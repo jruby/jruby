@@ -877,15 +877,19 @@ public class IRBuilder {
             s.addInstr(new CopyInstr(currLoop.loopResult, rv));
             s.addInstr(new JumpInstr(currLoop.loopEndLabel));
         }
-        else if (s instanceof IRClosure) {
-            // This lexical scope value is only used (and valid) in regular block contexts.
-            // If this instruction is executed in a Proc or Lambda context, the lexical scope value is useless.
-            s.addInstr(new BREAK_Instr(rv, (IRExecutionScope)(s.getLexicalParent())));
-        }
         else {
-            // SSS FIXME: If we are not in a closure or a loop, the break instruction will throw a runtime exception
-            // Since we know this right now, should we build an exception instruction here?
-            s.addInstr(new BREAK_Instr(rv, null));
+            // If we have ensure blocks, have to run those first!
+            if (!_ensureBlockStack.empty()) EnsureBlockInfo.emitJumpChain(s, _ensureBlockStack);
+            if (s instanceof IRClosure) {
+                // This lexical scope value is only used (and valid) in regular block contexts.
+                // If this instruction is executed in a Proc or Lambda context, the lexical scope value is useless.
+                s.addInstr(new BREAK_Instr(rv, (IRExecutionScope)(s.getLexicalParent())));
+            }
+            else {
+                // SSS FIXME: If we are not in a closure or a loop, the break instruction will throw a runtime exception
+                // Since we know this right now, should we build an exception instruction here?
+                s.addInstr(new BREAK_Instr(rv, null));
+            }
         }
         return rv;
     }
@@ -2419,7 +2423,7 @@ public class IRBuilder {
         }
         else {
             // If a closure, the next is simply a return from the closure!
-            // But, if we have an ensure stmt, have to run that first!
+            // If we have ensure blocks, have to run those first!
             if (!_ensureBlockStack.empty()) EnsureBlockInfo.emitJumpChain(s, _ensureBlockStack);
             s.addInstr(new ClosureReturnInstr(rv));
         }
