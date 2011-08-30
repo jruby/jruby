@@ -27,6 +27,7 @@ class MSpecScript
     '^' + SPEC_DIR + '/core/kernel/binding',
     '^' + SPEC_DIR + '/core/proc/new',
     '^' + SPEC_DIR + '/core/thread/run',
+    '^' + SPEC_DIR + '/core/thread/raise',  # infinite loop?
     '^' + SPEC_DIR + '/core/thread/wakeup',
 
     # 1.9
