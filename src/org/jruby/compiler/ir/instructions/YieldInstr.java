@@ -13,19 +13,20 @@ import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.RubyArray;
 import org.jruby.RubyProc;
 import org.jruby.RubyNil;
 
 public class YieldInstr extends Instr {
     Operand block;
     Operand yieldArg;
-    private final boolean wrapIntoArray;
+    private final boolean unwrapArray;
 
-    public YieldInstr(Variable result, Variable block, Operand arg, boolean wrapIntoArray) {
+    public YieldInstr(Variable result, Variable block, Operand arg, boolean unwrapArray) {
         super(Operation.YIELD, result);
         this.block = block;
         this.yieldArg = arg;
-        this.wrapIntoArray = wrapIntoArray;
+        this.unwrapArray = unwrapArray;
     }
    
     public Instr cloneForInlining(InlinerInfo ii) {
@@ -47,12 +48,7 @@ public class YieldInstr extends Instr {
             resultValue = b.yieldSpecific(context);
         } else {
             IRubyObject yieldVal = (IRubyObject)yieldArg.retrieve(interp, context, self);
-            if ((yieldArg instanceof Splat) || (yieldArg instanceof CompoundArray)) {
-                if (wrapIntoArray) resultValue = b.yield(context, yieldVal);
-                else resultValue = b.yieldArray(context, yieldVal, null, null);
-            } else {
-                resultValue = b.yield(context, yieldVal);
-            }
+            resultValue = (unwrapArray && (yieldVal instanceof RubyArray)) ? b.yieldArray(context, yieldVal, null, null) : b.yield(context, yieldVal);
         }
         getResult().store(interp, context, self, resultValue);
         return null;
@@ -60,10 +56,10 @@ public class YieldInstr extends Instr {
 
     @Override
     public String toString() { 
-        return wrapIntoArray ? (super.toString() + "(" + block + ", WRAP[" + yieldArg + "])") : (super.toString() + "(" + block + ", " + yieldArg + ")");
+        return unwrapArray ? (super.toString() + "(" + block + ", " + yieldArg + ")") : (super.toString() + "(" + block + ", UNWRAP(" + yieldArg + "))");
     }
 
-    // if wrapIntoArray, maybe convert yieldArg into a CompoundArray operand?
+    // if unwrapArray, maybe convert yieldArg into a CompoundArray operand?
     public Operand[] getOperands() {
         return (yieldArg == null) ? new Operand[]{block} : new Operand[] {block, yieldArg};
     }
