@@ -9,6 +9,9 @@ import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+// SSS FIXME: Have to find a clean solution to this hackiness of having
+// one or more non-Operand fields  in instructions or maybe rename the
+// base classes to something more appropriate?
 public class InstanceOfInstr extends OneOperandInstr {
     Class  type;
     String className;
@@ -20,6 +23,11 @@ public class InstanceOfInstr extends OneOperandInstr {
 
     public Instr cloneForInlining(InlinerInfo ii) {
         return new InstanceOfInstr(ii.getRenamedVariable(getResult()), getArg().cloneForInlining(ii), className);
+    }
+
+    @Override 
+    public String toString() {
+        return (isDead() ? "[DEAD]" : "") + (getResult() + " = ") + getOperation() + "(" + getArg() + ", " + className + ")";
     }
 
     @Override
