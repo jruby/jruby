@@ -85,7 +85,7 @@ public enum Operation {
     GET_CONST(OpFlags.f_is_load),
     GET_GLOBAL_VAR(OpFlags.f_is_load), 
     GET_FIELD(OpFlags.f_is_load),
-    GET_CVAR(OpFlags.f_is_load),
+    GET_CVAR(OpFlags.f_is_load | OpFlags.f_can_raise_exception),
     GET_ARRAY(OpFlags.f_is_load),
     BINDING_LOAD(OpFlags.f_is_load),
     SEARCH_CONST(OpFlags.f_is_load | OpFlags.f_can_raise_exception),
