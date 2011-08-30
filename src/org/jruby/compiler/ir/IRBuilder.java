@@ -1257,7 +1257,8 @@ public class IRBuilder {
         return rv;
     }
 
-    public Operand buildGetDefinitionBase(final Node node, IRScope m) {
+    public Operand buildGetDefinitionBase(Node node, IRScope m) {
+        node = skipOverNewlines(m, node);
         switch (node.getNodeType()) {
         case CLASSVARASGNNODE:
         case CLASSVARDECLNODE:
@@ -1362,7 +1363,8 @@ public class IRBuilder {
         }
     }
 
-    public Operand buildGetDefinition(final Node node, IRScope s) {
+    public Operand buildGetDefinition(Node defnNode, IRScope s) {
+        final Node node = skipOverNewlines(s, defnNode);
         switch (node.getNodeType()) {
             case CLASSVARASGNNODE:
             case CLASSVARDECLNODE:
