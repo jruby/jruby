@@ -174,6 +174,7 @@ import org.jruby.compiler.ir.operands.DynamicSymbol;
 import org.jruby.compiler.ir.operands.Fixnum;
 import org.jruby.compiler.ir.operands.Float;
 import org.jruby.compiler.ir.operands.Hash;
+import org.jruby.compiler.ir.operands.IRException;
 import org.jruby.compiler.ir.operands.KeyValuePair;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.MetaObject;
@@ -872,14 +873,15 @@ public class IRBuilder {
 
     public Operand buildBreak(BreakNode breakNode, IRExecutionScope s) {
         Operand rv = build(breakNode.getValueNode(), s);
+        // If we have ensure blocks, have to run those first!
+        if (!_ensureBlockStack.empty()) EnsureBlockInfo.emitJumpChain(s, _ensureBlockStack);
+
         IRLoop currLoop = s.getCurrentLoop();
         if (currLoop != null) {
             s.addInstr(new CopyInstr(currLoop.loopResult, rv));
             s.addInstr(new JumpInstr(currLoop.loopEndLabel));
         }
         else {
-            // If we have ensure blocks, have to run those first!
-            if (!_ensureBlockStack.empty()) EnsureBlockInfo.emitJumpChain(s, _ensureBlockStack);
             if (s instanceof IRClosure) {
                 // This lexical scope value is only used (and valid) in regular block contexts.
                 // If this instruction is executed in a Proc or Lambda context, the lexical scope value is useless.
@@ -2415,17 +2417,18 @@ public class IRBuilder {
 
     public Operand buildNext(final NextNode nextNode, IRExecutionScope s) {
         Operand rv = (nextNode.getValueNode() == null) ? Nil.NIL : build(nextNode.getValueNode(), s);
-        // SSS FIXME: 1. Is the ordering correct? (poll before next)
-        s.addInstr(new ThreadPollInstr());
-	    if (s.getCurrentLoop() != null) {
+        s.addInstr(new ThreadPollInstr()); // SSS FIXME: Is the ordering correct? (poll before next)
+
+        // If we have ensure blocks, have to run those first!
+        if (!_ensureBlockStack.empty()) EnsureBlockInfo.emitJumpChain(s, _ensureBlockStack);
+        if (s.getCurrentLoop() != null) {
             // If a regular loop, the next is simply a jump to the end of the iteration
             s.addInstr(new JumpInstr(s.getCurrentLoop().iterEndLabel));
         }
         else {
             // If a closure, the next is simply a return from the closure!
-            // If we have ensure blocks, have to run those first!
-            if (!_ensureBlockStack.empty()) EnsureBlockInfo.emitJumpChain(s, _ensureBlockStack);
-            s.addInstr(new ClosureReturnInstr(rv));
+            if (s instanceof IRClosure) s.addInstr(new ClosureReturnInstr(rv));
+            else s.addInstr(new THROW_EXCEPTION_Instr(IRException.NEXT_LocalJumpError));
         }
         return rv;
     }

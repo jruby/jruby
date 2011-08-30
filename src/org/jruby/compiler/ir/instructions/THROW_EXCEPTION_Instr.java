@@ -1,8 +1,9 @@
 package org.jruby.compiler.ir.instructions;
 
 import org.jruby.compiler.ir.Operation;
-import org.jruby.compiler.ir.operands.Operand;
+import org.jruby.compiler.ir.operands.IRException;
 import org.jruby.compiler.ir.operands.Label;
+import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -23,13 +24,18 @@ public class THROW_EXCEPTION_Instr extends OneOperandInstr {
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        Object excObj = getArg().retrieve(interp, context, self);
-        if (excObj instanceof IRubyObject)
-            RubyKernel.raise(context, context.getRuntime().getKernel(), new IRubyObject[] {(IRubyObject)excObj}, Block.NULL_BLOCK);
-        else if (excObj instanceof Error)  // from regular ensures
-           throw (Error)excObj;
-        else // from breaks running ensures
-           throw (RuntimeException)excObj;
+        if (getArg() instanceof IRException) {
+            throw ((IRException)getArg()).getException(context.getRuntime());
+        }
+        else {
+            Object excObj = getArg().retrieve(interp, context, self);
+            if (excObj instanceof IRubyObject)
+                RubyKernel.raise(context, context.getRuntime().getKernel(), new IRubyObject[] {(IRubyObject)excObj}, Block.NULL_BLOCK);
+            else if (excObj instanceof Error)  // from regular ensures
+               throw (Error)excObj;
+            else // from breaks running ensures
+               throw (RuntimeException)excObj;
+        }
 
         // Control will never reach here but the Java compiler doesn't know that
         // since RubyKernel.raise doesn't declare that it throws an exception.
