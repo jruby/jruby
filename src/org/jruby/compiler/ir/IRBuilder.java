@@ -1243,10 +1243,10 @@ public class IRBuilder {
         // Verify that the exception is of type 'JumpException'.
         // Since this is JRuby implementation Java code, we dont need EQQ here.
         // SSS FIXME: Hardcoded exception class name!
-        m.addInstr(new InstanceOfInstr(eqqResult, exc, "org.jruby.exceptions.JumpException")); 
+        m.addInstr(new InstanceOfInstr(eqqResult, exc, "org.jruby.RubyException")); 
         m.addInstr(new BEQInstr(eqqResult, BooleanLiteral.FALSE, uncaughtLabel));
         Object v2 = rescueBlock.run(rescueBlockArgs); // YIELD: Run the protected code block
-        if (v2 != null) m.addInstr(new CopyInstr(rv, (Operand)v1));
+        if (v2 != null) m.addInstr(new CopyInstr(rv, Nil.NIL));
         m.addInstr(new JumpInstr(rEndLabel));
         m.addInstr(new LABEL_Instr(uncaughtLabel));
         m.addInstr(new THROW_EXCEPTION_Instr(exc));
@@ -1567,7 +1567,7 @@ public class IRBuilder {
                 s.addInstr(new BNEInstr(cm, Nil.NIL, l));
                 s.addInstr(new JRubyImplCallInstr(cm, JRubyImplementationMethod.SELF_METACLASS, getSelf(s), NO_ARGS));
                 s.addInstr(new LABEL_Instr(l));
-                return buildDefinitionCheck(s, JRubyImplementationMethod.CLASS_VAR_DEFINED, cm, iVisited.getName(), "class-variable");
+                return buildDefinitionCheck(s, JRubyImplementationMethod.CLASS_VAR_DEFINED, cm, iVisited.getName(), "class variable");
             }
             case ATTRASSIGNNODE:
             {
@@ -1632,7 +1632,8 @@ public class IRBuilder {
                 CodeBlock protectedCode = new CodeBlock() {
                     public Operand run(Object[] args) { 
                         build((Node)args[0], (IRScope)args[1]);
-                        return Nil.NIL; 
+                        // always an expression as long as we get through here without an exception!
+                        return new StringLiteral("expression");
                     }
                 };
                 // rescue block
@@ -1641,10 +1642,7 @@ public class IRBuilder {
                 };
 
                 // Try verifying definition, and if we get an JumpException exception, process it with the rescue block above
-                protectCodeWithRescue(s, protectedCode, new Object[]{node, s}, rescueBlock, null);
-
-                // always an expression as long as we didn't get an exception in the code above
-                return new StringLiteral("expression");
+                return protectCodeWithRescue(s, protectedCode, new Object[]{node, s}, rescueBlock, null);
         }
     }
 
