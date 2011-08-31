@@ -43,7 +43,8 @@ public class DefineMetaClassInstr extends OneOperandInstr {
             RubyClass singletonClass = obj.getSingletonClass();
             dummyMetaClass.getStaticScope().setModule(singletonClass);
             DynamicMethod method = new InterpretedIRMethod(dummyMetaClass.getRootMethod(), singletonClass);
-            Object v = method.call(context, singletonClass, singletonClass, "", new IRubyObject[]{});
+            // SSS FIXME: Rather than pass the block implicitly, should we add %block as another operand to DefineMetaClass instr?
+            Object v = method.call(context, singletonClass, singletonClass, "", new IRubyObject[]{}, interp.getBlock());
             getResult().store(interp, context, self, v);
             return null;
         }

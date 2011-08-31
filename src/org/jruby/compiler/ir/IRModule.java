@@ -13,6 +13,7 @@ import org.jruby.compiler.ir.instructions.DefineModuleInstr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.PutConstInstr;
 import org.jruby.compiler.ir.instructions.ReceiveSelfInstruction;
+import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
 import org.jruby.compiler.ir.operands.ClassMetaObject;
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.Operand;
@@ -99,6 +100,7 @@ public class IRModule extends IRScopeImpl {
         String n = ROOT_METHOD_PREFIX + getName();
         rootMethod = new IRMethod(this, MetaObject.create(this), n, false, new LocalStaticScope(null));
         rootMethod.addInstr(new ReceiveSelfInstruction(rootMethod.getSelf()));   // Set up self!
+        rootMethod.addInstr(new ReceiveClosureInstr(rootMethod.getImplicitBlockArg()));
     }
 
     public List<IRModule> getModules() {

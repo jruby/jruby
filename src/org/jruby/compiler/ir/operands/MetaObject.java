@@ -23,7 +23,7 @@ public class MetaObject extends Operand {
     }
 
     public static MetaObject create(IRScope scope) {
-		  // Walk up lexical scopes to find the nearest lexical scope that contains the method
+        // Walk up lexical scopes to find the nearest lexical scope that contains the method
         if (scope instanceof IRMethod) scope = scope.getNearestModule();
 
         if (scope instanceof IRClass) return new ClassMetaObject((IRClass) scope);
@@ -64,7 +64,7 @@ public class MetaObject extends Operand {
     public void addUsedVariables(List<Variable> l) {
         // SSS: IRScopeImpl has an operand that records the container for the scope
         Operand c = scope.getContainer();
-		  if (c != null) c.addUsedVariables(l);
+        if (c != null) c.addUsedVariables(l);
     }
 
     /**
@@ -98,7 +98,8 @@ public class MetaObject extends Operand {
         IRMethod rootMethod = ((IRModule) scope).getRootMethod();
         DynamicMethod method = new InterpretedIRMethod(rootMethod, module);
 
-        return method.call(context, module, module, "", new IRubyObject[]{});
+        // SSS FIXME: Rather than pass the block implicitly, should we add %block as another operand to DefineClass, DefineModule instrs?
+        return method.call(context, module, module, "", new IRubyObject[]{}, interp.getBlock());
     }
 
     public RubyModule getContainer(InterpreterContext interp, ThreadContext context, IRubyObject self) {
