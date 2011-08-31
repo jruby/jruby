@@ -832,16 +832,16 @@ public class IRBuilder {
     }
 
     private Operand buildAttrAssign(final AttrAssignNode attrAssignNode, IRScope s) {
-        List<Operand> args = setupCallArgs(attrAssignNode.getArgsNode(), s);
         Operand obj = build(attrAssignNode.getReceiverNode(), s);
+        List<Operand> args = setupCallArgs(attrAssignNode.getArgsNode(), s);
         s.addInstr(new AttrAssignInstr(obj, new StringLiteral(attrAssignNode.getName()), args.toArray(new Operand[args.size()])));
         return args.get(args.size()-1);
     }
 
     public Operand buildAttrAssignAssignment(Node node, IRScope s, Operand value) {
         final AttrAssignNode attrAssignNode = (AttrAssignNode) node;
-        List<Operand> args = setupCallArgs(attrAssignNode.getArgsNode(), s);
         Operand obj = build(attrAssignNode.getReceiverNode(), s);
+        List<Operand> args = setupCallArgs(attrAssignNode.getArgsNode(), s);
         s.addInstr(new AttrAssignInstr(obj, new StringLiteral(attrAssignNode.getName()), args.toArray(new Operand[args.size()]), value));
         return value;
     }
@@ -1654,8 +1654,31 @@ public class IRBuilder {
         int depth = dasgnNode.getDepth();
         // SSS FIXME: Isn't it sufficient to use "getLocalVariable(variable.getName())"?
         Variable arg = getScopeNDown(s, depth).getLocalVariable(dasgnNode.getName());
-        s.addInstr(new CopyInstr(arg, build(dasgnNode.getValueNode(), s)));
-        return arg;
+        Operand  value = build(dasgnNode.getValueNode(), s);
+        s.addInstr(new CopyInstr(arg, value));
+        return value;
+
+        // IMPORTANT: The return value of this method is value, not arg!
+        //
+        // Consider this Ruby code: foo((a = 1), (a = 2))
+        //
+        // If we return 'value' this will get translated to:
+        //    a = 1
+        //    a = 2
+        //    call("foo", [1,2]) <---- CORRECT
+        //
+        // If we return 'arg' this will get translated to:
+        //    a = 1
+        //    a = 2
+        //    call("foo", [a,a]) <---- BUGGY
+        //
+        // This technique only works if 'value' is an immutable value (ex: fixnum) or a variable
+        // So, for Ruby code like this:   
+        //     def foo(x); x << 5; end; 
+        //     foo(a=[1,2]); 
+        //     p a
+        // we are guaranteed that the value passed into foo and 'a' point to the same object
+        // because of the use of copyAndReturnValue method for literal objects.
     }
     
     // ENEBO: On IRScope?
@@ -2274,9 +2297,9 @@ public class IRBuilder {
         IRClosure closure = new IRClosure(s, false, iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()), iterNode.getArgumentType());
         s.addClosure(closure);
 
-		  // Create a new nested builder to ensure this gets its own IR builder state 
-		  // like the ensure block stack
-		  IRBuilder closureBuilder = new IRBuilder();
+        // Create a new nested builder to ensure this gets its own IR builder state 
+        // like the ensure block stack
+        IRBuilder closureBuilder = new IRBuilder();
 
             // Receive self
         closure.addInstr(new ReceiveSelfInstruction(getSelf(closure)));
@@ -2302,10 +2325,32 @@ public class IRBuilder {
     }
 
     public Operand buildLocalAsgn(LocalAsgnNode localAsgnNode, IRScope s) {
+        Variable var  = s.getLocalVariable(localAsgnNode.getName());
         Operand value = build(localAsgnNode.getValueNode(), s);
-        s.addInstr(new CopyInstr(s.getLocalVariable(localAsgnNode.getName()), value));
+        s.addInstr(new CopyInstr(var, value));
+        return value;  
 
-        return value;
+        // IMPORTANT: The return value of this method is value, not var!
+        //
+        // Consider this Ruby code: foo((a = 1), (a = 2))
+        //
+        // If we return 'value' this will get translated to:
+        //    a = 1
+        //    a = 2
+        //    call("foo", [1,2]) <---- CORRECT
+        //
+        // If we return 'var' this will get translated to:
+        //    a = 1
+        //    a = 2
+        //    call("foo", [a,a]) <---- BUGGY
+        //
+        // This technique only works if 'value' is an immutable value (ex: fixnum) or a variable
+        // So, for Ruby code like this:   
+        //     def foo(x); x << 5; end; 
+        //     foo(a=[1,2]); 
+        //     p a
+        // we are guaranteed that the value passed into foo and 'a' point to the same object
+        // because of the use of copyAndReturnValue method for literal objects.
     }
 
     public Operand buildLocalVar(LocalVarNode node, IRScope s) {
