@@ -1,4 +1,5 @@
 require 'java'
+require 'jruby'
 
 describe "A Ruby object" do
   it "can serialize through ObjectOutputStream" do
@@ -11,7 +12,9 @@ describe "A Ruby object" do
     bytes = baos.toByteArray
     
     bais = java.io.ByteArrayInputStream.new(bytes)
-    ois = java.io.ObjectInputStream(bais)
+    ois = java.io.ObjectInputStream.new(bais)
+
+    org.jruby.Ruby.setThreadLocalRuntime(JRuby.runtime)
     
     obj2 = ois.readObject
     
