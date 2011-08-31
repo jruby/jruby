@@ -372,12 +372,28 @@ public class RubyModule extends RubyObject {
         return this;
     }
 
+    /**
+     * Get the base name of this class, or null if it is an anonymous class.
+     * 
+     * @return base name of the class
+     */
     public String getBaseName() {
-        return classId;
+        return baseName;
     }
 
+    /**
+     * Set the base name of the class. If null, the class effectively becomes
+     * anonymous (though constants elsewhere may reference it).
+     * @param name the new base name of the class
+     */
     public void setBaseName(String name) {
-        classId = name;
+        String oldName = baseName;
+        baseName = name;
+        
+        // clear full name for recalculation later if base was null before
+        if (oldName == null) {
+            calculatedName = null;
+        }
     }
 
     /**
@@ -388,46 +404,42 @@ public class RubyModule extends RubyObject {
      * @return The generated class name
      */
     public String getName() {
-        if (fullName == null) {
-            calculateName();
+        if (calculatedName == null) {
+            return calculateName();
         }
-        return fullName;
+        
+        return calculatedName;
     }
 
-    private void calculateName() {
-        fullName = calculateFullName();
-    }
-
-    private String calculateFullName() {
+    /**
+     * Recalculate the fully-qualified name of this class/module.
+     */
+    private synchronized String calculateName() {
         if (getBaseName() == null) {
-            if (bareName == null) {
-                if (isClass()) {
-                    bareName = "#<" + "Class"  + ":0x1" + String.format("%08x", System.identityHashCode(this)) + ">";
-                } else {
-                    bareName = "#<" + "Module" + ":0x1" + String.format("%08x", System.identityHashCode(this)) + ">";
-                }
-            }
-
-            return bareName;
+            // we are anonymous, don't store calculated name
+            return calculateAnonymousName();
         }
-
-        String result = getBaseName();
-        RubyClass objectClass = getRuntime().getObject();
-
-        for (RubyModule p = this.getParent(); p != null && p != objectClass; p = p.getParent()) {
-            String pName = p.getBaseName();
-            // This is needed when the enclosing class or module is a singleton.
-            // In that case, we generated a name such as null::Foo, which broke 
-            // Marshalling, among others. The correct thing to do in this situation 
-            // is to insert the generate the name of form #<Class:01xasdfasd> if 
-            // it's a singleton module/class, which this code accomplishes.
-            if(pName == null) {
-                pName = p.getName();
+        
+        Ruby runtime = getRuntime();
+        String name = getBaseName();
+        
+        for (RubyModule p = getParent() ; p != null && p != runtime.getObject() ; p = p.getParent()) {
+            if (p.getBaseName() == null) {
+                // parent is anonymous, don't store calculated name
+                return calculateAnonymousName();
             }
-            result = pName + "::" + result;
+            
+            // parent is not anonymous, use :: qualified name
+            name = p.getBaseName() + "::" + name;
         }
+        
+        return calculatedName = name;
+    }
 
-        return result;
+    private String calculateAnonymousName() {
+        // anonymous classes get the #<Class:0xdeadbeef> format
+        String anonBase = isClass() ? "Class" : "Module";
+        return "#<" + anonBase  + ":0x" + String.format("%x", System.identityHashCode(this)) + ">";
     }
 
     /**
@@ -1040,7 +1052,7 @@ public class RubyModule extends RubyObject {
     }
 
     public void invalidateCacheDescendants() {
-        if (DEBUG) LOG.debug("invalidating descendants: {}", classId);
+        if (DEBUG) LOG.debug("invalidating descendants: {}", baseName);
         invalidateCacheDescendantsInner();
         // update all hierarchies into which this module has been included
         synchronized (getRuntime().getHierarchyLock()) {
@@ -2498,7 +2510,7 @@ public class RubyModule extends RubyObject {
      */
     @JRubyMethod(name = "const_set", required = 2)
     public IRubyObject const_set(IRubyObject symbol, IRubyObject value) {
-        IRubyObject constant = fastSetConstant(validateConstant(symbol.asJavaString()).intern(), value);
+        IRubyObject constant = setConstant(validateConstant(symbol.asJavaString()).intern(), value);
 
         if (constant instanceof RubyModule) {
             ((RubyModule)constant).calculateName();
@@ -2920,13 +2932,6 @@ public class RubyModule extends RubyObject {
             if (module.getBaseName() == null) {
                 module.setBaseName(name);
                 module.setParent(this);
-                // we need to update fullName cache for module, along with all its children
-                module.calculateName();
-                for(IRubyObject child : module.getConstantMap().values()) {
-                    if (child instanceof RubyModule) {
-                        ((RubyModule)child).calculateName();
-                    }
-                }
             }
         }
         return value;
@@ -3420,12 +3425,22 @@ public class RubyModule extends RubyObject {
 
     public final int id;
 
-    // Containing class...The parent of Object is null. Object should always be last in chain.
+    /**
+     * The class/module within whose namespace this class/module resides.
+     */
     public RubyModule parent;
 
-    // ClassId is the name of the class/module sans where it is located.
-    // If it is null, then it an anonymous class.
-    protected String classId;
+    /**
+     * The base name of this class/module, excluding nesting. If null, this is
+     * an anonymous class.
+     */
+    protected String baseName;
+    
+    /**
+     * The fully-qualified name for this class/modulem including nesting. Use
+     * getName() to get it (with lazy calculation) or calclateName() to recalc.
+     */
+    private String calculatedName;
 
     private volatile Map<String, IRubyObject> constants = Collections.EMPTY_MAP;
     
@@ -3500,9 +3515,6 @@ public class RubyModule extends RubyObject {
     // ClassProviders return Java class/module (in #defineOrGetClassUnder and
     // #defineOrGetModuleUnder) when class/module is opened using colon syntax.
     private transient volatile Set<ClassProvider> classProviders = Collections.EMPTY_SET;
-
-    private String bareName;
-    private String fullName;
 
     // superClass may be null.
     protected RubyClass superClass;
