@@ -125,12 +125,9 @@ import com.kenai.constantine.ConstantSet;
 import com.kenai.constantine.platform.Errno;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.nio.channels.ClosedChannelException;
-import java.nio.channels.FileChannel;
 import java.util.EnumSet;
 import java.util.concurrent.atomic.AtomicLong;
-import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.ast.RootNode;
 import org.jruby.ast.executable.RuntimeCache;
@@ -147,7 +144,6 @@ import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.load.BasicLibraryService;
 import org.jruby.threading.DaemonThreadFactory;
-import org.jruby.util.JRubyFile;
 import org.jruby.util.io.SelectorPool;
 
 /**
@@ -207,8 +203,6 @@ public final class Ruby {
         return newInstance(config);
     }
 
-    private static Ruby globalRuntime;
-
     /**
      * Tests whether globalRuntime has been instantiated or not.
      *
@@ -225,12 +219,22 @@ public final class Ruby {
         return globalRuntime != null;
     }
 
+    /**
+     * Set the global runtime to the given runtime only if it has no been set.
+     * 
+     * @param runtime the runtime to use for global runtime
+     */
     private static synchronized void setGlobalRuntimeFirstTimeOnly(Ruby runtime) {
         if (globalRuntime == null) {
             globalRuntime = runtime;
         }
     }
 
+    /**
+     * Get the global runtime.
+     * 
+     * @return the global runtime
+     */
     public static synchronized Ruby getGlobalRuntime() {
         if (globalRuntime == null) {
             newInstance();
@@ -249,14 +253,24 @@ public final class Ruby {
             setGlobalRuntimeFirstTimeOnly(this);
         }
     }
+    
+    public static Ruby getThreadLocalRuntime() {
+        return threadLocalRuntime.get();
+    }
+    
+    /**
+     * Set the thread-local runtime to the given runtime.
+     * 
+     * @param ruby the new runtime for thread-local
+     */
+    public static void setThreadLocalRuntime(Ruby ruby) {
+        threadLocalRuntime.set(ruby);
+    }
 
     /**
-     * Create and initialize a new JRuby runtime. The properties of the
-     * specified RubyInstanceConfig will be used to determine various JRuby
-     * runtime characteristics.
+     * Get the thread-local runtime for the current thread, or null if unset.
      * 
-     * @param config The configuration to use for the new instance
-     * @see org.jruby.RubyInstanceConfig
+     * @return the thread-local runtime, or null if unset
      */
     private Ruby(RubyInstanceConfig config) {
         this.config             = config;
@@ -4131,4 +4145,10 @@ public final class Ruby {
     private RubyHash envObject;
     
     private final CoverageData coverageData = new CoverageData();
+
+    /** The "global" runtime. Set to the first runtime created, normally. */
+    private static Ruby globalRuntime;
+    
+    /** The "thread local" runtime. Set to the global runtime if unset. */
+    private static ThreadLocal<Ruby> threadLocalRuntime = new ThreadLocal<Ruby>();
 }
