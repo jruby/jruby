@@ -8,6 +8,7 @@ package org.jruby.runtime;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.compiler.ir.IRClosure;
@@ -180,21 +181,30 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
 
     @Override
     public IRubyObject[] prepareArgumentsForCall(ThreadContext context, IRubyObject[] args, Block.Type type) {
+        int blockArity = arity().getValue();
         switch (type) {
         // SSS FIXME: this is different from how regular interpreter does it .. it treats PROC & NORMAL blocks differently
         // But, without this fix, {:a=>:b}.each { |*x| puts a.inspect } outputs [:a,:b] instead of [[:a, :b]]
         case PROC:
         case NORMAL: {
-            if (args.length == 1 && args[0] instanceof RubyArray) {
-                if (argumentType == MULTIPLE_ASSIGNMENT) {
-                    args = ((RubyArray) args[0]).toJavaArray();
+            if (args.length == 1) {
+                IRubyObject soleArg = args[0];
+                if (soleArg instanceof RubyArray) {
+                    if (argumentType == MULTIPLE_ASSIGNMENT) {
+                        args = ((RubyArray) soleArg).toJavaArray();
+                    }
+                }
+                else if (blockArity > 1) {
+                    IRubyObject toAryArg = RuntimeHelpers.aryToAry(soleArg);
+                    if (toAryArg instanceof RubyArray) args = ((RubyArray)toAryArg).toJavaArray();
+                    else throw context.getRuntime().newTypeError(soleArg.getType().getName() + "#to_ary should return Array");
                 }
             }
             break;
         }
         case LAMBDA:
             if (argumentType == ARRAY && args.length != 1) {
-                context.getRuntime().getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (" + args.length + " for " + arity().getValue() + ")");
+                context.getRuntime().getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (" + args.length + " for " + blockArity + ")");
                 if (args.length == 0) {
                     args = context.getRuntime().getSingleNilArray();
                 } else {
