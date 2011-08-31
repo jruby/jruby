@@ -35,8 +35,9 @@ public class EQQInstr extends TwoOperandInstr {
                 }
             }
             getResult().store(interp, context, self, context.getRuntime().newBoolean(false));
-        }
-        else {
+        } else if (value.equals(context.getRuntime().getTrue())) { // SSS FIXME: Can I use value == RubyBoolean.True?
+            getResult().store(interp, context, self, receiver);
+        } else {
             getResult().store(interp, context, self, receiver.callMethod(context, "===", value));
         }
         
