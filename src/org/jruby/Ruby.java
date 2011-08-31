@@ -124,10 +124,8 @@ import jnr.constants.ConstantSet;
 import jnr.constants.platform.Errno;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.net.BindException;
 import java.nio.channels.ClosedChannelException;
-import java.nio.channels.FileChannel;
 import java.util.EnumSet;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
@@ -135,7 +133,6 @@ import java.util.regex.Pattern;
 import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.ast.RootNode;
 import org.jruby.ast.executable.RuntimeCache;
-import org.jruby.runtime.opto.ObjectIdentityInvalidator;
 import org.jruby.runtime.opto.Invalidator;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.Unrescuable;
@@ -151,9 +148,7 @@ import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.load.BasicLibraryService;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.threading.DaemonThreadFactory;
-import org.jruby.util.JRubyFile;
 import org.jruby.util.io.SelectorPool;
-import org.objectweb.asm.Opcodes;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -176,6 +171,45 @@ public final class Ruby {
      * The logger used to log relevant bits.
      */
     private static final Logger LOG = LoggerFactory.getLogger("Ruby");
+
+    /**
+     * Create and initialize a new JRuby runtime. The properties of the
+     * specified RubyInstanceConfig will be used to determine various JRuby
+     * runtime characteristics.
+     * 
+     * @param config The configuration to use for the new instance
+     * @see org.jruby.RubyInstanceConfig
+     */
+    private Ruby(RubyInstanceConfig config) {
+        this.config             = config;
+        this.is1_9              = config.getCompatVersion() == CompatVersion.RUBY1_9;
+        this.doNotReverseLookupEnabled = is1_9;
+        this.threadService      = new ThreadService(this);
+        if(config.isSamplingEnabled()) {
+            org.jruby.util.SimpleSampler.registerThreadContext(threadService.getCurrentContext());
+        }
+
+        this.in                 = config.getInput();
+        this.out                = config.getOutput();
+        this.err                = config.getError();
+        this.objectSpaceEnabled = config.isObjectSpaceEnabled();
+        this.profile            = config.getProfile();
+        this.currentDirectory   = config.getCurrentDirectory();
+        this.kcode              = config.getKCode();
+        this.beanManager        = BeanManagerFactory.create(this, config.isManagementEnabled());
+        this.jitCompiler        = new JITCompiler(this);
+        this.parserStats        = new ParserStats(this);
+        
+        this.beanManager.register(new Config(this));
+        this.beanManager.register(parserStats);
+        this.beanManager.register(new ClassCache(this));
+        this.beanManager.register(new org.jruby.management.Runtime(this));
+
+        this.runtimeCache = new RuntimeCache();
+        runtimeCache.initMethodCache(ClassIndex.MAX_CLASSES * MethodIndex.MAX_METHODS);
+        
+        constantInvalidator = OptoFactory.newConstantInvalidator();
+    }
     
     /**
      * Returns a new instance of the JRuby runtime configured with defaults.
@@ -220,8 +254,6 @@ public final class Ruby {
         return newInstance(config);
     }
 
-    private static Ruby globalRuntime;
-
     /**
      * Tests whether globalRuntime has been instantiated or not.
      *
@@ -238,12 +270,22 @@ public final class Ruby {
         return globalRuntime != null;
     }
 
+    /**
+     * Set the global runtime to the given runtime only if it has no been set.
+     * 
+     * @param runtime the runtime to use for global runtime
+     */
     private static synchronized void setGlobalRuntimeFirstTimeOnly(Ruby runtime) {
         if (globalRuntime == null) {
             globalRuntime = runtime;
         }
     }
 
+    /**
+     * Get the global runtime.
+     * 
+     * @return the global runtime
+     */
     public static synchronized Ruby getGlobalRuntime() {
         if (globalRuntime == null) {
             newInstance();
@@ -264,42 +306,21 @@ public final class Ruby {
     }
 
     /**
-     * Create and initialize a new JRuby runtime. The properties of the
-     * specified RubyInstanceConfig will be used to determine various JRuby
-     * runtime characteristics.
+     * Get the thread-local runtime for the current thread, or null if unset.
      * 
-     * @param config The configuration to use for the new instance
-     * @see org.jruby.RubyInstanceConfig
+     * @return the thread-local runtime, or null if unset
      */
-    private Ruby(RubyInstanceConfig config) {
-        this.config             = config;
-        this.is1_9              = config.getCompatVersion() == CompatVersion.RUBY1_9;
-        this.doNotReverseLookupEnabled = is1_9;
-        this.threadService      = new ThreadService(this);
-        if(config.isSamplingEnabled()) {
-            org.jruby.util.SimpleSampler.registerThreadContext(threadService.getCurrentContext());
-        }
-
-        this.in                 = config.getInput();
-        this.out                = config.getOutput();
-        this.err                = config.getError();
-        this.objectSpaceEnabled = config.isObjectSpaceEnabled();
-        this.profile            = config.getProfile();
-        this.currentDirectory   = config.getCurrentDirectory();
-        this.kcode              = config.getKCode();
-        this.beanManager        = BeanManagerFactory.create(this, config.isManagementEnabled());
-        this.jitCompiler        = new JITCompiler(this);
-        this.parserStats        = new ParserStats(this);
-        
-        this.beanManager.register(new Config(this));
-        this.beanManager.register(parserStats);
-        this.beanManager.register(new ClassCache(this));
-        this.beanManager.register(new org.jruby.management.Runtime(this));
-
-        this.runtimeCache = new RuntimeCache();
-        runtimeCache.initMethodCache(ClassIndex.MAX_CLASSES * MethodIndex.MAX_METHODS);
-        
-        constantInvalidator = OptoFactory.newConstantInvalidator();
+    public static Ruby getThreadLocalRuntime() {
+        return threadLocalRuntime.get();
+    }
+    
+    /**
+     * Set the thread-local runtime to the given runtime.
+     * 
+     * @param ruby the new runtime for thread-local
+     */
+    public static void setThreadLocalRuntime(Ruby ruby) {
+        threadLocalRuntime.set(ruby);
     }
     
     /**
@@ -4174,4 +4195,10 @@ public final class Ruby {
     private RubyHash envObject;
     
     private final CoverageData coverageData = new CoverageData();
+
+    /** The "global" runtime. Set to the first runtime created, normally. */
+    private static Ruby globalRuntime;
+    
+    /** The "thread local" runtime. Set to the global runtime if unset. */
+    private static ThreadLocal<Ruby> threadLocalRuntime = new ThreadLocal<Ruby>();
 }

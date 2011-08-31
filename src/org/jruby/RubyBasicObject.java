@@ -27,6 +27,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -108,7 +111,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     protected int flags;
 
     // variable table, lazily allocated as needed (if needed)
-    private volatile Object[] varTable;
+    private transient volatile Object[] varTable;
 
     /**
      * The error message used when some one tries to modify an
@@ -3011,5 +3014,74 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         if (IdUtil.isValidInstanceVariableName(name)) return name;
 
         throw getRuntime().newNameError("`" + name + "' is not allowable as an instance variable name", name);
+    }
+    
+    /**
+     * Serialization of a Ruby (basic) object involves three steps:
+     * 
+     * <ol>
+     * <li>Dump the object itself</li>
+     * <li>Dump a String used to load the appropriate Ruby class</li>
+     * <li>Dump each variable from varTable in turn</li>
+     * </ol>
+     * 
+     * The metaClass field is marked transient since Ruby classes generally will
+     * not be able to serialize (since they hold references to method tables,
+     * other classes, and potentially thread-, runtime-, or jvm-local state.
+     * 
+     * The varTable field is transient because the layout of the same class may
+     * differ across runtimes, since it is determined at runtime based on the
+     * order in which variables get assigned for a given class. We serialize
+     * entries by name to allow other layouts to work properly.
+     */
+    private void writeObject(ObjectOutputStream oos) throws IOException {
+        if (metaClass.isSingleton()) {
+            throw new IOException("can not serialize singleton object");
+        }
+        
+        oos.defaultWriteObject();
+        oos.writeUTF(metaClass.getName());
+        
+        if (varTable != null) {
+            Map<String, RubyClass.VariableAccessor> accessors = metaClass.getVariableAccessorsForRead();
+            oos.writeInt(accessors.size());
+            for (RubyClass.VariableAccessor accessor : accessors.values()) {
+                oos.writeUTF(ERR_INSECURE_SET_INST_VAR);
+                oos.writeObject(accessor.get(this));
+            }
+        } else {
+            oos.writeInt(0);
+        }
+    }
+    
+    /**
+     * Deserialization proceeds as follows:
+     * 
+     * <ol>
+     * <li>Deserialize the object instance. It will have null metaClass and
+     * varTable fields.</li>
+     * <li>Deserialize the name of the object's class, and retrieve class from a
+     * thread-local JRuby instance.</li>
+     * <li>Retrieve each variable in turn, re-assigning them by name.</li>
+     * </ol>
+     * 
+     * @see RubyBasicObject#writeObject(java.io.ObjectOutputStream) 
+     */
+    private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
+        Ruby ruby = Ruby.getThreadLocalRuntime();
+        
+        if (ruby == null) {
+            throw new IOException("No thread-local org.jruby.Ruby available; can't deserialize Ruby object. Set with Ruby#setThreadLocalRuntime.");
+        }
+        
+        ois.defaultReadObject();
+        metaClass = (RubyClass)ruby.getClassFromPath(ois.readUTF());
+        
+        int varCount = ois.readInt();
+        for (int i = 0; i < varCount; i++) {
+            String name = ois.readUTF();
+            Object value = ois.readObject();
+            metaClass.getVariableAccessorForWrite(name).set(this, value);
+        }
     }
 }
