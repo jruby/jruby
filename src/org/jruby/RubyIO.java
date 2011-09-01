@@ -2882,7 +2882,7 @@ public class RubyIO extends RubyObject {
         if (buf == null) {
             str = RubyString.newEmptyString(runtime);
         } else {
-            str = RubyString.newString(runtime, buf);
+            str = makeString(runtime, buf, false);
         }
         str.setTaint(true);
         return str;
