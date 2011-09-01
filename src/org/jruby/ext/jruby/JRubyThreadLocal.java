@@ -1,4 +1,5 @@
-/***** BEGIN LICENSE BLOCK *****
+/*
+ **** BEGIN LICENSE BLOCK *****
  * Version: CPL 1.0/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Common Public
@@ -10,8 +11,6 @@
  * IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
- *
- * Copyright (C) 2005 Thomas E Enebo <enebo@acm.org>
  * 
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -25,17 +24,31 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby.libraries;
-
-import java.io.IOException;
+package org.jruby.ext.jruby;
 
 import org.jruby.Ruby;
-import org.jruby.RubyJRuby;
-import org.jruby.runtime.load.Library;
+import org.jruby.RubyClass;
+import org.jruby.anno.JRubyClass;
+import org.jruby.runtime.ExecutionContext;
+import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
-public class JRubyLibrary implements Library {
+@JRubyClass(name = "JRuby::ThreadLocal")
+public final class JRubyThreadLocal extends JRubyExecutionContextLocal {
+    public static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
 
-    public void load(Ruby runtime, boolean wrap) throws IOException {
-        RubyJRuby.createJRuby(runtime);
+        public IRubyObject allocate(Ruby runtime, RubyClass type) {
+            return new JRubyThreadLocal(runtime, type);
+        }
+    };
+
+    public JRubyThreadLocal(Ruby runtime, RubyClass type) {
+        super(runtime, type);
     }
+
+    protected final ExecutionContext getExecutionContext(ThreadContext context) {
+        return context.getThread();
+    }
+    
 }

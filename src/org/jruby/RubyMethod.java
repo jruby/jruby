@@ -31,6 +31,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.ext.jruby.JRubyLibrary;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.JumpException;
@@ -327,7 +328,7 @@ public class RubyMethod extends RubyObject implements DataType {
 
     @JRubyMethod(name = "parameters", compat = CompatVersion.RUBY1_9)
     public IRubyObject parameters(ThreadContext context) {
-        return RubyJRuby.MethodExtensions.methodArgs(this);
+        return JRubyLibrary.MethodExtensions.methodArgs(this);
     }
 }
 

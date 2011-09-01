@@ -28,65 +28,53 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby;
+package org.jruby.ext.jruby;
 
+import java.io.IOException;
 import org.jruby.ast.RestArgNode;
-import org.jruby.ext.jruby.JRubyUtilLibrary;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.lang.management.ManagementFactory;
-import java.lang.management.ThreadMXBean;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
-import org.jruby.anno.JRubyClass;
 
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ListNode;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.Java;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 
 import org.jruby.ast.Node;
 import org.jruby.ast.types.INameNode;
-import org.jruby.compiler.ASTInspector;
-import org.jruby.compiler.ASTCompiler;
-import org.jruby.compiler.impl.StandardASMCompiler;
 import org.jruby.internal.runtime.methods.MethodArgs;
 import org.jruby.javasupport.JavaUtil;
-import org.jruby.runtime.InterpretedBlock;
 import org.jruby.runtime.ThreadContext;
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.util.TraceClassVisitor;
 
-import java.util.Map;
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
+import org.jruby.RubyClass;
+import org.jruby.RubyMethod;
+import org.jruby.RubyModule;
+import org.jruby.RubySymbol;
 import org.jruby.ast.MultipleAsgn19Node;
 import org.jruby.ast.UnnamedRestArgNode;
 import org.jruby.internal.runtime.methods.MethodArgs2;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.javasupport.util.RuntimeHelpers;
-import org.jruby.runtime.ExecutionContext;
-import org.jruby.runtime.ObjectAllocator;
-import static org.jruby.runtime.Visibility.*;
+import org.jruby.runtime.load.Library;
 
 /**
- * Module which defines JRuby-specific methods for use. 
+ * Native part of require 'jruby'. Provides methods for swapping between the
+ * normal Ruby reference to an object and the Java-integration-wrapped
+ * reference.
  */
 @JRubyModule(name="JRuby")
-public class RubyJRuby {
-    public static RubyModule createJRuby(Ruby runtime) {
+public class JRubyLibrary implements Library {
+    public void load(Ruby runtime, boolean wrap) throws IOException {
         ThreadContext context = runtime.getCurrentContext();
         runtime.getKernel().callMethod(context, "require", runtime.newString("java"));
         RubyModule jrubyModule = runtime.getOrCreateModule("JRuby");
 
-        jrubyModule.defineAnnotatedMethods(RubyJRuby.class);
+        jrubyModule.defineAnnotatedMethods(JRubyLibrary.class);
         jrubyModule.defineAnnotatedMethods(JRubyUtilLibrary.class);
 
         RubyClass threadLocalClass = jrubyModule.defineClassUnder("ThreadLocal", runtime.getObject(), JRubyThreadLocal.ALLOCATOR);
@@ -94,10 +82,13 @@ public class RubyJRuby {
 
         RubyClass fiberLocalClass = jrubyModule.defineClassUnder("FiberLocal", runtime.getObject(), JRubyFiberLocal.ALLOCATOR);
         fiberLocalClass.defineAnnotatedMethods(JRubyExecutionContextLocal.class);
-
-        return jrubyModule;
     }
 
+    /**
+     * Wrap the given object as in Java integration and return the wrapper. This
+     * version uses ObjectProxyCache to guarantee the same wrapper is returned
+     * as long as it is in use somewhere.
+     */
     @JRubyMethod(module = true)
     public static IRubyObject reference(ThreadContext context, IRubyObject recv, IRubyObject obj) {
         Ruby runtime = context.getRuntime();
@@ -105,6 +96,10 @@ public class RubyJRuby {
         return Java.getInstance(runtime, obj, true);
     }
 
+    /**
+     * Wrap the given object as in Java integration and return the wrapper. This
+     * version does not use ObjectProxyCache.
+     */
     @JRubyMethod(module = true)
     public static IRubyObject reference0(ThreadContext context, IRubyObject recv, IRubyObject obj) {
         Ruby runtime = context.getRuntime();
@@ -112,6 +107,10 @@ public class RubyJRuby {
         return Java.getInstance(runtime, obj);
     }
 
+    /**
+     * Unwrap the given Java-integration-wrapped object, returning the unwrapped
+     * object. If the wrapped object is not a Ruby object, an error will raise.
+     */
     @JRubyMethod(module = true)
     public static IRubyObject dereference(ThreadContext context, IRubyObject recv, IRubyObject obj) {
         Object unwrapped;
@@ -130,141 +129,6 @@ public class RubyJRuby {
 
         return (IRubyObject)unwrapped;
     }
-
-    public abstract static class JRubyExecutionContextLocal extends RubyObject {
-        private IRubyObject default_value;
-        private RubyProc default_proc;
-
-        public JRubyExecutionContextLocal(Ruby runtime, RubyClass type) {
-            super(runtime, type);
-            default_value = runtime.getNil();
-            default_proc = null;
-        }
-
-        @JRubyMethod(name="initialize", required=0, optional=1)
-        public IRubyObject rubyInitialize(ThreadContext context, IRubyObject args[], Block block) {
-            if (block.isGiven()) {
-                if (args.length != 0) {
-                    throw context.getRuntime().newArgumentError("wrong number of arguments");
-                }
-                default_proc = block.getProcObject();
-                if (default_proc == null) {
-                    default_proc = RubyProc.newProc(context.getRuntime(), block, block.type);
-                }
-            } else {
-                if (args.length == 1) {
-                    default_value = args[0];
-                } else if (args.length != 0) {
-                    throw context.getRuntime().newArgumentError("wrong number of arguments");
-                }
-            }
-            return context.getRuntime().getNil();
-        }
-
-        @JRubyMethod(name="default", required=0)
-        public IRubyObject getDefault(ThreadContext context) {
-            return default_value;
-        }
-
-        @JRubyMethod(name="default_proc", required=0)
-        public IRubyObject getDefaultProc(ThreadContext context) {
-            if (default_proc != null) {
-                return default_proc;
-            } else {
-                return context.getRuntime().getNil();
-            }
-        }
-
-        private static final IRubyObject[] EMPTY_ARGS = new IRubyObject[]{};
-
-        @JRubyMethod(name="value", required=0)
-        public IRubyObject getValue(ThreadContext context) {
-            final IRubyObject value;
-            final Map<Object, IRubyObject> contextVariables;
-            contextVariables = getContextVariables(context);
-            value = contextVariables.get(this);
-            if (value != null) {
-                return value;
-            } else if (default_proc != null) {
-                // pre-set for the sake of terminating recursive calls
-                contextVariables.put(this, context.getRuntime().getNil());
-
-                final IRubyObject new_value;
-                new_value = default_proc.call(context, EMPTY_ARGS, null, Block.NULL_BLOCK);
-                contextVariables.put(this, new_value);
-                return new_value;
-            } else {
-                return default_value;
-            }
-        }
-
-        @JRubyMethod(name="value=", required=1)
-        public IRubyObject setValue(ThreadContext context, IRubyObject value) {
-            getContextVariables(context).put(this, value);
-            return value;
-        }
-
-        protected final Map<Object, IRubyObject> getContextVariables(ThreadContext context) {
-            return getExecutionContext(context).getContextVariables();
-        }
-
-        protected abstract ExecutionContext getExecutionContext(ThreadContext context);
-    }
-
-    @JRubyClass(name="JRuby::ThreadLocal")
-    public final static class JRubyThreadLocal extends JRubyExecutionContextLocal {
-        public static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
-            public IRubyObject allocate(Ruby runtime, RubyClass type) {
-                return new JRubyThreadLocal(runtime, type);
-            }
-        };
-
-        public JRubyThreadLocal(Ruby runtime, RubyClass type) {
-            super(runtime, type);
-        }
-
-        protected final ExecutionContext getExecutionContext(ThreadContext context) {
-            return context.getThread();
-        }
-    }
-
-    @JRubyClass(name="JRuby::FiberLocal")
-    public final static class JRubyFiberLocal extends JRubyExecutionContextLocal {
-        public static final ObjectAllocator ALLOCATOR = new ObjectAllocator() {
-            public IRubyObject allocate(Ruby runtime, RubyClass type) {
-                return new JRubyFiberLocal(runtime, type);
-            }
-        };
-
-        public JRubyFiberLocal(Ruby runtime, RubyClass type) {
-            super(runtime, type);
-        }
-
-        @JRubyMethod(name="with_value", required=1)
-        public IRubyObject withValue(ThreadContext context, IRubyObject value, Block block) {
-            final Map<Object, IRubyObject> contextVariables;
-            contextVariables = getContextVariables(context);
-            final IRubyObject old_value;
-            old_value = contextVariables.get(this);
-            contextVariables.put(this, value);
-            try {
-                return block.yieldSpecific(context);
-            } finally {
-                contextVariables.put(this, old_value);
-            }
-        }
-
-        protected final ExecutionContext getExecutionContext(ThreadContext context) {
-            final ExecutionContext fiber;
-            fiber = context.getFiber();
-            if (fiber != null) {
-                return fiber;
-            } else {
-                /* root fiber */
-                return context.getThread();
-            }
-        }
-    }
     
     public static class MethodExtensions {
         @JRubyMethod(name = "args")
@@ -272,7 +136,7 @@ public class RubyJRuby {
             Ruby runtime = recv.getRuntime();
             RubyMethod rubyMethod = (RubyMethod)recv;
             RubyArray argsArray = RubyArray.newArray(runtime);
-            DynamicMethod method = rubyMethod.method;
+            DynamicMethod method = rubyMethod.getMethod();
             RubySymbol req = runtime.newSymbol("req");
             RubySymbol opt = runtime.newSymbol("opt");
             RubySymbol rest = runtime.newSymbol("rest");
