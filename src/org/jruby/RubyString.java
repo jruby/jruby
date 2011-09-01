@@ -1273,7 +1273,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             resCr = CR_UNKNOWN;
         } else if (toCr == CR_7BIT) {
             if (cr == CR_7BIT) {
-                resEnc = toEnc == ASCIIEncoding.INSTANCE ? toEnc : enc;
+                resEnc = toEnc != ASCIIEncoding.INSTANCE ? toEnc : enc;
                 resCr = CR_7BIT;
             } else {
                 resEnc = enc;
