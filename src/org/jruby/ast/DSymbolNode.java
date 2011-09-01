@@ -46,7 +46,7 @@ public class DSymbolNode extends DNode {
      * @param node to be copied
      */
     public DSymbolNode(ISourcePosition position, DStrNode node) {
-        super(position);
+        super(position, node.getEncoding());
         
         assert node != null : "node is not null";
         
