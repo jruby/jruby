@@ -447,6 +447,7 @@ public class RubyZlib {
         private boolean jzlib = false;
         private com.jcraft.jzlib.ZStream flater2 = null;
         private boolean finished = false;
+        private byte[] dictionary = null;
 
         protected static final ObjectAllocator INFLATE_ALLOCATOR = new ObjectAllocator() {
 
@@ -492,6 +493,8 @@ public class RubyZlib {
             jzlib = false;
             finished = false;
             flater2 = null;
+            dictionary = null;
+ 
             boolean nowrap = false;
             if (windowBits < 0) {
                 nowrap = true;
@@ -597,8 +600,7 @@ public class RubyZlib {
 
         private IRubyObject set_dictionary(IRubyObject str) {
             if(jzlib){
-              byte[] tmp = str.convertToString().getBytes();
-              flater2.inflateSetDictionary(tmp, tmp.length);
+              dictionary = str.convertToString().getBytes();
             }
             else
             flater.setDictionary(str.convertToString().getBytes());
@@ -657,6 +659,21 @@ public class RubyZlib {
                       switch(ret){
                       case com.jcraft.jzlib.JZlib.Z_DATA_ERROR:
                            throw Util.newDataError(runtime, flater2.msg);
+                      case com.jcraft.jzlib.JZlib.Z_NEED_DICT:
+                          if(dictionary==null){
+                              throw Util.newDictError(runtime, "need dictionary");
+                          }
+                          else {
+                            int err = flater2.inflateSetDictionary(dictionary,
+                                                                   dictionary.length);
+                            switch(err){
+                            case com.jcraft.jzlib.JZlib.Z_DATA_ERROR:
+                                throw Util.newDataError(runtime, "wrong dictionary");
+                            default:
+                            }
+                          }
+                          resultLength = flater2.next_out_index;
+                          break;
                       case com.jcraft.jzlib.JZlib.Z_OK:
                       case com.jcraft.jzlib.JZlib.Z_STREAM_END:
                           if(ret == com.jcraft.jzlib.JZlib.Z_STREAM_END)
@@ -669,7 +686,7 @@ public class RubyZlib {
                     }
                     else 
                         resultLength = flater.inflate(outp);
-                    if (flater.needsDictionary()) {
+                    if (!jzlib && flater.needsDictionary()) {
                         throw Util.newDictError(runtime, "need dictionary");
                     } else {
                         if (input.getRealSize() > 0) {
