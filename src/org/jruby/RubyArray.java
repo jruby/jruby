@@ -1823,24 +1823,20 @@ public class RubyArray extends RubyObject implements List {
         }
     }
 
-    private void recursiveJoin(final ThreadContext context, IRubyObject obj, final ByteList sep,
-            final ByteList result, IRubyObject val) {
-        if(val == this) {
-            throw getRuntime().newArgumentError("recursive array join");
-        } else {
-            final RubyArray ary = (RubyArray)val;
-            final IRubyObject outobj = obj;
-            getRuntime().execRecursive(new Ruby.RecursiveFunction() {
-                    public IRubyObject call(IRubyObject obj, boolean recur) {
-                        if(recur) {
-                            throw getRuntime().newArgumentError("recursive array join");
-                        } else {
-                            ((RubyArray)ary).join1(context, outobj, sep, 0, result);
-                        }
-                        return getRuntime().getNil();
-                    }
-                }, obj);
-        }
+    private void recursiveJoin(final ThreadContext context, final IRubyObject outValue,
+            final ByteList sep, final ByteList result, final IRubyObject ary) {
+        final Ruby runtime = context.getRuntime();
+        
+        if (ary == this) throw runtime.newArgumentError("recursive array join");
+            
+        runtime.execRecursive(new Ruby.RecursiveFunction() {
+            public IRubyObject call(IRubyObject obj, boolean recur) {
+                if (recur) throw runtime.newArgumentError("recursive array join");
+                            
+                ((RubyArray) ary).join1(context, outValue, sep, 0, result);
+                
+                return runtime.getNil();
+            }}, outValue);
     }
 
     /** rb_ary_join
