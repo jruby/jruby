@@ -707,41 +707,6 @@ class TestZlibInflateAuto < Test::Unit::TestCase
     end
   end
 
-<<<<<<< HEAD
-  def test_wrong_length_split_trailer
-    gzip = "\x1f\x8b\x08\x00\x1a\x96\xe0\x4c\x00\x03\xcb\x48\xcd\xc9\xc9\x07\x00\x86\xa6\x10\x36\x04\x00\x00"
-    z = Zlib::Inflate.new(Zlib::MAX_WBITS + 32)
-    assert_equal("hello", z.inflate(gzip))
-    assert_raise(Zlib::DataError) do
-      z.inflate("\x00")
-    end
-  end
-
-  if RUBY_VERSION > "1.9"
-    eval <<-EOD
-    require 'tempfile'
-    require 'nkf'
-
-    def test_encoding
-      ustr = "\u{3042 3044 3046}"
-      estr = NKF.nkf("-Wem0", ustr)
-      sstr = NKF.nkf("-Wsm0", ustr)
-      sstr.force_encoding("Shift_JIS")
-      t = Tempfile.new("test_encoding")
-      t.close
-      Zlib::GzipWriter.open(t.path, external_encoding: "UTF-8") {|gz| gz.print(ustr) }
-      assert_equal(ustr, Zlib::GzipReader.open(t.path, external_encoding: "UTF-8").read)
-      Zlib::GzipWriter.open(t.path, external_encoding: "EUC-JP", internal_encoding: "UTF-8") {|gz| gz.print(ustr) }
-      assert_equal(ustr, Zlib::GzipReader.open(t.path, external_encoding: "EUC-JP", internal_encoding: "UTF-8").read)
-      Zlib::GzipWriter.open(t.path, external_encoding: "EUC-JP", internal_encoding: "UTF-8") {|gz| gz.print(ustr) }
-      assert_equal(estr, Zlib::GzipReader.open(t.path, external_encoding: "EUC-JP", internal_encoding: "EUC-JP").read)
-      Zlib::GzipWriter.open(t.path, encoding: "EUC-JP:UTF-8") {|gz| gz.print(ustr) }
-      assert_equal(estr, Zlib::GzipReader.open(t.path, external_encoding: "EUC-JP").read)
-      Zlib::GzipWriter.open(t.path, encoding: "Shift_JIS:UTF-8") {|gz| gz.print(ustr) }
-      assert_equal(sstr, Zlib::GzipReader.open(t.path, external_encoding: "Shift_JIS").read)
-    end
-    EOD
-=======
   def test_dictionary
     dict = "hello"
     str = "hello, hello!"
@@ -763,6 +728,14 @@ class TestZlibInflateAuto < Test::Unit::TestCase
     i.set_dictionary(dict)
     i << ""
     assert_equal(str, i.finish)
->>>>>>> implementing Inflate#setDictionary with jzlib,
+  end
+
+  def test_wrong_length_split_trailer
+    gzip = "\x1f\x8b\x08\x00\x1a\x96\xe0\x4c\x00\x03\xcb\x48\xcd\xc9\xc9\x07\x00\x86\xa6\x10\x36\x04\x00\x00"
+    z = Zlib::Inflate.new(Zlib::MAX_WBITS + 32)
+    assert_equal("hello", z.inflate(gzip))
+    assert_raise(Zlib::DataError) do
+      z.inflate("\x00")
+    end
   end
 end

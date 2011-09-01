@@ -754,6 +754,20 @@ public class RubyZlib {
                     throw Util.newBufError(runtime, "buffer error");
                 }
             }
+            
+            if(jzlib){
+                if(finish){
+                if(!finished){
+                    int err=flater2.inflate(com.jcraft.jzlib.JZlib.Z_FINISH);
+                    if(err!=com.jcraft.jzlib.JZlib.Z_OK){
+                      throw Util.newBufError(runtime, "buffer error");
+                    }
+                    finished =true;
+                }
+                flater2.inflateEnd();
+                }
+            }
+            else
             if (finish) flater.end();
         }
 
@@ -805,32 +819,7 @@ public class RubyZlib {
         @Override
         protected IRubyObject internalFinish() {
             run(true);
-            
-            Ruby runtime = getRuntime();
-            // Need to process buffer first for calculating checksum
-            RubyString str = flushOutput(runtime);
-            // process trailer if needed
-            if (internalFinished() && readTrailerNeeded) {
-                if (input.getRealSize() < 8) {
-                    throw Util.newBufError(runtime, "buffer error");
-                }
-                readTrailer(input.bytes(), (flater.getBytesWritten() & 0xffffffffL),
-                        checksum.getValue());
-                input.view(8, input.getRealSize() - 8);
-            }
-            if(jzlib){
-                if(!finished){
-                    int err=flater2.inflate(com.jcraft.jzlib.JZlib.Z_FINISH);
-                    if(err!=com.jcraft.jzlib.JZlib.Z_OK){
-                      throw Util.newBufError(runtime, "buffer error");
-                    }
-                    finished =true;
-                }
-                flater2.inflateEnd();
-            }
-            else
-            flater.end();
-            
+
             // MRI behavior: in finished mode, we work as pass-through
             if (internalFinished()) {
                 if (input.getRealSize() > 0) {
