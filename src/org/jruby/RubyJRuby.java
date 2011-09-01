@@ -70,12 +70,10 @@ import java.util.Map;
 import org.jruby.ast.MultipleAsgn19Node;
 import org.jruby.ast.UnnamedRestArgNode;
 import org.jruby.internal.runtime.methods.MethodArgs2;
-import org.jruby.internal.runtime.methods.ProcMethod;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.ExecutionContext;
 import org.jruby.runtime.ObjectAllocator;
-import org.jruby.util.JRubyClassLoader;
 import static org.jruby.runtime.Visibility.*;
 
 /**
@@ -86,17 +84,10 @@ public class RubyJRuby {
     public static RubyModule createJRuby(Ruby runtime) {
         ThreadContext context = runtime.getCurrentContext();
         runtime.getKernel().callMethod(context, "require", runtime.newString("java"));
-        RubyModule jrubyModule = runtime.defineModule("JRuby");
+        RubyModule jrubyModule = runtime.getOrCreateModule("JRuby");
 
         jrubyModule.defineAnnotatedMethods(RubyJRuby.class);
         jrubyModule.defineAnnotatedMethods(JRubyUtilLibrary.class);
-
-        RubyClass compiledScriptClass = jrubyModule.defineClassUnder("CompiledScript",runtime.getObject(), runtime.getObject().getAllocator());
-
-        for (String name : new String[] {"name", "class_name", "original_script", "code"}) {
-            compiledScriptClass.addReadWriteAttribute(context, name);
-        }
-        compiledScriptClass.defineAnnotatedMethods(JRubyCompiledScript.class);
 
         RubyClass threadLocalClass = jrubyModule.defineClassUnder("ThreadLocal", runtime.getObject(), JRubyThreadLocal.ALLOCATOR);
         threadLocalClass.defineAnnotatedMethods(JRubyExecutionContextLocal.class);
@@ -124,136 +115,21 @@ public class RubyJRuby {
         runtime.getString().defineAnnotatedMethods(JRubyStringExtensions.class);
     }
 
-    public static class JRubySynchronizedMeta {
-        @JRubyMethod(visibility = PRIVATE)
-        public static IRubyObject append_features(IRubyObject self, IRubyObject target) {
-            if (target instanceof RubyClass && self instanceof RubyModule) { // should always be true
-                RubyClass targetModule = ((RubyClass)target);
-                targetModule.becomeSynchronized();
-                return ((RubyModule)self).append_features(target);
-            }
-            throw target.getRuntime().newTypeError(self + " can only be included into classes");
-        }
-
-        @JRubyMethod(visibility = PRIVATE)
-        public static IRubyObject extend_object(IRubyObject self, IRubyObject obj) {
-            if (self instanceof RubyModule) {
-                RubyClass singletonClass = obj.getSingletonClass();
-                singletonClass.becomeSynchronized();
-                return ((RubyModule)self).extend_object(obj);
-            }
-            // should never happen
-            throw self.getRuntime().newTypeError("JRuby::Singleton.extend_object called against " + self);
-        }
-    }
-
     @JRubyMethod(module = true)
-    public static IRubyObject runtime(IRubyObject recv, Block unusedBlock) {
-        return JavaUtil.convertJavaToUsableRubyObject(recv.getRuntime(), recv.getRuntime());
-    }
-
-    @JRubyMethod(module = true)
-    public static IRubyObject with_current_runtime_as_global(ThreadContext context, IRubyObject recv, Block block) {
-        Ruby currentRuntime = context.getRuntime();
-        Ruby globalRuntime = Ruby.getGlobalRuntime();
-        try {
-            if (globalRuntime != currentRuntime) {
-                currentRuntime.useAsGlobalRuntime();
-            }
-            block.yieldSpecific(context);
-        } finally {
-            if (Ruby.getGlobalRuntime() != globalRuntime) {
-                globalRuntime.useAsGlobalRuntime();
-            }
-        }
-        return currentRuntime.getNil();
-    }
-
-    @JRubyMethod(name = {"parse", "ast_for"}, optional = 3, module = true)
-    public static IRubyObject parse(IRubyObject recv, IRubyObject[] args, Block block) {
-        if(block.isGiven()) {
-            if(block.getBody() instanceof org.jruby.runtime.CompiledBlock) {
-                throw new RuntimeException("Cannot compile an already compiled block. Use -J-Djruby.jit.enabled=false to avoid this problem.");
-            }
-            Arity.checkArgumentCount(recv.getRuntime(),args,0,0);
-            return JavaUtil.convertJavaToUsableRubyObject(recv.getRuntime(), ((InterpretedBlock)block.getBody()).getBodyNode());
-        } else {
-            Arity.checkArgumentCount(recv.getRuntime(),args,1,3);
-            String filename = "-";
-            boolean extraPositionInformation = false;
-            RubyString content = args[0].convertToString();
-            if(args.length>1) {
-                filename = args[1].convertToString().toString();
-                if(args.length>2) {
-                    extraPositionInformation = args[2].isTrue();
-                }
-            }
-            return JavaUtil.convertJavaToUsableRubyObject(recv.getRuntime(),
-               recv.getRuntime().parse(content.getByteList(), filename, null, 0, extraPositionInformation));
-        }
-    }
-
-    @JRubyMethod(name = "compile", optional = 3, module = true)
-    public static IRubyObject compile(IRubyObject recv, IRubyObject[] args, Block block) {
-        Node node;
-        String filename;
-        RubyString content;
-        if(block.isGiven()) {
-            Arity.checkArgumentCount(recv.getRuntime(),args,0,0);
-            if(block.getBody() instanceof org.jruby.runtime.CompiledBlock) {
-                throw new RuntimeException("Cannot compile an already compiled block. Use -J-Djruby.jit.enabled=false to avoid this problem.");
-            }
-            content = RubyString.newEmptyString(recv.getRuntime());
-            Node bnode = ((InterpretedBlock)block.getBody()).getBodyNode();
-            node = new org.jruby.ast.RootNode(bnode.getPosition(), block.getBinding().getDynamicScope(), bnode);
-            filename = "__block_" + node.getPosition().getFile();
-        } else {
-            Arity.checkArgumentCount(recv.getRuntime(),args,1,3);
-            filename = "-";
-            boolean extraPositionInformation = false;
-            content = args[0].convertToString();
-            if(args.length>1) {
-                filename = args[1].convertToString().toString();
-                if(args.length>2) {
-                    extraPositionInformation = args[2].isTrue();
-                }
-            }
-
-            node = recv.getRuntime().parse(content.getByteList(), filename, null, 0, extraPositionInformation);
-        }
-
-        String classname;
-        if (filename.equals("-e")) {
-            classname = "__dash_e__";
-        } else {
-            classname = filename.replace('\\', '/').replaceAll(".rb", "").replaceAll("-","_dash_");
-        }
-
-        ASTInspector inspector = new ASTInspector();
-        inspector.inspect(node);
-            
-        StandardASMCompiler asmCompiler = new StandardASMCompiler(classname, filename);
-        ASTCompiler compiler = recv.getRuntime().getInstanceConfig().newCompiler();
-        compiler.compileRoot(node, asmCompiler, inspector);
-        byte[] bts = asmCompiler.getClassByteArray();
-
-        IRubyObject compiledScript = ((RubyModule)recv).getConstant("CompiledScript").callMethod(recv.getRuntime().getCurrentContext(),"new");
-        compiledScript.callMethod(recv.getRuntime().getCurrentContext(), "name=", recv.getRuntime().newString(filename));
-        compiledScript.callMethod(recv.getRuntime().getCurrentContext(), "class_name=", recv.getRuntime().newString(classname));
-        compiledScript.callMethod(recv.getRuntime().getCurrentContext(), "original_script=", content);
-        compiledScript.callMethod(recv.getRuntime().getCurrentContext(), "code=", JavaUtil.convertJavaToUsableRubyObject(recv.getRuntime(), bts));
-
-        return compiledScript;
-    }
-
-    @JRubyMethod(name = "reference", required = 1, module = true)
     public static IRubyObject reference(ThreadContext context, IRubyObject recv, IRubyObject obj) {
+        Ruby runtime = context.getRuntime();
+
+        return Java.getInstance(runtime, obj, true);
+    }
+
+    @JRubyMethod(module = true)
+    public static IRubyObject reference0(ThreadContext context, IRubyObject recv, IRubyObject obj) {
         Ruby runtime = context.getRuntime();
 
         return Java.getInstance(runtime, obj);
     }
 
-    @JRubyMethod(name = "dereference", required = 1, module = true)
+    @JRubyMethod(module = true)
     public static IRubyObject dereference(ThreadContext context, IRubyObject recv, IRubyObject obj) {
         Object unwrapped;
 
@@ -270,28 +146,6 @@ public class RubyJRuby {
         }
 
         return (IRubyObject)unwrapped;
-    }
-
-    @JRubyClass(name="JRuby::CompiledScript")
-    public static class JRubyCompiledScript {
-        @JRubyMethod(name = "to_s")
-        public static IRubyObject compiled_script_to_s(IRubyObject recv) {
-            return recv.getInstanceVariables().getInstanceVariable("@original_script");
-        }
-
-        @JRubyMethod(name = "inspect")
-        public static IRubyObject compiled_script_inspect(IRubyObject recv) {
-            return recv.getRuntime().newString("#<JRuby::CompiledScript " + recv.getInstanceVariables().getInstanceVariable("@name") + ">");
-        }
-
-        @JRubyMethod(name = "inspect_bytecode")
-        public static IRubyObject compiled_script_inspect_bytecode(IRubyObject recv) {
-            StringWriter sw = new StringWriter();
-            ClassReader cr = new ClassReader((byte[])recv.getInstanceVariables().getInstanceVariable("@code").toJava(byte[].class));
-            TraceClassVisitor cv = new TraceClassVisitor(new PrintWriter(sw));
-            cr.accept(cv, ClassReader.SKIP_DEBUG);
-            return recv.getRuntime().newString(sw.toString());
-        }
     }
 
     public abstract static class JRubyExecutionContextLocal extends RubyObject {
