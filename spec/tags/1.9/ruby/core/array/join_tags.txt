@@ -1,1 +1,0 @@
-fails:Array#join sets the result String's encoding to the first String's encoding
