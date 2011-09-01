@@ -74,6 +74,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
 import org.jruby.util.Qsort;
 import org.jruby.util.RecursiveComparator;
+import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 
 import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
@@ -1761,17 +1762,12 @@ public class RubyArray extends RubyObject implements List {
         return join(context, context.getRuntime().getGlobalVariables().get("$,"));
     }
 
-    // MRI: join0
+    // 1.9 MRI: join0
     private RubyString joinStrings(RubyString sep, int max, RubyString result) {
-        if (begin >= max) return result; // So we know we have at least one element
-        
         try {
-            // Result should have same encoding as first element of join
-            result.setEncoding(((RubyString) values[begin]).getEncoding());
-
             for(int i = begin; i < max; i++) {
-                if (i > begin && sep != null) result.append(sep);
-                result.append(values[i]);
+                if (i > begin && sep != null) result.append19(sep);
+                result.append19(values[i]);
             }
         } catch (ArrayIndexOutOfBoundsException e) {
             concurrentModification();
@@ -1780,19 +1776,19 @@ public class RubyArray extends RubyObject implements List {
         return result;
     }
 
-    // MRI: join1
+    // 1.9 MRI: join1
     private RubyString joinAny(ThreadContext context, IRubyObject obj, RubyString sep, 
             int i, RubyString result) {
         RubyClass stringClass = context.getRuntime().getString();
         RubyClass arrayClass = context.getRuntime().getArray();
 
         for (; i < begin + realLength; i++) {
-            if (i > begin && sep != null) result.append(sep);
+            if (i > begin && sep != null) result.append19(sep);
 
             IRubyObject val = safeArrayRef(values, i);
 
             if (val instanceof RubyString) {
-                result.append(val);
+                result.append19(val);
             } else if (val instanceof RubyArray) {
                 obj = val;
                 recursiveJoin(context, obj, sep, result, val);
@@ -1801,14 +1797,14 @@ public class RubyArray extends RubyObject implements List {
                 if (tmp.isNil()) tmp = TypeConverter.convertToTypeWithCheck(val, stringClass, "to_s");
 
                 if (!tmp.isNil()) {
-                    result.append(tmp);
+                    result.append19(tmp);
                 } else {
                     tmp = TypeConverter.convertToTypeWithCheck(val, arrayClass, "to_a");
                     if(!tmp.isNil()) {
                         obj = val;
                         recursiveJoin(context, obj, sep, result, tmp);
                     } else {
-                        result.append(RubyString.objAsString(context, val));
+                        result.append19(RubyString.objAsString(context, val));
                     }
                 }
             }
