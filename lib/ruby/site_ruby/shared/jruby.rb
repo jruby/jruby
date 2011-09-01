@@ -71,6 +71,9 @@ module JRuby
       else
         parse(content, filename, extra_position_info, &block)
       end
+      
+      content = content.to_str
+      filename = filename.to_str unless default_filename
 
       if filename == "-e"
         classname = "__dash_e__"
@@ -123,4 +126,5 @@ module JRuby
   end
 end
 
+# Load in the native bits
 require 'jruby_ext'

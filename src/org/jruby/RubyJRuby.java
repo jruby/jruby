@@ -98,17 +98,6 @@ public class RubyJRuby {
         return jrubyModule;
     }
 
-    public static RubyModule createJRubyExt(Ruby runtime) {
-        runtime.getKernel().callMethod(runtime.getCurrentContext(),"require", runtime.newString("java"));
-        RubyModule mJRubyExt = runtime.getOrCreateModule("JRuby").defineModuleUnder("Extensions");
-        
-        mJRubyExt.defineAnnotatedMethods(JRubyExtensions.class);
-
-        runtime.getObject().includeModule(mJRubyExt);
-
-        return mJRubyExt;
-    }
-
     public static void createJRubyCoreExt(Ruby runtime) {
         runtime.getClassClass().defineAnnotatedMethods(JRubyClassExtensions.class);
         runtime.getThread().defineAnnotatedMethods(JRubyThreadExtensions.class);
@@ -280,40 +269,6 @@ public class RubyJRuby {
                 /* root fiber */
                 return context.getThread();
             }
-        }
-    }
-
-    @JRubyModule(name="JRubyExtensions")
-    public static class JRubyExtensions {
-        @JRubyMethod(name = "steal_method", required = 2, module = true)
-        public static IRubyObject steal_method(IRubyObject recv, IRubyObject type, IRubyObject methodName) {
-            RubyModule to_add = null;
-            if(recv instanceof RubyModule) {
-                to_add = (RubyModule)recv;
-            } else {
-                to_add = recv.getSingletonClass();
-            }
-            String name = methodName.toString();
-            if(!(type instanceof RubyModule)) {
-                throw recv.getRuntime().newArgumentError("First argument must be a module/class");
-            }
-
-            DynamicMethod method = ((RubyModule)type).searchMethod(name);
-            if(method == null || method.isUndefined()) {
-                throw recv.getRuntime().newArgumentError("No such method " + name + " on " + type);
-            }
-
-            to_add.addMethod(name, method);
-            return recv.getRuntime().getNil();
-        }
-
-        @JRubyMethod(name = "steal_methods", required = 1, rest = true, module = true)
-        public static IRubyObject steal_methods(IRubyObject recv, IRubyObject[] args) {
-            IRubyObject type = args[0];
-            for(int i=1;i<args.length;i++) {
-                steal_method(recv, type, args[i]);
-            }
-            return recv.getRuntime().getNil();
         }
     }
     
