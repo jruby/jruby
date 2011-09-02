@@ -447,8 +447,6 @@ public class RubyZlib {
         private boolean jzlib = false;
         private com.jcraft.jzlib.ZStream flater2 = null;
         private boolean finished = false;
-        private byte[] dictionary = null;
-        private boolean needsDictionary = false;
 
         protected static final ObjectAllocator INFLATE_ALLOCATOR = new ObjectAllocator() {
 
@@ -494,8 +492,6 @@ public class RubyZlib {
             jzlib = false;
             finished = false;
             flater2 = null;
-            dictionary = null;
-            needsDictionary = false;
  
             boolean nowrap = false;
             if (windowBits < 0) {
@@ -602,13 +598,15 @@ public class RubyZlib {
 
         private IRubyObject set_dictionary(IRubyObject str) {
             if(jzlib){
-              if(needsDictionary){
                 byte [] tmp = str.convertToString().getBytes();
-                flater2.inflateSetDictionary(tmp, tmp.length);
-                needsDictionary = false;
-              } 
-              else
-                dictionary = str.convertToString().getBytes();
+                int ret =  flater2.inflateSetDictionary(tmp, tmp.length);
+                switch(ret){
+                    case com.jcraft.jzlib.JZlib.Z_STREAM_ERROR:
+                        throw Util.newStreamError(getRuntime(), "stream error");
+                    case com.jcraft.jzlib.JZlib.Z_DATA_ERROR:
+                        throw Util.newDataError(getRuntime(), "wrong dictionary");
+                    default:
+                }
             }
             else
             flater.setDictionary(str.convertToString().getBytes());
@@ -668,21 +666,7 @@ public class RubyZlib {
                       case com.jcraft.jzlib.JZlib.Z_DATA_ERROR:
                            throw Util.newDataError(runtime, flater2.msg);
                       case com.jcraft.jzlib.JZlib.Z_NEED_DICT:
-                          if(dictionary==null){
-                              needsDictionary = true;
-                              throw Util.newDictError(runtime, "need dictionary");
-                          }
-                          else {
-                            int err = flater2.inflateSetDictionary(dictionary,
-                                                                   dictionary.length);
-                            switch(err){
-                            case com.jcraft.jzlib.JZlib.Z_DATA_ERROR:
-                                throw Util.newDataError(runtime, "wrong dictionary");
-                            default:
-                            }
-                          }
-                          resultLength = flater2.next_out_index;
-                          break;
+                           throw Util.newDictError(runtime, "need dictionary");
                       case com.jcraft.jzlib.JZlib.Z_OK:
                       case com.jcraft.jzlib.JZlib.Z_STREAM_END:
                           if(ret == com.jcraft.jzlib.JZlib.Z_STREAM_END)
