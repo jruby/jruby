@@ -33,6 +33,8 @@
 package org.jruby.ast;
 
 import org.jcodings.Encoding;
+import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
@@ -42,8 +44,8 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
 import org.jruby.util.RegexpOptions;
+import org.jruby.util.StringSupport;
 
 /**
  * A regexp which contains some expressions which will need to be evaluated everytime the regexp 
@@ -98,6 +100,11 @@ public class DRegexpNode extends DNode implements ILiteralNode {
         if (getOnce() && onceRegexp != null) return onceRegexp;
 
         RubyString string = (RubyString) super.interpret(runtime, context, self, aBlock);
+        // FIXME: Massive hack (fix in RubyRegexp.newDRegexpEmbedded for compiler)
+        if (string.getEncoding() == USASCIIEncoding.INSTANCE) {
+            string.setEncoding(ASCIIEncoding.INSTANCE);
+        }
+
         RubyRegexp regexp = RubyRegexp.newDRegexp(runtime, string, options);
         
         if (getOnce() && onceRegexp == null) onceRegexp = regexp;
