@@ -312,6 +312,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     public static RubyRegexp newDRegexpEmbedded(Ruby runtime, RubyString pattern, int embeddedOptions) {
         try {
             RegexpOptions options = RegexpOptions.fromEmbeddedOptions(embeddedOptions);
+            // FIXME: Massive hack (fix in DRegexpNode too for interpreter)
+            if (pattern.getEncoding() == USASCIIEncoding.INSTANCE) {
+                pattern.setEncoding(ASCIIEncoding.INSTANCE);
+            }
             return new RubyRegexp(runtime, pattern.getByteList(), options);
         } catch (RaiseException re) {
             throw runtime.newRegexpError(re.getMessage());
