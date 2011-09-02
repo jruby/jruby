@@ -444,7 +444,7 @@ public class RubyZlib {
         private ByteList collected;
         private ByteList input;
 
-        private boolean jzlib = false;
+        private boolean jzlib = true;
         private com.jcraft.jzlib.ZStream flater2 = null;
         private boolean finished = false;
 
@@ -489,24 +489,28 @@ public class RubyZlib {
         }
 
         private void init(int windowBits) {
-            jzlib = false;
             finished = false;
             flater2 = null;
- 
+
+            if(jzlib){
+                flater2 = new com.jcraft.jzlib.ZStream();
+                flater2.inflateInit(windowBits);
+            }
+            else{
             boolean nowrap = false;
             if (windowBits < 0) {
                 nowrap = true;
             } else if ((windowBits & 0x10) != 0) {
-                jzlib=true;
-                flater2 = new com.jcraft.jzlib.ZStream();
-                flater2.inflateInit(windowBits);
+                nowrap = true; // gzip wrapper
+                readHeaderNeeded = true;
+                checksum = new CRC32();
             } else if ((windowBits & 0x20) != 0) {
-                jzlib=true;
-                flater2 = new com.jcraft.jzlib.ZStream();
-                flater2.inflateInit(windowBits);
+                nowrap = true; // automatic detection
+                readHeaderNeeded = true;
+                checksum = new CRC32();
             }
-//	    if(!jzlib)
             flater = new Inflater(nowrap);
+            }
             collected = new ByteList(BASE_SIZE);
             input = new ByteList();
         }
@@ -584,6 +588,18 @@ public class RubyZlib {
         }
 
         public IRubyObject sync_point() {
+            if(jzlib){
+                int ret = flater2.inflateSyncPoint();
+                switch(ret){
+                    case com.jcraft.jzlib.JZlib.Z_STREAM_END:
+                        return getRuntime().getTrue();
+                    case com.jcraft.jzlib.JZlib.Z_OK:
+                        return getRuntime().getFalse();
+                    default:
+                        throw Util.newStreamError(getRuntime(), "stream error");
+                }
+            }
+            else
             return getRuntime().getFalse();
         }
 
@@ -634,6 +650,30 @@ public class RubyZlib {
 
         @JRubyMethod(name = "sync", required = 1)
         public IRubyObject sync(ThreadContext context, IRubyObject string) {
+            if(jzlib){
+                if(flater2.avail_in>0){
+                    switch(flater2.inflateSync()){
+                        case com.jcraft.jzlib.JZlib.Z_OK:
+                            return getRuntime().getTrue();
+                        case com.jcraft.jzlib.JZlib.Z_DATA_ERROR:
+                            break;
+                        default:
+                            throw Util.newStreamError(getRuntime(), "stream error");
+                    }
+                }
+                if(string.convertToString().getByteList().length()<=0)
+                    return getRuntime().getFalse();
+                append(context, string);
+                switch(flater2.inflateSync()){
+                    case com.jcraft.jzlib.JZlib.Z_OK:
+                        return getRuntime().getTrue();
+                    case com.jcraft.jzlib.JZlib.Z_DATA_ERROR:
+                        return getRuntime().getFalse();
+                    default:
+                        throw Util.newStreamError(getRuntime(), "stream error");
+                }
+            }
+            else{
             try {
                 append(context, string);
             } catch (RaiseException re) {
@@ -642,6 +682,7 @@ public class RubyZlib {
                 }
             }
             return context.getRuntime().getFalse();
+            }
         }
 
         private void run(boolean finish) {
