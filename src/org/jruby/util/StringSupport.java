@@ -57,6 +57,17 @@ public final class StringSupport {
             return null;
         }
     }
+    
+    public static String codeRangeAsString(int codeRange) {
+        switch (codeRange) {
+            case CR_UNKNOWN: return "unknown";
+            case CR_7BIT: return "7bit";
+            case CR_VALID: return "valid";
+            case CR_BROKEN: return "broken";
+        }
+        
+        return "???";  // Not reached unless something seriously boned
+    }
 
     // rb_enc_mbclen
     public static int length(Encoding enc, byte[]bytes, int p, int end) {
