@@ -547,10 +547,10 @@ public class RubyZlib {
                     flater.setInput(bytes);
                     input = new ByteList(bytes, false);
                 }
-                run(false);
             } else {
                 input.append(obj);
             }
+            run(false);
         }
 
         @JRubyMethod(name = "sync_point?")
