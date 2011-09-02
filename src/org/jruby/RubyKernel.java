@@ -1105,13 +1105,14 @@ public class RubyKernel {
         return context.createCallerBacktrace(context.getRuntime(), level);
     }
 
-    @JRubyMethod(name = "catch", module = true, visibility = PRIVATE)
+    @JRubyMethod(name = "catch", module = true, visibility = PRIVATE, compat = RUBY1_8)
     public static IRubyObject rbCatch(ThreadContext context, IRubyObject recv, IRubyObject tag, Block block) {
         Ruby runtime = context.runtime;
-        RubyContinuation rbContinuation = new RubyContinuation(runtime, stringOrSymbol(tag));
+        RubySymbol sym = stringOrSymbol(tag);
+        RubyContinuation rbContinuation = new RubyContinuation(runtime, sym);
         try {
             context.pushCatch(rbContinuation.getContinuation());
-            return rbContinuation.enter(context, rbContinuation, block);
+            return rbContinuation.enter(context, sym, block);
         } finally {
             context.popCatch();
         }
@@ -1120,19 +1121,19 @@ public class RubyKernel {
     @JRubyMethod(name = "catch", module = true, visibility = PRIVATE, compat = RUBY1_9)
     public static IRubyObject rbCatch19(ThreadContext context, IRubyObject recv, Block block) {
         IRubyObject tag = new RubyObject(context.runtime.getObject());
-        return rbCatch19Common(context, tag, block, true);
+        return rbCatch19Common(context, tag, block);
     }
 
     @JRubyMethod(name = "catch", module = true, visibility = PRIVATE, compat = RUBY1_9)
     public static IRubyObject rbCatch19(ThreadContext context, IRubyObject recv, IRubyObject tag, Block block) {
-        return rbCatch19Common(context, tag, block, false);
+        return rbCatch19Common(context, tag, block);
     }
 
-    private static IRubyObject rbCatch19Common(ThreadContext context, IRubyObject tag, Block block, boolean yieldTag) {
+    private static IRubyObject rbCatch19Common(ThreadContext context, IRubyObject tag, Block block) {
         RubyContinuation rbContinuation = new RubyContinuation(context.getRuntime(), tag);
         try {
             context.pushCatch(rbContinuation.getContinuation());
-            return rbContinuation.enter(context, yieldTag ? tag : rbContinuation, block);
+            return rbContinuation.enter(context, tag, block);
         } finally {
             context.popCatch();
         }
