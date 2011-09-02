@@ -657,7 +657,7 @@ public class InvokeDynamicSupport {
             if (RubyInstanceConfig.INVOKEDYNAMIC_INVOCATION_SWITCHPOINT) {
                 // wrap in switchpoint for mutation invalidation
                 SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
-                gwt = switchPoint.guardWithTest(gwt, fallback);
+                gwt = switchPoint.guardWithTest(gwt, curry ? insertArguments(fallback, 0, site) : fallback);
             }
             
             site.setTarget(gwt);
