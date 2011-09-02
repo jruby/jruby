@@ -1841,7 +1841,7 @@ public class RubyArray extends RubyObject implements List {
         RubyString sepString = null;
         if (!sep.isNil()) {
             sepString = sep.convertToString();
-            len += sepString.size() * (realLength - 1);
+            len += sepString.getValue().length() * (realLength - 1);
         }
 
         for (int i = begin; i < begin + realLength; i++) {
