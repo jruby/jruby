@@ -1693,14 +1693,19 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         int p = start;
         int end = p + len;
         boolean needEscape = false;
-        while (p < end) {
-            int c = bytes[p] & 0xff;
-            if (c == '/' || (!enc.isPrint(c) && enc.length(bytes, p, end) == 1)) {
-                needEscape = true;
-                break;
+        if (enc.isAsciiCompatible()) {
+            while (p < end) {
+                int c = bytes[p] & 0xff;
+                if (c == '/' || (!enc.isPrint(c) && enc.length(bytes, p, end) == 1)) {
+                    needEscape = true;
+                    break;
+                }
+                p += enc.length(bytes, p, end);
             }
-            p += enc.length(bytes, p, end);
+        } else {
+            needEscape = true;
         }
+        
         if (!needEscape) {
             to.append(bytes, start, len);
         } else {
