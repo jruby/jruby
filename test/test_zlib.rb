@@ -516,6 +516,17 @@ class TestZlibDeflateGzip < Test::Unit::TestCase
     d.close
   end
 
+  def test_deflate_sync_flush_inflate
+    d = Zlib::Deflate.new(8, 15+16)
+    i = Zlib::Inflate.new(15+16)
+    "a".upto("z") do |c|
+        assert_equal(c, i.inflate(d.deflate(c, Zlib::SYNC_FLUSH)))
+    end 
+    i.inflate(d.finish)
+    i.close
+    d.close
+  end
+
   def test_deflate_full_flush
     d = Zlib::Deflate.new(8, 15+16)
     assert_nothing_raised do
