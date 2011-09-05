@@ -64,6 +64,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callback.Callback;
 
 import static org.jruby.ext.zlib.Zlib.*;
 
@@ -106,6 +107,10 @@ public class RubyZlib {
 
         cGzFile.defineClassUnder("Error", cZlibError, cZlibError.getAllocator());
         RubyClass cGzError = cGzFile.defineClassUnder("Error", cZlibError, cZlibError.getAllocator());
+        if (runtime.is1_9()) {
+            cGzError.addReadAttribute(runtime.getCurrentContext(), "input");
+        }
+        cGzError.defineAnnotatedMethods(RubyGzipFile.Error.class);
         cGzFile.defineClassUnder("CRCError", cGzError, cGzError.getAllocator());
         cGzFile.defineClassUnder("NoFooter", cGzError, cGzError.getAllocator());
         cGzFile.defineClassUnder("LengthError", cGzError, cGzError.getAllocator());
@@ -1386,7 +1391,7 @@ public class RubyZlib {
             }
         }
 
-        @JRubyMethod(visibility = PRIVATE)
+        @JRubyMethod(name = "initialize", visibility = PRIVATE, compat = RUBY1_8)
         public IRubyObject initialize(IRubyObject stream) {
             realIo = stream;
             line = 0;
@@ -1396,15 +1401,23 @@ public class RubyZlib {
             return this;
         }
 
-        @JRubyMethod(visibility = PRIVATE, compat = RUBY1_9)
-        public IRubyObject initialize19(IRubyObject stream) {
-            return initialize(stream);
-        }
+        @JRubyMethod(name = "initialize", required = 1, rest = true, visibility = PRIVATE, compat = RUBY1_9)
+        public IRubyObject initialize19(IRubyObject[] args) {
+            IRubyObject obj = initialize(args[0]);
+            if (realIo.respondsTo("path")) {
+                obj.getSingletonClass().defineMethod("path", new Callback() {
 
-        @JRubyMethod(visibility = PRIVATE, compat = RUBY1_9)
-        public IRubyObject initialize19(IRubyObject stream, IRubyObject options) {
-            initialize(stream);
-            return this;
+                    public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
+                        return ((RubyGzipReader) recv).realIo.callMethod(recv.getRuntime()
+                                .getCurrentContext(), "path");
+                    }
+
+                    public Arity getArity() {
+                        return Arity.NO_ARGUMENTS;
+                    }
+                });
+            }
+            return obj;
         }
 
         @JRubyMethod
@@ -1434,32 +1447,64 @@ public class RubyZlib {
 
         private IRubyObject internalGets(IRubyObject[] args) throws IOException {
             ByteList sep = ((RubyString)getRuntime().getGlobalVariables().get("$/")).getByteList();
-            if (args.length > 0) {
+            int limit = -1;
+            switch (args.length) {
+            case 0:
+                break;
+            case 1:
+                if (args[0].isNil()) {
+                    return readAll();
+                }
+                IRubyObject tmp = args[0].checkStringType();
+                if (tmp.isNil()) {
+                    limit = RubyNumeric.fix2int(args[0]);
+                } else {
+                    sep = tmp.convertToString().getByteList();
+                }
+                break;
+            case 2:
+            default:
+                limit = RubyNumeric.fix2int(args[1]);
+                if (args[0].isNil()) {
+                    return readAll(limit);
+                }
                 sep = args[0].convertToString().getByteList();
+                break;
             }
-            return internalSepGets(sep);
+            return internalSepGets(sep, limit);
         }
 
         private IRubyObject internalSepGets(ByteList sep) throws IOException {
+            return internalSepGets(sep, -1);
+        }
+        
+        private IRubyObject internalSepGets(ByteList sep, int limit) throws IOException {
             ByteList result = new ByteList();
-            int ce = bufferedStream.read();
-            while (ce != -1 && sep.indexOf(ce) == -1) {
-                result.append((byte)ce);
+            if (sep.getRealSize() == 0) sep = Stream.PARAGRAPH_SEPARATOR;
+            int ce = -1;
+            while (result.indexOf(sep) == -1) {
                 ce = bufferedStream.read();
+                if (ce == -1) break;
+                result.append(ce);
+                if (limit > 0 && result.length() >= limit) break;
             }
             // io.available() only returns 0 after EOF is encountered
             // so we need to differentiate between the empty string and EOF
             if (0 == result.length() && -1 == ce) {
-              return getRuntime().getNil();
+                return getRuntime().getNil();
             }
             line++;
             this.position = result.length();
-            result.append(sep);
-            return RubyString.newString(getRuntime(),result);
+            return RubyString.newString(getRuntime(), result);
         }
 
-        @JRubyMethod(name = "gets", optional = 1, writes = FrameField.LASTLINE)
+        @JRubyMethod(name = "gets", optional = 1, writes = FrameField.LASTLINE, compat = RUBY1_8)
         public IRubyObject gets(ThreadContext context, IRubyObject[] args) {
+            return gets_19(context, args);
+        }
+
+        @JRubyMethod(name = "gets", optional = 2, writes = FrameField.LASTLINE, compat = RUBY1_9)
+        public IRubyObject gets_19(ThreadContext context, IRubyObject[] args) {
             try {
                 IRubyObject result = internalGets(args);
                 if (!result.isNil()) {
@@ -1477,45 +1522,57 @@ public class RubyZlib {
         public IRubyObject read(IRubyObject[] args) {
             try {
                 if (args.length == 0 || args[0].isNil()) {
-                    ByteList val = new ByteList(10);
-                    byte[] buffer = new byte[BUFF_SIZE];
-                    int read = bufferedStream.read(buffer);
-                    while (read != -1) {
-                        val.append(buffer, 0, read);
-                        read = bufferedStream.read(buffer);
-                    }
-                    this.position += val.length();
-                    return RubyString.newString(getRuntime(), val);
+                    return readAll();
                 }
-
                 int len = RubyNumeric.fix2int(args[0]);
                 if (len < 0) {
                     throw getRuntime().newArgumentError("negative length " + len + " given");
                 } else if (len > 0) {
-                    byte[] buffer = new byte[len];
-                    int toRead = len;
-                    int offset = 0;
-                    int read = 0;
-                    while (toRead > 0) {
-                        read = bufferedStream.read(buffer, offset, toRead);
-                        if (read == -1) {
-                            if (offset == 0) {
-                                // we're at EOF right away
-                                return getRuntime().getNil();
-                            }
-                            break;
-                        }
-                        toRead -= read;
-                        offset += read;
-                    } // hmm...
-                    this.position += buffer.length;
-                    return RubyString.newString(getRuntime(),
-                            new ByteList(buffer, 0, len - toRead, false));
+                    return readSize(len);
                 }
                 return RubyString.newEmptyString(getRuntime());
             } catch (IOException ioe) {
                 throw getRuntime().newIOErrorFromException(ioe);
             }
+        }
+
+        private IRubyObject readAll() throws IOException {
+            return readAll(-1);
+        }
+
+        private IRubyObject readAll(int limit) throws IOException {
+            ByteList val = new ByteList(10);
+            int rest = limit == -1 ? BUFF_SIZE : limit;
+            byte[] buffer = new byte[rest];
+            while (rest > 0) {
+                int read = bufferedStream.read(buffer, 0, rest);
+                if (read == -1) break;
+                val.append(buffer, 0, read);
+                if (limit != -1) rest -= read;
+            }
+            this.position += val.length();
+            return RubyString.newString(getRuntime(), val);
+        }
+
+        private IRubyObject readSize(int len) throws IOException {
+            byte[] buffer = new byte[len];
+            int toRead = len;
+            int offset = 0;
+            int read = 0;
+            while (toRead > 0) {
+                read = bufferedStream.read(buffer, offset, toRead);
+                if (read == -1) {
+                    if (offset == 0) {
+                        // we're at EOF right away
+                        return getRuntime().getNil();
+                    }
+                    break;
+                }
+                toRead -= read;
+                offset += read;
+            } // hmm...
+            this.position += buffer.length;
+            return RubyString.newString(getRuntime(), new ByteList(buffer, 0, len - toRead, false));
         }
 
         @JRubyMethod(name = "lineno=", required = 1)
@@ -1543,7 +1600,7 @@ public class RubyZlib {
             }
         }
 
-        @JRubyMethod(name = "getc")
+        @JRubyMethod(name = { "getc", "getbyte" }, compat = RUBY1_8)
         public IRubyObject getc() {
             try {
                 int value = bufferedStream.read();
@@ -1552,6 +1609,27 @@ public class RubyZlib {
                 }
                 position++;
                 return getRuntime().newFixnum(value);
+            } catch (IOException ioe) {
+                throw getRuntime().newIOErrorFromException(ioe);
+            }
+        }
+
+        @JRubyMethod(name = "getbyte", compat = RUBY1_9)
+        public IRubyObject getbyte() {
+            return getc();
+        }
+            
+        @JRubyMethod(name = "getc", compat = RUBY1_9)
+        public IRubyObject getc_19() {
+            try {
+                int value = bufferedStream.read();
+                if (value == -1) {
+                    return getRuntime().getNil();
+                }
+                position++;
+                // TODO: must handle encoding. Move encoding handling methods to util class from RubyIO and use it.
+                // TODO: StringIO needs a love, too.
+                return getRuntime().newString("" + (char)(value & 0xFF));
             } catch (IOException ioe) {
                 throw getRuntime().newIOErrorFromException(ioe);
             }
@@ -1804,14 +1882,13 @@ public class RubyZlib {
 
         private HeaderModifyableGZIPOutputStream io;
         
-        @JRubyMethod(required = 1, rest = true, visibility = PRIVATE)
+        @JRubyMethod(name = "initialize", required = 1, rest = true, visibility = PRIVATE, compat = RUBY1_8)
         public IRubyObject initialize(IRubyObject[] args) {
             return initialize(args[0]);
         }
         
-        @JRubyMethod(visibility = PRIVATE)
-        public IRubyObject initialize(IRubyObject arg) {
-            realIo = (RubyObject) arg;
+        private IRubyObject initialize(IRubyObject stream) {
+            realIo = (RubyObject) stream;
             try {
                 io = new HeaderModifyableGZIPOutputStream(realIo);
                 return this;
@@ -1819,16 +1896,24 @@ public class RubyZlib {
                 throw getRuntime().newIOErrorFromException(ioe);
             }
         }
+        
+        @JRubyMethod(name = "initialize", required = 1, rest = true, visibility = PRIVATE, compat = RUBY1_9)
+        public IRubyObject initialize19(IRubyObject[] args) {
+            IRubyObject obj = initialize(args[0]);
+            if (realIo.respondsTo("path")) {
+                obj.getSingletonClass().defineMethod("path", new Callback() {
 
-        @JRubyMethod(visibility = PRIVATE, compat = RUBY1_9)
-        public IRubyObject initialize19(IRubyObject stream) {
-            return initialize(stream);
-        }
+                    public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
+                        return ((RubyGzipWriter) recv).realIo.callMethod(recv.getRuntime()
+                                .getCurrentContext(), "path");
+                    }
 
-        @JRubyMethod(visibility = PRIVATE, compat = RUBY1_9)
-        public IRubyObject initialize19(IRubyObject stream, IRubyObject options) {
-            initialize(stream);
-            return this;
+                    public Arity getArity() {
+                        return Arity.NO_ARGUMENTS;
+                    }
+                });
+            }
+            return obj;
         }
 
         @Override
@@ -1909,7 +1994,7 @@ public class RubyZlib {
         @JRubyMethod(name = "putc", required = 1)
         public IRubyObject putc(IRubyObject p1) {
             try {
-                io.write(RubyNumeric.fix2int(p1));
+                io.write(RubyNumeric.num2chr(p1));
                 return p1;
             } catch (IOException ioe) {
                 throw getRuntime().newIOErrorFromException(ioe);
