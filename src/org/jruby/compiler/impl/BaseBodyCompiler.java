@@ -438,16 +438,13 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
     public void createNewString(ArrayCallback callback, int count, Encoding encoding) {
         loadRuntime();
-        ByteList startingDstr = new ByteList(StandardASMCompiler.STARTING_DSTR_SIZE);
-
-        if (encoding != null) {
-            startingDstr.setEncoding(encoding);
+        method.ldc(StandardASMCompiler.STARTING_DSTR_FACTOR * count);
+        if (encoding == null) {
+            method.invokestatic(p(RubyString.class), "newStringLight", sig(RubyString.class, Ruby.class, int.class));
+        } else {
+            script.getCacheCompiler().cacheEncoding(this, encoding);
+            method.invokestatic(p(RubyString.class), "newStringLight", sig(RubyString.class, Ruby.class, int.class, Encoding.class));
         }
-        
-        script.getCacheCompiler().cacheByteList(this, startingDstr);
-        method.invokevirtual(p(ByteList.class), "dup", sig(ByteList.class));
-        method.ldc(StringSupport.CR_7BIT);
-        method.invokestatic(p(RubyString.class), "newStringShared", sig(RubyString.class, Ruby.class, ByteList.class, int.class));
 
         for (int i = 0; i < count; i++) {
             callback.nextValue(this, null, i);
@@ -2885,7 +2882,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     }
 
     public void loadEncoding(Encoding encoding) {
-        script.getCacheCompiler().cacheEncoding(this, encoding);
+        script.getCacheCompiler().cacheRubyEncoding(this, encoding);
     }
 
     public void definedCall(String name) {

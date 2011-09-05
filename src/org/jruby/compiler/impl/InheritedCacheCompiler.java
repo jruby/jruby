@@ -311,7 +311,7 @@ public class InheritedCacheCompiler implements CacheCompiler {
         if (index == null) {
             index = Integer.valueOf(inheritedStringCount++);
             stringIndices.put(asString, index);
-            stringEncodings.put(asString, cacheEncoding(contents.getEncoding()));
+            stringEncodings.put(asString, cacheEncodingInternal(contents.getEncoding()));
         }
 
         method.loadThis();
@@ -333,7 +333,7 @@ public class InheritedCacheCompiler implements CacheCompiler {
         if (index == null) {
             index = Integer.valueOf(inheritedStringCount++);
             stringIndices.put(asString, index);
-            stringEncodings.put(asString, cacheEncoding(contents.getEncoding()));
+            stringEncodings.put(asString, cacheEncodingInternal(contents.getEncoding()));
         }
 
         method.loadThis();
@@ -345,14 +345,19 @@ public class InheritedCacheCompiler implements CacheCompiler {
         }
     }
 
-    public void cacheEncoding(BaseBodyCompiler method, Encoding encoding) {
+    public void cacheRubyEncoding(BaseBodyCompiler method, Encoding encoding) {
         // split into three methods since ByteList depends on two parts in different places
-        int encodingIndex = cacheEncoding(encoding);
-        loadEncoding(method.method, encodingIndex);
+        cacheEncoding(method, encoding);
         createRubyEncoding(method);
     }
+    
+    public int cacheEncoding(BaseBodyCompiler method, Encoding encoding) {
+        int index = cacheEncodingInternal(encoding);
+        loadEncoding(method.method, index);
+        return index;
+    }
 
-    private int cacheEncoding(Encoding encoding) {
+    private int cacheEncodingInternal(Encoding encoding) {
         String encodingName = new String(encoding.getName());
 
         Integer index = encodingIndices.get(encodingName);

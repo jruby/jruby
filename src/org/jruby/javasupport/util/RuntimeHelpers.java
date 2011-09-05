@@ -2623,4 +2623,12 @@ public class RuntimeHelpers {
     public static IRubyObject lastElement(IRubyObject[] ary) {
         return ary[ary.length - 1];
     }
+    
+    public static RubyString appendAsString(RubyString target, IRubyObject other) {
+        return target.append(other.asString());
+    }
+    
+    public static RubyString appendAsString19(RubyString target, IRubyObject other) {
+        return target.append19(other.asString());
+    }
 }

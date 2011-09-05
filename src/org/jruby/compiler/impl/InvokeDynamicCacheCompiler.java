@@ -116,9 +116,9 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
      * @param encoding the encoding for this script
      */
     @Override
-    public void cacheEncoding(BaseBodyCompiler method, Encoding encoding) {
+    public void cacheRubyEncoding(BaseBodyCompiler method, Encoding encoding) {
         if (!RubyInstanceConfig.INVOKEDYNAMIC_LITERALS) {
-            super.cacheEncoding(method, encoding);
+            super.cacheRubyEncoding(method, encoding);
             return;
         }
         

@@ -415,6 +415,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
         this.value = value;
     }
 
+    public RubyString(Ruby runtime, RubyClass rubyClass, ByteList value, Encoding encoding, boolean objectSpace) {
+        this(runtime, rubyClass, value, objectSpace);
+        value.setEncoding(encoding);
+    }
+
     protected RubyString(Ruby runtime, RubyClass rubyClass, ByteList value, Encoding enc, int cr) {
         this(runtime, rubyClass, value);
         value.setEncoding(enc);
@@ -465,6 +470,10 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     public static RubyString newStringLight(Ruby runtime, int size) {
         return new RubyString(runtime, runtime.getString(), new ByteList(size), false);
+    }
+
+    public static RubyString newStringLight(Ruby runtime, int size, Encoding encoding) {
+        return new RubyString(runtime, runtime.getString(), new ByteList(size), encoding, false);
     }
   
     public static RubyString newString(Ruby runtime, CharSequence str) {

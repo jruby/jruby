@@ -24,7 +24,9 @@ public interface CacheCompiler {
     
     public void cacheByteList(BaseBodyCompiler method, ByteList contents);
 
-    public void cacheEncoding(BaseBodyCompiler method, Encoding encoding);
+    public void cacheRubyEncoding(BaseBodyCompiler method, Encoding encoding);
+
+    public int cacheEncoding(BaseBodyCompiler method, Encoding encoding);
     
     public void cacheSymbol(BaseBodyCompiler method, String symbol);
     
