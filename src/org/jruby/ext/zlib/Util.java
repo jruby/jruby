@@ -117,7 +117,11 @@ public final class Util {
                 header.length += header.comment.getBytes().length + 1;
             }
         } catch (IOException ioe) {
-            throw newGzipFileError(runtime, ioe.getMessage());
+            String msg = ioe.getMessage();
+            if (msg == null || msg.isEmpty()) {
+                msg = "not in gzip format";
+            }
+            throw newGzipFileError(runtime, msg);
         }
         // TODO: should check header CRC (cruby-zlib doesn't do for now)
         return header;
@@ -183,7 +187,12 @@ public final class Util {
 
     private static RaiseException newGzipFileError(Ruby runtime, String klass, String message) {
         RubyClass errorClass = runtime.getModule("Zlib").getClass("GzipFile").getClass(klass);
-        return new RaiseException(RubyException.newException(runtime, errorClass, message), true);
+        RubyException excn = RubyException.newException(runtime, errorClass, message);
+        if (runtime.is1_9()) {
+            // TODO: not yet supported. rewrite GzipReader/Writer with Inflate/Deflate?
+            excn.setInstanceVariable("@input", runtime.getNil());
+        }
+        return new RaiseException(excn, true);
     }
 
     private static int readUByte(InputStream in) throws IOException {
