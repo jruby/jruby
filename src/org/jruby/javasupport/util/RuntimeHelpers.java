@@ -2607,4 +2607,12 @@ public class RuntimeHelpers {
         if (metaclass.index >= ClassIndex.MAX_CLASSES) return metaclass.searchMethod(name);
         return context.runtimeCache.getMethod(context, metaclass, metaclass.index * (index + 1), name);
     }
+    
+    public static RubyString appendAsString(RubyString target, IRubyObject other) {
+        return target.append(other.asString());
+    }
+    
+    public static RubyString appendAsString19(RubyString target, IRubyObject other) {
+        return target.append19(other.asString());
+    }
 }
