@@ -79,7 +79,6 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.cext.RString;
 import org.jruby.javasupport.util.RuntimeHelpers;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.DynamicScope;
@@ -7255,9 +7254,12 @@ public class RubyString extends RubyObject implements EncodingCapable {
      * forceEncoding as its encoding if it is supplied; otherwise it will use the encoding it has
      * tucked away in the bytelist.  This will return a new copy of a ByteList in the request
      * encoding or die trying (ConverterNotFound).
+     * 
+     * c: rb_str_conv_enc_opts
      */
     public static ByteList transcode(ThreadContext context, ByteList value, Encoding forceEncoding,
             Encoding toEncoding, IRubyObject opts) {
+        if (toEncoding == null) return value;
         Ruby runtime = context.getRuntime();
         Encoding fromEncoding = forceEncoding != null ? forceEncoding : value.getEncoding();
         Charset from = lookupCharsetFor(runtime, fromEncoding, fromEncoding.toString(), toEncoding.toString());
