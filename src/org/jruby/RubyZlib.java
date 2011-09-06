@@ -1038,7 +1038,7 @@ public class RubyZlib {
         private ByteList collected;
         private ByteList input;
 
-        private com.jcraft.jzlib.ZStream flater = null;
+        private com.jcraft.jzlib.Inflater flater = null;
         private boolean finished = false;
 
         protected static final ObjectAllocator INFLATE_ALLOCATOR = new ObjectAllocator() {
@@ -1084,8 +1084,8 @@ public class RubyZlib {
         private void init(int windowBits) {
             finished = false;
 
-            flater = new com.jcraft.jzlib.ZStream();
-            flater.inflateInit(windowBits);
+            flater = new com.jcraft.jzlib.Inflater();
+            flater.init(windowBits);
 
             collected = new ByteList(BASE_SIZE);
             input = new ByteList();
@@ -1136,7 +1136,7 @@ public class RubyZlib {
         }
 
         public IRubyObject sync_point() {
-            int ret = flater.inflateSyncPoint();
+            int ret = flater.syncPoint();
             switch(ret){
                 case com.jcraft.jzlib.JZlib.Z_STREAM_END:
                     return getRuntime().getTrue();
@@ -1158,7 +1158,7 @@ public class RubyZlib {
 
         private IRubyObject set_dictionary(IRubyObject str) {
             byte [] tmp = str.convertToString().getBytes();
-            int ret =  flater.inflateSetDictionary(tmp, tmp.length);
+            int ret =  flater.setDictionary(tmp, tmp.length);
             switch(ret){
                 case com.jcraft.jzlib.JZlib.Z_STREAM_ERROR:
                     throw Util.newStreamError(getRuntime(), "stream error");
@@ -1191,7 +1191,7 @@ public class RubyZlib {
         @JRubyMethod(name = "sync", required = 1)
         public IRubyObject sync(ThreadContext context, IRubyObject string) {
             if(flater.avail_in>0){
-                switch(flater.inflateSync()){
+                switch(flater.sync()){
                     case com.jcraft.jzlib.JZlib.Z_OK:
                         return getRuntime().getTrue();
                     case com.jcraft.jzlib.JZlib.Z_DATA_ERROR:
@@ -1203,7 +1203,7 @@ public class RubyZlib {
             if(string.convertToString().getByteList().length()<=0)
                 return getRuntime().getFalse();
             append(context, string);
-            switch(flater.inflateSync()){
+            switch(flater.sync()){
                 case com.jcraft.jzlib.JZlib.Z_OK:
                     return getRuntime().getTrue();
                 case com.jcraft.jzlib.JZlib.Z_DATA_ERROR:
@@ -1307,7 +1307,7 @@ public class RubyZlib {
                 }
                 finished = true;
             }
-            flater.inflateEnd();
+            flater.end();
         }
     }
 
@@ -1326,7 +1326,7 @@ public class RubyZlib {
             }
         };
 
-        private com.jcraft.jzlib.ZStream flater = null;
+        private com.jcraft.jzlib.Deflater flater = null;
         private boolean finished = false;
         private int flush = Z_NO_FLUSH;
 
@@ -1386,11 +1386,11 @@ public class RubyZlib {
         private void init(int level, int windowBits, int memlevel, int strategy) {
             finished = false;
             flush = Z_NO_FLUSH;
-            flater = new com.jcraft.jzlib.ZStream();
+            flater = new com.jcraft.jzlib.Deflater();
 
-            int err =  flater.deflateInit(level, windowBits, memlevel); 
+            int err =  flater.init(level, windowBits, memlevel); 
             // TODO: checking err
-            err = flater.deflateParams(level, strategy);
+            err = flater.params(level, strategy);
             // TODO: checking err
 
             collected = new ByteList(BASE_SIZE);
@@ -1427,7 +1427,7 @@ public class RubyZlib {
                 flater.next_out=new byte[0];
             flater.avail_out = flater.next_out.length;
             flater.next_out_index = 0;
-            int err = flater.deflateParams(l, s);
+            int err = flater.params(l, s);
             // TODO: checking err
             if(flater.next_out_index>0)
                 collected.append(flater.next_out, 0, flater.next_out_index);
@@ -1439,7 +1439,7 @@ public class RubyZlib {
         public IRubyObject set_dictionary(ThreadContext context, IRubyObject arg) {
             try {
                 byte [] tmp = arg.convertToString().getBytes();
-                flater.deflateSetDictionary(tmp, tmp.length);
+                flater.setDictionary(tmp, tmp.length);
                 run();
                 return arg;
             } catch (IllegalArgumentException iae) {
@@ -1516,7 +1516,7 @@ public class RubyZlib {
 
         @Override
         protected void internalClose() {
-            flater.deflateEnd();
+            flater.end();
         }
 
         private void append(ByteList obj) throws IOException {
