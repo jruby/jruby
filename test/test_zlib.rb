@@ -832,4 +832,30 @@ class TestZlibInflateAuto < Test::Unit::TestCase
       z.inflate("\x00")
     end
   end
+
+  if RUBY_VERSION > "1.9"
+    eval <<-EOD
+    require 'tempfile'
+    require 'nkf'
+
+    def test_encoding
+      ustr = "\u{3042 3044 3046}"
+      estr = NKF.nkf("-Wem0", ustr)
+      sstr = NKF.nkf("-Wsm0", ustr)
+      sstr.force_encoding("Shift_JIS")
+      t = Tempfile.new("test_encoding")
+      t.close
+      Zlib::GzipWriter.open(t.path, external_encoding: "UTF-8") {|gz| gz.print(ustr) }
+      assert_equal(ustr, Zlib::GzipReader.open(t.path, external_encoding: "UTF-8").read)
+      Zlib::GzipWriter.open(t.path, external_encoding: "EUC-JP", internal_encoding: "UTF-8") {|gz| gz.print(ustr) }
+      assert_equal(ustr, Zlib::GzipReader.open(t.path, external_encoding: "EUC-JP", internal_encoding: "UTF-8").read)
+      Zlib::GzipWriter.open(t.path, external_encoding: "EUC-JP", internal_encoding: "UTF-8") {|gz| gz.print(ustr) }
+      assert_equal(estr, Zlib::GzipReader.open(t.path, external_encoding: "EUC-JP", internal_encoding: "EUC-JP").read)
+      Zlib::GzipWriter.open(t.path, encoding: "EUC-JP:UTF-8") {|gz| gz.print(ustr) }
+      assert_equal(estr, Zlib::GzipReader.open(t.path, external_encoding: "EUC-JP").read)
+      Zlib::GzipWriter.open(t.path, encoding: "Shift_JIS:UTF-8") {|gz| gz.print(ustr) }
+      assert_equal(sstr, Zlib::GzipReader.open(t.path, external_encoding: "Shift_JIS").read)
+    end
+    EOD
+  end
 end
