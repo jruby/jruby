@@ -48,6 +48,7 @@ import java.util.zip.DeflaterOutputStream;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterInputStream;
 
+import org.jcodings.Encoding;
 import org.joda.time.DateTime;
 
 import org.jruby.anno.FrameField;
@@ -73,6 +74,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.CRC32Ext;
 import org.jruby.util.IOInputStream;
 import org.jruby.util.IOOutputStream;
+import org.jruby.util.TypeConverter;
 import org.jruby.util.io.Stream;
 
 import static org.jruby.CompatVersion.*;
@@ -1041,7 +1043,17 @@ public class RubyZlib {
             }
             return instance;
         }
-        
+
+        static IRubyObject[] argsWithIo(IRubyObject io, IRubyObject[] args) {
+            List<IRubyObject> newArgs = new ArrayList<IRubyObject>();
+            newArgs.add(io);
+            for (IRubyObject arg : args) {
+                if (arg == null) break;
+                newArgs.add(arg);
+            }
+            return newArgs.toArray(new IRubyObject[0]);
+        }
+
         @JRubyMethod(meta = true)
         public static IRubyObject wrap(ThreadContext context, IRubyObject recv, IRubyObject io, Block block) {
             Ruby runtime = recv.getRuntime();
@@ -1049,7 +1061,7 @@ public class RubyZlib {
             
             // TODO: People extending GzipWriter/reader will break.  Find better way here.
             if (recv == runtime.getModule("Zlib").getClass("GzipWriter")) {
-                instance = RubyGzipWriter.newGzipWriter(recv, new IRubyObject[] { io }, block);
+                instance = RubyGzipWriter.newInstance(recv, new IRubyObject[] { io }, block);
             } else {
                 instance = RubyGzipReader.newInstance(recv, new IRubyObject[] { io }, block);
             }
@@ -1082,12 +1094,30 @@ public class RubyZlib {
         protected RubyString nullFreeComment;
         protected IRubyObject realIo;
         protected RubyTime mtime;
+        protected Encoding externalEncoding;
+        protected Encoding internalEncoding;
 
         public RubyGzipFile(Ruby runtime, RubyClass type) {
             super(runtime, type);
             mtime = RubyTime.newTime(runtime, new DateTime());
+            externalEncoding = runtime.getDefaultExternalEncoding();
+            internalEncoding = null;
         }
-        
+
+        // c: gzfile_newstr
+        protected RubyString newStr(Ruby runtime, ByteList value) {
+            if (runtime.is1_9()) {
+                if (internalEncoding == null) {
+                    return RubyString.newString(runtime, value, externalEncoding);
+                }
+                return RubyString.newStringNoCopy(runtime, RubyString.transcode(
+                        runtime.getCurrentContext(), value, externalEncoding, internalEncoding,
+                        runtime.getNil()));
+            } else {
+                return RubyString.newString(runtime, value);
+            }
+        }
+
         @JRubyMethod(name = "os_code")
         public IRubyObject os_code() {
             return getRuntime().newFixnum(osCode & 0xff);
@@ -1161,6 +1191,131 @@ public class RubyZlib {
         public IRubyObject set_sync(IRubyObject ignored) {
             return getRuntime().getNil();
         }
+
+        // TODO: Test it and move to RubyIO.java and let everywhere use it.
+        // RubyIO#parseOptions should use that as well.
+        public static class EncodingOption {
+            private Encoding externalEncoding;
+            private Encoding internalEncoding;
+            private boolean bom;
+
+            public EncodingOption(Encoding externalEncoding, Encoding internalEncoding, boolean bom) {
+                this.externalEncoding = externalEncoding;
+                this.internalEncoding = internalEncoding;
+                this.bom = bom;
+            }
+
+            public Encoding getExternalEncoding() {
+                return externalEncoding;
+            }
+
+            public Encoding getInternalEncoding() {
+                return internalEncoding;
+            }
+
+            public boolean hasBom() {
+                return bom;
+            }
+        }
+
+        // c: rb_io_extract_encoding_option
+        public static EncodingOption extractEncodingOptions(IRubyObject options) {
+            RubyHash opts = (RubyHash) options;
+            if (opts.isNil()) {
+                return null;
+            }
+            Ruby runtime = options.getRuntime();
+            IRubyObject encOption = opts.fastARef(runtime.newSymbol("encoding"));
+            IRubyObject extOption = opts.fastARef(runtime.newSymbol("external_encoding"));
+            IRubyObject intOption = opts.fastARef(runtime.newSymbol("internal_encoding"));
+            if (encOption != null && !encOption.isNil()) {
+                if (extOption != null) {
+                    runtime.getWarnings().warn(
+                            "Ignoring encoding parameter '" + encOption
+                                    + "': external_encoding is used");
+                    encOption = runtime.getNil();
+                } else if (intOption != null) {
+                    runtime.getWarnings().warn(
+                            "Ignoring encoding parameter '" + encOption
+                                    + "': internal_encoding is used");
+                    encOption = runtime.getNil();
+                } else {
+                    IRubyObject tmp = encOption.checkStringType19();
+                    if (!tmp.isNil()) {
+                        return parseModeEncodingOption(runtime, tmp.convertToString().toString());
+                    }
+                    return createEncodingOption(runtime, runtime.getEncodingService()
+                            .getEncodingFromObject(encOption), null, false);
+                }
+            }
+            boolean set = false;
+            Encoding extEncoding = null;
+            Encoding intEncoding = null;
+            if (extOption != null) {
+                set = true;
+                if (!extOption.isNil()) {
+                    extEncoding = runtime.getEncodingService().getEncodingFromObject(extOption);
+                }
+            }
+            if (intOption != null) {
+                set = true;
+                if (intOption.isNil()) {
+                    // null;
+                } else if (intOption.convertToString().toString().equals("-")) {
+                    // null;
+                } else {
+                    intEncoding = runtime.getEncodingService().getEncodingFromObject(intOption);
+                }
+            }
+            if (!set)
+                return null;
+            return createEncodingOption(runtime, extEncoding, intEncoding, false);
+        }
+
+        // c: parse_mode_enc
+        private static EncodingOption parseModeEncodingOption(Ruby runtime, String option) {
+            Encoding extEncoding = null;
+            Encoding intEncoding = null;
+            boolean isBom = false;
+            String[] encs = option.split(":", 2);
+            if (encs[0].toLowerCase().startsWith("bom|utf-")) {
+                isBom = true;
+                encs[0] = encs[0].substring(4);
+            }
+            extEncoding = runtime.getEncodingService().getEncodingFromObject(runtime.newString(encs[0]));
+            if (encs.length > 1) {
+                if (encs[1].equals("-")) {
+                    // null;
+                } else {
+                    intEncoding = runtime.getEncodingService().getEncodingFromObject(runtime.newString(encs[1]));
+                }
+            }
+            return createEncodingOption(runtime, extEncoding, intEncoding, isBom);
+        }
+
+        private static EncodingOption createEncodingOption(Ruby runtime, Encoding extEncoding,
+                Encoding intEncoding, boolean isBom) {
+            boolean defaultExt = false;
+            if (extEncoding == null) {
+                extEncoding = runtime.getDefaultExternalEncoding();
+                defaultExt = true;
+            }
+            // TODO: move to Ruby.java?
+            Encoding ascii8bit = runtime.getEncodingService().getEncodings()
+                    .get("ASCII-8BIT".getBytes()).getEncoding();
+            if (intEncoding == null && extEncoding != ascii8bit) {
+                intEncoding = runtime.getDefaultInternalEncoding();
+            }
+            if (intEncoding == null || intEncoding == extEncoding) {
+                if (defaultExt && intEncoding != extEncoding) {
+                    intEncoding = null;
+                } else {
+                    intEncoding = extEncoding;
+                }
+                extEncoding = null;
+            }
+            return new EncodingOption(intEncoding, extEncoding, isBom);
+        }
     }
 
     @JRubyClass(name="Zlib::GzipReader", parent="Zlib::GzipFile", include="Enumerable")
@@ -1183,14 +1338,22 @@ public class RubyZlib {
             return result;
         }
 
-        @JRubyMethod(meta = true)
-        public static IRubyObject open(final ThreadContext context, IRubyObject recv, IRubyObject filename, Block block) {
+        @JRubyMethod(name = "open", required = 1, optional = 1, meta = true, compat = RUBY1_8)
+        public static IRubyObject open18(final ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
             Ruby runtime = recv.getRuntime();
-            IRubyObject io = RuntimeHelpers.invoke(context, runtime.getFile(), "open", filename, runtime.newString("rb"));
-            RubyGzipReader gzio = newInstance(recv, new IRubyObject[]{io}, block);
+            IRubyObject io = RuntimeHelpers.invoke(context, runtime.getFile(), "open", args[0], runtime.newString("rb"));
+            RubyGzipReader gzio = newInstance(recv, new IRubyObject[] { io }, block);
             return RubyGzipFile.wrapBlock(context, gzio, block);
         }
 
+        @JRubyMethod(name = "open", required = 1, optional = 1, meta = true, compat = RUBY1_9)
+        public static IRubyObject open19(final ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+            Ruby runtime = recv.getRuntime();
+            IRubyObject io = RuntimeHelpers.invoke(context, runtime.getFile(), "open", args[0], runtime.newString("rb"));
+            RubyGzipReader gzio = newInstance(recv, argsWithIo(io, args), block);
+            return RubyGzipFile.wrapBlock(context, gzio, block);
+        }
+        
         public RubyGzipReader(Ruby runtime, RubyClass type) {
             super(runtime, type);
         }
@@ -1401,9 +1564,17 @@ public class RubyZlib {
             return this;
         }
 
-        @JRubyMethod(name = "initialize", required = 1, rest = true, visibility = PRIVATE, compat = RUBY1_9)
+        @JRubyMethod(name = "initialize", rest = true, visibility = PRIVATE, compat = RUBY1_9)
         public IRubyObject initialize19(IRubyObject[] args) {
             IRubyObject obj = initialize(args[0]);
+            if (args.length > 1) {
+                IRubyObject opt = TypeConverter.checkHashType(getRuntime(), args[args.length - 1]);
+                if (!opt.isNil()) {
+                    EncodingOption enc = extractEncodingOptions(opt);
+                    externalEncoding = enc.getExternalEncoding();
+                    internalEncoding = enc.getInternalEncoding();
+                }
+            }
             if (realIo.respondsTo("path")) {
                 obj.getSingletonClass().defineMethod("path", new Callback() {
 
@@ -1438,7 +1609,7 @@ public class RubyZlib {
 
         @JRubyMethod(name = "readline", writes = FrameField.LASTLINE)
         public IRubyObject readline(ThreadContext context) {
-            IRubyObject dst = gets(context, new IRubyObject[0]);
+            IRubyObject dst = gets_18(context, new IRubyObject[0]);
             if (dst.isNil()) {
                 throw getRuntime().newEOFError();
             }
@@ -1482,6 +1653,15 @@ public class RubyZlib {
             ByteList result = new ByteList();
             if (sep.getRealSize() == 0) sep = Stream.PARAGRAPH_SEPARATOR;
             int ce = -1;
+            // TODO: CRuby does encoding aware 'gets'. Not yet implemented.
+            // StringIO.new("あいう").gets(0) => ""
+            // StringIO.new("あいう").gets(1) => "あ"
+            // StringIO.new("あいう").gets(2) => "あ"
+            // StringIO.new("あいう").gets(3) => "あ"
+            // StringIO.new("あいう").gets(4) => "あい"
+            // StringIO.new("あいう").gets(5) => "あい"
+            // StringIO.new("あいう").gets(6) => "あい"
+            // StringIO.new("あいう").gets(7) => "あいう"
             while (result.indexOf(sep) == -1) {
                 ce = bufferedStream.read();
                 if (ce == -1) break;
@@ -1495,16 +1675,16 @@ public class RubyZlib {
             }
             line++;
             this.position = result.length();
-            return RubyString.newString(getRuntime(), result);
+            return newStr(getRuntime(), result);
         }
 
         @JRubyMethod(name = "gets", optional = 1, writes = FrameField.LASTLINE, compat = RUBY1_8)
-        public IRubyObject gets(ThreadContext context, IRubyObject[] args) {
-            return gets_19(context, args);
+        public IRubyObject gets_18(ThreadContext context, IRubyObject[] args) {
+            return gets(context, args);
         }
 
         @JRubyMethod(name = "gets", optional = 2, writes = FrameField.LASTLINE, compat = RUBY1_9)
-        public IRubyObject gets_19(ThreadContext context, IRubyObject[] args) {
+        public IRubyObject gets(ThreadContext context, IRubyObject[] args) {
             try {
                 IRubyObject result = internalGets(args);
                 if (!result.isNil()) {
@@ -1536,6 +1716,42 @@ public class RubyZlib {
             }
         }
 
+        @JRubyMethod(name = "readpartial", required = 1, optional = 1)
+        public IRubyObject readpartial(IRubyObject[] args) {
+            try {
+                int len = RubyNumeric.fix2int(args[0]);
+                if (len < 0) {
+                    throw getRuntime().newArgumentError("negative length " + len + " given");
+                }
+                if (args.length > 1) {
+                    if (!(args[1] instanceof RubyString)) {
+                        throw getRuntime().newTypeError(
+                                "wrong argument type " + args[1].getMetaClass().getName()
+                                        + " (expected String)");
+                    }
+                    return readPartial(len, (RubyString) args[1]);
+                }
+                return readPartial(len, null);
+            } catch (IOException ioe) {
+                throw getRuntime().newIOErrorFromException(ioe);
+            }
+        }
+
+        private IRubyObject readPartial(int len, RubyString outbuf) throws IOException {
+            ByteList val = new ByteList(10);
+            byte[] buffer = new byte[len];
+            int read = bufferedStream.read(buffer, 0, len);
+            if (read == -1) {
+                return getRuntime().getNil();
+            }
+            val.append(buffer, 0, read);
+            this.position += val.length();
+            if (outbuf != null) {
+                outbuf.view(val);
+            }
+            return newStr(getRuntime(), val);
+        }
+
         private IRubyObject readAll() throws IOException {
             return readAll(-1);
         }
@@ -1551,7 +1767,7 @@ public class RubyZlib {
                 if (limit != -1) rest -= read;
             }
             this.position += val.length();
-            return RubyString.newString(getRuntime(), val);
+            return newStr(getRuntime(), val);
         }
 
         private IRubyObject readSize(int len) throws IOException {
@@ -1572,7 +1788,7 @@ public class RubyZlib {
                 offset += read;
             } // hmm...
             this.position += buffer.length;
-            return RubyString.newString(getRuntime(), new ByteList(buffer, 0, len - toRead, false));
+            return newStr(getRuntime(), new ByteList(buffer, 0, len - toRead, false));
         }
 
         @JRubyMethod(name = "lineno=", required = 1)
@@ -1764,35 +1980,27 @@ public class RubyZlib {
         };
         
         @JRubyMethod(name = "new", rest = true, meta = true)
-        public static RubyGzipWriter newGzipWriter(IRubyObject recv, IRubyObject[] args, Block block) {
+        public static RubyGzipWriter newInstance(IRubyObject recv, IRubyObject[] args, Block block) {
             RubyClass klass = (RubyClass)recv;
-            
             RubyGzipWriter result = (RubyGzipWriter)klass.allocate();
             result.callInit(args, block);
             return result;
         }
 
-        @JRubyMethod(required = 1, optional = 2, meta = true)
-        public static IRubyObject open(final ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        @JRubyMethod(name = "open", required = 1, optional = 2, meta = true, compat = RUBY1_8)
+        public static IRubyObject open18(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
             Ruby runtime = recv.getRuntime();
-            IRubyObject level = runtime.getNil();
-            IRubyObject strategy = runtime.getNil();
-
-            if (args.length > 1) {
-                level = args[1];
-                checkLevel(context.getRuntime(), RubyNumeric.fix2int(level));
-                if (args.length > 2) strategy = args[2];
-            }
-
             IRubyObject io = RuntimeHelpers.invoke(context, runtime.getFile(), "open", args[0], runtime.newString("wb"));
-            RubyGzipWriter gzio = newGzipWriter(recv, new IRubyObject[]{io, level, strategy}, block);
+            RubyGzipWriter gzio = newInstance(recv, argsWithIo(io, args), block);
             return RubyGzipFile.wrapBlock(context, gzio, block);
         }
-        
-        private static void checkLevel(Ruby runtime, int level) {
-            if (level < 0 || level > 9) {
-                throw Util.newStreamError(runtime, "stream error: invalid level");
-            }
+
+        @JRubyMethod(name = "open", required = 1, optional = 3, meta = true, compat = RUBY1_9)
+        public static IRubyObject open19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+            Ruby runtime = recv.getRuntime();
+            IRubyObject io = RuntimeHelpers.invoke(context, runtime.getFile(), "open", args[0], runtime.newString("wb"));
+            RubyGzipWriter gzio = newInstance(recv, argsWithIo(io, args), block);
+            return RubyGzipFile.wrapBlock(context, gzio, block);
         }
 
         public RubyGzipWriter(Ruby runtime, RubyClass type) {
@@ -1884,10 +2092,10 @@ public class RubyZlib {
         
         @JRubyMethod(name = "initialize", required = 1, rest = true, visibility = PRIVATE, compat = RUBY1_8)
         public IRubyObject initialize(IRubyObject[] args) {
-            return initialize(args[0]);
+            return initializeCommon(args[0]);
         }
-        
-        private IRubyObject initialize(IRubyObject stream) {
+
+        private IRubyObject initializeCommon(IRubyObject stream) {
             realIo = (RubyObject) stream;
             try {
                 io = new HeaderModifyableGZIPOutputStream(realIo);
@@ -1896,10 +2104,18 @@ public class RubyZlib {
                 throw getRuntime().newIOErrorFromException(ioe);
             }
         }
-        
-        @JRubyMethod(name = "initialize", required = 1, rest = true, visibility = PRIVATE, compat = RUBY1_9)
-        public IRubyObject initialize19(IRubyObject[] args) {
-            IRubyObject obj = initialize(args[0]);
+
+        @JRubyMethod(name = "initialize", rest = true, visibility = PRIVATE, compat = RUBY1_9)
+        public IRubyObject initialize19(IRubyObject[] args, Block unused) {
+            IRubyObject obj = initializeCommon(args[0]);
+            if (args.length > 1) {
+                IRubyObject opt = TypeConverter.checkHashType(getRuntime(), args[args.length - 1]);
+                if (!opt.isNil()) {
+                    EncodingOption enc = extractEncodingOptions(opt);
+                    externalEncoding = enc.getExternalEncoding();
+                    internalEncoding = enc.getInternalEncoding();
+                }
+            }
             if (realIo.respondsTo("path")) {
                 obj.getSingletonClass().defineMethod("path", new Callback() {
 
