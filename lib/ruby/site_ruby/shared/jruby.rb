@@ -2,8 +2,15 @@ require 'java'
 
 module JRuby
   StringWriter = java.io.StringWriter
-  ClassReader = org.objectweb.asm.ClassReader
-  TraceClassVisitor = org.objectweb.asm.util.TraceClassVisitor
+  
+  begin
+    ClassReader = org.objectweb.asm.ClassReader
+    TraceClassVisitor = org.objectweb.asm.util.TraceClassVisitor
+  rescue
+    ClassReader = org.jruby.org.objectweb.asm.ClassReader
+    TraceClassVisitor = org.jruby.org.objectweb.asm.TraceClassVisitor
+  end
+    
   PrintWriter = java.io.PrintWriter
   Ruby = org.jruby.Ruby
   CompiledBlock = org.jruby.runtime.CompiledBlock
