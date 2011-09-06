@@ -1,12 +1,8 @@
 require 'rubygems/config_file'
+require 'rubygems/maven_gemify' # Maven support
 require 'rbconfig'
 
-# Maven support is loaded by autoload for SpecFetcher and RemoteFetcher
-# require 'rubygems/maven_gemify' # Maven support
-
 module Gem
-  autoload :SpecFetcher, 'rubygems/spec_fetcher'
-  autoload :RemoteFetcher, 'rubygems/spec_fetcher'
 
   ConfigFile::PLATFORM_DEFAULTS['install'] = '--no-rdoc --no-ri --env-shebang'
   ConfigFile::PLATFORM_DEFAULTS['update']  = '--no-rdoc --no-ri --env-shebang'
