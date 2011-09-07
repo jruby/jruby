@@ -25,11 +25,14 @@ public final class EncodingService {
     private RubyEncoding[] encodingIndex = new RubyEncoding[4];
     // the runtime
     private Ruby runtime;
+    
+    private Encoding ascii8bit;
 
     public EncodingService (Ruby runtime) {
         this.runtime = runtime;
         encodings = EncodingDB.getEncodings();
         aliases = EncodingDB.getAliases();
+        ascii8bit = encodings.get("ASCII-8BIT".getBytes()).getEncoding();
 
         encodingList = new IRubyObject[encodings.size()];
 
@@ -58,6 +61,10 @@ public final class EncodingService {
         }
     }
 
+    public Encoding getAscii8bitEncoding() {
+        return ascii8bit;
+    }
+    
     public CaseInsensitiveBytesHash<Entry> getEncodings() {
         return encodings;
     }
