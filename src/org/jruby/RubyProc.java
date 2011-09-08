@@ -241,7 +241,8 @@ public class RubyProc extends RubyObject implements DataType {
 
         if (isProc()) {
             // for procs and blocks, single array passed to multi-arg must be spread
-            if (this.block.arity() != Arity.ONE_ARGUMENT && args.length == 1 && args[0].respondsTo("to_ary")) {
+            // FIXME: Formalize this logic in Arity since it is likely used many places...not sure it is right yet though
+            if (this.block.arity() != Arity.ONE_ARGUMENT && (this.block.arity().isFixed() || this.block.arity() != Arity.OPTIONAL) && args.length == 1 && args[0].respondsTo("to_ary")) {
                 args = args[0].convertToArray().toJavaArray();
             }
             
