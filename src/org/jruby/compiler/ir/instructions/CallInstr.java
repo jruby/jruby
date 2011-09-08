@@ -232,13 +232,8 @@ public class CallInstr extends MultiOperandInstr {
         IRubyObject object = (IRubyObject) getReceiver().retrieve(interp, context, self);
         String name = ma.toString(); // SSS FIXME: If this is not a ruby string or a symbol, then this is an error in the source code!
         Object resultValue;
-        try {
-            resultValue = RuntimeHelpers.invoke(context, object, name, args, 
-                    prepareBlock(interp, context, self));
-        } catch (org.jruby.exceptions.JumpException.BreakJump bj) {
-            resultValue = (IRubyObject) bj.getValue();
-        }
-
+        Block  block = prepareBlock(interp, context, self);
+        resultValue = RuntimeHelpers.invoke(context, object, name, args, block);
         getResult().store(interp, context, self, resultValue);
         return null;
     }
@@ -350,12 +345,7 @@ public class CallInstr extends MultiOperandInstr {
                     m.getVisibility(), mn, CallType.FUNCTIONAL, args, 
                     prepareBlock(interp, context, self));
         } else {
-            try {
-                resultValue = m.call(context, ro, ro.getMetaClass(), mn, args,
-                        prepareBlock(interp, context, self));
-            } catch (org.jruby.exceptions.JumpException.BreakJump bj) {
-                resultValue = (IRubyObject) bj.getValue();
-            }
+            resultValue = m.call(context, ro, ro.getMetaClass(), mn, args, prepareBlock(interp, context, self));
         }
         
         getResult().store(interp, context, self, resultValue);
