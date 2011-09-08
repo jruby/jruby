@@ -348,6 +348,29 @@ class TestZlib < Test::Unit::TestCase
     }
     s.string
   end
+
+  def test_dup
+    d1 = Zlib::Deflate.new
+
+    data = "foo" * 10 
+    d1 << data
+    d2 = d1.dup
+
+    d1 << "bar"
+    d2 << "goo"
+
+    data1 = d1.finish
+    data2 = d2.finish
+
+    i = Zlib::Inflate.new
+
+    assert_equal(data+"bar",
+                 i.inflate(data1) + i.finish);
+
+    i.reset
+    assert_equal(data+"goo",
+                 i.inflate(data2) + i.finish);
+  end
 end
 
 # Test for MAX_WBITS + 16

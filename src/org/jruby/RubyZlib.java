@@ -1389,12 +1389,30 @@ public class RubyZlib {
 
         @Override
         @JRubyMethod(visibility = PRIVATE)
-        public IRubyObject initialize_copy(IRubyObject other) {
-            if (this == other) {
+        public IRubyObject initialize_copy(IRubyObject _other) {
+            if (!(_other instanceof JZlibDeflate)) {
+                throw getRuntime().newTypeError("Expecting an instance of class JZlibDeflate");
+            }
+
+            if (this == _other) {
                 return this;
             }
-            // TODO: we cannot implement Deflate#dup as long as we use java.util.zip.Deflater...
-            throw getRuntime().newNotImplementedError("Zlib::Deflate#dup is not supported");
+
+            JZlibDeflate other =  (JZlibDeflate)_other;
+
+            this.level = other.level;
+            this.windowBits = other.windowBits;
+            this.strategy = other.strategy;
+            this.collected = (ByteList)other.collected.clone();
+
+            this.flush = other.flush;
+            this.flater = new com.jcraft.jzlib.Deflater();
+            int ret = this.flater.copy(other.flater);
+            if(ret != com.jcraft.jzlib.JZlib.Z_OK){
+                throw Util.newStreamError(getRuntime(), "stream error");
+            }
+
+            return (IRubyObject)this;
         }
 
         @JRubyMethod(name = "<<", required = 1)
