@@ -40,6 +40,7 @@ import java.util.List;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.JumpException;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.BlockStaticScope;
@@ -242,7 +243,16 @@ public class RubyProc extends RubyObject implements DataType {
         if (isProc()) {
             // for procs and blocks, single array passed to multi-arg must be spread
             if (this.block.arity() != Arity.ONE_ARGUMENT && args.length == 1 && args[0].respondsTo("to_ary")) {
-                args = args[0].convertToArray().toJavaArray();
+                try {
+                    RubyArray ary = args[0].convertToArray();
+                    args = ary.toJavaArray();
+                } catch(RaiseException e) {
+                    if (e.getException().getMetaClass().getName() != "TypeError") {
+                        throw e;
+                    } else {
+                        // to_ary returns something other than array, suggests to_ary is overrided by class
+                    }
+                }
             }
             
             if (this.block.arity().isFixed()) {
