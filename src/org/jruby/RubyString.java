@@ -1024,26 +1024,22 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return invokedynamic(context, other, OP_EQUAL, this).isTrue() ? runtime.getTrue() : runtime.getFalse();
     }
 
-    @JRubyMethod(name = "+", required = 1, compat = RUBY1_8, argTypes = RubyString.class)
-    public IRubyObject op_plus(ThreadContext context, RubyString str) {
+    @JRubyMethod(name = "+", required = 1, compat = RUBY1_8)
+    public IRubyObject op_plus(ThreadContext context, IRubyObject _str) {
+        RubyString str = _str.convertToString();
         RubyString resultStr = newString(context.getRuntime(), addByteLists(value, str.value));
         resultStr.infectBy(flags | str.flags);
         return resultStr;
     }
-    public IRubyObject op_plus(ThreadContext context, IRubyObject other) {
-        return op_plus(context, other.convertToString());
-    }
 
     @JRubyMethod(name = "+", required = 1, compat = RUBY1_9)
-    public IRubyObject op_plus19(ThreadContext context, RubyString str) {
+    public IRubyObject op_plus19(ThreadContext context, IRubyObject _str) {
+        RubyString str = _str.convertToString();
         Encoding enc = checkEncoding(str);
         RubyString resultStr = newStringNoCopy(context.getRuntime(), addByteLists(value, str.value),
                                     enc, codeRangeAnd(getCodeRange(), str.getCodeRange()));
         resultStr.infectBy(flags | str.flags);
         return resultStr;
-    }
-    public IRubyObject op_plus19(ThreadContext context, IRubyObject other) {
-        return op_plus19(context, other.convertToString());
     }
 
     private ByteList addByteLists(ByteList value1, ByteList value2) {

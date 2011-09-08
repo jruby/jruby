@@ -100,7 +100,9 @@ public class InvocationLinker {
         RubyClass selfClass = pollAndGetClass(context, self);
         CacheEntry entry = selfClass.searchWithCache(name);
         if (methodMissing(entry, site.callType(), name, caller)) {
-            return callMethodMissing(entry, site.callType(), context, self, name, arg0);
+            IRubyObject mmResult = callMethodMissing(entry, site.callType(), context, self, name, arg0);
+            // TODO: replace with handle logic
+            return site.isAttrAssign() ? arg0 : mmResult;
         }
         
         MethodHandle target = getTarget(site, selfClass, name, entry, 1);
@@ -113,7 +115,9 @@ public class InvocationLinker {
         RubyClass selfClass = pollAndGetClass(context, self);
         CacheEntry entry = selfClass.searchWithCache(name);
         if (methodMissing(entry, site.callType(), name, caller)) {
-            return callMethodMissing(entry, site.callType(), context, self, name, arg0, arg1);
+            IRubyObject mmResult = callMethodMissing(entry, site.callType(), context, self, name, arg0, arg1);
+            // TODO: replace with handle logic
+            return site.isAttrAssign() ? arg1 : mmResult;
         }
         
         MethodHandle target = getTarget(site, selfClass, name, entry, 2);
@@ -126,7 +130,9 @@ public class InvocationLinker {
         RubyClass selfClass = pollAndGetClass(context, self);
         CacheEntry entry = selfClass.searchWithCache(name);
         if (methodMissing(entry, site.callType(), name, caller)) {
-            return callMethodMissing(entry, site.callType(), context, self, name, arg0, arg1, arg2);
+            IRubyObject mmResult = callMethodMissing(entry, site.callType(), context, self, name, arg0, arg1, arg2);
+            // TODO: replace with handle logic
+            return site.isAttrAssign() ? arg2 : mmResult;
         }
         
         MethodHandle target = getTarget(site, selfClass, name, entry, 3);
@@ -139,7 +145,9 @@ public class InvocationLinker {
         RubyClass selfClass = pollAndGetClass(context, self);
         CacheEntry entry = selfClass.searchWithCache(name);
         if (methodMissing(entry, site.callType(), name, caller)) {
-            return callMethodMissing(entry, site.callType(), context, self, name, args);
+            IRubyObject mmResult = callMethodMissing(entry, site.callType(), context, self, name, args);
+            // TODO: replace with handle logic
+            return site.isAttrAssign() ? args[args.length - 1] : mmResult;
         }
         
         MethodHandle target = getTarget(site, selfClass, name, entry, -1);

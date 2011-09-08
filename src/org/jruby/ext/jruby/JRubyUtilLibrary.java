@@ -58,8 +58,9 @@ public class JRubyUtilLibrary implements Library {
     }
 
     @JRubyMethod(module = true)
-    public static void gc(IRubyObject recv) {
+    public static IRubyObject gc(IRubyObject recv) {
         System.gc();
+        return recv.getRuntime().getNil();
     }
 
     @JRubyMethod(name = "objectspace", module = true)
