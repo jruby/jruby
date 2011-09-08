@@ -55,10 +55,10 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
         RubyModule currentModule = closure.getStaticScope().getModule();
         context.getCurrentScope().getStaticScope().setModule(currentModule);
 
-        InterpreterContext interp = new NaiveInterpreterContext(context, currentModule, self, null, closure.getLocalVariablesCount(), closure.getTemporaryVariableSize(), args, block, type);
+        InterpreterContext interp = new NaiveInterpreterContext(context, closure, currentModule, self, null, args, block, type);
         interp.setDynamicScope(binding.getDynamicScope());
 
-        return Interpreter.interpret(context, self, closure.getCFG(), interp);
+        return Interpreter.interpret(context, self, closure, interp);
     }
 
     @Override

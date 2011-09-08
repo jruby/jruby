@@ -222,53 +222,6 @@ public class CallInstr extends MultiOperandInstr {
         return new CallInstr(ii.getRenamedVariable(result), (MethAddr) methAddr.cloneForInlining(ii), receiver.cloneForInlining(ii), cloneCallArgs(ii), closure == null ? null : closure.cloneForInlining(ii));
    }
 
-// --------------- Private methods ---------------
-
-    private static Operand[] buildAllArgs(Operand methAddr, Operand receiver, Operand[] callArgs, Operand closure) {
-        Operand[] allArgs = new Operand[callArgs.length + 2 + ((closure != null) ? 1 : 0)];
-
-        assert methAddr != null : "METHADDR is null";
-        assert receiver != null : "RECEIVER is null";
-
-
-        allArgs[0] = methAddr;
-        allArgs[1] = receiver;
-        for (int i = 0; i < callArgs.length; i++) {
-            assert callArgs[i] != null : "ARG " + i + " is null";
-
-            allArgs[i + 2] = callArgs[i];
-        }
-
-        if (closure != null) allArgs[callArgs.length + 2] = closure;
-
-        return allArgs;
-    }
-    
-    private Label interpretMethodHandle(InterpreterContext interp, ThreadContext context, 
-            IRubyObject self, MethodHandle mh, IRubyObject[] args) {
-        assert mh.getMethodNameOperand() == getReceiver();
-
-        IRubyObject resultValue;
-        DynamicMethod m = mh.getResolvedMethod();
-        String mn = mh.getResolvedMethodName();
-        IRubyObject ro = mh.getReceiverObj();
-        if (m.isUndefined()) {
-            resultValue = RuntimeHelpers.callMethodMissing(context, ro,
-                    m.getVisibility(), mn, CallType.FUNCTIONAL, args, 
-                    prepareBlock(interp, context, self));
-        } else {
-            try {
-                resultValue = m.call(context, ro, ro.getMetaClass(), mn, args,
-                        prepareBlock(interp, context, self));
-            } catch (org.jruby.exceptions.JumpException.BreakJump bj) {
-                resultValue = (IRubyObject) bj.getValue();
-            }
-        }
-        
-        getResult().store(interp, context, self, resultValue);
-        return null;        
-    }
-
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         Object ma = methAddr.retrieve(interp, context, self);
@@ -361,4 +314,52 @@ public class CallInstr extends MultiOperandInstr {
         b.type = Block.Type.NORMAL;
         return b;
     }
+
+// --------------- Private methods ---------------
+
+    private static Operand[] buildAllArgs(Operand methAddr, Operand receiver, Operand[] callArgs, Operand closure) {
+        Operand[] allArgs = new Operand[callArgs.length + 2 + ((closure != null) ? 1 : 0)];
+
+        assert methAddr != null : "METHADDR is null";
+        assert receiver != null : "RECEIVER is null";
+
+
+        allArgs[0] = methAddr;
+        allArgs[1] = receiver;
+        for (int i = 0; i < callArgs.length; i++) {
+            assert callArgs[i] != null : "ARG " + i + " is null";
+
+            allArgs[i + 2] = callArgs[i];
+        }
+
+        if (closure != null) allArgs[callArgs.length + 2] = closure;
+
+        return allArgs;
+    }
+    
+    private Label interpretMethodHandle(InterpreterContext interp, ThreadContext context, 
+            IRubyObject self, MethodHandle mh, IRubyObject[] args) {
+        assert mh.getMethodNameOperand() == getReceiver();
+
+        IRubyObject resultValue;
+        DynamicMethod m = mh.getResolvedMethod();
+        String mn = mh.getResolvedMethodName();
+        IRubyObject ro = mh.getReceiverObj();
+        if (m.isUndefined()) {
+            resultValue = RuntimeHelpers.callMethodMissing(context, ro,
+                    m.getVisibility(), mn, CallType.FUNCTIONAL, args, 
+                    prepareBlock(interp, context, self));
+        } else {
+            try {
+                resultValue = m.call(context, ro, ro.getMetaClass(), mn, args,
+                        prepareBlock(interp, context, self));
+            } catch (org.jruby.exceptions.JumpException.BreakJump bj) {
+                resultValue = (IRubyObject) bj.getValue();
+            }
+        }
+        
+        getResult().store(interp, context, self, resultValue);
+        return null;        
+    }
+
 }

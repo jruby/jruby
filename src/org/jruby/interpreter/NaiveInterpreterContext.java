@@ -12,16 +12,17 @@ import org.jruby.runtime.Frame;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.IRMethod;
-import org.jruby.compiler.ir.operands.Label;
 
 /**
  *
  * @author enebo
  */
 public class NaiveInterpreterContext implements InterpreterContext {
-    protected Object returnValue;
+    protected IRExecutionScope irScope;
     protected IRubyObject[] parameters;
+    protected Object returnValue;
     protected Object[] temporaryVariables;
     protected Object[] localVariables;
     protected Frame frame;
@@ -31,17 +32,18 @@ public class NaiveInterpreterContext implements InterpreterContext {
     protected boolean allocatedDynScope = false;
     protected Object currException = null;
 
-    private Label methodExitLabel = null;
-
     // currentModule is:
     // - self if we are executing a class method of 'self'
     // - self.getMetaClass() if we are executing an instance method of 'self'
     // - the class in which the closure is lexically defined in if we are executing a closure
-    public NaiveInterpreterContext(ThreadContext context, RubyModule currentModule, IRubyObject self, String name, int localVariablesSize, int temporaryVariablesSize, IRubyObject[] parameters, Block block, Block.Type blockType) {
+    public NaiveInterpreterContext(ThreadContext context, IRExecutionScope irScope, RubyModule currentModule, IRubyObject self, String name, IRubyObject[] parameters, Block block, Block.Type blockType) {
         context.preMethodFrameOnly(currentModule, name, self, block);
+        this.irScope = irScope;
         this.frame = context.getCurrentFrame();
-
         this.parameters = parameters;
+
+        int localVariablesSize = irScope.getLocalVariablesCount();
+        int temporaryVariablesSize = irScope.getTemporaryVariableSize();
         this.localVariables = localVariablesSize > 0 ? new Object[localVariablesSize] : null;
         this.temporaryVariables = temporaryVariablesSize > 0 ? new Object[temporaryVariablesSize] : null;
         this.block = block;
@@ -171,17 +173,12 @@ public class NaiveInterpreterContext implements InterpreterContext {
         return args;
     }
 
-    public void setMethodExitLabel(Label l) {
-        methodExitLabel = l;
-    }
-
-    public Label getMethodExitLabel() {
-        return methodExitLabel;
+    public IRExecutionScope getCurrentIRScope() {
+        return this.irScope;
     }
 
     // Set the most recently raised exception
     public void setException(Object e) {
-        // SSS FIXME: More things to be done besides this?
         currException = e;
     }
 

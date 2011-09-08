@@ -23,6 +23,6 @@ public class ClosureReturnInstr extends OneOperandInstr {
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         interp.setReturnValue(getArg().retrieve(interp, context, self));
-        return interp.getMethodExitLabel();
+        return interp.getCurrentIRScope().getCFG().getExitBB().getLabel();
     }
 }

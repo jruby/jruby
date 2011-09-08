@@ -7,6 +7,7 @@ import org.jruby.RubyModule;
 import org.jruby.ast.Node;
 import org.jruby.ast.RootNode;
 import org.jruby.compiler.ir.IRBuilder;
+import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.IRClosure;
 import org.jruby.compiler.ir.IRScope;
@@ -71,13 +72,12 @@ public class Interpreter {
         }
     }
 
-    public static IRubyObject interpret(ThreadContext context, IRubyObject self, CFG cfg, InterpreterContext interp) {
+    public static IRubyObject interpret(ThreadContext context, IRubyObject self, IRExecutionScope scope, InterpreterContext interp) {
+		  CFG  cfg = scope.getCFG();
         Ruby runtime = context.getRuntime();
         boolean inClosure = (cfg.getScope() instanceof IRClosure);
         
         try {
-            interp.setMethodExitLabel(cfg.getExitBB().getLabel()); // used by return and break instructions!
-
             Instr[] instrs = cfg.prepareForInterpretation();
             int n   = instrs.length;
             int ipc = 0;
@@ -171,7 +171,7 @@ public class Interpreter {
         }
     }
 
-    public static IRubyObject INTERPRET_METHOD(ThreadContext context, CFG cfg, 
+    public static IRubyObject INTERPRET_METHOD(ThreadContext context, IRExecutionScope scope, 
         InterpreterContext interp, IRubyObject self, String name, RubyModule implClass, boolean isTraceable) {
         Ruby runtime = context.getRuntime();
         boolean syntheticMethod = name == null || name.equals("");
@@ -180,7 +180,7 @@ public class Interpreter {
             String className = implClass.getName();
             if (!syntheticMethod) ThreadContext.pushBacktrace(context, className, name, context.getFile(), context.getLine());
             if (isTraceable) methodPreTrace(runtime, context, name, implClass);
-            return interpret(context, self, cfg, interp);
+            return interpret(context, self, scope, interp);
         } finally {
             if (isTraceable) {
                 try {methodPostTrace(runtime, context, name, implClass);}

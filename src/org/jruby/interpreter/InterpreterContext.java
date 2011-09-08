@@ -8,6 +8,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.RubyException;
 
+import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.operands.Label;
 
@@ -58,9 +59,7 @@ public interface InterpreterContext {
     public void setFrame(Frame currentFrame);
     public Frame getFrame();
 
-    public void setMethodExitLabel(Label l);
-
-    public Label getMethodExitLabel();
+    public IRExecutionScope getCurrentIRScope();
 
     // Set the most recently raised exception
     public void setException(Object e);
