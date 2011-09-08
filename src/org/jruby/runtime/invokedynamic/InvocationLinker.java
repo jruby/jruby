@@ -332,10 +332,6 @@ public class InvocationLinker {
         return block.yieldSpecific(context, arg0, arg1, arg2);
     }
 
-    private static MethodHandle createGWT(RubyModule selfClass, MethodHandle test, MethodHandle target, MethodHandle fallback, CacheEntry entry, JRubyCallSite site) {
-        return createGWT(selfClass, test, target, fallback, entry, site, true);
-    }
-
     private static MethodHandle createFail(MethodHandle fail, JRubyCallSite site, String name, DynamicMethod method) {
         if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tbound to inline cache (failed #" + method.getSerialNumber() + ")");
         
@@ -395,6 +391,10 @@ public class InvocationLinker {
             }
             
             if (nativeCall.isJava()) {
+                 if (!RubyInstanceConfig.INVOKEDYNAMIC_JAVA) {
+                    throw new IndirectBindingException("direct Java dispatch not enabled");
+                 }
+                 
                 // if Java, must be no-arg invocation
                 if (nativeCall.getNativeSignature().length != 0 || siteArgCount != 0) {
                     throw new IndirectBindingException("Java call or receiver with > 0 args");
@@ -462,7 +462,7 @@ public class InvocationLinker {
             } else if (method.getNativeCall() != null) {
                 DynamicMethod.NativeCall nativeCall = method.getNativeCall();
                 
-                if (nativeCall.isJava() && RubyInstanceConfig.INVOKEDYNAMIC_JAVA) {
+                if (nativeCall.isJava()) {
                     // Ruby to Java
                     if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tbound to Java method #" + method.getSerialNumber() + ": " + nativeCall);
                     nativeTarget = createJavaHandle(method);
@@ -913,41 +913,59 @@ public class InvocationLinker {
             
             if (nativeCall.getNativeSignature().length == 0) {
                 // handle return value
-                if (nativeCall.getNativeReturn() == byte.class ||
+                if (
+                        nativeCall.getNativeReturn() == byte.class ||
                         nativeCall.getNativeReturn() == short.class ||
                         nativeCall.getNativeReturn() == char.class ||
                         nativeCall.getNativeReturn() == int.class ||
-                        nativeCall.getNativeReturn() == long.class ||
-                        nativeCall.getNativeReturn() == Byte.class ||
-                        nativeCall.getNativeReturn() == Short.class ||
-                        nativeCall.getNativeReturn() == Character.class ||
-                        nativeCall.getNativeReturn() == Integer.class ||
-                        nativeCall.getNativeReturn() == Long.class) {
+                        nativeCall.getNativeReturn() == long.class) {
                     nativeTarget = explicitCastArguments(nativeTarget, methodType(long.class));
                     returnFilter = insertArguments(
                             findStatic(RubyFixnum.class, "newFixnum", methodType(RubyFixnum.class, Ruby.class, long.class)),
                             0,
                             runtime);
-                } else if (nativeCall.getNativeReturn() == float.class ||
-                        nativeCall.getNativeReturn() == double.class ||
-                        nativeCall.getNativeReturn() == Float.class ||
-                        nativeCall.getNativeReturn() == Double.class) {
+                } else if (
+                        nativeCall.getNativeReturn() == Byte.class ||
+                        nativeCall.getNativeReturn() == Short.class ||
+                        nativeCall.getNativeReturn() == Character.class ||
+                        nativeCall.getNativeReturn() == Integer.class ||
+                        nativeCall.getNativeReturn() == Long.class) {
+                    returnFilter = insertArguments(
+                            findStatic(InvocationLinker.class, "fixnumOrNil", methodType(IRubyObject.class, Ruby.class, nativeCall.getNativeReturn())),
+                            0,
+                            runtime);
+                } else if (
+                        nativeCall.getNativeReturn() == float.class ||
+                        nativeCall.getNativeReturn() == double.class) {
                     nativeTarget = explicitCastArguments(nativeTarget, methodType(double.class));
                     returnFilter = insertArguments(
                             findStatic(RubyFloat.class, "newFloat", methodType(RubyFloat.class, Ruby.class, double.class)),
                             0,
                             runtime);
-                } else if (nativeCall.getNativeReturn() == boolean.class ||
-                        nativeCall.getNativeReturn() == Boolean.class) {
+                } else if (
+                        nativeCall.getNativeReturn() == Float.class ||
+                        nativeCall.getNativeReturn() == Double.class) {
+                    returnFilter = insertArguments(
+                            findStatic(InvocationLinker.class, "floatOrNil", methodType(RubyFloat.class, Ruby.class, nativeCall.getNativeReturn())),
+                            0,
+                            runtime);
+                } else if (
+                        nativeCall.getNativeReturn() == boolean.class) {
                     nativeTarget = explicitCastArguments(nativeTarget, methodType(boolean.class));
                     returnFilter = insertArguments(
                             findStatic(RubyBoolean.class, "newBoolean", methodType(RubyBoolean.class, Ruby.class, boolean.class)),
                             0,
                             runtime);
+                } else if (
+                        nativeCall.getNativeReturn() == Boolean.class) {
+                    returnFilter = insertArguments(
+                            findStatic(InvocationLinker.class, "booleanOrNil", methodType(IRubyObject.class, Ruby.class, Boolean.class)),
+                            0,
+                            runtime);
                 } else if (CharSequence.class.isAssignableFrom(nativeCall.getNativeReturn())) {
                     nativeTarget = explicitCastArguments(nativeTarget, methodType(CharSequence.class));
                     returnFilter = insertArguments(
-                            findStatic(RubyString.class, "newUnicodeString", methodType(RubyString.class, Ruby.class, CharSequence.class)),
+                            findStatic(InvocationLinker.class, "stringOrNil", methodType(IRubyObject.class, Ruby.class, CharSequence.class)),
                             0,
                             runtime);
                 } else if (nativeCall.getNativeReturn() == void.class) {
@@ -977,41 +995,58 @@ public class InvocationLinker {
                                 methodType(nativeCall.getNativeTarget(), IRubyObject.class)));
                 
                 // handle return value
-                if (nativeCall.getNativeReturn() == byte.class ||
+                if (
+                        nativeCall.getNativeReturn() == byte.class ||
                         nativeCall.getNativeReturn() == short.class ||
                         nativeCall.getNativeReturn() == char.class ||
                         nativeCall.getNativeReturn() == int.class ||
-                        nativeCall.getNativeReturn() == long.class ||
-                        nativeCall.getNativeReturn() == Byte.class ||
-                        nativeCall.getNativeReturn() == Short.class ||
-                        nativeCall.getNativeReturn() == Character.class ||
-                        nativeCall.getNativeReturn() == Integer.class ||
-                        nativeCall.getNativeReturn() == Long.class) {
+                        nativeCall.getNativeReturn() == long.class) {
                     nativeTarget = explicitCastArguments(nativeTarget, methodType(long.class, IRubyObject.class));
                     returnFilter = insertArguments(
                             findStatic(RubyFixnum.class, "newFixnum", methodType(RubyFixnum.class, Ruby.class, long.class)),
                             0,
                             runtime);
-                } else if (nativeCall.getNativeReturn() == float.class ||
-                        nativeCall.getNativeReturn() == double.class ||
-                        nativeCall.getNativeReturn() == Float.class ||
-                        nativeCall.getNativeReturn() == Double.class) {
+                } else if (
+                        nativeCall.getNativeReturn() == Byte.class ||
+                        nativeCall.getNativeReturn() == Short.class ||
+                        nativeCall.getNativeReturn() == Character.class ||
+                        nativeCall.getNativeReturn() == Integer.class ||
+                        nativeCall.getNativeReturn() == Long.class) {
+                    returnFilter = insertArguments(
+                            findStatic(InvocationLinker.class, "fixnumOrNil", methodType(IRubyObject.class, Ruby.class, nativeCall.getNativeReturn())),
+                            0,
+                            runtime);
+                } else if (
+                        nativeCall.getNativeReturn() == float.class ||
+                        nativeCall.getNativeReturn() == double.class) {
                     nativeTarget = explicitCastArguments(nativeTarget, methodType(double.class, IRubyObject.class));
                     returnFilter = insertArguments(
                             findStatic(RubyFloat.class, "newFloat", methodType(RubyFloat.class, Ruby.class, double.class)),
                             0,
                             runtime);
-                } else if (nativeCall.getNativeReturn() == boolean.class ||
-                        nativeCall.getNativeReturn() == Boolean.class) {
-                    nativeTarget = explicitCastArguments(nativeTarget, methodType(boolean.class, IRubyObject.class));
+                } else if (
+                        nativeCall.getNativeReturn() == Float.class ||
+                        nativeCall.getNativeReturn() == Double.class) {
+                    returnFilter = insertArguments(
+                            findStatic(InvocationLinker.class, "floatOrNil", methodType(RubyFloat.class, Ruby.class, nativeCall.getNativeReturn())),
+                            0,
+                            runtime);
+                } else if (
+                        nativeCall.getNativeReturn() == boolean.class) {
                     returnFilter = insertArguments(
                             findStatic(RubyBoolean.class, "newBoolean", methodType(RubyBoolean.class, Ruby.class, boolean.class)),
+                            0,
+                            runtime);
+                } else if (
+                        nativeCall.getNativeReturn() == Boolean.class) {
+                    returnFilter = insertArguments(
+                            findStatic(InvocationLinker.class, "booleanOrNil", methodType(IRubyObject.class, Ruby.class, Boolean.class)),
                             0,
                             runtime);
                 } else if (CharSequence.class.isAssignableFrom(nativeCall.getNativeReturn())) {
                     nativeTarget = explicitCastArguments(nativeTarget, methodType(CharSequence.class, IRubyObject.class));
                     returnFilter = insertArguments(
-                            findStatic(RubyString.class, "newUnicodeString", methodType(RubyString.class, Ruby.class, CharSequence.class)),
+                            findStatic(InvocationLinker.class, "stringOrNil", methodType(IRubyObject.class, Ruby.class, CharSequence.class)),
                             0,
                             runtime);
                 } else if (nativeCall.getNativeReturn() == void.class) {
@@ -1034,6 +1069,42 @@ public class InvocationLinker {
         }
         
         return null;
+    }
+    
+    public static IRubyObject fixnumOrNil(Ruby runtime, Byte b) {
+        return b == null ? runtime.getNil() : RubyFixnum.newFixnum(runtime, b);
+    }
+    
+    public static IRubyObject fixnumOrNil(Ruby runtime, Short s) {
+        return s == null ? runtime.getNil() : RubyFixnum.newFixnum(runtime, s);
+    }
+    
+    public static IRubyObject fixnumOrNil(Ruby runtime, Character c) {
+        return c == null ? runtime.getNil() : RubyFixnum.newFixnum(runtime, c);
+    }
+    
+    public static IRubyObject fixnumOrNil(Ruby runtime, Integer i) {
+        return i == null ? runtime.getNil() : RubyFixnum.newFixnum(runtime, i);
+    }
+    
+    public static IRubyObject fixnumOrNil(Ruby runtime, Long l) {
+        return l == null ? runtime.getNil() : RubyFixnum.newFixnum(runtime, l);
+    }
+    
+    public static IRubyObject floatOrNil(Ruby runtime, Float f) {
+        return f == null ? runtime.getNil() : RubyFloat.newFloat(runtime, f);
+    }
+    
+    public static IRubyObject floatOrNil(Ruby runtime, Double d) {
+        return d == null ? runtime.getNil() : RubyFloat.newFloat(runtime, d);
+    }
+    
+    public static IRubyObject booleanOrNil(Ruby runtime, Boolean b) {
+        return b == null ? runtime.getNil() : RubyBoolean.newBoolean(runtime, b);
+    }
+    
+    public static IRubyObject stringOrNil(Ruby runtime, CharSequence cs) {
+        return cs == null ? runtime.getNil() : RubyString.newUnicodeString(runtime, cs);
     }
     
     ////////////////////////////////////////////////////////////////////////////
