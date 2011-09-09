@@ -37,7 +37,6 @@ public class NaiveInterpreterContext implements InterpreterContext {
     // - self.getMetaClass() if we are executing an instance method of 'self'
     // - the class in which the closure is lexically defined in if we are executing a closure
     public NaiveInterpreterContext(ThreadContext context, IRExecutionScope irScope, RubyModule currentModule, IRubyObject self, String name, IRubyObject[] parameters, Block block, Block.Type blockType) {
-        context.preMethodFrameOnly(currentModule, name, self, block);
         this.irScope = irScope;
         this.frame = context.getCurrentFrame();
         this.parameters = parameters;

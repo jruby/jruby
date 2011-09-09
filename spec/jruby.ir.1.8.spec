@@ -20,16 +20,14 @@ class MSpecScript
     SPEC_DIR + '/core',
 
     # Current crashers
-    '^' + SPEC_DIR + '/language/if',
-    '^' + SPEC_DIR + '/language/super',
+    '^' + SPEC_DIR + '/language/if',         # FlipNode not implemented yet
     '^' + SPEC_DIR + '/language/eigenclass', # infinite loop because of bug in RubyModule
     '^' + SPEC_DIR + '/language/metaclass',  # infinite loop because of bug in RubyModule
-    '^' + SPEC_DIR + '/core/binding',
-    '^' + SPEC_DIR + '/core/io/open',
-    '^' + SPEC_DIR + '/core/kernel/binding',
-    '^' + SPEC_DIR + '/core/thread/run',
-    '^' + SPEC_DIR + '/core/thread/raise',  # infinite loop?
-    '^' + SPEC_DIR + '/core/thread/wakeup',
+    '^' + SPEC_DIR + '/core/binding',        # AddBindingInstructions pass bug
+    '^' + SPEC_DIR + '/core/kernel/binding', # AddBindingInstructions pass bug
+    '^' + SPEC_DIR + '/core/thread/run',     # infinite loop because of AddBindingInstructions bugs
+    '^' + SPEC_DIR + '/core/thread/raise',   # infinite loop because of AddBindingInstructions bugs
+    '^' + SPEC_DIR + '/core/thread/wakeup',  # infinite loop because of AddBindingInstructions bugs
 
     # 1.9
     '^' + SPEC_DIR + '/core/basicobject'

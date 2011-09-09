@@ -35,8 +35,9 @@ public class InterpretedIRMethod extends DynamicMethod {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-        InterpreterContext interp = new NaiveInterpreterContext(context, method, getImplementationClass(), self, name, args, block, null);
-//        Arity.checkArgumentCount(context.getRuntime(), args.length, requiredArgsCount, method.get???);
+        RubyModule currentModule = getImplementationClass();
+        context.preMethodFrameOnly(currentModule, name, self, block);
+        InterpreterContext interp = new NaiveInterpreterContext(context, method, currentModule, self, name, args, block, null);
         if (Interpreter.isDebug()) {
             // FIXME: name should probably not be "" ever.
             String realName = name == null || "".equals(name) ? method.getName() : name;
@@ -49,8 +50,8 @@ public class InterpretedIRMethod extends DynamicMethod {
             method.prepareForInterpretation();
             cfg = method.getCFG();
         }
-		  // Do this *after* the method has been prepared!
-		  interp.allocateSharedBindingScope(context, method);
+        // Do this *after* the method has been prepared!
+        interp.allocateSharedBindingScope(context, method);
         if (Interpreter.isDebug() && displayedCFG == false) {
             System.out.println("CFG:\n" + cfg.getGraph());
             System.out.println("\nInstructions:\n" + cfg.toStringInstrs());
@@ -58,7 +59,13 @@ public class InterpretedIRMethod extends DynamicMethod {
         }
 
         context.getCurrentScope().getStaticScope().setModule(clazz);
-        return Interpreter.INTERPRET_METHOD(context, method, interp, self, name, getImplementationClass(), false);
+        try {
+            return Interpreter.INTERPRET_METHOD(context, method, interp, self, name, getImplementationClass(), false);
+        } finally {
+            context.popFrame();
+            interp.setFrame(null);
+            if (interp.hasAllocatedDynamicScope()) context.postMethodScopeOnly();
+        }
     }
 
     @Override
