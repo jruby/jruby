@@ -251,6 +251,29 @@ class TestZlib < Test::Unit::TestCase
     assert (!z.sync_point?)
   end
 
+  def test_inflate_broken_data_with_sync
+    d = Zlib::Deflate.new
+    i = Zlib::Inflate.new
+
+    foo = d.deflate("foo", Zlib::SYNC_FLUSH)
+    noise = "noise"+d.deflate("*", Zlib::SYNC_FLUSH)
+    bar = d.deflate("bar", Zlib::SYNC_FLUSH)
+
+    begin
+      i << (foo+noise+bar)
+    rescue Zlib::DataError
+    end
+
+    i.sync(d.finish)
+
+    begin
+     i.finish
+    rescue Zlib::DataError  # failed in checking checksum because of broken data
+    end
+
+    assert_equal("foobar", i.flush_next_out)
+  end
+
   # JRUBY-4502: 1.4 raises native exception at gz.read
   def test_corrupted_data
     data = '12345abcde'

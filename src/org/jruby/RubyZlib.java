@@ -1116,14 +1116,31 @@ public class RubyZlib {
 
         public void append(ByteList obj) {
             if (!internalFinished()) {
-                byte[] bytes = obj.bytes();
-                flater.next_in=bytes;
-                flater.next_in_index=0;
-                flater.avail_in=bytes.length;
+                append_to_flater(obj);
             } else {
                 input.append(obj);
             }
             run(false);
+        }
+
+        private void append_to_flater(ByteList obj) {
+            byte[] bytes = obj.bytes();
+            if(flater.avail_in>0){  
+                // input data has not been consumed yet, so append obj to it.
+                byte[] tmp = new byte[flater.avail_in+bytes.length];
+                System.arraycopy(flater.next_in, flater.next_in_index,
+                                 tmp, 0, flater.avail_in);
+                System.arraycopy(bytes, 0, 
+                                 tmp, flater.avail_in, bytes.length);
+                flater.next_in=tmp;
+                flater.next_in_index=0;
+                flater.avail_in+=bytes.length;
+            }
+            else{
+                flater.next_in=bytes;
+                flater.next_in_index=0;
+                flater.avail_in=bytes.length;
+            }
         }
 
         @JRubyMethod(name = "sync_point?")
@@ -1134,12 +1151,12 @@ public class RubyZlib {
         public IRubyObject sync_point() {
             int ret = flater.syncPoint();
             switch(ret){
-                case com.jcraft.jzlib.JZlib.Z_STREAM_END:
+                case 1:
                     return getRuntime().getTrue();
-                case com.jcraft.jzlib.JZlib.Z_OK:
-                    return getRuntime().getFalse();
-                default:
+                case com.jcraft.jzlib.JZlib.Z_DATA_ERROR:
                     throw Util.newStreamError(getRuntime(), "stream error");
+                default:
+                    return getRuntime().getFalse();
             }
         }
 
@@ -1189,6 +1206,7 @@ public class RubyZlib {
             if(flater.avail_in>0){
                 switch(flater.sync()){
                     case com.jcraft.jzlib.JZlib.Z_OK:
+                        append_to_flater(string.convertToString().getByteList());
                         return getRuntime().getTrue();
                     case com.jcraft.jzlib.JZlib.Z_DATA_ERROR:
                         break;
@@ -1227,11 +1245,24 @@ public class RubyZlib {
                 int ret = flater.inflate(com.jcraft.jzlib.JZlib.Z_NO_FLUSH);
                 switch(ret){
                     case com.jcraft.jzlib.JZlib.Z_DATA_ERROR:
+                        resultLength = flater.next_out_index;
+                        if(resultLength>0){
+                            // error has been occurred,
+                            // but some data has been inflated successfully.
+                            collected.append(outp, 0, resultLength);
+                        }
                         throw Util.newDataError(runtime, flater.msg);
                     case com.jcraft.jzlib.JZlib.Z_NEED_DICT:
                          throw Util.newDictError(runtime, "need dictionary");
-                    case com.jcraft.jzlib.JZlib.Z_OK:
                     case com.jcraft.jzlib.JZlib.Z_STREAM_END:
+                        if(flater.avail_in>0){
+                          // MRI behavior: pass-through
+                          input.append(flater.next_in, 
+                                       flater.next_in_index, flater.avail_in);
+                          flater.next_in_index=flater.next_in.length;
+                          flater.avail_in=0;
+                        } 
+                    case com.jcraft.jzlib.JZlib.Z_OK:
                         resultLength = flater.next_out_index;
                         break;
                     default:
@@ -1295,7 +1326,7 @@ public class RubyZlib {
         protected void internalClose() {
             if(!internalFinished()){
                 int err = flater.inflate(com.jcraft.jzlib.JZlib.Z_FINISH);
-                if(err!=com.jcraft.jzlib.JZlib.Z_OK){
+                if(err != com.jcraft.jzlib.JZlib.Z_OK){
                     Ruby runtime = getRuntime();
                     throw Util.newBufError(runtime, "buffer error");
                 }
