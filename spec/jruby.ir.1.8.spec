@@ -22,10 +22,11 @@ class MSpecScript
     # Current crashers
     '^' + SPEC_DIR + '/language/if',
     '^' + SPEC_DIR + '/language/super',
+    '^' + SPEC_DIR + '/language/eigenclass', # infinite loop because of bug in RubyModule
+    '^' + SPEC_DIR + '/language/metaclass',  # infinite loop because of bug in RubyModule
     '^' + SPEC_DIR + '/core/binding',
     '^' + SPEC_DIR + '/core/io/open',
     '^' + SPEC_DIR + '/core/kernel/binding',
-    '^' + SPEC_DIR + '/core/proc/new',
     '^' + SPEC_DIR + '/core/thread/run',
     '^' + SPEC_DIR + '/core/thread/raise',  # infinite loop?
     '^' + SPEC_DIR + '/core/thread/wakeup',
