@@ -233,7 +233,12 @@ public class CallInstr extends MultiOperandInstr {
         String name = ma.toString(); // SSS FIXME: If this is not a ruby string or a symbol, then this is an error in the source code!
         Object resultValue;
         Block  block = prepareBlock(interp, context, self);
-        resultValue = RuntimeHelpers.invoke(context, object, name, args, block);
+        try {
+            resultValue = RuntimeHelpers.invoke(context, object, name, args, block);
+        }
+        finally {
+            block.escape();
+        }
         getResult().store(interp, context, self, resultValue);
         return null;
     }
