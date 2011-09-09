@@ -117,27 +117,25 @@ public class Interpreter {
                     } catch (IRBreakJump bj) {
                         if (lastInstr instanceof THROW_EXCEPTION_Instr) throw bj; // pass it along if we just executed a throw!
 
-                        if ((lastInstr instanceof BREAK_Instr) && (!inClosure || interp.inProc()))
-                            throw runtime.newLocalJumpError(Reason.BREAK, (IRubyObject)bj.breakValue, "unexpected break");
+                        if (lastInstr instanceof BREAK_Instr) {
+                            // Error
+                            if (!inClosure || interp.inProc()) throw runtime.newLocalJumpError(Reason.BREAK, (IRubyObject)bj.breakValue, "unexpected break");
 
-                        if (interp.inLambda()) {
                             // Lambda special case.  We are in a lambda and breaking out of it requires popping out exactly one level up.
-                            if (lastInstr instanceof BREAK_Instr) {
-                                bj.caughtByLambda = true;
-                                throw bj;
-                            }
-                            else {
-                                // We just unwound all the way up because of a non-local break
-                                throw runtime.newLocalJumpError(Reason.BREAK, (IRubyObject)bj.breakValue, "unexpected break");
-                            }
+                            if (interp.inLambda()) bj.caughtByLambda = true;
+
+                            // Pass it upward
+                            throw bj;
+                        } else if (interp.inLambda()) {
+                            // We just unwound all the way up because of a non-local break
+                            throw runtime.newLocalJumpError(Reason.BREAK, (IRubyObject)bj.breakValue, "unexpected break");
                         } else if (bj.caughtByLambda || (bj.scopeToReturnTo == cfg.getScope())) {
                             // We got where we need to get to (because a lambda stopped us, or because we popped to the
                             // lexical scope where we got called from).  Retrieve the result and store it.
                             Operand r = lastInstr.getResult();
                             if (r != null) r.store(interp, context, self, bj.breakValue);
                             ipc += 1;
-                        }
-                        else {
+                        } else {
                             // We need to continue to break upwards.
                             // Run any ensures we need to run before breaking up. 
                             // Quite easy to do this by passing 'bj' as the exception to the ensure block!
