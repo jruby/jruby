@@ -39,15 +39,7 @@ import java.util.Map;
 import java.util.HashMap;
 
 import org.jcodings.Encoding;
-import org.jcodings.EncodingDB;
 import org.jcodings.specific.ASCIIEncoding;
-import org.jcodings.specific.CP1251Encoding;
-import org.jcodings.specific.EUCJPEncoding;
-import org.jcodings.specific.ISO8859_1Encoding;
-import org.jcodings.specific.SJISEncoding;
-import org.jcodings.specific.UTF16BEEncoding;
-import org.jcodings.specific.UTF32BEEncoding;
-import org.jcodings.specific.UTF8Encoding;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
@@ -63,22 +55,22 @@ import org.jruby.ext.nkf.Command;
 
 @JRubyModule(name="NKF")
 public class RubyNKF {
-    public static final NKFCharset AUTO = new NKFCharset(0, "x-JISAutoDetect", SJISEncoding.INSTANCE);
+    public static final NKFCharset AUTO = new NKFCharset(0, "x-JISAutoDetect");
     // no ISO-2022-JP in jcodings
-    public static final NKFCharset JIS = new NKFCharset(1, "iso-2022-jp", SJISEncoding.INSTANCE);
-    public static final NKFCharset EUC = new NKFCharset(2, "EUC-JP", EUCJPEncoding.INSTANCE);
-    public static final NKFCharset SJIS = new NKFCharset(3, "Windows-31J", CP1251Encoding.INSTANCE);
-    public static final NKFCharset BINARY = new NKFCharset(4, null, null);
-    public static final NKFCharset NOCONV = new NKFCharset(4, null, null);
-    public static final NKFCharset UNKNOWN = new NKFCharset(0, null, null);
-    public static final NKFCharset ASCII = new NKFCharset(5, "iso-8859-1", ISO8859_1Encoding.INSTANCE);
-    public static final NKFCharset UTF8 = new NKFCharset(6, "UTF-8", UTF8Encoding.INSTANCE);
-    public static final NKFCharset UTF16 = new NKFCharset(8, "UTF-16", UTF16BEEncoding.INSTANCE);
-    public static final NKFCharset UTF32 = new NKFCharset(12, "UTF-32", UTF32BEEncoding.INSTANCE);
-    public static final NKFCharset OTHER = new NKFCharset(16, null, null);
-    public static final NKFCharset BASE64 = new NKFCharset(20, "base64", null);
-    public static final NKFCharset QENCODE = new NKFCharset(21, "qencode", null);
-    public static final NKFCharset MIME_DETECT = new NKFCharset(22, "MimeAutoDetect", null);
+    public static final NKFCharset JIS = new NKFCharset(1, "iso-2022-jp");
+    public static final NKFCharset EUC = new NKFCharset(2, "EUC-JP");
+    public static final NKFCharset SJIS = new NKFCharset(3, "Windows-31J");
+    public static final NKFCharset BINARY = new NKFCharset(4, null);
+    public static final NKFCharset NOCONV = new NKFCharset(4, null);
+    public static final NKFCharset UNKNOWN = new NKFCharset(0, null);
+    public static final NKFCharset ASCII = new NKFCharset(5, "iso-8859-1");
+    public static final NKFCharset UTF8 = new NKFCharset(6, "UTF-8");
+    public static final NKFCharset UTF16 = new NKFCharset(8, "UTF-16");
+    public static final NKFCharset UTF32 = new NKFCharset(12, "UTF-32");
+    public static final NKFCharset OTHER = new NKFCharset(16, null);
+    public static final NKFCharset BASE64 = new NKFCharset(20, "base64");
+    public static final NKFCharset QENCODE = new NKFCharset(21, "qencode");
+    public static final NKFCharset MIME_DETECT = new NKFCharset(22, "MimeAutoDetect");
 
     private static final ByteList BEGIN_MIME_STRING = new ByteList(ByteList.plain("=?"));
     private static final ByteList END_MIME_STRING = new ByteList(ByteList.plain("?="));
@@ -88,12 +80,10 @@ public class RubyNKF {
     public static class NKFCharset {
         private final int value;
         private final String charset;
-        private final Encoding encoding;
 
-        public NKFCharset(int v, String c, Encoding encoding) {
+        public NKFCharset(int v, String c) {
             value = v;
             charset = c;
-            this.encoding = encoding;
         }
 
         public int getValue() {
@@ -102,10 +92,6 @@ public class RubyNKF {
 
         public String getCharset() {
             return charset;
-        }
-        
-        public Encoding getEncoding() {
-            return encoding;
         }
     }
 
@@ -476,7 +462,12 @@ public class RubyNKF {
             }
             byte[] arr = buf.array();
             ByteList r = new ByteList(arr, 0, buf.limit());
-            r.setEncoding(output.getEncoding());
+            if (outputCharset.equalsIgnoreCase("Windows-31J")) outputCharset = "Shift_JIS";
+            Ruby ruby = context.getRuntime();
+            Encoding enc = ruby.getEncodingService().findEncoding(ruby.newString(outputCharset));
+            if (enc != null) {
+                r.setEncoding(enc);
+            }
 
             return r;
         }
