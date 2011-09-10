@@ -281,6 +281,32 @@ public class RubyZlib {
         return recv.getRuntime().newArray(ll);
     }
 
+    @JRubyMethod(name = "crc32_combine", required = 3, module = true, visibility = PRIVATE)
+    public static IRubyObject crc32_combine(IRubyObject recv,
+                                            IRubyObject arg0,
+                                            IRubyObject arg1,
+                                            IRubyObject arg2) {
+        long crc1 = RubyNumeric.num2long(arg0);
+        long crc2 = RubyNumeric.num2long(arg1);
+        long len2 = RubyNumeric.num2long(arg2);
+
+        long crc3 = com.jcraft.jzlib.JZlib.crc32_combine(crc1, crc2, len2);
+        return recv.getRuntime().newFixnum(crc3);
+    }
+
+    @JRubyMethod(name = "adler32_combine", required = 3, module = true, visibility = PRIVATE)
+    public static IRubyObject adler32_combine(IRubyObject recv,
+                                            IRubyObject arg0,
+                                            IRubyObject arg1,
+                                            IRubyObject arg2) {
+        long adler1 = RubyNumeric.num2long(arg0);
+        long adler2 = RubyNumeric.num2long(arg1);
+        long len2 = RubyNumeric.num2long(arg2);
+
+        long adler3 = com.jcraft.jzlib.JZlib.adler32_combine(adler1, adler2, len2);
+        return recv.getRuntime().newFixnum(adler3);
+    }
+
     @JRubyClass(name="Zlib::ZStream")
     public static abstract class ZStream extends RubyObject {
         protected boolean closed = false;

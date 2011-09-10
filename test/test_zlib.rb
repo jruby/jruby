@@ -421,6 +421,27 @@ class TestZlib < Test::Unit::TestCase
     assert_equal(data+"goo",
                  i.inflate(data2) + i.finish);
   end
+
+  def test_adler32_combine
+    one = Zlib.adler32("fo")
+    two = Zlib.adler32("o")
+    begin
+      assert_equal(0x02820145, Zlib.adler32_combine(one, two, 1))
+    rescue NotImplementedError
+      skip "adler32_combine is not implemented"
+    end
+  end
+
+  def test_crc32_combine
+    one = Zlib.crc32("fo")
+    two = Zlib.crc32("o")
+    begin
+      assert_equal(0x8c736521, Zlib.crc32_combine(one, two, 1))
+    rescue NotImplementedError
+      skip "crc32_combine is not implemented"
+    end
+  end
+
 end
 
 # Test for MAX_WBITS + 16
