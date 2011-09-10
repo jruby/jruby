@@ -238,9 +238,6 @@ class TestZlib < Test::Unit::TestCase
     assert_equal("", z.flush_next_in)
   end
 
-  # TODO: JRuby doesn't fully support this
-  # very low-level Inflate#sync method, so
-  # we just always return false.
   def test_inflate_sync
     z = Zlib::Inflate.new
     z << Zlib::Deflate.deflate('foo')
@@ -249,6 +246,36 @@ class TestZlib < Test::Unit::TestCase
     assert_equal("foo", z.finish)
     assert (!z.sync(''))
     assert (!z.sync_point?)
+  end
+
+  def test_sync
+    z = Zlib::Deflate.new
+    s = z.deflate("foo" * 1000, Zlib::FULL_FLUSH)
+    z.avail_out = 0
+    z.params(Zlib::NO_COMPRESSION, Zlib::FILTERED)
+    s << z.deflate("bar" * 1000, Zlib::FULL_FLUSH)
+    z.avail_out = 0
+    z.params(Zlib::BEST_COMPRESSION, Zlib::HUFFMAN_ONLY)
+    s << z.deflate("baz" * 1000, Zlib::FINISH)
+
+    z = Zlib::Inflate.new
+    assert_raise(Zlib::DataError) { z << "\0" * 100 }
+    assert_equal(false, z.sync(""))
+    assert_equal(false, z.sync_point?)
+
+    z = Zlib::Inflate.new
+    assert_raise(Zlib::DataError) { z << "\0" * 100 + s }
+    assert_equal(true, z.sync(""))
+    #assert_equal(true, z.sync_point?)
+    assert(z.avail_in>0)
+
+    z = Zlib::Inflate.new
+    assert_equal(false, z.sync("\0" * 100))
+    assert_equal(false, z.sync_point?)
+
+    z = Zlib::Inflate.new
+    assert_equal(true, z.sync("\0" * 100 + s))
+    #assert_equal(true, z.sync_point?)
   end
 
   def test_inflate_broken_data_with_sync

@@ -1116,31 +1116,11 @@ public class RubyZlib {
 
         public void append(ByteList obj) {
             if (!internalFinished()) {
-                append_to_flater(obj);
+                flater.setInput(obj.bytes(), true);
             } else {
                 input.append(obj);
             }
             run(false);
-        }
-
-        private void append_to_flater(ByteList obj) {
-            byte[] bytes = obj.bytes();
-            if(flater.avail_in>0){  
-                // input data has not been consumed yet, so append obj to it.
-                byte[] tmp = new byte[flater.avail_in+bytes.length];
-                System.arraycopy(flater.next_in, flater.next_in_index,
-                                 tmp, 0, flater.avail_in);
-                System.arraycopy(bytes, 0, 
-                                 tmp, flater.avail_in, bytes.length);
-                flater.next_in=tmp;
-                flater.next_in_index=0;
-                flater.avail_in+=bytes.length;
-            }
-            else{
-                flater.next_in=bytes;
-                flater.next_in_index=0;
-                flater.avail_in=bytes.length;
-            }
         }
 
         @JRubyMethod(name = "sync_point?")
@@ -1206,7 +1186,8 @@ public class RubyZlib {
             if(flater.avail_in>0){
                 switch(flater.sync()){
                     case com.jcraft.jzlib.JZlib.Z_OK:
-                        append_to_flater(string.convertToString().getByteList());
+                        flater.setInput(string.convertToString().getByteList().bytes(),
+                                        true);
                         return getRuntime().getTrue();
                     case com.jcraft.jzlib.JZlib.Z_DATA_ERROR:
                         break;
@@ -1216,7 +1197,7 @@ public class RubyZlib {
             }
             if(string.convertToString().getByteList().length()<=0)
                 return getRuntime().getFalse();
-            append(context, string);
+            flater.setInput(string.convertToString().getByteList().bytes(), true);
             switch(flater.sync()){
                 case com.jcraft.jzlib.JZlib.Z_OK:
                     return getRuntime().getTrue();
@@ -1239,9 +1220,8 @@ public class RubyZlib {
                     throw Util.newBufError(runtime, "buffer error");
                 }
 
-                flater.next_out = outp;
-                flater.next_out_index = 0;
-                flater.avail_out = outp.length;
+                flater.setOutput(outp);
+
                 int ret = flater.inflate(com.jcraft.jzlib.JZlib.Z_NO_FLUSH);
                 switch(ret){
                     case com.jcraft.jzlib.JZlib.Z_DATA_ERROR:
@@ -1259,8 +1239,7 @@ public class RubyZlib {
                           // MRI behavior: pass-through
                           input.append(flater.next_in, 
                                        flater.next_in_index, flater.avail_in);
-                          flater.next_in_index=flater.next_in.length;
-                          flater.avail_in=0;
+                          flater.setInput("".getBytes());
                         } 
                     case com.jcraft.jzlib.JZlib.Z_OK:
                         resultLength = flater.next_out_index;
@@ -1332,6 +1311,11 @@ public class RubyZlib {
                 }
             }
             flater.end();
+        }
+
+        @Override
+        public IRubyObject avail_in() {
+            return getRuntime().newFixnum(flater.avail_in);
         }
     }
 
@@ -1411,9 +1395,13 @@ public class RubyZlib {
             flater = new com.jcraft.jzlib.Deflater();
 
             int err =  flater.init(level, windowBits, memlevel); 
-            // TODO: checking err
+            if(err == com.jcraft.jzlib.JZlib.Z_STREAM_ERROR){
+                throw Util.newStreamError(getRuntime(), "stream error");
+            }
             err = flater.params(level, strategy);
-            // TODO: checking err
+            if(err == com.jcraft.jzlib.JZlib.Z_STREAM_ERROR){
+                throw Util.newStreamError(getRuntime(), "stream error");
+            }
 
             collected = new ByteList(BASE_SIZE);
         }
@@ -1468,7 +1456,9 @@ public class RubyZlib {
             flater.avail_out = flater.next_out.length;
             flater.next_out_index = 0;
             int err = flater.params(l, s);
-            // TODO: checking err
+            if(err == com.jcraft.jzlib.JZlib.Z_STREAM_ERROR){
+                throw Util.newStreamError(getRuntime(), "stream error");
+            }
             if(flater.next_out_index>0)
                 collected.append(flater.next_out, 0, flater.next_out_index);
             run();
@@ -1479,7 +1469,10 @@ public class RubyZlib {
         public IRubyObject set_dictionary(ThreadContext context, IRubyObject arg) {
             try {
                 byte [] tmp = arg.convertToString().getBytes();
-                flater.setDictionary(tmp, tmp.length);
+                int err = flater.setDictionary(tmp, tmp.length);
+                if(err == com.jcraft.jzlib.JZlib.Z_STREAM_ERROR){
+                    throw Util.newStreamError(context.getRuntime(), "stream error: ");
+		} 
                 run();
                 return arg;
             } catch (IllegalArgumentException iae) {
@@ -1560,18 +1553,16 @@ public class RubyZlib {
         }
 
         private void append(ByteList obj) throws IOException {
-            flater.next_in=obj.getUnsafeBytes();
-            flater.next_in_index=obj.getBegin();
-            flater.avail_in=obj.getRealSize();
+            flater.setInput(obj.getUnsafeBytes(),
+                            obj.getBegin(),
+                            obj.getRealSize(), true);
             run();
         }
 
         private IRubyObject flush(int flush) {
             this.flush=flush;
-            if (flush == Z_NO_FLUSH) { // TODO: ???
+            if (flush == Z_NO_FLUSH) {
                 return RubyString.newEmptyString(getRuntime());
-            }
-            if (flush == Z_FINISH) {  // TODO: ???
             }
             run();
             IRubyObject obj = RubyString.newString(getRuntime(), collected);
@@ -1595,10 +1586,13 @@ public class RubyZlib {
                 return;
             byte[] outp = new byte[1024];
             while (!internalFinished()){
-                flater.next_out = outp;
-                flater.next_out_index = 0;
-                flater.avail_out = flater.next_out.length;
-                int err = flater.deflate(flush); // TODO
+                flater.setOutput(outp);
+                int err = flater.deflate(flush);
+                switch(err){
+                    case com.jcraft.jzlib.JZlib.Z_STREAM_ERROR:
+                        throw Util.newStreamError(getRuntime(), "stream error: ");
+                    default:
+                }
                 int resultLength = flater.next_out_index;
                 if(resultLength == 0)
                     break;
