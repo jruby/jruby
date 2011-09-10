@@ -159,6 +159,7 @@ import org.jruby.compiler.ir.instructions.RubyInternalCallInstr.RubyInternalsMet
 import org.jruby.compiler.ir.instructions.SET_RETADDR_Instr;
 import org.jruby.compiler.ir.instructions.SetArgumentsInstr;
 import org.jruby.compiler.ir.instructions.SearchConstInstr;
+import org.jruby.compiler.ir.instructions.SuperInstr;
 import org.jruby.compiler.ir.instructions.ThreadPollInstr;
 import org.jruby.compiler.ir.instructions.THROW_EXCEPTION_Instr;
 import org.jruby.compiler.ir.instructions.YieldInstr;
@@ -3005,13 +3006,30 @@ public class IRBuilder {
         return copyAndReturnValue(s, new StringLiteral(strNode.getValue()));
     }
 
-    public Operand buildSuper(SuperNode superNode, IRScope s) {
-        List<Operand> args  = setupCallArgs(superNode.getArgsNode(), s);
-        Operand       block = setupCallClosure(superNode.getIterNode(), s);
-        Variable      ret   = s.getNewTemporaryVariable();
-        s.addInstr(new RubyInternalCallInstr(ret, RubyInternalsMethod.SUPER, getSelf(s),
-                args.toArray(new Operand[args.size()]), block));
+    private Operand buildSuperInstr(IRScope s, Node iterNode, Operand[] args) {
+        MethAddr maddr;
+        if (s instanceof IRClosure) {
+            // We dont always know the method name we are going to be invoking if the super occurs in a closure.
+            // This is because the super can be part of a block that will be used by 'define_method' to define
+            // a new method.  In that case, the method called by super will be determined by the 'name' argument
+            // to 'define_method'.
+            maddr = MethAddr.UNKNOWN_SUPER_TARGET;
+        }
+        else {
+            // The case where the method is a class root method is an error in the Ruby code.
+            // SSS FIXME: Should we insert an exception instruction here since we know this lexically?
+            IRMethod method = (IRMethod) s;
+            maddr = IRModule.isAClassRootMethod(method) ? MethAddr.NO_METHOD : new MethAddr(method.getName());
+        }
+        Operand  block = setupCallClosure(iterNode, s);
+        Variable ret   = s.getNewTemporaryVariable();
+        s.addInstr(new SuperInstr(ret, getSelf(s), maddr, args, block));
         return ret;
+    }
+
+    public Operand buildSuper(SuperNode superNode, IRScope s) {
+        List<Operand> args = setupCallArgs(superNode.getArgsNode(), s);
+        return buildSuperInstr(s, superNode.getIterNode(), args.toArray(new Operand[args.size()]));
     }
 
     public Operand buildSValue(SValueNode node, IRScope s) {
@@ -3151,11 +3169,8 @@ public class IRBuilder {
     }
 
     public Operand buildZSuper(ZSuperNode zsuperNode, IRScope s) {
-        Operand    block = setupCallClosure(zsuperNode.getIterNode(), s);
-        Variable   ret   = s.getNewTemporaryVariable();
-        s.addInstr(new RubyInternalCallInstr(ret, RubyInternalsMethod.ZSUPER, getSelf(s),
-                ((IRExecutionScope) s).getClosestMethodAncestor().getCallArgs(), block));
-        return ret;
+        Operand[] args = (s instanceof IRClosure) ? ((IRClosure)s).getBlockArgs() : ((IRMethod)s).getCallArgs();
+        return buildSuperInstr(s, zsuperNode.getIterNode(), args);
     }
 
     public void buildArgsCatArguments(List<Operand> args, ArgsCatNode argsCatNode, IRScope s) {

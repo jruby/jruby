@@ -14,14 +14,18 @@ import org.jruby.runtime.builtin.IRubyObject;
 //   Ex:  .. { |a| .. }
 // The closure receives 'a' via this instruction
 public class ReceiveClosureArgInstr extends NoOperandInstr {
-    public final int     argIndex;
-    public final boolean restOfArgArray;
+    public final int argIndex;
+    boolean restOfArgArray;
 
     public ReceiveClosureArgInstr(Variable dest, int argIndex, boolean restOfArgArray) {
         super(Operation.RECV_CLOSURE_ARG, dest);
         
         this.argIndex = argIndex;
         this.restOfArgArray = restOfArgArray;
+    }
+    
+    public boolean isRestOfArgArray() {
+        return restOfArgArray;
     }
 
     @Override

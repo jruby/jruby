@@ -7,6 +7,9 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class MethAddr extends Reference {
+    public static final MethAddr NO_METHOD = new MethAddr("");
+    public static final MethAddr UNKNOWN_SUPER_TARGET  = new MethAddr("-unknown-super-target-");
+
     public MethAddr(String name) {
         super(name);
     }

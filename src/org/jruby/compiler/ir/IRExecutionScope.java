@@ -14,7 +14,7 @@ import org.jruby.compiler.ir.compiler_pass.CompilerPass;
 import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
-import org.jruby.compiler.ir.instructions.RubyInternalCallInstr;
+import org.jruby.compiler.ir.instructions.SuperInstr;
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.MethAddr;
@@ -200,8 +200,7 @@ public abstract class IRExecutionScope extends IRScopeImpl {
             if (i instanceof ReceiveClosureInstr)
                 receivesClosureArg = true;
 
-            // SSS FIXME: Should we build a ZSUPER IR Instr rather than have this code here?
-            if ((i instanceof RubyInternalCallInstr) && (((RubyInternalCallInstr) i).implMethod == RubyInternalCallInstr.RubyInternalsMethod.ZSUPER))
+            if (i instanceof SuperInstr)
                 canCaptureCallersBinding = true;
 
             if (i instanceof CallInstr) {

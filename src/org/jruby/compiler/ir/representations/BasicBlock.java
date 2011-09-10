@@ -153,7 +153,7 @@ public class BasicBlock {
                 Operand closureArg;
                 ReceiveClosureArgInstr rcai = (ReceiveClosureArgInstr)i;
                 int argIndex = rcai.argIndex;
-                boolean restOfArgs = rcai.restOfArgArray;
+                boolean restOfArgs = rcai.isRestOfArgArray();
                 if (argIndex < yieldArgs.length) {
                     closureArg = yieldArgs[argIndex].cloneForInlining(ii);
                 }

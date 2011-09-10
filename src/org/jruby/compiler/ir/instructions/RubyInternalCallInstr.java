@@ -31,8 +31,6 @@ public class RubyInternalCallInstr extends CallInstr {
        TO_ARY("to_ary"),
        DEFINE_ALIAS("defineAlias"),
        GVAR_ALIAS("aliasGlobalVariable"),
-       SUPER("super"),
-       ZSUPER("super"),
        FOR_EACH("each"),
        //CHECK_ARITY("checkArity"),
        UNDEF_METHOD("undefMethod");
@@ -115,15 +113,6 @@ public class RubyInternalCallInstr extends CallInstr {
             }
             case GVAR_ALIAS:
                 throw new RuntimeException("GVAR_ALIAS: Not implemented yet!");
-            case SUPER:
-            case ZSUPER:
-            {
-                IRubyObject   object = (IRubyObject)getReceiver().retrieve(interp, context, self);
-                IRubyObject[] args = prepareArguments(interp, context, self, getCallArgs());
-                // SSS FIXME: Do we need to set up the frame in some way so this doesn't bomb?
-                rVal = RuntimeHelpers.invokeSuper(context, object, args, prepareBlock(interp, context, self));
-                break;
-            }
             case UNDEF_METHOD:
                 rVal = RuntimeHelpers.undefMethod(context, getReceiver().retrieve(interp, context, self));
                 break;
@@ -147,16 +136,5 @@ public class RubyInternalCallInstr extends CallInstr {
         if (rVal != null) getResult().store(interp, context, self, rVal);
 
         return null;
-    }
-
-    // SSS FIXME: Copied from runtime/callsite/SuperCallSite!  Probably worth putting in a library
-    protected static void checkSuperDisabledOrOutOfMethod(ThreadContext context, RubyModule frameClass, String frameName) {
-        if (frameClass == null) {
-            if (frameName != null) {
-                throw context.getRuntime().newNameError("superclass method '" + frameName + "' disabled", frameName);
-            } else {
-                throw context.getRuntime().newNoMethodError("super called outside of method", null, context.getRuntime().getNil());
-            }
-        }
     }
 }

@@ -1,11 +1,18 @@
 package org.jruby.compiler.ir;
 
+import java.util.List;
+import java.util.ArrayList;
+
 // Closures are contexts/scopes for the purpose of IR building.  They are self-contained and accumulate instructions
 // that don't merge into the flow of the containing scope.  They are manipulated as an unit.
 // Their parents are always execution scopes.
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.MetaObject;
+import org.jruby.compiler.ir.operands.Operand;
+import org.jruby.compiler.ir.operands.Splat;
 import org.jruby.compiler.ir.operands.Variable;
+import org.jruby.compiler.ir.instructions.Instr;
+import org.jruby.compiler.ir.instructions.ReceiveClosureArgInstr;
 import org.jruby.parser.BlockStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
@@ -29,6 +36,9 @@ public class IRClosure extends IRExecutionScope {
     // with the instructions as an independent closure scope.
     private boolean hasBeenInlined;     
 
+    // Block parameters
+    private List<Operand> blockArgs;
+
     public IRClosure(IRScope lexicalParent, boolean isForLoopBody, StaticScope staticScope, Arity arity, int argumentType) {
         super(lexicalParent, MetaObject.create(lexicalParent), null, staticScope);
         this.isForLoopBody = isForLoopBody;
@@ -37,6 +47,7 @@ public class IRClosure extends IRExecutionScope {
         endLabel = getNewLabel(prefix + "END");
         closureId = lexicalParent.getNextClosureId();
         setName(prefix + closureId);
+        blockArgs = new ArrayList<Operand>();
 
         this.body = new InterpretedIRBlockBody(this, arity, argumentType);
         this.hasBeenInlined = false;
@@ -64,6 +75,18 @@ public class IRClosure extends IRExecutionScope {
 
     public String getScopeName() {
         return "Closure";
+    }
+
+    @Override
+    public void addInstr(Instr i) {
+        // Accumulate block arguments
+        if (i instanceof ReceiveClosureArgInstr) blockArgs.add(((ReceiveClosureArgInstr) i).isRestOfArgArray() ? new Splat(i.result) : i.result);
+
+        super.addInstr(i);
+    }
+
+    public Operand[] getBlockArgs() { 
+        return blockArgs.toArray(new Operand[blockArgs.size()]);
     }
 
 /**
