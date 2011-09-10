@@ -999,9 +999,9 @@ public class Pack {
                     int length = encode.remaining() * 3 / 4;
                     byte[] lElem = new byte[length];
                     int index = 0;
-                    int s;
+                    int s = 0;
                     int total = 0;
-                    s = encode.get();
+                    if (length > 0) s = encode.get();
                     while (encode.hasRemaining() && s > ' ' && s < 'a') {
                         int a, b, c, d;
                         byte[] hunk = new byte[3];
