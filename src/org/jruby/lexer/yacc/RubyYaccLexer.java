@@ -2533,7 +2533,7 @@ public class RubyYaccLexer {
                 if ((c = src.read()) == '\\') {
                     c = readEscape();
                 } else if (c == '?') {
-                    return '\u0177';
+                    return '\177';
                 } else if (c == EOF) {
                     throw new SyntaxException(PID.INVALID_ESCAPE_SYNTAX, getPosition(),
                             getCurrentLine(), "Invalid escape character syntax");
