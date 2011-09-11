@@ -185,7 +185,7 @@ public class CFG {
         _cfg.addVertex(geb);
         _cfg.addEdge(geb, _exitBB)._type = CFG_Edge_Type.DUMMY_EDGE;
         for (BasicBlock b: getNodes()) {
-            if (!bbIsProtected(b)) {
+            if ((b != geb) && !bbIsProtected(b)) {
                 _cfg.addEdge(b, geb)._type = CFG_Edge_Type.EXCEPTION_EDGE;
                 _bbRescuerMap.put(b, geb);
                 _bbEnsurerMap.put(b, geb);
