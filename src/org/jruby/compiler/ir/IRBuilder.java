@@ -1717,7 +1717,7 @@ public class IRBuilder {
 
         // statically determine container where possible?
         // DefineIstanceMethod IR interpretation currently relies on this static determination for handling top-level methods
-        if ((s instanceof IRMethod) && ((IRMethod)s).isAClassRootMethod()) {
+        if ((s instanceof IRMethod) && ((IRMethod)s).isAModuleRootMethod()) {
             container =  MetaObject.create(s.getNearestModule());
             method = defineNewMethod(node, s, container, true);
             s.getNearestModule().addMethod(method);
@@ -2959,13 +2959,25 @@ public class IRBuilder {
 
         // If 'm' is a block scope, a return returns from the closest enclosing method.
         // The runtime takes care of lambdas
-        if (m instanceof IRClosure)
+        if (m instanceof IRClosure) {
             m.addInstr(new ReturnInstr(retVal, ((IRExecutionScope) m).getClosestMethodAncestor()));
-        else
+        } else if (!((IRMethod)m).isAModuleRootMethod()) {
             m.addInstr(new ReturnInstr(retVal));
+        } else {
+            // If 'm' is a root method, find the nearest regular non-root (root methods are synthetic, JRuby-generated) 
+            // method that 'm' is embedded in.  The return will have to snap out of that method.  If there is no such
+            // method, this is a local jump error!
+            IRScope sm = (IRMethod)m;
+            while ((sm != null) && (!(sm instanceof IRMethod) || ((IRMethod)sm).isAModuleRootMethod())) {
+                sm = sm.getLexicalParent();
+            }
+
+            if (sm == null) m.addInstr(new THROW_EXCEPTION_Instr(IRException.RETURN_LocalJumpError));
+            else m.addInstr(new ReturnInstr(retVal, (IRMethod)sm));
+        }
 
         // The value of the return itself in the containing expression can never be used because of control-flow reasons.
-        // The expression that uses this result can never be executed beyond this point and hence the value itself is just
+        // The expression that uses this result can never be executed beyond the return and hence the value itself is just
         // a placeholder operand. 
         return UnexecutableNil.U_NIL;
     }
@@ -3019,7 +3031,7 @@ public class IRBuilder {
             // The case where the method is a class root method is an error in the Ruby code.
             // SSS FIXME: Should we insert an exception instruction here since we know this lexically?
             IRMethod method = (IRMethod) s;
-            maddr = IRModule.isAClassRootMethod(method) ? MethAddr.NO_METHOD : new MethAddr(method.getName());
+            maddr = IRModule.isAModuleRootMethod(method) ? MethAddr.NO_METHOD : new MethAddr(method.getName());
         }
         Operand  block = setupCallClosure(iterNode, s);
         Variable ret   = s.getNewTemporaryVariable();

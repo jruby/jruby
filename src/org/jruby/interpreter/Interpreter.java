@@ -114,8 +114,6 @@ public class Interpreter {
                     // - If not, Just pass it along!
                     throw rj;
                 } catch (IRBreakJump bj) {
-                    if (lastInstr instanceof THROW_EXCEPTION_Instr) throw bj; // pass it along if we just executed a throw!
-
                     if (lastInstr instanceof BREAK_Instr) {
                         // Error
                         if (!inClosure || interp.inProc()) throw runtime.newLocalJumpError(Reason.BREAK, (IRubyObject)bj.breakValue, "unexpected break");
@@ -143,20 +141,14 @@ public class Interpreter {
                         interp.setException(bj); // Found an ensure block, set 'bj' as the exception and transfer control
                     }
                 }
-            }
-            catch (RaiseException re) {
+            } catch (RaiseException re) {
                 if (isDebug()) LOG.debug("in scope: " + cfg.getScope() + ", caught raise exception: " + re.getException() + "; excepting instr: " + lastInstr);
-                if (lastInstr instanceof THROW_EXCEPTION_Instr) throw re; // pass it along if we just executed a throw!
-
                 ipc = cfg.getRescuerPC(lastInstr);
                 if (isDebug()) LOG.debug("ipc for rescuer: " + ipc);
                 if (ipc == -1) throw re; // No one rescued exception, pass it on!
 
                 interp.setException(re.getException());
-            }
-            catch (Error e) {
-                if (lastInstr instanceof THROW_EXCEPTION_Instr) throw e; // pass it along if we just executed a throw!
-
+            } catch (Error e) {
                 ipc = cfg.getEnsurerPC(lastInstr);
                 if (ipc == -1) throw e; // No ensure block here, pass it on! 
                 interp.setException(e);
@@ -166,16 +158,17 @@ public class Interpreter {
         IRubyObject rv = (IRubyObject) interp.getReturnValue(context);
 
         // If not in a lambda, in a closure, and lastInstr was a return, have to return from the nearest method!
-        if ((lastInstr instanceof ReturnInstr) && !interp.inLambda() && inClosure) {
+        if ((lastInstr instanceof ReturnInstr) && !interp.inLambda()) {
             IRMethod methodToReturnFrom = ((ReturnInstr)lastInstr).methodToReturnFrom;
-            // SSS: better way to do this without having to maintain a call stack?
-            // Check with Tom why the block.escape/isEscaped logic isn't working
-            // if (interp.getBlock().isEscaped())
-            if (!callStack.get().contains(methodToReturnFrom)) {
+            if (inClosure && !callStack.get().contains(methodToReturnFrom)) {
+                // SSS: better way to do this without having to maintain a call stack?
+                // Check with Tom why the block.escape/isEscaped logic isn't working
+                // if (interp.getBlock().isEscaped())
                 if (isDebug()) LOG.debug("in scope: " + scope + ", raising unexpected return local jump error");
                 throw runtime.newLocalJumpError(Reason.RETURN, rv, "unexpected return");
             }
-            else {
+            else if (inClosure || (methodToReturnFrom != null)) {
+                // methodtoReturnFrom will not be null for explicit returns from class/module/sclass bodies
                 throw new IRReturnJump(methodToReturnFrom, rv);
             }
         }

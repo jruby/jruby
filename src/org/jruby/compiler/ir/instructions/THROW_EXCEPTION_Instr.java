@@ -31,9 +31,9 @@ public class THROW_EXCEPTION_Instr extends OneOperandInstr {
             Object excObj = getArg().retrieve(interp, context, self);
             if (excObj instanceof IRubyObject)
                 RubyKernel.raise(context, context.getRuntime().getKernel(), new IRubyObject[] {(IRubyObject)excObj}, Block.NULL_BLOCK);
-            else if (excObj instanceof Error)  // from regular ensures
+            else if (excObj instanceof Error)  // from regular ensures -- these should get passed through one level.
                throw (Error)excObj;
-            else // from breaks running ensures
+            else // from breaks running ensures -- these should get passed through one level.
                throw (RuntimeException)excObj;
         }
 

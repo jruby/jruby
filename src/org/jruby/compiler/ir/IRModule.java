@@ -83,7 +83,7 @@ public class IRModule extends IRScopeImpl {
         return coreClasses.get(n);
     }
 
-    public static boolean isAClassRootMethod(IRMethod m) {
+    public static boolean isAModuleRootMethod(IRMethod m) {
         return m.getName().startsWith(ROOT_METHOD_PREFIX);
     }
 
@@ -183,7 +183,7 @@ used, we are now forced to be conservative.
     }
 
     public void addMethod(IRMethod method) {
-        assert !IRModule.isAClassRootMethod(method);
+        assert !IRModule.isAModuleRootMethod(method);
 
         methods.add(method);
     }
