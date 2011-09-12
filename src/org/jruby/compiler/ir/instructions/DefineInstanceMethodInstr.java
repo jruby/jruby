@@ -37,7 +37,7 @@ public class DefineInstanceMethodInstr extends OneOperandInstr {
 
     @Override
     public String toString() {
-        return super.toString() + "(" + getArg() + ", " + method.getName() + ")";
+        return operation + "(" + getArg() + ", " + method.getName() + ")";
     }
 
     @Override
@@ -58,10 +58,31 @@ public class DefineInstanceMethodInstr extends OneOperandInstr {
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         RubyObject arg   = (RubyObject)getArg().retrieve(interp, context, self);
+
+        // SSS FIXME: argh! special case!
+        //
+        // At the top level of a script, there is a "main" object, and all methods defined in this scope get added to Object.
+        // Specifically, consider the example below:
+        //
+        //    bar {
+        //      def foo; .. end
+        //    }
+        //  
+        // Here, foo should be added to Object.  
+        //
+        // In *all* other cases, 'foo' should be added to 'self' if it is a module, or to the metaclass of 'self' if it is not.
+        // The code below implements this generic logic which is buggy for top-level methods defined within blocks.  So, the
+        // current code adds 'foo' to "main".metaclass whereas it should be added to "Object", "main".class
+        //
+        // The fix would be to do this: replace 'arg.getMetaClass' with 'context.getRubyClass', but that feels a little ugly.
+        // Is there a way out?
+        //
+        // RubyModule clazz = (arg instanceof RubyModule) ? (RubyModule)arg : context.getRubyClass();
+
         RubyModule clazz = (arg instanceof RubyModule) ? (RubyModule)arg : arg.getMetaClass();
         String     name  = method.getName();
 
-		  // Error checks and warnings on method definitions
+        // Error checks and warnings on method definitions
         Ruby runtime = context.getRuntime();
         if (clazz == runtime.getDummy()) {
             throw runtime.newTypeError("no class/module to add method");
@@ -82,6 +103,7 @@ public class DefineInstanceMethodInstr extends OneOperandInstr {
 
         DynamicMethod newMethod = new InterpretedIRMethod(method, visibility, clazz);
         clazz.addMethod(name, newMethod);
+        //System.out.println("Added " + name + " to " + clazz + "; self is " + self);
 
         if (visibility == Visibility.MODULE_FUNCTION) {
             clazz.getSingletonClass().addMethod(name, new WrapperMethod(clazz.getSingletonClass(), newMethod, Visibility.PUBLIC));
