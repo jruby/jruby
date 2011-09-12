@@ -1,4 +1,4 @@
-package org.jruby.util.io;
+package org.jruby.ext.jruby;
 
 import java.io.InputStream;
 import java.io.ObjectInputStream;
