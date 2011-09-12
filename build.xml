@@ -1117,7 +1117,7 @@
   </macrodef>
 
   <target name="test-security-manager" depends="jar-jruby">
-    <java classname="org.jruby.Main" fork="true" failonerror="false">
+    <java classname="org.jruby.Main" fork="true" failonerror="true">
       <classpath refid="test.class.path"/>
 
       <sysproperty key="java.security.manager" value=""/>
