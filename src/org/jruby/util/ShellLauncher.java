@@ -64,7 +64,7 @@ import jnr.posix.POSIX;
 import jnr.posix.util.FieldAccess;
 import jnr.posix.util.Platform;
 import org.jruby.javasupport.util.RuntimeHelpers;
-import org.jruby.libraries.RbConfigLibrary;
+import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.ModeFlags;

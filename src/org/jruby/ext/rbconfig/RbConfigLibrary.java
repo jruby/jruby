@@ -13,7 +13,7 @@
  *
  * Copyright (C) 2002-2004 Anders Bengtsson <ndrsbngtssn@yahoo.se>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
- * Copyright (C) 2005 Charles O Nutter
+ * Copyright (C) 2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2006 Nick Sieger
  *
  * Alternatively, the contents of this file may be used under the terms of
@@ -28,7 +28,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby.libraries;
+package org.jruby.ext.rbconfig;
 
 import java.io.IOException;
 import java.net.URL;
