@@ -1895,7 +1895,7 @@ public class Pack {
                                     int padLength = 0;
 
                                     if (occurrences > lCurElemString.length()) {
-                                        padLength = (occurrences - lCurElemString.length()) / 2 + occurrences % 2;
+                                        padLength = (occurrences - lCurElemString.length()) / 2 + (occurrences + lCurElemString.length()) % 2;
                                         occurrences = lCurElemString.length();
                                     }
 
@@ -1929,7 +1929,7 @@ public class Pack {
                                     int padLength = 0;
 
                                     if (occurrences > lCurElemString.length()) {
-                                        padLength = (occurrences - lCurElemString.length()) / 2 + occurrences % 2;
+                                        padLength = (occurrences - lCurElemString.length()) / 2 + (occurrences + lCurElemString.length()) % 2;
                                         occurrences = lCurElemString.length();
                                     }
 
