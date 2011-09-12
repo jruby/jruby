@@ -463,7 +463,7 @@ public class RubyNKF {
             ByteList r = new ByteList(arr, 0, buf.limit());
             if (outputCharset.equalsIgnoreCase("Windows-31J")) outputCharset = "Shift_JIS";
             Ruby ruby = context.getRuntime();
-            Encoding enc = ruby.getEncodingService().findEncoding(ruby.newString(outputCharset));
+            Encoding enc = ruby.getEncodingService().findEncoding(ruby.newString(outputCharset.equals("UTF-16") ? "UTF-16BE" : outputCharset));
             if (enc != null) {
                 r.setEncoding(enc);
             }
