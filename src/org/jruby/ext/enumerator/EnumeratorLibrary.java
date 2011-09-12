@@ -25,7 +25,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby.libraries;
+package org.jruby.ext.enumerator;
 
 import java.io.IOException;
 
@@ -34,6 +34,10 @@ import org.jruby.RubyEnumerator;
 
 import org.jruby.runtime.load.Library;
 
+/**
+ * As of 1.8.7, Enumerator is always loaded, so this is provided solely for
+ * backward compatibility with require 'enumerator'.
+ */
 public class EnumeratorLibrary implements Library {
     public void load(final Ruby runtime, boolean wrap) throws IOException {
         RubyEnumerator.defineEnumerator(runtime);
