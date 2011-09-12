@@ -121,7 +121,11 @@ public class Pack {
             }
         }
 
-        return (float)RubyKernel.new_float(o, o).getDoubleValue();
+        return (float) RubyKernel.new_float(o, o).getDoubleValue();
+    }
+    
+    private static float obj2flt19(Ruby runtime, IRubyObject o) {
+        return (float) TypeConverter.toFloat(runtime, o).getDoubleValue();        
     }
 
     private static double obj2dbl(Ruby runtime, IRubyObject o) {
@@ -137,6 +141,10 @@ public class Pack {
 
         return RubyKernel.new_float(o, o).getDoubleValue();
     }
+    
+    private static double obj2dbl19(Ruby runtime, IRubyObject o) {
+        return TypeConverter.toFloat(runtime, o).getDoubleValue();        
+    }    
 
     static {
         hex_table = ByteList.plain("0123456789ABCDEF");
@@ -159,9 +167,15 @@ public class Pack {
             public IRubyObject decode(Ruby runtime, ByteBuffer enc) {
                 return RubyFloat.newFloat(runtime, decodeFloatLittleEndian(enc));
             }
+            
             public void encode(Ruby runtime, IRubyObject o, ByteList result){
                 encodeFloatLittleEndian(result, obj2flt(runtime, o));
             }
+            
+            @Override
+            public void encode19(Ruby runtime, IRubyObject o, ByteList result){
+                encodeFloatLittleEndian(result, obj2flt19(runtime, o));
+            }            
         };
         // single precision, big-endian
         converters['g'] = new Converter(4) {
@@ -171,21 +185,34 @@ public class Pack {
             public void encode(Ruby runtime, IRubyObject o, ByteList result){
                 encodeFloatBigEndian(result, obj2flt(runtime, o));
             }
+            
+            @Override
+            public void encode19(Ruby runtime, IRubyObject o, ByteList result){
+                encodeFloatBigEndian(result, obj2flt19(runtime, o));
+            }
         };
         // single precision, native
         Converter tmp = new Converter(4) {
             public IRubyObject decode(Ruby runtime, ByteBuffer enc) {
-                if (Platform.BYTE_ORDER == Platform.BIG_ENDIAN) {
-                    return RubyFloat.newFloat(runtime, decodeFloatBigEndian(enc));
-                } else {
-                    return RubyFloat.newFloat(runtime, decodeFloatLittleEndian(enc));
-                }
+                return RubyFloat.newFloat(runtime, 
+                        Platform.BYTE_ORDER == Platform.BIG_ENDIAN ? 
+                        decodeFloatBigEndian(enc) : decodeFloatLittleEndian(enc));
             }
+            
             public void encode(Ruby runtime, IRubyObject o, ByteList result){
                 if (Platform.BYTE_ORDER == Platform.BIG_ENDIAN) {
                     encodeFloatBigEndian(result, obj2flt(runtime, o));
                 } else {
                     encodeFloatLittleEndian(result, obj2flt(runtime, o));
+                }
+            }
+            
+            @Override
+            public void encode19(Ruby runtime, IRubyObject o, ByteList result) {
+                if (Platform.BYTE_ORDER == Platform.BIG_ENDIAN) {                
+                    encodeFloatBigEndian(result, obj2flt19(runtime, o));
+                } else {
+                    encodeFloatLittleEndian(result, obj2flt19(runtime, o));
                 }
             }
         };
@@ -197,9 +224,15 @@ public class Pack {
             public IRubyObject decode(Ruby runtime, ByteBuffer enc) {
                 return RubyFloat.newFloat(runtime, decodeDoubleLittleEndian(enc));
             }
+            
             public void encode(Ruby runtime, IRubyObject o, ByteList result){
                 encodeDoubleLittleEndian(result, obj2dbl(runtime, o));
             }
+            
+            @Override
+            public void encode19(Ruby runtime, IRubyObject o, ByteList result){
+                encodeDoubleLittleEndian(result, obj2dbl19(runtime, o));
+            }               
         };
         // double precision, big-endian
         converters['G'] = new Converter(8) {
@@ -208,6 +241,11 @@ public class Pack {
             }
             public void encode(Ruby runtime, IRubyObject o, ByteList result){
                 encodeDoubleBigEndian(result, obj2dbl(runtime, o));
+            }
+            
+            @Override
+            public void encode19(Ruby runtime, IRubyObject o, ByteList result){
+                encodeDoubleBigEndian(result, obj2dbl19(runtime, o));
             }
         };
         // double precision, native
@@ -226,6 +264,11 @@ public class Pack {
                     encodeDoubleLittleEndian(result, obj2dbl(runtime, o));
                 }
             }
+            
+            @Override
+            public void encode19(Ruby runtime, IRubyObject o, ByteList result){
+                encodeDoubleLittleEndian(result, obj2dbl19(runtime, o));
+            }     
         };
         converters['D'] = tmp; // double precision, native
         converters['d'] = tmp; // double precision, native

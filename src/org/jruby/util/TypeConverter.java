@@ -34,6 +34,7 @@ import org.jruby.RubyFloat;
 import org.jruby.RubyInteger;
 import org.jruby.RubyNumeric;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class TypeConverter {
@@ -136,6 +137,15 @@ public class TypeConverter {
         return val;
     }
 
+    // MRI: rb_to_float 1.9
+    public static RubyNumeric toFloat(Ruby runtime, IRubyObject obj) {
+        RubyClass floatClass = runtime.getFloat();
+        
+        if (floatClass.isInstance(obj)) return (RubyNumeric) obj;
+        if (!runtime.getNumeric().isInstance(obj)) throw runtime.newTypeError(obj, "Float");
+
+        return (RubyNumeric) convertToType19(obj, floatClass, "to_f", true);
+    }
     /**
      * Checks that this object is of type DATA and then returns it, otherwise raises failure (MRI: Check_Type(obj, T_DATA))
      *
