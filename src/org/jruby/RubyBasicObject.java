@@ -2067,7 +2067,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * The actual method that checks frozen with the default frozen message from MRI.
      * If possible, call this instead of {@link #testFrozen}.
      */
-    protected void checkFrozen() {
+    public void checkFrozen() {
         testFrozen();
     }
 

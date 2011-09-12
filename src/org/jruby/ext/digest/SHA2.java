@@ -26,7 +26,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby.libraries;
+package org.jruby.ext.digest;
 
 import java.io.IOException;
 import org.jruby.Ruby;
@@ -35,6 +35,6 @@ import org.jruby.runtime.load.Library;
 public class SHA2 implements Library {
 
     public void load(final Ruby runtime, boolean wrap) throws IOException {
-        org.jruby.RubyDigest.createDigestSHA2(runtime);
+        org.jruby.ext.digest.RubyDigest.createDigestSHA2(runtime);
     }
 }

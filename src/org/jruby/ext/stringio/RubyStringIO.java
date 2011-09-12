@@ -1027,7 +1027,7 @@ public class RubyStringIO extends RubyObject {
 
     /* rb: check_modifiable */
     @Override
-    protected void checkFrozen() {
+    public void checkFrozen() {
         checkInitialized();
         if (data.internal.isFrozen()) throw getRuntime().newIOError("not modifiable string");
     }
