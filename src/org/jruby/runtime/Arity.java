@@ -63,6 +63,10 @@ public final class Arity implements Serializable {
     private Arity(int value) {
         this.value = value;
     }
+    
+    private static Arity createArity(int required, int optional, boolean rest) {
+        return createArity((optional > 0 || rest) ? -(required + 1) : required);
+    }
 
     public static Arity createArity(int value) {
         switch (value) {
@@ -87,21 +91,15 @@ public final class Arity implements Serializable {
     }
     
     public static Arity fromAnnotation(JRubyMethod anno) {
-        if (anno.optional() > 0 || anno.rest()) {
-            return createArity(-(anno.required() + 1));
-        }
-        return createArity(anno.required());
+        return createArity(anno.required(), anno.optional(), anno.rest());
     }
     
-    public static Arity fromAnnotation(JRubyMethod anno, int actualRequired) {
-        if (anno.optional() > 0 || anno.rest()) {
-            return createArity(-(actualRequired + 1));
-        }
-        return createArity(actualRequired);
+    public static Arity fromAnnotation(JRubyMethod anno, int required) {
+        return createArity(required, anno.optional(), anno.rest());
     }
     
     public static Arity fromAnnotation(JRubyMethod anno, Class[] parameterTypes, boolean isStatic) {
-        int required = 0;
+        int required;
         if (anno.optional() == 0 && !anno.rest() && anno.required() == 0) {
             // try count specific args to determine required
             int i = parameterTypes.length;
@@ -115,10 +113,8 @@ public final class Arity implements Serializable {
         } else {
             required = anno.required();
         }
-        if (anno.optional() > 0 || anno.rest()) {
-            return createArity(-(required + 1));
-        }
-        return createArity(required);
+        
+        return createArity(required, anno.optional(), anno.rest());
     }
     
     private static Arity newArity(int value) {
@@ -211,10 +207,7 @@ public final class Arity implements Serializable {
     }
 
     public int required() {
-        if (value < 0) {
-            return -(1 + value);
-        }
-        return value;
+        return value < 0 ? -(1 + value) : value;
     }
 
     @Override
@@ -229,11 +222,7 @@ public final class Arity implements Serializable {
 
     @Override
     public String toString() {
-        if(isFixed()) {
-            return "Fixed" + required();
-        } else {
-            return "Opt";
-        }
+        return isFixed() ? "Fixed" + required() : "Opt";
     }
 
     // Some helper functions:
@@ -242,29 +231,21 @@ public final class Arity implements Serializable {
         return checkArgumentCount(runtime, args.length, min, max);
     }
 
+    public static int checkArgumentCount(Ruby runtime, int length, int min, int max) {
+        raiseArgumentError(runtime, length, min, max);
+
+        return length;
+    }
+    
+    // FIXME: JRuby 2/next should change this name since it only sometimes raises an error    
     public static void raiseArgumentError(Ruby runtime, IRubyObject[] args, int min, int max) {
         raiseArgumentError(runtime, args.length, min, max);
     }
 
-    public static int checkArgumentCount(Ruby runtime, int length, int min, int max) {
-        int expected = 0;
-        if (length < min) {
-            expected = min;
-        } else if (max > -1 && length > max) {
-            expected = max;
-        } else {
-            return length;
-        }
-        throw runtime.newArgumentError(length, expected);
-    }
-
+    // FIXME: JRuby 2/next should change this name since it only sometimes raises an error
     public static void raiseArgumentError(Ruby runtime, int length, int min, int max) {
-        if (length < min) {
-            throw runtime.newArgumentError(length, min);
-        }
-        if (max > -1 && length > max) {
-            throw runtime.newArgumentError(length, max);
-        }
+        if (length < min) throw runtime.newArgumentError(length, min);
+        if (max > -1 && length > max) throw runtime.newArgumentError(length, max);
     }
 
     /**
