@@ -26,12 +26,18 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby;
+package org.jruby.ext.tempfile;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
+import org.jruby.RubyClass;
+import org.jruby.RubyFile;
+import org.jruby.RubyFixnum;
+import org.jruby.RubyKernel;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
