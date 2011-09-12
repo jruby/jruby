@@ -1,4 +1,0 @@
-fails(JRUBY-5656):Array#pack with format 'G' raises a ArgumentError if a String does not represent a floating point number
-fails(JRUBY-5656):Array#pack with format 'g' raises a ArgumentError if a String does not represent a floating point number
-fails(JRUBY-5656):Array#pack with format 'G' raises a TypeError if passed a String representation of a floating point number
-fails(JRUBY-5656):Array#pack with format 'g' raises a TypeError if passed a String representation of a floating point number
