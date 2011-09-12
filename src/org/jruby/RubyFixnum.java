@@ -1014,8 +1014,8 @@ public class RubyFixnum extends RubyInteger {
     public IRubyObject op_aref(IRubyObject other) {
         if(!(other instanceof RubyFixnum) && !((other = fixCoerce(other)) instanceof RubyFixnum)) {
             RubyBignum big = (RubyBignum) other;
-            RubyObject tryFix = RubyBignum.bignorm(getRuntime(), big.getValue());
-            if (!(tryFix instanceof RubyFixnum)) {
+            other = RubyBignum.bignorm(getRuntime(), big.getValue());
+            if (!(other instanceof RubyFixnum)) {
                 return big.getValue().signum() == 0 || value >= 0 ? RubyFixnum.zero(getRuntime()) : RubyFixnum.one(getRuntime());
             }
         }
