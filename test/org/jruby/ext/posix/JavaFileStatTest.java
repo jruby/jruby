@@ -3,11 +3,11 @@
  * and open the template in the editor.
  */
 
-package org.jruby.ext.posix;
+package jnr.posix;
 
 import junit.framework.TestCase;
 
-import org.jruby.ext.posix.util.Platform;
+import jnr.posix.util.Platform;
 
 /**
  *

@@ -53,7 +53,7 @@ import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 import org.jruby.RubyFile;
 
-import org.jruby.ext.posix.POSIX;
+import jnr.posix.POSIX;
 import org.jruby.util.ByteList;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.log.Logger;

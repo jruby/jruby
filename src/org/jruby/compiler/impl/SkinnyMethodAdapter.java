@@ -20,34 +20,30 @@ import org.objectweb.asm.Attribute;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
-import org.objectweb.asm.MethodHandle;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.util.Printer;
+import org.objectweb.asm.util.Textifier;
 import org.objectweb.asm.util.TraceMethodVisitor;
 
 /**
  *
  * @author headius
  */
-public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
+public class SkinnyMethodAdapter extends MethodVisitor implements Opcodes {
     private final static boolean DEBUG = SafePropertyAccessor.getBoolean("jruby.compile.dump");
     private MethodVisitor method;
+    private Printer printer;
     private String name;
     private ClassVisitor cv;
-    
-    /** Creates a new instance of SkinnyMethodAdapter */
-    public SkinnyMethodAdapter(MethodVisitor method) {
-        setMethodVisitor(method);
-    }
 
     public SkinnyMethodAdapter(ClassVisitor cv, int flags, String name, String signature, String something, String[] exceptions) {
+        super(flags);
         setMethodVisitor(cv.visitMethod(flags, name, signature, something, exceptions));
         this.cv = cv;
         this.name = name;
-    }
-    
-    public SkinnyMethodAdapter() {
     }
     
     public MethodVisitor getMethodVisitor() {
@@ -56,7 +52,8 @@ public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
     
     public void setMethodVisitor(MethodVisitor mv) {
         if (DEBUG) {
-            this.method = new TraceMethodVisitor(mv);
+            this.printer = new Textifier();
+            this.method = new TraceMethodVisitor(mv, printer);
         } else {
             this.method = mv;
         }
@@ -180,7 +177,7 @@ public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
         getMethodVisitor().visitMethodInsn(INVOKEINTERFACE, arg1, arg2, arg3);
     }
 
-    public void invokedynamic(String arg0, String arg1, MethodHandle arg2, Object... arg3) {
+    public void invokedynamic(String arg0, String arg1, Handle arg2, Object... arg3) {
         getMethodVisitor().visitInvokeDynamicInsn(arg0, arg1, arg2, arg3);
     }
     
@@ -542,7 +539,7 @@ public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
             } else {
                 pw.write("*** Dumping ***\n");
             }
-            ((TraceMethodVisitor)getMethodVisitor()).print(pw);
+            printer.print(pw);
             pw.flush();
         }
         getMethodVisitor().visitMaxs(1, 1);
@@ -840,95 +837,116 @@ public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
         visitor.visitEnd();
     }
 
+    @Override
     public void visitAttribute(Attribute arg0) {
         getMethodVisitor().visitAttribute(arg0);
     }
 
+    @Override
     public void visitCode() {
         getMethodVisitor().visitCode();
     }
 
+    @Override
     public void visitInsn(int arg0) {
         getMethodVisitor().visitInsn(arg0);
     }
 
+    @Override
     public void visitIntInsn(int arg0, int arg1) {
         getMethodVisitor().visitIntInsn(arg0, arg1);
     }
 
+    @Override
     public void visitVarInsn(int arg0, int arg1) {
         getMethodVisitor().visitVarInsn(arg0, arg1);
     }
 
+    @Override
     public void visitTypeInsn(int arg0, String arg1) {
         getMethodVisitor().visitTypeInsn(arg0, arg1);
     }
 
+    @Override
     public void visitFieldInsn(int arg0, String arg1, String arg2, String arg3) {
         getMethodVisitor().visitFieldInsn(arg0, arg1, arg2, arg3);
     }
 
+    @Override
     public void visitMethodInsn(int arg0, String arg1, String arg2, String arg3) {
         getMethodVisitor().visitMethodInsn(arg0, arg1, arg2, arg3);
     }
     
-    public void visitInvokeDynamicInsn(String arg0, String arg1, MethodHandle arg2, Object... arg3) {
+    @Override
+    public void visitInvokeDynamicInsn(String arg0, String arg1, Handle arg2, Object... arg3) {
         getMethodVisitor().visitInvokeDynamicInsn(arg0, arg1, arg2, arg3);
     }
 
+    @Override
     public void visitJumpInsn(int arg0, Label arg1) {
         getMethodVisitor().visitJumpInsn(arg0, arg1);
     }
 
+    @Override
     public void visitLabel(Label arg0) {
         getMethodVisitor().visitLabel(arg0);
     }
 
+    @Override
     public void visitLdcInsn(Object arg0) {
         getMethodVisitor().visitLdcInsn(arg0);
     }
 
+    @Override
     public void visitIincInsn(int arg0, int arg1) {
         getMethodVisitor().visitIincInsn(arg0, arg1);
     }
 
+    @Override
     public void visitTableSwitchInsn(int arg0, int arg1, Label arg2,
                                      Label[] arg3) {
         getMethodVisitor().visitTableSwitchInsn(arg0, arg1, arg2, arg3);
     }
 
+    @Override
     public void visitLookupSwitchInsn(Label arg0, int[] arg1, Label[] arg2) {
         getMethodVisitor().visitLookupSwitchInsn(arg0, arg1, arg2);
     }
 
+    @Override
     public void visitMultiANewArrayInsn(String arg0, int arg1) {
         getMethodVisitor().visitMultiANewArrayInsn(arg0, arg1);
     }
 
+    @Override
     public void visitTryCatchBlock(Label arg0, Label arg1, Label arg2,
                                    String arg3) {
         getMethodVisitor().visitTryCatchBlock(arg0, arg1, arg2, arg3);
     }
 
+    @Override
     public void visitLocalVariable(String arg0, String arg1, String arg2,
                                    Label arg3, Label arg4, int arg5) {
         getMethodVisitor().visitLocalVariable(arg0, arg1, arg2, arg3, arg4, arg5);
     }
 
+    @Override
     public void visitLineNumber(int arg0, Label arg1) {
         getMethodVisitor().visitLineNumber(arg0, arg1);
     }
 
+    @Override
     public void visitMaxs(int arg0, int arg1) {
         if (DEBUG) {
             PrintWriter pw = new PrintWriter(System.out);
             pw.write("*** Dumping ***\n");
-            ((TraceMethodVisitor)getMethodVisitor()).print(pw);
+            printer.print(pw);
             pw.flush();
         }
         getMethodVisitor().visitMaxs(arg0, arg1);
     }
 
+    @Override
     public void visitEnd() {
         getMethodVisitor().visitEnd();
     }
@@ -937,6 +955,7 @@ public class SkinnyMethodAdapter implements MethodVisitor, Opcodes {
         getMethodVisitor().visitTableSwitchInsn(min, max, defaultLabel, cases);
     }
 
+    @Override
     public void visitFrame(int arg0, int arg1, Object[] arg2, int arg3, Object[] arg4) {
         getMethodVisitor().visitFrame(arg0, arg1, arg2, arg3, arg4);
     }

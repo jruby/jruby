@@ -32,16 +32,19 @@ import jnr.constants.platform.Shutdown;
 import jnr.constants.platform.OpenFlags;
 import jnr.constants.platform.SocketLevel;
 import jnr.constants.platform.SocketOption;
-import com.kenai.jaffl.LastError;
-import com.kenai.jaffl.annotations.In;
-import com.kenai.jaffl.annotations.Out;
-import com.kenai.jaffl.annotations.Transient;
-import com.kenai.jaffl.byref.IntByReference;
+import jnr.ffi.LastError;
+import jnr.ffi.annotations.In;
+import jnr.ffi.annotations.Out;
+import jnr.ffi.annotations.Transient;
+import jnr.ffi.byref.IntByReference;
 import java.io.IOException;
 
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
+import jnr.ffi.Struct.Signed16;
+import jnr.ffi.Struct.Signed8;
+import jnr.ffi.Struct.UTF8String;
 
 import static jnr.constants.platform.AddressFamily.*;
 import static jnr.constants.platform.ProtocolFamily.*;
@@ -56,7 +59,7 @@ import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.ext.posix.util.Platform;
+import jnr.posix.util.Platform;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -165,7 +168,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
                         ? new String[] { "socket", "nsl", "c" }
                         : new String[] { "c" };
 
-                INSTANCE = (LibCSocket)com.kenai.jaffl.Library.loadLibrary(LibCSocket.class, libnames);
+                INSTANCE = (LibCSocket)jnr.ffi.Library.loadLibrary(LibCSocket.class, libnames);
                 return true;
             }
         } catch(Throwable e) {
@@ -202,11 +205,15 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
         // Sockaddr_un has different structure on different platforms.
         // See JRUBY-2213 for more details.
-        public static abstract class sockaddr_un extends com.kenai.jaffl.struct.Struct {
+        public static abstract class sockaddr_un extends jnr.ffi.Struct {
             public final static int LENGTH = 106;
             public abstract void setFamily(int family);
             public abstract int getFamily();
             public abstract UTF8String path();
+            
+            protected sockaddr_un() {
+                super(jnr.ffi.Runtime.getSystemRuntime());
+            }
             
             public static final sockaddr_un newInstance() {
                 return Platform.IS_BSD ? new LibCSocket.BSDSockAddrUnix() : new DefaultSockAddrUnix();
@@ -262,7 +269,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
     protected String fpath;
 
     protected static void rb_sys_fail(Ruby runtime, String message) {
-        final int n = LastError.getLastError();
+        final int n = LastError.getLastError(jnr.ffi.Runtime.getSystemRuntime());
 
         IRubyObject arg = (message != null) ? runtime.newString(message) : runtime.getNil();
 

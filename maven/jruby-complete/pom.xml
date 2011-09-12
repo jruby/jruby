@@ -30,7 +30,7 @@
       <scope>${jar.scope}</scope>
     </dependency>
     <dependency>
-      <groupId>org.jruby.ext.posix</groupId>
+      <groupId>jnr.posix</groupId>
       <artifactId>jnr-posix</artifactId>
       <scope>${jar.scope}</scope>
     </dependency>

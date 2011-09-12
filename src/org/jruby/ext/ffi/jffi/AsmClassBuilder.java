@@ -2,7 +2,6 @@ package org.jruby.ext.ffi.jffi;
 
 import java.io.PrintWriter;
 import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.commons.EmptyVisitor;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import java.lang.reflect.Constructor;
 import java.util.concurrent.atomic.AtomicLong;
@@ -120,7 +119,7 @@ final class AsmClassBuilder {
             Constructor<? extends ClassVisitor> c = tmvClass.getDeclaredConstructor(PrintWriter.class);
             return c.newInstance(out);
         } catch (Throwable t) {
-            return new EmptyVisitor();
+            return null;
         }
     }
 

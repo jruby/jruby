@@ -62,6 +62,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.RegexpOptions;
 import static org.jruby.util.CodegenUtils.*;
 
+import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 
 import org.jruby.util.log.Logger;
@@ -88,79 +89,79 @@ public class InvokeDynamicSupport {
     public final static String BOOTSTRAP_STRING_LONG_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, long.class);
     public final static String BOOTSTRAP_STRING_DOUBLE_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, double.class);
     
-    public static org.objectweb.asm.MethodHandle getBootstrapHandle(String name, Class type, String sig) {
-        return new org.objectweb.asm.MethodHandle(Opcodes.MH_INVOKESTATIC, p(type), name, sig);
+    public static Handle getBootstrapHandle(String name, Class type, String sig) {
+        return new Handle(Opcodes.H_INVOKESTATIC, p(type), name, sig);
     }
     
-    public static org.objectweb.asm.MethodHandle getBootstrapHandle(String name, String sig) {
+    public static Handle getBootstrapHandle(String name, String sig) {
         return getBootstrapHandle(name, InvokeDynamicSupport.class, sig);
     }
     
-    public static org.objectweb.asm.MethodHandle getInvocationHandle() {
+    public static Handle getInvocationHandle() {
         return getBootstrapHandle("invocationBootstrap", InvocationLinker.class, BOOTSTRAP_BARE_SIG);
     }
     
-    public static org.objectweb.asm.MethodHandle getConstantHandle() {
+    public static Handle getConstantHandle() {
         return getBootstrapHandle("getConstantBootstrap", BOOTSTRAP_BARE_SIG);
     }
     
-    public static org.objectweb.asm.MethodHandle getByteListHandle() {
+    public static Handle getByteListHandle() {
         return getBootstrapHandle("getByteListBootstrap", BOOTSTRAP_STRING_STRING_SIG);
     }
     
-    public static org.objectweb.asm.MethodHandle getRegexpHandle() {
+    public static Handle getRegexpHandle() {
         return getBootstrapHandle("getRegexpBootstrap", BOOTSTRAP_STRING_STRING_INT_SIG);
     }
     
-    public static org.objectweb.asm.MethodHandle getSymbolHandle() {
+    public static Handle getSymbolHandle() {
         return getBootstrapHandle("getSymbolBootstrap", BOOTSTRAP_STRING_SIG);
     }
     
-    public static org.objectweb.asm.MethodHandle getFixnumHandle() {
+    public static Handle getFixnumHandle() {
         return getBootstrapHandle("getFixnumBootstrap", BOOTSTRAP_LONG_SIG);
     }
     
-    public static org.objectweb.asm.MethodHandle getFloatHandle() {
+    public static Handle getFloatHandle() {
         return getBootstrapHandle("getFloatBootstrap", BOOTSTRAP_DOUBLE_SIG);
     }
     
-    public static org.objectweb.asm.MethodHandle getStaticScopeHandle() {
+    public static Handle getStaticScopeHandle() {
         return getBootstrapHandle("getStaticScopeBootstrap", BOOTSTRAP_STRING_INT_SIG);
     }
     
-    public static org.objectweb.asm.MethodHandle getLoadStaticScopeHandle() {
+    public static Handle getLoadStaticScopeHandle() {
         return getBootstrapHandle("getLoadStaticScopeBootstrap", BOOTSTRAP_BARE_SIG);
     }
     
-    public static org.objectweb.asm.MethodHandle getCallSiteHandle() {
+    public static Handle getCallSiteHandle() {
         return getBootstrapHandle("getCallSiteBootstrap", BOOTSTRAP_STRING_INT_SIG);
     }
     
-    public static org.objectweb.asm.MethodHandle getStringHandle() {
+    public static Handle getStringHandle() {
         return getBootstrapHandle("getStringBootstrap", BOOTSTRAP_STRING_STRING_INT_SIG);
     }
     
-    public static org.objectweb.asm.MethodHandle getBigIntegerHandle() {
+    public static Handle getBigIntegerHandle() {
         return getBootstrapHandle("getBigIntegerBootstrap", BOOTSTRAP_STRING_SIG);
     }
     
-    public static org.objectweb.asm.MethodHandle getEncodingHandle() {
+    public static Handle getEncodingHandle() {
         return getBootstrapHandle("getEncodingBootstrap", BOOTSTRAP_STRING_SIG);
     }
     
-    public static org.objectweb.asm.MethodHandle getBlockBodyHandle() {
+    public static Handle getBlockBodyHandle() {
         return getBootstrapHandle("getBlockBodyBootstrap", BOOTSTRAP_STRING_SIG);
     }
     
-    public static org.objectweb.asm.MethodHandle getBlockBody19Handle() {
+    public static Handle getBlockBody19Handle() {
         return getBootstrapHandle("getBlockBody19Bootstrap", BOOTSTRAP_STRING_SIG);
     }
     
-    public static org.objectweb.asm.MethodHandle getFixnumOperatorHandle() {
+    public static Handle getFixnumOperatorHandle() {
         return getBootstrapHandle("fixnumOperatorBootstrap", BOOTSTRAP_STRING_LONG_SIG);
     }
     
-    public static org.objectweb.asm.MethodHandle getFloatOperatorHandle() {
+    public static Handle getFloatOperatorHandle() {
         return getBootstrapHandle("floatOperatorBootstrap", BOOTSTRAP_STRING_DOUBLE_SIG);
     }
     

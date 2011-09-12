@@ -584,7 +584,12 @@ class TestFile < Test::Unit::TestCase
     filename = "__test__file"
     File.open(filename, "w") {|f| }
     time = Time.now - 3600
+    begin
     File.utime(time, time, filename)
+  rescue Object => o
+    o.printStackTrace
+    o.getCause.printStackTrace
+  end
     # File mtime resolution may not be sub-second on all platforms (e.g., windows)
     # allow for some slop
     assert((time.to_i - File.atime(filename).to_i).abs < 5)

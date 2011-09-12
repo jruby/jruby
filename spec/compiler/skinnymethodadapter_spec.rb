@@ -11,7 +11,6 @@ rescue # jarjar renames things, so we try the renamed version
 end
 
 class MockMethodVisitor
-  include MethodVisitor
   attr_accessor :calls
 
   def initialize
@@ -32,7 +31,8 @@ describe "SkinnyMethodAdapter" do
            /V1_/, # version identifiers
            /T_/, # type identifiers
            /F_/, # framing hints
-           /MH_/ # method handles
+           /H_/, # method handles
+           /ASM/ # ASM version stuff
         false
       when "DOUBLE", "FLOAT", "INTEGER", "LONG", "NULL", "TOP", "UNINITIALIZED_THIS"
         false

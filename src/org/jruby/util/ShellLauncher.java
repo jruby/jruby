@@ -28,7 +28,6 @@
 
 package org.jruby.util;
 
-import com.kenai.jaffl.FFIProvider;
 import static java.lang.System.out;
 
 import java.io.BufferedInputStream;
@@ -48,7 +47,6 @@ import java.nio.channels.FileChannel;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -62,9 +60,9 @@ import org.jruby.RubyIO;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
-import org.jruby.ext.posix.POSIX;
-import org.jruby.ext.posix.util.FieldAccess;
-import org.jruby.ext.posix.util.Platform;
+import jnr.posix.POSIX;
+import jnr.posix.util.FieldAccess;
+import jnr.posix.util.Platform;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.libraries.RbConfigLibrary;
 import org.jruby.runtime.ThreadContext;
@@ -597,8 +595,8 @@ public class ShellLauncher {
                                 return (Integer)UNIXProcess_pid.get(process);
                             } else if (ProcessImpl.isInstance(process)) {
                                 Long hproc = (Long) ProcessImpl_handle.get(process);
-                                return WindowsFFI.getKernel32(FFIProvider.getProvider())
-                                    .GetProcessId(new com.kenai.jaffl.NativeLong(hproc));
+                                return WindowsFFI.getKernel32()
+                                    .GetProcessId(new jnr.ffi.NativeLong(hproc));
                             }
                         } catch (Exception e) {
                             // ignore and use hashcode
@@ -628,8 +626,8 @@ public class ShellLauncher {
                     try {
                         if (ProcessImpl.isInstance(process)) {
                             Long hproc = (Long) ProcessImpl_handle.get(process);
-                            return WindowsFFI.getKernel32(FFIProvider.getProvider())
-                                .GetProcessId(new com.kenai.jaffl.NativeLong(hproc));
+                            return WindowsFFI.getKernel32()
+                                .GetProcessId(new jnr.ffi.NativeLong(hproc));
                         }
 
                     } catch (Exception e) {

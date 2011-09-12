@@ -10,7 +10,7 @@ import java.util.Map.Entry;
 import org.jruby.Ruby;
 import org.jruby.RubyHash;
 import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.ext.posix.POSIXHandler;
+import jnr.posix.POSIXHandler;
 
 import jnr.constants.platform.Errno;
 

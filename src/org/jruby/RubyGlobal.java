@@ -43,7 +43,7 @@ import org.jcodings.Encoding;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.ext.posix.POSIX;
+import jnr.posix.POSIX;
 import org.jruby.util.OSEnvironment;
 import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.javasupport.JavaUtil;

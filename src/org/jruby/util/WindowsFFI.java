@@ -27,9 +27,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util;
 
-import com.kenai.jaffl.*;
-import com.kenai.jaffl.FFIProvider;
-import com.kenai.jaffl.LibraryOption;
+import jnr.ffi.*;
+import jnr.ffi.FFIProvider;
+import jnr.ffi.LibraryOption;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -41,9 +41,9 @@ public class WindowsFFI {
      int GetProcessId(NativeLong handle);
     }
 
-    public static Kernel32 getKernel32(FFIProvider provider) {
+    public static Kernel32 getKernel32() {
         Map<LibraryOption, Object> options = new HashMap();
         options.put(LibraryOption.CallingConvention, CallingConvention.STDCALL);
-        return provider.loadLibrary("Kernel32.dll", Kernel32.class, options);
+        return Library.loadLibrary("Kernel32.dll", Kernel32.class, options);
     }
 }

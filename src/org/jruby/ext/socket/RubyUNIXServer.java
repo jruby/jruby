@@ -28,7 +28,7 @@
 package org.jruby.ext.socket;
 
 
-import com.kenai.jaffl.byref.IntByReference;
+import jnr.ffi.byref.IntByReference;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyNumeric;
