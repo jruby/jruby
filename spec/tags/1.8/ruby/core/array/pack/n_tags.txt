@@ -1,4 +1,0 @@
-fails(JRUBY-5656):Array#pack with format 'N' taints the output string if the format string is tainted
-fails(JRUBY-5656):Array#pack with format 'N' raises a TypeError when passed nil
-fails(JRUBY-5656):Array#pack with format 'n' taints the output string if the format string is tainted
-fails(JRUBY-5656):Array#pack with format 'n' raises a TypeError when passed nil

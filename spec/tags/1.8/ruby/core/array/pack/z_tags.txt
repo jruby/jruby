@@ -1,1 +1,0 @@
-fails(JRUBY-5656):Array#pack with format 'Z' taints the output string if the format string is tainted

@@ -48,8 +48,6 @@ import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Random;
-import java.util.Set;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -74,7 +72,6 @@ import org.jruby.util.ByteList;
 import org.jruby.util.Pack;
 import org.jruby.util.Qsort;
 import org.jruby.util.RecursiveComparator;
-import org.jruby.util.StringSupport;
 import org.jruby.util.TypeConverter;
 
 import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
@@ -3991,7 +3988,7 @@ public class RubyArray extends RubyObject implements List {
     public RubyString pack(ThreadContext context, IRubyObject obj) {
         RubyString iFmt = obj.convertToString();
         try {
-            return Pack.pack(getRuntime(), this, iFmt.getByteList());
+            return Pack.pack(getRuntime(), this, iFmt.getByteList(), iFmt.isTaint());
         } catch (ArrayIndexOutOfBoundsException aioob) {
             concurrentModification();
             return null; // not reached
