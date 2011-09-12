@@ -1,2 +1,0 @@
-fails(JRUBY-5656):Array#pack with format 'A' taints the output string if the format string is tainted
-fails(JRUBY-5656):Array#pack with format 'a' taints the output string if the format string is tainted

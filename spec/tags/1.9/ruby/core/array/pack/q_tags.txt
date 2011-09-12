@@ -1,4 +1,0 @@
-fails(JRUBY-5656):Array#pack with format 'Q' taints the output string if the format string is tainted
-fails(JRUBY-5656):Array#pack with format 'Q' raises a TypeError when passed nil
-fails(JRUBY-5656):Array#pack with format 'q' taints the output string if the format string is tainted
-fails(JRUBY-5656):Array#pack with format 'q' raises a TypeError when passed nil
