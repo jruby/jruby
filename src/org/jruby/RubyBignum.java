@@ -788,10 +788,15 @@ public class RubyBignum extends RubyInteger {
     @JRubyMethod(name = "[]", required = 1)
     public RubyFixnum op_aref(IRubyObject other) {
         if (other instanceof RubyBignum) {
-            if (((RubyBignum) other).value.signum() >= 0 || value.signum() == -1) {
-                return RubyFixnum.zero(getRuntime());
+            // Need to normalize first
+            other = bignorm(getRuntime(), ((RubyBignum) other).value);
+            if (other instanceof RubyBignum) {
+                // '!=' for negative value
+                if ((((RubyBignum) other).value.signum() >= 0) != (value.signum() == -1)) {
+                    return RubyFixnum.zero(getRuntime());
+                }
+                return RubyFixnum.one(getRuntime());
             }
-            return RubyFixnum.one(getRuntime());
         }
         long position = num2long(other);
         if (position < 0 || position > Integer.MAX_VALUE) {
