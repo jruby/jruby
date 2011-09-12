@@ -26,7 +26,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby;
+package org.jruby.ext.iconv;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -41,6 +41,15 @@ import java.nio.charset.UnmappableCharacterException;
 import java.nio.charset.UnsupportedCharsetException;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
+import org.jruby.RubyClass;
+import org.jruby.RubyException;
+import org.jruby.RubyHash;
+import org.jruby.RubyModule;
+import org.jruby.RubyNumeric;
+import org.jruby.RubyObject;
+import org.jruby.RubyString;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;

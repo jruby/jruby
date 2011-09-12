@@ -25,12 +25,11 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby.libraries;
+package org.jruby.ext.iconv;
 
 import java.io.IOException;
 
 import org.jruby.Ruby;
-import org.jruby.RubyIconv;
 import org.jruby.runtime.load.Library;
 
 public class IConvLibrary implements Library {
