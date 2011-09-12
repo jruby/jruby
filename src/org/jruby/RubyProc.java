@@ -128,9 +128,7 @@ public class RubyProc extends RubyObject implements DataType {
     @JRubyMethod(name = "new", rest = true, meta = true)
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         // No passed in block, lets check next outer frame for one ('Proc.new')
-        if (!block.isGiven()) {
-            block = context.getCurrentFrame().getBlock();
-        }
+        if (!block.isGiven()) block = context.getCurrentFrame().getBlock();
 
         // This metaclass == recv check seems gross, but MRI seems to do the same:
         // if (!proc && ruby_block->block_obj && CLASS_OF(ruby_block->block_obj) == klass) {
@@ -185,19 +183,13 @@ public class RubyProc extends RubyObject implements DataType {
     @JRubyMethod(name = "dup")
     @Override
     public IRubyObject dup() {
-    	RubyProc newProc = newProc(getRuntime(), block, type, sourcePosition);
-        return newProc;
+        return newProc(getRuntime(), block, type, sourcePosition);
     }
     
     @JRubyMethod(name = "==", required = 1)
     public IRubyObject op_equal(IRubyObject other) {
-        if (!(other instanceof RubyProc)) return getRuntime().getFalse();
-        
-        if (this == other || this.block.equals(((RubyProc)other).block)) {
-            return getRuntime().getTrue();
-        }
-        
-        return getRuntime().getFalse();
+        return getRuntime().newBoolean(other instanceof RubyProc &&
+                (this == other || this.block.equals(((RubyProc)other).block)));
     }
     
     @JRubyMethod(name = "to_s", compat = RUBY1_8)
@@ -212,10 +204,9 @@ public class RubyProc extends RubyObject implements DataType {
     public IRubyObject to_s19() {
         StringBuilder sb = new StringBuilder("#<Proc:0x" + Integer.toString(block.hashCode(), 16) + "@" +
                 block.getBody().getFile() + ":" + (block.getBody().getLine() + 1));
-        if (isLambda()) {
-            sb.append(" (lambda)");
-        }
+        if (isLambda()) sb.append(" (lambda)");
         sb.append(">");
+        
         return RubyString.newString(getRuntime(), sb.toString());
     }
 
@@ -232,35 +223,39 @@ public class RubyProc extends RubyObject implements DataType {
     public IRubyObject call(ThreadContext context, IRubyObject[] args) {
         return call(context, args, null, Block.NULL_BLOCK);
     }
+    
+    private IRubyObject[] prepareProcArgs(ThreadContext context, IRubyObject[] args) {
+        Arity arity = block.arity();
+        
+        // for procs and blocks, single array passed to multi-arg must be spread
+        if (arity != Arity.ONE_ARGUMENT && arity.required() != 0 && 
+                (arity.isFixed() || arity != Arity.OPTIONAL) &&
+                args.length == 1 && args[0].respondsTo("to_ary")) {
+            args = args[0].convertToArray().toJavaArray();
+        }
+
+        if (arity.isFixed()) {
+            List<IRubyObject> list = new ArrayList<IRubyObject>(Arrays.asList(args));
+            int required = arity.required();
+            if (required > args.length) {
+                for (int i = args.length; i < required; i++) {
+                    list.add(context.getRuntime().getNil());
+                }
+                args = list.toArray(args);
+            } else if (required < args.length) {
+                args = list.subList(0, required).toArray(args);
+            }
+        }
+
+        return args;
+    }
 
     @JRubyMethod(name = {"call", "[]", "yield", "==="}, rest = true, compat = RUBY1_9)
-    public IRubyObject call19(ThreadContext context, IRubyObject[] args, Block block) {
-        if (isLambda()) {
-            this.block.arity().checkArity(context.getRuntime(), args.length);
-        }
+    public IRubyObject call19(ThreadContext context, IRubyObject[] args, Block blockCallArg) {
+        if (isLambda()) block.arity().checkArity(context.getRuntime(), args.length);
+        if (isProc()) args = prepareProcArgs(context, args);
 
-        if (isProc()) {
-            // for procs and blocks, single array passed to multi-arg must be spread
-            // FIXME: Formalize this logic in Arity since it is likely used many places...not sure it is right yet though
-            if (this.block.arity() != Arity.ONE_ARGUMENT && this.block.arity().required() != 0 && (this.block.arity().isFixed() || this.block.arity() != Arity.OPTIONAL) && args.length == 1 && args[0].respondsTo("to_ary")) {
-                args = args[0].convertToArray().toJavaArray();
-            }
-            
-            if (this.block.arity().isFixed()) {
-                List<IRubyObject> list = new ArrayList<IRubyObject>(Arrays.asList(args));
-                int required = this.block.arity().required();
-                if (required > args.length) {
-                    for (int i = args.length; i < required; i++) {
-                        list.add(context.getRuntime().getNil());
-                    }
-                    args = list.toArray(args);
-                } else if (required < args.length) {
-                    args = list.subList(0, required).toArray(args);
-                }
-            }
-        }
-
-        return call(context, args, null, block);
+        return call(context, args, null, blockCallArg);
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject self, Block passedBlock) {
@@ -284,41 +279,32 @@ public class RubyProc extends RubyObject implements DataType {
 
     private IRubyObject handleBreakJump(Ruby runtime, Block newBlock, JumpException.BreakJump bj, int jumpTarget) {
         switch(newBlock.type) {
-        case LAMBDA: if (bj.getTarget() == jumpTarget) {
-            return (IRubyObject) bj.getValue();
-        } else {
-            throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.BREAK, (IRubyObject)bj.getValue(), "unexpected break");
+            case LAMBDA: 
+                if (bj.getTarget() == jumpTarget) return (IRubyObject) bj.getValue();
+                
+                throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.BREAK, (IRubyObject)bj.getValue(), "unexpected break");
+            case PROC:
+                if (newBlock.isEscaped()) throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.BREAK, (IRubyObject)bj.getValue(), "break from proc-closure");
         }
-        case PROC:
-            if (newBlock.isEscaped()) {
-                throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.BREAK, (IRubyObject)bj.getValue(), "break from proc-closure");
-            } else {
-                throw bj;
-            }
-        default: throw bj;
-        }
+        
+        throw bj;
     }
 
     private IRubyObject handleReturnJump(ThreadContext context, JumpException.ReturnJump rj, int jumpTarget) {
         int target = rj.getTarget();
-        Ruby runtime = context.getRuntime();
 
         // lambda always just returns the value
-        if (target == jumpTarget && isLambda()) {
-            return (IRubyObject) rj.getValue();
-        }
+        if (target == jumpTarget && isLambda()) return (IRubyObject) rj.getValue();
 
-        // returns can't propagate out of threads
-        if (isThread()) {
-            // just re-throw, let thread handle it
-            throw rj;
-        }
+        // returns can't propagate out of threads. rethrow to let thread handle it
+        if (isThread()) throw rj;
 
         // If the block-receiving method is not still active and the original
         // enclosing frame is no longer on the stack, it's a bad return.
         // FIXME: this is not very efficient for cases where it won't error
         if (target == jumpTarget && !context.isJumpTargetAlive(target, 0)) {
-            throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.RETURN, (IRubyObject)rj.getValue(), "unexpected return");
+            throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.RETURN,
+                    (IRubyObject) rj.getValue(), "unexpected return");
         }
 
         // otherwise, let it propagate
@@ -356,15 +342,12 @@ public class RubyProc extends RubyObject implements DataType {
 
     @JRubyMethod(name = "parameters", compat = RUBY1_9)
     public IRubyObject parameters(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
         BlockBody body = this.getBlock().getBody();
 
-        if (body instanceof MethodBlock) {
-            MethodBlock methodBlock = (MethodBlock)body;
-            return methodBlock.getMethod().parameters(context);
-        }
+        if (body instanceof MethodBlock) return ((MethodBlock) body).getMethod().parameters(context);
 
-        return RuntimeHelpers.parameterListToParameters(runtime, body.getParameterList(), isLambda());
+        return RuntimeHelpers.parameterListToParameters(context.getRuntime(),
+                body.getParameterList(), isLambda());
     }
 
     @JRubyMethod(name = "lambda?", compat = RUBY1_9)
