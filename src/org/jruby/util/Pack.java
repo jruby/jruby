@@ -111,15 +111,7 @@ public class Pack {
     }
 
     private static float obj2flt(Ruby runtime, IRubyObject o) {
-        if(o instanceof RubyString) {
-            String str = o.asJavaString();
-            float f = (float)RubyNumeric.num2dbl(o.convertToFloat());
-            if(str.matches("^\\s*[-+]?\\s*[0-9].*")) {
-                return f;
-            } else {
-                throw runtime.newTypeError("array item not a float");
-            }
-        }
+        if (o instanceof RubyString) return (float) str2dbl(runtime, (RubyString) o);
 
         return (float) RubyKernel.new_float(o, o).getDoubleValue();
     }
@@ -127,17 +119,18 @@ public class Pack {
     private static float obj2flt19(Ruby runtime, IRubyObject o) {
         return (float) TypeConverter.toFloat(runtime, o).getDoubleValue();        
     }
+    
+    private static double str2dbl(Ruby runtime, RubyString o) {
+        String str = o.asJavaString();
+        double d = RubyNumeric.num2dbl(o.convertToFloat());
+            
+        if (str.matches("^\\s*[-+]?\\s*[0-9].*")) return d;
+
+        throw runtime.newArgumentError("invalid value for Float");        
+    }
 
     private static double obj2dbl(Ruby runtime, IRubyObject o) {
-        if(o instanceof RubyString) {
-            String str = o.asJavaString();
-            double d = RubyNumeric.num2dbl(o.convertToFloat());
-            if(str.matches("^\\s*[-+]?\\s*[0-9].*")) {
-                return d;
-            } else {
-                throw runtime.newTypeError("array item not a float");
-            }
-        }
+        if (o instanceof RubyString) return str2dbl(runtime, (RubyString) o);
 
         return RubyKernel.new_float(o, o).getDoubleValue();
     }
