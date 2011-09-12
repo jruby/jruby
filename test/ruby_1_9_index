@@ -15,6 +15,7 @@ test_win32
 test_time_1_9
 test_yaml_1_9
 test_dir_1_9
+test_nkf_1_9
 test_runaway_magic_comment_1_9
 externals/ruby1.9/psych/test_alias_and_anchor
 externals/ruby1.9/psych/test_array
