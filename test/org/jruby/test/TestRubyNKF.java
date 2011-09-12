@@ -1,7 +1,7 @@
 package org.jruby.test;
 
 import org.jruby.Ruby;
-import org.jruby.RubyNKF;
+import org.jruby.ext.nkf.RubyNKF;
 import org.jruby.ext.nkf.Command;
 
 public class TestRubyNKF extends TestRubyBase {

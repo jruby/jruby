@@ -25,7 +25,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby;
+package org.jruby.ext.nkf;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -40,6 +40,11 @@ import java.util.HashMap;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.ASCIIEncoding;
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
+import org.jruby.RubyFixnum;
+import org.jruby.RubyModule;
+import org.jruby.RubyString;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
@@ -48,10 +53,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
 import org.jruby.util.Pack;
-import org.jruby.ext.nkf.Option;
-import org.jruby.ext.nkf.Options;
-import org.jruby.ext.nkf.CommandParser;
-import org.jruby.ext.nkf.Command;
 
 @JRubyModule(name="NKF")
 public class RubyNKF {
