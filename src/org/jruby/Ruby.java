@@ -1464,8 +1464,8 @@ public final class Ruby {
         addLazyBuiltin("zlib.jar", "zlib", "org.jruby.ext.zlib.ZlibLibrary");
         addLazyBuiltin("enumerator.jar", "enumerator", "org.jruby.ext.enumerator.EnumeratorLibrary");
         addLazyBuiltin("readline.jar", "readline", "org.jruby.ext.ReadlineService");
-        addLazyBuiltin("thread.jar", "thread", "org.jruby.libraries.ThreadLibrary");
-        addLazyBuiltin("thread.rb", "thread", "org.jruby.libraries.ThreadLibrary");
+        addLazyBuiltin("thread.jar", "thread", "org.jruby.ext.thread.ThreadLibrary");
+        addLazyBuiltin("thread.rb", "thread", "org.jruby.ext.thread.ThreadLibrary");
         addLazyBuiltin("digest.jar", "digest.so", "org.jruby.libraries.DigestLibrary");
         addLazyBuiltin("digest/md5.jar", "digest/md5", "org.jruby.libraries.MD5");
         addLazyBuiltin("digest/rmd160.jar", "digest/rmd160", "org.jruby.libraries.RMD160");
