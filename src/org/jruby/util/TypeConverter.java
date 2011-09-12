@@ -49,9 +49,7 @@ public class TypeConverter {
      */
     @Deprecated
     public static final IRubyObject convertToType(IRubyObject obj, RubyClass target, int convertMethodIndex, String convertMethod, boolean raise) {
-        if (!obj.respondsTo(convertMethod)) {
-            return handleUncoercibleObject(raise, obj, target);
-        }
+        if (!obj.respondsTo(convertMethod)) return handleUncoercibleObject(raise, obj, target);
         
         return obj.callMethod(obj.getRuntime().getCurrentContext(), convertMethod);
     }
@@ -67,9 +65,7 @@ public class TypeConverter {
      * @return the converted value
      */
     public static final IRubyObject convertToType(IRubyObject obj, RubyClass target, String convertMethod, boolean raise) {
-        if (!obj.respondsTo(convertMethod)) {
-            return handleUncoercibleObject(raise, obj, target);
-        }
+        if (!obj.respondsTo(convertMethod)) return handleUncoercibleObject(raise, obj, target);
         
         return obj.callMethod(obj.getRuntime().getCurrentContext(), convertMethod);
     }
@@ -86,10 +82,8 @@ public class TypeConverter {
      */
     public static final IRubyObject convertToType19(IRubyObject obj, RubyClass target, String convertMethod, boolean raise) {
         IRubyObject r = obj.checkCallMethod(obj.getRuntime().getCurrentContext(), convertMethod);
-        if (r == null) {
-            return handleUncoercibleObject(raise, obj, target);
-        }
-        return r;
+        
+        return r == null ? handleUncoercibleObject(raise, obj, target) : r;
     }
 
     /**
@@ -149,18 +143,16 @@ public class TypeConverter {
      * @return the converted value
      */
     public static final IRubyObject checkData(IRubyObject obj) {
-        if(obj instanceof org.jruby.runtime.marshal.DataType) {
-            return obj;
-        }
-        String type;
-        if (obj.isNil()) {
-            type = "nil";
-        } else if (obj instanceof RubyBoolean) {
-            type = obj.isTrue() ? "true" : "false";
-        } else {
-            type = obj.getMetaClass().getRealClass().getName();
-        }
-        throw obj.getRuntime().newTypeError("wrong argument type " + type + " (expected Data)");
+        if(obj instanceof org.jruby.runtime.marshal.DataType) return obj;
+
+        throw obj.getRuntime().newTypeError("wrong argument type " + typeAsString(obj) + " (expected Data)");
+    }
+    
+    private static String typeAsString(IRubyObject obj) {
+        if (obj.isNil()) return "nil";
+        if (obj instanceof RubyBoolean) return obj.isTrue() ? "true" : "false";
+
+        return obj.getMetaClass().getRealClass().getName();
     }
 
     /**
@@ -237,21 +229,17 @@ public class TypeConverter {
 
     // rb_check_to_integer
     public static IRubyObject checkIntegerType(Ruby runtime, IRubyObject obj, String method) {
-        if (obj instanceof RubyFixnum) {
-            return obj;
-        }
+        if (obj instanceof RubyFixnum) return obj;
+
         IRubyObject conv = TypeConverter.convertToType(obj, runtime.getInteger(), method, false);
         return conv instanceof RubyInteger ? conv : runtime.getNil();
     }
 
     // 1.9 rb_check_to_float
     public static IRubyObject checkFloatType(Ruby runtime, IRubyObject obj) {
-        if (obj instanceof RubyFloat) {
-            return obj;
-        }
-        if (!(obj instanceof RubyNumeric)) {
-            return runtime.getNil();
-        }
+        if (obj instanceof RubyFloat) return obj;
+        if (!(obj instanceof RubyNumeric)) return runtime.getNil();
+
         return TypeConverter.convertToTypeWithCheck(obj, runtime.getFloat(), "to_f");
     }
 
@@ -261,18 +249,8 @@ public class TypeConverter {
     }
 
     public static IRubyObject handleUncoercibleObject(boolean raise, IRubyObject obj, RubyClass target) throws RaiseException {
-        if (raise) {
-            String type;
-            if (obj.isNil()) {
-                type = "nil";
-            } else if (obj instanceof RubyBoolean) {
-                type = obj.isTrue() ? "true" : "false";
-            } else {
-                type = obj.getMetaClass().getRealClass().getName();
-            }
-            throw obj.getRuntime().newTypeError("can't convert " + type + " into " + target);
-        } else {
-            return obj.getRuntime().getNil();
-        }
+        if (raise) throw obj.getRuntime().newTypeError("can't convert " + typeAsString(obj) + " into " + target);
+
+        return obj.getRuntime().getNil();
     }
 }
