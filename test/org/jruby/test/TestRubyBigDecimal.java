@@ -1,7 +1,7 @@
 package org.jruby.test;
 
 import junit.framework.TestCase;
-import org.jruby.RubyBigDecimal;
+import org.jruby.ext.bigdecimal.RubyBigDecimal;
 
 public class TestRubyBigDecimal extends TestCase {
   public void testFormatWithLeadingPlus() {

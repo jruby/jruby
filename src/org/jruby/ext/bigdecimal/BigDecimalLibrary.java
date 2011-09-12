@@ -28,11 +28,10 @@
 /**
  * $Id: $
  */
-package org.jruby.libraries;
+package org.jruby.ext.bigdecimal;
 
 import java.io.IOException;
 
-import org.jruby.RubyBigDecimal;
 import org.jruby.Ruby;
 import org.jruby.runtime.load.Library;
 

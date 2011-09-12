@@ -389,7 +389,7 @@ public class RubyObject extends RubyBasicObject {
      * so dangerous casting can be omitted
      * Prefered over callMethod(context, "inspect")
      */
-    static RubyString inspect(ThreadContext context, IRubyObject object) {
+    public static RubyString inspect(ThreadContext context, IRubyObject object) {
         return RubyString.objAsString(context, object.callMethod(context, "inspect"));
     }
 
