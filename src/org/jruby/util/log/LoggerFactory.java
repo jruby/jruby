@@ -33,7 +33,7 @@ import java.lang.reflect.Constructor;
 
 public class LoggerFactory {
 
-    private static final String LOGGER_CLASS = SafePropertyAccessor.getProperty("jruby.logger.class", "org.jruby.util.log.StandardErrorLogger");
+    private static final String LOGGER_CLASS = SafePropertyAccessor.getProperty("jruby.logger.class", "org.jruby.util.log.JavaUtilLoggingLogger");
 
     private static final Constructor<?> CTOR;
     static {
