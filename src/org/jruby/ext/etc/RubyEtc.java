@@ -1,4 +1,4 @@
-package org.jruby;
+package org.jruby.ext.etc;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
@@ -8,6 +8,10 @@ import jnr.posix.Passwd;
 import jnr.posix.Group;
 import jnr.posix.POSIX;
 import jnr.posix.util.Platform;
+import org.jruby.Ruby;
+import org.jruby.RubyModule;
+import org.jruby.RubyNumeric;
+import org.jruby.RubyStruct;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;

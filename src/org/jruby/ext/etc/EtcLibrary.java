@@ -1,9 +1,8 @@
-package org.jruby.libraries;
+package org.jruby.ext.etc;
 
 import java.io.IOException;
 
 import org.jruby.Ruby;
-import org.jruby.RubyEtc;
 import org.jruby.runtime.load.Library;
 
 public class EtcLibrary implements Library {

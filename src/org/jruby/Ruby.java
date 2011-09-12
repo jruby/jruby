@@ -1473,7 +1473,7 @@ public final class Ruby {
         addLazyBuiltin("digest/sha2.jar", "digest/sha2", "org.jruby.ext.digest.SHA2");
         addLazyBuiltin("bigdecimal.jar", "bigdecimal", "org.jruby.ext.bigdecimal.BigDecimalLibrary");
         addLazyBuiltin("io/wait.jar", "io/wait", "org.jruby.ext.io.wait.IOWaitLibrary");
-        addLazyBuiltin("etc.jar", "etc", "org.jruby.libraries.EtcLibrary");
+        addLazyBuiltin("etc.jar", "etc", "org.jruby.ext.etc.EtcLibrary");
         addLazyBuiltin("weakref.rb", "weakref", "org.jruby.ext.WeakRefLibrary");
         addLazyBuiltin("delegate_internal.jar", "delegate_internal", "org.jruby.ext.DelegateLibrary");
         addLazyBuiltin("timeout.rb", "timeout", "org.jruby.ext.Timeout");
@@ -1988,14 +1988,14 @@ public final class Ruby {
     public IRubyObject getPasswdStruct() {
         return passwdStruct;
     }
-    void setPasswdStruct(RubyClass passwdStruct) {
+    public void setPasswdStruct(RubyClass passwdStruct) {
         this.passwdStruct = passwdStruct;
     }
 
     public IRubyObject getGroupStruct() {
         return groupStruct;
     }
-    void setGroupStruct(RubyClass groupStruct) {
+    public void setGroupStruct(RubyClass groupStruct) {
         this.groupStruct = groupStruct;
     }
 
