@@ -95,15 +95,15 @@ public class RubyEnumerator extends RubyObject {
         initialize(object, method, args);
     }
 
-    static IRubyObject enumeratorize(Ruby runtime, IRubyObject object, String method) {
+    public static IRubyObject enumeratorize(Ruby runtime, IRubyObject object, String method) {
         return new RubyEnumerator(runtime, object, runtime.fastNewSymbol(method), IRubyObject.NULL_ARRAY);
     }
 
-    static IRubyObject enumeratorize(Ruby runtime, IRubyObject object, String method, IRubyObject arg) {
+    public static IRubyObject enumeratorize(Ruby runtime, IRubyObject object, String method, IRubyObject arg) {
         return new RubyEnumerator(runtime, object, runtime.fastNewSymbol(method), new IRubyObject[]{arg});
     }
 
-    static IRubyObject enumeratorize(Ruby runtime, IRubyObject object, String method, IRubyObject[]args) {
+    public static IRubyObject enumeratorize(Ruby runtime, IRubyObject object, String method, IRubyObject[]args) {
         return new RubyEnumerator(runtime, object, runtime.fastNewSymbol(method), args); // TODO: make sure it's really safe to not to copy it
     }
 

@@ -28,13 +28,23 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby;
+package org.jruby.ext.stringio;
 
 import org.jruby.util.StringSupport;
 import org.jcodings.Encoding;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import org.jruby.CompatVersion;
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
+import org.jruby.RubyClass;
+import org.jruby.RubyFixnum;
+import org.jruby.RubyIO;
+import org.jruby.RubyKernel;
+import org.jruby.RubyNumeric;
+import org.jruby.RubyObject;
+import org.jruby.RubyString;
 
 import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyClass;

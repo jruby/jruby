@@ -60,7 +60,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
-import org.jruby.RubyStringIO;
+import org.jruby.ext.stringio.RubyStringIO;
 import org.jruby.RubyTime;
 
 import org.jruby.anno.FrameField;

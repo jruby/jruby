@@ -779,7 +779,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return shared;
     }
 
-    final void modifyCheck() {
+    public final void modifyCheck() {
         frozenCheck();
 
         if (!isTaint() && getRuntime().getSafeLevel() >= 4) {
