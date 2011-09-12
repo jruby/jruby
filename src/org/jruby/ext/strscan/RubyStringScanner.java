@@ -1,10 +1,20 @@
-package org.jruby;
+package org.jruby.ext.strscan;
 
 import org.joni.Matcher;
 import org.joni.Option;
 import org.joni.Regex;
 import org.joni.Region;
 import org.jcodings.Encoding;
+import org.jruby.CompatVersion;
+import org.jruby.Ruby;
+import org.jruby.RubyBoolean;
+import org.jruby.RubyClass;
+import org.jruby.RubyException;
+import org.jruby.RubyFixnum;
+import org.jruby.RubyNumeric;
+import org.jruby.RubyObject;
+import org.jruby.RubyRegexp;
+import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;

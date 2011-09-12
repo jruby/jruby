@@ -345,12 +345,12 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     /** rb_reg_options
      */
-    private RegexpOptions getOptions() {
+    public RegexpOptions getOptions() {
         check();
         return options;
     }
 
-    final Regex getPattern() {
+    public final Regex getPattern() {
         check();
         return pattern;
     }
