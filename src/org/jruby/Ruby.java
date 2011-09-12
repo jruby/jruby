@@ -1316,9 +1316,6 @@ public final class Ruby {
         if (profile.allowClass("Continuation")) {
             RubyContinuation.createContinuation(this);
         }
-        if (profile.allowClass("Enumerator")) {
-            RubyEnumerator.defineEnumerator(this);
-        }
     }
 
     public static final int NIL_PREFILLED_ARRAY_SIZE = RubyArray.ARRAY_DEFAULT_SIZE * 8;
@@ -1534,6 +1531,10 @@ public final class Ruby {
                 //defineModule("Gem"); // dummy Gem module for prelude
                 loadFile("builtin/gem_prelude.rb", getJRubyClassLoader().getResourceAsStream("builtin/gem_prelude.rb"), false);
             }
+        }
+        
+        if (profile.allowClass("Enumerator")) {
+            RubyEnumerator.defineEnumerator(this);
         }
     }
 

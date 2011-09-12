@@ -74,7 +74,7 @@ public class RubyEnumerator extends RubyObject {
         RubyYielder.createYielderClass(runtime);
         
         if (runtime.is1_9()) {
-            runtime.getLoadService().require("generator_internal");
+            runtime.getLoadService().load("generator_internal.rb", false);
         }
     }
 
