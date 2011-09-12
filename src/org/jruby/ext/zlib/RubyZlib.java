@@ -30,7 +30,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby;
+package org.jruby.ext.zlib;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -50,6 +50,18 @@ import java.util.zip.InflaterInputStream;
 
 import org.jcodings.Encoding;
 import org.joda.time.DateTime;
+import org.jruby.Ruby;
+import org.jruby.RubyBasicObject;
+import org.jruby.RubyClass;
+import org.jruby.RubyFixnum;
+import org.jruby.RubyIO;
+import org.jruby.RubyKernel;
+import org.jruby.RubyModule;
+import org.jruby.RubyNumeric;
+import org.jruby.RubyObject;
+import org.jruby.RubyString;
+import org.jruby.RubyStringIO;
+import org.jruby.RubyTime;
 
 import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyClass;
@@ -78,7 +90,6 @@ import org.jruby.util.TypeConverter;
 import org.jruby.util.io.Stream;
 
 import static org.jruby.CompatVersion.*;
-import org.jruby.ext.zlib.Util;
 
 @JRubyModule(name="Zlib")
 public class RubyZlib {
@@ -212,7 +223,7 @@ public class RubyZlib {
     public static IRubyObject zlib_version(IRubyObject recv) {
         RubyBasicObject res = (RubyBasicObject) ((RubyModule)recv).getConstant("ZLIB_VERSION");
         // MRI behavior, enforced by tests
-        res.taint(recv.getRuntime());
+        res.setTaint(true);
         return res;
     }
 
