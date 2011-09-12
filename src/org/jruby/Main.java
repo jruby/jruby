@@ -54,6 +54,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.SimpleSampler;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 /**
  * Class used to launch the interpreter.
@@ -65,6 +67,8 @@ import org.jruby.util.SimpleSampler;
  * @author  jpetersen
  */
 public class Main {
+    private static final Logger LOG = LoggerFactory.getLogger("Main");
+    
     public Main(RubyInstanceConfig config) {
         this(config, false);
     }
@@ -96,20 +100,22 @@ public class Main {
     public void processDotfile() {
         // try current dir, then home dir
         String home = SafePropertyAccessor.getProperty("user.dir");
-        File dotfile = new File(home + "/.jrubyrc");
-        if (!dotfile.exists()) {
-            home = SafePropertyAccessor.getProperty("user.home");
-            dotfile = new File(home + "/.jrubyrc");
-        }
-        
-        // no dotfile!
-        if (!dotfile.exists()) return;
-        
-        // update system properties with long form jruby properties from .jrubyrc
-        Properties sysProps = System.getProperties();
-        Properties newProps = new Properties();
         FileInputStream fis = null;
+        
         try {
+            File dotfile = new File(home + "/.jrubyrc");
+            if (!dotfile.exists()) {
+                home = SafePropertyAccessor.getProperty("user.home");
+                dotfile = new File(home + "/.jrubyrc");
+            }
+
+            // no dotfile!
+            if (!dotfile.exists()) return;
+
+            // update system properties with long form jruby properties from .jrubyrc
+            Properties sysProps = System.getProperties();
+            Properties newProps = new Properties();
+
             // load properties and re-set as jruby.*
             fis = new FileInputStream(dotfile);
             newProps.load(fis);
@@ -120,7 +126,10 @@ public class Main {
             // replace system properties
             System.setProperties(sysProps);
         } catch (IOException ioe) {
-            // do anything?
+            // do anything else?
+            LOG.debug("exception loading .jrubyrc", ioe);
+        } catch (SecurityException se) {
+            LOG.debug("exception loading .jrubyrc", se);
         } finally {
             if (fis != null) try {fis.close();} catch (Exception e) {}
         }
