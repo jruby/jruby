@@ -890,10 +890,10 @@ public class LoadService {
         }
         String file = state.loadName;
         if (file.endsWith(".so") || file.endsWith(".dll") || file.endsWith(".bundle")) {
-            if (RubyInstanceConfig.nativeEnabled) {
+            if (RubyInstanceConfig.CEXT_ENABLED) {
                 return new CExtension(resource);
             } else {
-                throw runtime.newLoadError("native code is disabled, can't load cext `" + resource.getName() + "'");
+                throw runtime.newLoadError("C extensions are disabled, can't load `" + resource.getName() + "'");
             }
         } else if (file.endsWith(".jar")) {
             return new JarredScript(resource);

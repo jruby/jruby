@@ -300,7 +300,11 @@ public class RubyInstanceConfig {
     public static final String COMPILE_EXCLUDE
             = SafePropertyAccessor.getProperty("jruby.jit.exclude");
     
-    public final static boolean nativeEnabled = SafePropertyAccessor.getBoolean("jruby.native.enabled", true);
+    public static final boolean NATIVE_ENABLED = SafePropertyAccessor.getBoolean("jruby.native.enabled", true);
+    @Deprecated
+    public static final boolean nativeEnabled = NATIVE_ENABLED;
+    
+    public final static boolean CEXT_ENABLED = SafePropertyAccessor.getBoolean("jruby.cext.enabled", NATIVE_ENABLED);
 
     public static final boolean REIFY_RUBY_CLASSES
             = SafePropertyAccessor.getBoolean("jruby.reify.classes", false);
