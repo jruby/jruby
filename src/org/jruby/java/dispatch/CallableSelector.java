@@ -430,7 +430,7 @@ public class CallableSelector {
     public static RaiseException argTypesDoNotMatch(Ruby runtime, IRubyObject receiver, JavaCallable[] methods, Object... args) {
         Class[] argTypes = new Class[args.length];
         for (int i = 0; i < args.length; i++) {
-            argTypes[0] = argClassTypeError(args[i]);
+            argTypes[i] = argClassTypeError(args[i]);
         }
 
         return argumentError(runtime.getCurrentContext(), methods, receiver, argTypes);
@@ -449,7 +449,7 @@ public class CallableSelector {
 
     private static RaiseException argumentError(ThreadContext context, ParameterTypes[] methods, IRubyObject receiver, Class[] argTypes) {
         boolean constructor = methods[0] instanceof JavaConstructor || methods[0] instanceof JavaProxyConstructor;
-
+        
         StringBuffer fullError = new StringBuffer();
         fullError.append("no ");
         if (constructor) {

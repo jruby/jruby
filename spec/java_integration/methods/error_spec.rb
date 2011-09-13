@@ -15,6 +15,10 @@ describe "Java instance methods" do
     proc do 
       java.util.ArrayList.new.add_all "str"
     end.should raise_error(NameError)
+
+    proc do 
+      java.util.System.set_property 1, 2
+    end.should raise_error(NameError)
   end
   
   describe "with fixed arity" do
