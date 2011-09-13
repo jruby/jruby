@@ -37,6 +37,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.util.Random;
 import static org.jruby.RubyEnumerator.enumeratorize;
 
 import java.io.IOException;
