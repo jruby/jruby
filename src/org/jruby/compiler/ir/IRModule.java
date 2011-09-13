@@ -24,6 +24,8 @@ import org.jruby.parser.LocalStaticScope;
 import org.jruby.parser.StaticScope;
 
 public class IRModule extends IRScopeImpl {
+    private final static LocalStaticScope rootObjectScope = new LocalStaticScope(null);
+
     // The "root" method of a class -- the scope in which all definitions, and class code executes, equivalent to java clinit
     private final static String ROOT_METHOD_PREFIX = "[root]:";
     private static Map<String, IRClass> coreClasses;
@@ -79,6 +81,10 @@ public class IRModule extends IRScopeImpl {
         addCoreClass("Proc", boostrapScript, null, null);
     }
 
+    public static StaticScope getRootObjectScope() {
+        return rootObjectScope;
+    }
+
     public static IRClass getCoreClass(String n) {
         return coreClasses.get(n);
     }
@@ -100,7 +106,7 @@ public class IRModule extends IRScopeImpl {
         //    end
         //
         String n = ROOT_METHOD_PREFIX + getName();
-        rootMethod = new IRMethod(this, MetaObject.create(this), n, false, new LocalStaticScope(null));
+        rootMethod = new IRMethod(this, MetaObject.create(this), n, false, new LocalStaticScope(rootObjectScope));
         rootMethod.addInstr(new ReceiveSelfInstruction(rootMethod.getSelf()));   // Set up self!
         rootMethod.addInstr(new ReceiveClosureInstr(rootMethod.getImplicitBlockArg()));
     }

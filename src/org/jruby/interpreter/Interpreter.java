@@ -10,6 +10,7 @@ import org.jruby.ast.Node;
 import org.jruby.ast.RootNode;
 import org.jruby.compiler.ir.IRBuilder;
 import org.jruby.compiler.ir.IRMethod;
+import org.jruby.compiler.ir.IRModule;
 import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.IRClosure;
 import org.jruby.compiler.ir.IRScope;
@@ -69,6 +70,9 @@ public class Interpreter {
         }
 
         RubyModule currModule = root.getStaticScope().getModule();
+
+        // Scope state for root?
+        IRModule.getRootObjectScope().setModule(currModule);
         IRMethod rootMethod = root.getRootClass().getRootMethod();
         InterpretedIRMethod method = new InterpretedIRMethod(rootMethod, currModule);
         ThreadContext context = runtime.getCurrentContext();
