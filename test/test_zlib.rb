@@ -842,7 +842,6 @@ class TestZlibInflateAuto < Test::Unit::TestCase
       ustr = "\u{3042 3044 3046}"
       estr = NKF.nkf("-Wem0", ustr)
       sstr = NKF.nkf("-Wsm0", ustr)
-      sstr.force_encoding("Shift_JIS")
       t = Tempfile.new("test_encoding")
       t.close
       Zlib::GzipWriter.open(t.path, external_encoding: "UTF-8") {|gz| gz.print(ustr) }
