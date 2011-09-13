@@ -118,7 +118,7 @@ public final class Util {
             }
         } catch (IOException ioe) {
             String msg = ioe.getMessage();
-            if (msg == null || msg.isEmpty()) {
+            if (msg == null || msg.length() == 0) {
                 msg = "not in gzip format";
             }
             throw newGzipFileError(runtime, msg);
