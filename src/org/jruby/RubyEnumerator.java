@@ -73,9 +73,7 @@ public class RubyEnumerator extends RubyObject {
 
         RubyYielder.createYielderClass(runtime);
         
-        if (runtime.is1_9()) {
-            runtime.getLoadService().load("generator_internal.rb", false);
-        }
+        runtime.getLoadService().require("generator_internal.rb");
     }
 
     private static ObjectAllocator ENUMERATOR_ALLOCATOR = new ObjectAllocator() {
@@ -407,23 +405,5 @@ public class RubyEnumerator extends RubyObject {
     @JRubyMethod(name = "with_index", compat = RUBY1_9)
     public static IRubyObject with_index19(ThreadContext context, IRubyObject self, IRubyObject arg, final Block block) {
         return with_index_common(context, self, block, "with_index", arg);
-    }
-
-    @JRubyMethod
-    public static IRubyObject next(ThreadContext context, IRubyObject self) {
-        context.getRuntime().getLoadService().require("generator_internal");
-        return self.callMethod(context, "next");
-    }
-
-    @JRubyMethod
-    public static IRubyObject rewind(ThreadContext context, IRubyObject self) {
-        context.getRuntime().getLoadService().require("generator_internal");
-        return self.callMethod(context, "rewind");
-    }
-
-    @JRubyMethod(compat = RUBY1_9)
-    public static IRubyObject peek(ThreadContext context, IRubyObject self) {
-        context.getRuntime().getLoadService().require("generator_internal");
-        return self.callMethod(context, "peek");
     }
 }
