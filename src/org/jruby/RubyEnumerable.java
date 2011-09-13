@@ -139,7 +139,7 @@ public class RubyEnumerable {
             if (self.respondsTo("size")) return self.callMethod(context, "size");
 
             result = new int[] { 0 };
-            callEach(runtime, context, self, block.arity(), new BlockCallback() {
+            callEach(runtime, context, self, Arity.NO_ARGUMENTS, new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                     checkContext(localContext, ctx, "count");
                     result[0]++;
@@ -158,7 +158,7 @@ public class RubyEnumerable {
         
         if (block.isGiven()) runtime.getWarnings().warn(ID.BLOCK_UNUSED , "given block not used");
         
-        callEach(runtime, context, self, block.arity(), new BlockCallback() {
+        callEach(runtime, context, self, Arity.ONE_REQUIRED, new BlockCallback() {
             public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block block) {
                 IRubyObject larg = checkArgs(runtime, largs);
                 checkContext(localContext, ctx, "count");
@@ -502,7 +502,7 @@ public class RubyEnumerable {
                 }
             });
         } else {
-            callEach(runtime, context, self, block.arity(), new BlockCallback() {
+            callEach(runtime, context, self, Arity.ONE_REQUIRED, new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                     IRubyObject larg = checkArgs(runtime, largs);
                     if (pattern.callMethod(ctx, "===", larg).isTrue()) {
@@ -1040,7 +1040,7 @@ public class RubyEnumerable {
                 }
             });
         } else {
-            callEach(runtime, context, self, block.arity(), new BlockCallback() {
+            callEach(runtime, context, self, Arity.ONE_REQUIRED, new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                     IRubyObject larg = checkArgs(runtime, largs);
                     synchronized (result) {
@@ -1101,7 +1101,7 @@ public class RubyEnumerable {
                 }
             });
         } else {
-            callEach(runtime, context, self, block.arity(), new BlockCallback() {
+            callEach(runtime, context, self, Arity.ONE_REQUIRED, new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                     IRubyObject larg = checkArgs(runtime, largs);
                     synchronized (result) {
@@ -1172,7 +1172,7 @@ public class RubyEnumerable {
                 }
             });
         } else {
-            callEach(runtime, context, self, block.arity(), new BlockCallback() {
+            callEach(runtime, context, self, Arity.ONE_REQUIRED, new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                     IRubyObject arg = checkArgs(runtime, largs);
                     synchronized (result) {
@@ -1250,7 +1250,7 @@ public class RubyEnumerable {
                     }
                 });
             } else {
-                callEach(runtime, context, self, block.arity(), new BlockCallback() {
+                callEach(runtime, context, self, Arity.ONE_REQUIRED, new BlockCallback() {
                     public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                         checkContext(localContext, ctx, "none?");
                         IRubyObject larg = checkArgs(runtime, largs);
@@ -1288,7 +1288,7 @@ public class RubyEnumerable {
                     }
                 });
             } else {
-                callEach(runtime, context, self, block.arity(), new BlockCallback() {
+                callEach(runtime, context, self, Arity.ONE_REQUIRED, new BlockCallback() {
                     public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                         checkContext(localContext, ctx, "one?");
                         IRubyObject larg = checkArgs(runtime, largs);
@@ -1333,7 +1333,7 @@ public class RubyEnumerable {
                     }
                 });
             } else {
-                callEach(runtime, context, self, block.arity(), new BlockCallback() {
+                callEach(runtime, context, self, Arity.ONE_REQUIRED, new BlockCallback() {
                     public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                         checkContext(localContext, ctx, "all?");
                         IRubyObject larg = checkArgs(runtime, largs);
@@ -1375,7 +1375,7 @@ public class RubyEnumerable {
                     }
                 });
             } else {
-                callEach(runtime, context, self, block.arity(), new BlockCallback() {
+                callEach(runtime, context, self, Arity.ONE_REQUIRED, new BlockCallback() {
                     public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                         checkContext(localContext, ctx, "any?");
                         IRubyObject larg = checkArgs(runtime, largs);
@@ -1494,7 +1494,7 @@ public class RubyEnumerable {
             return runtime.getNil();
         } else {
             final RubyArray zip = runtime.newArray();
-            callEach(runtime, context, self, block.arity(), new BlockCallback() {
+            callEach(runtime, context, self, Arity.ONE_REQUIRED, new BlockCallback() {
                 AtomicInteger ix = new AtomicInteger(0);
 
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
@@ -1541,7 +1541,7 @@ public class RubyEnumerable {
             return runtime.getNil();
         } else {
             final RubyArray zip = runtime.newArray();
-            callEach(runtime, context, self, block.arity(), new BlockCallback() {
+            callEach(runtime, context, self, Arity.ONE_REQUIRED, new BlockCallback() {
                 AtomicInteger ix = new AtomicInteger(0);
 
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
