@@ -36,7 +36,7 @@ package org.jruby.test;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 
-import jnr.posix.JavaFileStatTest;
+import org.jruby.ext.posix.JavaFileStatTest;
 import org.jruby.javasupport.TestJava;
 import org.jruby.javasupport.TestJavaClass;
 import org.jruby.javasupport.test.JavaSupportTestSuite;
