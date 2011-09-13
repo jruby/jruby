@@ -32,6 +32,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.runtime.Visibility.*;
@@ -58,6 +59,13 @@ public class PsychToRuby {
 
     @JRubyMethod(visibility = PRIVATE)
     public static IRubyObject path2class(ThreadContext context, IRubyObject self, IRubyObject path) {
-        return context.runtime.getClassFromPath(path.asJavaString());
+        try {
+            return context.runtime.getClassFromPath(path.asJavaString());
+        } catch (RaiseException re) {
+            if (re.getException().getMetaClass() == context.runtime.getNameError()) {
+                throw context.runtime.newArgumentError("undefined class/module " + path);
+            }
+            throw re;
+        }
     }
 }

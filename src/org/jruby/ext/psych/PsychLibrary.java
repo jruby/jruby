@@ -28,13 +28,33 @@
 package org.jruby.ext.psych;
 
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.RubyModule;
+import org.jruby.RubyString;
+import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodZero;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
 
 public class PsychLibrary implements Library {
     public void load(final Ruby runtime, boolean wrap) {
         RubyModule psych = runtime.defineModule("Psych");
-
+        
+        RubyString version = runtime.newString("0.1.4");
+        version.setFrozen(true);
+        
+        final RubyArray versionElements = runtime.newArray(runtime.newFixnum(0), runtime.newFixnum(1), runtime.newFixnum(4));
+        versionElements.setFrozen(true);
+        
+        psych.setConstant("LIBYAML_VERSION", runtime.newString("0.1.4"));
+        psych.getSingletonClass().addMethod("libyaml_version", new JavaMethodZero(psych, Visibility.PUBLIC) {
+            @Override
+            public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
+                return versionElements;
+            }
+        });
+        
         PsychParser.initPsychParser(runtime, psych);
         PsychEmitter.initPsychEmitter(runtime, psych);
         PsychToRuby.initPsychToRuby(runtime, psych);

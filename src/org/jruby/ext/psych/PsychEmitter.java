@@ -35,13 +35,16 @@ import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
+import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
+import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IOOutputStream;
+import org.jruby.util.TypeConverter;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.emitter.Emitter;
 import org.yaml.snakeyaml.emitter.EmitterException;
@@ -86,6 +89,10 @@ public class PsychEmitter extends RubyObject {
 
     @JRubyMethod
     public IRubyObject start_stream(ThreadContext context, IRubyObject encoding) {
+        if (!(encoding instanceof RubyFixnum)) {
+            throw context.runtime.newTypeError(encoding, context.runtime.getFixnum());
+        }
+        
         // TODO: do something with encoding? perhaps at the stream level?
         StreamStartEvent event = new StreamStartEvent(NULL_MARK, NULL_MARK);
         emit(context, event);
@@ -148,6 +155,10 @@ public class PsychEmitter extends RubyObject {
         IRubyObject plain = args[3];
         IRubyObject quoted = args[4];
         IRubyObject style = args[5];
+        
+        if (!(value instanceof RubyString)) {
+            throw context.runtime.newTypeError(value, context.runtime.getString());
+        }
 
         ScalarEvent event = new ScalarEvent(
                 anchor.isNil() ? null : anchor.asJavaString(),

@@ -95,7 +95,7 @@ public class IOInputStream extends InputStream {
         IRubyObject readValue = readAdapter.call(io.getRuntime().getCurrentContext(), io, io, numOne);
         int returnValue = -1;
         if (!readValue.isNil()) {
-            returnValue = readValue.toString().charAt(0);
+            returnValue = readValue.convertToString().getByteList().get(0);
         }
         return returnValue;
     }
@@ -108,7 +108,7 @@ public class IOInputStream extends InputStream {
         IRubyObject readValue = readAdapter.call(io.getRuntime().getCurrentContext(), io, io, io.getRuntime().newFixnum(b.length));
         int returnValue = -1;
         if (!readValue.isNil()) {
-            ByteList str = ((RubyString)readValue).getByteList();
+            ByteList str = readValue.convertToString().getByteList();
             System.arraycopy(str.getUnsafeBytes(), str.getBegin(), b, 0, str.getRealSize());
             returnValue = str.getRealSize();
         }
@@ -123,7 +123,7 @@ public class IOInputStream extends InputStream {
         IRubyObject readValue = readAdapter.call(io.getRuntime().getCurrentContext(), io, io, io.getRuntime().newFixnum(len));
         int returnValue = -1;
         if (!readValue.isNil()) {
-            ByteList str = ((RubyString)readValue).getByteList();
+            ByteList str = readValue.convertToString().getByteList();
             System.arraycopy(str.getUnsafeBytes(), str.getBegin(), b, off, str.getRealSize());
             returnValue = str.getRealSize();
         }
