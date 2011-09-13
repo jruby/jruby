@@ -3289,6 +3289,11 @@ public final class Ruby {
         return newRaiseException(getTypeError(), "wrong argument type " +
                 receivedObject.getMetaClass().getRealClass() + " (expected " + expectedType + ")");
     }
+    
+    public RaiseException newTypeError(IRubyObject receivedObject, String expectedType) {
+        return newRaiseException(getTypeError(), "wrong argument type " +
+                receivedObject.getMetaClass().getRealClass() + " (expected " + expectedType + ")");
+    }    
 
     public RaiseException newEOFError() {
         return newRaiseException(getEOFError(), "End of file reached");
