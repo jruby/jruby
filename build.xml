@@ -386,7 +386,7 @@
       <zipfileset src="${build.lib.dir}/jffi-x86_64-Windows.jar"/>
       <zipfileset src="${build.lib.dir}/jffi-s390x-Linux.jar"/>
       <zipfileset src="${build.lib.dir}/joda-time-${joda.time.version}.jar"/>
-      <zipfileset src="${build.lib.dir}/snakeyaml-1.8.jar"/>
+      <zipfileset src="${build.lib.dir}/snakeyaml-1.9.jar"/>
       <zipfileset src="${build.lib.dir}/yecht.jar"/>
       <zipfileset src="${build.lib.dir}/yydebug.jar"/>
       <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
@@ -489,7 +489,7 @@
       <zipfileset src="${build.lib.dir}/jffi-x86_64-Windows.jar"/>
       <zipfileset src="${build.lib.dir}/jffi-s390x-Linux.jar"/>
       <zipfileset src="${build.lib.dir}/joda-time-${joda.time.version}.jar"/>
-      <zipfileset src="${build.lib.dir}/snakeyaml-1.8.jar"/>
+      <zipfileset src="${build.lib.dir}/snakeyaml-1.9.jar"/>
       <zipfileset src="${build.lib.dir}/yecht.jar"/>
       <zipfileset src="${build.lib.dir}/yydebug.jar"/>
       <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
@@ -648,7 +648,7 @@
       <zipfileset src="${build.lib.dir}/jffi-x86_64-Windows.jar"/>
       <zipfileset src="${build.lib.dir}/jffi-s390x-Linux.jar"/>
       <zipfileset src="${build.lib.dir}/joda-time-${joda.time.version}.jar"/>
-      <zipfileset src="${build.lib.dir}/snakeyaml-1.8.jar"/>
+      <zipfileset src="${build.lib.dir}/snakeyaml-1.9.jar"/>
       <zipfileset src="${build.lib.dir}/yecht.jar"/>
       <zipfileset src="${build.lib.dir}/yydebug.jar"/>
       <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>

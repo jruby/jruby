@@ -186,8 +186,8 @@ public class PsychParser extends RubyObject {
                     IRubyObject tag = se.getTag() == null ?
                         runtime.getNil() :
                         RubyString.newString(runtime, se.getTag());
-                    IRubyObject plain_implicit = runtime.newBoolean(se.getImplicit().isFirst());
-                    IRubyObject quoted_implicit = runtime.newBoolean(se.getImplicit().isSecond());
+                    IRubyObject plain_implicit = runtime.newBoolean(se.getImplicit().canOmitTagInPlainScalar());
+                    IRubyObject quoted_implicit = runtime.newBoolean(se.getImplicit().canOmitTagInNonPlainScalar());
                     IRubyObject style = runtime.newFixnum(se.getStyle());
                     IRubyObject val = RubyString.newString(runtime, se.getValue());
 
