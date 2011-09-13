@@ -129,7 +129,7 @@ public class JavaSupport {
         this.active = active;
     }
     
-    private Class loadJavaClass(String className) throws ClassNotFoundException {
+    public Class loadJavaClass(String className) throws ClassNotFoundException {
         Class primitiveClass;
         if ((primitiveClass = PRIMITIVE_CLASSES.get(className)) == null) {
             if (!Ruby.isSecurityRestricted()) {
