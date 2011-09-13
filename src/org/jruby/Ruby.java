@@ -1056,7 +1056,7 @@ public final class Ruby {
         
         // Construct key services
         loadService = config.createLoadService(this);
-        posix = POSIXFactory.getPOSIX(new JRubyPOSIXHandler(this), RubyInstanceConfig.nativeEnabled);
+        posix = POSIXFactory.getPOSIX(new JRubyPOSIXHandler(this), RubyInstanceConfig.NATIVE_ENABLED);
         javaSupport = new JavaSupport(this);
         
         executor = new ThreadPoolExecutor(
