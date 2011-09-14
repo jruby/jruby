@@ -54,7 +54,6 @@ import org.jruby.parser.LocalStaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
-import org.jruby.runtime.BlockCallback;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ContextAwareBlockBody;
 import org.jruby.runtime.ObjectAllocator;
@@ -109,6 +108,7 @@ public class RubySymbol extends RubyObject {
         symbolClass.index = ClassIndex.SYMBOL;
         symbolClass.setReifiedClass(RubySymbol.class);
         symbolClass.kindOf = new RubyModule.KindOf() {
+            @Override
             public boolean isKindOf(IRubyObject obj, RubyModule type) {
                 return obj instanceof RubySymbol;
             }
@@ -198,9 +198,8 @@ public class RubySymbol extends RubyObject {
     }
 
     private final RubyFixnum to_int(Ruby runtime) {
-        if (runtime.isVerbose()) {
-            runtime.getWarnings().warn(ID.SYMBOL_AS_INTEGER, "treating Symbol as an integer");
-        }
+        if (runtime.isVerbose()) runtime.getWarnings().warn(ID.SYMBOL_AS_INTEGER, "treating Symbol as an integer");
+
         return to_i(runtime);
     }
 
@@ -214,16 +213,11 @@ public class RubySymbol extends RubyObject {
         return inspect(context.getRuntime());
     }
     private final IRubyObject inspect(Ruby runtime) {
-        
-        final ByteList bytes;
-        if (isSymbolName(symbol)) {
-            bytes = symbolBytes;
-        } else {
-            bytes = ((RubyString)RubyString.newString(runtime, symbolBytes).dump()).getByteList();
-        }
+        final ByteList bytes = isSymbolName(symbol) ? symbolBytes : 
+                ((RubyString)RubyString.newString(runtime, symbolBytes).dump()).getByteList();
+
         ByteList result = new ByteList(bytes.getRealSize() + 1);
-        result.append((byte)':');
-        result.append(bytes);
+        result.append((byte)':').append(bytes);
 
         return RubyString.newString(runtime, result);
     }
@@ -239,32 +233,33 @@ public class RubySymbol extends RubyObject {
     }
 
     private final IRubyObject inspect19(Ruby runtime) {
-        
         ByteList result = new ByteList(symbolBytes.getRealSize() + 1);
         result.setEncoding(symbolBytes.getEncoding());
         result.append((byte)':');
         result.append(symbolBytes);
 
         RubyString str = RubyString.newString(runtime, result); 
-        if (isPrintable() && isSymbolName19(symbol)) { // TODO: 1.9 rb_enc_symname_p
-            return str;
-        } else {
-            str = (RubyString)str.inspect19();
-            ByteList bytes = str.getByteList();
-            bytes.set(0, ':');
-            bytes.set(1, '"');
-            return str;
-        }
+        // TODO: 1.9 rb_enc_symname_p
+        if (isPrintable() && isSymbolName19(symbol)) return str;
+            
+        str = (RubyString)str.inspect19();
+        ByteList bytes = str.getByteList();
+        bytes.set(0, ':');
+        bytes.set(1, '"');
+        
+        return str;
     }
 
     @Override
     public IRubyObject to_s() {
         return to_s(getRuntime());
     }
+    
     @JRubyMethod(name = "to_s")
     public IRubyObject to_s(ThreadContext context) {
         return to_s(context.getRuntime());
     }
+    
     private final IRubyObject to_s(Ruby runtime) {
         return RubyString.newStringShared(runtime, symbolBytes);
     }
@@ -272,6 +267,7 @@ public class RubySymbol extends RubyObject {
     public IRubyObject id2name() {
         return to_s(getRuntime());
     }
+    
     @JRubyMethod(name = "id2name")
     public IRubyObject id2name(ThreadContext context) {
         return to_s(context);
@@ -338,39 +334,36 @@ public class RubySymbol extends RubyObject {
     }
 
     @JRubyMethod(name = "<=>", compat = CompatVersion.RUBY1_9)
+    @Override
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
         Ruby runtime = context.getRuntime();
-        if (other instanceof RubySymbol) {
-            return (newShared(runtime).op_cmp19(context, ((RubySymbol)other).newShared(runtime)));
-        }
-        return runtime.getNil();
+        
+        return !(other instanceof RubySymbol) ? runtime.getNil() :
+                newShared(runtime).op_cmp19(context, ((RubySymbol)other).newShared(runtime));
     }
 
     @JRubyMethod(name = "casecmp", compat = CompatVersion.RUBY1_9)
     public IRubyObject casecmp(ThreadContext context, IRubyObject other) {
         Ruby runtime = context.getRuntime();
-        if (other instanceof RubySymbol) {
-            return newShared(runtime).casecmp19(context, ((RubySymbol) other).newShared(runtime));
-        }
-        return runtime.getNil();
+        
+        return !(other instanceof RubySymbol) ? runtime.getNil() :
+                newShared(runtime).casecmp19(context, ((RubySymbol) other).newShared(runtime));
     }
 
     @JRubyMethod(name = {"=~", "match"}, compat = CompatVersion.RUBY1_9)
+    @Override
     public IRubyObject op_match19(ThreadContext context, IRubyObject other) {
-        Ruby runtime = context.getRuntime();
-        return newShared(runtime).op_match19(context, other);
+        return newShared(context.getRuntime()).op_match19(context, other);
     }
 
     @JRubyMethod(name = {"[]", "slice"}, compat = CompatVersion.RUBY1_9)
     public IRubyObject op_aref(ThreadContext context, IRubyObject arg) {
-        Ruby runtime = context.getRuntime();
-        return newShared(runtime).op_aref19(context, arg);
+        return newShared(context.getRuntime()).op_aref19(context, arg);
     }
 
     @JRubyMethod(name = {"[]", "slice"}, compat = CompatVersion.RUBY1_9)
     public IRubyObject op_aref(ThreadContext context, IRubyObject arg1, IRubyObject arg2) {
-        Ruby runtime = context.getRuntime();
-        return newShared(runtime).op_aref19(context, arg1, arg2);
+        return newShared(context.getRuntime()).op_aref19(context, arg1, arg2);
     }
 
     @JRubyMethod(name = {"length", "size"}, compat = CompatVersion.RUBY1_9)
@@ -386,24 +379,28 @@ public class RubySymbol extends RubyObject {
     @JRubyMethod(name = "upcase", compat = CompatVersion.RUBY1_9)
     public IRubyObject upcase(ThreadContext context) {
         Ruby runtime = context.getRuntime();
+        
         return newSymbol(runtime, rubyStringFromString(runtime).upcase19(context).toString());
     }
 
     @JRubyMethod(name = "downcase", compat = CompatVersion.RUBY1_9)
     public IRubyObject downcase(ThreadContext context) {
         Ruby runtime = context.getRuntime();
+        
         return newSymbol(runtime, rubyStringFromString(runtime).downcase19(context).toString());
     }
 
     @JRubyMethod(name = "capitalize", compat = CompatVersion.RUBY1_9)
     public IRubyObject capitalize(ThreadContext context) {
         Ruby runtime = context.getRuntime();
+        
         return newSymbol(runtime, rubyStringFromString(runtime).capitalize19(context).toString());
     }
 
     @JRubyMethod(name = "swapcase", compat = CompatVersion.RUBY1_9)
     public IRubyObject swapcase(ThreadContext context) {
         Ruby runtime = context.getRuntime();
+        
         return newSymbol(runtime, rubyStringFromString(runtime).swapcase19(context).toString());
     }
 
@@ -411,61 +408,33 @@ public class RubySymbol extends RubyObject {
     public IRubyObject encoding(ThreadContext context) {
         return context.getRuntime().getEncodingService().getEncoding(symbolBytes.getEncoding());
     }
-
-    private static class ToProcCallback implements BlockCallback {
-        private RubySymbol symbol;
-        public ToProcCallback(RubySymbol symbol) {
-            this.symbol = symbol;
-        }
-
-        public IRubyObject call(ThreadContext ctx, IRubyObject[] args, Block blk) {
-            if (args.length == 0) {
-                throw symbol.getRuntime().newArgumentError("no receiver given");
-            } else {
-                if (args.length == 1 && args[0] instanceof RubyArray) {
-                    args = ((RubyArray)args[0]).toJavaArrayUnsafe();
-                }
-                IRubyObject[] args2 = new IRubyObject[args.length-1];
-                System.arraycopy(args, 1, args2, 0, args2.length);
-                return RuntimeHelpers.invoke(ctx, args[0], symbol.symbol, args2);
-            }
-        }
-    }
     
     @JRubyMethod
     public IRubyObject to_proc(ThreadContext context) {
         StaticScope scope = new LocalStaticScope(null);
-        
         BlockBody body = new ContextAwareBlockBody(scope, Arity.OPTIONAL, BlockBody.SINGLE_RESTARG) {
+            private IRubyObject yieldInner(ThreadContext context, RubyArray array) {
+                if (array.isEmpty()) throw context.getRuntime().newArgumentError("no receiver given");
+
+                return RuntimeHelpers.invoke(context, array.shift(context), symbol, array.toJavaArray());
+            }
+            
             @Override
             public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Type type) {
-                RubyArray array = ArgsUtil.convertToRubyArray(context.getRuntime(), value, false);
-                if (array.isEmpty()) {
-                    throw context.getRuntime().newArgumentError("no receiver given");
-                }
-                IRubyObject receiver = array.shift(context);
-                return RuntimeHelpers.invoke(context, receiver, symbol, array.toJavaArray());
+                return yieldInner(context, ArgsUtil.convertToRubyArray(context.getRuntime(), value, false));
             }
 
             @Override
             public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Type type) {
-                RubyArray array = aValue && (value instanceof RubyArray) ? (RubyArray)value : 
-                  ArgsUtil.convertToRubyArray(context.getRuntime(), value, false);
-                if (array.isEmpty()) {
-                    throw context.getRuntime().newArgumentError("no receiver given");
-                }
-                IRubyObject receiver = array.shift(context);
-                return RuntimeHelpers.invoke(context, receiver, symbol, array.toJavaArray());
+                RubyArray array = aValue && value instanceof RubyArray ? 
+                        (RubyArray) value : ArgsUtil.convertToRubyArray(context.getRuntime(), value, false);
+                
+                return yieldInner(context, array);
             }
 
             @Override
             public Block cloneBlock(Binding binding) {
                 return new Block(this, binding);
-            }
-
-            @Override
-            public Arity arity() {
-                return Arity.OPTIONAL;
             }
 
             public String getFile() {
@@ -476,33 +445,25 @@ public class RubySymbol extends RubyObject {
                 return -1;
             }
         };
-        Block block = new Block(body, context.currentBinding());
+
         return RubyProc.newProc(context.getRuntime(),
-                                block,
+                                new Block(body, context.currentBinding()),
                                 Block.Type.PROC);
     }
     
     private static boolean isIdentStart(char c) {
-        return ((c >= 'a' && c <= 'z')|| (c >= 'A' && c <= 'Z')
-                || c == '_');
+        return ((c >= 'a' && c <= 'z')|| (c >= 'A' && c <= 'Z') || c == '_');
     }
+    
     private static boolean isIdentChar(char c) {
-        return ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z')
-                || c == '_');
+        return ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || c == '_');
     }
     
     private static boolean isIdentifier(String s) {
-        if (s == null || s.length() <= 0) {
-            return false;
-        } 
-        
-        if (!isIdentStart(s.charAt(0))) {
-            return false;
-        }
+        if (s == null || s.length() <= 0 || !isIdentStart(s.charAt(0))) return false;
+
         for (int i = 1; i < s.length(); i++) {
-            if (!isIdentChar(s.charAt(i))) {
-                return false;
-            }
+            if (!isIdentChar(s.charAt(i))) return false;
         }
         
         return true;
@@ -514,9 +475,7 @@ public class RubySymbol extends RubyObject {
      * @return
      */
     private static boolean isSpecialGlobalName(String s) {
-        if (s == null || s.length() <= 0) {
-            return false;
-        }
+        if (s == null || s.length() <= 0) return false;
 
         int length = s.length();
            
@@ -529,13 +488,11 @@ public class RubySymbol extends RubyObject {
             return (length == 1 || (length == 2 && isIdentChar(s.charAt(1))));
             
         default:
-            // we already confirmed above that length > 0
             for (int i = 0; i < length; i++) {
-                if (!Character.isDigit(s.charAt(i))) {
-                    return false;
-                }
+                if (!Character.isDigit(s.charAt(i))) return false;
             }
         }
+        
         return true;
     }
 
@@ -548,9 +505,12 @@ public class RubySymbol extends RubyObject {
 
         while (p < end) {
             int c = codePoint(runtime, enc, bytes, p, end);
+            
             if (!enc.isPrint(c)) return false;
+            
             p += codeLength(runtime, enc, c);
         }
+        
         return true;
     }
 
@@ -559,12 +519,11 @@ public class RubySymbol extends RubyObject {
 
         int length = s.length();
         char c = s.charAt(0);
-        if (isSymbolNameCommon(s, c, length) || (c == '!' && (length == 1 ||
-                    (length == 2 && (s.charAt(1) == '~' || s.charAt(1) == '=')) ) )) {
-            return true;
-        }
-
-        return isSymbolLocal(s, c, length);
+        
+        return isSymbolNameCommon(s, c, length) || 
+                (c == '!' && (length == 1 ||
+                             (length == 2 && (s.charAt(1) == '~' || s.charAt(1) == '=')))) ||
+                isSymbolLocal(s, c, length);
     }
 
     private static boolean isSymbolName(String s) {
@@ -572,23 +531,19 @@ public class RubySymbol extends RubyObject {
 
         int length = s.length();
         char c = s.charAt(0);
-        if (isSymbolNameCommon(s, c, length)) return true;
         
-        return isSymbolLocal(s, c, length);
+        return isSymbolNameCommon(s, c, length) || isSymbolLocal(s, c, length);
     }
 
     private static boolean isSymbolNameCommon(String s, char c, int length) {        
         switch (c) {
         case '$':
-            if (length > 1 && isSpecialGlobalName(s.substring(1))) {
-                return true;
-            }
+            if (length > 1 && isSpecialGlobalName(s.substring(1))) return true;
+
             return isIdentifier(s.substring(1));
         case '@':
             int offset = 1;
-            if (length >= 2 && s.charAt(1) == '@') {
-                offset++;
-            }
+            if (length >= 2 && s.charAt(1) == '@') offset++;
 
             return isIdentifier(s.substring(offset));
         case '<':
@@ -622,14 +577,11 @@ public class RubySymbol extends RubyObject {
         for (; last < length; last++) {
             char d = s.charAt(last);
 
-            if (!isIdentChar(d)) {
-                break;
-            }
+            if (!isIdentChar(d)) break;
         }
 
-        if (last == length) {
-            return true;
-        } else if (localID && last == length - 1) {
+        if (last == length) return true;
+        if (localID && last == length - 1) {
             char d = s.charAt(last);
 
             return d == '!' || d == '?' || d == '=';
@@ -649,15 +601,16 @@ public class RubySymbol extends RubyObject {
 
     public static RubySymbol unmarshalFrom(UnmarshalStream input) throws java.io.IOException {
         RubySymbol result = newSymbol(input.getRuntime(), RubyString.byteListToString(input.unmarshalString()));
+        
         input.registerLinkTarget(result);
+        
         return result;
     }
 
     @Override
     public Object toJava(Class target) {
-        if (target == String.class || target == CharSequence.class) {
-            return symbol;
-        }
+        if (target == String.class || target == CharSequence.class) return symbol;
+
         return super.toJava(target);
     }
 
@@ -700,10 +653,11 @@ public class RubySymbol extends RubyObject {
         public RubySymbol getSymbol(String name) {
             int hash = name.hashCode();
             SymbolEntry[] table = symbolTable;
-            SymbolEntry e = getEntryFromTable(table, hash);
-            for (; e != null; e = e.next) {
+            
+            for (SymbolEntry e = getEntryFromTable(table, hash); e != null; e = e.next) {
                 if (isSymbolMatch(name, hash, e)) return e.symbol;
             }
+            
             return createSymbol(name, ByteList.create(name), hash, table);
         }
 
@@ -711,20 +665,21 @@ public class RubySymbol extends RubyObject {
             String name = bytes.toString();
             int hash = name.hashCode();
             SymbolEntry[] table = symbolTable;
-            SymbolEntry e = getEntryFromTable(table, hash);
-            for (; e != null; e = e.next) {
+            
+            for (SymbolEntry e = getEntryFromTable(table, hash); e != null; e = e.next) {
                 if (isSymbolMatch(name, hash, e)) return e.symbol;
             }
+            
             return createSymbol(name, bytes, hash, table);
         }
 
         public RubySymbol fastGetSymbol(String internedName) {
-            //            assert internedName == internedName.intern() : internedName + " is not interned";
             SymbolEntry[] table = symbolTable;
-            SymbolEntry e = getEntryFromTable(symbolTable, internedName.hashCode());
-            for (; e != null; e = e.next) {
+            
+            for (SymbolEntry e = getEntryFromTable(symbolTable, internedName.hashCode()); e != null; e = e.next) {
                 if (isSymbolMatch(internedName, e)) return e.symbol;
             }
+            
             return fastCreateSymbol(internedName, table);
         }
 
@@ -744,21 +699,17 @@ public class RubySymbol extends RubyObject {
             ReentrantLock lock;
             (lock = tableLock).lock();
             try {
-                int potentialNewSize;
-                if ((potentialNewSize = size + 1) > threshold) {
-                    table = rehash();
-                } else {
-                    table = symbolTable;
-                }
-                int index;
+                int index;                
+                int potentialNewSize = size + 1;
+                
+                table = potentialNewSize > threshold ? rehash() : symbolTable;
+
                 // try lookup again under lock
                 for (SymbolEntry e = table[index = hash & (table.length - 1)]; e != null; e = e.next) {
-                    if (hash == e.hash && name.equals(e.name)) {
-                        return e.symbol;
-                    }
+                    if (hash == e.hash && name.equals(e.name)) return e.symbol;
                 }
-                String internedName;
-                RubySymbol symbol = new RubySymbol(runtime, internedName = name.intern(), value);
+                String internedName = name.intern();
+                RubySymbol symbol = new RubySymbol(runtime, internedName, value);
                 table[index] = new SymbolEntry(hash, internedName, symbol, table[index]);
                 size = potentialNewSize;
                 // write-volatile
@@ -773,19 +724,15 @@ public class RubySymbol extends RubyObject {
             ReentrantLock lock;
             (lock = tableLock).lock();
             try {
-                int potentialNewSize;
-                if ((potentialNewSize = size + 1) > threshold) {
-                    table = rehash();
-                } else {
-                    table = symbolTable;
-                }
                 int index;
                 int hash;
+                int potentialNewSize = size + 1;
+                
+                table = potentialNewSize > threshold ? rehash() : symbolTable;
+
                 // try lookup again under lock
                 for (SymbolEntry e = table[index = (hash = internedName.hashCode()) & (table.length - 1)]; e != null; e = e.next) {
-                    if (internedName == e.name) {
-                        return e.symbol;
-                    }
+                    if (internedName == e.name) return e.symbol;
                 }
                 RubySymbol symbol = new RubySymbol(runtime, internedName);
                 table[index] = new SymbolEntry(hash, internedName, symbol, table[index]);
@@ -802,29 +749,30 @@ public class RubySymbol extends RubyObject {
         public RubySymbol lookup(String name) {
             int hash = name.hashCode();
             SymbolEntry[] table;
+            
             for (SymbolEntry e = (table = symbolTable)[hash & (table.length - 1)]; e != null; e = e.next) {
-                if (hash == e.hash && name.equals(e.name)) {
-                    return e.symbol;
-                }
+                if (hash == e.hash && name.equals(e.name)) return e.symbol;
             }
+
             return null;
         }
         
         public RubySymbol lookup(long id) {
             SymbolEntry[] table = symbolTable;
+            
             for (int i = table.length; --i >= 0; ) {
                 for (SymbolEntry e = table[i]; e != null; e = e.next) {
-                    if (id == e.symbol.id) {
-                        return e.symbol;
-                    }
+                    if (id == e.symbol.id) return e.symbol;
                 }
             }
+
             return null;
         }
         
         public RubyArray all_symbols() {
             SymbolEntry[] table = this.symbolTable;
             RubyArray array = runtime.newArray(this.size);
+            
             for (int i = table.length; --i >= 0; ) {
                 for (SymbolEntry e = table[i]; e != null; e = e.next) {
                     array.append(e.symbol);
@@ -842,10 +790,9 @@ public class RubySymbol extends RubyObject {
         
         private SymbolEntry[] rehash() {
             SymbolEntry[] oldTable = symbolTable;
-            int oldCapacity;
-            if ((oldCapacity = oldTable.length) >= MAXIMUM_CAPACITY) {
-                return oldTable;
-            }
+            int oldCapacity = oldTable.length;
+            
+            if (oldCapacity >= MAXIMUM_CAPACITY) return oldTable;
             
             int newCapacity = oldCapacity << 1;
             SymbolEntry[] newTable = new SymbolEntry[newCapacity];
