@@ -83,11 +83,11 @@ public class Config implements ConfigMBean {
     }
 
     public String getRequiredLibraries() {
-        return ruby.get().getInstanceConfig().requiredLibraries().toString();
+        return ruby.get().getInstanceConfig().getRequiredLibraries().toString();
     }
 
     public String getLoadPaths() {
-        return ruby.get().getInstanceConfig().loadPaths().toString();
+        return ruby.get().getInstanceConfig().getLoadPaths().toString();
     }
 
     public String getDisplayedFileName() {

@@ -300,11 +300,11 @@ public class RubyGlobal {
             runtime.defineVariable(new GlobalVariable(runtime, "$;", RubyRegexp.newRegexp(runtime, runtime.getInstanceConfig().getInputFieldSeparator(), new RegexpOptions())));
         }
         
-        Boolean verbose = runtime.getInstanceConfig().getVerbose();
+        RubyInstanceConfig.Verbosity verbose = runtime.getInstanceConfig().getVerbosity();
         IRubyObject verboseValue = null;
-        if (verbose == null) {
+        if (verbose == RubyInstanceConfig.Verbosity.NIL) {
             verboseValue = runtime.getNil();
-        } else if(verbose == Boolean.TRUE) {
+        } else if(verbose == RubyInstanceConfig.Verbosity.TRUE) {
             verboseValue = runtime.getTrue();
         } else {
             verboseValue = runtime.getFalse();

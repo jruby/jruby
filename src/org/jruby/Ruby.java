@@ -1106,7 +1106,7 @@ public final class Ruby {
         RubyGlobal.createGlobals(tc, this);
 
         // Prepare LoadService and load path
-        getLoadService().init(config.loadPaths());
+        getLoadService().init(config.getLoadPaths());
         
         booting = false;
 
@@ -1118,7 +1118,7 @@ public final class Ruby {
         }
 
         // Require in all libraries specified on command line
-        for (String scriptName : config.requiredLibraries()) {
+        for (String scriptName : config.getRequiredLibraries()) {
             loadService.require(scriptName);
         }
     }

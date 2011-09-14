@@ -87,7 +87,7 @@ public class RubyArgsFile {
                         currentFile = runtime.getGlobalVariables().get("$stdin");
                     } else {
                         currentFile = RubyFile.open(context, runtime.getFile(), new IRubyObject[]{filename}, Block.NULL_BLOCK);
-                        String extension = runtime.getInstanceConfig().getInPlaceBackupExtention();
+                        String extension = runtime.getInstanceConfig().getInPlaceBackupExtension();
                         if (extension != null) {
                             if (Platform.IS_WINDOWS) {
                                 inplaceEditWindows(context, filename.asJavaString(), extension);

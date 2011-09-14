@@ -78,7 +78,7 @@ public class TestCommandlineParser extends TestCase {
             }
         }
         RubyInstanceConfig c = new TestableCommandlineParser(new String[]{"-I", "someLoadPath", "--", "simple.rb", "-v", "--version"});
-        assertEquals("someLoadPath", c.loadPaths().get(0));
+        assertEquals("someLoadPath", c.getLoadPaths().get(0));
         assertEquals("simple.rb", c.getScriptFileName());
         assertEquals("simple.rb", c.displayedFileName());
         assertTrue("Should not be verbose. The -v flag should be a parameter to the script, not the jruby interpreter", !c.isVerbose());
@@ -91,12 +91,12 @@ public class TestCommandlineParser extends TestCase {
         String[] args = new String[]{"-h"};
         RubyInstanceConfig parser = new RubyInstanceConfig();
         parser.processArguments(args);
-        assertFalse(parser.isShouldRunInterpreter());
+        assertFalse(parser.getShouldRunInterpreter());
 
         args = new String[]{"--help"};
         parser = new RubyInstanceConfig();
         parser.processArguments(args);
-        assertFalse(parser.isShouldRunInterpreter());
+        assertFalse(parser.getShouldRunInterpreter());
     }
 
     public void testCommandTakesOneArgument() {
@@ -119,7 +119,7 @@ public class TestCommandlineParser extends TestCase {
         String[] args = new String[] { "-xtest", "testDoc.foo"};
         RubyInstanceConfig parser = new RubyInstanceConfig();
         parser.processArguments(args);
-        assertEquals(true, parser.isxFlag());
+        assertEquals(true, parser.isXFlag());
         assertEquals("testDoc.foo", parser.getScriptFileName());
     }
 }

@@ -276,7 +276,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * @return a list of load paths.
      */
     public List<String> getLoadPaths() {
-        return provider.getRubyInstanceConfig().loadPaths();
+        return provider.getRubyInstanceConfig().getLoadPaths();
     }
 
     /**

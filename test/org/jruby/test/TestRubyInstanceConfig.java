@@ -54,8 +54,8 @@ public class TestRubyInstanceConfig extends TestRubyBase {
         assertEquals(RubyInstanceConfig.LoadServiceCreator.DEFAULT, config.getLoadServiceCreator());
         assertFalse(config.isInlineScript());
         assertNull(config.getScriptFileName());
-        assertTrue(config.loadPaths().isEmpty());
-        assertTrue(config.requiredLibraries().isEmpty());
+        assertTrue(config.getLoadPaths().isEmpty());
+        assertTrue(config.getRequiredLibraries().isEmpty());
         assertTrue(config.isUpdateNativeENVEnabled());
     }
 

@@ -97,7 +97,7 @@ public class Main {
         config.setHardExit(hardExit);
     }
     
-    public void processDotfile() {
+    public static void processDotfile() {
         // try current dir, then home dir
         String home = SafePropertyAccessor.getProperty("user.dir");
         FileInputStream fis = null;
@@ -216,7 +216,7 @@ public class Main {
         doShowVersion();
         doShowCopyright();
 
-        if (!config.shouldRunInterpreter() ) {
+        if (!config.getShouldRunInterpreter() ) {
             doPrintUsage(false);
             doPrintProperties();
             return new Status();
@@ -235,10 +235,10 @@ public class Main {
             if (in == null) {
                 // no script to run, return success
                 return new Status();
-            } else if (config.isxFlag() && !config.hasShebangLine()) {
+            } else if (config.isXFlag() && !config.hasShebangLine()) {
                 // no shebang was found and x option is set
                 throw new MainExitException(1, "jruby: no Ruby script found in input (LoadError)");
-            } else if (config.isShouldCheckSyntax()) {
+            } else if (config.getShouldCheckSyntax()) {
                 // check syntax only and exit
                 return doCheckSyntax(runtime, in, filename);
             } else {
@@ -398,13 +398,13 @@ public class Main {
     }
 
     private void doPrintProperties() {
-        if (config.shouldPrintProperties()) {
+        if (config.getShouldPrintProperties()) {
             config.getOutput().print(config.getPropertyHelp());
         }
     }
 
     private void doPrintUsage(boolean force) {
-        if (config.shouldPrintUsage() || force) {
+        if (config.getShouldPrintUsage() || force) {
             config.getOutput().print(config.getBasicUsageHelp());
         }
     }
