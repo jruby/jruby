@@ -829,15 +829,15 @@ public class RubyInstanceConfig {
         return showCopyright;
     }
 
-    protected void setShowVersion(boolean showVersion) {
+    public void setShowVersion(boolean showVersion) {
         this.showVersion = showVersion;
     }
     
-    protected void setShowBytecode(boolean showBytecode) {
+    public void setShowBytecode(boolean showBytecode) {
         this.showBytecode = showBytecode;
     }
 
-    protected void setShowCopyright(boolean showCopyright) {
+    public void setShowCopyright(boolean showCopyright) {
         this.showCopyright = showCopyright;
     }
     
