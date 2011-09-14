@@ -515,18 +515,18 @@ public class InvocationLinker {
         return metaclass == ((RubyBasicObject)self).getMetaClass();
     }
     
-    private static IRubyObject getLast(IRubyObject[] args) {
+    public static IRubyObject getLast(IRubyObject[] args) {
         return args[args.length - 1];
     }
     
     private static final MethodHandle BLOCK_ESCAPE = findStatic(InvocationLinker.class, "blockEscape", methodType(IRubyObject.class, IRubyObject.class, Block.class));
-    protected static IRubyObject blockEscape(IRubyObject retval, Block block) {
+    public static IRubyObject blockEscape(IRubyObject retval, Block block) {
         block.escape();
         return retval;
     }
     
     private static final MethodHandle BLOCK_ESCAPE_EXCEPTION = findStatic(InvocationLinker.class, "blockEscapeException", methodType(IRubyObject.class, Throwable.class, Block.class));
-    protected static IRubyObject blockEscapeException(Throwable throwable, Block block) throws Throwable {
+    public static IRubyObject blockEscapeException(Throwable throwable, Block block) throws Throwable {
         block.escape();
         throw throwable;
     }
@@ -1200,7 +1200,7 @@ public class InvocationLinker {
         return target;
     }
     
-    protected static IRubyObject valueOrNil(IRubyObject value, IRubyObject nil) {
+    public static IRubyObject valueOrNil(IRubyObject value, IRubyObject nil) {
         return value == null ? nil : value;
     }
 
