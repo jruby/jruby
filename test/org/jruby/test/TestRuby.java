@@ -104,38 +104,21 @@ public class TestRuby extends TestRubyBase {
     }
     
     public void testNativeENVSettingWhenNativeIsDisabledGlobally() throws Exception {
-        try {
-            setNativeEnabled(false);
-            runtime = Ruby.newInstance();
-            runtime.evalScriptlet("ENV['gravy'] = 'with sausage'");
-            assertNull(runtime.getPosix().getenv("gravy"));
-        } finally {
-            setNativeEnabled(true);
-        }
+        RubyInstanceConfig cfg = new RubyInstanceConfig();
+        cfg.setNativeEnabled(false);
+        runtime = Ruby.newInstance(cfg);
+        runtime.evalScriptlet("ENV['gravy'] = 'with sausage'");
+        assertNull(runtime.getPosix().getenv("gravy"));
+        System.out.println(runtime.getPosix().getenv("gravy"));
     }
     
     public void testNativeENVSettingWhenNativeIsDisabledGloballyButExplicitlyEnabledOnTheRuntime() throws Exception {
-        try {
-            setNativeEnabled(false);
-            RubyInstanceConfig cfg = new RubyInstanceConfig();
-            cfg.setUpdateNativeENVEnabled(true);
-            runtime = Ruby.newInstance(cfg);
-            runtime.evalScriptlet("ENV['sausage'] = 'biscuits'");
-            assertNull(runtime.getPosix().getenv("sausage"));
-        } finally {
-            setNativeEnabled(true);
-        }
-    }
-    
-    private void setNativeEnabled(boolean nativeEnabled) throws Exception {
-        Field nativeEnabledField = RubyInstanceConfig.class.getDeclaredField("nativeEnabled");
-        nativeEnabledField.setAccessible(true);
-
-        Field modifiers = Field.class.getDeclaredField("modifiers");
-        modifiers.setAccessible(true);
-        modifiers.setInt(nativeEnabledField, nativeEnabledField.getModifiers() & ~Modifier.FINAL);
-        
-        nativeEnabledField.set(RubyInstanceConfig.class, nativeEnabled);
+        RubyInstanceConfig cfg = new RubyInstanceConfig();
+        cfg.setNativeEnabled(false);
+        cfg.setUpdateNativeENVEnabled(true);
+        runtime = Ruby.newInstance(cfg);
+        runtime.evalScriptlet("ENV['sausage'] = 'biscuits'");
+        assertNull(runtime.getPosix().getenv("sausage"));
     }
     
     public void testPrintErrorWithNilBacktrace() throws Exception {

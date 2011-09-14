@@ -890,7 +890,7 @@ public class LoadService {
         }
         String file = state.loadName;
         if (file.endsWith(".so") || file.endsWith(".dll") || file.endsWith(".bundle")) {
-            if (RubyInstanceConfig.CEXT_ENABLED) {
+            if (runtime.getInstanceConfig().isCextEnabled()) {
                 return new CExtension(resource);
             } else {
                 throw runtime.newLoadError("C extensions are disabled, can't load `" + resource.getName() + "'");

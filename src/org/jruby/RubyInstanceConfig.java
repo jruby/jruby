@@ -300,11 +300,34 @@ public class RubyInstanceConfig {
     public static final String COMPILE_EXCLUDE
             = SafePropertyAccessor.getProperty("jruby.jit.exclude");
     
+    /**
+     * Indicates the global default for whether native code is enabled. Default
+     * is true or the value of the property "jruby.native.enabled", if set.
+     * 
+     * This value is used to default new runtime configurations.
+     */
     public static final boolean NATIVE_ENABLED = SafePropertyAccessor.getBoolean("jruby.native.enabled", true);
     @Deprecated
     public static final boolean nativeEnabled = NATIVE_ENABLED;
     
+    /**
+     * Indicates the global default for whether C extensions are enabled. Default
+     * is the value of RubyInstanceConfig.NATIVE_ENABLED or the value of the
+     * property "jruby.cext.enabled", if set.
+     * 
+     * This value is used to default new runtime configurations.
+     */
     public final static boolean CEXT_ENABLED = SafePropertyAccessor.getBoolean("jruby.cext.enabled", NATIVE_ENABLED);
+    
+    /**
+     * Whether native code is enabled for this configuration.
+     */
+    private boolean _nativeEnabled = NATIVE_ENABLED;
+    
+    /**
+     * Whether C extensions are enabled for this configuration.
+     */
+    private boolean _cextEnabled = CEXT_ENABLED;
 
     public static final boolean REIFY_RUBY_CLASSES
             = SafePropertyAccessor.getBoolean("jruby.reify.classes", false);
@@ -1874,5 +1897,42 @@ public class RubyInstanceConfig {
     
     public static void setLoadedNativeExtensions(boolean loadedNativeExtensions) {
         RubyInstanceConfig.loadedNativeExtensions = loadedNativeExtensions;
+    }
+    
+    /**
+     * Set whether native code is enabled for this config. Disabling it also
+     * disables C extensions (@see RubyInstanceConfig#setCextEnabled).
+     * 
+     * @param b new value indicating whether native code is enabled
+     */
+    public void setNativeEnabled(boolean b) {
+        _nativeEnabled = false;
+    }
+    
+    /**
+     * Get whether native code is enabled for this config.
+     * 
+     * @return true if native code is enabled; false otherwise.
+     */
+    public boolean isNativeEnabled() {
+        return _nativeEnabled;
+    }
+    
+    /**
+     * Set whether C extensions are enabled for this config.
+     * 
+     * @param b new value indicating whether native code is enabled
+     */
+    public void setCextEnabled(boolean b) {
+        _cextEnabled = b;
+    }
+    
+    /**
+     * Get whether C extensions are enabled for this config.
+     * 
+     * @return true if C extensions are enabled; false otherwise.
+     */
+    public boolean isCextEnabled() {
+        return _cextEnabled;
     }
 }

@@ -386,7 +386,7 @@ public class RubyGlobal {
     	CaseInsensitiveStringOnlyRubyHash env = new CaseInsensitiveStringOnlyRubyHash(runtime,
                                                        environmentVariableMap, 
                                                        runtime.getNil(),
-                                                       RubyInstanceConfig.NATIVE_ENABLED && 
+                                                       runtime.getInstanceConfig().isNativeEnabled() && 
                                                            runtime.getInstanceConfig().isUpdateNativeENVEnabled() );
         env.getSingletonClass().defineAnnotatedMethods(CaseInsensitiveStringOnlyRubyHash.class);
         runtime.defineGlobalConstant("ENV", env);

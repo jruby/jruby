@@ -30,13 +30,12 @@ package org.jruby.ext.ffi;
 
 import java.io.IOException;
 import org.jruby.Ruby;
-import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.runtime.load.Library;
 
 public class FFIService implements Library {
     public void load(final Ruby runtime, boolean wrap) throws IOException {
-        if (!RubyInstanceConfig.NATIVE_ENABLED) {
+        if (!runtime.getInstanceConfig().isNativeEnabled()) {
             throw runtime.newLoadError("Native API access is disabled");
         }
         if (!Platform.getPlatform().isSupported()) {
