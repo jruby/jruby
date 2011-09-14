@@ -1,1 +1,0 @@
-fails:Encoding.compatible? returns the encoding of the string that would result from concatenating the arguments

@@ -15,7 +15,7 @@ public class SocketLibrary implements Library {
         RubyBasicSocket.createBasicSocket(runtime);
         RubySocket.createSocket(runtime);
 
-        if (RubyInstanceConfig.nativeEnabled && RubyUNIXSocket.tryUnixDomainSocket()) {
+        if (RubyInstanceConfig.NATIVE_ENABLED && RubyUNIXSocket.tryUnixDomainSocket()) {
             RubyUNIXSocket.createUNIXSocket(runtime);
             RubyUNIXServer.createUNIXServer(runtime);
         }

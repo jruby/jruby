@@ -1056,7 +1056,7 @@ public final class Ruby {
         
         // Construct key services
         loadService = config.createLoadService(this);
-        posix = POSIXFactory.getPOSIX(new JRubyPOSIXHandler(this), RubyInstanceConfig.nativeEnabled);
+        posix = POSIXFactory.getPOSIX(new JRubyPOSIXHandler(this), RubyInstanceConfig.NATIVE_ENABLED);
         javaSupport = new JavaSupport(this);
         
         executor = new ThreadPoolExecutor(
@@ -3289,6 +3289,11 @@ public final class Ruby {
         return newRaiseException(getTypeError(), "wrong argument type " +
                 receivedObject.getMetaClass().getRealClass() + " (expected " + expectedType + ")");
     }
+    
+    public RaiseException newTypeError(IRubyObject receivedObject, String expectedType) {
+        return newRaiseException(getTypeError(), "wrong argument type " +
+                receivedObject.getMetaClass().getRealClass() + " (expected " + expectedType + ")");
+    }    
 
     public RaiseException newEOFError() {
         return newRaiseException(getEOFError(), "End of file reached");

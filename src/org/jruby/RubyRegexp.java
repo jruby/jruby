@@ -1109,6 +1109,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         appendRegexpString19(runtime, description, s, start, len, enc);
         description.append((byte)'/');
         appendOptions(description, options);
+        if (options.isEncodingNone()) description.append((byte) 'n');
         return description; 
     }
 

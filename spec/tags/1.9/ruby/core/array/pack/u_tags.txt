@@ -1,4 +1,0 @@
-fails(JRUBY-5656):Array#pack with format 'U' taints the output string if the format string is tainted
-fails(JRUBY-5656):Array#pack with format 'U' ignores NULL bytes between directives
-fails(JRUBY-5656):Array#pack with format 'u' taints the output string if the format string is tainted
-fails(JRUBY-5656):Array#pack with format 'u' raises a TypeError if passed nil

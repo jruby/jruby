@@ -273,7 +273,12 @@ public class RubyInstanceConfig {
 
     public static final String COMPILE_EXCLUDE
             = SafePropertyAccessor.getProperty("jruby.jit.exclude");
-    public static boolean nativeEnabled = true;
+    
+    public static final boolean NATIVE_ENABLED = SafePropertyAccessor.getBoolean("jruby.native.enabled", true);
+    @Deprecated
+    public static final boolean nativeEnabled = NATIVE_ENABLED;
+    
+    public final static boolean CEXT_ENABLED = SafePropertyAccessor.getBoolean("jruby.cext.enabled", NATIVE_ENABLED);
 
     public static final boolean REIFY_RUBY_CLASSES
             = SafePropertyAccessor.getBoolean("jruby.reify.classes", false);
@@ -355,11 +360,7 @@ public class RubyInstanceConfig {
             if (specVersion == null) {
                 specVersion = System.getProperty("java.specification.version");
             }
-            if (System.getProperty("jruby.native.enabled") != null) {
-                nativeEnabled = Boolean.getBoolean("jruby.native.enabled");
-            }
         } catch (SecurityException se) {
-            nativeEnabled = false;
             specVersion = "1.5";
         }
         

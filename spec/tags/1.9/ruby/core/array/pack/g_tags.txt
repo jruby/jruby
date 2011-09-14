@@ -1,8 +1,0 @@
-fails(JRUBY-5656):Array#pack with format 'G' taints the output string if the format string is tainted
-fails(JRUBY-5656):Array#pack with format 'G' raises a ArgumentError if a String does not represent a floating point number
-fails(JRUBY-5656):Array#pack with format 'G' ignores NULL bytes between directives
-fails(JRUBY-5656):Array#pack with format 'g' taints the output string if the format string is tainted
-fails(JRUBY-5656):Array#pack with format 'g' raises a ArgumentError if a String does not represent a floating point number
-fails(JRUBY-5656):Array#pack with format 'g' ignores NULL bytes between directives
-fails(JRUBY-5656):Array#pack with format 'G' raises a TypeError if passed a String representation of a floating point number
-fails(JRUBY-5656):Array#pack with format 'g' raises a TypeError if passed a String representation of a floating point number

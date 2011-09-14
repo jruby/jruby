@@ -616,11 +616,20 @@ public class LoadService {
                 }
 
                 // quietly try to load the class
-                Class theClass = runtime.getJavaSupport().loadJavaClassQuiet(className);
+                Class theClass = runtime.getJavaSupport().loadJavaClass(className);
                 state.library = new ClassExtensionLibrary(className + ".java", theClass);
-            } catch (Exception ee) {
-                state.library = null;
-                runtime.getGlobalVariables().clear("$!");
+            } catch (ClassNotFoundException cnfe) {
+                if (runtime.isDebug()) cnfe.printStackTrace();
+                // we ignore this and assume the jar is not an extension
+            } catch (UnsupportedClassVersionError ucve) {
+                if (runtime.isDebug()) ucve.printStackTrace();
+                throw runtime.newLoadError("JRuby ext built for wrong Java version in `" + finName + "': " + ucve);
+            } catch (IOException ioe) {
+                if (runtime.isDebug()) ioe.printStackTrace();
+                throw runtime.newLoadError("IOException loading extension `" + finName + "`: " + ioe);
+            } catch (Exception e) {
+                if (runtime.isDebug()) e.printStackTrace();
+                throw runtime.newLoadError("Exception loading extension `" + finName + "`: " + e);
             }
 
             // If there was a good library before, we go back to that
@@ -894,10 +903,10 @@ public class LoadService {
         }
         String file = state.loadName;
         if (file.endsWith(".so") || file.endsWith(".dll") || file.endsWith(".bundle")) {
-            if (RubyInstanceConfig.nativeEnabled) {
+            if (RubyInstanceConfig.CEXT_ENABLED) {
                 return new CExtension(resource);
             } else {
-                throw runtime.newLoadError("native code is disabled, can't load cext `" + resource.getName() + "'");
+                throw runtime.newLoadError("C extensions are disabled, can't load `" + resource.getName() + "'");
             }
         } else if (file.endsWith(".jar")) {
             return new JarredScript(resource);

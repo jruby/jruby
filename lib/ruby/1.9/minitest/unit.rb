@@ -91,15 +91,14 @@ module MiniTest
     # Fails unless the block returns a true value.
 
     def assert_block msg = nil
-      msg = message(msg) { "Expected block to return true value" }
-      assert yield, msg
+      assert yield, "Expected block to return true value."
     end
 
     ##
     # Fails unless +obj+ is empty.
 
     def assert_empty obj, msg = nil
-      msg = message(msg) { "Expected #{obj.inspect} to be empty" }
+      msg = message(msg) { "Expected #{mu_pp(obj)} to be empty" }
       assert_respond_to obj, :empty?
       assert obj.empty?, msg
     end
@@ -204,6 +203,14 @@ module MiniTest
       begin
         yield
         should_raise = true
+      rescue MiniTest::Skip => e
+        details = "#{msg}#{mu_pp(exp)} exception expected, not"
+
+        if exp.include? MiniTest::Skip then
+          return e
+        else
+          raise e
+        end
       rescue Exception => e
         details = "#{msg}#{mu_pp(exp)} exception expected, not"
         assert(exp.any? { |ex|
@@ -243,6 +250,7 @@ module MiniTest
     # +send_ary+ is a receiver, message and arguments.
     #
     # Fails unless the call returns a true value
+    # TODO: I should prolly remove this from specs
 
     def assert_send send_ary, m = nil
       recv, msg, *args = send_ary
@@ -489,8 +497,15 @@ module MiniTest
     def self.autorun
       at_exit {
         next if $! # don't run if there was an exception
+
+        # the order here is important. The at_exit handler must be
+        # installed before anyone else gets a chance to install their
+        # own, that way we can be assured that our exit will be last
+        # to run (at_exit stacks).
+        exit_code = nil
+
+        at_exit { exit false if exit_code && exit_code != 0 }
         exit_code = MiniTest::Unit.new.run(ARGV)
-        exit false if exit_code && exit_code != 0
       } unless @@installed_at_exit
       @@installed_at_exit = true
     end
