@@ -52,7 +52,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
 
 import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
-import static org.jruby.runtime.MethodIndex.OP_EQUAL;
 import static org.jruby.runtime.MethodIndex.OP_CMP;
 
 /**
@@ -228,7 +227,7 @@ public class RubyEnumerable {
         final RubyArray result = runtime.newArray();
 
         try {
-            callEach(runtime, context, self, block.arity(), new BlockCallback() {
+            callEach(runtime, context, self, Arity.NO_ARGUMENTS, new BlockCallback() {
                 long i = len; // Atomic ?
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                     IRubyObject larg = checkArgs(runtime, largs);
@@ -275,7 +274,7 @@ public class RubyEnumerable {
         final RubyArray result = runtime.newArray();
 
         try {
-            callEach(runtime, context, self, block.arity(), new BlockCallback() {
+            callEach(runtime, context, self, Arity.NO_ARGUMENTS, new BlockCallback() {
                 long i = len; // Atomic ?
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                     IRubyObject larg = checkArgs(runtime, largs);
@@ -609,7 +608,7 @@ public class RubyEnumerable {
         final long result[] = new long[] {0};
 
         try {
-            callEach(runtime, context, self, block.arity(), new BlockCallback() {
+            callEach(runtime, context, self, Arity.NO_ARGUMENTS, new BlockCallback() {
                 public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                     IRubyObject larg = checkArgs(runtime, largs);
                     if (block.yield(ctx, larg).isTrue()) throw JumpException.SPECIAL_JUMP;
@@ -840,7 +839,7 @@ public class RubyEnumerable {
         final String methodId = method.asJavaString();
         final IRubyObject result[] = new IRubyObject[] { init }; 
 
-        callEach(runtime, context, self, block.arity(), new BlockCallback() {
+        callEach(runtime, context, self, Arity.NO_ARGUMENTS, new BlockCallback() {
             public IRubyObject call(ThreadContext ctx, IRubyObject[] largs, Block blk) {
                 IRubyObject larg = checkArgs(runtime, largs);
                 result[0] = result[0] == null ? larg : result[0].callMethod(ctx, methodId, larg);
