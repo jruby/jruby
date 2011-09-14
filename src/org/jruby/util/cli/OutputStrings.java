@@ -1,18 +1,16 @@
 package org.jruby.util.cli;
 
-// TODO: replace this file with the file in Charles's machine :)
-
-import static org.jruby.RubyInstanceConfig.*;
 import jnr.posix.util.Platform;
-
 import org.jruby.CompatVersion;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.runtime.Constants;
 import org.jruby.util.SafePropertyAccessor;
 
 public class OutputStrings {
     public static String getBasicUsageHelp() {
         StringBuilder sb = new StringBuilder();
-        sb.append("Usage: jruby [switches] [--] [programfile] [arguments]\n")
+        sb
+                .append("Usage: jruby [switches] [--] [programfile] [arguments]\n")
                 .append("  -0[octal]       specify record separator (\\0, if no argument)\n")
                 .append("  -a              autosplit mode with -n or -p (splits $_ into $F)\n")
                 .append("  -b              benchmark mode, times the script execution\n")
@@ -70,7 +68,8 @@ public class OutputStrings {
 
     public static String getExtendedHelp() {
         StringBuilder sb = new StringBuilder();
-        sb.append("Extended options:\n")
+        sb
+                .append("Extended options:\n")
                 .append("  -X-O        run with ObjectSpace disabled (default; improves performance)\n")
                 .append("  -X+O        run with ObjectSpace enabled (reduces performance)\n")
                 .append("  -X-C        disable all compilation\n")
@@ -81,8 +80,8 @@ public class OutputStrings {
 
     public static String getPropertyHelp() {
         StringBuilder sb = new StringBuilder();
-        sb.append(
-                "These properties can be used to alter runtime behavior for perf or compatibility.\n")
+        sb
+                .append("These properties can be used to alter runtime behavior for perf or compatibility.\n")
                 .append("Specify them by passing -X<property>=<value>\n")
                 .append("  or if passing directly to Java, -Djruby.<property>=<value>\n")
                 .append("\nCOMPILER SETTINGS:\n")
@@ -95,27 +94,19 @@ public class OutputStrings {
                 .append("    compile.fastops=true|false\n")
                 .append("       Turn on fast operators for Fixnum and Float. Default is true\n")
                 .append("    compile.chainsize=<line count>\n")
-                .append("       Set the number of lines at which compiled bodies are \"chained\". Default is ")
-                .append(CHAINED_COMPILE_LINE_COUNT_DEFAULT)
-                .append("\n")
+                .append("       Set the number of lines at which compiled bodies are \"chained\". Default is ").append(RubyInstanceConfig.CHAINED_COMPILE_LINE_COUNT_DEFAULT).append("\n")
                 .append("    compile.lazyHandles=true|false\n")
                 .append("       Generate method bindings (handles) for compiled methods lazily. Default is false.\n")
                 .append("    compile.peephole=true|false\n")
                 .append("       Enable or disable peephole optimizations. Default is true (on).\n")
                 .append("\nJIT SETTINGS:\n")
                 .append("    jit.threshold=<invocation count>\n")
-                .append("       Set the JIT threshold to the specified method invocation count. Default is ")
-                .append(JIT_THRESHOLD)
-                .append(".\n")
+                .append("       Set the JIT threshold to the specified method invocation count. Default is ").append(RubyInstanceConfig.JIT_THRESHOLD).append(".\n")
                 .append("    jit.max=<method count>\n")
                 .append("       Set the max count of active methods eligible for JIT-compilation.\n")
-                .append("       Default is ")
-                .append(JIT_MAX_METHODS_LIMIT)
-                .append(" per runtime. A value of 0 disables JIT, -1 disables max.\n")
+                .append("       Default is ").append(RubyInstanceConfig.JIT_MAX_METHODS_LIMIT).append(" per runtime. A value of 0 disables JIT, -1 disables max.\n")
                 .append("    jit.maxsize=<jitted method size (full .class)>\n")
-                .append("       Set the maximum full-class byte size allowed for jitted methods. Default is ")
-                .append(JIT_MAX_SIZE_LIMIT)
-                .append(".\n")
+                .append("       Set the maximum full-class byte size allowed for jitted methods. Default is ").append(RubyInstanceConfig.JIT_MAX_SIZE_LIMIT).append(".\n")
                 .append("    jit.logging=true|false\n")
                 .append("       Enable JIT logging (reports successful compilation). Default is false\n")
                 .append("    jit.logging.verbose=true|false\n")
@@ -202,11 +193,14 @@ public class OutputStrings {
             break;
         }
 
-        String fullVersion = String.format("jruby %s (ruby-%s%s%d) (%s %s) (%s %s) [%s-%s-java]",
-                Constants.VERSION, ver, patchDelimeter, patchlevel, Constants.COMPILE_DATE,
-                Constants.REVISION, System.getProperty("java.vm.name"),
-                System.getProperty("java.version"), Platform.getOSName(),
-                SafePropertyAccessor.getProperty("os.arch", "unknown"));
+        String fullVersion = String.format(
+                "jruby %s (ruby-%s%s%d) (%s %s) (%s %s) [%s-%s-java]",
+                Constants.VERSION, ver, patchDelimeter, patchlevel,
+                Constants.COMPILE_DATE, Constants.REVISION,
+                System.getProperty("java.vm.name"), System.getProperty("java.version"),
+                Platform.getOSName(),
+                SafePropertyAccessor.getProperty("os.arch", "unknown")
+                );
 
         return fullVersion;
     }

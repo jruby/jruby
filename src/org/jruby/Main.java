@@ -54,6 +54,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.SimpleSampler;
+import org.jruby.util.cli.OutputStrings;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -399,25 +400,25 @@ public class Main {
 
     private void doPrintProperties() {
         if (config.getShouldPrintProperties()) {
-            config.getOutput().print(config.getPropertyHelp());
+            config.getOutput().print(OutputStrings.getPropertyHelp());
         }
     }
 
     private void doPrintUsage(boolean force) {
         if (config.getShouldPrintUsage() || force) {
-            config.getOutput().print(config.getBasicUsageHelp());
+            config.getOutput().print(OutputStrings.getBasicUsageHelp());
         }
     }
 
     private void doShowCopyright() {
         if (config.isShowCopyright()) {
-            config.getOutput().println(config.getCopyrightString());
+            config.getOutput().println(OutputStrings.getCopyrightString());
         }
     }
 
     private void doShowVersion() {
         if (config.isShowVersion()) {
-            config.getOutput().println(config.getVersionString());
+            config.getOutput().println(OutputStrings.getVersionString(config.getCompatVersion()));
         }
     }
 

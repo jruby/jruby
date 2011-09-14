@@ -64,6 +64,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ClassCache;
 import org.jruby.util.KCode;
+import org.jruby.util.cli.OutputStrings;
 
 /**
  * ScriptingContainer provides various methods and resources that are useful
@@ -947,7 +948,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * @return version information.
      */
     public String getSupportedRubyVersion() {
-        return provider.getRubyInstanceConfig().getVersionString().trim();
+        return OutputStrings.getVersionString(provider.getRubyInstanceConfig().getCompatVersion()).trim();
     }
 
     /**

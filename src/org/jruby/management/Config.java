@@ -6,6 +6,7 @@ import java.util.Arrays;
 
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.util.cli.OutputStrings;
 
 public class Config implements ConfigMBean {
     private final SoftReference<Ruby> ruby;
@@ -15,11 +16,11 @@ public class Config implements ConfigMBean {
     }
     
     public String getVersionString() {
-        return ruby.get().getInstanceConfig().getVersionString();
+        return OutputStrings.getVersionString(ruby.get().getInstanceConfig().getCompatVersion());
     }
 
     public String getCopyrightString() {
-        return ruby.get().getInstanceConfig().getCopyrightString();
+        return OutputStrings.getCopyrightString();
     }
 
     public String getCompileMode() {

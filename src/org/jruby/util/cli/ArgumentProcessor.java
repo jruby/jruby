@@ -316,9 +316,9 @@ public class ArgumentProcessor {
                     String extendedOption = grabOptionalValue();
                     if (extendedOption == null) {
                         if (SafePropertyAccessor.getBoolean("jruby.launcher.nopreamble", false)) {
-                            throw new MainExitException(0, config.getExtendedHelp());
+                            throw new MainExitException(0, OutputStrings.getExtendedHelp());
                         } else {
-                            throw new MainExitException(0, "jruby: missing argument\n" + config.getExtendedHelp());
+                            throw new MainExitException(0, "jruby: missing argument\n" + OutputStrings.getExtendedHelp());
                         }
                     } else if (extendedOption.equals("-O")) {
                         config.setObjectSpaceEnabled(false);

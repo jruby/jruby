@@ -158,6 +158,7 @@ public class RubyInstanceConfig {
             environment = new HashMap();
         }
     }
+    
     public RubyInstanceConfig(RubyInstanceConfig parentConfig) {
         currentDirectory = parentConfig.getCurrentDirectory();
         samplingEnabled = parentConfig.samplingEnabled;
@@ -189,22 +190,27 @@ public class RubyInstanceConfig {
         return creator.create(runtime);
     }
 
+    @Deprecated
     public String getBasicUsageHelp() {
         return OutputStrings.getBasicUsageHelp();
     }
 
+    @Deprecated
     public String getExtendedHelp() {
         return OutputStrings.getExtendedHelp();
     }
 
+    @Deprecated
     public String getPropertyHelp() {
         return OutputStrings.getPropertyHelp();
     }
 
+    @Deprecated
     public String getVersionString() {
         return OutputStrings.getVersionString(compatVersion);
     }
 
+    @Deprecated
     public String getCopyrightString() {
         return OutputStrings.getCopyrightString();
     }
@@ -317,7 +323,7 @@ public class RubyInstanceConfig {
 
         if (newJRubyHome != null) {
             // verify it if it's there
-            newJRubyHome = verifyHome(newJRubyHome);
+            newJRubyHome = verifyHome(newJRubyHome, error);
         } else {
             try {
                 newJRubyHome = SystemPropertyCatcher.findFromJar(this);
@@ -325,7 +331,7 @@ public class RubyInstanceConfig {
 
             if (newJRubyHome != null) {
                 // verify it if it's there
-                newJRubyHome = verifyHome(newJRubyHome);
+                newJRubyHome = verifyHome(newJRubyHome, error);
             } else {
                 // otherwise fall back on system temp location
                 newJRubyHome = SafePropertyAccessor.getProperty("java.io.tmpdir");
@@ -336,7 +342,7 @@ public class RubyInstanceConfig {
     }
 
     // We require the home directory to be absolute
-    private String verifyHome(String home) {
+    private static String verifyHome(String home, PrintStream error) {
         if (home.equals(".")) {
             home = SafePropertyAccessor.getProperty("user.dir");
         }
@@ -402,7 +408,7 @@ public class RubyInstanceConfig {
         } catch (IOException e) {
             // We haven't found any file directly on the file system,
             // now check for files inside the JARs.
-            InputStream is = getJarScriptSource();
+            InputStream is = getJarScriptSource(scriptFileName);
             if (is != null) {
                 return new BufferedInputStream(is, 8129);
             }
@@ -410,7 +416,7 @@ public class RubyInstanceConfig {
         }
     }
 
-    private InputStream findScript(File file) throws IOException {
+    private static InputStream findScript(File file) throws IOException {
         StringBuffer buf = new StringBuffer();
         BufferedReader br = new BufferedReader(new FileReader(file));
         String currentLine = br.readLine();
@@ -431,15 +437,14 @@ public class RubyInstanceConfig {
         return new BufferedInputStream(new ByteArrayInputStream(buf.toString().getBytes()), 8192);
     }
 
-    private InputStream getJarScriptSource() {
-        String name = getScriptFileName();
-        boolean looksLikeJarURL = name.startsWith("file:") && name.indexOf("!/") != -1;
+    private static InputStream getJarScriptSource(String scriptFileName) {
+        boolean looksLikeJarURL = scriptFileName.startsWith("file:") && scriptFileName.indexOf("!/") != -1;
         if (!looksLikeJarURL) {
             return null;
         }
 
-        String before = name.substring("file:".length(), name.indexOf("!/"));
-        String after =  name.substring(name.indexOf("!/") + 2);
+        String before = scriptFileName.substring("file:".length(), scriptFileName.indexOf("!/"));
+        String after =  scriptFileName.substring(scriptFileName.indexOf("!/") + 2);
 
         try {
             JarFile jFile = new JarFile(before);
@@ -517,7 +522,7 @@ public class RubyInstanceConfig {
     }
 
     public void setJRubyHome(String home) {
-        jrubyHome = verifyHome(home);
+        jrubyHome = verifyHome(home, error);
     }
 
     public CompileMode getCompileMode() {
