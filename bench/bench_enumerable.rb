@@ -1,7 +1,26 @@
 require 'benchmark'
 
+ARR = [false, false, false, false, false, false, false, false, false, false]
+
+class NotArray
+  include Enumerable
+
+  def each
+    yield false
+    yield false
+    yield false
+    yield false
+    yield false
+    yield false
+    yield false
+    yield false
+    yield false
+    yield false
+  end
+end
+
 def bench_enumerable(bm)
-  arr = [false, false, false, false, false, false, false, false, false, false]
+  arr = ARR
 
   bm.report("1m array.any?, 10-false array") do
     i = 0
@@ -10,6 +29,16 @@ def bench_enumerable(bm)
       i+=1
     end
   end
+
+  not_array = NotArray.new
+  bm.report("1m array.any?, 10-false eachable object") do
+    i = 0
+    while i<1000000
+      not_array.any?
+      i+=1
+    end
+  end
+
 end
 
 if $0 == __FILE__
