@@ -96,10 +96,10 @@ public class RubyTCPSocket extends RubyIPSocket {
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
         Arity.checkArgumentCount(context.getRuntime(), args, 2, 4);
 
-        String remoteHost = args[0].isNil()? "localhost" : args[0].convertToString().toString();
-        int remotePort = getPortFrom(context.getRuntime(), args[1]);
-        String localHost = args.length >= 3 && !args[2].isNil() ? args[2].convertToString().toString() : null;
-        int localPort = args.length == 4 ? getPortFrom(context.getRuntime(), args[3]) : 0;
+        String remoteHost = args[0].isNil() ? "localhost" : args[0].convertToString().toString();
+        int remotePort    = getPortFrom(context.getRuntime(), args[1]);
+        String localHost  = args.length >= 3 && !args[2].isNil() ? args[2].convertToString().toString() : null;
+        int localPort     = args.length == 4 && !args[3].isNil() ? getPortFrom(context.getRuntime(), args[3]) : 0;
 
         try {
             // This is a bit convoluted because (1) SocketChannel.bind is only in jdk 7 and
