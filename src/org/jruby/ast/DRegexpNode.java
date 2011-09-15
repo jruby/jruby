@@ -33,8 +33,6 @@
 package org.jruby.ast;
 
 import org.jcodings.Encoding;
-import org.jcodings.specific.ASCIIEncoding;
-import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.Ruby;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
@@ -45,7 +43,6 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.RegexpOptions;
-import org.jruby.util.StringSupport;
 
 /**
  * A regexp which contains some expressions which will need to be evaluated everytime the regexp 
@@ -99,10 +96,12 @@ public class DRegexpNode extends DNode implements ILiteralNode {
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         if (getOnce() && onceRegexp != null) return onceRegexp;
 
-        RubyString string = (RubyString) super.interpret(runtime, context, self, aBlock);
-        // FIXME: Massive hack (fix in RubyRegexp.newDRegexpEmbedded for compiler)
-        if (string.getEncoding() == USASCIIEncoding.INSTANCE) {
-            string.setEncoding(ASCIIEncoding.INSTANCE);
+        RubyString string;
+        
+        if (runtime.is1_9()) {
+            string = buildDRegexpString19(runtime, context, self, aBlock);
+        } else {
+            string = buildDynamicString(runtime, context, self, aBlock);
         }
 
         RubyRegexp regexp = RubyRegexp.newDRegexp(runtime, string, options);
@@ -110,5 +109,21 @@ public class DRegexpNode extends DNode implements ILiteralNode {
         if (getOnce() && onceRegexp == null) onceRegexp = regexp;
 
         return regexp;
+    }
+
+    private RubyString buildDRegexpString19(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        RubyString string = null;
+
+        int size = size();
+        RubyString[] strings = new RubyString[size];
+        for (int i = 0; i < size; i++) {
+            strings[i] = getString(runtime, context, self, aBlock, string, get(i));
+        }
+        
+        return RubyRegexp.preprocessDRegexp(runtime, strings, options);
+    }
+
+    public RubyString getString(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock, RubyString string, Node node) {
+        return node.interpret(runtime, context, self, aBlock).convertToString();
     }
 }

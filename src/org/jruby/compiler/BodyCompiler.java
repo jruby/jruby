@@ -501,6 +501,7 @@ public interface BodyCompiler {
 
     public void createNewRegexp(ByteList value, int options);
     public void createNewRegexp(CompilerCallback createStringCallback, int options);
+    public void createDRegexp19(ArrayCallback arrayCallback, Object[] sourceArray, int options);
     
     public void pollThreadEvents();
 

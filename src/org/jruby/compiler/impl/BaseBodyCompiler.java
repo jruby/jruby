@@ -5,9 +5,7 @@
 package org.jruby.compiler.impl;
 
 import java.io.PrintStream;
-import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -25,7 +23,6 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyException;
 import org.jruby.RubyFixnum;
-import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyMatchData;
@@ -70,7 +67,6 @@ import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.SafePropertyAccessor;
-import org.jruby.util.StringSupport;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 import static org.objectweb.asm.Opcodes.*;
@@ -1379,6 +1375,19 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
             createStringCallback.call(this);
             method.pushInt(options);
             method.invokestatic(p(RubyRegexp.class), "newDRegexpEmbedded", sig(RubyRegexp.class, params(Ruby.class, RubyString.class, int.class))); //[reg]
+        }
+    }
+    
+    public void createDRegexp19(ArrayCallback arrayCallback, Object[] sourceArray, int options) {
+        boolean onceOnly = (options & ReOptions.RE_OPTION_ONCE) != 0;   // for regular expressions with the /o flag
+
+        if (onceOnly) {
+            script.getCacheCompiler().cacheDRegexp19(this, arrayCallback, sourceArray, options);
+        } else {
+            loadRuntime();
+            createObjectArray(sourceArray, arrayCallback);
+            method.ldc(options);
+            method.invokestatic(p(RubyRegexp.class), "newDRegexpEmbedded19", sig(RubyRegexp.class, params(Ruby.class, IRubyObject[].class, int.class))); //[reg]
         }
     }
 
