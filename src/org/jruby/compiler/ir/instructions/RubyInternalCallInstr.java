@@ -11,6 +11,7 @@ import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.operands.BooleanLiteral;
+import org.jruby.compiler.ir.operands.StringLiteral;
 import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 
@@ -93,7 +94,7 @@ public class RubyInternalCallInstr extends CallInstr {
                 Operand[] args = getCallArgs(); // Guaranteed 2 args by parser
                 IRubyObject object = (IRubyObject)getReceiver().retrieve(interp, context, self);
                 
-                if (object == null || object instanceof RubyFixnum || object instanceof RubySymbol){
+                if (object == null || object instanceof RubyFixnum || object instanceof RubySymbol) {
                     throw runtime.newTypeError("no class to make alias");
                 }
 
@@ -112,7 +113,13 @@ public class RubyInternalCallInstr extends CallInstr {
                 break;
             }
             case GVAR_ALIAS:
-                throw new RuntimeException("GVAR_ALIAS: Not implemented yet!");
+            {
+                Operand[] args = getCallArgs(); // Guaranteed 2 args by parser
+                String newName = ((StringLiteral)args[0])._str_value;
+                String oldName = ((StringLiteral)args[1])._str_value;
+                runtime.getGlobalVariables().alias(newName, oldName);
+                break;
+            }
             case UNDEF_METHOD:
                 rVal = RuntimeHelpers.undefMethod(context, getReceiver().retrieve(interp, context, self));
                 break;

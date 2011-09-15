@@ -3138,7 +3138,7 @@ public class IRBuilder {
     // Is this a ruby-internals or a jruby-internals call?
     public Operand buildVAlias(Node node, IRScope s) {
         VAliasNode valiasNode = (VAliasNode) node;
-        generateRubyInternalsCall(s, RubyInternalsMethod.GVAR_ALIAS, false, new StringLiteral(valiasNode.getNewName()), new Operand[] { new StringLiteral(valiasNode.getOldName()) });
+        generateRubyInternalsCall(s, RubyInternalsMethod.GVAR_ALIAS, false, getSelf(s), new Operand[] { new StringLiteral(valiasNode.getNewName()), new StringLiteral(valiasNode.getOldName()) });
         return Nil.NIL;
     }
 
