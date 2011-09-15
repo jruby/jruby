@@ -126,7 +126,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.net.BindException;
 import java.nio.channels.ClosedChannelException;
+import java.security.SecureRandom;
 import java.util.EnumSet;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 
@@ -199,6 +201,15 @@ public final class Ruby {
         this.beanManager        = BeanManagerFactory.create(this, config.isManagementEnabled());
         this.jitCompiler        = new JITCompiler(this);
         this.parserStats        = new ParserStats(this);
+        
+        Random myRandom;
+        try {
+            myRandom = new SecureRandom();
+        } catch (Throwable t) {
+            LOG.debug("unable to instantiate SecureRandom, falling back on Random", t);
+            myRandom = new Random();
+        }
+        this.random = myRandom;
         
         this.beanManager.register(new Config(this));
         this.beanManager.register(parserStats);
@@ -3972,8 +3983,11 @@ public final class Ruby {
     public CoverageData getCoverageData() {
         return coverageData;
     }
+    
+    public Random getRandom() {
+        return random;
+    }
 
-    private volatile int constantGeneration = 1;
     private final Invalidator constantInvalidator;
     private final ThreadService threadService;
     
@@ -4200,4 +4214,7 @@ public final class Ruby {
     
     /** The "thread local" runtime. Set to the global runtime if unset. */
     private static ThreadLocal<Ruby> threadLocalRuntime = new ThreadLocal<Ruby>();
+    
+    /** The runtime-local random number generator. Uses SecureRandom if permissions allow. */
+    private final Random random;
 }

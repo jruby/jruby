@@ -32,7 +32,7 @@ import java.io.PrintStream;
 public class StandardErrorLogger implements Logger {
 
     private final String loggerName;
-    private boolean debug = true;
+    private boolean debug = false;
     private ParameterizedWriter writer;
 
     public StandardErrorLogger(String loggerName) {
