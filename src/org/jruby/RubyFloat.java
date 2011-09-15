@@ -891,7 +891,7 @@ public class RubyFloat extends RubyNumeric {
 
         ByteList byteList = new ByteList();
         // Always use US locale, to ensure "." separator. JRUBY-5918
-        Sprintf.sprintf(byteList, Locale.US, "%.17g", RubyArray.newArray(getRuntime(), this, this));
+        Sprintf.sprintf(byteList, Locale.US, "%.17g", RubyArray.newArray(getRuntime(), this));
         return byteList;
     }
 
