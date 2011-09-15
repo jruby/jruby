@@ -120,15 +120,36 @@ public class TestRuby extends TestRubyBase {
         }
     }
     
+    public void testRequireCextNotAllowedWhenCextIsDisabledGlobally() throws Exception {
+        try {
+            setCextEnabled(false);
+            runtime = Ruby.newInstance();
+            runtime.evalScriptlet("require 'tempfile'; file = Tempfile.open(['foo', '.so']); file.close; require file.path");
+            fail();
+	} catch (RaiseException re) {
+	    assertTrue(re.getException().message.asJavaString().startsWith("C extensions are disabled"));
+        } finally {
+            setCextEnabled(true);
+        }
+    }
+    
     private void setNativeEnabled(boolean nativeEnabled) throws Exception {
-        Field nativeEnabledField = RubyInstanceConfig.class.getDeclaredField("nativeEnabled");
-        nativeEnabledField.setAccessible(true);
+        setConfigEnabled("NATIVE_ENABLED", nativeEnabled);
+    }
+    
+    private void setCextEnabled(boolean cextEnabled) throws Exception {
+        setConfigEnabled("CEXT_ENABLED", cextEnabled);
+    }
+    
+    private void setConfigEnabled(String fieldName, boolean enabled) throws Exception {
+        Field enabledField = RubyInstanceConfig.class.getDeclaredField(fieldName);
+        enabledField.setAccessible(true);
 
         Field modifiers = Field.class.getDeclaredField("modifiers");
         modifiers.setAccessible(true);
-        modifiers.setInt(nativeEnabledField, nativeEnabledField.getModifiers() & ~Modifier.FINAL);
+        modifiers.setInt(enabledField, enabledField.getModifiers() & ~Modifier.FINAL);
         
-        nativeEnabledField.set(RubyInstanceConfig.class, nativeEnabled);
+        enabledField.set(RubyInstanceConfig.class, enabled);
     }
     
     public void testPrintErrorWithNilBacktrace() throws Exception {
