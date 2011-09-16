@@ -173,7 +173,7 @@ public abstract class IRScopeImpl implements IRScope {
     }
 
     // Enebo: We should just make n primitive int and not take the hash hit
-    private int allocateNextPrefixedName(String prefix) {
+    protected int allocateNextPrefixedName(String prefix) {
         int index = getPrefixCountSize(prefix);
         
         nextVarIndex.put(prefix, index + 1);

@@ -12,6 +12,7 @@ import java.util.TreeSet;
 
 import org.jruby.compiler.ir.compiler_pass.CompilerPass;
 import org.jruby.compiler.ir.instructions.CallInstr;
+import org.jruby.compiler.ir.instructions.CopyInstr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
 import org.jruby.compiler.ir.instructions.SuperInstr;
@@ -113,6 +114,11 @@ public abstract class IRExecutionScope extends IRScopeImpl {
     @Override
     public void addInstr(Instr i) {
         instructions.add(i);
+    }
+
+    public void initFlipStateVariable(Variable v, Operand initState) {
+        // Add it to the beginning
+        instructions.add(0, new CopyInstr(v, initState));
     }
 
     public void startLoop(IRLoop l) {

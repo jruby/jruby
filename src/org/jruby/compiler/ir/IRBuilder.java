@@ -38,6 +38,7 @@ import org.jruby.ast.EvStrNode;
 import org.jruby.ast.EnsureNode;
 import org.jruby.ast.FCallNode;
 import org.jruby.ast.FixnumNode;
+import org.jruby.ast.FlipNode;
 import org.jruby.ast.FloatNode;
 import org.jruby.ast.GlobalAsgnNode;
 import org.jruby.ast.GlobalVarNode;
@@ -260,6 +261,8 @@ public class IRBuilder {
     public static void main(String[] args) {
         boolean isDebug = args.length > 0 && args[0].equals("-debug");
         int     i = isDebug ? 1 : 0;
+
+        LOG.setDebugEnable(isDebug);
 
         String methName = null;
         if (args.length > i && args[i].equals("-inline")) {
@@ -496,7 +499,7 @@ public class IRBuilder {
             case FALSENODE: return buildFalse(node, m); // done
             case FCALLNODE: return buildFCall((FCallNode) node, m); // done
             case FIXNUMNODE: return buildFixnum((FixnumNode) node, m); // done
-//            case FLIPNODE: return buildFlip(node, m); // SSS FIXME: What code generates this AST?
+            case FLIPNODE: return buildFlip(node, m); // done
             case FLOATNODE: return buildFloat((FloatNode) node, m); // done
             case FORNODE: return buildFor((ForNode) node, (IRExecutionScope)m); // done
             case GLOBALASGNNODE: return buildGlobalAsgn((GlobalAsgnNode) node, m); // done
@@ -546,7 +549,7 @@ public class IRBuilder {
             case TRUENODE: return buildTrue(node, m); // done
             case UNDEFNODE: return buildUndef(node, m); // done
             case UNTILNODE: return buildUntil((UntilNode) node, (IRExecutionScope)m); // done
-            case VALIASNODE: return buildVAlias(node, m); // done -- see FIXME
+            case VALIASNODE: return buildVAlias(node, m); // done
             case VCALLNODE: return buildVCall((VCallNode) node, m); // done
             case WHILENODE: return buildWhile((WhileNode) node, (IRExecutionScope)m); // done
             case WHENNODE: assert false : "When nodes are handled by case node compilation."; return null;
@@ -2023,109 +2026,81 @@ public class IRBuilder {
         return new Fixnum(node.getValue());
     }
 
-/**
     public Operand buildFlip(Node node, IRScope m) {
-        final FlipNode flipNode = (FlipNode) node;
+        /* ----------------------------------------------------------------------
+         * Consider a simple 2-state (s1, s2) FSM with the following transitions:
+         *
+         *     new_state(s1, F) = s1
+         *     new_state(s1, T) = s2
+         *     new_state(s2, F) = s2
+         *     new_state(s2, T) = s1
+         *
+         * Here is the pseudo-code for evaluating the flip-node.
+         * Let 'v' holds the value of the current state. 
+         *
+         *    1. if (v == 's1') f1 = eval_condition(s1-condition); v = new_state(v, f1); ret = f1
+         *    2. if (v == 's2') f2 = eval_condition(s2-condition); v = new_state(v, f2); ret = true
+         *    3. return ret
+         *
+         * For exclusive flip conditions, line 2 changes to:
+         *    2. if (!f1 && (v == 's2')) f2 = eval_condition(s2-condition); v = new_state(v, f2)
+         *
+         * In IR code below, we are representing the two states as 1 and 2.  Any
+         * two values are good enough (even true and false), but 1 and 2 is simple
+         * enough and also makes the IR output readable 
+         * ---------------------------------------------------------------------- */
+        final FlipNode flipNode = (FlipNode)node;
 
-        m.getVariableCompiler().retrieveLocalVariable(flipNode.getIndex(), flipNode.getDepth());
+        Fixnum s1 = new Fixnum((long)1);
+        Fixnum s2 = new Fixnum((long)2);
 
-        if (flipNode.isExclusive()) {
-            m.performBooleanBranch(new BranchCallback() {
+        // Create a variable to hold the flip state 
+        IRMethod nearestMethod = m.getNearestMethod();
+        Variable flipState = nearestMethod.getNewFlipStateVariable();
+        nearestMethod.initFlipStateVariable(flipState, s1);
 
-                public void branch(IRScope m) {
-                    build(flipNode.getEndNode(), m,true);
-                    m.performBooleanBranch(new BranchCallback() {
+        // Variables and labels needed for the code
+        Variable returnVal = m.getNewTemporaryVariable();
+        Label    s2Label   = m.getNewLabel();
+        Label    doneLabel = m.getNewLabel();
 
-                        public void branch(IRScope m) {
-                            m.loadFalse();
-                            m.getVariableCompiler().assignLocalVariable(flipNode.getIndex(), flipNode.getDepth(), false);
-                        }
-                    }, new BranchCallback() {
+        // Init
+        m.addInstr(new CopyInstr(returnVal, BooleanLiteral.FALSE));
 
-                        public void branch(IRScope m) {
-                        }
-                    });
-                    m.loadTrue();
-                }
-            }, new BranchCallback() {
+        // Are we in state 1?
+        m.addInstr(new BNEInstr(flipState, s1, s2Label));
 
-                public void branch(IRScope m) {
-                    build(flipNode.getBeginNode(), m,true);
-                    becomeTrueOrFalse(m);
-                    m.getVariableCompiler().assignLocalVariable(flipNode.getIndex(), flipNode.getDepth(), true);
-                }
-            });
-        } else {
-            m.performBooleanBranch(new BranchCallback() {
+        // ----- Code for when we are in state 1 -----
+        Operand s1Val = build(flipNode.getBeginNode(), m);
+        m.addInstr(new BNEInstr(s1Val, BooleanLiteral.TRUE, s2Label));
 
-                public void branch(IRScope m) {
-                    build(flipNode.getEndNode(), m,true);
-                    m.performBooleanBranch(new BranchCallback() {
+        // s1 condition is true => set returnVal to true & move to state 2
+        m.addInstr(new CopyInstr(returnVal, BooleanLiteral.TRUE));
+        m.addInstr(new CopyInstr(flipState, s2));
 
-                        public void branch(IRScope m) {
-                            m.loadFalse();
-                            m.getVariableCompiler().assignLocalVariable(flipNode.getIndex(), flipNode.getDepth(), false);
-                        }
-                    }, new BranchCallback() {
+        // Check for state 2
+        m.addInstr(new LABEL_Instr(s2Label));
 
-                        public void branch(IRScope m) {
-                        }
-                    });
-                    m.loadTrue();
-                }
-            }, new BranchCallback() {
+        // For exclusive ranges/flips, we dont evaluate s2's condition if s1's condition was satisfied
+        if (flipNode.isExclusive()) m.addInstr(new BEQInstr(returnVal, BooleanLiteral.TRUE, doneLabel));
 
-                public void branch(IRScope m) {
-                    build(flipNode.getBeginNode(), m,true);
-                    m.performBooleanBranch(new BranchCallback() {
+        // Are we in state 2?
+        m.addInstr(new BNEInstr(flipState, s2, doneLabel));
 
-                        public void branch(IRScope m) {
-                            build(flipNode.getEndNode(), m,true);
-                            flipTrueOrFalse(m);
-                            m.getVariableCompiler().assignLocalVariable(flipNode.getIndex(), flipNode.getDepth(), false);
-                            m.loadTrue();
-                        }
-                    }, new BranchCallback() {
+        // ----- Code for when we are in state 2 -----
+        Operand s2Val = build(flipNode.getEndNode(), m);
+        m.addInstr(new CopyInstr(returnVal, BooleanLiteral.TRUE));
+        m.addInstr(new BNEInstr(s2Val, BooleanLiteral.TRUE, doneLabel));
 
-                        public void branch(IRScope m) {
-                            m.loadFalse();
-                        }
-                    });
-                }
-            });
-        }
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
+        // s2 condition is true => move to state 1 
+        m.addInstr(new CopyInstr(flipState, s1));
+
+        // Done testing for s1's and s2's conditions.  
+        // returnVal will have the result of the flip condition
+        m.addInstr(new LABEL_Instr(doneLabel));
+
+        return returnVal;
     }
-
-    private void becomeTrueOrFalse(IRScope m) {
-        m.performBooleanBranch(new BranchCallback() {
-
-                    public void branch(IRScope m) {
-                        m.loadTrue();
-                    }
-                }, new BranchCallback() {
-
-                    public void branch(IRScope m) {
-                        m.loadFalse();
-                    }
-                });
-    }
-
-    private void flipTrueOrFalse(IRScope m) {
-        m.performBooleanBranch(new BranchCallback() {
-
-                    public void branch(IRScope m) {
-                        m.loadFalse();
-                    }
-                }, new BranchCallback() {
-
-                    public void branch(IRScope m) {
-                        m.loadTrue();
-                    }
-                });
-    }
-**/
 
     public Operand buildFloat(FloatNode node, IRScope m) {
         // SSS: Since flaot literals are effectively interned objects, no need to copyAndReturnValue(...)

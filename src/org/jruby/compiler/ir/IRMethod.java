@@ -193,4 +193,8 @@ public class IRMethod extends IRExecutionScope {
     public int getLocalVariablesCount() {
         return nextLocalVariableSlot;
     }
+
+    public LocalVariable getNewFlipStateVariable() {
+        return getLocalVariable("%flip_" + allocateNextPrefixedName("%flip"));
+    }
 }
