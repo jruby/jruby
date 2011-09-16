@@ -79,7 +79,7 @@ public class Interpreter {
 
         try {
             IRubyObject rv =  method.call(context, self, currModule, "", IRubyObject.NULL_ARRAY);
-            if (isDebug()) LOG.debug("-- Interpreted instructions: {}", interpInstrsCount);
+            if (isDebug()) LOG.info("-- Interpreted instructions: {}", interpInstrsCount);
             return rv;
         } catch (IRBreakJump bj) {
             throw runtime.newLocalJumpError(Reason.BREAK, (IRubyObject)bj.breakValue, "unexpected break");
@@ -99,7 +99,7 @@ public class Interpreter {
             interpInstrsCount++;
             lastInstr = instrs[ipc];
             
-            if (isDebug()) LOG.debug("I: {}", lastInstr);
+            if (isDebug()) LOG.info("I: {}", lastInstr);
 
             // We need a nested try-catch:
             // - The first try-catch around the instruction captures JRuby-implementation exceptions
@@ -146,9 +146,9 @@ public class Interpreter {
                     }
                 }
             } catch (RaiseException re) {
-                if (isDebug()) LOG.debug("in scope: " + cfg.getScope() + ", caught raise exception: " + re.getException() + "; excepting instr: " + lastInstr);
+                if (isDebug()) LOG.info("in scope: " + cfg.getScope() + ", caught raise exception: " + re.getException() + "; excepting instr: " + lastInstr);
                 ipc = cfg.getRescuerPC(lastInstr);
-                if (isDebug()) LOG.debug("ipc for rescuer: " + ipc);
+                if (isDebug()) LOG.info("ipc for rescuer: " + ipc);
                 if (ipc == -1) throw re; // No one rescued exception, pass it on!
 
                 interp.setException(re.getException());
@@ -168,7 +168,7 @@ public class Interpreter {
                 // SSS: better way to do this without having to maintain a call stack?
                 // Check with Tom why the block.escape/isEscaped logic isn't working
                 // if (interp.getBlock().isEscaped())
-                if (isDebug()) LOG.debug("in scope: " + scope + ", raising unexpected return local jump error");
+                if (isDebug()) LOG.info("in scope: " + scope + ", raising unexpected return local jump error");
                 throw runtime.newLocalJumpError(Reason.RETURN, rv, "unexpected return");
             }
             else if (inClosure || (methodToReturnFrom != null)) {
