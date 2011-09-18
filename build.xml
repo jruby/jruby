@@ -781,7 +781,7 @@
       <classpath path="${jruby.classes.dir}"/>
       <sysproperty key="jruby.home" value="${basedir}"/>
       <env key="GEM_PATH" value=""/> <!-- to ignore any gems installed in ~/.gem -->
-      <arg line="-S gem install ${dev.gems}"/>
+      <arg line="-S gem install -n ${basedir}/bin ${dev.gems}"/>
     </java>
   </target>
 
