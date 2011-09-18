@@ -33,12 +33,12 @@ public class JRubyImplCallInstr extends CallInstr {
     //
     // 1. Most of these are there to support defined?  I just did a dumb translation of the
     //    bytecode instrs from the existing AST compiler.  This code needs cleanup!  Most of
-    //    the defined? inlined IR instructions in IRBuilder should be cleanly tucked away into a
-    //    defined? support runtime library with a relatively clean API.
+    //    the defined? inlined IR instructions in IRBuilder should be cleanly tucked away
+	 //    into a defined? support runtime library with a relatively clean API.
     //
-    // 2. Some of the other methods are a little arbitrary as well and come from the first pass
-    //    of trying to mimic behavior of the previous AST compiler.  This set of code can be
-    //    cleaned up in a later pass.
+    // 2. Some of the other methods are a little arbitrary as well and come from the
+	 //    first pass of trying to mimic behavior of the previous AST compiler.  This code
+	 //    can be cleaned up in a later pass.
     public enum JRubyImplementationMethod {
        // SSS FIXME: Note that compiler/impl/BaseBodyCompiler is using op_match2 for match() and and op_match for match2,
        // and we are replicating it here ... Is this a bug there?
@@ -50,13 +50,11 @@ public class JRubyImplCallInstr extends CallInstr {
        RT_GET_BACKREF("runtime_getBackref"),
        RTH_GET_DEFINED_CONSTANT_OR_BOUND_METHOD("getDefinedConstantOrBoundMethod"),
        BLOCK_GIVEN("block_isGiven"), // SSS FIXME: Should this be a Ruby internals call rather than a JRUBY internals call?
-       SELF_METACLASS("self_metaClass"), // SSS FIXME: Should this be a Ruby internals call rather than a JRUBY internals call?
        SELF_HAS_INSTANCE_VARIABLE("self_hasInstanceVariable"), // SSS FIXME: Should this be a Ruby internals call rather than a JRUBY internals call?
        SELF_IS_METHOD_BOUND("self_isMethodBound"), // SSS FIXME: Should this be a Ruby internals call rather than a JRUBY internals call?
        TC_SAVE_ERR_INFO("threadContext_saveErrInfo"),
        TC_RESTORE_ERR_INFO("threadContext_restoreErrInfo"),
        TC_GET_CONSTANT_DEFINED("threadContext_getConstantDefined"),
-       TC_GET_CURRENT_MODULE("threadContext_getCurrentModule"),
        BACKREF_IS_RUBY_MATCH_DATA("backref_isRubyMatchData"),
        METHOD_PUBLIC_ACCESSIBLE("methodIsPublicAccessible"),
        CLASS_VAR_DEFINED("isClassVarDefined"),
@@ -189,9 +187,6 @@ public class JRubyImplCallInstr extends CallInstr {
                 // SSS: FIXME: Or use this directly? "context.getCurrentScope().getBackRef(rt)" What is the diff??
                 rVal = RuntimeHelpers.getBackref(runtime, context);
                 break;
-            case SELF_METACLASS:
-                rVal = ((IRubyObject)getReceiver().retrieve(interp, context, self)).getMetaClass();
-                break;
             case RAISE_ARGUMENT_ERROR:
             {
                 Operand[] args = getCallArgs();
@@ -227,9 +222,6 @@ public class JRubyImplCallInstr extends CallInstr {
                 //name = getCallArgs()[0].retrieve(interp).toString();
                 name = ((StringLiteral)getCallArgs()[0])._str_value;
                 rVal = runtime.newBoolean(context.getConstantDefined(name));
-                break;
-            case TC_GET_CURRENT_MODULE:
-                rVal = context.getCurrentScope().getStaticScope().getModule();
                 break;
             case BACKREF_IS_RUBY_MATCH_DATA:
                 // bRef = getBackref()

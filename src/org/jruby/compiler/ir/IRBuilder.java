@@ -1580,15 +1580,7 @@ public class IRBuilder {
                  *   cm.isClassVarDefined ? "class variable" : nil
                  * ------------------------------------------------------------------------------ */
                 ClassVarNode iVisited = (ClassVarNode) node;
-                Variable     cm = s.getNewTemporaryVariable();
-                Label        l = s.getNewLabel();
-                // SSS FIXME: // Look at classVarDefinitionContainer(s)
-                // GetClassVarContainerModuleInstr currently does exactly what these 4 instructions do!
-                // So, this is the inlined version of GetClassVarContainerModuleInstr!
-                s.addInstr(new JRubyImplCallInstr(cm, JRubyImplementationMethod.TC_GET_CURRENT_MODULE, null, NO_ARGS));
-                s.addInstr(new BNEInstr(cm, Nil.NIL, l));
-                s.addInstr(new JRubyImplCallInstr(cm, JRubyImplementationMethod.SELF_METACLASS, getSelf(s), NO_ARGS));
-                s.addInstr(new LABEL_Instr(l));
+                Variable cm = classVarDefinitionContainer(s, true);
                 return buildDefinitionCheck(s, JRubyImplementationMethod.CLASS_VAR_DEFINED, cm, iVisited.getName(), "class variable");
             }
             case ATTRASSIGNNODE:
