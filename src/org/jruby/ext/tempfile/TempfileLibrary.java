@@ -36,6 +36,6 @@ import org.jruby.runtime.load.Library;
  */
 public class TempfileLibrary implements Library {
     public void load(Ruby runtime, boolean wrap) throws IOException {
-        RubyTempfile.createTempfileClass(runtime);
+        Tempfile.createTempfileClass(runtime);
     }
 }
