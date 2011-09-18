@@ -18,7 +18,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class AttrAssignInstr extends MultiOperandInstr {
     private Operand   obj;   // SSS: Document this.  What is this?
-    private Operand   attr;   // SSS: Document this.  What is this?
+    private Operand   attr;  // SSS: Document this.  What is this?
     private Operand   value; // SSS: Document this.  What is this?
     private Operand[] args;
 
@@ -82,11 +82,6 @@ public class AttrAssignInstr extends MultiOperandInstr {
         String      attrMeth = ((RubyString) attr.retrieve(interp, context, self)).asJavaString();
         List<IRubyObject> argList = new ArrayList<IRubyObject>();
 
-        // SSS FIXME: Is this correct?  Is value the 1st arg (or the last arg??)
-        if (value != null) {
-            argList.add((IRubyObject)value.retrieve(interp, context, self));
-        }
-
         for (int i = 0; i < args.length; i++) {
             IRubyObject rArg = (IRubyObject)args[i].retrieve(interp, context, self);
             if ((args[i] instanceof Splat) || (args[i] instanceof CompoundArray)) { 
@@ -94,6 +89,10 @@ public class AttrAssignInstr extends MultiOperandInstr {
             } else {
                 argList.add(rArg);
             }
+        }
+
+        if (value != null) {
+            argList.add((IRubyObject)value.retrieve(interp, context, self));
         }
 
         receiver.callMethod(context, attrMeth, argList.toArray(new IRubyObject[argList.size()]));
