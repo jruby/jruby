@@ -109,7 +109,7 @@ public enum Operation {
     NOT(0), // ruby NOT operator
     SET_RETADDR(0),
     INSTANCE_OF(0), // java instanceof bytecode
-    CLASS_OF(0),
+    CLASS_VAR_MODULE(0),
     IS_TRUE(0), // checks if the operand is non-null and non-false
     EQQ(0), // (FIXME: Exceptions?) a === call used only for its conditional results, as in case/when, begin/rescue, ...
     ALLOC_BINDING(OpFlags.f_has_side_effect),

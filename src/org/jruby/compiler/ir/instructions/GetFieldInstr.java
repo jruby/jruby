@@ -25,6 +25,7 @@ public class GetFieldInstr extends GetInstr {
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         IRubyObject object = (IRubyObject) getSource().retrieve(interp, context, self);
 
+        // FIXME: Why getRealClass? Document
         RubyClass clazz = object.getMetaClass().getRealClass();
 
         // FIXME: Should add this as a field for instruction
