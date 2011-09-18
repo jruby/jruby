@@ -57,7 +57,7 @@ public class GetConstInstr extends GetInstr {
         } else if (source instanceof RubyModule) {
             module = (RubyModule) source;
         } else {
-            throw context.getRuntime().newNameError(source + " is not a type/class", ((IRubyObject)source).asJavaString());
+            throw context.getRuntime().newTypeError(source + " is not a type/class");
         }
 
         Object constant = module.getConstant(getName());
