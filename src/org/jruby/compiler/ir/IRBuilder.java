@@ -117,7 +117,7 @@ import org.jruby.compiler.ir.instructions.BEQInstr;
 import org.jruby.compiler.ir.instructions.BNEInstr;
 import org.jruby.compiler.ir.instructions.BREAK_Instr;
 import org.jruby.compiler.ir.instructions.CallInstr;
-import org.jruby.compiler.ir.instructions.ClassOf;
+import org.jruby.compiler.ir.instructions.GetClassVarContainerModuleInstr;
 import org.jruby.compiler.ir.instructions.ClosureReturnInstr;
 import org.jruby.compiler.ir.instructions.CopyInstr;
 import org.jruby.compiler.ir.instructions.DefineClassInstr;
@@ -1059,10 +1059,11 @@ public class IRBuilder {
         return ret;
     }
 
+    // @@c
     public Operand buildClassVar(ClassVarNode node, IRScope s) {
         Variable ret = s.getNewTemporaryVariable();
-        Variable classFor = containingClassVariableFor(s);
-        s.addInstr(new GetClassVariableInstr(ret, classFor, node.getName()));
+        Variable classVarContainer = classVarDefinitionContainer(s, true);
+        s.addInstr(new GetClassVariableInstr(ret, classVarContainer, node.getName()));
         return ret;
     }
 
@@ -1073,8 +1074,8 @@ public class IRBuilder {
     // end
     public Operand buildClassVarAsgn(final ClassVarAsgnNode classVarAsgnNode, IRScope s) {
         Operand val = build(classVarAsgnNode.getValueNode(), s);
-        Variable classFor = containingClassVariableFor(s);
-        s.addInstr(new PutClassVariableInstr(classFor, classVarAsgnNode.getName(), val));
+        Variable classVarContainer = classVarDefinitionContainer(s, true);
+        s.addInstr(new PutClassVariableInstr(classVarContainer, classVarAsgnNode.getName(), val));
         return val;
     }
 
@@ -1085,22 +1086,36 @@ public class IRBuilder {
     // end
     public Operand buildClassVarDecl(final ClassVarDeclNode classVarDeclNode, IRScope s) {
         Operand val = build(classVarDeclNode.getValueNode(), s);
-        Variable classFor = containingClassVariableFor(s);        
-        s.addInstr(new PutClassVariableInstr(classFor, classVarDeclNode.getName(), val));
+        Variable classVarContainer = classVarDefinitionContainer(s, false);
+        s.addInstr(new PutClassVariableInstr(classVarContainer, classVarDeclNode.getName(), val));
         return val;
     }
     
-    /**
-     * We commonly have cases where we need either self or self's class.
-     * This method determines this based on whether we are in an instance
-     * variable scope or any other scope.  Note that for closures we just
-     * walk out until we find a method (class/modules scopes have a special
-     * method type so we are guaranteed to find it).
-     */
-    public Variable containingClassVariableFor(IRScope s) {
-        IRMethod containingMethod = s.getNearestMethod();
+    public Variable classVarDefinitionContainer(IRScope s, boolean lookInMetaClass) {
+        /* -------------------------------------------------------------------------------
+         * Find the nearest class/module scope (within which 's' is embedded) that can hold
+         * class variables and return its root method.  Skip singleton root methods since
+         * singletons can never contain class variables!
+         *
+         * Ex: check out this ruby code
+         * 
+         *     o = "huh?"
+         *     class << o
+         *       @@c = "I escape o!"
+         *     end
+         *
+         *     p @@c
+         * 
+         * So @@c is accessible outside the singleton class in the script
+         * ------------------------------------------------------------------------------- */
+        IRScope current = s;
+        while (current != null && (   !(current instanceof IRMethod) 
+                                   || !((IRMethod)current).isAModuleRootMethod()
+                                   ||  (current.getLexicalParent() instanceof IRMetaClass))) {
+            current = current.getLexicalParent();
+        }
         Variable tmp = s.getNewTemporaryVariable();
-        s.addInstr(new ClassOf(tmp, getSelf(s)));   // %v_x = class_of %self
+        s.addInstr(new GetClassVarContainerModuleInstr(tmp, (IRMethod)current, lookInMetaClass ? getSelf(s) : null));
         return tmp;
     }
 
@@ -1567,6 +1582,9 @@ public class IRBuilder {
                 ClassVarNode iVisited = (ClassVarNode) node;
                 Variable     cm = s.getNewTemporaryVariable();
                 Label        l = s.getNewLabel();
+                // SSS FIXME: // Look at classVarDefinitionContainer(s)
+                // GetClassVarContainerModuleInstr currently does exactly what these 4 instructions do!
+                // So, this is the inlined version of GetClassVarContainerModuleInstr!
                 s.addInstr(new JRubyImplCallInstr(cm, JRubyImplementationMethod.TC_GET_CURRENT_MODULE, null, NO_ARGS));
                 s.addInstr(new BNEInstr(cm, Nil.NIL, l));
                 s.addInstr(new JRubyImplCallInstr(cm, JRubyImplementationMethod.SELF_METACLASS, getSelf(s), NO_ARGS));
@@ -2942,7 +2960,7 @@ public class IRBuilder {
             // If 'm' is a root method, find the nearest regular non-root (root methods are synthetic, JRuby-generated) 
             // method that 'm' is embedded in.  The return will have to snap out of that method.  If there is no such
             // method, this is a local jump error!
-            IRScope sm = (IRMethod)m;
+            IRScope sm = m;
             while ((sm != null) && (!(sm instanceof IRMethod) || ((IRMethod)sm).isAModuleRootMethod())) {
                 sm = sm.getLexicalParent();
             }

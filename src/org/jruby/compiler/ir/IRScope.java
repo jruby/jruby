@@ -31,7 +31,7 @@ public interface IRScope {
     public IRModule getNearestModule();
 
     /**
-     * Returns the nearest method from this scope which may be itself.
+     * Returns the nearest method from this scope which may be itself (can never be null)
      */
     public IRMethod getNearestMethod();
     
