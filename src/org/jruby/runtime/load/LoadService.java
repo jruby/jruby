@@ -1306,6 +1306,8 @@ public class LoadService {
         } else if (name.startsWith("classpath:")) {
             isClasspathScheme = true;
             name = name.substring("classpath:".length());
+        } else if(name.startsWith("file:") && name.indexOf("!/") != -1) {
+            name = name.substring(name.indexOf("!/") + 2);
         }
 
         debugLogTry("fileInClasspath", name);
