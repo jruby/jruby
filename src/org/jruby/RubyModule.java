@@ -2966,7 +2966,7 @@ public class RubyModule extends RubyObject {
         // if adding a module under a constant name, set that module's basename to the constant name
         if (value instanceof RubyModule) {
             RubyModule module = (RubyModule)value;
-            if (module.getBaseName() == null) {
+            if (module != this && module.getBaseName() == null) {
                 module.setBaseName(name);
                 module.setParent(this);
             }
