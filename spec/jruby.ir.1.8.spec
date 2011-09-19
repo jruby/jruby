@@ -20,8 +20,6 @@ class MSpecScript
     SPEC_DIR + '/core',
 
     # Current crashers
-    '^' + SPEC_DIR + '/language/eigenclass', # infinite loop because of bug in RubyModule
-    '^' + SPEC_DIR + '/language/metaclass',  # infinite loop because of bug in RubyModule
     '^' + SPEC_DIR + '/core/binding',        # AddBindingInstructions pass bug
     '^' + SPEC_DIR + '/core/kernel/binding', # AddBindingInstructions pass bug
     '^' + SPEC_DIR + '/core/thread/run',     # infinite loop because of AddBindingInstructions bugs
