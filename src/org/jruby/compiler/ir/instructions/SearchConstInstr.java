@@ -63,7 +63,7 @@ public class SearchConstInstr extends GetInstr {
         }
 
         if (constant == null) {
-            constant = context.getCurrentScope().getStaticScope().getModule().callMethod(context, "const_missing", runtime.fastNewSymbol(name));
+            constant = staticScope.getModule().callMethod(context, "const_missing", runtime.fastNewSymbol(name));
         }
         
         getResult().store(interp, context, self, constant);
