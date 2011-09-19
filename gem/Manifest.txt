@@ -3,5 +3,5 @@ Manifest.txt
 README.txt
 lib/jruby-jars.rb
 lib/jruby-jars/version.rb
-lib/jruby-core-1.6.3.jar
-lib/jruby-stdlib-1.6.3.jar
+lib/jruby-core-1.7.0.dev.jar
+lib/jruby-stdlib-1.7.0.dev.jar
