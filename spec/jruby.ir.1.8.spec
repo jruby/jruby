@@ -18,14 +18,6 @@ class MSpecScript
   # Core library specs
   set :core, [
     SPEC_DIR + '/core',
-
-    # Current crashers
-    '^' + SPEC_DIR + '/core/binding',        # AddBindingInstructions pass bug
-    '^' + SPEC_DIR + '/core/kernel/binding', # AddBindingInstructions pass bug
-    '^' + SPEC_DIR + '/core/thread/run',     # infinite loop because of AddBindingInstructions bugs
-    '^' + SPEC_DIR + '/core/thread/raise',   # infinite loop because of AddBindingInstructions bugs
-    '^' + SPEC_DIR + '/core/thread/wakeup',  # infinite loop because of AddBindingInstructions bugs
-
     # 1.9
     '^' + SPEC_DIR + '/core/basicobject'
   ]

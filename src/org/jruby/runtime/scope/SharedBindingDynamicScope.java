@@ -22,7 +22,7 @@ public class SharedBindingDynamicScope extends DynamicScope {
 
     private void allocate() {
         if(variableValues == null) {
-            int size = irMethod.getBindingSlotsCount();
+            int size = irMethod.getLocalVariablesCount();
 //            System.out.println("Have " + size + " variables");
             variableValues = new IRubyObject[size];
         }
