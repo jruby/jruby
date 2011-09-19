@@ -396,16 +396,23 @@ public class RubyModule extends RubyObject {
         }
         
         Ruby runtime = getRuntime();
+        
         String name = getBaseName();
+        RubyClass objectClass = getRuntime().getObject();
         
         for (RubyModule p = getParent() ; p != null && p != runtime.getObject() ; p = p.getParent()) {
-            if (p.getBaseName() == null) {
-                // parent is anonymous, don't store calculated name
-                return calculateAnonymousName();
-            }
+            String pName = p.getBaseName();
             
-            // parent is not anonymous, use :: qualified name
-            name = p.getBaseName() + "::" + name;
+            // This is needed when the enclosing class or module is a singleton.
+            // In that case, we generated a name such as null::Foo, which broke 
+            // Marshalling, among others. The correct thing to do in this situation 
+            // is to insert the generate the name of form #<Class:01xasdfasd> if 
+            // it's a singleton module/class, which this code accomplishes.
+            if(pName == null) {
+                pName = p.getName();
+             }
+            
+            name = pName + "::" + name;
         }
         
         return calculatedName = name;
