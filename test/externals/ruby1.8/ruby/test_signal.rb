@@ -34,7 +34,10 @@ class TestSignal < Test::Unit::TestCase
 
       x = assert_raises(RuntimeError) do
         Process.kill "SIGINT", $$
-        sleep 0.1
+        t = Time.now
+        while (Time.now - t) < 5
+          sleep 0.1
+        end
       end
       assert(x)
       assert_match(/Interrupt/, x.message)
