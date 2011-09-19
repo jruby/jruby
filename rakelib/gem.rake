@@ -1,6 +1,6 @@
 desc "Build the jruby-jars gem"
 task :gem do
-  ruby "-S", "maybe_install_gems", "hoe"
+  ruby "-S", "maybe_install_gems", "hoe", "rdoc"
   Dir.chdir("gem") do
     ruby "-S", "rake", "package"
     cp FileList["pkg/*.gem"], "../#{DIST_DIR}"
