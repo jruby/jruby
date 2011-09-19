@@ -73,11 +73,11 @@ public class LocalVariable extends Variable {
     public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         // SSS FIXME: Should we have a special case for self?
         //return interp.getLocalVariable(getName());
-        return interp.getLocalVariable(context, location);
+        return isSelf() ? self : interp.getLocalVariable(context, location);
     }
 
     @Override
     public Object store(InterpreterContext interp, ThreadContext context, IRubyObject self, Object value) {
-        return interp.setLocalVariable(location, value);
+        return isSelf() ? self : interp.setLocalVariable(location, value);
     }
 }

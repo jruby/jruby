@@ -24,7 +24,6 @@ public class NaiveInterpreterContext implements InterpreterContext {
     protected IRubyObject[] parameters;
     protected Object returnValue;
     protected Object[] temporaryVariables;
-    protected Object[] localVariables;
     protected Frame frame;
     protected Block block;
     protected Block.Type blockType;
@@ -41,9 +40,7 @@ public class NaiveInterpreterContext implements InterpreterContext {
         this.frame = context.getCurrentFrame();
         this.parameters = parameters;
 
-        int localVariablesSize = irScope.getLocalVariablesCount();
         int temporaryVariablesSize = irScope.getTemporaryVariableSize();
-        this.localVariables = localVariablesSize > 0 ? new Object[localVariablesSize] : null;
         this.temporaryVariables = temporaryVariablesSize > 0 ? new Object[temporaryVariablesSize] : null;
         this.block = block;
         // SSS FIXME: Can it happen that (block.type != blockType)?
@@ -108,10 +105,7 @@ public class NaiveInterpreterContext implements InterpreterContext {
 
     // Post-inlining
     public void updateLocalVariablesCount(int n) {
-        // SSS FIXME: use System.arraycopy
-        Object[] oldLocalVars = this.localVariables;
-        this.localVariables = new Object[n];
-        System.arraycopy(oldLocalVars, 0, this.localVariables, 0, oldLocalVars.length);
+       // FIXME: Needs to be done.
     }
 
     public Object getSharedBindingVariable(ThreadContext context, int bindingSlot) {
@@ -125,16 +119,13 @@ public class NaiveInterpreterContext implements InterpreterContext {
     }
 
     public Object getLocalVariable(ThreadContext context, int offset) {
-        Object o = localVariables[offset];
-        return (o == null) ? context.getRuntime().getNil() : o;
+        Object value = currDynScope.getValue(offset, 0);
+        return (value == null) ? context.getRuntime().getNil() : value;
     }
 
     public Object setLocalVariable(int offset, Object value) {
-        Object oldValue = localVariables[offset];
-
-        localVariables[offset] = value;
-
-        return oldValue;
+        currDynScope.setValueDepthZero((IRubyObject)value, offset); 
+        return null;
     }
 
     public IRubyObject[] setNewParameters(IRubyObject[] newParams) {
