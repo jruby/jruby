@@ -2642,15 +2642,12 @@ public class IRBuilder {
         Label    l     = s.getNewLabel();
         Variable elt   = s.getNewTemporaryVariable();
         Variable flag  = s.getNewTemporaryVariable();
-        List<Operand> args = setupCallArgs(opElementAsgnNode.getArgsNode(), s);
-        // SSS FIXME: Verify with Tom that I am not missing something here
-        assert args.size() == 1;
-        Operand  index = args.get(0);
-        s.addInstr(CallInstr.create(elt, new MethAddr("[]"), array, new Operand[] { index }, null));
+        List<Operand> argList = setupCallArgs(opElementAsgnNode.getArgsNode(), s);
+        s.addInstr(CallInstr.create(elt, new MethAddr("[]"), array, argList.toArray(new Operand[argList.size()]), null));
         s.addInstr(new IsTrueInstr(flag, elt));
         s.addInstr(new BEQInstr(flag, BooleanLiteral.TRUE, l));
         Operand value = build(opElementAsgnNode.getValueNode(), s);
-        s.addInstr(CallInstr.create(elt, new MethAddr("[]="), array, new Operand[] { index, value }, null));
+        s.addInstr(CallInstr.create(elt, new MethAddr("[]="), array, argList.toArray(new Operand[argList.size()]), null));
         s.addInstr(new CopyInstr(elt, value));
         s.addInstr(new LABEL_Instr(l));
         return elt;
@@ -2663,15 +2660,13 @@ public class IRBuilder {
         Label    l     = s.getNewLabel();
         Variable elt   = s.getNewTemporaryVariable();
         Variable flag  = s.getNewTemporaryVariable();
-        List<Operand> args = setupCallArgs(opElementAsgnNode.getArgsNode(), s);
-        // SSS FIXME: Verify with Tom that I am not missing something here
-        assert args.size() == 1;
-        Operand  index = args.get(0);
-        s.addInstr(CallInstr.create(elt, new MethAddr("[]"), array, new Operand[] { index }, null));
+        List<Operand> argList = setupCallArgs(opElementAsgnNode.getArgsNode(), s);
+        s.addInstr(CallInstr.create(elt, new MethAddr("[]"), array, argList.toArray(new Operand[argList.size()]), null));
         s.addInstr(new IsTrueInstr(flag, elt));
         s.addInstr(new BEQInstr(flag, BooleanLiteral.FALSE, l));
         Operand value = build(opElementAsgnNode.getValueNode(), s);
-        s.addInstr(CallInstr.create(elt, new MethAddr("[]="), array, new Operand[] { index, value }, null));
+        argList.add(value);
+        s.addInstr(CallInstr.create(elt, new MethAddr("[]="), array, argList.toArray(new Operand[argList.size()]), null));
         s.addInstr(new CopyInstr(elt, value));
         s.addInstr(new LABEL_Instr(l));
         return elt;
@@ -2688,19 +2683,17 @@ public class IRBuilder {
         final OpElementAsgnNode opElementAsgnNode = (OpElementAsgnNode) node;
 
         Operand array = build(opElementAsgnNode.getReceiverNode(), s);
-        List<Operand> args = setupCallArgs(opElementAsgnNode.getArgsNode(), s);
-        // SSS FIXME: Verify with Tom that I am not missing something here
-        assert args.size() == 1;
-        Operand  index = args.get(0);
-        Variable elt   = s.getNewTemporaryVariable();
-        s.addInstr(CallInstr.create(elt, new MethAddr("[]"), array, new Operand[] { index }, null));         // elt = a[index]
+        List<Operand> argList = setupCallArgs(opElementAsgnNode.getArgsNode(), s);
+        Variable elt = s.getNewTemporaryVariable();
+        s.addInstr(CallInstr.create(elt, new MethAddr("[]"), array, argList.toArray(new Operand[argList.size()]), null)); // elt = a[args]
         Operand value = build(opElementAsgnNode.getValueNode(), s);                                       // Load 'value'
         String  operation = opElementAsgnNode.getOperatorName();
-        s.addInstr(CallInstr.create(elt, new MethAddr(operation), elt, new Operand[] { value }, null));      // elt = elt.OPERATION(value)
+        s.addInstr(CallInstr.create(elt, new MethAddr(operation), elt, new Operand[] { value }, null)); // elt = elt.OPERATION(value)
         // SSS: do not load the call result into 'elt' to eliminate the RAW dependency on the call
         // We already know what the result is going be .. we are just storing it back into the array
         Variable tmp = s.getNewTemporaryVariable();
-        s.addInstr(CallInstr.create(tmp, new MethAddr("[]="), array, new Operand[] { index, elt }, null));   // a[index] = elt
+        argList.add(elt);
+        s.addInstr(CallInstr.create(tmp, new MethAddr("[]="), array, argList.toArray(new Operand[argList.size()]), null));   // a[args] = elt
         return elt;
     }
 
