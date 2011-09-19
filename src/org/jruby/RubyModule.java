@@ -425,7 +425,7 @@ public class RubyModule extends RubyObject {
         String name = getBaseName();
         RubyClass objectClass = getRuntime().getObject();
         
-        for (RubyModule p = getParent() ; p != null && p != runtime.getObject() ; p = p.getParent()) {
+        for (RubyModule p = getParent() ; p != null && p != objectClass ; p = p.getParent()) {
             String pName = p.getBaseName();
             
             // This is needed when the enclosing class or module is a singleton.
