@@ -2774,7 +2774,12 @@ public class IRBuilder {
     public Operand buildRedo(Node node, IRExecutionScope s) {
         // For closures, a redo is a jump to the beginning of the closure
         // For non-closures, a redo is a jump to the beginning of the loop
-        s.addInstr(new JumpInstr((s.getCurrentLoop() != null) ?  s.getCurrentLoop().iterStartLabel : ((IRClosure)s).startLabel));
+        if (s instanceof IRClosure) {
+            s.addInstr(new JumpInstr((s.getCurrentLoop() != null) ?  s.getCurrentLoop().iterStartLabel : ((IRClosure)s).startLabel));
+        }
+        else {
+            s.addInstr(new THROW_EXCEPTION_Instr(IRException.REDO_LocalJumpError));
+        }
         return Nil.NIL;
     }
 
