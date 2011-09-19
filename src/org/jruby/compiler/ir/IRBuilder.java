@@ -2647,6 +2647,7 @@ public class IRBuilder {
         s.addInstr(new IsTrueInstr(flag, elt));
         s.addInstr(new BEQInstr(flag, BooleanLiteral.TRUE, l));
         Operand value = build(opElementAsgnNode.getValueNode(), s);
+        argList.add(value);
         s.addInstr(CallInstr.create(elt, new MethAddr("[]="), array, argList.toArray(new Operand[argList.size()]), null));
         s.addInstr(new CopyInstr(elt, value));
         s.addInstr(new LABEL_Instr(l));
