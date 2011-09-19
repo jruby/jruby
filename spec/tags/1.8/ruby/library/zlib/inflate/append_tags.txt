@@ -1,1 +1,0 @@
-fails(JRUBY-6078):Zlib::Inflate#<< properly handles incomplete data
