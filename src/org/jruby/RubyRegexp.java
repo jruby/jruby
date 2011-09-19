@@ -322,6 +322,18 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         }
     }
     
+    public static RubyRegexp newDRegexpEmbedded19(Ruby runtime, IRubyObject[] strings, int embeddedOptions) {
+        try {
+            RegexpOptions options = RegexpOptions.fromEmbeddedOptions(embeddedOptions);
+            RubyString pattern = preprocessDRegexp(runtime, strings, options);
+            
+            return new RubyRegexp(runtime, pattern.getByteList(), options);
+        } catch (RaiseException re) {
+            throw runtime.newRegexpError(re.getMessage());
+        }
+        
+    }
+    
     public static RubyRegexp newRegexp(Ruby runtime, ByteList pattern) {
         return new RubyRegexp(runtime, pattern);
     }
@@ -660,6 +672,46 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     public static void preprocessCheck(Ruby runtime, ByteList bytes) {
         preprocess(runtime, bytes, bytes.getEncoding(), new Encoding[]{null}, ErrorMode.RAISE);
+    }
+    
+    // rb_reg_preprocess_dregexp
+    public static RubyString preprocessDRegexp(Ruby runtime, IRubyObject[] strings, RegexpOptions options) {
+        RubyString string = null;
+        Encoding regexpEnc = null;
+        
+        for (int i = 0; i < strings.length; i++) {
+            RubyString str = strings[i].convertToString();
+            Encoding strEnc = str.getEncoding();
+            
+            if (options.isEncodingNone() && strEnc != ASCIIEncoding.INSTANCE) {
+                if (str.getCodeRange() != StringSupport.CR_7BIT) {
+                    throw runtime.newRegexpError("/.../n has a non escaped non ASCII character in non ASCII-8BIT script");
+                }
+                strEnc = ASCIIEncoding.INSTANCE;
+            }
+            
+            Encoding[] fixedEnc = new Encoding[1];
+            ByteList buf = RubyRegexp.preprocess(runtime, str.getByteList(), strEnc, fixedEnc, RubyRegexp.ErrorMode.PREPROCESS);
+            
+            if (fixedEnc[0] != null) {
+                if (regexpEnc != null && regexpEnc != fixedEnc[0]) {
+                    throw runtime.newRegexpError("encoding mismatch in dynamic regexp: " + new String(regexpEnc.getName()) + " and " + new String(fixedEnc[0].getName()));
+                }
+                regexpEnc = fixedEnc[0];
+            }
+            
+            if (string == null) {
+                string = (RubyString)str.dup();
+            } else {
+                string.append19(str);
+            }
+        }
+        
+        if (regexpEnc != null) {
+            string.setEncoding(regexpEnc);
+        }
+
+        return string;
     }
 
     private void check() {

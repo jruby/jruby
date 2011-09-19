@@ -38,6 +38,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFile;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyKernel;
+import org.jruby.RubyTempfile;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -57,7 +58,8 @@ import org.jruby.util.io.OpenFile;
  * An implementation of tempfile.rb in Java.
  */
 @JRubyClass(name="Tempfile", parent="File")
-public class RubyTempfile extends RubyFile {
+@SuppressWarnings("deprecation")
+public class Tempfile extends RubyTempfile {
 
     /** Keep strong references to the Reaper until cleanup */
     private static final ConcurrentMap<Reaper, Boolean> referenceSet
@@ -66,9 +68,7 @@ public class RubyTempfile extends RubyFile {
 
     private static ObjectAllocator TEMPFILE_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            RubyFile instance = new RubyTempfile(runtime, klass);
-
-            instance.setMetaClass(klass);
+            RubyFile instance = new Tempfile(runtime, klass);
 
             return instance;
         }
@@ -79,7 +79,7 @@ public class RubyTempfile extends RubyFile {
 
         RubyKernel.require(tempfileClass, runtime.newString("tmpdir"), Block.NULL_BLOCK);
 
-        tempfileClass.defineAnnotatedMethods(RubyTempfile.class);
+        tempfileClass.defineAnnotatedMethods(Tempfile.class);
 
         return tempfileClass;
     }
@@ -106,7 +106,7 @@ public class RubyTempfile extends RubyFile {
 
     // This should only be called by this and RubyFile.
     // It allows this object to be created without a IOHandler.
-    public RubyTempfile(Ruby runtime, RubyClass type) {
+    public Tempfile(Ruby runtime, RubyClass type) {
         super(runtime, type);
     }
 
@@ -264,7 +264,7 @@ public class RubyTempfile extends RubyFile {
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = context.getRuntime();
         RubyClass klass = (RubyClass) recv;
-        RubyTempfile tempfile = (RubyTempfile) klass.newInstance(context, args, block);
+        Tempfile tempfile = (Tempfile) klass.newInstance(context, args, block);
 
         if (block.isGiven()) {
             try {
@@ -278,13 +278,13 @@ public class RubyTempfile extends RubyFile {
         return tempfile;
     }
 
-    private static final class Reaper extends PhantomReferenceReaper<RubyTempfile> implements Runnable {
+    private static final class Reaper extends PhantomReferenceReaper<Tempfile> implements Runnable {
         private volatile boolean released = false;
         private final Ruby runtime;
         private final File tmpFile;
         private final OpenFile openFile;
 
-        Reaper(RubyTempfile file, Ruby runtime, File tmpFile, OpenFile openFile) {
+        Reaper(Tempfile file, Ruby runtime, File tmpFile, OpenFile openFile) {
             super(file);
             this.runtime = runtime;
             this.tmpFile = tmpFile;

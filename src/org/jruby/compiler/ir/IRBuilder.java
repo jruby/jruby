@@ -38,6 +38,7 @@ import org.jruby.ast.EvStrNode;
 import org.jruby.ast.EnsureNode;
 import org.jruby.ast.FCallNode;
 import org.jruby.ast.FixnumNode;
+import org.jruby.ast.FlipNode;
 import org.jruby.ast.FloatNode;
 import org.jruby.ast.GlobalAsgnNode;
 import org.jruby.ast.GlobalVarNode;
@@ -116,7 +117,7 @@ import org.jruby.compiler.ir.instructions.BEQInstr;
 import org.jruby.compiler.ir.instructions.BNEInstr;
 import org.jruby.compiler.ir.instructions.BREAK_Instr;
 import org.jruby.compiler.ir.instructions.CallInstr;
-import org.jruby.compiler.ir.instructions.ClassOf;
+import org.jruby.compiler.ir.instructions.GetClassVarContainerModuleInstr;
 import org.jruby.compiler.ir.instructions.ClosureReturnInstr;
 import org.jruby.compiler.ir.instructions.CopyInstr;
 import org.jruby.compiler.ir.instructions.DefineClassInstr;
@@ -260,6 +261,8 @@ public class IRBuilder {
     public static void main(String[] args) {
         boolean isDebug = args.length > 0 && args[0].equals("-debug");
         int     i = isDebug ? 1 : 0;
+
+        LOG.setDebugEnable(isDebug);
 
         String methName = null;
         if (args.length > i && args[i].equals("-inline")) {
@@ -496,7 +499,7 @@ public class IRBuilder {
             case FALSENODE: return buildFalse(node, m); // done
             case FCALLNODE: return buildFCall((FCallNode) node, m); // done
             case FIXNUMNODE: return buildFixnum((FixnumNode) node, m); // done
-//            case FLIPNODE: return buildFlip(node, m); // SSS FIXME: What code generates this AST?
+            case FLIPNODE: return buildFlip(node, m); // done
             case FLOATNODE: return buildFloat((FloatNode) node, m); // done
             case FORNODE: return buildFor((ForNode) node, (IRExecutionScope)m); // done
             case GLOBALASGNNODE: return buildGlobalAsgn((GlobalAsgnNode) node, m); // done
@@ -546,7 +549,7 @@ public class IRBuilder {
             case TRUENODE: return buildTrue(node, m); // done
             case UNDEFNODE: return buildUndef(node, m); // done
             case UNTILNODE: return buildUntil((UntilNode) node, (IRExecutionScope)m); // done
-            case VALIASNODE: return buildVAlias(node, m); // done -- see FIXME
+            case VALIASNODE: return buildVAlias(node, m); // done
             case VCALLNODE: return buildVCall((VCallNode) node, m); // done
             case WHILENODE: return buildWhile((WhileNode) node, (IRExecutionScope)m); // done
             case WHENNODE: assert false : "When nodes are handled by case node compilation."; return null;
@@ -1056,10 +1059,11 @@ public class IRBuilder {
         return ret;
     }
 
+    // @@c
     public Operand buildClassVar(ClassVarNode node, IRScope s) {
         Variable ret = s.getNewTemporaryVariable();
-        Variable classFor = containingClassVariableFor(s);
-        s.addInstr(new GetClassVariableInstr(ret, classFor, node.getName()));
+        Variable classVarContainer = classVarDefinitionContainer(s, true);
+        s.addInstr(new GetClassVariableInstr(ret, classVarContainer, node.getName()));
         return ret;
     }
 
@@ -1070,8 +1074,8 @@ public class IRBuilder {
     // end
     public Operand buildClassVarAsgn(final ClassVarAsgnNode classVarAsgnNode, IRScope s) {
         Operand val = build(classVarAsgnNode.getValueNode(), s);
-        Variable classFor = containingClassVariableFor(s);
-        s.addInstr(new PutClassVariableInstr(classFor, classVarAsgnNode.getName(), val));
+        Variable classVarContainer = classVarDefinitionContainer(s, true);
+        s.addInstr(new PutClassVariableInstr(classVarContainer, classVarAsgnNode.getName(), val));
         return val;
     }
 
@@ -1082,22 +1086,36 @@ public class IRBuilder {
     // end
     public Operand buildClassVarDecl(final ClassVarDeclNode classVarDeclNode, IRScope s) {
         Operand val = build(classVarDeclNode.getValueNode(), s);
-        Variable classFor = containingClassVariableFor(s);        
-        s.addInstr(new PutClassVariableInstr(classFor, classVarDeclNode.getName(), val));
+        Variable classVarContainer = classVarDefinitionContainer(s, false);
+        s.addInstr(new PutClassVariableInstr(classVarContainer, classVarDeclNode.getName(), val));
         return val;
     }
     
-    /**
-     * We commonly have cases where we need either self or self's class.
-     * This method determines this based on whether we are in an instance
-     * variable scope or any other scope.  Note that for closures we just
-     * walk out until we find a method (class/modules scopes have a special
-     * method type so we are guaranteed to find it).
-     */
-    public Variable containingClassVariableFor(IRScope s) {
-        IRMethod containingMethod = s.getNearestMethod();
+    public Variable classVarDefinitionContainer(IRScope s, boolean lookInMetaClass) {
+        /* -------------------------------------------------------------------------------
+         * Find the nearest class/module scope (within which 's' is embedded) that can hold
+         * class variables and return its root method.  Skip singleton root methods since
+         * singletons can never contain class variables!
+         *
+         * Ex: check out this ruby code
+         * 
+         *     o = "huh?"
+         *     class << o
+         *       @@c = "I escape o!"
+         *     end
+         *
+         *     p @@c
+         * 
+         * So @@c is accessible outside the singleton class in the script
+         * ------------------------------------------------------------------------------- */
+        IRScope current = s;
+        while (current != null && (   !(current instanceof IRMethod) 
+                                   || !((IRMethod)current).isAModuleRootMethod()
+                                   ||  (current.getLexicalParent() instanceof IRMetaClass))) {
+            current = current.getLexicalParent();
+        }
         Variable tmp = s.getNewTemporaryVariable();
-        s.addInstr(new ClassOf(tmp, getSelf(s)));   // %v_x = class_of %self
+        s.addInstr(new GetClassVarContainerModuleInstr(tmp, (IRMethod)current, lookInMetaClass ? getSelf(s) : null));
         return tmp;
     }
 
@@ -1562,12 +1580,7 @@ public class IRBuilder {
                  *   cm.isClassVarDefined ? "class variable" : nil
                  * ------------------------------------------------------------------------------ */
                 ClassVarNode iVisited = (ClassVarNode) node;
-                Variable     cm = s.getNewTemporaryVariable();
-                Label        l = s.getNewLabel();
-                s.addInstr(new JRubyImplCallInstr(cm, JRubyImplementationMethod.TC_GET_CURRENT_MODULE, null, NO_ARGS));
-                s.addInstr(new BNEInstr(cm, Nil.NIL, l));
-                s.addInstr(new JRubyImplCallInstr(cm, JRubyImplementationMethod.SELF_METACLASS, getSelf(s), NO_ARGS));
-                s.addInstr(new LABEL_Instr(l));
+                Variable cm = classVarDefinitionContainer(s, true);
                 return buildDefinitionCheck(s, JRubyImplementationMethod.CLASS_VAR_DEFINED, cm, iVisited.getName(), "class variable");
             }
             case ATTRASSIGNNODE:
@@ -2023,109 +2036,81 @@ public class IRBuilder {
         return new Fixnum(node.getValue());
     }
 
-/**
     public Operand buildFlip(Node node, IRScope m) {
-        final FlipNode flipNode = (FlipNode) node;
+        /* ----------------------------------------------------------------------
+         * Consider a simple 2-state (s1, s2) FSM with the following transitions:
+         *
+         *     new_state(s1, F) = s1
+         *     new_state(s1, T) = s2
+         *     new_state(s2, F) = s2
+         *     new_state(s2, T) = s1
+         *
+         * Here is the pseudo-code for evaluating the flip-node.
+         * Let 'v' holds the value of the current state. 
+         *
+         *    1. if (v == 's1') f1 = eval_condition(s1-condition); v = new_state(v, f1); ret = f1
+         *    2. if (v == 's2') f2 = eval_condition(s2-condition); v = new_state(v, f2); ret = true
+         *    3. return ret
+         *
+         * For exclusive flip conditions, line 2 changes to:
+         *    2. if (!f1 && (v == 's2')) f2 = eval_condition(s2-condition); v = new_state(v, f2)
+         *
+         * In IR code below, we are representing the two states as 1 and 2.  Any
+         * two values are good enough (even true and false), but 1 and 2 is simple
+         * enough and also makes the IR output readable 
+         * ---------------------------------------------------------------------- */
+        final FlipNode flipNode = (FlipNode)node;
 
-        m.getVariableCompiler().retrieveLocalVariable(flipNode.getIndex(), flipNode.getDepth());
+        Fixnum s1 = new Fixnum((long)1);
+        Fixnum s2 = new Fixnum((long)2);
 
-        if (flipNode.isExclusive()) {
-            m.performBooleanBranch(new BranchCallback() {
+        // Create a variable to hold the flip state 
+        IRMethod nearestMethod = m.getNearestMethod();
+        Variable flipState = nearestMethod.getNewFlipStateVariable();
+        nearestMethod.initFlipStateVariable(flipState, s1);
 
-                public void branch(IRScope m) {
-                    build(flipNode.getEndNode(), m,true);
-                    m.performBooleanBranch(new BranchCallback() {
+        // Variables and labels needed for the code
+        Variable returnVal = m.getNewTemporaryVariable();
+        Label    s2Label   = m.getNewLabel();
+        Label    doneLabel = m.getNewLabel();
 
-                        public void branch(IRScope m) {
-                            m.loadFalse();
-                            m.getVariableCompiler().assignLocalVariable(flipNode.getIndex(), flipNode.getDepth(), false);
-                        }
-                    }, new BranchCallback() {
+        // Init
+        m.addInstr(new CopyInstr(returnVal, BooleanLiteral.FALSE));
 
-                        public void branch(IRScope m) {
-                        }
-                    });
-                    m.loadTrue();
-                }
-            }, new BranchCallback() {
+        // Are we in state 1?
+        m.addInstr(new BNEInstr(flipState, s1, s2Label));
 
-                public void branch(IRScope m) {
-                    build(flipNode.getBeginNode(), m,true);
-                    becomeTrueOrFalse(m);
-                    m.getVariableCompiler().assignLocalVariable(flipNode.getIndex(), flipNode.getDepth(), true);
-                }
-            });
-        } else {
-            m.performBooleanBranch(new BranchCallback() {
+        // ----- Code for when we are in state 1 -----
+        Operand s1Val = build(flipNode.getBeginNode(), m);
+        m.addInstr(new BNEInstr(s1Val, BooleanLiteral.TRUE, s2Label));
 
-                public void branch(IRScope m) {
-                    build(flipNode.getEndNode(), m,true);
-                    m.performBooleanBranch(new BranchCallback() {
+        // s1 condition is true => set returnVal to true & move to state 2
+        m.addInstr(new CopyInstr(returnVal, BooleanLiteral.TRUE));
+        m.addInstr(new CopyInstr(flipState, s2));
 
-                        public void branch(IRScope m) {
-                            m.loadFalse();
-                            m.getVariableCompiler().assignLocalVariable(flipNode.getIndex(), flipNode.getDepth(), false);
-                        }
-                    }, new BranchCallback() {
+        // Check for state 2
+        m.addInstr(new LABEL_Instr(s2Label));
 
-                        public void branch(IRScope m) {
-                        }
-                    });
-                    m.loadTrue();
-                }
-            }, new BranchCallback() {
+        // For exclusive ranges/flips, we dont evaluate s2's condition if s1's condition was satisfied
+        if (flipNode.isExclusive()) m.addInstr(new BEQInstr(returnVal, BooleanLiteral.TRUE, doneLabel));
 
-                public void branch(IRScope m) {
-                    build(flipNode.getBeginNode(), m,true);
-                    m.performBooleanBranch(new BranchCallback() {
+        // Are we in state 2?
+        m.addInstr(new BNEInstr(flipState, s2, doneLabel));
 
-                        public void branch(IRScope m) {
-                            build(flipNode.getEndNode(), m,true);
-                            flipTrueOrFalse(m);
-                            m.getVariableCompiler().assignLocalVariable(flipNode.getIndex(), flipNode.getDepth(), false);
-                            m.loadTrue();
-                        }
-                    }, new BranchCallback() {
+        // ----- Code for when we are in state 2 -----
+        Operand s2Val = build(flipNode.getEndNode(), m);
+        m.addInstr(new CopyInstr(returnVal, BooleanLiteral.TRUE));
+        m.addInstr(new BNEInstr(s2Val, BooleanLiteral.TRUE, doneLabel));
 
-                        public void branch(IRScope m) {
-                            m.loadFalse();
-                        }
-                    });
-                }
-            });
-        }
-        // TODO: don't require pop
-        if (!expr) m.consumeCurrentValue();
+        // s2 condition is true => move to state 1 
+        m.addInstr(new CopyInstr(flipState, s1));
+
+        // Done testing for s1's and s2's conditions.  
+        // returnVal will have the result of the flip condition
+        m.addInstr(new LABEL_Instr(doneLabel));
+
+        return returnVal;
     }
-
-    private void becomeTrueOrFalse(IRScope m) {
-        m.performBooleanBranch(new BranchCallback() {
-
-                    public void branch(IRScope m) {
-                        m.loadTrue();
-                    }
-                }, new BranchCallback() {
-
-                    public void branch(IRScope m) {
-                        m.loadFalse();
-                    }
-                });
-    }
-
-    private void flipTrueOrFalse(IRScope m) {
-        m.performBooleanBranch(new BranchCallback() {
-
-                    public void branch(IRScope m) {
-                        m.loadFalse();
-                    }
-                }, new BranchCallback() {
-
-                    public void branch(IRScope m) {
-                        m.loadTrue();
-                    }
-                });
-    }
-**/
 
     public Operand buildFloat(FloatNode node, IRScope m) {
         // SSS: Since flaot literals are effectively interned objects, no need to copyAndReturnValue(...)
@@ -2967,7 +2952,7 @@ public class IRBuilder {
             // If 'm' is a root method, find the nearest regular non-root (root methods are synthetic, JRuby-generated) 
             // method that 'm' is embedded in.  The return will have to snap out of that method.  If there is no such
             // method, this is a local jump error!
-            IRScope sm = (IRMethod)m;
+            IRScope sm = m;
             while ((sm != null) && (!(sm instanceof IRMethod) || ((IRMethod)sm).isAModuleRootMethod())) {
                 sm = sm.getLexicalParent();
             }
@@ -3138,7 +3123,7 @@ public class IRBuilder {
     // Is this a ruby-internals or a jruby-internals call?
     public Operand buildVAlias(Node node, IRScope s) {
         VAliasNode valiasNode = (VAliasNode) node;
-        generateRubyInternalsCall(s, RubyInternalsMethod.GVAR_ALIAS, false, new StringLiteral(valiasNode.getNewName()), new Operand[] { new StringLiteral(valiasNode.getOldName()) });
+        generateRubyInternalsCall(s, RubyInternalsMethod.GVAR_ALIAS, false, getSelf(s), new Operand[] { new StringLiteral(valiasNode.getNewName()), new StringLiteral(valiasNode.getOldName()) });
         return Nil.NIL;
     }
 

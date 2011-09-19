@@ -44,6 +44,7 @@ import org.jruby.ast.NodeType;
 import org.jruby.ast.executable.AbstractScript;
 import org.jruby.ast.executable.RuntimeCache;
 import org.jruby.compiler.ASTInspector;
+import org.jruby.compiler.ArrayCallback;
 import org.jruby.compiler.CacheCompiler;
 import org.jruby.compiler.CompilerCallback;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -200,6 +201,31 @@ public class InheritedCacheCompiler implements CacheCompiler {
         createStringCallback.call(method);
         method.method.ldc(options);
         method.method.invokevirtual(p(RuntimeCache.class), "cacheRegexp", sig(RubyRegexp.class, int.class, RubyString.class, int.class));
+
+        method.method.label(alreadyCompiled);
+    }
+
+    public void cacheDRegexp19(BaseBodyCompiler method, ArrayCallback arrayCallback, Object[] sourceArray, int options) {
+        int index = inheritedRegexpCount++;
+        Label alreadyCompiled = new Label();
+
+        method.loadThis();
+        method.method.getfield(scriptCompiler.getClassname(), "runtimeCache", ci(RuntimeCache.class));
+        method.method.pushInt(index);
+        method.method.invokevirtual(p(RuntimeCache.class), "getRegexp", sig(RubyRegexp.class, int.class));
+        method.method.dup();
+
+        method.ifNotNull(alreadyCompiled);
+
+        method.method.pop();
+        method.loadThis();
+        method.method.getfield(scriptCompiler.getClassname(), "runtimeCache", ci(RuntimeCache.class));
+        method.method.pushInt(index);
+        method.loadRuntime();
+        method.createObjectArray(sourceArray, arrayCallback);
+        method.method.ldc(options);
+        method.method.invokestatic(p(RubyRegexp.class), "newDRegexpEmbedded19", sig(RubyRegexp.class, params(Ruby.class, IRubyObject[].class, int.class))); //[reg]
+        method.method.invokevirtual(p(RuntimeCache.class), "cacheRegexp", sig(RubyRegexp.class, int.class, RubyRegexp.class));
 
         method.method.label(alreadyCompiled);
     }

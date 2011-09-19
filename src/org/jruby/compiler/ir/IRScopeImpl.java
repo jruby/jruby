@@ -23,6 +23,8 @@ import org.jruby.compiler.ir.compiler_pass.LiveVariableAnalysis;
 import org.jruby.compiler.ir.compiler_pass.opts.DeadCodeElimination;
 import org.jruby.compiler.ir.compiler_pass.opts.LocalOptimizationPass;
 import org.jruby.parser.StaticScope;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 /**
  * Right now, this class abstracts 5 different scopes: Script, Module, Class, 
@@ -57,6 +59,8 @@ import org.jruby.parser.StaticScope;
  * and so on ...
  */
 public abstract class IRScopeImpl implements IRScope {
+    private static final Logger LOG = LoggerFactory.getLogger("IRScope");
+
     // SSS FIXME: Dumb design leaking a live operand into a non-operand!!
     Operand container;       // Parent container for this context
     RubyModule containerModule; // Live version of container
@@ -173,7 +177,7 @@ public abstract class IRScopeImpl implements IRScope {
     }
 
     // Enebo: We should just make n primitive int and not take the hash hit
-    private int allocateNextPrefixedName(String prefix) {
+    protected int allocateNextPrefixedName(String prefix) {
         int index = getPrefixCountSize(prefix);
         
         nextVarIndex.put(prefix, index + 1);
@@ -253,7 +257,7 @@ public abstract class IRScopeImpl implements IRScope {
         runCompilerPass(new CFG_Builder());
         if (RubyInstanceConfig.IR_TEST_INLINER != null) {
             if (RubyInstanceConfig.IR_COMPILER_DEBUG) {
-                System.out.println("Asked to inline " + RubyInstanceConfig.IR_TEST_INLINER);
+                LOG.info("Asked to inline " + RubyInstanceConfig.IR_TEST_INLINER);
             }
             runCompilerPass(new InlineTest(RubyInstanceConfig.IR_TEST_INLINER));
             runCompilerPass(new LocalOptimizationPass());
@@ -269,7 +273,7 @@ public abstract class IRScopeImpl implements IRScope {
     
     private void printPass(String message) {
         if (RubyInstanceConfig.IR_COMPILER_DEBUG) {
-            System.out.println("################## " + message + "##################");
+            LOG.info("################## " + message + "##################");
             runCompilerPass(new IR_Printer());        
         }
     }

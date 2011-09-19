@@ -26,7 +26,7 @@ public class BNEInstr extends BranchInstr {
         if (op2 instanceof BooleanLiteral) {
             boolean v1True  = ((IRubyObject)value1).isTrue();
             boolean op2True = ((BooleanLiteral)op2).isTrue();
-            return (v1True && !op2True) || (v1True && !op2True) ? target : null;
+            return (v1True && !op2True) || (!v1True && op2True) ? target : null;
         } else {
             Object value2 = op2.retrieve(interp, context, self);
 //            System.out.println("VALUE1: " + value1 + ", VALUE2: " + value2);

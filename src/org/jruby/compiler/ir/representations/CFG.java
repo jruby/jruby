@@ -250,11 +250,11 @@ public class CFG {
             bbs = linearize();
         }
         catch (RuntimeException e) {
-            System.out.println("============= ERROR ================");
-            System.out.println("Encountered exception: " + e + " while linearizing");
-            System.out.println("\nGraph:\n" + getGraph().toString());
-            System.out.println("\nInstructions:\n" + toStringInstrs());
-            System.out.println("====================================");
+            System.err.println("============= ERROR ================");
+            System.err.println("Encountered exception: " + e + " while linearizing");
+            System.err.println("\nGraph:\n" + getGraph().toString());
+            System.err.println("\nInstructions:\n" + toStringInstrs());
+            System.err.println("====================================");
             throw e;
         }
 
@@ -794,9 +794,9 @@ public class CFG {
         // Sanity check!
         for (BasicBlock b: getNodes()) {
             if (!bbSet.get(b.getID())) {
-                System.out.println("BB " + b.getID() + " missing from po list!");
-                System.out.println("CFG: " + _cfg);
-                System.out.println("Instrs: " + toStringInstrs());
+                System.err.println("BB " + b.getID() + " missing from po list!");
+                System.err.println("CFG: " + _cfg);
+                System.err.println("Instrs: " + toStringInstrs());
                 break;
             }
         }
@@ -1117,11 +1117,11 @@ public class CFG {
                         else if (b2 == null)
                             b2 = e._dst;
                         else {
-                            System.out.println("============= ERROR ================");
-                            System.out.println("Encountered bb: " + b.getID() + " with no instrs. and more than 2 targets!!");
-                            System.out.println("\nGraph:\n" + getGraph().toString());
-                            System.out.println("\nInstructions:\n" + toStringInstrs());
-                            System.out.println("====================================");
+                            System.err.println("============= ERROR ================");
+                            System.err.println("Encountered bb: " + b.getID() + " with no instrs. and more than 2 targets!!");
+                            System.err.println("\nGraph:\n" + getGraph().toString());
+                            System.err.println("\nInstructions:\n" + toStringInstrs());
+                            System.err.println("====================================");
                             throw new RuntimeException("Encountered bb: " + b.getID() + " with no instrs. and more than 2 targets!!");
                         }
                     }

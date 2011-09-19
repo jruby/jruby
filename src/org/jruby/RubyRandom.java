@@ -200,15 +200,12 @@ public class RubyRandom extends RubyObject {
         }
     }
 
-    // TODO: Need to have randomSeed for each VM?
-    private static SecureRandom randomSeed = new SecureRandom();
-
     private static final int DEFAULT_SEED_CNT = 4;
 
     // c: random_seed
     public static RubyBignum randomSeed(Ruby runtime) {
         byte[] seed = new byte[DEFAULT_SEED_CNT * 4];
-        randomSeed.nextBytes(seed);
+        runtime.getRandom().nextBytes(seed);
         return RubyBignum.newBignum(runtime, (new BigInteger(seed)).abs());
     }
 

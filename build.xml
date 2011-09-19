@@ -817,7 +817,7 @@
       <sysproperty key="jruby.home" value="${basedir}"/>
       <env key="GEM_PATH" value=""/> <!-- to ignore any gems installed in ~/.gem -->
       <env key="GEM_HOME" value="${jruby.gem.home.1.8}"/> <!-- to make sure we are working with JRuby and not RVM's gems -->
-      <arg line="-S gem install ${dev.gems}"/>
+      <arg line="-S gem install -n ${basedir}/bin ${dev.gems}"/>
     </java>
   </target>
 
@@ -846,6 +846,7 @@
       <classpath refid="build.classpath"/>
       <classpath path="${jruby.classes.dir}"/>
       <sysproperty key="jruby.home" value="${basedir}"/>
+      <env key="PATH" value="${basedir}/lib/ruby/gems/1.8/bin:${env.PATH}"/>
       <env key="GEM_PATH" value=""/> <!-- to ignore any gems installed in ~/.gem -->
       <arg line="-S gem install ${jruby.launcher.gem}"/>
     </java>

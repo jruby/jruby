@@ -32,6 +32,7 @@ public class StandardErrorLoggerTest extends TestCase {
     }
 
     public void testWithException() {
+        logger.setDebugEnable(true);
         logger.debug(new IllegalStateException());
         stream.flush();
         Assert.assertTrue(baos.toString().contains(IllegalStateException.class.getName()));

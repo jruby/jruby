@@ -11,8 +11,12 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 public class InterpretedIRMethod extends DynamicMethod {
+    private static final Logger LOG = LoggerFactory.getLogger("InterpretedIRMethod");
+
     public final IRMethod method;
     boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
 
@@ -41,7 +45,7 @@ public class InterpretedIRMethod extends DynamicMethod {
         if (Interpreter.isDebug()) {
             // FIXME: name should probably not be "" ever.
             String realName = name == null || "".equals(name) ? method.getName() : name;
-            System.out.println("Executing '" + realName + "'");
+            LOG.info("Executing '" + realName + "'");
         }
 
         CFG cfg = method.getCFG();
@@ -53,8 +57,8 @@ public class InterpretedIRMethod extends DynamicMethod {
         // Do this *after* the method has been prepared!
         interp.allocateSharedBindingScope(context, method);
         if (Interpreter.isDebug() && displayedCFG == false) {
-            System.out.println("CFG:\n" + cfg.getGraph());
-            System.out.println("\nInstructions:\n" + cfg.toStringInstrs());
+            LOG.info("CFG:\n" + cfg.getGraph());
+            LOG.info("\nInstructions:\n" + cfg.toStringInstrs());
             displayedCFG = true;
         }
 

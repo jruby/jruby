@@ -29,16 +29,14 @@
 
 package org.jruby.compiler;
 
-import org.joni.ast.BackRefNode;
-import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyMatchData;
 import org.jruby.ast.ArgsCatNode;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArgsPushNode;
 import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.ArrayNode;
+import org.jruby.ast.DRegexpNode;
 import org.jruby.ast.EncodingNode;
-import org.jruby.ast.FCallNode;
 import org.jruby.ast.IterNode;
 import org.jruby.ast.HashNode;
 import org.jruby.ast.Hash19Node;
@@ -484,6 +482,7 @@ public class ASTCompiler19 extends ASTCompiler {
         context.splatCurrentValue("splatValue19");
     }
 
+    @Override
     public void compileArgsCatArguments(Node node, BodyCompiler context, boolean expr) {
         ArgsCatNode argsCatNode = (ArgsCatNode) node;
 
@@ -498,6 +497,7 @@ public class ASTCompiler19 extends ASTCompiler {
         if (!expr) context.consumeCurrentValue();
     }
 
+    @Override
     public void compileSplatArguments(Node node, BodyCompiler context, boolean expr) {
         SplatNode splatNode = (SplatNode) node;
 
@@ -505,5 +505,24 @@ public class ASTCompiler19 extends ASTCompiler {
         context.splatToArguments19();
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
+    }
+
+    public void compileDRegexp(Node node, BodyCompiler context, boolean expr) {
+        final DRegexpNode dregexpNode = (DRegexpNode) node;
+
+        ArrayCallback dElementsCallback = new ArrayCallback() {
+            public void nextValue(BodyCompiler context, Object sourceArray, int index) {
+                compile((Node)((Object[])sourceArray)[index], context, true);
+            }
+        };
+
+        if (expr) {
+            context.createDRegexp19(dElementsCallback, dregexpNode.childNodes().toArray(), dregexpNode.getOptions().toEmbeddedOptions());
+        } else {
+            // not an expression, only compile the elements
+            for (Node nextNode : dregexpNode.childNodes()) {
+                compile(nextNode, context, false);
+            }
+        }
     }
 }

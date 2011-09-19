@@ -35,8 +35,6 @@ package org.jruby.test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -109,7 +107,6 @@ public class TestRuby extends TestRubyBase {
         runtime = Ruby.newInstance(cfg);
         runtime.evalScriptlet("ENV['gravy'] = 'with sausage'");
         assertNull(runtime.getPosix().getenv("gravy"));
-        System.out.println(runtime.getPosix().getenv("gravy"));
     }
     
     public void testNativeENVSettingWhenNativeIsDisabledGloballyButExplicitlyEnabledOnTheRuntime() throws Exception {
@@ -119,6 +116,19 @@ public class TestRuby extends TestRubyBase {
         runtime = Ruby.newInstance(cfg);
         runtime.evalScriptlet("ENV['sausage'] = 'biscuits'");
         assertNull(runtime.getPosix().getenv("sausage"));
+    }
+    
+    public void testRequireCextNotAllowedWhenCextIsDisabledGlobally() throws Exception {
+        RubyInstanceConfig cfg = new RubyInstanceConfig();
+        cfg.setCextEnabled(false);
+        runtime = Ruby.newInstance(cfg);
+        try {
+            runtime.evalScriptlet("require 'tempfile'; file = Tempfile.open(['foo', '.so']); file.close; require file.path");
+            fail();
+        } catch (RaiseException re) {
+            assertTrue(re.getException().message.asJavaString().startsWith(
+                    "C extensions are disabled"));
+        }
     }
     
     public void testPrintErrorWithNilBacktrace() throws Exception {
