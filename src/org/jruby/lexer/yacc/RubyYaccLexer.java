@@ -532,7 +532,7 @@ public class RubyYaccLexer {
                 // Do nothing like MRI
             } else if (getEncoding() == RubyYaccLexer.USASCII_ENCODING &&
                     bufferEncoding != RubyYaccLexer.UTF8_ENCODING) {
-                buffer.setEncoding(RubyYaccLexer.ASCII8BIT_ENCODING);
+                codeRange = ParserSupport.associateEncoding(buffer, RubyYaccLexer.ASCII8BIT_ENCODING, codeRange);
             }
         }
 

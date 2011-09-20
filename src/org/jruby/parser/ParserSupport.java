@@ -177,6 +177,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.util.ByteList;
 import org.jruby.util.IdUtil;
 import org.jruby.util.RegexpOptions;
+import org.jruby.util.StringSupport;
 
 /** 
  *
@@ -1633,4 +1634,22 @@ public class ParserSupport {
         regexpFragmentCheck(end, ByteList.create(""));
         return new DRegexpNode(position, options, encoding).add(contents);
     }
+    
+    // FIXME:  This logic is used by many methods in MRI, but we are only using it in lexer
+    // currently.  Consolidate this when we tackle a big encoding refactoring
+    public static int associateEncoding(ByteList buffer, Encoding newEncoding, int codeRange) {
+        Encoding bufferEncoding = buffer.getEncoding();
+                
+        if (newEncoding == bufferEncoding) return codeRange;
+        
+        // TODO: Special const error
+        
+        buffer.setEncoding(newEncoding);
+        
+        if (codeRange != StringSupport.CR_7BIT || !newEncoding.isAsciiCompatible()) {
+            return StringSupport.CR_UNKNOWN;
+        }
+        
+        return codeRange;
+    }    
 }
