@@ -65,7 +65,6 @@ import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
-import org.jruby.util.ByteList;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.RecursiveComparator;
 
@@ -111,6 +110,7 @@ import static org.jruby.runtime.MethodIndex.HASH;
  */
 @JRubyClass(name = "Hash", include="Enumerable")
 public class RubyHash extends RubyObject implements Map {
+    public static final int DEFAULT_INSPECT_STR_SIZE = 20;
 
     public static RubyClass createHashClass(Ruby runtime) {
         RubyClass hashc = runtime.defineClass("Hash", runtime.getObject(), HASH_ALLOCATOR);
@@ -713,23 +713,23 @@ public class RubyHash extends RubyObject implements Map {
      *
      */
     private IRubyObject inspectHash(final ThreadContext context) {
-        final ByteList buffer = new ByteList();
-        buffer.append('{');
+        final RubyString str = RubyString.newStringLight(context.runtime, DEFAULT_INSPECT_STR_SIZE);
+        str.cat((byte)'{');
         final boolean[] firstEntry = new boolean[1];
 
         firstEntry[0] = true;
         visitAll(new Visitor() {
             public void visit(IRubyObject key, IRubyObject value) {
-                if (!firstEntry[0]) buffer.append(',').append(' ');
+                if (!firstEntry[0]) str.cat((byte)',').cat((byte)' ');
 
-                buffer.append(inspect(context, key).getByteList());
-                buffer.append('=').append('>');
-                buffer.append(inspect(context, value).getByteList());
+                str.cat19(inspect(context, key));
+                str.cat((byte)'=').cat((byte)'>');
+                str.cat19(inspect(context, value));
                 firstEntry[0] = false;
             }
         });
-        buffer.append('}');
-        return getRuntime().newString(buffer);
+        str.cat((byte)'}');
+        return str;
     }
 
     /** rb_hash_inspect

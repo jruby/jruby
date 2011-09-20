@@ -414,6 +414,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
         this.value = value;
     }
 
+    public RubyString(Ruby runtime, RubyClass rubyClass, ByteList value, Encoding encoding, boolean objectSpace) {
+        this(runtime, rubyClass, value, objectSpace);
+        value.setEncoding(encoding);
+    }
+
     protected RubyString(Ruby runtime, RubyClass rubyClass, ByteList value, Encoding enc, int cr) {
         this(runtime, rubyClass, value);
         value.setEncoding(enc);
@@ -464,6 +469,10 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     public static RubyString newStringLight(Ruby runtime, int size) {
         return new RubyString(runtime, runtime.getString(), new ByteList(size), false);
+    }
+    
+    public static RubyString newStringLight(Ruby runtime, int size, Encoding encoding) {
+        return new RubyString(runtime, runtime.getString(), new ByteList(size), encoding, false);
     }
   
     public static RubyString newString(Ruby runtime, CharSequence str) {
@@ -1092,10 +1101,13 @@ public class RubyString extends RubyObject implements EncodingCapable {
         IRubyObject tmp = arg.checkArrayType();
         if (tmp.isNil()) tmp = arg;
 
+        ByteList out = new ByteList(value.getRealSize());
+        out.setEncoding(value.getEncoding());
+        
+        boolean tainted;
+        
         // FIXME: Should we make this work with platform's locale,
         // or continue hardcoding US?
-        ByteList out = new ByteList(value.getRealSize());
-        boolean tainted;
         switch (compat) {
         case RUBY1_8:
             tainted = Sprintf.sprintf(out, Locale.US, value, tmp);

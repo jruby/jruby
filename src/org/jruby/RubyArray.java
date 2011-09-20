@@ -49,6 +49,8 @@ import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import org.jcodings.Encoding;
+import org.jcodings.specific.USASCIIEncoding;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -88,6 +90,7 @@ import static org.jruby.runtime.MethodIndex.OP_CMP;
  */
 @JRubyClass(name="Array")
 public class RubyArray extends RubyObject implements List {
+    public static final int DEFAULT_INSPECT_STR_SIZE = 10;
 
     public static RubyClass createArrayClass(Ruby runtime) {
         RubyClass arrayc = runtime.defineClass("Array", runtime.getObject(), ARRAY_ALLOCATOR);
@@ -1467,22 +1470,25 @@ public class RubyArray extends RubyObject implements List {
      * 
      */
     private IRubyObject inspectAry(ThreadContext context) {
-        ByteList buffer = new ByteList();
-        buffer.append('[');
+        Encoding encoding = context.runtime.getDefaultInternalEncoding();
+        if (encoding == null) encoding = USASCIIEncoding.INSTANCE;
+        RubyString str = RubyString.newStringLight(context.runtime, DEFAULT_INSPECT_STR_SIZE, encoding);
+        str.cat((byte)'[');
         boolean tainted = isTaint();
         boolean untrust = isUntrusted();
 
         for (int i = 0; i < realLength; i++) {
-            if (i > 0) buffer.append(',').append(' ');
+            if (i > 0) str.cat((byte)',').cat((byte)' ');
 
-            RubyString str = inspect(context, safeArrayRef(values, begin + i));
-            if (str.isTaint()) tainted = true;
-            if (str.isUntrusted()) untrust = true;
-            buffer.append(str.getByteList());
+            RubyString str2 = inspect(context, safeArrayRef(values, begin + i));
+            if (str2.isTaint()) tainted = true;
+            if (str2.isUntrusted()) untrust = true;
+            
+            // safe for both 1.9 and 1.8
+            str.cat19(str2);
         }
-        buffer.append(']');
+        str.cat((byte)']');
 
-        RubyString str = getRuntime().newString(buffer);
         if (tainted) str.setTaint(true);
         if (untrust) str.setUntrusted(true);
 
