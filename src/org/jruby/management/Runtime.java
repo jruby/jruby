@@ -28,6 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.management;
 
+import java.io.FileDescriptor;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.ref.SoftReference;
@@ -94,7 +95,7 @@ public class Runtime implements RuntimeMBean {
         ThreadContext tc = th.getContext();
         if (tc != null) {
             exc.setBacktraceData(gather.getBacktraceData(tc, th.getNativeThread(), true));
-            pw.println(Format.MRI.printBacktrace(exc));
+            pw.println(Format.MRI.printBacktrace(exc, false));
         } else {
             pw.println("    [no longer alive]");
         }
@@ -111,7 +112,7 @@ public class Runtime implements RuntimeMBean {
                 try {
                     result[0] = ruby.get().evalScriptlet(code).toString();
                 } catch (RaiseException re) {
-                    result[0] = ruby.get().getInstanceConfig().getTraceType().printBacktrace(re.getException());
+                    result[0] = ruby.get().getInstanceConfig().getTraceType().printBacktrace(re.getException(), false);
                 } catch (Throwable t) {
                     StringWriter sw = new StringWriter();
                     t.printStackTrace(new PrintWriter(sw));

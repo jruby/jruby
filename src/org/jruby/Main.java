@@ -40,6 +40,7 @@ package org.jruby;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.File;
+import java.io.FileDescriptor;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -455,7 +456,7 @@ public class Main {
                 return 0;
             }
         } else {
-            System.err.print(runtime.getInstanceConfig().getTraceType().printBacktrace(raisedException));
+            System.err.print(runtime.getInstanceConfig().getTraceType().printBacktrace(raisedException, runtime.getPosix().isatty(FileDescriptor.err)));
             return 1;
         }
     }

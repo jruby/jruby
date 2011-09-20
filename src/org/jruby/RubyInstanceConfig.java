@@ -1070,6 +1070,20 @@ public class RubyInstanceConfig {
         return xFlag;
     }
     
+    /**
+     * True if colorized backtraces are enabled. False otherwise.
+     */
+    public boolean getBacktraceColor() {
+        return backtraceColor;
+    }
+    
+    /**
+     * Set to true to enable colorized backtraces.
+     */
+    public void setBacktraceColor(boolean backtraceColor) {
+        this.backtraceColor = backtraceColor;
+    }
+    
     ////////////////////////////////////////////////////////////////////////////
     // Configuration fields.
     ////////////////////////////////////////////////////////////////////////////
@@ -1168,6 +1182,8 @@ public class RubyInstanceConfig {
 
     private TraceType traceType =
             TraceType.traceTypeFor(SafePropertyAccessor.getProperty("jruby.backtrace.style", "ruby_framed"));
+    
+    private boolean backtraceColor = SafePropertyAccessor.getBoolean("jruby.backtrace.color", false);
 
     private LoadServiceCreator creator = LoadServiceCreator.DEFAULT;
     

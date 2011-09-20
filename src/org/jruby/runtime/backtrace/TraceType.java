@@ -1,9 +1,9 @@
 package org.jruby.runtime.backtrace;
 
 import java.io.ByteArrayOutputStream;
+import java.io.FileDescriptor;
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
@@ -30,8 +30,8 @@ public class TraceType {
         return gather.getBacktraceData(context, nativeException);
     }
 
-    public String printBacktrace(RubyException exception) {
-        return format.printBacktrace(exception);
+    public String printBacktrace(RubyException exception, boolean console) {
+        return format.printBacktrace(exception, console);
     }
     
     public static void dumpException(RubyException exception) {
@@ -39,7 +39,8 @@ public class TraceType {
     }
     
     public static void dumpBacktrace(RubyException exception) {
-        System.err.println("Backtrace generated:\n" + Format.JRUBY.printBacktrace(exception));
+        Ruby runtime = exception.getRuntime();
+        System.err.println("Backtrace generated:\n" + Format.JRUBY.printBacktrace(exception, runtime.getPosix().isatty(FileDescriptor.err)));
     }
     
     public static void dumpCaller(RubyArray trace) {
@@ -123,8 +124,8 @@ public class TraceType {
          * Formatting like C Ruby
          */
         MRI {
-            public String printBacktrace(RubyException exception) {
-                return printBacktraceMRI(exception);
+            public String printBacktrace(RubyException exception, boolean console) {
+                return printBacktraceMRI(exception, console);
             }
         },
 
@@ -132,8 +133,8 @@ public class TraceType {
          * New JRuby formatting
          */
         JRUBY {
-            public String printBacktrace(RubyException exception) {
-                return printBacktraceJRuby(exception);
+            public String printBacktrace(RubyException exception, boolean console) {
+                return printBacktraceJRuby(exception, console);
             }
         },
 
@@ -141,15 +142,15 @@ public class TraceType {
          * Rubinius-style formatting
          */
         RUBINIUS {
-            public String printBacktrace(RubyException exception) {
-                return printBacktraceRubinius(exception);
+            public String printBacktrace(RubyException exception, boolean console) {
+                return printBacktraceRubinius(exception, console);
             }
         };
 
-        public abstract String printBacktrace(RubyException exception);
+        public abstract String printBacktrace(RubyException exception, boolean console);
     }
 
-    protected static String printBacktraceMRI(RubyException exception) {
+    protected static String printBacktraceMRI(RubyException exception, boolean console) {
         Ruby runtime = exception.getRuntime();
         ThreadContext context = runtime.getCurrentContext();
         IRubyObject backtrace = exception.callMethod(context, "backtrace");
@@ -223,7 +224,7 @@ public class TraceType {
     private static final String EVAL_COLOR = "\033[0;33m";
     private static final String CLEAR_COLOR = "\033[0m";
 
-    protected static String printBacktraceRubinius(RubyException exception) {
+    protected static String printBacktraceRubinius(RubyException exception, boolean console) {
         Ruby runtime = exception.getRuntime();
         RubyStackTraceElement[] frames = exception.getBacktraceElements();
         if (frames == null) frames = new RubyStackTraceElement[0];
@@ -285,7 +286,7 @@ public class TraceType {
         return buffer.toString();
     }
 
-    protected static String printBacktraceJRuby(RubyException exception) {
+    protected static String printBacktraceJRuby(RubyException exception, boolean console) {
         Ruby runtime = exception.getRuntime();
         RubyStackTraceElement[] frames = exception.getBacktraceElements();
         if (frames == null) frames = new RubyStackTraceElement[0];
@@ -308,9 +309,23 @@ public class TraceType {
                 .append(": ")
                 .append(message)
                 .append('\n');
+        
+        boolean color = console && runtime.getInstanceConfig().getBacktraceColor();
 
         // backtrace lines
+        boolean first = true;
         for (RubyStackTraceElement frame : frames) {
+            if (color) {
+                if (first) {
+                    buffer.append(FIRST_COLOR);
+                } else if (frame.isBinding() || frame.getFileName().equals("(eval)")) {
+                    buffer.append(EVAL_COLOR);
+                } else if (frame.getFileName().indexOf(".java") != -1) {
+                    buffer.append(KERNEL_COLOR);
+                }
+                first = false;
+            }
+            
             buffer.append("  ");
 
             // method name
@@ -323,73 +338,14 @@ public class TraceType {
                     .append(" at ")
                     .append(frame.getFileName())
                     .append(':')
-                    .append(frame.getLineNumber())
-                    .append('\n');
-        }
-
-        return buffer.toString();
-    }
-
-    protected static String printBacktraceJRuby2(RubyException exception) {
-        Ruby runtime = exception.getRuntime();
-        RubyStackTraceElement[] frames = exception.getBacktraceData().getBacktrace(runtime);
-        if (frames == null) frames = new RubyStackTraceElement[0];
-
-        List<String> lineNumbers = new ArrayList(frames.length);
-
-        // find longest filename and line number
-        int longestFileName = 0;
-        int longestLineNumber = 0;
-        for (RubyStackTraceElement frame : frames) {
-            String lineNumber = String.valueOf(frame.getLineNumber());
-            lineNumbers.add(lineNumber);
+                    .append(frame.getLineNumber());
             
-            longestFileName = Math.max(longestFileName, frame.getFileName().length());
-            longestLineNumber = Math.max(longestLineNumber, String.valueOf(frame.getLineNumber()).length());
-        }
-
-        StringBuilder buffer = new StringBuilder();
-
-        // exception line
-        String message = exception.message(runtime.getCurrentContext()).toString();
-        if (exception.getMetaClass() == runtime.getRuntimeError() && message.length() == 0) {
-            message = "No current exception";
-        }
-        buffer
-                .append(exception.getMetaClass().getName())
-                .append(": ")
-                .append(message)
-                .append('\n');
-
-        // backtrace lines
-        int i = 0;
-        for (RubyStackTraceElement frame : frames) {
-            buffer.append("  ");
-
-            // file and line, centered on :
-            String fileName = frame.getFileName();
-            String lineNumber = lineNumbers.get(i);
-            for (int j = 0; j < longestFileName - fileName.length(); j++) {
-                buffer.append(' ');
+            if (color) {
+                buffer.append(CLEAR_COLOR);
             }
-            buffer
-                    .append(fileName)
-                    .append(":")
-                    .append(lineNumber);
-
-            // padding to center remainder on "in"
-            for (int l = 0; l < longestLineNumber - lineNumber.length(); l++) {
-                buffer.append(' ');
-            }
-
-            // method name
-            buffer
-                    .append(' ')
-                    .append("in ")
-                    .append(frame.getMethodName())
-                    .append('\n');
             
-            i++;
+            buffer
+                    .append('\n');
         }
 
         return buffer.toString();
