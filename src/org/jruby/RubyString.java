@@ -1101,10 +1101,13 @@ public class RubyString extends RubyObject implements EncodingCapable {
         IRubyObject tmp = arg.checkArrayType();
         if (tmp.isNil()) tmp = arg;
 
+        ByteList out = new ByteList(value.getRealSize());
+        out.setEncoding(value.getEncoding());
+        
+        boolean tainted;
+        
         // FIXME: Should we make this work with platform's locale,
         // or continue hardcoding US?
-        ByteList out = new ByteList(value.getRealSize());
-        boolean tainted;
         switch (compat) {
         case RUBY1_8:
             tainted = Sprintf.sprintf(out, Locale.US, value, tmp);
