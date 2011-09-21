@@ -775,7 +775,7 @@ class TestKernel < Test::Unit::TestCase
   def test_exec_rubyopt
     old = ENV['RUBYOPT']
     ENV['RUBYOPT'] = "-v"
-    result =  `ruby -e "a=1"`
+    result =  `bin/jruby -e "a=1"`
     assert_equal 0, $?.exitstatus
     assert_match /ruby/i, result
   ensure
@@ -799,4 +799,3 @@ class TestKernel < Test::Unit::TestCase
 #  warn
 
 end
-

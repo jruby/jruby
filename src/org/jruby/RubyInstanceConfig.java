@@ -116,7 +116,7 @@ public class RubyInstanceConfig {
             }
             
             managementEnabled = SafePropertyAccessor.getBoolean("jruby.management.enabled", false);
-            runRubyInProcess = SafePropertyAccessor.getBoolean("jruby.launch.inproc", true);
+            runRubyInProcess = SafePropertyAccessor.getBoolean("jruby.launch.inproc", false);
             boolean jitProperty = SafePropertyAccessor.getProperty("jruby.jit.enabled") != null;
             if (jitProperty) {
                 error.print("jruby.jit.enabled property is deprecated; use jruby.compile.mode=(OFF|JIT|FORCE) for -C, default, and +C flags");
