@@ -92,7 +92,7 @@ Java_org_jruby_cext_Native_callInit(JNIEnv* env, jobject self, jobject jThreadCo
 {
     jobject runtime = env->CallObjectMethod(jThreadContext, jruby::ThreadContext_getRuntime_method);
     if (!env->IsSameObject(runtime, jruby::runtime)) {
-        jruby::throwExceptionByName(env, jruby::RuntimeException, "invalid ruby runtime");
+        jruby::throwExceptionByName(env, jruby::RuntimeException, "C extension initialized against invalid ruby runtime");
         return 0;
     }
 

@@ -157,11 +157,9 @@ rb_undef_method(VALUE klass, const char* method)
 {
     JLocalEnv env;
 
-    jmethodID undef = getMethodID(env, RubyModule_class, "undef",
-            "(Lorg/jruby/runtime/ThreadContext;Ljava/lang/String;)V");
     jobject ctxt = env->CallObjectMethod(getRuntime(), Ruby_getCurrentContext_method);
     checkExceptions(env);
-    env->CallObjectMethod(valueToObject(env, klass), undef, ctxt, env->NewStringUTF(method));
+    env->CallObjectMethod(valueToObject(env, klass), RubyModule_undef_method, ctxt, env->NewStringUTF(method));
     checkExceptions(env);
 }
 
