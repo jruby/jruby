@@ -276,6 +276,11 @@ public class JRuby {
             // Thread wakeup, do nothing
         }
     }
+    
+    public static long getMetaClass(IRubyObject object) {
+        RubyClass metaClass = object.getMetaClass();
+        return Handle.nativeHandle(metaClass);
+    }
 
     public static final class NativeFunctionTask implements BlockingTask {
 

@@ -124,11 +124,14 @@ namespace jruby {
     extern jmethodID JRuby_nativeBlockingRegion;
     extern jmethodID JRuby_newThread;
     extern jmethodID JRuby_newProc;
+    extern jmethodID JRuby_getMetaClass;
+
     extern jmethodID RubyArray_toJavaArray_method;
     extern jmethodID RubyClass_newClass_method;
     extern jmethodID Ruby_defineClass_method;
     extern jmethodID Ruby_defineClassUnder_method;
     extern jmethodID RubyClass_setAllocator_method;
+    extern jmethodID RubyModule_undef_method;
     extern jmethodID Ruby_getClassFromPath_method;
     extern jmethodID ObjectAllocator_allocate_method;
     extern jmethodID RubyClass_getAllocator_method;

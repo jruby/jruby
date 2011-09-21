@@ -63,7 +63,8 @@ rb_class_new_instance(int argc, VALUE* argv, VALUE klass)
 extern "C" VALUE
 rb_class_of(VALUE obj)
 {
-    return callMethodA(obj, "class", 0, NULL);
+    JLocalEnv env;
+    return (VALUE) env->CallStaticObjectMethod(JRuby_class, JRuby_getMetaClass, valueToObject(env, obj));
 }
 
 extern "C" VALUE

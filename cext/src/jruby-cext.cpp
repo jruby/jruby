@@ -84,8 +84,12 @@ namespace jruby {
     jmethodID JRuby_nativeBlockingRegion;
     jmethodID JRuby_newThread;
     jmethodID JRuby_newProc;
+    jmethodID JRuby_sysFail;
+    jmethodID JRuby_threadSleep;
+    jmethodID JRuby_getMetaClass;
 
     jmethodID ThreadContext_getRuntime_method;
+    
     jmethodID Ruby_defineModule_method;
     jmethodID Ruby_getNil_method;
     jmethodID Ruby_getTrue_method;
@@ -94,44 +98,62 @@ namespace jruby {
     jmethodID Ruby_getModule_method;
     jmethodID Ruby_newSymbol_method;
     jmethodID Ruby_newFixnum_method;
+    jmethodID Ruby_defineClass_method;
+    jmethodID Ruby_defineClassUnder_method;
+    jmethodID Ruby_getClassFromPath_method;
+    jmethodID Ruby_defineReadonlyVariable_method;
+    
     jmethodID RaiseException_constructor;
+    
     jmethodID RubyData_newRubyData_method;
+    
     jmethodID RubyObject_getNativeTypeIndex_method;
+    
     jmethodID RubyBignum_big2dbl_method;
     jmethodID RubyBignum_big2long_method;
     jmethodID RubyBignum_big2ulong_method;
+    
     jmethodID RubyNumeric_num2long_method;
     jmethodID RubyNumeric_num2chr_method;
     jmethodID RubyNumeric_num2dbl_method;
     jmethodID RubyNumeric_int2fix_method;
+    
     jmethodID RubyString_newStringNoCopy;
     jmethodID RubyString_view;
+    jmethodID RubyString_resize_method;
+    
     jmethodID RubySymbol_getSymbolLong;
+    
     jmethodID RubyStruct_newInstance;
+    
     jmethodID IRubyObject_callMethod;
     jmethodID IRubyObject_asJavaString_method;
     jmethodID IRubyObject_respondsTo_method;
+    
     jmethodID Handle_nativeHandle;
+    
     jmethodID Ruby_getCurrentContext_method;
+    
     jmethodID GC_trigger;
+    
     jmethodID RubyArray_toJavaArray_method;
+    
     jmethodID RubyClass_newClass_method;
-    jmethodID Ruby_defineClass_method;
-    jmethodID Ruby_defineClassUnder_method;
     jmethodID RubyClass_setAllocator_method;
-    jmethodID Ruby_getClassFromPath_method;
-    jmethodID ObjectAllocator_allocate_method;
     jmethodID RubyClass_getAllocator_method;
+    
+    jmethodID RubyModule_undef_method;
+
+    jmethodID ObjectAllocator_allocate_method;
+    
     jmethodID RubyBasicObject_getInstanceVariable_method;
     jmethodID RubyBasicObject_setInstanceVariable_method;
     jmethodID RubyBasicObject_hasInstanceVariable_method;
-    jmethodID Ruby_defineReadonlyVariable_method;
-    jmethodID JRuby_sysFail;
-    jmethodID RubyString_resize_method;
+    
     jmethodID RubyArray_newArray;
     jmethodID RubyArray_clear_method;
     jmethodID RubyArray_append_method;
-    jmethodID JRuby_threadSleep;
+
     jfieldID Handle_address_field;
     jfieldID RubyString_value_field;
     jfieldID RubyFloat_value_field;
@@ -325,6 +347,7 @@ loadIds(JNIEnv* env)
             "(Lorg/jruby/Ruby;Lorg/jruby/RubyArray;)Lorg/jruby/runtime/builtin/IRubyObject;");
     JRuby_blockGiven = getStaticMethodID(env, JRuby_class, "blockGiven", "(Lorg/jruby/Ruby;)I");
     JRuby_getBlockProc = getStaticMethodID(env, JRuby_class, "getBlockProc", "(Lorg/jruby/Ruby;)Lorg/jruby/RubyProc;");
+    JRuby_getMetaClass = getStaticMethodID(env, JRuby_class, "getMetaClass", "(Lorg/jruby/runtime/builtin/IRubyObject;)J");
     RubyArray_toJavaArray_method = getMethodID(env, RubyArray_class, "toJavaArray",
             "()[Lorg/jruby/runtime/builtin/IRubyObject;");
     RubyClass_newClass_method = getStaticMethodID(env, RubyClass_class, "newClass",
@@ -335,6 +358,8 @@ loadIds(JNIEnv* env)
             "(Ljava/lang/String;Lorg/jruby/RubyClass;Lorg/jruby/runtime/ObjectAllocator;Lorg/jruby/RubyModule;)Lorg/jruby/RubyClass;");
     RubyClass_setAllocator_method = getMethodID(env, RubyClass_class, "setAllocator",
             "(Lorg/jruby/runtime/ObjectAllocator;)V");
+    RubyModule_undef_method = getMethodID(env, RubyModule_class, "undef",
+            "(Lorg/jruby/runtime/ThreadContext;Ljava/lang/String;)V");
     Ruby_getClassFromPath_method = getMethodID(env, Ruby_class, "getClassFromPath",
             "(Ljava/lang/String;)Lorg/jruby/RubyModule;");
     ObjectAllocator_allocate_method = getMethodID(env, ObjectAllocator_class, "allocate",
