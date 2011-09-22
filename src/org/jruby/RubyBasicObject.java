@@ -102,7 +102,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
     private static final Logger LOG = LoggerFactory.getLogger("RubyBasicObject");
 
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
     
     // The class of this object
     protected transient RubyClass metaClass;
