@@ -263,6 +263,8 @@ public class RubyClass extends RubyModule {
     }
     
     private volatile VariableAccessor objectIdAccessor = VariableAccessor.DUMMY_ACCESSOR;
+    
+    private volatile VariableAccessor nativeHandleAccessor = VariableAccessor.DUMMY_ACCESSOR;
 
     private synchronized final VariableAccessor allocateVariableAccessor(String name) {
         String[] myVariableNames = variableNames;
@@ -310,12 +312,23 @@ public class RubyClass extends RubyModule {
         return objectIdAccessor;
     }
 
+    public synchronized VariableAccessor getNativeHandleAccessorForWrite() {
+        if (nativeHandleAccessor == VariableAccessor.DUMMY_ACCESSOR) nativeHandleAccessor = allocateVariableAccessor("native_handle");
+        return nativeHandleAccessor;
+    }
+
+    public VariableAccessor getNativeHandleAccessorForRead() {
+        return nativeHandleAccessor;
+    }
+
     public int getVariableTableSize() {
         return variableAccessors.size();
     }
 
-    public int getVariableTableSizeWithObjectId() {
-        return variableAccessors.size() + (objectIdAccessor == VariableAccessor.DUMMY_ACCESSOR ? 0 : 1);
+    public int getVariableTableSizeWithExtras() {
+        return variableAccessors.size()
+                + (objectIdAccessor == VariableAccessor.DUMMY_ACCESSOR ? 0 : 1)
+                + (nativeHandleAccessor == VariableAccessor.DUMMY_ACCESSOR ? 0 : 1);
     }
 
     public Map<String, VariableAccessor> getVariableTableCopy() {

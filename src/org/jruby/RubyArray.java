@@ -256,8 +256,6 @@ public class RubyArray extends RubyObject implements List {
     private int begin = 0;
     private int realLength = 0;
 
-    private RArray rarray;
-
     /*
      * plain internal array assignment
      */
@@ -400,12 +398,18 @@ public class RubyArray extends RubyObject implements List {
         return realLength;
     }
 
-    public void setRArray(RArray rarray) {
-        this.rarray = rarray;
+    public RArray getRArray() {
+        return (RArray)getMetaClass().getRealClass().getNativeHandleAccessorForRead().get(this);
+    }
+    
+    public final void setRArray(RArray rarray) {
+        setRArray(getMetaClass().getRealClass().getNativeHandleAccessorForWrite().getIndex(), rarray);
     }
 
-    public RArray getRArray() {
-        return rarray;
+    private void setRArray(int index, RArray value) {
+        if (index < 0) return;
+        Object[] ivarTable = getVariableTableForWrite(index);
+        ivarTable[index] = value;
     }
 
     public IRubyObject[] toJavaArray() {

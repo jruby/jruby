@@ -128,8 +128,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     private ByteList value;
 
-    private RString rstring;
-
     public static RubyClass createStringClass(Ruby runtime) {
         RubyClass stringClass = runtime.defineClass("String", runtime.getObject(), STRING_ALLOCATOR);
         runtime.setString(stringClass);
@@ -189,11 +187,17 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     public final RString getRString() {
-        return rstring;
+        return (RString)getMetaClass().getRealClass().getNativeHandleAccessorForRead().get(this);
+    }
+    
+    public final void setRString(RString rstring) {
+        setRString(getMetaClass().getRealClass().getNativeHandleAccessorForWrite().getIndex(), rstring);
     }
 
-    public final void setRString(RString rstring) {
-        this.rstring = rstring;
+    private void setRString(int index, RString value) {
+        if (index < 0) return;
+        Object[] ivarTable = getVariableTableForWrite(index);
+        ivarTable[index] = value;
     }
 
     public final void clearCodeRange() {
