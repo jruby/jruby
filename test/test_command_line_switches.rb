@@ -335,7 +335,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
 
     # first subprocess will be "real", second should launch in-process
     # this will test whether in-process child is getting proper env for RUBYOPT
-    args = %{-e "p defined?(Benchmark) != nil; ENV[%{RUBYOPT}] = nil; system %{jruby -e 'p defined?(Benchmark) != nil'}"}
+    args = %{-Xlaunch.inproc=true -e "p defined?(Benchmark) != nil; ENV[%{RUBYOPT}] = nil; system %{bin/jruby -e 'p defined?(Benchmark) != nil'}"}
 
     assert_equal "true\nfalse\n", jruby(args)
   ensure
