@@ -337,11 +337,11 @@ public class Main {
         int status = 0;
         try {
             runtime.parseFromMain(in, filename);
-            config.getOutput().println("Syntax OK for " + filename);
+            config.getError().println("Syntax OK for " + filename);
         } catch (RaiseException re) {
             status = -1;
             if (re.getException().getMetaClass().getBaseName().equals("SyntaxError")) {
-                config.getOutput().println("SyntaxError in " + re.getException().message(runtime.getCurrentContext()));
+                config.getError().println("SyntaxError in " + re.getException().message(runtime.getCurrentContext()));
             } else {
                 throw re;
             }
@@ -352,21 +352,21 @@ public class Main {
                 if (argFile.exists()) {
                     try {
                         runtime.parseFromMain(new FileInputStream(argFile), arg);
-                        config.getOutput().println("Syntax OK for " + arg);
+                        config.getError().println("Syntax OK for " + arg);
                     } catch (FileNotFoundException fnfe) {
                         status = -1;
-                        config.getOutput().println("File not found: " + arg);
+                        config.getError().println("File not found: " + arg);
                     } catch (RaiseException re) {
                         status = -1;
                         if (re.getException().getMetaClass().getBaseName().equals("SyntaxError")) {
-                            config.getOutput().println("SyntaxError in " + re.getException().message(runtime.getCurrentContext()));
+                            config.getError().println("SyntaxError in " + re.getException().message(runtime.getCurrentContext()));
                         } else {
                             throw re;
                         }
                     }
                 } else {
                     status = -1;
-                    config.getOutput().println("File not found: " + arg);
+                    config.getError().println("File not found: " + arg);
                 }
             }
         }
