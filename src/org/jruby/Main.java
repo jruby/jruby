@@ -348,43 +348,48 @@ public class Main {
     }
 
     private Status doCheckSyntax(Ruby runtime, InputStream in, String filename) throws RaiseException {
-        int status = 0;
+        // check primary script
+        boolean status = checkStreamSyntax(runtime, in, filename);
+        
+        // check other scripts specified on argv
+        String[] argv = config.getArgv();
+        if (argv.length > 0) {
+            for (String arg : argv) {
+                status = status && checkFileSyntax(runtime, arg);
+            }
+        }
+        
+        return new Status(status ? 0 : -1);
+    }
+    
+    private boolean checkFileSyntax(Ruby runtime, String filename) {
+        File file = new File(filename);
+        if (file.exists()) {
+            try {
+                return checkStreamSyntax(runtime, new FileInputStream(file), filename);
+            } catch (FileNotFoundException fnfe) {
+                config.getError().println("File not found: " + filename);
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
+    
+    private boolean checkStreamSyntax(Ruby runtime, InputStream in, String filename) {
+        PrintStream error = config.getError();
         try {
             runtime.parseFromMain(in, filename);
-            config.getError().println("Syntax OK for " + filename);
+            error.println("Syntax OK for " + filename);
+            return true;
         } catch (RaiseException re) {
-            status = -1;
             if (re.getException().getMetaClass().getBaseName().equals("SyntaxError")) {
-                config.getError().println("SyntaxError in " + re.getException().message(runtime.getCurrentContext()));
+                error.println("SyntaxError in " + re.getException().message(runtime.getCurrentContext()));
             } else {
                 throw re;
             }
+            return false;
         }
-        if (config.getArgv().length > 0) {
-            for (String arg : config.getArgv()) {
-                File argFile = new File(arg);
-                if (argFile.exists()) {
-                    try {
-                        runtime.parseFromMain(new FileInputStream(argFile), arg);
-                        config.getError().println("Syntax OK for " + arg);
-                    } catch (FileNotFoundException fnfe) {
-                        status = -1;
-                        config.getError().println("File not found: " + arg);
-                    } catch (RaiseException re) {
-                        status = -1;
-                        if (re.getException().getMetaClass().getBaseName().equals("SyntaxError")) {
-                            config.getError().println("SyntaxError in " + re.getException().message(runtime.getCurrentContext()));
-                        } else {
-                            throw re;
-                        }
-                    }
-                } else {
-                    status = -1;
-                    config.getError().println("File not found: " + arg);
-                }
-            }
-        }
-        return new Status(status);
     }
 
     private void doSetContextClassLoader(Ruby runtime) {
