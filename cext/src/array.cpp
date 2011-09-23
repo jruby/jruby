@@ -48,7 +48,11 @@ RubyArray::RubyArray(JNIEnv* env, jobject obj_): Handle(env, obj_, T_ARRAY)
 
 RubyArray::~RubyArray()
 {
-    // See Java_org_jruby_cext_Native_freeRArray
+    RArray* rarray = rwdata.rarray;
+    if (rarray != NULL) {
+        free(rarray->ptr);
+        free(rarray);
+    }
 }
 
 void 
@@ -101,7 +105,7 @@ RubyArray::toRArray(bool readonly)
     rwdata.nsync.sync = RubyArray_nsync;
     rwdata.clean.data = this;
     rwdata.clean.sync = RubyArray_clean;
-    rwdata.rarray = (RArray *) j2p(env->CallStaticLongMethod(JRuby_class, JRuby_getRArray, obj));
+    rwdata.rarray = (RArray *) calloc(1, sizeof(RArray));
     checkExceptions(env);
     rwdata.readonly = readonly;
 
