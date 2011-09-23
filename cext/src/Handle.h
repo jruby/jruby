@@ -193,6 +193,7 @@ namespace jruby {
         virtual ~RubyArray();
 
         RArray* toRArray(bool readonly);
+        void markElements();
         bool jsync(JNIEnv* env);
         bool nsync(JNIEnv* env);
         bool clean(JNIEnv* env);

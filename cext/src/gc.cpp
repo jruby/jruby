@@ -45,6 +45,22 @@ rb_gc_mark_locations(VALUE* first, VALUE* last)
     }
 }
 
+static void
+gc_mark_children(Handle* h)
+{
+    switch (h->getType()) {
+        case T_ARRAY:
+            dynamic_cast<RubyArray *>(h)->markElements();
+            break;
+
+        case T_DATA: {
+            RData* rdata = dynamic_cast<RubyData *>(h)->toRData();
+            (*rdata->dmark)(rdata->data);
+            break;
+        }
+    }
+}
+
 extern "C" void
 rb_gc_mark(VALUE v)
 {
@@ -56,6 +72,7 @@ rb_gc_mark(VALUE v)
     Handle* h = Handle::valueOf(v);
     if ((h->flags & FL_MARK) == 0) {
         h->flags |= FL_MARK;
+        gc_mark_children(h);
     }
 }
 
@@ -101,30 +118,27 @@ rb_global_variable(VALUE *var)
 extern "C" JNIEXPORT void JNICALL
 Java_org_jruby_cext_Native_gc(JNIEnv* env, jobject self)
 {
-    RubyData* dh;
     Handle* h;
 
-    TAILQ_FOREACH(dh, &dataHandles, dataList) {
-        RData* rdata = dh->toRData();
-        if ((dh->flags & FL_MARK) == 0 && rdata->dmark != NULL) {
-            dh->flags |= FL_MARK;
-            (*rdata->dmark)(rdata->data);
-            dh->flags &= ~FL_MARK;
-        }
-    }
-
     /*
-     * Set the mark flag on all global vars, so they don't get pruned out
+     * Mark on all global vars, so they don't get pruned out
      */
     for (std::list<VALUE*>::iterator it = globalVariables.begin(); it != globalVariables.end(); ++it) {
         VALUE* vp = *it;
-        if (vp != NULL && !SPECIAL_CONST_P(*vp)) {
-            reinterpret_cast<Handle*>(*vp)->flags |= FL_MARK;
+        rb_gc_mark(*vp);
+    }
+    
+    /*
+     * Mark the children of all handles, but not the handle itself, so if it 
+     * is not referenced by other handles, it can be pruned.
+     */
+    TAILQ_FOREACH(h, &liveHandles, all) {
+        if ((h->flags & FL_MARK) == 0) {
+            gc_mark_children(h);
         }
     }
 
-    for (h = TAILQ_FIRST(&liveHandles); h != TAILQ_END(&liveHandles); ) {
-        Handle* next = TAILQ_NEXT(h, all);
+    TAILQ_FOREACH(h, &liveHandles, all) {
 
         if ((h->flags & (FL_MARK | FL_CONST)) == 0) {
 
@@ -138,8 +152,6 @@ Java_org_jruby_cext_Native_gc(JNIEnv* env, jobject self)
         } else if ((h->flags & FL_MARK) != 0) {
             h->flags &= ~FL_MARK;
         }
-
-        h = next;
     }
 }
 

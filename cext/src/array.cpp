@@ -51,6 +51,14 @@ RubyArray::~RubyArray()
     // See Java_org_jruby_cext_Native_freeRArray
 }
 
+void 
+RubyArray::markElements()
+{
+    if (rwdata.rarray != NULL && rwdata.rarray->ptr != NULL) {
+        rb_gc_mark_locations(rwdata.rarray->ptr, &rwdata.rarray->ptr[rwdata.rarray->len]);
+    }
+}
+
 static bool
 RubyArray_jsync(JNIEnv* env, DataSync* data)
 {
