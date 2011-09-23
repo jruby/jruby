@@ -209,6 +209,7 @@ public class TestUnitTestSuite extends TestSuite {
             for (String testClass : testClassNames) {
                 try {
                     synchronized(interpreter) {
+                        long start = System.currentTimeMillis();
                         RubyArray faults = (RubyArray) interpreter.runtime.executeScript(generateTestScript(scriptName(), testClass), scriptName() + "_generated_test.rb");
 
                         if (!faults.isEmpty()) {
