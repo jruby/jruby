@@ -122,7 +122,7 @@ class TestDir < Test::Unit::TestCase
       pwd.gsub! '\\', '/'
       assert_equal("testDir_4", pwd.split("/")[-1].strip)
 
-      pwd = `jruby -e "puts Dir.pwd"`
+      pwd = `#{ENV_JAVA['jruby.home']}/bin/jruby -e "puts Dir.pwd"`
       pwd.gsub! '\\', '/'
       assert_equal("testDir_4", pwd.split("/")[-1].strip)
 
