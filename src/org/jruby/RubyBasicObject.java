@@ -1281,6 +1281,16 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         Object[] ivarTable = getVariableTableForWrite(index);
         ivarTable[index] = value;
     }
+    
+    public final Object getNativeHandle() {
+        return getMetaClass().getRealClass().getNativeHandleAccessorForRead().get(this);
+    }
+
+    public final void setNativeHandle(Object value) {
+        int index = getMetaClass().getRealClass().getNativeHandleAccessorForWrite().getIndex();
+        Object[] ivarTable = getVariableTableForWrite(index);
+        ivarTable[index] = value;
+    }
 
     //
     // COMMON VARIABLE METHODS

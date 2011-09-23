@@ -60,6 +60,7 @@ public final class Handle extends Cleaner {
 
     private final Ruby runtime;
     private final long address;
+    private Object data; // RString or RArray
     
     static Handle newHandle(Ruby runtime, Object rubyObject, long nativeHandle) {
         return new Handle(runtime, rubyObject, nativeHandle);
@@ -103,6 +104,15 @@ public final class Handle extends Cleaner {
     void dispose() {
         Native.freeHandle(address);
     }
+    
+    void setDataObject(Object data) {
+        this.data = data;
+    }
+    
+    Object getDataObject() {
+        return data;
+    }
+    
 
     /**
      * Retrieves the Handle object associated with a {@link RubyObject}. Retrieval is either done

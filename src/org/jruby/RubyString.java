@@ -77,7 +77,6 @@ import org.joni.Regex;
 import org.joni.Region;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.cext.RString;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
@@ -188,20 +187,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
     public final void setCodeRange(int codeRange) {
         clearCodeRange();
         flags |= codeRange & CR_MASK;
-    }
-
-    public final RString getRString() {
-        return (RString)getMetaClass().getRealClass().getNativeHandleAccessorForRead().get(this);
-    }
-    
-    public final void setRString(RString rstring) {
-        setRString(getMetaClass().getRealClass().getNativeHandleAccessorForWrite().getIndex(), rstring);
-    }
-
-    private void setRString(int index, RString value) {
-        if (index < 0) return;
-        Object[] ivarTable = getVariableTableForWrite(index);
-        ivarTable[index] = value;
     }
 
     public final void clearCodeRange() {

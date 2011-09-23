@@ -53,11 +53,12 @@ public final class RArray extends Cleaner {
     }
 
     static RArray valueOf(RubyArray ary) {
-        RArray rarray = ary.getRArray();
+        Handle h = Handle.valueOf(ary);
+        RArray rarray = (RArray) h.getDataObject();
         if (rarray != null) {
             return rarray;
         }
-        ary.setRArray(rarray = RArray.newRArray(ary, Native.newRArray()));
+        h.setDataObject(rarray = RArray.newRArray(ary, Native.newRArray()));
 
         return rarray;
     }

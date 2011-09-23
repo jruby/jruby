@@ -53,7 +53,6 @@ import org.jcodings.specific.USASCIIEncoding;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.cext.RArray;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.java.addons.ArrayJavaAddons;
 import org.jruby.javasupport.JavaUtil;
@@ -398,20 +397,6 @@ public class RubyArray extends RubyObject implements List {
 
     public int getLength() {
         return realLength;
-    }
-
-    public RArray getRArray() {
-        return (RArray)getMetaClass().getRealClass().getNativeHandleAccessorForRead().get(this);
-    }
-    
-    public final void setRArray(RArray rarray) {
-        setRArray(getMetaClass().getRealClass().getNativeHandleAccessorForWrite().getIndex(), rarray);
-    }
-
-    private void setRArray(int index, RArray value) {
-        if (index < 0) return;
-        Object[] ivarTable = getVariableTableForWrite(index);
-        ivarTable[index] = value;
     }
 
     public IRubyObject[] toJavaArray() {

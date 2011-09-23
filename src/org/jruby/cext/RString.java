@@ -53,11 +53,13 @@ public final class RString extends Cleaner {
     }
 
     static RString valueOf(RubyString str) {
-        RString rstring = str.getRString();
+        Handle h = Handle.valueOf(str);
+        RString rstring = (RString) h.getDataObject();
         if (rstring != null) {
             return rstring;
         }
-        str.setRString(rstring = RString.newRString(str, Native.newRString()));
+
+        h.setDataObject(rstring = RString.newRString(str, Native.newRString()));
 
         return rstring;
     }

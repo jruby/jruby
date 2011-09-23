@@ -37,6 +37,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.jruby.RubyBasicObject;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.threading.DaemonThreadFactory;
 import org.jruby.util.SoftReferenceReaper;
@@ -89,7 +90,9 @@ public class GC {
     }
 
     static final Handle lookup(IRubyObject obj) {
-        return nativeHandles.get(obj);
+        return obj instanceof RubyBasicObject 
+                ? (Handle) ((RubyBasicObject) obj).getNativeHandle()
+                : nativeHandles.get(obj);
     }
 
     /**
@@ -97,7 +100,12 @@ public class GC {
      * @param obj
      */
     static final void register(IRubyObject obj, Handle h) {
-        nativeHandles.put(obj, h);
+        if (obj instanceof RubyBasicObject) {
+            ((RubyBasicObject) obj).setNativeHandle(h);
+        } else {
+            nativeHandles.put(obj, h);
+        }
+
         Cleaner.register(h);
     }
 
