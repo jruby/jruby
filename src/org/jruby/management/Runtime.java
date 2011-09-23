@@ -91,9 +91,9 @@ public class Runtime implements RuntimeMBean {
     private static void dumpThread(Ruby ruby, RubyThread th, Gather gather, PrintWriter pw) {
         pw.println("Thread: " + th.getNativeThread().getName());
         pw.println("Stack:");
-        RubyException exc = new RubyException(ruby, ruby.getRuntimeError(), "thread dump");
         ThreadContext tc = th.getContext();
         if (tc != null) {
+            RubyException exc = new RubyException(ruby, ruby.getRuntimeError(), "thread dump");
             exc.setBacktraceData(gather.getBacktraceData(tc, th.getNativeThread(), true));
             pw.println(Format.MRI.printBacktrace(exc, false));
         } else {
