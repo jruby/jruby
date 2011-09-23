@@ -180,7 +180,7 @@ class TestLaunchingByShellScript < Test::Unit::TestCase
   end
 
   def test_launch_inproc_ignores_dash_J_with_warning
-    output = `jruby -J-Xmx256m -e "puts true"`
+    output = `#{ENV_JAVA['jruby.home']}/bin/jruby -J-Xmx256m -e "puts true"`
     assert_equal "true\n", output
   end
 end

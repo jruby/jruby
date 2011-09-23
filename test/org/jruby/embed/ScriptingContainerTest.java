@@ -1769,7 +1769,7 @@ public class ScriptingContainerTest {
         instance.setOutput(pstream);
         instance.setWriter(writer);
         instance.setErrorWriter(writer);
-        boolean expResult = true;
+        boolean expResult = false;
         boolean result = instance.isRunRubyInProcess();
         assertEquals(expResult, result);
 
