@@ -224,11 +224,11 @@ public class ParserSupport {
     }
     
     public void pushBlockScope() {
-        currentScope = new BlockStaticScope(currentScope);
+        currentScope = StaticScope.newBlockScope(currentScope);
     }
     
     public void pushLocalScope() {
-        currentScope = new LocalStaticScope(currentScope);
+        currentScope = StaticScope.newLocalScope(currentScope);
     }
     
     public Node arg_concat(ISourcePosition position, Node node1, Node node2) {
@@ -1535,7 +1535,7 @@ public class ParserSupport {
         if (name == "_") return identifier;
 
         StaticScope current = getCurrentScope();
-        if (current instanceof BlockStaticScope) {
+        if (current.isBlockScope()) {
             if (current.exists(name) >= 0) yyerror("duplicated argument name");
 
             if (warnings.isVerbose() && current.isDefined(name) >= 0) {

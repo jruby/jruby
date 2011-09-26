@@ -13,7 +13,6 @@ import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Splat;
-import org.jruby.parser.LocalStaticScope;
 import org.jruby.parser.StaticScope;
 
 public class IRMethod extends IRExecutionScope {
@@ -114,13 +113,11 @@ public class IRMethod extends IRExecutionScope {
 
     @Override
     protected StaticScope constructStaticScope(StaticScope unused) {
-        LocalStaticScope newScope = new LocalStaticScope(null); // method scopes cannot see any lower
-
         this.requiredArgs = 0;
         this.optionalArgs = 0;
         this.restArg = -1;
 
-        return newScope;
+        return StaticScope.newLocalScope(null); // method scopes cannot see any lower
     }
 
     public LocalVariable getLocalVariable(String name, IRExecutionScope currScope) {

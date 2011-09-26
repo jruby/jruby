@@ -47,8 +47,6 @@ import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.SimpleSourcePosition;
-import org.jruby.parser.BlockStaticScope;
-import org.jruby.parser.LocalStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -258,8 +256,7 @@ public class RuntimeHelpers {
     
     public static BlockBody createCompiledBlockBody(ThreadContext context, Object scriptObject, String closureMethod, int arity, 
             String[] staticScopeNames, boolean hasMultipleArgsHead, int argsNodeType, String file, int line, boolean light) {
-        StaticScope staticScope = 
-            new BlockStaticScope(context.getCurrentScope().getStaticScope(), staticScopeNames);
+        StaticScope staticScope = StaticScope.newBlockScope(context.getCurrentScope().getStaticScope(), staticScopeNames);
         staticScope.determineModule();
         
         if (light) {
@@ -284,8 +281,7 @@ public class RuntimeHelpers {
 
     public static BlockBody createCompiledBlockBody19(ThreadContext context, Object scriptObject, String closureMethod, int arity,
             String[] staticScopeNames, boolean hasMultipleArgsHead, int argsNodeType, String file, int line, boolean light, String parameterList) {
-        StaticScope staticScope =
-            new BlockStaticScope(context.getCurrentScope().getStaticScope(), staticScopeNames);
+        StaticScope staticScope = StaticScope.newBlockScope(context.getCurrentScope().getStaticScope(), staticScopeNames);
         staticScope.determineModule();
 
         if (light) {
@@ -1554,7 +1550,7 @@ public class RuntimeHelpers {
     }
     
     public static void preLoad(ThreadContext context, String[] varNames) {
-        StaticScope staticScope = new LocalStaticScope(null, varNames);
+        StaticScope staticScope = StaticScope.newLocalScope(null, varNames);
         preLoadCommon(context, staticScope, false);
     }
 
@@ -1983,23 +1979,23 @@ public class RuntimeHelpers {
         return namesBuilder.toString();
     }
 
-    public static LocalStaticScope decodeRootScope(ThreadContext context, String scopeString) {
+    public static StaticScope decodeRootScope(ThreadContext context, String scopeString) {
         String[][] decodedScope = decodeScopeDescriptor(scopeString);
-        LocalStaticScope scope = new LocalStaticScope(null, decodedScope[1]);
+        StaticScope scope = StaticScope.newLocalScope(null, decodedScope[1]);
         setAritiesFromDecodedScope(scope, decodedScope[0]);
         return scope;
     }
 
-    public static LocalStaticScope decodeLocalScope(ThreadContext context, String scopeString) {
+    public static StaticScope decodeLocalScope(ThreadContext context, String scopeString) {
         String[][] decodedScope = decodeScopeDescriptor(scopeString);
-        LocalStaticScope scope = new LocalStaticScope(context.getCurrentScope().getStaticScope(), decodedScope[1]);
+        StaticScope scope = StaticScope.newLocalScope(context.getCurrentScope().getStaticScope(), decodedScope[1]);
         setAritiesFromDecodedScope(scope, decodedScope[0]);
         return scope;
     }
 
-    public static BlockStaticScope decodeBlockScope(ThreadContext context, String scopeString) {
+    public static StaticScope decodeBlockScope(ThreadContext context, String scopeString) {
         String[][] decodedScope = decodeScopeDescriptor(scopeString);
-        BlockStaticScope scope = new BlockStaticScope(context.getCurrentScope().getStaticScope(), decodedScope[1]);
+        StaticScope scope = StaticScope.newBlockScope(context.getCurrentScope().getStaticScope(), decodedScope[1]);
         setAritiesFromDecodedScope(scope, decodedScope[0]);
         return scope;
     }

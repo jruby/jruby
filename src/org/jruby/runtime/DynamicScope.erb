@@ -3,11 +3,9 @@
 package org.jruby.runtime;
 
 import org.jruby.Ruby;
-import org.jruby.parser.BlockStaticScope;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.runtime.scope.NoVarsDynamicScope;
 import org.jruby.runtime.scope.OneVarDynamicScope;
-import org.jruby.parser.EvalStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.DummyDynamicScope;
@@ -111,7 +109,7 @@ public abstract class DynamicScope {
                 evalScope = this;
             } else {
                 // bindings scopes must always be ManyVars scopes since evals can grow them
-                evalScope = new ManyVarsDynamicScope(new EvalStaticScope(getStaticScope()), this);
+                evalScope = new ManyVarsDynamicScope(StaticScope.newEvalScope(getStaticScope()), this);
             }
         }
 
@@ -333,7 +331,7 @@ public abstract class DynamicScope {
     // Helper function to give a good view of current dynamic scope with captured scopes
     public String toString(StringBuffer buf, String indent) {
         buf.append(indent).append("Static Type[" + hashCode() + "]: " +
-                (staticScope instanceof BlockStaticScope ? "block" : "local")+" [");
+                (staticScope.isBlockScope() ? "block" : "local")+" [");
         int size = staticScope.getNumberOfVariables();
         IRubyObject[] variableValues = getValues();
 

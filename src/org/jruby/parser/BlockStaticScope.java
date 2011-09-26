@@ -40,11 +40,11 @@ public class BlockStaticScope extends StaticScope {
     // Is this block and argument scope of a define_method (for the purposes of zsuper).
     private boolean isArgumentScope = false;
 
-    public BlockStaticScope(StaticScope parentScope) {
+    protected BlockStaticScope(StaticScope parentScope) {
         super(parentScope, new String[0]);
     }
 
-    public BlockStaticScope(StaticScope parentScope, String[] names) {
+    protected BlockStaticScope(StaticScope parentScope, String[] names) {
         super(parentScope, names);
     }
     
@@ -67,6 +67,11 @@ public class BlockStaticScope extends StaticScope {
     @Override
     public void makeArgumentScope() {
         this.isArgumentScope = true;
+    }
+
+    @Override
+    public boolean isBlockScope() {
+        return true;
     }
     
     /**

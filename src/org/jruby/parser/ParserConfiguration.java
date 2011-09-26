@@ -191,7 +191,7 @@ public class ParserConfiguration {
         // will always happen because of $~ and $_).
         // FIXME: Because we end up adjusting this after-the-fact, we can't use
         // any of the specific-size scopes.
-        return new ManyVarsDynamicScope(new LocalStaticScope(null), existingScope);
+        return new ManyVarsDynamicScope(StaticScope.newLocalScope(null), existingScope);
     }
 
     /**

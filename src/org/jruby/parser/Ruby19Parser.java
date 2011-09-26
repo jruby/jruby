@@ -1654,8 +1654,7 @@ states[19] = new ParserState() {
 };
 states[20] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    /* FIXME: the == here is gross; need a cleaner way to check it*/
-                    if (support.isInDef() || support.isInSingle() || support.getCurrentScope().getClass() == BlockStaticScope.class) {
+                    if (support.isInDef() || support.isInSingle() || support.getCurrentScope().isBlockScope()) {
                         support.yyerror("BEGIN in method, singleton, or block");
                     }
     return yyVal;

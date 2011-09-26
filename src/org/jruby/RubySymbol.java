@@ -50,7 +50,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.javasupport.util.RuntimeHelpers;
-import org.jruby.parser.LocalStaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
@@ -411,7 +410,7 @@ public class RubySymbol extends RubyObject {
     
     @JRubyMethod
     public IRubyObject to_proc(ThreadContext context) {
-        StaticScope scope = new LocalStaticScope(null);
+        StaticScope scope = StaticScope.newLocalScope(null);
         BlockBody body = new ContextAwareBlockBody(scope, Arity.OPTIONAL, BlockBody.SINGLE_RESTARG) {
             private IRubyObject yieldInner(ThreadContext context, RubyArray array) {
                 if (array.isEmpty()) throw context.getRuntime().newArgumentError("no receiver given");

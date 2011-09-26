@@ -42,7 +42,6 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.exceptions.JumpException;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
-import org.jruby.parser.BlockStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Binding;
@@ -157,7 +156,7 @@ public class RubyProc extends RubyObject implements DataType {
         if (isThread()) {
             // modify the block with a new backref/lastline-grabbing scope
             StaticScope oldScope = block.getBody().getStaticScope();
-            StaticScope newScope = new BlockStaticScope(oldScope.getEnclosingScope(), oldScope.getVariables());
+            StaticScope newScope = StaticScope.newBlockScope(oldScope.getEnclosingScope(), oldScope.getVariables());
             newScope.setBackrefLastlineScope(true);
             newScope.setPreviousCRefScope(oldScope.getPreviousCRefScope());
             newScope.setModule(oldScope.getModule());

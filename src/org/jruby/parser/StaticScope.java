@@ -116,6 +116,45 @@ public abstract class StaticScope implements Serializable {
     }
 
     /**
+     * Allocate a new local static scope
+     * @parent the parent scope which which the new scope should be nested
+     * @return the new scope
+     */
+    public static StaticScope newLocalScope(StaticScope parent) {
+        return new LocalStaticScope(parent);
+    }
+
+    public static StaticScope newLocalScope(StaticScope parent, String[] names) {
+        return new LocalStaticScope(parent, names);
+    }
+
+    /**
+     * Allocate a new block static scope
+     * @parent the parent scope which which the new scope should be nested
+     * @return the new scope
+     */
+    public static StaticScope newBlockScope(StaticScope parent) {
+        return new BlockStaticScope(parent);
+    }
+
+    public static StaticScope newBlockScope(StaticScope parent, String[] names) {
+        return new BlockStaticScope(parent, names);
+    }
+
+    /**
+     * Allocate a new eval static scope
+     * @parent the parent scope which which the new scope should be nested
+     * @return the new scope
+     */
+    public static StaticScope newEvalScope(StaticScope parent) {
+        return new EvalStaticScope(parent);
+    }
+
+    public static StaticScope newEvalScope(StaticScope parent, String[] names) {
+        return new EvalStaticScope(parent, names);
+    }
+
+    /**
      * Add a new variable to this (current) scope unless it is already defined in the
      * current scope.
      *
@@ -367,6 +406,10 @@ public abstract class StaticScope implements Serializable {
      */
     public abstract boolean isArgumentScope();
     public abstract void makeArgumentScope();
+
+    public boolean isBlockScope() {
+        return false;
+    }
 
     public boolean isBackrefLastlineScope() {
         return isBackrefLastlineScope;

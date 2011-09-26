@@ -20,11 +20,10 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.ModuleMetaObject;
 import org.jruby.compiler.ir.IRModule;
-import org.jruby.parser.LocalStaticScope;
 import org.jruby.parser.StaticScope;
 
 public class IRModule extends IRScopeImpl {
-    private final static LocalStaticScope rootObjectScope = new LocalStaticScope(null);
+    private final static StaticScope rootObjectScope = StaticScope.newLocalScope(null);
 
     // The "root" method of a class -- the scope in which all definitions, and class code executes, equivalent to java clinit
     private final static String ROOT_METHOD_PREFIX = "[root]:";
@@ -106,7 +105,7 @@ public class IRModule extends IRScopeImpl {
         //    end
         //
         String n = ROOT_METHOD_PREFIX + getName();
-        rootMethod = new IRMethod(this, MetaObject.create(this), n, false, new LocalStaticScope(rootObjectScope));
+        rootMethod = new IRMethod(this, MetaObject.create(this), n, false, StaticScope.newLocalScope(rootObjectScope));
         rootMethod.addInstr(new ReceiveSelfInstruction(rootMethod.getSelf()));   // Set up self!
         rootMethod.addInstr(new ReceiveClosureInstr(rootMethod.getImplicitBlockArg()));
     }

@@ -13,7 +13,6 @@ import org.jruby.compiler.ir.operands.Splat;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.ReceiveClosureArgInstr;
-import org.jruby.parser.BlockStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.BlockBody;
@@ -112,7 +111,7 @@ public class IRClosure extends IRExecutionScope {
 
     @Override
     protected StaticScope constructStaticScope(StaticScope parent) {
-        return new BlockStaticScope(parent);
+        return StaticScope.newBlockScope(parent);
     }
 
     public BlockBody getBlockBody() {

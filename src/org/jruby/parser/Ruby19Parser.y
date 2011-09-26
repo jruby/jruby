@@ -361,8 +361,7 @@ stmt            : kALIAS fitem {
                     $$ = new RescueNode(support.getPosition($1), $1, new RescueBodyNode(support.getPosition($1), null, body, null), null);
                 }
                 | klBEGIN {
-                    // FIXME: the == here is gross; need a cleaner way to check it
-                    if (support.isInDef() || support.isInSingle() || support.getCurrentScope().getClass() == BlockStaticScope.class) {
+                    if (support.isInDef() || support.isInSingle() || support.getCurrentScope().isBlockScope()) {
                         support.yyerror("BEGIN in method, singleton, or block");
                     }
                 } tLCURLY compstmt tRCURLY {
