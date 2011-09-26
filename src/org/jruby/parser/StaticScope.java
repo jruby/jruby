@@ -115,17 +115,22 @@ public abstract class StaticScope implements Serializable {
         return true;
     }
 
+    // SSS: Temporarily in place while both IR and AST code live together
+    private static boolean inIRMode() {
+        return false;
+    }
+
     /**
      * Allocate a new local static scope
      * @parent the parent scope which which the new scope should be nested
      * @return the new scope
      */
     public static StaticScope newLocalScope(StaticScope parent) {
-        return new LocalStaticScope(parent);
+        return inIRMode() ? new IRStaticScope(parent, false, false) : new LocalStaticScope(parent);
     }
 
     public static StaticScope newLocalScope(StaticScope parent, String[] names) {
-        return new LocalStaticScope(parent, names);
+        return inIRMode() ? new IRStaticScope(parent, names, false, false) : new LocalStaticScope(parent, names);
     }
 
     /**
@@ -134,11 +139,11 @@ public abstract class StaticScope implements Serializable {
      * @return the new scope
      */
     public static StaticScope newBlockScope(StaticScope parent) {
-        return new BlockStaticScope(parent);
+        return inIRMode() ? new IRStaticScope(parent, true, false) : new BlockStaticScope(parent);
     }
 
     public static StaticScope newBlockScope(StaticScope parent, String[] names) {
-        return new BlockStaticScope(parent, names);
+        return inIRMode() ? new IRStaticScope(parent, names, true, false) : new BlockStaticScope(parent, names);
     }
 
     /**
@@ -147,11 +152,11 @@ public abstract class StaticScope implements Serializable {
      * @return the new scope
      */
     public static StaticScope newEvalScope(StaticScope parent) {
-        return new EvalStaticScope(parent);
+        return inIRMode() ? new IRStaticScope(parent, true, true) : new EvalStaticScope(parent);
     }
 
     public static StaticScope newEvalScope(StaticScope parent, String[] names) {
-        return new EvalStaticScope(parent, names);
+        return inIRMode() ? new IRStaticScope(parent, names, true, true) : new EvalStaticScope(parent, names);
     }
 
     /**
