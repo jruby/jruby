@@ -28,7 +28,7 @@ class org::jruby::ast::Node
     root = self
     unless org.jruby.ast.RootNode === root
       pos = POS
-      scope1 = org.jruby.parser.LocalStaticScope.new(nil)
+      scope1 = org.jruby.parser.StaticScope.newLocalScope(nil)
       scope1.setVariables(java.lang.String[self.locals || 40].new)
       scope = org.jruby.runtime.DynamicScope.newDynamicScope(scope1, nil)
       root = org.jruby.ast.RootNode.new(pos, scope, self)
