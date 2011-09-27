@@ -34,6 +34,7 @@ import static com.sun.mirror.util.DeclarationVisitors.*;
  */
 public class AnnotationBinder implements AnnotationProcessorFactory {
 
+    public static final String POPULATOR_SUFFIX = "$POPULATOR";
     private static final Logger LOG = LoggerFactory.getLogger("AnnotationBinder");
 
     // Process any set of annotations
@@ -115,10 +116,10 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                     out.println("import java.util.Arrays;");
                     out.println("import java.util.List;");
 
-                    out.println("public class " + qualifiedName + "$POPULATOR extends TypePopulator {");
+                    out.println("public class " + qualifiedName + POPULATOR_SUFFIX + " extends TypePopulator {");
                     out.println("    public void populate(RubyModule cls, Class clazz) {");
                     if (DEBUG) {
-                        out.println("        System.out.println(\"Using pregenerated populator: \" + \"" + cd.getSimpleName() + "Populator\");");
+                        out.println("        System.out.println(\"Using pregenerated populator: \" + \"" + qualifiedName + POPULATOR_SUFFIX + "\");");
                     }
 
                     // scan for meta, compat, etc to reduce findbugs complaints about "dead assignments"
@@ -325,7 +326,7 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                     out.close();
                     out = null;
 
-                    FileOutputStream fos = new FileOutputStream("src_gen/" + qualifiedName + "$POPULATOR.java");
+                    FileOutputStream fos = new FileOutputStream("src_gen/" + qualifiedName + POPULATOR_SUFFIX + ".java");
                     fos.write(bytes.toByteArray());
                     fos.close();
                 } catch (IOException ioe) {

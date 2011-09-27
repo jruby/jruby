@@ -56,6 +56,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import org.jruby.anno.AnnotationBinder;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyConstant;
@@ -99,7 +100,6 @@ import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.runtime.opto.Invalidator;
 import org.jruby.runtime.opto.OptoFactory;
-import org.jruby.runtime.opto.SwitchPointInvalidator;
 import org.jruby.util.ClassProvider;
 import org.jruby.util.IdUtil;
 import org.jruby.util.collections.WeakHashSet;
@@ -682,9 +682,9 @@ public class RubyModule extends RubyObject {
             try {
                 String qualifiedName = "org.jruby.gen." + clazz.getCanonicalName().replace('.', '$');
 
-                if (DEBUG) LOG.debug("looking for {}$Populator", qualifiedName);
+                if (DEBUG) LOG.debug("looking for " + qualifiedName + AnnotationBinder.POPULATOR_SUFFIX);
 
-                Class populatorClass = Class.forName(qualifiedName + "$Populator");
+                Class populatorClass = Class.forName(qualifiedName + AnnotationBinder.POPULATOR_SUFFIX);
                 populator = (TypePopulator)populatorClass.newInstance();
             } catch (Throwable t) {
                 if (DEBUG) LOG.debug("Could not find it, using default populator");
