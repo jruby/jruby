@@ -30,6 +30,8 @@ import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
+import java.nio.charset.CodingErrorAction;
+
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB.Entry;
 import org.jcodings.specific.ASCIIEncoding;
@@ -210,6 +212,10 @@ public class RubyEncoding extends RubyObject {
         private static final int BUF_SIZE = CHAR_THRESHOLD * 4;
         private final ByteBuffer byteBuffer = ByteBuffer.allocate(BUF_SIZE);
         private final CharBuffer charBuffer = CharBuffer.allocate(BUF_SIZE);
+
+        public UTF8Coder() {
+            decoder.onMalformedInput(CodingErrorAction.REPLACE);
+        }
 
         public byte[] encode(CharSequence cs) {
             ByteBuffer buffer;
