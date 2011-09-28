@@ -23,7 +23,9 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -35,6 +37,7 @@ public class CallInstr extends MultiOperandInstr {
     protected Operand[] arguments;
     protected MethAddr  methAddr;
     protected Operand   closure;
+    public CallSite callAdapter;
 
     private boolean flagsComputed;
     private boolean canBeEval;
@@ -59,6 +62,7 @@ public class CallInstr extends MultiOperandInstr {
         flagsComputed = false;
         canBeEval = true;
         targetRequiresCallersBinding = true;
+        callAdapter = MethodIndex.getFunctionalCallSite(methAddr.toString());
     }
 
     public Operand[] getOperands() {
@@ -234,7 +238,7 @@ public class CallInstr extends MultiOperandInstr {
         Object resultValue;
         Block  block = prepareBlock(interp, context, self);
         try {
-            resultValue = RuntimeHelpers.invoke(context, object, name, args, block);
+            resultValue = callAdapter.call(context, self, object, args, block);
         }
         finally {
             block.escape();
