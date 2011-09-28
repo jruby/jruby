@@ -85,7 +85,7 @@ public class Utils {
     }
 
     static void preEval(ScriptingContainer container, ScriptContext context) {
-        Object receiver = getReceiverObject(context);
+        Object receiver = Utils.getReceiverObject(context);
         Bindings bindings = context.getBindings(ScriptContext.ENGINE_SCOPE);
         for (Map.Entry<String, Object> entry : bindings.entrySet()) {
             Utils.put(container, receiver, entry.getKey(), entry.getValue(), context);
@@ -94,13 +94,13 @@ public class Utils {
         //container.setReader(context.getReader());
         container.setWriter(context.getWriter());
         container.setErrorWriter(context.getErrorWriter());
-
+        
         // if key of globalMap exists in engineMap, this key-value pair should be skipped.
         bindings = context.getBindings(ScriptContext.GLOBAL_SCOPE);
         if (bindings == null) return;
         for (Map.Entry<String, Object> entry : bindings.entrySet()) {
             if (container.getVarMap().containsKey(entry.getKey())) continue;
-            put(container, receiver, entry.getKey(), entry.getValue(), context);
+            Utils.put(container, receiver, entry.getKey(), entry.getValue(), context);
         }
     }
 
@@ -111,7 +111,7 @@ public class Utils {
 
     static void postEval(ScriptingContainer container, ScriptContext context) {
         if (context == null) return;
-        Object receiver = getReceiverObject(context);
+        Object receiver = Utils.getReceiverObject(context);
         
         Bindings engineMap = context.getBindings(ScriptContext.ENGINE_SCOPE);
         int size = engineMap.keySet().size();
@@ -119,7 +119,7 @@ public class Utils {
         Iterator<Map.Entry<String, Object>> iter = engineMap.entrySet().iterator();
         for (;iter.hasNext();) {
             Map.Entry<String, Object> entry = iter.next();
-            if (shouldLVarBeDeleted(container, entry.getKey())) {
+            if (Utils.shouldLVarBeDeleted(container, entry.getKey())) {
                 iter.remove();
             }
         }
@@ -127,11 +127,11 @@ public class Utils {
         if (keys != null && keys.size() > 0) {
             for (String key : keys) {
                 Object value = container.getVarMap().get(key);
-                engineMap.put(adjustKey(key), value);
+                engineMap.put(Utils.adjustKey(key), value);
             }
         }
 
-        Bindings globalMap = context.getBindings(ScriptContext.ENGINE_SCOPE);
+        Bindings globalMap = context.getBindings(ScriptContext.GLOBAL_SCOPE);
         if (globalMap == null) return;
         keys = globalMap.keySet();
         if (keys != null && keys.size() > 0) {
@@ -145,8 +145,8 @@ public class Utils {
 
     private static Object put(ScriptingContainer container, Object receiver, String key, Object value, ScriptContext context) {
         Object oldValue = null;
-        String adjustedKey = adjustKey(key);
-        if (isRubyVariable(container, adjustedKey)) {
+        String adjustedKey = Utils.adjustKey(key);
+        if (Utils.isRubyVariable(container, adjustedKey)) {
             boolean sharing_variables = true;
             Object obj = context.getAttribute(AttributeName.SHARING_VARIABLES.toString(), ScriptContext.ENGINE_SCOPE);
             if (obj != null && obj instanceof Boolean && ((Boolean) obj) == false) {
