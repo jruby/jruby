@@ -27,20 +27,37 @@
 package org.jruby.runtime.opto;
 
 import java.lang.invoke.SwitchPoint;
+import java.util.List;
 
 public class SwitchPointInvalidator implements Invalidator {
-    private volatile SwitchPoint[] switchPoints;
+    private volatile SwitchPoint switchPoint;
     
     public SwitchPointInvalidator() {
-        switchPoints = new SwitchPoint[] {new SwitchPoint()};
+        switchPoint = new SwitchPoint();
     }
     
     public synchronized void invalidate() {
+        SwitchPoint.invalidateAll(new SwitchPoint[]{switchPoint});
+        switchPoint = new SwitchPoint();
+    }
+
+    public void invalidateAll(List<Invalidator> invalidators) {
+        SwitchPoint[] switchPoints = new SwitchPoint[invalidators.size()];
+        
+        for (int i = 0; i < invalidators.size(); i++) {
+            Invalidator invalidator = invalidators.get(i);
+            assert invalidator instanceof SwitchPointInvalidator;
+            switchPoints[i] = ((SwitchPointInvalidator)invalidator).getSwitchPoint();
+        }
+        
         SwitchPoint.invalidateAll(switchPoints);
-        switchPoints = new SwitchPoint[] {new SwitchPoint()};
     }
     
     public Object getData() {
-        return switchPoints[0];
+        return switchPoint;
+    }
+    
+    public SwitchPoint getSwitchPoint() {
+        return switchPoint;
     }
 }

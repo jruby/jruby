@@ -1060,13 +1060,16 @@ public class RubyModule extends RubyObject {
 
     public void invalidateCacheDescendants() {
         if (DEBUG) LOG.debug("invalidating descendants: {}", baseName);
-        invalidateCacheDescendantsInner();
-        // update all hierarchies into which this module has been included
+        List<Invalidator> invalidators = new ArrayList();
+        invalidators.add(methodInvalidator);
+        
         synchronized (getRuntime().getHierarchyLock()) {
             for (RubyClass includingHierarchy : includingHierarchies) {
-                includingHierarchy.invalidateCacheDescendants();
+                includingHierarchy.addInvalidators(invalidators);
             }
         }
+        
+        methodInvalidator.invalidateAll(invalidators);
     }
     
     protected void invalidateCoreClasses() {
@@ -3531,5 +3534,5 @@ public class RubyModule extends RubyObject {
     private volatile Map<String, IRubyObject> classVariables = Collections.EMPTY_MAP;
     
     // Invalidator used for method caches
-    private final Invalidator methodInvalidator;
+    protected final Invalidator methodInvalidator;
 }

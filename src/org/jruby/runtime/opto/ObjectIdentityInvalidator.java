@@ -26,6 +26,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.opto;
 
+import java.util.List;
+
 public class ObjectIdentityInvalidator implements Invalidator {
     private volatile Object generation;
     
@@ -35,6 +37,12 @@ public class ObjectIdentityInvalidator implements Invalidator {
     
     public synchronized void invalidate() {
         generation = new Object();
+    }
+    
+    public void invalidateAll(List<Invalidator> invalidators) {
+        for (Invalidator invalidator : invalidators) {
+            invalidator.invalidate();
+        }
     }
 
     public Object getData() {

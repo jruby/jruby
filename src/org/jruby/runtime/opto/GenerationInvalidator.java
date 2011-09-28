@@ -1,5 +1,6 @@
 package org.jruby.runtime.opto;
 
+import java.util.List;
 import org.jruby.RubyModule;
 
 public class GenerationInvalidator implements Invalidator {
@@ -10,6 +11,12 @@ public class GenerationInvalidator implements Invalidator {
     
     public void invalidate() {
         module.updateGeneration();
+    }
+    
+    public void invalidateAll(List<Invalidator> invalidators) {
+        for (Invalidator invalidator : invalidators) {
+            invalidator.invalidate();
+        }
     }
 
     public Object getData() {

@@ -1,5 +1,7 @@
 package org.jruby.runtime.opto;
 
+import java.lang.invoke.SwitchPoint;
+import java.util.List;
 import org.jruby.RubyModule;
 
 public class GenerationAndSwitchPointInvalidator implements Invalidator {
@@ -15,6 +17,19 @@ public class GenerationAndSwitchPointInvalidator implements Invalidator {
         // does not need to be atomic
         generationInvalidator.invalidate();
         switchPointInvalidator.invalidate();
+    }
+    
+    public void invalidateAll(List<Invalidator> invalidators) {
+        SwitchPoint[] switchPoints = new SwitchPoint[invalidators.size()];
+        
+        for (int i = 0; i < invalidators.size(); i++) {
+            Invalidator invalidator = invalidators.get(i);
+            assert invalidator instanceof GenerationAndSwitchPointInvalidator;
+            GenerationAndSwitchPointInvalidator gsInvalidator = (GenerationAndSwitchPointInvalidator)invalidator;
+            gsInvalidator.generationInvalidator.invalidate();
+            switchPoints[i] = gsInvalidator.switchPointInvalidator.getSwitchPoint();
+        }
+        SwitchPoint.invalidateAll(switchPoints);
     }
 
     public Object getData() {

@@ -26,6 +26,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.opto;
 
+import java.util.List;
+
 /**
  * Abstract invalidator of "something". An example would be a global invalidator
  * for cached constants.
@@ -38,5 +40,6 @@ package org.jruby.runtime.opto;
  */
 public interface Invalidator {
     public void invalidate();
+    public void invalidateAll(List<Invalidator> invalidators);
     public Object getData();
 }
