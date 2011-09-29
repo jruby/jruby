@@ -83,14 +83,14 @@ public class Utils {
     }
 
     static void preEval(ScriptingContainer container, ScriptContext context) {
-        Object receiver = getReceiverObject(context);
+        Object receiver = Utils.getReceiverObject(context);
         Bindings bindings = context.getBindings(ScriptContext.ENGINE_SCOPE);
         Set<String> keys = bindings.keySet();
         for (String key : keys) {
             Object value = bindings.get(key);
             Utils.put(container, receiver, key, value, context);
         }
-        
+
         //container.setReader(context.getReader());
         container.setWriter(context.getWriter());
         container.setErrorWriter(context.getErrorWriter());
@@ -113,8 +113,7 @@ public class Utils {
 
     static void postEval(ScriptingContainer container, ScriptContext context) {
         if (context == null) return;
-        Object receiver = getReceiverObject(context);
-        
+        Object receiver = Utils.getReceiverObject(context);
         Bindings engineMap = context.getBindings(ScriptContext.ENGINE_SCOPE);
         int size = engineMap.keySet().size();
         String[] names = engineMap.keySet().toArray(new String[size]);
