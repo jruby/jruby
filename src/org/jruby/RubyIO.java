@@ -106,8 +106,12 @@ public class RubyIO extends RubyObject {
         
         openFile = new OpenFile();
     }
-
+    
     public RubyIO(Ruby runtime, OutputStream outputStream) {
+        this(runtime, outputStream, true);
+    }
+
+    public RubyIO(Ruby runtime, OutputStream outputStream, boolean autoclose) {
         super(runtime, runtime.getIO());
         
         // We only want IO objects with valid streams (better to error now). 
@@ -118,7 +122,7 @@ public class RubyIO extends RubyObject {
         openFile = new OpenFile();
         
         try {
-            openFile.setMainStream(ChannelStream.open(runtime, new ChannelDescriptor(Channels.newChannel(outputStream))));
+            openFile.setMainStream(ChannelStream.open(runtime, new ChannelDescriptor(Channels.newChannel(outputStream)), autoclose));
         } catch (InvalidValueException e) {
             throw getRuntime().newErrnoEINVALError();
         }

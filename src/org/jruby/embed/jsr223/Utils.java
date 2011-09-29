@@ -86,15 +86,16 @@ public class Utils {
 
     static void preEval(ScriptingContainer container, ScriptContext context) {
         Object receiver = Utils.getReceiverObject(context);
+
         Bindings bindings = context.getBindings(ScriptContext.ENGINE_SCOPE);
         for (Map.Entry<String, Object> entry : bindings.entrySet()) {
             Utils.put(container, receiver, entry.getKey(), entry.getValue(), context);
         }
-        
+
         //container.setReader(context.getReader());
         container.setWriter(context.getWriter());
         container.setErrorWriter(context.getErrorWriter());
-        
+
         // if key of globalMap exists in engineMap, this key-value pair should be skipped.
         bindings = context.getBindings(ScriptContext.GLOBAL_SCOPE);
         if (bindings == null) return;
@@ -112,7 +113,7 @@ public class Utils {
     static void postEval(ScriptingContainer container, ScriptContext context) {
         if (context == null) return;
         Object receiver = Utils.getReceiverObject(context);
-        
+
         Bindings engineMap = context.getBindings(ScriptContext.ENGINE_SCOPE);
         int size = engineMap.keySet().size();
         String[] names = engineMap.keySet().toArray(new String[size]);
