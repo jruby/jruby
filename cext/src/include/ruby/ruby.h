@@ -1007,6 +1007,7 @@ RUBY_DLLSPEC void rb_io_check_closed(rb_io_t* io);
 RUBY_DLLSPEC void rb_io_set_nonblock(rb_io_t* io);
 RUBY_DLLSPEC int rb_io_wait_readable(int f);
 RUBY_DLLSPEC int rb_io_wait_writable(int f);
+RUBY_DLLSPEC VALUE rb_file_open(char* filename, char* mode);
 #define HAVE_RB_IO_FD 1
 // Writes the OpenFile struct pointer of val into ptr
 RUBY_DLLSPEC rb_io_t* jruby_io_struct(VALUE io);

@@ -215,6 +215,12 @@ rb_io_close(VALUE io)
     return callMethod(io, "close", 0);
 }
 
+extern "C" VALUE
+rb_file_open(char* filename, char* mode)
+{
+    return callMethod(rb_cFile, "open", 2, rb_str_new2(filename), rb_str_new2(mode));
+}
+
 static int set_non_blocking(int fd) {
 #ifndef JRUBY_WIN32
     int flags;
