@@ -447,5 +447,8 @@ rb_ary_freeze(VALUE ary)
 extern "C" VALUE
 rb_ary_to_ary(VALUE ary)
 {
-    return callMethod(ary, "to_ary", 0);
+    VALUE tmp = rb_check_array_type(ary);
+
+    if (!NIL_P(tmp)) return tmp;
+    return rb_ary_new3(1, ary);
 }
