@@ -736,6 +736,7 @@ RUBY_DLLSPEC VALUE rb_hash_lookup(VALUE hash, VALUE key);
 /* String */
 RUBY_DLLSPEC VALUE rb_str_new(const char*, long);
 RUBY_DLLSPEC VALUE rb_str_new2(const char*);
+RUBY_DLLSPEC VALUE rb_str_new4(VALUE);
 RUBY_DLLSPEC VALUE rb_str_new_cstr(const char*);
 RUBY_DLLSPEC VALUE rb_tainted_str_new_cstr(const char*);
 RUBY_DLLSPEC VALUE rb_tainted_str_new(const char*, long);
@@ -829,7 +830,6 @@ RUBY_DLLSPEC char* jruby_str_cstr_readonly(VALUE v);
 #define rb_str_new2 rb_str_new_cstr
 #define rb_str_new3 rb_str_dup
 #define rb_str_new_shared rb_str_new3
-#define rb_str_new4 rb_str_new_frozen
 #define rb_tainted_str_new2 rb_tainted_str_new_cstr
 
 /** Returns the string associated with a symbol. */

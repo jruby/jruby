@@ -241,6 +241,16 @@ rb_str_new_cstr(const char *ptr)
     return newString(ptr, ptr ? strlen(ptr) : 0);
 }
 
+extern "C" VALUE
+rb_str_new4(VALUE str)
+{
+    if (callMethod(str, "frozen?", 0) == Qtrue) {
+	return str;
+    } else {
+	return rb_str_new_frozen(str);
+    }
+}
+
 #define STR_BUF_MIN_SIZE 1
 extern "C" VALUE
 rb_str_buf_new(long capacity)
