@@ -27,7 +27,7 @@ public class GenerationAndSwitchPointInvalidator implements Invalidator {
             assert invalidator instanceof GenerationAndSwitchPointInvalidator;
             GenerationAndSwitchPointInvalidator gsInvalidator = (GenerationAndSwitchPointInvalidator)invalidator;
             gsInvalidator.generationInvalidator.invalidate();
-            switchPoints[i] = gsInvalidator.switchPointInvalidator.getSwitchPoint();
+            switchPoints[i] = gsInvalidator.switchPointInvalidator.replaceSwitchPoint();
         }
         SwitchPoint.invalidateAll(switchPoints);
     }
