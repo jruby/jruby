@@ -1607,7 +1607,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
             return;
         }
         Ruby runtime = provider.getRuntime();
-        RubyIO io = new RubyIO(runtime, pstream, false);
+        RubyIO io = new RubyIO(runtime, pstream);
         io.getOpenFile().getMainStream().setSync(true);
         runtime.defineVariable(new OutputGlobalVariable(runtime, "$stdout", io));
         runtime.getObject().getConstantMapForWrite().put("STDOUT", io);
@@ -1672,7 +1672,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
             return;
         }
         Ruby runtime = provider.getRuntime();
-        RubyIO io = new RubyIO(runtime, error, false);
+        RubyIO io = new RubyIO(runtime, error);
         io.getOpenFile().getMainStream().setSync(true);
         runtime.defineVariable(new OutputGlobalVariable(runtime, "$stderr", io));
         runtime.getObject().getConstantMapForWrite().put("STDERR", io);
