@@ -37,7 +37,7 @@
 	<classpathentry kind="lib" path="build_lib/asm-commons-4.0_RC2.jar"/>
 	<classpathentry kind="lib" path="build_lib/asm-tree-4.0_RC2.jar"/>
 	<classpathentry kind="lib" path="build_lib/asm-util-4.0_RC2.jar"/>
-	<classpathentry kind="lib" path="build_lib/jzlib-gzip.jar"/>
 	<classpathentry kind="lib" path="build_lib/snakeyaml-1.9.jar"/>
+	<classpathentry kind="lib" path="build_lib/jzlib-1.1.0.jar"/>
 	<classpathentry kind="output" path="build.eclipse"/>
 </classpath>

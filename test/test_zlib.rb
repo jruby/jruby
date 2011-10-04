@@ -303,20 +303,15 @@ class TestZlib < Test::Unit::TestCase
 
   # JRUBY-4502: 1.4 raises native exception at gz.read
   def test_corrupted_data
-    data = '12345abcde'
     zip = "\037\213\b\000,\334\321G\000\005\000\235\005\000$\n\000\000"
     io = StringIO.new(zip)
     # JRuby cannot check corrupted data format at GzipReader.new for now
     # because of different input buffer handling.
-    if defined?(JRUBY_VERSION)
-      assert_raise(IOError) do
-        gz = Zlib::GzipReader.new(io)     # CRuby raises here
-        gz.read                           # JRuby raises here
-      end
-    else
-      assert_raise(Zlib::DataError) do
-        gz = Zlib::GzipReader.new(io)     # CRuby raises here
-      end
+    assert_raise(Zlib::DataError) do
+      gz = Zlib::GzipReader.new(io)     # CRuby raises here
+                                        # if size of input is less that 2048
+
+      gz.read                           # JRuby raises here
     end
   end
 
@@ -391,6 +386,44 @@ class TestZlib < Test::Unit::TestCase
     assert(called)
   end
 
+  def test_gzip_reader_check_corrupted_trailer
+
+    data = TestZlib.create_gzip_stream("hello")
+
+    assert_raise(Zlib::GzipFile::CRCError) do
+      _data = data.dup
+      _data[_data.size-5] = 'X'  # checksum
+      gz = Zlib::GzipReader.new(StringIO.new(_data))
+      gz.read
+      gz.finish
+    end
+
+    assert_raise(Zlib::GzipFile::LengthError) do
+      _data = data.dup
+      _data[_data.size-4] = 'X'  # length
+      gz = Zlib::GzipReader.new(StringIO.new(_data))
+      gz.read
+      gz.finish
+    end
+
+    assert_raise(Zlib::GzipFile::NoFooter) do
+      _data = data.dup
+      _data = _data.slice!(0, _data.size-1)
+      gz = Zlib::GzipReader.new(StringIO.new(_data))
+      gz.read
+      gz.finish
+    end
+
+    assert_raise(Zlib::GzipFile::NoFooter) do
+      _data = data.dup
+      _data[_data.size-5] = 'X'  # checksum
+      _data = _data.slice!(0, _data.size-1)
+      gz = Zlib::GzipReader.new(StringIO.new(_data))
+      gz.read
+      gz.finish
+    end
+  end
+
   def self.create_gzip_stream(string)
     s = StringIO.new
     Zlib::GzipWriter.wrap(s) { |io|
@@ -442,6 +475,93 @@ class TestZlib < Test::Unit::TestCase
     end
   end
 
+  def test_writer_sync
+    marker = "\x00\x00\xff\xff"
+
+    sio = StringIO.new("")
+
+    if RUBY_VERSION >= '1.9.0'
+      sio.set_encoding "ASCII-8BIT"
+    end
+
+    Zlib::GzipWriter.wrap(sio) { |z|
+      z.write 'a'
+      z.sync = true
+      z.write 'b'           # marker
+      z.write 'c'           # marker
+      z.sync = false
+      z.write 'd'
+      z.write 'e'
+      assert_equal(false, z.sync);
+    }
+
+    data = sio.string
+
+    i = Zlib::Inflate.new(Zlib::MAX_WBITS + 16)
+
+    if RUBY_VERSION >= '1.9.0'
+      #TODO working around JRUBY-6073
+      if((marker.encoding == Encoding.find("ASCII-8BIT")) &&
+         !marker.valid_encoding?)
+        marker.encode!("ASCII-8BIT")
+      end
+    end
+
+    assert_equal("ab", i.inflate(data.slice!(0, data.index(marker)+4)))
+    assert_equal("c", i.inflate(data.slice!(0, data.index(marker)+4)))
+    assert_equal("de", i.inflate(data))
+  end
+
+  def test_writer_flush
+    marker = "\x00\x00\xff\xff"
+
+    sio = StringIO.new("")
+    Zlib::GzipWriter.wrap(sio) { |z|
+      z.write 'a'
+      z.write 'b'           # marker
+      z.flush
+      z.write 'c'           # marker
+      z.flush
+      z.write 'd'
+      z.write 'e'
+      assert_equal(false, z.sync);
+    }
+
+    data = sio.string
+
+    if RUBY_VERSION >= '1.9.0'
+      #data.index(marker) will return nil
+    else
+      i = Zlib::Inflate.new(Zlib::MAX_WBITS + 16)
+      assert_equal("ab", i.inflate(data.slice!(0, data.index(marker)+4)))
+      assert_equal("c", i.inflate(data.slice!(0, data.index(marker)+4)))
+      assert_equal("de", i.inflate(data))
+    end
+  end
+
+  if RUBY_VERSION >= '1.9.0'
+  def test_error_input
+    t = Tempfile.new("test_zlib_gzip_reader_open")
+    t.close
+    e = assert_raise(Zlib::GzipFile::Error) {
+      Zlib::GzipReader.open(t.path)
+    }
+    assert_equal("not in gzip format", e.message)
+    assert_nil(e.input)
+    open(t.path, "wb") {|f| f.write("foo")}
+    e = assert_raise(Zlib::GzipFile::Error) {
+      Zlib::GzipReader.open(t.path)
+    }
+    assert_equal("not in gzip format", e.message)
+    assert_equal("foo", e.input)
+    open(t.path, "wb") {|f| f.write("foobarzothoge")}
+    e = assert_raise(Zlib::GzipFile::Error) {
+      Zlib::GzipReader.open(t.path)
+    }
+    assert_equal("not in gzip format", e.message)
+    assert_equal("foobarzothoge", e.input)
+  end
+  end
 end
 
 # Test for MAX_WBITS + 16
