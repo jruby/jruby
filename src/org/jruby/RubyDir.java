@@ -203,8 +203,9 @@ public class RubyDir extends RubyObject {
                     Enumeration<JarEntry> entries = jarFile.entries();
                     while (entries.hasMoreElements()) {
                         String entry = entries.nextElement().getName();
-                        if (filePattern.matcher(entry).find()) {
-                            allFiles.add(RubyString.newString(runtime, jarUri + entry.toString()));
+                        String chomped_entry = entry.endsWith("/") ? entry.substring(0, entry.length() - 1) : entry;
+                        if (filePattern.matcher(chomped_entry).find()) {
+                            allFiles.add(RubyString.newString(runtime, jarUri + chomped_entry.toString()));
                         }
                     }
                     IRubyObject[] tempFileList = new IRubyObject[allFiles.size()];
@@ -304,7 +305,7 @@ public class RubyDir extends RubyObject {
             }
         }
         sb.append("$");
-        return sb.toString().replace("[^/]*[^/]*/", ".*");
+        return sb.toString().replace("[^/]*[^/]*/", ".*").replace("[^/]*[^/]*", ".*");
     }
     
     /**
