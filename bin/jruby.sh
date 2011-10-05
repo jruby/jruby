@@ -52,7 +52,7 @@ fi
 
 JRUBY_OPTS_SPECIAL="--ng" # space-separated list of special flags
 unset JRUBY_OPTS_TEMP
-function process_special_opts {
+process_special_opts() {
     case $1 in
         --ng) nailgun_client=true;;
         *) break;;
