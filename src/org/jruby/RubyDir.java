@@ -193,6 +193,7 @@ public class RubyDir extends RubyObject {
             Matcher matcher = pattern.matcher(glob);
             if (matcher.find()) {
                 String jarFileName = matcher.group(1);
+                String jarUri = "file:" + jarFileName + "!/";
                 String fileGlobString = matcher.group(2);
                 String filePatternString = convertGlobToRegEx(fileGlobString);
                 Pattern filePattern = Pattern.compile(filePatternString);
@@ -203,7 +204,7 @@ public class RubyDir extends RubyObject {
                     while (entries.hasMoreElements()) {
                         String entry = entries.nextElement().getName();
                         if (filePattern.matcher(entry).find()) {
-                            allFiles.add(RubyString.newString(runtime, entry.toString()));
+                            allFiles.add(RubyString.newString(runtime, jarUri + entry.toString()));
                         }
                     }
                     IRubyObject[] tempFileList = new IRubyObject[allFiles.size()];
@@ -230,7 +231,6 @@ public class RubyDir extends RubyObject {
     }
 
     private static String convertGlobToRegEx(String line) {
-        System.out.println("convertGlobToRegEx: [" + line + "]");
         line = line.trim();
         StringBuilder sb = new StringBuilder(line.length());
         sb.append("^");
