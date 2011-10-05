@@ -36,7 +36,7 @@ public class IRScript extends IRScopeImpl {
         return "Script: file: " + getFileName() + super.toString();
     }
 
-    public LocalVariable getLocalVariable(String name) {
+    public LocalVariable getLocalVariable(String name, int depth) {
         throw new UnsupportedOperationException("This should be happening on Root Method instead");
     }
 

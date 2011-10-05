@@ -74,7 +74,7 @@ public interface IRScope {
     /**
      * Get Local Variable from this scope
      */
-    public LocalVariable getLocalVariable(String name);
+    public LocalVariable getLocalVariable(String name, int depth);
 
     public String getName();
 

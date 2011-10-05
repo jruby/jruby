@@ -8,6 +8,7 @@ import org.jruby.interpreter.InterpreterContext;
 import org.jruby.interpreter.NaiveInterpreterContext;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -39,9 +40,6 @@ public class InterpretedIRMethod extends DynamicMethod {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-        RubyModule currentModule = getImplementationClass();
-        context.preMethodFrameOnly(currentModule, name, self, block);
-        InterpreterContext interp = new NaiveInterpreterContext(context, method, currentModule, self, name, args, block, null);
         if (Interpreter.isDebug()) {
             // FIXME: name should probably not be "" ever.
             String realName = name == null || "".equals(name) ? method.getName() : name;
@@ -54,21 +52,24 @@ public class InterpretedIRMethod extends DynamicMethod {
             method.prepareForInterpretation();
             cfg = method.getCFG();
         }
-        // Do this *after* the method has been prepared!
-        interp.allocateSharedBindingScope(context, method);
+
         if (Interpreter.isDebug() && displayedCFG == false) {
             LOG.info("CFG:\n" + cfg.getGraph());
             LOG.info("\nInstructions:\n" + cfg.toStringInstrs());
             displayedCFG = true;
         }
 
+        RubyModule currentModule = getImplementationClass();
+        context.preMethodFrameOnly(currentModule, name, self, block);
+        DynamicScope ds = DynamicScope.newDynamicScope(method.getStaticScope());
+        context.pushScope(ds);
         context.getCurrentScope().getStaticScope().setModule(clazz);
+        InterpreterContext interp = new NaiveInterpreterContext(context, method, currentModule, self, name, args, block, null);
         try {
             return Interpreter.INTERPRET_METHOD(context, method, interp, self, name, getImplementationClass(), false);
         } finally {
             context.popFrame();
-            interp.setFrame(null);
-            if (interp.hasAllocatedDynamicScope()) context.postMethodScopeOnly();
+            context.postMethodScopeOnly();
         }
     }
 

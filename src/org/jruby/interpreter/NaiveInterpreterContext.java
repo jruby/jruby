@@ -39,6 +39,7 @@ public class NaiveInterpreterContext implements InterpreterContext {
         this.irScope = irScope;
         this.frame = context.getCurrentFrame();
         this.parameters = parameters;
+        this.currDynScope = context.getCurrentScope();
 
         int temporaryVariablesSize = irScope.getTemporaryVariableSize();
         this.temporaryVariables = temporaryVariablesSize > 0 ? new Object[temporaryVariablesSize] : null;
@@ -61,25 +62,6 @@ public class NaiveInterpreterContext implements InterpreterContext {
 
     public void setBlock(Block block) {
         this.block = block;
-    }
-
-    public void setDynamicScope(DynamicScope s) {
-        this.currDynScope = s;
-    }
-
-    public void allocateSharedBindingScope(ThreadContext context, IRMethod method) {
-        this.allocatedDynScope = true;
-        this.currDynScope = new org.jruby.runtime.scope.SharedBindingDynamicScope(method.getStaticScope(), method);
-        context.pushScope(this.currDynScope);
-    }
-
-    public DynamicScope getSharedBindingScope() {
-        return this.currDynScope;
-    }
-
-    // SSS: Should get rid of this and add a FreeBinding instruction
-    public boolean hasAllocatedDynamicScope() {
-        return this.allocatedDynScope;
     }
 
     public Object getReturnValue(ThreadContext context) {
@@ -118,13 +100,13 @@ public class NaiveInterpreterContext implements InterpreterContext {
         currDynScope.setValueDepthZero((IRubyObject)value, bindingSlot);
     }
 
-    public Object getLocalVariable(ThreadContext context, int offset) {
-        Object value = currDynScope.getValue(offset, 0);
+    public Object getLocalVariable(ThreadContext context, int depth, int offset) {
+        Object value = currDynScope.getValue(offset, depth);
         return (value == null) ? context.getRuntime().getNil() : value;
     }
 
-    public Object setLocalVariable(int offset, Object value) {
-        currDynScope.setValueDepthZero((IRubyObject)value, offset); 
+    public Object setLocalVariable(int depth, int offset, Object value) {
+        currDynScope.setValue((IRubyObject)value, offset, depth); 
         return null;
     }
 

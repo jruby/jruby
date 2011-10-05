@@ -1,6 +1,6 @@
 package org.jruby.parser;
 
-import org.jruby.compiler.ir.IRScope;
+import org.jruby.compiler.ir.IRExecutionScope;
 
 import org.jruby.ast.AssignableNode;
 import org.jruby.ast.LocalAsgnNode;
@@ -18,7 +18,7 @@ public class IRStaticScope extends StaticScope {
     boolean isEval;          // Is this an eval scope?
     boolean isArgumentScope; // Is this block and argument scope of a define_method (for the purposes of zsuper).
 
-    IRScope irScope;         // IR Scope that this static scope corresponds to
+    IRExecutionScope irScope; // Method/Closure that this static scope corresponds to
 
     protected IRStaticScope(StaticScope enclosingScope, boolean isBlock, boolean isEval) {
         this(enclosingScope, NO_NAMES, isBlock, isEval);
@@ -133,12 +133,12 @@ public class IRStaticScope extends StaticScope {
         return "IRStaticScope" + (isBlock ? "(BLOCK): " : "(LOCAL): ") + super.toString();
     }
 
-    public void setIRScope(IRScope irScope) {
+    public void setIRScope(IRExecutionScope irScope) {
         this.irScope = irScope;
     }
 
     @Override
     public int getNumberOfVariables() {
-        return super.getNumberOfVariables() + 1;  // %block
+        return (irScope == null) ? super.getNumberOfVariables() : irScope.getUsedVariablesCount();
     }
 }

@@ -22,7 +22,7 @@ public class ClosureMetaObject extends MetaObject {
     public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         BlockBody body = ((IRClosure) scope).getBlockBody();
         scope.getStaticScope().determineModule();
-        Binding binding = context.currentBinding(self, interp.getSharedBindingScope());
+        Binding binding = context.currentBinding(self, context.getCurrentScope());
 
         return new Block(body, binding);
     }

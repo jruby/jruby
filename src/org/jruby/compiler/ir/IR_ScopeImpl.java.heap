@@ -1,0 +1,16 @@
+// SSS FIXME: Maybe this is not really a concern after all ...
+        // Nesting level of this scope in the lexical nesting of scopes in the current file -- this is not to be confused
+        // with semantic nesting of scopes across files.
+        //
+        // Consider this code in a file f
+        // class M1::M2::M3::C 
+        //   ...
+        // end
+        //
+        // So, C is at lexical nesting level of 1 (the file script is at 0) in the file 'f'
+        // Semantically it is at level 3 (M1, M2, M3 are at 0,1,2).
+        //
+        // This is primarily used to ensure that variable names don't clash!
+        // i.e. definition of %v_1 in a closure shouldn't override the use of %v_1 from the parent scope!
+//    private int _lexicalNestingLevel;
+

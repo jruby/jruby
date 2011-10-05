@@ -10,10 +10,13 @@ import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Splat;
+import org.jruby.compiler.ir.operands.ClosureLocalVariable;
+import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.ReceiveClosureArgInstr;
 import org.jruby.parser.StaticScope;
+import org.jruby.parser.IRStaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.InterpretedIRBlockBody;
@@ -50,6 +53,7 @@ public class IRClosure extends IRExecutionScope {
 
         this.body = new InterpretedIRBlockBody(this, arity, argumentType);
         this.hasBeenInlined = false;
+        if ((staticScope != null) && !isForLoopBody) ((IRStaticScope)staticScope).setIRScope(this);
     }
 
     @Override
@@ -124,5 +128,48 @@ public class IRClosure extends IRExecutionScope {
 
     public boolean hasBeenInlined() {
         return this.hasBeenInlined;
+    }
+
+    public LocalVariable findExistingLocalVariable(String name) {
+        LocalVariable lvar = localVariables.get(name);
+        if (lvar != null) return lvar;
+        else return ((IRExecutionScope)getLexicalParent()).findExistingLocalVariable(name);
+    }
+
+    public LocalVariable getNewLocalVariable(String name, int scopeDepth) {
+        LocalVariable lvar = new ClosureLocalVariable(this, name, 0, nextLocalVariableSlot);
+        localVariables.put(name, lvar);
+        nextLocalVariableSlot++;
+        return lvar;
+    }
+
+    public LocalVariable getLocalVariable(String name, int scopeDepth) {
+        if (isForLoopBody) return getLexicalParent().getLocalVariable(name, scopeDepth);
+
+        LocalVariable lvar = findExistingLocalVariable(name);
+        if (lvar == null) {
+            lvar = getNewLocalVariable(name, scopeDepth);
+        }
+        else if (lvar.getScopeDepth() != scopeDepth) {
+            // Create a copy of the variable usable at a different scope depth
+            lvar = lvar.clone();
+            lvar.setScopeDepth(scopeDepth);
+        }
+
+        return lvar;
+    }
+
+    public int getNestingDepth() {
+        int n = 0;
+        IRScope s = this;
+        while (s instanceof IRClosure) {
+            s = ((IRClosure)s).getLexicalParent();
+            n++;
+        }
+        return n;
+    }
+
+    public LocalVariable getImplicitBlockArg() {
+        return getLocalVariable("%block", getNestingDepth());
     }
 }

@@ -54,7 +54,7 @@ public class InlinerInfo {
                 // Frame load/store placement dataflow pass (and possible other passes later on) exploit
                 // information whether a variable is a temporary or a local/self variable.
                 // So, variable renaming for inlining has to preserve this information.
-                newVar = m.getLocalVariable(newVar.getName());
+                newVar = m.getLocalVariable(newVar.getName(), ((LocalVariable)newVar).getScopeDepth());
             }
             this.varRenameMap.put(v, newVar);
         }

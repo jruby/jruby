@@ -18,6 +18,7 @@ import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
 import org.jruby.compiler.ir.instructions.SuperInstr;
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.Operand;
+import org.jruby.compiler.ir.operands.Self;
 import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.CFG;
@@ -29,6 +30,10 @@ public abstract class IRExecutionScope extends IRScopeImpl {
     private List<Instr>   instructions;   // List of IR instructions for this method
     private CFG              cfg;      // Control flow graph for this scope
     private List<IRClosure> closures; // List of (nested) closures in this scope
+
+    // All local variables (their names) are mapped to an integer id in this scope
+    protected int nextLocalVariableSlot;
+    protected Map<String, LocalVariable> localVariables;
 
     /* *****************************************************************************************************
      * Does this execution scope (applicable only to methods) receive a block and use it in such a way that
@@ -100,6 +105,9 @@ public abstract class IRExecutionScope extends IRScopeImpl {
         canModifyCode = true;
         canCaptureCallersBinding = true;
         requiresBinding = true;
+
+        localVariables = new HashMap<String, LocalVariable>();
+        nextLocalVariableSlot = 0;
     }
 
     public IRExecutionScope(IRScope lexicalParent, Operand container, String name, StaticScope staticScope) {
@@ -283,9 +291,9 @@ public abstract class IRExecutionScope extends IRScopeImpl {
         return sb.toString();
     }
 
-	 /******
-	  * SSS: Not used -- this was something headius wrote way-back
-	  *
+    /******
+     * SSS: Not used -- this was something headius wrote way-back
+     *
     @Interp
     public Iterator<LocalVariable> getLiveLocalVariables() {
         Map<LocalVariable, Integer> ends = new HashMap<LocalVariable, Integer>();
@@ -320,9 +328,9 @@ public abstract class IRExecutionScope extends IRScopeImpl {
 
         return variables.iterator();
     }
-	 **/
+    **/
 
-	 // SSS FIXME: This is unused code.
+    // SSS FIXME: This is unused code.
     /**
      * Create and (re)assign a static scope.  In general local variables should
      * never change even if we optimize more, but I was not positive so I am
@@ -377,20 +385,23 @@ public abstract class IRExecutionScope extends IRScopeImpl {
     @Interp
     protected abstract StaticScope constructStaticScope(StaticScope parent);
 
-    // ENEBO: Can this always be the same variable?  Then SELF comparison could compare against this?
-    public Variable getSelf() {
-        return getLocalVariable("%self");
+    public LocalVariable getSelf() {
+        return Self.SELF;
     }
 
-    public Variable getImplicitBlockArg() {
-        return getLocalVariable("%block");
-    }
+    public abstract LocalVariable getImplicitBlockArg();
 
-    public LocalVariable getLocalVariable(String name) {
-        return getClosestMethodAncestor().getLocalVariable(name, this);
-    }
+    public abstract LocalVariable findExistingLocalVariable(String name);
+
+    public abstract LocalVariable getLocalVariable(String name, int depth);
 
     public int getLocalVariablesCount() {
-        return getClosestMethodAncestor().getLocalVariablesCount();
+        return nextLocalVariableSlot;
+    }
+
+    public int getUsedVariablesCount() {
+        // System.out.println("For " + this + ", # lvs: " + nextLocalVariableSlot);
+        // %block, # local vars, # flip vars
+        return 1 + nextLocalVariableSlot + getPrefixCountSize("%flip");
     }
 }

@@ -269,7 +269,7 @@ used, we are now forced to be conservative.
         else return runtime.getClass(n);
     }
 
-    public LocalVariable getLocalVariable(String name) {
+    public LocalVariable getLocalVariable(String name, int depth) {
         throw new UnsupportedOperationException("This should be happening in the root method of this module/class instead");
     }
 }

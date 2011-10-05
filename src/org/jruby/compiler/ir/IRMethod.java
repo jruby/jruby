@@ -14,6 +14,7 @@ import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Splat;
 import org.jruby.parser.StaticScope;
+import org.jruby.parser.IRStaticScope;
 
 public class IRMethod extends IRExecutionScope {
     public final boolean isInstanceMethod;
@@ -29,10 +30,6 @@ public class IRMethod extends IRExecutionScope {
     // Call parameters
     private List<Operand> callArgs;
 
-    // All local variables (their names) are mapped to an integer id in this method's lexical scope (including all nested closures)
-    private int nextLocalVariableSlot;
-    private Map<String, LocalVariable> localVariables;
-
     // Local variables (their names) are mapped to a slot in a binding shared across all call sites encountered in this method's lexical scope
     // (including all nested closures) -- only variables that need a slot get a slot.  This info is determined by the Binding*PlacementAnalysis
     // dataflow passes in dataflow/analyses/
@@ -45,11 +42,14 @@ public class IRMethod extends IRExecutionScope {
         startLabel = getNewLabel("_METH_START");
         endLabel = getNewLabel("_METH_END");
         callArgs = new ArrayList<Operand>();
+        if (staticScope != null) ((IRStaticScope)staticScope).setIRScope(this);
+        updateVersion();
+/*
+ * SSS: Only necessary when we run the add binding load/store dataflow pass to promote all ruby local vars to java local vars
+ *
         bindingSlotMap = new HashMap<String, Integer>();
         nextAvailableBindingSlot = 0;
-        localVariables = new HashMap<String, LocalVariable>();
-        nextLocalVariableSlot = 0;
-        updateVersion();
+ */
     }
 
     public final void updateVersion() {
@@ -120,52 +120,27 @@ public class IRMethod extends IRExecutionScope {
         return StaticScope.newLocalScope(null); // method scopes cannot see any lower
     }
 
-    public LocalVariable getLocalVariable(String name, IRExecutionScope currScope) {
-        LocalVariable lvar = localVariables.get(name);
+    public LocalVariable findExistingLocalVariable(String name) {
+        return localVariables.get(name);
+    }
+
+    public LocalVariable getLocalVariable(String name, int scopeDepth) {
+        LocalVariable lvar = findExistingLocalVariable(name);
         if (lvar == null) {
-            if ((currScope instanceof IRClosure) && !((IRClosure)currScope).isForLoopBody) {
-                // Variable is local to the closure.  If not, it would have been found in the localVariables.get call above!
-                lvar = new ClosureLocalVariable((IRClosure)currScope, name, nextLocalVariableSlot);
-            }
-            else {
-                lvar = new LocalVariable(name, nextLocalVariableSlot);
-            }
+            lvar = new LocalVariable(name, scopeDepth, nextLocalVariableSlot);
             localVariables.put(name, lvar);
             nextLocalVariableSlot++;
         }
 
-        /* --------------------------------------------------------------------------------
-         * If 'lvar' was previously a closure-local-variable, one of 3 things can happen:
-         * (1) We are now in a method scope ==> reset 'lvar' to be a normal variable
-         * (2) We are now in the same closure scope in which 'lvar' was defined -- nothing to do
-         *     this use of 'lvar' is still closure-local.
-         * (3) We are now in a closure scope which is nested in the scope that defined 'lvar'.
-         *     So, 'lvar' use in 'currScope' is still "local" to a closure.
-         * (4) We are now in a closure scope which is not nested in the scope that defined 'lvar'
-         *     So, we are just reusing the variable name, but this is a new variable.
-         *     Reset defining scope for 'lvar' to be 'currScope'
-         * -------------------------------------------------------------------------------- */
-        if (lvar instanceof ClosureLocalVariable) {
-            if (currScope instanceof IRMethod) {
-                // SCENARIO 1 ABOVE
-                lvar = new LocalVariable(name, lvar.getLocation());
-                localVariables.put(name, lvar);
-            }
-            else {
-                IRClosure definingScope = ((ClosureLocalVariable)lvar).definingScope;
-                if ((currScope == definingScope) || currScope.nestedInClosure(definingScope)) {
-                    // SCENARIO 2 & 3 ABOVE.  Nothing to do
-                    ;
-                }
-                else {
-                    // SCENARIO 4 ABOVE
-                    lvar = new ClosureLocalVariable((IRClosure)currScope, name, lvar.getLocation());
-                    localVariables.put(name, lvar);
-                }
-            }
-        }
-
         return lvar;
+    }
+
+    public LocalVariable getImplicitBlockArg() {
+        return getLocalVariable("%block", 0);
+    }
+
+    public LocalVariable getNewFlipStateVariable() {
+        return getLocalVariable("%flip_" + allocateNextPrefixedName("%flip"), 0);
     }
 
     public int assignBindingSlot(String varName) {
@@ -184,14 +159,5 @@ public class IRMethod extends IRExecutionScope {
 
     public int getBindingSlotsCount() {
         return nextAvailableBindingSlot;
-    }
-
-    @Override
-    public int getLocalVariablesCount() {
-        return nextLocalVariableSlot;
-    }
-
-    public LocalVariable getNewFlipStateVariable() {
-        return getLocalVariable("%flip_" + allocateNextPrefixedName("%flip"));
     }
 }

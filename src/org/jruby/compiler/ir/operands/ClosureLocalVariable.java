@@ -9,14 +9,14 @@ import org.jruby.interpreter.InterpreterContext;
  */
 public class ClosureLocalVariable extends LocalVariable {
     public final IRClosure definingScope;
-    public ClosureLocalVariable(IRClosure scope, String name, int location) {
-        super(name, location);
+    public ClosureLocalVariable(IRClosure scope, String name, int scopeDepth, int location) {
+        super(name, scopeDepth, location);
         this.definingScope = scope;
     }
 
     @Override
     public String toString() {
-        return "<" + name + ">";
+        return "<" + name + "(" + scopeDepth + ":" + location + ")>";
     }
 
     // SSS FIXME: a = "<v>"; b = ClosureLocalVariable("v"); a.hashCode() == b.hashCode() but a.equals(b) == false
@@ -38,5 +38,10 @@ public class ClosureLocalVariable extends LocalVariable {
         if (!(arg0 instanceof ClosureLocalVariable)) return 0;
 
         return name.compareTo(((LocalVariable) arg0).name);
+    }
+
+    @Override
+    public LocalVariable clone() {
+        return new ClosureLocalVariable(definingScope, name, scopeDepth, location);
     }
 }

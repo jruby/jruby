@@ -50,7 +50,7 @@ public class StoreToBindingInstr extends OneOperandInstr {
         
         // FIXME: This is a pseudo-hack.  bindings set up for blocks in opt arg default values
         // can trip over this since we cannot store somethign which is not a real IRubyObject.
-        Object value = interp.getLocalVariable(context, v.getLocation());
+        Object value = interp.getLocalVariable(context, v.getScopeDepth(), v.getLocation());
         if (!(value instanceof UndefinedValue)) {
             interp.setSharedBindingVariable(bindingSlot, value);
         }

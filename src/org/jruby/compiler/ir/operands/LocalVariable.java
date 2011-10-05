@@ -11,17 +11,16 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * @author enebo
- *
- * SSS FIXME: Do we create a SelfVariable that extends LocalVariable?
- * That we can trap writes to %self, special-case lookup for %self, and the isSelf method
  */
 public class LocalVariable extends Variable {
-    final public String name;
-    private int location;
+    protected String name;
+    protected int scopeDepth;
+    protected int location;
 
     // FIXME: We should resolve to an index into an array but localvariable has no allocator
-    public LocalVariable(String name, int location) {
+    public LocalVariable(String name, int scopeDepth, int location) {
         this.name = name;
+        this.scopeDepth = scopeDepth;
         this.location = location;
     }
 
@@ -31,6 +30,14 @@ public class LocalVariable extends Variable {
         this.location = slot;
     }
 **/
+
+    public void setScopeDepth(int depth) {
+        this.scopeDepth = depth;
+    }
+
+    public int getScopeDepth() {
+        return scopeDepth;
+    }
 
     public int getLocation() {
         return location;
@@ -43,7 +50,7 @@ public class LocalVariable extends Variable {
 
     @Override
     public String toString() {
-        return name;
+        return isSelf() ? name : name + "(" + scopeDepth + ":" + location + ")";
     }
 
     @Override
@@ -52,7 +59,7 @@ public class LocalVariable extends Variable {
     }
 
     public boolean isSelf() {
-        return name.equals("%self");  // SSS FIXME: This is potentially bug-prone.
+		  return false;
     }
 
     @Override
@@ -71,13 +78,15 @@ public class LocalVariable extends Variable {
 
     @Override
     public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        // SSS FIXME: Should we have a special case for self?
-        //return interp.getLocalVariable(getName());
-        return isSelf() ? self : interp.getLocalVariable(context, location);
+        return interp.getLocalVariable(context, scopeDepth, location);
     }
 
     @Override
     public Object store(InterpreterContext interp, ThreadContext context, IRubyObject self, Object value) {
-        return isSelf() ? self : interp.setLocalVariable(location, value);
+        return interp.setLocalVariable(scopeDepth, location, value);
+    }
+
+    public LocalVariable clone() {
+        return new LocalVariable(name, scopeDepth, location);
     }
 }

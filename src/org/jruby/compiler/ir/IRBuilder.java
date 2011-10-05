@@ -179,6 +179,7 @@ import org.jruby.compiler.ir.operands.Hash;
 import org.jruby.compiler.ir.operands.IRException;
 import org.jruby.compiler.ir.operands.KeyValuePair;
 import org.jruby.compiler.ir.operands.Label;
+import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.operands.ModuleMetaObject;
@@ -664,8 +665,7 @@ public class IRBuilder {
             case DASGNNODE: {
                 DAsgnNode variable = (DAsgnNode) node;
                 int depth = variable.getDepth();
-                // SSS FIXME: Isn't it sufficient to use "getLocalVariable(variable.getName())"?
-                s.addInstr(new CopyInstr(getScopeNDown(s, depth).getLocalVariable(variable.getName()), v));
+                s.addInstr(new CopyInstr(s.getLocalVariable(variable.getName(), depth), v));
                 break;
             }
             case GLOBALASGNNODE:
@@ -678,8 +678,7 @@ public class IRBuilder {
             case LOCALASGNNODE: {
                 LocalAsgnNode localVariable = (LocalAsgnNode) node;
                 int depth = localVariable.getDepth();
-                // SSS FIXME: Isn't it sufficient to use "getLocalVariable(variable.getName())"?
-                s.addInstr(new CopyInstr(getScopeNDown(s, depth).getLocalVariable(localVariable.getName()), v));
+                s.addInstr(new CopyInstr(s.getLocalVariable(localVariable.getName(), depth), v));
                 break;
             }
             case MULTIPLEASGNNODE:
@@ -694,6 +693,11 @@ public class IRBuilder {
             default:
                 throw new NotCompilableException("Can't build assignment node: " + node);
         }
+    }
+
+    private LocalVariable getBlockArgVariable(IRClosure cl, String name, int depth) {
+        // For non-loops, this name will override any name that exists in outer scopes
+        return cl.isForLoopBody ? cl.getLocalVariable(name, depth) : cl.getNewLocalVariable(name, depth);
     }
 
     // This method is called to build arguments for a block!
@@ -711,8 +715,7 @@ public class IRBuilder {
             // Ruby 1.8 is the buggy semantics if I understand correctly.
             case DASGNNODE: {
                 DAsgnNode dynamicAsgn = (DAsgnNode) node;
-                // SSS FIXME: Isn't it sufficient to use "getLocalVariable(variable.getName())"?
-                v = getScopeNDown(s, dynamicAsgn.getDepth()).getLocalVariable(dynamicAsgn.getName());
+                v = getBlockArgVariable((IRClosure)s, dynamicAsgn.getName(), dynamicAsgn.getDepth());
                 s.addInstr(new ReceiveClosureArgInstr(v, argIndex, isSplat));
                 break;
             }
@@ -746,8 +749,7 @@ public class IRBuilder {
             case LOCALASGNNODE: {
                 LocalAsgnNode localVariable = (LocalAsgnNode) node;
                 int depth = localVariable.getDepth();
-                // SSS FIXME: Isn't it sufficient to use "getLocalVariable(variable.getName())"?
-                v = getScopeNDown(s, depth).getLocalVariable(localVariable.getName());
+                v = getBlockArgVariable((IRClosure)s, localVariable.getName(), depth);
                 s.addInstr(new ReceiveClosureArgInstr(v, argIndex, isSplat));
                 break;
             }
@@ -1666,8 +1668,7 @@ public class IRBuilder {
         // assignments to block variables within a block.  As far as the IR is concerned,
         // this is just a simple copy
         int depth = dasgnNode.getDepth();
-        // SSS FIXME: Isn't it sufficient to use "getLocalVariable(variable.getName())"?
-        Variable arg = getScopeNDown(s, depth).getLocalVariable(dasgnNode.getName());
+        Variable arg = s.getLocalVariable(dasgnNode.getName(), depth);
         Operand  value = build(dasgnNode.getValueNode(), s);
         s.addInstr(new CopyInstr(arg, value));
         return value;
@@ -1782,7 +1783,7 @@ public class IRBuilder {
         ListNode preArgs  = argsNode.getPre();
         for (int i = 0; i < required; i++, argIndex++) {
             ArgumentNode a = (ArgumentNode)preArgs.get(i);
-            s.addInstr(new ReceiveArgumentInstruction(s.getLocalVariable(a.getName()), argIndex));
+            s.addInstr(new ReceiveArgumentInstruction(s.getLocalVariable(a.getName(), 0), argIndex));
         }
 
             // IMPORTANT: Receive the block argument before the opt and splat args
@@ -1790,7 +1791,7 @@ public class IRBuilder {
             // won't work if the block argument hasn't been received yet!
         Variable blockVar = null;
         if (argsNode.getBlock() != null) {
-            blockVar = s.getLocalVariable(argsNode.getBlock().getName());
+            blockVar = s.getLocalVariable(argsNode.getBlock().getName(), 0);
             s.addInstr(new ReceiveClosureInstr(blockVar));
         }
 
@@ -1809,7 +1810,7 @@ public class IRBuilder {
                     // Jump to 'l' if this arg is not null.  If null, fall through and build the default value!
                 Label l = s.getNewLabel();
                 LocalAsgnNode n = (LocalAsgnNode)optArgs.get(j);
-                Variable av = s.getLocalVariable(n.getName());
+                Variable av = s.getLocalVariable(n.getName(), 0);
                 s.addInstr(new ReceiveOptionalArgumentInstr(av, argIndex));
                 s.addInstr(new BNEInstr(av, UndefinedValue.UNDEFINED, l)); // if 'av' is not undefined, go to default
                 build(n, s);
@@ -1823,7 +1824,7 @@ public class IRBuilder {
             // So, we generate an implicit arg name
             String argName = argsNode.getRestArgNode().getName();
             argName = (argName.equals("")) ? "%_arg_array" : argName;
-            s.addInstr(new ReceiveArgumentInstruction(s.getLocalVariable(argName), argIndex, true));
+            s.addInstr(new ReceiveArgumentInstruction(s.getLocalVariable(argName, 0), argIndex, true));
         }
 
         // FIXME: Ruby 1.9 post args code needs to come here
@@ -1878,7 +1879,7 @@ public class IRBuilder {
     }
 
     public Operand buildDVar(DVarNode node, IRScope m) {
-        return m.getLocalVariable(node.getName());
+        return m.getLocalVariable(node.getName(), node.getDepth());
     }
 
     public Operand buildDXStr(final DXStrNode dstrNode, IRScope m) {
@@ -2068,6 +2069,10 @@ public class IRBuilder {
         IRMethod nearestMethod = m.getNearestMethod();
         Variable flipState = nearestMethod.getNewFlipStateVariable();
         nearestMethod.initFlipStateVariable(flipState, s1);
+        if (m instanceof IRClosure) {
+            flipState = ((LocalVariable)flipState).clone();
+            ((LocalVariable)flipState).setScopeDepth(((IRClosure)m).getNestingDepth());
+        }
 
         // Variables and labels needed for the code
         Variable returnVal = m.getNewTemporaryVariable();
@@ -2311,7 +2316,7 @@ public class IRBuilder {
     }
 
     public Operand buildLocalAsgn(LocalAsgnNode localAsgnNode, IRScope s) {
-        Variable var  = s.getLocalVariable(localAsgnNode.getName());
+        Variable var  = s.getLocalVariable(localAsgnNode.getName(), localAsgnNode.getDepth());
         Operand value = build(localAsgnNode.getValueNode(), s);
         s.addInstr(new CopyInstr(var, value));
         return value;  
@@ -2340,7 +2345,7 @@ public class IRBuilder {
     }
 
     public Operand buildLocalVar(LocalVarNode node, IRScope s) {
-        return s.getLocalVariable(node.getName());
+        return s.getLocalVariable(node.getName(), node.getDepth());
     }
 
     public Operand buildMatch(MatchNode matchNode, IRScope m) {

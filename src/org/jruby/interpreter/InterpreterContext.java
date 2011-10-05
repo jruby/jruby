@@ -42,13 +42,9 @@ public interface InterpreterContext {
 
     public Object getTemporaryVariable(int offset);
     public Object setTemporaryVariable(int offset, Object value);
-    public Object getLocalVariable(ThreadContext context, int offset);
-    public Object setLocalVariable(int offset, Object value);
+    public Object getLocalVariable(ThreadContext context, int depth, int offset);
+    public Object setLocalVariable(int depth, int offset, Object value);
 
-    public void setDynamicScope(DynamicScope s);
-    public void allocateSharedBindingScope(ThreadContext context, IRMethod method);
-    public DynamicScope getSharedBindingScope();
-    public boolean hasAllocatedDynamicScope();
     public Object getSharedBindingVariable(ThreadContext context, int bindingSlot);
     public void setSharedBindingVariable(int bindingSlot, Object value);
 
