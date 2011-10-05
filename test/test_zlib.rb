@@ -499,14 +499,6 @@ class TestZlib < Test::Unit::TestCase
 
     i = Zlib::Inflate.new(Zlib::MAX_WBITS + 16)
 
-    if RUBY_VERSION >= '1.9.0'
-      #TODO working around JRUBY-6073
-      if((marker.encoding == Encoding.find("ASCII-8BIT")) &&
-         !marker.valid_encoding?)
-        marker.encode!("ASCII-8BIT")
-      end
-    end
-
     assert_equal("ab", i.inflate(data.slice!(0, data.index(marker)+4)))
     assert_equal("c", i.inflate(data.slice!(0, data.index(marker)+4)))
     assert_equal("de", i.inflate(data))
