@@ -211,7 +211,6 @@ public class RubyDir extends RubyObject {
                     allFiles.toArray(tempFileList);
                     return runtime.newArrayNoCopy(tempFileList);
                 } catch (IOException e) {
-                    e.printStackTrace();
                     return runtime.newArrayNoCopy(new IRubyObject[0]);
                 }
             }
