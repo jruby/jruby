@@ -1432,24 +1432,60 @@ public class RubyInstanceConfig {
      */
     public final static boolean CEXT_ENABLED = SafePropertyAccessor.getBoolean("jruby.cext.enabled", NATIVE_ENABLED);
 
+    /**
+     * Whether to reify (pre-compile and generate) a Java class per Ruby class.
+     *
+     * Set with the <tt>jruby.reify.classes</tt> system property.
+     */
     public static final boolean REIFY_RUBY_CLASSES
             = SafePropertyAccessor.getBoolean("jruby.reify.classes", false);
 
+    /**
+     * Log errors that occur during reification.
+     *
+     * Set with the <tt>jruby.reify.logErrors</tt> system property.
+     */
     public static final boolean REIFY_LOG_ERRORS
             = SafePropertyAccessor.getBoolean("jruby.reify.logErrors", false);
 
+    /**
+     * Whether to use a custom-generated handle for Java methods instead of
+     * reflection.
+     *
+     * Set with the <tt>jruby.java.handles</tt> system property.
+     */
     public static final boolean USE_GENERATED_HANDLES
             = SafePropertyAccessor.getBoolean("jruby.java.handles", false);
 
+    /**
+     * Turn on debugging of the load service (requires and loads).
+     *
+     * Set with the <tt>jruby.debug.loadService</tt> system property.
+     */
     public static final boolean DEBUG_LOAD_SERVICE
             = SafePropertyAccessor.getBoolean("jruby.debug.loadService", false);
 
+    /**
+     * Turn on timings of the load service (requires and loads).
+     *
+     * Set with the <tt>jruby.debug.loadService.timing</tt> system property.
+     */
     public static final boolean DEBUG_LOAD_TIMINGS
             = SafePropertyAccessor.getBoolean("jruby.debug.loadService.timing", false);
 
+    /**
+     * Turn on debugging of subprocess launching.
+     *
+     * Set with the <tt>jruby.debug.launch</tt> system property.
+     */
     public static final boolean DEBUG_LAUNCHING
             = SafePropertyAccessor.getBoolean("jruby.debug.launch", false);
 
+    /**
+     * Turn on debugging of script resolution with "-S".
+     *
+     * Set with the <tt>jruby.debug.scriptResolution</tt> system property.
+     */
     public static final boolean DEBUG_SCRIPT_RESOLUTION
             = SafePropertyAccessor.getBoolean("jruby.debug.scriptResolution", false);
 
