@@ -160,10 +160,26 @@ public class LoadService {
     public enum SuffixType {
         Source, Extension, Both, Neither;
 
-        public static final String[] sourceSuffixes = { ".class", ".rb" };
-        public static final String[] extensionSuffixes = { ".jar", ".so", ".bundle", ".dll" };
-        private static final String[] allSuffixes = { ".class", ".rb", ".jar", ".so", ".bundle", ".dll" };
         private static final String[] emptySuffixes = { "" };
+        // NOTE: always search .rb first for speed
+        public static final String[] sourceSuffixes = { ".rb", ".class" };
+        public static final String[] extensionSuffixes;
+        private static final String[] allSuffixes;
+
+        static {                // compute based on platform
+            extensionSuffixes = new String[2];
+            extensionSuffixes[0] = ".jar";
+            if (Platform.IS_WINDOWS) {
+                extensionSuffixes[1] = ".dll";
+            } else if (Platform.IS_MAC) { // TODO: BSD also?
+                extensionSuffixes[1] = ".bundle";
+            } else {
+                extensionSuffixes[1] = ".so";
+            }
+            allSuffixes = new String[sourceSuffixes.length + extensionSuffixes.length];
+            System.arraycopy(sourceSuffixes, 0, allSuffixes, 0, sourceSuffixes.length);
+            System.arraycopy(extensionSuffixes, 0, allSuffixes, sourceSuffixes.length, extensionSuffixes.length);
+        }
 
         public String[] getSuffixes() {
             switch (this) {
