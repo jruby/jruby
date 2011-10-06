@@ -169,7 +169,7 @@ public class Utils {
     }
     
     private static RubyIO getRubyIO(Ruby runtime, Writer writer) throws IOException, BadDescriptorException {
-        PrintStream pstream = new PrintStream(new WriterOutputStream(writer));
+        PrintStream pstream = new PrintStream(new WriterOutputStream(writer), true);
         RubyIO io = new RubyIO(runtime, pstream, false);
         io.getOpenFile().getMainStreamSafe().setSync(true);
         io.getOpenFile().getMainStreamSafe().fflush();
