@@ -361,11 +361,12 @@ public class RubyInstanceConfig {
         return home;
     }
 
-    
+    /** Indicates whether the JVM process' native environment will be updated when ENV[...] is set from Ruby. */
     public boolean isUpdateNativeENVEnabled() {
         return updateNativeENVEnabled;
     }
 
+    /** Ensure that the JVM process' native environment will be updated when ENV is modified .*/
     public void setUpdateNativeENVEnabled(boolean updateNativeENVEnabled) {
         this.updateNativeENVEnabled = updateNativeENVEnabled;
     }
@@ -1274,65 +1275,160 @@ public class RubyInstanceConfig {
     public static final int CHAINED_COMPILE_LINE_COUNT
             = SafePropertyAccessor.getInt("jruby.compile.chainsize", CHAINED_COMPILE_LINE_COUNT_DEFAULT);
 
+    /**
+     * Enable compiler peephole optimizations.
+     *
+     * Set with the <tt>jruby.compile.peephole</tt> system property.
+     */
     public static final boolean PEEPHOLE_OPTZ
             = SafePropertyAccessor.getBoolean("jruby.compile.peephole", true);
+    /**
+     * Enable "dynopt" optimizations.
+     *
+     * Set with the <tt>jruby.compile.dynopt</tt> system property.
+     */
     public static boolean DYNOPT_COMPILE_ENABLED
             = SafePropertyAccessor.getBoolean("jruby.compile.dynopt", false);
+
+    /**
+     * Enable compiler "noguards" optimizations.
+     *
+     * Set with the <tt>jruby.compile.noguards</tt> system property.
+     */
     public static boolean NOGUARDS_COMPILE_ENABLED
             = SafePropertyAccessor.getBoolean("jruby.compile.noguards");
+
+    /**
+     * Enable compiler "fastest" set of optimizations.
+     *
+     * Set with the <tt>jruby.compile.fastest</tt> system property.
+     */
     public static boolean FASTEST_COMPILE_ENABLED
             = SafePropertyAccessor.getBoolean("jruby.compile.fastest");
+
+    /**
+     * Enable fast operator compiler optimizations.
+     *
+     * Set with the <tt>jruby.compile.fastops</tt> system property.
+     */
     public static boolean FASTOPS_COMPILE_ENABLED
             = FASTEST_COMPILE_ENABLED
             || SafePropertyAccessor.getBoolean("jruby.compile.fastops", true);
+
+    /**
+     * Enable "threadless" compile.
+     *
+     * Set with the <tt>jruby.compile.threadless</tt> system property.
+     */
     public static boolean THREADLESS_COMPILE_ENABLED
             = FASTEST_COMPILE_ENABLED
             || SafePropertyAccessor.getBoolean("jruby.compile.threadless");
+
+    /**
+     * Enable "fast send" compiler optimizations.
+     *
+     * Set with the <tt>jruby.compile.fastsend</tt> system property.
+     */
     public static boolean FASTSEND_COMPILE_ENABLED
             = FASTEST_COMPILE_ENABLED
             || SafePropertyAccessor.getBoolean("jruby.compile.fastsend");
+
+    /**
+     * Enable lazy handles optimizations.
+     *
+     * Set with the <tt>jruby.compile.lazyHandles</tt> system property.
+     */
     public static boolean LAZYHANDLES_COMPILE = SafePropertyAccessor.getBoolean("jruby.compile.lazyHandles", false);
+
+    /**
+     * Inline dynamic calls.
+     *
+     * Set with the <tt>jruby.compile.inlineDyncalls</tt> system property.
+     */
     public static boolean INLINE_DYNCALL_ENABLED
             = FASTEST_COMPILE_ENABLED
             || SafePropertyAccessor.getBoolean("jruby.compile.inlineDyncalls");
+
+    /**
+     * Enable fast multiple assignment optimization.
+     *
+     * Set with the <tt>jruby.compile.fastMasgn</tt> system property.
+     */
     public static boolean FAST_MULTIPLE_ASSIGNMENT
             = SafePropertyAccessor.getBoolean("jruby.compile.fastMasgn", false);
-    
+
+    /**
+     * Enable a thread pool. Each Ruby thread will be mapped onto a thread from this pool.
+     *
+     * Set with the <tt>jruby.thread.pool.enabled</tt> system property.
+     */
     public static final boolean POOLING_ENABLED
             = SafePropertyAccessor.getBoolean("jruby.thread.pool.enabled");
+
+    /**
+     * Maximum thread pool size (integer, default Integer.MAX_VALUE).
+     *
+     * Set with the <tt>jruby.thread.pool.max</tt> system property.
+     */
     public static final int POOL_MAX
             = SafePropertyAccessor.getInt("jruby.thread.pool.max", Integer.MAX_VALUE);
+    /**
+     * Minimum thread pool size (integer, default 0).
+     *
+     * Set with the <tt>jruby.thread.pool.min</tt> system property.
+     */
     public static final int POOL_MIN
             = SafePropertyAccessor.getInt("jruby.thread.pool.min", 0);
+    /**
+     * Thread pool time-to-live in seconds.
+     *
+     * Set with the <tt>jruby.thread.pool.max</tt> system property.
+     */
     public static final int POOL_TTL
             = SafePropertyAccessor.getInt("jruby.thread.pool.ttl", 60);
 
+    /**
+     * Enable use of the native Java version of the 'net/protocol' library.
+     *
+     * Set with the <tt>jruby.thread.pool.max</tt> system property.
+     */
     public static final boolean NATIVE_NET_PROTOCOL
             = SafePropertyAccessor.getBoolean("jruby.native.net.protocol", false);
 
+    /**
+     * Enable tracing of method calls.
+     *
+     * Set with the <tt>jruby.debug.fullTrace</tt> system property.
+     */
     public static boolean FULL_TRACE_ENABLED
             = SafePropertyAccessor.getBoolean("jruby.debug.fullTrace", false);
 
+    /**
+     * Comma-separated list of methods to exclude from JIT compilation.
+     * Specify as "Module", "Module#method" or "method".
+     *
+     * Set with the <tt>jruby.jit.exclude</tt> system property.
+     */
     public static final String COMPILE_EXCLUDE
             = SafePropertyAccessor.getProperty("jruby.jit.exclude");
-    
+
     /**
      * Indicates the global default for whether native code is enabled. Default
-     * is true or the value of the property "jruby.native.enabled", if set.
-     * 
-     * This value is used to default new runtime configurations.
+     * is true. This value is used to default new runtime configurations.
+     *
+     * Set with the <tt>jruby.native.enabled</tt> system property.
      */
     public static final boolean NATIVE_ENABLED = SafePropertyAccessor.getBoolean("jruby.native.enabled", true);
-    
+
     @Deprecated
     public static final boolean nativeEnabled = NATIVE_ENABLED;
-    
+
     /**
-     * Indicates the global default for whether C extensions are enabled. Default
-     * is the value of RubyInstanceConfig.NATIVE_ENABLED or the value of the
-     * property "jruby.cext.enabled", if set.
-     * 
-     * This value is used to default new runtime configurations.
+     * Indicates the global default for whether C extensions are enabled.
+     * Default is the value of RubyInstanceConfig.NATIVE_ENABLED. This value
+     * is used to default new runtime configurations.
+     *
+     * Set with the <tt>jruby.cext.enabled</tt> system property.
      */
     public final static boolean CEXT_ENABLED = SafePropertyAccessor.getBoolean("jruby.cext.enabled", NATIVE_ENABLED);
 
