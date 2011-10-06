@@ -72,61 +72,83 @@ import org.jruby.util.log.LoggerFactory;
 import static org.jruby.util.URLUtil.getPath;
 
 /**
- * <b>How require works in JRuby</b>
- * When requiring a name from Ruby, JRuby will first remove any file extension it knows about,
- * thereby making it possible to use this string to see if JRuby has already loaded
- * the name in question. If a .rb extension is specified, JRuby will only try
- * those extensions when searching. If a .so, .o, .dll, or .jar extension is specified, JRuby
- * will only try .so or .jar when searching. Otherwise, JRuby goes through the known suffixes
- * (.rb, .rb.ast.ser, .so, and .jar) and tries to find a library with this name. The process for finding a library follows this order
- * for all searchable extensions:
+ * <h2>How require works in JRuby</h2>
+ *
+ * When requiring a name from Ruby, JRuby will first remove any file
+ * extension it knows about, thereby making it possible to use this string
+ * to see if JRuby has already loaded the name in question. If a .rb
+ * extension is specified, JRuby will only try those extensions when
+ * searching. If a .so, .o, .dll, or .jar extension is specified, JRuby will
+ * only try .so or .jar when searching. Otherwise, JRuby goes through the
+ * known suffixes (.rb, .rb.ast.ser, .so, and .jar) and tries to find a
+ * library with this name. The process for finding a library follows this
+ * order for all searchable extensions:
+ *
  * <ol>
- * <li>First, check if the name starts with 'jar:', then the path points to a jar-file resource which is returned.</li>
+ * <li>First, check if the name starts with 'jar:', then the path points to
+ * a jar-file resource which is returned.</li>
  * <li>Second, try searching for the file in the current dir</li>
  * <li>Then JRuby looks through the load path trying these variants:
  *   <ol>
- *     <li>See if the current load path entry starts with 'jar:', if so check if this jar-file contains the name</li>
- *     <li>Otherwise JRuby tries to construct a path by combining the entry and the current working directy, and then see if
- *         a file with the correct name can be reached from this point.</li>
+ *     <li>See if the current load path entry starts with 'jar:', if so
+ *     check if this jar-file contains the name</li>
+ *     <li>Otherwise JRuby tries to construct a path by combining the entry
+ *     and the current working directy, and then see if a file with the
+ *     correct name can be reached from this point.</li>
  *   </ol>
  * </li>
- * <li>If all these fail, try to load the name as a resource from classloader resources, using the bare name as
- *     well as the load path entries</li>
- * <li>When we get to this state, the normal JRuby loading has failed. At this stage JRuby tries to load
- *     Java native extensions, by following this process:
+ * <li>If all these fail, try to load the name as a resource from
+ * classloader resources, using the bare name as well as the load path
+ * entries</li>
+ * <li>When we get to this state, the normal JRuby loading has failed. At
+ * this stage JRuby tries to load Java native extensions, by following this
+ * process:
  *   <ol>
- *     <li>First it checks that we haven't already found a library. If we found a library of type JarredScript, the method continues.</li>
- *     <li>The first step is translating the name given into a valid Java Extension class name. First it splits the string into
- *     each path segment, and then makes all but the last downcased. After this it takes the last entry, removes all underscores
- *     and capitalizes each part separated by underscores. It then joins everything together and tacks on a 'Service' at the end.
- *     Lastly, it removes all leading dots, to make it a valid Java FWCN.</li>
- *     <li>If the previous library was of type JarredScript, we try to add the jar-file to the classpath</li>
- *     <li>Now JRuby tries to instantiate the class with the name constructed. If this works, we return a ClassExtensionLibrary. Otherwise,
- *     the old library is put back in place, if there was one.
+ *     <li>First it checks that we haven't already found a library. If we
+ *     found a library of type JarredScript, the method continues.</li>
+ *
+ *     <li>The first step is translating the name given into a valid Java
+ *     Extension class name. First it splits the string into each path
+ *     segment, and then makes all but the last downcased. After this it
+ *     takes the last entry, removes all underscores and capitalizes each
+ *     part separated by underscores. It then joins everything together and
+ *     tacks on a 'Service' at the end. Lastly, it removes all leading dots,
+ *     to make it a valid Java FWCN.</li>
+ *
+ *     <li>If the previous library was of type JarredScript, we try to add
+ *     the jar-file to the classpath</li>
+ *
+ *     <li>Now JRuby tries to instantiate the class with the name
+ *     constructed. If this works, we return a ClassExtensionLibrary.
+ *     Otherwise, the old library is put back in place, if there was one.
  *   </ol>
  * </li>
- * <li>When all separate methods have been tried and there was no result, a LoadError will be raised.</li>
- * <li>Otherwise, the name will be added to the loaded features, and the library loaded</li>
+ * <li>When all separate methods have been tried and there was no result, a
+ * LoadError will be raised.</li>
+ * <li>Otherwise, the name will be added to the loaded features, and the
+ * library loaded</li>
  * </ol>
  *
- * <b>How to make a class that can get required by JRuby</b>
- * <p>First, decide on what name should be used to require the extension.
- * In this purely hypothetical example, this name will be 'active_record/connection_adapters/jdbc_adapter'.
- * Then create the class name for this require-name, by looking at the guidelines above. Our class should
- * be named active_record.connection_adapters.JdbcAdapterService, and implement one of the library-interfaces.
- * The easiest one is BasicLibraryService, where you define the basicLoad-method, which will get called
- * when your library should be loaded.</p>
- * <p>The next step is to either put your compiled class on JRuby's classpath, or package the class/es inside a
- * jar-file. To package into a jar-file, we first create the file, then rename it to jdbc_adapter.jar. Then
- * we put this jar-file in the directory active_record/connection_adapters somewhere in JRuby's load path. For
- * example, copying jdbc_adapter.jar into JRUBY_HOME/lib/ruby/site_ruby/1.8/active_record/connection_adapters
- * will make everything work. If you've packaged your extension inside a RubyGem, write a setub.rb-script that
- * copies the jar-file to this place.</p>
- * <p>If you don't want to have the name of your extension-class to be prescribed, you can also put a file called
- * jruby-ext.properties in your jar-files META-INF directory, where you can use the key <full-extension-name>.impl
- * to make the extension library load the correct class. An example for the above would have a jruby-ext.properties
- * that contained a ruby like: "active_record/connection_adapters/jdbc_adapter=org.jruby.ar.JdbcAdapter". (NOTE: THIS
- * FEATURE IS NOT IMPLEMENTED YET.)</p>
+ * <h2>How to make a class that can get required by JRuby</h2>
+ *
+ * <p>First, decide on what name should be used to require the extension. In
+ * this purely hypothetical example, this name will be
+ * 'active_record/connection_adapters/jdbc_adapter'. Then create the class
+ * name for this require-name, by looking at the guidelines above. Our class
+ * should be named active_record.connection_adapters.JdbcAdapterService, and
+ * implement one of the library-interfaces. The easiest one is
+ * BasicLibraryService, where you define the basicLoad-method, which will
+ * get called when your library should be loaded.</p>
+ *
+ * <p>The next step is to either put your compiled class on JRuby's
+ * classpath, or package the class/es inside a jar-file. To package into a
+ * jar-file, we first create the file, then rename it to jdbc_adapter.jar.
+ * Then we put this jar-file in the directory
+ * active_record/connection_adapters somewhere in JRuby's load path. For
+ * example, copying jdbc_adapter.jar into
+ * JRUBY_HOME/lib/ruby/site_ruby/1.8/active_record/connection_adapters will
+ * make everything work. If you've packaged your extension inside a RubyGem,
+ * write a setub.rb-script that copies the jar-file to this place.</p>
  *
  * @author jpetersen
  */
