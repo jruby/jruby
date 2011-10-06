@@ -696,8 +696,11 @@ public class IRBuilder {
     }
 
     private LocalVariable getBlockArgVariable(IRClosure cl, String name, int depth) {
+        return cl.getLocalVariable(name, depth);
+        // SSS FIXME: The code below is probably 1.9 semantics?
+        //
         // For non-loops, this name will override any name that exists in outer scopes
-        return cl.isForLoopBody ? cl.getLocalVariable(name, depth) : cl.getNewLocalVariable(name, depth);
+        //return cl.isForLoopBody ? cl.getLocalVariable(name, depth) : cl.getNewLocalVariable(name, depth);
     }
 
     // This method is called to build arguments for a block!
@@ -980,13 +983,14 @@ public class IRBuilder {
 
         // build "else" if it exists
         if (hasElse) {
+            labels.add(elseLabel);
             bodies.put(elseLabel, caseNode.getElseNode());
         }
 
-        // now emit bodies
-        for (Map.Entry<Label, Node> entry : bodies.entrySet()) {
-            m.addInstr(new LABEL_Instr(entry.getKey()));
-            Operand bodyValue = build(entry.getValue(), m);
+        // now emit bodies while preserving when clauses order
+        for (Label whenLabel: labels) {
+            m.addInstr(new LABEL_Instr(whenLabel));
+            Operand bodyValue = build(bodies.get(whenLabel), m);
             // bodyValue can be null if the body ends with a return!
             if (bodyValue != null) {
                // SSS FIXME: Do local optimization of break results (followed by a copy & jump) to short-circuit the jump right away
