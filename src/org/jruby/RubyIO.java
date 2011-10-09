@@ -4006,6 +4006,21 @@ public class RubyIO extends RubyObject {
             modes = parseModes19(context, rubyOptions.fastARef(runtime.newSymbol("mode")).asString());
         }
 
+	// This duplicates the non-error behavior of MRI 1.9: the
+	// :binmode option is ORed in with other options. It does
+	// not obliterate what came before.
+
+	if (rubyOptions.containsKey(runtime.newSymbol("binmode")) &&
+	    rubyOptions.fastARef(runtime.newSymbol("binmode")).isTrue()) {
+	    try {
+		modes = new ModeFlags(modes.getFlags() | ModeFlags.BINARY);
+	    } catch (InvalidValueException e) {
+		throw getRuntime().newErrnoEINVALError(); // n.b., this should be unreachable
+							  // because we are changing neither read-only
+							  // nor append.
+	    }
+	}
+
 //      FIXME: check how ruby 1.9 handles this
 
 //        if (rubyOptions.containsKey(runtime.newSymbol("textmode")) &&
