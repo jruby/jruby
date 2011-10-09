@@ -62,7 +62,7 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
     JRubyEngine(ScriptingContainer container, JRubyEngineFactory factory) {
         this.container = container;
         this.factory = factory;
-        this.context = new SimpleScriptContext();
+        this.context = new JRubyContext(container);
     }
 
     public CompiledScript compile(String script) throws ScriptException {
