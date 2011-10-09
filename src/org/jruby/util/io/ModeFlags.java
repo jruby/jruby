@@ -206,7 +206,17 @@ public class ModeFlags implements Cloneable {
         // TODO: Make this more intelligible value
         return ""+flags;
     }
-    
+
+    /**
+     * Return a value that, when passed to our constructor,
+     * would create a copy of this instance.
+     *
+     * @return an int of the private flags variable.
+     */
+    public int getFlags() {
+        return flags;
+    }
+
     /**
      * Convert the flags in this object to a set of flags appropriate for the
      * OpenFile structure and logic therein.
