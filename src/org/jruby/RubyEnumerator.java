@@ -150,8 +150,14 @@ public class RubyEnumerator extends RubyObject {
         return initialize(object, method, new IRubyObject[] { methodArg });
     }
 
-    @JRubyMethod(name = "initialize", required = 3, rest = true, visibility = PRIVATE, compat = RUBY1_8)
+    @JRubyMethod(name = "initialize", rest = true, visibility = PRIVATE, compat = RUBY1_8)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
+        switch (args.length) {
+            case 0: return initialize(context);
+            case 1: return initialize(context, args[0]);
+            case 2: return initialize(context, args[0], args[1]);
+        }
+
         IRubyObject[] methArgs = new IRubyObject[args.length - 2];
         System.arraycopy(args, 2, methArgs, 0, methArgs.length);
         return initialize(args[0], args[1], methArgs);
