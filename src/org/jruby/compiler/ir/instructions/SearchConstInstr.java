@@ -6,6 +6,7 @@ import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
+import org.jruby.compiler.ir.operands.UndefinedValue;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 
@@ -62,9 +63,7 @@ public class SearchConstInstr extends GetInstr {
             constant = staticScope.getConstant(context.getRuntime(), name, object);
         }
 
-        if (constant == null) {
-            constant = staticScope.getModule().callMethod(context, "const_missing", runtime.fastNewSymbol(name));
-        }
+        if (constant == null) constant = UndefinedValue.UNDEFINED;
         
         getResult().store(interp, context, self, constant);
         

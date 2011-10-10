@@ -114,6 +114,7 @@ public enum Operation {
     EQQ(0), // (FIXME: Exceptions?) a === call used only for its conditional results, as in case/when, begin/rescue, ...
     ALLOC_BINDING(OpFlags.f_has_side_effect),
     THREAD_POLL(OpFlags.f_has_side_effect),
+    CONST_MISSING(OpFlags.f_can_raise_exception),
 
     /** for splitting calls into method-lookup and call -- unused **/
     METHOD_LOOKUP(0),

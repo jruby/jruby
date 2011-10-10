@@ -117,7 +117,7 @@ import org.jruby.compiler.ir.instructions.BEQInstr;
 import org.jruby.compiler.ir.instructions.BNEInstr;
 import org.jruby.compiler.ir.instructions.BREAK_Instr;
 import org.jruby.compiler.ir.instructions.CallInstr;
-import org.jruby.compiler.ir.instructions.GetClassVarContainerModuleInstr;
+import org.jruby.compiler.ir.instructions.ConstMissingInstr;
 import org.jruby.compiler.ir.instructions.ClosureReturnInstr;
 import org.jruby.compiler.ir.instructions.CopyInstr;
 import org.jruby.compiler.ir.instructions.DefineClassInstr;
@@ -132,6 +132,7 @@ import org.jruby.compiler.ir.instructions.FilenameInstr;
 import org.jruby.compiler.ir.instructions.GetArrayInstr;
 import org.jruby.compiler.ir.instructions.InstanceOfInstr;
 import org.jruby.compiler.ir.instructions.GetClassVariableInstr;
+import org.jruby.compiler.ir.instructions.GetClassVarContainerModuleInstr;
 import org.jruby.compiler.ir.instructions.GetConstInstr;
 import org.jruby.compiler.ir.instructions.GetFieldInstr;
 import org.jruby.compiler.ir.instructions.GetGlobalVariableInstr;
@@ -484,7 +485,7 @@ public class IRBuilder {
             case COLON2NODE: return buildColon2((Colon2Node) node, m); // done
             case COLON3NODE: return buildColon3((Colon3Node) node, m); // done
             case CONSTDECLNODE: return buildConstDecl((ConstDeclNode) node, m); // done
-            case CONSTNODE: return searchConst(m, ((ConstNode) node).getName()); // done
+            case CONSTNODE: return searchConst(m, m, ((ConstNode) node).getName()); // done
             case DASGNNODE: return buildDAsgn((DAsgnNode) node, m); // done
             case DEFINEDNODE: return buildGetDefinitionBase(((DefinedNode) node).getExpressionNode(), m);
             case DEFNNODE: return buildDefn((MethodDefNode) node, m); // done
@@ -1135,9 +1136,13 @@ public class IRBuilder {
         return val;
     }
 
-    private Operand searchConst(IRScope s, String name) {
+    private Operand searchConst(IRScope s, IRScope startingScope, String name) {
         Variable v = s.getNewTemporaryVariable();
-        s.addInstr(new SearchConstInstr(v, MetaObject.create(s), name));
+        s.addInstr(new SearchConstInstr(v, MetaObject.create(startingScope), name));
+        Label foundLabel = s.getNewLabel();
+        s.addInstr(new BNEInstr(v, UndefinedValue.UNDEFINED, foundLabel));
+        s.addInstr(new ConstMissingInstr(v, startingScope, name));
+        s.addInstr(new LABEL_Instr(foundLabel));
         return v;
     }
 
@@ -1146,7 +1151,7 @@ public class IRBuilder {
         final String name = iVisited.getName();
 
         // ENEBO: Does this really happen?
-        if (leftNode == null) return searchConst(s, name);
+        if (leftNode == null) return searchConst(s, s, name);
 
         if (iVisited instanceof Colon2ConstNode) {
             // 1. Load the module first (lhs of node)
@@ -1170,10 +1175,7 @@ public class IRBuilder {
     }
 
     public Operand buildColon3(Colon3Node node, IRScope s) {
-        Variable cv = s.getNewTemporaryVariable();
-        MetaObject object = MetaObject.create(IRClass.getCoreClass("Object"));
-        s.addInstr(new SearchConstInstr(cv, object, node.getName()));
-        return cv;
+        return searchConst(s, IRClass.getCoreClass("Object"), node.getName());
     }
 
     interface CodeBlock {
@@ -1411,8 +1413,13 @@ public class IRBuilder {
             case VCALLNODE:
                 // SSS FIXME: Can we get away without passing in self?
                 return buildDefinitionCheck(s, JRubyImplementationMethod.SELF_IS_METHOD_BOUND, getSelf(s), ((VCallNode) node).getName(), "method");
-            case CONSTNODE:
-                return buildDefinitionCheck(s, JRubyImplementationMethod.TC_GET_CONSTANT_DEFINED, null, ((ConstNode) node).getName(), "constant");
+            case CONSTNODE: {
+                Label undefLabel = s.getNewLabel();
+                Variable tmpVar  = s.getNewTemporaryVariable();
+                s.addInstr(new SearchConstInstr(tmpVar, MetaObject.create(s), ((ConstNode) node).getName()));
+                s.addInstr(new BEQInstr(tmpVar, UndefinedValue.UNDEFINED, undefLabel));
+                return buildDefnCheckIfThenPaths(s, undefLabel, new StringLiteral("constant"));
+            }
             case GLOBALVARNODE:
                 return buildDefinitionCheck(s, JRubyImplementationMethod.RT_IS_GLOBAL_DEFINED, null, ((GlobalVarNode) node).getName(), "global-variable");
             case INSTVARNODE:

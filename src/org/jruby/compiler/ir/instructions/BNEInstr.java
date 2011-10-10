@@ -1,9 +1,11 @@
 package org.jruby.compiler.ir.instructions;
 
 import org.jruby.compiler.ir.Operation;
-import org.jruby.compiler.ir.operands.Label;
-import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.BooleanLiteral;
+import org.jruby.compiler.ir.operands.Label;
+import org.jruby.compiler.ir.operands.Nil;
+import org.jruby.compiler.ir.operands.Operand;
+import org.jruby.compiler.ir.operands.UndefinedValue;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.ThreadContext;
@@ -28,10 +30,9 @@ public class BNEInstr extends BranchInstr {
             boolean op2True = ((BooleanLiteral)op2).isTrue();
             return (v1True && !op2True) || (!v1True && op2True) ? target : null;
         } else {
-            Object value2 = op2.retrieve(interp, context, self);
-//            System.out.println("VALUE1: " + value1 + ", VALUE2: " + value2);
-            // FIXME: equals? rather than == 
-            return !(value1 == value2) ? target : null;
+            Object  value2 = op2.retrieve(interp, context, self);
+            boolean eql    = ((op2 == Nil.NIL) || (op2 == UndefinedValue.UNDEFINED)) ? (value1 == value2) : ((IRubyObject)value1).op_equal(context, (IRubyObject)value2).isTrue();
+            return !eql ? target : null;
         }
     }
 }
