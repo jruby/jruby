@@ -191,10 +191,8 @@ public class JavaClass extends JavaObject {
                 }
             }
             
-        // ignore... there's no companion object
-        } catch (ClassNotFoundException e) {
-        } catch (NoSuchFieldException e) {
-        } catch (IllegalAccessException e) {
+        } catch (Exception e) {
+            // ignore... there's no companion object
         }
     }
     
