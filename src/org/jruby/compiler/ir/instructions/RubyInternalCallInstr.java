@@ -17,6 +17,7 @@ import org.jruby.compiler.ir.representations.InlinerInfo;
 
 import org.jruby.interpreter.InterpreterContext;
 
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -49,12 +50,12 @@ public class RubyInternalCallInstr extends CallInstr {
     public RubyInternalsMethod implMethod;
 
     public RubyInternalCallInstr(Variable result, RubyInternalsMethod m, Operand receiver, Operand[] args) {
-        super(Operation.RUBY_INTERNALS, result, m.getMethAddr(), receiver, args, null);
+        super(Operation.RUBY_INTERNALS, CallType.FUNCTIONAL, result, m.getMethAddr(), receiver, args, null);
         this.implMethod = m;
     }
 
     public RubyInternalCallInstr(Variable result, RubyInternalsMethod m, Operand receiver, Operand[] args, Operand closure) {
-        super(result, m.getMethAddr(), receiver, args, closure);
+        super(CallType.FUNCTIONAL, result, m.getMethAddr(), receiver, args, closure);
         this.implMethod = m;
     }
 

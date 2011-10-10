@@ -25,7 +25,7 @@ import org.jruby.javasupport.util.RuntimeHelpers;
 
 public class SuperInstr extends CallInstr {
     public SuperInstr(Variable result, Operand receiver, MethAddr superMeth, Operand[] args, Operand closure) {
-        super(Operation.SUPER, result, superMeth, receiver, args, closure);
+        super(Operation.SUPER, CallType.SUPER, result, superMeth, receiver, args, closure);
     }
 
     @Override

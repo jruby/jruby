@@ -24,6 +24,7 @@ import org.jruby.interpreter.InterpreterContext;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.util.ByteList;
@@ -87,12 +88,12 @@ public class JRubyImplCallInstr extends CallInstr {
     JRubyImplementationMethod implMethod;
 
     public JRubyImplCallInstr(Variable result, JRubyImplementationMethod methAddr, Operand receiver, Operand[] args) {
-        super(Operation.JRUBY_IMPL, result, methAddr.getMethAddr(), receiver, args, null);
+        super(Operation.JRUBY_IMPL, CallType.FUNCTIONAL, result, methAddr.getMethAddr(), receiver, args, null);
         this.implMethod = methAddr;
     }
 
     public JRubyImplCallInstr(Variable result, JRubyImplementationMethod methAddr, Operand receiver, Operand[] args, Operand closure) {
-        super(result, methAddr.getMethAddr(), receiver, args, closure);
+        super(CallType.FUNCTIONAL, result, methAddr.getMethAddr(), receiver, args, closure);
         this.implMethod = methAddr;
     }
 

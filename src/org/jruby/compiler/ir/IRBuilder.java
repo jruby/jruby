@@ -200,6 +200,7 @@ import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.BlockBody;
+import org.jruby.runtime.CallType;
 import org.jruby.util.ByteList;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -1167,7 +1168,7 @@ public class IRBuilder {
             List<Operand> args       = setupCallArgs(null, s);
             Operand       block      = setupCallClosure(null, s);
             Variable      callResult = s.getNewTemporaryVariable();
-            Instr      callInstr  = CallInstr.create(callResult, new MethAddr(c2mNode.getName()), 
+            Instr         callInstr  = CallInstr.create(callResult, new MethAddr(c2mNode.getName()), 
                     null, args.toArray(new Operand[args.size()]), block);
             s.addInstr(callInstr);
             return callResult;
@@ -2009,7 +2010,7 @@ public class IRBuilder {
         List<Operand> args         = setupCallArgs(callArgsNode, s);
         Operand       block        = setupCallClosure(fcallNode.getIterNode(), s);
         Variable      callResult   = s.getNewTemporaryVariable();
-        Instr         callInstr    = CallInstr.create(callResult, new MethAddr(fcallNode.getName()), getSelf(s), args.toArray(new Operand[args.size()]), block);
+        Instr         callInstr    = CallInstr.create(CallType.FUNCTIONAL, callResult, new MethAddr(fcallNode.getName()), getSelf(s), args.toArray(new Operand[args.size()]), block);
         s.addInstr(callInstr);
         return callResult;
     }
@@ -3134,7 +3135,7 @@ public class IRBuilder {
 
     public Operand buildVCall(VCallNode node, IRScope s) {
         Variable callResult = s.getNewTemporaryVariable();
-        Instr    callInstr  = CallInstr.create(callResult, new MethAddr(node.getName()), getSelf(s), NO_ARGS, null);
+        Instr    callInstr  = CallInstr.create(CallType.VARIABLE, callResult, new MethAddr(node.getName()), getSelf(s), NO_ARGS, null);
         s.addInstr(callInstr);
         return callResult;
     }

@@ -37,6 +37,7 @@ public class CallInstr extends MultiOperandInstr {
     protected Operand[] arguments;
     protected MethAddr  methAddr;
     protected Operand   closure;
+	 protected CallType  callType;
     public CallSite callAdapter;
 
     private boolean flagsComputed;
@@ -45,24 +46,30 @@ public class CallInstr extends MultiOperandInstr {
     public HashMap<DynamicMethod, Integer> profile;
     
     public static CallInstr create(Variable result, MethAddr methAddr, Operand receiver, Operand[] args, Operand closure) {
-        return new CallInstr(result, methAddr, receiver, args, closure);
+        return new CallInstr(CallType.NORMAL, result, methAddr, receiver, args, closure);
     }
     
-    public CallInstr(Variable result, MethAddr methAddr, Operand receiver, Operand[] args, Operand closure) {
-        this(Operation.CALL, result, methAddr, receiver, args, closure);
+    public static CallInstr create(CallType callType, Variable result, MethAddr methAddr, Operand receiver, Operand[] args, Operand closure) {
+        return new CallInstr(callType, result, methAddr, receiver, args, closure);
+    }
+    
+    public CallInstr(CallType callType, Variable result, MethAddr methAddr, Operand receiver, Operand[] args, Operand closure) {
+        this(Operation.CALL, callType, result, methAddr, receiver, args, closure);
     }
 
-    public CallInstr(Operation op, Variable result, MethAddr methAddr, Operand receiver, Operand[] args, Operand closure) {
+    public CallInstr(Operation op, CallType callType, Variable result, MethAddr methAddr, Operand receiver, Operand[] args, Operand closure) {
         super(op, result);
 
         this.receiver = receiver;
         this.arguments = args;
         this.methAddr = methAddr;
         this.closure = closure;
+		  this.callType = callType;
         flagsComputed = false;
         canBeEval = true;
         targetRequiresCallersBinding = true;
-        callAdapter = MethodIndex.getFunctionalCallSite(methAddr.toString());
+        //callAdapter = MethodIndex.getFunctionalCallSite(methAddr.toString());
+        //callAdapter = MethodIndex.getCallSite(methAddr.toString());
     }
 
     public Operand[] getOperands() {
@@ -223,7 +230,7 @@ public class CallInstr extends MultiOperandInstr {
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new CallInstr(ii.getRenamedVariable(result), (MethAddr) methAddr.cloneForInlining(ii), receiver.cloneForInlining(ii), cloneCallArgs(ii), closure == null ? null : closure.cloneForInlining(ii));
+        return new CallInstr(callType, ii.getRenamedVariable(result), (MethAddr) methAddr.cloneForInlining(ii), receiver.cloneForInlining(ii), cloneCallArgs(ii), closure == null ? null : closure.cloneForInlining(ii));
    }
 
     @Override
@@ -238,7 +245,8 @@ public class CallInstr extends MultiOperandInstr {
         Object resultValue;
         Block  block = prepareBlock(interp, context, self);
         try {
-            resultValue = callAdapter.call(context, self, object, args, block);
+				resultValue = RuntimeHelpers.invoke(context, object, name, args, callType, block);
+            // resultValue = callAdapter.call(context, self, object, args, block);
         }
         finally {
             block.escape();

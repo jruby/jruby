@@ -12,13 +12,13 @@ import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.Arity;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class CheckArityInstr extends CallInstr {
     public CheckArityInstr(Variable result, Operand receiver, Operand[] args) {
-        super(Operation.CHECK_ARITY, result, JRubyImplementationMethod.CHECK_ARITY.getMethAddr(), receiver, args, null);
-
+        super(Operation.CHECK_ARITY, CallType.FUNCTIONAL, result, JRubyImplementationMethod.CHECK_ARITY.getMethAddr(), receiver, args, null);
     }
 
     /**
