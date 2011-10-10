@@ -845,7 +845,8 @@ public class IRBuilder {
         Operand obj = build(attrAssignNode.getReceiverNode(), s);
         List<Operand> args = setupCallArgs(attrAssignNode.getArgsNode(), s);
         s.addInstr(new AttrAssignInstr(obj, new StringLiteral(attrAssignNode.getName()), args.toArray(new Operand[args.size()])));
-        return args.get(args.size()-1);
+        Operand lastArg = args.get(args.size()-1);
+       return (lastArg instanceof CompoundArray) ? ((CompoundArray)lastArg).getAppendedArg() : lastArg;
     }
 
     public Operand buildAttrAssignAssignment(Node node, IRScope s, Operand value) {

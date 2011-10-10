@@ -39,6 +39,8 @@ public class CompoundArray extends Operand {
 
     public String toString() { return a1 + ", *" + a2; }
 
+    public Operand getAppendedArg() { return a2; }
+
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap) {
 /*
  * SSS FIXME:  Cannot convert this to an Array operand!
