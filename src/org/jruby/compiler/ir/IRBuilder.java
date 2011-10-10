@@ -949,23 +949,12 @@ public class IRBuilder {
             WhenNode whenNode = (WhenNode)aCase;
             Label bodyLabel = m.getNewLabel();
 
+             Variable eqqResult = m.getNewTemporaryVariable();
+             variables.add(eqqResult);
+             labels.add(bodyLabel);
             if (whenNode.getExpressionNodes() instanceof ListNode) {
-                // multiple conditions for when
-                for (Node expression : ((ListNode)whenNode.getExpressionNodes()).childNodes()) {
-                    Variable eqqResult = m.getNewTemporaryVariable();
-
-                    variables.add(eqqResult);
-                    labels.add(bodyLabel);
-                    
-                    m.addInstr(new EQQInstr(eqqResult, build(expression, m), value));
-                    m.addInstr(new BEQInstr(eqqResult, BooleanLiteral.TRUE, bodyLabel));
-                }
+                m.addInstr(new BEQInstr(value, buildArray(whenNode.getExpressionNodes(), m), bodyLabel));
             } else {
-                Variable eqqResult = m.getNewTemporaryVariable();
-
-                variables.add(eqqResult);
-                labels.add(bodyLabel);
-
                 m.addInstr(new EQQInstr(eqqResult, build(whenNode.getExpressionNodes(), m), value));
                 m.addInstr(new BEQInstr(eqqResult, BooleanLiteral.TRUE, bodyLabel));
             }
