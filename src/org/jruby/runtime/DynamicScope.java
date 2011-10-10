@@ -90,7 +90,7 @@ public abstract class DynamicScope {
         return newDynamicScope(staticScope, null);
     }
 
-    public final DynamicScope getEvalScope() {
+    public final DynamicScope getEvalScope(Ruby runtime) {
         // We create one extra dynamicScope on a binding so that when we 'eval "b=1", binding' the
         // 'b' will get put into this new dynamic scope.  The original scope does not see the new
         // 'b' and successive evals with this binding will.  I take it having the ability to have
@@ -111,11 +111,11 @@ public abstract class DynamicScope {
             // we are evaling within an eval and in that case we should be sharing the same
             // binding scope.
             DynamicScope parent = getNextCapturedScope();
-            if (parent != null && parent.getEvalScope() == this) {
+            if (parent != null && parent.getEvalScope(runtime) == this) {
                 evalScope = this;
             } else {
                 // bindings scopes must always be ManyVars scopes since evals can grow them
-                evalScope = new ManyVarsDynamicScope(StaticScope.newEvalScope(getStaticScope()), this);
+                evalScope = new ManyVarsDynamicScope(runtime.getStaticScopeFactory().newEvalScope(getStaticScope()), this);
             }
         }
 

@@ -88,7 +88,6 @@ import org.jruby.management.Config;
 import org.jruby.management.ParserStats;
 import org.jruby.parser.Parser;
 import org.jruby.parser.ParserConfiguration;
-import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
@@ -144,6 +143,8 @@ import org.jruby.interpreter.Interpreter;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.management.BeanManager;
 import org.jruby.management.BeanManagerFactory;
+import org.jruby.parser.IRStaticScopeFactory;
+import org.jruby.parser.StaticScopeFactory;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.MethodIndex;
@@ -190,6 +191,9 @@ public final class Ruby {
         if(config.isSamplingEnabled()) {
             org.jruby.util.SimpleSampler.registerThreadContext(threadService.getCurrentContext());
         }
+        
+        this.staticScopeFactory = config.getCompileMode() == CompileMode.OFFIR ?
+                new IRStaticScopeFactory() : new StaticScopeFactory();
 
         this.in                 = config.getInput();
         this.out                = config.getOutput();
@@ -346,7 +350,7 @@ public final class Ruby {
     public IRubyObject evalScriptlet(String script) {
         ThreadContext context = getCurrentContext();
         DynamicScope currentScope = context.getCurrentScope();
-        ManyVarsDynamicScope newScope = new ManyVarsDynamicScope(StaticScope.newEvalScope(currentScope.getStaticScope()), currentScope);
+        ManyVarsDynamicScope newScope = new ManyVarsDynamicScope(getStaticScopeFactory().newEvalScope(currentScope.getStaticScope()), currentScope);
 
         return evalScriptlet(script, newScope);
     }
@@ -3987,6 +3991,10 @@ public final class Ruby {
     public Random getRandom() {
         return random;
     }
+    
+    public StaticScopeFactory getStaticScopeFactory() {
+        return staticScopeFactory;
+    }
 
     private final Invalidator constantInvalidator;
     private final ThreadService threadService;
@@ -4217,4 +4225,6 @@ public final class Ruby {
     
     /** The runtime-local random number generator. Uses SecureRandom if permissions allow. */
     private final Random random;
+    
+    private final StaticScopeFactory staticScopeFactory;
 }

@@ -256,7 +256,7 @@ public class RuntimeHelpers {
     
     public static BlockBody createCompiledBlockBody(ThreadContext context, Object scriptObject, String closureMethod, int arity, 
             String[] staticScopeNames, boolean hasMultipleArgsHead, int argsNodeType, String file, int line, boolean light) {
-        StaticScope staticScope = StaticScope.newBlockScope(context.getCurrentScope().getStaticScope(), staticScopeNames);
+        StaticScope staticScope = context.getRuntime().getStaticScopeFactory().newBlockScope(context.getCurrentScope().getStaticScope(), staticScopeNames);
         staticScope.determineModule();
         
         if (light) {
@@ -281,7 +281,7 @@ public class RuntimeHelpers {
 
     public static BlockBody createCompiledBlockBody19(ThreadContext context, Object scriptObject, String closureMethod, int arity,
             String[] staticScopeNames, boolean hasMultipleArgsHead, int argsNodeType, String file, int line, boolean light, String parameterList) {
-        StaticScope staticScope = StaticScope.newBlockScope(context.getCurrentScope().getStaticScope(), staticScopeNames);
+        StaticScope staticScope = context.getRuntime().getStaticScopeFactory().newBlockScope(context.getCurrentScope().getStaticScope(), staticScopeNames);
         staticScope.determineModule();
 
         if (light) {
@@ -1550,7 +1550,7 @@ public class RuntimeHelpers {
     }
     
     public static void preLoad(ThreadContext context, String[] varNames) {
-        StaticScope staticScope = StaticScope.newLocalScope(null, varNames);
+        StaticScope staticScope = context.getRuntime().getStaticScopeFactory().newLocalScope(null, varNames);
         preLoadCommon(context, staticScope, false);
     }
 
@@ -1981,21 +1981,21 @@ public class RuntimeHelpers {
 
     public static StaticScope decodeRootScope(ThreadContext context, String scopeString) {
         String[][] decodedScope = decodeScopeDescriptor(scopeString);
-        StaticScope scope = StaticScope.newLocalScope(null, decodedScope[1]);
+        StaticScope scope = context.getRuntime().getStaticScopeFactory().newLocalScope(null, decodedScope[1]);
         setAritiesFromDecodedScope(scope, decodedScope[0]);
         return scope;
     }
 
     public static StaticScope decodeLocalScope(ThreadContext context, String scopeString) {
         String[][] decodedScope = decodeScopeDescriptor(scopeString);
-        StaticScope scope = StaticScope.newLocalScope(context.getCurrentScope().getStaticScope(), decodedScope[1]);
+        StaticScope scope = context.getRuntime().getStaticScopeFactory().newLocalScope(context.getCurrentScope().getStaticScope(), decodedScope[1]);
         setAritiesFromDecodedScope(scope, decodedScope[0]);
         return scope;
     }
 
     public static StaticScope decodeBlockScope(ThreadContext context, String scopeString) {
         String[][] decodedScope = decodeScopeDescriptor(scopeString);
-        StaticScope scope = StaticScope.newBlockScope(context.getCurrentScope().getStaticScope(), decodedScope[1]);
+        StaticScope scope = context.getRuntime().getStaticScopeFactory().newBlockScope(context.getCurrentScope().getStaticScope(), decodedScope[1]);
         setAritiesFromDecodedScope(scope, decodedScope[0]);
         return scope;
     }

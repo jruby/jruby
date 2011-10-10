@@ -147,7 +147,7 @@ public class ASTInterpreter {
      */
     public static IRubyObject evalWithBinding(ThreadContext context, IRubyObject self, IRubyObject src, Binding binding) {
         Ruby runtime = src.getRuntime();
-        DynamicScope evalScope = binding.getDynamicScope().getEvalScope();
+        DynamicScope evalScope = binding.getDynamicScope().getEvalScope(runtime);
         
         // FIXME:  This determine module is in a strange location and should somehow be in block
         evalScope.getStaticScope().determineModule();
@@ -189,7 +189,7 @@ public class ASTInterpreter {
         // no binding, just eval in "current" frame (caller's frame)
         RubyString source = src.convertToString();
         
-        DynamicScope evalScope = context.getCurrentScope().getEvalScope();
+        DynamicScope evalScope = context.getCurrentScope().getEvalScope(runtime);
         evalScope.getStaticScope().determineModule();
         
         try {

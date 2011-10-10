@@ -224,11 +224,11 @@ public class ParserSupport {
     }
     
     public void pushBlockScope() {
-        currentScope = StaticScope.newBlockScope(currentScope);
+        currentScope = configuration.getRuntime().getStaticScopeFactory().newBlockScope(currentScope);
     }
     
     public void pushLocalScope() {
-        currentScope = StaticScope.newLocalScope(currentScope);
+        currentScope = configuration.getRuntime().getStaticScopeFactory().newLocalScope(currentScope);
     }
     
     public Node arg_concat(ISourcePosition position, Node node1, Node node2) {

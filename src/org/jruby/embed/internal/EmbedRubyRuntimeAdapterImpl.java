@@ -58,6 +58,7 @@ import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.javasupport.JavaEmbedUtils;
 import org.jruby.javasupport.JavaEmbedUtils.EvalUnit;
 import org.jruby.parser.StaticScope;
+import org.jruby.parser.StaticScopeFactory;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -228,20 +229,18 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
 
     static ManyVarsDynamicScope getManyVarsDynamicScope(ScriptingContainer container, int depth) {
         ManyVarsDynamicScope scope;
+        StaticScopeFactory scopeFactory = container.getProvider().getRuntime().getStaticScopeFactory();
 
         // root our parsing scope with a dummy scope
-        StaticScope topStaticScope = StaticScope.newLocalScope(null);
+        StaticScope topStaticScope = scopeFactory.newLocalScope(null);
         topStaticScope.setModule(container.getProvider().getRuntime().getObject());
 
         DynamicScope currentScope = new ManyVarsDynamicScope(topStaticScope, null);
         String[] names4Injection = container.getVarMap().getLocalVarNames();
-        if (names4Injection == null || names4Injection.length == 0) {
-            scope =
-                new ManyVarsDynamicScope(StaticScope.newEvalScope(currentScope.getStaticScope()), currentScope);
-        } else {
-            scope =
-                new ManyVarsDynamicScope(StaticScope.newEvalScope(currentScope.getStaticScope(), names4Injection), currentScope);
-        }
+        StaticScope evalScope = names4Injection == null || names4Injection.length == 0 ?
+                scopeFactory.newEvalScope(currentScope.getStaticScope()) :
+                scopeFactory.newEvalScope(currentScope.getStaticScope(), names4Injection);
+        scope = new ManyVarsDynamicScope(evalScope, currentScope);
 
         // JRUBY-5501: ensure we've set up a cref for the scope too
         scope.getStaticScope().determineModule();

@@ -2,19 +2,17 @@ package org.jruby.compiler.ir;
 
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
 import java.util.ArrayList;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
-import org.jruby.compiler.ir.instructions.ReceiveSelfInstruction;
 import org.jruby.compiler.ir.operands.Label;
-import org.jruby.compiler.ir.operands.ClosureLocalVariable;
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Splat;
 import org.jruby.parser.StaticScope;
 import org.jruby.parser.IRStaticScope;
+import org.jruby.parser.IRStaticScopeFactory;
 
 public class IRMethod extends IRExecutionScope {
     public final boolean isInstanceMethod;
@@ -117,7 +115,7 @@ public class IRMethod extends IRExecutionScope {
         this.optionalArgs = 0;
         this.restArg = -1;
 
-        return StaticScope.newLocalScope(null); // method scopes cannot see any lower
+        return IRStaticScopeFactory.newIRLocalScope(null); // method scopes cannot see any lower
     }
 
     public LocalVariable findExistingLocalVariable(String name) {

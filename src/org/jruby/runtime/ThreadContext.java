@@ -142,7 +142,7 @@ public final class ThreadContext {
         
         // TOPLEVEL self and a few others want a top-level scope.  We create this one right
         // away and then pass it into top-level parse so it ends up being the top level.
-        StaticScope topStaticScope = StaticScope.newLocalScope(null);
+        StaticScope topStaticScope = runtime.getStaticScopeFactory().newLocalScope(null);
         pushScope(new ManyVarsDynamicScope(topStaticScope, null));
 
         Frame[] stack = frameStack;
@@ -887,7 +887,7 @@ public final class ThreadContext {
     
     public void preBsfApply(String[] names) {
         // FIXME: I think we need these pushed somewhere?
-        StaticScope staticScope = StaticScope.newLocalScope(null);
+        StaticScope staticScope = getRuntime().getStaticScopeFactory().newLocalScope(null);
         staticScope.setVariables(names);
         pushFrame();
     }
@@ -1023,7 +1023,7 @@ public final class ThreadContext {
         
         pushRubyClass(executeUnderClass);
         DynamicScope scope = getCurrentScope();
-        StaticScope sScope = StaticScope.newBlockScope(scope.getStaticScope());
+        StaticScope sScope = getRuntime().getStaticScopeFactory().newBlockScope(scope.getStaticScope());
         sScope.setModule(executeUnderClass);
         pushScope(DynamicScope.newDynamicScope(sScope, scope));
         pushCallFrame(frame.getKlazz(), frame.getName(), frame.getSelf(), block);

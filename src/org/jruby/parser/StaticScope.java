@@ -121,45 +121,6 @@ public abstract class StaticScope implements Serializable {
     }
 
     /**
-     * Allocate a new local static scope
-     * @parent the parent scope which which the new scope should be nested
-     * @return the new scope
-     */
-    public static StaticScope newLocalScope(StaticScope parent) {
-        return inIRMode() ? new IRStaticScope(parent, false, false) : new LocalStaticScope(parent);
-    }
-
-    public static StaticScope newLocalScope(StaticScope parent, String[] names) {
-        return inIRMode() ? new IRStaticScope(parent, names, false, false) : new LocalStaticScope(parent, names);
-    }
-
-    /**
-     * Allocate a new block static scope
-     * @parent the parent scope which which the new scope should be nested
-     * @return the new scope
-     */
-    public static StaticScope newBlockScope(StaticScope parent) {
-        return inIRMode() ? new IRStaticScope(parent, true, false) : new BlockStaticScope(parent);
-    }
-
-    public static StaticScope newBlockScope(StaticScope parent, String[] names) {
-        return inIRMode() ? new IRStaticScope(parent, names, true, false) : new BlockStaticScope(parent, names);
-    }
-
-    /**
-     * Allocate a new eval static scope
-     * @parent the parent scope which which the new scope should be nested
-     * @return the new scope
-     */
-    public static StaticScope newEvalScope(StaticScope parent) {
-        return inIRMode() ? new IRStaticScope(parent, true, true) : new EvalStaticScope(parent);
-    }
-
-    public static StaticScope newEvalScope(StaticScope parent, String[] names) {
-        return inIRMode() ? new IRStaticScope(parent, names, true, true) : new EvalStaticScope(parent, names);
-    }
-
-    /**
      * Add a new variable to this (current) scope unless it is already defined in the
      * current scope.
      *

@@ -410,7 +410,7 @@ public class RubySymbol extends RubyObject {
     
     @JRubyMethod
     public IRubyObject to_proc(ThreadContext context) {
-        StaticScope scope = StaticScope.newLocalScope(null);
+        StaticScope scope = context.getRuntime().getStaticScopeFactory().newLocalScope(null);
         BlockBody body = new ContextAwareBlockBody(scope, Arity.OPTIONAL, BlockBody.SINGLE_RESTARG) {
             private IRubyObject yieldInner(ThreadContext context, RubyArray array) {
                 if (array.isEmpty()) throw context.getRuntime().newArgumentError("no receiver given");
