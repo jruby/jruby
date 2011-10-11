@@ -54,30 +54,35 @@ public class DefineInstanceMethodInstr extends OneOperandInstr {
             method.setContainer(v);
     }
 
-    // SSS FIXME: Go through this and DefineClassmethodInstr.interpret, clean up, extract common code
+    // SSS FIXME: Go through this and DefineClassMethodInstr.interpret, clean up, extract common code
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         RubyObject arg   = (RubyObject)getArg().retrieve(interp, context, self);
 
-        // SSS FIXME: argh! special case!
+        // SSS FIXME: argh! special cases!
         //
-        // At the top level of a script, there is a "main" object, and all methods defined in this scope get added to Object.
-        // Specifically, consider the example below:
+        // 1. At the top level of a script, there is a "main" object, and all methods defined in this scope get added to Object.
+        //    Specifically, consider the example below:
         //
         //    bar {
         //      def foo; .. end
         //    }
         //  
-        // Here, foo should be added to Object.  
+        //    Here, foo should be added to Object.  
+        //
+        // 2. Consider this:
+        //
+        //    def foo;
+        //      def bar; .. end;
+        //      ...
+        //    end
+        //
+        //    Here 'bar'; should be added to self.metaclass no matter what self is
         //
         // In *all* other cases, 'foo' should be added to 'self' if it is a module, or to the metaclass of 'self' if it is not.
-        // The code below implements this generic logic which is buggy for top-level methods defined within blocks.  So, the
-        // current code adds 'foo' to "main".metaclass whereas it should be added to "Object", "main".class
         //
-        // The fix would be to do this: replace 'arg.getMetaClass' with 'context.getRubyClass', but that feels a little ugly.
-        // Is there a way out?
-        //
-        // RubyModule clazz = (arg instanceof RubyModule) ? (RubyModule)arg : context.getRubyClass();
+        // Adding it to 'context.getRubyClass()' will work in all cases, but I dont like it since it is using
+        // an implicit arg from the stack rather than use an operand of the instruction.  Can we fix this?
 
         RubyModule clazz = (arg instanceof RubyModule) ? (RubyModule)arg : arg.getMetaClass();
         String     name  = method.getName();

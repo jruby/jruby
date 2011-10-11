@@ -46,7 +46,7 @@ public class DefineClassMethodInstr extends OneOperandInstr {
             method.setContainer(v);
     }
 
-    // SSS FIXME: Go through this and DefineClassmethodInstr.interpret, clean up, extract common code
+    // SSS FIXME: Go through this and DefineInstanceMethodInstr.interpret, clean up, extract common code
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         String name = method.getName();

@@ -115,11 +115,6 @@ public abstract class StaticScope implements Serializable {
         return true;
     }
 
-    // SSS: Temporarily in place while both IR and AST code live together
-    private static boolean inIRMode() {
-        return false;
-    }
-
     /**
      * Add a new variable to this (current) scope unless it is already defined in the
      * current scope.
