@@ -183,6 +183,13 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
                     if (toAryArg instanceof RubyArray) args = ((RubyArray)toAryArg).toJavaArray();
                     else throw context.getRuntime().newTypeError(soleArg.getType().getName() + "#to_ary should return Array");
                 }
+            } else if (argumentType == ARRAY) {
+                context.getRuntime().getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (" + args.length + " for " + blockArity + ")");
+                if (args.length == 0) {
+                    args = context.getRuntime().getSingleNilArray();
+                } else {
+                    args = new IRubyObject[] {context.getRuntime().newArrayNoCopy(args)};
+                }
             }
             break;
         }
