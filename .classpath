@@ -11,7 +11,6 @@
 			<accessrule kind="discouraged" pattern="sun/misc/SignalHandler"/>
 		</accessrules>
 	</classpathentry>
-	<classpathentry kind="lib" path="build_lib/snakeyaml-1.8.jar"/>
 	<classpathentry kind="lib" path="build_lib/junit.jar"/>
 	<classpathentry kind="lib" path="build_lib/jline-1.0.jar"/>
 	<classpathentry kind="lib" path="build_lib/bsf.jar"/>
@@ -38,5 +37,6 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.USER_LIBRARY/ANT"/>
 	<classpathentry kind="lib" path="build_lib/jnr-netdb.jar"/>
 	<classpathentry kind="lib" path="build_lib/org.osgi.core-4.2.0.jar"/>
+	<classpathentry kind="lib" path="build_lib/snakeyaml-1.9.jar"/>
 	<classpathentry kind="output" path="build.eclipse"/>
 </classpath>
