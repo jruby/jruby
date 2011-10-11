@@ -19,12 +19,12 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ConstMissingInstr extends Instr {
-    IRScope scope;
+    IRModule definingModule;
     String  missingConst;
 
-    public ConstMissingInstr(Variable dest, IRScope scope, String missingConst) {
+    public ConstMissingInstr(Variable dest, IRModule definingModule, String missingConst) {
         super(Operation.CONST_MISSING, dest);
-        this.scope = scope;
+        this.definingModule = definingModule;
         this.missingConst = missingConst;
     }
 
@@ -35,17 +35,17 @@ public class ConstMissingInstr extends Instr {
     public void simplifyOperands(Map<Operand, Operand> valueMap) { }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new ConstMissingInstr(ii.getRenamedVariable(result), scope, missingConst);
+        return new ConstMissingInstr(ii.getRenamedVariable(result), definingModule, missingConst);
     }
 
     @Override
     public String toString() { 
-        return super.toString() + "(" + scope.getName() + "," + missingConst  + ")";
+        return super.toString() + "(" + definingModule.getName() + "," + missingConst  + ")";
     }
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        StaticScope staticScope = scope.getStaticScope();
+        StaticScope staticScope = definingModule.getStaticScope();
         Object constant = staticScope.getModule().callMethod(context, "const_missing", context.getRuntime().fastNewSymbol(missingConst));
         getResult().store(interp, context, self, constant);
         

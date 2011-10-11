@@ -1138,12 +1138,17 @@ public class IRBuilder {
         return val;
     }
 
+    private IRModule findNearestModule(IRScope s) {
+        while (s != null && !(s instanceof IRModule)) s = s.getLexicalParent();
+        return (IRModule)s;
+    }
+
     private Operand searchConst(IRScope s, IRScope startingScope, String name) {
         Variable v = s.getNewTemporaryVariable();
         s.addInstr(new SearchConstInstr(v, MetaObject.create(startingScope), name));
         Label foundLabel = s.getNewLabel();
         s.addInstr(new BNEInstr(v, UndefinedValue.UNDEFINED, foundLabel));
-        s.addInstr(new ConstMissingInstr(v, startingScope, name));
+        s.addInstr(new ConstMissingInstr(v, findNearestModule(startingScope), name));
         s.addInstr(new LABEL_Instr(foundLabel));
         return v;
     }
@@ -1696,15 +1701,6 @@ public class IRBuilder {
         //     p a
         // we are guaranteed that the value passed into foo and 'a' point to the same object
         // because of the use of copyAndReturnValue method for literal objects.
-    }
-    
-    // ENEBO: On IRScope?
-    private IRScope getScopeNDown(IRScope current, int depth) {
-        for (int i = 0; i < depth; i++) {
-            current.getLexicalParent();
-        }
-            
-        return current;
     }
 
     private IRMethod defineNewMethod(MethodDefNode defNode, IRScope s, Operand container, boolean isInstanceMethod) {
