@@ -68,7 +68,7 @@ public class Dir {
     public final static byte[] DOUBLE_STAR = new byte[]{'*','*'};
 
     private static boolean isdirsep(byte c) {
-        return DOSISH ? (c == '\\' || c == '/') : c == '/';
+        return c == '/' || DOSISH && c == '\\';
     }
 
     private static int rb_path_next(byte[] _s, int s, int send) {
