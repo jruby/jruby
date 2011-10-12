@@ -2928,9 +2928,7 @@ public class IRBuilder {
         // Jump back to the innermost rescue block
         // We either find it, or we add code to throw a runtime exception
         if (_rescueBlockLabelStack.empty()) {
-            // SSS FIXME: This should be a LocalJumpError exception rather than a generic runtime exception!
-            StringLiteral exc = new StringLiteral("retry outside of rescue not supported");
-            s.addInstr(new THROW_EXCEPTION_Instr(exc));
+            s.addInstr(new THROW_EXCEPTION_Instr(IRException.RETURN_LocalJumpError));
         }
         else {
             s.addInstr(new JumpInstr(_rescueBlockLabelStack.peek()));
