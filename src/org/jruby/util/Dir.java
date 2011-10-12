@@ -566,6 +566,16 @@ public class Dir {
         }
     }
 
+    private static boolean isSpecialFile(String name) {
+        int length = name.length();
+        
+        if (length < 1 || length > 3 || name.charAt(0) != '.') return false;
+        if (length == 1) return true;
+        char c = name.charAt(1);
+        if (length == 2 && (c == '.' || c == '/')) return true;
+        return c == '.' && name.charAt(2) == '/';
+    }
+
     private static int addToResultIfExists(String cwd, byte[] bytes, int begin, int end, int flags, GlobFunc func, GlobArgs arg) {
         String fileName = newStringFromUTF8(bytes, begin, end - begin);
         JavaSecuredFile file = cwd != null ? new JavaSecuredFile(cwd, fileName) :
@@ -576,7 +586,7 @@ public class Dir {
 
             // On case-insenstive file systems any case string will 'exists',
             // but what does it display as if you ls/dir it?
-            if ((flags & FNM_CASEFOLD) != 0) {
+            if ((flags & FNM_CASEFOLD) != 0 && !isSpecialFile(fileName)) {
                 try {
                     String realName = file.getCanonicalFile().getName();
 
