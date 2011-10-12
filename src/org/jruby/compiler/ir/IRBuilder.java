@@ -654,12 +654,11 @@ public class IRBuilder {
             case ATTRASSIGNNODE: 
                 buildAttrAssignAssignment(node, s, v);
                 break;
-            // SSS FIXME: What is the difference between ClassVarAsgnNode & ClassVarDeclNode
             case CLASSVARASGNNODE:
-                s.addInstr(new PutClassVariableInstr(MetaObject.create(s).getNearestClass(), ((ClassVarAsgnNode)node).getName(), v));
+                s.addInstr(new PutClassVariableInstr(classVarDefinitionContainer(s, true), ((ClassVarAsgnNode)node).getName(), v));
                 break;
             case CLASSVARDECLNODE:
-                s.addInstr(new PutClassVariableInstr(MetaObject.create(s).getNearestClass(), ((ClassVarDeclNode)node).getName(), v));
+                s.addInstr(new PutClassVariableInstr(classVarDefinitionContainer(s, false), ((ClassVarDeclNode)node).getName(), v));
                 break;
             case CONSTDECLNODE:
                 buildConstDeclAssignment((ConstDeclNode) node, s, v);
@@ -724,16 +723,15 @@ public class IRBuilder {
                 s.addInstr(new ReceiveClosureArgInstr(v, argIndex, isSplat));
                 break;
             }
-            // SSS FIXME: What is the difference between ClassVarAsgnNode & ClassVarDeclNode
             case CLASSVARASGNNODE:
                 v = s.getNewTemporaryVariable();
                 s.addInstr(new ReceiveClosureArgInstr(v, argIndex, isSplat));
-                s.addInstr(new PutClassVariableInstr(MetaObject.create(s).getNearestClass(), ((ClassVarAsgnNode)node).getName(), v));
+                s.addInstr(new PutClassVariableInstr(classVarDefinitionContainer(s, true), ((ClassVarAsgnNode)node).getName(), v));
                 break;
             case CLASSVARDECLNODE:
                 v = s.getNewTemporaryVariable();
                 s.addInstr(new ReceiveClosureArgInstr(v, argIndex, isSplat));
-                s.addInstr(new PutClassVariableInstr(MetaObject.create(s).getNearestClass(), ((ClassVarDeclNode)node).getName(), v));
+                s.addInstr(new PutClassVariableInstr(classVarDefinitionContainer(s, false), ((ClassVarDeclNode)node).getName(), v));
                 break;
             case CONSTDECLNODE:
                 v = s.getNewTemporaryVariable();
@@ -1077,7 +1075,7 @@ public class IRBuilder {
         return val;
     }
 
-    // ClassVarAsgn node is assignment outside method/closure scope (top-level, class, module)
+    // ClassVarDecl node is assignment outside method/closure scope (top-level, class, module)
     //
     // class C
     //   @@c = 1
