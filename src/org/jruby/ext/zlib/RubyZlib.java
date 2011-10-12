@@ -537,6 +537,7 @@ public class RubyZlib {
             if (collectedIdx > 0) {
                 RubyString res = RubyString.newString(runtime, collected, 0, collectedIdx);
                 collectedIdx = 0;
+                flater.setOutput(collected);
                 return res;
             }
             return RubyString.newEmptyString(runtime);
@@ -1022,6 +1023,7 @@ public class RubyZlib {
             run();
             IRubyObject obj = RubyString.newString(getRuntime(), collected, 0, collectedIdx);
             collectedIdx = 0;
+            flater.setOutput(collected);
             return obj;
         }
 
