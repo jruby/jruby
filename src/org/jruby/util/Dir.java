@@ -517,13 +517,19 @@ public class Dir {
         
         return extract_path(bytes, begin, elementEnd);
     }
+    
+    // Win drive letter X:/
+    private static boolean beginsWithDriveLetter(byte[] path, int begin, int end) {
+        return DOSISH && begin + 2 < end && path[begin + 1] == ':' && isdirsep(path[begin + 2]); 
+    }
 
-    private static boolean BASE(byte[] base) {
+    // Is this nothing or literally root directory for the OS.
+    private static boolean isRoot(byte[] base) {
         int length = base.length;
-        return DOSISH ? 
-            (length > 0 && !((isdirsep(base[0]) && length < 2) ||
-            (length > 2 && base[1] == ':' && isdirsep(base[2]) && length < 4))) :
-            (length > 0 && !(isdirsep(base[0]) && length < 2));
+        
+        return length == 0 ||  // empty
+               length == 1 && isdirsep(base[0]) || // Just '/'
+               length < 4 && beginsWithDriveLetter(base, 0, length); // Just X:/ 
     }
     
     private static boolean isJarFilePath(byte[] bytes, int begin, int end) {
@@ -532,8 +538,7 @@ public class Dir {
     }
     
     private static boolean isAbsolutePath(byte[] path, int begin, int length) {
-        return path[begin] == '/' || (DOSISH &&
-                begin+2 < length && path[begin+1] == ':' && isdirsep(path[begin+2]));
+        return isdirsep(path[begin]) || beginsWithDriveLetter(path, begin, length);
     }
 
     private static String[] files(File directory) {
@@ -720,7 +725,7 @@ public class Dir {
                                 }
                                 buf.length(0);
                                 buf.append(base);
-                                buf.append( BASE(base) ? SLASH : EMPTY );
+                                buf.append(isRoot(base) ? EMPTY : SLASH );
                                 buf.append(getBytesInUTF8(dirp[i]));
                                 if (isAbsolutePath(buf.getUnsafeBytes(), buf.getBegin(), buf.getRealSize())) {
                                     st = new JavaSecuredFile(newStringFromUTF8(buf.getUnsafeBytes(), buf.getBegin(), buf.getRealSize()));
@@ -743,7 +748,7 @@ public class Dir {
                             if(fnmatch(magic,0,magic.length,bs,0, bs.length,flags) == 0) {
                                 buf.length(0);
                                 buf.append(base);
-                                buf.append( BASE(base) ? SLASH : EMPTY );
+                                buf.append(isRoot(base) ? EMPTY : SLASH );
                                 buf.append(getBytesInUTF8(dirp[i]));
                                 if(m == -1) {
                                     status = func.call(buf.getUnsafeBytes(),0, buf.getRealSize(),arg);
@@ -787,7 +792,7 @@ public class Dir {
                                     }
                                     buf.length(0);
                                     buf.append(base, 0, base.length - jar.length());
-                                    buf.append( BASE(base) ? SLASH : EMPTY );
+                                    buf.append(isRoot(base) ? EMPTY : SLASH);
                                     buf.append(absoluteName, 0, absoluteLen);
 
                                     if(je.isDirectory()) {
@@ -809,7 +814,7 @@ public class Dir {
                                 if(fnmatch(magic,0,magic.length,bs,0,len,flags) == 0) {
                                     buf.length(0);
                                     buf.append(base, 0, base.length - jar.length());
-                                    buf.append( BASE(base) ? SLASH : EMPTY );
+                                    buf.append(isRoot(base) ? EMPTY : SLASH);
                                     buf.append(absoluteName, 0, absoluteLen);
 
                                     buf = fixBytesForJarInUTF8(buf.getUnsafeBytes(), 0, buf.getRealSize());
