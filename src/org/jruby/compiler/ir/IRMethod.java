@@ -40,8 +40,10 @@ public class IRMethod extends IRExecutionScope {
         startLabel = getNewLabel("_METH_START");
         endLabel = getNewLabel("_METH_END");
         callArgs = new ArrayList<Operand>();
-        if (staticScope != null) ((IRStaticScope)staticScope).setIRScope(this);
-        updateVersion();
+        if (!IRBuilder.inIRGenOnlyMode()) {
+           if (staticScope != null) ((IRStaticScope)staticScope).setIRScope(this);
+           updateVersion();
+        }
 /*
  * SSS: Only necessary when we run the add binding load/store dataflow pass to promote all ruby local vars to java local vars
  *

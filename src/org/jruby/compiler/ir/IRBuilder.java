@@ -261,10 +261,17 @@ public class IRBuilder {
     // FIXME: Move this
     public static final Operand[] NO_ARGS = new Operand[]{};
 
+    private static boolean inIRGenOnlyMode = false;
+
+    public static boolean inIRGenOnlyMode() {
+        return inIRGenOnlyMode;
+    }
+
     public static void main(String[] args) {
         boolean isDebug = args.length > 0 && args[0].equals("-debug");
         int     i = isDebug ? 1 : 0;
 
+        IRBuilder.inIRGenOnlyMode = true;
         LOG.setDebugEnable(isDebug);
 
         String methName = null;
@@ -312,8 +319,8 @@ public class IRBuilder {
             long t7 = new Date().getTime();
             scope.runCompilerPass(new DeadCodeElimination());
             long t8 = new Date().getTime();
-            scope.runCompilerPass(new AddBindingInstructions());
-            long t9 = new Date().getTime();
+            // scope.runCompilerPass(new AddBindingInstructions());
+            // long t9 = new Date().getTime();
             if (isDebug) {
                 scope.runCompilerPass(new IR_Printer());
             }
@@ -330,7 +337,7 @@ public class IRBuilder {
             LOG.debug("Time to run build domtree : {}", (t6 - t5));
             LOG.debug("Time to run lva           : {}", (t7 - t6));
             LOG.debug("Time to run dead code elim: {}", (t8 - t7));
-            LOG.debug("Time to add frame instrs  : {}", (t9 - t8));
+            //LOG.debug("Time to add frame instrs  : {}", (t9 - t8));
             i++;
         }
     }

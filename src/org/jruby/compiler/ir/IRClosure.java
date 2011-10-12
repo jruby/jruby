@@ -46,15 +46,19 @@ public class IRClosure extends IRExecutionScope {
         super(lexicalParent, MetaObject.create(lexicalParent), null, staticScope);
         this.isForLoopBody = isForLoopBody;
         String prefix = isForLoopBody ? "_FOR_LOOP_" : "_CLOSURE_";
-        startLabel = getNewLabel(prefix + "START");
-        endLabel = getNewLabel(prefix + "END");
-        closureId = lexicalParent.getNextClosureId();
+        this.startLabel = getNewLabel(prefix + "START");
+        this.endLabel = getNewLabel(prefix + "END");
+        this.closureId = lexicalParent.getNextClosureId();
         setName(prefix + closureId);
-        blockArgs = new ArrayList<Operand>();
+        this.blockArgs = new ArrayList<Operand>();
 
-        this.body = new InterpretedIRBlockBody(this, arity, argumentType);
         this.hasBeenInlined = false;
-        if ((staticScope != null) && !isForLoopBody) ((IRStaticScope)staticScope).setIRScope(this);
+        if (!IRBuilder.inIRGenOnlyMode()) {
+            this.body = new InterpretedIRBlockBody(this, arity, argumentType);
+            if ((staticScope != null) && !isForLoopBody) ((IRStaticScope)staticScope).setIRScope(this);
+        } else {
+            this.body = null;
+        }
     }
 
     @Override
