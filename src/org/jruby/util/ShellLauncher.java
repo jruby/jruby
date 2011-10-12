@@ -595,8 +595,7 @@ public class ShellLauncher {
                                 return (Integer)UNIXProcess_pid.get(process);
                             } else if (ProcessImpl.isInstance(process)) {
                                 Long hproc = (Long) ProcessImpl_handle.get(process);
-                                return WindowsFFI.getKernel32()
-                                    .GetProcessId(new jnr.ffi.NativeLong(hproc));
+                                return WindowsFFI.getKernel32().GetProcessId(hproc.intValue());
                             }
                         } catch (Exception e) {
                             // ignore and use hashcode
@@ -626,8 +625,7 @@ public class ShellLauncher {
                     try {
                         if (ProcessImpl.isInstance(process)) {
                             Long hproc = (Long) ProcessImpl_handle.get(process);
-                            return WindowsFFI.getKernel32()
-                                .GetProcessId(new jnr.ffi.NativeLong(hproc));
+                            return WindowsFFI.getKernel32().GetProcessId(hproc.intValue());
                         }
 
                     } catch (Exception e) {

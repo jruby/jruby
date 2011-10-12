@@ -38,7 +38,7 @@ import java.util.Map;
  */
 public class WindowsFFI {
     public static interface Kernel32 {
-     int GetProcessId(NativeLong handle);
+     int GetProcessId(int handle);
     }
 
     public static Kernel32 getKernel32() {
