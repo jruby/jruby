@@ -529,7 +529,7 @@ public class Dir {
         
         return length == 0 ||  // empty
                length == 1 && isdirsep(base[0]) || // Just '/'
-               length < 4 && beginsWithDriveLetter(base, 0, length); // Just X:/ 
+               length == 3 && beginsWithDriveLetter(base, 0, length); // Just X:/ 
     }
     
     private static boolean isJarFilePath(byte[] bytes, int begin, int end) {
