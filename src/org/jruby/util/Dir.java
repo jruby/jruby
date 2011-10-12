@@ -572,17 +572,25 @@ public class Dir {
             new JavaSecuredFile(fileName);
 
         if (file.exists()) {
+            boolean trailingSlash = bytes[end - 1] == '/';
+
             // On case-insenstive file systems any case string will 'exists',
             // but what does it display as if you ls/dir it?
             if ((flags & FNM_CASEFOLD) != 0) {
                 try {
                     String realName = file.getCanonicalFile().getName();
+
                     // TODO: This is only being done to the name of the file,
                     // but it should do for all parent directories too...
-                    int newEnd = fileName.lastIndexOf('/');
+                    // TODO: OMGZ is this ugly
+                    int fileNameLength = fileName.length();
+                    int newEnd = fileNameLength <= 1 ? -1 : fileName.lastIndexOf('/', fileNameLength - 2);
                     if (newEnd != -1) {
                         realName = fileName.substring(0, newEnd + 1) + realName;
                     }
+                    // It came in with a trailing slash preserve that in new name.
+                    if (trailingSlash) realName = realName + "/";
+
                     bytes = realName.getBytes();
                     begin = 0;
                     end = bytes.length;
