@@ -1016,11 +1016,13 @@ public class RubyZlib {
         }
 
         private IRubyObject flush(int flush) {
+            int last_flush = this.flush;
             this.flush=flush;
             if (flush == JZlib.Z_NO_FLUSH) {
                 return RubyString.newEmptyString(getRuntime());
             }
             run();
+            this.flush = last_flush;
             IRubyObject obj = RubyString.newString(getRuntime(), collected, 0, collectedIdx);
             collectedIdx = 0;
             flater.setOutput(collected);
