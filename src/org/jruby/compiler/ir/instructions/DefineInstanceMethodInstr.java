@@ -57,34 +57,10 @@ public class DefineInstanceMethodInstr extends OneOperandInstr {
     // SSS FIXME: Go through this and DefineClassMethodInstr.interpret, clean up, extract common code
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        RubyObject arg   = (RubyObject)getArg().retrieve(interp, context, self);
-
-        // SSS FIXME: argh! special cases!
-        //
-        // 1. At the top level of a script, there is a "main" object, and all methods defined in this scope get added to Object.
-        //    Specifically, consider the example below:
-        //
-        //    bar {
-        //      def foo; .. end
-        //    }
-        //  
-        //    Here, foo should be added to Object.  
-        //
-        // 2. Consider this:
-        //
-        //    def foo;
-        //      def bar; .. end;
-        //      ...
-        //    end
-        //
-        //    Here 'bar'; should be added to self.metaclass no matter what self is
-        //
-        // In *all* other cases, 'foo' should be added to 'self' if it is a module, or to the metaclass of 'self' if it is not.
-        //
-        // Adding it to 'context.getRubyClass()' will work in all cases, but I dont like it since it is using
-        // an implicit arg from the stack rather than use an operand of the instruction.  Can we fix this?
-
-        RubyModule clazz = (arg instanceof RubyModule) ? (RubyModule)arg : arg.getMetaClass();
+        // SSS FIXME: This is a temporary solution that uses information from the stack.
+        // This instruction and this logic will be re-implemented to not use implicit information from the stack.
+        // Till such time, this code implements the correct semantics
+        RubyModule clazz = context.getRubyClass();
         String     name  = method.getName();
 
         // Error checks and warnings on method definitions
