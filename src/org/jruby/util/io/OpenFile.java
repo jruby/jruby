@@ -320,6 +320,7 @@ public class OpenFile {
                 if (ms != null) {
                     // TODO: Ruby logic is somewhat more complicated here, see comments after
                     main = ms.getDescriptor();
+                    runtime.removeFilenoIntMap(main.getFileno());
                     try {
                         if (pipe == null && isWriteBuffered()) {
                             ms.fflush();
