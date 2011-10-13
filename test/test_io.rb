@@ -540,4 +540,15 @@ class TestIO < Test::Unit::TestCase
   def test_stringio_gets_separator
     assert_equal 'abc', @stringio.gets('c')
   end
+
+  # JRUBY-6137
+  def test_rubyio_fileno_mapping_leak
+    starting_count = JRuby.runtime.fileno_int_map_size
+    io = org.jruby.RubyIO.new(JRuby.runtime, org.jruby.util.io.STDIO::ERR)
+    open_io_count = JRuby.runtime.fileno_int_map_size
+    assert_equal(starting_count + 1, open_io_count)
+    io.close
+    closed_io_count = JRuby.runtime.fileno_int_map_size
+    assert_equal(starting_count, closed_io_count)
+  end
 end

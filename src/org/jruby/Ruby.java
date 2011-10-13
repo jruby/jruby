@@ -3468,6 +3468,14 @@ public final class Ruby {
         return internal;
     }
 
+    public int getFilenoIntMapSize() {
+        return filenoIntExtMap.size();
+    }
+
+    public void removeFilenoIntMap(int internal) {
+        filenoIntExtMap.remove(internal);
+    }
+
     /**
      * Get the "external" fileno for a given ChannelDescriptor. Primarily for
      * the shared 0, 1, and 2 filenos, which we can't actually share across

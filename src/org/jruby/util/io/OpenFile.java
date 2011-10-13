@@ -329,6 +329,7 @@ public class OpenFile {
                 if (ms != null) {
                     // TODO: Ruby logic is somewhat more complicated here, see comments after
                     main = ms.getDescriptor();
+                    runtime.removeFilenoIntMap(main.getFileno());
                     try {
                         // check for closed channel due to child exit
                         if (isProcess && ms.getChannel().isOpen()
