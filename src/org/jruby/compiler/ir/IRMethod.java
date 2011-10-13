@@ -90,27 +90,6 @@ public class IRMethod extends IRExecutionScope {
         return IRModule.isAModuleRootMethod(this);
     }
 
-    // SSS FIXME: Incorect!
-    // ENEBO: Should it be: return (m == null) ? ":" + getName() : m.getName() + ":" + getName();
-    public String getFullyQualifiedName() {
-        IRModule m = getDefiningIRModule();
-        
-        return (m == null) ? null : m.getName() + ":" + getName();
-    }
-
-    public IRModule getDefiningIRModule() {
-        if (!(container instanceof MetaObject)) return null;
-
-        IRScope scope = ((MetaObject) container).scope;
-
-        // FIXME: This is a hot mess and probably should be a while loop...but perhaps bigger change is needed
-        if (scope instanceof IRMethod) {
-            scope = ((MetaObject) ((IRMethod) scope).container).scope;
-        }
-
-        return (IRModule) scope;
-    }
-
     @Override
     protected StaticScope constructStaticScope(StaticScope unused) {
         this.requiredArgs = 0;
