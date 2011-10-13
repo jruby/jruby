@@ -6830,6 +6830,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         ByteList val = value.shallowDup();
         int p = val.getBegin();
         int s = p;
+        int offset = p;
         int len = val.getRealSize();
         int end = p + len;
         byte[]bytes = val.getUnsafeBytes();
@@ -6843,7 +6844,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
                     int p0 = enc.leftAdjustCharHead(bytes, s, p, end);
                     if (enc.isNewLine(bytes, p0, end)) {
                         p = p0 + StringSupport.length(enc, bytes, p0, end);
-                        block.yield(context, makeShared19(runtime, val, s, p - s).infectBy(this));
+                        block.yield(context, makeShared19(runtime, val, s - offset, p - s).infectBy(this));
                         s = p;
                         continue;
                     }
@@ -6873,7 +6874,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
                     }
                     if (c == newLine && (rslen <= 1 ||
                             ByteList.memcmp(sepValue.getUnsafeBytes(), sepValue.getBegin(), rslen, bytes, p, rslen) == 0)) {
-                        block.yield(context, makeShared19(runtime, val, s, p - s + (rslen != 0 ? rslen : n)).infectBy(this));
+                        block.yield(context, makeShared19(runtime, val, s - offset, p - s + (rslen != 0 ? rslen : n)).infectBy(this));
                         s = p + (rslen != 0 ? rslen : n);
                     }
                     p += n;
@@ -6882,7 +6883,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         }
 
         if (s != end) {
-            block.yield(context, makeShared19(runtime, val, s, end - s).infectBy(this));
+            block.yield(context, makeShared19(runtime, val, s-offset, end - s).infectBy(this));
         }
         return this;
     }
