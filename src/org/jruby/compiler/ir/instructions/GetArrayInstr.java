@@ -55,17 +55,12 @@ public class GetArrayInstr extends OneOperandInstr {
         if (!all) {
             val = array.entry(index);
         } else {
-            // SSS FIXME: This is inefficient!  Better implementation exists?
             int n = array.getLength();
             int size = n - index;
-            if ((size > 0) && (size < 5)) {
-                IRubyObject[] rest = new IRubyObject[size];
-                for (int i = 0; i < size; i++) {
-                    rest[i] = array.entry(index+i);
-                }
-                val = RubyArray.newArrayNoCopyLight(context.getRuntime(), rest);
-            }
-            else {
+            if (size <= 0) {
+                val = RubyArray.newArray(context.getRuntime());
+            } else {
+                // FIXME: Perf win to use COW between source Array and this new one (remove toJavaArray)
                 val = RubyArray.newArrayNoCopy(context.getRuntime(), array.toJavaArray(), index);
             }
         }
