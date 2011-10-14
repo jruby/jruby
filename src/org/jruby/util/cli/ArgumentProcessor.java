@@ -477,7 +477,7 @@ public class ArgumentProcessor {
             if (path != null) {
                 String[] paths = path.split(System.getProperty("path.separator"));
                 for (int i = 0; i < paths.length; i++) {
-                    fullName = JRubyFile.create(paths[i], scriptName);
+                    fullName = JRubyFile.create(new File(paths[i]).getAbsolutePath(), scriptName);
                     if (fullName.exists() && fullName.isFile()) {
                         if (RubyInstanceConfig.DEBUG_SCRIPT_RESOLUTION) {
                             config.getError().println("Found: " + fullName.getAbsolutePath());
