@@ -811,11 +811,16 @@ public class RubyRational extends RubyNumeric {
         IRubyObject b = op_roundCommonPre(context, n);
         return op_roundCommonPost(context, ((RubyRational)f_mul(context, this, b)).op_ceil(context), n, b);
     }
+    
+    @JRubyMethod(name = "to_i")
+    public IRubyObject to_i(ThreadContext context) {
+        return op_truncate(context);
+    }
 
     /** nurat_truncate
      * 
      */
-    @JRubyMethod(name = {"truncate", "to_i"})
+    @JRubyMethod(name = "truncate")
     public IRubyObject op_truncate(ThreadContext context) {
         if (f_negative_p(context, num)) {
             return f_negate(context, f_idiv(context, f_negate(context, num), den));
