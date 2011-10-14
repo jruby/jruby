@@ -2486,12 +2486,12 @@ public class IRBuilder {
 
     public Operand buildOpAsgn(OpAsgnNode opAsgnNode, IRScope s) {
         Label l = null;
-        Variable getResult = s.getNewTemporaryVariable();
-        Variable setResult = s.getNewTemporaryVariable();
+        Variable readerValue = s.getNewTemporaryVariable();
+        Variable writerValue = s.getNewTemporaryVariable();
 
         // get attr
         Operand  v1 = build(opAsgnNode.getReceiverNode(), s);
-        s.addInstr(CallInstr.create(getResult, new MethAddr(opAsgnNode.getVariableName()), v1, NO_ARGS, null));
+        s.addInstr(CallInstr.create(readerValue, new MethAddr(opAsgnNode.getVariableName()), v1, NO_ARGS, null));
 
         // Ex: e.val ||= n
         //     e.val &&= n
@@ -2499,27 +2499,27 @@ public class IRBuilder {
         if (opName.equals("||") || opName.equals("&&")) {
             l = s.getNewLabel();
             Variable flag = s.getNewTemporaryVariable();
-            s.addInstr(new IsTrueInstr(flag, v1));
+            s.addInstr(new IsTrueInstr(flag, readerValue));
             s.addInstr(new BEQInstr(flag, opName.equals("||") ? BooleanLiteral.TRUE : BooleanLiteral.FALSE, l));
 
             // compute value and set it
             Operand  v2 = build(opAsgnNode.getValueNode(), s);
-            s.addInstr(CallInstr.create(setResult, new MethAddr(opAsgnNode.getVariableNameAsgn()), v1, new Operand[] {v2}, null));
-            s.addInstr(new CopyInstr(getResult, setResult));
+            s.addInstr(CallInstr.create(writerValue, new MethAddr(opAsgnNode.getVariableNameAsgn()), v1, new Operand[] {v2}, null));
+            s.addInstr(new CopyInstr(readerValue, writerValue));
             s.addInstr(new LABEL_Instr(l));
 
-            return getResult;
+            return readerValue;
         }
         // Ex: e.val = e.val.f(n)
         else {
             // call operator
             Operand  v2 = build(opAsgnNode.getValueNode(), s);
             Variable setValue = s.getNewTemporaryVariable();
-            s.addInstr(CallInstr.create(setValue, new MethAddr(opAsgnNode.getOperatorName()), getResult, new Operand[]{v2}, null));
+            s.addInstr(CallInstr.create(setValue, new MethAddr(opAsgnNode.getOperatorName()), readerValue, new Operand[]{v2}, null));
            
             // set attr
-            s.addInstr(CallInstr.create(setResult, new MethAddr(opAsgnNode.getVariableNameAsgn()), v1, new Operand[] {setValue}, null));
-            return setResult;
+            s.addInstr(CallInstr.create(writerValue, new MethAddr(opAsgnNode.getVariableNameAsgn()), v1, new Operand[] {setValue}, null));
+            return writerValue;
         }
     }
 
