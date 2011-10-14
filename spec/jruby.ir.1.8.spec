@@ -19,6 +19,7 @@ class MSpecScript
   set :core, [
     SPEC_DIR + '/core',
     '^' + SPEC_DIR + '/library/conditionvariable/wait_spec.rb',
+    '^' + SPEC_DIR + '/library/conditionvariable/broadcast_spec.rb',
 
     # 1.9
     '^' + SPEC_DIR + '/core/basicobject'
