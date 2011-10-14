@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.ListIterator;
 
+import org.jruby.RubyInstanceConfig;
 import org.jruby.compiler.ir.IRClosure;
 import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.IRMethod;
@@ -99,9 +100,15 @@ public class LocalOptimizationPass implements CompilerPass {
             Variable res = i.getResult();
             // System.out.println("For " + i + "; dst = " + res + "; val = " + val);
             // System.out.println("AFTER: " + i);
-            if (val != null && res != null && res != val) {
+
+            if (res != null && val != null && res != val) {
                 recordSimplification(res, val, valueMap, simplificationMap);
+            } else if (res != null && val == null) {
+                // If we didn't get a simplified value, remove any existing simplifications for the result
+                // to get rid of RAW hazards!
+                valueMap.remove(res);
             }
+
             // Optimize some core class method calls for constant values
             else if (iop.isCall()) {
                 val = null;
