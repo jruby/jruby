@@ -82,7 +82,7 @@ public class DefineInstanceMethodInstr extends OneOperandInstr {
         clazz.addMethod(name, newMethod);
         //System.out.println("Added " + name + " to " + clazz + "; self is " + self);
 
-        if (visibility == Visibility.MODULE_FUNCTION) {
+        if (context.getCurrentVisibility() == Visibility.MODULE_FUNCTION) {
             clazz.getSingletonClass().addMethod(name, new WrapperMethod(clazz.getSingletonClass(), newMethod, Visibility.PUBLIC));
             clazz.callMethod(context, "singleton_method_added", runtime.fastNewSymbol(name));
         }
