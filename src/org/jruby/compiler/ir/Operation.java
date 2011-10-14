@@ -115,6 +115,7 @@ public enum Operation {
     ALLOC_BINDING(OpFlags.f_has_side_effect),
     THREAD_POLL(OpFlags.f_has_side_effect),
     CONST_MISSING(OpFlags.f_can_raise_exception),
+    ENSURE_RUBY_ARRAY(0),
 
     /** for splitting calls into method-lookup and call -- unused **/
     METHOD_LOOKUP(0),

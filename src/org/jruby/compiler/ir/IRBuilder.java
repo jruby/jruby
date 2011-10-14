@@ -126,6 +126,7 @@ import org.jruby.compiler.ir.instructions.DefineMetaClassInstr;
 import org.jruby.compiler.ir.instructions.DefineInstanceMethodInstr;
 import org.jruby.compiler.ir.instructions.DefineModuleInstr;
 import org.jruby.compiler.ir.instructions.EQQInstr;
+import org.jruby.compiler.ir.instructions.EnsureRubyArrayInstr;
 import org.jruby.compiler.ir.instructions.ExceptionRegionStartMarkerInstr;
 import org.jruby.compiler.ir.instructions.ExceptionRegionEndMarkerInstr;
 import org.jruby.compiler.ir.instructions.FilenameInstr;
@@ -687,11 +688,25 @@ public class IRBuilder {
                 s.addInstr(new CopyInstr(s.getLocalVariable(localVariable.getName(), depth), v));
                 break;
             }
-            case MULTIPLEASGNNODE:
-            {
-                // Invoke to_ary on the operand only if it is not an array already
-                Variable nv = generateRubyInternalsCall(s, RubyInternalsMethod.TO_ARY, true, v, new Operand[] { BooleanLiteral.FALSE });
-                buildMultipleAsgnAssignment((MultipleAsgnNode) node, s, nv);
+            case MULTIPLEASGNNODE: {
+                /* --------------------------------------------------------------------------------------------
+                 * SSS FIXME: For 1.9 mode, this code would be:
+                 *
+                 * Operand valuesArg = generateRubyInternalsCall(s, RubyInternalsMethod.TO_ARY, true, v, new Operand[] { BooleanLiteral.FALSE });
+                 * buildMultipleAsgnAssignment(childNode, s, valuesArg);
+                 *
+                 * But in 1.8 mode, we do that only in some cases .. so, this is complicated!
+                 * ------------------------------------------------------------------------------------------ */
+                Operand valuesArg;
+                MultipleAsgnNode childNode = (MultipleAsgnNode) node;
+                if (childNode.getHeadNode() != null && ((ListNode)childNode.getHeadNode()).childNodes().size() > 0) {
+                    // Invoke to_ary on the operand only if it is not an array already
+                    valuesArg = generateRubyInternalsCall(s, RubyInternalsMethod.TO_ARY, true, v, new Operand[] { BooleanLiteral.FALSE });
+                } else {
+                    s.addInstr(new EnsureRubyArrayInstr(v, v));
+                    valuesArg = v;
+                }
+                buildMultipleAsgnAssignment(childNode, s, valuesArg);
                 break;
             }
             case ZEROARGNODE:
@@ -764,16 +779,19 @@ public class IRBuilder {
             case MULTIPLEASGNNODE:
             {
                 Variable oldArgs = null;
+                MultipleAsgnNode childNode = (MultipleAsgnNode) node;
                 // Push
                 if (!isRoot) {
                     v = s.getNewTemporaryVariable();
                     s.addInstr(new ReceiveClosureArgInstr(v, argIndex, isSplat));
                     oldArgs = s.getNewTemporaryVariable();
-                    s.addInstr(new SetArgumentsInstr(oldArgs, v, true));      // convert to array via to_ary if necessary 
+                    // SSS FIXME: In 1.9 mode, runToAry will be unconditionally true, but not in 1.8
+                    boolean runToAry = childNode.getHeadNode() != null && (((ListNode)childNode.getHeadNode()).childNodes().size() > 0);
+                    s.addInstr(new SetArgumentsInstr(oldArgs, v, runToAry));      // convert to array via to_ary if necessary 
                     // SSS FIXME: Are we guaranteed that splats dont head to multiple-assignment nodes!  i.e. |*(a,b)|?
                 }
                 // Build
-                buildMultipleAsgnAssignment((MultipleAsgnNode) node, s, null);
+                buildMultipleAsgnAssignment(childNode, s, null);
                 // Pop
                 if (!isRoot) {
                     s.addInstr(new SetArgumentsInstr(null, oldArgs, false));  // restore oldArgs -- no to_ary required
@@ -2411,7 +2429,7 @@ public class IRBuilder {
     // SSS: This method is called both for regular multiple assignment as well as argument passing
     //
     // Ex: a,b,*c=v  is a regular assignment and in this case, the "values" operand will be non-null
-    // Ex: { |a,b,*c| ..} is the argment passing case
+    // Ex: { |a,b,*c| ..} is the argument passing case
     public void buildMultipleAsgnAssignment(final MultipleAsgnNode multipleAsgnNode, IRScope s, Operand values) {
         final ListNode sourceArray = multipleAsgnNode.getHeadNode();
 
@@ -2430,19 +2448,19 @@ public class IRBuilder {
         }
 
         // First, build an assignment for a splat, if any, with the rest of the args!
-        Node an = multipleAsgnNode.getArgsNode();
-        if (an == null) {
+        Node argsNode = multipleAsgnNode.getArgsNode();
+        if (argsNode == null) {
             if (sourceArray == null)
                 throw new NotCompilableException("Something's wrong, multiple assignment with no head or args at: " + multipleAsgnNode.getPosition());
         } 
-        else if (an instanceof StarNode) {
+        else if (argsNode instanceof StarNode) {
             // do nothing
         } 
         else if (values != null) {
-            buildAssignment(an, s, values, i, true); // rest of the argument array!
+            buildAssignment(argsNode, s, values, i, true); // rest of the argument array!
         }
         else {
-            buildBlockArgsAssignment(an, s, i, false, true); // rest of the argument array!
+            buildBlockArgsAssignment(argsNode, s, i, false, true); // rest of the argument array!
         }
 
     }
