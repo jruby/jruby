@@ -44,11 +44,11 @@ public class IRModule extends IRScopeImpl {
     }
 
     static private IRClass addCoreClass(String name, IRScope parent, String[] coreMethods, StaticScope staticScope) {
-        IRClass c = new IRClass(parent, null, null, name, staticScope);
+        IRClass c = new IRClass(parent, null, name, staticScope);
         coreClasses.put(c.getName(), c);
         if (coreMethods != null) {
             for (String m : coreMethods) {
-                IRMethod meth = new IRMethod(c, null, m, true, null);
+                IRMethod meth = new IRMethod(c, m, true, null);
                 meth.setCodeModificationFlag(false);
                 c.addMethod(meth);
             }
@@ -99,7 +99,7 @@ public class IRModule extends IRScopeImpl {
         //    end
         //
         String n = ROOT_METHOD_PREFIX + getName();
-        rootMethod = new IRMethod(this, MetaObject.create(this), n, false, IRStaticScopeFactory.newIRLocalScope(rootObjectScope));
+        rootMethod = new IRMethod(this, n, false, IRStaticScopeFactory.newIRLocalScope(rootObjectScope));
         rootMethod.addInstr(new ReceiveSelfInstruction(rootMethod.getSelf()));   // Set up self!
         rootMethod.addInstr(new ReceiveClosureInstr(rootMethod.getImplicitBlockArg()));
     }
@@ -208,10 +208,8 @@ used, we are now forced to be conservative.
         return this;
     }
 
-    public IRModule(IRScope lexicalParent, Operand container, String name, StaticScope scope) {
-        // SSS FIXME: container could be a meta-object which means we can record the constant statically!
-        // Add in this opt!
-        super(lexicalParent, container, name, scope);
+    public IRModule(IRScope lexicalParent, String name, StaticScope scope) {
+        super(lexicalParent, name, scope);
         addRootMethod();
         updateVersion();
     }

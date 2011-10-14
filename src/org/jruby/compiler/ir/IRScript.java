@@ -10,8 +10,8 @@ public class IRScript extends IRScopeImpl {
     private final IRClass dummyClass;  // Dummy class for the script
 
     public IRScript(String className, String sourceName, StaticScope staticScope) {
-        super((IRScope) null, null, sourceName, staticScope);
-        dummyClass = new IRClass(this, null, null, "[script]:" + sourceName, staticScope);
+        super((IRScope) null, sourceName, staticScope);
+        dummyClass = new IRClass(this, null, "[script]:" + sourceName, staticScope);
     }
 
     public Operand getFileName() {

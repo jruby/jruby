@@ -110,8 +110,8 @@ public abstract class IRExecutionScope extends IRScopeImpl {
         nextLocalVariableSlot = 0;
     }
 
-    public IRExecutionScope(IRScope lexicalParent, Operand container, String name, StaticScope staticScope) {
-        super(lexicalParent, container, name, staticScope);
+    public IRExecutionScope(IRScope lexicalParent, String name, StaticScope staticScope) {
+        super(lexicalParent, name, staticScope);
         init();
     }
 

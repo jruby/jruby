@@ -33,15 +33,4 @@ public class ModuleMetaObject extends MetaObject {
             return null;
         }
     }
-
-    @Override
-    public Object store(InterpreterContext interp, ThreadContext context, IRubyObject self, Object value) {
-        // Store it in live tree of modules/classes
-        RubyModule container = (RubyModule) scope.getContainer().retrieve(interp, context, self);
-        container.setConstant(scope.getName(), (RubyModule) value);
-
-        // Save reference into scope for easy access
-        scope.getStaticScope().setModule((RubyModule) value);
-        return (RubyModule) value;
-    }
 }

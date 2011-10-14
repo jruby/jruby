@@ -10,8 +10,7 @@ public class IRMetaClass extends IRClass {
 
     public IRMetaClass(IRScope s, StaticScope staticScope) {
         // Super class is always <Class:Class>
-        // This metaclass is always top-level, hence the null container.
-        super(s, null, MetaObject.create(CLASS_METACLASS), "<DUMMY_MC:" + dummyMetaClassCount + ">", staticScope);
+        super(s, MetaObject.create(CLASS_METACLASS), "<DUMMY_MC:" + dummyMetaClassCount + ">", staticScope);
         dummyMetaClassCount += 1;
     }
 

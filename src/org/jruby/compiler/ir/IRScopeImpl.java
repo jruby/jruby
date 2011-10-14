@@ -61,10 +61,8 @@ import org.jruby.util.log.LoggerFactory;
 public abstract class IRScopeImpl implements IRScope {
     private static final Logger LOG = LoggerFactory.getLogger("IRScope");
 
-    // SSS FIXME: Dumb design leaking a live operand into a non-operand!!
-    Operand container;       // Parent container for this context
-    RubyModule containerModule; // Live version of container
-    IRScope lexicalParent;  // Lexical parent scope
+    private IRScope lexicalParent;  // Lexical parent scope
+    private RubyModule containerModule; // Live version of container
 
     private String name;
 
@@ -82,21 +80,10 @@ public abstract class IRScopeImpl implements IRScope {
 
     private StaticScope staticScope;
 
-    public IRScopeImpl(IRScope lexicalParent, Operand container, String name, StaticScope staticScope) {
+    public IRScopeImpl(IRScope lexicalParent, String name, StaticScope staticScope) {
         this.lexicalParent = lexicalParent;
-        this.container = container;
         this.name = name;
         this.staticScope = staticScope;
-    }
-
-    // Update the containing scope
-    public void setContainer(Operand o) {
-        container = o;
-    }
-
-    // Returns the containing scope!
-    public Operand getContainer() {
-        return container;
     }
 
     public RubyModule getContainerModule() {

@@ -16,11 +16,6 @@ import org.jruby.parser.StaticScope;
  */
 public interface IRScope {
     /**
-     *  Returns the containing parent scope
-     */
-    public Operand getContainer();
-
-    /**
      *  Returns the lexical scope that contains this scope definition
      */
     public IRScope getLexicalParent();

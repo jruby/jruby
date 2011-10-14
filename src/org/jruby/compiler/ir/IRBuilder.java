@@ -170,7 +170,6 @@ import org.jruby.compiler.ir.operands.Backref;
 import org.jruby.compiler.ir.operands.BacktickString;
 import org.jruby.compiler.ir.operands.Bignum;
 import org.jruby.compiler.ir.operands.BooleanLiteral;
-import org.jruby.compiler.ir.operands.ClassMetaObject;
 import org.jruby.compiler.ir.operands.CompoundArray;
 import org.jruby.compiler.ir.operands.CompoundString;
 import org.jruby.compiler.ir.operands.DynamicSymbol;
@@ -183,7 +182,6 @@ import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.MethAddr;
-import org.jruby.compiler.ir.operands.ModuleMetaObject;
 import org.jruby.compiler.ir.operands.Nil;
 import org.jruby.compiler.ir.operands.UnexecutableNil;
 import org.jruby.compiler.ir.operands.NthRef;
@@ -1023,10 +1021,9 @@ public class IRBuilder {
         String className = cpath.getName();
         Operand container = getContainerFromCPath(cpath, s);
 
-        IRClass c = new IRClass(s, container, superClass, className, classNode.getScope());
-        ClassMetaObject cmo = (ClassMetaObject) MetaObject.create(c);
+        IRClass c = new IRClass(s, superClass, className, classNode.getScope());
         Variable ret = s.getNewTemporaryVariable();
-        s.addInstr(new DefineClassInstr(ret, cmo, superClass));
+        s.addInstr(new DefineClassInstr(ret, c, container, superClass));
         s.getNearestModule().addClass(c);
 
         IRMethod rootMethod = c.getRootMethod();
@@ -1708,8 +1705,8 @@ public class IRBuilder {
         // because of the use of copyAndReturnValue method for literal objects.
     }
 
-    private IRMethod defineNewMethod(MethodDefNode defNode, IRScope s, Operand container, boolean isInstanceMethod) {
-        IRMethod method = new IRMethod(s, container, defNode.getName(), isInstanceMethod, defNode.getScope());
+    private IRMethod defineNewMethod(MethodDefNode defNode, IRScope s, boolean isInstanceMethod) {
+        IRMethod method = new IRMethod(s, defNode.getName(), isInstanceMethod, defNode.getScope());
 
         // Build IR for arguments
         receiveArgs(defNode.getArgsNode(), method);
@@ -1736,12 +1733,12 @@ public class IRBuilder {
         // DefineIstanceMethod IR interpretation currently relies on this static determination for handling top-level methods
         if ((s instanceof IRMethod) && ((IRMethod)s).isAModuleRootMethod()) {
             container =  MetaObject.create(s.getNearestModule());
-            method = defineNewMethod(node, s, container, true);
+            method = defineNewMethod(node, s, true);
             s.getNearestModule().addMethod(method);
         }
         else {
             container = getSelf(s);
-            method = defineNewMethod(node, s, container, true);
+            method = defineNewMethod(node, s, true);
         }
         s.addInstr(new DefineInstanceMethodInstr(container, method));
         return Nil.NIL;
@@ -1749,7 +1746,7 @@ public class IRBuilder {
 
     public Operand buildDefs(DefsNode node, IRScope s) { // Class method
         Operand container =  build(node.getReceiverNode(), s);
-        IRMethod method = defineNewMethod(node, s, container, false);
+        IRMethod method = defineNewMethod(node, s, false);
         // ENEBO: Can all metaobjects be used for this?  closure?
         //if (container instanceof MetaObject) {
         //    ((IRModule) ((MetaObject) container).getScope()).addMethod(method);
@@ -2392,9 +2389,9 @@ public class IRBuilder {
         Operand container = getContainerFromCPath(cpath, s);
 
         // Build the new module
-        IRModule m = new IRModule(s, container, moduleName, moduleNode.getScope());
+        IRModule m = new IRModule(s, moduleName, moduleNode.getScope());
         Variable ret = s.getNewTemporaryVariable();
-        s.addInstr(new DefineModuleInstr(ret, (ModuleMetaObject) MetaObject.create(m)));
+        s.addInstr(new DefineModuleInstr(m, ret, container));
         s.getNearestModule().addModule(m);
 
         IRMethod rootMethod = m.getRootMethod();

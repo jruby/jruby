@@ -40,10 +40,6 @@ public class DefineClassMethodInstr extends OneOperandInstr {
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap) {
         super.simplifyOperands(valueMap);
-        Operand v = valueMap.get(getArg());
-        // SSS FIXME: Dumb design leaking operand into IRScopeImpl -- hence this setting going on here.  Fix it!
-        if (v != null)
-            method.setContainer(v);
     }
 
     // SSS FIXME: Go through this and DefineInstanceMethodInstr.interpret, clean up, extract common code

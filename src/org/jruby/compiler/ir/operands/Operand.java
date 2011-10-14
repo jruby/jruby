@@ -65,11 +65,11 @@ public abstract class Operand {
 
     @Interp
     public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        throw new RuntimeException(this.getClass().getSimpleName() + " should not be directly interpreted");
+        throw new RuntimeException(this.getClass().getSimpleName() + " should not be directly retrieved.");
     }
 
     @Interp
     public Object store(InterpreterContext interp, ThreadContext context, IRubyObject self, Object value) {
-        throw new RuntimeException(this.getClass().getSimpleName() + " should not be directly interpreted");
+        throw new RuntimeException(this.getClass().getSimpleName() + " should not be directly stored.");
     }
 }

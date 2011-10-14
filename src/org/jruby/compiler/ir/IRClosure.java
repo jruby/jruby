@@ -43,7 +43,7 @@ public class IRClosure extends IRExecutionScope {
     private List<Operand> blockArgs;
 
     public IRClosure(IRScope lexicalParent, boolean isForLoopBody, StaticScope staticScope, Arity arity, int argumentType) {
-        super(lexicalParent, MetaObject.create(lexicalParent), null, staticScope);
+        super(lexicalParent, null, staticScope);
         this.isForLoopBody = isForLoopBody;
         String prefix = isForLoopBody ? "_FOR_LOOP_" : "_CLOSURE_";
         this.startLabel = getNewLabel(prefix + "START");
@@ -63,7 +63,7 @@ public class IRClosure extends IRExecutionScope {
 
     @Override
     public int getNextClosureId() {
-        return lexicalParent.getNextClosureId();
+        return getLexicalParent().getNextClosureId();
     }
 
     @Override
