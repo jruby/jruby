@@ -58,7 +58,7 @@ public class GetArrayInstr extends OneOperandInstr {
             int n = array.getLength();
             int size = n - index;
             if (size <= 0) {
-                val = RubyArray.newArray(context.getRuntime());
+                val = RubyArray.newEmptyArray(context.getRuntime());
             } else {
                 // FIXME: Perf win to use COW between source Array and this new one (remove toJavaArray)
                 val = RubyArray.newArrayNoCopy(context.getRuntime(), array.toJavaArray(), index);
