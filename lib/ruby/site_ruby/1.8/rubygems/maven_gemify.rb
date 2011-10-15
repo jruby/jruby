@@ -102,7 +102,7 @@ module Gem
 
   module Maven
     class Gemify
-      DEFAULT_PLUGIN_VERSION = "0.26.0"
+      DEFAULT_PLUGIN_VERSION = "0.28.5"
 
       attr_reader :repositories
 
@@ -294,7 +294,7 @@ module Gem
           begin
             user_settings_file =
               if user_settings_file
-                resolve_file(usr_settings_file)
+                resolve_file(user_settings_file)
               else
                 user_maven_home = java.io.File.new(java.lang.System.getProperty("user.home"), ".m2")
                 java.io.File.new(user_maven_home, "settings.xml")
