@@ -5,6 +5,7 @@ import java.util.Map;
 import java.util.ArrayList;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
+import org.jruby.compiler.ir.instructions.ReceiveOptionalArgumentInstr;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.MetaObject;
@@ -67,8 +68,9 @@ public class IRMethod extends IRExecutionScope {
     @Override
     public void addInstr(Instr i) {
         // Accumulate call arguments
-        // SSS FIXME: ReceiveSelf should inherit from ReceiveArg?
+        // SSS FIXME: Should we have a base class for receive instrs?
         if (i instanceof ReceiveArgumentInstruction) callArgs.add(((ReceiveArgumentInstruction) i).isRestOfArgArray() ? new Splat(i.result) : i.result);
+        else if (i instanceof ReceiveOptionalArgumentInstr) callArgs.add(i.result);
 
         super.addInstr(i);
     }
