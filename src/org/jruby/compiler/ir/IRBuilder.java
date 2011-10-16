@@ -954,7 +954,7 @@ public class IRBuilder {
         //     when true <blah>
         //     when false <blah>
         //   end
-        if (value == null) value = BooleanLiteral.TRUE;
+        if (value == null) value = UndefinedValue.UNDEFINED;
 
         // the CASE instruction
         Label     endLabel  = m.getNewLabel();
@@ -973,15 +973,38 @@ public class IRBuilder {
             WhenNode whenNode = (WhenNode)aCase;
             Label bodyLabel = m.getNewLabel();
 
-             Variable eqqResult = m.getNewTemporaryVariable();
-             variables.add(eqqResult);
-             labels.add(bodyLabel);
+            Variable eqqResult = m.getNewTemporaryVariable();
+            variables.add(eqqResult);
+            labels.add(bodyLabel);
+            Operand v1, v2;
             if (whenNode.getExpressionNodes() instanceof ListNode) {
-                m.addInstr(new BEQInstr(value, buildArray(whenNode.getExpressionNodes(), m), bodyLabel));
+                // SSS FIXME: Note about refactoring:
+                // - BEQInstr has a quick implementation when the second operand is a boolean literal
+                //   If it can be fixed to do this even on the first operand, we can switch around
+                //   v1 and v2 in the UndefinedValue scenario and DRY out this code.
+                // - Even with this asymmetric implementation of BEQInstr, you might be tempted to
+                //   switch around v1 and v2 in the else case.  But, that is equivalent to this Ruby code change:
+                //      (v1 == value) instead of (value == v1)
+                //   It seems that they should be identical, but the first one is v1.==(value) and the second one is
+                //   value.==(v1).  This is just fine *if* the Ruby programmer has implemented an algebraically
+                //   symmetric "==" method on those objects.  If not, then, the results might be unexpected where the
+                //   code (intentionally or otherwise) relies on this asymmetry of "==".  While it could be argued
+                //   that this a Ruby code bug, we will just try to preserve the order of the == check as it appears
+                //   in the Ruby code.
+                if (value == UndefinedValue.UNDEFINED)  {
+                    v1 = buildArray(whenNode.getExpressionNodes(), m);
+                    v2 = BooleanLiteral.TRUE;
+                }
+                else {
+                    v1 = value;
+                    v2 = buildArray(whenNode.getExpressionNodes(), m);
+                }
             } else {
                 m.addInstr(new EQQInstr(eqqResult, build(whenNode.getExpressionNodes(), m), value));
-                m.addInstr(new BEQInstr(eqqResult, BooleanLiteral.TRUE, bodyLabel));
+                v1 = eqqResult;
+                v2 = BooleanLiteral.TRUE;
             }
+            m.addInstr(new BEQInstr(v1, v2, bodyLabel));
 
             // SSS FIXME: This doesn't preserve original order of when clauses.  We could consider
             // preserving the order (or maybe not, since we would have to sort the constants first

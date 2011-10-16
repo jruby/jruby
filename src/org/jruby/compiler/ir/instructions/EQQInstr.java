@@ -3,6 +3,7 @@ package org.jruby.compiler.ir.instructions;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
+import org.jruby.compiler.ir.operands.UndefinedValue;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
@@ -25,7 +26,9 @@ public class EQQInstr extends TwoOperandInstr {
         IRubyObject receiver = (IRubyObject) getOperand1().retrieve(interp, context, self);
         IRubyObject value = (IRubyObject) getOperand2().retrieve(interp, context, self);
 
-        if (receiver instanceof RubyArray) {
+        if (value == UndefinedValue.UNDEFINED) {
+            getResult().store(interp, context, self, receiver);
+        } else if (receiver instanceof RubyArray) {
             RubyArray testVals = (RubyArray)receiver;
             for (int i = 0, n = testVals.getLength(); i < n; i++) {
                 IRubyObject eqqVal = testVals.eltInternal(i).callMethod(context, "===", value);
@@ -35,8 +38,6 @@ public class EQQInstr extends TwoOperandInstr {
                 }
             }
             getResult().store(interp, context, self, context.getRuntime().newBoolean(false));
-        } else if (value.equals(context.getRuntime().getTrue())) { // SSS FIXME: Can I use value == RubyBoolean.True?
-            getResult().store(interp, context, self, receiver);
         } else {
             getResult().store(interp, context, self, receiver.callMethod(context, "===", value));
         }
