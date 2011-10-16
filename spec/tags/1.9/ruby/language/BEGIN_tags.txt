@@ -1,0 +1,2 @@
+fails:The BEGIN keyword runs first in a given code unit
+fails:The BEGIN keyword runs multiple begins in FIFO order
