@@ -1188,10 +1188,11 @@ public class IRBuilder {
 
     private Operand searchConst(IRScope s, IRScope startingScope, String name) {
         Variable v = s.getNewTemporaryVariable();
-        s.addInstr(new SearchConstInstr(v, MetaObject.create(startingScope), name));
+        IRModule nearestModule = findNearestModule(startingScope);
+        s.addInstr(new SearchConstInstr(v, MetaObject.create(nearestModule), name));
         Label foundLabel = s.getNewLabel();
         s.addInstr(new BNEInstr(v, UndefinedValue.UNDEFINED, foundLabel));
-        s.addInstr(new ConstMissingInstr(v, findNearestModule(startingScope), name));
+        s.addInstr(new ConstMissingInstr(v, nearestModule, name));
         s.addInstr(new LABEL_Instr(foundLabel));
         return v;
     }
@@ -1466,7 +1467,7 @@ public class IRBuilder {
             case CONSTNODE: {
                 Label undefLabel = s.getNewLabel();
                 Variable tmpVar  = s.getNewTemporaryVariable();
-                s.addInstr(new SearchConstInstr(tmpVar, MetaObject.create(s), ((ConstNode) node).getName()));
+                s.addInstr(new SearchConstInstr(tmpVar, MetaObject.create(findNearestModule(s)), ((ConstNode) node).getName()));
                 s.addInstr(new BEQInstr(tmpVar, UndefinedValue.UNDEFINED, undefLabel));
                 return buildDefnCheckIfThenPaths(s, undefLabel, new StringLiteral("constant"));
             }
