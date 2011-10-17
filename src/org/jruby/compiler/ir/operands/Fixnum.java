@@ -9,13 +9,16 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class Fixnum extends Constant {
     final public Long value;
+    private Object rubyFixnum;
 
     public Fixnum(Long val) {
         value = val;
+        rubyFixnum = null;
     }
 
     public Fixnum(BigInteger val) { 
         value = val.longValue();
+        rubyFixnum = null;
     }
 
     @Override
@@ -60,10 +63,7 @@ public class Fixnum extends Constant {
 
     @Override
     public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-/*
-        if (cachedValue == null) cachedValue = interp.getRuntime().newFixnum(value);
-        return cachedValue;
-*/
-        return context.getRuntime().newFixnum(value);
+        if (rubyFixnum == null) rubyFixnum = context.getRuntime().newFixnum(value);
+        return rubyFixnum;
     }
 }

@@ -7,9 +7,11 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class Float extends Constant {
     final public Double value;
+    private Object rubyFloat;
 
     public Float(Double val) {
         value = val;
+        rubyFloat = null;
     }
 
     @Override
@@ -41,11 +43,7 @@ public class Float extends Constant {
 
     @Override
     public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-/*
-		  if (cachedValue == null)
-            cachedValue = interp.getRuntime().newFloat(value);
-		  return cachedValue;
-*/
-        return context.getRuntime().newFloat(value);
+        if (rubyFloat == null) rubyFloat = context.getRuntime().newFloat(value);
+        return rubyFloat;
     }
 }
