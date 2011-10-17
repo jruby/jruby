@@ -11,9 +11,6 @@ import org.jruby.interpreter.NaiveInterpreterContext;
 import org.jruby.runtime.Block.Type;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- * @author enebo
- */
 public class InterpretedIRBlockBody extends ContextAwareBlockBody {
     private final IRClosure closure;
 
@@ -62,12 +59,12 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
         IRubyObject[] args;
         if (isArray) {
             if (arity().getValue() > 1) {
-                args = value == null ? IRubyObject.NULL_ARRAY : prepareArgumentsForCall(context, ((RubyArray)value).toJavaArray(), type);
+                args = value == null ? IRubyObject.NULL_ARRAY : prepareArgumentsForYield(context, ((RubyArray)value).toJavaArray(), type);
             } else {
                 args = assignArrayToBlockArgs(context.getRuntime(), value);
             }
         } else {
-            args = prepareArgumentsForCall(context, value == null ? IRubyObject.NULL_ARRAY : new IRubyObject[] { value }, type);
+            args = prepareArgumentsForYield(context, value == null ? IRubyObject.NULL_ARRAY : new IRubyObject[] { value }, type);
         }
 
         return commonYieldPath(context, args, self, klass, binding, type, Block.NULL_BLOCK);
@@ -127,17 +124,42 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
         }
     }
 
+    public IRubyObject[] prepareArgumentsForYield(ThreadContext context, IRubyObject[] args, Block.Type type) {
+        int blockArity = arity().getValue();
+        if (type != Block.Type.NORMAL) throw new RuntimeException("JRuby Internal Error.  Trying to yield to a " + type + " block.  Only NORMAL blocks can be yielded to.").
+
+        if (args.length == 1) {
+            IRubyObject soleArg = args[0];
+            if (soleArg instanceof RubyArray) {
+                if (argumentType == MULTIPLE_ASSIGNMENT) args = ((RubyArray) soleArg).toJavaArray();
+            } else if (blockArity > 1) {
+                IRubyObject toAryArg = RuntimeHelpers.aryToAry(soleArg);
+                if (toAryArg instanceof RubyArray) args = ((RubyArray)toAryArg).toJavaArray();
+                else throw context.getRuntime().newTypeError(soleArg.getType().getName() + "#to_ary should return Array");
+            }
+        } else if (argumentType == ARRAY) {
+            context.getRuntime().getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (" + args.length + " for " + blockArity + ")");
+            if (args.length == 0) {
+                args = context.getRuntime().getSingleNilArray();
+            } else {
+                args = new IRubyObject[] {context.getRuntime().newArrayNoCopy(args)};
+            }
+        }
+
+        return args;
+    }
+
     public IRubyObject[] prepareArgumentsForCall(ThreadContext context, IRubyObject[] args, Block.Type type) {
         int blockArity = arity().getValue();
         switch (type) {
-        // SSS FIXME: this is different from how regular interpreter does it .. it treats PROC & NORMAL blocks differently
-        // But, without this fix, {:a=>:b}.each { |*x| puts x.inspect } outputs [:a,:b] instead of [[:a, :b]]
-        case PROC:
-        case NORMAL: {
+        // SSS FIXME: How is it even possible to "call" a block?  
+        // I thought only procs & lambdas can be called, and blocks are yielded to.
+        case NORMAL: 
+        case PROC: {
             if (args.length == 1) {
                 IRubyObject soleArg = args[0];
                 if (soleArg instanceof RubyArray) {
-                    if (argumentType == MULTIPLE_ASSIGNMENT) {
+                    if ((argumentType == MULTIPLE_ASSIGNMENT) || ((argumentType == SINGLE_RESTARG) && (type == Block.Type.NORMAL))) {
                         args = ((RubyArray) soleArg).toJavaArray();
                     }
                 } else if (blockArity > 1) {
