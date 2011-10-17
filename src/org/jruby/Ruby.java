@@ -752,7 +752,7 @@ public final class Ruby {
 
         try {
             if (getInstanceConfig().getCompileMode() == CompileMode.OFFIR) {
-                return Interpreter.interpret(this, rootNode, self);
+                return Interpreter.interpret(this, rootNode, self, Block.NULL_BLOCK);
             } else {
                 return ASTInterpreter.INTERPRET_ROOT(this, context, rootNode, getTopSelf(), Block.NULL_BLOCK);
             }

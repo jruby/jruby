@@ -3022,15 +3022,15 @@ public class IRBuilder {
         StaticScope staticScope = rootNode.getStaticScope();
 
         // Top-level script!
-        IRScript script = new IRScript("__file__", file, rootNode.getStaticScope());
+        IRScript script = new IRScript("__file__", file, staticScope);
         IRClass  rootClass = script.getRootClass();
         IRMethod rootMethod = rootClass.getRootMethod();
 
         // Debug info: record file name
         rootMethod.addInstr(new FilenameInstr(file));
 
-        // Get going!
-        build(rootNode.getBodyNode(), rootMethod);
+        // Build IR for the tree and return the result of the expression tree
+        rootMethod.addInstr(new ReturnInstr(build(rootNode.getBodyNode(), rootMethod)));
 
         return script;
     }

@@ -22,25 +22,27 @@ import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.CFG;
-import org.jruby.internal.runtime.methods.InterpretedIRMethod;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.RubyEvent;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
 public class Interpreter {
     private static final Logger LOG = LoggerFactory.getLogger("Interpreter");
 
-    public static IRubyObject interpret(Ruby runtime, Node rootNode, IRubyObject self) {
+    public static IRubyObject interpret(Ruby runtime, Node rootNode, IRubyObject self, Block block) {
         IRScope scope = new IRBuilder().buildRoot((RootNode) rootNode);
         scope.prepareForInterpretation();
 //        scope.runCompilerPass(new CallSplitter());
 
-        return interpretTop(runtime, scope, self);
+        return interpretTop(runtime, scope, ((RootNode)rootNode).getScope(), self, block);
     }
 
     private static int interpInstrsCount = 0;
@@ -58,7 +60,7 @@ public class Interpreter {
         return RubyInstanceConfig.IR_DEBUG;
     }
 
-    public static IRubyObject interpretTop(Ruby runtime, IRScope scope, IRubyObject self) {
+    public static IRubyObject interpretTop(Ruby runtime, IRScope scope, DynamicScope rootScope, IRubyObject self, Block block) {
         assert scope instanceof IRScript : "Must be an IRScript scope at Top!!!";
 
         IRScript root = (IRScript) scope;
@@ -74,11 +76,11 @@ public class Interpreter {
         // Scope state for root?
         IRModule.getRootObjectScope().setModule(currModule);
         IRMethod rootMethod = root.getRootClass().getRootMethod();
-        InterpretedIRMethod method = new InterpretedIRMethod(rootMethod, currModule);
+        InterpretedIRMethod method = new InterpretedIRMethod(rootMethod, currModule, rootScope);
         ThreadContext context = runtime.getCurrentContext();
 
         try {
-            IRubyObject rv =  method.call(context, self, currModule, "", IRubyObject.NULL_ARRAY);
+            IRubyObject rv =  method.call(context, self, currModule, "", IRubyObject.NULL_ARRAY, block);
             if (isDebug()) LOG.info("-- Interpreted instructions: {}", interpInstrsCount);
             return rv;
         } catch (IRBreakJump bj) {

@@ -56,6 +56,8 @@ import org.jruby.runtime.Binding;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.InterpretedBlock;
 import org.jruby.util.ByteList;
+import org.jruby.RubyInstanceConfig.CompileMode;
+import org.jruby.interpreter.Interpreter;
 
 public class ASTInterpreter {
     public static IRubyObject INTERPRET_METHOD(
@@ -93,7 +95,11 @@ public class ASTInterpreter {
     public static IRubyObject INTERPRET_EVAL(Ruby runtime, ThreadContext context, String file, int line, Node node, String name, IRubyObject self, Block block) {
         try {
             ThreadContext.pushBacktrace(context, self.getMetaClass().getName(), name, file, line);
-            return node.interpret(runtime, context, self, block);
+            if (runtime.getInstanceConfig().getCompileMode() == CompileMode.OFFIR) {
+                return Interpreter.interpret(runtime, node, self, block);
+            } else {
+                return node.interpret(runtime, context, self, block);
+            }
         } finally {
             ThreadContext.popBacktrace(context);
         }
@@ -148,7 +154,7 @@ public class ASTInterpreter {
     public static IRubyObject evalWithBinding(ThreadContext context, IRubyObject self, IRubyObject src, Binding binding) {
         Ruby runtime = src.getRuntime();
         DynamicScope evalScope = binding.getDynamicScope().getEvalScope(runtime);
-        
+
         // FIXME:  This determine module is in a strange location and should somehow be in block
         evalScope.getStaticScope().determineModule();
 

@@ -16,6 +16,7 @@ public class IRStaticScope extends StaticScope {
 
     boolean isBlock;         // Is this a block scope?
     boolean isEval;          // Is this an eval scope?
+    boolean isBlockOrEval;
     boolean isArgumentScope; // Is this block and argument scope of a define_method (for the purposes of zsuper).
 
     IRExecutionScope irScope; // Method/Closure that this static scope corresponds to
@@ -28,10 +29,11 @@ public class IRStaticScope extends StaticScope {
         super(enclosingScope, names);
         this.isBlock = isBlock;
         this.isEval = isEval;
-        this.isArgumentScope = !isBlock;
+        this.isBlockOrEval = isBlock || isEval;
+        this.isArgumentScope = !isBlockOrEval;
         this.irScope = null;
 
-        if (!isBlock) setBackrefLastlineScope(true);
+        if (!isBlockOrEval) setBackrefLastlineScope(true);
     }
 
     public StaticScope getLocalScope() {
@@ -39,7 +41,7 @@ public class IRStaticScope extends StaticScope {
     }
 
     public int isDefined(String name, int depth) {
-        if (isBlock) {
+        if (isBlockOrEval) {
             int slot = exists(name); 
             if (slot >= 0) return (depth << 16) | slot;
             
@@ -52,7 +54,7 @@ public class IRStaticScope extends StaticScope {
 
     @Override
     public boolean isBlockScope() {
-        return isBlock;
+        return isBlockOrEval;
     }
 
     @Override
@@ -70,7 +72,7 @@ public class IRStaticScope extends StaticScope {
      */
     public String[] getAllNamesInScope() {
         String[] names = getVariables();
-        if (isBlock) {
+        if (isBlockOrEval) {
             String[] ourVariables = names;
             String[] variables = enclosingScope.getAllNamesInScope();
             
@@ -100,9 +102,9 @@ public class IRStaticScope extends StaticScope {
             // mark as captured if from containing scope
             if (depth > 0) capture(slot);
 
-            return isBlock ? new DAsgnNode(position, name, ((depth << 16) | slot), value) 
+            return isBlockOrEval ? new DAsgnNode(position, name, ((depth << 16) | slot), value) 
                            : new LocalAsgnNode(position, name, ((depth << 16) | slot), value);
-        } else if (!isBlock && (topScope == this)) {
+        } else if (!isBlockOrEval && (topScope == this)) {
             slot = addVariable(name);
 
             return new LocalAsgnNode(position, name, slot , value);
@@ -111,7 +113,7 @@ public class IRStaticScope extends StaticScope {
         // If we are not a block-scope and we go there, we know that 'topScope' is a block scope 
         // because a local scope cannot be within a local scope
         // If topScope was itself it would have created a LocalAsgnNode above.
-        return isBlock ? enclosingScope.assign(position, name, value, topScope, depth + 1)
+        return isBlockOrEval ? enclosingScope.assign(position, name, value, topScope, depth + 1)
                        : ((IRStaticScope)topScope).addAssign(position, name, value);
     }
 
@@ -122,15 +124,15 @@ public class IRStaticScope extends StaticScope {
             // mark as captured if from containing scope
             if (depth > 0) capture(slot);
             
-            return isBlock ? new DVarNode(position, ((depth << 16) | slot), name) : new LocalVarNode(position, ((depth << 16) | slot), name);
+            return isBlockOrEval ? new DVarNode(position, ((depth << 16) | slot), name) : new LocalVarNode(position, ((depth << 16) | slot), name);
         }
 
-        return isBlock ? enclosingScope.declare(position, name, depth + 1) : new VCallNode(position, name);
+        return isBlockOrEval ? enclosingScope.declare(position, name, depth + 1) : new VCallNode(position, name);
     }
     
     @Override
     public String toString() {
-        return "IRStaticScope" + (isBlock ? "(BLOCK): " : "(LOCAL): ") + super.toString();
+        return "IRStaticScope" + (isBlockOrEval ? "(BLOCK): " : "(LOCAL): ") + super.toString();
     }
 
     public void setIRScope(IRExecutionScope irScope) {
