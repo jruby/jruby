@@ -1,39 +1,76 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package org.jruby.runtime;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
 import org.jruby.javasupport.util.RuntimeHelpers;
-import org.jruby.ast.util.ArgsUtil;
-import org.jruby.parser.StaticScope;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.compiler.ir.IRClosure;
-import org.jruby.exceptions.JumpException;
 import org.jruby.interpreter.Interpreter;
-import org.jruby.interpreter.InterpreterContext;
 import org.jruby.interpreter.NaiveInterpreterContext;
 import org.jruby.runtime.Block.Type;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
- *
  * @author enebo
  */
 public class InterpretedIRBlockBody extends ContextAwareBlockBody {
     private final IRClosure closure;
 
-    private final boolean hasMultipleArgsHead;
-
     public InterpretedIRBlockBody(IRClosure closure, Arity arity, int argumentType) {
         super(closure.getStaticScope(), arity, argumentType);
-
         this.closure = closure;
-        this.hasMultipleArgsHead = false;
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, Binding binding, Block.Type type) {
+        return call(context, IRubyObject.NULL_ARRAY, binding, type, Block.NULL_BLOCK);
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, Binding binding, Block.Type type) {
+        return call(context, new IRubyObject[] {arg0}, binding, type, Block.NULL_BLOCK);
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding, Block.Type type) {
+        return call(context, new IRubyObject[] {arg0, arg1}, binding, type, Block.NULL_BLOCK);
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Block.Type type) {
+        return call(context, new IRubyObject[] {arg0, arg1, arg2}, binding, type, Block.NULL_BLOCK);
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
+        return call(context, args, binding, type, Block.NULL_BLOCK);
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type, Block block) {
+        return commonYieldPath(context, prepareArgumentsForCall(context, args, type), null, null, binding, type, block);
+    }
+
+    @Override
+    public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Type type) {
+        return yield(context, value, null, null, false, binding, type);
+    }
+
+    @Override
+    public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, RubyModule klass, boolean isArray, Binding binding, Type type) {
+        IRubyObject[] args;
+        if (isArray) {
+            if (arity().getValue() > 1) {
+                args = value == null ? IRubyObject.NULL_ARRAY : prepareArgumentsForCall(context, ((RubyArray)value).toJavaArray(), type);
+            } else {
+                args = assignArrayToBlockArgs(context.getRuntime(), value);
+            }
+        } else {
+            args = prepareArgumentsForCall(context, value == null ? IRubyObject.NULL_ARRAY : new IRubyObject[] { value }, type);
+        }
+
+        return commonYieldPath(context, args, self, klass, binding, type, Block.NULL_BLOCK);
     }
 
     private IRubyObject prepareSelf(Binding binding) {
@@ -43,7 +80,7 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
         return self;
     }
 
-    public IRubyObject commonCallPath(ThreadContext context, IRubyObject[] args, IRubyObject self, RubyModule klass, Binding binding, Type type, Block block) {
+    private IRubyObject commonYieldPath(ThreadContext context, IRubyObject[] args, IRubyObject self, RubyModule klass, Binding binding, Type type, Block block) {
         Visibility oldVis = binding.getFrame().getVisibility();
         RubyModule currentModule = closure.getStaticScope().getModule();
         context.getCurrentScope().getStaticScope().setModule(currentModule);
@@ -54,7 +91,7 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
             DynamicScope prevScope = binding.getDynamicScope();
             DynamicScope newScope  = closure.isForLoopBody ? prevScope : DynamicScope.newDynamicScope(closure.getStaticScope(), prevScope);
             context.pushScope(newScope);
-            InterpreterContext interp = new NaiveInterpreterContext(context, closure, currentModule, self, null, args, block, type);
+            NaiveInterpreterContext interp = new NaiveInterpreterContext(context, closure, currentModule, self, null, args, block, type);
             return Interpreter.interpret(context, self, closure, interp);
         }
         finally {
@@ -62,89 +99,17 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
             context.postYield(binding, prevFrame);
         }
     }
-
-    @Override
-    public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
-        args = prepareArgumentsForCall(context, args, type);
-        return commonCallPath(context, args, null, null, binding, type, Block.NULL_BLOCK);
-    }
-
-    @Override
-    public IRubyObject call(ThreadContext context, Binding binding, Block.Type type) {
-        IRubyObject[] args = prepareArgumentsForCall(context, IRubyObject.NULL_ARRAY, type);
-        return commonCallPath(context, args, null, null, binding, type, Block.NULL_BLOCK);
-    }
-
-    @Override
-    public IRubyObject call(ThreadContext context, IRubyObject arg0, Binding binding, Block.Type type) {
-        IRubyObject[] args = prepareArgumentsForCall(context, new IRubyObject[] {arg0}, type);
-        return commonCallPath(context, args, null, null, binding, type, Block.NULL_BLOCK);
-    }
-
-    @Override
-    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding, Block.Type type) {
-        IRubyObject[] args = prepareArgumentsForCall(context, new IRubyObject[] {arg0, arg1}, type);
-        return commonCallPath(context, args, null, null, binding, type, Block.NULL_BLOCK);
-    }
-
-    @Override
-    public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Block.Type type) {
-        IRubyObject[] args = prepareArgumentsForCall(context, new IRubyObject[] {arg0, arg1, arg2}, type);
-        return commonCallPath(context, args, null, null, binding, type, Block.NULL_BLOCK);
-    }
-
-    @Override
-    public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type, Block block) {
-        args = prepareArgumentsForCall(context, args, type);
-        return commonCallPath(context, args, null, null, binding, type, block);
-    }
-
-    @Override
-    public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Type type) {
-        IRubyObject[] args = prepareArgumentsForCall(context, new IRubyObject[] { value }, type);
-        return commonCallPath(context, args, null, null, binding, type, Block.NULL_BLOCK);
-    }
-
-    @Override
-    public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, RubyModule klass, boolean isArray, Binding binding, Type type) {
-        IRubyObject[] args;
-        if (isArray) {
-            if (arity().getValue() > 1) {
-                args = value == null ? new IRubyObject[] {} : prepareArgumentsForCall(context, ((RubyArray)value).toJavaArray(), type);
-            }
-            else {
-                args = assignArrayToBlockArgs(context.getRuntime(), value);
-            }
-        }
-        else {
-            args = prepareArgumentsForCall(context, value == null ? new IRubyObject[] {} : new IRubyObject[] { value }, type);
-        }
-
-        return commonCallPath(context, args, self, klass, binding, type, Block.NULL_BLOCK);
-    }
-
-    private IRubyObject handleNextJump(ThreadContext context, JumpException.NextJump nj, Block.Type type) {
-        return nj.getValue() == null ? context.getRuntime().getNil() : (IRubyObject)nj.getValue();
-    }
     
     private IRubyObject prepareArrayArgsForCall(Ruby ruby, IRubyObject value) {
-        int length = ArgsUtil.arrayLength(value);
+        int length = (value instanceof RubyArray) ? ((RubyArray)value).getLength() : 0;
         switch (length) {
-        case 0:
-            return ruby.getNil();
-        case 1:
-            return ((RubyArray)value).eltInternal(0);
-        default:
-            blockArgWarning(ruby, length);
+        case 0: return ruby.getNil();
+        case 1: return ((RubyArray)value).eltInternal(0);
+        default: blockArgWarning(ruby, length);
         }
         return value;
     }
-    
-    private IRubyObject warnMultiReturnNil(Ruby ruby) {
-        ruby.getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (0 for 1)");
-        return ruby.getNil();
-    }    
-    
+
     private void blockArgWarning(Ruby ruby, int length) {
         ruby.getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (" +
                     length + " for 1)");
@@ -152,23 +117,21 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
 
     protected IRubyObject[] assignArrayToBlockArgs(Ruby ruby, IRubyObject value) {
         switch (argumentType) {
-            case ZERO_ARGS:
-                return new IRubyObject[] {};
-            case MULTIPLE_ASSIGNMENT:
-            case SINGLE_RESTARG:
-                return ArgsUtil.convertToJavaArray(value);
-            default: {
-                return new IRubyObject[] {prepareArrayArgsForCall(ruby, value)};
-            }
+        case ZERO_ARGS:
+            return IRubyObject.NULL_ARRAY;
+        case MULTIPLE_ASSIGNMENT:
+        case SINGLE_RESTARG:
+            return (value == null) ? IRubyObject.NULL_ARRAY : ((value instanceof RubyArray) ? ((RubyArray)value).toJavaArrayMaybeUnsafe() : new IRubyObject[] { value } );
+        default:
+            return new IRubyObject[] {prepareArrayArgsForCall(ruby, value)};
         }
     }
 
-    @Override
     public IRubyObject[] prepareArgumentsForCall(ThreadContext context, IRubyObject[] args, Block.Type type) {
         int blockArity = arity().getValue();
         switch (type) {
         // SSS FIXME: this is different from how regular interpreter does it .. it treats PROC & NORMAL blocks differently
-        // But, without this fix, {:a=>:b}.each { |*x| puts a.inspect } outputs [:a,:b] instead of [[:a, :b]]
+        // But, without this fix, {:a=>:b}.each { |*x| puts x.inspect } outputs [:a,:b] instead of [[:a, :b]]
         case PROC:
         case NORMAL: {
             if (args.length == 1) {
@@ -177,8 +140,7 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
                     if (argumentType == MULTIPLE_ASSIGNMENT) {
                         args = ((RubyArray) soleArg).toJavaArray();
                     }
-                }
-                else if (blockArity > 1) {
+                } else if (blockArity > 1) {
                     IRubyObject toAryArg = RuntimeHelpers.aryToAry(soleArg);
                     if (toAryArg instanceof RubyArray) args = ((RubyArray)toAryArg).toJavaArray();
                     else throw context.getRuntime().newTypeError(soleArg.getType().getName() + "#to_ary should return Array");
@@ -208,13 +170,6 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
         }
 
         return args;
-    }
-
-    private IRubyObject defaultArgLogic(Ruby ruby, IRubyObject value) {
-        if (value == null) {
-            return warnMultiReturnNil(ruby);
-        }
-        return value;
     }
 
     @Override
