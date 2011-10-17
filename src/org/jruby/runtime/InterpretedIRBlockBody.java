@@ -126,7 +126,7 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
 
     public IRubyObject[] prepareArgumentsForYield(ThreadContext context, IRubyObject[] args, Block.Type type) {
         int blockArity = arity().getValue();
-        if (type != Block.Type.NORMAL) throw new RuntimeException("JRuby Internal Error.  Trying to yield to a " + type + " block.  Only NORMAL blocks can be yielded to.").
+        if (type != Block.Type.NORMAL) throw new RuntimeException("JRuby Internal Error.  Trying to yield to a " + type + " block.  Only NORMAL blocks can be yielded to.");
 
         if (args.length == 1) {
             IRubyObject soleArg = args[0];
