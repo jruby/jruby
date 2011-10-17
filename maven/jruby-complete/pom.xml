@@ -30,7 +30,7 @@
       <scope>${jar.scope}</scope>
     </dependency>
     <dependency>
-      <groupId>jnr.posix</groupId>
+      <groupId>com.github.jnr</groupId>
       <artifactId>jnr-posix</artifactId>
       <scope>${jar.scope}</scope>
     </dependency>
@@ -52,11 +52,6 @@
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jffi</artifactId>
-      <scope>${jar.scope}</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.jruby.extras</groupId>
-      <artifactId>jaffl</artifactId>
       <scope>${jar.scope}</scope>
     </dependency>
     <dependency>
