@@ -99,7 +99,7 @@ public class IRModule extends IRScopeImpl {
         //    end
         //
         String n = ROOT_METHOD_PREFIX + getName();
-        rootMethod = new IRMethod(this, n, false, IRStaticScopeFactory.newIRLocalScope(getLexicalParent().getStaticScope()));
+        rootMethod = new IRMethod(this, n, false, getStaticScope());
         rootMethod.addInstr(new ReceiveSelfInstruction(rootMethod.getSelf()));   // Set up self!
         rootMethod.addInstr(new ReceiveClosureInstr(rootMethod.getImplicitBlockArg()));
     }
