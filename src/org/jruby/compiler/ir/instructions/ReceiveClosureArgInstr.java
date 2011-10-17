@@ -55,11 +55,7 @@ public class ReceiveClosureArgInstr extends NoOperandInstr {
                 o = RubyArray.newArray(context.getRuntime(), restOfArgs);
             }
         } else {
-            if (numArgs <= argIndex) {
-                o = context.getRuntime().getNil();
-            } else {
-                o = interp.getParameter(argIndex);
-            }
+            o = (argIndex < numArgs) ? interp.getParameter(argIndex) : context.getRuntime().getNil();
         }
         getResult().store(interp, context, self, o);
         return null;
