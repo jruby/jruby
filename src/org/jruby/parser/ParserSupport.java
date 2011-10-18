@@ -1623,7 +1623,9 @@ public class ParserSupport {
 
             for (Node fragment: dStrNode.childNodes()) {
                 if (fragment instanceof StrNode) {
-                    regexpFragmentCheck(end, ((StrNode) fragment).getValue());
+                    ByteList frag = ((StrNode) fragment).getValue();
+                    regexpFragmentCheck(end, frag);
+                    encoding = frag.getEncoding();
                 }
             }
 
@@ -1631,7 +1633,9 @@ public class ParserSupport {
         }
 
         // EvStrNode: #{val}: no fragment check, but at least set encoding
-        regexpFragmentCheck(end, ByteList.create(""));
+        ByteList empty = ByteList.create("");
+        regexpFragmentCheck(end, empty);
+        encoding = empty.getEncoding();
         return new DRegexpNode(position, options, encoding).add(contents);
     }
     
