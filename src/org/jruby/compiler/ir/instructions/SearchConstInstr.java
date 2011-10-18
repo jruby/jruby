@@ -19,54 +19,52 @@ import org.jruby.interpreter.InterpreterContext;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 
-// ENEBO: Which case does this?  I think I just reversed this changed based on usage I can see.
-// NOTE: the scopeOrObj operand can be a dynamic scope.
-//
 // The runtime method call that GET_CONST is translated to in this case will call
 // a get_constant method on the scope meta-object which does the lookup of the constant table
 // on the meta-object.  In the case of method & closures, the runtime method will delegate
 // this call to the parent scope.
-//
-public class SearchConstInstr extends GetInstr {
-    public SearchConstInstr(Variable dest, Operand scope, String constName) {
-        super(Operation.SEARCH_CONST, dest, scope, constName);
+
+public class SearchConstInstr extends Instr {
+    IRModule definingModule;
+    String constName;
+
+    public SearchConstInstr(Variable dest, IRModule definingModule, String constName) {
+        super(Operation.SEARCH_CONST, dest);
+        this.definingModule = definingModule;
+        this.constName = constName;
+    }
+
+    public Operand[] getOperands() { 
+        return new Operand[] {};
+    }
+
+    public void simplifyOperands(Map<Operand, Operand> valueMap) { }
+
+    public Instr cloneForInlining(InlinerInfo ii) {
+        return new SearchConstInstr(ii.getRenamedVariable(result), definingModule, constName);
     }
 
     @Override
-    public Operand simplifyAndGetResult(Map<Operand, Operand> valueMap) {
-        simplifyOperands(valueMap);
-        if (!(getSource() instanceof MetaObject)) return null;
-
-        // SSS FIXME: Isn't this always going to be an IR Module?
-        IRScope s = ((MetaObject) getSource()).scope;
-        return (s instanceof IRModule) ? ((IRModule)s).getConstantValue(getName()) : null;
-    }
-
-    public Instr cloneForInlining(InlinerInfo ii) {
-        return new SearchConstInstr(ii.getRenamedVariable(result), getSource().cloneForInlining(ii), getName());
+    public String toString() { 
+        return super.toString() + "(" + (definingModule == null ? "-dynamic-" : definingModule.getName()) + "," + constName  + ")";
     }
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        String name = getName();
-        Object n = getSource();
-
-        assert n instanceof MetaObject: "All sources should be a meta object";
-
-        StaticScope staticScope = ((MetaObject) n).getScope().getStaticScope();
+        StaticScope staticScope = definingModule == null ? context.getCurrentScope().getStaticScope() : definingModule.getStaticScope();
         Ruby runtime = context.getRuntime();
         RubyModule object = runtime.getObject();
         Object constant;
         if (staticScope == null) { // FIXME: CORE CLASSES have no staticscope yet...hack for now
-            constant = object.getConstant(name);
+            constant = object.getConstant(constName);
         } else {
-            constant = staticScope.getConstant(context.getRuntime(), name, object);
+            constant = staticScope.getConstant(runtime, constName, object);
         }
 
         if (constant == null) constant = UndefinedValue.UNDEFINED;
         
         getResult().store(interp, context, self, constant);
-        
+
         return null;
     }
 }

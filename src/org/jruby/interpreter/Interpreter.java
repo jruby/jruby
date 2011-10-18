@@ -11,6 +11,7 @@ import org.jruby.ast.RootNode;
 import org.jruby.compiler.ir.IRBuilder;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.IRModule;
+import org.jruby.compiler.ir.IREvalScript;
 import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.IRClosure;
 import org.jruby.compiler.ir.IRScope;
@@ -24,6 +25,8 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.CFG;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.parser.IRStaticScope;
+import org.jruby.parser.StaticScope;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
@@ -37,12 +40,37 @@ import org.jruby.util.log.LoggerFactory;
 public class Interpreter {
     private static final Logger LOG = LoggerFactory.getLogger("Interpreter");
 
-    public static IRubyObject interpret(Ruby runtime, Node rootNode, IRubyObject self, Block block) {
+    public static IRubyObject interpret(Ruby runtime, Node rootNode, IRubyObject self) {
         IRScope scope = new IRBuilder().buildRoot((RootNode) rootNode);
         scope.prepareForInterpretation();
 //        scope.runCompilerPass(new CallSplitter());
 
-        return interpretTop(runtime, scope, ((RootNode)rootNode).getScope(), self, block);
+        return interpretTop(runtime, scope, self);
+    }
+
+    public static IRubyObject interpretCommonEval(Ruby runtime, String file, int lineNumber, RootNode node, IRubyObject self, Block block, StaticScope ss, IRScope containingIRScope) {
+        IREvalScript evalScript = new IRBuilder().buildEvalRoot(ss, containingIRScope, file, lineNumber, node);
+        evalScript.prepareForInterpretation();
+//        evalScript.runCompilerPass(new CallSplitter());
+        try {
+            return evalScript.call(runtime.getCurrentContext(), self, evalScript.getStaticScope().getModule(), node.getScope(), block);
+        } catch (IRBreakJump bj) {
+            throw runtime.newLocalJumpError(Reason.BREAK, (IRubyObject)bj.breakValue, "unexpected break");
+        }
+    }
+
+    public static IRubyObject interpretSimpleEval(Ruby runtime, String file, int lineNumber, Node node, IRubyObject self) {
+        RootNode rootNode = (RootNode)node;
+        StaticScope ss = rootNode.getStaticScope();
+        IRScope containingIRScope = ((IRStaticScope)ss.getEnclosingScope().getEnclosingScope()).getIRScope();
+        return interpretCommonEval(runtime, file, lineNumber, rootNode, self, Block.NULL_BLOCK, ss, containingIRScope);
+    }
+
+    public static IRubyObject interpretBindingEval(Ruby runtime, String file, int lineNumber, Node node, IRubyObject self, Block block) {
+        RootNode rootNode = (RootNode)node;
+        StaticScope ss = rootNode.getStaticScope();
+        IRScope containingIRScope = ((IRStaticScope)ss.getEnclosingScope()).getIRScope();
+        return interpretCommonEval(runtime, file, lineNumber, rootNode, self, block, ss, containingIRScope);
     }
 
     private static int interpInstrsCount = 0;
@@ -60,7 +88,7 @@ public class Interpreter {
         return RubyInstanceConfig.IR_DEBUG;
     }
 
-    public static IRubyObject interpretTop(Ruby runtime, IRScope scope, DynamicScope rootScope, IRubyObject self, Block block) {
+    public static IRubyObject interpretTop(Ruby runtime, IRScope scope, IRubyObject self) {
         assert scope instanceof IRScript : "Must be an IRScript scope at Top!!!";
 
         IRScript root = (IRScript) scope;
@@ -76,11 +104,11 @@ public class Interpreter {
         // Scope state for root?
         IRModule.getRootObjectScope().setModule(currModule);
         IRMethod rootMethod = root.getRootClass().getRootMethod();
-        InterpretedIRMethod method = new InterpretedIRMethod(rootMethod, currModule, rootScope);
+        InterpretedIRMethod method = new InterpretedIRMethod(rootMethod, currModule);
         ThreadContext context = runtime.getCurrentContext();
 
         try {
-            IRubyObject rv =  method.call(context, self, currModule, "", IRubyObject.NULL_ARRAY, block);
+            IRubyObject rv =  method.call(context, self, currModule, "", IRubyObject.NULL_ARRAY);
             if (isDebug()) LOG.info("-- Interpreted instructions: {}", interpInstrsCount);
             return rv;
         } catch (IRBreakJump bj) {

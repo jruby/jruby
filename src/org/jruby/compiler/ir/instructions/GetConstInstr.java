@@ -40,7 +40,7 @@ public class GetConstInstr extends GetInstr {
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new SearchConstInstr(ii.getRenamedVariable(result), getSource().cloneForInlining(ii), getName());
+        return new GetConstInstr(ii.getRenamedVariable(result), getSource().cloneForInlining(ii), getName());
     }
 
     @Override

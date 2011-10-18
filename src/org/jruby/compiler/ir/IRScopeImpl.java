@@ -11,7 +11,6 @@ import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.compiler_pass.CompilerPass;
-import org.jruby.compiler.ir.operands.TemporaryClosureVariable;
 import org.jruby.compiler.ir.operands.TemporaryVariable;
 import org.jruby.compiler.ir.operands.RenamedVariable;
 import org.jruby.compiler.ir.compiler_pass.AddBindingInstructions;
@@ -96,12 +95,19 @@ public abstract class IRScopeImpl implements IRScope {
     }
 
     public IRModule getNearestModule() {
-        IRScope current = lexicalParent;
+        IRScope current = this;
 
-        while (current != null && !(current instanceof IRModule) && !(current instanceof IRScript)) {
+        while (current != null && !((current instanceof IRModule) || (current instanceof IRScript) || (current instanceof IREvalScript))) {
             current = current.getLexicalParent();
         }
-        
+
+        // In eval mode, we dont have a lexical view of what module we are nested in
+        // because binding_eval, class_eval, module_eval, instance_eval can switch
+        // around the lexical scope for evaluation to be something else.
+        if (current instanceof IREvalScript) {
+            return null;
+        }
+
         if (current instanceof IRScript) { // Possible we are a method at top-level.
             current = ((IRScript) current).getRootClass();
         }
@@ -125,10 +131,6 @@ public abstract class IRScopeImpl implements IRScope {
         nextClosureIndex++;
         
         return nextClosureIndex;
-    }
-
-    public Variable getNewTemporaryClosureVariable(int closureId) {
-        return new TemporaryClosureVariable(closureId, allocateNextPrefixedName("%cl_" + closureId));
     }
 
     public Variable getNewTemporaryVariable() {
@@ -229,6 +231,12 @@ public abstract class IRScopeImpl implements IRScope {
 
     /* Run any necessary passes to get the IR ready for interpretation */
     public void prepareForInterpretation() {
+        // Should be an execution scope
+        if (!(this instanceof IRExecutionScope)) return;
+
+        // forcibly clear out the shared eval-scope variable allocator each time this method executes
+        ((IRExecutionScope)this).initEvalScopeVariableAllocator(true); 
+
         // SSS FIXME: We should configure different optimization levels
         // and run different kinds of analysis depending on time budget.  Accordingly, we need to set
         // IR levels/states (basic, optimized, etc.) and the

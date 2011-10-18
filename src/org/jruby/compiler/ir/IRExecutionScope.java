@@ -24,16 +24,34 @@ import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.CFG;
 import org.jruby.parser.StaticScope;
 
-/* IR_Method and IR_Closure -- basically scopes that represent execution contexts.
+/* IRMethod, IRClosure, IREvalScript -- basically scopes that represent execution contexts.
  * This is just an abstraction over methods and closures */
 public abstract class IRExecutionScope extends IRScopeImpl {
-    private List<Instr>   instructions;   // List of IR instructions for this method
-    private CFG              cfg;      // Control flow graph for this scope
-    private List<IRClosure> closures; // List of (nested) closures in this scope
+    private List<Instr>     instructions; // List of IR instructions for this method
+    private CFG             cfg;          // Control flow graph for this scope
+    private List<IRClosure> closures;     // List of (nested) closures in this scope
 
-    // All local variables (their names) are mapped to an integer id in this scope
-    protected int nextLocalVariableSlot;
-    protected Map<String, LocalVariable> localVariables;
+    protected static class LocalVariableAllocator {
+        public int nextSlot;
+        public Map<String, LocalVariable> varMap;
+
+        public LocalVariableAllocator() {
+            varMap = new HashMap<String, LocalVariable>();
+            nextSlot = 0;
+        }
+
+        public final LocalVariable getVariable(String name) {
+            return varMap.get(name);
+        }
+
+        public final void putVariable(String name, LocalVariable var) {
+            varMap.put(name, var);
+            nextSlot++;
+        }
+    }
+
+    LocalVariableAllocator localVars;
+    LocalVariableAllocator evalScopeVars;
 
     /* *****************************************************************************************************
      * Does this execution scope (applicable only to methods) receive a block and use it in such a way that
@@ -106,8 +124,7 @@ public abstract class IRExecutionScope extends IRScopeImpl {
         canCaptureCallersBinding = true;
         requiresBinding = true;
 
-        localVariables = new HashMap<String, LocalVariable>();
-        nextLocalVariableSlot = 0;
+        localVars = new LocalVariableAllocator();
     }
 
     public IRExecutionScope(IRScope lexicalParent, String name, StaticScope staticScope) {
@@ -395,13 +412,17 @@ public abstract class IRExecutionScope extends IRScopeImpl {
 
     public abstract LocalVariable getLocalVariable(String name, int depth);
 
+    protected void initEvalScopeVariableAllocator(boolean reset) {
+        if (reset || evalScopeVars == null) evalScopeVars = new LocalVariableAllocator();
+    }
+
     public int getLocalVariablesCount() {
-        return nextLocalVariableSlot;
+        return localVars.nextSlot;
     }
 
     public int getUsedVariablesCount() {
         // System.out.println("For " + this + ", # lvs: " + nextLocalVariableSlot);
         // %block, # local vars, # flip vars
-        return 1 + nextLocalVariableSlot + getPrefixCountSize("%flip");
+        return 1 + localVars.nextSlot + getPrefixCountSize("%flip");
     }
 }

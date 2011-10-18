@@ -182,6 +182,7 @@ import org.jruby.compiler.ir.operands.KeyValuePair;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.MetaObject;
+import org.jruby.compiler.ir.operands.ModuleMetaObject;
 import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.operands.Nil;
 import org.jruby.compiler.ir.operands.UnexecutableNil;
@@ -1069,7 +1070,10 @@ public class IRBuilder {
         IRClass c = new IRClass(s, superClass, className, classNode.getScope());
         Variable ret = s.getNewTemporaryVariable();
         s.addInstr(new DefineClassInstr(ret, c, container, superClass));
-        s.getNearestModule().addClass(c);
+        // SSS NOTE: This is a debugging tool that works in most cases and is not used
+        // at runtime by the executing code since this static nesting might be wrong.
+        IRModule nm = s.getNearestModule();
+        if (nm != null) nm.addClass(c);
 
         IRMethod rootMethod = c.getRootMethod();
         Operand rv = build(classNode.getBodyNode(), rootMethod);
@@ -1093,7 +1097,10 @@ public class IRBuilder {
 
         // Create a dummy meta class and record it as being lexically defined in scope s
         IRMetaClass mc = new IRMetaClass(s, sclassNode.getScope());
-        s.getNearestModule().addClass(mc);
+        // SSS NOTE: This is a debugging tool that works in most cases and is not used
+        // at runtime by the executing code since this static nesting might be wrong.
+        IRModule nm = s.getNearestModule();
+        if (nm != null) nm.addClass(mc);
         Variable ret = s.getNewTemporaryVariable();
         s.addInstr(new DefineMetaClassInstr(ret, receiver, mc));
 
@@ -1169,11 +1176,20 @@ public class IRBuilder {
         return buildConstDeclAssignment(node, s, val);
     }
 
+    private MetaObject findContainerModule(IRScope s) {
+        IRModule nearestModule = s.getNearestModule();
+        return (nearestModule == null) ? ModuleMetaObject.CURRENT_MODULE : MetaObject.create(nearestModule);
+    }
+
+    private IRModule startingSearchScope(IRScope s) {
+        return s.getNearestModule();
+    }
+
     public Operand buildConstDeclAssignment(ConstDeclNode constDeclNode, IRScope s, Operand val) {
         Node constNode = constDeclNode.getConstNode();
 
         if (constNode == null) {
-            s.addInstr(new PutConstInstr(s.getNearestModule(), constDeclNode.getName(), val));
+            s.addInstr(new PutConstInstr(findContainerModule(s), constDeclNode.getName(), val));
         } else if (constNode.getNodeType() == NodeType.COLON2NODE) {
             Operand module = build(((Colon2Node) constNode).getLeftNode(), s);
             s.addInstr(new PutConstInstr(module, constDeclNode.getName(), val));
@@ -1185,18 +1201,13 @@ public class IRBuilder {
         return val;
     }
 
-    private IRModule findNearestModule(IRScope s) {
-        while (s != null && !(s instanceof IRModule)) s = s.getLexicalParent();
-        return (IRModule)s;
-    }
-
     private Operand searchConst(IRScope s, IRScope startingScope, String name) {
+        IRModule startingModule = startingSearchScope(startingScope);
         Variable v = s.getNewTemporaryVariable();
-        IRModule nearestModule = findNearestModule(startingScope);
-        s.addInstr(new SearchConstInstr(v, MetaObject.create(nearestModule), name));
+        s.addInstr(new SearchConstInstr(v, startingModule, name));
         Label foundLabel = s.getNewLabel();
         s.addInstr(new BNEInstr(v, UndefinedValue.UNDEFINED, foundLabel));
-        s.addInstr(new ConstMissingInstr(v, nearestModule, name));
+        s.addInstr(new ConstMissingInstr(v, startingModule, name));
         s.addInstr(new LABEL_Instr(foundLabel));
         return v;
     }
@@ -1471,7 +1482,7 @@ public class IRBuilder {
             case CONSTNODE: {
                 Label undefLabel = s.getNewLabel();
                 Variable tmpVar  = s.getNewTemporaryVariable();
-                s.addInstr(new SearchConstInstr(tmpVar, MetaObject.create(findNearestModule(s)), ((ConstNode) node).getName()));
+                s.addInstr(new SearchConstInstr(tmpVar, startingSearchScope(s), ((ConstNode) node).getName()));
                 s.addInstr(new BEQInstr(tmpVar, UndefinedValue.UNDEFINED, undefLabel));
                 return buildDefnCheckIfThenPaths(s, undefLabel, new StringLiteral("constant"));
             }
@@ -1778,15 +1789,16 @@ public class IRBuilder {
         // statically determine container where possible?
         // DefineIstanceMethod IR interpretation currently relies on this static determination for handling top-level methods
         if ((s instanceof IRMethod) && ((IRMethod)s).isAModuleRootMethod()) {
-            container =  MetaObject.create(s.getNearestModule());
             method = defineNewMethod(node, s, true);
-            s.getNearestModule().addMethod(method);
+            // SSS NOTE: This is a debugging tool that works in most cases and is not used
+            // at runtime by the executing code since this static nesting might be wrong.
+            IRModule nm = s.getNearestModule();
+            if (nm != null) nm.addMethod(method);
         }
         else {
-            container = getSelf(s);
             method = defineNewMethod(node, s, true);
         }
-        s.addInstr(new DefineInstanceMethodInstr(container, method));
+        s.addInstr(new DefineInstanceMethodInstr(new StringLiteral("--unused--"), method));
         return Nil.NIL;
     }
 
@@ -2422,7 +2434,7 @@ public class IRBuilder {
             if (leftNode != null) { // Foo::Bar
                 container = build(leftNode, s);
             } else { // Only name with no left-side Bar <- Note no :: on left
-                container = MetaObject.create(s.getNearestModule());
+                container = findContainerModule(s);
             }
         } else { //::Bar
             container = MetaObject.create(IRClass.getCoreClass("Object"));
@@ -2440,7 +2452,10 @@ public class IRBuilder {
         IRModule m = new IRModule(s, moduleName, moduleNode.getScope());
         Variable ret = s.getNewTemporaryVariable();
         s.addInstr(new DefineModuleInstr(m, ret, container));
-        s.getNearestModule().addModule(m);
+        // SSS NOTE: This is a debugging tool that works in most cases and is not used
+        // at runtime by the executing code since this static nesting might be wrong.
+        IRModule nm = s.getNearestModule();
+        if (nm != null) nm.addModule(m);
 
         IRMethod rootMethod = m.getRootMethod();
         Operand rv = build(moduleNode.getBodyNode(), rootMethod);
@@ -3015,6 +3030,21 @@ public class IRBuilder {
         // The expression that uses this result can never be executed beyond the return and hence the value itself is just
         // a placeholder operand. 
         return UnexecutableNil.U_NIL;
+    }
+
+    public IREvalScript buildEvalRoot(StaticScope staticScope, IRScope containingIRScope, String file, int lineNumber, RootNode rootNode) {
+        // Top-level script!
+        IREvalScript script = new IREvalScript(containingIRScope, staticScope);
+
+        // Debug info: record file name and line number
+        script.addInstr(new FilenameInstr(file));
+        script.addInstr(new LineNumberInstr(script, lineNumber));
+
+        // Build IR for the tree and return the result of the expression tree
+        Operand rval = build(rootNode.getBodyNode(), script);
+        script.addInstr(new ClosureReturnInstr(rval));
+
+        return script;
     }
 
     public IRScope buildRoot(RootNode rootNode) {

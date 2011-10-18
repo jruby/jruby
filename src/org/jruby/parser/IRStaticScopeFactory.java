@@ -45,4 +45,9 @@ public class IRStaticScopeFactory extends StaticScopeFactory {
         return new IRStaticScope(parent, false, false);
     }
     
+    // We only call these from inside IR impl (IR is all or nothing)    
+    public static StaticScope newIREvalScope(StaticScope parent) {
+        return new IRStaticScope(parent, true, true);
+    }
+    
 }

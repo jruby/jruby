@@ -19,28 +19,18 @@ public class InterpretedIRMethod extends DynamicMethod {
     private static final Logger LOG = LoggerFactory.getLogger("InterpretedIRMethod");
 
     private final IRMethod method;
-    private final DynamicScope rootDynamicScope; // Used when we are in an eval context
     boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
 
     // We can probably use IRMethod callArgs for something (at least arity)
     public InterpretedIRMethod(IRMethod method, RubyModule implementationClass) {
         super(implementationClass, Visibility.PRIVATE, CallConfiguration.FrameNoneScopeNone);
         this.method = method;
-        this.rootDynamicScope = null;
-    }
-
-    // We can probably use IRMethod callArgs for something (at least arity)
-    public InterpretedIRMethod(IRMethod method, RubyModule implementationClass, DynamicScope rootDynamicScope) {
-        super(implementationClass, Visibility.PRIVATE, CallConfiguration.FrameNoneScopeNone);
-        this.method = method;
-        this.rootDynamicScope = rootDynamicScope;
     }
 
     // We can probably use IRMethod callArgs for something (at least arity)
     public InterpretedIRMethod(IRMethod method, Visibility visibility, RubyModule implementationClass) {
         super(implementationClass, visibility, CallConfiguration.FrameNoneScopeNone);
         this.method = method;
-        this.rootDynamicScope = null;
     }
     
     @Override
@@ -69,15 +59,7 @@ public class InterpretedIRMethod extends DynamicMethod {
             displayedCFG = true;
         }
 
-        // Are we in eval mode?
-        DynamicScope ds;
-        if (context.getCurrentFrame().isBindingFrame()) {
-            ds = this.rootDynamicScope;
-            ds.growIfNeeded();
-        } else {
-            ds = DynamicScope.newDynamicScope(method.getStaticScope());
-        }
-        context.pushScope(ds);
+        context.pushScope(DynamicScope.newDynamicScope(method.getStaticScope()));
         RubyModule currentModule = getImplementationClass();
         context.preMethodFrameOnly(currentModule, name, self, block);
         context.getCurrentScope().getStaticScope().setModule(clazz);

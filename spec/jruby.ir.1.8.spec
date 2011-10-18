@@ -19,7 +19,6 @@ class MSpecScript
   set :core, [
     SPEC_DIR + '/core',
     "^" + SPEC_DIR + '/language/BEGIN',
-    "^" + SPEC_DIR + '/core/kernel/instance_eval',
 
     # 1.9
     '^' + SPEC_DIR + '/core/basicobject'

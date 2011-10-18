@@ -135,6 +135,10 @@ public class IRStaticScope extends StaticScope {
         return "IRStaticScope" + (isBlockOrEval ? "(BLOCK): " : "(LOCAL): ") + super.toString();
     }
 
+    public IRExecutionScope getIRScope() {
+        return irScope;
+    }
+
     public void setIRScope(IRExecutionScope irScope) {
         this.irScope = irScope;
     }

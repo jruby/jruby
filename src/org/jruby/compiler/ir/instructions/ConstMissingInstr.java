@@ -40,12 +40,12 @@ public class ConstMissingInstr extends Instr {
 
     @Override
     public String toString() { 
-        return super.toString() + "(" + definingModule.getName() + "," + missingConst  + ")";
+        return super.toString() + "(" + (definingModule == null ? "-dynamic-" : definingModule.getName()) + "," + missingConst  + ")";
     }
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        StaticScope staticScope = definingModule.getStaticScope();
+        StaticScope staticScope = definingModule == null ? context.getCurrentScope().getStaticScope() : definingModule.getStaticScope();
         Object constant = staticScope.getModule().callMethod(context, "const_missing", context.getRuntime().fastNewSymbol(missingConst));
         getResult().store(interp, context, self, constant);
         

@@ -12,6 +12,7 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Splat;
 import org.jruby.compiler.ir.operands.ClosureLocalVariable;
 import org.jruby.compiler.ir.operands.LocalVariable;
+import org.jruby.compiler.ir.operands.TemporaryClosureVariable;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.ReceiveClosureArgInstr;
@@ -27,12 +28,12 @@ public class IRClosure extends IRExecutionScope {
     public final Label endLabel;   // Label for the end of the closure (used to implement retry)
     public final int closureId;    // Unique id for this closure within the nearest ancestor method.
 
-    private final BlockBody body;
+    private BlockBody body;
 
     // Oy, I have a headache!
     // for-loop body closures are special in that they dont really define a new variable scope.
     // They just silently reuse the parent scope.  This changes how variables are allocated (see IRMethod.java).
-    public final boolean isForLoopBody;
+    private boolean isForLoopBody;
 
     // Has this closure been inlined into a method? If yes, its independent existence has come to an end
     // because it has very likely been integrated into another scope and we should no longer do anything
@@ -43,22 +44,27 @@ public class IRClosure extends IRExecutionScope {
     private List<Operand> blockArgs;
 
     public IRClosure(IRScope lexicalParent, boolean isForLoopBody, StaticScope staticScope, Arity arity, int argumentType) {
-        super(lexicalParent, null, staticScope);
+        this(lexicalParent, staticScope, isForLoopBody ? "_FOR_LOOP_" : "_CLOSURE_");
         this.isForLoopBody = isForLoopBody;
-        String prefix = isForLoopBody ? "_FOR_LOOP_" : "_CLOSURE_";
-        this.startLabel = getNewLabel(prefix + "START");
-        this.endLabel = getNewLabel(prefix + "END");
-        this.closureId = lexicalParent.getNextClosureId();
-        setName(prefix + closureId);
-        this.blockArgs = new ArrayList<Operand>();
-
         this.hasBeenInlined = false;
+        this.blockArgs = new ArrayList<Operand>();
         if (!IRBuilder.inIRGenOnlyMode()) {
             this.body = new InterpretedIRBlockBody(this, arity, argumentType);
             if ((staticScope != null) && !isForLoopBody) ((IRStaticScope)staticScope).setIRScope(this);
         } else {
             this.body = null;
         }
+    }
+
+    // Used by IREvalScript
+    protected IRClosure(IRScope lexicalParent, StaticScope staticScope, String prefix) {
+        super(lexicalParent, null, staticScope);
+        this.isForLoopBody = false;
+        this.startLabel = getNewLabel(prefix + "START");
+        this.endLabel = getNewLabel(prefix + "END");
+        this.closureId = lexicalParent.getNextClosureId();
+        setName(prefix + closureId);
+        this.body = null;
     }
 
     @Override
@@ -73,7 +79,7 @@ public class IRClosure extends IRExecutionScope {
 
     @Override
     public Variable getNewTemporaryVariable() {
-        return getNewTemporaryClosureVariable(closureId);
+        return new TemporaryClosureVariable(closureId, allocateNextPrefixedName("%cl_" + closureId));
     }
 
     @Override
@@ -83,6 +89,10 @@ public class IRClosure extends IRExecutionScope {
 
     public String getScopeName() {
         return "Closure";
+    }
+
+    public boolean isForLoopBody() {
+        return isForLoopBody;
     }
 
     @Override
@@ -96,13 +106,6 @@ public class IRClosure extends IRExecutionScope {
     public Operand[] getBlockArgs() { 
         return blockArgs.toArray(new Operand[blockArgs.size()]);
     }
-
-/**
-    @Override
-    public void setConstantValue(String constRef, Operand val) {
-        throw new org.jruby.compiler.NotCompilableException("Unexpected: Encountered set constant value in a closure!");
-    }
-**/
 
     public String toStringBody() {
         StringBuilder buf = new StringBuilder();
@@ -136,15 +139,14 @@ public class IRClosure extends IRExecutionScope {
     }
 
     public LocalVariable findExistingLocalVariable(String name) {
-        LocalVariable lvar = localVariables.get(name);
+        LocalVariable lvar = localVars.getVariable(name);
         if (lvar != null) return lvar;
         else return ((IRExecutionScope)getLexicalParent()).findExistingLocalVariable(name);
     }
 
     public LocalVariable getNewLocalVariable(String name, int scopeDepth) {
-        LocalVariable lvar = new ClosureLocalVariable(this, name, 0, nextLocalVariableSlot);
-        localVariables.put(name, lvar);
-        nextLocalVariableSlot++;
+        LocalVariable lvar = new ClosureLocalVariable(this, name, 0, localVars.nextSlot);
+        localVars.putVariable(name, lvar);
         return lvar;
     }
 
