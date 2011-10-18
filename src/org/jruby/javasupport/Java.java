@@ -921,6 +921,8 @@ public class Java implements Library {
             try {
                 // First char is upper case, so assume it's a class name
                 final RubyModule javaModule = getProxyClass(runtime, JavaClass.forNameVerbose(runtime, fullName));
+                
+                // save class in singletonized parent, so we don't come back here
                 memoizePackageOrClass(parentPackage, name, javaModule);
 
                 return javaModule;
