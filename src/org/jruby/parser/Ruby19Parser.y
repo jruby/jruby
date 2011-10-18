@@ -361,8 +361,8 @@ stmt            : kALIAS fitem {
                     $$ = new RescueNode(support.getPosition($1), $1, new RescueBodyNode(support.getPosition($1), null, body, null), null);
                 }
                 | klBEGIN {
-                    if (support.isInDef() || support.isInSingle() || support.getCurrentScope().isBlockScope()) {
-                        support.yyerror("BEGIN in method, singleton, or block");
+                    if (support.isInDef() || support.isInSingle()) {
+                        support.yyerror("BEGIN in method");
                     }
                 } tLCURLY compstmt tRCURLY {
                     support.getResult().addBeginNode(new PreExe19Node($1.getPosition(), support.getCurrentScope(), $4));
