@@ -1511,6 +1511,13 @@ public class RubyInstanceConfig {
     public static final boolean JIT_LOADING_DEBUG = SafePropertyAccessor.getBoolean("jruby.jit.debug", false);
 
     public static final boolean CAN_SET_ACCESSIBLE = SafePropertyAccessor.getBoolean("jruby.ji.setAccessible", true);
+    /**
+     * In Java integration, allow upper case name for a Java package;
+     * e.g., com.example.UpperCase.Class
+     */
+    public static final boolean UPPER_CASE_PACKAGE_NAME_ALLOWED = 
+            SafePropertyAccessor.getBoolean("jruby.ji.upcase.package.name.allowed", false);
+    
     
     public static final boolean USE_INVOKEDYNAMIC =
             JAVA_VERSION == Opcodes.V1_7

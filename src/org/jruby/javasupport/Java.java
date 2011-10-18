@@ -876,7 +876,7 @@ public class Java implements Library {
     }
 
     private static RubyModule getProxyOrPackageUnderPackage(ThreadContext context, final Ruby runtime,
-            RubyModule parentPackage, String sym) {
+            RubyModule parentPackage, String sym) throws Exception {
         IRubyObject packageNameObj = parentPackage.getInstanceVariable("@package_name");
         if (packageNameObj == null) {
             throw runtime.newArgumentError("invalid package module");
@@ -918,27 +918,22 @@ public class Java implements Library {
             
             return packageModule;
         } else {
-            // upper case name, so most likely a class
-            final RubyModule javaModule = getProxyClass(runtime, JavaClass.forNameVerbose(runtime, fullName));
+            try {
+                // First char is upper case, so assume it's a class name
+                final RubyModule javaModule = getProxyClass(runtime, JavaClass.forNameVerbose(runtime, fullName));
+                memoizePackageOrClass(parentPackage, name, javaModule);
 
-            // save class in singletonized parent, so we don't come back here
-            memoizePackageOrClass(parentPackage, name, javaModule);
+                return javaModule;
+            } catch (Exception e) {
+                if (RubyInstanceConfig.UPPER_CASE_PACKAGE_NAME_ALLOWED) {
+                    // but for those not hip to conventions and best practices,
+                    // we'll try as a package
+                    return getJavaPackageModule(runtime, fullName);
+                } else {
+                    throw e;
+                }
+            }
 
-            return javaModule;
-
-        // FIXME: we should also support orgs that use capitalized package
-        // names (including, embarrassingly, the one I work for), but this
-        // should be enabled by a system property, as the expected default
-        // behavior for an upper-case value should be (and is) to treat it
-        // as a class name, and raise an exception if it's not found 
-
-//            try {
-//                return getProxyClass(runtime, JavaClass.forName(runtime, fullName));
-//            } catch (Exception e) {
-//                // but for those not hip to conventions and best practices,
-//                // we'll try as a package
-//                return getJavaPackageModule(runtime, fullName);
-//            }
         }
     }
 
@@ -946,7 +941,7 @@ public class Java implements Library {
             ThreadContext context,
             IRubyObject recv,
             IRubyObject parentPackage,
-            IRubyObject sym) {
+            IRubyObject sym) throws Exception {
         Ruby runtime = recv.getRuntime();
         if (!(parentPackage instanceof RubyModule)) {
             throw runtime.newTypeError(parentPackage, runtime.getModule());

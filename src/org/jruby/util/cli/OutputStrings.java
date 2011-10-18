@@ -174,6 +174,8 @@ public class OutputStrings {
                 .append("\nJAVA INTEGRATION:\n")
                 .append("    ji.setAccessible=true|false\n")
                 .append("       Try to set inaccessible Java methods to be accessible. Default is true.\n")
+                .append("    ji.upper.case.package.name.allowed=true|false\n")
+                .append("       Allow Capitalized Java pacakge names. Default is false.\n")
                 .append("    interfaces.useProxy=true|false\n")
                 .append("       Use java.lang.reflect.Proxy for interface impl. Default is false.\n");
 
