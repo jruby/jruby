@@ -77,9 +77,12 @@ public class AbstractProfilePrinter {
     }
     
     public boolean isThisProfilerInvocation(int serial) {
-        String name = methodName(serial);
-        return name.length() > 15 && 
-                (name.equals("JRuby::Profiler.start") || name.equals("JRuby::Profiler.stop"));
+        final String start = PROFILER_START_HASH_METHOD;
+        final String stop = PROFILER_STOP_HASH_METHOD;
+
+        final String name = methodName(serial);
+        return ( name.hashCode() == start.hashCode() && name.equals(start) ) ||
+               ( name.hashCode() == stop.hashCode() && name.equals(stop) );
     }
     
     public String methodName(int serial) {
@@ -105,22 +108,27 @@ public class AbstractProfilePrinter {
         return displayName;
     }
     
+    private static final String PROFILER_START_HASH_METHOD = "JRuby::Profiler.start";
+    private static final String PROFILER_STOP_HASH_METHOD = "JRuby::Profiler.stop";
+
     protected static String moduleHashMethod(RubyModule module, String name) {
         if (module instanceof MetaClass) {
             IRubyObject obj = ((MetaClass) module).getAttached();
             if (obj instanceof RubyModule) {
-                module = (RubyModule) obj;
-                return module.getName() + "." + name;
+                return ((RubyModule) obj).getName() + "." + name;
             } else if (obj instanceof RubyObject) {
                 return ((RubyObject) obj).getType().getName() + "(singleton)#" + name;
             } else {
                 return "unknown#" + name;
             }
-        } else if (module.isSingleton()) {
-            return ((RubyClass) module).getRealClass().getName() + "(singleton)#" + name;
-        } else {
-            return module.getName() + "#" + name;
         }
+        if (module.isSingleton()) {
+            return ((RubyClass) module).getRealClass().getName() + "(singleton)#" + name;
+        }
+        if (module instanceof RubyClass) {
+            return module.getName() + "#" + name; // instance method
+        }
+        return module.getName() + "." + name; // module method
     }
     
     protected Map<Integer, MethodData> methodData(Invocation top) {
@@ -132,7 +140,7 @@ public class AbstractProfilePrinter {
         return methods;
     }
 
-    protected void methodData1(Map<Integer, MethodData> methods, Invocation inv) {
+    private void methodData1(Map<Integer, MethodData> methods, Invocation inv) {
         for (Entry<Invocation> entry : inv.getChildren().entrySet()) {
             Invocation child = entry.getValue();
             int serial = child.getMethodSerialNumber();
