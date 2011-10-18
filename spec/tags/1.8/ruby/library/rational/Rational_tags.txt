@@ -1,0 +1,1 @@
+fails:Rational() passed Integer returns a new Rational number with 1 as the denominator

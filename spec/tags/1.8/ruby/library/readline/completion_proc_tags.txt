@@ -1,0 +1,2 @@
+fails:Readline.completion_proc returns nil
+fails:Readline.completion_proc= returns the passed Proc

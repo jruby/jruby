@@ -1,0 +1,2 @@
+fails:Constant resolution within methods with ||= raises a NameError if the constant is not defined
+fails(compiler):Literal (A::X) constant resolution with dynamically assigned constants searches Object if a toplevel qualifier (::X) is given

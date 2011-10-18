@@ -1,0 +1,2 @@
+fails:Integer#round returns itself rounded if passed a negative value
+critical(hangs):Integer#round returns 0 if passed a big negative value

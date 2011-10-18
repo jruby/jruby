@@ -1,0 +1,2 @@
+fails:Range#step given Float values and step returns float values of the form step * n + begin and never the end value if the range is exclusive
+fails:Range#step given Float values and step returns float values of the form step * n + begin and never bigger than the end value if the range is inclusive

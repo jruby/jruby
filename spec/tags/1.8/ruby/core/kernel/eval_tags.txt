@@ -1,0 +1,1 @@
+fails:Kernel#eval raises a LocalJumpError if there is no lambda-style closure in the chain

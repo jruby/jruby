@@ -1,0 +1,1 @@
+fails:Struct.new raises an ArgumentError if fixnum#to_sym is nil

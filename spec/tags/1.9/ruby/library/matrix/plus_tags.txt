@@ -1,0 +1,1 @@
+fails:Matrix#+ for a subclass of Matrix returns an instance of that subclass

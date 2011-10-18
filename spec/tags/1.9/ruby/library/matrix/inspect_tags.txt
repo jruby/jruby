@@ -1,0 +1,1 @@
+fails:Matrix#inspect for a subclass of Matrix returns a string using the subclass' name

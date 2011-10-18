@@ -1,0 +1,1 @@
+fails:Array#to_s uses default internal encoding regardless of strings' encodings or content

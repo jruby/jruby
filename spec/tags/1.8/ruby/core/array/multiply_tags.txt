@@ -1,0 +1,1 @@
+fails:Array#* with an integer does not copy the taint status of the original array if the passed count is 0

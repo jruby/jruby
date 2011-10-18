@@ -1,1 +1,4 @@
 fails(JRUBY-5233):Marshal::load loads a Random
+fails:Marshal::load for a Module loads an old module
+fails:Marshal::load for a wrapped C pointer loads
+fails:Marshal::load for a wrapped C pointer raises TypeError when the local class is missing _data_load

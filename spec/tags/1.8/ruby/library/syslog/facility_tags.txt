@@ -1,0 +1,1 @@
+fails:Syslog.facility returns nil if the log is closed

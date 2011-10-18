@@ -1,2 +1,5 @@
 fails(JRUBY-3357):Marshal::load loads an Array with proc
 fails(JRUBY-3786):Marshal::load raises an ArgumentError when the dumped data is truncated
+fails:Marshal::load for a Module loads an old module
+fails:Marshal::load for a wrapped C pointer loads
+fails:Marshal::load for a wrapped C pointer raises TypeError when the local class is missing _data_load

@@ -1,3 +1,15 @@
 fails:Block-local variables can not have the same name as one of the standard parameters
 fails(JRUBY-5668):A block with multiple arguments raises a TypeError if the #to_ary value isn't an Array
 fails(JRUBY-5668):A block with multiple arguments tries to use #to_ary to convert a single incoming value
+fails:A block taking |a, b| arguments destructures a splatted Array
+fails:A block taking |a, b| arguments calls #to_ary to convert a single yielded object to an Array
+fails:A block taking |a, b| arguments raises an TypeError if #to_ary does not return an Array
+fails:A block taking |a, *b| arguments destructures a splatted Array
+fails:A block taking |a, *b| arguments calls #to_ary to convert a single yielded object to an Array
+fails:A block taking |a, *b| arguments raises an TypeError if #to_ary does not return an Array
+fails:A block taking |a, | arguments calls #to_ary to convert a single yielded object to an Array
+fails:A block taking |a, | arguments raises an TypeError if #to_ary does not return an Array
+fails:A block taking |(a, b)| arguments assigns nil to the arguments when yielded no values
+fails:A block taking |(a, b), c| arguments assigns nil to the arguments when yielded no values
+fails:A block taking |(a, b), c| arguments calls #to_ary to convert a single yielded object to an Array
+fails:A block taking |(a, b), c| arguments does not call #to_ary if the object does not respond to #to_ary

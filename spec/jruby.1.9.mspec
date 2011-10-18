@@ -61,6 +61,10 @@ class MSpecScript
     '^' + SPEC_DIR + '/library/generator',
     '^' + SPEC_DIR + '/library/parsedate',
     '^' + SPEC_DIR + '/library/ping',
+
+    # masked out because of load-time errors that can't be tagged
+    '^' + SPEC_DIR + '/library/net/http',
+    '^' + SPEC_DIR + '/library/yaml'
   ]
 
   # Command Line specs
