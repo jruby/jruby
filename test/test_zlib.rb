@@ -945,6 +945,13 @@ class TestZlibInflateAuto < Test::Unit::TestCase
     end
   end
 
+  def test_deflate_full_flush
+    z = Zlib::Deflate.new(8, 15)
+    s = z.deflate("f", Zlib::FULL_FLUSH)
+    s << z.deflate("b", Zlib::FINISH)
+    assert_equal("x\332J\003\000\000\000\377\377K\002\000\0010\000\311", s)
+  end
+
   if RUBY_VERSION > "1.9"
     eval <<-EOD
     require 'tempfile'

@@ -473,7 +473,8 @@ public class RubyZlib {
 
         public static final int BASE_SIZE = 100;
         private int windowBits;
-        private ByteList collected;
+        private byte[] collected;
+        private int collectedIdx;
         private ByteList input;
 
         private com.jcraft.jzlib.Inflater flater = null;
@@ -521,7 +522,8 @@ public class RubyZlib {
         private void init(int windowBits) {
             flater = new com.jcraft.jzlib.Inflater();
             flater.init(windowBits);
-            collected = new ByteList(BASE_SIZE);
+            collected = new byte[BASE_SIZE];
+            collectedIdx = 0;
             input = new ByteList();
         }
 
@@ -532,10 +534,10 @@ public class RubyZlib {
         }
 
         private RubyString flushOutput(Ruby runtime) {
-            if (collected.getRealSize() > 0) {
-                RubyString res = RubyString.newString(runtime, collected.getUnsafeBytes(),
-                        collected.getBegin(), collected.getRealSize());
-                resetBuffer(collected);
+            if (collectedIdx > 0) {
+                RubyString res = RubyString.newString(runtime, collected, 0, collectedIdx);
+                collectedIdx = 0;
+                flater.setOutput(collected);
                 return res;
             }
             return RubyString.newEmptyString(runtime);
@@ -647,7 +649,6 @@ public class RubyZlib {
         }
 
         private void run(boolean finish) {
-            byte[] outp = new byte[1024];
             int resultLength = -1;
             Ruby runtime = getRuntime();
 
@@ -658,17 +659,20 @@ public class RubyZlib {
                     throw newBufError(runtime, "buffer error");
                 }
 
-                flater.setOutput(outp);
-
+                flater.setOutput(collected, collectedIdx, collected.length - collectedIdx);
                 int ret = flater.inflate(com.jcraft.jzlib.JZlib.Z_NO_FLUSH);
+                resultLength = flater.next_out_index - collectedIdx;
+                collectedIdx = flater.next_out_index;
                 switch(ret){
                     case com.jcraft.jzlib.JZlib.Z_DATA_ERROR:
+                        /*
                         resultLength = flater.next_out_index;
                         if(resultLength>0){
                             // error has been occurred,
                             // but some data has been inflated successfully.
                             collected.append(outp, 0, resultLength);
                         }
+                        */
                         throw newDataError(runtime, flater.getMessage());
                     case com.jcraft.jzlib.JZlib.Z_NEED_DICT:
                          throw newDictError(runtime, "need dictionary");
@@ -685,10 +689,10 @@ public class RubyZlib {
                     default:
                         resultLength = 0;
                 }
-
-                collected.append(outp, 0, resultLength);
-                if (resultLength == outp.length) {
-                    outp = new byte[outp.length * 2];
+                if (collected.length == collectedIdx && !internalFinished()) {
+                    byte[] tmp = new byte[collected.length * 3];
+                    System.arraycopy(collected, 0, tmp, 0, collected.length);
+                    collected = tmp;
                 }
             }
             if(finish){
@@ -737,7 +741,13 @@ public class RubyZlib {
             // MRI behavior: in finished mode, we work as pass-through
             if (internalFinished()) {
                 if (input.getRealSize() > 0) {
-                    collected.append(input);
+                    if (collected.length - collectedIdx < input.length()) {
+                        byte[] tmp = new byte[collected.length + input.length()];
+                        System.arraycopy(collected, 0, tmp, 0, collectedIdx);
+                        collected = tmp;
+                    }
+                    System.arraycopy(input.getUnsafeBytes(), input.begin(), collected, collectedIdx, input.length());
+                    collectedIdx += input.length();
                     resetBuffer(input);
                 }
             }
@@ -768,7 +778,8 @@ public class RubyZlib {
         private int level;
         private int windowBits;
         private int strategy;
-        private ByteList collected;
+        private byte[] collected;
+        private int collectedIdx;
         protected static final ObjectAllocator DEFLATE_ALLOCATOR = new ObjectAllocator() {
 
             public IRubyObject allocate(Ruby runtime, RubyClass klass) {
@@ -847,7 +858,8 @@ public class RubyZlib {
                 throw newStreamError(getRuntime(), "stream error");
             }
 
-            collected = new ByteList(BASE_SIZE);
+            collected = new byte[BASE_SIZE];
+            collectedIdx = 0;
         }
 
         @Override
@@ -866,7 +878,9 @@ public class RubyZlib {
             this.level = other.level;
             this.windowBits = other.windowBits;
             this.strategy = other.strategy;
-            this.collected = (ByteList)other.collected.clone();
+            this.collected = new byte[other.collected.length];
+            System.arraycopy(other.collected, 0, this.collected, 0, other.collected.length);
+            this.collectedIdx = other.collectedIdx;
 
             this.flush = other.flush;
             this.flater = new com.jcraft.jzlib.Deflater();
@@ -896,15 +910,13 @@ public class RubyZlib {
             int s = RubyNumeric.fix2int(strategy);
             checkStrategy(getRuntime(), s);
             if(flater.next_out==null)
-                flater.next_out=new byte[0];
-            flater.avail_out = flater.next_out.length;
-            flater.next_out_index = 0;
+                flater.setOutput(new byte[0]);
             int err = flater.params(l, s);
             if(err == com.jcraft.jzlib.JZlib.Z_STREAM_ERROR){
                 throw newStreamError(getRuntime(), "stream error");
             }
-            if(flater.next_out_index>0)
-                collected.append(flater.next_out, 0, flater.next_out_index);
+            if(collectedIdx!=flater.next_out_index)
+                collectedIdx = flater.next_out_index;
             run();
             return getRuntime().getNil();
         }
@@ -1004,13 +1016,16 @@ public class RubyZlib {
         }
 
         private IRubyObject flush(int flush) {
+            int last_flush = this.flush;
             this.flush=flush;
             if (flush == JZlib.Z_NO_FLUSH) {
                 return RubyString.newEmptyString(getRuntime());
             }
             run();
-            IRubyObject obj = RubyString.newString(getRuntime(), collected);
-            collected = new ByteList(BASE_SIZE);
+            this.flush = last_flush;
+            IRubyObject obj = RubyString.newString(getRuntime(), collected, 0, collectedIdx);
+            collectedIdx = 0;
+            flater.setOutput(collected);
             return obj;
         }
 
@@ -1028,21 +1043,21 @@ public class RubyZlib {
         private void run() {
             if(internalFinished())
                 return;
-            byte[] outp = new byte[1024];
             while (!internalFinished()){
-                flater.setOutput(outp);
+                flater.setOutput(collected, collectedIdx, collected.length - collectedIdx);
                 int err = flater.deflate(flush);
                 switch(err){
                     case com.jcraft.jzlib.JZlib.Z_STREAM_ERROR:
                         throw newStreamError(getRuntime(), "stream error: ");
                     default:
                 }
-                int resultLength = flater.next_out_index;
-                if(resultLength == 0)
+                if(collectedIdx == flater.next_out_index)
                     break;
-                collected.append(flater.next_out, 0, resultLength);
-                if (resultLength == flater.next_out.length && !internalFinished()) {
-                    outp = new byte[flater.next_out.length * 2];
+                collectedIdx = flater.next_out_index;
+                if (collected.length == collectedIdx && !internalFinished()) {
+                    byte[] tmp = new byte[collected.length * 3];
+                    System.arraycopy(collected, 0, tmp, 0, collected.length);
+                    collected = tmp;
                 }
             }
         }
