@@ -50,7 +50,7 @@ public class JavaUtilities {
     }
 
     @JRubyMethod(module = true, backtrace = true, visibility = Visibility.PRIVATE)
-    public static IRubyObject get_proxy_or_package_under_package(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
+    public static IRubyObject get_proxy_or_package_under_package(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1) throws Exception {
         return Java.get_proxy_or_package_under_package(context, recv, arg0, arg1);
     }
 }
