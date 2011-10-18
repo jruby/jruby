@@ -195,6 +195,7 @@ public class JavaClass extends JavaObject {
         } catch (ClassNotFoundException e) {
         } catch (NoSuchFieldException e) {
         } catch (IllegalAccessException e) {
+        } catch (RaiseException e) {
         }
     }
     
