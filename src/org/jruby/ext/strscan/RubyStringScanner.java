@@ -187,7 +187,8 @@ public class RubyStringScanner extends RubyObject {
         int size = str.getByteList().getRealSize();
         if (beg > size) return getRuntime().getNil();
         if (end > size) end = size;
-        return str.makeSharedString(runtime, beg, end - beg);
+        return runtime.is1_9() ? str.makeSharedString19(runtime, beg, end - beg) :
+                str.makeSharedString(runtime, beg, end - beg);
     }
     
     private IRubyObject extractBegLen(Ruby runtime, int beg, int len) {
@@ -195,7 +196,8 @@ public class RubyStringScanner extends RubyObject {
         int size = str.getByteList().getRealSize();
         if (beg > size) return getRuntime().getNil();
         if (beg + len > size) len = size - beg;
-        return str.makeSharedString(runtime, beg, len);
+        return runtime.is1_9() ? str.makeSharedString19(runtime, beg, len) :
+                str.makeSharedString(runtime, beg, len);
     }
     
     private IRubyObject scan(IRubyObject regex, boolean succptr, boolean getstr, boolean headonly) {

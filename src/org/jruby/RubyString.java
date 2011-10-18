@@ -725,6 +725,10 @@ public class RubyString extends RubyObject implements EncodingCapable {
     public final RubyString makeSharedString(Ruby runtime, int index, int len) {
         return makeShared(runtime, runtime.getString(), index, len);
     }
+    
+    public RubyString makeSharedString19(Ruby runtime, int index, int len) {
+        return makeShared19(runtime, runtime.getString(), value, index, len);
+    }
 
     public final RubyString makeShared(Ruby runtime, int index, int len) {
         return makeShared(runtime, getType(), index, len);
@@ -752,9 +756,12 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     private RubyString makeShared19(Ruby runtime, ByteList value, int index, int len) {
+        return makeShared19(runtime, getType(), value, index, len);
+    }
+    
+    private RubyString makeShared19(Ruby runtime, RubyClass meta, ByteList value, int index, int len) {
         final RubyString shared;
         Encoding enc = value.getEncoding();
-        RubyClass meta = getType();
 
         if (len == 0) {
             shared = newEmptyString(runtime, meta, enc);
