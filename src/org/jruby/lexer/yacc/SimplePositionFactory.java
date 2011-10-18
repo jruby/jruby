@@ -48,9 +48,9 @@ public class SimplePositionFactory {
     }
 
     public ISourcePosition getPosition() {
-        if (lastPosition.getStartLine() == source.getLine()) return lastPosition;
+        if (lastPosition.getStartLine() == source.getVirtualLine()) return lastPosition;
 
-        lastPosition = new SimpleSourcePosition(source.getFilename(), source.getLine());
+        lastPosition = new SimpleSourcePosition(source.getFilename(), source.getVirtualLine());
 
         return lastPosition;
     }
