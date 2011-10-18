@@ -2,3 +2,7 @@ fails:The -s command line option when using -- to stop parsing parses long args 
 fails:The -s command line option when using -- to stop parsing converts extra dashes into underscorse
 fails:The -s command line option when running a script parses long args into globals
 fails:The -s command line option when running a script converts extra dashes into underscorse
+fails(compiler):The -s command line option when using -- to stop parsing parses long args into globals
+fails(compiler):The -s command line option when using -- to stop parsing converts extra dashes into underscorse
+fails(compiler):The -s command line option when running a script parses long args into globals
+fails(compiler):The -s command line option when running a script converts extra dashes into underscorse

@@ -1,4 +1,2 @@
 fails:Module#autoload does not load the file when refering to the constant in defined?
 fails:Module#autoload shares the autoload request across dup'ed copies of modules
-fails:Module#autoload does NOT raise a NameError when the autoload file did not define the constant and a module is opened with the same name
-fails:Module#autoload return nil on refering the constant with defined?()

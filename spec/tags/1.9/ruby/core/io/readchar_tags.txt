@@ -1,1 +1,0 @@
-fails:IO#readchar returns the next string from the stream

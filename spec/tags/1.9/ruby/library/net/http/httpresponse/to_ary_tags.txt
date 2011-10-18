@@ -1,2 +1,0 @@
-fails:Net::HTTPResponse#to_ary returns an Array containing a duplicate of self and self's body
-fails:Net::HTTPResponse#to_ary removes #to_ary from the duplicate of self

@@ -1,1 +1,0 @@
-fails:Dir.pwd correctly displays dirs with unicode characters in them

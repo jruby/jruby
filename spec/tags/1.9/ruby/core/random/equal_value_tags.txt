@@ -1,2 +1,0 @@
-fails(JRUBY-4456):Random#== returns true if the two objects have the same state
-fails(JRUBY-4456):Random#== returns false if the two objects have different state

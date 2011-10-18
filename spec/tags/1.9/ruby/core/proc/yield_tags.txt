@@ -1,1 +1,0 @@
-fails(JRUBY-4457):Proc#yield on a Proc created with Proc.new auto-explodes a single Array argument

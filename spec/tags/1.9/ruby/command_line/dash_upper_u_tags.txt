@@ -1,5 +1,6 @@
 fails:ruby -U does not affect the source encoding
 fails:ruby -U raises a RuntimeError if used with -Eext:int
 fails:ruby -U raises a RuntimeError if used with -E:int
-fails:ruby -U is overruled by Encoding.default_internal=
-fails:ruby -U does not affect the default external encoding
+fails(compiler):ruby -U does not affect the source encoding
+fails(compiler):ruby -U raises a RuntimeError if used with -Eext:int
+fails(compiler):ruby -U raises a RuntimeError if used with -E:int

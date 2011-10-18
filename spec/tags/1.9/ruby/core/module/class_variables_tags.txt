@@ -1,1 +1,0 @@
-fails(JRUBY-5667,only in full run):Module#class_variables returns an Array of Symbols of class variable names defined in a metaclass

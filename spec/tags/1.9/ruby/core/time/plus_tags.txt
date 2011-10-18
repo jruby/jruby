@@ -1,2 +1,1 @@
-fails:Time#+ does NOT round
 fails:Time#+ adds a negative Float

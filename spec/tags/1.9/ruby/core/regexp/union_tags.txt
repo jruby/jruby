@@ -1,0 +1,1 @@
+fails(compiler):Regexp.union raises ArgumentError if the kcodes conflict

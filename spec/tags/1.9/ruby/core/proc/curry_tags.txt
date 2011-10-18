@@ -1,4 +1,0 @@
-fails:Proc#curry can be passed superfluous arguments if created from a proc
-fails:Proc#curry raises an ArgumentError if passed superfluous arguments when created from a lambda
-fails:Proc#curry with arity argument raises an ArgumentError if passed more than _arity_ arguments when created from a lambda
-fails:Proc#curry with arity argument returns Procs with arities of -1 regardless of the value of _arity_

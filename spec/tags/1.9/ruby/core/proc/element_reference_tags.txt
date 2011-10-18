@@ -1,1 +1,0 @@
-fails:Proc#call on a Proc created with Proc.new auto-explodes a single Array argument

@@ -1,3 +1,0 @@
-fails:Net::HTTPResponse#reading_body when body_allowed is true reads and returns the response body for self from the passed socket
-fails:Net::HTTPResponse#reading_body when body_allowed is true yields the passed block before reading the body
-fails:Net::HTTPResponse#reading_body when body_allowed is false yields the passed block

@@ -1,0 +1,1 @@
+fails(compiler):Class.new creates a class that can be given a name by assigning it to a constant

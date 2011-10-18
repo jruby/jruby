@@ -1,6 +1,0 @@
-fails(JRUBY-5656):String#unpack with format 'S' ignores NULL bytes between directives
-fails(JRUBY-5656):String#unpack with format 'S' with modifier '_' ignores NULL bytes between directives
-fails(JRUBY-5656):String#unpack with format 'S' with modifier '!' ignores NULL bytes between directives
-fails(JRUBY-5656):String#unpack with format 's' ignores NULL bytes between directives
-fails(JRUBY-5656):String#unpack with format 's' with modifier '_' ignores NULL bytes between directives
-fails(JRUBY-5656):String#unpack with format 's' with modifier '!' ignores NULL bytes between directives

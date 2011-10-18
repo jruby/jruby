@@ -1,0 +1,2 @@
+fails(compiler):Kernel.__callee__ returns the current method, even when aliased
+fails(compiler):Kernel.__callee__ returns the original name when aliased method

@@ -1,1 +1,2 @@
-fails:Regexp#encoding returns ASCII-8BIT if the 'n' modifier is supplied and non-US-ASCII characters are present
+fails(compiler):Regexp#encoding returns Windows-31J if the 's' modifier is supplied
+fails(compiler):Regexp#encoding returns EUC_JP if the 'e' modifier is supplied

@@ -1,1 +1,2 @@
 fails:Struct#inspect returns a string representation without the class name for anonymous structs
+fails(compiler):Struct#inspect returns a string representation of some kind

@@ -1,8 +1,5 @@
-fails:Regexp with character classes matches Unicode letter characters with [[:alnum:]]
 fails:Regexp with character classes matches Unicode marks with [[:alnum:]]
-fails:Regexp with character classes matches Unicode letter characters with [[:alpha:]]
 fails:Regexp with character classes matches Unicode marks with [[:alpha:]]
-fails:Regexp with character classes matches Unicode letter characters with [[:graph:]]
 fails:Regexp with character classes doesn't match Unicode format characters with [[:graph:]]
 fails:Regexp with character classes doesn't match Unicode private-use characters with [[:graph:]]
 fails:Regexp with character classes doesn't match Unicode format characters with [[:print:]]

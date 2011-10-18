@@ -6,4 +6,3 @@ fails:Encoding::Converter#replacement= raises an UndefinedConversionError is the
 fails:Encoding::Converter#replacement= does not change the replacement character if the argument cannot be converted into the destination encoding
 
 fails(JRUBY-5668):Encoding::Converter#replacement returns � when the destination encoding is UTF-8
-fails(JRUBY-5668):Encoding::Converter#replacement= accepts a String argument of arbitrary length

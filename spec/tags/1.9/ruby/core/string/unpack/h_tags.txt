@@ -1,2 +1,0 @@
-fails(JRUBY-5656):String#unpack with format 'H' ignores NULL bytes between directives
-fails(JRUBY-5656):String#unpack with format 'h' ignores NULL bytes between directives
