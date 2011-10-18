@@ -58,6 +58,9 @@ public abstract class LexerSource {
     // Number of newlines read from the reader
     protected int line = 0;
     
+    // Virtual line as specified by eval, etc...
+    protected int lineOffset = 0;
+    
     // How many bytes into the source are we?
     protected int offset = 0;
     
@@ -78,9 +81,10 @@ public abstract class LexerSource {
      * @param line starting line number for source (used by eval)
      * @param extraPositionInformation will gives us extra information that an IDE may want (deprecated)
      */
-    protected LexerSource(String sourceName, List<String> list, int line, boolean extraPositionInformation) {
+    protected LexerSource(String sourceName, List<String> list, int lineOffset, 
+            boolean extraPositionInformation) {
         this.sourceName = sourceName;
-        this.line = line;
+        this.lineOffset = lineOffset;
         positionFactory = new SimplePositionFactory(this, line);
         this.list = list;
         lineBuffer = new StringBuilder(160);
@@ -101,6 +105,10 @@ public abstract class LexerSource {
      */
     public int getLine() {
         return line;
+    }
+    
+    public int getVirtualLine() {
+        return line + lineOffset;
     }
     
     /**
