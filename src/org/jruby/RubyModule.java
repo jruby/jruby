@@ -387,13 +387,7 @@ public class RubyModule extends RubyObject {
      * @param name the new base name of the class
      */
     public void setBaseName(String name) {
-        String oldName = baseName;
         baseName = name;
-        
-        // clear full name for recalculation later if base was null before
-        if (oldName == null) {
-            calculatedName = null;
-        }
     }
 
     /**
@@ -404,17 +398,13 @@ public class RubyModule extends RubyObject {
      * @return The generated class name
      */
     public String getName() {
-        if (calculatedName == null) {
-            return calculateName();
-        }
-        
-        return calculatedName;
+        return calculateName();
     }
 
     /**
      * Recalculate the fully-qualified name of this class/module.
      */
-    private synchronized String calculateName() {
+    private String calculateName() {
         if (getBaseName() == null) {
             // we are anonymous, don't store calculated name
             return calculateAnonymousName();
@@ -423,7 +413,7 @@ public class RubyModule extends RubyObject {
         Ruby runtime = getRuntime();
         
         String name = getBaseName();
-        RubyClass objectClass = getRuntime().getObject();
+        RubyClass objectClass = runtime.getObject();
         
         for (RubyModule p = getParent() ; p != null && p != objectClass ; p = p.getParent()) {
             String pName = p.getBaseName();
@@ -440,7 +430,7 @@ public class RubyModule extends RubyObject {
             name = pName + "::" + name;
         }
         
-        return calculatedName = name;
+        return name;
     }
 
     private String calculateAnonymousName() {
@@ -3445,12 +3435,6 @@ public class RubyModule extends RubyObject {
      * an anonymous class.
      */
     protected String baseName;
-    
-    /**
-     * The fully-qualified name for this class/modulem including nesting. Use
-     * getName() to get it (with lazy calculation) or calclateName() to recalc.
-     */
-    private String calculatedName;
 
     private volatile Map<String, IRubyObject> constants = Collections.EMPTY_MAP;
     
