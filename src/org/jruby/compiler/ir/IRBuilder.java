@@ -3083,7 +3083,7 @@ public class IRBuilder {
         return copyAndReturnValue(s, new StringLiteral(strNode.getValue()));
     }
 
-    private Operand buildSuperInstr(IRScope s, Node iterNode, Operand[] args) {
+    private Operand buildSuperInstr(IRScope s, Operand block, Operand[] args) {
         MethAddr maddr;
         if (s instanceof IRClosure) {
             // We dont always know the method name we are going to be invoking if the super occurs in a closure.
@@ -3098,15 +3098,15 @@ public class IRBuilder {
             IRMethod method = (IRMethod) s;
             maddr = IRModule.isAModuleRootMethod(method) ? MethAddr.NO_METHOD : new MethAddr(method.getName());
         }
-        Operand  block = setupCallClosure(iterNode, s);
-        Variable ret   = s.getNewTemporaryVariable();
+        Variable ret = s.getNewTemporaryVariable();
         s.addInstr(new SuperInstr(ret, getSelf(s), maddr, args, block));
         return ret;
     }
 
     public Operand buildSuper(SuperNode superNode, IRScope s) {
         List<Operand> args = setupCallArgs(superNode.getArgsNode(), s);
-        return buildSuperInstr(s, superNode.getIterNode(), args.toArray(new Operand[args.size()]));
+        Operand  block = setupCallClosure(superNode.getIterNode(), s);
+        return buildSuperInstr(s, block, args.toArray(new Operand[args.size()]));
     }
 
     public Operand buildSValue(SValueNode node, IRScope s) {
@@ -3247,7 +3247,9 @@ public class IRBuilder {
 
     public Operand buildZSuper(ZSuperNode zsuperNode, IRScope s) {
         Operand[] args = (s instanceof IRClosure) ? ((IRClosure)s).getBlockArgs() : ((IRMethod)s).getCallArgs();
-        return buildSuperInstr(s, zsuperNode.getIterNode(), args);
+        Operand block = setupCallClosure(zsuperNode.getIterNode(), s);
+        if (block == null) block = ((IRExecutionScope)s).getImplicitBlockArg();
+        return buildSuperInstr(s, block, args);
     }
 
     public void buildArgsCatArguments(List<Operand> args, ArgsCatNode argsCatNode, IRScope s) {
