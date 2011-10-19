@@ -1,3 +1,1 @@
 fails(compiler):A class definition extending an object (sclass) allows accessing the block of the original scope
-fails:An anonymous class forces named nested classes to be anonymous
-fails:An anonymous class never recalculates full name once no longer anonymous
