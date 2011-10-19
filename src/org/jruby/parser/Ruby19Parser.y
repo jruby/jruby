@@ -236,6 +236,7 @@ public class Ruby19Parser implements RubyParser {
    // ENEBO: end all new types
 
 %type <Token> rparen rbracket reswords f_bad_arg
+%type <Node> top_compstmt top_stmts top_stmt
 
 /*
  *    precedence table
@@ -271,7 +272,7 @@ public class Ruby19Parser implements RubyParser {
 program       : {
                   lexer.setState(LexState.EXPR_BEG);
                   support.initTopLocalVariables();
-              } compstmt {
+              } top_compstmt {
   // ENEBO: Removed !compile_for_eval which probably is to reduce warnings
                   if ($2 != null) {
                       /* last expression should not be void */
@@ -282,6 +283,34 @@ program       : {
                       }
                   }
                   support.getResult().setAST(support.addRootNode($2, support.getPosition($2)));
+              }
+
+top_compstmt  : top_stmts opt_terms {
+                  if ($1 instanceof BlockNode) {
+                      support.checkUselessStatements($<BlockNode>1);
+                  }
+                  $$ = $1;
+              }
+
+top_stmts     : none
+              | top_stmt {
+                    $$ = support.newline_node($1, support.getPosition($1));
+              }
+              | top_stmts terms top_stmt {
+                    $$ = support.appendToBlock($1, support.newline_node($3, support.getPosition($3)));
+              }
+              | error top_stmt {
+                    $$ = $2;
+              }
+
+top_stmt      : stmt
+              | klBEGIN {
+                    if (support.isInDef() || support.isInSingle()) {
+                        support.yyerror("BEGIN in method");
+                    }
+              } tLCURLY top_compstmt tRCURLY {
+                    support.getResult().addBeginNode(new PreExe19Node($1.getPosition(), support.getCurrentScope(), $4));
+                    $$ = null;
               }
 
 bodystmt      : compstmt opt_rescue opt_else opt_ensure {
@@ -359,14 +388,6 @@ stmt            : kALIAS fitem {
                 | stmt kRESCUE_MOD stmt {
                     Node body = $3 == null ? NilImplicitNode.NIL : $3;
                     $$ = new RescueNode(support.getPosition($1), $1, new RescueBodyNode(support.getPosition($1), null, body, null), null);
-                }
-                | klBEGIN {
-                    if (support.isInDef() || support.isInSingle()) {
-                        support.yyerror("BEGIN in method");
-                    }
-                } tLCURLY compstmt tRCURLY {
-                    support.getResult().addBeginNode(new PreExe19Node($1.getPosition(), support.getCurrentScope(), $4));
-                    $$ = null;
                 }
                 | klEND tLCURLY compstmt tRCURLY {
                     if (support.isInDef() || support.isInSingle()) {
