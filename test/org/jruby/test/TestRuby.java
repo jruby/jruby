@@ -122,8 +122,18 @@ public class TestRuby extends TestRubyBase {
         RubyInstanceConfig cfg = new RubyInstanceConfig();
         cfg.setCextEnabled(false);
         runtime = Ruby.newInstance(cfg);
+        
+        String extensionSuffix;
+        if (Platform.IS_WINDOWS) {
+            extensionSuffix = ".dll";
+        } else if (Platform.IS_MAC) { // TODO: BSD also?
+            extensionSuffix = ".bundle";
+        } else {
+            extensionSuffix = ".so";
+        }
+
         try {
-            runtime.evalScriptlet("require 'tempfile'; file = Tempfile.open(['foo', '.so']); file.close; require file.path");
+            runtime.evalScriptlet("require 'tempfile'; file = Tempfile.open(['foo', '" + extensionSuffix + "']); file.close; require file.path");
             fail();
         } catch (RaiseException re) {
             assertTrue(re.getException().message.asJavaString().startsWith(
