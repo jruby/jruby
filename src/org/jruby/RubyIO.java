@@ -3522,8 +3522,11 @@ public class RubyIO extends RubyObject {
                     } catch (InterruptedException ie) {}
                 }
             }
-            
+
             RubyIO io = new RubyIO(runtime, process, modes);
+            if (recv instanceof RubyClass) {
+                io.setMetaClass((RubyClass) recv);
+            }
 
             if (block.isGiven()) {
                 try {
