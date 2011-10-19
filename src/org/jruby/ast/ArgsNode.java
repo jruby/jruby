@@ -255,7 +255,7 @@ public class ArgsNode extends Node {
         // arg grouping, use slower arg walking logic
         if (preCount > 0) {
             int size = pre.size();
-            for (int i = 0; i < size; i++) {
+            for (int i = 0; i < size && i < args.length; i++) {
                 Node next = pre.get(i);
                 if (next instanceof AssignableNode) {
                     ((AssignableNode)next).assign(runtime, context, self, args[i], block, false);
