@@ -1625,7 +1625,9 @@ public class ParserSupport {
                 if (fragment instanceof StrNode) {
                     ByteList frag = ((StrNode) fragment).getValue();
                     regexpFragmentCheck(end, frag);
-                    encoding = frag.getEncoding();
+                    if (!lexer.isOneEight()) {
+                        encoding = frag.getEncoding();
+                    }
                 }
             }
 
@@ -1635,7 +1637,9 @@ public class ParserSupport {
         // EvStrNode: #{val}: no fragment check, but at least set encoding
         ByteList empty = ByteList.create("");
         regexpFragmentCheck(end, empty);
-        encoding = empty.getEncoding();
+        if (!lexer.isOneEight()) {
+            encoding = empty.getEncoding();
+        }
         return new DRegexpNode(position, options, encoding).add(contents);
     }
     
