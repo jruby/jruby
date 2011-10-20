@@ -1313,6 +1313,9 @@ public final class ThreadContext {
     
     public void startProfiling() {
         isProfiling = true;
+        // use new profiling data every time profiling is started, useful in 
+        // case users keep a reference to previous data after profiling stop
+        profileData = new ProfileData(this);
     }
     
     public void stopProfiling() {

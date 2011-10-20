@@ -77,6 +77,17 @@ describe JRuby::Profiler, "::ProfileData" do
       level3.count.should == 2
       level3.recursive_depth.should == 1
     end
+    
+    it "should use new data when profiling again" do
+      profile_data = JRuby::Profiler.profile_data
+      profile_data.compute_results.children.size.should == 1
+      
+      new_profile_data = JRuby::Profiler.profile { }
+      new_profile_data.should_not == profile_data
+      new_profile_data.compute_results.children.size.should == 0
+      profile_data.compute_results.children.size.should == 1
+    end
+    
   end
   
   context "after profiling recursive methods" do
