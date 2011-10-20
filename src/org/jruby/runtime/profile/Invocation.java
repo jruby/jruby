@@ -28,6 +28,7 @@ package org.jruby.runtime.profile;
 import org.jruby.util.collections.IntHashMap;
 
 public class Invocation {
+    
     private final int methodSerialNumber;
     private int recursiveDepth;
     private Invocation parent;
@@ -109,7 +110,7 @@ public class Invocation {
         return child;
     }
     
-    public Invocation copyWithNewSerialAndParent(int serial, Invocation newParent) {
+    Invocation copyWithNewSerialAndParent(int serial, Invocation newParent) {
         Invocation newInv = new Invocation(newParent, serial, children);
         newInv.setDuration(duration);
         newInv.setCount(count);
@@ -135,4 +136,12 @@ public class Invocation {
     public long selfTime() {
         return duration - childTime();
     }
+    
+    @Override
+    public String toString() {
+        return "Invocation(#" + methodSerialNumber + " count="+ count + " duration="+ duration + 
+               " parent="+ ( parent == null ? null : "#" + parent.methodSerialNumber ) + 
+               " children.size=" + children.size() + ")";
+    }
+    
 }

@@ -27,12 +27,13 @@ package org.jruby.runtime.profile;
 
 import java.util.ArrayList;
 
-public class MethodData extends InvocationSet {
-    public int serialNumber;
+class MethodData extends InvocationSet {
+    
+    final int serialNumber;
 
-    public MethodData(int serial) {
+    MethodData(int serial) {
+        super(new ArrayList<Invocation>());
         this.serialNumber = serial;
-        this.invocations = new ArrayList<Invocation>();
     }
 
     private static class IntList {
@@ -166,4 +167,5 @@ public class MethodData extends InvocationSet {
         }
         return t;
     }
+    
 }
