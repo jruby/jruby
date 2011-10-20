@@ -182,6 +182,12 @@ namespace :spec do
       t.ruby_opts = version_arg
       t.pattern = 'spec/compiler/**/*_spec.rb'
     end
+    
+    desc "Runs Profiler Specs"
+    RSpec::Core::RakeTask.new("profiler#{version_suffix}" => "test:compile") do |t|
+      t.ruby_opts = "--profile #{version_arg}"
+      t.pattern = 'spec/profiler/**/*_spec.rb'
+    end
 
     desc "Runs FFI specs"
     RSpec::Core::RakeTask.new("ffi#{version_suffix}" => "test:compile") do |t|
