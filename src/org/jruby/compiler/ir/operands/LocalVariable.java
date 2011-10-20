@@ -24,17 +24,6 @@ public class LocalVariable extends Variable {
         this.location = location;
     }
 
-/**
- * SSS FIXME: Unused code
-    public void setLocation(int slot) {
-        this.location = slot;
-    }
-**/
-
-    public void setScopeDepth(int depth) {
-        this.scopeDepth = depth;
-    }
-
     public int getScopeDepth() {
         return scopeDepth;
     }
@@ -86,7 +75,8 @@ public class LocalVariable extends Variable {
         return interp.setLocalVariable(scopeDepth, location, value);
     }
 
-    public LocalVariable clone() {
-        return new LocalVariable(name, scopeDepth, location);
+    // SSS FIXME: Better name than this?
+    public LocalVariable cloneForDepth(int n) {
+        return new LocalVariable(name, n, location);
     }
 }

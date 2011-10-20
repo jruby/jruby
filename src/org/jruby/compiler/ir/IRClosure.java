@@ -28,6 +28,8 @@ public class IRClosure extends IRExecutionScope {
     public final Label endLabel;   // Label for the end of the closure (used to implement retry)
     public final int closureId;    // Unique id for this closure within the nearest ancestor method.
 
+    private int nestingDepth;      // How many nesting levels within a method is this closure nested in?
+
     private BlockBody body;
 
     // Oy, I have a headache!
@@ -65,6 +67,15 @@ public class IRClosure extends IRExecutionScope {
         this.closureId = lexicalParent.getNextClosureId();
         setName(prefix + closureId);
         this.body = null;
+
+        // set nesting depth
+        int n = 0;
+        IRScope s = this;
+        while (s instanceof IRClosure) {
+            s = ((IRClosure)s).getLexicalParent();
+            n++;
+        }
+        this.nestingDepth = n;
     }
 
     @Override
@@ -156,24 +167,16 @@ public class IRClosure extends IRExecutionScope {
         LocalVariable lvar = findExistingLocalVariable(name);
         if (lvar == null) {
             lvar = getNewLocalVariable(name, scopeDepth);
-        }
-        else if (lvar.getScopeDepth() != scopeDepth) {
+        } else if (lvar.getScopeDepth() != scopeDepth) {
             // Create a copy of the variable usable at a different scope depth
-            lvar = lvar.clone();
-            lvar.setScopeDepth(scopeDepth);
+            lvar = lvar.cloneForDepth(scopeDepth);
         }
 
         return lvar;
     }
 
     public int getNestingDepth() {
-        int n = 0;
-        IRScope s = this;
-        while (s instanceof IRClosure) {
-            s = ((IRClosure)s).getLexicalParent();
-            n++;
-        }
-        return n;
+        return nestingDepth;
     }
 
     public LocalVariable getImplicitBlockArg() {

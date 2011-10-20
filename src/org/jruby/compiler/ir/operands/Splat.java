@@ -36,6 +36,10 @@ public class Splat extends Operand {
         return true;
     }
 
+    public Operand getArray() {
+        return array;
+    }
+
     @Override
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap) {
         /*

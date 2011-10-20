@@ -2128,8 +2128,7 @@ public class IRBuilder {
         Variable flipState = nearestMethod.getNewFlipStateVariable();
         nearestMethod.initFlipStateVariable(flipState, s1);
         if (m instanceof IRClosure) {
-            flipState = ((LocalVariable)flipState).clone();
-            ((LocalVariable)flipState).setScopeDepth(((IRClosure)m).getNestingDepth());
+            flipState = ((LocalVariable)flipState).cloneForDepth(((IRClosure)m).getNestingDepth());
         }
 
         // Variables and labels needed for the code
@@ -3245,8 +3244,25 @@ public class IRBuilder {
        return copyAndReturnValue(m, new Array());
     }
 
+    private Operand[] getZSuperArgs(IRScope s) {
+        if (s instanceof IRMethod) {
+            return ((IRMethod)s).getCallArgs();
+        }
+        else {
+            Operand[] sArgs = s.getNearestMethod().getCallArgs();
+
+            // Update args to make them accessible at a different depth 
+            int n = ((IRClosure)s).getNestingDepth();
+            for (int i = 0; i < sArgs.length; i++) {
+                Operand arg = sArgs[i];
+                sArgs[i] = (arg instanceof Splat) ? new Splat(((LocalVariable)((Splat)arg).getArray()).cloneForDepth(n)) : ((LocalVariable)arg).cloneForDepth(n);
+            }
+            return sArgs;
+        }
+    }
+
     public Operand buildZSuper(ZSuperNode zsuperNode, IRScope s) {
-        Operand[] args = (s instanceof IRClosure) ? ((IRClosure)s).getBlockArgs() : ((IRMethod)s).getCallArgs();
+        Operand[] args = getZSuperArgs(s);
         Operand block = setupCallClosure(zsuperNode.getIterNode(), s);
         if (block == null) block = ((IRExecutionScope)s).getImplicitBlockArg();
         return buildSuperInstr(s, block, args);
