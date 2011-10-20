@@ -13,6 +13,9 @@ import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -95,7 +98,8 @@ public class AttrAssignInstr extends MultiOperandInstr {
             argList.add((IRubyObject)value.retrieve(interp, context, self));
         }
 
-        receiver.callMethod(context, attrMeth, argList.toArray(new IRubyObject[argList.size()]));
+        // no visibility checks if receiver is self
+        RuntimeHelpers.invoke(context, receiver, attrMeth, argList.toArray(new IRubyObject[argList.size()]), (self == receiver) ? CallType.FUNCTIONAL : CallType.NORMAL, Block.NULL_BLOCK);
         return null;
     }
 }
