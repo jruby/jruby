@@ -28,33 +28,36 @@ package org.jruby.runtime.profile;
 import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.Map;
-import java.util.Map.Entry;
 
-public class FlatProfilePrinter extends AbstractProfilePrinter {
+import org.jruby.util.collections.IntHashMap;
+import org.jruby.util.collections.IntHashMap.Entry;
+
+public class FlatProfilePrinter extends ProfilePrinter {
+    
     private static final int SERIAL_OFFSET = 0;
     private static final int SELFTIME_OFFSET = 1;
     private static final int COUNT_OFFSET = 2;
     private static final int AGGREGATETIME_OFFSET = 3;
-    private final Invocation topInvocation;
-
-    public FlatProfilePrinter(Invocation top) {
-        topInvocation = top;
+    
+    public FlatProfilePrinter(ProfileData profileData) {
+        super(profileData);
     }
-
+    
+    FlatProfilePrinter(ProfileData profileData, Invocation topInvocation) {
+        super(profileData, topInvocation);
+    }
+    
     public void printProfile(PrintStream out) {
-        
+        final Invocation topInvocation = getTopInvocation();
         out.printf("Total time: %s\n\n", nanoString(topInvocation.getDuration()));
 
-        Map<Integer, MethodData> serialsToMethods = methodData(topInvocation);
-
-        long[][] tuples = new long[serialsToMethods.size()][];
-
+        final IntHashMap<MethodData> methods = methodData(topInvocation);
+        final long[][] tuples = new long[methods.size()][];
+        
         int j = 0;
-        for (Entry<Integer, MethodData> entry : serialsToMethods.entrySet()) {
-            MethodData method = entry.getValue();
-            tuples[j] = new long[]{entry.getKey(), method.selfTime(), method.totalCalls(), method.totalTime()};
-            j++;
+        for (Entry<MethodData> entry : methods.entrySet()) {
+            final MethodData method = entry.getValue();
+            tuples[j++] = new long[]{ entry.getKey(), method.selfTime(), method.totalCalls(), method.totalTime() };
         }
 
         Arrays.sort(tuples, new Comparator<long[]>() {

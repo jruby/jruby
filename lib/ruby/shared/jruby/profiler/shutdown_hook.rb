@@ -5,9 +5,7 @@ trap 'INT' do
   runtime.thread_service.ruby_thread_map.each do |t, rubythread|
     java.lang.System.err.println "\n#{t} profile results:"
     context = JRuby.reference(rubythread).context
-    profile_data = context.profile_data
-    printer = JRuby.runtime.instance_config.make_default_profile_printer(profile_data)
-    printer.printProfile(java.lang.System.err)
+    runtime.printProfileData(context.profile_data, java.lang.System.err)
   end
   exit
 end

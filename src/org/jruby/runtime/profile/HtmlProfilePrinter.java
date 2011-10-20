@@ -30,17 +30,22 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Map;
 
-public class HtmlProfilePrinter extends AbstractProfilePrinter {
-  private static final long LIMIT = 100000000;
-  public static MethodData currentData;
-  private final Invocation topInvocation;
+import org.jruby.util.collections.IntHashMap;
 
-  public HtmlProfilePrinter(Invocation topInvocation) {
-    this.topInvocation = topInvocation;
+public class HtmlProfilePrinter extends ProfilePrinter {
+  private static final long LIMIT = 100000000;
+    
+  public HtmlProfilePrinter(ProfileData profileData) {
+      super(profileData);
+  }
+    
+  HtmlProfilePrinter(ProfileData profileData, Invocation topInvocation) {
+      super(profileData, topInvocation);
   }
 
   @Override
   public void printProfile(PrintStream out) {
+    final Invocation topInvocation = getTopInvocation();
     out.println(head);
     out.println("<body>");
     out.println("<h1>Profile Report</h1>");
@@ -58,8 +63,8 @@ public class HtmlProfilePrinter extends AbstractProfilePrinter {
         "  </tr>");
 
 
-    Map<Integer, MethodData> methods = methodData(topInvocation);
-    MethodData[] sortedMethods = methods.values().toArray(new MethodData[0]);
+    IntHashMap<MethodData> methods = methodData(topInvocation);
+    MethodData[] sortedMethods = methods.values().toArray(new MethodData[methods.size()]);
 
     Arrays.sort(sortedMethods, new Comparator<MethodData>() {
       public int compare(MethodData md1, MethodData md2) {
@@ -69,8 +74,7 @@ public class HtmlProfilePrinter extends AbstractProfilePrinter {
       }
     });
 
-    for (MethodData data : sortedMethods) {
-      currentData = data;
+    for (final MethodData data : sortedMethods) {
       if (!isProfilerInvocation(data.invocations.get(0))) {
         out.println("<tr class='break'><td colspan='7'></td></tr>");
         int serial = data.serialNumber;
@@ -109,8 +113,8 @@ public class HtmlProfilePrinter extends AbstractProfilePrinter {
 
         Arrays.sort(childSerials, new Comparator<Integer>() {
           public int compare(Integer child1, Integer child2) {
-            long time1 = currentData.rootInvocationsOfChild(child1).totalTime();
-            long time2 = currentData.rootInvocationsOfChild(child2).totalTime();
+            long time1 = data.rootInvocationsOfChild(child1).totalTime();
+            long time2 = data.rootInvocationsOfChild(child2).totalTime();
             return time1 == time2 ? 0 : (time1 < time2 ? 1 : -1);
           }
         });
@@ -132,7 +136,7 @@ public class HtmlProfilePrinter extends AbstractProfilePrinter {
     out.println("</html>");
   }
 
-  private void printInvocationOfChild(PrintStream out, Map<Integer, MethodData> methods, MethodData data, int childSerial, String callerName, InvocationSet invs) {
+  private void printInvocationOfChild(PrintStream out, IntHashMap<MethodData> methods, MethodData data, int childSerial, String callerName, InvocationSet invs) {
     out.print("<!-- " + invs.totalTime() + " -->");
     if (invs.totalTime() < LIMIT) {
       return;
@@ -173,7 +177,7 @@ public class HtmlProfilePrinter extends AbstractProfilePrinter {
     out.println("  <td>" + nanoString(invs.childTime()) + "</td>");
   }
 
-  private Integer[] parentSerials(MethodData data) {
+  private Integer[] parentSerials(final MethodData data) {
     int[] parentSerialsInts = data.parents();
     Integer[] parentSerials = new Integer[parentSerialsInts.length];
     for (int i = 0; i < parentSerialsInts.length; i++) {
@@ -182,8 +186,8 @@ public class HtmlProfilePrinter extends AbstractProfilePrinter {
 
     Arrays.sort(parentSerials, new Comparator<Integer>() {
       public int compare(Integer parent1, Integer parent2) {
-        long time1 = currentData.rootInvocationsFromParent(parent1).totalTime();
-        long time2 = currentData.rootInvocationsFromParent(parent2).totalTime();
+        long time1 = data.rootInvocationsFromParent(parent1).totalTime();
+        long time2 = data.rootInvocationsFromParent(parent2).totalTime();
         return time1 == time2 ? 0 : (time1 < time2 ? -1 : 1);
       }
     });
