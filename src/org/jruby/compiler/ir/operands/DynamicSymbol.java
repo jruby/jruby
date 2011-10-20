@@ -9,6 +9,10 @@ public class DynamicSymbol extends DynamicReference {
 
     @Override
     public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        return context.getRuntime().newSymbol(_refName.retrieveJavaString(interp, context, self));
+        return context.getRuntime().newSymbol(((IRubyObject)_refName.retrieve(interp, context, self)).asJavaString());
     }
+
+	public String toString() {
+        return ":" + _refName.toString();
+	}
 }

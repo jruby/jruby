@@ -7,6 +7,11 @@ import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
+import org.jruby.util.StringSupport;
+import org.jruby.RubyBasicObject;
+import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 
 // This represents a compound string in Ruby
 // Ex: - "Hi " + "there"
@@ -75,6 +80,7 @@ public class CompoundString extends Operand {
         return new CompoundString(newPieces);
     }
 
+    // SSS FIXME: Buggy?
     String retrieveJavaString(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         StringBuilder buf = new StringBuilder();
 
@@ -87,6 +93,24 @@ public class CompoundString extends Operand {
 
     @Override
     public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        return context.getRuntime().newString(retrieveJavaString(interp, context, self));
+        // SSS FIXME: Doesn't work in all cases.  See example below
+        //
+        //    s = "x\234\355\301\001\001\000\000\000\200\220\376\257\356\b\n#{"\000" * 31}\030\200\000\000\001"
+        //    s.length prints 70 instead of 52
+        //
+        // return context.getRuntime().newString(retrieveJavaString(interp, context, self));
+
+        ByteList bytes = new ByteList();
+        //if (is19()) bytes.setEncoding(encoding);
+        RubyString str = RubyString.newStringShared(context.getRuntime(), bytes, StringSupport.CR_7BIT);
+        for (Operand p : pieces) {
+            if (p instanceof StringLiteral) {
+                str.getByteList().append(((StringLiteral)p)._bl_value);
+            } else {
+                str.append((IRubyObject)p.retrieve(interp, context, self));
+            }
+        }
+
+        return str;
     }
 }

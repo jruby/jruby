@@ -167,6 +167,7 @@ import org.jruby.compiler.ir.instructions.ThreadPollInstr;
 import org.jruby.compiler.ir.instructions.THROW_EXCEPTION_Instr;
 import org.jruby.compiler.ir.instructions.YieldInstr;
 import org.jruby.compiler.ir.operands.Array;
+import org.jruby.compiler.ir.operands.AsString;
 import org.jruby.compiler.ir.operands.Backref;
 import org.jruby.compiler.ir.operands.BacktickString;
 import org.jruby.compiler.ir.operands.Bignum;
@@ -2052,8 +2053,7 @@ public class IRBuilder {
     }
 
     public Operand buildEvStr(EvStrNode node, IRScope s) {
-            // SSS: FIXME: Somewhere here, we need to record information the type of this operand as String
-        return build(node.getBody(), s);
+        return new AsString(build(node.getBody(), s));
     }
 
     public Operand buildFalse(Node node, IRScope s) {
