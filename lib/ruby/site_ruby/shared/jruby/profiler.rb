@@ -25,8 +25,8 @@ module JRuby
     protected
 
       def self.start
-        clear
         current_thread_context.start_profiling
+        clear
       end
 
       def self.stop
