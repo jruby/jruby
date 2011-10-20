@@ -25,16 +25,14 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.profile;
 
-import java.util.ArrayList;
+import java.util.List;
 
-public class InvocationSet {
-    ArrayList<Invocation> invocations;
+class InvocationSet {
+    
+    final List<Invocation> invocations;
 
-    public InvocationSet() {
-    }
-
-    public InvocationSet(ArrayList<Invocation> invs) {
-        this.invocations = invs;
+    InvocationSet(List<Invocation> invocations) {
+        this.invocations = invocations;
     }
 
     public long totalTime() {
@@ -86,4 +84,5 @@ public class InvocationSet {
         }
         return c;
     }
+    
 }

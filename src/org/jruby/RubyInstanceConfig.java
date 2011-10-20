@@ -60,11 +60,6 @@ import org.jruby.exceptions.MainExitException;
 import org.jruby.embed.util.SystemPropertyCatcher;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.backtrace.TraceType;
-import org.jruby.runtime.profile.IProfileData;
-import org.jruby.runtime.profile.AbstractProfilePrinter;
-import org.jruby.runtime.profile.FlatProfilePrinter;
-import org.jruby.runtime.profile.GraphProfilePrinter;
-import org.jruby.runtime.profile.HtmlProfilePrinter;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.runtime.load.LoadService19;
 import org.jruby.util.ClassCache;
@@ -468,20 +463,6 @@ public class RubyInstanceConfig {
         } else {
             return new ASTCompiler19();
         }
-    }
-    
-    public AbstractProfilePrinter makeDefaultProfilePrinter(IProfileData profileData) {
-        if (profilingMode == ProfilingMode.FLAT) {
-            return new FlatProfilePrinter(profileData.getResults());
-        }
-        else if (profilingMode == ProfilingMode.GRAPH) {
-            return new GraphProfilePrinter(profileData.getResults());
-        }
-        else if (profilingMode == ProfilingMode.HTML){
-            return new HtmlProfilePrinter(profileData.getResults());
-        }
-
-        return null;
     }
     
     ////////////////////////////////////////////////////////////////////////////

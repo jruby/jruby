@@ -35,15 +35,10 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
-import org.jruby.runtime.backtrace.BacktraceElement;
-import org.jruby.runtime.backtrace.RubyStackTraceElement;
-import org.jruby.runtime.profile.IProfileData;
 import java.util.ArrayList;
-import org.jruby.runtime.profile.ProfileData;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import org.jruby.runtime.scope.ManyVarsDynamicScope;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -58,9 +53,13 @@ import org.jruby.exceptions.JumpException.ReturnJump;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.ext.fiber.Fiber;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.backtrace.BacktraceElement;
+import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.backtrace.TraceType.Gather;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.profile.ProfileData;
+import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.util.RecursiveComparator;
 import org.jruby.util.RubyDateFormat;
 import org.jruby.util.log.Logger;
@@ -114,8 +113,8 @@ public final class ThreadContext {
     
     private boolean isProfiling = false;
     // The flat profile data for this thread
-   private IProfileData profileData;
-   
+	private ProfileData profileData;
+	
     // In certain places, like grep, we don't use real frames for the
     // call blocks. This has the effect of not setting the backref in
     // the correct frame - this delta is activated to the place where
@@ -1288,7 +1287,7 @@ public final class ThreadContext {
      *
      * @return the thread's profile data
      */
-    public IProfileData getProfileData() {
+    public ProfileData getProfileData() {
         if (profileData == null)
             profileData = new ProfileData(this);
         return profileData;

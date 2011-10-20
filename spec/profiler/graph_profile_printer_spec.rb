@@ -10,7 +10,7 @@ describe JRuby::Profiler, "::GraphProfilePrinter" do
   
   context "empty profile data" do
     before do
-      @top = JRuby::Profiler.profile {}
+      @profile_data = JRuby::Profiler.profile {}
     end
     
     it "should print total time 0" do
@@ -48,7 +48,7 @@ describe JRuby::Profiler, "::GraphProfilePrinter" do
     
     before do
       obj = ProfilerTest.new
-      @top = JRuby::Profiler.profile do
+      @profile_data = JRuby::Profiler.profile do
         obj.wait(0.01)
         obj.test_instance_method
       end
@@ -95,7 +95,7 @@ describe JRuby::Profiler, "::GraphProfilePrinter" do
     describe "calls, children and parents" do
       before do
         obj = ProfilerTest.new
-        @top = JRuby::Profiler.profile do
+        @profile_data = JRuby::Profiler.profile do
           obj.recurse(3)
         end
       end
@@ -136,7 +136,7 @@ describe JRuby::Profiler, "::GraphProfilePrinter" do
     describe "durations" do
       before do
         obj = ProfilerTest.new
-        @top = JRuby::Profiler.profile do
+        @profile_data = JRuby::Profiler.profile do
           obj.recurse_wait(3, 0.05)
         end
       end
@@ -164,7 +164,7 @@ describe JRuby::Profiler, "::GraphProfilePrinter" do
     before do
       obj = ProfilerTest.new
       obj.recurse_and_start_profiling(3)
-      @top = JRuby::Profiler.stop
+      @profile_data = JRuby::Profiler.stop
     end
     
     it "should have the correct call info" do
