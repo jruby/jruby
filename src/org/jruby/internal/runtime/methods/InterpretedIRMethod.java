@@ -63,6 +63,7 @@ public class InterpretedIRMethod extends DynamicMethod {
         RubyModule currentModule = getImplementationClass();
         context.preMethodFrameOnly(currentModule, name, self, block);
         context.getCurrentScope().getStaticScope().setModule(clazz);
+        context.setCurrentVisibility(getVisibility());
         InterpreterContext interp = new NaiveInterpreterContext(context, method, currentModule, self, name, args, block, null);
         try {
             return Interpreter.INTERPRET_METHOD(context, method, interp, self, name, getImplementationClass(), false);

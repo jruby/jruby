@@ -11,6 +11,7 @@ import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
@@ -37,7 +38,7 @@ public class DefineModuleInstr extends OneOperandInstr {
 
         RubyModule newRubyModule = moduleContainer.defineOrGetModuleUnder(newIRModule.getName());
         newIRModule.getStaticScope().setModule(newRubyModule);
-        DynamicMethod method = new InterpretedIRMethod(newIRModule.getRootMethod(), newRubyModule);
+        DynamicMethod method = new InterpretedIRMethod(newIRModule.getRootMethod(), Visibility.PUBLIC, newRubyModule);
 
         // SSS FIXME: Rather than pass the block implicitly, should we add %block as another operand to DefineClass, DefineModule instrs?
         Object value = method.call(context, newRubyModule, newRubyModule, "", new IRubyObject[]{}, interp.getBlock());
