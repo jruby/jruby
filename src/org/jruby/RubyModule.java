@@ -1034,6 +1034,7 @@ public class RubyModule extends RubyObject {
     public void invalidateCacheDescendants() {
         if (DEBUG) System.out.println("invalidating descendants: " + baseName);
         invalidateCacheDescendantsInner();
+        cachedMethods.clear();
         // update all hierarchies into which this module has been included
         synchronized (getRuntime().getHierarchyLock()) {
             for (RubyClass includingHierarchy : includingHierarchies) {
@@ -1052,6 +1053,7 @@ public class RubyModule extends RubyObject {
         }
     }
 
+    @Deprecated
     protected void invalidateCacheDescendantsInner() {
         generation = getRuntime().getNextModuleGeneration();
     }
@@ -3431,7 +3433,7 @@ public class RubyModule extends RubyObject {
 
     private volatile Map<String, IRubyObject> constants = Collections.EMPTY_MAP;
     private volatile Map<String, DynamicMethod> methods = Collections.EMPTY_MAP;
-    private Map<String, CacheEntry> cachedMethods = Collections.EMPTY_MAP;
+    protected Map<String, CacheEntry> cachedMethods = Collections.EMPTY_MAP;
     protected int generation;
 
     protected volatile Set<RubyClass> includingHierarchies = Collections.EMPTY_SET;
