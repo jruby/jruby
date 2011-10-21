@@ -153,6 +153,7 @@ import org.jruby.runtime.load.BasicLibraryService;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.runtime.profile.ProfileData;
 import org.jruby.runtime.profile.ProfilePrinter;
+import org.jruby.runtime.profile.ProfiledMethod;
 import org.jruby.threading.DaemonThreadFactory;
 import org.jruby.util.io.SelectorPool;
 import org.jruby.util.log.Logger;
@@ -3888,16 +3889,9 @@ public final class Ruby {
     }
 
     /**
-     * Get the list of method names being profiled
+     * Get the list of method holders for methods being profiled.
      */
-    public String[] getProfiledNames() {
-        return profiledNames;
-    }
-
-    /**
-     * Get the list of method objects for methods being profiled
-     */
-    public DynamicMethod[] getProfiledMethods() {
+    public ProfiledMethod[] getProfiledMethods() {
         return profiledMethods;
     }
     
@@ -3907,7 +3901,7 @@ public final class Ruby {
      * @param name the name of the method
      * @param method
      */
-    public void addProfiledMethod(String name, DynamicMethod method) {
+    void addProfiledMethod(final String name, final DynamicMethod method) {
         if (!config.isProfiling()) return;
         if (method.isUndefined()) return;
         if (method.getSerialNumber() > MAX_PROFILE_METHODS) return;
@@ -3915,19 +3909,15 @@ public final class Ruby {
         final int index = (int) method.getSerialNumber();
         synchronized(this) {
             if (profiledMethods.length <= index) {
-                int newSize = Math.min((int)index * 2 + 1, MAX_PROFILE_METHODS);
-                String[] newProfiledNames = new String[newSize];
-                System.arraycopy(profiledNames, 0, newProfiledNames, 0, profiledNames.length);
-                profiledNames = newProfiledNames;
-                DynamicMethod[] newProfiledMethods = new DynamicMethod[newSize];
+                int newSize = Math.min((int) index * 2 + 1, MAX_PROFILE_METHODS);
+                ProfiledMethod[] newProfiledMethods = new ProfiledMethod[newSize];
                 System.arraycopy(profiledMethods, 0, newProfiledMethods, 0, profiledMethods.length);
                 profiledMethods = newProfiledMethods;
             }
     
             // only add the first one we encounter, since others will probably share the original
-            if (profiledNames[index] == null) {
-                profiledNames[index] = name;
-                profiledMethods[index] = method;
+            if (profiledMethods[index] == null) {
+                profiledMethods[index] = new ProfiledMethod(name, method);
             }
         }
     }
@@ -4218,11 +4208,9 @@ public final class Ruby {
 
     // The maximum number of methods we will track for profiling purposes
     private static final int MAX_PROFILE_METHODS = 100000;
-
-    // The list of method names associated with method serial numbers
-    private String[] profiledNames = new String[0];
+    
     // The method objects for serial numbers
-    private DynamicMethod[] profiledMethods = new DynamicMethod[0];
+    private ProfiledMethod[] profiledMethods = new ProfiledMethod[0];
     
     // Message for Errno exceptions that will not generate a backtrace
     public static final String ERRNO_BACKTRACE_MESSAGE = "errno backtraces disabled; run with -Xerrno.backtrace=true to enable";
