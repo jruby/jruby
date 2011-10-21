@@ -37,6 +37,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Locale;
 import java.util.Set;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
@@ -51,7 +52,6 @@ import org.jruby.compiler.impl.StandardASMCompiler;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DefaultMethod;
-import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.util.ClassCache;
@@ -85,94 +85,112 @@ public class JITCompiler implements JITCompilerMBean {
         ruby.getBeanManager().register(this);
     }
 
-    public DynamicMethod tryJIT(final DefaultMethod method, final ThreadContext context, final String name) {
+    public void tryJIT(final DefaultMethod method, final ThreadContext context, final String name) {
         if (context.getRuntime().getInstanceConfig().getCompileMode().shouldJIT()) {
-            return jitIsEnabled(method, context, name);
+            jitIsEnabled(method, context, name);
         }
-
-        return null;
     }
 
-    private DynamicMethod jitIsEnabled(final DefaultMethod method, final ThreadContext context, final String name) {
+    private void jitIsEnabled(final DefaultMethod method, final ThreadContext context, final String name) {
         RubyInstanceConfig instanceConfig = context.getRuntime().getInstanceConfig();
         
         if (method.incrementCallCount() >= instanceConfig.getJitThreshold()) {
-            return jitThresholdReached(method, instanceConfig, context, name);
+            jitThresholdReached(method, instanceConfig, context, name);
         }
-
-        return null;
     }
     
-    private DynamicMethod jitThresholdReached(final DefaultMethod method, RubyInstanceConfig instanceConfig, final ThreadContext context, final String name) {
-        try {
-            // The cache is full. Abandon JIT for this method and bail out.
-            ClassCache classCache = instanceConfig.getClassCache();
-            if (classCache.isFull()) {
-                counts.abandonCount.incrementAndGet();
-                method.setCallCount(-1);
-                return null;
-            }
-
-            // Check if the method has been explicitly excluded
-            String moduleName = method.getImplementationClass().getName();
-            if(instanceConfig.getExcludedMethods().size() > 0) {
-                String excludeModuleName = moduleName;
-                if(method.getImplementationClass().isSingleton()) {
-                    IRubyObject possibleRealClass = ((MetaClass)method.getImplementationClass()).getAttached();
-                    if(possibleRealClass instanceof RubyModule) {
-                        excludeModuleName = "Meta:" + ((RubyModule)possibleRealClass).getName();
+    private void jitThresholdReached(final DefaultMethod method, final RubyInstanceConfig instanceConfig, final ThreadContext context, final String name) {
+        // Disable any other jit tasks from entering queue
+        method.setCallCount(-1);
+        
+        Runnable jitTask = new Runnable() {
+            public void run() {
+                try {
+                    // The cache is full. Abandon JIT for this method and bail out.
+                    ClassCache classCache = instanceConfig.getClassCache();
+                    if (classCache.isFull()) {
+                        counts.abandonCount.incrementAndGet();
+                        return;
                     }
-                }
 
-                if ((instanceConfig.getExcludedMethods().contains(excludeModuleName) ||
-                     instanceConfig.getExcludedMethods().contains(excludeModuleName +"#"+name) ||
-                     instanceConfig.getExcludedMethods().contains(name))) {
-                    method.setCallCount(-1);
-                    return null;
+                    // Check if the method has been explicitly excluded
+                    String moduleName = method.getImplementationClass().getName();
+                    if (instanceConfig.getExcludedMethods().size() > 0) {
+                        String excludeModuleName = moduleName;
+                        if (method.getImplementationClass().isSingleton()) {
+                            IRubyObject possibleRealClass = ((MetaClass) method.getImplementationClass()).getAttached();
+                            if (possibleRealClass instanceof RubyModule) {
+                                excludeModuleName = "Meta:" + ((RubyModule) possibleRealClass).getName();
+                            }
+                        }
+
+                        if ((instanceConfig.getExcludedMethods().contains(excludeModuleName)
+                                || instanceConfig.getExcludedMethods().contains(excludeModuleName + "#" + name)
+                                || instanceConfig.getExcludedMethods().contains(name))) {
+                            method.setCallCount(-1);
+                            return;
+                        }
+                    }
+
+                    String key = SexpMaker.create(name, method.getArgsNode(), method.getBodyNode());
+                    JITClassGenerator generator = new JITClassGenerator(name, key, context.getRuntime(), method, context, counts);
+
+                    Class<Script> sourceClass = (Class<Script>) instanceConfig.getClassCache().cacheClassByKey(key, generator);
+
+                    if (sourceClass == null) {
+                        // class could not be found nor generated; give up on JIT and bail out
+                        counts.failCount.incrementAndGet();
+                        return;
+                    }
+
+                    // successfully got back a jitted method
+                    counts.successCount.incrementAndGet();
+
+                    // finally, grab the script
+                    Script jitCompiledScript = sourceClass.newInstance();
+
+                    // add to the jitted methods set
+                    Set<Script> jittedMethods = context.getRuntime().getJittedMethods();
+                    jittedMethods.add(jitCompiledScript);
+
+                    // logEvery n methods based on configuration
+                    if (instanceConfig.getJitLogEvery() > 0) {
+                        int methodCount = jittedMethods.size();
+                        if (methodCount % instanceConfig.getJitLogEvery() == 0) {
+                            log(method, name, "live compiled methods: " + methodCount);
+                        }
+                    }
+
+                    if (instanceConfig.isJitLogging()) {
+                        log(method, name, "done jitting");
+                    }
+
+                    method.switchToJitted(jitCompiledScript, generator.callConfig());
+                    return;
+                } catch (Throwable t) {
+                    if (context.getRuntime().getDebug().isTrue()) {
+                        t.printStackTrace();
+                    }
+                    if (instanceConfig.isJitLoggingVerbose()) {
+                        log(method, name, "could not compile", t.getMessage());
+                    }
+
+                    counts.failCount.incrementAndGet();
+                    return;
                 }
             }
+        };
 
-            String key = SexpMaker.create(name, method.getArgsNode(), method.getBodyNode());
-            JITClassGenerator generator = new JITClassGenerator(name, key, context.getRuntime(), method, context, counts);
-
-            Class<Script> sourceClass = (Class<Script>)instanceConfig.getClassCache().cacheClassByKey(key, generator);
-
-            if (sourceClass == null) {
-                // class could not be found nor generated; give up on JIT and bail out
-                counts.failCount.incrementAndGet();
-                method.setCallCount(-1);
-                return null;
+        if (context.runtime.getExecutor() != null) {
+            try {
+                context.runtime.getExecutor().submit(jitTask);
+            } catch (RejectedExecutionException ree) {
+                // failed to submit, just run it directly
+                jitTask.run();
             }
-
-            // successfully got back a jitted method
-            counts.successCount.incrementAndGet();
-
-            // finally, grab the script
-            Script jitCompiledScript = sourceClass.newInstance();
-
-            // add to the jitted methods set
-            Set<Script> jittedMethods = context.getRuntime().getJittedMethods();
-            jittedMethods.add(jitCompiledScript);
-
-            // logEvery n methods based on configuration
-            if (instanceConfig.getJitLogEvery() > 0) {
-                int methodCount = jittedMethods.size();
-                if (methodCount % instanceConfig.getJitLogEvery() == 0) {
-                    log(method, name, "live compiled methods: " + methodCount);
-                }
-            }
-
-            if (instanceConfig.isJitLogging()) log(method, name, "done jitting");
-
-            method.switchToJitted(jitCompiledScript, generator.callConfig());
-            return null;
-        } catch (Throwable t) {
-            if (context.getRuntime().getDebug().isTrue()) t.printStackTrace();
-            if (instanceConfig.isJitLoggingVerbose()) log(method, name, "could not compile", t.getMessage());
-
-            counts.failCount.incrementAndGet();
-            method.setCallCount(-1);
-            return null;
+        } else {
+            // no executor, just run directly
+            jitTask.run();
         }
     }
 
