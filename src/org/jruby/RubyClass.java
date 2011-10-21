@@ -1010,12 +1010,13 @@ public class RubyClass extends RubyModule {
         }
     }
     
-    public void addInvalidators(List<Invalidator> invalidators) {
+    public void addInvalidatorsAndFlush(List<Invalidator> invalidators) {
         invalidators.add(methodInvalidator);
+        cachedMethods.clear();
         synchronized (runtime.getHierarchyLock()) {
             Set<RubyClass> mySubclasses = subclasses;
             if (mySubclasses != null) for (RubyClass subclass : mySubclasses) {
-                subclass.addInvalidators(invalidators);
+                subclass.addInvalidatorsAndFlush(invalidators);
             }
         }
     }

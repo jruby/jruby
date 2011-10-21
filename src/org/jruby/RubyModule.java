@@ -1055,7 +1055,7 @@ public class RubyModule extends RubyObject {
         
         synchronized (getRuntime().getHierarchyLock()) {
             for (RubyClass includingHierarchy : includingHierarchies) {
-                includingHierarchy.addInvalidators(invalidators);
+                includingHierarchy.addInvalidatorsAndFlush(invalidators);
             }
         }
         
@@ -1080,6 +1080,7 @@ public class RubyModule extends RubyObject {
         generation = getRuntime().getNextModuleGeneration();
     }
 
+    @Deprecated
     protected void invalidateCacheDescendantsInner() {
         methodInvalidator.invalidate();
     }
@@ -3501,7 +3502,7 @@ public class RubyModule extends RubyObject {
     }
     private volatile Map<String, Autoload> autoloads = Collections.EMPTY_MAP;
     private volatile Map<String, DynamicMethod> methods = Collections.EMPTY_MAP;
-    private Map<String, CacheEntry> cachedMethods = Collections.EMPTY_MAP;
+    protected Map<String, CacheEntry> cachedMethods = Collections.EMPTY_MAP;
     protected int generation;
 
     protected volatile Set<RubyClass> includingHierarchies = Collections.EMPTY_SET;
