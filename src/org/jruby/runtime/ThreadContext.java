@@ -50,6 +50,7 @@ import org.jruby.RubyString;
 import org.jruby.RubyThread;
 import org.jruby.ast.executable.RuntimeCache;
 import org.jruby.exceptions.JumpException.ReturnJump;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.ext.fiber.Fiber;
 import org.jruby.parser.StaticScope;
@@ -57,6 +58,8 @@ import org.jruby.runtime.backtrace.BacktraceElement;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.backtrace.TraceType.Gather;
+import org.jruby.runtime.backtrace.BacktraceElement;
+import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.profile.ProfileData;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
@@ -1288,29 +1291,12 @@ public final class ThreadContext {
      * @return the thread's profile data
      */
     public ProfileData getProfileData() {
-        if (profileData == null)
+        if (profileData == null) {
             profileData = new ProfileData(this);
+        }
         return profileData;
     }
 
-    private int currentMethodSerial = 0;
-    
-    public int profileEnter(int nextMethod) {
-        int previousMethodSerial = currentMethodSerial;
-        currentMethodSerial = nextMethod;
-        if (isProfiling)
-            getProfileData().profileEnter(nextMethod);
-        return previousMethodSerial;
-    }
-
-    public int profileExit(int nextMethod, long startTime) {
-        int previousMethodSerial = currentMethodSerial;
-        currentMethodSerial = nextMethod;
-        if (isProfiling)
-            getProfileData().profileExit(nextMethod, startTime);
-        return previousMethodSerial;
-    }
-    
     public void startProfiling() {
         isProfiling = true;
         // use new profiling data every time profiling is started, useful in 
@@ -1324,6 +1310,26 @@ public final class ThreadContext {
     
     public boolean isProfiling() {
         return isProfiling;
+    }
+    
+    private int currentMethodSerial = 0;
+    
+    public int profileEnter(int nextMethod) {
+        int previousMethodSerial = currentMethodSerial;
+        currentMethodSerial = nextMethod;
+        if (isProfiling()) {
+            getProfileData().profileEnter(nextMethod);
+        }
+        return previousMethodSerial;
+    }
+    
+    public int profileExit(int nextMethod, long startTime) {
+        int previousMethodSerial = currentMethodSerial;
+        currentMethodSerial = nextMethod;
+        if (isProfiling()) {
+            getProfileData().profileExit(nextMethod, startTime);
+        }
+        return previousMethodSerial;
     }
     
     public Set<RecursiveComparator.Pair> getRecursiveSet() {
@@ -1340,4 +1346,5 @@ public final class ThreadContext {
     }
     
     private Set<RecursiveComparator.Pair> recursiveSet;
+    
 }

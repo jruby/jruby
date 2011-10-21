@@ -114,10 +114,12 @@ public abstract class ProfilePrinter {
     public String methodName(int serial) {
         return profileData.methodName(serial);
     }
-    
-    static String methodName(String name, DynamicMethod method) {
+
+    static String methodName(ProfiledMethod profileMethod) {
         final String displayName;
-        if (method != null) {
+        if (profileMethod != null) {
+            String name = profileMethod.getName();
+            DynamicMethod method = profileMethod.getMethod();
             if (name == null) name = method.getName();
             displayName = moduleHashMethod(method.getImplementationClass(), name);
         } else {

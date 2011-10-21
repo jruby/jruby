@@ -26,7 +26,6 @@
 package org.jruby.runtime.profile;
 
 import org.jruby.Ruby;
-import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
 
 import static org.jruby.runtime.profile.ProfilePrinter.PROFILER_PROFILE_METHOD;
@@ -51,29 +50,13 @@ public class ProfileData {
         threadContext = tc;
         clear();
     }
-
-    /**
-     * Get the list of method names being profiled
-     */
-    protected String[] getProfiledNames() {
-        return Ruby.getGlobalRuntime().getProfiledNames();
-    }
-
-    /**
-     * Get the list of method objects for methods being profiled
-     */
-    protected DynamicMethod[] getProfiledMethods() {
+    
+    protected ProfiledMethod[] getProfiledMethods() {
         return Ruby.getGlobalRuntime().getProfiledMethods();
     }
     
-    protected String getProfiledName(final int serial) {
-        final String[] profiledNames = getProfiledNames();
-        if (serial >= profiledNames.length) return null;
-        return profiledNames[serial];
-    }
-    
-    protected DynamicMethod getProfiledMethod(final int serial) {
-        final DynamicMethod[] profiledMethods = getProfiledMethods();
+    protected ProfiledMethod getProfiledMethod(final int serial) {
+        final ProfiledMethod[] profiledMethods = getProfiledMethods();
         if (serial >= profiledMethods.length) return null;
         return profiledMethods[serial];
     }
@@ -114,7 +97,6 @@ public class ProfileData {
             
             newTopInvocation.addChild(newCurrentInvocation);
             newCurrentInvocation.incrementCount();
-
             
             topInvocation     = newTopInvocation;
             currentInvocation = newCurrentInvocation;
@@ -182,27 +164,24 @@ public class ProfileData {
         setRecursiveDepths();
         
         if (topInvocation.getChildren().size() != 1) {
-            return addDuration(topInvocation);
+            return setDuration(topInvocation);
         }
         if (topInvocation.getChildren().size() == 1) {
-            Invocation singleTopChild = null;
-            for (Invocation inv : topInvocation.getChildren().values() ) {
-                singleTopChild = inv;
-            }
+            Invocation singleTopChild = topInvocation.getChildren().values().iterator().next();
             int serial = singleTopChild.getMethodSerialNumber();
             if ( PROFILER_PROFILE_METHOD.equals( methodName(serial) ) ) {
-                for (Invocation inv : singleTopChild.getChildren().values() ) {
+                for ( Invocation inv : singleTopChild.getChildren().values() ) {
                     serial = inv.getMethodSerialNumber();
                     if ( PROFILER_PROFILED_CODE_METHOD.equals( methodName(serial) ) ) {
-                        return addDuration(inv.copyWithNewSerialAndParent(0, null));
+                        return setDuration(inv.copyWithNewSerialAndParent(0, null));
                     }
                 }
             }
         }
-        return addDuration(topInvocation);
+        return setDuration(topInvocation);
     }
     
-    private static Invocation addDuration(Invocation inv) {
+    private static Invocation setDuration(Invocation inv) {
         inv.setDuration(inv.childTime());
         return inv;
     }
@@ -253,7 +232,7 @@ public class ProfileData {
     
     String methodName(final int serial) {
         if (serial == 0) return "(top)";
-        return ProfilePrinter.methodName(getProfiledName(serial), getProfiledMethod(serial));
+        return ProfilePrinter.methodName( getProfiledMethod(serial) );
     }
     
 }
