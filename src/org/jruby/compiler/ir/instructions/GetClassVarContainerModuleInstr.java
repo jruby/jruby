@@ -13,6 +13,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyClass;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.evaluator.ASTInterpreter;
 
 /*
  * Finds the module that will hold class vars for the object that is being queried.
@@ -49,6 +50,7 @@ public class GetClassVarContainerModuleInstr extends Instr {
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         RubyModule containerModule = (candidateScope == null) ? null : candidateScope.getStaticScope().getModule();
+        if (containerModule == null) containerModule = ASTInterpreter.getClassVariableBase(context, context.getRuntime());
         if (containerModule == null && object != null) {
             IRubyObject arg = (IRubyObject) object.retrieve(interp, context, self);
             // SSS: What is the right thing to do here?

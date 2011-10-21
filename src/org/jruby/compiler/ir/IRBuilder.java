@@ -1160,15 +1160,22 @@ public class IRBuilder {
          *     p @@c
          * 
          * So @@c is accessible outside the singleton class in the script
+         *
+         * Stop lexical scope walking at an eval script boundary.  Evals are essentially
+         * a way for a programmer to splice an entire tree of lexical scopes at the point
+         * where the eval happens.  So, when we hit an eval-script boundary at compile-time,
+         * defer scope traversal to when we know where this scope has been spliced in.
          * ------------------------------------------------------------------------------- */
         IRScope current = s;
-        while (current != null && (   !(current instanceof IRMethod) 
-                                   || !((IRMethod)current).isAModuleRootMethod()
-                                   ||  (current.getLexicalParent() instanceof IRMetaClass))) {
+        while (current != null && (   !(current instanceof IREvalScript)
+                                   && !(    (current instanceof IRMethod) 
+                                         && ((IRMethod)current).isAModuleRootMethod()
+                                         && !(current.getLexicalParent() instanceof IRMetaClass)))) {
             current = current.getLexicalParent();
         }
+
         Variable tmp = s.getNewTemporaryVariable();
-        s.addInstr(new GetClassVarContainerModuleInstr(tmp, (IRMethod)current, lookInMetaClass ? getSelf(s) : null));
+        s.addInstr(new GetClassVarContainerModuleInstr(tmp, current instanceof IRMethod ? (IRMethod)current : null, lookInMetaClass ? getSelf(s) : null));
         return tmp;
     }
 
