@@ -1,4 +1,3 @@
-fails:Process.setrlimit requires at least two arguments
 fails:Process.setrlimit and Process.getrlimit limit and get core size (bytes)
 fails:Process.setrlimit and Process.getrlimit limit and get CPU time (seconds)
 fails:Process.setrlimit and Process.getrlimit limit and get data segment (bytes)

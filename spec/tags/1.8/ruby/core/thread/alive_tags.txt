@@ -1,2 +1,1 @@
-fails(JRUBY-3459):Thread#alive? reports aborting on a killed thread
 fails:Thread#alive? return true for a killed but still running thread

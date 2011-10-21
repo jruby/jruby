@@ -6,5 +6,4 @@ fails:Process.kill kills process groups if signal starts with a minus sign
 fails:Process.kill kills process groups if signal starts with a minus sign and 'SIG'
 windows(JRUBY-4317):Process.kill raises an ArgumentError for unknown signals
 windows(JRUBY-4317):Process.kill doesn't accept lowercase signal names
-windows(JRUBY-4317):Process.kill doesn't tolerate leading or trailing spaces in signal names
 fails(hang):Process.kill coerces the pid to an Integer

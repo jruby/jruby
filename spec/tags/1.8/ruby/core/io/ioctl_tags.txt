@@ -1,4 +1,3 @@
 fails(linux):IO#ioctl resizes an empty String to match the output size
 fails(linux):IO#ioctl passes data from and to a String correctly
 fails(linux):IO#ioctl raises an Errno error when ioctl fails
-

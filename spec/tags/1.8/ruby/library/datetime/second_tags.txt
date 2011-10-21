@@ -1,6 +1,0 @@
-fails:DateTime.second returns 0 seconds if passed no arguments
-fails:DateTime.second returns the seconds passed in the arguments
-fails:DateTime.second adds 60 to negative values
-fails:DateTime.second returns the absolute value of a Rational
-fails:DateTime.second displays the fraction of a minute
-fails:DateTime.second takes a second fraction near 60

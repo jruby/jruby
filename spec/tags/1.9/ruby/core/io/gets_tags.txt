@@ -1,7 +1,4 @@
 failed:IO#gets with ASCII separator returns the separator's character representation
 failed:IO#gets with an empty String separator returns the next paragraph
-windows:IO#gets accepts an integer as second parameter to limit the output's size
-windows:IO#gets accepts an integer as limit parameter which is same as IO size
-
 fails:IO#gets calls #to_int to convert a single object argument to an Integer limit
 fails:IO#gets calls #to_int to convert the second object argument to an Integer limit

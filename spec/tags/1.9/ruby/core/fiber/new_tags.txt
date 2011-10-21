@@ -1,4 +1,3 @@
 fails:Fiber.new raises a SyntaxError when the block contains a retry statement
 fails:Fiber.new closes over lexical environments
 fails:Fiber.new escapes an inner ensure block
-

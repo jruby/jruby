@@ -1,1 +1,0 @@
-fails:Encoding#dummy? returns true for dummy encodings

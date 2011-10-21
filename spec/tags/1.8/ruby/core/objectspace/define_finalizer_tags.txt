@@ -1,3 +1,2 @@
 fails:ObjectSpace.define_finalizer calls finalizer on process termination
-fails:ObjectSpace.define_finalizer doesn't call self-referencing finalizers
 fails(JRUBY-5668):ObjectSpace.define_finalizer raises ArgumentError trying to define a finalizer on a non-reference

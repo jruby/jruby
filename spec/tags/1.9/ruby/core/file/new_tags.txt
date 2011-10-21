@@ -1,6 +1,3 @@
-fails:File.new raises an Errno::EINVAL error with File::APPEND
-fails:File.new raises an Errno::EINVAL error with File::RDONLY|File::APPEND
-fails:File.new raises an Errno::EINVAL error with File::RDONLY|File::WRONLY
 fails(JRUBY-4082):File.new opens directories
 fails(JRUBY-4564):File.new returns a new File when use File::APPEND mode
 fails(JRUBY-4564):File.new returns a new File when use File::RDONLY|File::APPEND mode

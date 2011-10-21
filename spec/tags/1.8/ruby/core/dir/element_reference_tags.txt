@@ -3,4 +3,3 @@ fails(JRUBY-5667):Dir.[] matches non-dotfiles with '*'
 fails(JRUBY-5667):Dir.[] matches non-dotfiles in the current directory with '**'
 fails(JRUBY-5667):Dir.[] recursively matches any nondot subdirectories with '**/'
 fails(JRUBY-5667):Dir.[] matches dot or non-dotfiles with '{,.}*'
-

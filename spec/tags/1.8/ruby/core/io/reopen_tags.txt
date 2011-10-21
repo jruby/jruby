@@ -1,4 +1,3 @@
-fails(JRUBY-3143):IO#reopen reassociates self with a new stream after some reads
 fails(JRUBY-4646):IO#reopen changes the class of the instance to the class of the object returned by #to_io
 fails(JRUBY-4646):IO#reopen with an IO may change the class of the instance
 fails:IO#reopen with a String passes all mode flags through
