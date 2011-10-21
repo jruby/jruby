@@ -121,15 +121,16 @@ public class TestRuby extends TestRubyBase {
     }
     
     public void testRequireCextNotAllowedWhenCextIsDisabledGlobally() throws Exception {
+        RubyInstanceConfig cfg = new RubyInstanceConfig();
+        cfg.setCextEnabled(false);
+        runtime = Ruby.newInstance(cfg);
+        
         try {
-            setCextEnabled(false);
-            runtime = Ruby.newInstance();
             runtime.evalScriptlet("require 'tempfile'; file = Tempfile.open(['foo', '.so']); file.close; require file.path");
             fail();
-	} catch (RaiseException re) {
-	    assertTrue(re.getException().message.asJavaString().startsWith("C extensions are disabled"));
-        } finally {
-            setCextEnabled(true);
+        } catch (RaiseException re) {
+            re.printStackTrace();
+            assertTrue(re.getException().message.asJavaString().startsWith("C extensions are disabled"));
         }
     }
     

@@ -228,6 +228,7 @@ public class RubyInstanceConfig {
     private boolean hardExit = false;
     private boolean disableGems = false;
     private boolean updateNativeENVEnabled = true;
+    private boolean cextEnabled = CEXT_ENABLED;
     
     private int safeLevel = 0;
 
@@ -1826,5 +1827,13 @@ public class RubyInstanceConfig {
     
     public static void setLoadedNativeExtensions(boolean loadedNativeExtensions) {
         RubyInstanceConfig.loadedNativeExtensions = loadedNativeExtensions;
+    }
+
+    public boolean isCextEnabled() {
+        return cextEnabled;
+    }
+
+    public void setCextEnabled(boolean cextEnabled) {
+        this.cextEnabled = cextEnabled;
     }
 }
