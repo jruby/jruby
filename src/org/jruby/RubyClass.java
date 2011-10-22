@@ -1001,7 +1001,7 @@ public class RubyClass extends RubyModule {
     @Override
     public void invalidateCacheDescendants() {
         super.invalidateCacheDescendants();
-        // update all subclasses
+        
         synchronized (runtime.getHierarchyLock()) {
             Set<RubyClass> mySubclasses = subclasses;
             if (mySubclasses != null) for (RubyClass subclass : mySubclasses) {
@@ -1011,8 +1011,13 @@ public class RubyClass extends RubyModule {
     }
     
     public void addInvalidatorsAndFlush(List<Invalidator> invalidators) {
+        // add this class's invalidators to the aggregate
         invalidators.add(methodInvalidator);
-        cachedMethods.clear();
+        
+        // if we're not at boot time, don't bother fully clearing caches
+        if (!runtime.isBooting()) cachedMethods.clear();
+        
+        // cascade into subclasses
         synchronized (runtime.getHierarchyLock()) {
             Set<RubyClass> mySubclasses = subclasses;
             if (mySubclasses != null) for (RubyClass subclass : mySubclasses) {
