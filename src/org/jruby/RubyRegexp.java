@@ -1520,7 +1520,12 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         // FIXME: This is pretty gross; we should have a cleaner initialization
         // that doesn't depend on package-visible fields and ideally is atomic,
         // probably using an immutable structure we replace all at once.
-        match.regs = matcher.getRegion(); // lazy, null when no groups defined
+
+        // The region must be cloned because a subsequent match will update the
+        // region, resulting in the MatchData created here pointing at the
+        // incorrect region (capture/group).
+        Region region = matcher.getRegion(); // lazy, null when no groups defined
+        match.regs = region == null ? null : region.clone();
         match.begin = matcher.getBegin();
         match.end = matcher.getEnd();
         match.pattern = pattern;
