@@ -24,10 +24,10 @@ class Proc
       raise ArgumentError, "cannot create binding from curried proc"
     }
     curried.singleton_class.send(:define_method, :parameters) {
-      proc.parameters
+      [[:rest]]
     }
     curried.singleton_class.send(:define_method, :source_location) {
-      proc.source_location
+      nil
     }
     curried
   end
