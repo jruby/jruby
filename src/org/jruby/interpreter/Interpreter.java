@@ -62,11 +62,7 @@ public class Interpreter {
         IREvalScript evalScript = new IRBuilder().buildEvalRoot(ss, containingIRScope, file, lineNumber, rootNode);
         evalScript.prepareForInterpretation();
 //        evalScript.runCompilerPass(new CallSplitter());
-        try {
-            return evalScript.call(runtime.getCurrentContext(), self, evalScript.getStaticScope().getModule(), rootNode.getScope(), block);
-        } catch (IRBreakJump bj) {
-            throw runtime.newLocalJumpError(Reason.BREAK, (IRubyObject)bj.breakValue, "unexpected break");
-        }
+        return evalScript.call(runtime.getCurrentContext(), self, evalScript.getStaticScope().getModule(), rootNode.getScope(), block);
     }
 
     public static IRubyObject interpretSimpleEval(Ruby runtime, String file, int lineNumber, Node node, IRubyObject self) {
@@ -152,12 +148,18 @@ public class Interpreter {
                     // - If not, Just pass it along!
                     throw rj;
                 } catch (IRBreakJump bj) {
-                    if (lastInstr instanceof BREAK_Instr) {
+                    if ((lastInstr instanceof BREAK_Instr) || bj.breakInEval) {
+
+                        // Clear eval flag
+                        bj.breakInEval = false;
+
                         // Error
                         if (!inClosure || interp.inProc()) throw runtime.newLocalJumpError(Reason.BREAK, (IRubyObject)bj.breakValue, "unexpected break");
 
                         // Lambda special case.  We are in a lambda and breaking out of it requires popping out exactly one level up.
                         if (interp.inLambda()) bj.caughtByLambda = true;
+                        // If we are in an eval, record it so we can account for it
+                        else if (scope instanceof IREvalScript) bj.breakInEval = true;
 
                         // Pass it upward
                         throw bj;
