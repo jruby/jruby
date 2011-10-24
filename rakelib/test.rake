@@ -21,7 +21,7 @@ namespace :test do
   end
 
   desc "FIXME: Not sure about what this should be called (name came from ant)"
-  task :rake_targets => ['install_gems', 'spec:ji:quiet', 'spec:compiler', 'spec:ffi', 'spec:regression'] do
+  task :rake_targets => ['install_gems', 'spec:ji:quiet', 'spec:compiler', 'spec:profiler', 'spec:ffi', 'spec:regression'] do
     jrake(BASE_DIR, 'test:tracing') { arg :line => '--debug' }
   end
 
