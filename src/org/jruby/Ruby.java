@@ -1552,14 +1552,14 @@ public final class Ruby {
     
     private void initRubyKernel() {
         // load Ruby parts of core
-        loadFile("builtin/kernel.rb", getJRubyClassLoader().getResourceAsStream("builtin/kernel.rb"), false);
+        loadFile("jruby/kernel.rb", getJRubyClassLoader().getResourceAsStream("jruby/kernel.rb"), false);
         
         switch (config.getCompatVersion()) {
             case RUBY1_8:
-                loadFile("builtin/kernel18.rb", getJRubyClassLoader().getResourceAsStream("builtin/kernel18.rb"), false);
+                loadFile("jruby/kernel18.rb", getJRubyClassLoader().getResourceAsStream("jruby/kernel18.rb"), false);
                 break;
             case RUBY1_9:
-                loadFile("builtin/kernel19.rb", getJRubyClassLoader().getResourceAsStream("builtin/kernel19.rb"), false);
+                loadFile("jruby/kernel19.rb", getJRubyClassLoader().getResourceAsStream("jruby/kernel19.rb"), false);
                 break;
         }
     }
