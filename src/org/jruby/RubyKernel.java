@@ -1208,12 +1208,6 @@ public class RubyKernel {
             return runtime.newArgumentError(message);
         }
     };
-
-    @JRubyMethod(required = 1, optional = 1, module = true, visibility = PRIVATE)
-    public static IRubyObject trap(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        context.getRuntime().getLoadService().require("jsignal_internal");
-        return RuntimeHelpers.invoke(context, recv, "__jtrap", args, block);
-    }
     
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject warn(ThreadContext context, IRubyObject recv, IRubyObject message) {

@@ -1542,11 +1542,6 @@ public final class Ruby {
             }
         });
         
-        String[] builtins = {"jsignal_internal", "generator_internal"};
-        for (String library : builtins) {
-            addBuiltinIfAllowed(library + ".rb", new BuiltinScript(library));
-        }
-        
         RubyKernel.autoload(topSelf, newSymbol("Java"), newString("java"));
     }
     

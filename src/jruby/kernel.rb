@@ -4,3 +4,4 @@
 
 # These are loads so they don't pollute LOADED_FEATURES
 load 'jruby/kernel/generator.rb'
+load 'jruby/kernel/signal.rb'

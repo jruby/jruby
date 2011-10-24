@@ -67,13 +67,6 @@ public class RubySignal {
         mSignal.defineAnnotatedMethods(RubySignal.class);
         //registerThreadDumpSignalHandler(runtime);
     }
-
-    @JRubyMethod(required = 1, optional = 1, module = true)
-    public static IRubyObject trap(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        Ruby runtime = recv.getRuntime();
-        runtime.getLoadService().require("jsignal_internal");
-        return RuntimeHelpers.invoke(context, runtime.getKernel(), "__jtrap", args, block);
-    }
     
     @JRubyMethod(module = true)
     public static IRubyObject list(ThreadContext context, IRubyObject recv) {
