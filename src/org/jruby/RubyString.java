@@ -61,6 +61,7 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CodingErrorAction;
+import java.nio.charset.UnsupportedCharsetException;
 import java.util.Arrays;
 import java.util.Locale;
 
@@ -7261,8 +7262,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     private static Charset lookupCharsetFor(Ruby runtime, Encoding encoding, String fromName, String toName) {
-        Charset from = encoding.getCharset();
-        if (from != null) return from;
+        Charset from = null;
+        try {
+            from = encoding.getCharset();
+            if (from != null) return from;
+        } catch (Exception e) {}
 
         try { // We try looking up based on Java's supported charsets...likely missing charset entry in jcodings
             from = Charset.forName(encoding.toString());
