@@ -72,8 +72,6 @@ public class RubyEnumerator extends RubyObject {
         runtime.setEnumerator(enmr);
 
         RubyYielder.createYielderClass(runtime);
-        
-        runtime.getLoadService().require("generator_internal.rb");
     }
 
     private static ObjectAllocator ENUMERATOR_ALLOCATOR = new ObjectAllocator() {

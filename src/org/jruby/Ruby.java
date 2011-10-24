@@ -138,6 +138,8 @@ import org.jruby.runtime.opto.Invalidator;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.ext.coverage.CoverageData;
+import org.jruby.ext.jruby.JRubyConfigLibrary;
+import org.jruby.ext.jruby.JRubyLibrary;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.interpreter.Interpreter;
 import org.jruby.javasupport.util.RuntimeHelpers;
@@ -1128,6 +1130,9 @@ public final class Ruby {
         // initialize builtin libraries
         initBuiltins();
         
+        // init Ruby-based kernel
+        initRubyKernel();
+        
         if(config.isProfiling()) {
             getLoadService().require("jruby/profiler/shutdown_hook");
         }
@@ -1331,6 +1336,21 @@ public final class Ruby {
         if (profile.allowClass("Continuation")) {
             RubyContinuation.createContinuation(this);
         }
+        
+        if (profile.allowClass("Enumerator")) {
+            RubyEnumerator.defineEnumerator(this);
+        }
+        
+        if (is1_9()) {
+            if (RubyInstanceConfig.COROUTINE_FIBERS) {
+                LoadService.reflectedLoad(this, "fiber", "org.jruby.ext.fiber.CoroutineFiberLibrary", getJRubyClassLoader(), false);
+            } else {
+                LoadService.reflectedLoad(this, "fiber", "org.jruby.ext.fiber.ThreadFiberLibrary", getJRubyClassLoader(), false);
+            }
+        }
+        
+        // Load the JRuby::Config module for accessing configuration settings from Ruby
+        new JRubyConfigLibrary().load(this, false);
     }
 
     public static final int NIL_PREFILLED_ARRAY_SIZE = RubyArray.ARRAY_DEFAULT_SIZE * 8;
@@ -1510,14 +1530,6 @@ public final class Ruby {
             addLazyBuiltin("net/protocol.rb", "net/protocol", "org.jruby.ext.net.protocol.NetProtocolBufferedIOLibrary");
         }
         
-        if (is1_9()) {
-            if (RubyInstanceConfig.COROUTINE_FIBERS) {
-                LoadService.reflectedLoad(this, "fiber", "org.jruby.ext.fiber.CoroutineFiberLibrary", getJRubyClassLoader(), false);
-            } else {
-                LoadService.reflectedLoad(this, "fiber", "org.jruby.ext.fiber.ThreadFiberLibrary", getJRubyClassLoader(), false);
-            }
-        }
-        
         addBuiltinIfAllowed("openssl.jar", new Library() {
             public void load(Ruby runtime, boolean wrap) throws IOException {
                 runtime.getLoadService().require("jruby/openssl/stub");
@@ -1536,20 +1548,19 @@ public final class Ruby {
         }
         
         RubyKernel.autoload(topSelf, newSymbol("Java"), newString("java"));
-
-        if(is1_9()) {
-            // see ruby.c's ruby_init_gems function
-            loadFile("builtin/prelude.rb", getJRubyClassLoader().getResourceAsStream("builtin/prelude.rb"), false);
-            if (!config.isDisableGems()) {
-                // NOTE: This has been disabled because gem_prelude is terribly broken.
-                //       We just require 'rubygems' in gem_prelude, at least for now.
-                //defineModule("Gem"); // dummy Gem module for prelude
-                loadFile("builtin/gem_prelude.rb", getJRubyClassLoader().getResourceAsStream("builtin/gem_prelude.rb"), false);
-            }
-        }
+    }
+    
+    private void initRubyKernel() {
+        // load Ruby parts of core
+        loadFile("builtin/kernel.rb", getJRubyClassLoader().getResourceAsStream("builtin/kernel.rb"), false);
         
-        if (profile.allowClass("Enumerator")) {
-            RubyEnumerator.defineEnumerator(this);
+        switch (config.getCompatVersion()) {
+            case RUBY1_8:
+                loadFile("builtin/kernel18.rb", getJRubyClassLoader().getResourceAsStream("builtin/kernel18.rb"), false);
+                break;
+            case RUBY1_9:
+                loadFile("builtin/kernel19.rb", getJRubyClassLoader().getResourceAsStream("builtin/kernel19.rb"), false);
+                break;
         }
     }
 

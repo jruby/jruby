@@ -69,7 +69,7 @@ import org.jruby.runtime.load.Library;
  */
 @JRubyModule(name="JRuby")
 public class JRubyLibrary implements Library {
-    public void load(Ruby runtime, boolean wrap) throws IOException {
+    public void load(Ruby runtime, boolean wrap) {
         ThreadContext context = runtime.getCurrentContext();
         runtime.getKernel().callMethod(context, "require", runtime.newString("java"));
         RubyModule jrubyModule = runtime.getOrCreateModule("JRuby");
@@ -82,6 +82,8 @@ public class JRubyLibrary implements Library {
 
         RubyClass fiberLocalClass = jrubyModule.defineClassUnder("FiberLocal", runtime.getObject(), JRubyFiberLocal.ALLOCATOR);
         fiberLocalClass.defineAnnotatedMethods(JRubyExecutionContextLocal.class);
+        
+        new JRubyConfigLibrary().load(runtime, wrap);
     }
 
     /**
