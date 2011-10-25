@@ -29,13 +29,13 @@ public class LiveVariableNode extends FlowGraphNode
     @Override
     public void init()
     {
-        this.setSize = _prob.getDFVarsCount();
+        this.setSize = problem.getDFVarsCount();
         this.out = new BitSet(this.setSize);
     }
 
     private void addDFVar(Variable v)
     {
-        LiveVariablesProblem lvp = (LiveVariablesProblem)_prob;
+        LiveVariablesProblem lvp = (LiveVariablesProblem)problem;
         if ((v != null) && (lvp.getDFVar(v) == null)) {
             lvp.addDFVar(v);
 //            System.out.println("Adding df var for " + v + ":" + lvp.getDFVar(v)._id);
@@ -52,9 +52,9 @@ public class LiveVariableNode extends FlowGraphNode
 
     public void initSolnForNode()
     {
-        LiveVariablesProblem p = (LiveVariablesProblem)_prob;
+        LiveVariablesProblem p = (LiveVariablesProblem)problem;
         this.in = new BitSet(this.setSize);
-        if (_bb == p.getCFG().getExitBB()) {
+        if (basicBlock == p.getCFG().getExitBB()) {
             Collection<Variable> lv = p.getVarsLiveOnExit();
             if ((lv != null) && !lv.isEmpty()) {
                 for (Variable v: lv)
@@ -84,14 +84,14 @@ public class LiveVariableNode extends FlowGraphNode
 
     public boolean applyTransferFunction()
     {
-        LiveVariablesProblem lvp = (LiveVariablesProblem)_prob;
+        LiveVariablesProblem lvp = (LiveVariablesProblem)problem;
 
         this.tmp = (BitSet)this.in.clone();
 //        System.out.println("Apply TF for BB " + _bb.getID());
 //        System.out.println("After MEET, df state is:\n" + toString());
 
         // Traverse the instructions in this basic block in reverse order!
-        List<Instr> instrs = _bb.getInstrs();
+        List<Instr> instrs = basicBlock.getInstrs();
         ListIterator<Instr> it = instrs.listIterator(instrs.size());
         while (it.hasPrevious()) {
             Instr i = it.previous();
@@ -246,13 +246,13 @@ public class LiveVariableNode extends FlowGraphNode
     void markDeadInstructions()
     {
 //        System.out.println("dead processing for " + _bb.getID());
-        LiveVariablesProblem lvp = (LiveVariablesProblem)_prob;
+        LiveVariablesProblem lvp = (LiveVariablesProblem)problem;
 
         if (this.in == null) {
            // this.in cannot be null for reachable bbs
            // This bb is unreachable! (or we have a mighty bug!)
            // Mark everything dead in here!
-           for (Instr i: _bb.getInstrs())
+           for (Instr i: basicBlock.getInstrs())
                i.markDead();
 
            return;
@@ -262,7 +262,7 @@ public class LiveVariableNode extends FlowGraphNode
 
         // Traverse the instructions in this basic block in reverse order!
         // Mark as dead all instructions whose results are not used! 
-        List<Instr> instrs = _bb.getInstrs();
+        List<Instr> instrs = basicBlock.getInstrs();
         ListIterator<Instr> it = instrs.listIterator(instrs.size());
         while (it.hasPrevious()) {
             Instr i = it.previous();

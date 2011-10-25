@@ -38,7 +38,7 @@ public class BindingStorePlacementNode extends FlowGraphNode {
 
         // For closure scopes, the heap binding will already have been allocated in the parent scope
         // So, don't even bother with the binding allocation in closures!
-        if (_prob.getCFG().getScope() instanceof IRClosure) {
+        if (problem.getCFG().getScope() instanceof IRClosure) {
             _inBindingAllocated = _outBindingAllocated = true;
         } else {
             _inBindingAllocated = _outBindingAllocated = false;
@@ -66,10 +66,10 @@ public class BindingStorePlacementNode extends FlowGraphNode {
     public boolean applyTransferFunction() {
         boolean bindingAllocated = _inBindingAllocated;
 
-        BindingStorePlacementProblem bsp = (BindingStorePlacementProblem) _prob;
+        BindingStorePlacementProblem bsp = (BindingStorePlacementProblem) problem;
         Set<LocalVariable> dirtyVars = new HashSet<LocalVariable>(_inDirtyVars);
 
-        for (Instr i : _bb.getInstrs()) {
+        for (Instr i : basicBlock.getInstrs()) {
             if (i.operation == Operation.BINDING_LOAD) continue;
 
             // Process calls specially -- these are the sites of binding stores!
@@ -136,10 +136,10 @@ public class BindingStorePlacementNode extends FlowGraphNode {
     public void addStoreAndBindingAllocInstructions(Set<LocalVariable> callsiteDirtyVars) {
         boolean addAllocateBindingInstructions = false; // SSS: This is going to be useful during JIT -- we are far away from there at this time
 
-        BindingStorePlacementProblem bsp = (BindingStorePlacementProblem) _prob;
+        BindingStorePlacementProblem bsp = (BindingStorePlacementProblem) problem;
         CFG cfg = bsp.getCFG();
         IRExecutionScope s = cfg.getScope();
-        ListIterator<Instr> instrs = _bb.getInstrs().listIterator();
+        ListIterator<Instr> instrs = basicBlock.getInstrs().listIterator();
         Set<LocalVariable> dirtyVars = new HashSet<LocalVariable>(_inDirtyVars);
         boolean bindingAllocated = _inBindingAllocated;
 
@@ -151,7 +151,7 @@ public class BindingStorePlacementNode extends FlowGraphNode {
         //         Ex: s=0; a.each { |i| j = i+1; sum += j; }; puts sum
         //       i,j are dirty inside the block, but not used outside
 
-        boolean amExitBB = (_bb == cfg.getExitBB());
+        boolean amExitBB = (basicBlock == cfg.getExitBB());
         if (amExitBB) {
 /**
             LiveVariablesProblem lvp = (LiveVariablesProblem)cfg.getDataFlowSolution(DataFlowConstants.LVP_NAME);

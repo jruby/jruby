@@ -40,8 +40,8 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
     }
 
     public void initSolnForNode() {
-        if (_bb == _prob.getCFG().getExitBB()) {
-            _inReqdLoads = ((BindingLoadPlacementProblem) _prob).getLoadsOnScopeExit();
+        if (basicBlock == problem.getCFG().getExitBB()) {
+            _inReqdLoads = ((BindingLoadPlacementProblem) problem).getLoadsOnScopeExit();
         }
     }
 
@@ -51,10 +51,10 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
     }
 
     public boolean applyTransferFunction() {
-        BindingLoadPlacementProblem blp = (BindingLoadPlacementProblem) _prob;
+        BindingLoadPlacementProblem blp = (BindingLoadPlacementProblem) problem;
         Set<LocalVariable> reqdLoads = new HashSet<LocalVariable>(_inReqdLoads);
 
-        List<Instr> instrs = _bb.getInstrs();
+        List<Instr> instrs = basicBlock.getInstrs();
         ListIterator<Instr> it = instrs.listIterator(instrs.size());
         while (it.hasPrevious()) {
             Instr i = it.previous();
@@ -108,7 +108,7 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
         }
 
         // At the beginning of the scope, required loads can be discarded.
-        if (_bb == _prob.getCFG().getEntryBB()) reqdLoads.clear();
+        if (basicBlock == problem.getCFG().getEntryBB()) reqdLoads.clear();
 
         if (_outReqdLoads.equals(reqdLoads)) {
             //System.out.println("\n For CFG " + _prob.getCFG() + " BB " + _bb.getID());
@@ -127,9 +127,9 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
     }
 
     public void addLoads() {
-        BindingLoadPlacementProblem blp = (BindingLoadPlacementProblem) _prob;
+        BindingLoadPlacementProblem blp = (BindingLoadPlacementProblem) problem;
         IRExecutionScope s = blp.getCFG().getScope();
-        List<Instr> instrs = _bb.getInstrs();
+        List<Instr> instrs = basicBlock.getInstrs();
         ListIterator<Instr> it = instrs.listIterator(instrs.size());
         Set<LocalVariable> reqdLoads = new HashSet<LocalVariable>(_inReqdLoads);
         while (it.hasPrevious()) {
@@ -189,7 +189,7 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
         }
 
         // Load first use of variables in closures
-        if ((s instanceof IRClosure) && (_bb == _prob.getCFG().getEntryBB())) {
+        if ((s instanceof IRClosure) && (basicBlock == problem.getCFG().getEntryBB())) {
             // System.out.println("\n[In Entry BB] For CFG " + _prob.getCFG() + ":");
             // System.out.println("\t--> Reqd loads   : " + java.util.Arrays.toString(reqdLoads.toArray()));
             for (LocalVariable v : reqdLoads) {

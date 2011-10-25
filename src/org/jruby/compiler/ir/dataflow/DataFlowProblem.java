@@ -116,7 +116,7 @@ public abstract class DataFlowProblem {
         buf.append("-------------------------\n");
   
         for (FlowGraphNode n: flowGraphNodes) {
-            buf.append("DF State for BB ").append(n._bb.getID()).append(":\n").append(n.toString());
+            buf.append("DF State for BB ").append(n.basicBlock.getID()).append(":\n").append(n.toString());
         }
 
         return buf.toString();
