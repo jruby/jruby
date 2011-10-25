@@ -14,7 +14,7 @@ import org.jruby.compiler.ir.compiler_pass.CompilerPass;
 import org.jruby.compiler.ir.operands.TemporaryVariable;
 import org.jruby.compiler.ir.operands.RenamedVariable;
 import org.jruby.compiler.ir.compiler_pass.AddBindingInstructions;
-import org.jruby.compiler.ir.compiler_pass.CFG_Builder;
+import org.jruby.compiler.ir.compiler_pass.CFGBuilder;
 import org.jruby.compiler.ir.compiler_pass.IR_Printer;
 import org.jruby.compiler.ir.compiler_pass.InlineTest;
 import org.jruby.compiler.ir.compiler_pass.LinearizeCFG;
@@ -249,7 +249,7 @@ public abstract class IRScopeImpl implements IRScope {
         runCompilerPass(new LocalOptimizationPass());
         printPass("After local optimization pass");
 
-        runCompilerPass(new CFG_Builder());
+        runCompilerPass(new CFGBuilder());
         if (RubyInstanceConfig.IR_TEST_INLINER != null) {
             if (RubyInstanceConfig.IR_COMPILER_DEBUG) {
                 LOG.info("Asked to inline " + RubyInstanceConfig.IR_TEST_INLINER);

@@ -105,7 +105,7 @@ import org.jruby.ast.XStrNode;
 import org.jruby.ast.ZSuperNode;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.ir.compiler_pass.AddBindingInstructions;
-import org.jruby.compiler.ir.compiler_pass.CFG_Builder;
+import org.jruby.compiler.ir.compiler_pass.CFGBuilder;
 import org.jruby.compiler.ir.compiler_pass.IR_Printer;
 import org.jruby.compiler.ir.compiler_pass.InlineTest;
 import org.jruby.compiler.ir.compiler_pass.LinearizeCFG;
@@ -300,7 +300,7 @@ public class IRBuilder {
                 LOG.debug("################## After local optimization pass ##################");
                 scope.runCompilerPass(new IR_Printer());
             }
-            scope.runCompilerPass(new CFG_Builder());
+            scope.runCompilerPass(new CFGBuilder());
             long t5 = new Date().getTime();
 //            scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.DominatorTreeBuilder());
             long t6 = new Date().getTime();
