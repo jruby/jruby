@@ -135,23 +135,23 @@ public abstract class DataFlowProblem {
     protected List<FlowGraphNode>    flowGraphNodes;
 
     protected FlowGraphNode getFlowGraphNode(BasicBlock b) {
-        return _bbTofgMap.get(b.getID());
+        return basicBlockToFlowGraph.get(b.getID());
     }
 
 /* -------------- Private fields and methods below ---------------- */
     private int     nextVariableId;
     private ArrayList<DataFlowVar> variables;
-    private Map<Integer, FlowGraphNode> _bbTofgMap;
+    private Map<Integer, FlowGraphNode> basicBlockToFlowGraph;
 
     private void buildFlowGraph() {
         flowGraphNodes = new LinkedList<FlowGraphNode>();
-        _bbTofgMap = new HashMap<Integer, FlowGraphNode>();
+        basicBlockToFlowGraph = new HashMap<Integer, FlowGraphNode>();
 
         for (BasicBlock bb: cfg.getNodes()) {
             FlowGraphNode fgNode = buildFlowGraphNode(bb);
             fgNode.buildDataFlowVars();
             flowGraphNodes.add(fgNode);
-            _bbTofgMap.put(bb.getID(), fgNode);
+            basicBlockToFlowGraph.put(bb.getID(), fgNode);
         }
     }
 }
