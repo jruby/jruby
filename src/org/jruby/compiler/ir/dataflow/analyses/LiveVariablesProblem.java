@@ -59,7 +59,7 @@ public class LiveVariablesProblem extends DataFlowProblem
     public List<Variable> getVarsLiveOnEntry()
     {
         List<Variable> liveVars = new ArrayList<Variable>();
-        BitSet liveIn = ((LiveVariableNode)getFlowGraphNode(_cfg.getEntryBB())).getLiveOutBitSet();
+        BitSet liveIn = ((LiveVariableNode)getFlowGraphNode(cfg.getEntryBB())).getLiveOutBitSet();
         for (int i = 0; i < liveIn.size(); i++) {
             if (liveIn.get(i) == true) {
                 Variable v = getVariable(i);
@@ -95,7 +95,7 @@ public class LiveVariablesProblem extends DataFlowProblem
 
     public void markDeadInstructions()
     {
-        for (FlowGraphNode n: _fgNodes)
+        for (FlowGraphNode n: flowGraphNodes)
             ((LiveVariableNode)n).markDeadInstructions();
     }
 

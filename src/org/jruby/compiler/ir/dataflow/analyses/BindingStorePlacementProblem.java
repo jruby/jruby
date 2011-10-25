@@ -64,7 +64,7 @@ public class BindingStorePlacementProblem extends DataFlowProblem
             dirtyVars = new HashSet<LocalVariable>();
         }
 
-        for (FlowGraphNode n: _fgNodes) {
+        for (FlowGraphNode n: flowGraphNodes) {
             BindingStorePlacementNode bspn = (BindingStorePlacementNode)n;
             if (mightRequireGlobalEnsureBlock && !cfg.bbIsProtected(bspn.getBB()))
                 bspn.addStoreAndBindingAllocInstructions(dirtyVars);

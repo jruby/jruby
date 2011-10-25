@@ -33,7 +33,8 @@ public class DeadCodeElimination implements CompilerPass {
 
         // Run on nested closures!
         List<IRClosure> closures = ((IRExecutionScope)s).getClosures();
-        for (IRClosure cl: closures)
+        for (IRClosure cl: closures) {
             run(cl);
+        }
     }
 }

@@ -6,30 +6,23 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.ListIterator;
 
-import org.jruby.RubyInstanceConfig;
 import org.jruby.compiler.ir.IRClosure;
 import org.jruby.compiler.ir.IRExecutionScope;
-import org.jruby.compiler.ir.IRMethod;
-import org.jruby.compiler.ir.IRModule;
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.CodeVersion;
-import org.jruby.compiler.ir.operands.Array;
-import org.jruby.compiler.ir.operands.Fixnum;
-import org.jruby.compiler.ir.operands.Float;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
-import org.jruby.compiler.ir.operands.Constant;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.compiler_pass.CompilerPass;
 
 public class LocalOptimizationPass implements CompilerPass {
-    public LocalOptimizationPass() { }
-
     // Should we run this pass on the current scope before running it on nested scopes?
-    public boolean isPreOrder() { return false; }
+    public boolean isPreOrder() {
+        return false;
+    }
 
     public void run(IRScope s) {
         if (s instanceof IRExecutionScope) {
@@ -37,9 +30,9 @@ public class LocalOptimizationPass implements CompilerPass {
 
             // Run this pass on nested closures first!
             // This let us compute execute scope flags for a method based on what all nested closures do
-            List<IRClosure> closures = es.getClosures();
-            for (IRClosure c: closures)
+            for (IRClosure c: es.getClosures()) {
                 run(c);
+            }
 
             // Now, run on current scope
             runLocalOpts(es);
@@ -107,10 +100,7 @@ public class LocalOptimizationPass implements CompilerPass {
                 // If we didn't get a simplified value, remove any existing simplifications for the result
                 // to get rid of RAW hazards!
                 valueMap.remove(res);
-            }
-
-            // Optimize some core class method calls for constant values
-            else if (iop.isCall()) {
+            } else if (iop.isCall()) { // Optimize some core class method calls for constant values
                 val = null;
                 CallInstr call = (CallInstr) i;
                 Operand   r    = call.getReceiver(); 
@@ -121,8 +111,7 @@ public class LocalOptimizationPass implements CompilerPass {
                     // Look in our value map to see if we have a simplified value for the receiver.
                     if (!r.isConstant()) {
                         Operand v = valueMap.get(r);
-                        if (v != null)
-                            r = v;
+                        if (v != null) r = v;
                     }
                 }
             }
@@ -131,8 +120,9 @@ public class LocalOptimizationPass implements CompilerPass {
             if (res != null) {
                 List<Variable> simplifiedVars = simplificationMap.get(res);
                 if (simplifiedVars != null) {
-                    for (Variable v: simplifiedVars)
+                    for (Variable v: simplifiedVars) {
                         valueMap.remove(v);
+                    }
                     simplificationMap.remove(res);
                 }
             }

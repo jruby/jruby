@@ -38,7 +38,7 @@ public class BindingLoadPlacementProblem extends DataFlowProblem
 
     public void addLoads()
     {
-        for (FlowGraphNode n: _fgNodes) {
+        for (FlowGraphNode n: flowGraphNodes) {
             BindingLoadPlacementNode blpn = (BindingLoadPlacementNode)n;
             blpn.addLoads();
         }
