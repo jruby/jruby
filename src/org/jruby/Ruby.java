@@ -1547,14 +1547,14 @@ public final class Ruby {
     
     private void initRubyKernel() {
         // load Ruby parts of core
-        loadFile("jruby/kernel.rb", getJRubyClassLoader().getResourceAsStream("jruby/kernel.rb"), false);
+        loadService.load("jruby/kernel.rb", false);
         
         switch (config.getCompatVersion()) {
             case RUBY1_8:
-                loadFile("jruby/kernel18.rb", getJRubyClassLoader().getResourceAsStream("jruby/kernel18.rb"), false);
+                loadService.load("jruby/kernel18.rb", false);
                 break;
             case RUBY1_9:
-                loadFile("jruby/kernel19.rb", getJRubyClassLoader().getResourceAsStream("jruby/kernel19.rb"), false);
+                loadService.load("jruby/kernel19.rb", false);
                 break;
         }
     }
