@@ -26,22 +26,21 @@ import java.util.HashSet;
 import java.util.ListIterator;
 
 public class BindingStorePlacementNode extends FlowGraphNode {
-    /* ---------- Public fields, methods --------- */
     public BindingStorePlacementNode(DataFlowProblem prob, BasicBlock n) {
         super(prob, n);
     }
 
     @Override
     public void init() {
-        _inDirtyVars = new HashSet<LocalVariable>();
-        _outDirtyVars = new HashSet<LocalVariable>();
+        inDirtyVars = new HashSet<LocalVariable>();
+        outDirtyVars = new HashSet<LocalVariable>();
 
         // For closure scopes, the heap binding will already have been allocated in the parent scope
         // So, don't even bother with the binding allocation in closures!
         if (problem.getCFG().getScope() instanceof IRClosure) {
-            _inBindingAllocated = _outBindingAllocated = true;
+            inBindingAllocated = outBindingAllocated = true;
         } else {
-            _inBindingAllocated = _outBindingAllocated = false;
+            inBindingAllocated = outBindingAllocated = false;
         }
     }
 
@@ -56,18 +55,18 @@ public class BindingStorePlacementNode extends FlowGraphNode {
 
     public void compute_MEET(CFG_Edge edge, FlowGraphNode pred) {
         BindingStorePlacementNode n = (BindingStorePlacementNode) pred;
-        _inDirtyVars.addAll(n._outDirtyVars);
+        inDirtyVars.addAll(n.outDirtyVars);
 
         // For binding allocation, we are using the and operator -- so only if the binding has been allocated
         // on all incoming paths do we consider that a binding has been allocated 
-        _inBindingAllocated = _inBindingAllocated && n._outBindingAllocated;
+        inBindingAllocated = inBindingAllocated && n.outBindingAllocated;
     }
 
     public boolean applyTransferFunction() {
-        boolean bindingAllocated = _inBindingAllocated;
+        boolean bindingAllocated = inBindingAllocated;
 
         BindingStorePlacementProblem bsp = (BindingStorePlacementProblem) problem;
-        Set<LocalVariable> dirtyVars = new HashSet<LocalVariable>(_inDirtyVars);
+        Set<LocalVariable> dirtyVars = new HashSet<LocalVariable>(inDirtyVars);
 
         for (Instr i : basicBlock.getInstrs()) {
             if (i.operation == Operation.BINDING_LOAD) continue;
@@ -102,12 +101,10 @@ public class BindingStorePlacementNode extends FlowGraphNode {
                         }
                     }
                     dirtyVars = newDirtyVars;
-                } // Call has no closure && it requires stores
-                else if (call.targetRequiresCallersBinding()) {
+                } else if (call.targetRequiresCallersBinding()) { // Call has no closure && it requires stores
                     bindingAllocated = true;
                     dirtyVars.clear();
-                }
-                else if (call.canSetDollarVars()) {
+                } else if (call.canSetDollarVars()) {
                     bindingAllocated = true;
                 }
             }
@@ -121,10 +118,10 @@ public class BindingStorePlacementNode extends FlowGraphNode {
             if (i.operation.isReturn()) dirtyVars.clear();
         }
 
-        if (_outDirtyVars.equals(dirtyVars) && (_outBindingAllocated == bindingAllocated)) return false;
+        if (outDirtyVars.equals(dirtyVars) && outBindingAllocated == bindingAllocated) return false;
 
-        _outDirtyVars = dirtyVars;
-        _outBindingAllocated = bindingAllocated;
+        outDirtyVars = dirtyVars;
+        outBindingAllocated = bindingAllocated;
         return true;
     }
 
@@ -140,8 +137,8 @@ public class BindingStorePlacementNode extends FlowGraphNode {
         CFG cfg = bsp.getCFG();
         IRExecutionScope s = cfg.getScope();
         ListIterator<Instr> instrs = basicBlock.getInstrs().listIterator();
-        Set<LocalVariable> dirtyVars = new HashSet<LocalVariable>(_inDirtyVars);
-        boolean bindingAllocated = _inBindingAllocated;
+        Set<LocalVariable> dirtyVars = new HashSet<LocalVariable>(inDirtyVars);
+        boolean bindingAllocated = inBindingAllocated;
 
         // If this is the exit BB, we need a binding story on exit only for vars that are both:
         //
@@ -151,7 +148,7 @@ public class BindingStorePlacementNode extends FlowGraphNode {
         //         Ex: s=0; a.each { |i| j = i+1; sum += j; }; puts sum
         //       i,j are dirty inside the block, but not used outside
 
-        boolean amExitBB = (basicBlock == cfg.getExitBB());
+        boolean amExitBB = basicBlock == cfg.getExitBB();
         if (amExitBB) {
 /**
             LiveVariablesProblem lvp = (LiveVariablesProblem)cfg.getDataFlowSolution(DataFlowConstants.LVP_NAME);
@@ -205,8 +202,8 @@ public class BindingStorePlacementNode extends FlowGraphNode {
                             // FIXME: This may not need check for local variable if it is guaranteed to only be local variables.
                             instrs.add(new StoreToBindingInstr(s, v.getName(), v));
                             newDirtyVars.remove(v);
-                        } // These variables will be spilt inside the closure -- so they will no longer be dirty after the call site!
-                        else if (cl_bsp.scopeDefinesVariable(v)) {
+                        } else if (cl_bsp.scopeDefinesVariable(v)) {
+                            // These variables will be spilt inside the closure -- so they will no longer be dirty after the call site!
                             newDirtyVars.remove(v);
                         }
                     }
@@ -215,8 +212,7 @@ public class BindingStorePlacementNode extends FlowGraphNode {
 
                     // add stores in the closure
                     ((BindingStorePlacementProblem) cl_cfg.getDataFlowSolution(bsp.getName())).addStoreAndBindingAllocInstructions();
-                } // Call has no closure && it requires stores
-                else if (call.targetRequiresCallersBinding()) {
+                } else if (call.targetRequiresCallersBinding()) { // Call has no closure && it requires stores
                     instrs.previous();
                     if (addAllocateBindingInstructions) {
                         if (!bindingAllocated) {
@@ -229,8 +225,7 @@ public class BindingStorePlacementNode extends FlowGraphNode {
                     }
                     instrs.next();
                     dirtyVars.clear();
-                }
-                else if (call.canSetDollarVars()) {
+                } else if (call.canSetDollarVars()) {
                     if (addAllocateBindingInstructions) {
                         if (!bindingAllocated) {
                             instrs.add(new AllocateBindingInstr(s));
@@ -298,18 +293,18 @@ public class BindingStorePlacementNode extends FlowGraphNode {
         for (Variable v : dirtyVars) {
             if (v instanceof ClosureLocalVariable) {
                 IRClosure definingScope = ((ClosureLocalVariable)v).definingScope;
-                if ((s != definingScope) && s.nestedInClosure(definingScope))
+                
+                if ((s != definingScope) && s.nestedInClosure(definingScope)) {
                     instrs.add(new StoreToBindingInstr(s, v.getName(), v));
-            }
-            else {
+                }
+            } else {
                 instrs.add(new StoreToBindingInstr(s, v.getName(), v));
             }
         }
     }
 
-    /* ---------- Package fields, methods --------- */
-    Set<LocalVariable> _inDirtyVars;     // On entry to flow graph node:  Variables that need to be stored to the heap binding
-    Set<LocalVariable> _outDirtyVars;    // On exit from flow graph node: Variables that need to be stored to the heap binding
-    boolean _inBindingAllocated;   // Flag on entry to bb as to whether a binding has been allocated?
-    boolean _outBindingAllocated;   // Flag on exit to bb as to whether a binding has been allocated?
+    Set<LocalVariable> inDirtyVars;     // On entry to flow graph node:  Variables that need to be stored to the heap binding
+    Set<LocalVariable> outDirtyVars;    // On exit from flow graph node: Variables that need to be stored to the heap binding
+    boolean inBindingAllocated;   // Flag on entry to bb as to whether a binding has been allocated?
+    boolean outBindingAllocated;   // Flag on exit to bb as to whether a binding has been allocated?
 }
