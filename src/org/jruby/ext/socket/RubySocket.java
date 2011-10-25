@@ -509,8 +509,9 @@ public class RubySocket extends RubyBasicSocket {
     }
     @JRubyMethod(name = {"pack_sockaddr_in", "sockaddr_in"}, meta = true)
     public static IRubyObject pack_sockaddr_in(ThreadContext context, IRubyObject recv, IRubyObject port, IRubyObject host) {
+        int portNum = port instanceof RubyString ? Integer.parseInt(port.convertToString().toString()): RubyNumeric.fix2int(port);
         return pack_sockaddr_in(context, recv,
-                RubyNumeric.fix2int(port),
+                portNum,
                 host.isNil() ? null : host.convertToString().toString());
     }
     public static IRubyObject pack_sockaddr_in(ThreadContext context, IRubyObject recv, int iport, String host) {
