@@ -1102,6 +1102,14 @@ public class RubyIO extends RubyObject {
         
         return context.getRuntime().getEncodingService().getEncodingFromObject(encoding);
     }
+    
+    public static IRubyObject open(ThreadContext context, IRubyObject filename) {
+        return open(context, context.runtime.getFile(), new IRubyObject[]{filename}, Block.NULL_BLOCK);
+    }
+    
+    public static IRubyObject open(ThreadContext context, IRubyObject filename, IRubyObject mode) {
+        return open(context, context.runtime.getFile(), new IRubyObject[]{filename, mode}, Block.NULL_BLOCK);
+    }
 
     @JRubyMethod(required = 1, optional = 2, meta = true)
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
