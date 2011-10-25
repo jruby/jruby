@@ -30,7 +30,7 @@ public class LiveVariablesProblem extends DataFlowProblem
     private void addDFVar(Variable v, boolean recordVar)  {
         DataFlowVar dfv = new DataFlowVar(this); 
         _dfVarMap.put(v, dfv); 
-        _varDfVarMap.put(dfv._id, v);
+        _varDfVarMap.put(dfv.id, v);
         if ((v instanceof LocalVariable) && !((LocalVariable)v).isSelf()) _localVars.add((LocalVariable)v);
         if (recordVar) _udVars.add(v);
     }
@@ -88,7 +88,7 @@ public class LiveVariablesProblem extends DataFlowProblem
     {
         StringBuffer buf = new StringBuffer();
         for (Variable v: _dfVarMap.keySet())
-            buf.append("DF Var ").append(_dfVarMap.get(v)._id).append(" = ").append(v).append("\n");
+            buf.append("DF Var ").append(_dfVarMap.get(v).getId()).append(" = ").append(v).append("\n");
 
         return buf.toString();
     }

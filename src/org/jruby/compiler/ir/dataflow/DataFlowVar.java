@@ -1,11 +1,17 @@
-/* Represents some data flow fact about some dataflow problem */
-
 package org.jruby.compiler.ir.dataflow;
 
-public class DataFlowVar
-{
-/* ******************** PUBLIC INTERFACE ******************* */
-    public final int _id;   // Unique ID assigned to this variable
+/** 
+ * Represents some data flow fact about some dataflow problem 
+ */
+public class DataFlowVar {
+    // Unique ID assigned to this variable
+    public final int id;
 
-    public DataFlowVar(DataFlowProblem prob) { _id = prob.addDataFlowVar(this); }
+    public DataFlowVar(DataFlowProblem prob) {
+        id = prob.addDataFlowVar(this);
+    }
+    
+    public int getId() {
+        return id;
+    }
 }

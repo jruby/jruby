@@ -58,7 +58,7 @@ public class LiveVariableNode extends FlowGraphNode
             Collection<Variable> lv = p.getVarsLiveOnExit();
             if ((lv != null) && !lv.isEmpty()) {
                 for (Variable v: lv)
-                    this.in.set(p.getDFVar(v)._id);
+                    this.in.set(p.getDFVar(v).getId());
             }
         }
     }
@@ -101,7 +101,7 @@ public class LiveVariableNode extends FlowGraphNode
             Variable v = i.getResult();
             if (v != null) {
                 DataFlowVar dv = lvp.getDFVar(v);
-                this.tmp.clear(dv._id);
+                this.tmp.clear(dv.getId());
 //                System.out.println("cleared live flag for: " + v);
             }
 
@@ -121,7 +121,7 @@ public class LiveVariableNode extends FlowGraphNode
 
 //                        System.out.println(".. call is a data flow barrier ..");
                         // Mark all non-self local variables live if 'c' is a dataflow barrier!
-                        for (Variable x: lvp.getNonSelfLocalVars()) this.tmp.set(lvp.getDFVar(x)._id);
+                        for (Variable x: lvp.getNonSelfLocalVars()) this.tmp.set(lvp.getDFVar(x).getId());
                     }
                     else {
                         // Propagate current LVA state through the closure
@@ -160,7 +160,7 @@ public class LiveVariableNode extends FlowGraphNode
                             // This can be null for vars used, but not defined!  Yes, the source program is buggy ..
                             if (dv != null) {
 //                                System.out.println(y + " is live on entry of the closure!");
-                                this.tmp.set(dv._id);
+                                this.tmp.set(dv.getId());
                             }
                         } 
                     }
@@ -168,7 +168,7 @@ public class LiveVariableNode extends FlowGraphNode
                 else if (c.isDataflowBarrier()) {
 //                    System.out.println(".. call is a data flow barrier ..");
                      // Mark all non-self local variables live if 'c' is a dataflow barrier!
-                    for (Variable x: lvp.getNonSelfLocalVars()) this.tmp.set(lvp.getDFVar(x)._id);
+                    for (Variable x: lvp.getNonSelfLocalVars()) this.tmp.set(lvp.getDFVar(x).getId());
                 }
                 else if (c.canRaiseException()) {
 //                    System.out.println(".. can raise exception ..");
@@ -192,7 +192,7 @@ public class LiveVariableNode extends FlowGraphNode
                 DataFlowVar dv = lvp.getDFVar(x);
                 // This can be null for vars used, but not defined!  Yes, the source program is buggy ..
                 if (dv != null) {
-                    this.tmp.set(dv._id);
+                    this.tmp.set(dv.getId());
 //                    System.out.println("set live flag for: " + x);
                 }
             }
@@ -271,17 +271,17 @@ public class LiveVariableNode extends FlowGraphNode
             if (v != null) {
                 DataFlowVar dv = lvp.getDFVar(v);
                     // If 'v' is not live at the instruction site, and it has no side effects, mark it dead!
-                if ((this.tmp.get(dv._id) == false) && !i.hasSideEffects() && !i.operation.isDebugOp()) {
+                if ((this.tmp.get(dv.getId()) == false) && !i.hasSideEffects() && !i.operation.isDebugOp()) {
 //                    System.out.println("YES!");
                     i.markDead();
                     it.remove();
                 }
-                else if (this.tmp.get(dv._id) == false) {
+                else if (this.tmp.get(dv.getId()) == false) {
 //                    System.out.println("NO!  has side effects! Op is: " + i.operation);
                 }
                 else {
 //                    System.out.println("NO! LIVE result:" + v);
-                    this.tmp.clear(dv._id);
+                    this.tmp.clear(dv.getId());
                 }
             }
             else if (!i.hasSideEffects() && !i.operation.isDebugOp() && !i.transfersControl()) {
@@ -296,7 +296,7 @@ public class LiveVariableNode extends FlowGraphNode
                 CallInstr c = (CallInstr) i;
                 if (c.isDataflowBarrier()) {
                     // Mark all non-self local variables live if 'c' is a dataflow barrier!
-                    for (Variable x: lvp.getNonSelfLocalVars()) this.tmp.set(lvp.getDFVar(x)._id);
+                    for (Variable x: lvp.getNonSelfLocalVars()) this.tmp.set(lvp.getDFVar(x).getId());
                 }
                 else {
                     if (c.canRaiseException()) {
@@ -321,7 +321,7 @@ public class LiveVariableNode extends FlowGraphNode
                             DataFlowVar dv = lvp.getDFVar(y);
                             // This can be null for vars used, but not defined!  Yes, the source program is buggy ..
                             if (dv != null)
-                                this.tmp.set(dv._id);
+                                this.tmp.set(dv.getId());
                         } 
                     }
                 }
@@ -332,7 +332,7 @@ public class LiveVariableNode extends FlowGraphNode
                for (Variable x: i.getUsedVariables()) {
                    DataFlowVar dv = lvp.getDFVar(x);
                    if (dv != null)
-                       this.tmp.set(dv._id);
+                       this.tmp.set(dv.getId());
                }
             }
         }
