@@ -7,12 +7,13 @@ import org.jruby.compiler.ir.representations.CFG;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
-public class IR_Printer implements CompilerPass {
-
+public class IRPrinter implements CompilerPass {
     private static final Logger LOG = LoggerFactory.getLogger("IR_Printer");
 
     // Should we run this pass on the current scope before running it on nested scopes?
-    public boolean isPreOrder()  { return true; }
+    public boolean isPreOrder() {
+        return true;
+    }
 
     public void run(IRScope s) {
         LOG.info("----------------------------------------");
@@ -20,8 +21,7 @@ public class IR_Printer implements CompilerPass {
 
         // If the cfg of the method is around, print the CFG!
         CFG c = null;
-        if (s instanceof IRExecutionScope)
-            c = ((IRExecutionScope)s).getCFG();
+        if (s instanceof IRExecutionScope) c = ((IRExecutionScope)s).getCFG();
 
         if (c != null) {
             LOG.info("\nGraph:\n" + c.getGraph().toString());

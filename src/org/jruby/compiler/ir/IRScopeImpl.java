@@ -15,7 +15,7 @@ import org.jruby.compiler.ir.operands.TemporaryVariable;
 import org.jruby.compiler.ir.operands.RenamedVariable;
 import org.jruby.compiler.ir.compiler_pass.AddBindingInstructions;
 import org.jruby.compiler.ir.compiler_pass.CFGBuilder;
-import org.jruby.compiler.ir.compiler_pass.IR_Printer;
+import org.jruby.compiler.ir.compiler_pass.IRPrinter;
 import org.jruby.compiler.ir.compiler_pass.InlineTest;
 import org.jruby.compiler.ir.compiler_pass.LinearizeCFG;
 import org.jruby.compiler.ir.compiler_pass.LiveVariableAnalysis;
@@ -268,7 +268,7 @@ public abstract class IRScopeImpl implements IRScope {
     private void printPass(String message) {
         if (RubyInstanceConfig.IR_COMPILER_DEBUG) {
             LOG.info("################## " + message + "##################");
-            runCompilerPass(new IR_Printer());        
+            runCompilerPass(new IRPrinter());        
         }
     }
 

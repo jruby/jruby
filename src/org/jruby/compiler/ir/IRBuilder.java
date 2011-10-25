@@ -106,7 +106,7 @@ import org.jruby.ast.ZSuperNode;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.ir.compiler_pass.AddBindingInstructions;
 import org.jruby.compiler.ir.compiler_pass.CFGBuilder;
-import org.jruby.compiler.ir.compiler_pass.IR_Printer;
+import org.jruby.compiler.ir.compiler_pass.IRPrinter;
 import org.jruby.compiler.ir.compiler_pass.InlineTest;
 import org.jruby.compiler.ir.compiler_pass.LinearizeCFG;
 import org.jruby.compiler.ir.compiler_pass.LiveVariableAnalysis;
@@ -292,13 +292,13 @@ public class IRBuilder {
             long t3 = new Date().getTime();
             if (isDebug) {
                 LOG.debug("################## Before local optimization pass ##################");
-                scope.runCompilerPass(new IR_Printer());
+                scope.runCompilerPass(new IRPrinter());
             }
             scope.runCompilerPass(new org.jruby.compiler.ir.compiler_pass.opts.LocalOptimizationPass());
             long t4 = new Date().getTime();
             if (isDebug) {
                 LOG.debug("################## After local optimization pass ##################");
-                scope.runCompilerPass(new IR_Printer());
+                scope.runCompilerPass(new IRPrinter());
             }
             scope.runCompilerPass(new CFGBuilder());
             long t5 = new Date().getTime();
@@ -310,7 +310,7 @@ public class IRBuilder {
                 LOG.debug("Asked to inline " + methName);
                 scope.runCompilerPass(new InlineTest(methName));
                 scope.runCompilerPass(new LocalOptimizationPass());
-                scope.runCompilerPass(new IR_Printer());
+                scope.runCompilerPass(new IRPrinter());
             }
            
             if (isDebug) {
@@ -323,12 +323,12 @@ public class IRBuilder {
             // scope.runCompilerPass(new AddBindingInstructions());
             // long t9 = new Date().getTime();
             if (isDebug) {
-                scope.runCompilerPass(new IR_Printer());
+                scope.runCompilerPass(new IRPrinter());
             }
             scope.runCompilerPass(new LinearizeCFG());
             if (isDebug) {
                 LOG.debug("################## After cfg linearization pass ##################");
-                scope.runCompilerPass(new IR_Printer());
+                scope.runCompilerPass(new IRPrinter());
             }
            
             LOG.debug("Time to build AST         : {}", (t2 - t1));
