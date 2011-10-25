@@ -17,14 +17,12 @@ import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.Tuple;
 import org.jruby.compiler.ir.instructions.BranchInstr;
-import org.jruby.compiler.ir.instructions.BREAK_Instr;
 import org.jruby.compiler.ir.instructions.CaseInstr;
 import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.JumpInstr;
 import org.jruby.compiler.ir.instructions.JUMP_INDIRECT_Instr;
 import org.jruby.compiler.ir.instructions.LABEL_Instr;
-import org.jruby.compiler.ir.instructions.MethodLookupInstr;
 import org.jruby.compiler.ir.instructions.ExceptionRegionStartMarkerInstr;
 import org.jruby.compiler.ir.instructions.ExceptionRegionEndMarkerInstr;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
@@ -199,7 +197,7 @@ public class CFG {
 
     private BasicBlock createNewBB(Label l, DirectedGraph<BasicBlock, CFG_Edge> g, Map<Label, BasicBlock> bbMap, Stack<ExceptionRegion> nestedExceptionRegions) {
         BasicBlock b = new BasicBlock(this, l);
-        bbMap.put(b._label, b);
+        bbMap.put(b.getLabel(), b);
         g.addVertex(b);
         if (!nestedExceptionRegions.empty())
             nestedExceptionRegions.peek().addBB(b);
@@ -212,7 +210,7 @@ public class CFG {
 
     private void removeBB(BasicBlock b) {
         _cfg.removeVertex(b);
-        _bbMap.remove(b._label);
+        _bbMap.remove(b.getLabel());
         _bbRescuerMap.remove(b);
         _bbEnsurerMap.remove(b);
         // SSS FIXME: Patch up rescued regions as well??
@@ -558,7 +556,7 @@ public class CFG {
         // 1. split yield site bb and move outbound edges from yield site bb to split bb.
         BasicBlock splitBB = yieldBB.splitAtInstruction(yield, getNewLabel(), false);
         _cfg.addVertex(splitBB);
-        _bbMap.put(splitBB._label, splitBB);
+        _bbMap.put(splitBB.getLabel(), splitBB);
         List<CFG_Edge> edgesToRemove = new java.util.ArrayList<CFG_Edge>();
         for (CFG_Edge e: outgoingEdgesOf(yieldBB)) {
             _cfg.addEdge(splitBB, e._dst)._type = e._type;
@@ -576,7 +574,7 @@ public class CFG {
         for (BasicBlock b: ccfg.getNodes()) {
             if (b != cEntry && b != cExit) {
                 _cfg.addVertex(b);
-                _bbMap.put(b._label, b);
+                _bbMap.put(b.getLabel(), b);
                 b.updateCFG(this);
                 b.processClosureArgAndReturnInstrs(ii, yield);
             }
@@ -649,7 +647,7 @@ public class CFG {
 
         // 1. split callsite bb and move outbound edges from callsite bb to split bb.
         BasicBlock splitBB = callBB.splitAtInstruction(call, getNewLabel(), false);
-        _bbMap.put(splitBB._label, splitBB);
+        _bbMap.put(splitBB.getLabel(), splitBB);
         _cfg.addVertex(splitBB);
         List<CFG_Edge> edgesToRemove = new java.util.ArrayList<CFG_Edge>();
         for (CFG_Edge e: outgoingEdgesOf(callBB)) {
@@ -669,7 +667,7 @@ public class CFG {
             if (b != mEntry && b != mExit) {
                 BasicBlock bCloned = b.cloneForInlining(ii);
                 _cfg.addVertex(bCloned);
-                _bbMap.put(bCloned._label, bCloned);
+                _bbMap.put(bCloned.getLabel(), bCloned);
             }
         }
 
@@ -1203,7 +1201,7 @@ public class CFG {
                         BasicBlock tgt = succs.iterator().next()._dst;
                         if ((tgt != next) && ((li == null) || !li.operation.transfersControl())) {
 //                            System.out.println("BB " + curr.getID() + " doesn't fall through to " + next.getID() + ".  Adding a jump to " + tgt._label);
-                            curr.addInstr(new JumpInstr(tgt._label));
+                            curr.addInstr(new JumpInstr(tgt.getLabel()));
                         }
                     }
                 }
@@ -1220,7 +1218,7 @@ public class CFG {
                 BasicBlock tgt = succs.iterator().next()._dst;
                 if ((li == null) || !li.operation.transfersControl()) {
 //                    System.out.println("BB " + curr.getID() + " is the last bb in the layout! Adding a jump to " + tgt._label);
-                    curr.addInstr(new JumpInstr(tgt._label));
+                    curr.addInstr(new JumpInstr(tgt.getLabel()));
                 }
             }
         }
