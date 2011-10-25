@@ -24,24 +24,30 @@ import java.util.HashSet;
 // strictly speaking, this is a AND of two independent dataflow analyses -- we are doing these together for
 // efficiency reasons, and also because the binding allocation problem is also a forwards flow problem and is a
 // relatively straightforward analysis.
-public class BindingStorePlacementProblem extends DataFlowProblem
-{
-/* ----------- Public Interface ------------ */
-    public BindingStorePlacementProblem()       
-    { 
-        super(DataFlowProblem.DF_Direction.FORWARD); 
+public class BindingStorePlacementProblem extends DataFlowProblem {
+
+    public BindingStorePlacementProblem() {
+        super(DataFlowProblem.DF_Direction.FORWARD);
     }
 
-    public String        getName() { return "Binding Stores Placement Analysis"; }
-    public FlowGraphNode buildFlowGraphNode(BasicBlock bb) { return new BindingStorePlacementNode(this, bb);  }
-    @Override
-    public String        getDataFlowVarsForOutput() { return ""; }
+    public String getName() {
+        return "Binding Stores Placement Analysis";
+    }
 
-    public boolean scopeDefinesVariable(Variable v) { 
+    public FlowGraphNode buildFlowGraphNode(BasicBlock bb) {
+        return new BindingStorePlacementNode(this, bb);
+    }
+
+    @Override
+    public String getDataFlowVarsForOutput() {
+        return "";
+    }
+
+    public boolean scopeDefinesVariable(Variable v) {
         return getCFG().definesLocalVariable(v);
     }
 
-    public boolean scopeUsesVariable(Variable v) { 
+    public boolean scopeUsesVariable(Variable v) {
         return getCFG().usesLocalVariable(v);
     }
 
@@ -64,20 +70,21 @@ public class BindingStorePlacementProblem extends DataFlowProblem
             dirtyVars = new HashSet<LocalVariable>();
         }
 
-        for (FlowGraphNode n: flowGraphNodes) {
-            BindingStorePlacementNode bspn = (BindingStorePlacementNode)n;
-            if (mightRequireGlobalEnsureBlock && !cfg.bbIsProtected(bspn.getBB()))
+        for (FlowGraphNode n : flowGraphNodes) {
+            BindingStorePlacementNode bspn = (BindingStorePlacementNode) n;
+            if (mightRequireGlobalEnsureBlock && !cfg.bbIsProtected(bspn.getBB())) {
                 bspn.addStoreAndBindingAllocInstructions(dirtyVars);
-            else
+            } else {
                 bspn.addStoreAndBindingAllocInstructions(null);
+            }
         }
 
         if ((mightRequireGlobalEnsureBlock == true) && !dirtyVars.isEmpty()) {
             BasicBlock geb = new BasicBlock(cfg, new Label("_GLOBAL_ENSURE_BLOCK"));
             Variable exc = cfgScope.getNewTemporaryVariable();
             geb.addInstr(new RECV_EXCEPTION_Instr(exc));
-            for (LocalVariable v: dirtyVars) {
-                geb.addInstr(new StoreToBindingInstr((IRClosure)cfgScope, v.getName(), v));
+            for (LocalVariable v : dirtyVars) {
+                geb.addInstr(new StoreToBindingInstr((IRClosure) cfgScope, v.getName(), v));
             }
             geb.addInstr(new THROW_EXCEPTION_Instr(exc));
             cfg.addGlobalEnsureBlock(geb);
