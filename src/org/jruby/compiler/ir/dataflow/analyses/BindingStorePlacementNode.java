@@ -19,7 +19,7 @@ import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.BasicBlock;
 import org.jruby.compiler.ir.representations.CFG;
-import org.jruby.compiler.ir.representations.CFG.CFG_Edge;
+import org.jruby.compiler.ir.representations.CFG.CFGEdge;
 
 import java.util.Set;
 import java.util.HashSet;
@@ -53,7 +53,7 @@ public class BindingStorePlacementNode extends FlowGraphNode {
         // Nothing to do
     }
 
-    public void compute_MEET(CFG_Edge edge, FlowGraphNode pred) {
+    public void compute_MEET(CFGEdge edge, FlowGraphNode pred) {
         BindingStorePlacementNode n = (BindingStorePlacementNode) pred;
         inDirtyVars.addAll(n.outDirtyVars);
 

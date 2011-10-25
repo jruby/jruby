@@ -1,7 +1,7 @@
 package org.jruby.compiler.ir.dataflow;
 
 import org.jruby.compiler.ir.representations.BasicBlock;
-import org.jruby.compiler.ir.representations.CFG.CFG_Edge;
+import org.jruby.compiler.ir.representations.CFG.CFGEdge;
 import org.jruby.compiler.ir.instructions.Instr;
 
 import java.util.BitSet;
@@ -32,7 +32,7 @@ public abstract class FlowGraphNode {
      * is a predecessor of the current node!  The choice of "IN/OUT" is 
      * determined by the direction of data flow.
      */
-    public abstract void compute_MEET(CFG_Edge edge, FlowGraphNode pred);
+    public abstract void compute_MEET(CFGEdge edge, FlowGraphNode pred);
 
     /** Compute "OUT/IN" for the current node!  The choice of "IN/OUT" is 
      * determined by the direction of data flow.  OUT/IN = transfer-function
@@ -88,12 +88,12 @@ public abstract class FlowGraphNode {
         // sources & targets depends on direction of the data flow problem
         initSolnForNode();
         if (problem.getFlowDirection() == DataFlowProblem.DF_Direction.FORWARD) {
-            for (CFG_Edge e: problem.incomingEdgesOf(basicBlock)) {
-                compute_MEET(e, problem.getFlowGraphNode(e._src));
+            for (CFGEdge e: problem.incomingEdgesOf(basicBlock)) {
+                compute_MEET(e, problem.getFlowGraphNode(e.getSource()));
             }
         } else if (problem.getFlowDirection() == DataFlowProblem.DF_Direction.BACKWARD) {
-            for (CFG_Edge e: problem.outgoingEdgesOf(basicBlock)) {
-                compute_MEET(e, problem.getFlowGraphNode(e._dst));
+            for (CFGEdge e: problem.outgoingEdgesOf(basicBlock)) {
+                compute_MEET(e, problem.getFlowGraphNode(e.getDestination()));
             }
         } else {
             throw new RuntimeException("Bidirectional data flow computation not implemented yet!");
@@ -106,12 +106,12 @@ public abstract class FlowGraphNode {
         boolean changed = applyTransferFunction();
         if (changed) {
             if (problem.getFlowDirection() == DataFlowProblem.DF_Direction.FORWARD) {
-                for (CFG_Edge e: problem.outgoingEdgesOf(basicBlock)) {
-                    processDestBB(workList, bbSet, e._dst);
+                for (CFGEdge e: problem.outgoingEdgesOf(basicBlock)) {
+                    processDestBB(workList, bbSet, e.getDestination());
                 }
             } else if (problem.getFlowDirection() == DataFlowProblem.DF_Direction.BACKWARD) {
-                for (CFG_Edge e: problem.incomingEdgesOf(basicBlock)) {
-                    processDestBB(workList, bbSet, e._src);
+                for (CFGEdge e: problem.incomingEdgesOf(basicBlock)) {
+                    processDestBB(workList, bbSet, e.getSource());
                 }
             }
         }
