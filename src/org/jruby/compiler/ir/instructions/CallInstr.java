@@ -37,7 +37,7 @@ public class CallInstr extends MultiOperandInstr {
     protected Operand[] arguments;
     protected MethAddr  methAddr;
     protected Operand   closure;
-	 protected CallType  callType;
+    protected CallType  callType;
     public CallSite callAdapter;
 
     private boolean flagsComputed;
@@ -64,12 +64,16 @@ public class CallInstr extends MultiOperandInstr {
         this.arguments = args;
         this.methAddr = methAddr;
         this.closure = closure;
-		  this.callType = callType;
+        this.callType = callType;
         flagsComputed = false;
         canBeEval = true;
         targetRequiresCallersBinding = true;
-        //callAdapter = MethodIndex.getFunctionalCallSite(methAddr.toString());
-        //callAdapter = MethodIndex.getCallSite(methAddr.toString());
+        switch (callType) {
+            case NORMAL    : callAdapter = MethodIndex.getCallSite(methAddr.toString()); break;
+            case FUNCTIONAL: callAdapter = MethodIndex.getFunctionalCallSite(methAddr.toString()); break;
+            case VARIABLE  : callAdapter = MethodIndex.getVariableCallSite(methAddr.toString()); break;
+            case SUPER     : callAdapter = MethodIndex.getSuperCallSite(); break;
+        }
     }
 
     public Operand[] getOperands() {
@@ -245,8 +249,8 @@ public class CallInstr extends MultiOperandInstr {
         Object resultValue;
         Block  block = prepareBlock(interp, context, self);
         try {
-				resultValue = RuntimeHelpers.invoke(context, object, name, args, callType, block);
-            // resultValue = callAdapter.call(context, self, object, args, block);
+             // resultValue = RuntimeHelpers.invoke(context, object, name, args, callType, block);
+             resultValue = callAdapter.call(context, self, object, args, block);
         }
         finally {
             block.escape();
