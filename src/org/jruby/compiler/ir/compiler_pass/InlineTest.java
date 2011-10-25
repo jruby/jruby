@@ -1,6 +1,5 @@
 package org.jruby.compiler.ir.compiler_pass;
 
-import org.jruby.compiler.ir.IRClass;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.IRModule;
 import org.jruby.compiler.ir.IRScope;
