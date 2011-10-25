@@ -10,34 +10,29 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.RubyArray;
 import org.jruby.runtime.ThreadContext;
 
-// This represents an array that is built at runtime from its constituents.
+// This represents an array that is used solely during arguments construction
 //   * Array + Splat ([1,2,3], *[5,6,7])
-//   * Array + Value ([1,2,3], 5)
-// Note that in either case, the first operand array is not modified, 
-// i.e. this is a side-effect free operation, hence an operand
+// This is a side-effect free operation, hence an operand
 //
 // NOTE: This operand is only used in the initial stages of optimization.
-// Further down the line, this will get built into an actual array object
+// Further down the line, this might get built into an actual array object.
 public class CompoundArray extends Operand {
     Operand a1;
     Operand a2;
-    boolean argsPushNode;
 
     public CompoundArray(Operand a1, Operand a2) { 
         this.a1 = a1;
         this.a2 = a2; 
-        argsPushNode = false;
     }
 
     public CompoundArray(Operand a1, Operand a2, boolean argsPushNode) { 
         this.a1 = a1;
         this.a2 = a2;
-        this.argsPushNode = argsPushNode;
     }
 
     public boolean isConstant() { return false; /*return a1.isConstant() && a2.isConstant();*/ }
 
-    public String toString() { return a1 + ", *" + a2; }
+    public String toString() { return "ArgsCat[" + a1 + ", " + a2 + "]"; }
 
     public Operand getAppendedArg() { return a2; }
 
@@ -94,6 +89,6 @@ public class CompoundArray extends Operand {
     public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         IRubyObject v1 = (IRubyObject)a1.retrieve(interp, context, self);
         IRubyObject v2 = (IRubyObject)a2.retrieve(interp, context, self);
-        return argsPushNode ? ((RubyArray)v1.dup()).append(v2) : RuntimeHelpers.argsCat(v1, v2);
+        return RuntimeHelpers.argsCat(v1, v2);
     }
 }

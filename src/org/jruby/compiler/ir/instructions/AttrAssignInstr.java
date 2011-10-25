@@ -8,7 +8,6 @@ import org.jruby.RubyArray;
 import org.jruby.RubyString;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Splat;
-import org.jruby.compiler.ir.operands.CompoundArray;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.InlinerInfo;
@@ -83,20 +82,20 @@ public class AttrAssignInstr extends MultiOperandInstr {
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         IRubyObject receiver = (IRubyObject) obj.retrieve(interp, context, self);
         String      attrMeth = ((RubyString) attr.retrieve(interp, context, self)).asJavaString();
-        List<IRubyObject> argList = new ArrayList<IRubyObject>();
+        List<IRubyObject> argList = new ArrayList<IRubyObject>(); 
 
+        // Process attr method args -- splats are expanded
         for (int i = 0; i < args.length; i++) {
             IRubyObject rArg = (IRubyObject)args[i].retrieve(interp, context, self);
-            if ((args[i] instanceof Splat) || (args[i] instanceof CompoundArray)) { 
+            if (args[i] instanceof Splat) { 
                 argList.addAll(Arrays.asList(((RubyArray)rArg).toJavaArray()));
             } else {
                 argList.add(rArg);
             }
         }
 
-        if (value != null) {
-            argList.add((IRubyObject)value.retrieve(interp, context, self));
-        }
+        // Process value -- splats are NOT expanded
+        if (value != null) argList.add((IRubyObject)value.retrieve(interp, context, self));
 
         // no visibility checks if receiver is self
         RuntimeHelpers.invoke(context, receiver, attrMeth, argList.toArray(new IRubyObject[argList.size()]), (self == receiver) ? CallType.FUNCTIONAL : CallType.NORMAL, Block.NULL_BLOCK);

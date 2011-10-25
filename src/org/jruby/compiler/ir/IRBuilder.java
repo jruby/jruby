@@ -591,14 +591,29 @@ public class IRBuilder {
 
     public void buildArguments(List<Operand> args, Node node, IRScope s) {
         switch (node.getNodeType()) {
-            case ARGSCATNODE: buildArgsCatArguments(args, (ArgsCatNode) node, s); break;
-            case ARGSPUSHNODE: buildArgsPushArguments(args, (ArgsPushNode) node, s); break;
-            case ARRAYNODE: buildArrayArguments(args, node, s); break;
-            case SPLATNODE: buildSplatArguments(args, (SplatNode) node, s); break;
-            default: 
-                Operand retVal = build(node, s);
-                if (retVal != null)    // SSS FIXME: Can this ever be null?
-                   args.add(retVal);
+            case ARGSCATNODE: {
+                ArgsCatNode n = (ArgsCatNode)node;
+                args.add(new Splat(build(n.getFirstNode(), s)));
+                args.add(new Splat(build(n.getSecondNode(), s)));
+                break;
+            }
+            case ARGSPUSHNODE: {
+                ArgsPushNode n = (ArgsPushNode)node;
+                args.add(new Splat(build(n.getFirstNode(), s)));
+                args.add(build(n.getSecondNode(), s));
+                break;
+            }
+            case ARRAYNODE: {
+                args.add(buildArray(node, s));
+                break;
+            }
+            case SPLATNODE: {
+                args.add(buildSplat((SplatNode)node, s));
+                break;
+            }
+            default: {
+                args.add(build(node, s));
+            }
         }
     }
     
@@ -874,7 +889,7 @@ public class IRBuilder {
         List<Operand> args = setupCallArgs(attrAssignNode.getArgsNode(), s);
         s.addInstr(new AttrAssignInstr(obj, new StringLiteral(attrAssignNode.getName()), args.toArray(new Operand[args.size()])));
         Operand lastArg = args.get(args.size()-1);
-       return (lastArg instanceof CompoundArray) ? ((CompoundArray)lastArg).getAppendedArg() : lastArg;
+        return (lastArg instanceof Splat) ? ((Splat)lastArg).getArray() : lastArg;
     }
 
     public Operand buildAttrAssignAssignment(Node node, IRScope s, Operand value) {
@@ -3273,27 +3288,5 @@ public class IRBuilder {
         Operand block = setupCallClosure(zsuperNode.getIterNode(), s);
         if (block == null) block = ((IRExecutionScope)s).getImplicitBlockArg();
         return buildSuperInstr(s, block, args);
-    }
-
-    public void buildArgsCatArguments(List<Operand> args, ArgsCatNode argsCatNode, IRScope s) {
-        Operand v1 = build(argsCatNode.getFirstNode(), s);
-        Operand v2 = build(argsCatNode.getSecondNode(), s);
-        args.add(new CompoundArray(v1, v2));
-    }
-
-    public void buildArgsPushArguments(List<Operand> args, ArgsPushNode argsPushNode, IRScope m) {
-        Operand v1 = build(argsPushNode.getFirstNode(), m);
-        Operand v2 = build(argsPushNode.getSecondNode(), m);
-        args.add(new CompoundArray(v1, v2, true));
-    }
-
-    public void buildArrayArguments(List<Operand> args, Node node, IRScope s) {
-        // SSS FIXME: Where does this go?
-        // m.setLinePosition(arrayNode.getPosition());
-        args.add(buildArray(node, s));
-    }
-
-    public void buildSplatArguments(List<Operand> args, SplatNode node, IRScope s) {
-        args.add(buildSplat(node, s));
     }
 }

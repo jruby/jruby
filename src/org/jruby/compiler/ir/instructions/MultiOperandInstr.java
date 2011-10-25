@@ -8,7 +8,6 @@ import org.jruby.RubyArray;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Splat;
-import org.jruby.compiler.ir.operands.CompoundArray;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
@@ -62,7 +61,7 @@ public abstract class MultiOperandInstr extends Instr {
          // since there is no array list --> array transformation
          if (!constArgs) {
              for (int i = 0; i < args.length; i++) {
-                 if (!(args[i] instanceof Splat) && !(args[i] instanceof CompoundArray)) {
+                 if (!(args[i] instanceof Splat)) {
                      preparedArgs[i] = (IRubyObject) args[i].retrieve(interp, context, self);
                  }
                  else {
@@ -74,7 +73,7 @@ public abstract class MultiOperandInstr extends Instr {
                      }
                      for (int j = i; j < args.length; j++) {
                          IRubyObject rArg = (IRubyObject)args[j].retrieve(interp, context, self);
-                         if ((args[j] instanceof Splat) || (args[j] instanceof CompoundArray)) {
+                         if (args[j] instanceof Splat) {
                              argList.addAll(Arrays.asList(((RubyArray)rArg).toJavaArray()));
                          } else {
                              argList.add(rArg);
