@@ -25,6 +25,7 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.CFG;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.ThreadKill;
 import org.jruby.parser.IRStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
@@ -188,6 +189,10 @@ public class Interpreter {
                 if (ipc == -1) throw re; // No one rescued exception, pass it on!
 
                 interp.setException(re.getException());
+            } catch (ThreadKill e) {
+                ipc = cfg.getEnsurerPC(lastInstr);
+                if (ipc == -1) throw e; // No ensure block here, pass it on! 
+                interp.setException(e);
             } catch (Error e) {
                 ipc = cfg.getEnsurerPC(lastInstr);
                 if (ipc == -1) throw e; // No ensure block here, pass it on! 
