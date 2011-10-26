@@ -150,6 +150,8 @@ public class ASTInterpreter {
     public static IRubyObject evalWithBinding(ThreadContext context, IRubyObject self, IRubyObject src, Binding binding) {
         Ruby runtime = src.getRuntime();
         DynamicScope evalScope = binding.getDynamicScope().getEvalScope(runtime);
+        String savedFile = context.getFile();
+        int savedLine = context.getLine();
 
         // FIXME:  This determine module is in a strange location and should somehow be in block
         evalScope.getStaticScope().determineModule();
@@ -175,6 +177,8 @@ public class ASTInterpreter {
         } catch (StackOverflowError soe) {
             throw runtime.newSystemStackError("stack level too deep", soe);
         } finally {
+            context.setFile(savedFile);
+            context.setLine(savedLine);
             context.postEvalWithBinding(binding, lastFrame);
         }
     }
