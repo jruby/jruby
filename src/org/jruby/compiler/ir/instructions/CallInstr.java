@@ -250,7 +250,20 @@ public class CallInstr extends MultiOperandInstr {
         Block  block = prepareBlock(interp, context, self);
         try {
              // resultValue = RuntimeHelpers.invoke(context, object, name, args, callType, block);
-             resultValue = callAdapter.call(context, self, object, args, block);
+
+             // SSS FIXME:
+             // Some downstream calls dont like if I call the  args[] boxed version with fewer than
+             // 4 arguments!  I think it is bad practice and a bug for those calls to bomb when we
+             // invoke the boxed rather than the unboxed version.  But, since some of this is not
+             // in JRuby core, we'll bite the bullet for now -- this whole CallInstr setup needs
+             // cleaning up to use specialized versions.
+             switch (args.length) {
+             case 0: resultValue = callAdapter.call(context, self, object, block); break;
+             case 1: resultValue = callAdapter.call(context, self, object, args[0], block); break;
+             case 2: resultValue = callAdapter.call(context, self, object, args[0], args[1], block); break;
+             case 3: resultValue = callAdapter.call(context, self, object, args[0], args[1], args[2], block);
+             default: resultValue = callAdapter.call(context, self, object, args, block);
+             }
         }
         finally {
             block.escape();
