@@ -764,6 +764,7 @@ public class ShellLauncher {
 
     public static class POpenProcess extends Process {
         private final Process child;
+        private final boolean waitForChild;
 
         // real stream references, to keep them from being GCed prematurely
         private InputStream realInput;
@@ -778,14 +779,15 @@ public class ShellLauncher {
         private FileChannel inerrChannel;
         private Pumper inputPumper;
         private Pumper inerrPumper;
-        private Pumper outputPumper;
 
         public POpenProcess(Process child, Ruby runtime, ModeFlags modes) {
             this.child = child;
 
             if (modes.isWritable()) {
+                this.waitForChild = true;
                 prepareOutput(child);
             } else {
+                this.waitForChild = false;
                 // close process output
                 // See JRUBY-3405; hooking up to parent process stdin caused
                 // problems for IRB etc using stdin.
@@ -803,6 +805,7 @@ public class ShellLauncher {
 
         public POpenProcess(Process child) {
             this.child = child;
+            this.waitForChild = false;
 
             prepareOutput(child);
             prepareInput(child);
@@ -846,19 +849,7 @@ public class ShellLauncher {
 
         @Override
         public int waitFor() throws InterruptedException {
-            if (outputPumper == null) {
-                try {
-                    if (output != null) output.close();
-                } catch (IOException ioe) {
-                    // ignore, we're on the way out
-                }
-            } else {
-                outputPumper.quit();
-            }
-
-            int result = child.waitFor();
-
-            return result;
+            return child.waitFor();
         }
 
         @Override
@@ -879,13 +870,19 @@ public class ShellLauncher {
                 // processes seem to have some peculiar locking sequences, so we
                 // need to ensure nobody is trying to close/destroy while we are
                 synchronized (this) {
-                    RubyIO.obliterateProcess(child);
                     if (inputPumper != null) synchronized(inputPumper) {inputPumper.quit();}
                     if (inerrPumper != null) synchronized(inerrPumper) {inerrPumper.quit();}
-                    if (outputPumper != null) synchronized(outputPumper) {outputPumper.quit();}
+                    if (waitForChild) {
+                        waitFor();
+                    } else {
+                        RubyIO.obliterateProcess(child);
+                    }
                 }
             } catch (IOException ioe) {
                 throw new RuntimeException(ioe);
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException(ie);
             }
         }
 
@@ -922,7 +919,6 @@ public class ShellLauncher {
             } else {
                 outputChannel = null;
             }
-            outputPumper = null;
         }
 
         private void pumpInput(Process child, Ruby runtime) {

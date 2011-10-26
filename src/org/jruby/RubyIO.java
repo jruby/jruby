@@ -3535,7 +3535,6 @@ public class RubyIO extends RubyObject {
                     if (io.openFile.isOpen()) {
                         io.close();
                     }
-                    context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, process.waitFor(), ShellLauncher.getPidFromProcess(process)));
                 }
             }
             return io;
@@ -3543,11 +3542,9 @@ public class RubyIO extends RubyObject {
             throw runtime.newErrnoEINVALError();
         } catch (IOException e) {
             throw runtime.newIOErrorFromException(e);
-        } catch (InterruptedException e) {
-            throw runtime.newThreadError("unexpected interrupt");
         }
     }
-    
+
     private static class Ruby19POpen {
         public final RubyString cmd;
         public final IRubyObject[] cmdPlusArgs;
