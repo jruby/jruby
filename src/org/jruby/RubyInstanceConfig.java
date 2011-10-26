@@ -610,6 +610,8 @@ public class RubyInstanceConfig {
                 .append("       (This affects all JRuby instances in a given JVM)\n")
                 .append("    native.verbose=true|false\n")
                 .append("       Enable verbose logging of native extension loading. Default is false.\n")
+                .append("    cext.enabled=true|false\n")
+                .append("       Enable or disable C extension support. Default is true (enabled).\n")
                 .append("\nTHREAD POOLING:\n")
                 .append("    thread.pool.enabled=true|false\n")
                 .append("       Enable reuse of native backing threads via a thread pool. Default is false.\n")
