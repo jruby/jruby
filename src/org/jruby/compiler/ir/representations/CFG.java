@@ -42,20 +42,19 @@ import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.dataflow.DataFlowProblem;
 
 public class CFG {
-    public enum CFG_Edge_Type {
+    public enum CFGEdgeType {
         REGULAR, DUMMY_EDGE, JUMP_EDGE, FALLTHRU_EDGE, FORWARD_EDGE, BACK_EDGE, EXIT_EDGE, EXCEPTION_EDGE
     }
 
     public static class CFGEdge {
-
         final private BasicBlock source;
         final private BasicBlock destination;
-        public CFG_Edge_Type type;
+        private CFGEdgeType type;
 
         public CFGEdge(BasicBlock src, BasicBlock dst) {
             this.source = src;
             this.destination = dst;
-            type = CFG_Edge_Type.REGULAR;   // Unknown type to start with
+            type = CFGEdgeType.REGULAR;   // Unknown type to start with
         }
         
         public BasicBlock getSource() {
@@ -190,10 +189,10 @@ public class CFG {
     /* Add 'b' as a global ensure block that protects all unprotected blocks in this scope */
     public void addGlobalEnsureBlock(BasicBlock geb) {
         cfg.addVertex(geb);
-        cfg.addEdge(geb, exitBB).type = CFG_Edge_Type.DUMMY_EDGE;
+        cfg.addEdge(geb, exitBB).type = CFGEdgeType.DUMMY_EDGE;
         for (BasicBlock b : getNodes()) {
             if ((b != geb) && !bbIsProtected(b)) {
-                cfg.addEdge(b, geb).type = CFG_Edge_Type.EXCEPTION_EDGE;
+                cfg.addEdge(b, geb).type = CFGEdgeType.EXCEPTION_EDGE;
                 bbRescuerMap.put(b, geb);
                 bbEnsurerMap.put(b, geb);
             }
@@ -448,12 +447,12 @@ public class CFG {
 
             // 2. Record a mapping from the region's exclusive basic blocks to the first bb that will start exception handling for all their exceptions.
             // 3. Add an exception edge from every exclusive bb of the region to firstRescueBB
-            for (BasicBlock b : rr._exclusiveBBs) {
+            for (BasicBlock b : rr.getExclusiveBBs()) {
                 bbRescuerMap.put(b, firstRescueBB);
-                if (rr._ensureBlockLabel != null) {
-                    bbEnsurerMap.put(b, getTargetBB(rr._ensureBlockLabel));
+                if (rr.getEnsureBlockLabel() != null) {
+                    bbEnsurerMap.put(b, getTargetBB(rr.getEnsureBlockLabel()));
                 }
-                g.addEdge(b, firstRescueBB).type = CFG_Edge_Type.EXCEPTION_EDGE;
+                g.addEdge(b, firstRescueBB).type = CFGEdgeType.EXCEPTION_EDGE;
             }
         }
 
@@ -469,16 +468,16 @@ public class CFG {
         // * all exception bbs to the exit bb (mark these exception edges)
         // * last bb     -> dummy exit (only if the last bb didn't end with a control transfer!
         exitBB = createNewBB(g, bbMap, nestedExceptionRegions);
-        g.addEdge(entryBB, exitBB).type = CFG_Edge_Type.DUMMY_EDGE;
-        g.addEdge(entryBB, firstBB).type = CFG_Edge_Type.DUMMY_EDGE;
+        g.addEdge(entryBB, exitBB).type = CFGEdgeType.DUMMY_EDGE;
+        g.addEdge(entryBB, firstBB).type = CFGEdgeType.DUMMY_EDGE;
         for (BasicBlock rb : retBBs) {
-            g.addEdge(rb, exitBB).type = CFG_Edge_Type.DUMMY_EDGE;
+            g.addEdge(rb, exitBB).type = CFGEdgeType.DUMMY_EDGE;
         }
         for (BasicBlock rb : excBBs) {
-            g.addEdge(rb, exitBB).type = CFG_Edge_Type.EXCEPTION_EDGE;
+            g.addEdge(rb, exitBB).type = CFGEdgeType.EXCEPTION_EDGE;
         }
         if (!bbEndedWithControlXfer) {
-            g.addEdge(currBB, exitBB).type = CFG_Edge_Type.DUMMY_EDGE;
+            g.addEdge(currBB, exitBB).type = CFGEdgeType.DUMMY_EDGE;
         }
 
         cfg = g;
@@ -592,12 +591,12 @@ public class CFG {
         }
         for (CFGEdge e : ccfg.incomingEdgesOf(cExit)) {
             if (e.source != cEntry) {
-                if (e.type == CFG_Edge_Type.EXCEPTION_EDGE) {
+                if (e.type == CFGEdgeType.EXCEPTION_EDGE) {
                     // e._src has an explicit throw that returns from the closure
                     // after inlining, if the yield instruction has a rescuer, then the
                     // throw has to be captured by the rescuer as well.
                     BasicBlock rescuerOfSplitBB = bbRescuerMap.get(splitBB);
-                    cfg.addEdge(e.source, rescuerOfSplitBB != null ? rescuerOfSplitBB : exitBB).type = CFG_Edge_Type.EXCEPTION_EDGE;
+                    cfg.addEdge(e.source, rescuerOfSplitBB != null ? rescuerOfSplitBB : exitBB).type = CFGEdgeType.EXCEPTION_EDGE;
                 } else {
                     cfg.addEdge(e.source, splitBB).type = e.type;
                 }
@@ -696,12 +695,12 @@ public class CFG {
 
         for (CFGEdge e : mcfg.incomingEdgesOf(mExit)) {
             if (e.source != mEntry) {
-                if (e.type == CFG_Edge_Type.EXCEPTION_EDGE) {
+                if (e.type == CFGEdgeType.EXCEPTION_EDGE) {
                     // e._src has an explicit throw that returns from the callee
                     // after inlining, if the caller instruction has a rescuer, then the
                     // throw has to be captured by the rescuer as well.
                     BasicBlock rescuerOfSplitBB = bbRescuerMap.get(splitBB);
-                    cfg.addEdge(ii.getRenamedBB(e.source), rescuerOfSplitBB != null ? rescuerOfSplitBB : exitBB).type = CFG_Edge_Type.EXCEPTION_EDGE;
+                    cfg.addEdge(ii.getRenamedBB(e.source), rescuerOfSplitBB != null ? rescuerOfSplitBB : exitBB).type = CFGEdgeType.EXCEPTION_EDGE;
                 } else {
                     cfg.addEdge(ii.getRenamedBB(e.source), splitBB).type = e.type;
                 }
@@ -1036,7 +1035,7 @@ public class CFG {
 
             if (noExceptions) {
                 for (CFGEdge e : cfg.outgoingEdgesOf(b)) {
-                    if (e.type == CFG_Edge_Type.EXCEPTION_EDGE) {
+                    if (e.type == CFGEdgeType.EXCEPTION_EDGE) {
                         toRemove.add(e);
                         
                         if (bbRescuerMap.get(e.getSource()) == e.getDestination()) {
@@ -1071,7 +1070,7 @@ public class CFG {
         // Push all exception edge targets (first bbs of rescue blocks) first so that rescue handlers are laid out last
         // at the end of the method, outside the common execution path
         for (CFGEdge e : cfg.edgeSet()) {
-            if (e.type == CFG_Edge_Type.EXCEPTION_EDGE) {
+            if (e.type == CFGEdgeType.EXCEPTION_EDGE) {
                 pushBBOnStack(stack, bbSet, e.destination);
             }
         }
