@@ -98,7 +98,7 @@ public enum Operation {
     PUT_ARRAY(OpFlags.f_is_store | OpFlags.f_has_side_effect),
     PUT_CVAR(OpFlags.f_is_store | OpFlags.f_has_side_effect),
     BINDING_STORE(OpFlags.f_is_store | OpFlags.f_has_side_effect), 
-    ATTR_ASSIGN(OpFlags.f_is_store | OpFlags.f_has_side_effect),
+    ATTR_ASSIGN(OpFlags.f_is_store | OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
     
     /** JRuby-impl instructions **/
     BLOCK_GIVEN(0),
