@@ -43,6 +43,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.ZipEntry;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
@@ -399,13 +400,30 @@ public class RubyDir extends RubyObject {
     }
 
     private static List<String> entriesIntoAJarFile(Ruby runtime, String path) {
-        List<ByteList> dirs = Dir.push_glob(runtime.getCurrentDirectory(),
-                RubyString.newString(runtime, path + "/*").getByteList(), Dir.FNM_DOTMATCH);
-
+        String file = path.substring(5);
+        int bang = file.indexOf('!');
+        if (bang == -1) {
+          return entriesIntoADirectory(runtime, path.substring(5));
+        }
+        if (bang == file.length() - 1) {
+            return new ArrayList<String>();
+        }
+        String jar = file.substring(0, bang);
+        String after = file.substring(bang + 2);
+        JarFile jf;
+        try {
+            jf = new JarFile(jar);
+        } catch (IOException e) {
+            throw new RuntimeException("Valid JAR file expected", e);
+        }
+        
         List<String> fileList = new ArrayList<String>();
-        for (ByteList file : dirs) {
-            String[] split = file.toString().split("/");
-            fileList.add(split[split.length - 1]);
+        Enumeration<? extends ZipEntry> entries = jf.entries();
+        while (entries.hasMoreElements()) {
+            String zipEntry = entries.nextElement().getName();
+            if (zipEntry.matches(after + "/" + "[^/]+")) {
+                fileList.add(zipEntry.substring(after.length() + 1));
+            }
         }
 
         return fileList;
