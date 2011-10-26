@@ -52,8 +52,6 @@ public class ParserConfiguration {
     private boolean isEvalParse = true;
     // Should positions added extra IDE-friendly information and leave in all newline nodes
     private boolean extraPositionInformation = false;
-    // Will parser parse Duby grammar Extensions
-    private boolean isDubyExtensionsEnabled = SafePropertyAccessor.getBoolean("jruby.duby.enabled", false);
     // Should we display extra debug information while parsing?
     private boolean isDebug = false;
     // whether we should save the end-of-file data as DATA
@@ -216,8 +214,4 @@ public class ParserConfiguration {
     public boolean isInlineSource() {
         return inlineSource;
     }
-    
-    public boolean isDubyExtensionsEnabled() {
-        return isDubyExtensionsEnabled;
-}
 }

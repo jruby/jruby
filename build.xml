@@ -272,6 +272,7 @@
       <include name="org/jruby/util/CodegenUtils.java"/>
       <include name="org/jruby/util/log/*.java"/>
       <include name="org/jruby/util/SafePropertyAccessor.java"/>
+      <include name="org/jruby/util/cli/Properties.java"/>
     </javac>
   </target>
 

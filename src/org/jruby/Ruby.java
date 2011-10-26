@@ -4119,7 +4119,7 @@ public final class Ruby {
     // must be located be in this order!
     private volatile static boolean securityRestricted = false;
     static {
-        if (SafePropertyAccessor.isSecurityProtected("jruby.reflection")) {
+        if (SafePropertyAccessor.isSecurityProtected("jruby.reflected.handles")) {
             // can't read non-standard properties
             securityRestricted = true;
         } else {

@@ -9,6 +9,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.cli.Properties;
 
 class DefaultMethod extends JFFIDynamicMethod {
     private final ParameterMarshaller[] marshallers;
@@ -127,7 +128,7 @@ class DefaultMethod extends JFFIDynamicMethod {
 
     @Override
     public synchronized NativeCall getNativeCall() {
-        if (!Boolean.getBoolean("jruby.ffi.compile.invokedynamic")) {
+        if (!Properties.FFI_COMPILE_INVOKEDYNAMIC.load()) {
             return null;
         }
 

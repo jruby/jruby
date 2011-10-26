@@ -2596,14 +2596,8 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
             CompilerCallback body, CompilerCallback args,
             CompilerCallback receiver, ASTInspector inspector, boolean root,
             String filename, int line, String parameterDesc) {
-        // TODO: build arg list based on number of args, optionals, etc
-        String newMethodName;
-        if (root && SafePropertyAccessor.getBoolean("jruby.compile.toplevel", false)) {
-            newMethodName = name;
-        } else {
-            String mangledName = JavaNameMangler.mangleMethodName(name);
-            newMethodName = "method__" + script.getAndIncrementMethodIndex() + "$RUBY$" + mangledName;
-        }
+        String mangledName = JavaNameMangler.mangleMethodName(name);
+        String newMethodName = "method__" + script.getAndIncrementMethodIndex() + "$RUBY$" + mangledName;
 
         BodyCompiler methodCompiler = script.startMethod(name, newMethodName, args, scope, inspector);
 

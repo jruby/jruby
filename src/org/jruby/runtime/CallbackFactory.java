@@ -36,8 +36,6 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.runtime.callback.Callback;
 import org.jruby.runtime.callback.ReflectionCallbackFactory;
 import org.jruby.runtime.callback.InvocationCallbackFactory;
-import org.jruby.runtime.callback.DumpingInvocationCallbackFactory;
-import org.jruby.util.SafePropertyAccessor;
 
 /**
  * Helper class to build Callback method.
@@ -234,7 +232,6 @@ public abstract class CallbackFactory {
     public abstract Callback getFastOptMethod(String method);
 
     private static final boolean reflection;
-    private static final boolean dumping;
     
 
     static {
@@ -244,12 +241,8 @@ public abstract class CallbackFactory {
             reflection_ = true;
         } else {
             reflection_ = RubyInstanceConfig.REFLECTED_HANDLES;
-            if (SafePropertyAccessor.getProperty("jruby.dump_invocations") != null) {
-                dumping_ = true;
-            }
         }
         reflection = reflection_;
-        dumping = dumping_;
     }
 
     public static CallbackFactory createFactory(Ruby runtime, Class type) {
@@ -260,10 +253,7 @@ public abstract class CallbackFactory {
     public static CallbackFactory createFactory(Ruby runtime, Class type, ClassLoader classLoader) {
         if (reflection) {
             return new ReflectionCallbackFactory(type);
-        } else if (dumping) {
-            return new DumpingInvocationCallbackFactory(runtime, type, classLoader);
         } else {
-            // FIXME: No, I don't like it.
             return new InvocationCallbackFactory(runtime, type, classLoader);
         }
     }

@@ -7,7 +7,11 @@ public enum CompatVersion {
     public static CompatVersion getVersionFromString(String compatString) {
         if (compatString.equalsIgnoreCase("RUBY1_8")) {
             return CompatVersion.RUBY1_8;
+        } else if (compatString.equalsIgnoreCase("1.8")) {
+            return CompatVersion.RUBY1_8;
         } else if (compatString.equalsIgnoreCase("RUBY1_9")) {
+            return CompatVersion.RUBY1_9;
+        } else if (compatString.equalsIgnoreCase("1.9")) {
             return CompatVersion.RUBY1_9;
         } else {
             return null;

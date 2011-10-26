@@ -1,8 +1,8 @@
 package org.jruby.util.cli;
 
+import java.util.Arrays;
 import jnr.posix.util.Platform;
 import org.jruby.CompatVersion;
-import org.jruby.RubyInstanceConfig;
 import org.jruby.runtime.Constants;
 import org.jruby.util.SafePropertyAccessor;
 
@@ -46,7 +46,7 @@ public class OutputStrings {
                 .append("                    functionality\n")
                 .append("  --jdb           runs JRuby process under JDB\n")
                 .append("  --properties    List all configuration Java properties\n")
-                .append("                    (pass -X<property without \"jruby.\">=value to set them)\n")
+                .append("                    (prepend \"jruby.\" when passing directly to Java)\n")
                 .append("  --sample        run with profiling using the JVM's sampling profiler\n")
                 .append("  --profile       run with instrumented (timed) profiling, flat format\n")
                 .append("  --profile.api   activate Ruby profiler API\n")
@@ -80,108 +80,22 @@ public class OutputStrings {
 
     public static String getPropertyHelp() {
         StringBuilder sb = new StringBuilder();
+
         sb
                 .append("These properties can be used to alter runtime behavior for perf or compatibility.\n")
                 .append("Specify them by passing -X<property>=<value>\n")
                 .append("  or if passing directly to Java, -Djruby.<property>=<value>\n")
-                .append("\nCOMPILER SETTINGS:\n")
-                .append("    compile.mode=JIT|FORCE|OFF\n")
-                .append("       Set compilation mode. JIT is default; FORCE compiles all, OFF disables\n")
-                .append("    compile.threadless=true|false\n")
-                .append("       (EXPERIMENTAL) Turn on compilation without polling for \"unsafe\" thread events. Default is false\n")
-                .append("    compile.dynopt=true|false\n")
-                .append("       (EXPERIMENTAL) Use interpreter to help compiler make direct calls. Default is false\n")
-                .append("    compile.fastops=true|false\n")
-                .append("       Turn on fast operators for Fixnum and Float. Default is true\n")
-                .append("    compile.chainsize=<line count>\n")
-                .append("       Set the number of lines at which compiled bodies are \"chained\". Default is ").append(RubyInstanceConfig.CHAINED_COMPILE_LINE_COUNT_DEFAULT).append("\n")
-                .append("    compile.lazyHandles=true|false\n")
-                .append("       Generate method bindings (handles) for compiled methods lazily. Default is false.\n")
-                .append("    compile.peephole=true|false\n")
-                .append("       Enable or disable peephole optimizations. Default is true (on).\n")
-                .append("\nJIT SETTINGS:\n")
-                .append("    jit.threshold=<invocation count>\n")
-                .append("       Set the JIT threshold to the specified method invocation count. Default is ").append(RubyInstanceConfig.JIT_THRESHOLD).append(".\n")
-                .append("    jit.max=<method count>\n")
-                .append("       Set the max count of active methods eligible for JIT-compilation.\n")
-                .append("       Default is ").append(RubyInstanceConfig.JIT_MAX_METHODS_LIMIT).append(" per runtime. A value of 0 disables JIT, -1 disables max.\n")
-                .append("    jit.maxsize=<jitted method size (full .class)>\n")
-                .append("       Set the maximum full-class byte size allowed for jitted methods. Default is ").append(RubyInstanceConfig.JIT_MAX_SIZE_LIMIT).append(".\n")
-                .append("    jit.logging=true|false\n")
-                .append("       Enable JIT logging (reports successful compilation). Default is false\n")
-                .append("    jit.logging.verbose=true|false\n")
-                .append("       Enable verbose JIT logging (reports failed compilation). Default is false\n")
-                .append("    jit.logEvery=<method count>\n")
-                .append("       Log a message every n methods JIT compiled. Default is 0 (off).\n")
-                .append("    jit.exclude=<ClsOrMod,ClsOrMod::method_name,-::method_name>\n")
-                .append("       Exclude methods from JIT by class/module short name, c/m::method_name,\n")
-                .append("       or -::method_name for anon/singleton classes/modules. Comma-delimited.\n")
-                .append("    jit.cache=true|false\n")
-                .append("       Cache jitted method in-memory bodies across runtimes and loads. Default is true.\n")
-                .append("    jit.codeCache=<dir>\n")
-                .append("       Save jitted methods to <dir> as they're compiled, for future runs.\n")
-                .append("\nNATIVE SUPPORT:\n")
-                .append("    native.enabled=true|false\n")
-                .append("       Enable/disable native extensions (like JNA for non-Java APIs; Default is true\n")
-                .append("       (This affects all JRuby instances in a given JVM)\n")
-                .append("    native.verbose=true|false\n")
-                .append("       Enable verbose logging of native extension loading. Default is false.\n")
-                .append("    cext.enabled=true|false\n")
-                .append("       Enable or disable C extension support. Default is true (enabled).\n")
-                .append("\nTHREAD POOLING:\n")
-                .append("    thread.pool.enabled=true|false\n")
-                .append("       Enable reuse of native backing threads via a thread pool. Default is false.\n")
-                .append("    thread.pool.min=<min thread count>\n")
-                .append("       The minimum number of threads to keep alive in the pool. Default is 0.\n")
-                .append("    thread.pool.max=<max thread count>\n")
-                .append("       The maximum number of threads to allow in the pool. Default is unlimited.\n")
-                .append("    thread.pool.ttl=<time to live, in seconds>\n")
-                .append("       The maximum number of seconds to keep alive an idle thread. Default is 60.\n")
-                .append("\nMISCELLANY:\n")
-                .append("    compat.version=1.8|1.9\n")
-                .append("       Specify the major Ruby version to be compatible with; Default is RUBY1_8\n")
-                .append("    objectspace.enabled=true|false\n")
-                .append("       Enable or disable ObjectSpace.each_object (default is disabled)\n")
-                .append("    launch.inproc=true|false\n")
-                .append("       Set in-process launching of e.g. system('ruby ...'). Default is true\n")
-                .append("    bytecode.version=1.5|1.6\n")
-                .append("       Set bytecode version for JRuby to generate. Default is current JVM version.\n")
-                .append("    management.enabled=true|false\n")
-                .append("       Set whether JMX management is enabled. Default is false.\n")
-                .append("    jump.backtrace=true|false\n")
-                .append("       Make non-local flow jumps generate backtraces. Default is false.\n")
-                .append("    process.noUnwrap=true|false\n")
-                .append("       Do not unwrap process streams (IBM Java 6 issue). Default is false.\n")
-                .append("    reify.classes=true|false\n")
-                .append("       Before instantiation, stand up a real Java class for ever Ruby class. Default is false. \n")
-                .append("    reify.logErrors=true|false\n")
-                .append("       Log errors during reification (reify.classes=true). Default is false. \n")
-                .append("    reflected.handles=true|false\n")
-                .append("       Use reflection for binding methods, not generated bytecode. Default is false.\n")
-                .append("    backtrace.color=true|false\n")
-                .append("       Enable colorized backtraces. Default is false.\n")
-                .append("    backtrace.style=normal|raw|full|mri|rubinius\n")
-                .append("       Set the style of exception backtraces. Default is normal.\n")
-                .append("\nDEBUGGING/LOGGING:\n")
-                .append("    debug.loadService=true|false\n")
-                .append("       LoadService logging\n")
-                .append("    debug.loadService.timing=true|false\n")
-                .append("       Print load timings for each require'd library. Default is false.\n")
-                .append("    debug.launch=true|false\n")
-                .append("       ShellLauncher logging\n")
-                .append("    debug.fullTrace=true|false\n")
-                .append("       Set whether full traces are enabled (c-call/c-return). Default is false.\n")
-                .append("    debug.scriptResolution=true|false\n")
-                .append("       Print which script is executed by '-S' flag. Default is false.\n")
-                .append("    errno.backtrace=true|false\n")
-                .append("       Generate backtraces for heavily-used Errno exceptions (EAGAIN). Default is false.\n")
-                .append("\nJAVA INTEGRATION:\n")
-                .append("    ji.setAccessible=true|false\n")
-                .append("       Try to set inaccessible Java methods to be accessible. Default is true.\n")
-                .append("    ji.upper.case.package.name.allowed=true|false\n")
-                .append("       Allow Capitalized Java pacakge names. Default is false.\n")
-                .append("    interfaces.useProxy=true|false\n")
-                .append("       Use java.lang.reflect.Proxy for interface impl. Default is false.\n");
+                .append("  or put <property>=<value> in .jrubyrc\n");
+        
+        Properties.Category category = null;
+        for (Properties.Property property : Properties.PROPERTIES) {
+            if (category != property.category) {
+                category = property.category;
+                sb.append('\n').append(category).append(" settings:\n\n");
+            }
+            sb.append("   ").append(property.name).append('=').append(Arrays.toString(property.options)).append('\n');
+            sb.append("      ").append(property.description).append(" Default is ").append(property.defval).append(".\n");
+        }
 
         return sb.toString();
     }

@@ -226,8 +226,6 @@ public class ASTInspector {
         }
     }
     
-    public static final boolean ENABLED = SafePropertyAccessor.getProperty("jruby.astInspector.enabled", "true").equals("true");
-    
     /**
      * Perform an inspection of a subtree or set of subtrees separate from the
      * parent inspection, to make independent decisions based on that subtree(s).
@@ -274,7 +272,7 @@ public class ASTInspector {
     }
     
     public void inspect(Node node) {
-        if (!ENABLED || RubyInstanceConfig.FULL_TRACE_ENABLED) {
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             disable();
             return;
         }

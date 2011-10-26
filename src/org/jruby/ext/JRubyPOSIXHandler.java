@@ -13,6 +13,7 @@ import org.jruby.common.IRubyWarnings.ID;
 import jnr.posix.POSIXHandler;
 
 import jnr.constants.platform.Errno;
+import org.jruby.util.cli.Properties;
 
 public class JRubyPOSIXHandler implements POSIXHandler {
     private final Ruby runtime;
@@ -23,7 +24,7 @@ public class JRubyPOSIXHandler implements POSIXHandler {
 
         boolean verbose = false;
         try {
-            verbose = Boolean.getBoolean("jruby.native.verbose");
+            verbose = Properties.NATIVE_VERBOSE.load();
         } catch (SecurityException e) {
         }
         this.isVerbose = verbose;

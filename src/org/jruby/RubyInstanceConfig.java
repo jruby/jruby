@@ -72,6 +72,7 @@ import org.jruby.util.KCode;
 import org.jruby.util.NormalizedFile;
 import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.cli.OutputStrings;
+import org.jruby.util.cli.Properties;
 import org.objectweb.asm.Opcodes;
 
 /**
@@ -85,13 +86,10 @@ public class RubyInstanceConfig {
         currentDirectory = Ruby.isSecurityRestricted() ? "/" : JRubyFile.getFileProperty("user.dir");
         samplingEnabled = SafePropertyAccessor.getBoolean("jruby.sampling.enabled", false);
 
-        String compatString = SafePropertyAccessor.getProperty("jruby.compat.version", Constants.DEFAULT_RUBY_VERSION);
-        if (compatString.equalsIgnoreCase("RUBY1_8") || compatString.equalsIgnoreCase("1.8")) {
-            compatVersion = CompatVersion.RUBY1_8;
-        } else if (compatString.equalsIgnoreCase("RUBY1_9") || compatString.equalsIgnoreCase("1.9")) {
-            compatVersion = CompatVersion.RUBY1_9;
-        } else {
-            error.println("Compatibility version `" + compatString + "' invalid; use RUBY1_8 or RUBY1_9. Using RUBY1_8.");
+        String compatString = Properties.COMPAT_VERSION.load();
+        compatVersion = CompatVersion.getVersionFromString(compatString);
+        if (compatVersion == null) {
+            error.println("Compatibility version `" + compatString + "' invalid; use 1.8 or 1.9. Using 1.8.");
             compatVersion = CompatVersion.RUBY1_8;
         }
 
@@ -106,51 +104,39 @@ public class RubyInstanceConfig {
             jitMaxSize = -1;
             managementEnabled = false;
         } else {
-            String threshold = SafePropertyAccessor.getProperty("jruby.jit.threshold");
-            String max = SafePropertyAccessor.getProperty("jruby.jit.max");
-            String maxSize = SafePropertyAccessor.getProperty("jruby.jit.maxsize");
-            
             if (COMPILE_EXCLUDE != null) {
                 String[] elements = COMPILE_EXCLUDE.split(",");
                 excludedMethods.addAll(Arrays.asList(elements));
             }
             
-            managementEnabled = SafePropertyAccessor.getBoolean("jruby.management.enabled", false);
-            runRubyInProcess = SafePropertyAccessor.getBoolean("jruby.launch.inproc", false);
-            boolean jitProperty = SafePropertyAccessor.getProperty("jruby.jit.enabled") != null;
-            if (jitProperty) {
-                error.print("jruby.jit.enabled property is deprecated; use jruby.compile.mode=(OFF|JIT|FORCE) for -C, default, and +C flags");
-                compileMode = SafePropertyAccessor.getBoolean("jruby.jit.enabled") ? CompileMode.JIT : CompileMode.OFF;
-            } else {
-                String jitModeProperty = SafePropertyAccessor.getProperty("jruby.compile.mode", "JIT");
+            managementEnabled = Properties.MANAGEMENT_ENABLED.load();
+            runRubyInProcess = Properties.LAUNCH_INPROC.load();
+            
+            String jitModeProperty = Properties.COMPILE_MODE.load();
 
-                if (jitModeProperty.equals("OFF")) {
-                    compileMode = CompileMode.OFF;
-                } else if (jitModeProperty.equals("JIT")) {
-                    compileMode = CompileMode.JIT;
-                } else if (jitModeProperty.equals("FORCE")) {
-                    compileMode = CompileMode.FORCE;
-                } else {
-                    error.print("jruby.compile.mode property must be OFF, JIT, FORCE, or unset; defaulting to JIT");
-                    compileMode = CompileMode.JIT;
-                }
+            if (jitModeProperty.equals("OFF")) {
+                compileMode = CompileMode.OFF;
+            } else if (jitModeProperty.equals("JIT")) {
+                compileMode = CompileMode.JIT;
+            } else if (jitModeProperty.equals("FORCE")) {
+                compileMode = CompileMode.FORCE;
+            } else {
+                error.print(Properties.COMPILE_MODE + " property must be OFF, JIT, FORCE, or unset; defaulting to JIT");
+                compileMode = CompileMode.JIT;
             }
-            jitLogging = SafePropertyAccessor.getBoolean("jruby.jit.logging");
-            jitDumping = SafePropertyAccessor.getBoolean("jruby.jit.dumping");
-            jitLoggingVerbose = SafePropertyAccessor.getBoolean("jruby.jit.logging.verbose");
-            String logEvery = SafePropertyAccessor.getProperty("jruby.jit.logEvery");
-            jitLogEvery = logEvery == null ? 0 : Integer.parseInt(logEvery);
-            jitThreshold = threshold == null ?
-                    JIT_THRESHOLD : Integer.parseInt(threshold);
-            jitMax = max == null ?
-                    JIT_MAX_METHODS_LIMIT : Integer.parseInt(max);
-            jitMaxSize = maxSize == null ?
-                    JIT_MAX_SIZE_LIMIT : Integer.parseInt(maxSize);
+            
+            jitLogging = Properties.JIT_LOGGING.load();
+            jitDumping = Properties.JIT_DUMPING.load();
+            jitLoggingVerbose = Properties.JIT_LOGGING_VERBOSE.load();
+            jitLogEvery = Properties.JIT_LOGEVERY.load();
+            jitThreshold = Properties.JIT_THRESHOLD.load();
+            jitMax = Properties.JIT_MAX.load();
+            jitMaxSize = Properties.JIT_MAXSIZE.load();
         }
 
         // default ClassCache using jitMax as a soft upper bound
         classCache = new ClassCache<Script>(loader, jitMax);
-        threadDumpSignal = SafePropertyAccessor.getProperty("jruby.thread.dump.signal", "USR2");
+        threadDumpSignal = Properties.THREAD_DUMP_SIGNAL.load();
 
         try {
             environment = System.getenv();
@@ -1102,8 +1088,7 @@ public class RubyInstanceConfig {
     private PrintStream output         = System.out;
     private PrintStream error          = System.err;
     private Profile profile            = Profile.DEFAULT;
-    private boolean objectSpaceEnabled
-            = SafePropertyAccessor.getBoolean("jruby.objectspace.enabled", false);
+    private boolean objectSpaceEnabled = Properties.OBJECTSPACE_ENABLED.load();
 
     private CompileMode compileMode = CompileMode.JIT;
     private boolean runRubyInProcess   = true;
@@ -1182,9 +1167,9 @@ public class RubyInstanceConfig {
     private boolean _cextEnabled = CEXT_ENABLED;
 
     private TraceType traceType =
-            TraceType.traceTypeFor(SafePropertyAccessor.getProperty("jruby.backtrace.style", "ruby_framed"));
+            TraceType.traceTypeFor(Properties.BACKTRACE_STYLE.load());
     
-    private boolean backtraceColor = SafePropertyAccessor.getBoolean("jruby.backtrace.color", false);
+    private boolean backtraceColor = Properties.BACKTRACE_COLOR.load();
 
     private LoadServiceCreator creator = LoadServiceCreator.DEFAULT;
     
@@ -1246,17 +1231,20 @@ public class RubyInstanceConfig {
     /**
      * The max count of active methods eligible for JIT-compilation.
      */
-    public static final int JIT_MAX_METHODS_LIMIT = 4096;
+    @Deprecated
+    public static final int JIT_MAX_METHODS_LIMIT = Constants.JIT_MAX_METHODS_LIMIT;
 
     /**
      * The max size of JIT-compiled methods (full class size) allowed.
      */
-    public static final int JIT_MAX_SIZE_LIMIT = 30000;
+    @Deprecated
+    public static final int JIT_MAX_SIZE_LIMIT = Constants.JIT_MAX_SIZE_LIMIT;
 
     /**
      * The JIT threshold to the specified method invocation count.
      */
-    public static final int JIT_THRESHOLD = 50;
+    @Deprecated
+    public static final int JIT_THRESHOLD = Constants.JIT_THRESHOLD;
     
     /**
      * The version to use for generated classes. Set to current JVM version by default
@@ -1266,45 +1254,41 @@ public class RubyInstanceConfig {
     /**
      * Default size for chained compilation.
      */
-    public static final int CHAINED_COMPILE_LINE_COUNT_DEFAULT = 500;
+    @Deprecated
+    public static final int CHAINED_COMPILE_LINE_COUNT_DEFAULT = Constants.CHAINED_COMPILE_LINE_COUNT_DEFAULT;
     
     /**
      * The number of lines at which a method, class, or block body is split into
      * chained methods (to dodge 64k method-size limit in JVM).
      */
-    public static final int CHAINED_COMPILE_LINE_COUNT
-            = SafePropertyAccessor.getInt("jruby.compile.chainsize", CHAINED_COMPILE_LINE_COUNT_DEFAULT);
+    public static final int CHAINED_COMPILE_LINE_COUNT = Properties.COMPILE_CHAINSIZE.load();
 
     /**
      * Enable compiler peephole optimizations.
      *
      * Set with the <tt>jruby.compile.peephole</tt> system property.
      */
-    public static final boolean PEEPHOLE_OPTZ
-            = SafePropertyAccessor.getBoolean("jruby.compile.peephole", true);
+    public static final boolean PEEPHOLE_OPTZ = Properties.COMPILE_PEEPHOLE.load();
     /**
      * Enable "dynopt" optimizations.
      *
      * Set with the <tt>jruby.compile.dynopt</tt> system property.
      */
-    public static boolean DYNOPT_COMPILE_ENABLED
-            = SafePropertyAccessor.getBoolean("jruby.compile.dynopt", false);
+    public static boolean DYNOPT_COMPILE_ENABLED = Properties.COMPILE_DYNOPT.load();
 
     /**
      * Enable compiler "noguards" optimizations.
      *
      * Set with the <tt>jruby.compile.noguards</tt> system property.
      */
-    public static boolean NOGUARDS_COMPILE_ENABLED
-            = SafePropertyAccessor.getBoolean("jruby.compile.noguards");
+    public static boolean NOGUARDS_COMPILE_ENABLED = Properties.COMPILE_NOGUARDS.load();
 
     /**
      * Enable compiler "fastest" set of optimizations.
      *
      * Set with the <tt>jruby.compile.fastest</tt> system property.
      */
-    public static boolean FASTEST_COMPILE_ENABLED
-            = SafePropertyAccessor.getBoolean("jruby.compile.fastest");
+    public static boolean FASTEST_COMPILE_ENABLED = Properties.COMPILE_FASTEST.load();
 
     /**
      * Enable fast operator compiler optimizations.
@@ -1312,8 +1296,7 @@ public class RubyInstanceConfig {
      * Set with the <tt>jruby.compile.fastops</tt> system property.
      */
     public static boolean FASTOPS_COMPILE_ENABLED
-            = FASTEST_COMPILE_ENABLED
-            || SafePropertyAccessor.getBoolean("jruby.compile.fastops", true);
+            = FASTEST_COMPILE_ENABLED || Properties.COMPILE_FASTOPS.load();
 
     /**
      * Enable "threadless" compile.
@@ -1321,8 +1304,7 @@ public class RubyInstanceConfig {
      * Set with the <tt>jruby.compile.threadless</tt> system property.
      */
     public static boolean THREADLESS_COMPILE_ENABLED
-            = FASTEST_COMPILE_ENABLED
-            || SafePropertyAccessor.getBoolean("jruby.compile.threadless");
+            = FASTEST_COMPILE_ENABLED || Properties.COMPILE_THREADLESS.load();
 
     /**
      * Enable "fast send" compiler optimizations.
@@ -1330,15 +1312,14 @@ public class RubyInstanceConfig {
      * Set with the <tt>jruby.compile.fastsend</tt> system property.
      */
     public static boolean FASTSEND_COMPILE_ENABLED
-            = FASTEST_COMPILE_ENABLED
-            || SafePropertyAccessor.getBoolean("jruby.compile.fastsend");
+            = FASTEST_COMPILE_ENABLED || Properties.COMPILE_FASTSEND.load();
 
     /**
      * Enable lazy handles optimizations.
      *
      * Set with the <tt>jruby.compile.lazyHandles</tt> system property.
      */
-    public static boolean LAZYHANDLES_COMPILE = SafePropertyAccessor.getBoolean("jruby.compile.lazyHandles", false);
+    public static boolean LAZYHANDLES_COMPILE = Properties.COMPILE_LAZYHANDLES.load();
 
     /**
      * Inline dynamic calls.
@@ -1346,62 +1327,54 @@ public class RubyInstanceConfig {
      * Set with the <tt>jruby.compile.inlineDyncalls</tt> system property.
      */
     public static boolean INLINE_DYNCALL_ENABLED
-            = FASTEST_COMPILE_ENABLED
-            || SafePropertyAccessor.getBoolean("jruby.compile.inlineDyncalls");
+            = FASTEST_COMPILE_ENABLED || Properties.COMPILE_INLINEDYNCALLS.load();
 
     /**
      * Enable fast multiple assignment optimization.
      *
      * Set with the <tt>jruby.compile.fastMasgn</tt> system property.
      */
-    public static boolean FAST_MULTIPLE_ASSIGNMENT
-            = SafePropertyAccessor.getBoolean("jruby.compile.fastMasgn", false);
+    public static boolean FAST_MULTIPLE_ASSIGNMENT = Properties.COMPILE_FASTMASGN.load();
 
     /**
      * Enable a thread pool. Each Ruby thread will be mapped onto a thread from this pool.
      *
      * Set with the <tt>jruby.thread.pool.enabled</tt> system property.
      */
-    public static final boolean POOLING_ENABLED
-            = SafePropertyAccessor.getBoolean("jruby.thread.pool.enabled");
+    public static final boolean POOLING_ENABLED = Properties.THREADPOOL_ENABLED.load();
 
     /**
      * Maximum thread pool size (integer, default Integer.MAX_VALUE).
      *
      * Set with the <tt>jruby.thread.pool.max</tt> system property.
      */
-    public static final int POOL_MAX
-            = SafePropertyAccessor.getInt("jruby.thread.pool.max", Integer.MAX_VALUE);
+    public static final int POOL_MAX = Properties.THREADPOOL_MAX.load();
     /**
      * Minimum thread pool size (integer, default 0).
      *
      * Set with the <tt>jruby.thread.pool.min</tt> system property.
      */
-    public static final int POOL_MIN
-            = SafePropertyAccessor.getInt("jruby.thread.pool.min", 0);
+    public static final int POOL_MIN = Properties.THREADPOOL_MIN.load();
     /**
      * Thread pool time-to-live in seconds.
      *
      * Set with the <tt>jruby.thread.pool.max</tt> system property.
      */
-    public static final int POOL_TTL
-            = SafePropertyAccessor.getInt("jruby.thread.pool.ttl", 60);
+    public static final int POOL_TTL = Properties.THREADPOOL_TTL.load();
 
     /**
      * Enable use of the native Java version of the 'net/protocol' library.
      *
      * Set with the <tt>jruby.thread.pool.max</tt> system property.
      */
-    public static final boolean NATIVE_NET_PROTOCOL
-            = SafePropertyAccessor.getBoolean("jruby.native.net.protocol", false);
+    public static final boolean NATIVE_NET_PROTOCOL = Properties.NATIVE_NET_PROTOCOL.load();
 
     /**
      * Enable tracing of method calls.
      *
      * Set with the <tt>jruby.debug.fullTrace</tt> system property.
      */
-    public static boolean FULL_TRACE_ENABLED
-            = SafePropertyAccessor.getBoolean("jruby.debug.fullTrace", false);
+    public static boolean FULL_TRACE_ENABLED = Properties.DEBUG_FULLTRACE.load();
 
     /**
      * Comma-separated list of methods to exclude from JIT compilation.
@@ -1409,8 +1382,7 @@ public class RubyInstanceConfig {
      *
      * Set with the <tt>jruby.jit.exclude</tt> system property.
      */
-    public static final String COMPILE_EXCLUDE
-            = SafePropertyAccessor.getProperty("jruby.jit.exclude");
+    public static final String COMPILE_EXCLUDE = Properties.JIT_EXCLUDE.load();
 
     /**
      * Indicates the global default for whether native code is enabled. Default
@@ -1418,7 +1390,7 @@ public class RubyInstanceConfig {
      *
      * Set with the <tt>jruby.native.enabled</tt> system property.
      */
-    public static final boolean NATIVE_ENABLED = SafePropertyAccessor.getBoolean("jruby.native.enabled", true);
+    public static final boolean NATIVE_ENABLED = Properties.NATIVE_ENABLED.load();
 
     @Deprecated
     public static final boolean nativeEnabled = NATIVE_ENABLED;
@@ -1430,23 +1402,21 @@ public class RubyInstanceConfig {
      *
      * Set with the <tt>jruby.cext.enabled</tt> system property.
      */
-    public final static boolean CEXT_ENABLED = SafePropertyAccessor.getBoolean("jruby.cext.enabled", NATIVE_ENABLED);
+    public final static boolean CEXT_ENABLED = Properties.CEXT_ENABLED.load();
 
     /**
      * Whether to reify (pre-compile and generate) a Java class per Ruby class.
      *
      * Set with the <tt>jruby.reify.classes</tt> system property.
      */
-    public static final boolean REIFY_RUBY_CLASSES
-            = SafePropertyAccessor.getBoolean("jruby.reify.classes", false);
+    public static final boolean REIFY_RUBY_CLASSES = Properties.REIFY_CLASSES.load();
 
     /**
      * Log errors that occur during reification.
      *
      * Set with the <tt>jruby.reify.logErrors</tt> system property.
      */
-    public static final boolean REIFY_LOG_ERRORS
-            = SafePropertyAccessor.getBoolean("jruby.reify.logErrors", false);
+    public static final boolean REIFY_LOG_ERRORS = Properties.REIFY_LOGERRORS.load();
 
     /**
      * Whether to use a custom-generated handle for Java methods instead of
@@ -1454,121 +1424,106 @@ public class RubyInstanceConfig {
      *
      * Set with the <tt>jruby.java.handles</tt> system property.
      */
-    public static final boolean USE_GENERATED_HANDLES
-            = SafePropertyAccessor.getBoolean("jruby.java.handles", false);
+    public static final boolean USE_GENERATED_HANDLES = Properties.JAVA_HANDLES.load();
 
     /**
      * Turn on debugging of the load service (requires and loads).
      *
      * Set with the <tt>jruby.debug.loadService</tt> system property.
      */
-    public static final boolean DEBUG_LOAD_SERVICE
-            = SafePropertyAccessor.getBoolean("jruby.debug.loadService", false);
+    public static final boolean DEBUG_LOAD_SERVICE = Properties.DEBUG_LOADSERVICE.load();
 
     /**
      * Turn on timings of the load service (requires and loads).
      *
      * Set with the <tt>jruby.debug.loadService.timing</tt> system property.
      */
-    public static final boolean DEBUG_LOAD_TIMINGS
-            = SafePropertyAccessor.getBoolean("jruby.debug.loadService.timing", false);
+    public static final boolean DEBUG_LOAD_TIMINGS = Properties.DEBUG_LOADSERVICE_TIMING.load();
 
     /**
      * Turn on debugging of subprocess launching.
      *
      * Set with the <tt>jruby.debug.launch</tt> system property.
      */
-    public static final boolean DEBUG_LAUNCHING
-            = SafePropertyAccessor.getBoolean("jruby.debug.launch", false);
+    public static final boolean DEBUG_LAUNCHING = Properties.DEBUG_LAUNCH.load();
 
     /**
      * Turn on debugging of script resolution with "-S".
      *
      * Set with the <tt>jruby.debug.scriptResolution</tt> system property.
      */
-    public static final boolean DEBUG_SCRIPT_RESOLUTION
-            = SafePropertyAccessor.getBoolean("jruby.debug.scriptResolution", false);
+    public static final boolean DEBUG_SCRIPT_RESOLUTION = Properties.DEBUG_SCRIPTRESOLUTION.load();
 
-    public static final boolean JUMPS_HAVE_BACKTRACE
-            = SafePropertyAccessor.getBoolean("jruby.jump.backtrace", false);
+    public static final boolean JUMPS_HAVE_BACKTRACE = Properties.JUMP_BACKTRACE.load();
 
-    public static final boolean JIT_CACHE_ENABLED
-            = SafePropertyAccessor.getBoolean("jruby.jit.cache", true);
+    public static final boolean JIT_CACHE_ENABLED = Properties.JIT_CACHE.load();
 
-    public static final String JIT_CODE_CACHE
-            = SafePropertyAccessor.getProperty("jruby.jit.codeCache", null);
+    public static final String JIT_CODE_CACHE = Properties.JIT_CODECACHE.load();
 
-    public static final boolean REFLECTED_HANDLES
-            = SafePropertyAccessor.getBoolean("jruby.reflected.handles", false)
-            || SafePropertyAccessor.getBoolean("jruby.reflection", false);
+    public static final boolean REFLECTED_HANDLES = Properties.REFLECTED_HANDLES.load();
 
-    public static final boolean NO_UNWRAP_PROCESS_STREAMS
-            = SafePropertyAccessor.getBoolean("jruby.process.noUnwrap", false);
+    public static final boolean NO_UNWRAP_PROCESS_STREAMS = Properties.PROCESS_NOUNWRAP.load();
 
-    public static final boolean INTERFACES_USE_PROXY
-            = SafePropertyAccessor.getBoolean("jruby.interfaces.useProxy");
+    public static final boolean INTERFACES_USE_PROXY = Properties.INTERFACES_USEPROXY.load();
 
-    public static final boolean JIT_LOADING_DEBUG = SafePropertyAccessor.getBoolean("jruby.jit.debug", false);
+    public static final boolean JIT_LOADING_DEBUG = Properties.JIT_DEBUG.load();
 
-    public static final boolean CAN_SET_ACCESSIBLE = SafePropertyAccessor.getBoolean("jruby.ji.setAccessible", true);
+    public static final boolean CAN_SET_ACCESSIBLE = Properties.JI_SETACCESSIBLE.load();
     /**
      * In Java integration, allow upper case name for a Java package;
      * e.g., com.example.UpperCase.Class
      */
-    public static final boolean UPPER_CASE_PACKAGE_NAME_ALLOWED = 
-            SafePropertyAccessor.getBoolean("jruby.ji.upcase.package.name.allowed", false);
+    public static final boolean UPPER_CASE_PACKAGE_NAME_ALLOWED = Properties.JI_UPPER_CASE_PACKAGE_NAME_ALLOWED.load();
     
     
     public static final boolean USE_INVOKEDYNAMIC =
-            JAVA_VERSION == Opcodes.V1_7
-            && SafePropertyAccessor.getBoolean("jruby.compile.invokedynamic", true);
+            JAVA_VERSION == Opcodes.V1_7 && Properties.COMPILE_INVOKEDYNAMIC.load();
     
     // max times an indy call site can fail before it goes to simple IC
-    public static final int MAX_FAIL_COUNT = SafePropertyAccessor.getInt("jruby.invokedynamic.maxfail", 2);
+    public static final int MAX_FAIL_COUNT = Properties.INVOKEDYNAMIC_MAXFAIL.load();
     
     // logging of various indy aspects
-    public static final boolean LOG_INDY_BINDINGS = SafePropertyAccessor.getBoolean("jruby.invokedynamic.log.binding");
-    public static final boolean LOG_INDY_CONSTANTS = SafePropertyAccessor.getBoolean("jruby.invokedynamic.log.constants");
+    public static final boolean LOG_INDY_BINDINGS = Properties.INVOKEDYNAMIC_LOG_BINDING.load();
+    public static final boolean LOG_INDY_CONSTANTS = Properties.INVOKEDYNAMIC_LOG_CONSTANTS.load();
     
     // properties enabling or disabling certain uses of invokedynamic
-    public static final boolean INVOKEDYNAMIC_ALL = USE_INVOKEDYNAMIC && (SafePropertyAccessor.getBoolean("jruby.invokedynamic.all", false));
-    public static final boolean INVOKEDYNAMIC_SAFE = USE_INVOKEDYNAMIC && (SafePropertyAccessor.getBoolean("jruby.invokedynamic.safe", false));
+    public static final boolean INVOKEDYNAMIC_ALL = USE_INVOKEDYNAMIC && Properties.INVOKEDYNAMIC_ALL.load();
+    public static final boolean INVOKEDYNAMIC_SAFE = USE_INVOKEDYNAMIC && Properties.INVOKEDYNAMIC_SAFE.load();
     
     public static final boolean INVOKEDYNAMIC_INVOCATION = INVOKEDYNAMIC_ALL || INVOKEDYNAMIC_SAFE ||
-            USE_INVOKEDYNAMIC && SafePropertyAccessor.getBoolean("jruby.invokedynamic.invocation", true);
+            USE_INVOKEDYNAMIC && Properties.INVOKEDYNAMIC_INVOCATION.load();
     public static final boolean INVOKEDYNAMIC_INVOCATION_SWITCHPOINT = INVOKEDYNAMIC_ALL || INVOKEDYNAMIC_SAFE ||
-            USE_INVOKEDYNAMIC && SafePropertyAccessor.getBoolean("jruby.invokedynamic.invocation.switchpoint", true);
+            USE_INVOKEDYNAMIC && Properties.INVOKEDYNAMIC_INVOCATION_SWITCHPOINT.load();
     public static final boolean INVOKEDYNAMIC_INDIRECT = INVOKEDYNAMIC_ALL || INVOKEDYNAMIC_SAFE ||
-            USE_INVOKEDYNAMIC && INVOKEDYNAMIC_INVOCATION && SafePropertyAccessor.getBoolean("jruby.invokedynamic.indirect", true);
+            USE_INVOKEDYNAMIC && INVOKEDYNAMIC_INVOCATION && Properties.INVOKEDYNAMIC_INVOCATION_INDIRECT.load();
     public static final boolean INVOKEDYNAMIC_JAVA = INVOKEDYNAMIC_ALL ||
-            USE_INVOKEDYNAMIC && INVOKEDYNAMIC_INVOCATION && SafePropertyAccessor.getBoolean("jruby.invokedynamic.java", false);
+            USE_INVOKEDYNAMIC && INVOKEDYNAMIC_INVOCATION && Properties.INVOKEDYNAMIC_INVOCATION_JAVA.load();
     public static final boolean INVOKEDYNAMIC_ATTR = INVOKEDYNAMIC_ALL || INVOKEDYNAMIC_SAFE ||
-            USE_INVOKEDYNAMIC && INVOKEDYNAMIC_INVOCATION && SafePropertyAccessor.getBoolean("jruby.invokedynamic.attr", true);
+            USE_INVOKEDYNAMIC && INVOKEDYNAMIC_INVOCATION && Properties.INVOKEDYNAMIC_INVOCATION_ATTR.load();
     public static final boolean INVOKEDYNAMIC_FASTOPS = INVOKEDYNAMIC_ALL || INVOKEDYNAMIC_SAFE ||
-            USE_INVOKEDYNAMIC && INVOKEDYNAMIC_INVOCATION && SafePropertyAccessor.getBoolean("jruby.invokedynamic.fastops", true);
+            USE_INVOKEDYNAMIC && INVOKEDYNAMIC_INVOCATION && Properties.INVOKEDYNAMIC_INVOCATION_FASTOPS.load();
     
     public static final boolean INVOKEDYNAMIC_CACHE = INVOKEDYNAMIC_ALL || INVOKEDYNAMIC_SAFE ||
-            USE_INVOKEDYNAMIC && SafePropertyAccessor.getBoolean("jruby.invokedynamic.cache", true);
+            USE_INVOKEDYNAMIC && Properties.INVOKEDYNAMIC_CACHE.load();
     public static final boolean INVOKEDYNAMIC_CONSTANTS = INVOKEDYNAMIC_ALL || INVOKEDYNAMIC_SAFE ||
-            USE_INVOKEDYNAMIC && INVOKEDYNAMIC_CACHE && SafePropertyAccessor.getBoolean("jruby.invokedynamic.constants", false);
+            USE_INVOKEDYNAMIC && INVOKEDYNAMIC_CACHE && Properties.INVOKEDYNAMIC_CACHE_CONSTANTS.load();
     public static final boolean INVOKEDYNAMIC_LITERALS = INVOKEDYNAMIC_ALL || INVOKEDYNAMIC_SAFE ||
-            USE_INVOKEDYNAMIC && INVOKEDYNAMIC_CACHE && SafePropertyAccessor.getBoolean("jruby.invokedynamic.literals", true);
+            USE_INVOKEDYNAMIC && INVOKEDYNAMIC_CACHE && Properties.INVOKEDYNAMIC_CACHE_LITERALS.load();
     
     // properties for logging exceptions, backtraces, and caller invocations
-    public static final boolean LOG_EXCEPTIONS = SafePropertyAccessor.getBoolean("jruby.log.exceptions");
-    public static final boolean LOG_BACKTRACES = SafePropertyAccessor.getBoolean("jruby.log.backtraces");
-    public static final boolean LOG_CALLERS = SafePropertyAccessor.getBoolean("jruby.log.callers");
+    public static final boolean LOG_EXCEPTIONS = Properties.LOG_EXCEPTIONS.load();
+    public static final boolean LOG_BACKTRACES = Properties.LOG_BACKTRACES.load();
+    public static final boolean LOG_CALLERS = Properties.LOG_CALLERS.load();
     
-    public static final boolean ERRNO_BACKTRACE
-            = SafePropertyAccessor.getBoolean("jruby.errno.backtrace", false);
+    public static final boolean ERRNO_BACKTRACE = Properties.ERRNO_BACKTRACE.load();
     
-    public static final boolean IR_DEBUG = SafePropertyAccessor.getBoolean("jruby.ir.debug");
-    public static final boolean IR_COMPILER_DEBUG = SafePropertyAccessor.getBoolean("jruby.ir.compiler.debug");    
-    public static final boolean IR_LIVE_VARIABLE = SafePropertyAccessor.getBoolean("jruby.ir.pass.live_variable");
-    public static final boolean IR_DEAD_CODE = SafePropertyAccessor.getBoolean("jruby.ir.pass.dead_code");
-    public static final String IR_TEST_INLINER = SafePropertyAccessor.getProperty("jruby.ir.pass.test_inliner");
+    public static final boolean IR_DEBUG = Properties.IR_DEBUG.load();
+    public static final boolean IR_COMPILER_DEBUG = Properties.IR_COMPILER_DEBUG.load(); 
+    public static final boolean IR_LIVE_VARIABLE = Properties.IR_PASS_LIVEVARIABLE.load();
+    public static final boolean IR_DEAD_CODE = Properties.IR_PASS_DEADCODE.load();
+    public static final String IR_TEST_INLINER = Properties.IR_PASS_TESTINLINER.load();
     
-    public static final boolean COROUTINE_FIBERS = SafePropertyAccessor.getBoolean("jruby.fiber.coroutines");
+    public static final boolean COROUTINE_FIBERS = Properties.FIBER_COROUTINES.load();
     
     private static volatile boolean loadedNativeExtensions = false;
     
@@ -1577,15 +1532,7 @@ public class RubyInstanceConfig {
     ////////////////////////////////////////////////////////////////////////////
     
     private static int initGlobalJavaVersion() {
-        String specVersion = null;
-        try {
-            specVersion = System.getProperty("jruby.bytecode.version");
-            if (specVersion == null) {
-                specVersion = System.getProperty("java.specification.version");
-            }
-        } catch (SecurityException se) {
-            specVersion = "1.5";
-        }
+        String specVersion = specVersion = Properties.BYTECODE_VERSION.load();
         
         // stack map calculation is failing for some compilation scenarios, so
         // forcing both 1.5 and 1.6 to use 1.5 bytecode for the moment.

@@ -205,10 +205,8 @@ public class ParserSupport {
     }
     
     public void allowDubyExtension(ISourcePosition position) {
-        if (!configuration.isDubyExtensionsEnabled()) {
-            throw new SyntaxException(PID.DUBY_EXTENSIONS_OFF, position,
-                    lexer.getCurrentLine(), "Duby extensions not configured");
-        }
+        throw new SyntaxException(PID.DUBY_EXTENSIONS_OFF, position,
+                lexer.getCurrentLine(), "Duby extensions not configured");
     }
     
     public StaticScope getCurrentScope() {

@@ -30,11 +30,12 @@ package org.jruby.util.log;
 import org.jruby.util.SafePropertyAccessor;
 
 import java.lang.reflect.Constructor;
+import org.jruby.util.cli.Properties;
 
 public class LoggerFactory {
 
-    private static final String LOGGER_CLASS = SafePropertyAccessor.getProperty("jruby.logger.class", "org.jruby.util.log.JavaUtilLoggingLogger");
-    private static final String BACKUP_LOGGER_CLASS = SafePropertyAccessor.getProperty("jruby.logger.class", "org.jruby.util.log.StandardErrorLogger");
+    private static final String LOGGER_CLASS = Properties.LOGGER_CLASS.load();
+    private static final String BACKUP_LOGGER_CLASS = "org.jruby.util.log.StandardErrorLogger";
 
     private static final Constructor<?> CTOR;
     private static final Logger LOG;

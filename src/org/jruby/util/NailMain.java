@@ -4,12 +4,13 @@ import com.martiansoftware.nailgun.NGContext;
 import org.jruby.Main;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ast.executable.Script;
+import org.jruby.runtime.Constants;
 
 public class NailMain {
     public static final ClassCache<Script> classCache;
 
     static {
-         classCache = new ClassCache<Script>(NailMain.class.getClassLoader(), RubyInstanceConfig.JIT_MAX_METHODS_LIMIT);
+         classCache = new ClassCache<Script>(NailMain.class.getClassLoader(), Constants.JIT_MAX_METHODS_LIMIT);
     }
     public static void nailMain(NGContext context) {
         NailMain main = new NailMain();

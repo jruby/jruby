@@ -114,9 +114,6 @@ public abstract class MethodFactory {
         // if reflection is forced or we've determined that we can't load bytecode, use reflection
         if (reflection || !CAN_LOAD_BYTECODE) return new ReflectionMethodFactory();
 
-        // if we're dumping invokers to disk, use dumping
-        if (dumping) return new DumpingInvocationMethodFactory(dumpingPath, classLoader);
-
         // otherwise, generate invokers at runtime
         return new InvocationMethodFactory(classLoader);
     }
@@ -262,14 +259,6 @@ public abstract class MethodFactory {
      * Use the reflection-based factory.
      */
     private static final boolean reflection;
-    /**
-     * User the dumping-based factory, which generates .class files as it runs.
-     */
-    private static final boolean dumping;
-    /**
-     * The target path for the dumping factory to save the .class files.
-     */
-    private static final String dumpingPath;
     
     static {
         boolean reflection_ = false, dumping_ = false;
@@ -279,13 +268,7 @@ public abstract class MethodFactory {
             reflection_ = true;
         } else {
             reflection_ = RubyInstanceConfig.REFLECTED_HANDLES;
-            if (SafePropertyAccessor.getProperty("jruby.dump_invocations") != null) {
-                dumping_ = true;
-                dumpingPath_ = SafePropertyAccessor.getProperty("jruby.dump_invocations");
-            }
         }
         reflection = reflection_;
-        dumping = dumping_;
-        dumpingPath = dumpingPath_;
     }
 }

@@ -97,11 +97,12 @@ import org.jruby.java.proxies.InterfaceJavaProxy;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.java.proxies.RubyObjectHolderProxy;
 import org.jruby.util.ClassCache.OneShotClassLoader;
+import org.jruby.util.cli.Properties;
 
 @JRubyModule(name = "Java")
 public class Java implements Library {
-    public static final boolean NEW_STYLE_EXTENSION = SafePropertyAccessor.getBoolean("jruby.ji.newStyleExtension", false);
-    public static final boolean OBJECT_PROXY_CACHE = SafePropertyAccessor.getBoolean("jruby.ji.objectProxyCache", true);
+    public static final boolean NEW_STYLE_EXTENSION = Properties.JI_NEWSTYLEEXTENSION.load();
+    public static final boolean OBJECT_PROXY_CACHE = Properties.JI_OBJECTPROXYCACHE.load();
 
     public void load(Ruby runtime, boolean wrap) throws IOException {
         createJavaModule(runtime);

@@ -93,6 +93,7 @@ import org.jruby.runtime.callback.Callback;
 import org.jruby.util.ByteList;
 import org.jruby.util.IdUtil;
 import org.jruby.util.SafePropertyAccessor;
+import org.jruby.util.cli.Properties;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -116,7 +117,7 @@ public class JavaClass extends JavaObject {
             } catch (Throwable t) {
                 // added this so if things are weird in the future we can debug without
                 // spinning a new binary
-                if (SafePropertyAccessor.getBoolean("jruby.ji.logCanSetAccessible")) {
+                if (Properties.JI_LOGCANSETACCESSIBLE.load()) {
                     t.printStackTrace();
                 }
 
