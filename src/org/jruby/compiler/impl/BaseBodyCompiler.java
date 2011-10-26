@@ -1604,7 +1604,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     }
 
     protected String getNewRescueName() {
-        return "rescue_" + (script.getAndIncrementRescueNumber()) + "$RUBY$SYNTHETIC" + JavaNameMangler.mangleStringForCleanJavaIdentifier(getRubyName());
+        return "rescue_" + (script.getAndIncrementRescueNumber()) + "$RUBY$SYNTHETIC" + JavaNameMangler.mangleMethodName(getRubyName());
     }
 
     public void storeExceptionInErrorInfo() {
@@ -2275,7 +2275,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         String classMethodName = null;
         String rubyName;
         if (receiverCallback == null) {
-            String mangledName = JavaNameMangler.mangleStringForCleanJavaIdentifier(name);
+            String mangledName = JavaNameMangler.mangleMethodName(name);
             classMethodName = "class_" + script.getAndIncrementMethodIndex() + "$RUBY$" + mangledName;
             rubyName = mangledName;
         } else {
@@ -2397,7 +2397,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     }
 
     public void defineModule(final String name, final StaticScope staticScope, final CompilerCallback pathCallback, final CompilerCallback bodyCallback, final ASTInspector inspector) {
-        String mangledName = JavaNameMangler.mangleStringForCleanJavaIdentifier(name);
+        String mangledName = JavaNameMangler.mangleMethodName(name);
         String moduleMethodName = "module__" + script.getAndIncrementMethodIndex() + "$RUBY$" + mangledName;
 
         final RootScopedBodyCompiler classBody = new ClassBodyCompiler(script, moduleMethodName, mangledName, inspector, staticScope);
@@ -2601,7 +2601,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         if (root && SafePropertyAccessor.getBoolean("jruby.compile.toplevel", false)) {
             newMethodName = name;
         } else {
-            String mangledName = JavaNameMangler.mangleStringForCleanJavaIdentifier(name);
+            String mangledName = JavaNameMangler.mangleMethodName(name);
             newMethodName = "method__" + script.getAndIncrementMethodIndex() + "$RUBY$" + mangledName;
         }
 

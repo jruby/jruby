@@ -171,6 +171,8 @@ public class JavaNameMangler {
                 case '.':
                     cleanBuffer.append("dot_");
                     continue;
+                case '@':
+                    cleanBuffer.append("at_");
                 default:
                     cleanBuffer.append(Integer.toHexString(characters[i])).append("_");
                 }
