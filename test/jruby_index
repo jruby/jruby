@@ -27,6 +27,7 @@ test_defined
 test_default_constants
 test_delegated_array_equals
 test_dir
+test_dir_with_jar_without_dir_entry
 test_digest_lazy_load
 test_digest_extend
 test_digest2
