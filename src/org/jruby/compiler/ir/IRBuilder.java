@@ -3127,6 +3127,7 @@ public class IRBuilder {
     public Operand buildSuper(SuperNode superNode, IRScope s) {
         List<Operand> args = setupCallArgs(superNode.getArgsNode(), s);
         Operand  block = setupCallClosure(superNode.getIterNode(), s);
+        if (block == null) block = ((IRExecutionScope)s).getImplicitBlockArg();
         return buildSuperInstr(s, block, args.toArray(new Operand[args.size()]));
     }
 
