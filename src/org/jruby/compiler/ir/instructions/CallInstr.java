@@ -261,7 +261,7 @@ public class CallInstr extends MultiOperandInstr {
              case 0: resultValue = callAdapter.call(context, self, object, block); break;
              case 1: resultValue = callAdapter.call(context, self, object, args[0], block); break;
              case 2: resultValue = callAdapter.call(context, self, object, args[0], args[1], block); break;
-             case 3: resultValue = callAdapter.call(context, self, object, args[0], args[1], args[2], block);
+             case 3: resultValue = callAdapter.call(context, self, object, args[0], args[1], args[2], block); break;
              default: resultValue = callAdapter.call(context, self, object, args, block);
              }
         }
