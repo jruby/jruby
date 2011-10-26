@@ -15,12 +15,12 @@ import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.BasicBlock;
 import org.jruby.compiler.ir.representations.CFG;
-import org.jruby.compiler.ir.representations.CFG.CFGEdge;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
+import org.jruby.compiler.ir.util.Edge;
 
 public class BindingLoadPlacementNode extends FlowGraphNode {
     public BindingLoadPlacementNode(DataFlowProblem prob, BasicBlock n) {
@@ -44,7 +44,7 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
         }
     }
 
-    public void compute_MEET(CFGEdge edge, FlowGraphNode pred) {
+    public void compute_MEET(Edge edge, FlowGraphNode pred) {
         BindingLoadPlacementNode n = (BindingLoadPlacementNode) pred;
         inRequiredLoads.addAll(n.outRequiredLoads);
     }

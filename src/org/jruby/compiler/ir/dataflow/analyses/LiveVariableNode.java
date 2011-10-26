@@ -11,7 +11,6 @@ import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.BasicBlock;
 import org.jruby.compiler.ir.representations.CFG;
-import org.jruby.compiler.ir.representations.CFG.CFGEdge;
 
 import java.util.Collection;
 import java.util.Set;
@@ -19,6 +18,7 @@ import java.util.BitSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
+import org.jruby.compiler.ir.util.Edge;
 
 public class LiveVariableNode extends FlowGraphNode {
     public LiveVariableNode(DataFlowProblem prob, BasicBlock n) {
@@ -62,7 +62,7 @@ public class LiveVariableNode extends FlowGraphNode {
         }
     }
 
-    public void compute_MEET(CFGEdge edge, FlowGraphNode pred) {
+    public void compute_MEET(Edge edge, FlowGraphNode pred) {
 //        System.out.println("computing meet for BB " + _bb.getID() + " with BB " + ((LiveVariableNode)pred)._bb.getID());
         // All variables live at the entry of 'pred' are also live at exit of this node
         in.or(((LiveVariableNode) pred).out);

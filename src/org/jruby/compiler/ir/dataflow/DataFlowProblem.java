@@ -10,8 +10,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jruby.compiler.ir.representations.CFG;
-import org.jruby.compiler.ir.representations.CFG.CFGEdge;
 import org.jruby.compiler.ir.representations.BasicBlock;
+import org.jruby.compiler.ir.util.Edge;
 
 public abstract class DataFlowProblem {
 /* -------------- Public fields and methods below ---------------- */
@@ -93,11 +93,11 @@ public abstract class DataFlowProblem {
         return variables.size();
     }
 
-    public Set<CFGEdge> incomingEdgesOf(BasicBlock bb) {
+    public Set<Edge> incomingEdgesOf(BasicBlock bb) {
         return cfg.incomingEdgesOf(bb);
     }
 
-    public Set<CFGEdge> outgoingEdgesOf(BasicBlock bb) {
+    public Set<Edge> outgoingEdgesOf(BasicBlock bb) {
         return cfg.outgoingEdgesOf(bb);
     }
 
