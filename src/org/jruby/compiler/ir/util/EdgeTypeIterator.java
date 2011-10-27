@@ -13,26 +13,28 @@ import java.util.Set;
  * @author enebo
  */
 public class EdgeTypeIterator<T> implements Iterator<Edge<T>> {
-    private Iterator<Edge<T>> edges;
+    private Iterator<Edge<T>> internalIterator;
     private Object type;
     private Edge nextEdge = null;
     
     public EdgeTypeIterator(Set<Edge<T>> edges, Object type) {
-        this.edges = edges.iterator();
+        this.internalIterator = edges.iterator();
         this.type = type;
     }
 
     public boolean hasNext() {
-        if (nextEdge == null) {
-            while (edges.hasNext()) {
-                Edge edge = edges.next();
+        // Multiple hasNext calls with no next...hasNext still true
+        if (nextEdge != null) return true;
+        
+        while (internalIterator.hasNext()) {
+            Edge edge = internalIterator.next();
                 
-                if (edge.getType() == type) {
-                    nextEdge = edge;
-                    return true;
-                }
+            if (edge.getType() == type) {
+                nextEdge = edge;
+                return true;
             }
         }
+
         return false;
     }
 

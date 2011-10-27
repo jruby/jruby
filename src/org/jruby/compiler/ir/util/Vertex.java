@@ -1,7 +1,6 @@
 package org.jruby.compiler.ir.util;
 
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 
 /**
@@ -57,12 +56,12 @@ public class Vertex<T> {
         outgoing = null;
     }
     
-    public Iterator<Edge<T>> getIncomingEdgesOfType(Object type) {
-        return new EdgeTypeIterator<T>(getIncomingEdges(), type);
+    public Iterable<Edge<T>> getIncomingEdgesOfType(Object type) {
+        return new EdgeTypeIterable<T>(getIncomingEdges(), type);
     }
     
-    public Iterator<Edge<T>> getOutgoingEdgesOfType(Object type) {
-        return new EdgeTypeIterator<T>(getOutgoingEdges(), type);
+    public Iterable<Edge<T>> getOutgoingEdgesOfType(Object type) {
+        return new EdgeTypeIterable<T>(getOutgoingEdges(), type);
     }
     
     public Set<Edge<T>> getIncomingEdges() {

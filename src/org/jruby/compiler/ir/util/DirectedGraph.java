@@ -11,14 +11,18 @@ import java.util.Set;
  */
 public class DirectedGraph<T> {
     private Map<T, Vertex<T>> vertices = new HashMap<T, Vertex<T>>();
-    private Set<Edge> edges = new HashSet<Edge>();
+    private Set<Edge<T>> edges = new HashSet<Edge<T>>();
     
     public Collection<Vertex<T>> vertices() {
         return vertices.values();
     }
     
-    public Collection<Edge> edges() {
+    public Collection<Edge<T>> edges() {
         return edges;
+    }
+    
+    public Iterable<Edge<T>> edgesOfType(Object type) {
+        return new EdgeTypeIterable<T>(edges, type);
     }
     
     public Collection<T> allData() {

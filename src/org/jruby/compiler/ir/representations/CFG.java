@@ -5,6 +5,7 @@ import java.util.BitSet;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.ListIterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -216,7 +217,7 @@ public class CFG {
     }
 
     public Instr[] prepareForInterpretation() {
-        if (instrs != null) return instrs; // Done
+        if (instrs != null) return instrs; // Already prepared
 
         List<Instr> newInstrs = new ArrayList<Instr>();
         List<BasicBlock> bbs = null;
@@ -1011,16 +1012,14 @@ public class CFG {
             }
 
             if (noExceptions) {
-                for (Edge e : cfg.vertexFor(b).getOutgoingEdges()) {
-                    if (e.getType() == EdgeType.EXCEPTION_EDGE) {
-                        toRemove.add(e);
+                for (Edge<BasicBlock> e : cfg.vertexFor(b).getOutgoingEdgesOfType(EdgeType.EXCEPTION_EDGE)) {
+                    toRemove.add(e);
                         
-                        if (bbRescuerMap.get(e.getSource()) == e.getDestination().getData()) {
-                            bbRescuerMap.remove(e.getSource());
-                        }
-                        if (bbEnsurerMap.get(e.getSource()) == e.getDestination().getData()) {
-                            bbEnsurerMap.remove(e.getSource());
-                        }
+                    if (bbRescuerMap.get(e.getSource()) == e.getDestination().getData()) {
+                        bbRescuerMap.remove(e.getSource());
+                    }
+                    if (bbEnsurerMap.get(e.getSource()) == e.getDestination().getData()) {
+                        bbEnsurerMap.remove(e.getSource());
                     }
                 }
             }
@@ -1036,7 +1035,7 @@ public class CFG {
     }
 
     public List<BasicBlock> linearize() {
-        if (linearizedBBList != null) return linearizedBBList; // Done!
+        if (linearizedBBList != null) return linearizedBBList; // Already linearized
 
         // System.out.println("--- start ---");
         linearizedBBList = new ArrayList<BasicBlock>();
@@ -1048,12 +1047,11 @@ public class CFG {
         bbSet.set(root.getID());
         Stack<BasicBlock> stack = new Stack<BasicBlock>();
 
-        // Push all exception edge targets (first bbs of rescue blocks) first so that rescue handlers are laid out last
-        // at the end of the method, outside the common execution path
-        for (Edge<BasicBlock> e : cfg.edges()) {
-            if (e.getType() == EdgeType.EXCEPTION_EDGE) {
-                pushBBOnStack(stack, bbSet, e.getDestination().getData());
-            }
+        // Push all exception edge targets (first bbs of rescue blocks) first
+        // so that rescue handlers are laid out last at the end of the method,
+        // outside the common execution path.
+        for (Edge<BasicBlock> edge: cfg.edgesOfType(EdgeType.EXCEPTION_EDGE)) {
+            pushBBOnStack(stack, bbSet, edge.getDestination().getData());
         }
 
         // Root next!
