@@ -1,12 +1,13 @@
 package org.jruby.compiler.ir.util;
 
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
 /**
  *
  */
-public class Vertex<T> {
+public class Vertex<T extends DataInfo> {
     private DirectedGraph graph;
     private T data;
     private Set<Edge<T>> incoming = null;
@@ -82,17 +83,39 @@ public class Vertex<T> {
     
     @Override
     public String toString() {
+        boolean found = false;
         StringBuilder buf = new StringBuilder(data.toString());
+
+        buf.append(":");
         
-        buf.append(": ");
-        for (Edge edge: getIncomingEdges()) {
-            buf.append("<").append(edge.getSource().getData()).append(" ");
-        }
+        Set<Edge<T>> edges = getOutgoingEdges();
+        int size = edges.size();
         
-        for (Edge edge: getOutgoingEdges()) {
-            buf.append(">").append(edge.getDestination().getData()).append(" ");
+        if (size > 0) {
+            found = true;
+            buf.append(">[");
+            Iterator<Edge<T>> iterator = edges.iterator();
+            
+            for (int i = 0; i < size - 1; i++) {
+                buf.append(iterator.next().getDestination().getData().getID()).append(",");
+            }
+            buf.append(iterator.next().getDestination().getData().getID()).append("]");
         }
-        buf.append("\n");        
+
+        edges = getIncomingEdges();
+        size = edges.size();
+        
+        if (size > 0) {
+            if (found) buf.append(", ");
+            buf.append("<[");            
+            Iterator<Edge<T>> iterator = edges.iterator();
+
+            for (int i = 0; i < size - 1; i++) {
+                buf.append(iterator.next().getSource().getData().getID()).append(",");
+            }
+            buf.append(iterator.next().getSource().getData().getID()).append("]");
+        }
+        buf.append("\n");
         
         return buf.toString();
     }

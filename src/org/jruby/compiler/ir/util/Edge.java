@@ -3,7 +3,7 @@ package org.jruby.compiler.ir.util;
 /**
  *
  */
-public class Edge<T> {
+public class Edge<T extends DataInfo> {
     private Vertex<T> source;
     private Vertex<T> destination;
     private Object type;
@@ -29,7 +29,7 @@ public class Edge<T> {
     
     @Override
     public String toString() {
-        return "<" + source.getData() + " --> " + 
-                destination.getData() + "> (" + type + ")";        
+        return "<" + source.getData().getID() + " --> " + 
+                destination.getData().getID() + "> (" + type + ")";        
     }
 }

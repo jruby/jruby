@@ -16,8 +16,9 @@ import org.jruby.compiler.ir.instructions.YieldInstr;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.ListIterator;
+import org.jruby.compiler.ir.util.DataInfo;
 
-public class BasicBlock {
+public class BasicBlock implements DataInfo {
     private int id;                        // Basic Block id
     private CFG cfg;                       // CFG that this basic block belongs to
     private Label label;                   // All basic blocks have a starting label

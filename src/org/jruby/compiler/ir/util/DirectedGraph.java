@@ -9,7 +9,7 @@ import java.util.Set;
 /**
  * Meant to be single-threaded.  More work on whole impl if not.
  */
-public class DirectedGraph<T> {
+public class DirectedGraph<T extends DataInfo> {
     private Map<T, Vertex<T>> vertices = new HashMap<T, Vertex<T>>();
     private Set<Edge<T>> edges = new HashSet<Edge<T>>();
     
