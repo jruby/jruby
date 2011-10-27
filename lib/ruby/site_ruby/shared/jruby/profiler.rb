@@ -41,7 +41,7 @@ module JRuby
     private
     
       def self.runtime
-        Java::OrgJRuby::Ruby.getGlobalRuntime
+        JRuby.runtime
       end
 
       def self.current_thread_context

@@ -25,8 +25,9 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.profile;
 
-import org.jruby.Ruby;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.util.collections.IntHashMap;
 
 import static org.jruby.runtime.profile.ProfilePrinter.PROFILER_PROFILE_METHOD;
 import static org.jruby.runtime.profile.ProfilePrinter.PROFILER_PROFILED_CODE_METHOD;
@@ -40,6 +41,10 @@ import static org.jruby.runtime.profile.ProfilePrinter.PROFILER_PROFILED_CODE_ME
  */
 public class ProfileData {
     
+    private static final int MAX_PROFILE_METHODS = 100000;
+    
+    private final IntHashMap<ProfiledMethod> profiledMethods = new IntHashMap<ProfiledMethod>(500);
+    
     private Invocation currentInvocation;
     private Invocation topInvocation;
     private int[] methodRecursion;
@@ -51,14 +56,29 @@ public class ProfileData {
         clear();
     }
     
-    protected ProfiledMethod[] getProfiledMethods() {
-        return Ruby.getGlobalRuntime().getProfiledMethods();
+    public IntHashMap<ProfiledMethod> getProfiledMethods() {
+        return profiledMethods;
+    }
+    
+    public void addProfiledMethod(String name, DynamicMethod method) {
+        if (method.isUndefined()) return;
+        final long serial = method.getSerialNumber();
+        if (serial > MAX_PROFILE_METHODS) return;
+        
+        if (profiledMethods.get((int) serial) == null) {
+            profiledMethods.put((int) serial, new ProfiledMethod(name, method));
+        }
     }
     
     protected ProfiledMethod getProfiledMethod(final int serial) {
-        final ProfiledMethod[] profiledMethods = getProfiledMethods();
-        if (serial >= profiledMethods.length) return null;
-        return profiledMethods[serial];
+        ProfiledMethod profiledMethod = getProfiledMethods().get(serial);
+        if (profiledMethod == null) { // check for the method in the runtime :
+            ProfiledMethod[] runtimeMethods = threadContext.getRuntime().getProfiledMethods();
+            if (serial < runtimeMethods.length) {
+                profiledMethod = runtimeMethods[serial];
+            }
+        }
+        return profiledMethod;
     }
     
     /**
@@ -129,6 +149,8 @@ public class ProfileData {
         methodRecursion = new int[1000];
         currentInvocation = new Invocation(0);
         topInvocation = currentInvocation;
+        
+        profiledMethods.clear();
     }
 
     public long totalTime() {
