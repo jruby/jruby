@@ -13,7 +13,6 @@ import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.Ruby;
 import org.jruby.runtime.ThreadContext;
 
-import java.util.Map;
 import org.jruby.RubyModule;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.parser.StaticScope;
@@ -38,8 +37,6 @@ public class SearchConstInstr extends Instr {
         return new Operand[] {};
     }
 
-    public void simplifyOperands(Map<Operand, Operand> valueMap) { }
-
     public Instr cloneForInlining(InlinerInfo ii) {
         return new SearchConstInstr(ii.getRenamedVariable(getResult()), definingModule, constName);
     }
@@ -55,6 +52,7 @@ public class SearchConstInstr extends Instr {
         Ruby runtime = context.getRuntime();
         RubyModule object = runtime.getObject();
         Object constant;
+        
         if (staticScope == null) { // FIXME: CORE CLASSES have no staticscope yet...hack for now
             constant = object.getConstant(constName);
         } else {

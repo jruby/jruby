@@ -16,10 +16,11 @@ import org.jruby.runtime.ThreadContext;
 // tree of the form  |a,(b,(c,(d,..))),..| by pushing a argument array as we go up/down one level
 // of this assignment tree.
 public class SetArgumentsInstr extends OneOperandInstr {
-    public final boolean coerceToArray;
+    private final boolean coerceToArray;
 
     public SetArgumentsInstr(Variable dest, Variable newArgs, boolean coerceToArray) {
         super(Operation.SET_ARGS, dest, newArgs);
+        
         this.coerceToArray = coerceToArray;
     }
 

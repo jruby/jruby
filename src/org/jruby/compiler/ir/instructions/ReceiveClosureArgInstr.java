@@ -14,7 +14,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 //   Ex:  .. { |a| .. }
 // The closure receives 'a' via this instruction
 public class ReceiveClosureArgInstr extends NoOperandInstr {
-    public final int argIndex;
+    private final int argIndex;
     boolean restOfArgArray;
 
     public ReceiveClosureArgInstr(Variable dest, int argIndex, boolean restOfArgArray) {
@@ -31,6 +31,10 @@ public class ReceiveClosureArgInstr extends NoOperandInstr {
     @Override
     public String toString() {
         return super.toString() + "(" + argIndex + (restOfArgArray ? ", ALL" : "") + ")";
+    }
+    
+    public int getArgIndex() {
+        return argIndex;
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {

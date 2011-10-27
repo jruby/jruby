@@ -150,7 +150,7 @@ public class BasicBlock implements DataInfo {
             } else if (i instanceof ReceiveClosureArgInstr) {
                 Operand closureArg;
                 ReceiveClosureArgInstr rcai = (ReceiveClosureArgInstr)i;
-                int argIndex = rcai.argIndex;
+                int argIndex = rcai.getArgIndex();
                 
                 if (argIndex < yieldArgs.length) {
                     closureArg = yieldArgs[argIndex].cloneForInlining(ii);

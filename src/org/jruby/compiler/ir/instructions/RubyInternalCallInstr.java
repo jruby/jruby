@@ -47,7 +47,7 @@ public class RubyInternalCallInstr extends CallInstr {
        }
     }
 
-    public RubyInternalsMethod implMethod;
+    private RubyInternalsMethod implMethod;
 
     public RubyInternalCallInstr(Variable result, RubyInternalsMethod m, Operand receiver, Operand[] args) {
         super(Operation.RUBY_INTERNALS, CallType.FUNCTIONAL, result, m.getMethAddr(), receiver, args, null);
@@ -86,7 +86,6 @@ public class RubyInternalCallInstr extends CallInstr {
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        Object   receiver;
         Ruby     runtime = context.getRuntime();
         Object   rVal = null;
         switch (this.implMethod) {
@@ -117,14 +116,15 @@ public class RubyInternalCallInstr extends CallInstr {
             case UNDEF_METHOD:
                 rVal = RuntimeHelpers.undefMethod(context, getReceiver().retrieve(interp, context, self));
                 break;
-            case TO_ARY:
-                receiver = getReceiver().retrieve(interp, context, self);
+            case TO_ARY: {
+                Object recv = getReceiver().retrieve(interp, context, self);
                 Operand[] args = getCallArgs();
                 // Don't call to_ary if we we have an array already and we are asked not to run to_ary on arrays
-                if ((args.length > 0) && ((BooleanLiteral)args[0]).isFalse() && (receiver instanceof RubyArray))
-                    rVal = receiver;
+                if ((args.length > 0) && ((BooleanLiteral)args[0]).isFalse() && (recv instanceof RubyArray))
+                    rVal = recv;
                 else
-                    rVal = RuntimeHelpers.aryToAry((IRubyObject) receiver);
+                    rVal = RuntimeHelpers.aryToAry((IRubyObject) recv);
+            }
                 break;
             case FOR_EACH:
                 super.interpret(interp, context, self); // SSS FIXME: Correct?

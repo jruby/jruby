@@ -9,8 +9,8 @@ import org.jruby.compiler.ir.operands.Variable;
 // This is of the form:
 //   v = OP(arg1, arg2, attribute_array); Ex: v = ADD(v1, v2)
 public abstract class TwoOperandInstr extends Instr {
-    Operand operand1;
-    Operand operand2;
+    private Operand operand1;
+    private Operand operand2;
 
     public TwoOperandInstr(Operation op, Variable destination, Operand a1, Operand a2) {
         super(op, destination);
@@ -35,6 +35,7 @@ public abstract class TwoOperandInstr extends Instr {
         return operand2;
     }
 
+    @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap) {
         operand1 = operand1.getSimplifiedOperand(valueMap);
         operand2 = operand2.getSimplifiedOperand(valueMap);

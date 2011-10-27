@@ -10,8 +10,8 @@ public abstract class PutInstr extends Instr {
     public final int VALUE = 0;
     public final int TARGET = 1;
 
-    Operand[] operands;
-    String  ref;
+    protected Operand[] operands;
+    protected String  ref;
 
     public PutInstr(Operation op, Operand target, String ref, Operand value) {
         super(op);
@@ -42,6 +42,7 @@ public abstract class PutInstr extends Instr {
                 (ref == null ? "" : ", " + ref) + ") = " + operands[VALUE];
     }
 
+    @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap) {
         operands[VALUE] = operands[VALUE].getSimplifiedOperand(valueMap);
         operands[TARGET] = operands[TARGET].getSimplifiedOperand(valueMap);

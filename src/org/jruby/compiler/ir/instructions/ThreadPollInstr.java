@@ -18,7 +18,9 @@ public class ThreadPollInstr extends NoOperandInstr {
 
     // Can this instruction raise exceptions?
     @Override
-    public boolean canRaiseException() { return false; }
+    public boolean canRaiseException() {
+        return false;
+    }
     
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {

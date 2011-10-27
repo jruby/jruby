@@ -17,8 +17,8 @@ public class BNEInstr extends BranchInstr {
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new BNEInstr(operand1.cloneForInlining(ii), 
-                operand2.cloneForInlining(ii), ii.getRenamedLabel(getJumpTarget()));
+        return new BNEInstr(getOperand1().cloneForInlining(ii), 
+                getOperand2().cloneForInlining(ii), ii.getRenamedLabel(getJumpTarget()));
     }
 
     @Override

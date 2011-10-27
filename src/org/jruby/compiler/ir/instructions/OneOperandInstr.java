@@ -10,7 +10,7 @@ import org.jruby.compiler.ir.operands.Variable;
 //   v = OP(arg, attribute_array); Ex: v = NOT(v1)
 
 public abstract class OneOperandInstr extends Instr {
-    Operand argument;
+    protected Operand argument;
 
     public OneOperandInstr(Operation op, Variable dest, Operand argument) {
         super(op, dest);
@@ -33,6 +33,7 @@ public abstract class OneOperandInstr extends Instr {
         return new Operand[] {argument};
     }
 
+    @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap) {
         argument = argument.getSimplifiedOperand(valueMap);
     }

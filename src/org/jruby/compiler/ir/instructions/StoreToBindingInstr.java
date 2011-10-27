@@ -13,15 +13,15 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class StoreToBindingInstr extends OneOperandInstr {
-	 private IRMethod targetMethod;
-    private int      bindingSlot;
-    private String   slotName;
+	private IRMethod targetMethod;
+    private int bindingSlot;
+    private String slotName;
 
     public StoreToBindingInstr(IRExecutionScope scope, String slotName, Operand value) {
         super(Operation.BINDING_STORE, null, value);
 
         this.slotName = slotName;
-		  this.targetMethod = (IRMethod)scope.getClosestMethodAncestor();
+        this.targetMethod = (IRMethod)scope.getClosestMethodAncestor();
         bindingSlot = targetMethod.assignBindingSlot(slotName);
     }
 
@@ -40,7 +40,9 @@ public class StoreToBindingInstr extends OneOperandInstr {
 
     // Any exception raised by the execution of this instruction is an interpreter/compiler bug
     @Override
-    public boolean canRaiseException() { return false; }
+    public boolean canRaiseException() {
+        return false;
+    }
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {

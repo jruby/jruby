@@ -1,6 +1,5 @@
 package org.jruby.compiler.ir.instructions;
 
-import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 
@@ -36,21 +35,22 @@ public class SuperInstr extends CallInstr {
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        IRubyObject   receiver = (IRubyObject)getReceiver().retrieve(interp, context, self);
-        IRubyObject[] args     = prepareArguments(interp, context, self, getCallArgs());
-        Block         block    = prepareBlock(interp, context, self);
-        RubyModule    klazz    = context.getFrameKlazz();
+        // FIXME: Receiver is not being used...should we be retrieving it?
+        IRubyObject receiver = (IRubyObject)getReceiver().retrieve(interp, context, self);
+        IRubyObject[] args = prepareArguments(interp, context, self, getCallArgs());
+        Block block = prepareBlock(interp, context, self);
+        RubyModule klazz = context.getFrameKlazz();
         // SSS FIXME: Even though we may know the method name in some instances,
         // we are not making use of it here.  It is cleaner in the sense of not
         // relying on implicit information whose data flow doesn't show up in the IR.
-        String        methName = context.getCurrentFrame().getName(); // methAddr.getName();
+        String methodName = context.getCurrentFrame().getName(); // methAddr.getName();
 
-        checkSuperDisabledOrOutOfMethod(context, klazz, methName);
+        checkSuperDisabledOrOutOfMethod(context, klazz, methodName);
         RubyClass superClass = RuntimeHelpers.findImplementerIfNecessary(self.getMetaClass(), klazz).getSuperClass();
-        DynamicMethod method = superClass != null ? superClass.searchMethod(methName) : UndefinedMethod.INSTANCE;
+        DynamicMethod method = superClass != null ? superClass.searchMethod(methodName) : UndefinedMethod.INSTANCE;
         
-        Object rVal = method.isUndefined() ? RuntimeHelpers.callMethodMissing(context, self, method.getVisibility(), methName, CallType.SUPER, args, block)
-                                           : method.call(context, self, superClass, methName, args, block);
+        Object rVal = method.isUndefined() ? RuntimeHelpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, args, block)
+                                           : method.call(context, self, superClass, methodName, args, block);
 
         getResult().store(interp, context, self, rVal);
 
