@@ -547,7 +547,7 @@ public class CFG {
                 b.processClosureArgAndReturnInstrs(ii, yield);
             }
         }
-        for (BasicBlock b : cfg.allData()) {
+        for (BasicBlock b : ccfg.getNodes()) {
             if (b != cEntry && b != cExit) {
                 for (Edge<BasicBlock> e : ccfg.outgoingEdgesOf(b)) {
                     BasicBlock c = e.getDestination().getData();
@@ -1211,7 +1211,7 @@ public class CFG {
     public void setUpUseDefLocalVarMaps() {
         definedLocalVars = new java.util.HashSet<Variable>();
         usedLocalVars = new java.util.HashSet<Variable>();
-        for (BasicBlock bb : getNodes()) {
+        for (BasicBlock bb : cfg.allData()) {
             for (Instr i : bb.getInstrs()) {
                 for (Variable v : i.getUsedVariables()) {
                     if (v instanceof LocalVariable) usedLocalVars.add(v);
