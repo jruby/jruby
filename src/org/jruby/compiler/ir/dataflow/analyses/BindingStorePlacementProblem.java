@@ -4,7 +4,7 @@ import org.jruby.compiler.ir.IRClosure;
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.instructions.RECV_EXCEPTION_Instr;
 import org.jruby.compiler.ir.instructions.StoreToBindingInstr;
-import org.jruby.compiler.ir.instructions.THROW_EXCEPTION_Instr;
+import org.jruby.compiler.ir.instructions.ThrowExceptionInstr;
 import org.jruby.compiler.ir.representations.BasicBlock;
 import org.jruby.compiler.ir.representations.CFG;
 import org.jruby.compiler.ir.dataflow.DataFlowProblem;
@@ -86,7 +86,7 @@ public class BindingStorePlacementProblem extends DataFlowProblem {
             for (LocalVariable v : dirtyVars) {
                 geb.addInstr(new StoreToBindingInstr((IRClosure) cfgScope, v.getName(), v));
             }
-            geb.addInstr(new THROW_EXCEPTION_Instr(exc));
+            geb.addInstr(new ThrowExceptionInstr(exc));
             cfg.addGlobalEnsureBlock(geb);
         }
     }

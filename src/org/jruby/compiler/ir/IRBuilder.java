@@ -164,7 +164,7 @@ import org.jruby.compiler.ir.instructions.SetArgumentsInstr;
 import org.jruby.compiler.ir.instructions.SearchConstInstr;
 import org.jruby.compiler.ir.instructions.SuperInstr;
 import org.jruby.compiler.ir.instructions.ThreadPollInstr;
-import org.jruby.compiler.ir.instructions.THROW_EXCEPTION_Instr;
+import org.jruby.compiler.ir.instructions.ThrowExceptionInstr;
 import org.jruby.compiler.ir.instructions.YieldInstr;
 import org.jruby.compiler.ir.operands.Array;
 import org.jruby.compiler.ir.operands.AsString;
@@ -1356,7 +1356,7 @@ public class IRBuilder {
         if (v2 != null) m.addInstr(new CopyInstr(rv, Nil.NIL));
         m.addInstr(new JumpInstr(rEndLabel));
         m.addInstr(new LABEL_Instr(uncaughtLabel));
-        m.addInstr(new THROW_EXCEPTION_Instr(exc));
+        m.addInstr(new ThrowExceptionInstr(exc));
 
         // End
         m.addInstr(new LABEL_Instr(rEndLabel));
@@ -2067,7 +2067,7 @@ public class IRBuilder {
         m.addInstr(new SET_RETADDR_Instr(ebi.returnAddr, rethrowExcLabel));
         m.addInstr(new JumpInstr(ebi.start));
         m.addInstr(new LABEL_Instr(rethrowExcLabel));
-        m.addInstr(new THROW_EXCEPTION_Instr(exc));
+        m.addInstr(new ThrowExceptionInstr(exc));
 
         // End label for the exception region
         m.addInstr(new LABEL_Instr(rEndLabel));
@@ -2549,7 +2549,7 @@ public class IRBuilder {
         else {
             // If a closure, the next is simply a return from the closure!
             if (s instanceof IRClosure) s.addInstr(new ClosureReturnInstr(rv));
-            else s.addInstr(new THROW_EXCEPTION_Instr(IRException.NEXT_LocalJumpError));
+            else s.addInstr(new ThrowExceptionInstr(IRException.NEXT_LocalJumpError));
         }
         return rv;
     }
@@ -2862,7 +2862,7 @@ public class IRBuilder {
             s.addInstr(new JumpInstr((s.getCurrentLoop() != null) ?  s.getCurrentLoop().iterStartLabel : ((IRClosure)s).startLabel));
         }
         else {
-            s.addInstr(new THROW_EXCEPTION_Instr(IRException.REDO_LocalJumpError));
+            s.addInstr(new ThrowExceptionInstr(IRException.REDO_LocalJumpError));
         }
         return Nil.NIL;
     }
@@ -2983,7 +2983,7 @@ public class IRBuilder {
             if (rescueBodyNode.getOptRescueNode() != null) {
                 buildRescueBodyInternal(m, rescueBodyNode.getOptRescueNode(), rv, endLabel, rescueBlockLabels);
             } else {
-                m.addInstr(new THROW_EXCEPTION_Instr(exc));
+                m.addInstr(new ThrowExceptionInstr(exc));
             }
         }
 
@@ -3015,7 +3015,7 @@ public class IRBuilder {
         // Jump back to the innermost rescue block
         // We either find it, or we add code to throw a runtime exception
         if (_rescueBlockLabelStack.empty()) {
-            s.addInstr(new THROW_EXCEPTION_Instr(IRException.RETURN_LocalJumpError));
+            s.addInstr(new ThrowExceptionInstr(IRException.RETURN_LocalJumpError));
         }
         else {
             s.addInstr(new JumpInstr(_rescueBlockLabelStack.peek()));
@@ -3044,7 +3044,7 @@ public class IRBuilder {
                 sm = sm.getLexicalParent();
             }
 
-            if (sm == null) m.addInstr(new THROW_EXCEPTION_Instr(IRException.RETURN_LocalJumpError));
+            if (sm == null) m.addInstr(new ThrowExceptionInstr(IRException.RETURN_LocalJumpError));
             else m.addInstr(new ReturnInstr(retVal, (IRMethod)sm));
         }
 

@@ -28,7 +28,7 @@ import org.jruby.compiler.ir.instructions.ExceptionRegionStartMarkerInstr;
 import org.jruby.compiler.ir.instructions.ExceptionRegionEndMarkerInstr;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
 import org.jruby.compiler.ir.instructions.SET_RETADDR_Instr;
-import org.jruby.compiler.ir.instructions.THROW_EXCEPTION_Instr;
+import org.jruby.compiler.ir.instructions.ThrowExceptionInstr;
 import org.jruby.compiler.ir.instructions.YieldInstr;
 import org.jruby.compiler.ir.operands.Nil;
 import org.jruby.compiler.ir.operands.Label;
@@ -359,7 +359,7 @@ public class CFG {
                     tgt = null;
                     retBBs.add(currBB);
                     bbEndedWithControlXfer = true;
-                } else if (i instanceof THROW_EXCEPTION_Instr) {
+                } else if (i instanceof ThrowExceptionInstr) {
                     tgt = null;
                     excBBs.add(currBB);
                     bbEndedWithControlXfer = true;
