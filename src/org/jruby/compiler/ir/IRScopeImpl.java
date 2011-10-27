@@ -250,7 +250,7 @@ public abstract class IRScopeImpl implements IRScope {
         printPass("After local optimization pass");
 
         runCompilerPass(new CFGBuilder());
-        if (RubyInstanceConfig.IR_TEST_INLINER != null) {
+        if (!RubyInstanceConfig.IR_TEST_INLINER.equals("none")) {
             if (RubyInstanceConfig.IR_COMPILER_DEBUG) {
                 LOG.info("Asked to inline " + RubyInstanceConfig.IR_TEST_INLINER);
             }
