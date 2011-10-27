@@ -13,13 +13,12 @@ import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 
-import java.util.Map;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class AllocateBindingInstr extends Instr {
-    IRMethod scope;   // Scope for which frame is needed
+    private IRMethod scope;   // Scope for which frame is needed
 
     public AllocateBindingInstr(IRExecutionScope scope) {
         super(Operation.ALLOC_BINDING);
@@ -32,8 +31,6 @@ public class AllocateBindingInstr extends Instr {
         return new Operand[] { MetaObject.create(scope) };
     }
 
-    public void simplifyOperands(Map<Operand, Operand> valueMap) {}
-
     public Instr cloneForInlining(InlinerInfo ii) {
         // The frame will now be allocated in the caller's scope
         return new AllocateBindingInstr(ii.callerCFG.getScope());
@@ -42,7 +39,9 @@ public class AllocateBindingInstr extends Instr {
     // Can this instruction raise exceptions?
 	 // If this instruction raises an exception, you are in deep doo-doo.
     @Override
-    public boolean canRaiseException() { return false; }
+    public boolean canRaiseException() {
+        return false;
+    }
 
     @Override
     public String toString() {
