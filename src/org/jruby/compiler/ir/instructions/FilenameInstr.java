@@ -8,10 +8,11 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class FilenameInstr extends NoOperandInstr {
-    public final String filename;
+    private final String filename;
 
     public FilenameInstr(String filename) {
         super(Operation.FILE_NAME);
+        
         this.filename = filename;
     }
 

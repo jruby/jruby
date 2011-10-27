@@ -27,6 +27,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 // Ex: v = BOXED_FIXNUM(n)
 //     v = HAS_TYPE(Fixnum)
 public abstract class Instr {
+    public static final Operand[] EMPTY_OPERANDS = new Operand[] {};
+    
     public final Operation operation;
     public final Variable result;
     // Used during optimization passes to propagate type and other information

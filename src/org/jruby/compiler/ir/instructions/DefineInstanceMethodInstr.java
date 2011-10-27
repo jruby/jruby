@@ -5,7 +5,6 @@ import java.util.Map;
 import org.jruby.MetaClass;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
-import org.jruby.RubyObject;
 
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.operands.Label;
@@ -26,7 +25,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 
 public class DefineInstanceMethodInstr extends OneOperandInstr {
-    public final IRMethod method;
+    private final IRMethod method;
 
     public DefineInstanceMethodInstr(Operand container, IRMethod method) {
         super(Operation.DEF_INST_METH, null, container);
@@ -36,6 +35,10 @@ public class DefineInstanceMethodInstr extends OneOperandInstr {
     @Override
     public String toString() {
         return operation + "(" + getArg() + ", " + method.getName() + ")";
+    }
+    
+    public IRMethod getMethod() {
+        return method;
     }
 
     @Override

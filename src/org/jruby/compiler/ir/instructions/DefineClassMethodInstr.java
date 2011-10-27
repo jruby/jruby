@@ -20,7 +20,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 // SSS FIXME: Should we merge DefineInstanceMethod and DefineClassMethod instructions?
 // identical except for 1 bit in interpret -- or will they diverge?
 public class DefineClassMethodInstr extends OneOperandInstr {
-    public final IRMethod method;
+    private final IRMethod method;
 
     public DefineClassMethodInstr(Operand container, IRMethod method) {
         super(Operation.DEF_CLASS_METH, null, container);
@@ -30,6 +30,10 @@ public class DefineClassMethodInstr extends OneOperandInstr {
     @Override
     public String toString() {
         return super.toString() + "(" + getArg() + ", " + method.getName() + ")";
+    }
+    
+    public IRMethod getMethod() {
+        return method;
     }
 
     @Override

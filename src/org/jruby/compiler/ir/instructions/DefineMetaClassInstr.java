@@ -18,9 +18,11 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class DefineMetaClassInstr extends OneOperandInstr {
-    IRMetaClass dummyMetaClass;
+    private IRMetaClass dummyMetaClass;
+    
     public DefineMetaClassInstr(Variable dest, Operand object, IRMetaClass dummyMetaClass) {
         super(Operation.DEF_META_CLASS, dest, object);
+        
         this.dummyMetaClass = dummyMetaClass;
     }
 

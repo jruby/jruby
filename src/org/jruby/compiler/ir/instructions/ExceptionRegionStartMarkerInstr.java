@@ -7,47 +7,50 @@ import java.util.ArrayList;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Label;
-import org.jruby.compiler.ir.representations.BasicBlock;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 
-public class ExceptionRegionStartMarkerInstr extends Instr
-{
-    private static Operand[] _empty = new Operand[] {};
+public class ExceptionRegionStartMarkerInstr extends Instr {
+    final public Label begin;
+    final public Label end;
+    final public List<Label> rescueBlockLabels;
+    final public Label ensureBlockLabel;
 
-    final public Label _begin;
-    final public Label _end;
-    final public List<Label> _rescueBlockLabels;
-    final public Label _ensureBlockLabel;
-
-    public ExceptionRegionStartMarkerInstr(Label rBegin, Label rEnd, Label ensureBlockLabel, List<Label> rbLabels)
-    {
+    public ExceptionRegionStartMarkerInstr(Label begin, Label end, 
+            Label ensureBlockLabel, List<Label> rescueBlockLabels) {
         super(Operation.EXC_REGION_START);
-        _begin = rBegin;
-        _end = rEnd;
-        _rescueBlockLabels = rbLabels;
-        _ensureBlockLabel = ensureBlockLabel;
+        
+        this.begin = begin;
+        this.end = end;
+        this.rescueBlockLabels = rescueBlockLabels;
+        this.ensureBlockLabel = ensureBlockLabel;
     }
 
+    @Override
     public String toString() {
-        StringBuffer buf = new StringBuffer(super.toString());
-        buf.append("(").append(_begin).append(", ").append(_end).append(", ").append("[");
-        for (Label l: _rescueBlockLabels)
+        StringBuilder buf = new StringBuilder(super.toString());
+        
+        buf.append("(").append(begin).append(", ").append(end).append(", ").append("[");
+        for (Label l: rescueBlockLabels)
             buf.append(l).append(",");
         buf.append("]");
-        if (_ensureBlockLabel != null) buf.append("ensure[").append(_ensureBlockLabel).append("]");
+        if (ensureBlockLabel != null) buf.append("ensure[").append(ensureBlockLabel).append("]");
         buf.append(")");
+        
         return buf.toString();
     }
 
-    public Operand[] getOperands() { return _empty; }
-
-    public void simplifyOperands(Map<Operand, Operand> valueMap) { }
+    public Operand[] getOperands() {
+        return EMPTY_OPERANDS;
+    }
 
     public Instr cloneForInlining(InlinerInfo ii) { 
         List<Label> newLabels = new ArrayList<Label>();
-        for (Label l: _rescueBlockLabels)
+        
+        for (Label l: rescueBlockLabels) {
             newLabels.add(ii.getRenamedLabel(l));
+        }
 
-        return new ExceptionRegionStartMarkerInstr(ii.getRenamedLabel(_begin), ii.getRenamedLabel(_end), (_ensureBlockLabel == null) ? null : ii.getRenamedLabel(_ensureBlockLabel), newLabels);
+        return new ExceptionRegionStartMarkerInstr(ii.getRenamedLabel(begin), ii.getRenamedLabel(end),
+                ensureBlockLabel == null ? null : ii.getRenamedLabel(ensureBlockLabel), newLabels);
     }
 }

@@ -327,7 +327,7 @@ public class CFG {
 // SSS: Do we need this anymore?
 //                currBB.addInstr(i);
                 ExceptionRegionStartMarkerInstr ersmi = (ExceptionRegionStartMarkerInstr) i;
-                ExceptionRegion rr = new ExceptionRegion(ersmi._rescueBlockLabels, ersmi._ensureBlockLabel);
+                ExceptionRegion rr = new ExceptionRegion(ersmi.rescueBlockLabels, ersmi.ensureBlockLabel);
                 rr.addBB(currBB);
                 allExceptionRegions.add(rr);
 

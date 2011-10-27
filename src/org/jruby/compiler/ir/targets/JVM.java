@@ -258,7 +258,7 @@ public class JVM implements CompilerTarget {
     }
 
     public void emitDEF_INST_METH(DefineInstanceMethodInstr instr) {
-        IRMethod irMethod = instr.method;
+        IRMethod irMethod = instr.getMethod();
         GeneratorAdapter adapter = new GeneratorAdapter(ACC_PUBLIC, Method.getMethod("void " + irMethod.getName() + " ()"), null, null, cls());
         adapter.loadThis();
         adapter.loadArgs();
@@ -268,7 +268,7 @@ public class JVM implements CompilerTarget {
     }
 
     public void emitDEF_CLS_METH(DefineClassMethodInstr instr) {
-        IRMethod irMethod = instr.method;
+        IRMethod irMethod = instr.getMethod();
         GeneratorAdapter adapter = new GeneratorAdapter(ACC_PUBLIC | ACC_STATIC, Method.getMethod("void " + irMethod.getName() + " ()"), null, null, cls());
         adapter.returnValue();
         adapter.endMethod();

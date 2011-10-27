@@ -1,8 +1,6 @@
 package org.jruby.compiler.ir.instructions;
 
-import org.jruby.Ruby;
 import org.jruby.RubyModule;
-import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.IRModule;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
@@ -17,10 +15,11 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 
 public class DefineModuleInstr extends OneOperandInstr {
-    public final IRModule newIRModule;
+    private final IRModule newIRModule;
 
     public DefineModuleInstr(IRModule newIRModule, Variable dest, Operand container) {
         super(Operation.DEF_MODULE, dest, container);
+        
         this.newIRModule = newIRModule;
     }
 
@@ -31,12 +30,11 @@ public class DefineModuleInstr extends OneOperandInstr {
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        RubyModule moduleContainer = null;
-        Object c = getArg().retrieve(interp, context, self);
-        if (c instanceof RubyModule) moduleContainer = (RubyModule)c;
-        else throw context.getRuntime().newTypeError("no outer class/module");
+        Object container = getArg().retrieve(interp, context, self);
+        
+        if (!(container instanceof RubyModule)) throw context.getRuntime().newTypeError("no outer class/module");
 
-        RubyModule newRubyModule = moduleContainer.defineOrGetModuleUnder(newIRModule.getName());
+        RubyModule newRubyModule = ((RubyModule) container).defineOrGetModuleUnder(newIRModule.getName());
         newIRModule.getStaticScope().setModule(newRubyModule);
         DynamicMethod method = new InterpretedIRMethod(newIRModule.getRootMethod(), Visibility.PUBLIC, newRubyModule);
 
