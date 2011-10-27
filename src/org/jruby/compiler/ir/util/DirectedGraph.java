@@ -66,7 +66,7 @@ public class DirectedGraph<T> {
 
     @Override
     public String toString() {
-        StringBuilder buf = new StringBuilder("Directed-Graph:\n");
+        StringBuilder buf = new StringBuilder();
         
         for (T block: allData()) {
             buf.append(vertexFor(block));

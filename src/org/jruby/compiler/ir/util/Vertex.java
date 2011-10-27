@@ -82,17 +82,17 @@ public class Vertex<T> {
     
     @Override
     public String toString() {
-        StringBuilder buf = new StringBuilder("Vertex ");
+        StringBuilder buf = new StringBuilder(data.toString());
         
-        buf.append(data).append(":\nincoming edges\n");
+        buf.append(": ");
         for (Edge edge: getIncomingEdges()) {
-            buf.append(edge).append("\n");
+            buf.append("<").append(edge.getSource().getData()).append(" ");
         }
         
-        buf.append("outgoing edges\n");
         for (Edge edge: getOutgoingEdges()) {
-            buf.append(edge).append("\n");
+            buf.append(">").append(edge.getDestination().getData()).append(" ");
         }
+        buf.append("\n");        
         
         return buf.toString();
     }

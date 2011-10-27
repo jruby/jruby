@@ -5,7 +5,6 @@ import java.util.BitSet;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.ListIterator;
 import java.util.LinkedList;
 import java.util.List;
