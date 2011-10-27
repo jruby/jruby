@@ -17,7 +17,7 @@ import org.jruby.compiler.ir.IRClosure;
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.IRScript;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
-import org.jruby.compiler.ir.instructions.BREAK_Instr;
+import org.jruby.compiler.ir.instructions.BreakInstr;
 import org.jruby.compiler.ir.instructions.ThrowExceptionInstr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.operands.Label;
@@ -149,7 +149,7 @@ public class Interpreter {
                     // - If not, Just pass it along!
                     throw rj;
                 } catch (IRBreakJump bj) {
-                    if ((lastInstr instanceof BREAK_Instr) || bj.breakInEval) {
+                    if ((lastInstr instanceof BreakInstr) || bj.breakInEval) {
 
                         // Clear eval flag
                         bj.breakInEval = false;

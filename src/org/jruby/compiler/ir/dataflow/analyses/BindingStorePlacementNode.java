@@ -11,7 +11,7 @@ import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.AllocateBindingInstr;
 import org.jruby.compiler.ir.instructions.StoreToBindingInstr;
 import org.jruby.compiler.ir.instructions.ClosureReturnInstr;
-import org.jruby.compiler.ir.instructions.BREAK_Instr;
+import org.jruby.compiler.ir.instructions.BreakInstr;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.ClosureLocalVariable;
@@ -238,7 +238,7 @@ public class BindingStorePlacementNode extends FlowGraphNode {
                 // These variables would have to be spilled into the binding if this
                 // call raised an exception and exited this scope.
                 if ((callsiteDirtyVars != null) && call.canRaiseException()) callsiteDirtyVars.addAll(dirtyVars);
-            } else if ((i instanceof ClosureReturnInstr) || (i instanceof BREAK_Instr)) {
+            } else if ((i instanceof ClosureReturnInstr) || (i instanceof BreakInstr)) {
                 // At closure return and break instructions (both of which are exits from the closure),
                 // we need a binding store on exit only for vars that are both:
                 //

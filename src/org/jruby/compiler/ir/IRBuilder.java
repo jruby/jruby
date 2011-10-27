@@ -115,7 +115,7 @@ import org.jruby.compiler.ir.compiler_pass.opts.LocalOptimizationPass;
 import org.jruby.compiler.ir.instructions.AttrAssignInstr;
 import org.jruby.compiler.ir.instructions.BEQInstr;
 import org.jruby.compiler.ir.instructions.BNEInstr;
-import org.jruby.compiler.ir.instructions.BREAK_Instr;
+import org.jruby.compiler.ir.instructions.BreakInstr;
 import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.ConstMissingInstr;
 import org.jruby.compiler.ir.instructions.ClosureReturnInstr;
@@ -941,12 +941,12 @@ public class IRBuilder {
             if (s instanceof IRClosure) {
                 // This lexical scope value is only used (and valid) in regular block contexts.
                 // If this instruction is executed in a Proc or Lambda context, the lexical scope value is useless.
-                s.addInstr(new BREAK_Instr(rv, (IRExecutionScope)(s.getLexicalParent())));
+                s.addInstr(new BreakInstr(rv, (IRExecutionScope)(s.getLexicalParent())));
             }
             else {
                 // SSS FIXME: If we are not in a closure or a loop, the break instruction will throw a runtime exception
                 // Since we know this right now, should we build an exception instruction here?
-                s.addInstr(new BREAK_Instr(rv, null));
+                s.addInstr(new BreakInstr(rv, null));
             }
         }
         return rv;
