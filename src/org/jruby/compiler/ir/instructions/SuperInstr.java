@@ -30,7 +30,7 @@ public class SuperInstr extends CallInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new SuperInstr(ii.getRenamedVariable(result), getReceiver().cloneForInlining(ii), methAddr,
+        return new SuperInstr(ii.getRenamedVariable(getResult()), getReceiver().cloneForInlining(ii), methAddr,
                 cloneCallArgs(ii), closure == null ? null : closure.cloneForInlining(ii));
     }
 

@@ -227,14 +227,14 @@ public class CallInstr extends MultiOperandInstr {
     @Override
     public String toString() {
         return ""
-                + (result == null ? "" : result + " = ")
-                + operation + "(" + methAddr + ", " + receiver + ", " +
+                + (getResult() == null ? "" : getResult() + " = ")
+                + getOperation() + "(" + methAddr + ", " + receiver + ", " +
                 java.util.Arrays.toString(getCallArgs())
                 + (closure == null ? "" : ", &" + closure) + ")";
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new CallInstr(callType, ii.getRenamedVariable(result), (MethAddr) methAddr.cloneForInlining(ii), receiver.cloneForInlining(ii), cloneCallArgs(ii), closure == null ? null : closure.cloneForInlining(ii));
+        return new CallInstr(callType, ii.getRenamedVariable(getResult()), (MethAddr) methAddr.cloneForInlining(ii), receiver.cloneForInlining(ii), cloneCallArgs(ii), closure == null ? null : closure.cloneForInlining(ii));
    }
 
     @Override

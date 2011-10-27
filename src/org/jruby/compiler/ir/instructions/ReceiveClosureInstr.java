@@ -21,7 +21,7 @@ public class ReceiveClosureInstr extends NoOperandInstr {
     public Instr cloneForInlining(InlinerInfo ii) {
 		  // SSS FIXME: This is not strictly correct -- we have to wrap the block into an
 		  // operand type that converts the static code block to a proc which is a closure.
-        return new CopyInstr(ii.getRenamedVariable(result), ii.getCallClosure());
+        return new CopyInstr(ii.getRenamedVariable(getResult()), ii.getCallClosure());
     }
 
     @Interp

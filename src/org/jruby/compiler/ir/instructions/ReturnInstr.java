@@ -21,7 +21,7 @@ public class ReturnInstr extends OneOperandInstr {
 
     @Override
     public String toString() { 
-        return operation + "(" + argument + (methodToReturnFrom == null ? "" : ", <" + methodToReturnFrom.getName() + ">") + ")";
+        return getOperation() + "(" + argument + (methodToReturnFrom == null ? "" : ", <" + methodToReturnFrom.getName() + ">") + ")";
     }
 
     public ReturnInstr(Operand returnValue, IRMethod m) {

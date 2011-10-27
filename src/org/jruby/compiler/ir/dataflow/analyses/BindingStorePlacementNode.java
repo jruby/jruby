@@ -69,7 +69,7 @@ public class BindingStorePlacementNode extends FlowGraphNode {
         Set<LocalVariable> dirtyVars = new HashSet<LocalVariable>(inDirtyVars);
 
         for (Instr i : basicBlock.getInstrs()) {
-            if (i.operation == Operation.BINDING_LOAD) continue;
+            if (i.getOperation() == Operation.BINDING_LOAD) continue;
 
             // Process calls specially -- these are the sites of binding stores!
             if (i instanceof CallInstr) {
@@ -115,7 +115,7 @@ public class BindingStorePlacementNode extends FlowGraphNode {
             if ((v != null) && (v instanceof LocalVariable) && !((LocalVariable)v).isSelf()) {
                 dirtyVars.add((LocalVariable)v);
             }
-            if (i.operation.isReturn()) dirtyVars.clear();
+            if (i.getOperation().isReturn()) dirtyVars.clear();
         }
 
         if (outDirtyVars.equals(dirtyVars) && outBindingAllocated == bindingAllocated) return false;
@@ -172,7 +172,7 @@ public class BindingStorePlacementNode extends FlowGraphNode {
 
         while (instrs.hasNext()) {
             Instr i = instrs.next();
-            if (i.operation == Operation.BINDING_LOAD) continue;
+            if (i.getOperation() == Operation.BINDING_LOAD) continue;
 
             if (i instanceof CallInstr) {
                 CallInstr call = (CallInstr) i;

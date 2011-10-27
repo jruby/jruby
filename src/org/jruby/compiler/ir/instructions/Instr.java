@@ -29,8 +29,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 public abstract class Instr {
     public static final Operand[] EMPTY_OPERANDS = new Operand[] {};
     
-    public final Operation operation;
-    public final Variable result;
+    private final Operation operation;
+    private final Variable result;
     // Used during optimization passes to propagate type and other information
     private Attribute[] attributes;
     // Is this instruction live or dead?  During optimization passes, if this instruction

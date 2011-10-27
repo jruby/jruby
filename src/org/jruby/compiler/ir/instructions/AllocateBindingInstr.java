@@ -45,7 +45,7 @@ public class AllocateBindingInstr extends Instr {
 
     @Override
     public String toString() {
-        return "" + operation + "(" + scope + ")";
+        return "" + getOperation() + "(" + scope + ")";
     }
 
     @Override

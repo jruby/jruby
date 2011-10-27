@@ -17,7 +17,7 @@ public class BlockGivenInstr extends NoOperandInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new BlockGivenInstr(ii.getRenamedVariable(result));
+        return new BlockGivenInstr(ii.getRenamedVariable(getResult()));
     }
 
     @Override

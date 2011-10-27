@@ -13,11 +13,12 @@ import org.jruby.runtime.builtin.IRubyObject;
 // one or more non-Operand fields  in instructions or maybe rename the
 // base classes to something more appropriate?
 public class InstanceOfInstr extends OneOperandInstr {
-    Class  type;
-    String className;
+    private Class type;
+    private String className;
 
     public InstanceOfInstr(Variable dst, Operand v, String className) {
         super(Operation.INSTANCE_OF, dst, v);
+        
         this.className = className;
     }
 

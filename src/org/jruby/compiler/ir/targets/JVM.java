@@ -191,7 +191,7 @@ public class JVM implements CompilerTarget {
     }
 
     public void emit(Instr instr) {
-        switch (instr.operation) {
+        switch (instr.getOperation()) {
         case BEQ:
             emitBEQ((BEQInstr)instr); break;
         case CALL:
@@ -213,7 +213,7 @@ public class JVM implements CompilerTarget {
         case RETURN:
             emitRETURN((ReturnInstr) instr); break;
         default:
-            System.err.println("unsupported: " + instr.operation);
+            System.err.println("unsupported: " + instr.getOperation());
         }
     }
 
@@ -244,7 +244,7 @@ public class JVM implements CompilerTarget {
     }
 
     public void emitCOPY(CopyInstr copy) {
-        int index = getVariableIndex(copy.result);
+        int index = getVariableIndex(copy.getResult());
         emit(copy.getOperands()[0]);
         method().storeLocal(index);
     }
@@ -303,7 +303,7 @@ public class JVM implements CompilerTarget {
     }
 
     public void emitRECV_ARG(ReceiveArgumentInstruction recvArg) {
-        int index = getVariableIndex(recvArg.result);
+        int index = getVariableIndex(recvArg.getResult());
         // TODO: need to get this back into the method signature...now is too late...
     }
 

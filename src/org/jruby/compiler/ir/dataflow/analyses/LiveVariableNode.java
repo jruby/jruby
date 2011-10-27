@@ -260,7 +260,7 @@ public class LiveVariableNode extends FlowGraphNode {
             if (v != null) {
                 DataFlowVar dv = lvp.getDFVar(v);
                     // If 'v' is not live at the instruction site, and it has no side effects, mark it dead!
-                if ((tmp.get(dv.getId()) == false) && !i.hasSideEffects() && !i.operation.isDebugOp()) {
+                if ((tmp.get(dv.getId()) == false) && !i.hasSideEffects() && !i.getOperation().isDebugOp()) {
 //                    System.out.println("YES!");
                     i.markDead();
                     it.remove();
@@ -270,7 +270,7 @@ public class LiveVariableNode extends FlowGraphNode {
 //                    System.out.println("NO! LIVE result:" + v);
                     tmp.clear(dv.getId());
                 }
-            } else if (!i.hasSideEffects() && !i.operation.isDebugOp() && !i.transfersControl()) {
+            } else if (!i.hasSideEffects() && !i.getOperation().isDebugOp() && !i.transfersControl()) {
                  i.markDead();
                  it.remove();
             } else {

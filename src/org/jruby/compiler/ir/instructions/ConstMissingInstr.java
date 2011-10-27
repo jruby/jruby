@@ -28,7 +28,7 @@ public class ConstMissingInstr extends Instr {
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new ConstMissingInstr(ii.getRenamedVariable(result), definingModule, missingConst);
+        return new ConstMissingInstr(ii.getRenamedVariable(getResult()), definingModule, missingConst);
     }
 
     @Override

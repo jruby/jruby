@@ -16,13 +16,14 @@ public class GetClassVariableInstr extends GetInstr {
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new GetClassVariableInstr(ii.getRenamedVariable(result),
+        return new GetClassVariableInstr(ii.getRenamedVariable(getResult()),
                 getSource().cloneForInlining(ii), getName());
     }
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        getResult().store(interp, context, self, ((RubyModule) getSource().retrieve(interp, context, self)).getClassVar(getName()));
+        getResult().store(interp, context, self, 
+                ((RubyModule) getSource().retrieve(interp, context, self)).getClassVar(getName()));
         return null;
     }
 }

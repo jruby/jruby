@@ -28,7 +28,7 @@ public class DefineMetaClassInstr extends OneOperandInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new DefineMetaClassInstr(ii.getRenamedVariable(result), getArg().cloneForInlining(ii), dummyMetaClass);
+        return new DefineMetaClassInstr(ii.getRenamedVariable(getResult()), getArg().cloneForInlining(ii), dummyMetaClass);
     }
 
     @Override

@@ -29,7 +29,7 @@ public class DefineClassInstr extends TwoOperandInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new DefineClassInstr(ii.getRenamedVariable(result), this.newIRClass, getOperand1().cloneForInlining(ii), getOperand2().cloneForInlining(ii));
+        return new DefineClassInstr(ii.getRenamedVariable(getResult()), this.newIRClass, getOperand1().cloneForInlining(ii), getOperand2().cloneForInlining(ii));
     }
     
     private RubyModule newClass(InterpreterContext interp, ThreadContext context, IRubyObject self, RubyModule classContainer) {

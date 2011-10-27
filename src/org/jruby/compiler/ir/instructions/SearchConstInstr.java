@@ -41,7 +41,7 @@ public class SearchConstInstr extends Instr {
     public void simplifyOperands(Map<Operand, Operand> valueMap) { }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new SearchConstInstr(ii.getRenamedVariable(result), definingModule, constName);
+        return new SearchConstInstr(ii.getRenamedVariable(getResult()), definingModule, constName);
     }
 
     @Override

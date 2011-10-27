@@ -19,7 +19,7 @@ public class NotInstr extends OneOperandInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new NotInstr(ii.getRenamedVariable(result), argument.cloneForInlining(ii));
+        return new NotInstr(ii.getRenamedVariable(getResult()), argument.cloneForInlining(ii));
     }
 
     @Override

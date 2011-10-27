@@ -10,7 +10,6 @@ import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.RubyModule;
-import org.jruby.RubyClass;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.evaluator.ASTInterpreter;
@@ -20,8 +19,8 @@ import org.jruby.evaluator.ASTInterpreter;
  * A candidate static IRScope is also passed in.
  */
 public class GetClassVarContainerModuleInstr extends Instr {
-    IRMethod candidateScope;
-    Operand  object;
+    private IRMethod candidateScope;
+    private Operand  object;
 
     public GetClassVarContainerModuleInstr(Variable destination, IRMethod candidateScope, Operand object) {
         super(Operation.CLASS_VAR_MODULE, destination);
@@ -31,7 +30,7 @@ public class GetClassVarContainerModuleInstr extends Instr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new GetClassVarContainerModuleInstr(ii.getRenamedVariable(result), candidateScope, object == null ? null : object.cloneForInlining(ii));
+        return new GetClassVarContainerModuleInstr(ii.getRenamedVariable(getResult()), candidateScope, object == null ? null : object.cloneForInlining(ii));
     }
 
     @Override
@@ -58,8 +57,9 @@ public class GetClassVarContainerModuleInstr extends Instr {
             containerModule = arg.getMetaClass(); //(arg instanceof RubyClass) ? ((RubyClass)arg).getRealClass() : arg.getType();
         }
 
-        if (containerModule != null) getResult().store(interp, context, self, containerModule);
-        else throw context.getRuntime().newTypeError("no class/module to define class variable");
+        if (containerModule == null) throw context.getRuntime().newTypeError("no class/module to define class variable");
+
+        getResult().store(interp, context, self, containerModule);
 
         return null;
     }

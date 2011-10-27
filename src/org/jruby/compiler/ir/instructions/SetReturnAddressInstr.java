@@ -22,11 +22,11 @@ public class SetReturnAddressInstr extends OneOperandInstr {
 
     @Override
     public String toString() {
-        return "" + result + " = " + argument;
+        return "" + getResult() + " = " + argument;
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new SetReturnAddressInstr(ii.getRenamedVariable(result), 
+        return new SetReturnAddressInstr(ii.getRenamedVariable(getResult()), 
                 ii.getRenamedLabel(getReturnAddr()));
     }
 

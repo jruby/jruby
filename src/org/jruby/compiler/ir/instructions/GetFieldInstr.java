@@ -17,7 +17,7 @@ public class GetFieldInstr extends GetInstr {
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new GetFieldInstr(ii.getRenamedVariable(result),
+        return new GetFieldInstr(ii.getRenamedVariable(getResult()),
                 getSource().cloneForInlining(ii), getName());
     }
 
@@ -30,7 +30,7 @@ public class GetFieldInstr extends GetInstr {
 
         // FIXME: Should add this as a field for instruction
         VariableAccessor accessor = clazz.getVariableAccessorForRead(getName());
-        Object v = (accessor == null) ? null : accessor.get(object);
+        Object v = accessor == null ? null : accessor.get(object);
         getResult().store(interp, context, self, v == null ? context.getRuntime().getNil() : v);
         return null;
     }

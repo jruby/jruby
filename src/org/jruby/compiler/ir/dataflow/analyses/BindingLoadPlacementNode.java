@@ -60,7 +60,7 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
             //System.out.println("-----\nInstr " + i);
             //System.out.println("Before: " + java.util.Arrays.toString(reqdLoads.toArray()));
 
-            if (i.operation == Operation.BINDING_STORE) continue;
+            if (i.getOperation() == Operation.BINDING_STORE) continue;
 
             // Right away, clear the variable defined by this instruction -- it doesn't have to be loaded!
             Variable r = i.getResult();
@@ -134,7 +134,7 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
         while (it.hasPrevious()) {
             Instr i = it.previous();
 
-            if (i.operation == Operation.BINDING_STORE) continue;
+            if (i.getOperation() == Operation.BINDING_STORE) continue;
 
             // Right away, clear the variable defined by this instruction -- it doesn't have to be loaded!
             Variable r = i.getResult();

@@ -297,7 +297,7 @@ public class CFG {
         boolean bbEnded = false;
         boolean bbEndedWithControlXfer = false;
         for (Instr i : instrs) {
-            Operation iop = i.operation;
+            Operation iop = i.getOperation();
             if (iop == Operation.LABEL) {
                 Label l = ((LABEL_Instr) i)._lbl;
                 newBB = createNewBB(l, g, bbMap, nestedExceptionRegions);
@@ -1173,7 +1173,7 @@ public class CFG {
                     Set<Edge<BasicBlock>> succs = cfg.vertexFor(curr).getOutgoingEdges();
                     if (succs.size() == 1) {
                         BasicBlock tgt = succs.iterator().next().getDestination().getData();
-                        if ((tgt != next) && ((li == null) || !li.operation.transfersControl())) {
+                        if ((tgt != next) && ((li == null) || !li.getOperation().transfersControl())) {
 //                            System.out.println("BB " + curr.getID() + " doesn't fall through to " + next.getID() + ".  Adding a jump to " + tgt._label);
                             curr.addInstr(new JumpInstr(tgt.getLabel()));
                         }
@@ -1189,7 +1189,7 @@ public class CFG {
                 Set<Edge<BasicBlock>> succs = cfg.vertexFor(curr).getOutgoingEdges();
                 assert succs.size() == 1;
                 BasicBlock tgt = succs.iterator().next().getDestination().getData();
-                if ((li == null) || !li.operation.transfersControl()) {
+                if ((li == null) || !li.getOperation().transfersControl()) {
 //                    System.out.println("BB " + curr.getID() + " is the last bb in the layout! Adding a jump to " + tgt._label);
                     curr.addInstr(new JumpInstr(tgt.getLabel()));
                 }

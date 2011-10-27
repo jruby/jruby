@@ -279,7 +279,7 @@ public abstract class IRExecutionScope extends IRScopeImpl {
         
         for (int i = instructions.size() - 1; i >= 0; i--) {
             Instr instr = instructions.get(i);
-            Variable var = instr.result;
+            Variable var = instr.getResult();
 
             if (var != null) {
                 variables.add(var);

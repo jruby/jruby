@@ -42,7 +42,7 @@ public class CaseInstr extends OneOperandInstr {
 
     @Override
     public String toString() {
-       return "" + result + " = CASE(" + argument + ", ELSE: " + elseLabel + ")";
+       return "" + getResult() + " = CASE(" + argument + ", ELSE: " + elseLabel + ")";
     }
 
     @Override

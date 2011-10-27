@@ -21,8 +21,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 // in later passes as well when compiler passes replace ruby-array []
 // calls with inlined lookups
 public class GetArrayInstr extends OneOperandInstr {
-    public final int index;
-    public final boolean all;  // If true, returns the rest of the array starting at the index
+    private final int index;
+    private final boolean all;  // If true, returns the rest of the array starting at the index
 
     public GetArrayInstr(Variable dest, Operand array, int index, boolean getRestOfArray) {
         super(Operation.GET_ARRAY, dest, array);
@@ -32,7 +32,7 @@ public class GetArrayInstr extends OneOperandInstr {
 
     @Override
     public String toString() {
-        return "" + result + " = " + argument + "[" + index + (all ? ":END" : "") + "] (GET_ARRAY)";
+        return "" + getResult() + " = " + argument + "[" + index + (all ? ":END" : "") + "] (GET_ARRAY)";
     }
 
     @Override
@@ -44,7 +44,7 @@ public class GetArrayInstr extends OneOperandInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new GetArrayInstr(ii.getRenamedVariable(result), argument.cloneForInlining(ii), index, all);
+        return new GetArrayInstr(ii.getRenamedVariable(getResult()), argument.cloneForInlining(ii), index, all);
     }
 
     @Override
@@ -52,6 +52,7 @@ public class GetArrayInstr extends OneOperandInstr {
         // ENEBO: Can I assume since IR figured this is an internal array it will be RubyArray like this?
         RubyArray array = (RubyArray) getArg().retrieve(interp, context, self);
         Object val;
+        
         if (!all) {
             val = array.entry(index);
         } else {

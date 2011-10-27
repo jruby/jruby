@@ -48,6 +48,6 @@ public class BreakInstr extends OneOperandInstr {
 
     @Override
     public String toString() {
-        return operation + "(" + argument + (scopeToReturnTo == null ? "" : ", " + scopeToReturnTo) + ")";
+        return getOperation() + "(" + argument + (scopeToReturnTo == null ? "" : ", " + scopeToReturnTo) + ")";
     }
 }

@@ -35,6 +35,7 @@ public abstract class GetInstr extends Instr {
         return super.toString() + "(" + source + (ref == null ? "" : ", " + ref) + ")";
     }
 
+    @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap) {
         source = source.getSimplifiedOperand(valueMap);
     }

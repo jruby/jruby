@@ -54,11 +54,11 @@ public class LoadFromBindingInstr extends Instr {
 
     @Override
     public String toString() {
-        return "" + result + " = BINDING(" + sourceMethod + ")." + getSlotName();
+        return "" + getResult() + " = BINDING(" + sourceMethod + ")." + getSlotName();
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new LoadFromBindingInstr(ii.getRenamedVariable(result), sourceMethod, getSlotName());
+        return new LoadFromBindingInstr(ii.getRenamedVariable(getResult()), sourceMethod, getSlotName());
     }
 
     // Any exception raised by the execution of this instruction is an interpreter/compiler bug

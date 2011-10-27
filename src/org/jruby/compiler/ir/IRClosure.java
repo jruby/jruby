@@ -109,7 +109,7 @@ public class IRClosure extends IRExecutionScope {
     @Override
     public void addInstr(Instr i) {
         // Accumulate block arguments
-        if (i instanceof ReceiveClosureArgInstr) blockArgs.add(((ReceiveClosureArgInstr) i).isRestOfArgArray() ? new Splat(i.result) : i.result);
+        if (i instanceof ReceiveClosureArgInstr) blockArgs.add(((ReceiveClosureArgInstr) i).isRestOfArgArray() ? new Splat(i.getResult()) : i.getResult());
 
         super.addInstr(i);
     }

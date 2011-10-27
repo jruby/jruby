@@ -122,7 +122,7 @@ public class BasicBlock implements DataInfo {
 
     // SSS FIXME: Verify correctness; also deal with YieldInstr.wrapIntoArray flag
     public void processClosureArgAndReturnInstrs(InlinerInfo ii, YieldInstr yi) {
-        Variable  yieldResult = ii.getRenamedVariable(yi.result);
+        Variable  yieldResult = ii.getRenamedVariable(yi.getResult());
         Operand[] yieldArgs   = yi.getNonBlockOperands();
 
         for (ListIterator<Instr> it = ((ArrayList<Instr>)instrs).listIterator(); it.hasNext(); ) {
@@ -135,15 +135,15 @@ public class BasicBlock implements DataInfo {
                 // SSS FIXME: It is not always the case that the call receiver is also the %self within
                 // a block  Ex: ... r.foo(args) { ... blah .. }.  i.e. there are scenarios where %self
                 // within the block is not identical to 'r'.  Handle this!
-                if (!rsi.result.equals(ii.getCallReceiver())) {
-                    it.set(new CopyInstr(rsi.result, ii.getCallReceiver()));
+                if (!rsi.getResult().equals(ii.getCallReceiver())) {
+                    it.set(new CopyInstr(rsi.getResult(), ii.getCallReceiver()));
                 } else {
                     it.set(NopInstr.NOP);
                 }
             } else if (i instanceof ReceiveClosureInstr) {
                 ReceiveClosureInstr rci = (ReceiveClosureInstr)i;
-                if (!rci.result.equals(ii.getCallClosure())) {
-                    it.set(new CopyInstr(rci.result, ii.getCallClosure()));
+                if (!rci.getResult().equals(ii.getCallClosure())) {
+                    it.set(new CopyInstr(rci.getResult(), ii.getCallClosure()));
                 } else {
                     it.set(NopInstr.NOP);
                 }
@@ -166,7 +166,7 @@ public class BasicBlock implements DataInfo {
                 }
 
                 // Replace the arg receive with a simple copy
-                it.set(new CopyInstr(rcai.result, closureArg));
+                it.set(new CopyInstr(rcai.getResult(), closureArg));
             }
         }
     }

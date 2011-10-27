@@ -14,7 +14,7 @@ public class ReceiveExceptionInstr extends NoOperandInstr {
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new ReceiveExceptionInstr(ii.getRenamedVariable(result));
+        return new ReceiveExceptionInstr(ii.getRenamedVariable(getResult()));
     }
 
     @Override

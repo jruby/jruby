@@ -79,7 +79,7 @@ public class RubyInternalCallInstr extends CallInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new RubyInternalCallInstr(ii.getRenamedVariable(result),
+        return new RubyInternalCallInstr(ii.getRenamedVariable(getResult()),
                 this.implMethod, getReceiver().cloneForInlining(ii),
                 cloneCallArgs(ii), closure == null ? null : closure.cloneForInlining(ii));
     }

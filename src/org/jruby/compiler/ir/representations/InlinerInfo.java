@@ -107,7 +107,7 @@ public class InlinerInfo {
     }
 
     public Variable getCallResultVariable() {
-        return call.result;
+        return call.getResult();
     }
 
     public void recordYieldSite(BasicBlock bb, YieldInstr i) {

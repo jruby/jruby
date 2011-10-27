@@ -35,7 +35,7 @@ public class ReceiveArgumentInstruction extends NoOperandInstr {
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new CopyInstr(ii.getRenamedVariable(result), ii.getCallArg(argIndex, restOfArgArray));
+        return new CopyInstr(ii.getRenamedVariable(getResult()), ii.getCallArg(argIndex, restOfArgArray));
     }
 
     @Override

@@ -34,7 +34,7 @@ public class DefineInstanceMethodInstr extends OneOperandInstr {
 
     @Override
     public String toString() {
-        return operation + "(" + getArg() + ", " + method.getName() + ")";
+        return getOperation() + "(" + getArg() + ", " + method.getName() + ")";
     }
     
     public IRMethod getMethod() {

@@ -80,7 +80,7 @@ public class LocalOptimizationPass implements CompilerPass {
         ListIterator<Instr> instrs = s.getInstrs().listIterator();
         while (instrs.hasNext()) {
             Instr i = instrs.next();
-            Operation iop = i.operation;
+            Operation iop = i.getOperation();
             if (iop.startsBasicBlock()) {
                 valueMap = new HashMap<Operand,Operand>();
                 simplificationMap = new HashMap<Variable,List<Variable>>();

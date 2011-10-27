@@ -25,7 +25,7 @@ public class DefineModuleInstr extends OneOperandInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new DefineModuleInstr(this.newIRModule, ii.getRenamedVariable(result), getArg().cloneForInlining(ii));
+        return new DefineModuleInstr(this.newIRModule, ii.getRenamedVariable(getResult()), getArg().cloneForInlining(ii));
     }
 
     @Override

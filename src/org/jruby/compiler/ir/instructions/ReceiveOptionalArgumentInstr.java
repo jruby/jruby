@@ -2,7 +2,6 @@ package org.jruby.compiler.ir.instructions;
 
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Label;
-import org.jruby.compiler.ir.operands.Nil;
 import org.jruby.compiler.ir.operands.UndefinedValue;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
@@ -19,7 +18,7 @@ public class ReceiveOptionalArgumentInstr extends NoOperandInstr {
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new ReceiveOptionalArgumentInstr(ii.getRenamedVariable(result), argIndex);
+        return new ReceiveOptionalArgumentInstr(ii.getRenamedVariable(getResult()), argIndex);
     }
 
     @Override

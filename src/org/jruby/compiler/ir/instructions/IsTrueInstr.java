@@ -34,7 +34,7 @@ public class IsTrueInstr extends OneOperandInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new IsTrueInstr(ii.getRenamedVariable(result), argument.cloneForInlining(ii));
+        return new IsTrueInstr(ii.getRenamedVariable(getResult()), argument.cloneForInlining(ii));
     }
 
     // Can this instruction raise exceptions?

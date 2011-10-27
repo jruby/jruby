@@ -27,7 +27,7 @@ public class EnsureRubyArrayInstr extends OneOperandInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new EnsureRubyArrayInstr(ii.getRenamedVariable(result), argument.cloneForInlining(ii));
+        return new EnsureRubyArrayInstr(ii.getRenamedVariable(getResult()), argument.cloneForInlining(ii));
     }
 
     @Override
