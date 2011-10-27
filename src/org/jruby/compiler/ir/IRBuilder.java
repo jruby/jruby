@@ -142,7 +142,7 @@ import org.jruby.compiler.ir.instructions.IsTrueInstr;
 import org.jruby.compiler.ir.instructions.JRubyImplCallInstr;
 import org.jruby.compiler.ir.instructions.JRubyImplCallInstr.JRubyImplementationMethod;
 import org.jruby.compiler.ir.instructions.JumpInstr;
-import org.jruby.compiler.ir.instructions.JUMP_INDIRECT_Instr;
+import org.jruby.compiler.ir.instructions.JumpIndirectInstr;
 import org.jruby.compiler.ir.instructions.LABEL_Instr;
 import org.jruby.compiler.ir.instructions.LineNumberInstr;
 import org.jruby.compiler.ir.instructions.NotInstr;
@@ -1299,7 +1299,7 @@ public class IRBuilder {
         // Ensure block code
         m.addInstr(new LABEL_Instr(ebi.start));
         ensureCode.run(ensureCodeArgs); // YIELD: Run the ensure code block
-        m.addInstr(new JUMP_INDIRECT_Instr(ebi.returnAddr));
+        m.addInstr(new JumpIndirectInstr(ebi.returnAddr));
 
         // By moving the exception region end marker here to include the ensure block,
         // we effectively swallow those exceptions -- but we will end up trying to rerun the ensure code again!
@@ -2052,7 +2052,7 @@ public class IRBuilder {
         if (ensureRetVal == null)   // null => there was a return from within the ensure block!
             rv = null;
 
-        m.addInstr(new JUMP_INDIRECT_Instr(ebi.returnAddr));
+        m.addInstr(new JumpIndirectInstr(ebi.returnAddr));
 
         // Now build the dummy rescue block that:
         // * catches all exceptions thrown by the body

@@ -22,7 +22,7 @@ import org.jruby.compiler.ir.instructions.CaseInstr;
 import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.JumpInstr;
-import org.jruby.compiler.ir.instructions.JUMP_INDIRECT_Instr;
+import org.jruby.compiler.ir.instructions.JumpIndirectInstr;
 import org.jruby.compiler.ir.instructions.LABEL_Instr;
 import org.jruby.compiler.ir.instructions.ExceptionRegionStartMarkerInstr;
 import org.jruby.compiler.ir.instructions.ExceptionRegionEndMarkerInstr;
@@ -363,15 +363,15 @@ public class CFG {
                     tgt = null;
                     excBBs.add(currBB);
                     bbEndedWithControlXfer = true;
-                } else if (i instanceof JUMP_INDIRECT_Instr) {
+                } else if (i instanceof JumpIndirectInstr) {
                     tgt = null;
                     bbEndedWithControlXfer = true;
-                    Set<Label> retAddrs = retAddrMap.get(((JUMP_INDIRECT_Instr) i).getJumpTarget());
+                    Set<Label> retAddrs = retAddrMap.get(((JumpIndirectInstr) i).getJumpTarget());
                     for (Label l : retAddrs) {
                         addEdge(g, currBB, l, bbMap, forwardRefs);
                     }
                     // Record the target bb for the retaddr var for any set_addr instrs that appear later and use the same retaddr var
-                    retAddrTargetMap.put(((JUMP_INDIRECT_Instr) i).getJumpTarget(), currBB);
+                    retAddrTargetMap.put(((JumpIndirectInstr) i).getJumpTarget(), currBB);
                 } else {
                     tgt = null;
                 }

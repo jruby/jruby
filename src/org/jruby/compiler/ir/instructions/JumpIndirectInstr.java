@@ -9,20 +9,21 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 // Used in ensure blocks to jump to the label contained in '_target'
-public class JUMP_INDIRECT_Instr extends OneOperandInstr
-{
-    public JUMP_INDIRECT_Instr(Variable tgt) {
-        super(Operation.JUMP_INDIRECT, null, tgt);
+public class JumpIndirectInstr extends OneOperandInstr {
+    public JumpIndirectInstr(Variable target) {
+        super(Operation.JUMP_INDIRECT, null, target);
     }
 
-    public Variable getJumpTarget() { return (Variable)getArg(); }
+    public Variable getJumpTarget() {
+        return (Variable) getArg();
+    }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new JUMP_INDIRECT_Instr(ii.getRenamedVariable(getJumpTarget()));
+        return new JumpIndirectInstr(ii.getRenamedVariable(getJumpTarget()));
     }
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        return (Label)(getArg().retrieve(interp, context, self));
+        return (Label) (getArg().retrieve(interp, context, self));
     }
 }
