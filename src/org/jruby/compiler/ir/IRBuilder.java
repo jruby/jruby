@@ -154,7 +154,7 @@ import org.jruby.compiler.ir.instructions.ReceiveSelfInstruction;
 import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
 import org.jruby.compiler.ir.instructions.ReceiveClosureArgInstr;
 import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
-import org.jruby.compiler.ir.instructions.RECV_EXCEPTION_Instr;
+import org.jruby.compiler.ir.instructions.ReceiveExceptionInstr;
 import org.jruby.compiler.ir.instructions.ReceiveOptionalArgumentInstr;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
 import org.jruby.compiler.ir.instructions.RubyInternalCallInstr;
@@ -1346,7 +1346,7 @@ public class IRBuilder {
         Variable eqqResult = m.getNewTemporaryVariable();
 
         m.addInstr(new LABEL_Instr(rbLabel));
-        m.addInstr(new RECV_EXCEPTION_Instr(exc));
+        m.addInstr(new ReceiveExceptionInstr(exc));
         // Verify that the exception is of type 'JumpException'.
         // Since this is JRuby implementation Java code, we dont need EQQ here.
         // SSS FIXME: Hardcoded exception class name!
@@ -2063,7 +2063,7 @@ public class IRBuilder {
         rescueLabels.add(ebi.dummyRescueBlockLabel);
         Variable exc = m.getNewTemporaryVariable();
         m.addInstr(new LABEL_Instr(ebi.dummyRescueBlockLabel));
-        m.addInstr(new RECV_EXCEPTION_Instr(exc));
+        m.addInstr(new ReceiveExceptionInstr(exc));
         m.addInstr(new SetReturnAddressInstr(ebi.returnAddr, rethrowExcLabel));
         m.addInstr(new JumpInstr(ebi.start));
         m.addInstr(new LABEL_Instr(rethrowExcLabel));
@@ -2958,7 +2958,7 @@ public class IRBuilder {
 
         // Load exception & exception comparison type
         Variable exc = m.getNewTemporaryVariable();
-        m.addInstr(new RECV_EXCEPTION_Instr(exc));
+        m.addInstr(new ReceiveExceptionInstr(exc));
 
         // Compare and branch as necessary!
         Label uncaughtLabel = null;
