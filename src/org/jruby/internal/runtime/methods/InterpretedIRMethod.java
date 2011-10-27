@@ -18,6 +18,7 @@ import org.jruby.util.log.LoggerFactory;
 public class InterpretedIRMethod extends DynamicMethod {
     private static final Logger LOG = LoggerFactory.getLogger("InterpretedIRMethod");
 
+    private final boolean  isTopLevel;
     private final IRMethod method;
     boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
 
@@ -25,12 +26,21 @@ public class InterpretedIRMethod extends DynamicMethod {
     public InterpretedIRMethod(IRMethod method, RubyModule implementationClass) {
         super(implementationClass, Visibility.PRIVATE, CallConfiguration.FrameNoneScopeNone);
         this.method = method;
+        this.isTopLevel = false;
+    }
+
+    // We can probably use IRMethod callArgs for something (at least arity)
+    public InterpretedIRMethod(IRMethod method, RubyModule implementationClass, boolean isTopLevel) {
+        super(implementationClass, Visibility.PRIVATE, CallConfiguration.FrameNoneScopeNone);
+        this.method = method;
+        this.isTopLevel = isTopLevel;
     }
 
     // We can probably use IRMethod callArgs for something (at least arity)
     public InterpretedIRMethod(IRMethod method, Visibility visibility, RubyModule implementationClass) {
         super(implementationClass, visibility, CallConfiguration.FrameNoneScopeNone);
         this.method = method;
+        this.isTopLevel = false;
     }
     
     @Override
@@ -60,6 +70,8 @@ public class InterpretedIRMethod extends DynamicMethod {
         }
 
         context.pushScope(DynamicScope.newDynamicScope(method.getStaticScope()));
+        // SSS FIXME: Is this correct?
+        if (isTopLevel) context.getRuntime().getObject().setConstantQuiet("TOPLEVEL_BINDING", context.getRuntime().newBinding(context.currentBinding()));
         RubyModule currentModule = getImplementationClass();
         context.preMethodFrameOnly(currentModule, name, self, block);
         context.getCurrentScope().getStaticScope().setModule(clazz);

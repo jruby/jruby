@@ -105,7 +105,7 @@ public class Interpreter {
         // Scope state for root?
         IRModule.getRootObjectScope().setModule(currModule);
         IRMethod rootMethod = root.getRootClass().getRootMethod();
-        InterpretedIRMethod method = new InterpretedIRMethod(rootMethod, currModule);
+        InterpretedIRMethod method = new InterpretedIRMethod(rootMethod, currModule, true);
         ThreadContext context = runtime.getCurrentContext();
 
         try {
