@@ -9,14 +9,14 @@ import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.jruby.ext.ffi.Type;
-import org.jruby.util.cli.Properties;
+import org.jruby.util.cli.Options;
 
 /**
  *
  */
 final class JITHandle {
 
-    private static final int THRESHOLD = Properties.FFI_COMPILE_THRESHOLD.load();
+    private static final int THRESHOLD = Options.FFI_COMPILE_THRESHOLD.load();
     private final JITSignature jitSignature;
     private volatile boolean compilationFailed = false;
     private final AtomicInteger counter = new AtomicInteger(0);

@@ -15,7 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicLong;
-import org.jruby.util.cli.Properties;
+import org.jruby.util.cli.Options;
 
 import static org.jruby.util.CodegenUtils.*;
 import static org.objectweb.asm.Opcodes.*;
@@ -24,7 +24,7 @@ import static org.objectweb.asm.Opcodes.*;
  *
  */
 public final class IndyCompiler {
-    public static final boolean DEBUG = Properties.FFI_COMPILE_DUMP.load();
+    public static final boolean DEBUG = Options.FFI_COMPILE_DUMP.load();
     private static final Map<Class, NativeInvoker> invokers
             = Collections.synchronizedMap(new WeakHashMap<Class, NativeInvoker>());
     private static final AtomicLong nextClassId = new AtomicLong();

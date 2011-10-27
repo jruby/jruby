@@ -5,7 +5,7 @@ import org.objectweb.asm.ClassReader;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import java.lang.reflect.Constructor;
 import java.util.concurrent.atomic.AtomicLong;
-import org.jruby.util.cli.Properties;
+import org.jruby.util.cli.Options;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 
@@ -16,7 +16,7 @@ import static org.objectweb.asm.Opcodes.*;
  * 
  */
 final class AsmClassBuilder {
-    public static final boolean DEBUG = false || Properties.FFI_COMPILE_DUMP.load();
+    public static final boolean DEBUG = false || Options.FFI_COMPILE_DUMP.load();
     private static final AtomicLong nextClassID = new AtomicLong(0);
     private final JITSignature signature;
     private final ClassWriter classWriter;

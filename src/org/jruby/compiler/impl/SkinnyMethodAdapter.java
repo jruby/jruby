@@ -13,7 +13,7 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.util.Map;
 import org.jruby.util.SafePropertyAccessor;
-import org.jruby.util.cli.Properties;
+import org.jruby.util.cli.Options;
 import static org.jruby.util.CodegenUtils.*;
 
 import org.objectweb.asm.AnnotationVisitor;
@@ -34,7 +34,7 @@ import org.objectweb.asm.util.TraceMethodVisitor;
  * @author headius
  */
 public class SkinnyMethodAdapter extends MethodVisitor implements Opcodes {
-    private final static boolean DEBUG = Properties.COMPILE_DUMP.load();
+    private final static boolean DEBUG = Options.COMPILE_DUMP.load();
     private MethodVisitor method;
     private Printer printer;
     private String name;

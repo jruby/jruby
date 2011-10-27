@@ -72,7 +72,7 @@ import org.jruby.util.KCode;
 import org.jruby.util.NormalizedFile;
 import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.cli.OutputStrings;
-import org.jruby.util.cli.Properties;
+import org.jruby.util.cli.Options;
 import org.objectweb.asm.Opcodes;
 
 /**
@@ -86,7 +86,7 @@ public class RubyInstanceConfig {
         currentDirectory = Ruby.isSecurityRestricted() ? "/" : JRubyFile.getFileProperty("user.dir");
         samplingEnabled = SafePropertyAccessor.getBoolean("jruby.sampling.enabled", false);
 
-        String compatString = Properties.COMPAT_VERSION.load();
+        String compatString = Options.COMPAT_VERSION.load();
         compatVersion = CompatVersion.getVersionFromString(compatString);
         if (compatVersion == null) {
             error.println("Compatibility version `" + compatString + "' invalid; use 1.8 or 1.9. Using 1.8.");
@@ -109,10 +109,10 @@ public class RubyInstanceConfig {
                 excludedMethods.addAll(Arrays.asList(elements));
             }
             
-            managementEnabled = Properties.MANAGEMENT_ENABLED.load();
-            runRubyInProcess = Properties.LAUNCH_INPROC.load();
+            managementEnabled = Options.MANAGEMENT_ENABLED.load();
+            runRubyInProcess = Options.LAUNCH_INPROC.load();
             
-            String jitModeProperty = Properties.COMPILE_MODE.load();
+            String jitModeProperty = Options.COMPILE_MODE.load();
 
             if (jitModeProperty.equals("OFF")) {
                 compileMode = CompileMode.OFF;
@@ -121,22 +121,22 @@ public class RubyInstanceConfig {
             } else if (jitModeProperty.equals("FORCE")) {
                 compileMode = CompileMode.FORCE;
             } else {
-                error.print(Properties.COMPILE_MODE + " property must be OFF, JIT, FORCE, or unset; defaulting to JIT");
+                error.print(Options.COMPILE_MODE + " property must be OFF, JIT, FORCE, or unset; defaulting to JIT");
                 compileMode = CompileMode.JIT;
             }
             
-            jitLogging = Properties.JIT_LOGGING.load();
-            jitDumping = Properties.JIT_DUMPING.load();
-            jitLoggingVerbose = Properties.JIT_LOGGING_VERBOSE.load();
-            jitLogEvery = Properties.JIT_LOGEVERY.load();
-            jitThreshold = Properties.JIT_THRESHOLD.load();
-            jitMax = Properties.JIT_MAX.load();
-            jitMaxSize = Properties.JIT_MAXSIZE.load();
+            jitLogging = Options.JIT_LOGGING.load();
+            jitDumping = Options.JIT_DUMPING.load();
+            jitLoggingVerbose = Options.JIT_LOGGING_VERBOSE.load();
+            jitLogEvery = Options.JIT_LOGEVERY.load();
+            jitThreshold = Options.JIT_THRESHOLD.load();
+            jitMax = Options.JIT_MAX.load();
+            jitMaxSize = Options.JIT_MAXSIZE.load();
         }
 
         // default ClassCache using jitMax as a soft upper bound
         classCache = new ClassCache<Script>(loader, jitMax);
-        threadDumpSignal = Properties.THREAD_DUMP_SIGNAL.load();
+        threadDumpSignal = Options.THREAD_DUMP_SIGNAL.load();
 
         try {
             environment = System.getenv();
@@ -1088,7 +1088,7 @@ public class RubyInstanceConfig {
     private PrintStream output         = System.out;
     private PrintStream error          = System.err;
     private Profile profile            = Profile.DEFAULT;
-    private boolean objectSpaceEnabled = Properties.OBJECTSPACE_ENABLED.load();
+    private boolean objectSpaceEnabled = Options.OBJECTSPACE_ENABLED.load();
 
     private CompileMode compileMode = CompileMode.JIT;
     private boolean runRubyInProcess   = true;
@@ -1167,9 +1167,9 @@ public class RubyInstanceConfig {
     private boolean _cextEnabled = CEXT_ENABLED;
 
     private TraceType traceType =
-            TraceType.traceTypeFor(Properties.BACKTRACE_STYLE.load());
+            TraceType.traceTypeFor(Options.BACKTRACE_STYLE.load());
     
-    private boolean backtraceColor = Properties.BACKTRACE_COLOR.load();
+    private boolean backtraceColor = Options.BACKTRACE_COLOR.load();
 
     private LoadServiceCreator creator = LoadServiceCreator.DEFAULT;
     
@@ -1261,34 +1261,34 @@ public class RubyInstanceConfig {
      * The number of lines at which a method, class, or block body is split into
      * chained methods (to dodge 64k method-size limit in JVM).
      */
-    public static final int CHAINED_COMPILE_LINE_COUNT = Properties.COMPILE_CHAINSIZE.load();
+    public static final int CHAINED_COMPILE_LINE_COUNT = Options.COMPILE_CHAINSIZE.load();
 
     /**
      * Enable compiler peephole optimizations.
      *
      * Set with the <tt>jruby.compile.peephole</tt> system property.
      */
-    public static final boolean PEEPHOLE_OPTZ = Properties.COMPILE_PEEPHOLE.load();
+    public static final boolean PEEPHOLE_OPTZ = Options.COMPILE_PEEPHOLE.load();
     /**
      * Enable "dynopt" optimizations.
      *
      * Set with the <tt>jruby.compile.dynopt</tt> system property.
      */
-    public static boolean DYNOPT_COMPILE_ENABLED = Properties.COMPILE_DYNOPT.load();
+    public static boolean DYNOPT_COMPILE_ENABLED = Options.COMPILE_DYNOPT.load();
 
     /**
      * Enable compiler "noguards" optimizations.
      *
      * Set with the <tt>jruby.compile.noguards</tt> system property.
      */
-    public static boolean NOGUARDS_COMPILE_ENABLED = Properties.COMPILE_NOGUARDS.load();
+    public static boolean NOGUARDS_COMPILE_ENABLED = Options.COMPILE_NOGUARDS.load();
 
     /**
      * Enable compiler "fastest" set of optimizations.
      *
      * Set with the <tt>jruby.compile.fastest</tt> system property.
      */
-    public static boolean FASTEST_COMPILE_ENABLED = Properties.COMPILE_FASTEST.load();
+    public static boolean FASTEST_COMPILE_ENABLED = Options.COMPILE_FASTEST.load();
 
     /**
      * Enable fast operator compiler optimizations.
@@ -1296,7 +1296,7 @@ public class RubyInstanceConfig {
      * Set with the <tt>jruby.compile.fastops</tt> system property.
      */
     public static boolean FASTOPS_COMPILE_ENABLED
-            = FASTEST_COMPILE_ENABLED || Properties.COMPILE_FASTOPS.load();
+            = FASTEST_COMPILE_ENABLED || Options.COMPILE_FASTOPS.load();
 
     /**
      * Enable "threadless" compile.
@@ -1304,7 +1304,7 @@ public class RubyInstanceConfig {
      * Set with the <tt>jruby.compile.threadless</tt> system property.
      */
     public static boolean THREADLESS_COMPILE_ENABLED
-            = FASTEST_COMPILE_ENABLED || Properties.COMPILE_THREADLESS.load();
+            = FASTEST_COMPILE_ENABLED || Options.COMPILE_THREADLESS.load();
 
     /**
      * Enable "fast send" compiler optimizations.
@@ -1312,14 +1312,14 @@ public class RubyInstanceConfig {
      * Set with the <tt>jruby.compile.fastsend</tt> system property.
      */
     public static boolean FASTSEND_COMPILE_ENABLED
-            = FASTEST_COMPILE_ENABLED || Properties.COMPILE_FASTSEND.load();
+            = FASTEST_COMPILE_ENABLED || Options.COMPILE_FASTSEND.load();
 
     /**
      * Enable lazy handles optimizations.
      *
      * Set with the <tt>jruby.compile.lazyHandles</tt> system property.
      */
-    public static boolean LAZYHANDLES_COMPILE = Properties.COMPILE_LAZYHANDLES.load();
+    public static boolean LAZYHANDLES_COMPILE = Options.COMPILE_LAZYHANDLES.load();
 
     /**
      * Inline dynamic calls.
@@ -1327,54 +1327,54 @@ public class RubyInstanceConfig {
      * Set with the <tt>jruby.compile.inlineDyncalls</tt> system property.
      */
     public static boolean INLINE_DYNCALL_ENABLED
-            = FASTEST_COMPILE_ENABLED || Properties.COMPILE_INLINEDYNCALLS.load();
+            = FASTEST_COMPILE_ENABLED || Options.COMPILE_INLINEDYNCALLS.load();
 
     /**
      * Enable fast multiple assignment optimization.
      *
      * Set with the <tt>jruby.compile.fastMasgn</tt> system property.
      */
-    public static boolean FAST_MULTIPLE_ASSIGNMENT = Properties.COMPILE_FASTMASGN.load();
+    public static boolean FAST_MULTIPLE_ASSIGNMENT = Options.COMPILE_FASTMASGN.load();
 
     /**
      * Enable a thread pool. Each Ruby thread will be mapped onto a thread from this pool.
      *
      * Set with the <tt>jruby.thread.pool.enabled</tt> system property.
      */
-    public static final boolean POOLING_ENABLED = Properties.THREADPOOL_ENABLED.load();
+    public static final boolean POOLING_ENABLED = Options.THREADPOOL_ENABLED.load();
 
     /**
      * Maximum thread pool size (integer, default Integer.MAX_VALUE).
      *
      * Set with the <tt>jruby.thread.pool.max</tt> system property.
      */
-    public static final int POOL_MAX = Properties.THREADPOOL_MAX.load();
+    public static final int POOL_MAX = Options.THREADPOOL_MAX.load();
     /**
      * Minimum thread pool size (integer, default 0).
      *
      * Set with the <tt>jruby.thread.pool.min</tt> system property.
      */
-    public static final int POOL_MIN = Properties.THREADPOOL_MIN.load();
+    public static final int POOL_MIN = Options.THREADPOOL_MIN.load();
     /**
      * Thread pool time-to-live in seconds.
      *
      * Set with the <tt>jruby.thread.pool.max</tt> system property.
      */
-    public static final int POOL_TTL = Properties.THREADPOOL_TTL.load();
+    public static final int POOL_TTL = Options.THREADPOOL_TTL.load();
 
     /**
      * Enable use of the native Java version of the 'net/protocol' library.
      *
      * Set with the <tt>jruby.thread.pool.max</tt> system property.
      */
-    public static final boolean NATIVE_NET_PROTOCOL = Properties.NATIVE_NET_PROTOCOL.load();
+    public static final boolean NATIVE_NET_PROTOCOL = Options.NATIVE_NET_PROTOCOL.load();
 
     /**
      * Enable tracing of method calls.
      *
      * Set with the <tt>jruby.debug.fullTrace</tt> system property.
      */
-    public static boolean FULL_TRACE_ENABLED = Properties.DEBUG_FULLTRACE.load();
+    public static boolean FULL_TRACE_ENABLED = Options.DEBUG_FULLTRACE.load();
 
     /**
      * Comma-separated list of methods to exclude from JIT compilation.
@@ -1382,7 +1382,7 @@ public class RubyInstanceConfig {
      *
      * Set with the <tt>jruby.jit.exclude</tt> system property.
      */
-    public static final String COMPILE_EXCLUDE = Properties.JIT_EXCLUDE.load();
+    public static final String COMPILE_EXCLUDE = Options.JIT_EXCLUDE.load();
 
     /**
      * Indicates the global default for whether native code is enabled. Default
@@ -1390,7 +1390,7 @@ public class RubyInstanceConfig {
      *
      * Set with the <tt>jruby.native.enabled</tt> system property.
      */
-    public static final boolean NATIVE_ENABLED = Properties.NATIVE_ENABLED.load();
+    public static final boolean NATIVE_ENABLED = Options.NATIVE_ENABLED.load();
 
     @Deprecated
     public static final boolean nativeEnabled = NATIVE_ENABLED;
@@ -1402,21 +1402,21 @@ public class RubyInstanceConfig {
      *
      * Set with the <tt>jruby.cext.enabled</tt> system property.
      */
-    public final static boolean CEXT_ENABLED = Properties.CEXT_ENABLED.load();
+    public final static boolean CEXT_ENABLED = Options.CEXT_ENABLED.load();
 
     /**
      * Whether to reify (pre-compile and generate) a Java class per Ruby class.
      *
      * Set with the <tt>jruby.reify.classes</tt> system property.
      */
-    public static final boolean REIFY_RUBY_CLASSES = Properties.REIFY_CLASSES.load();
+    public static final boolean REIFY_RUBY_CLASSES = Options.REIFY_CLASSES.load();
 
     /**
      * Log errors that occur during reification.
      *
      * Set with the <tt>jruby.reify.logErrors</tt> system property.
      */
-    public static final boolean REIFY_LOG_ERRORS = Properties.REIFY_LOGERRORS.load();
+    public static final boolean REIFY_LOG_ERRORS = Options.REIFY_LOGERRORS.load();
 
     /**
      * Whether to use a custom-generated handle for Java methods instead of
@@ -1424,106 +1424,106 @@ public class RubyInstanceConfig {
      *
      * Set with the <tt>jruby.java.handles</tt> system property.
      */
-    public static final boolean USE_GENERATED_HANDLES = Properties.JAVA_HANDLES.load();
+    public static final boolean USE_GENERATED_HANDLES = Options.JAVA_HANDLES.load();
 
     /**
      * Turn on debugging of the load service (requires and loads).
      *
      * Set with the <tt>jruby.debug.loadService</tt> system property.
      */
-    public static final boolean DEBUG_LOAD_SERVICE = Properties.DEBUG_LOADSERVICE.load();
+    public static final boolean DEBUG_LOAD_SERVICE = Options.DEBUG_LOADSERVICE.load();
 
     /**
      * Turn on timings of the load service (requires and loads).
      *
      * Set with the <tt>jruby.debug.loadService.timing</tt> system property.
      */
-    public static final boolean DEBUG_LOAD_TIMINGS = Properties.DEBUG_LOADSERVICE_TIMING.load();
+    public static final boolean DEBUG_LOAD_TIMINGS = Options.DEBUG_LOADSERVICE_TIMING.load();
 
     /**
      * Turn on debugging of subprocess launching.
      *
      * Set with the <tt>jruby.debug.launch</tt> system property.
      */
-    public static final boolean DEBUG_LAUNCHING = Properties.DEBUG_LAUNCH.load();
+    public static final boolean DEBUG_LAUNCHING = Options.DEBUG_LAUNCH.load();
 
     /**
      * Turn on debugging of script resolution with "-S".
      *
      * Set with the <tt>jruby.debug.scriptResolution</tt> system property.
      */
-    public static final boolean DEBUG_SCRIPT_RESOLUTION = Properties.DEBUG_SCRIPTRESOLUTION.load();
+    public static final boolean DEBUG_SCRIPT_RESOLUTION = Options.DEBUG_SCRIPTRESOLUTION.load();
 
-    public static final boolean JUMPS_HAVE_BACKTRACE = Properties.JUMP_BACKTRACE.load();
+    public static final boolean JUMPS_HAVE_BACKTRACE = Options.JUMP_BACKTRACE.load();
 
-    public static final boolean JIT_CACHE_ENABLED = Properties.JIT_CACHE.load();
+    public static final boolean JIT_CACHE_ENABLED = Options.JIT_CACHE.load();
 
-    public static final String JIT_CODE_CACHE = Properties.JIT_CODECACHE.load();
+    public static final String JIT_CODE_CACHE = Options.JIT_CODECACHE.load();
 
-    public static final boolean REFLECTED_HANDLES = Properties.REFLECTED_HANDLES.load();
+    public static final boolean REFLECTED_HANDLES = Options.REFLECTED_HANDLES.load();
 
-    public static final boolean NO_UNWRAP_PROCESS_STREAMS = Properties.PROCESS_NOUNWRAP.load();
+    public static final boolean NO_UNWRAP_PROCESS_STREAMS = Options.PROCESS_NOUNWRAP.load();
 
-    public static final boolean INTERFACES_USE_PROXY = Properties.INTERFACES_USEPROXY.load();
+    public static final boolean INTERFACES_USE_PROXY = Options.INTERFACES_USEPROXY.load();
 
-    public static final boolean JIT_LOADING_DEBUG = Properties.JIT_DEBUG.load();
+    public static final boolean JIT_LOADING_DEBUG = Options.JIT_DEBUG.load();
 
-    public static final boolean CAN_SET_ACCESSIBLE = Properties.JI_SETACCESSIBLE.load();
+    public static final boolean CAN_SET_ACCESSIBLE = Options.JI_SETACCESSIBLE.load();
     /**
      * In Java integration, allow upper case name for a Java package;
      * e.g., com.example.UpperCase.Class
      */
-    public static final boolean UPPER_CASE_PACKAGE_NAME_ALLOWED = Properties.JI_UPPER_CASE_PACKAGE_NAME_ALLOWED.load();
+    public static final boolean UPPER_CASE_PACKAGE_NAME_ALLOWED = Options.JI_UPPER_CASE_PACKAGE_NAME_ALLOWED.load();
     
     
     public static final boolean USE_INVOKEDYNAMIC =
-            JAVA_VERSION == Opcodes.V1_7 && Properties.COMPILE_INVOKEDYNAMIC.load();
+            JAVA_VERSION == Opcodes.V1_7 && Options.COMPILE_INVOKEDYNAMIC.load();
     
     // max times an indy call site can fail before it goes to simple IC
-    public static final int MAX_FAIL_COUNT = Properties.INVOKEDYNAMIC_MAXFAIL.load();
+    public static final int MAX_FAIL_COUNT = Options.INVOKEDYNAMIC_MAXFAIL.load();
     
     // logging of various indy aspects
-    public static final boolean LOG_INDY_BINDINGS = Properties.INVOKEDYNAMIC_LOG_BINDING.load();
-    public static final boolean LOG_INDY_CONSTANTS = Properties.INVOKEDYNAMIC_LOG_CONSTANTS.load();
+    public static final boolean LOG_INDY_BINDINGS = Options.INVOKEDYNAMIC_LOG_BINDING.load();
+    public static final boolean LOG_INDY_CONSTANTS = Options.INVOKEDYNAMIC_LOG_CONSTANTS.load();
     
     // properties enabling or disabling certain uses of invokedynamic
-    public static final boolean INVOKEDYNAMIC_ALL = USE_INVOKEDYNAMIC && Properties.INVOKEDYNAMIC_ALL.load();
-    public static final boolean INVOKEDYNAMIC_SAFE = USE_INVOKEDYNAMIC && Properties.INVOKEDYNAMIC_SAFE.load();
+    public static final boolean INVOKEDYNAMIC_ALL = USE_INVOKEDYNAMIC && Options.INVOKEDYNAMIC_ALL.load();
+    public static final boolean INVOKEDYNAMIC_SAFE = USE_INVOKEDYNAMIC && Options.INVOKEDYNAMIC_SAFE.load();
     
     public static final boolean INVOKEDYNAMIC_INVOCATION = INVOKEDYNAMIC_ALL || INVOKEDYNAMIC_SAFE ||
-            USE_INVOKEDYNAMIC && Properties.INVOKEDYNAMIC_INVOCATION.load();
+            USE_INVOKEDYNAMIC && Options.INVOKEDYNAMIC_INVOCATION.load();
     public static final boolean INVOKEDYNAMIC_INVOCATION_SWITCHPOINT = INVOKEDYNAMIC_ALL || INVOKEDYNAMIC_SAFE ||
-            USE_INVOKEDYNAMIC && Properties.INVOKEDYNAMIC_INVOCATION_SWITCHPOINT.load();
+            USE_INVOKEDYNAMIC && Options.INVOKEDYNAMIC_INVOCATION_SWITCHPOINT.load();
     public static final boolean INVOKEDYNAMIC_INDIRECT = INVOKEDYNAMIC_ALL || INVOKEDYNAMIC_SAFE ||
-            USE_INVOKEDYNAMIC && INVOKEDYNAMIC_INVOCATION && Properties.INVOKEDYNAMIC_INVOCATION_INDIRECT.load();
+            USE_INVOKEDYNAMIC && INVOKEDYNAMIC_INVOCATION && Options.INVOKEDYNAMIC_INVOCATION_INDIRECT.load();
     public static final boolean INVOKEDYNAMIC_JAVA = INVOKEDYNAMIC_ALL ||
-            USE_INVOKEDYNAMIC && INVOKEDYNAMIC_INVOCATION && Properties.INVOKEDYNAMIC_INVOCATION_JAVA.load();
+            USE_INVOKEDYNAMIC && INVOKEDYNAMIC_INVOCATION && Options.INVOKEDYNAMIC_INVOCATION_JAVA.load();
     public static final boolean INVOKEDYNAMIC_ATTR = INVOKEDYNAMIC_ALL || INVOKEDYNAMIC_SAFE ||
-            USE_INVOKEDYNAMIC && INVOKEDYNAMIC_INVOCATION && Properties.INVOKEDYNAMIC_INVOCATION_ATTR.load();
+            USE_INVOKEDYNAMIC && INVOKEDYNAMIC_INVOCATION && Options.INVOKEDYNAMIC_INVOCATION_ATTR.load();
     public static final boolean INVOKEDYNAMIC_FASTOPS = INVOKEDYNAMIC_ALL || INVOKEDYNAMIC_SAFE ||
-            USE_INVOKEDYNAMIC && INVOKEDYNAMIC_INVOCATION && Properties.INVOKEDYNAMIC_INVOCATION_FASTOPS.load();
+            USE_INVOKEDYNAMIC && INVOKEDYNAMIC_INVOCATION && Options.INVOKEDYNAMIC_INVOCATION_FASTOPS.load();
     
     public static final boolean INVOKEDYNAMIC_CACHE = INVOKEDYNAMIC_ALL || INVOKEDYNAMIC_SAFE ||
-            USE_INVOKEDYNAMIC && Properties.INVOKEDYNAMIC_CACHE.load();
+            USE_INVOKEDYNAMIC && Options.INVOKEDYNAMIC_CACHE.load();
     public static final boolean INVOKEDYNAMIC_CONSTANTS = INVOKEDYNAMIC_ALL || INVOKEDYNAMIC_SAFE ||
-            USE_INVOKEDYNAMIC && INVOKEDYNAMIC_CACHE && Properties.INVOKEDYNAMIC_CACHE_CONSTANTS.load();
+            USE_INVOKEDYNAMIC && INVOKEDYNAMIC_CACHE && Options.INVOKEDYNAMIC_CACHE_CONSTANTS.load();
     public static final boolean INVOKEDYNAMIC_LITERALS = INVOKEDYNAMIC_ALL || INVOKEDYNAMIC_SAFE ||
-            USE_INVOKEDYNAMIC && INVOKEDYNAMIC_CACHE && Properties.INVOKEDYNAMIC_CACHE_LITERALS.load();
+            USE_INVOKEDYNAMIC && INVOKEDYNAMIC_CACHE && Options.INVOKEDYNAMIC_CACHE_LITERALS.load();
     
     // properties for logging exceptions, backtraces, and caller invocations
-    public static final boolean LOG_EXCEPTIONS = Properties.LOG_EXCEPTIONS.load();
-    public static final boolean LOG_BACKTRACES = Properties.LOG_BACKTRACES.load();
-    public static final boolean LOG_CALLERS = Properties.LOG_CALLERS.load();
+    public static final boolean LOG_EXCEPTIONS = Options.LOG_EXCEPTIONS.load();
+    public static final boolean LOG_BACKTRACES = Options.LOG_BACKTRACES.load();
+    public static final boolean LOG_CALLERS = Options.LOG_CALLERS.load();
     
-    public static final boolean ERRNO_BACKTRACE = Properties.ERRNO_BACKTRACE.load();
+    public static final boolean ERRNO_BACKTRACE = Options.ERRNO_BACKTRACE.load();
     
-    public static final boolean IR_DEBUG = Properties.IR_DEBUG.load();
-    public static final boolean IR_COMPILER_DEBUG = Properties.IR_COMPILER_DEBUG.load(); 
-    public static final boolean IR_LIVE_VARIABLE = Properties.IR_PASS_LIVEVARIABLE.load();
-    public static final boolean IR_DEAD_CODE = Properties.IR_PASS_DEADCODE.load();
-    public static final String IR_TEST_INLINER = Properties.IR_PASS_TESTINLINER.load();
+    public static final boolean IR_DEBUG = Options.IR_DEBUG.load();
+    public static final boolean IR_COMPILER_DEBUG = Options.IR_COMPILER_DEBUG.load(); 
+    public static final boolean IR_LIVE_VARIABLE = Options.IR_PASS_LIVEVARIABLE.load();
+    public static final boolean IR_DEAD_CODE = Options.IR_PASS_DEADCODE.load();
+    public static final String IR_TEST_INLINER = Options.IR_PASS_TESTINLINER.load();
     
-    public static final boolean COROUTINE_FIBERS = Properties.FIBER_COROUTINES.load();
+    public static final boolean COROUTINE_FIBERS = Options.FIBER_COROUTINES.load();
     
     private static volatile boolean loadedNativeExtensions = false;
     
@@ -1532,7 +1532,7 @@ public class RubyInstanceConfig {
     ////////////////////////////////////////////////////////////////////////////
     
     private static int initGlobalJavaVersion() {
-        String specVersion = specVersion = Properties.BYTECODE_VERSION.load();
+        String specVersion = specVersion = Options.BYTECODE_VERSION.load();
         
         // stack map calculation is failing for some compilation scenarios, so
         // forcing both 1.5 and 1.6 to use 1.5 bytecode for the moment.

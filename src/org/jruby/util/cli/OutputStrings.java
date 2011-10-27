@@ -87,8 +87,8 @@ public class OutputStrings {
                 .append("  or if passing directly to Java, -Djruby.<property>=<value>\n")
                 .append("  or put <property>=<value> in .jrubyrc\n");
         
-        Properties.Category category = null;
-        for (Properties.Property property : Properties.PROPERTIES) {
+        Options.Category category = null;
+        for (Options.Option property : Options.PROPERTIES) {
             if (category != property.category) {
                 category = property.category;
                 sb.append('\n').append(category).append(" settings:\n\n");
