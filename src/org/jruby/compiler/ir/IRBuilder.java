@@ -376,6 +376,7 @@ public class IRBuilder {
     {
         Label    start;
         Label    end;
+        Label    dummyRescueBlockLabel;
         Variable returnAddr;
 
         public EnsureBlockInfo(IRScope m)
@@ -383,6 +384,7 @@ public class IRBuilder {
             returnAddr = m.getNewTemporaryVariable();
             start      = m.getNewLabel();
             end        = m.getNewLabel();
+            dummyRescueBlockLabel = m.getNewLabel();
         }
 
         public static void emitJumpChain(IRScope m, Stack<EnsureBlockInfo> ebStack)
@@ -1286,7 +1288,7 @@ public class IRBuilder {
 
         // Protected region code
         m.addInstr(new LABEL_Instr(rBeginLabel));
-        m.addInstr(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, ebi.start, rescueLabels));
+        m.addInstr(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, ebi.dummyRescueBlockLabel, rescueLabels));
         Operand v1 = protectedCode.run(protectedCodeArgs); // YIELD: Run the protected code block
         m.addInstr(new CopyInstr(ret, v1));
         m.addInstr(new SET_RETADDR_Instr(ebi.returnAddr, rEndLabel));
@@ -1305,9 +1307,8 @@ public class IRBuilder {
 
         // Rescue block code
         // SSS FIXME: How do we get this to catch all exceptions, not just Ruby exceptions?
-        Label dummyRescueBlockLabel = m.getNewLabel();
-        rescueLabels.add(dummyRescueBlockLabel);
-        m.addInstr(new LABEL_Instr(dummyRescueBlockLabel));
+        rescueLabels.add(ebi.dummyRescueBlockLabel);
+        m.addInstr(new LABEL_Instr(ebi.dummyRescueBlockLabel));
         m.addInstr(new CopyInstr(ret, Nil.NIL));
         m.addInstr(new SET_RETADDR_Instr(ebi.returnAddr, ebi.end));
         m.addInstr(new JumpInstr(ebi.start));
@@ -2024,7 +2025,7 @@ public class IRBuilder {
 
         // Start of region
         m.addInstr(new LABEL_Instr(rBeginLabel));
-        m.addInstr(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, ebi.start, rescueLabels));
+        m.addInstr(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, ebi.dummyRescueBlockLabel, rescueLabels));
 
         // Generate IR for Code being protected
         Operand  rv = (bodyNode instanceof RescueNode) ? buildRescueInternal(bodyNode, m, rBeginLabel) : build(bodyNode, m);
@@ -2057,11 +2058,10 @@ public class IRBuilder {
         // * jumps to the ensure block code
         // * returns back (via set_retaddr instr)
         // * rethrows the caught exception
-        Label dummyRescueBlockLabel = m.getNewLabel();
         Label rethrowExcLabel = m.getNewLabel();
-        rescueLabels.add(dummyRescueBlockLabel);
+        rescueLabels.add(ebi.dummyRescueBlockLabel);
         Variable exc = m.getNewTemporaryVariable();
-        m.addInstr(new LABEL_Instr(dummyRescueBlockLabel));
+        m.addInstr(new LABEL_Instr(ebi.dummyRescueBlockLabel));
         m.addInstr(new RECV_EXCEPTION_Instr(exc));
         m.addInstr(new SET_RETADDR_Instr(ebi.returnAddr, rethrowExcLabel));
         m.addInstr(new JumpInstr(ebi.start));
