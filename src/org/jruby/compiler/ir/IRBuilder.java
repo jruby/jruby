@@ -143,7 +143,7 @@ import org.jruby.compiler.ir.instructions.JRubyImplCallInstr;
 import org.jruby.compiler.ir.instructions.JRubyImplCallInstr.JRubyImplementationMethod;
 import org.jruby.compiler.ir.instructions.JumpInstr;
 import org.jruby.compiler.ir.instructions.JumpIndirectInstr;
-import org.jruby.compiler.ir.instructions.LABEL_Instr;
+import org.jruby.compiler.ir.instructions.LabelInstr;
 import org.jruby.compiler.ir.instructions.LineNumberInstr;
 import org.jruby.compiler.ir.instructions.NotInstr;
 import org.jruby.compiler.ir.instructions.PutConstInstr;
@@ -402,7 +402,7 @@ public class IRBuilder {
                 Label retLabel = m.getNewLabel();
                 m.addInstr(new SetReturnAddressInstr(ebArray[i].returnAddr, retLabel));
                 m.addInstr(new JumpInstr(ebArray[i].start));
-                m.addInstr(new LABEL_Instr(retLabel));
+                m.addInstr(new LabelInstr(retLabel));
             }
         }
     }
@@ -863,7 +863,7 @@ public class IRBuilder {
             m.addInstr(new BEQInstr(v1, BooleanLiteral.FALSE, l));
             Operand  v2  = build(andNode.getSecondNode(), m);
             m.addInstr(new CopyInstr(ret, v2));
-            m.addInstr(new LABEL_Instr(l));
+            m.addInstr(new LabelInstr(l));
             return ret;
         }
     }
@@ -1048,7 +1048,7 @@ public class IRBuilder {
 
         // now emit bodies while preserving when clauses order
         for (Label whenLabel: labels) {
-            m.addInstr(new LABEL_Instr(whenLabel));
+            m.addInstr(new LabelInstr(whenLabel));
             Operand bodyValue = build(bodies.get(whenLabel), m);
             // bodyValue can be null if the body ends with a return!
             if (bodyValue != null) {
@@ -1062,13 +1062,13 @@ public class IRBuilder {
         }
 
         if (!hasElse) {
-            m.addInstr(new LABEL_Instr(elseLabel));
+            m.addInstr(new LabelInstr(elseLabel));
             m.addInstr(new CopyInstr(result, Nil.NIL));
             m.addInstr(new JumpInstr(endLabel));
         }
 
         // close it out
-        m.addInstr(new LABEL_Instr(endLabel));
+        m.addInstr(new LabelInstr(endLabel));
 
         // SSS: Got rid of the marker case label instruction
 
@@ -1234,7 +1234,7 @@ public class IRBuilder {
         Label foundLabel = s.getNewLabel();
         s.addInstr(new BNEInstr(v, UndefinedValue.UNDEFINED, foundLabel));
         s.addInstr(new ConstMissingInstr(v, startingModule, name));
-        s.addInstr(new LABEL_Instr(foundLabel));
+        s.addInstr(new LabelInstr(foundLabel));
         return v;
     }
 
@@ -1288,7 +1288,7 @@ public class IRBuilder {
         List<Label> rescueLabels = new ArrayList<Label>() { };
 
         // Protected region code
-        m.addInstr(new LABEL_Instr(rBeginLabel));
+        m.addInstr(new LabelInstr(rBeginLabel));
         m.addInstr(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, ebi.dummyRescueBlockLabel, rescueLabels));
         Operand v1 = protectedCode.run(protectedCodeArgs); // YIELD: Run the protected code block
         m.addInstr(new CopyInstr(ret, v1));
@@ -1297,7 +1297,7 @@ public class IRBuilder {
         _ensureBlockStack.pop();
 
         // Ensure block code
-        m.addInstr(new LABEL_Instr(ebi.start));
+        m.addInstr(new LabelInstr(ebi.start));
         ensureCode.run(ensureCodeArgs); // YIELD: Run the ensure code block
         m.addInstr(new JumpIndirectInstr(ebi.returnAddr));
 
@@ -1309,13 +1309,13 @@ public class IRBuilder {
         // Rescue block code
         // SSS FIXME: How do we get this to catch all exceptions, not just Ruby exceptions?
         rescueLabels.add(ebi.dummyRescueBlockLabel);
-        m.addInstr(new LABEL_Instr(ebi.dummyRescueBlockLabel));
+        m.addInstr(new LabelInstr(ebi.dummyRescueBlockLabel));
         m.addInstr(new CopyInstr(ret, Nil.NIL));
         m.addInstr(new SetReturnAddressInstr(ebi.returnAddr, ebi.end));
         m.addInstr(new JumpInstr(ebi.start));
 
         // End
-        m.addInstr(new LABEL_Instr(rEndLabel));
+        m.addInstr(new LabelInstr(rEndLabel));
 
         return ret;
     }
@@ -1330,7 +1330,7 @@ public class IRBuilder {
         List<Label> rescueLabels = new ArrayList<Label>() { };
 
         // Protected region code
-        m.addInstr(new LABEL_Instr(rBeginLabel));
+        m.addInstr(new LabelInstr(rBeginLabel));
         m.addInstr(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, null, rescueLabels));
         Object v1 = protectedCode.run(protectedCodeArgs); // YIELD: Run the protected code block
         m.addInstr(new CopyInstr(rv, (Operand)v1));
@@ -1345,7 +1345,7 @@ public class IRBuilder {
         Variable exc = m.getNewTemporaryVariable();
         Variable eqqResult = m.getNewTemporaryVariable();
 
-        m.addInstr(new LABEL_Instr(rbLabel));
+        m.addInstr(new LabelInstr(rbLabel));
         m.addInstr(new ReceiveExceptionInstr(exc));
         // Verify that the exception is of type 'JumpException'.
         // Since this is JRuby implementation Java code, we dont need EQQ here.
@@ -1355,11 +1355,11 @@ public class IRBuilder {
         Object v2 = rescueBlock.run(rescueBlockArgs); // YIELD: Run the protected code block
         if (v2 != null) m.addInstr(new CopyInstr(rv, Nil.NIL));
         m.addInstr(new JumpInstr(rEndLabel));
-        m.addInstr(new LABEL_Instr(uncaughtLabel));
+        m.addInstr(new LabelInstr(uncaughtLabel));
         m.addInstr(new ThrowExceptionInstr(exc));
 
         // End
-        m.addInstr(new LABEL_Instr(rEndLabel));
+        m.addInstr(new LabelInstr(rEndLabel));
 
         return rv;
     }
@@ -1419,9 +1419,9 @@ public class IRBuilder {
         Label defLabel = s.getNewLabel();
         Variable tmpVar = getValueInTemporaryVariable(s, defVal);
         s.addInstr(new JumpInstr(defLabel));
-        s.addInstr(new LABEL_Instr(undefLabel));
+        s.addInstr(new LabelInstr(undefLabel));
         s.addInstr(new CopyInstr(tmpVar, Nil.NIL));
-        s.addInstr(new LABEL_Instr(defLabel));
+        s.addInstr(new LabelInstr(defLabel));
         return tmpVar;
     }
 
@@ -1897,7 +1897,7 @@ public class IRBuilder {
                 s.addInstr(new ReceiveOptionalArgumentInstr(av, argIndex));
                 s.addInstr(new BNEInstr(av, UndefinedValue.UNDEFINED, l)); // if 'av' is not undefined, go to default
                 build(n, s);
-                s.addInstr(new LABEL_Instr(l));
+                s.addInstr(new LabelInstr(l));
             }
         }
 
@@ -2025,7 +2025,7 @@ public class IRBuilder {
         _rescueBlockLabelStack.push(rBeginLabel);
 
         // Start of region
-        m.addInstr(new LABEL_Instr(rBeginLabel));
+        m.addInstr(new LabelInstr(rBeginLabel));
         m.addInstr(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, ebi.dummyRescueBlockLabel, rescueLabels));
 
         // Generate IR for Code being protected
@@ -2043,7 +2043,7 @@ public class IRBuilder {
         _rescueBlockLabelStack.pop();
 
         // Generate the ensure block now
-        m.addInstr(new LABEL_Instr(ebi.start));
+        m.addInstr(new LabelInstr(ebi.start));
 
         // Two cases:
         // 1. Ensure block has no explicit return => the result of the entire ensure expression is the result of the protected body.
@@ -2062,15 +2062,15 @@ public class IRBuilder {
         Label rethrowExcLabel = m.getNewLabel();
         rescueLabels.add(ebi.dummyRescueBlockLabel);
         Variable exc = m.getNewTemporaryVariable();
-        m.addInstr(new LABEL_Instr(ebi.dummyRescueBlockLabel));
+        m.addInstr(new LabelInstr(ebi.dummyRescueBlockLabel));
         m.addInstr(new ReceiveExceptionInstr(exc));
         m.addInstr(new SetReturnAddressInstr(ebi.returnAddr, rethrowExcLabel));
         m.addInstr(new JumpInstr(ebi.start));
-        m.addInstr(new LABEL_Instr(rethrowExcLabel));
+        m.addInstr(new LabelInstr(rethrowExcLabel));
         m.addInstr(new ThrowExceptionInstr(exc));
 
         // End label for the exception region
-        m.addInstr(new LABEL_Instr(rEndLabel));
+        m.addInstr(new LabelInstr(rEndLabel));
 
         return rv;
     }
@@ -2174,7 +2174,7 @@ public class IRBuilder {
         m.addInstr(new CopyInstr(flipState, s2));
 
         // Check for state 2
-        m.addInstr(new LABEL_Instr(s2Label));
+        m.addInstr(new LabelInstr(s2Label));
 
         // For exclusive ranges/flips, we dont evaluate s2's condition if s1's condition was satisfied
         if (flipNode.isExclusive()) m.addInstr(new BEQInstr(returnVal, BooleanLiteral.TRUE, doneLabel));
@@ -2192,7 +2192,7 @@ public class IRBuilder {
 
         // Done testing for s1's and s2's conditions.  
         // returnVal will have the result of the flip condition
-        m.addInstr(new LABEL_Instr(doneLabel));
+        m.addInstr(new LabelInstr(doneLabel));
 
         return returnVal;
     }
@@ -2229,7 +2229,7 @@ public class IRBuilder {
         }
 
             // Start label -- used by redo!
-        closure.addInstr(new LABEL_Instr(closure.startLabel));
+        closure.addInstr(new LabelInstr(closure.startLabel));
 
             // Build closure body and return the result of the closure
         Operand closureRetVal = forNode.getBodyNode() == null ? Nil.NIL : build(forNode.getBodyNode(), closure);
@@ -2322,7 +2322,7 @@ public class IRBuilder {
         }
 
         // Build the else part of the if-statement
-        s.addInstr(new LABEL_Instr(falseLabel));
+        s.addInstr(new LabelInstr(falseLabel));
         if (ifNode.getElseBody() != null) {
             Operand elseResult = build(ifNode.getElseBody(), s);
             // elseResult can be U_NIL if then-body ended with a return!
@@ -2339,14 +2339,14 @@ public class IRBuilder {
         }
 
         if (thenNull && elseNull) {
-            s.addInstr(new LABEL_Instr(doneLabel));
+            s.addInstr(new LabelInstr(doneLabel));
             return Nil.NIL;
         }
         else if (thenUnil && elseUnil) {
             return U_NIL;
         }
         else {
-            s.addInstr(new LABEL_Instr(doneLabel));
+            s.addInstr(new LabelInstr(doneLabel));
             return result;
         }
     }
@@ -2383,7 +2383,7 @@ public class IRBuilder {
             closureBuilder.buildBlockArgsAssignment(iterNode.getBlockVarNode(), closure, 0, true, true, false);
 
             // start label -- used by redo!
-        closure.addInstr(new LABEL_Instr(closure.startLabel));
+        closure.addInstr(new LabelInstr(closure.startLabel));
 
             // Build closure body and return the result of the closure
         Operand closureRetVal = iterNode.getBodyNode() == null ? Nil.NIL : closureBuilder.build(iterNode.getBodyNode(), closure);
@@ -2591,7 +2591,7 @@ public class IRBuilder {
             Operand  v2 = build(opAsgnNode.getValueNode(), s);
             s.addInstr(CallInstr.create(writerValue, new MethAddr(opAsgnNode.getVariableNameAsgn()), v1, new Operand[] {v2}, null));
             s.addInstr(new CopyInstr(readerValue, writerValue));
-            s.addInstr(new LABEL_Instr(l));
+            s.addInstr(new LabelInstr(l));
 
             return readerValue;
         }
@@ -2625,7 +2625,7 @@ public class IRBuilder {
         s.addInstr(new BEQInstr(f, BooleanLiteral.FALSE, l));
         Operand v2 = build(andNode.getSecondNode(), s);  // This does the assignment!
         s.addInstr(new CopyInstr(result, v2));
-        s.addInstr(new LABEL_Instr(l));
+        s.addInstr(new LabelInstr(l));
         s.addInstr(new ThreadPollInstr());
         return result;
     }
@@ -2658,12 +2658,12 @@ public class IRBuilder {
         Variable result = getValueInTemporaryVariable(s, v1);
         s.addInstr(new IsTrueInstr(flag, v1));
         if (needsDefnCheck) {
-            s.addInstr(new LABEL_Instr(l2));
+            s.addInstr(new LabelInstr(l2));
         }
         s.addInstr(new BEQInstr(flag, BooleanLiteral.TRUE, l1));  // if v1 is defined and true, we are done! 
         Operand v2 = build(orNode.getSecondNode(), s); // This is an AST node that sets x = y, so nothing special to do here.
         s.addInstr(new CopyInstr(result, v2));
-        s.addInstr(new LABEL_Instr(l1));
+        s.addInstr(new LabelInstr(l1));
         s.addInstr(new ThreadPollInstr());
 
         // Return value of x ||= y is always 'x'
@@ -2740,7 +2740,7 @@ public class IRBuilder {
         argList.add(value);
         s.addInstr(CallInstr.create(elt, new MethAddr("[]="), array, argList.toArray(new Operand[argList.size()]), null));
         s.addInstr(new CopyInstr(elt, value));
-        s.addInstr(new LABEL_Instr(l));
+        s.addInstr(new LabelInstr(l));
         return elt;
     }
 
@@ -2759,7 +2759,7 @@ public class IRBuilder {
         argList.add(value);
         s.addInstr(CallInstr.create(elt, new MethAddr("[]="), array, argList.toArray(new Operand[argList.size()]), null));
         s.addInstr(new CopyInstr(elt, value));
-        s.addInstr(new LABEL_Instr(l));
+        s.addInstr(new LabelInstr(l));
         return elt;
     }
 
@@ -2814,7 +2814,7 @@ public class IRBuilder {
             m.addInstr(new BEQInstr(v1, BooleanLiteral.TRUE, l));
             Operand  v2  = build(orNode.getSecondNode(), m);
             m.addInstr(new CopyInstr(ret, v2));
-            m.addInstr(new LABEL_Instr(l));
+            m.addInstr(new LabelInstr(l));
             return ret;
         }
     }
@@ -2889,7 +2889,7 @@ public class IRBuilder {
         // Only generate the label instruction if we weren't passed in a label
         // Optimization to eliminate extra labels in begin-rescue-ensure-end code
         if (availableBeginLabel == null)
-            m.addInstr(new LABEL_Instr(rBeginLabel));
+            m.addInstr(new LabelInstr(rBeginLabel));
 
         // Placeholder rescue instruction that tells rest of the compiler passes the boundaries of the rescue block.
         List<Label> rescueBlockLabels = new ArrayList<Label>();
@@ -2909,7 +2909,7 @@ public class IRBuilder {
 
         // Else part of the body -- we simply fall through from the main body if there were no exceptions
         if (elseLabel != null) {
-            m.addInstr(new LABEL_Instr(elseLabel));
+            m.addInstr(new LabelInstr(elseLabel));
             tmp = build(rescueNode.getElseNode(), m);
         }
 
@@ -2941,12 +2941,12 @@ public class IRBuilder {
         // Build the actual rescue block(s)
         Label rbLabel = m.getNewLabel(); // Label marking start of the first rescue code.
         rescueBlockLabels.add(rbLabel);
-        m.addInstr(new LABEL_Instr(rbLabel));
+        m.addInstr(new LabelInstr(rbLabel));
         buildRescueBodyInternal(m, rescueNode.getRescueNode(), rv, rEndLabel, rescueBlockLabels);
 
         // End label -- only if there is no ensure block!  With an ensure block, you end at ensureEndLabel.
         if (noEnsure)
-            m.addInstr(new LABEL_Instr(rEndLabel));
+            m.addInstr(new LabelInstr(rEndLabel));
 
         _rescueBlockLabelStack.pop();
         return rv;
@@ -2979,7 +2979,7 @@ public class IRBuilder {
             }
             // Uncaught exception -- build other rescue nodes or rethrow!
             rescueBlockLabels.add(uncaughtLabel);
-            m.addInstr(new LABEL_Instr(uncaughtLabel));
+            m.addInstr(new LabelInstr(uncaughtLabel));
             if (rescueBodyNode.getOptRescueNode() != null) {
                 buildRescueBodyInternal(m, rescueBodyNode.getOptRescueNode(), rv, endLabel, rescueBlockLabels);
             } else {
@@ -2989,7 +2989,7 @@ public class IRBuilder {
 
         // Caught exception case -- build rescue body
         if (caughtLabel != null) {
-            m.addInstr(new LABEL_Instr(caughtLabel));
+            m.addInstr(new LabelInstr(caughtLabel));
         }
         Node realBody = skipOverNewlines(m, rescueBodyNode.getBodyNode());
         Operand x = build(realBody, m);
@@ -3173,7 +3173,7 @@ public class IRBuilder {
         else {
             IRLoop loop = new IRLoop(s);
             s.startLoop(loop);
-            s.addInstr(new LABEL_Instr(loop.loopStartLabel));
+            s.addInstr(new LabelInstr(loop.loopStartLabel));
             Variable loopResult = loop.loopResult;
 
             if (isLoopHeadCondition) {
@@ -3182,7 +3182,7 @@ public class IRBuilder {
                 s.addInstr(new CopyInstr((Variable)loopResult, Nil.NIL));
                 s.addInstr(new JumpInstr(loop.loopEndLabel));
             }
-            s.addInstr(new LABEL_Instr(loop.iterStartLabel));
+            s.addInstr(new LabelInstr(loop.iterStartLabel));
 
             // Looks like while can be treated as an expression!
             // So, capture the result of the body so that it can be returned.
@@ -3200,7 +3200,7 @@ public class IRBuilder {
                 // SSS FIXME: Is this correctly placed ... at the end of the loop iteration?
             s.addInstr(new ThreadPollInstr());
 
-            s.addInstr(new LABEL_Instr(loop.iterEndLabel));
+            s.addInstr(new LabelInstr(loop.iterEndLabel));
             if (isLoopHeadCondition) {
                 // Issue a jump back to the head of the while loop
                 s.addInstr(new JumpInstr(loop.loopStartLabel));
@@ -3211,7 +3211,7 @@ public class IRBuilder {
                 s.addInstr(new CopyInstr((Variable)loopResult, Nil.NIL));
             }
 
-            s.addInstr(new LABEL_Instr(loop.loopEndLabel));
+            s.addInstr(new LabelInstr(loop.loopEndLabel));
             s.endLoop(loop);
 
             return loopResult;

@@ -4,18 +4,21 @@ import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 
-public class LABEL_Instr extends NoOperandInstr
-{
-    public final Label _lbl;
+public class LabelInstr extends NoOperandInstr {
+    public final Label label;
 
-    public LABEL_Instr(Label l) {
+    public LabelInstr(Label label) {
         super(Operation.LABEL);
-        _lbl = l;
+        
+        this.label = label;
     }
 
-    public String toString() { return _lbl + ":"; }
+    @Override
+    public String toString() {
+        return label + ":";
+    }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new LABEL_Instr(ii.getRenamedLabel(_lbl));
+        return new LabelInstr(ii.getRenamedLabel(label));
     }
 }

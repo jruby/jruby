@@ -23,7 +23,7 @@ import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.JumpInstr;
 import org.jruby.compiler.ir.instructions.JumpIndirectInstr;
-import org.jruby.compiler.ir.instructions.LABEL_Instr;
+import org.jruby.compiler.ir.instructions.LabelInstr;
 import org.jruby.compiler.ir.instructions.ExceptionRegionStartMarkerInstr;
 import org.jruby.compiler.ir.instructions.ExceptionRegionEndMarkerInstr;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
@@ -299,7 +299,7 @@ public class CFG {
         for (Instr i : instrs) {
             Operation iop = i.getOperation();
             if (iop == Operation.LABEL) {
-                Label l = ((LABEL_Instr) i)._lbl;
+                Label l = ((LabelInstr) i).label;
                 newBB = createNewBB(l, g, bbMap, nestedExceptionRegions);
                 // Jump instruction bbs dont add an edge to the succeeding bb by default
                 if (!bbEndedWithControlXfer) g.addEdge(currBB, newBB, EdgeType.REGULAR);

@@ -24,7 +24,7 @@ import org.jruby.compiler.ir.instructions.DefineInstanceMethodInstr;
 import org.jruby.compiler.ir.instructions.GetFieldInstr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.JumpInstr;
-import org.jruby.compiler.ir.instructions.LABEL_Instr;
+import org.jruby.compiler.ir.instructions.LabelInstr;
 import org.jruby.compiler.ir.instructions.PutFieldInstr;
 import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
@@ -203,7 +203,7 @@ public class JVM implements CompilerTarget {
         case JUMP:
             emitJUMP((JumpInstr)instr); break;
         case LABEL:
-            emitLABEL((LABEL_Instr)instr); break;
+            emitLABEL((LabelInstr)instr); break;
         case PUT_FIELD:
             emitPUT_FIELD((PutFieldInstr)instr); break;
         case GET_FIELD:
@@ -278,8 +278,8 @@ public class JVM implements CompilerTarget {
         method().goTo(getLabel(jump.target));
     }
 
-    public void emitLABEL(LABEL_Instr lbl) {
-        method().mark(getLabel(lbl._lbl));
+    public void emitLABEL(LabelInstr lbl) {
+        method().mark(getLabel(lbl.label));
     }
 
     public void emitPUT_FIELD(PutFieldInstr putField) {
