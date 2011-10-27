@@ -8,7 +8,7 @@ module JRuby::Profiler::SpecHelpers
   end
     
   def top_invocation
-    @profile_data.compute_results
+    @top_invocation ||= profile_data.compute_results
   end
   
   def method_name(inv)
@@ -27,12 +27,20 @@ module JRuby::Profiler::SpecHelpers
   end
 
   def graph_output
-    my_output_stream = java.io.ByteArrayOutputStream.new
-    print_stream = java.io.PrintStream.new(my_output_stream)
-    JRuby::Profiler::GraphProfilePrinter.new(profile_data).printProfile(print_stream)
-    my_output_stream.toString
+    data_output JRuby::Profiler::GraphProfilePrinter
   end
-  
+
+  def flat_output
+    data_output JRuby::Profiler::FlatProfilePrinter
+  end
+
+  def data_output(printer)
+    output_stream = java.io.ByteArrayOutputStream.new
+    print_stream = java.io.PrintStream.new(output_stream)
+    printer.new(profile_data).printProfile(print_stream)
+    output_stream.toString
+  end
+      
   def line_for(text, method)
     lines = lines_for(text, method)
     if lines.length == 0
