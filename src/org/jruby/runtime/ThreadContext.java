@@ -1322,6 +1322,13 @@ public final class ThreadContext {
         }
         return previousMethodSerial;
     }
+
+    public int profileEnter(String name, DynamicMethod nextMethod) {
+        if (isProfiling()) {
+            getProfileData().addProfiledMethod(name, nextMethod);
+        }
+        return profileEnter((int) nextMethod.getSerialNumber());
+    }
     
     public int profileExit(int nextMethod, long startTime) {
         int previousMethodSerial = currentMethodSerial;
