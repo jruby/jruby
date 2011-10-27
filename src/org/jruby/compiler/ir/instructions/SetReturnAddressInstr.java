@@ -11,28 +11,35 @@ import org.jruby.runtime.builtin.IRubyObject;
 // This is of the form:
 //    v = LBL_..
 // Used in rescue blocks to tell the ensure block where to return to after it is done doing its thing.
-public class SET_RETADDR_Instr extends OneOperandInstr 
-{
-    public SET_RETADDR_Instr(Variable d, Label l) {
+public class SetReturnAddressInstr extends OneOperandInstr {
+    public SetReturnAddressInstr(Variable d, Label l) {
         super(Operation.SET_RETADDR, d, l);
     }
 
-    public Label getReturnAddr() { return (Label)argument; }
+    public Label getReturnAddr() {
+        return (Label) argument;
+    }
 
     @Override
-    public String toString() { return "" + result + " = " + argument; }
+    public String toString() {
+        return "" + result + " = " + argument;
+    }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new SET_RETADDR_Instr(ii.getRenamedVariable(result), ii.getRenamedLabel((Label)argument));
+        return new SetReturnAddressInstr(ii.getRenamedVariable(result), 
+                ii.getRenamedLabel(getReturnAddr()));
     }
 
     // Can this instruction raise exceptions?
     @Override
-    public boolean canRaiseException() { return false; }
+    public boolean canRaiseException() {
+        return false;
+    }
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         getResult().store(interp, context, self, ((Label)getArg()));
+        
         return null;
     }
 }

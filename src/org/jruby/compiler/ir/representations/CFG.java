@@ -27,7 +27,7 @@ import org.jruby.compiler.ir.instructions.LABEL_Instr;
 import org.jruby.compiler.ir.instructions.ExceptionRegionStartMarkerInstr;
 import org.jruby.compiler.ir.instructions.ExceptionRegionEndMarkerInstr;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
-import org.jruby.compiler.ir.instructions.SET_RETADDR_Instr;
+import org.jruby.compiler.ir.instructions.SetReturnAddressInstr;
 import org.jruby.compiler.ir.instructions.ThrowExceptionInstr;
 import org.jruby.compiler.ir.instructions.YieldInstr;
 import org.jruby.compiler.ir.operands.Nil;
@@ -381,9 +381,9 @@ public class CFG {
                 currBB.addInstr(i);
             }
 
-            if (i instanceof SET_RETADDR_Instr) {
+            if (i instanceof SetReturnAddressInstr) {
                 Variable v = i.getResult();
-                Label tgtLbl = ((SET_RETADDR_Instr) i).getReturnAddr();
+                Label tgtLbl = ((SetReturnAddressInstr) i).getReturnAddr();
                 BasicBlock tgtBB = retAddrTargetMap.get(v);
                 // If we have the target bb, add the edge
                 // If not, record it for fixup later

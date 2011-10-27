@@ -159,7 +159,7 @@ import org.jruby.compiler.ir.instructions.ReceiveOptionalArgumentInstr;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
 import org.jruby.compiler.ir.instructions.RubyInternalCallInstr;
 import org.jruby.compiler.ir.instructions.RubyInternalCallInstr.RubyInternalsMethod;
-import org.jruby.compiler.ir.instructions.SET_RETADDR_Instr;
+import org.jruby.compiler.ir.instructions.SetReturnAddressInstr;
 import org.jruby.compiler.ir.instructions.SetArgumentsInstr;
 import org.jruby.compiler.ir.instructions.SearchConstInstr;
 import org.jruby.compiler.ir.instructions.SuperInstr;
@@ -400,7 +400,7 @@ public class IRBuilder {
             EnsureBlockInfo[] ebArray = ebStack.toArray(new EnsureBlockInfo[n]);
             for (int i = n-1; i >= 0; i--) {
                 Label retLabel = m.getNewLabel();
-                m.addInstr(new SET_RETADDR_Instr(ebArray[i].returnAddr, retLabel));
+                m.addInstr(new SetReturnAddressInstr(ebArray[i].returnAddr, retLabel));
                 m.addInstr(new JumpInstr(ebArray[i].start));
                 m.addInstr(new LABEL_Instr(retLabel));
             }
@@ -1292,7 +1292,7 @@ public class IRBuilder {
         m.addInstr(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, ebi.dummyRescueBlockLabel, rescueLabels));
         Operand v1 = protectedCode.run(protectedCodeArgs); // YIELD: Run the protected code block
         m.addInstr(new CopyInstr(ret, v1));
-        m.addInstr(new SET_RETADDR_Instr(ebi.returnAddr, rEndLabel));
+        m.addInstr(new SetReturnAddressInstr(ebi.returnAddr, rEndLabel));
 
         _ensureBlockStack.pop();
 
@@ -1311,7 +1311,7 @@ public class IRBuilder {
         rescueLabels.add(ebi.dummyRescueBlockLabel);
         m.addInstr(new LABEL_Instr(ebi.dummyRescueBlockLabel));
         m.addInstr(new CopyInstr(ret, Nil.NIL));
-        m.addInstr(new SET_RETADDR_Instr(ebi.returnAddr, ebi.end));
+        m.addInstr(new SetReturnAddressInstr(ebi.returnAddr, ebi.end));
         m.addInstr(new JumpInstr(ebi.start));
 
         // End
@@ -2036,7 +2036,7 @@ public class IRBuilder {
 
         // Jump to start of ensure block -- dont bother if we had a return in the protected body 
         if (rv != U_NIL)
-            m.addInstr(new SET_RETADDR_Instr(ebi.returnAddr, rEndLabel));
+            m.addInstr(new SetReturnAddressInstr(ebi.returnAddr, rEndLabel));
 
         // Pop the current ensure block info node *BEFORE* generating the ensure code for this block itself!
         _ensureBlockStack.pop();
@@ -2064,7 +2064,7 @@ public class IRBuilder {
         Variable exc = m.getNewTemporaryVariable();
         m.addInstr(new LABEL_Instr(ebi.dummyRescueBlockLabel));
         m.addInstr(new RECV_EXCEPTION_Instr(exc));
-        m.addInstr(new SET_RETADDR_Instr(ebi.returnAddr, rethrowExcLabel));
+        m.addInstr(new SetReturnAddressInstr(ebi.returnAddr, rethrowExcLabel));
         m.addInstr(new JumpInstr(ebi.start));
         m.addInstr(new LABEL_Instr(rethrowExcLabel));
         m.addInstr(new ThrowExceptionInstr(exc));
@@ -2924,7 +2924,7 @@ public class IRBuilder {
             }
             else {
                 // NOTE: rEndLabel is identical to ebi.end, but less confusing to use rEndLabel since that makes more semantic sense
-                m.addInstr(new SET_RETADDR_Instr(ebi.returnAddr, rEndLabel));
+                m.addInstr(new SetReturnAddressInstr(ebi.returnAddr, rEndLabel));
                 m.addInstr(new JumpInstr(ebi.start));
             }
         }
@@ -2998,7 +2998,7 @@ public class IRBuilder {
             // Jump to end of rescue block since we've caught and processed the exception
             if (!_ensureBlockStack.empty()) {
                 EnsureBlockInfo ebi = _ensureBlockStack.peek();
-                m.addInstr(new SET_RETADDR_Instr(ebi.returnAddr, endLabel));
+                m.addInstr(new SetReturnAddressInstr(ebi.returnAddr, endLabel));
                 m.addInstr(new JumpInstr(ebi.start));
             }
             else {
