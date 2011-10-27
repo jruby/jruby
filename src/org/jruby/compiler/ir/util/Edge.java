@@ -3,23 +3,23 @@ package org.jruby.compiler.ir.util;
 /**
  *
  */
-public class Edge {
-    private Vertex source;
-    private Vertex destination;
+public class Edge<T> {
+    private Vertex<T> source;
+    private Vertex<T> destination;
     private Object type;
     
-    public Edge(Vertex source, Vertex destination, Object type) {
+    public Edge(Vertex<T> source, Vertex<T> destination, Object type) {
         this.source = source;
         this.destination = destination;
         this.type = type;
 
     }
     
-    public Vertex getDestination() {
+    public Vertex<T> getDestination() {
         return destination;
     }
 
-    public Vertex getSource() {
+    public Vertex<T> getSource() {
         return source;
     }
 
@@ -29,7 +29,7 @@ public class Edge {
     
     @Override
     public String toString() {
-        return "<" + source.getBasicBlock().getID() + " --> " + 
-                destination.getBasicBlock().getID() + "> (" + type + ")";        
+        return "<" + source.getData() + " --> " + 
+                destination.getData() + "> (" + type + ")";        
     }
 }

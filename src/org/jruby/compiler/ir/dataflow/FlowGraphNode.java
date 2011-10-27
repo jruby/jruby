@@ -88,12 +88,12 @@ public abstract class FlowGraphNode {
         // sources & targets depends on direction of the data flow problem
         initSolnForNode();
         if (problem.getFlowDirection() == DataFlowProblem.DF_Direction.FORWARD) {
-            for (Edge e: problem.incomingEdgesOf(basicBlock)) {
-                compute_MEET(e, problem.getFlowGraphNode(e.getSource().getBasicBlock()));
+            for (Edge<BasicBlock> e: problem.incomingEdgesOf(basicBlock)) {
+                compute_MEET(e, problem.getFlowGraphNode(e.getSource().getData()));
             }
         } else if (problem.getFlowDirection() == DataFlowProblem.DF_Direction.BACKWARD) {
-            for (Edge e: problem.outgoingEdgesOf(basicBlock)) {
-                compute_MEET(e, problem.getFlowGraphNode(e.getDestination().getBasicBlock()));
+            for (Edge<BasicBlock> e: problem.outgoingEdgesOf(basicBlock)) {
+                compute_MEET(e, problem.getFlowGraphNode(e.getDestination().getData()));
             }
         } else {
             throw new RuntimeException("Bidirectional data flow computation not implemented yet!");
@@ -106,12 +106,12 @@ public abstract class FlowGraphNode {
         boolean changed = applyTransferFunction();
         if (changed) {
             if (problem.getFlowDirection() == DataFlowProblem.DF_Direction.FORWARD) {
-                for (Edge e: problem.outgoingEdgesOf(basicBlock)) {
-                    processDestBB(workList, bbSet, e.getDestination().getBasicBlock());
+                for (Edge<BasicBlock> e: problem.outgoingEdgesOf(basicBlock)) {
+                    processDestBB(workList, bbSet, e.getDestination().getData());
                 }
             } else if (problem.getFlowDirection() == DataFlowProblem.DF_Direction.BACKWARD) {
-                for (Edge e: problem.incomingEdgesOf(basicBlock)) {
-                    processDestBB(workList, bbSet, e.getSource().getBasicBlock());
+                for (Edge<BasicBlock> e: problem.incomingEdgesOf(basicBlock)) {
+                    processDestBB(workList, bbSet, e.getSource().getData());
                 }
             }
         }

@@ -12,12 +12,12 @@ import java.util.Set;
  *
  * @author enebo
  */
-public class EdgeTypeIterator implements Iterator<Edge> {
-    private Iterator<Edge> edges;
+public class EdgeTypeIterator<T> implements Iterator<Edge<T>> {
+    private Iterator<Edge<T>> edges;
     private Object type;
     private Edge nextEdge = null;
     
-    public EdgeTypeIterator(Set<Edge> edges, Object type) {
+    public EdgeTypeIterator(Set<Edge<T>> edges, Object type) {
         this.edges = edges.iterator();
         this.type = type;
     }
@@ -36,9 +36,9 @@ public class EdgeTypeIterator implements Iterator<Edge> {
         return false;
     }
 
-    public Edge next() {
+    public Edge<T> next() {
         if (hasNext()) {
-            Edge tmp = nextEdge;
+            Edge<T> tmp = nextEdge;
             nextEdge = null;
             return tmp;
         }

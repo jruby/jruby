@@ -5,16 +5,15 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import org.jruby.compiler.ir.representations.BasicBlock;
 
 /**
  * Meant to be single-threaded.  More work on whole impl if not.
  */
-public class DirectedGraph {
-    private Map<BasicBlock, Vertex> vertices = new HashMap<BasicBlock, Vertex>();
+public class DirectedGraph<T> {
+    private Map<T, Vertex<T>> vertices = new HashMap<T, Vertex<T>>();
     private Set<Edge> edges = new HashSet<Edge>();
     
-    public Collection<Vertex> vertices() {
+    public Collection<Vertex<T>> vertices() {
         return vertices.values();
     }
     
@@ -22,11 +21,11 @@ public class DirectedGraph {
         return edges;
     }
     
-    public Collection<BasicBlock> basicBlocks() {
+    public Collection<T> allData() {
         return vertices.keySet();
     }
     
-    public void addEdge(BasicBlock source, BasicBlock destination, Object type) {
+    public void addEdge(T source, T destination, Object type) {
         vertexFor(source).addEdgeTo(destination, type);
     }
     
@@ -34,30 +33,30 @@ public class DirectedGraph {
         edge.getSource().removeEdgeTo(edge.getDestination());
     }
     
-    public void removeEdge(BasicBlock source, BasicBlock destination) {
+    public void removeEdge(T source, T destination) {
         for (Edge edge: vertexFor(source).getOutgoingEdges()) {
-            if (edge.getDestination().getBasicBlock() == destination) {
+            if (edge.getDestination().getData() == destination) {
                 vertexFor(source).removeEdgeTo(edge.getDestination());
                 return;
             }
         }
     }
     
-    public Vertex vertexFor(BasicBlock basicBlock) {
-        Vertex vertex = vertices.get(basicBlock);
+    public Vertex<T> vertexFor(T data) {
+        Vertex vertex = vertices.get(data);
         
         if (vertex != null) return vertex;
         
-        vertex = new Vertex(this, basicBlock);
+        vertex = new Vertex(this, data);
         
-        vertices.put(basicBlock, vertex);
+        vertices.put(data, vertex);
         
         return vertex;
     }
     
-    public void removeVertexFor(BasicBlock basicBlock) {
-        Vertex vertex = vertexFor(basicBlock);
-        vertices.remove(basicBlock);
+    public void removeVertexFor(T data) {
+        Vertex vertex = vertexFor(data);
+        vertices.remove(data);
         vertex.removeAllEdges();
     }
 
@@ -65,7 +64,7 @@ public class DirectedGraph {
     public String toString() {
         StringBuilder buf = new StringBuilder("Directed-Graph:\n");
         
-        for (BasicBlock block: basicBlocks()) {
+        for (T block: allData()) {
             buf.append(vertexFor(block));
         }
         

@@ -50,7 +50,7 @@ public class CFG {
     BasicBlock entryBB;        // Entry BB -- dummy
     BasicBlock exitBB;         // Exit BB -- dummy
     int nextBBId;       // Next available basic block id
-    DirectedGraph cfg;           // The actual graph
+    DirectedGraph<BasicBlock> cfg;           // The actual graph
     LinkedList<BasicBlock> postOrderList; // Post order traversal list of the cfg
     Map<String, DataFlowProblem> dfProbs;       // Map of name -> dataflow problem
     Map<Label, BasicBlock> bbMap;         // Map of label -> basic blocks with that label
@@ -102,19 +102,19 @@ public class CFG {
 
     // NOTE: Because nodes can be removed, this may be smaller than getMaxNodeID()
     public int numNodes() {
-        return cfg.basicBlocks().size();
+        return cfg.allData().size();
     }
 
-    public Set<Edge> incomingEdgesOf(BasicBlock bb) {
+    public Set<Edge<BasicBlock>> incomingEdgesOf(BasicBlock bb) {
         return cfg.vertexFor(bb).getIncomingEdges();
     }
 
-    public Set<Edge> outgoingEdgesOf(BasicBlock bb) {
+    public Set<Edge<BasicBlock>> outgoingEdgesOf(BasicBlock bb) {
         return cfg.vertexFor(bb).getOutgoingEdges();
     }
 
     public Collection<BasicBlock> getNodes() {
-        return cfg.basicBlocks();
+        return cfg.allData();
     }
 
     public BasicBlock getTargetBB(Label l) {
@@ -166,7 +166,7 @@ public class CFG {
     public void addGlobalEnsureBlock(BasicBlock geb) {
         cfg.addEdge(geb, exitBB, EdgeType.DUMMY_EDGE);
         
-        for (BasicBlock basicBlock: cfg.basicBlocks()) {
+        for (BasicBlock basicBlock: cfg.allData()) {
             if (basicBlock != geb && !bbIsProtected(basicBlock)) {
                 cfg.addEdge(basicBlock, geb, EdgeType.EXCEPTION_EDGE);
                 bbRescuerMap.put(basicBlock, geb);
@@ -283,7 +283,7 @@ public class CFG {
         // List of all rescued regions
         List<ExceptionRegion> allExceptionRegions = new ArrayList<ExceptionRegion>();
 
-        DirectedGraph g = new DirectedGraph();
+        DirectedGraph g = new DirectedGraph<BasicBlock>();
         
         // Dummy entry basic block (see note at end to see why)
         entryBB = createNewBB(g, bbMap, nestedExceptionRegions);
@@ -486,8 +486,8 @@ public class CFG {
         if ((aR == bR) || a.isEmpty() || b.isEmpty()) {
             a.swallowBB(b);
             cfg.removeEdge(a, b);
-            for (Edge e : cfg.vertexFor(b).getOutgoingEdges()) {
-                cfg.addEdge(a, e.getDestination().getBasicBlock(), e.getType());
+            for (Edge<BasicBlock> e : cfg.vertexFor(b).getOutgoingEdges()) {
+                cfg.addEdge(a, e.getDestination().getData(), e.getType());
             }
 
             removeBB(b);
@@ -505,13 +505,13 @@ public class CFG {
     // callBB will only have a single successor & splitBB will only have a single predecessor
     // after inlining the callee.  Merge them with their successor/predecessors respectively
     private void mergeStraightlineBBs(BasicBlock callBB, BasicBlock splitBB) {
-        Set<Edge> edges = outgoingEdgesOf(callBB);
+        Set<Edge<BasicBlock>> edges = outgoingEdgesOf(callBB);
         assert (edges.size() == 1);
-        mergeBBs(callBB, edges.iterator().next().getDestination().getBasicBlock());
+        mergeBBs(callBB, edges.iterator().next().getDestination().getData());
 
         edges = incomingEdgesOf(splitBB);
         assert (edges.size() == 1);
-        mergeBBs(edges.iterator().next().getSource().getBasicBlock(), splitBB);
+        mergeBBs(edges.iterator().next().getSource().getData(), splitBB);
     }
 
     private void inlineClosureAtYieldSite(InlinerInfo ii, IRClosure cl, BasicBlock yieldBB, YieldInstr yield) {
@@ -523,9 +523,9 @@ public class CFG {
         BasicBlock splitBB = yieldBB.splitAtInstruction(yield, getNewLabel(), false);
         cfg.vertexFor(splitBB);
         bbMap.put(splitBB.getLabel(), splitBB);
-        List<Edge> edgesToRemove = new java.util.ArrayList<Edge>();
-        for (Edge e : outgoingEdgesOf(yieldBB)) {
-            cfg.addEdge(splitBB, e.getDestination().getBasicBlock(), e.getType());
+        List<Edge<BasicBlock>> edgesToRemove = new java.util.ArrayList<Edge<BasicBlock>>();
+        for (Edge<BasicBlock> e : outgoingEdgesOf(yieldBB)) {
+            cfg.addEdge(splitBB, e.getDestination().getData(), e.getType());
             edgesToRemove.add(e);
         }
         // Ugh! I get exceptions if I try to pass the set I receive from outgoingEdgesOf!  What a waste!
@@ -547,22 +547,22 @@ public class CFG {
                 b.processClosureArgAndReturnInstrs(ii, yield);
             }
         }
-        for (BasicBlock b : cfg.basicBlocks()) {
+        for (BasicBlock b : cfg.allData()) {
             if (b != cEntry && b != cExit) {
-                for (Edge e : ccfg.outgoingEdgesOf(b)) {
-                    BasicBlock c = e.getDestination().getBasicBlock();
+                for (Edge<BasicBlock> e : ccfg.outgoingEdgesOf(b)) {
+                    BasicBlock c = e.getDestination().getData();
                     if (c != cExit) cfg.addEdge(b, c, e.getType());
                 }
             }
         }
         
-        for (Edge e : cfg.vertexFor(cEntry).getOutgoingEdges()) {
-            BasicBlock destination = e.getDestination().getBasicBlock();
+        for (Edge<BasicBlock> e : cfg.vertexFor(cEntry).getOutgoingEdges()) {
+            BasicBlock destination = e.getDestination().getData();
             if (destination != cExit) cfg.addEdge(yieldBB, destination, e.getType());
         }
         
-        for (Edge e : cfg.vertexFor(cExit).getIncomingEdges()) {
-            BasicBlock source = e.getSource().getBasicBlock();
+        for (Edge<BasicBlock> e : cfg.vertexFor(cExit).getIncomingEdges()) {
+            BasicBlock source = e.getSource().getData();
             if (source != cEntry) {
                 if (e.getType() == EdgeType.EXCEPTION_EDGE) {
                     // e._src has an explicit throw that returns from the closure
@@ -624,9 +624,9 @@ public class CFG {
         BasicBlock splitBB = callBB.splitAtInstruction(call, getNewLabel(), false);
         bbMap.put(splitBB.getLabel(), splitBB);
         cfg.vertexFor(splitBB);
-        List<Edge> edgesToRemove = new java.util.ArrayList<Edge>();
-        for (Edge e : outgoingEdgesOf(callBB)) {
-            cfg.addEdge(splitBB, e.getDestination().getBasicBlock(), e.getType());
+        List<Edge<BasicBlock>> edgesToRemove = new java.util.ArrayList<Edge<BasicBlock>>();
+        for (Edge<BasicBlock> e : outgoingEdgesOf(callBB)) {
+            cfg.addEdge(splitBB, e.getDestination().getData(), e.getType());
             edgesToRemove.add(e);
         }
         // Ugh! I get exceptions if I try to pass the set I receive from outgoingEdgesOf!  What a waste! 
@@ -639,7 +639,7 @@ public class CFG {
         CFG mcfg = m.getCFG();
         BasicBlock mEntry = mcfg.getEntryBB();
         BasicBlock mExit = mcfg.getExitBB();
-        DirectedGraph g = new DirectedGraph();
+        DirectedGraph g = new DirectedGraph<BasicBlock>();
         for (BasicBlock b : mcfg.getNodes()) {
             if (b != mEntry && b != mExit) {
                 BasicBlock bCloned = b.cloneForInlining(ii);
@@ -652,8 +652,8 @@ public class CFG {
         for (BasicBlock x : mcfg.getNodes()) {
             if (x != mEntry && x != mExit) {
                 BasicBlock rx = ii.getRenamedBB(x);
-                for (Edge e : mcfg.outgoingEdgesOf(x)) {
-                    BasicBlock b = e.getDestination().getBasicBlock();
+                for (Edge<BasicBlock> e : mcfg.outgoingEdgesOf(x)) {
+                    BasicBlock b = e.getDestination().getData();
                     if (b != mExit) {
                         cfg.addEdge(rx, ii.getRenamedBB(b), e.getType());
                     }
@@ -662,15 +662,15 @@ public class CFG {
         }
 
         // 4. Hook up entry/exit edges
-        for (Edge e : mcfg.outgoingEdgesOf(mEntry)) {
-            BasicBlock destination = e.getDestination().getBasicBlock();
+        for (Edge<BasicBlock> e : mcfg.outgoingEdgesOf(mEntry)) {
+            BasicBlock destination = e.getDestination().getData();
             if (destination != mExit) {
                 cfg.addEdge(callBB, ii.getRenamedBB(destination), e.getType());
             }
         }
 
-        for (Edge e : mcfg.incomingEdgesOf(mExit)) {
-            BasicBlock source = e.getSource().getBasicBlock();
+        for (Edge<BasicBlock> e : mcfg.incomingEdgesOf(mExit)) {
+            BasicBlock source = e.getSource().getData();
             if (source != mEntry) {
                 if (e.getType() == EdgeType.EXCEPTION_EDGE) {
                     // e._src has an explicit throw that returns from the callee
@@ -760,8 +760,8 @@ public class CFG {
             // Check if all children of the top of the stack have been added
             BasicBlock b = stack.peek();
             boolean allChildrenDone = true;
-            for (Edge e : cfg.vertexFor(b).getOutgoingEdges()) {
-                BasicBlock dst = e.getDestination().getBasicBlock();
+            for (Edge<BasicBlock> e : cfg.vertexFor(b).getOutgoingEdges()) {
+                BasicBlock dst = e.getDestination().getData();
                 int dstID = dst.getID();
                 if (!bbSet.get(dstID)) {
                     allChildrenDone = false;
@@ -855,8 +855,8 @@ public class CFG {
                 Integer newBIdom = null;
 
                 // newBIdom is initialized to be some (first-encountered, for ex.) processed predecessor of 'b'.
-                for (Edge e : cfg.vertexFor(b).getIncomingEdges()) {
-                    BasicBlock src = e.getSource().getBasicBlock();
+                for (Edge<BasicBlock> e : cfg.vertexFor(b).getIncomingEdges()) {
+                    BasicBlock src = e.getSource().getData();
                     Integer srcPoNumber = bbToPoNumbers[src.getID()];
                     if (idoms[srcPoNumber] != null) {
 //                        System.out.println("Initialized idom(" + bPoNumber + ")=" + srcPoNumber);
@@ -870,9 +870,9 @@ public class CFG {
 
                 // Now, intersect dom sets of all of b's predecessors 
                 Integer processedPred = newBIdom;
-                for (Edge e : cfg.vertexFor(b).getIncomingEdges()) {
+                for (Edge<BasicBlock> e : cfg.vertexFor(b).getIncomingEdges()) {
                     // Process b's predecessors except the initialized bidom value
-                    BasicBlock src = e.getSource().getBasicBlock();
+                    BasicBlock src = e.getSource().getData();
                     Integer srcPoNumber = bbToPoNumbers[src.getID()];
                     Integer srcIdom = idoms[srcPoNumber];
                     if ((srcIdom != null) && (srcPoNumber != processedPred)) {
@@ -1015,10 +1015,10 @@ public class CFG {
                     if (e.getType() == EdgeType.EXCEPTION_EDGE) {
                         toRemove.add(e);
                         
-                        if (bbRescuerMap.get(e.getSource()) == e.getDestination().getBasicBlock()) {
+                        if (bbRescuerMap.get(e.getSource()) == e.getDestination().getData()) {
                             bbRescuerMap.remove(e.getSource());
                         }
-                        if (bbEnsurerMap.get(e.getSource()) == e.getDestination().getBasicBlock()) {
+                        if (bbEnsurerMap.get(e.getSource()) == e.getDestination().getData()) {
                             bbEnsurerMap.remove(e.getSource());
                         }
                     }
@@ -1050,9 +1050,9 @@ public class CFG {
 
         // Push all exception edge targets (first bbs of rescue blocks) first so that rescue handlers are laid out last
         // at the end of the method, outside the common execution path
-        for (Edge e : cfg.edges()) {
+        for (Edge<BasicBlock> e : cfg.edges()) {
             if (e.getType() == EdgeType.EXCEPTION_EDGE) {
-                pushBBOnStack(stack, bbSet, e.getDestination().getBasicBlock());
+                pushBBOnStack(stack, bbSet, e.getDestination().getData());
             }
         }
 
@@ -1069,8 +1069,8 @@ public class CFG {
             } else if (b == entryBB) {
                 int i = 0;
                 BasicBlock[] bs = new BasicBlock[3];
-                for (Edge e : cfg.vertexFor(b).getOutgoingEdges()) {
-                    bs[i++] = e.getDestination().getBasicBlock();
+                for (Edge<BasicBlock> e : cfg.vertexFor(b).getOutgoingEdges()) {
+                    bs[i++] = e.getDestination().getData();
                 }
                 BasicBlock b1 = bs[0], b2 = bs[1], b3 = bs[2];
                 if (b3 != null) {
@@ -1091,11 +1091,11 @@ public class CFG {
                 if (lastInstr == null) {
                     // Only possible for the root block with 2 edges + blocks with just 1 target with no instructions
                     BasicBlock b1 = null, b2 = null;
-                    for (Edge e : cfg.vertexFor(b).getOutgoingEdges()) {
+                    for (Edge<BasicBlock> e : cfg.vertexFor(b).getOutgoingEdges()) {
                         if (b1 == null) {
-                            b1 = e.getDestination().getBasicBlock();
+                            b1 = e.getDestination().getData();
                         } else if (b2 == null) {
-                            b2 = e.getDestination().getBasicBlock();
+                            b2 = e.getDestination().getData();
                         } else {
                             System.err.println("============= ERROR ================");
                             System.err.println("Encountered bb: " + b.getID() + " with no instrs. and more than 2 targets!!");
@@ -1126,8 +1126,8 @@ public class CFG {
                         // This can happen because of exceptions and rescue handlers
                         // If so, dont ignore it.  Process it right away (because everyone will end up ignoring this block!)
                         boolean allJumps = true;
-                        for (Edge e : cfg.vertexFor(blockToIgnore).getIncomingEdges()) {
-                            if (!(e.getSource().getBasicBlock().getLastInstr() instanceof JumpInstr)) {
+                        for (Edge<BasicBlock> e : cfg.vertexFor(blockToIgnore).getIncomingEdges()) {
+                            if (!(e.getSource().getData().getLastInstr() instanceof JumpInstr)) {
                                 allJumps = false;
                             }
                         }
@@ -1141,8 +1141,8 @@ public class CFG {
                     }
 
                     // Push everything else
-                    for (Edge e : cfg.vertexFor(b).getOutgoingEdges()) {
-                        BasicBlock x = e.getDestination().getBasicBlock();
+                    for (Edge<BasicBlock> e : cfg.vertexFor(b).getOutgoingEdges()) {
+                        BasicBlock x = e.getDestination().getData();
                         if (x != blockToIgnore) pushBBOnStack(stack, bbSet, x);
                     }
                 }
@@ -1151,7 +1151,7 @@ public class CFG {
         }
 
         // Verify that all bbs have been laid out!
-        for (BasicBlock b : cfg.basicBlocks()) {
+        for (BasicBlock b : cfg.allData()) {
             if (!bbSet.get(b.getID())) {
                 throw new RuntimeException("Bad CFG linearization: BB " + b.getID() + " has been missed!");
             }
@@ -1173,9 +1173,9 @@ public class CFG {
                     }
                 } // If curr has a single successor and next is not it, and curr does't end in a control transfer instruction, add a jump!
                 else {
-                    Set<Edge> succs = cfg.vertexFor(curr).getOutgoingEdges();
+                    Set<Edge<BasicBlock>> succs = cfg.vertexFor(curr).getOutgoingEdges();
                     if (succs.size() == 1) {
-                        BasicBlock tgt = succs.iterator().next().getDestination().getBasicBlock();
+                        BasicBlock tgt = succs.iterator().next().getDestination().getData();
                         if ((tgt != next) && ((li == null) || !li.operation.transfersControl())) {
 //                            System.out.println("BB " + curr.getID() + " doesn't fall through to " + next.getID() + ".  Adding a jump to " + tgt._label);
                             curr.addInstr(new JumpInstr(tgt.getLabel()));
@@ -1189,9 +1189,9 @@ public class CFG {
                     curr.addInstr(new ReturnInstr(Nil.NIL));
                 }
             } else if (curr != exitBB) {
-                Set<Edge> succs = cfg.vertexFor(curr).getOutgoingEdges();
+                Set<Edge<BasicBlock>> succs = cfg.vertexFor(curr).getOutgoingEdges();
                 assert succs.size() == 1;
-                BasicBlock tgt = succs.iterator().next().getDestination().getBasicBlock();
+                BasicBlock tgt = succs.iterator().next().getDestination().getData();
                 if ((li == null) || !li.operation.transfersControl()) {
 //                    System.out.println("BB " + curr.getID() + " is the last bb in the layout! Adding a jump to " + tgt._label);
                     curr.addInstr(new JumpInstr(tgt.getLabel()));

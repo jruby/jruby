@@ -3,30 +3,29 @@ package org.jruby.compiler.ir.util;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
-import org.jruby.compiler.ir.representations.BasicBlock;
 
 /**
  *
  */
-public class Vertex {
+public class Vertex<T> {
     private DirectedGraph graph;
-    private BasicBlock basicBlock;
-    private Set<Edge> incoming = null;
-    private Set<Edge> outgoing = null;
+    private T data;
+    private Set<Edge<T>> incoming = null;
+    private Set<Edge<T>> outgoing = null;
     
-    public Vertex(DirectedGraph graph, BasicBlock basicBlock) {
+    public Vertex(DirectedGraph graph, T data) {
         this.graph = graph;
-        this.basicBlock = basicBlock;
+        this.data = data;
     }
 
     public void addEdgeTo(Vertex destination, Object type) {
-        Edge edge = new Edge(this, destination, type);
+        Edge edge = new Edge<T>(this, destination, type);
         getOutgoingEdges().add(edge);
         destination.getIncomingEdges().add(edge);
         graph.edges().add(edge);
     }
     
-    public void addEdgeTo(BasicBlock destination, Object type) {
+    public void addEdgeTo(T destination, Object type) {
         Vertex destinationVertex = graph.vertexFor(destination);
         
         addEdgeTo(destinationVertex, type);
@@ -58,35 +57,35 @@ public class Vertex {
         outgoing = null;
     }
     
-    public Iterator<Edge> getIncomingEdgesOfType(Object type) {
-        return new EdgeTypeIterator(getIncomingEdges(), type);
+    public Iterator<Edge<T>> getIncomingEdgesOfType(Object type) {
+        return new EdgeTypeIterator<T>(getIncomingEdges(), type);
     }
     
-    public Iterator<Edge> getOutgoingEdgesOfType(Object type) {
-        return new EdgeTypeIterator(getOutgoingEdges(), type);
+    public Iterator<Edge<T>> getOutgoingEdgesOfType(Object type) {
+        return new EdgeTypeIterator<T>(getOutgoingEdges(), type);
     }
     
-    public Set<Edge> getIncomingEdges() {
-        if (incoming == null) incoming = new HashSet<Edge>();
+    public Set<Edge<T>> getIncomingEdges() {
+        if (incoming == null) incoming = new HashSet<Edge<T>>();
         
         return incoming;
     }
     
-    public Set<Edge> getOutgoingEdges() {
-        if (outgoing == null) outgoing = new HashSet<Edge>();
+    public Set<Edge<T>> getOutgoingEdges() {
+        if (outgoing == null) outgoing = new HashSet<Edge<T>>();
         
         return outgoing;
     }    
     
-    public BasicBlock getBasicBlock() {
-        return basicBlock;
+    public T getData() {
+        return data;
     }
     
     @Override
     public String toString() {
         StringBuilder buf = new StringBuilder("Vertex ");
         
-        buf.append(basicBlock.getID()).append(":\nincoming edges\n");
+        buf.append(data).append(":\nincoming edges\n");
         for (Edge edge: getIncomingEdges()) {
             buf.append(edge).append("\n");
         }

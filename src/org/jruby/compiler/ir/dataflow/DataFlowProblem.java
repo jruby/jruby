@@ -93,11 +93,11 @@ public abstract class DataFlowProblem {
         return variables.size();
     }
 
-    public Set<Edge> incomingEdgesOf(BasicBlock bb) {
+    public Set<Edge<BasicBlock>> incomingEdgesOf(BasicBlock bb) {
         return cfg.incomingEdgesOf(bb);
     }
 
-    public Set<Edge> outgoingEdgesOf(BasicBlock bb) {
+    public Set<Edge<BasicBlock>> outgoingEdgesOf(BasicBlock bb) {
         return cfg.outgoingEdgesOf(bb);
     }
 
