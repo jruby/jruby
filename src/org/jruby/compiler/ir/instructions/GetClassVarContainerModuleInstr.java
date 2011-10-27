@@ -49,6 +49,7 @@ public class GetClassVarContainerModuleInstr extends Instr {
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+        // SSS FIXME: This is ugly and needs fixing.  Is there another way of capturing this info?
         RubyModule containerModule = (candidateScope == null) ? null : candidateScope.getStaticScope().getModule();
         if (containerModule == null) containerModule = ASTInterpreter.getClassVariableBase(context, context.getRuntime());
         if (containerModule == null && object != null) {

@@ -25,8 +25,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 
-// SSS FIXME: Should we merge DefineInstanceMethod and DefineClassMethod instructions?
-// identical except for 1 bit in interpret -- or will they diverge?
 public class DefineInstanceMethodInstr extends OneOperandInstr {
     public final IRMethod method;
 
@@ -55,7 +53,7 @@ public class DefineInstanceMethodInstr extends OneOperandInstr {
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         // SSS FIXME: This is a temporary solution that uses information from the stack.
         // This instruction and this logic will be re-implemented to not use implicit information from the stack.
-        // Till such time, this code implements the correct semantics
+        // Till such time, this code implements the correct semantics.
         RubyModule clazz = context.getRubyClass();
         String     name  = method.getName();
 

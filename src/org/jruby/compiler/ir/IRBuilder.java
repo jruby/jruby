@@ -1161,6 +1161,7 @@ public class IRBuilder {
         return val;
     }
     
+    // SSS FIXME: This feels a little ugly.  Is there a better way of representing this?
     public Variable classVarDefinitionContainer(IRScope s, boolean lookInMetaClass) {
         /* -------------------------------------------------------------------------------
          * Find the nearest class/module scope (within which 's' is embedded) that can hold

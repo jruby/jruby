@@ -80,7 +80,6 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
     private IRubyObject commonYieldPath(ThreadContext context, IRubyObject[] args, IRubyObject self, RubyModule klass, Binding binding, Type type, Block block) {
         Visibility oldVis = binding.getFrame().getVisibility();
         RubyModule currentModule = closure.getStaticScope().getModule();
-        // context.getCurrentScope().getStaticScope().setModule(currentModule);
 
         Frame prevFrame = context.preYieldNoScope(binding, klass);
         if (klass == null) self = prepareSelf(binding);
