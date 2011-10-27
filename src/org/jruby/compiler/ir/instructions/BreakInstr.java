@@ -30,7 +30,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 // def foo(n); break if n > 5; end; foo(100) will throw an exception
 //
 public class BreakInstr extends OneOperandInstr {
-    public final IRExecutionScope scopeToReturnTo;
+    private final IRExecutionScope scopeToReturnTo;
 
     public BreakInstr(Operand rv, IRExecutionScope s) {
         super(Operation.BREAK, null, rv);

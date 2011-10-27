@@ -1,26 +1,21 @@
 package org.jruby.compiler.ir.instructions;
 
-import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.IRModule;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Label;
-import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 
-import org.jruby.Ruby;
 import org.jruby.runtime.ThreadContext;
 
-import java.util.Map;
-import org.jruby.RubyModule;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ConstMissingInstr extends Instr {
-    IRModule definingModule;
-    String  missingConst;
+    private IRModule definingModule;
+    private String  missingConst;
 
     public ConstMissingInstr(Variable dest, IRModule definingModule, String missingConst) {
         super(Operation.CONST_MISSING, dest);
@@ -31,8 +26,6 @@ public class ConstMissingInstr extends Instr {
     public Operand[] getOperands() { 
         return new Operand[] {};
     }
-
-    public void simplifyOperands(Map<Operand, Operand> valueMap) { }
 
     public Instr cloneForInlining(InlinerInfo ii) {
         return new ConstMissingInstr(ii.getRenamedVariable(result), definingModule, missingConst);
