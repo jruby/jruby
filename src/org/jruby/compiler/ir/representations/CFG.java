@@ -1179,9 +1179,13 @@ public class CFG {
                     curr.addInstr(new ReturnInstr(Nil.NIL));
                 }
             } else if (curr != exitBB) {
-                Set<Edge<BasicBlock>> succs = cfg.vertexFor(curr).getOutgoingEdges();
-                assert succs.size() == 1;
-                BasicBlock tgt = succs.iterator().next().getDestination().getData();
+                Iterator<Edge<BasicBlock>> edges = cfg.vertexFor(curr).getOutgoingEdges().iterator();
+                BasicBlock tgt = edges.next().getDestination().getData();
+                if (edges.hasNext()) {
+                    BasicBlock other = edges.next().getDestination().getData();
+                    assert (other == exitBB || tgt == exitBB);
+                    if (tgt == exitBB) tgt = other;
+                }
                 if ((li == null) || !li.getOperation().transfersControl()) {
 //                    System.out.println("BB " + curr.getID() + " is the last bb in the layout! Adding a jump to " + tgt._label);
                     curr.addInstr(new JumpInstr(tgt.getLabel()));
