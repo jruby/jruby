@@ -15,6 +15,11 @@ public class Options {
             this.description = description;
         }
         
+        @Override
+        public String toString() {
+            return "jruby." + name;
+        }
+        
         public final Category category;
         public final String name;
         public final Class type;
@@ -80,7 +85,7 @@ public class Options {
     }
     
     public static final StringOption COMPILE_MODE =
-            new StringOption(COMPILER, "compile.mode", new String[]{"JIT", "FORCE", "OFF"}, "JIT", "Set compilation mode. JIT = at runtime; FORCE = before execution.");
+            new StringOption(COMPILER, "compile.mode", new String[]{"JIT", "FORCE", "OFF", "OFFIR"}, "JIT", "Set compilation mode. JIT = at runtime; FORCE = before execution.");
     public static final BooleanOption COMPILE_DUMP =
             new BooleanOption(COMPILER, "compile.dump", false, "Dump to console all bytecode generated at runtime.");
     public static final BooleanOption COMPILE_THREADLESS =

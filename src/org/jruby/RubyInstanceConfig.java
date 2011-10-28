@@ -116,6 +116,8 @@ public class RubyInstanceConfig {
 
             if (jitModeProperty.equals("OFF")) {
                 compileMode = CompileMode.OFF;
+            } else if (jitModeProperty.equals("OFFIR")) {
+                compileMode = compileMode.OFFIR;
             } else if (jitModeProperty.equals("JIT")) {
                 compileMode = CompileMode.JIT;
             } else if (jitModeProperty.equals("FORCE")) {
