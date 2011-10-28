@@ -1033,6 +1033,21 @@ public class CFG {
 
         deleteOrphanedBlocks();
     }
+    
+    /**
+     * Is this block only reachable by JumpInstr?
+     * (Exception and Rescue handlers can sometimes cause this situation)
+     */
+    private boolean isOnlyReachableFromJumpInstrs(BasicBlock block) {
+        // Check if all of blockToIgnore's predecessors get to it with a jump!
+        // This can happen because of exceptions and rescue handlers
+        // If so, dont ignore it.  Process it right away (because everyone will end up ignoring this block!)
+        for (Edge<BasicBlock> e : cfg.vertexFor(block).getIncomingEdges()) {
+            if (!(e.getSource().getData().getLastInstr() instanceof JumpInstr)) return false;
+        }
+        
+        return true;
+    }
 
     public List<BasicBlock> linearize() {
         if (linearizedBBList != null) return linearizedBBList; // Already linearized
@@ -1111,24 +1126,14 @@ public class CFG {
                     // System.out.println("last instr is: " + lastInstr);
                     BasicBlock blockToIgnore = null;
                     if (lastInstr instanceof JumpInstr) {
-                        blockToIgnore = bbMap.get(((JumpInstr) lastInstr).target);
-
-                        // Check if all of blockToIgnore's predecessors get to it with a jump!
-                        // This can happen because of exceptions and rescue handlers
-                        // If so, dont ignore it.  Process it right away (because everyone will end up ignoring this block!)
-                        boolean allJumps = true;
-                        for (Edge<BasicBlock> e : cfg.vertexFor(blockToIgnore).getIncomingEdges()) {
-                            if (!(e.getSource().getData().getLastInstr() instanceof JumpInstr)) {
-                                allJumps = false;
-                            }
-                        }
-
-                        if (allJumps) blockToIgnore = null;
+                        blockToIgnore = bbMap.get(((JumpInstr) lastInstr).getJumpTarget());
+    
+                        // Un-ignore this block since there is no natural path to it.
+                        if (isOnlyReachableFromJumpInstrs(blockToIgnore)) blockToIgnore = null;
                     } else if (lastInstr instanceof BranchInstr) {
                         // Push the taken block onto the stack first so that it gets processed last!
-                        BasicBlock takenBlock = bbMap.get(((BranchInstr) lastInstr).getJumpTarget());
-                        pushBBOnStack(stack, bbSet, takenBlock);
-                        blockToIgnore = takenBlock;
+                        blockToIgnore = bbMap.get(((BranchInstr) lastInstr).getJumpTarget());
+                        pushBBOnStack(stack, bbSet, blockToIgnore);
                     }
 
                     // Push everything else
