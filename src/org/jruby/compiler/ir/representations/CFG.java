@@ -1062,7 +1062,7 @@ public class CFG {
             linearizedBBList.add(b);
 
             if (b == exitBB) {
-                assert stack.empty();
+                // Exit cannot also be entry and it has no outgoing edges...skip
             } else if (b == entryBB) {
                 int i = 0;
                 BasicBlock[] bs = new BasicBlock[3];
@@ -1103,7 +1103,6 @@ public class CFG {
                         }
                     }
 
-                    assert (b1 != null);
                     if (b2 == null) {
                         pushBBOnStack(stack, bbSet, b1);
                     } else if (b1.getID() < b2.getID()) {
@@ -1143,7 +1142,6 @@ public class CFG {
                         if (x != blockToIgnore) pushBBOnStack(stack, bbSet, x);
                     }
                 }
-                assert !stack.empty();
             }
         }
 
