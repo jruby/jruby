@@ -1079,8 +1079,7 @@ public class CFG {
                 }
             } else {
                 // Find the basic block that is the target of the 'taken' branch
-                Instr lastInstr = b.getLastInstr();
-                if (lastInstr == null) {
+                if (b.isEmpty()) {  // No Instructions
                     // Only possible for the root block with 2 edges + blocks with just 1 target with no instructions
                     BasicBlock b1 = null, b2 = null;
                     for (Edge<BasicBlock> e : cfg.vertexFor(b).getOutgoingEdges()) {
@@ -1108,6 +1107,7 @@ public class CFG {
                         pushBBOnStack(stack, bbSet, b2);
                     }
                 } else {
+                    Instr lastInstr = b.getLastInstr();                    
                     // System.out.println("last instr is: " + lastInstr);
                     BasicBlock blockToIgnore = null;
                     if (lastInstr instanceof JumpInstr) {
