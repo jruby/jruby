@@ -1085,7 +1085,7 @@ public class IRBuilder {
         String className = cpath.getName();
         Operand container = getContainerFromCPath(cpath, s);
 
-        IRClass c = new IRClass(s, superClass, className, classNode.getScope());
+        IRClass c = new IRClass(s, (superClass instanceof MetaObject) ? (IRClass)((MetaObject)superClass).scope : null, className, classNode.getScope());
         Variable ret = s.getNewTemporaryVariable();
         s.addInstr(new DefineClassInstr(ret, c, container, superClass));
         // SSS NOTE: This is a debugging tool that works in most cases and is not used

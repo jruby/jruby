@@ -26,6 +26,8 @@ public class IRMethod extends IRExecutionScope {
     // it seems the first one ... but let us see ...
     private CodeVersion version;   // Current code version for this method -- can change during execution as methods get redefined!
 
+	 // SSS FIXME: Note that if operands from the method are modified,
+	 // callArgs would have to be updated as well
     // Call parameters
     private List<Operand> callArgs;
 
@@ -75,18 +77,9 @@ public class IRMethod extends IRExecutionScope {
         super.addInstr(i);
     }
 
-    public Operand[] getCallArgs() { 
+    public Operand[] getCallArgs() {
         return callArgs.toArray(new Operand[callArgs.size()]);
     }
-
-/**
-    @Override
-    public void setConstantValue(String constRef, Operand val) {
-        if (!isAModuleRootMethod()) throw new NotCompilableException("Unexpected: Encountered set constant value in a method!");
-        
-        ((MetaObject) container).scope.setConstantValue(constRef, val);
-    }
-**/
 
     public boolean isAModuleRootMethod() { 
         return IRModule.isAModuleRootMethod(this);

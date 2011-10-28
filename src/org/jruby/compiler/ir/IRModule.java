@@ -11,7 +11,6 @@ import org.jruby.compiler.ir.compiler_pass.CompilerPass;
 import org.jruby.compiler.ir.instructions.ReceiveSelfInstruction;
 import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
 import org.jruby.compiler.ir.operands.LocalVariable;
-import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.parser.IRStaticScopeFactory;
 import org.jruby.parser.StaticScope;
@@ -37,7 +36,6 @@ public class IRModule extends IRScopeImpl {
     private List<IRModule> modules = new ArrayList<IRModule>();
     private List<IRClass> classes = new ArrayList<IRClass>();
     private List<IRMethod> methods = new ArrayList<IRMethod>();
-    private Map<String, Operand> constants = new HashMap<String, Operand>();
     
     static {
         bootStrap();
@@ -114,63 +112,6 @@ public class IRModule extends IRScopeImpl {
 
     public List<IRMethod> getMethods() {
         return methods;
-    }
-
-    public Map getConstants() {
-        return Collections.unmodifiableMap(constants);
-    }
-
-    // Attempted compile-time resolution of a Ruby constant.
-    //
-    // We might not be able to resolve for the following reasons:
-    // 1. The constant is missing
-    // 2. The reference is a lexical forward-reference
-    // 3. The constant's value is only known when the program first runs.
-    // 4. Our compiler isn't able to right away infer that this is a constant.
-    //
-    // SSS FIXME:
-    // 1. The operand can be a literal array, range, or hash -- hence Operand
-    //    because Array, Range, and Hash derive from Operand and not Constant ...
-    //    Is there a way to fix this impedance mismatch?
-    // 2. It should be possible to handle the forward-reference case by creating a new
-    //    ForwardReference operand and then inform the scope of the forward reference
-    //    which the scope can fix up when the reference gets defined.  At code-gen time,
-    //    if the reference is unresolved, when a value is retrieved for the forward-ref
-    //    and we get a null, we can throw a ConstMissing exception!  Not sure!
-    public Operand getConstantValue(String constRef) {
-        return null;
-/**
-SSS: We are no longer going to use this because of the Module.remove_const method
-
-Even if we can resolve the name to a constant we know at compilation time, there is no
-guarantee that the value will exist at runtime!  So, we need to actually return the module
-from which the value was found so that the caller can then protect the resolved value against
-the module version to protect against remove_consts!  Even though this feature is very rarely
-used, we are now forced to be conservative.
-
-        Operand cv = constants.get(constRef);
-        Operand p = container;
-        // SSS FIXME: Traverse up the scope hierarchy to find the constant as long as the container is a static scope
-        if ((cv == null) && (p != null) && (p instanceof MetaObject)) {
-            // Can be null for IR_Script meta objects
-            if (((MetaObject) p).scope == null) {
-                IRClass coreClass = IRModule.getCoreClass(constRef);
-
-                return coreClass != null ? new ClassMetaObject(coreClass) : null;
-            }
-            // Boxed scope has to be an IR module or class
-            cv = ((IRModule) (((MetaObject) p).scope)).getConstantValue(constRef);
-
-            // If cv is null, it can either mean the constant is missing 
-            // or it can mean that we couldn't resolve this at compilation time.
-        }
-        return cv;
-**/
-    }
-
-    public void setConstantValue(String constRef, Operand val) {
-        // FIXME: isConstant can be confusing since we have Ruby constants and constants in the compiler sense
-        if (val.isConstant()) constants.put(constRef, val);
     }
 
     public void addModule(IRModule m) {

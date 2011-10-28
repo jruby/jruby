@@ -1,16 +1,14 @@
 package org.jruby.compiler.ir;
 
-import org.jruby.compiler.ir.operands.Operand;
-import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.parser.StaticScope;
 
 public class IRMetaClass extends IRClass {
     static int dummyMetaClassCount = 0;
-    static IRMetaClass CLASS_METACLASS;    // SSS FIXME: Needs initialization
+    static IRMetaClass CLASS_METACLASS = new IRMetaClass(null, null);
 
     public IRMetaClass(IRScope s, StaticScope staticScope) {
         // Super class is always <Class:Class>
-        super(s, MetaObject.create(CLASS_METACLASS), "<DUMMY_MC:" + dummyMetaClassCount + ">", staticScope);
+        super(s, CLASS_METACLASS, "<DUMMY_MC:" + dummyMetaClassCount + ">", staticScope);
         dummyMetaClassCount += 1;
     }
 

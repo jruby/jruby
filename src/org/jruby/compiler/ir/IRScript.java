@@ -1,7 +1,6 @@
 package org.jruby.compiler.ir;
 
 import org.jruby.compiler.ir.operands.LocalVariable;
-import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.StringLiteral;
 import org.jruby.parser.StaticScope;
 import org.jruby.compiler.ir.compiler_pass.CompilerPass;
@@ -14,7 +13,7 @@ public class IRScript extends IRScopeImpl {
         dummyClass = new IRClass(this, null, "[script]:" + sourceName, staticScope);
     }
 
-    public Operand getFileName() {
+    public StringLiteral getFileName() {
         return new StringLiteral(getName());
     }
 

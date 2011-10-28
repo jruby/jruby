@@ -2,7 +2,6 @@ package org.jruby.compiler.ir;
 
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.operands.Label;
-import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.compiler_pass.CompilerPass;
 import org.jruby.compiler.ir.operands.LocalVariable;

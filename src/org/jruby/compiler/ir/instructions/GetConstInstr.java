@@ -29,16 +29,6 @@ public class GetConstInstr extends GetInstr {
         super(Operation.GET_CONST, dest, scopeOrObj, constName);
     }
 
-    @Override
-    public Operand simplifyAndGetResult(Map<Operand, Operand> valueMap) {
-        simplifyOperands(valueMap);
-        if (!(getSource() instanceof MetaObject)) return null;
-
-        // SSS FIXME: Isn't this always going to be an IR Module?
-        IRScope s = ((MetaObject) getSource()).scope;
-        return (s instanceof IRModule) ? ((IRModule)s).getConstantValue(getName()) : null;
-    }
-
     public Instr cloneForInlining(InlinerInfo ii) {
         return new GetConstInstr(ii.getRenamedVariable(getResult()), getSource().cloneForInlining(ii), getName());
     }
