@@ -5,6 +5,7 @@ import java.util.BitSet;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.ListIterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -1064,18 +1065,12 @@ public class CFG {
             if (b == exitBB) {
                 // Exit cannot also be entry and it has no outgoing edges...skip
             } else if (b == entryBB) {
-                int i = 0;
-                BasicBlock[] bs = new BasicBlock[3];
-                for (Edge<BasicBlock> e : cfg.vertexFor(b).getOutgoingEdges()) {
-                    bs[i++] = e.getDestination().getData();
-                }
-                BasicBlock b1 = bs[0], b2 = bs[1], b3 = bs[2];
-                if (b3 != null) {
-                    pushBBOnStack(stack, bbSet, b3);
-                }
-                if (b2 == null) {
-                    pushBBOnStack(stack, bbSet, b1);
-                } else if (b1.getID() < b2.getID()) {
+                // Entry can only have two out edges (-> firstBB, -> exitBB)
+                Iterator<Edge<BasicBlock>> edges = cfg.vertexFor(b).getOutgoingEdges().iterator();
+                BasicBlock b1 = edges.next().getDestination().getData();
+                BasicBlock b2 = edges.next().getDestination().getData();
+
+                if (b1.getID() < b2.getID()) {  // Process in creation order
                     pushBBOnStack(stack, bbSet, b2);
                     pushBBOnStack(stack, bbSet, b1);
                 } else {
