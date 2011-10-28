@@ -93,6 +93,11 @@ namespace :spec do
     mspec :compile_mode => "OFF", :spec_config => RUBY18_MSPEC_FILE
   end
 
+  desc "Tagged 1.8 specs in interpreted (IR) mode only"
+  task :interpreted_ir_18 do
+    mspec :compile_mode => "OFFIR", :spec_config => RUBY18_MSPEC_FILE
+  end
+
   desc "Tagged 1.8 specs in JIT mode only (threshold=0)"
   task :compiled_18 do
     mspec :compile_mode => "JIT", :spec_config => RUBY18_MSPEC_FILE, 
