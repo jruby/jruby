@@ -1,5 +1,8 @@
 package org.jruby.compiler.ir;
 
+import java.util.List;
+import java.util.ArrayList;
+
 import org.jruby.RubyModule;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.LocalVariable;
@@ -21,8 +24,11 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
 public class IREvalScript extends IRClosure {
-    private IRExecutionScope nearestNonEvalScope;
     private static final Logger LOG = LoggerFactory.getLogger("IREvalScript");
+
+    private IRExecutionScope nearestNonEvalScope;
+    private List<IRClosure> beginBlocks;
+    private List<IRClosure> endBlocks;
 
     public IREvalScript(IRScope lexicalParent, StaticScope staticScope) {
         super(lexicalParent, staticScope, "EVAL_");
@@ -60,6 +66,26 @@ public class IREvalScript extends IRClosure {
     @Override
     protected StaticScope constructStaticScope(StaticScope parent) {
         return IRStaticScopeFactory.newIREvalScope(parent);
+    }
+
+    /* Record a begin block -- not all scope implementations can handle them */
+    public void recordBeginBlock(IRClosure beginBlockClosure) {
+        if (beginBlocks == null) beginBlocks = new ArrayList<IRClosure>();
+        beginBlocks.add(beginBlockClosure);
+    }
+
+    /* Record an end block -- not all scope implementations can handle them */
+    public void recordEndBlock(IRClosure endBlockClosure) {
+        if (endBlocks == null) endBlocks = new ArrayList<IRClosure>();
+        endBlocks.add(endBlockClosure);
+    }
+
+    public List<IRClosure> getBeginBlocks() {
+        return beginBlocks;
+    }
+
+    public List<IRClosure> getEndBlocks() {
+        return endBlocks;
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, DynamicScope evalScope, Block block) {

@@ -1,5 +1,6 @@
 package org.jruby.interpreter;
 
+import java.util.List;
 import java.util.Stack;
 
 import org.jruby.Ruby;
@@ -21,6 +22,7 @@ import org.jruby.compiler.ir.instructions.BreakInstr;
 import org.jruby.compiler.ir.instructions.ThrowExceptionInstr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.operands.Label;
+import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.CFG;
 import org.jruby.exceptions.JumpException;
@@ -41,39 +43,6 @@ import org.jruby.util.log.LoggerFactory;
 public class Interpreter {
     private static final Logger LOG = LoggerFactory.getLogger("Interpreter");
 
-    public static IRubyObject interpret(Ruby runtime, Node rootNode, IRubyObject self) {
-        IRScope scope = new IRBuilder().buildRoot((RootNode) rootNode);
-        scope.prepareForInterpretation();
-//        scope.runCompilerPass(new CallSplitter());
-
-        return interpretTop(runtime, scope, self);
-    }
-
-    public static IRubyObject interpretCommonEval(Ruby runtime, String file, int lineNumber, RootNode rootNode, IRubyObject self, Block block) {
-        StaticScope ss = rootNode.getStaticScope();
-        // SSS FIXME: Weirdness here.  We cannot get the containing IR scope from ss because of static-scope wrapping that is going on
-        // 1. In all cases, DynamicScope.getEvalScope wraps the executing static scope in a new local scope.
-        // 2. For instance-eval (module-eval, class-eval) scenarios, there is an extra scope that is added to 
-        //    the stack in ThreadContext.java:preExecuteUnder
-        // I dont know what rule to apply when.  However, in both these cases, since there is no IR-scope associated,
-        // I have used the hack below where I first unwrap once and see if I get a non-null IR scope.  If that doesn't
-        // work, I unwarp once more and I am guaranteed to get the IR scope I want.
-        IRScope containingIRScope = ((IRStaticScope)ss.getEnclosingScope()).getIRScope();
-        if (containingIRScope == null) containingIRScope = ((IRStaticScope)ss.getEnclosingScope().getEnclosingScope()).getIRScope();
-        IREvalScript evalScript = new IRBuilder().buildEvalRoot(ss, containingIRScope, file, lineNumber, rootNode);
-        evalScript.prepareForInterpretation();
-//        evalScript.runCompilerPass(new CallSplitter());
-        return evalScript.call(runtime.getCurrentContext(), self, evalScript.getStaticScope().getModule(), rootNode.getScope(), block);
-    }
-
-    public static IRubyObject interpretSimpleEval(Ruby runtime, String file, int lineNumber, Node node, IRubyObject self) {
-        return interpretCommonEval(runtime, file, lineNumber, (RootNode)node, self, Block.NULL_BLOCK);
-    }
-
-    public static IRubyObject interpretBindingEval(Ruby runtime, String file, int lineNumber, Node node, IRubyObject self, Block block) {
-        return interpretCommonEval(runtime, file, lineNumber, (RootNode)node, self, block);
-    }
-
     private static int interpInstrsCount = 0;
 
     // SSS FIXME: Isn't there a simpler way for doing this?
@@ -89,6 +58,57 @@ public class Interpreter {
         return RubyInstanceConfig.IR_DEBUG;
     }
 
+    public static IRubyObject interpret(Ruby runtime, Node rootNode, IRubyObject self) {
+        IRScope scope = new IRBuilder().buildRoot((RootNode) rootNode);
+        scope.prepareForInterpretation();
+//        scope.runCompilerPass(new CallSplitter());
+
+        return interpretTop(runtime, scope, self);
+    }
+
+    public static IRubyObject interpretCommonEval(Ruby runtime, String file, int lineNumber, RootNode rootNode, IRubyObject self, Block block) {
+        // SSS FIXME: Weirdness here.  We cannot get the containing IR scope from ss because of static-scope wrapping that is going on
+        // 1. In all cases, DynamicScope.getEvalScope wraps the executing static scope in a new local scope.
+        // 2. For instance-eval (module-eval, class-eval) scenarios, there is an extra scope that is added to 
+        //    the stack in ThreadContext.java:preExecuteUnder
+        // I dont know what rule to apply when.  However, in both these cases, since there is no IR-scope associated,
+        // I have used the hack below where I first unwrap once and see if I get a non-null IR scope.  If that doesn't
+        // work, I unwarp once more and I am guaranteed to get the IR scope I want.
+        StaticScope ss = rootNode.getStaticScope();
+        IRScope containingIRScope = ((IRStaticScope)ss.getEnclosingScope()).getIRScope();
+        if (containingIRScope == null) containingIRScope = ((IRStaticScope)ss.getEnclosingScope().getEnclosingScope()).getIRScope();
+
+        IREvalScript evalScript = new IRBuilder().buildEvalRoot(ss, containingIRScope, file, lineNumber, rootNode);
+        evalScript.prepareForInterpretation();
+//        evalScript.runCompilerPass(new CallSplitter());
+        ThreadContext context = runtime.getCurrentContext(); 
+        runBeginEndBlocks(evalScript.getBeginBlocks(), context, self);
+        IRubyObject rv = evalScript.call(context, self, evalScript.getStaticScope().getModule(), rootNode.getScope(), block);
+        runBeginEndBlocks(evalScript.getEndBlocks(), context, self);
+        return rv;
+    }
+
+    public static IRubyObject interpretSimpleEval(Ruby runtime, String file, int lineNumber, Node node, IRubyObject self) {
+        return interpretCommonEval(runtime, file, lineNumber, (RootNode)node, self, Block.NULL_BLOCK);
+    }
+
+    public static IRubyObject interpretBindingEval(Ruby runtime, String file, int lineNumber, Node node, IRubyObject self, Block block) {
+        return interpretCommonEval(runtime, file, lineNumber, (RootNode)node, self, block);
+    }
+
+    public static void runBeginEndBlocks(List<IRClosure> beBlocks, ThreadContext context, IRubyObject self) {
+        if (beBlocks == null) return;
+
+        for (IRClosure b: beBlocks) {
+            // SSS FIXME: Should I piggyback on ClosureMetaObject.retrieve or just copy that code here?
+            b.prepareForInterpretation();
+            Block blk = (Block)MetaObject.create(b).retrieve(null, context, self);
+            blk.yield(context, null);
+        }
+    }
+
+    // SSS FIXME: We have two different 'prepareForInterpretation' methods
+    // one in IRScopeImpl, and another in CFG.  See if they can be merged into one
     public static IRubyObject interpretTop(Ruby runtime, IRScope scope, IRubyObject self) {
         assert scope instanceof IRScript : "Must be an IRScript scope at Top!!!";
 
@@ -104,12 +124,14 @@ public class Interpreter {
 
         // Scope state for root?
         IRModule.getRootObjectScope().setModule(currModule);
-        IRMethod rootMethod = root.getRootClass().getRootMethod();
-        InterpretedIRMethod method = new InterpretedIRMethod(rootMethod, currModule, true);
         ThreadContext context = runtime.getCurrentContext();
 
         try {
+            runBeginEndBlocks(root.getBeginBlocks(), context, self);
+            IRMethod rootMethod = root.getRootClass().getRootMethod();
+            InterpretedIRMethod method = new InterpretedIRMethod(rootMethod, currModule, true);
             IRubyObject rv =  method.call(context, self, currModule, "", IRubyObject.NULL_ARRAY);
+            runBeginEndBlocks(root.getEndBlocks(), context, self);
             if (isDebug()) LOG.info("-- Interpreted instructions: {}", interpInstrsCount);
             return rv;
         } catch (IRBreakJump bj) {

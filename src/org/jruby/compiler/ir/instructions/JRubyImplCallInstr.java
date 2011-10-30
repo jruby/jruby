@@ -8,12 +8,15 @@ import org.jruby.RubyMatchData;
 import org.jruby.RubyModule;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
+import org.jruby.compiler.ir.IRClosure;
+import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.jruby.BlockGivenInstr;
 import org.jruby.compiler.ir.instructions.jruby.CheckArityInstr;
 import org.jruby.compiler.ir.operands.BooleanLiteral;
 import org.jruby.compiler.ir.operands.Fixnum;
 import org.jruby.compiler.ir.operands.Label;
+import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.operands.Nil;
 import org.jruby.compiler.ir.operands.Operand;
@@ -35,11 +38,11 @@ public class JRubyImplCallInstr extends CallInstr {
     // 1. Most of these are there to support defined?  I just did a dumb translation of the
     //    bytecode instrs from the existing AST compiler.  This code needs cleanup!  Most of
     //    the defined? inlined IR instructions in IRBuilder should be cleanly tucked away
-	 //    into a defined? support runtime library with a relatively clean API.
+    //    into a defined? support runtime library with a relatively clean API.
     //
     // 2. Some of the other methods are a little arbitrary as well and come from the
-	 //    first pass of trying to mimic behavior of the previous AST compiler.  This code
-	 //    can be cleaned up in a later pass.
+    //    first pass of trying to mimic behavior of the previous AST compiler.  This code
+    //    can be cleaned up in a later pass.
     public enum JRubyImplementationMethod {
        // SSS FIXME: Note that compiler/impl/BaseBodyCompiler is using op_match2 for match() and and op_match for match2,
        // and we are replicating it here ... Is this a bug there?
@@ -61,6 +64,7 @@ public class JRubyImplCallInstr extends CallInstr {
        FRAME_SUPER_METHOD_BOUND("frame_superMethodBound"),
        SET_WITHIN_DEFINED("setWithinDefined"),
        CHECK_ARITY("checkArity"),
+       RECORD_END_BLOCK("recordEndBlock"),
        RAISE_ARGUMENT_ERROR("raiseArgumentError");
 
        public MethAddr methAddr;
@@ -253,6 +257,13 @@ public class JRubyImplCallInstr extends CallInstr {
                     }
                 }
                 rVal = runtime.newBoolean(flag);
+                break;
+            }
+            case RECORD_END_BLOCK: {
+                Operand [] args = getCallArgs();
+                IRScope topLevelScope = ((MetaObject)args[0]).getScope().getTopLevelScope();
+                IRScope  endBlock     = ((MetaObject)args[1]).getScope();
+                topLevelScope.recordEndBlock((IRClosure)endBlock);
                 break;
             }
             case FRAME_SUPER_METHOD_BOUND:

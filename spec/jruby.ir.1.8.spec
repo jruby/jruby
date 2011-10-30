@@ -18,7 +18,6 @@ class MSpecScript
   # Core library specs
   set :core, [
     SPEC_DIR + '/core',
-    "^" + SPEC_DIR + '/language/BEGIN',
 
     # 1.9
     '^' + SPEC_DIR + '/core/basicobject'

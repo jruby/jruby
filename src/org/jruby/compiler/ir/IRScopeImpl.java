@@ -117,7 +117,7 @@ public abstract class IRScopeImpl implements IRScope {
     
     public IRMethod getNearestMethod() {
         IRScope current = this;
-        
+
         while (current != null && !(current instanceof IRMethod)) {
             current = current.getLexicalParent();
         }
@@ -125,6 +125,19 @@ public abstract class IRScopeImpl implements IRScope {
         assert current instanceof IRMethod : "All scopes must be surrounded by at least one method";
         
         return (IRMethod) current;
+    }
+
+    /**
+     * Returns the top level executable scope
+     */
+    public IRScope getTopLevelScope() {
+        IRScope current = this;
+
+        while (!(current instanceof IREvalScript) && !(current instanceof IRScript)) {
+            current = current.getLexicalParent();
+        }
+        
+        return current;
     }
 
     public int getNextClosureId() {
@@ -139,7 +152,7 @@ public abstract class IRScopeImpl implements IRScope {
 
     // Generate a new variable for inlined code (for ease of debugging, use differently named variables for inlined code)
     public Variable getNewInlineVariable() {
-		  // Use the temporary variable counters for allocating temporary variables
+        // Use the temporary variable counters for allocating temporary variables
         return new RenamedVariable("%i", allocateNextPrefixedName("%v"));
     }
 
@@ -278,5 +291,15 @@ public abstract class IRScopeImpl implements IRScope {
 
     public String toStringVariables() {
         return "";
+    }
+
+    /* Record a begin block -- not all scope implementations can handle them */
+    public void recordBeginBlock(IRClosure beginBlockClosure) {
+        throw new RuntimeException("BEGIN blocks cannot be added to: " + this.getClass().getName());
+    }
+
+    /* Record an end block -- not all scope implementations can handle them */
+    public void recordEndBlock(IRClosure endBlockClosure) {
+        throw new RuntimeException("END blocks cannot be added to: " + this.getClass().getName());
     }
 }

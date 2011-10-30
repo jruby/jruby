@@ -96,6 +96,8 @@ import org.jruby.ast.ModuleNode;
 import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.OpAsgnNode;
 import org.jruby.ast.OpElementAsgnNode;
+import org.jruby.ast.PreExeNode;
+import org.jruby.ast.PostExeNode;
 import org.jruby.ast.SelfNode;
 import org.jruby.ast.StarNode;
 import org.jruby.ast.ToAryNode;
@@ -540,8 +542,8 @@ public class IRBuilder {
             case OPASGNORNODE: return buildOpAsgnOr((OpAsgnOrNode) node, m); // done
             case OPELEMENTASGNNODE: return buildOpElementAsgn(node, m); // done
             case ORNODE: return buildOr((OrNode) node, m); // done
-//            case POSTEXENODE: return buildPostExe(node, m); // DEFERRED
-//            case PREEXENODE: return buildPreExe(node, m); // DEFERRED
+            case PREEXENODE: return buildPreExe(node, m); // DEFERRED
+            case POSTEXENODE: return buildPostExe(node, m); // DEFERRED
             case REDONODE: return buildRedo(node, (IRExecutionScope)m); // done??
             case REGEXPNODE: return buildRegexp((RegexpNode) node, m); // done
             case RESCUEBODYNODE:
@@ -2819,41 +2821,26 @@ public class IRBuilder {
         }
     }
 
-/**
-    public Operand buildPostExe(Node node, IRScope m) {
+    public Operand buildPostExe(Node node, IRScope s) {
         final PostExeNode postExeNode = (PostExeNode) node;
+        IRClosure endClosure = new IRClosure(s, false, postExeNode.getScope(), Arity.procArityOf(postExeNode.getVarNode()), postExeNode.getArgumentType());
+        build(postExeNode.getBodyNode(), endClosure);
 
-        // create the closure class and instantiate it
-        final CompilerCallback closureBody = new CompilerCallback() {
-
-                    public void call(IRScope m) {
-                        if (postExeNode.getBodyNode() != null) {
-                            build(postExeNode.getBodyNode(), m, true);
-                        } else {
-                            m.loadNil();
-                        }
-                    }
-                };
-        m.createNewEndBlock(closureBody);
+        // Add an instruction to record the end block at runtime
+         Variable tmpVar = s.getNewTemporaryVariable();
+        s.addInstr(new JRubyImplCallInstr(tmpVar, JRubyImplementationMethod.RECORD_END_BLOCK, null, new Operand[]{MetaObject.create(s), MetaObject.create(endClosure)}));
+        return Nil.NIL;
     }
 
-    public Operand buildPreExe(Node node, IRScope m) {
+    public Operand buildPreExe(Node node, IRScope s) {
         final PreExeNode preExeNode = (PreExeNode) node;
+        IRClosure beginClosure = new IRClosure(s, false, preExeNode.getScope(), Arity.procArityOf(preExeNode.getVarNode()), preExeNode.getArgumentType());
+        build(preExeNode.getBodyNode(), beginClosure);
 
-        // create the closure class and instantiate it
-        final CompilerCallback closureBody = new CompilerCallback() {
-
-                    public void call(IRScope m) {
-                        if (preExeNode.getBodyNode() != null) {
-                            build(preExeNode.getBodyNode(), m,true);
-                        } else {
-                            m.loadNil();
-                        }
-                    }
-                };
-        m.runBeginBlock(preExeNode.getScope(), closureBody);
+        // Record the begin block at IR build time
+        s.getTopLevelScope().recordBeginBlock(beginClosure);
+        return Nil.NIL;
     }
-**/
 
     public Operand buildRedo(Node node, IRExecutionScope s) {
         // For closures, a redo is a jump to the beginning of the closure
