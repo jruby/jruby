@@ -402,7 +402,7 @@
     </jar>
 
     <antcall target="add-emma-jars"/>
-    <antcall target="generate-ri-cache"/>
+    <!-- temporarily commented out due to JRUBY-6163 <antcall target="generate-ri-cache"/> -->
 
     <property name="jar-jruby.hasrun" value="true"/>
   </target>
@@ -510,7 +510,7 @@
       <param name="bar.wrap" value="${lib.dir}/jruby.bar" />
     </antcall>
       
-    <antcall target="generate-ri-cache"/>
+    <!-- temporarily commented out due to JRUBY-6163 <antcall target="generate-ri-cache"/> -->
   </target>
   <target name="jarjar" depends="jar-jruby-dist"/>
 
