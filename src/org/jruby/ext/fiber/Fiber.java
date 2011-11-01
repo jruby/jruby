@@ -47,6 +47,8 @@ public abstract class Fiber extends RubyObject implements ExecutionContext {
     protected abstract IRubyObject resumeOrTransfer(ThreadContext context, IRubyObject arg, boolean transfer);
 
     public abstract IRubyObject yield(ThreadContext context, IRubyObject res);
+    
+    public abstract boolean isAlive();
 
     public boolean isRoot() {
         return root;

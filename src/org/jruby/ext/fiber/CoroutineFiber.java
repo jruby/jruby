@@ -133,4 +133,8 @@ public class CoroutineFiber extends Fiber {
         return slot;
     }
     
+    public boolean isAlive() {
+        return state != CoroutineFiberState.FINISHED;
+    }
+    
 }
