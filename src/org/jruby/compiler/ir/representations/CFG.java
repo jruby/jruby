@@ -45,7 +45,10 @@ public class CFG {
     private static final Logger LOG = LoggerFactory.getLogger("CFG");
     
     public enum EdgeType {
-        REGULAR, DUMMY_EDGE, EXCEPTION_EDGE, FALL_THROUGH
+        REGULAR,       // Any non-special edge.  Not really used.
+        EXCEPTION,     // Edge to exception handling basic blocks
+        FALL_THROUGH,  // Edge which is the natural fall through choice on a branch
+        EXIT           // Edge to dummy exit BB
     }
 
     IRExecutionScope scope;   // Scope (method/closure) to which this cfg belongs
@@ -170,11 +173,11 @@ public class CFG {
 
     /* Add 'b' as a global ensure block that protects all unprotected blocks in this scope */
     public void addGlobalEnsureBlock(BasicBlock geb) {
-        cfg.addEdge(geb, exitBB, EdgeType.DUMMY_EDGE);
+        cfg.addEdge(geb, exitBB, EdgeType.EXIT);
         
         for (BasicBlock basicBlock: cfg.allData()) {
             if (basicBlock != geb && !bbIsProtected(basicBlock)) {
-                cfg.addEdge(basicBlock, geb, EdgeType.EXCEPTION_EDGE);
+                cfg.addEdge(basicBlock, geb, EdgeType.EXCEPTION);
                 bbRescuerMap.put(basicBlock, geb);
                 bbEnsurerMap.put(basicBlock, geb);
             }
@@ -426,7 +429,7 @@ public class CFG {
                 if (rr.getEnsureBlockLabel() != null) {
                     bbEnsurerMap.put(b, getBasicBlockOf(rr.getEnsureBlockLabel()));
                 }
-                g.addEdge(b, firstRescueBB, EdgeType.EXCEPTION_EDGE);
+                g.addEdge(b, firstRescueBB, EdgeType.EXCEPTION);
             }
         }
 
@@ -442,16 +445,16 @@ public class CFG {
         // * all exception bbs to the exit bb (mark these exception edges)
         // * last bb     -> dummy exit (only if the last bb didn't end with a control transfer!
         exitBB = createNewBB(g, bbMap, nestedExceptionRegions);
-        g.addEdge(entryBB, exitBB, EdgeType.DUMMY_EDGE);
+        g.addEdge(entryBB, exitBB, EdgeType.EXIT);
         g.addEdge(entryBB, firstBB, EdgeType.FALL_THROUGH);
         for (BasicBlock rb : retBBs) {
-            g.addEdge(rb, exitBB, EdgeType.DUMMY_EDGE);
+            g.addEdge(rb, exitBB, EdgeType.EXIT);
         }
         for (BasicBlock rb : excBBs) {
-            g.addEdge(rb, exitBB, EdgeType.EXCEPTION_EDGE);
+            g.addEdge(rb, exitBB, EdgeType.EXIT);
         }
         if (!bbEndedWithControlXfer) {
-            g.addEdge(currBB, exitBB, EdgeType.DUMMY_EDGE);
+            g.addEdge(currBB, exitBB, EdgeType.EXIT);
         }
 
         cfg = g;
@@ -571,12 +574,17 @@ public class CFG {
         for (Edge<BasicBlock> e : cfg.vertexFor(cExit).getIncomingEdges()) {
             BasicBlock source = e.getSource().getData();
             if (source != cEntry) {
-                if (e.getType() == EdgeType.EXCEPTION_EDGE) {
+                if (e.getType() == EdgeType.EXCEPTION) {
                     // e._src has an explicit throw that returns from the closure
                     // after inlining, if the yield instruction has a rescuer, then the
                     // throw has to be captured by the rescuer as well.
                     BasicBlock rescuerOfSplitBB = bbRescuerMap.get(splitBB);
-                    cfg.addEdge(source, rescuerOfSplitBB != null ? rescuerOfSplitBB : exitBB, EdgeType.EXCEPTION_EDGE);
+                    if (rescuerOfSplitBB != null) {
+                        cfg.addEdge(source, rescuerOfSplitBB, EdgeType.EXCEPTION);
+                    } else {
+                        cfg.addEdge(source, exitBB, EdgeType.EXIT);
+                    }
+
                 } else {
                     cfg.addEdge(source, splitBB, e.getType());
                 }
@@ -679,12 +687,16 @@ public class CFG {
         for (Edge<BasicBlock> e : mcfg.incomingEdgesOf(mExit)) {
             BasicBlock source = e.getSource().getData();
             if (source != mEntry) {
-                if (e.getType() == EdgeType.EXCEPTION_EDGE) {
+                if (e.getType() == EdgeType.EXCEPTION) {
                     // e._src has an explicit throw that returns from the callee
                     // after inlining, if the caller instruction has a rescuer, then the
                     // throw has to be captured by the rescuer as well.
                     BasicBlock rescuerOfSplitBB = bbRescuerMap.get(splitBB);
-                    cfg.addEdge(ii.getRenamedBB(source), rescuerOfSplitBB != null ? rescuerOfSplitBB : exitBB, EdgeType.EXCEPTION_EDGE);
+                    if (rescuerOfSplitBB != null) {
+                        cfg.addEdge(ii.getRenamedBB(source), rescuerOfSplitBB, EdgeType.EXCEPTION);
+                    } else {
+                        cfg.addEdge(ii.getRenamedBB(source), exitBB, EdgeType.EXIT);                        
+                    }
                 } else {
                     cfg.addEdge(ii.getRenamedBB(source), splitBB, e.getType());
                 }
@@ -1016,7 +1028,7 @@ public class CFG {
             }
 
             if (noExceptions) {
-                for (Edge<BasicBlock> e : cfg.vertexFor(b).getOutgoingEdgesOfType(EdgeType.EXCEPTION_EDGE)) {
+                for (Edge<BasicBlock> e : cfg.vertexFor(b).getOutgoingEdgesOfType(EdgeType.EXCEPTION)) {
                     toRemove.add(e);
                         
                     if (bbRescuerMap.get(e.getSource()) == e.getDestination().getData()) {
