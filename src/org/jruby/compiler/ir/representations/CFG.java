@@ -5,7 +5,6 @@ import java.util.BitSet;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.ListIterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -27,11 +26,9 @@ import org.jruby.compiler.ir.instructions.JumpIndirectInstr;
 import org.jruby.compiler.ir.instructions.LabelInstr;
 import org.jruby.compiler.ir.instructions.ExceptionRegionStartMarkerInstr;
 import org.jruby.compiler.ir.instructions.ExceptionRegionEndMarkerInstr;
-import org.jruby.compiler.ir.instructions.ReturnInstr;
 import org.jruby.compiler.ir.instructions.SetReturnAddressInstr;
 import org.jruby.compiler.ir.instructions.ThrowExceptionInstr;
 import org.jruby.compiler.ir.instructions.YieldInstr;
-import org.jruby.compiler.ir.operands.Nil;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
@@ -41,10 +38,14 @@ import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.dataflow.DataFlowProblem;
 import org.jruby.compiler.ir.util.DirectedGraph;
 import org.jruby.compiler.ir.util.Edge;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 public class CFG {
+    private static final Logger LOG = LoggerFactory.getLogger("CFG");
+    
     public enum EdgeType {
-        REGULAR, DUMMY_EDGE, EXCEPTION_EDGE
+        REGULAR, DUMMY_EDGE, EXCEPTION_EDGE, FALL_THROUGH
     }
 
     IRExecutionScope scope;   // Scope (method/closure) to which this cfg belongs
@@ -80,6 +81,10 @@ public class CFG {
         return cfg;
     }
 
+    public Map<Label, BasicBlock> getBBMap() {
+        return bbMap;
+    }
+    
     public IRExecutionScope getScope() {
         return scope;
     }
@@ -143,7 +148,7 @@ public class CFG {
         }
 
         // SSS FIXME: Cannot happen! Throw runtime exception
-        System.err.println("Fell through looking for rescuer ipc for " + excInstr);
+        LOG.error("Fell through looking for rescuer ipc for " + excInstr);
         return -1;
     }
 
@@ -159,7 +164,7 @@ public class CFG {
         }
 
         // SSS FIXME: Cannot happen! Throw runtime exception
-        System.err.println("Fell through looking for ensurer ipc for " + excInstr);
+        LOG.error("Fell through looking for ensurer ipc for " + excInstr);
         return -1;
     }
 
@@ -201,7 +206,7 @@ public class CFG {
         // SSS FIXME: Patch up rescued regions as well??
     }
 
-    private void addEdge(DirectedGraph g, BasicBlock src, Label tgt, Map<Label, BasicBlock> bbMap, Map<Label, List<BasicBlock>> forwardRefs) {
+    private void addEdge(DirectedGraph g, BasicBlock src, Label tgt, Map<Label, List<BasicBlock>> forwardRefs) {
         BasicBlock tgtBB = bbMap.get(tgt);
         if (tgtBB != null) {
             g.addEdge(src, tgtBB, EdgeType.REGULAR);
@@ -215,6 +220,11 @@ public class CFG {
             frefs.add(src);
         }
     }
+    
+    private void printError(String message) {
+        LOG.error(message + "\nGraph:\n" + getGraph().toString() + 
+                "\nInstructions:\n" + toStringInstrs());
+    }    
 
     public Instr[] prepareForInterpretation() {
         if (instrs != null) return instrs; // Already prepared
@@ -224,11 +234,7 @@ public class CFG {
         try {
             bbs = linearize();
         } catch (RuntimeException e) {
-            System.err.println("============= ERROR ================");
-            System.err.println("Encountered exception: " + e + " while linearizing");
-            System.err.println("\nGraph:\n" + getGraph().toString());
-            System.err.println("\nInstructions:\n" + toStringInstrs());
-            System.err.println("====================================");
+            printError(e.getMessage());
             throw e;
         }
 
@@ -318,7 +324,7 @@ public class CFG {
             } else if (bbEnded && (iop != Operation.EXC_REGION_END)) {
                 newBB = createNewBB(g, bbMap, nestedExceptionRegions);
                 // Jump instruction bbs dont add an edge to the succeeding bb by default
-                if (!bbEndedWithControlXfer) g.addEdge(currBB, newBB, EdgeType.REGULAR); // currBB cannot be null!
+                if (!bbEndedWithControlXfer) g.addEdge(currBB, newBB, EdgeType.FALL_THROUGH); // currBB cannot be null!
                 currBB = newBB;
                 bbEnded = false;
                 bbEndedWithControlXfer = false;
@@ -369,7 +375,7 @@ public class CFG {
                     bbEndedWithControlXfer = true;
                     Set<Label> retAddrs = retAddrMap.get(((JumpIndirectInstr) i).getJumpTarget());
                     for (Label l : retAddrs) {
-                        addEdge(g, currBB, l, bbMap, forwardRefs);
+                        addEdge(g, currBB, l, forwardRefs);
                     }
                     // Record the target bb for the retaddr var for any set_addr instrs that appear later and use the same retaddr var
                     retAddrTargetMap.put(((JumpIndirectInstr) i).getJumpTarget(), currBB);
@@ -377,7 +383,7 @@ public class CFG {
                     tgt = null;
                 }
 
-                if (tgt != null) addEdge(g, currBB, tgt, bbMap, forwardRefs);
+                if (tgt != null) addEdge(g, currBB, tgt, forwardRefs);
             } else if (iop != Operation.LABEL) {
                 currBB.addInstr(i);
             }
@@ -389,7 +395,7 @@ public class CFG {
                 // If we have the target bb, add the edge
                 // If not, record it for fixup later
                 if (tgtBB != null) {
-                    addEdge(g, tgtBB, tgtLbl, bbMap, forwardRefs);
+                    addEdge(g, tgtBB, tgtLbl, forwardRefs);
                 } else {
                     Set<Label> addrs = retAddrMap.get(v);
                     if (addrs == null) {
@@ -437,7 +443,7 @@ public class CFG {
         // * last bb     -> dummy exit (only if the last bb didn't end with a control transfer!
         exitBB = createNewBB(g, bbMap, nestedExceptionRegions);
         g.addEdge(entryBB, exitBB, EdgeType.DUMMY_EDGE);
-        g.addEdge(entryBB, firstBB, EdgeType.DUMMY_EDGE);
+        g.addEdge(entryBB, firstBB, EdgeType.FALL_THROUGH);
         for (BasicBlock rb : retBBs) {
             g.addEdge(rb, exitBB, EdgeType.DUMMY_EDGE);
         }
@@ -781,9 +787,7 @@ public class CFG {
         // Sanity check!
         for (BasicBlock b : getNodes()) {
             if (!bbSet.get(b.getID())) {
-                System.err.println("BB " + b.getID() + " missing from po list!");
-                System.err.println("CFG: " + cfg);
-                System.err.println("Instrs: " + toStringInstrs());
+                printError("BB " + b.getID() + " missing from po list!");
                 break;
             }
         }
@@ -934,13 +938,13 @@ public class CFG {
     public DataFlowProblem getDataFlowSolution(String name) {
         return dfProbs.get(name);
     }
-
-    private void pushBBOnStack(Stack<BasicBlock> stack, BitSet bbSet, BasicBlock bb) {
-        if (!bbSet.get(bb.getID())) {
-            // System.out.println("pushing " + bb);
-            stack.push(bb);
-            bbSet.set(bb.getID());
-        }
+    
+    public List<BasicBlock> linearize() {
+        if (linearizedBBList != null) return linearizedBBList; // Already linearized
+        
+        linearizedBBList = Linearizer.linearize(this);
+        
+        return linearizedBBList;
     }
 
     public void deleteOrphanedBlocks() {
@@ -1034,174 +1038,6 @@ public class CFG {
         deleteOrphanedBlocks();
     }
     
-    /**
-     * Is this block only reachable by JumpInstr?
-     * (Exception and Rescue handlers can sometimes cause this situation)
-     */
-    private boolean isOnlyReachableFromJumpInstrs(BasicBlock block) {
-        // Check if all of blockToIgnore's predecessors get to it with a jump!
-        // This can happen because of exceptions and rescue handlers
-        // If so, dont ignore it.  Process it right away (because everyone will end up ignoring this block!)
-        for (Edge<BasicBlock> e : cfg.vertexFor(block).getIncomingEdges()) {
-            if (!(e.getSource().getData().getLastInstr() instanceof JumpInstr)) return false;
-        }
-        
-        return true;
-    }
-
-    public List<BasicBlock> linearize() {
-        if (linearizedBBList != null) return linearizedBBList; // Already linearized
-
-        // System.out.println("--- start ---");
-        linearizedBBList = new ArrayList<BasicBlock>();
-
-        // Linearize the basic blocks of the cfg!
-        // This is a simple linearization -- nothing fancy
-        BasicBlock root = getEntryBB();
-        BitSet bbSet = new BitSet(1 + getMaxNodeID());
-        bbSet.set(root.getID());
-        Stack<BasicBlock> stack = new Stack<BasicBlock>();
-
-        // Push all exception edge targets (first bbs of rescue blocks) first
-        // so that rescue handlers are laid out last at the end of the method,
-        // outside the common execution path.
-        for (Edge<BasicBlock> edge: cfg.edgesOfType(EdgeType.EXCEPTION_EDGE)) {
-            pushBBOnStack(stack, bbSet, edge.getDestination().getData());
-        }
-
-        // Root next!
-        stack.push(root);
-
-        while (!stack.empty()) {
-            BasicBlock b = stack.pop();
-            // System.out.println("processing bb: " + b.getID());
-            linearizedBBList.add(b);
-
-            if (b == exitBB) {
-                // Exit cannot also be entry and it has no outgoing edges...skip
-            } else if (b == entryBB) {
-                // Entry can only have two out edges (-> firstBB, -> exitBB)
-                Iterator<Edge<BasicBlock>> edges = cfg.vertexFor(b).getOutgoingEdges().iterator();
-                BasicBlock b1 = edges.next().getDestination().getData();
-                BasicBlock b2 = edges.next().getDestination().getData();
-
-                if (b1.getID() < b2.getID()) {  // Process in creation order
-                    pushBBOnStack(stack, bbSet, b2);
-                    pushBBOnStack(stack, bbSet, b1);
-                } else {
-                    pushBBOnStack(stack, bbSet, b1);
-                    pushBBOnStack(stack, bbSet, b2);
-                }
-            } else {
-                // Find the basic block that is the target of the 'taken' branch
-                if (b.isEmpty()) {  // No Instructions
-                    // Only possible for the root block with 2 edges + blocks with just 1 target with no instructions
-                    BasicBlock b1 = null, b2 = null;
-                    for (Edge<BasicBlock> e : cfg.vertexFor(b).getOutgoingEdges()) {
-                        if (b1 == null) {
-                            b1 = e.getDestination().getData();
-                        } else if (b2 == null) {
-                            b2 = e.getDestination().getData();
-                        } else {
-                            System.err.println("============= ERROR ================");
-                            System.err.println("Encountered bb: " + b.getID() + " with no instrs. and more than 2 targets!!");
-                            System.err.println("\nGraph:\n" + getGraph().toString());
-                            System.err.println("\nInstructions:\n" + toStringInstrs());
-                            System.err.println("====================================");
-                            throw new RuntimeException("Encountered bb: " + b.getID() + " with no instrs. and more than 2 targets!!");
-                        }
-                    }
-
-                    if (b2 == null) {
-                        pushBBOnStack(stack, bbSet, b1);
-                    } else if (b1.getID() < b2.getID()) {
-                        pushBBOnStack(stack, bbSet, b2);
-                        pushBBOnStack(stack, bbSet, b1);
-                    } else {
-                        pushBBOnStack(stack, bbSet, b1);
-                        pushBBOnStack(stack, bbSet, b2);
-                    }
-                } else {
-                    Instr lastInstr = b.getLastInstr();                    
-                    // System.out.println("last instr is: " + lastInstr);
-                    BasicBlock blockToIgnore = null;
-                    if (lastInstr instanceof JumpInstr) {
-                        blockToIgnore = bbMap.get(((JumpInstr) lastInstr).getJumpTarget());
-    
-                        // Un-ignore this block since there is no natural path to it.
-                        if (isOnlyReachableFromJumpInstrs(blockToIgnore)) blockToIgnore = null;
-                    } else if (lastInstr instanceof BranchInstr) {
-                        // Push the taken block onto the stack first so that it gets processed last!
-                        blockToIgnore = bbMap.get(((BranchInstr) lastInstr).getJumpTarget());
-                        pushBBOnStack(stack, bbSet, blockToIgnore);
-                    }
-
-                    // Push everything else
-                    for (Edge<BasicBlock> e : cfg.vertexFor(b).getOutgoingEdges()) {
-                        BasicBlock x = e.getDestination().getData();
-                        if (x != blockToIgnore) pushBBOnStack(stack, bbSet, x);
-                    }
-                }
-            }
-        }
-
-        // Verify that all bbs have been laid out!
-        for (BasicBlock b : cfg.allData()) {
-            if (!bbSet.get(b.getID())) {
-                throw new RuntimeException("Bad CFG linearization: BB " + b.getID() + " has been missed!");
-            }
-        }
-
-        // Fixup (add/remove) jumps where appropriate
-        int n = linearizedBBList.size();
-        for (int i = 0; i < n; i++) {
-            BasicBlock curr = linearizedBBList.get(i);
-            Instr li = curr.getLastInstr();
-            if ((i + 1) < n) {
-                BasicBlock next = linearizedBBList.get(i + 1);
-
-                // If curr ends in a jump to next, remove the jump!
-                if (li instanceof JumpInstr) {
-                    if (next == bbMap.get(((JumpInstr) li).target)) {
-//                        System.out.println("BB " + curr.getID() + " falls through in layout to BB " + next.getID() + ".  Removing jump from former bb!"); 
-                        curr.removeInstr(li);
-                    }
-                } // If curr has a single successor and next is not it, and curr does't end in a control transfer instruction, add a jump!
-                else {
-                    Set<Edge<BasicBlock>> succs = cfg.vertexFor(curr).getOutgoingEdges();
-                    if (succs.size() == 1) {
-                        BasicBlock tgt = succs.iterator().next().getDestination().getData();
-                        if ((tgt != next) && ((li == null) || !li.getOperation().transfersControl())) {
-//                            System.out.println("BB " + curr.getID() + " doesn't fall through to " + next.getID() + ".  Adding a jump to " + tgt._label);
-                            curr.addInstr(new JumpInstr(tgt.getLabel()));
-                        }
-                    }
-                }
-
-                if (curr == exitBB) {
-                    // Add a dummy ret
-//                    System.out.println("Exit bb is not the last bb in the layout!  Adding a dummy return!");
-                    curr.addInstr(new ReturnInstr(Nil.NIL));
-                }
-            } else if (curr != exitBB) {
-                Iterator<Edge<BasicBlock>> edges = cfg.vertexFor(curr).getOutgoingEdges().iterator();
-                BasicBlock tgt = edges.next().getDestination().getData();
-                if (edges.hasNext()) {
-                    BasicBlock other = edges.next().getDestination().getData();
-                    assert (other == exitBB || tgt == exitBB);
-                    if (tgt == exitBB) tgt = other;
-                }
-                if ((li == null) || !li.getOperation().transfersControl()) {
-//                    System.out.println("BB " + curr.getID() + " is the last bb in the layout! Adding a jump to " + tgt._label);
-                    curr.addInstr(new JumpInstr(tgt.getLabel()));
-                }
-            }
-        }
-        // System.out.println("--- end ---");
-
-        return linearizedBBList;
-    }
-
     @Override
     public String toString() {
         return "CFG[" + scope.getScopeName() + ":" + scope.getName() + "]";

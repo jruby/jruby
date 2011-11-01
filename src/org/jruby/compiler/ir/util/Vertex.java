@@ -65,6 +65,24 @@ public class Vertex<T extends DataInfo> {
         return new EdgeTypeIterable<T>(getOutgoingEdges(), type);
     }
     
+    public Iterable<Edge<T>> getOutgoingEdgesNotOfType(Object type) {
+        return new EdgeTypeIterable<T>(getOutgoingEdges(), type, true);
+    }
+    
+    public Edge<T> getOutgoingEdgeOfType(Object type) {
+        Iterator<Edge<T>> iterator = getOutgoingEdgesOfType(type).iterator();
+        
+        if (iterator.hasNext()) {
+            Edge<T> edge = iterator.next();
+            
+            assert !iterator.hasNext() : "Should only be one edge of type " + type;
+            
+            return edge;
+        }
+        
+        return null;
+    }
+    
     public Set<Edge<T>> getIncomingEdges() {
         if (incoming == null) incoming = new HashSet<Edge<T>>();
         

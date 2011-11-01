@@ -16,10 +16,12 @@ public class EdgeTypeIterator<T extends DataInfo> implements Iterator<Edge<T>> {
     private Iterator<Edge<T>> internalIterator;
     private Object type;
     private Edge nextEdge = null;
+    private boolean negate;
     
-    public EdgeTypeIterator(Set<Edge<T>> edges, Object type) {
+    public EdgeTypeIterator(Set<Edge<T>> edges, Object type, boolean negate) {
         this.internalIterator = edges.iterator();
         this.type = type;
+        this.negate = negate;
     }
 
     public boolean hasNext() {
@@ -28,8 +30,13 @@ public class EdgeTypeIterator<T extends DataInfo> implements Iterator<Edge<T>> {
         
         while (internalIterator.hasNext()) {
             Edge edge = internalIterator.next();
-                
-            if (edge.getType() == type) {
+
+            if (negate) {
+                if (edge.getType() != type) {
+                    nextEdge = edge;
+                    return true;
+                }
+            } else  if (edge.getType() == type) {
                 nextEdge = edge;
                 return true;
             }
