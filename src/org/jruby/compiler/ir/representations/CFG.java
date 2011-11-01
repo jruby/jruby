@@ -123,7 +123,7 @@ public class CFG {
         return cfg.allData();
     }
 
-    public BasicBlock getTargetBB(Label l) {
+    public BasicBlock getBasicBlockOf(Label l) {
         return bbMap.get(l);
     }
 
@@ -414,7 +414,7 @@ public class CFG {
 
         // Process all rescued regions
         for (ExceptionRegion rr : allExceptionRegions) {
-            BasicBlock firstRescueBB = getTargetBB(rr.getFirstRescueBlockLabel());
+            BasicBlock firstRescueBB = getBasicBlockOf(rr.getFirstRescueBlockLabel());
 
             // 1. Tell the region that firstRescueBB is its protector!
             rr.setFirstRescueBB(firstRescueBB);
@@ -424,7 +424,7 @@ public class CFG {
             for (BasicBlock b : rr.getExclusiveBBs()) {
                 bbRescuerMap.put(b, firstRescueBB);
                 if (rr.getEnsureBlockLabel() != null) {
-                    bbEnsurerMap.put(b, getTargetBB(rr.getEnsureBlockLabel()));
+                    bbEnsurerMap.put(b, getBasicBlockOf(rr.getEnsureBlockLabel()));
                 }
                 g.addEdge(b, firstRescueBB, EdgeType.EXCEPTION_EDGE);
             }

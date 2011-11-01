@@ -117,7 +117,7 @@ public class Linearizer {
     }
 
     private static void tryAndRemoveUnneededJump(BasicBlock next, CFG cfg, Instr lastInstr, BasicBlock current) {
-        if (next == cfg.getBBMap().get(((JumpInstr) lastInstr).getJumpTarget())) current.removeInstr(lastInstr);
+        if (next == cfg.getBasicBlockOf(((JumpInstr) lastInstr).getJumpTarget())) current.removeInstr(lastInstr);
     }
 
     private static void verifyAllBasicBlocksProcessed(DirectedGraph<BasicBlock> graph, 
