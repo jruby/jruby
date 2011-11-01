@@ -126,4 +126,8 @@ public class ThreadFiber extends Fiber {
         return result;
     }
     
+    public boolean isAlive() {
+        return state != ThreadFiberState.FINISHED;
+    }
+    
 }
