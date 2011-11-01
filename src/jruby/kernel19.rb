@@ -4,7 +4,6 @@
 require 'thread.jar'
 
 # These are loads so they don't pollute LOADED_FEATURES
-load 'jruby/kernel19/mutex.rb'
 load 'jruby/kernel19/thread.rb'
 load 'jruby/kernel19/kernel.rb'
 load 'jruby/kernel19/proc.rb'
