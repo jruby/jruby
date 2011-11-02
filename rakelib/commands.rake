@@ -72,6 +72,7 @@ end
 
 def mspec(mspec_options = {}, java_options = {}, &code)
   java_options[:dir] ||= BASE_DIR
+  java_options[:maxmemory] ||= JRUBY_LAUNCH_MEMORY
 
   mspec_options[:compile_mode] ||= 'OFF'
   mspec_options[:jit_threshold] ||= 20
