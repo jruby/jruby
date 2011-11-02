@@ -6,7 +6,7 @@ class OpFlags {
     final static int f_has_side_effect     = 0x002;
     final static int f_can_raise_exception = 0x004;
     final static int f_is_marker_op        = 0x008;
-    final static int f_is_branch           = 0x010;
+    final static int f_is_jump_or_branch   = 0x010;
     final static int f_is_return           = 0x020;
     final static int f_is_exception        = 0x040;
     final static int f_is_debug_op         = 0x080;
@@ -18,10 +18,12 @@ class OpFlags {
 
 public enum Operation {
 
-/* Mark a *non-control-flow* instruction as side-effecting if the following condition is false:
- *    If "r = op(args)" is the instruction I and v is the value produced by the instruction at runtime,
- *     and replacing I with "r = v" will leave the program behavior unchanged.  If so, and we determine
- *     that the value of 'r' is not used anywhere, then it would be safe to get rid of I altogether.
+/* Mark a *non-control-flow* instruction as side-effecting if its compuation is not referentially
+ * transparent.  In other words, mark it side-effecting if the following is true:
+ *
+ *   If "r = op(args)" is the instruction I and v is the value produced by the instruction at runtime,
+ *   and replacing I with "r = v" will leave the program behavior unchanged.  If so, and we determine
+ *   that the value of 'r' is not used anywhere, then it would be safe to get rid of I altogether.
  *
  * So definitions, calls, returns, stores are all side-effecting by this definition */
 
@@ -29,10 +31,10 @@ public enum Operation {
     NOP(0),
 
     /** control-flow **/
-    JUMP(OpFlags.f_is_branch),
-    JUMP_INDIRECT(OpFlags.f_is_branch),
-    BEQ(OpFlags.f_is_branch),
-    BNE(OpFlags.f_is_branch),
+    JUMP(OpFlags.f_is_jump_or_branch),
+    JUMP_INDIRECT(OpFlags.f_is_jump_or_branch),
+    BEQ(OpFlags.f_is_jump_or_branch),
+    BNE(OpFlags.f_is_jump_or_branch),
 
     /** argument receive related in methods and blocks **/
     RECV_SELF(OpFlags.f_is_arg_receive),
@@ -141,11 +143,7 @@ public enum Operation {
     }
 
     public boolean transfersControl() { 
-        return (flags & (OpFlags.f_is_branch | OpFlags.f_is_return | OpFlags.f_is_exception)) > 0;
-    }
-
-    public boolean isBranch() {
-        return (flags & OpFlags.f_is_branch) > 0;
+        return (flags & (OpFlags.f_is_jump_or_branch | OpFlags.f_is_return | OpFlags.f_is_exception)) > 0;
     }
 
     public boolean isLoad() {
