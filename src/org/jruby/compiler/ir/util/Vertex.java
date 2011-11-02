@@ -60,6 +60,10 @@ public class Vertex<T extends DataInfo> {
     public Iterable<Edge<T>> getIncomingEdgesOfType(Object type) {
         return new EdgeTypeIterable<T>(getIncomingEdges(), type);
     }
+
+    public Iterable<Edge<T>> getIncomingEdgesNotOfType(Object type) {
+        return new EdgeTypeIterable<T>(getIncomingEdges(), type, true);
+    }
     
     public Iterable<Edge<T>> getOutgoingEdgesOfType(Object type) {
         return new EdgeTypeIterable<T>(getOutgoingEdges(), type);
@@ -87,6 +91,14 @@ public class Vertex<T extends DataInfo> {
 
     public Edge<T> getOutgoingEdgeOfType(Object type) {
         return getSingleEdge(getOutgoingEdgesOfType(type).iterator(), type);
+    }
+    
+    /**
+     * Get single incoming edge of any type and assert if there is more than
+     * one.
+     */
+    public Edge<T> getIncomingEdge() {
+        return getSingleEdge(getIncomingEdgesNotOfType(null).iterator(), null);
     }
     
     /**
