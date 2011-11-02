@@ -1346,17 +1346,8 @@ public class LoadService {
         return null;
     }
 
-    // Canonicalization here is only used to expand '.' and '..' in jar
-    // paths, not for real files that exist on the filesystem
     private String expandRelativeJarPath(String path) {
-        try {
-            String cwd = new File(".").getCanonicalPath();
-            return new File(path).getCanonicalPath()
-                .substring(cwd.length() + 1)
-                .replaceAll("\\\\","/");
-        } catch(Exception e) {
-            return path;
-        }
+        return path.replaceAll("/[^/]+/\\.\\.|[^/]+/\\.\\./|\\./","").replace("^\\\\","/");
     }
 
     protected String resolveLoadName(LoadServiceResource foundResource, String previousPath) {
