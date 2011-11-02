@@ -113,7 +113,8 @@ public enum Operation {
     INSTANCE_OF(0), // java instanceof bytecode
     CLASS_VAR_MODULE(0),
     IS_TRUE(0), // checks if the operand is non-null and non-false
-    EQQ(0), // (FIXME: Exceptions?) a === call used only for its conditional results, as in case/when, begin/rescue, ...
+    EQQ(0), // (FIXME: Exceptions?) a === call used in when
+    RESCUE_EQQ(OpFlags.f_can_raise_exception), // a === call used in rescue
     ALLOC_BINDING(OpFlags.f_has_side_effect),
     THREAD_POLL(OpFlags.f_has_side_effect),
     CONST_MISSING(OpFlags.f_can_raise_exception),

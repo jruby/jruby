@@ -158,6 +158,7 @@ import org.jruby.compiler.ir.instructions.ReceiveClosureArgInstr;
 import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
 import org.jruby.compiler.ir.instructions.ReceiveExceptionInstr;
 import org.jruby.compiler.ir.instructions.ReceiveOptionalArgumentInstr;
+import org.jruby.compiler.ir.instructions.RescueEQQInstr;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
 import org.jruby.compiler.ir.instructions.RubyInternalCallInstr;
 import org.jruby.compiler.ir.instructions.RubyInternalCallInstr.RubyInternalsMethod;
@@ -2927,6 +2928,12 @@ public class IRBuilder {
         return rv;
     }
 
+    private void outputExceptionCheck(IRScope m, Operand excType, Operand excObj, Label caughtLabel) {
+        Variable eqqResult = m.getNewTemporaryVariable();
+        m.addInstr(new RescueEQQInstr(eqqResult, excType, excObj));
+        m.addInstr(new BEQInstr(eqqResult, BooleanLiteral.TRUE, caughtLabel));
+    }
+
     private void buildRescueBodyInternal(IRScope m, Node node, Variable rv, Label endLabel) {
         final RescueBodyNode rescueBodyNode = (RescueBodyNode) node;
         final Node exceptionList = rescueBodyNode.getExceptionNodes();
@@ -2936,35 +2943,44 @@ public class IRBuilder {
         m.addInstr(new ReceiveExceptionInstr(exc));
 
         // Compare and branch as necessary!
-        Label uncaughtLabel = null;
-        Label caughtLabel = null;
+        Label uncaughtLabel = m.getNewLabel();
+        Label caughtLabel = m.getNewLabel();
         if (exceptionList != null) {
-            uncaughtLabel = m.getNewLabel();
-            caughtLabel = m.getNewLabel();
-            Variable eqqResult = m.getNewTemporaryVariable();
             if (exceptionList instanceof ListNode) {
                for (Node excType : ((ListNode) exceptionList).childNodes()) {
-                   m.addInstr(new EQQInstr(eqqResult, build(excType, m), exc));
-                   m.addInstr(new BEQInstr(eqqResult, BooleanLiteral.TRUE, caughtLabel));
+                   outputExceptionCheck(m, build(excType, m), exc, caughtLabel);
                }
+            } else { // splatnode, catch 
+                outputExceptionCheck(m, build(((SplatNode)exceptionList).getValue(), m), exc, caughtLabel);
             }
-            else { // splatnode, catch 
-                m.addInstr(new EQQInstr(eqqResult, exc, build(((SplatNode)exceptionList).getValue(), m)));
-                m.addInstr(new BEQInstr(eqqResult, BooleanLiteral.TRUE, caughtLabel));
-            }
-            // Uncaught exception -- build other rescue nodes or rethrow!
-            m.addInstr(new LabelInstr(uncaughtLabel));
-            if (rescueBodyNode.getOptRescueNode() != null) {
-                buildRescueBodyInternal(m, rescueBodyNode.getOptRescueNode(), rv, endLabel);
-            } else {
-                m.addInstr(new ThrowExceptionInstr(exc));
-            }
+        }
+        else {
+            // FIXME:
+            // rescue => e AND rescue implicitly EQQ the exception object with StandardError
+            // We generate explicit IR for this test here.  But, this can lead to inconsistent
+            // behavior (when compared to MRI) in certain scenarios.  See example:
+            //
+            //   self.class.const_set(:StandardError, 1) 
+            //   begin; raise TypeError.new; rescue; puts "AHA"; end
+            //
+            // MRI rescues the error, but we will raise an exception because of reassignment
+            // of StandardError.  I am ignoring this for now and treating this as undefined behavior. 
+            // 
+            Variable v = m.getNewTemporaryVariable();
+            m.addInstr(new SearchConstInstr(v, null, "StandardError"));
+            outputExceptionCheck(m, v, exc, caughtLabel);
+        }
+
+        // Uncaught exception -- build other rescue nodes or rethrow!
+        m.addInstr(new LabelInstr(uncaughtLabel));
+        if (rescueBodyNode.getOptRescueNode() != null) {
+            buildRescueBodyInternal(m, rescueBodyNode.getOptRescueNode(), rv, endLabel);
+        } else {
+            m.addInstr(new ThrowExceptionInstr(exc));
         }
 
         // Caught exception case -- build rescue body
-        if (caughtLabel != null) {
-            m.addInstr(new LabelInstr(caughtLabel));
-        }
+        m.addInstr(new LabelInstr(caughtLabel));
         Node realBody = skipOverNewlines(m, rescueBodyNode.getBodyNode());
         Operand x = build(realBody, m);
         if (x != U_NIL) { // can be U_NIL if the rescue block has an explicit return
