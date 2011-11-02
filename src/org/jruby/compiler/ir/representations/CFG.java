@@ -337,7 +337,7 @@ public class CFG {
 // SSS: Do we need this anymore?
 //                currBB.addInstr(i);
                 ExceptionRegionStartMarkerInstr ersmi = (ExceptionRegionStartMarkerInstr) i;
-                ExceptionRegion rr = new ExceptionRegion(ersmi.rescueBlockLabels, ersmi.ensureBlockLabel);
+                ExceptionRegion rr = new ExceptionRegion(ersmi.firstRescueBlockLabel, ersmi.ensureBlockLabel);
                 rr.addBB(currBB);
                 allExceptionRegions.add(rr);
 
@@ -418,12 +418,19 @@ public class CFG {
 
             // 2. Record a mapping from the region's exclusive basic blocks to the first bb that will start exception handling for all their exceptions.
             // 3. Add an exception edge from every exclusive bb of the region to firstRescueBB
+            BasicBlock ensureBlockBB = rr.getEnsureBlockLabel() == null ? null : getBasicBlockOf(rr.getEnsureBlockLabel());
             for (BasicBlock b : rr.getExclusiveBBs()) {
                 bbRescuerMap.put(b, firstRescueBB);
-                if (rr.getEnsureBlockLabel() != null) {
-                    bbEnsurerMap.put(b, getBasicBlockOf(rr.getEnsureBlockLabel()));
-                }
                 g.addEdge(b, firstRescueBB, EdgeType.EXCEPTION);
+                if (ensureBlockBB != null) {
+                    bbEnsurerMap.put(b, ensureBlockBB);
+                    // SSS FIXME: This is a conservative edge because when a rescue block is present
+                    // that catches an exception, control never reaches the ensure block directly.
+                    // Only when we get an error or threadkill even, or when breaks propagate upward
+                    // do we need to hit an ensure directly.  This edge is present to account for that
+                    // control-flow scneario.
+                    g.addEdge(b, ensureBlockBB, EdgeType.EXCEPTION);
+                }
             }
         }
 

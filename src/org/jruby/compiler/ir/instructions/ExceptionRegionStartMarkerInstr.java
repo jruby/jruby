@@ -12,16 +12,16 @@ import org.jruby.compiler.ir.representations.InlinerInfo;
 public class ExceptionRegionStartMarkerInstr extends Instr {
     final public Label begin;
     final public Label end;
-    final public List<Label> rescueBlockLabels;
+    final public Label firstRescueBlockLabel;
     final public Label ensureBlockLabel;
 
     public ExceptionRegionStartMarkerInstr(Label begin, Label end, 
-            Label ensureBlockLabel, List<Label> rescueBlockLabels) {
+            Label ensureBlockLabel, Label firstRescueBlockLabel) {
         super(Operation.EXC_REGION_START);
         
         this.begin = begin;
         this.end = end;
-        this.rescueBlockLabels = rescueBlockLabels;
+        this.firstRescueBlockLabel = firstRescueBlockLabel;
         this.ensureBlockLabel = ensureBlockLabel;
     }
 
@@ -29,11 +29,8 @@ public class ExceptionRegionStartMarkerInstr extends Instr {
     public String toString() {
         StringBuilder buf = new StringBuilder(super.toString());
         
-        buf.append("(").append(begin).append(", ").append(end).append(", ").append("[");
-        for (Label l: rescueBlockLabels)
-            buf.append(l).append(",");
-        buf.append("]");
-        if (ensureBlockLabel != null) buf.append("ensure[").append(ensureBlockLabel).append("]");
+        buf.append("(").append(begin).append(", ").append(end).append(", rescue[").append(firstRescueBlockLabel).append("]");
+        if (ensureBlockLabel != null) buf.append(", ensure[").append(ensureBlockLabel).append("]");
         buf.append(")");
         
         return buf.toString();
@@ -44,13 +41,7 @@ public class ExceptionRegionStartMarkerInstr extends Instr {
     }
 
     public Instr cloneForInlining(InlinerInfo ii) { 
-        List<Label> newLabels = new ArrayList<Label>();
-        
-        for (Label l: rescueBlockLabels) {
-            newLabels.add(ii.getRenamedLabel(l));
-        }
-
         return new ExceptionRegionStartMarkerInstr(ii.getRenamedLabel(begin), ii.getRenamedLabel(end),
-                ensureBlockLabel == null ? null : ii.getRenamedLabel(ensureBlockLabel), newLabels);
+                ensureBlockLabel == null ? null : ii.getRenamedLabel(ensureBlockLabel), ii.getRenamedLabel(firstRescueBlockLabel));
     }
 }

@@ -5,16 +5,16 @@ import java.util.ArrayList;
 import org.jruby.compiler.ir.operands.Label;
 
 public class ExceptionRegion {
-    private Label ensureBlockLabel; 
-    private List<Label> rescueBlockLabels; // Labels of all the rescue blocks that handle exceptions in this region
+    private Label ensureBlockLabel; // Label of the ensure block
+    private Label firstRescueBlockLabel; // Label of the first rescue block
 
     private List<BasicBlock> exclusiveBBs;  // Basic blocks exclusively contained within this region
     private List<ExceptionRegion> nestedRegions; // Rescue regions nested within this one
     private BasicBlock endBB;         // Last BB of the rescued region
     private BasicBlock firstRescueBB; // First BB of the first rescue block of this region 
 
-    public ExceptionRegion(List<Label> rescueBlockLabels, Label ensureBlockLabel) {
-        this.rescueBlockLabels = rescueBlockLabels;
+    public ExceptionRegion(Label firstRescueBlockLabel, Label ensureBlockLabel) {
+        this.firstRescueBlockLabel = firstRescueBlockLabel;
         this.ensureBlockLabel = ensureBlockLabel;
         exclusiveBBs = new ArrayList<BasicBlock>();
         nestedRegions = new ArrayList<ExceptionRegion>();
@@ -45,16 +45,11 @@ public class ExceptionRegion {
     }
 
     public Label getFirstRescueBlockLabel() {
-        return rescueBlockLabels.get(0);
+        return firstRescueBlockLabel;
     }
 
     public ExceptionRegion cloneForInlining(InlinerInfo ii) {
-        List<Label> newLabels = new ArrayList<Label>();
-        for (Label l: rescueBlockLabels) {
-            newLabels.add(ii.getRenamedLabel(l));
-        }
-
-        ExceptionRegion newR = new ExceptionRegion(newLabels, ensureBlockLabel == null ? null : ii.getRenamedLabel(ensureBlockLabel));
+        ExceptionRegion newR = new ExceptionRegion(ii.getRenamedLabel(firstRescueBlockLabel), ensureBlockLabel == null ? null : ii.getRenamedLabel(ensureBlockLabel));
         newR.endBB = ii.getRenamedBB(endBB);
         newR.firstRescueBB = ii.getRenamedBB(firstRescueBB);
         

@@ -357,7 +357,8 @@ public class IRBuilder {
      *       ... ensure block to run
      *   end
      * -----------------
-     *  IR instructions for the protected body
+     *  L_region_start
+     *     IR instructions for the protected body
      *  L_start:
      *     .. ensure block IR ...
      *     jump %ret_addr
@@ -376,6 +377,7 @@ public class IRBuilder {
      * ----------------------------------------------------------------------------------- */
     private static class EnsureBlockInfo
     {
+        Label    regionStart;
         Label    start;
         Label    end;
         Label    dummyRescueBlockLabel;
@@ -383,9 +385,10 @@ public class IRBuilder {
 
         public EnsureBlockInfo(IRScope m)
         {
-            returnAddr = m.getNewTemporaryVariable();
-            start      = m.getNewLabel();
-            end        = m.getNewLabel();
+            regionStart = m.getNewLabel();
+            start       = m.getNewLabel();
+            end         = m.getNewLabel();
+            returnAddr  = m.getNewTemporaryVariable();
             dummyRescueBlockLabel = m.getNewLabel();
         }
 
@@ -1285,13 +1288,12 @@ public class IRBuilder {
         // Push a new ensure block info node onto the stack of ensure block
         EnsureBlockInfo ebi = new EnsureBlockInfo(m);
         _ensureBlockStack.push(ebi);
-        Label rBeginLabel = m.getNewLabel();
+        Label rBeginLabel = ebi.regionStart;
         Label rEndLabel   = ebi.end;
-        List<Label> rescueLabels = new ArrayList<Label>() { };
 
         // Protected region code
         m.addInstr(new LabelInstr(rBeginLabel));
-        m.addInstr(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, ebi.dummyRescueBlockLabel, rescueLabels));
+        m.addInstr(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, ebi.dummyRescueBlockLabel, ebi.dummyRescueBlockLabel));
         Operand v1 = protectedCode.run(protectedCodeArgs); // YIELD: Run the protected code block
         m.addInstr(new CopyInstr(ret, v1));
         m.addInstr(new SetReturnAddressInstr(ebi.returnAddr, rEndLabel));
@@ -1310,7 +1312,6 @@ public class IRBuilder {
 
         // Rescue block code
         // SSS FIXME: How do we get this to catch all exceptions, not just Ruby exceptions?
-        rescueLabels.add(ebi.dummyRescueBlockLabel);
         m.addInstr(new LabelInstr(ebi.dummyRescueBlockLabel));
         m.addInstr(new CopyInstr(ret, Nil.NIL));
         m.addInstr(new SetReturnAddressInstr(ebi.returnAddr, ebi.end));
@@ -1328,12 +1329,12 @@ public class IRBuilder {
 
         Variable rv = m.getNewTemporaryVariable();
         Label rBeginLabel = m.getNewLabel();
-        Label rEndLabel = m.getNewLabel();
-        List<Label> rescueLabels = new ArrayList<Label>() { };
+        Label rEndLabel   = m.getNewLabel();
+        Label rescueLabel = m.getNewLabel();
 
         // Protected region code
         m.addInstr(new LabelInstr(rBeginLabel));
-        m.addInstr(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, null, rescueLabels));
+        m.addInstr(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, null, rescueLabel));
         Object v1 = protectedCode.run(protectedCodeArgs); // YIELD: Run the protected code block
         m.addInstr(new CopyInstr(rv, (Operand)v1));
         m.addInstr(new JumpInstr(rEndLabel));
@@ -1341,15 +1342,12 @@ public class IRBuilder {
 
         // Rescue code
         Label uncaughtLabel = m.getNewLabel();
-        Label rbLabel = m.getNewLabel();
-        rescueLabels.add(rbLabel);
-        rescueLabels.add(uncaughtLabel);
         Variable exc = m.getNewTemporaryVariable();
         Variable eqqResult = m.getNewTemporaryVariable();
 
-        m.addInstr(new LabelInstr(rbLabel));
+        m.addInstr(new LabelInstr(rescueLabel));
         m.addInstr(new ReceiveExceptionInstr(exc));
-        // Verify that the exception is of type 'JumpException'.
+        // Verify that the exception is of type 'RubyException'.
         // Since this is JRuby implementation Java code, we dont need EQQ here.
         // SSS FIXME: Hardcoded exception class name!
         m.addInstr(new InstanceOfInstr(eqqResult, exc, "org.jruby.RubyException")); 
@@ -1800,7 +1798,7 @@ public class IRBuilder {
             Node bodyNode = defNode.getBodyNode();
 
             // if root of method is rescue, build as a light rescue
-            Operand rv = (bodyNode instanceof RescueNode) ?  buildRescueInternal(bodyNode, method, null) : build(bodyNode, method);
+            Operand rv = (bodyNode instanceof RescueNode) ?  buildRescue(bodyNode, method) : build(bodyNode, method);
             if (rv != null) method.addInstr(new ReturnInstr(rv));
         } else {
             method.addInstr(new ReturnInstr(Nil.NIL));
@@ -2021,28 +2019,28 @@ public class IRBuilder {
         EnsureBlockInfo ebi = new EnsureBlockInfo(m);
         _ensureBlockStack.push(ebi);
 
-        Label rBeginLabel = m.getNewLabel();
+        Label rBeginLabel = ebi.regionStart;
         Label rEndLabel   = ebi.end;
-        List<Label> rescueLabels = new ArrayList<Label>() { };
-        _rescueBlockLabelStack.push(rBeginLabel);
 
-        // Start of region
-        m.addInstr(new LabelInstr(rBeginLabel));
-        m.addInstr(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, ebi.dummyRescueBlockLabel, rescueLabels));
+        // Generate IR for code being protected
+        Operand rv;  
+        if (bodyNode instanceof RescueNode) {
+            // The rescue code will ensure that the region is ended
+            rv = buildRescueInternal(bodyNode, m);
+        } else {
+            m.addInstr(new LabelInstr(rBeginLabel));
+            m.addInstr(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, ebi.dummyRescueBlockLabel, ebi.dummyRescueBlockLabel));
+            _rescueBlockLabelStack.push(rBeginLabel);
+            rv = build(bodyNode, m);
+            m.addInstr(new ExceptionRegionEndMarkerInstr()); // End of protected region
+            _rescueBlockLabelStack.pop();
 
-        // Generate IR for Code being protected
-        Operand  rv = (bodyNode instanceof RescueNode) ? buildRescueInternal(bodyNode, m, rBeginLabel) : build(bodyNode, m);
-
-        // End of protected region
-        m.addInstr(new ExceptionRegionEndMarkerInstr());
-
-        // Jump to start of ensure block -- dont bother if we had a return in the protected body 
-        if (rv != U_NIL)
-            m.addInstr(new SetReturnAddressInstr(ebi.returnAddr, rEndLabel));
+            // Jump to start of ensure block -- dont bother if we had a return in the protected body 
+            if (rv != U_NIL) m.addInstr(new SetReturnAddressInstr(ebi.returnAddr, rEndLabel));
+        }
 
         // Pop the current ensure block info node *BEFORE* generating the ensure code for this block itself!
         _ensureBlockStack.pop();
-        _rescueBlockLabelStack.pop();
 
         // Generate the ensure block now
         m.addInstr(new LabelInstr(ebi.start));
@@ -2051,8 +2049,8 @@ public class IRBuilder {
         // 1. Ensure block has no explicit return => the result of the entire ensure expression is the result of the protected body.
         // 2. Ensure block has an explicit return => the result of the protected body is ignored.
         Operand ensureRetVal = (ensureNode.getEnsureNode() == null) ? Nil.NIL : build(ensureNode.getEnsureNode(), m);
-        if (ensureRetVal == null)   // null => there was a return from within the ensure block!
-            rv = null;
+        // U_NIL => there was a return from within the ensure block!
+        if (ensureRetVal == U_NIL) rv = U_NIL;
 
         m.addInstr(new JumpIndirectInstr(ebi.returnAddr));
 
@@ -2062,7 +2060,6 @@ public class IRBuilder {
         // * returns back (via set_retaddr instr)
         // * rethrows the caught exception
         Label rethrowExcLabel = m.getNewLabel();
-        rescueLabels.add(ebi.dummyRescueBlockLabel);
         Variable exc = m.getNewTemporaryVariable();
         m.addInstr(new LabelInstr(ebi.dummyRescueBlockLabel));
         m.addInstr(new ReceiveExceptionInstr(exc));
@@ -2859,35 +2856,28 @@ public class IRBuilder {
     }
 
     public Operand buildRescue(Node node, IRScope m) {
-        return buildRescueInternal(node, m, null);
+        return buildRescueInternal(node, m);
     }
 
-    private Operand buildRescueInternal(Node node, IRScope m, Label availableBeginLabel) {
+    private Operand buildRescueInternal(Node node, IRScope m) {
         final RescueNode rescueNode = (RescueNode) node;
-        boolean noEnsure    = _ensureBlockStack.empty();
-        EnsureBlockInfo ebi = noEnsure ? null : _ensureBlockStack.peek();
+
+        EnsureBlockInfo closestEnsure = _ensureBlockStack.empty() ? null : _ensureBlockStack.peek();
 
         // Labels marking start, else, end of the begin-rescue(-ensure)-end block
-        Label   rBeginLabel = availableBeginLabel != null ? availableBeginLabel : m.getNewLabel();  
-        Label   rEndLabel   = noEnsure ? m.getNewLabel() : ebi.end;
-        Label   elseLabel   = rescueNode.getElseNode() == null ? null : m.getNewLabel();
+        Label rBeginLabel = closestEnsure == null ? m.getNewLabel() : closestEnsure.regionStart;
+        Label rEndLabel   = closestEnsure == null ? m.getNewLabel() : closestEnsure.end;
+        Label rescueLabel = m.getNewLabel(); // Label marking start of the first rescue code.
         _rescueBlockLabelStack.push(rBeginLabel);
 
-        // Only generate the label instruction if we weren't passed in a label
-        // Optimization to eliminate extra labels in begin-rescue-ensure-end code
-        if (availableBeginLabel == null)
-            m.addInstr(new LabelInstr(rBeginLabel));
-
+        m.addInstr(new LabelInstr(rBeginLabel));
         // Placeholder rescue instruction that tells rest of the compiler passes the boundaries of the rescue block.
-        List<Label> rescueBlockLabels = new ArrayList<Label>();
-        ExceptionRegionStartMarkerInstr rbStartInstr = new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, null, rescueBlockLabels);
-        m.addInstr(rbStartInstr);
+        m.addInstr(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, closestEnsure == null ? null : closestEnsure.dummyRescueBlockLabel, rescueLabel));
 
         // Body
         Operand tmp = Nil.NIL;  // default return value if for some strange reason, we neither have the body node or the else node!
         Variable rv = m.getNewTemporaryVariable();
-        if (rescueNode.getBodyNode() != null)
-            tmp = build(rescueNode.getBodyNode(), m);
+        if (rescueNode.getBodyNode() != null) tmp = build(rescueNode.getBodyNode(), m);
 
         // Since rescued regions are well nested within Ruby, this bare marker is sufficient to
         // let us discover the edge of the region during linear traversal of instructions during cfg construction.
@@ -2895,6 +2885,7 @@ public class IRBuilder {
         m.addInstr(rbEndInstr);
 
         // Else part of the body -- we simply fall through from the main body if there were no exceptions
+        Label elseLabel = rescueNode.getElseNode() == null ? null : m.getNewLabel();
         if (elseLabel != null) {
             m.addInstr(new LabelInstr(elseLabel));
             tmp = build(rescueNode.getElseNode(), m);
@@ -2906,16 +2897,14 @@ public class IRBuilder {
             // No explicit return from the protected body
             // - If we dont have any ensure blocks, simply jump to the end of the rescue block
             // - If we do, get the innermost ensure block, set up the return address to the end of the ensure block, and go execute the ensure code.
-            if (noEnsure) {
+            if (closestEnsure == null) {
                 m.addInstr(new JumpInstr(rEndLabel));
+            } else {
+                // NOTE: rEndLabel is identical to closestEnsure.end, but less confusing to use rEndLabel since that makes more semantic sense
+                m.addInstr(new SetReturnAddressInstr(closestEnsure.returnAddr, rEndLabel));
+                m.addInstr(new JumpInstr(closestEnsure.start));
             }
-            else {
-                // NOTE: rEndLabel is identical to ebi.end, but less confusing to use rEndLabel since that makes more semantic sense
-                m.addInstr(new SetReturnAddressInstr(ebi.returnAddr, rEndLabel));
-                m.addInstr(new JumpInstr(ebi.start));
-            }
-        }
-        else {
+        } else {
             // If the body had an explicit return, the return instruction IR build takes care of setting
             // up execution of all necessary ensure blocks.  So, nothing to do here!  
             //
@@ -2926,20 +2915,17 @@ public class IRBuilder {
         }
 
         // Build the actual rescue block(s)
-        Label rbLabel = m.getNewLabel(); // Label marking start of the first rescue code.
-        rescueBlockLabels.add(rbLabel);
-        m.addInstr(new LabelInstr(rbLabel));
-        buildRescueBodyInternal(m, rescueNode.getRescueNode(), rv, rEndLabel, rescueBlockLabels);
+        m.addInstr(new LabelInstr(rescueLabel));
+        buildRescueBodyInternal(m, rescueNode.getRescueNode(), rv, rEndLabel);
 
         // End label -- only if there is no ensure block!  With an ensure block, you end at ensureEndLabel.
-        if (noEnsure)
-            m.addInstr(new LabelInstr(rEndLabel));
+        if (closestEnsure == null) m.addInstr(new LabelInstr(rEndLabel));
 
         _rescueBlockLabelStack.pop();
         return rv;
     }
 
-    private void buildRescueBodyInternal(IRScope m, Node node, Variable rv, Label endLabel, List<Label> rescueBlockLabels) {
+    private void buildRescueBodyInternal(IRScope m, Node node, Variable rv, Label endLabel) {
         final RescueBodyNode rescueBodyNode = (RescueBodyNode) node;
         final Node exceptionList = rescueBodyNode.getExceptionNodes();
 
@@ -2965,10 +2951,9 @@ public class IRBuilder {
                 m.addInstr(new BEQInstr(eqqResult, BooleanLiteral.TRUE, caughtLabel));
             }
             // Uncaught exception -- build other rescue nodes or rethrow!
-            rescueBlockLabels.add(uncaughtLabel);
             m.addInstr(new LabelInstr(uncaughtLabel));
             if (rescueBodyNode.getOptRescueNode() != null) {
-                buildRescueBodyInternal(m, rescueBodyNode.getOptRescueNode(), rv, endLabel, rescueBlockLabels);
+                buildRescueBodyInternal(m, rescueBodyNode.getOptRescueNode(), rv, endLabel);
             } else {
                 m.addInstr(new ThrowExceptionInstr(exc));
             }
