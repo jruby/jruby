@@ -184,7 +184,7 @@ public class CFG {
         }
     }
 
-    private Label getNewLabel() {
+    Label getNewLabel() {
         return scope.getNewLabel();
     }
 
