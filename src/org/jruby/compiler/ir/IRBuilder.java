@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Date;
 
 import org.jruby.Ruby;
+import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.ast.AliasNode;
 import org.jruby.ast.AndNode;
 import org.jruby.ast.ArgsNode;
@@ -421,6 +422,10 @@ public class IRBuilder {
 
     public static Node buildAST(boolean isCommandLineScript, String arg) {
         Ruby ruby = Ruby.getGlobalRuntime();
+        
+        // set to IR mode, since we use different scopes, etc for IR
+        ruby.getInstanceConfig().setCompileMode(CompileMode.OFFIR);
+        
         if (isCommandLineScript) {
             // inline script
             return ruby.parse(ByteList.create(arg), "-e", null, 0, false);
