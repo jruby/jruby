@@ -7,7 +7,7 @@ import java.util.Set;
 /**
  *
  */
-public class Vertex<T extends DataInfo> {
+public class Vertex<T extends DataInfo> implements Comparable<Vertex<T>> {
     private DirectedGraph graph;
     private T data;
     private Set<Edge<T>> incoming = null;
@@ -162,5 +162,11 @@ public class Vertex<T extends DataInfo> {
         buf.append("\n");
         
         return buf.toString();
+    }
+
+    public int compareTo(Vertex<T> that) {
+        if (this.getData().getID() == that.getData().getID()) return 0;
+        if (this.getData().getID() < that.getData().getID()) return -1;
+        return 1;
     }
 }
