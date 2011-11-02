@@ -60,12 +60,15 @@ public class Linearizer {
             BitSet processed, BasicBlock current) {
         if (processed.get(current.getID())) return;
 
+        // Cannot lay out current block till its fall-through predecessor has been laid out already
+        Edge<BasicBlock> e = graph.vertexFor(current).getIncomingEdgeOfType(EdgeType.FALL_THROUGH);
+        if ((e != null) && !processed.get(e.getSource().getData().getID())) return;
+
         list.add(current);
         processed.set(current.getID());
         
         Vertex<BasicBlock> vertex = graph.vertexFor(current);
         Edge<BasicBlock> fallThrough = vertex.getOutgoingEdgeOfType(EdgeType.FALL_THROUGH);
-        
         if (fallThrough != null) {
             linearizeInner(graph, list, processed, fallThrough.getDestination().getData());
         }
@@ -99,7 +102,7 @@ public class Linearizer {
         
         BasicBlock current = list.get(n - 1);
         if (current != exitBB) {
-            Iterator<Edge<BasicBlock>> edges = graph.vertexFor(current).getOutgoingEdges().iterator();
+            Iterator<Edge<BasicBlock>> edges = graph.vertexFor(current).getOutgoingEdgesNotOfType(EdgeType.EXCEPTION).iterator();
             BasicBlock target = edges.next().getDestination().getData();
 
             // ENEBO: Unsure this ever happens...review this case with subbu
