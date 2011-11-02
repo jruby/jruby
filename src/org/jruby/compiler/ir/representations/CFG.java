@@ -305,15 +305,17 @@ public class CFG {
         BasicBlock currBB = firstBB;
         BasicBlock newBB = null;
         boolean bbEnded = false;
-        boolean bbEndedWithControlXfer = false;
+        boolean nextBBisFallThrough = true;
         for (Instr i : instrs) {
             Operation iop = i.getOperation();
             if (iop == Operation.LABEL) {
                 Label l = ((LabelInstr) i).label;
                 newBB = createNewBB(l, g, bbMap, nestedExceptionRegions);
                 // Jump instruction bbs dont add an edge to the succeeding bb by default
-                if (!bbEndedWithControlXfer) g.addEdge(currBB, newBB, EdgeType.REGULAR);
+                if (nextBBisFallThrough) g.addEdge(currBB, newBB, EdgeType.FALL_THROUGH);
                 currBB = newBB;
+                bbEnded = false;
+                nextBBisFallThrough = true;
 
                 // Add forward reference edges
                 List<BasicBlock> frefs = forwardRefs.get(l);
@@ -322,15 +324,13 @@ public class CFG {
                         g.addEdge(b, newBB, EdgeType.REGULAR);
                     }
                 }
-                bbEnded = false;
-                bbEndedWithControlXfer = false;
             } else if (bbEnded && (iop != Operation.EXC_REGION_END)) {
                 newBB = createNewBB(g, bbMap, nestedExceptionRegions);
                 // Jump instruction bbs dont add an edge to the succeeding bb by default
-                if (!bbEndedWithControlXfer) g.addEdge(currBB, newBB, EdgeType.FALL_THROUGH); // currBB cannot be null!
+                if (nextBBisFallThrough) g.addEdge(currBB, newBB, EdgeType.FALL_THROUGH); // currBB cannot be null!
                 currBB = newBB;
                 bbEnded = false;
-                bbEndedWithControlXfer = false;
+                nextBBisFallThrough = true;
             }
 
             if (i instanceof ExceptionRegionStartMarkerInstr) {
@@ -356,26 +356,20 @@ public class CFG {
                 bbEnded = true;
                 currBB.addInstr(i);
                 Label tgt;
+                nextBBisFallThrough = false;
                 if (i instanceof BranchInstr) {
                     tgt = ((BranchInstr) i).getJumpTarget();
+                    nextBBisFallThrough = true;
                 } else if (i instanceof JumpInstr) {
                     tgt = ((JumpInstr) i).getJumpTarget();
-                    bbEndedWithControlXfer = true;
-                } else if (i instanceof CaseInstr) {
-                    // CASE IR instructions are dummy instructions
-                    // -- all when/then clauses have been converted into if-then-else blocks
-                    tgt = null;
                 } else if (iop.isReturn()) { // BREAK, RETURN, CLOSURE_RETURN
                     tgt = null;
                     retBBs.add(currBB);
-                    bbEndedWithControlXfer = true;
                 } else if (i instanceof ThrowExceptionInstr) {
                     tgt = null;
                     excBBs.add(currBB);
-                    bbEndedWithControlXfer = true;
                 } else if (i instanceof JumpIndirectInstr) {
                     tgt = null;
-                    bbEndedWithControlXfer = true;
                     Set<Label> retAddrs = retAddrMap.get(((JumpIndirectInstr) i).getJumpTarget());
                     for (Label l : retAddrs) {
                         addEdge(g, currBB, l, forwardRefs);
@@ -383,7 +377,7 @@ public class CFG {
                     // Record the target bb for the retaddr var for any set_addr instrs that appear later and use the same retaddr var
                     retAddrTargetMap.put(((JumpIndirectInstr) i).getJumpTarget(), currBB);
                 } else {
-                    tgt = null;
+                    throw new RuntimeException("Unhandled case in CFG builder for basic block ending instr: " + i);
                 }
 
                 if (tgt != null) addEdge(g, currBB, tgt, forwardRefs);
@@ -453,7 +447,7 @@ public class CFG {
         for (BasicBlock rb : excBBs) {
             g.addEdge(rb, exitBB, EdgeType.EXIT);
         }
-        if (!bbEndedWithControlXfer) {
+        if (nextBBisFallThrough) {
             g.addEdge(currBB, exitBB, EdgeType.EXIT);
         }
 
