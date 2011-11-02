@@ -1,5 +1,6 @@
 package org.jruby.compiler.ir;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -222,7 +223,7 @@ public abstract class IRScopeImpl implements IRScope {
     }
 
     public List<Instr> getInstrs() {
-        return null;
+        return Collections.EMPTY_LIST;
     }
 
     @Override
