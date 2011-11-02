@@ -88,6 +88,14 @@ public class Vertex<T extends DataInfo> {
     public Edge<T> getOutgoingEdgeOfType(Object type) {
         return getSingleEdge(getOutgoingEdgesOfType(type).iterator(), type);
     }
+    
+    /**
+     * Get single outgoing edge of any type and assert if there is more than
+     * one.
+     */
+    public Edge<T> getOutgoingEdge() {
+        return getSingleEdge(getOutgoingEdgesNotOfType(null).iterator(), null);
+    }
 
     public Set<Edge<T>> getIncomingEdges() {
         if (incoming == null) incoming = new HashSet<Edge<T>>();
