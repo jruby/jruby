@@ -63,6 +63,10 @@ public class DirectedGraph<T extends DataInfo> {
         vertices.remove(data);
         vertex.removeAllEdges();
     }
+    
+    public int size() {
+        return allData().size();
+    }
 
     @Override
     public String toString() {
