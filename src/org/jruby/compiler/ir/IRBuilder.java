@@ -2022,22 +2022,24 @@ public class IRBuilder {
         Label rBeginLabel = ebi.regionStart;
         Label rEndLabel   = ebi.end;
 
+        // start of protected region
+        m.addInstr(new LabelInstr(rBeginLabel));
+        m.addInstr(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, ebi.dummyRescueBlockLabel, ebi.dummyRescueBlockLabel));
+
         // Generate IR for code being protected
         Operand rv;  
         if (bodyNode instanceof RescueNode) {
             // The rescue code will ensure that the region is ended
-            rv = buildRescueInternal(bodyNode, m);
+            rv = buildRescueInternal(bodyNode, m, ebi);
         } else {
-            m.addInstr(new LabelInstr(rBeginLabel));
-            m.addInstr(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, ebi.dummyRescueBlockLabel, ebi.dummyRescueBlockLabel));
-            _rescueBlockLabelStack.push(rBeginLabel);
             rv = build(bodyNode, m);
-            m.addInstr(new ExceptionRegionEndMarkerInstr()); // End of protected region
-            _rescueBlockLabelStack.pop();
 
             // Jump to start of ensure block -- dont bother if we had a return in the protected body 
             if (rv != U_NIL) m.addInstr(new SetReturnAddressInstr(ebi.returnAddr, rEndLabel));
         }
+
+        // end of protected region
+        m.addInstr(new ExceptionRegionEndMarkerInstr()); 
 
         // Pop the current ensure block info node *BEFORE* generating the ensure code for this block itself!
         _ensureBlockStack.pop();
@@ -2856,23 +2858,23 @@ public class IRBuilder {
     }
 
     public Operand buildRescue(Node node, IRScope m) {
-        return buildRescueInternal(node, m);
+        return buildRescueInternal(node, m, null);
     }
 
-    private Operand buildRescueInternal(Node node, IRScope m) {
+    private Operand buildRescueInternal(Node node, IRScope m, EnsureBlockInfo ensure) {
         final RescueNode rescueNode = (RescueNode) node;
 
-        EnsureBlockInfo closestEnsure = _ensureBlockStack.empty() ? null : _ensureBlockStack.peek();
-
         // Labels marking start, else, end of the begin-rescue(-ensure)-end block
-        Label rBeginLabel = closestEnsure == null ? m.getNewLabel() : closestEnsure.regionStart;
-        Label rEndLabel   = closestEnsure == null ? m.getNewLabel() : closestEnsure.end;
+        Label rBeginLabel = ensure == null ? m.getNewLabel() : ensure.regionStart;
+        Label rEndLabel   = ensure == null ? m.getNewLabel() : ensure.end;
         Label rescueLabel = m.getNewLabel(); // Label marking start of the first rescue code.
         _rescueBlockLabelStack.push(rBeginLabel);
 
-        m.addInstr(new LabelInstr(rBeginLabel));
+        // Otherwise, the ensure node would have emitted this already
+        if (ensure == null) m.addInstr(new LabelInstr(rBeginLabel));
+
         // Placeholder rescue instruction that tells rest of the compiler passes the boundaries of the rescue block.
-        m.addInstr(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, closestEnsure == null ? null : closestEnsure.dummyRescueBlockLabel, rescueLabel));
+        m.addInstr(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, ensure == null ? null : ensure.dummyRescueBlockLabel, rescueLabel));
 
         // Body
         Operand tmp = Nil.NIL;  // default return value if for some strange reason, we neither have the body node or the else node!
@@ -2897,12 +2899,12 @@ public class IRBuilder {
             // No explicit return from the protected body
             // - If we dont have any ensure blocks, simply jump to the end of the rescue block
             // - If we do, get the innermost ensure block, set up the return address to the end of the ensure block, and go execute the ensure code.
-            if (closestEnsure == null) {
+            if (ensure == null) {
                 m.addInstr(new JumpInstr(rEndLabel));
             } else {
-                // NOTE: rEndLabel is identical to closestEnsure.end, but less confusing to use rEndLabel since that makes more semantic sense
-                m.addInstr(new SetReturnAddressInstr(closestEnsure.returnAddr, rEndLabel));
-                m.addInstr(new JumpInstr(closestEnsure.start));
+                // NOTE: rEndLabel is identical to ensure.end, but less confusing to use rEndLabel since that makes more semantic sense
+                m.addInstr(new SetReturnAddressInstr(ensure.returnAddr, rEndLabel));
+                m.addInstr(new JumpInstr(ensure.start));
             }
         } else {
             // If the body had an explicit return, the return instruction IR build takes care of setting
@@ -2919,7 +2921,7 @@ public class IRBuilder {
         buildRescueBodyInternal(m, rescueNode.getRescueNode(), rv, rEndLabel);
 
         // End label -- only if there is no ensure block!  With an ensure block, you end at ensureEndLabel.
-        if (closestEnsure == null) m.addInstr(new LabelInstr(rEndLabel));
+        if (ensure == null) m.addInstr(new LabelInstr(rEndLabel));
 
         _rescueBlockLabelStack.pop();
         return rv;
