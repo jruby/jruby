@@ -1,14 +1,10 @@
 package org.jruby.compiler.ir.representations;
 
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.HashMap;
-import java.util.ListIterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Stack;
 
 import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.IRClosure;
@@ -37,7 +33,6 @@ public class CFGData {
     IRExecutionScope scope;   // Scope (method/closure) to which this cfg belongs
 
     CFG cfg = null;
-    LinkedList<BasicBlock> postOrderList; // Post order traversal list of the cfg
     Map<String, DataFlowProblem> dfProbs;       // Map of name -> dataflow problem
     List<BasicBlock> linearizedBBList;  // Linearized list of bbs
     private Instr[] instrs;
@@ -46,7 +41,6 @@ public class CFGData {
 
     public CFGData(IRExecutionScope s) {
         scope = s;
-        postOrderList = null;
         dfProbs = new HashMap<String, DataFlowProblem>();
         instrs = null;
     }
@@ -65,11 +59,6 @@ public class CFGData {
         
         return linearizedBBList;
     }    
-    
-    protected LinkedList<BasicBlock> postOrderList() {
-        if (postOrderList == null) postOrderList = buildPostOrderList();
-        return postOrderList;
-    }
     
     protected void depends(Object obj) {
         assert obj != null: "Unsatisfied dependency and this depends() was set " +
@@ -194,7 +183,7 @@ public class CFGData {
         depends(cfg());
 
         // FIXME: Add result from this build and add to CFG as a field, then add depends() for htings which use it.
-        builder.buildDominatorTree(cfg, postOrderList(), cfg.getMaxNodeID());
+        builder.buildDominatorTree(cfg, cfg.postOrderList(), cfg.getMaxNodeID());
     }
     
     public List<BasicBlock> buildLinearization() {
@@ -203,55 +192,6 @@ public class CFGData {
         linearizedBBList = CFGLinearizer.linearize(cfg);
         
         return linearizedBBList;
-    }
-    
-    private LinkedList<BasicBlock> buildPostOrderList() {
-        depends(cfg());
-        LinkedList<BasicBlock> list = new LinkedList<BasicBlock>();
-        BasicBlock root = cfg.getEntryBB();
-        Stack<BasicBlock> stack = new Stack<BasicBlock>();
-        stack.push(root);
-        BitSet bbSet = new BitSet(1 + cfg.getMaxNodeID());
-        bbSet.set(root.getID());
-
-        // Non-recursive post-order traversal (the added flag is required to handle cycles and common ancestors)
-        while (!stack.empty()) {
-            // Check if all children of the top of the stack have been added
-            BasicBlock b = stack.peek();
-            boolean allChildrenDone = true;
-            for (BasicBlock dst : cfg.getOutgoingDestinations(b)) {
-                int dstID = dst.getID();
-                if (!bbSet.get(dstID)) {
-                    allChildrenDone = false;
-                    stack.push(dst);
-                    bbSet.set(dstID);
-                }
-            }
-
-            // If all children have been added previously, we are ready with 'b' in this round!
-            if (allChildrenDone) {
-                stack.pop();
-                list.add(b);
-            }
-        }
-
-        // Sanity check!
-        for (BasicBlock b : cfg.getBasicBlocks()) {
-            if (!bbSet.get(b.getID())) {
-                printError("BB " + b.getID() + " missing from po list!");
-                break;
-            }
-        }
-        
-        return list;
-    }
-
-    public ListIterator<BasicBlock> getPostOrderTraverser() {
-        return postOrderList().listIterator();
-    }
-
-    public ListIterator<BasicBlock> getReversePostOrderTraverser() {
-        return postOrderList().listIterator(cfg().size());
     }
 
     public String toStringInstrs() {

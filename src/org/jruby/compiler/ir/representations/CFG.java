@@ -1,10 +1,13 @@
 package org.jruby.compiler.ir.representations;
 
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
@@ -28,6 +31,8 @@ import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.CFGData.EdgeType;
 import org.jruby.compiler.ir.util.DirectedGraph;
 import org.jruby.compiler.ir.util.Edge;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 /**
  * Represents the base build of a CFG.  All information here is accessed via
@@ -35,6 +40,8 @@ import org.jruby.compiler.ir.util.Edge;
  * organizational structure for a build.
  */
 public class CFG {
+    private static final Logger LOG = LoggerFactory.getLogger("CFG");
+    
     private IRExecutionScope scope;
     private Map<Label, BasicBlock> bbMap = new HashMap<Label, BasicBlock>();
         
@@ -50,11 +57,12 @@ public class CFG {
     private BasicBlock exitBB = null;
     private DirectedGraph<BasicBlock> graph = new DirectedGraph<BasicBlock>();
     
-    private int nextBBId;       // Next available basic block id
+    private int nextBBId = 0;       // Next available basic block id
+    
+    LinkedList<BasicBlock> postOrderList = null; // Post order traversal list of the cfg    
     
     public CFG(IRExecutionScope scope) {
         this.scope = scope;
-        nextBBId = 0; // Init before building basic blocks below!
     }
     
     public int getNextBBID() {
@@ -85,6 +93,19 @@ public class CFG {
     public List<ExceptionRegion> getOutermostExceptionRegions() {
         return outermostERs;
     }
+    
+    protected LinkedList<BasicBlock> postOrderList() {
+        if (postOrderList == null) postOrderList = buildPostOrderList();
+        return postOrderList;
+    }
+    
+    public ListIterator<BasicBlock> getPostOrderTraverser() {
+        return postOrderList().listIterator();
+    }
+
+    public ListIterator<BasicBlock> getReversePostOrderTraverser() {
+        return postOrderList().listIterator(size());
+    }    
 
     public DirectedGraph<BasicBlock> getGraph() {
         return graph;
@@ -492,4 +513,48 @@ public class CFG {
     void removeEdge(BasicBlock a, BasicBlock b) {
         throw new UnsupportedOperationException("Not yet implemented");
     }
+    
+    private LinkedList<BasicBlock> buildPostOrderList() {
+        LinkedList<BasicBlock> list = new LinkedList<BasicBlock>();
+        BasicBlock root = getEntryBB();
+        Stack<BasicBlock> stack = new Stack<BasicBlock>();
+        stack.push(root);
+        BitSet bbSet = new BitSet(1 + getMaxNodeID());
+        bbSet.set(root.getID());
+
+        // Non-recursive post-order traversal (the added flag is required to handle cycles and common ancestors)
+        while (!stack.empty()) {
+            // Check if all children of the top of the stack have been added
+            BasicBlock b = stack.peek();
+            boolean allChildrenDone = true;
+            for (BasicBlock dst : getOutgoingDestinations(b)) {
+                int dstID = dst.getID();
+                if (!bbSet.get(dstID)) {
+                    allChildrenDone = false;
+                    stack.push(dst);
+                    bbSet.set(dstID);
+                }
+            }
+
+            // If all children have been added previously, we are ready with 'b' in this round!
+            if (allChildrenDone) {
+                stack.pop();
+                list.add(b);
+            }
+        }
+
+        // Sanity check!
+        for (BasicBlock b : getBasicBlocks()) {
+            if (!bbSet.get(b.getID())) {
+                printError("BB " + b.getID() + " missing from po list!");
+                break;
+            }
+        }
+        
+        return list;
+    }    
+    
+    private void printError(String message) {
+        LOG.error(message + "\nGraph:\n" + this + "\nInstructions:\n" + toStringInstrs());
+    }      
 }

@@ -73,12 +73,12 @@ public abstract class DataFlowProblem {
     private LinkedList<FlowGraphNode> getInitialWorkList() {
         LinkedList<FlowGraphNode> wl = new LinkedList<FlowGraphNode>();
         if (direction == DF_Direction.FORWARD) {
-           ListIterator<BasicBlock> it = cfgData.getReversePostOrderTraverser();
+           ListIterator<BasicBlock> it = cfgData.cfg().getReversePostOrderTraverser();
            while (it.hasPrevious()) {
               wl.add(getFlowGraphNode(it.previous()));
            }
         } else {
-           ListIterator<BasicBlock> it = cfgData.getPostOrderTraverser();
+           ListIterator<BasicBlock> it = cfgData.cfg().getPostOrderTraverser();
            while (it.hasNext()) {
               wl.add(getFlowGraphNode(it.next()));
            }
