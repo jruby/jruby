@@ -106,10 +106,6 @@ public class CFG {
     public ListIterator<BasicBlock> getReversePostOrderTraverser() {
         return postOrderList().listIterator(size());
     }    
-
-    public DirectedGraph<BasicBlock> getGraph() {
-        return graph;
-    }
     
     public IRExecutionScope getScope() {
         return scope;
