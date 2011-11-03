@@ -51,12 +51,24 @@ class IRBytecodeAdapter {
         adapter.astore(i);
     }
 
-    public void invokeObject(String name, int arity) {
+    public void invokeOther(String name, int arity) {
         adapter.invokedynamic("invoke:" + JavaNameMangler.mangleMethodName(name), sig(Object.class, params(ThreadContext.class, Object.class, Object.class, arity)), new Handle(Opcodes.H_INVOKESTATIC, "dummy", "dummy", "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;J)Ljava/lang/invoke/CallSite;"));
     }
 
-    public void invokeBoolean(String name, int arity) {
+    public void invokeSelf(String name, int arity) {
+        adapter.invokedynamic("invokeSelf:" + JavaNameMangler.mangleMethodName(name), sig(Object.class, params(ThreadContext.class, Object.class, Object.class, arity)), new Handle(Opcodes.H_INVOKESTATIC, "dummy", "dummy", "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;J)Ljava/lang/invoke/CallSite;"));
+    }
+
+    public void invokeSuper(String name, int arity) {
+        adapter.invokedynamic("invokeSuper:" + JavaNameMangler.mangleMethodName(name), sig(Object.class, params(ThreadContext.class, Object.class, Object.class, arity)), new Handle(Opcodes.H_INVOKESTATIC, "dummy", "dummy", "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;J)Ljava/lang/invoke/CallSite;"));
+    }
+
+    public void invokeOtherBoolean(String name, int arity) {
         adapter.invokedynamic("invoke:" + JavaNameMangler.mangleMethodName(name), sig(boolean.class, params(ThreadContext.class, Object.class, Object.class, arity)), new Handle(Opcodes.H_INVOKESTATIC, "dummy", "dummy", "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;J)Ljava/lang/invoke/CallSite;"));
+    }
+
+    public void invokeSelfBoolean(String name, int arity) {
+        adapter.invokedynamic("invokeSelf:" + JavaNameMangler.mangleMethodName(name), sig(boolean.class, params(ThreadContext.class, Object.class, Object.class, arity)), new Handle(Opcodes.H_INVOKESTATIC, "dummy", "dummy", "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;J)Ljava/lang/invoke/CallSite;"));
     }
 
     public void invokeVirtual(Type type, Method method) {

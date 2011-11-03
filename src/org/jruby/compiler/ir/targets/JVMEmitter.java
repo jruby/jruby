@@ -32,7 +32,7 @@ public enum JVMEmitter {
             jvm.method().loadLocal(0);
             jvm.emit(args[0]);
             jvm.emit(args[1]);
-            jvm.method().invokeBoolean("==", 1);
+            jvm.method().invokeOtherBoolean("==", 1);
         }
     },
     
@@ -46,7 +46,18 @@ public enum JVMEmitter {
                 jvm.emit(operand);
             }
 
-            jvm.method().invokeObject(call.getMethodAddr().getName(), call.getCallArgs().length);
+            switch (call.getCallType()) {
+                case FUNCTIONAL:
+                case VARIABLE:
+                    jvm.method().invokeSelf(call.getMethodAddr().getName(), call.getCallArgs().length);
+                    break;
+                case NORMAL:
+                    jvm.method().invokeOther(call.getMethodAddr().getName(), call.getCallArgs().length);
+                    break;
+                case SUPER:
+                    jvm.method().invokeSuper(call.getMethodAddr().getName(), call.getCallArgs().length);
+                    break;
+            }
         }
     },
     

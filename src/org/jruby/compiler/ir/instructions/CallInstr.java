@@ -100,6 +100,10 @@ public class CallInstr extends MultiOperandInstr {
     public Operand[] getCallArgs() {
         return arguments;
     }
+    
+    public CallType getCallType() {
+        return callType;
+    }
 
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap) {
