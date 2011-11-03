@@ -159,7 +159,7 @@ public class CFG {
     }
     
     /**
-     *  Build a Control Flow Graph in a Reducible Flowgraph format.
+     *  Build the Control Flow Graph
      */
     public DirectedGraph<BasicBlock> build(List<Instr> instrs) {
         // Map of label & basic blocks which are waiting for a bb with that label

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Iterator;
 import java.util.List;
+import org.jruby.compiler.ir.instructions.BranchInstr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.JumpInstr;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
@@ -11,20 +12,30 @@ import org.jruby.compiler.ir.operands.Nil;
 import org.jruby.compiler.ir.representations.CFGData.EdgeType;
 
 /**
- * This produces a linear list of BasicBlocks in the same approximate order
- * as the flow of the ruby program.  In processing this list, we will also
- * add jumps where required and remove as many jumps as possible.
+ * This produces a linear list of BasicBlocks so that the linearized instruction
+ * list is in executable form.  In generating this list, we will also add jumps
+ * where required and remove as many jumps as possible.
  * 
  * Ordinary BasicBlocks will follow FollowThrough edges and just concatenate 
  * together eliminating the need for executing a jump instruction during 
  * execution.
  * 
  * Notes:
- * 1. Branches have two edges (FollowTrough/NotTaken and Taken)
- * 2. All BasicBlocks can possibly have a third edge for exception
+ * 1. Basic blocks ending in branches have two edges (FollowTrough/NotTaken and Taken)
+ * 2. All BasicBlocks can possibly have two additional edges related to exceptions: 
+ *    - one that transfers control to a rescue block (if one exists that protects
+ *      the excepting instruction) which is also responsible for running ensures
+ *    - one that transfers control to an ensure block (if one exists) for
+ *      situations where we bypass the rescue block (breaks and thread-kill).
  * 3. Branch, Jump, Return, and Exceptions are all boundaries for BasicBlocks
  * 4. Dummy Entry and Exit BasicBlocks exist in all CFGs
  * 
+ * NOTE: When the IR builder first builds its list, and the CFG builder builds the CFG,
+ * the order in which BBs are created should already be a linearized list.  Need to verify
+ * this and we might be able to skip linearization if the CFG has not been transformed
+ * by any code transformation passes.  This might be the case when JRuby first starts up
+ * when we may just build the IR and start interpreting it right away without running any
+ * opts.  In that scenario, it may be worth it to not run the linearizer at all.
  */
 public class CFGLinearizer {
     public static List<BasicBlock> linearize(CFG cfg) {
@@ -36,18 +47,6 @@ public class CFGLinearizer {
         fixupList(cfg, list);
         
         return list;
-    }
-
-    // If there is no jump at add of block and the next block is not destination insert a valid jump
-    private static void addJumpIfNextNotDestination(CFG cfg, BasicBlock next, Instr lastInstr, BasicBlock current) {
-        Iterator<BasicBlock> outs = cfg.getOutgoingDestinations(current).iterator();
-        BasicBlock target = outs.hasNext() ? outs.next() : null;
-        
-        if (target != null && !outs.hasNext()) {
-            if ((target != next) && ((lastInstr == null) || !lastInstr.getOperation().transfersControl())) {
-                current.addInstr(new JumpInstr(target.getLabel()));
-            }
-        }
     }
     
     private static void linearizeInner(CFG cfg, List<BasicBlock> list, 
@@ -90,21 +89,24 @@ public class CFGLinearizer {
                 addJumpIfNextNotDestination(cfg, list.get(i + 1), lastInstr, current);
             }
         }
-        
+
         BasicBlock current = list.get(n - 1);
         if (current != exitBB) {
-            Iterator<BasicBlock> iter = cfg.getOutgoingDestinationsNotOfType(current, EdgeType.EXCEPTION).iterator();
-            BasicBlock target = iter.next();
-
-            // ENEBO: Unsure this ever happens...review this case with subbu
-            if (target != exitBB && iter.hasNext()) {
-                BasicBlock target2 = iter.next();
-                if (target2 == exitBB) target = target2;
-            }
-
             Instr lastInstr = current.getLastInstr();
+            // Last instruction of the last basic block in the linearized list can NEVER
+            // be a branch instruction because this basic block would then have a fallthrough
+            // which would have to be present after it.
+            assert (!(lastInstr instanceof BranchInstr));
+
             if ((lastInstr == null) || !lastInstr.getOperation().transfersControl()) {
-                //                    System.out.println("BB " + curr.getID() + " is the last bb in the layout! Adding a jump to " + tgt._label);
+                // We are guaranteed to have at least one non-exception edge because
+                // the exit BB post-dominates all BBs in the CFG even when exception
+                // edges are removed.
+                Iterator<BasicBlock> iter = cfg.getOutgoingDestinationsNotOfType(current, EdgeType.EXCEPTION).iterator();
+                BasicBlock target = iter.next();
+                assert ((target == exitBB) && !iter.hasNext());
+
+                // System.out.println("BB " + curr.getID() + " is the last bb in the layout! Adding a jump to " + tgt._label);
                 current.addInstr(new JumpInstr(target.getLabel()));
             }
         }
@@ -112,6 +114,18 @@ public class CFGLinearizer {
 
     private static void tryAndRemoveUnneededJump(BasicBlock next, CFG cfg, Instr lastInstr, BasicBlock current) {
         if (next == cfg.getBBForLabel(((JumpInstr) lastInstr).getJumpTarget())) current.removeInstr(lastInstr);
+    }
+
+    // If there is no jump at add of block and the next block is not destination insert a valid jump
+    private static void addJumpIfNextNotDestination(CFG cfg, BasicBlock next, Instr lastInstr, BasicBlock current) {
+        Iterator<BasicBlock> outs = cfg.getOutgoingDestinations(current).iterator();
+        BasicBlock target = outs.hasNext() ? outs.next() : null;
+        
+        if (target != null && !outs.hasNext()) {
+            if ((target != next) && ((lastInstr == null) || !lastInstr.getOperation().transfersControl())) {
+                current.addInstr(new JumpInstr(target.getLabel()));
+            }
+        }
     }
 
     private static void verifyAllBasicBlocksProcessed(CFG cfg, BitSet processed) throws RuntimeException {

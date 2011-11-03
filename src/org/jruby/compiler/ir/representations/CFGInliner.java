@@ -33,14 +33,11 @@ public class CFGInliner {
         InlinerInfo ii = new InlinerInfo(call, cfgData);
         BasicBlock splitBB = callBB.splitAtInstruction(call, cfgData.getNewLabel(), false);
         cfg.putBBForLabel(splitBB.getLabel(), splitBB);
-        List<Edge<BasicBlock>> edgesToRemove = new java.util.ArrayList<Edge<BasicBlock>>();
         for (Edge<BasicBlock> e : cfg.getOutgoingEdges(callBB)) {
             cfg.addEdge(splitBB, e.getDestination().getData(), e.getType());
-            edgesToRemove.add(e);
         }
-        // Ugh! I get exceptions if I try to pass the set I receive from outgoingEdgesOf!  What a waste! 
-        // That is why I build the new list edgesToRemove
-        for (Edge edge: edgesToRemove) {
+
+        for (Edge edge: cfg.getOutgoingEdges(callBB)) {
             cfg.removeEdge(edge);
         }
 
