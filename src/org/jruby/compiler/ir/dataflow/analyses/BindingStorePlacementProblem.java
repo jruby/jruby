@@ -64,7 +64,7 @@ public class BindingStorePlacementProblem extends DataFlowProblem {
         boolean mightRequireGlobalEnsureBlock = false;
         Set<LocalVariable> dirtyVars = null;
         CFGData cfg = getCFGData();
-        IRScope cfgScope = cfg.getScope();
+        IRScope cfgScope = cfg.cfg().getScope();
         if (cfgScope instanceof IRClosure) {
             mightRequireGlobalEnsureBlock = true;
             dirtyVars = new HashSet<LocalVariable>();

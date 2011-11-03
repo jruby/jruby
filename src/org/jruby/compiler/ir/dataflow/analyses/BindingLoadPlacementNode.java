@@ -126,7 +126,7 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
 
     public void addLoads() {
         BindingLoadPlacementProblem blp = (BindingLoadPlacementProblem) problem;
-        IRExecutionScope s = blp.getCFGData().getScope();
+        IRExecutionScope s = blp.getCFGData().cfg().getScope();
         List<Instr> instrs = basicBlock.getInstrs();
         ListIterator<Instr> it = instrs.listIterator(instrs.size());
         Set<LocalVariable> reqdLoads = new HashSet<LocalVariable>(inRequiredLoads);

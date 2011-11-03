@@ -17,7 +17,7 @@ import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.YieldInstr;
 
 public class InlinerInfo {
-    public final CFGData callerCFG;
+    public final CFG callerCFG;
     public final CallInstr call;
 
     private Operand[] callArgs;
@@ -26,7 +26,7 @@ public class InlinerInfo {
     private Map<BasicBlock, BasicBlock> bbRenameMap;
     private List yieldSites;
 
-    public InlinerInfo(CallInstr call, CFGData c) {
+    public InlinerInfo(CallInstr call, CFG c) {
         this.call = call;
         this.callArgs = call.getCallArgs();
         this.callerCFG = c;
@@ -68,7 +68,7 @@ public class InlinerInfo {
     public BasicBlock getOrCreateRenamedBB(BasicBlock bb) {
         BasicBlock renamedBB = getRenamedBB(bb);
         if (renamedBB == null) {
-            renamedBB =  new BasicBlock(this.callerCFG.cfg(), getRenamedLabel(bb.getLabel()));
+            renamedBB =  new BasicBlock(this.callerCFG, getRenamedLabel(bb.getLabel()));
             bbRenameMap.put(bb, renamedBB);
         }
         return renamedBB;

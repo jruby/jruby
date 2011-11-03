@@ -30,8 +30,8 @@ public class CFGInliner {
     
     public void inlineMethod(IRMethod m, BasicBlock callBB, CallInstr call) {
         // 1. split callsite bb and move outbound edges from callsite bb to split bb.
-        InlinerInfo ii = new InlinerInfo(call, cfgData);
-        BasicBlock splitBB = callBB.splitAtInstruction(call, cfgData.getNewLabel(), false);
+        InlinerInfo ii = new InlinerInfo(call, cfg);
+        BasicBlock splitBB = callBB.splitAtInstruction(call, cfg.getScope().getNewLabel(), false);
         cfg.putBBForLabel(splitBB.getLabel(), splitBB);
         for (Edge<BasicBlock> e : cfg.getOutgoingEdges(callBB)) {
             cfg.addEdge(splitBB, e.getDestination().getData(), e.getType());
@@ -160,7 +160,7 @@ public class CFGInliner {
         cl.markInlined();
 
         // 1. split yield site bb and move outbound edges from yield site bb to split bb.
-        BasicBlock splitBB = yieldBB.splitAtInstruction(yield, cfgData.getNewLabel(), false);
+        BasicBlock splitBB = yieldBB.splitAtInstruction(yield, cfg.getScope().getNewLabel(), false);
 
         cfg.putBBForLabel(splitBB.getLabel(), splitBB);
         List<Edge<BasicBlock>> edgesToRemove = new java.util.ArrayList<Edge<BasicBlock>>();

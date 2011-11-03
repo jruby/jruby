@@ -50,10 +50,6 @@ public class CFGData {
         dfProbs = new HashMap<String, DataFlowProblem>();
         instrs = null;
     }
-
-    public IRExecutionScope getScope() {
-        return scope;
-    }
     
     // Dependencies
 
@@ -135,10 +131,6 @@ public class CFGData {
             }
         }
     }
-
-    Label getNewLabel() {
-        return scope.getNewLabel();
-    }
     
     private void printError(String message) {
         LOG.error(message + "\nGraph:\n" + cfg() + "\nInstructions:\n" + toStringInstrs());
@@ -193,7 +185,7 @@ public class CFGData {
     
     
     public void buildCFG(List<Instr> instructions) {
-        CFG newBuild = new CFG(this);
+        CFG newBuild = new CFG(scope);
         newBuild.build(instructions);
         cfg = newBuild;
     }    
@@ -343,7 +335,7 @@ public class CFGData {
             }
         }
 
-        for (IRClosure cl : getScope().getClosures()) {
+        for (IRClosure cl : cfg.getScope().getClosures()) {
             cl.getCFGData().setUpUseDefLocalVarMaps();
         }
     }
@@ -352,7 +344,7 @@ public class CFGData {
         if (usedLocalVars == null) setUpUseDefLocalVarMaps();
         if (usedLocalVars.contains(v)) return true;
 
-        for (IRClosure cl : getScope().getClosures()) {
+        for (IRClosure cl : cfg.getScope().getClosures()) {
             if (cl.getCFGData().usesLocalVariable(v)) return true;
         }
 
@@ -363,7 +355,7 @@ public class CFGData {
         if (definedLocalVars == null) setUpUseDefLocalVarMaps();
         if (definedLocalVars.contains(v)) return true;
 
-        for (IRClosure cl : getScope().getClosures()) {
+        for (IRClosure cl : cfg.getScope().getClosures()) {
             if (cl.getCFGData().definesLocalVariable(v)) return true;
         }
 

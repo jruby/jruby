@@ -36,7 +36,7 @@ public class BindingStorePlacementNode extends FlowGraphNode {
 
         // For closure scopes, the heap binding will already have been allocated in the parent scope
         // So, don't even bother with the binding allocation in closures!
-        if (problem.getCFGData().getScope() instanceof IRClosure) {
+        if (problem.getCFGData().cfg().getScope() instanceof IRClosure) {
             inBindingAllocated = outBindingAllocated = true;
         } else {
             inBindingAllocated = outBindingAllocated = false;
@@ -134,7 +134,7 @@ public class BindingStorePlacementNode extends FlowGraphNode {
 
         BindingStorePlacementProblem bsp = (BindingStorePlacementProblem) problem;
         CFGData cfgData = bsp.getCFGData();
-        IRExecutionScope s = cfgData.getScope();
+        IRExecutionScope s = cfgData.cfg().getScope();
         ListIterator<Instr> instrs = basicBlock.getInstrs().listIterator();
         Set<LocalVariable> dirtyVars = new HashSet<LocalVariable>(inDirtyVars);
         boolean bindingAllocated = inBindingAllocated;

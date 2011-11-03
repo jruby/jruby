@@ -188,7 +188,7 @@ public class Interpreter {
                     } else if (interp.inLambda()) {
                         // We just unwound all the way up because of a non-local break
                         throw runtime.newLocalJumpError(Reason.BREAK, (IRubyObject)bj.breakValue, "unexpected break");
-                    } else if (bj.caughtByLambda || (bj.scopeToReturnTo == cfgData.getScope())) {
+                    } else if (bj.caughtByLambda || (bj.scopeToReturnTo == cfgData.cfg().getScope())) {
                         // We got where we need to get to (because a lambda stopped us, or because we popped to the
                         // lexical scope where we got called from).  Retrieve the result and store it.
                         Operand r = lastInstr.getResult();
@@ -204,7 +204,7 @@ public class Interpreter {
                     }
                 }
             } catch (RaiseException re) {
-                if (isDebug()) LOG.info("in scope: " + cfgData.getScope() + ", caught raise exception: " + re.getException() + "; excepting instr: " + lastInstr);
+                if (isDebug()) LOG.info("in scope: " + cfgData.cfg().getScope() + ", caught raise exception: " + re.getException() + "; excepting instr: " + lastInstr);
                 ipc = cfgData.getRescuerPC(lastInstr);
                 if (isDebug()) LOG.info("ipc for rescuer: " + ipc);
                 if (ipc == -1) throw re; // No one rescued exception, pass it on!

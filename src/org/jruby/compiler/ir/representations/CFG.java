@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 import org.jruby.compiler.ir.IRClosure;
+import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.BranchInstr;
 import org.jruby.compiler.ir.instructions.CallInstr;
@@ -34,7 +35,7 @@ import org.jruby.compiler.ir.util.Edge;
  * organizational structure for a build.
  */
 public class CFG {
-    private CFGData cfgData;
+    private IRExecutionScope scope;
     private Map<Label, BasicBlock> bbMap = new HashMap<Label, BasicBlock>();
         
     // Map of bb -> first bb of the rescue block that initiates exception handling for all exceptions thrown within this bb
@@ -51,8 +52,8 @@ public class CFG {
     
     private int nextBBId;       // Next available basic block id
     
-    public CFG(CFGData cfgData) {
-        this.cfgData = cfgData;
+    public CFG(IRExecutionScope scope) {
+        this.scope = scope;
         nextBBId = 0; // Init before building basic blocks below!
     }
     
@@ -88,6 +89,10 @@ public class CFG {
     public DirectedGraph<BasicBlock> getGraph() {
         return graph;
     }
+    
+    public IRExecutionScope getScope() {
+        return scope;
+    }    
     
     public int size() {
         return graph.size();
@@ -397,7 +402,7 @@ public class CFG {
     }
 
     private BasicBlock createBB(Stack<ExceptionRegion> nestedExceptionRegions) {
-        return createBB(cfgData.getNewLabel(), nestedExceptionRegions);
+        return createBB(scope.getNewLabel(), nestedExceptionRegions);
     }
     
 
