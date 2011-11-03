@@ -73,7 +73,7 @@ public class LiveVariableNode extends FlowGraphNode {
         lvp.initVarsLiveOnExit(liveOnEntry);
         lvp.setup(cfgData);
         lvp.compute_MOP_Solution();
-        cfgData.setDataFlowSolution(lvp.getName(), lvp);
+        cl.setDataFlowSolution(lvp.getName(), lvp);
 
         return lvp;
     }
@@ -300,7 +300,7 @@ public class LiveVariableNode extends FlowGraphNode {
                     if ((o != null) && (o instanceof MetaObject)) {
                         IRClosure cl = (IRClosure) ((MetaObject)o).scope;
                         CFGData x = cl.getCFGData();
-                        LiveVariablesProblem xlvp = (LiveVariablesProblem)x.getDataFlowSolution(lvp.getName());
+                        LiveVariablesProblem xlvp = (LiveVariablesProblem)cl.getDataFlowSolution(lvp.getName());
                         // Collect variables live on entry and merge that info into the current problem.
                         for (Variable y: xlvp.getVarsLiveOnEntry()) {
                             DataFlowVar dv = lvp.getDFVar(y);

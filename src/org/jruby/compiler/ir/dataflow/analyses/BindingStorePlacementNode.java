@@ -83,7 +83,7 @@ public class BindingStorePlacementNode extends FlowGraphNode {
                     BindingStorePlacementProblem cl_bsp = new BindingStorePlacementProblem();
                     cl_bsp.setup(cl_cfg);
                     cl_bsp.compute_MOP_Solution();
-                    cl_cfg.setDataFlowSolution(cl_bsp.getName(), cl_bsp);
+                    cl.setDataFlowSolution(cl_bsp.getName(), cl_bsp);
 
                     // If the call is an eval, or if the callee can capture this method's binding, we have to spill all variables.
                     boolean spillAllVars = call.canBeEval() || call.targetRequiresCallersBinding();
@@ -158,7 +158,7 @@ public class BindingStorePlacementNode extends FlowGraphNode {
             liveVars = lvp.getVarsLiveOnExit();
             System.out.println("\t--> Vars live on exit : " + (liveVars == null ? "NONE" : java.util.Arrays.toString(liveVars.toArray())));
 **/
-            LiveVariablesProblem lvp = (LiveVariablesProblem)cfgData.getDataFlowSolution(DataFlowConstants.LVP_NAME);
+            LiveVariablesProblem lvp = (LiveVariablesProblem)s.getDataFlowSolution(DataFlowConstants.LVP_NAME);
             if (lvp != null) {
                 java.util.Collection<Variable> liveVars = lvp.getVarsLiveOnExit();
                 if (liveVars != null) {
@@ -177,8 +177,9 @@ public class BindingStorePlacementNode extends FlowGraphNode {
                 CallInstr call = (CallInstr) i;
                 Operand o = call.getClosureArg();
                 if ((o != null) && (o instanceof MetaObject)) {
-                    CFGData cl_cfg = ((IRClosure) ((MetaObject) o).scope).getCFGData();
-                    BindingStorePlacementProblem cl_bsp = (BindingStorePlacementProblem) cl_cfg.getDataFlowSolution(bsp.getName());
+                    IRClosure scope = (IRClosure) ((MetaObject) o).scope;
+
+                    BindingStorePlacementProblem cl_bsp = (BindingStorePlacementProblem) scope.getDataFlowSolution(bsp.getName());
 
                     instrs.previous();
                     if (addAllocateBindingInstructions) {
@@ -210,7 +211,7 @@ public class BindingStorePlacementNode extends FlowGraphNode {
                     instrs.next();
 
                     // add stores in the closure
-                    ((BindingStorePlacementProblem) cl_cfg.getDataFlowSolution(bsp.getName())).addStoreAndBindingAllocInstructions();
+                    ((BindingStorePlacementProblem) scope.getDataFlowSolution(bsp.getName())).addStoreAndBindingAllocInstructions();
                 } else if (call.targetRequiresCallersBinding()) { // Call has no closure && it requires stores
                     instrs.previous();
                     if (addAllocateBindingInstructions) {
@@ -258,7 +259,7 @@ public class BindingStorePlacementNode extends FlowGraphNode {
                     liveVars = lvp.getVarsLiveOnExit();
                     System.out.println("\t--> Vars live on exit : " + (liveVars == null ? "NONE" : java.util.Arrays.toString(liveVars.toArray())));
 **/
-                    LiveVariablesProblem lvp = (LiveVariablesProblem)cfgData.getDataFlowSolution(DataFlowConstants.LVP_NAME);
+                    LiveVariablesProblem lvp = (LiveVariablesProblem)s.getDataFlowSolution(DataFlowConstants.LVP_NAME);
                     if (lvp != null) {
                         java.util.Collection<Variable> liveVars = lvp.getVarsLiveOnExit();
                         if (liveVars != null) {

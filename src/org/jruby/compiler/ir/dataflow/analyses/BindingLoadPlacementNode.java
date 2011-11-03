@@ -77,7 +77,7 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
                     cl_blp.initLoadsOnScopeExit(reqdLoads);
                     cl_blp.setup(cl_cfg);
                     cl_blp.compute_MOP_Solution();
-                    cl_cfg.setDataFlowSolution(cl_blp.getName(), cl_blp);
+                    cl.setDataFlowSolution(cl_blp.getName(), cl_blp);
 
                     // Variables defined in the closure do not need to be loaded anymore at
                     // program points before the call.
@@ -144,8 +144,8 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
                 CallInstr call = (CallInstr) i;
                 Operand o = call.getClosureArg();
                 if ((o != null) && (o instanceof MetaObject)) {
-                    CFGData cl_cfg = ((IRClosure) ((MetaObject) o).scope).getCFGData();
-                    BindingLoadPlacementProblem cl_blp = (BindingLoadPlacementProblem) cl_cfg.getDataFlowSolution(blp.getName());
+                    IRClosure scope = (IRClosure) ((MetaObject) o).scope;
+                    BindingLoadPlacementProblem cl_blp = (BindingLoadPlacementProblem) scope.getDataFlowSolution(blp.getName());
 
                     // Only those variables that are defined in the closure, and are in the required loads set 
                     // will need to be loaded from the binding after the call!  Rest can wait ..
@@ -162,7 +162,7 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
                     reqdLoads = newReqdLoads;
 
                     // add loads in the closure
-                    ((BindingLoadPlacementProblem) cl_cfg.getDataFlowSolution(blp.getName())).addLoads();
+                    ((BindingLoadPlacementProblem) scope.getDataFlowSolution(blp.getName())).addLoads();
                 } 
 
                 // In this case, we are going to blindly load everything

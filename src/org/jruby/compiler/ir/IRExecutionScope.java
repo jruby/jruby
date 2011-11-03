@@ -10,6 +10,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import org.jruby.compiler.ir.compiler_pass.CompilerPass;
+import org.jruby.compiler.ir.dataflow.DataFlowProblem;
 import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.CopyInstr;
 import org.jruby.compiler.ir.instructions.Instr;
@@ -32,6 +33,7 @@ public abstract class IRExecutionScope extends IRScopeImpl {
     private List<IRClosure> closures;     // List of (nested) closures in this scope
     private Set<Variable> definedLocalVars;   // Local variables defined in this scope
     private Set<Variable> usedLocalVars;      // Local variables used in this scope    
+    private Map<String, DataFlowProblem> dfProbs = new HashMap<String, DataFlowProblem>();       // Map of name -> dataflow problem    
 
     protected static class LocalVariableAllocator {
         public int nextSlot;
@@ -470,5 +472,13 @@ public abstract class IRExecutionScope extends IRScopeImpl {
         }
 
         return false;
+    }    
+    
+    public void setDataFlowSolution(String name, DataFlowProblem p) {
+        dfProbs.put(name, p);
+    }
+
+    public DataFlowProblem getDataFlowSolution(String name) {
+        return dfProbs.get(name);
     }    
 }

@@ -24,14 +24,13 @@ public class CFGData {
     IRExecutionScope scope;   // Scope (method/closure) to which this cfg belongs
 
     CFG cfg = null;
-    Map<String, DataFlowProblem> dfProbs;       // Map of name -> dataflow problem
+
     List<BasicBlock> linearizedBBList;  // Linearized list of bbs
     private Instr[] instrs;
 
 
     public CFGData(IRExecutionScope s) {
         scope = s;
-        dfProbs = new HashMap<String, DataFlowProblem>();
         instrs = null;
     }
     
@@ -205,14 +204,6 @@ public class CFGData {
         }
 
         return buf.toString();
-    }
-
-    public void setDataFlowSolution(String name, DataFlowProblem p) {
-        dfProbs.put(name, p);
-    }
-
-    public DataFlowProblem getDataFlowSolution(String name) {
-        return dfProbs.get(name);
     }
 
     public void splitCalls() {
