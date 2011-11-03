@@ -20,11 +20,9 @@ import org.jruby.compiler.ir.util.Edge;
  * @author enebo
  */
 public class CFGInliner {
-    private CFGData cfgData;
     private CFG cfg;
     
-    public CFGInliner(CFGData cfg, CFG build) {
-        this.cfgData = cfg;
+    public CFGInliner(CFG build) {
         this.cfg = build;
     }
     

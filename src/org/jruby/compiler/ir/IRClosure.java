@@ -123,7 +123,6 @@ public class IRClosure extends IRExecutionScope {
 
         if (getCFG() != null) {
             buf.append("\nCFG:\n").append(getCFG());
-            buf.append("\nInstructions:\n").append(getCFGData().toStringInstrs());
         } else {
             buf.append(toStringInstrs());
         }

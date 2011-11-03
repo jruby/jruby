@@ -23,7 +23,6 @@ import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
-import org.jruby.compiler.ir.representations.CFGData;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
 import org.jruby.parser.IRStaticScope;
@@ -136,7 +135,6 @@ public class Interpreter {
     }
 
     public static IRubyObject interpret(ThreadContext context, IRubyObject self, IRExecutionScope scope, InterpreterContext interp) {
-        CFGData  cfgData = scope.getCFGData();
         Ruby runtime = context.getRuntime();
         boolean inClosure = (scope instanceof IRClosure);
 

@@ -10,6 +10,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import org.jruby.compiler.ir.compiler_pass.CompilerPass;
+import org.jruby.compiler.ir.compiler_pass.DominatorTreeBuilder;
 import org.jruby.compiler.ir.dataflow.DataFlowProblem;
 import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.CopyInstr;
@@ -23,7 +24,7 @@ import org.jruby.compiler.ir.operands.Self;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.BasicBlock;
 import org.jruby.compiler.ir.representations.CFG;
-import org.jruby.compiler.ir.representations.CFGData;
+import org.jruby.compiler.ir.representations.CFGInliner;
 import org.jruby.compiler.ir.representations.CFGLinearizer;
 import org.jruby.parser.StaticScope;
 import org.jruby.util.log.Logger;
@@ -35,7 +36,7 @@ public abstract class IRExecutionScope extends IRScopeImpl {
     private static final Logger LOG = LoggerFactory.getLogger("IRExecutionScope");
     
     private List<Instr>     instructions; // List of IR instructions for this method
-    private CFGData             cfgData;          // Control flow graph for this scope
+    private CFG cfg = null;
     private List<IRClosure> closures;     // List of (nested) closures in this scope
     private Set<Variable> definedLocalVars;   // Local variables defined in this scope
     private Set<Variable> usedLocalVars;      // Local variables used in this scope    
@@ -213,19 +214,14 @@ public abstract class IRExecutionScope extends IRScopeImpl {
         return canCaptureCallersBinding;
     }
 
-    public CFGData buildCFG() {
-        cfgData = new CFGData(this);
-        cfgData.buildCFG(instructions);
-        return cfgData;
+    public CFG buildCFG() {
+        cfg = new CFG(this);
+        cfg.build(instructions);
+        return cfg;
     }
     
     public CFG getCFG() {
-        return cfgData != null ? cfgData.cfg() : null;
-    }
-
-    // Get the control flow graph for this scope
-    public CFGData getCFGData() {
-        return cfgData;
+        return cfg;
     }
 
     // Nothing to do -- every compiler pass decides whether to
@@ -445,7 +441,7 @@ public abstract class IRExecutionScope extends IRScopeImpl {
     public void setUpUseDefLocalVarMaps() {
         definedLocalVars = new java.util.HashSet<Variable>();
         usedLocalVars = new java.util.HashSet<Variable>();
-        for (BasicBlock bb : cfgData.cfg().getBasicBlocks()) {
+        for (BasicBlock bb : cfg().getBasicBlocks()) {
             for (Instr i : bb.getInstrs()) {
                 for (Variable v : i.getUsedVariables()) {
                     if (v instanceof LocalVariable) usedLocalVars.add(v);
@@ -497,7 +493,7 @@ public abstract class IRExecutionScope extends IRScopeImpl {
             buildLinearization(); // FIXME: compiler passes should have done this
             depends(linearization());
         } catch (RuntimeException e) {
-            LOG.error("Error linearizing: " + cfgData.cfg(), e);
+            LOG.error("Error linearizing: " + cfg(), e);
             throw e;
         }
 
@@ -525,7 +521,7 @@ public abstract class IRExecutionScope extends IRScopeImpl {
         }
 
         // Exit BB ipc
-        cfgData.cfg().getExitBB().getLabel().setTargetPC(ipc + 1);
+        cfg().getExitBB().getLabel().setTargetPC(ipc + 1);
 
         instrs = newInstrs.toArray(new Instr[newInstrs.size()]);
         return instrs;
@@ -535,19 +531,19 @@ public abstract class IRExecutionScope extends IRScopeImpl {
     public List<BasicBlock> buildLinearization() {
         if (linearizedBBList != null) return linearizedBBList; // Already linearized
         
-        linearizedBBList = CFGLinearizer.linearize(cfgData.cfg());
+        linearizedBBList = CFGLinearizer.linearize(cfg());
         
         return linearizedBBList;
     }
     
     // SSS FIXME: Extremely inefficient
     public int getRescuerPC(Instr excInstr) {
-        depends(cfgData.cfg());
+        depends(cfg());
         
         for (BasicBlock b : linearizedBBList) {
             for (Instr i : b.getInstrs()) {
                 if (i == excInstr) {
-                    BasicBlock rescuerBB = cfgData.cfg().getRescuerBBFor(b);
+                    BasicBlock rescuerBB = cfg().getRescuerBBFor(b);
                     return (rescuerBB == null) ? -1 : rescuerBB.getLabel().getTargetPC();
                 }
             }
@@ -560,12 +556,12 @@ public abstract class IRExecutionScope extends IRScopeImpl {
 
     // SSS FIXME: Extremely inefficient
     public int getEnsurerPC(Instr excInstr) {
-        depends(cfgData.cfg());
+        depends(cfg());
         
         for (BasicBlock b : linearizedBBList) {
             for (Instr i : b.getInstrs()) {
                 if (i == excInstr) {
-                    BasicBlock ensurerBB = cfgData.cfg().getEnsurerBBFor(b);
+                    BasicBlock ensurerBB = cfg.getEnsurerBBFor(b);
                     return (ensurerBB == null) ? -1 : ensurerBB.getLabel().getTargetPC();
                 }
             }
@@ -577,7 +573,7 @@ public abstract class IRExecutionScope extends IRScopeImpl {
     }
     
     public List<BasicBlock> linearization() {
-        depends(cfgData.cfg());
+        depends(cfg());
         
         assert linearizedBBList != null: "You have not run linearization";
         
@@ -587,5 +583,62 @@ public abstract class IRExecutionScope extends IRScopeImpl {
     protected void depends(Object obj) {
         assert obj != null: "Unsatisfied dependency and this depends() was set " +
                 "up wrong.  Use depends(build()) not depends(build).";
+    }
+    
+    public CFG cfg() {
+        assert cfg != null: "Trying to access build before build started";
+        return cfg;
+    }     
+
+    public void splitCalls() {
+        // FIXME: (Enebo) We are going to make a SplitCallInstr so this logic can be separate
+        // from unsplit calls.  Comment out until new SplitCall is created.
+//        for (BasicBlock b: getNodes()) {
+//            List<Instr> bInstrs = b.getInstrs();
+//            for (ListIterator<Instr> it = ((ArrayList<Instr>)b.getInstrs()).listIterator(); it.hasNext(); ) {
+//                Instr i = it.next();
+//                // Only user calls, not Ruby & JRuby internal calls
+//                if (i.operation == Operation.CALL) {
+//                    CallInstr call = (CallInstr)i;
+//                    Operand   r    = call.getReceiver();
+//                    Operand   m    = call.getMethodAddr();
+//                    Variable  mh   = _scope.getNewTemporaryVariable();
+//                    MethodLookupInstr mli = new MethodLookupInstr(mh, m, r);
+//                    // insert method lookup at the right place
+//                    it.previous();
+//                    it.add(mli);
+//                    it.next();
+//                    // update call address
+//                    call.setMethodAddr(mh);
+//                }
+//            }
+//        }
+//
+//        List<IRClosure> closures = _scope.getClosures();
+//        if (!closures.isEmpty()) {
+//            for (IRClosure c : closures) {
+//                c.getCFG().splitCalls();
+//            }
+//        }
+    }    
+    
+    public void inlineMethod(IRMethod method, BasicBlock basicBlock, CallInstr call) {
+        depends(cfg());
+        
+        new CFGInliner(cfg).inlineMethod(method, basicBlock, call);
+    }
+    
+    
+    public void buildCFG(List<Instr> instructions) {
+        CFG newBuild = new CFG(this);
+        newBuild.build(instructions);
+        cfg = newBuild;
+    }    
+
+    public void buildDominatorTree(DominatorTreeBuilder builder) {
+        depends(cfg());
+
+        // FIXME: Add result from this build and add to CFG as a field, then add depends() for htings which use it.
+        builder.buildDominatorTree(cfg, cfg.postOrderList(), cfg.getMaxNodeID());
     }
 }

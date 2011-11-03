@@ -7,7 +7,6 @@ import java.util.Map;
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.representations.BasicBlock;
-import org.jruby.compiler.ir.representations.CFGData;
 import org.jruby.compiler.ir.representations.CFG;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -21,12 +20,11 @@ public class DominatorTreeBuilder implements CompilerPass {
 
     public void run(IRScope s) {
         if (s instanceof IRExecutionScope) {
-            CFGData cfg = ((IRExecutionScope)s).getCFGData();
-            
+            IRExecutionScope scope = ((IRExecutionScope) s);
             try {
-                cfg.buildDominatorTree(this);
+                scope.buildDominatorTree(this);
             } catch (Exception e) {
-                LOG.debug("Caught exception building dom tree for {}", cfg);
+                LOG.debug("Caught exception building dom tree for {}", scope.cfg());
             }
         }
     }

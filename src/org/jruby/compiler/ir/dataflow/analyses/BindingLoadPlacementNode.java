@@ -14,7 +14,6 @@ import org.jruby.compiler.ir.operands.ClosureLocalVariable;
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.BasicBlock;
-import org.jruby.compiler.ir.representations.CFGData;
 
 import java.util.HashSet;
 import java.util.List;
@@ -38,7 +37,7 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
     }
 
     public void initSolnForNode() {
-        if (basicBlock == problem.getCFGData().cfg().getExitBB()) {
+        if (basicBlock == problem.getScope().cfg().getExitBB()) {
             inRequiredLoads = ((BindingLoadPlacementProblem) problem).getLoadsOnScopeExit();
         }
     }
@@ -72,10 +71,9 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
                 Operand o = call.getClosureArg();
                 if ((o != null) && (o instanceof MetaObject)) {
                     IRClosure cl = (IRClosure) ((MetaObject) o).scope;
-                    CFGData cl_cfg = cl.getCFGData();
                     BindingLoadPlacementProblem cl_blp = new BindingLoadPlacementProblem();
                     cl_blp.initLoadsOnScopeExit(reqdLoads);
-                    cl_blp.setup(cl_cfg);
+                    cl_blp.setup(cl);
                     cl_blp.compute_MOP_Solution();
                     cl.setDataFlowSolution(cl_blp.getName(), cl_blp);
 
@@ -106,7 +104,7 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
         }
 
         // At the beginning of the scope, required loads can be discarded.
-        if (basicBlock == problem.getCFGData().cfg().getEntryBB()) reqdLoads.clear();
+        if (basicBlock == problem.getScope().cfg().getEntryBB()) reqdLoads.clear();
 
         if (outRequiredLoads.equals(reqdLoads)) {
             //System.out.println("\n For CFG " + _prob.getCFG() + " BB " + _bb.getID());
@@ -126,7 +124,7 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
 
     public void addLoads() {
         BindingLoadPlacementProblem blp = (BindingLoadPlacementProblem) problem;
-        IRExecutionScope s = blp.getCFGData().cfg().getScope();
+        IRExecutionScope s = blp.getScope().cfg().getScope();
         List<Instr> instrs = basicBlock.getInstrs();
         ListIterator<Instr> it = instrs.listIterator(instrs.size());
         Set<LocalVariable> reqdLoads = new HashSet<LocalVariable>(inRequiredLoads);
@@ -187,7 +185,7 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
         }
 
         // Load first use of variables in closures
-        if ((s instanceof IRClosure) && (basicBlock == problem.getCFGData().cfg().getEntryBB())) {
+        if ((s instanceof IRClosure) && (basicBlock == problem.getScope().cfg().getEntryBB())) {
             // System.out.println("\n[In Entry BB] For CFG " + _prob.getCFG() + ":");
             // System.out.println("\t--> Reqd loads   : " + java.util.Arrays.toString(reqdLoads.toArray()));
             for (LocalVariable v : reqdLoads) {

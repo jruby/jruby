@@ -44,11 +44,11 @@ public class BindingStorePlacementProblem extends DataFlowProblem {
     }
 
     public boolean scopeDefinesVariable(Variable v) {
-        return getCFGData().cfg().getScope().definesLocalVariable(v);
+        return getScope().cfg().getScope().definesLocalVariable(v);
     }
 
     public boolean scopeUsesVariable(Variable v) {
-        return getCFGData().cfg().getScope().usesLocalVariable(v);
+        return getScope().cfg().getScope().usesLocalVariable(v);
     }
 
     public void addStoreAndBindingAllocInstructions() {
@@ -63,7 +63,7 @@ public class BindingStorePlacementProblem extends DataFlowProblem {
          * -------------------------------------------------------------------- */
         boolean mightRequireGlobalEnsureBlock = false;
         Set<LocalVariable> dirtyVars = null;
-        CFG cfg = getCFGData().cfg();
+        CFG cfg = getScope().cfg();
         IRScope cfgScope = cfg.getScope();
         if (cfgScope instanceof IRClosure) {
             mightRequireGlobalEnsureBlock = true;

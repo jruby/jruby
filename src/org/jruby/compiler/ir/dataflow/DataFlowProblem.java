@@ -8,7 +8,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import org.jruby.compiler.ir.representations.CFGData;
+import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.representations.BasicBlock;
 
 public abstract class DataFlowProblem {
@@ -37,13 +37,13 @@ public abstract class DataFlowProblem {
         return direction;
     }
 
-    public void setup(CFGData c) {
-        cfgData = c;
+    public void setup(IRExecutionScope scope) {
+        this.scope = scope;
         buildFlowGraph();
     }
 
-    public CFGData getCFGData() {
-        return cfgData;
+    public IRExecutionScope getScope() {
+        return scope;
     }
 
     /* Compute Meet Over All Paths solution for this dataflow problem on the input CFG.
@@ -59,7 +59,7 @@ public abstract class DataFlowProblem {
             LinkedList<FlowGraphNode> workList = getInitialWorkList();
 
             // 3. Initialize a bitset with a flag set for all basic blocks
-            int numNodes = cfgData.cfg().getMaxNodeID();
+            int numNodes = scope.cfg().getMaxNodeID();
             BitSet bbSet = new BitSet(1+numNodes);
             bbSet.flip(0, numNodes);
 
@@ -73,12 +73,12 @@ public abstract class DataFlowProblem {
     private LinkedList<FlowGraphNode> getInitialWorkList() {
         LinkedList<FlowGraphNode> wl = new LinkedList<FlowGraphNode>();
         if (direction == DF_Direction.FORWARD) {
-           ListIterator<BasicBlock> it = cfgData.cfg().getReversePostOrderTraverser();
+           ListIterator<BasicBlock> it = scope.cfg().getReversePostOrderTraverser();
            while (it.hasPrevious()) {
               wl.add(getFlowGraphNode(it.previous()));
            }
         } else {
-           ListIterator<BasicBlock> it = cfgData.cfg().getPostOrderTraverser();
+           ListIterator<BasicBlock> it = scope.cfg().getPostOrderTraverser();
            while (it.hasNext()) {
               wl.add(getFlowGraphNode(it.next()));
            }
@@ -92,11 +92,11 @@ public abstract class DataFlowProblem {
     }
 
     public Iterable<BasicBlock> getIncomingSourcesOf(BasicBlock bb) {
-        return cfgData.cfg().getIncomingSources(bb);
+        return scope.cfg().getIncomingSources(bb);
     }
 
     public Iterable<BasicBlock> getOutgoingDestinationsOf(BasicBlock bb) {
-        return cfgData.cfg().getOutgoingDestinations(bb);
+        return scope.cfg().getOutgoingDestinations(bb);
     }
 
     /* Individual analyses should override this */
@@ -129,9 +129,8 @@ public abstract class DataFlowProblem {
     }
 
 /* -------------- Protected fields and methods below ---------------- */
-    protected CFGData                    cfgData;
     protected List<FlowGraphNode>    flowGraphNodes;
-
+    protected IRExecutionScope scope;
     protected FlowGraphNode getFlowGraphNode(BasicBlock b) {
         return basicBlockToFlowGraph.get(b.getID());
     }
@@ -145,7 +144,7 @@ public abstract class DataFlowProblem {
         flowGraphNodes = new LinkedList<FlowGraphNode>();
         basicBlockToFlowGraph = new HashMap<Integer, FlowGraphNode>();
 
-        for (BasicBlock bb: cfgData.cfg().getBasicBlocks()) {
+        for (BasicBlock bb: scope.cfg().getBasicBlocks()) {
             FlowGraphNode fgNode = buildFlowGraphNode(bb);
             fgNode.buildDataFlowVars();
             flowGraphNodes.add(fgNode);

@@ -8,7 +8,6 @@ import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.representations.CFG;
-import org.jruby.compiler.ir.representations.CFGData;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -29,8 +28,8 @@ public class InlineTest implements CompilerPass {
     public void run(IRScope s) {
         if (!(s instanceof IRMethod)) return;
 
-        CFGData cfgData = ((IRMethod) s).getCFGData();
-        CFG cfg = cfgData.cfg();
+        IRMethod method = ((IRMethod) s);
+        CFG cfg = method.cfg();
 
         IRModule m = s.getNearestModule();
         IRMethod mi = m.getInstanceMethod(methodToInline);
@@ -55,7 +54,7 @@ public class InlineTest implements CompilerPass {
                     MethAddr addr = call.getMethodAddr();
                     if (methodToInline.equals(((MethAddr) addr).getName())) {
                         LOG.debug("Will be inlining method {} at callsite: {}", methodToInline, call);
-                        cfgData.inlineMethod(mi, b, call);
+                        method.inlineMethod(mi, b, call);
                         // Just inline once per scope -- this is a test after all!
                         // Because, the surrounding iterators will break with a concurrent modification exception if we proceed!
                         return;

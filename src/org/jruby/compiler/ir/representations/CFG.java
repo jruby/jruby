@@ -105,7 +105,7 @@ public class CFG {
         return outermostERs;
     }
     
-    protected LinkedList<BasicBlock> postOrderList() {
+    public LinkedList<BasicBlock> postOrderList() {
         if (postOrderList == null) postOrderList = buildPostOrderList();
         return postOrderList;
     }
@@ -517,7 +517,11 @@ public class CFG {
     
     public String toStringInstrs() {
         StringBuilder buf = new StringBuilder();
+
         
+        for (BasicBlock b : getBasicBlocks()) {
+            buf.append(b.toStringInstrs());
+        }
         buf.append("\n\n------ Rescue block map ------\n");
         for (BasicBlock bb : rescuerMap.keySet()) {
             buf.append("BB ").append(bb.getID()).append(" --> BB ").append(rescuerMap.get(bb).getID()).append("\n");
@@ -526,7 +530,16 @@ public class CFG {
         for (BasicBlock bb : ensurerMap.keySet()) {
             buf.append("BB ").append(bb.getID()).append(" --> BB ").append(ensurerMap.get(bb).getID()).append("\n");
         }
-        
+
+        List<IRClosure> closures = scope.getClosures();
+        if (!closures.isEmpty()) {
+            buf.append("\n\n------ Closures encountered in this scope ------\n");
+            for (IRClosure c : closures) {
+                buf.append(c.toStringBody());
+            }
+            buf.append("------------------------------------------------\n");
+        }
+
         return buf.toString();
     }
 

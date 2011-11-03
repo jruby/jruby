@@ -24,7 +24,7 @@ public class DeadCodeElimination implements CompilerPass {
         
         if (lvp == null) {
             lvp = new LiveVariablesProblem();
-            lvp.setup(executionScope.getCFGData());
+            lvp.setup(executionScope);
             lvp.compute_MOP_Solution();
             executionScope.setDataFlowSolution(lvp.getName(), lvp);
         }

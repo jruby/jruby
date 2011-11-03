@@ -17,7 +17,7 @@ public abstract class FlowGraphNode {
     public FlowGraphNode(DataFlowProblem p, BasicBlock n) {
         problem = p;
         basicBlock = n;
-        rescuer = problem.getCFGData().cfg().getRescuerBBFor(basicBlock);
+        rescuer = problem.getScope().cfg().getRescuerBBFor(basicBlock);
     }
    
     /** 
@@ -118,7 +118,7 @@ public abstract class FlowGraphNode {
 
     public FlowGraphNode getExceptionTargetNode() {
         // If there is a rescue node, on exception, control goes to the rescuer bb.  If not, it goes to the scope exit.
-        return problem.getFlowGraphNode(rescuer == null ? problem.getCFGData().cfg().getExitBB() : rescuer);
+        return problem.getFlowGraphNode(rescuer == null ? problem.getScope().cfg().getExitBB() : rescuer);
     }
 
 /* --------- protected fields/methods below --------- */

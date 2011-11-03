@@ -10,10 +10,8 @@ import org.jruby.compiler.ir.operands.ClosureLocalVariable;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.TemporaryClosureVariable;
 import org.jruby.compiler.ir.operands.Variable;
-import org.jruby.compiler.ir.representations.CFGData;
 import org.jruby.interpreter.Interpreter;
 import org.jruby.interpreter.NaiveInterpreterContext;
-import org.jruby.parser.IRStaticScope;
 import org.jruby.parser.IRStaticScopeFactory;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
@@ -89,10 +87,8 @@ public class IREvalScript extends IRClosure {
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, DynamicScope evalScope, Block block) {
-        CFGData cfgData = getCFGData();
         if (Interpreter.isDebug()) {
-            LOG.info("CFG:\n" + cfgData.cfg());
-            LOG.info("\nInstructions:\n" + cfgData.toStringInstrs());
+            LOG.info("CFG:\n" + cfg());
         }
         try {
             context.pushScope(evalScope);
