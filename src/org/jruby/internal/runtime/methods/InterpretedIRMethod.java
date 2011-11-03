@@ -50,6 +50,7 @@ public class InterpretedIRMethod extends DynamicMethod {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+        try {
         if (Interpreter.isDebug()) {
             // FIXME: name should probably not be "" ever.
             String realName = name == null || "".equals(name) ? method.getName() : name;
@@ -82,6 +83,11 @@ public class InterpretedIRMethod extends DynamicMethod {
         } finally {
             context.popFrame();
             context.postMethodScopeOnly();
+        }
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+            
+            return null;
         }
     }
 

@@ -3,7 +3,6 @@ package org.jruby.compiler.ir.util;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
-import org.jruby.compiler.ir.representations.BasicBlock;
 
 /**
  *

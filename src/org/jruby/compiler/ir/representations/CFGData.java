@@ -158,6 +158,7 @@ public class CFGData {
         if (instrs != null) return instrs; // Already prepared
 
         try {
+            buildLinearization(); // FIXME: compiler passes should have done this
             depends(linearization());
         } catch (RuntimeException e) {
             printError(e.getMessage());
