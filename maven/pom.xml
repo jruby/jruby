@@ -14,7 +14,7 @@
 
   <properties>
     <jar.scope>provided</jar.scope>
-    <asm.version>3.3.1</asm.version>
+    <asm.version>4.0</asm.version>
   </properties>
 
   <dependencies>

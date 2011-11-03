@@ -45,7 +45,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/build_lib/asm-4.0_RC2.jar!/" />
+          <root url="jar://$MODULE_DIR$/build_lib/asm-4.0.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -54,7 +54,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/build_lib/asm-analysis-4.0_RC2.jar!/" />
+          <root url="jar://$MODULE_DIR$/build_lib/asm-analysis-4.0.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -63,7 +63,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/build_lib/asm-commons-4.0_RC2.jar!/" />
+          <root url="jar://$MODULE_DIR$/build_lib/asm-commons-4.0.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -72,7 +72,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/build_lib/asm-tree-4.0_RC2.jar!/" />
+          <root url="jar://$MODULE_DIR$/build_lib/asm-tree-4.0.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -81,7 +81,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/build_lib/asm-util-4.0_RC2.jar!/" />
+          <root url="jar://$MODULE_DIR$/build_lib/asm-util-4.0.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
