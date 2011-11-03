@@ -14,18 +14,12 @@ import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.operands.Label;
 
 import org.jruby.compiler.ir.dataflow.DataFlowProblem;
+import org.jruby.compiler.ir.representations.CFG.EdgeType;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
 public class CFGData {
     private static final Logger LOG = LoggerFactory.getLogger("CFG");
-
-    public enum EdgeType {
-        REGULAR,       // Any non-special edge.  Not really used.
-        EXCEPTION,     // Edge to exception handling basic blocks
-        FALL_THROUGH,  // Edge which is the natural fall through choice on a branch
-        EXIT           // Edge to dummy exit BB
-    }
 
     IRExecutionScope scope;   // Scope (method/closure) to which this cfg belongs
 

@@ -12,7 +12,7 @@ import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.YieldInstr;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
-import org.jruby.compiler.ir.representations.CFGData.EdgeType;
+import org.jruby.compiler.ir.representations.CFG.EdgeType;
 import org.jruby.compiler.ir.util.Edge;
 
 /**

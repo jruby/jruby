@@ -9,7 +9,7 @@ import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.JumpInstr;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
 import org.jruby.compiler.ir.operands.Nil;
-import org.jruby.compiler.ir.representations.CFGData.EdgeType;
+import org.jruby.compiler.ir.representations.CFG.EdgeType;
 
 /**
  * This produces a linear list of BasicBlocks so that the linearized instruction

@@ -28,7 +28,6 @@ import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
-import org.jruby.compiler.ir.representations.CFGData.EdgeType;
 import org.jruby.compiler.ir.util.DirectedGraph;
 import org.jruby.compiler.ir.util.Edge;
 import org.jruby.util.log.Logger;
@@ -40,6 +39,13 @@ import org.jruby.util.log.LoggerFactory;
  * organizational structure for a build.
  */
 public class CFG {
+    public enum EdgeType {
+        REGULAR,       // Any non-special edge.  Not really used.
+        EXCEPTION,     // Edge to exception handling basic blocks
+        FALL_THROUGH,  // Edge which is the natural fall through choice on a branch
+        EXIT           // Edge to dummy exit BB
+    }
+    
     private static final Logger LOG = LoggerFactory.getLogger("CFG");
     
     private IRExecutionScope scope;
