@@ -16,6 +16,7 @@ import org.jruby.compiler.ir.instructions.CopyInstr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
 import org.jruby.compiler.ir.instructions.SuperInstr;
+import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Self;
@@ -23,17 +24,24 @@ import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.BasicBlock;
 import org.jruby.compiler.ir.representations.CFG;
 import org.jruby.compiler.ir.representations.CFGData;
+import org.jruby.compiler.ir.representations.CFGLinearizer;
 import org.jruby.parser.StaticScope;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 /* IRMethod, IRClosure, IREvalScript -- basically scopes that represent execution contexts.
  * This is just an abstraction over methods and closures */
 public abstract class IRExecutionScope extends IRScopeImpl {
+    private static final Logger LOG = LoggerFactory.getLogger("IRExecutionScope");
+    
     private List<Instr>     instructions; // List of IR instructions for this method
     private CFGData             cfgData;          // Control flow graph for this scope
     private List<IRClosure> closures;     // List of (nested) closures in this scope
     private Set<Variable> definedLocalVars;   // Local variables defined in this scope
     private Set<Variable> usedLocalVars;      // Local variables used in this scope    
     private Map<String, DataFlowProblem> dfProbs = new HashMap<String, DataFlowProblem>();       // Map of name -> dataflow problem    
+    private Instr[] instrs = null;
+    List<BasicBlock> linearizedBBList = null;  // Linearized list of bbs
 
     protected static class LocalVariableAllocator {
         public int nextSlot;
@@ -309,7 +317,7 @@ public abstract class IRExecutionScope extends IRScopeImpl {
             if (end != null) { // Variable is actually used somewhere and not dead
                 if (i > 0) sb.append("\n");
                 i++;
-                sb.append("    " + var + ": " + starts.get(var) + "-" + end);
+                sb.append("    ").append(var).append(": ").append(starts.get(var)).append("-").append(end);
             }
         }
 
@@ -481,4 +489,103 @@ public abstract class IRExecutionScope extends IRScopeImpl {
     public DataFlowProblem getDataFlowSolution(String name) {
         return dfProbs.get(name);
     }    
+    
+    public Instr[] prepareInstructionsForInterpretation() {
+        if (instrs != null) return instrs; // Already prepared
+
+        try {
+            buildLinearization(); // FIXME: compiler passes should have done this
+            depends(linearization());
+        } catch (RuntimeException e) {
+            LOG.error("Error linearizing: " + cfgData.cfg(), e);
+            throw e;
+        }
+
+        // Set up a bb array that maps labels to targets -- just to make sure old code continues to work! 
+        // ENEBO: Currently unused
+        // setupFallThruMap();
+
+        // Set up IPCs
+        HashMap<Label, Integer> labelIPCMap = new HashMap<Label, Integer>();
+        List<Label> labelsToFixup = new ArrayList<Label>();
+        List<Instr> newInstrs = new ArrayList<Instr>();
+        int ipc = 0;
+        for (BasicBlock b : linearizedBBList) {
+            labelIPCMap.put(b.getLabel(), ipc);
+            labelsToFixup.add(b.getLabel());
+            for (Instr i : b.getInstrs()) {
+                newInstrs.add(i);
+                ipc++;
+            }
+        }
+
+        // Fix up labels
+        for (Label l : labelsToFixup) {
+            l.setTargetPC(labelIPCMap.get(l));
+        }
+
+        // Exit BB ipc
+        cfgData.cfg().getExitBB().getLabel().setTargetPC(ipc + 1);
+
+        instrs = newInstrs.toArray(new Instr[newInstrs.size()]);
+        return instrs;
+    }
+    
+    
+    public List<BasicBlock> buildLinearization() {
+        if (linearizedBBList != null) return linearizedBBList; // Already linearized
+        
+        linearizedBBList = CFGLinearizer.linearize(cfgData.cfg());
+        
+        return linearizedBBList;
+    }
+    
+    // SSS FIXME: Extremely inefficient
+    public int getRescuerPC(Instr excInstr) {
+        depends(cfgData.cfg());
+        
+        for (BasicBlock b : linearizedBBList) {
+            for (Instr i : b.getInstrs()) {
+                if (i == excInstr) {
+                    BasicBlock rescuerBB = cfgData.cfg().getRescuerBBFor(b);
+                    return (rescuerBB == null) ? -1 : rescuerBB.getLabel().getTargetPC();
+                }
+            }
+        }
+
+        // SSS FIXME: Cannot happen! Throw runtime exception
+        LOG.error("Fell through looking for rescuer ipc for " + excInstr);
+        return -1;
+    }
+
+    // SSS FIXME: Extremely inefficient
+    public int getEnsurerPC(Instr excInstr) {
+        depends(cfgData.cfg());
+        
+        for (BasicBlock b : linearizedBBList) {
+            for (Instr i : b.getInstrs()) {
+                if (i == excInstr) {
+                    BasicBlock ensurerBB = cfgData.cfg().getEnsurerBBFor(b);
+                    return (ensurerBB == null) ? -1 : ensurerBB.getLabel().getTargetPC();
+                }
+            }
+        }
+
+        // SSS FIXME: Cannot happen! Throw runtime exception
+        LOG.error("Fell through looking for ensurer ipc for " + excInstr);
+        return -1;
+    }
+    
+    public List<BasicBlock> linearization() {
+        depends(cfgData.cfg());
+        
+        assert linearizedBBList != null: "You have not run linearization";
+        
+        return linearizedBBList;
+    }
+    
+    protected void depends(Object obj) {
+        assert obj != null: "Unsatisfied dependency and this depends() was set " +
+                "up wrong.  Use depends(build()) not depends(build).";
+    }
 }

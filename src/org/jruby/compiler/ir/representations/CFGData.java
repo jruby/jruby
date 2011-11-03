@@ -1,9 +1,6 @@
 package org.jruby.compiler.ir.representations;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.IRClosure;
@@ -11,9 +8,7 @@ import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.compiler_pass.DominatorTreeBuilder;
 import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.Instr;
-import org.jruby.compiler.ir.operands.Label;
 
-import org.jruby.compiler.ir.dataflow.DataFlowProblem;
 import org.jruby.compiler.ir.representations.CFG.EdgeType;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -25,13 +20,8 @@ public class CFGData {
 
     CFG cfg = null;
 
-    List<BasicBlock> linearizedBBList;  // Linearized list of bbs
-    private Instr[] instrs;
-
-
     public CFGData(IRExecutionScope s) {
         scope = s;
-        instrs = null;
     }
     
     // Dependencies
@@ -39,15 +29,7 @@ public class CFGData {
     public CFG cfg() {
         assert cfg != null: "Trying to access build before build started";
         return cfg;
-    }
-    
-    public List<BasicBlock> linearization() {
-        depends(cfg());
-        
-        assert linearizedBBList != null: "You have not run linearization";
-        
-        return linearizedBBList;
-    }    
+    }   
     
     protected void depends(Object obj) {
         assert obj != null: "Unsatisfied dependency and this depends() was set " +
@@ -57,42 +39,6 @@ public class CFGData {
     public boolean bbIsProtected(BasicBlock b) {
         // No need to look in ensurerMap because (_bbEnsurerMap(b) != null) => (_bbResucerMap(b) != null)
         return (cfg().getRescuerBBFor(b) != null);
-    }
-
-    // SSS FIXME: Extremely inefficient
-    public int getRescuerPC(Instr excInstr) {
-        depends(cfg());
-        
-        for (BasicBlock b : linearizedBBList) {
-            for (Instr i : b.getInstrs()) {
-                if (i == excInstr) {
-                    BasicBlock rescuerBB = cfg.getRescuerBBFor(b);
-                    return (rescuerBB == null) ? -1 : rescuerBB.getLabel().getTargetPC();
-                }
-            }
-        }
-
-        // SSS FIXME: Cannot happen! Throw runtime exception
-        LOG.error("Fell through looking for rescuer ipc for " + excInstr);
-        return -1;
-    }
-
-    // SSS FIXME: Extremely inefficient
-    public int getEnsurerPC(Instr excInstr) {
-        depends(cfg());
-        
-        for (BasicBlock b : linearizedBBList) {
-            for (Instr i : b.getInstrs()) {
-                if (i == excInstr) {
-                    BasicBlock ensurerBB = cfg.getEnsurerBBFor(b);
-                    return (ensurerBB == null) ? -1 : ensurerBB.getLabel().getTargetPC();
-                }
-            }
-        }
-
-        // SSS FIXME: Cannot happen! Throw runtime exception
-        LOG.error("Fell through looking for ensurer ipc for " + excInstr);
-        return -1;
     }
 
     /* Add 'b' as a global ensure block that protects all unprotected blocks in this scope */
@@ -108,52 +54,7 @@ public class CFGData {
                 cfg.setEnsurerBB(basicBlock, geb);
             }
         }
-    }
-    
-    private void printError(String message) {
-        LOG.error(message + "\nGraph:\n" + cfg() + "\nInstructions:\n" + toStringInstrs());
-    }    
-
-    public Instr[] prepareForInterpretation() {
-        if (instrs != null) return instrs; // Already prepared
-
-        try {
-            buildLinearization(); // FIXME: compiler passes should have done this
-            depends(linearization());
-        } catch (RuntimeException e) {
-            printError(e.getMessage());
-            throw e;
-        }
-
-        // Set up a bb array that maps labels to targets -- just to make sure old code continues to work! 
-        // ENEBO: Currently unused
-        // setupFallThruMap();
-
-        // Set up IPCs
-        HashMap<Label, Integer> labelIPCMap = new HashMap<Label, Integer>();
-        List<Label> labelsToFixup = new ArrayList<Label>();
-        List<Instr> newInstrs = new ArrayList<Instr>();
-        int ipc = 0;
-        for (BasicBlock b : linearizedBBList) {
-            labelIPCMap.put(b.getLabel(), ipc);
-            labelsToFixup.add(b.getLabel());
-            for (Instr i : b.getInstrs()) {
-                newInstrs.add(i);
-                ipc++;
-            }
-        }
-
-        // Fix up labels
-        for (Label l : labelsToFixup) {
-            l.setTargetPC(labelIPCMap.get(l));
-        }
-
-        // Exit BB ipc
-        cfg.getExitBB().getLabel().setTargetPC(ipc + 1);
-
-        instrs = newInstrs.toArray(new Instr[newInstrs.size()]);
-        return instrs;
-    }
+    } 
 
     public void inlineMethod(IRMethod method, BasicBlock basicBlock, CallInstr call) {
         depends(cfg());
@@ -173,14 +74,6 @@ public class CFGData {
 
         // FIXME: Add result from this build and add to CFG as a field, then add depends() for htings which use it.
         builder.buildDominatorTree(cfg, cfg.postOrderList(), cfg.getMaxNodeID());
-    }
-    
-    public List<BasicBlock> buildLinearization() {
-        if (linearizedBBList != null) return linearizedBBList; // Already linearized
-        
-        linearizedBBList = CFGLinearizer.linearize(cfg);
-        
-        return linearizedBBList;
     }
 
     public String toStringInstrs() {

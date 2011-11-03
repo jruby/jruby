@@ -140,7 +140,7 @@ public class Interpreter {
         Ruby runtime = context.getRuntime();
         boolean inClosure = (scope instanceof IRClosure);
 
-        Instr[] instrs = cfgData.prepareForInterpretation();
+        Instr[] instrs = scope.prepareInstructionsForInterpretation();
         int n   = instrs.length;
         int ipc = 0;
         Instr lastInstr = null;
@@ -160,9 +160,6 @@ public class Interpreter {
                 try {
                     Label jumpTarget = lastInstr.interpret(interp, context, self);
                     ipc = (jumpTarget == null) ? ipc + 1 : jumpTarget.getTargetPC();
-                    if (ipc == -1) {
-                        System.out.println("JUMPTARGET IS " + jumpTarget + ", LI = " + lastInstr);
-                    }
                 } catch (IRReturnJump rj) {
                     // - If we are in a lambda or if we are in the method scope we are supposed to return from, stop propagating
                     if (interp.inLambda() || (rj.methodToReturnFrom == scope)) return (IRubyObject) rj.returnValue;
@@ -188,7 +185,7 @@ public class Interpreter {
                     } else if (interp.inLambda()) {
                         // We just unwound all the way up because of a non-local break
                         throw runtime.newLocalJumpError(Reason.BREAK, (IRubyObject)bj.breakValue, "unexpected break");
-                    } else if (bj.caughtByLambda || (bj.scopeToReturnTo == cfgData.cfg().getScope())) {
+                    } else if (bj.caughtByLambda || (bj.scopeToReturnTo == scope)) {
                         // We got where we need to get to (because a lambda stopped us, or because we popped to the
                         // lexical scope where we got called from).  Retrieve the result and store it.
                         Operand r = lastInstr.getResult();
@@ -198,24 +195,24 @@ public class Interpreter {
                         // We need to continue to break upwards.
                         // Run any ensures we need to run before breaking up. 
                         // Quite easy to do this by passing 'bj' as the exception to the ensure block!
-                        ipc = cfgData.getEnsurerPC(lastInstr);
+                        ipc = scope.getEnsurerPC(lastInstr);
                         if (ipc == -1) throw bj; // No ensure block here, just rethrow bj
                         interp.setException(bj); // Found an ensure block, set 'bj' as the exception and transfer control
                     }
                 }
             } catch (RaiseException re) {
-                if (isDebug()) LOG.info("in scope: " + cfgData.cfg().getScope() + ", caught raise exception: " + re.getException() + "; excepting instr: " + lastInstr);
-                ipc = cfgData.getRescuerPC(lastInstr);
+                if (isDebug()) LOG.info("in scope: " + scope + ", caught raise exception: " + re.getException() + "; excepting instr: " + lastInstr);
+                ipc = scope.getRescuerPC(lastInstr);
                 if (isDebug()) LOG.info("ipc for rescuer: " + ipc);
                 if (ipc == -1) throw re; // No one rescued exception, pass it on!
 
                 interp.setException(re.getException());
             } catch (ThreadKill e) {
-                ipc = cfgData.getEnsurerPC(lastInstr);
+                ipc = scope.getEnsurerPC(lastInstr);
                 if (ipc == -1) throw e; // No ensure block here, pass it on! 
                 interp.setException(e);
             } catch (Error e) {
-                ipc = cfgData.getEnsurerPC(lastInstr);
+                ipc = scope.getEnsurerPC(lastInstr);
                 if (ipc == -1) throw e; // No ensure block here, pass it on! 
                 interp.setException(e);
             }

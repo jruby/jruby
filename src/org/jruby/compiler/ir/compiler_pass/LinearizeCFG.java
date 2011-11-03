@@ -11,7 +11,7 @@ public class LinearizeCFG implements CompilerPass {
     public void run(IRScope s) {
         if (s instanceof IRExecutionScope) {
 //            System.out.println("Linearizing cfg for " + s);
-            ((IRExecutionScope)s).getCFGData().buildLinearization();
+            ((IRExecutionScope)s).buildLinearization();
         }
     }
 }
