@@ -6,7 +6,7 @@ import org.jruby.compiler.ir.instructions.ReceiveExceptionInstr;
 import org.jruby.compiler.ir.instructions.StoreToBindingInstr;
 import org.jruby.compiler.ir.instructions.ThrowExceptionInstr;
 import org.jruby.compiler.ir.representations.BasicBlock;
-import org.jruby.compiler.ir.representations.CFG;
+import org.jruby.compiler.ir.representations.CFGData;
 import org.jruby.compiler.ir.dataflow.DataFlowProblem;
 import org.jruby.compiler.ir.dataflow.FlowGraphNode;
 import org.jruby.compiler.ir.operands.Label;
@@ -44,11 +44,11 @@ public class BindingStorePlacementProblem extends DataFlowProblem {
     }
 
     public boolean scopeDefinesVariable(Variable v) {
-        return getCFG().definesLocalVariable(v);
+        return getCFGData().definesLocalVariable(v);
     }
 
     public boolean scopeUsesVariable(Variable v) {
-        return getCFG().usesLocalVariable(v);
+        return getCFGData().usesLocalVariable(v);
     }
 
     public void addStoreAndBindingAllocInstructions() {
@@ -63,7 +63,7 @@ public class BindingStorePlacementProblem extends DataFlowProblem {
          * -------------------------------------------------------------------- */
         boolean mightRequireGlobalEnsureBlock = false;
         Set<LocalVariable> dirtyVars = null;
-        CFG cfg = getCFG();
+        CFGData cfg = getCFGData();
         IRScope cfgScope = cfg.getScope();
         if (cfgScope instanceof IRClosure) {
             mightRequireGlobalEnsureBlock = true;

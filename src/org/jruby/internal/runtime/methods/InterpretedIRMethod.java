@@ -2,7 +2,7 @@ package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
 import org.jruby.compiler.ir.IRMethod;
-import org.jruby.compiler.ir.representations.CFG;
+import org.jruby.compiler.ir.representations.CFGData;
 import org.jruby.interpreter.Interpreter;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.interpreter.NaiveInterpreterContext;
@@ -56,16 +56,16 @@ public class InterpretedIRMethod extends DynamicMethod {
             LOG.info("Executing '" + realName + "'");
         }
 
-        CFG cfg = method.getCFG();
-        if (cfg == null) {
+        CFGData cfgData = method.getCFGData();
+        if (cfgData == null) {
             // The base IR may not have been processed yet because the method is added dynamically.
             method.prepareForInterpretation();
-            cfg = method.getCFG();
+            cfgData = method.getCFGData();
         }
 
         if (Interpreter.isDebug() && displayedCFG == false) {
-            LOG.info("CFG:\n" + cfg.getGraph());
-            LOG.info("\nInstructions:\n" + cfg.toStringInstrs());
+            LOG.info("CFG:\n" + cfgData.cfg());
+            LOG.info("\nInstructions:\n" + cfgData.toStringInstrs());
             displayedCFG = true;
         }
 

@@ -2,10 +2,8 @@ package org.jruby.compiler.ir;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Stack;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -19,16 +17,16 @@ import org.jruby.compiler.ir.instructions.SuperInstr;
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Self;
-import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.CFG;
+import org.jruby.compiler.ir.representations.CFGData;
 import org.jruby.parser.StaticScope;
 
 /* IRMethod, IRClosure, IREvalScript -- basically scopes that represent execution contexts.
  * This is just an abstraction over methods and closures */
 public abstract class IRExecutionScope extends IRScopeImpl {
     private List<Instr>     instructions; // List of IR instructions for this method
-    private CFG             cfg;          // Control flow graph for this scope
+    private CFGData             cfgData;          // Control flow graph for this scope
     private List<IRClosure> closures;     // List of (nested) closures in this scope
 
     protected static class LocalVariableAllocator {
@@ -201,15 +199,19 @@ public abstract class IRExecutionScope extends IRScopeImpl {
         return canCaptureCallersBinding;
     }
 
-    public CFG buildCFG() {
-        cfg = new CFG(this);
-        cfg.build(instructions);
-        return cfg;
+    public CFGData buildCFG() {
+        cfgData = new CFGData(this);
+        cfgData.buildCFG(instructions);
+        return cfgData;
+    }
+    
+    public CFG getCFG() {
+        return cfgData != null ? cfgData.cfg() : null;
     }
 
     // Get the control flow graph for this scope
-    public CFG getCFG() {
-        return cfg;
+    public CFGData getCFGData() {
+        return cfgData;
     }
 
     // Nothing to do -- every compiler pass decides whether to

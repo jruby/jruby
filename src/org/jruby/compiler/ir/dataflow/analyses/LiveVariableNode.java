@@ -10,7 +10,7 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.BasicBlock;
-import org.jruby.compiler.ir.representations.CFG;
+import org.jruby.compiler.ir.representations.CFGData;
 
 import java.util.Collection;
 import java.util.Set;
@@ -18,7 +18,6 @@ import java.util.BitSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
-import org.jruby.compiler.ir.util.Edge;
 
 public class LiveVariableNode extends FlowGraphNode {
     public LiveVariableNode(DataFlowProblem prob, BasicBlock n) {
@@ -52,7 +51,7 @@ public class LiveVariableNode extends FlowGraphNode {
         
         in = new BitSet(setSize);
         
-        if (basicBlock == p.getCFG().getExitBB()) {
+        if (basicBlock == p.getCFGData().cfg().getExitBB()) {
             Collection<Variable> lv = p.getVarsLiveOnExit();
             if ((lv != null) && !lv.isEmpty()) {
                 for (Variable v: lv) {
@@ -62,19 +61,19 @@ public class LiveVariableNode extends FlowGraphNode {
         }
     }
 
-    public void compute_MEET(Edge edge, FlowGraphNode pred) {
+    public void compute_MEET(BasicBlock source, FlowGraphNode pred) {
 //        System.out.println("computing meet for BB " + _bb.getID() + " with BB " + ((LiveVariableNode)pred)._bb.getID());
         // All variables live at the entry of 'pred' are also live at exit of this node
         in.or(((LiveVariableNode) pred).out);
     }
 
     private LiveVariablesProblem processClosure(IRClosure cl, Collection<Variable> liveOnEntry) {
-        CFG c = cl.getCFG();
+        CFGData cfgData = cl.getCFGData();
         LiveVariablesProblem lvp = new LiveVariablesProblem();
         lvp.initVarsLiveOnExit(liveOnEntry);
-        lvp.setup(c);
+        lvp.setup(cfgData);
         lvp.compute_MOP_Solution();
-        c.setDataFlowSolution(lvp.getName(), lvp);
+        cfgData.setDataFlowSolution(lvp.getName(), lvp);
 
         return lvp;
     }
@@ -300,7 +299,7 @@ public class LiveVariableNode extends FlowGraphNode {
                     Operand o = c.getClosureArg();
                     if ((o != null) && (o instanceof MetaObject)) {
                         IRClosure cl = (IRClosure) ((MetaObject)o).scope;
-                        CFG x = cl.getCFG();
+                        CFGData x = cl.getCFGData();
                         LiveVariablesProblem xlvp = (LiveVariablesProblem)x.getDataFlowSolution(lvp.getName());
                         // Collect variables live on entry and merge that info into the current problem.
                         for (Variable y: xlvp.getVarsLiveOnEntry()) {

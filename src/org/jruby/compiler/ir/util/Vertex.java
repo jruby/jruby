@@ -3,6 +3,7 @@ package org.jruby.compiler.ir.util;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+import org.jruby.compiler.ir.representations.BasicBlock;
 
 /**
  *
@@ -68,11 +69,59 @@ public class Vertex<T extends DataInfo> implements Comparable<Vertex<T>> {
     public Iterable<Edge<T>> getOutgoingEdgesOfType(Object type) {
         return new EdgeTypeIterable<T>(getOutgoingEdges(), type);
     }
+
+    public T getIncomingSourceData() {
+        Edge<T> edge = getSingleEdge(getIncomingEdges().iterator(), "");
+        
+        return edge == null ? null : edge.getSource().getData();  
+    }    
     
+    public T getIncomingSourceDataOfType(Object type) {
+        Edge<T> edge = getSingleEdge(getIncomingEdgesOfType(type).iterator(), type);
+        
+        return edge == null ? null : edge.getSource().getData();
+    }    
+    
+    public Iterable<T> getIncomingSourcesData() {
+        return new DataIterable<T>(getIncomingEdges(), null, true);
+    }
+    
+    public Iterable<T> getIncomingSourcesDataOfType(Object type) {
+        return new DataIterable<T>(getIncomingEdges(), type, false);
+    }      
+    
+    public Iterable<T> getIncomingSourcesDataNotOfType(Object type) {
+        return new DataIterable<T>(getIncomingEdges(), type, true);
+    }      
+        
     public Iterable<Edge<T>> getOutgoingEdgesNotOfType(Object type) {
         return new EdgeTypeIterable<T>(getOutgoingEdges(), type, true);
     }
+    
+    public Iterable<T> getOutgoingDestinationsData() {
+        return new DataIterable<T>(getOutgoingEdges(), null, true);
+    }
 
+    public Iterable<T> getOutgoingDestinationsDataOfType(Object type) {
+        return new DataIterable<T>(getOutgoingEdges(), type, false);
+    }
+    
+    public Iterable<T> getOutgoingDestinationsDataNotOfType(Object type) {
+        return new DataIterable<T>(getOutgoingEdges(), type, true);
+    }
+
+    public T getOutgoingDestinationData() {
+        Edge<T> edge = getSingleEdge(getOutgoingEdges().iterator(), "");
+        
+        return edge == null ? null : edge.getSource().getData();  
+    }    
+    
+    public T getOutgoingDestinationDataOfType(Object type) {
+        Edge<T> edge = getSingleEdge(getOutgoingEdgesOfType(type).iterator(), type);
+        
+        return edge == null ? null : edge.getDestination().getData();
+    }
+    
     private Edge<T> getSingleEdge(Iterator<Edge<T>> iterator, Object type) {
         if (iterator.hasNext()) {
             Edge<T> edge = iterator.next();

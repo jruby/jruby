@@ -3,7 +3,7 @@ package org.jruby.compiler.ir.compiler_pass;
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.IRMethod;
-import org.jruby.compiler.ir.representations.CFG;
+import org.jruby.compiler.ir.representations.CFGData;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -20,11 +20,11 @@ public class IRPrinter implements CompilerPass {
         LOG.info(s.toString());
 
         // If the cfg of the method is around, print the CFG!
-        CFG c = null;
-        if (s instanceof IRExecutionScope) c = ((IRExecutionScope)s).getCFG();
+        CFGData c = null;
+        if (s instanceof IRExecutionScope) c = ((IRExecutionScope)s).getCFGData();
 
         if (c != null) {
-            LOG.info("\nGraph:\n" + c.getGraph().toString());
+            LOG.info("\nGraph:\n" + c.cfg());
             LOG.info("\nInstructions:\n" + c.toStringInstrs());
         } else if (s instanceof IRMethod) {
             IRMethod m = (IRMethod)s;

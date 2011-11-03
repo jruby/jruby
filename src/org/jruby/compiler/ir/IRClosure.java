@@ -7,7 +7,6 @@ import java.util.ArrayList;
 // that don't merge into the flow of the containing scope.  They are manipulated as an unit.
 // Their parents are always execution scopes.
 import org.jruby.compiler.ir.operands.Label;
-import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Splat;
 import org.jruby.compiler.ir.operands.ClosureLocalVariable;
@@ -121,10 +120,10 @@ public class IRClosure extends IRExecutionScope {
     public String toStringBody() {
         StringBuilder buf = new StringBuilder();
         buf.append(getName()).append(" = { \n");
-        org.jruby.compiler.ir.representations.CFG c = getCFG();
-        if (c != null) {
-            buf.append("\nCFG:\n").append(c.getGraph().toString());
-            buf.append("\nInstructions:\n").append(c.toStringInstrs());
+
+        if (getCFG() != null) {
+            buf.append("\nCFG:\n").append(getCFG());
+            buf.append("\nInstructions:\n").append(getCFGData().toStringInstrs());
         } else {
             buf.append(toStringInstrs());
         }

@@ -9,6 +9,6 @@ public class CallSplitter implements CompilerPass {
     }
 
     public void run(IRScope s) {
-        if (s instanceof IRExecutionScope) ((IRExecutionScope)s).getCFG().splitCalls();
+        if (s instanceof IRExecutionScope) ((IRExecutionScope)s).getCFGData().splitCalls();
     }
 }

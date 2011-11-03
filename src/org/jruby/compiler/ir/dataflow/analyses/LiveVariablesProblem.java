@@ -6,7 +6,7 @@ import org.jruby.compiler.ir.dataflow.FlowGraphNode;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.representations.BasicBlock;
-import org.jruby.compiler.ir.representations.CFG;
+import org.jruby.compiler.ir.representations.CFGData;
 
 import java.util.ArrayList;
 import java.util.BitSet;
@@ -71,7 +71,7 @@ public class LiveVariablesProblem extends DataFlowProblem {
      */
     public List<Variable> getVarsLiveOnEntry() {
         List<Variable> liveVars = new ArrayList<Variable>();
-        BitSet liveIn = ((LiveVariableNode) getFlowGraphNode(cfg.getEntryBB())).getLiveOutBitSet();
+        BitSet liveIn = ((LiveVariableNode) getFlowGraphNode(cfgData.cfg().getEntryBB())).getLiveOutBitSet();
         
         for (int i = 0; i < liveIn.size(); i++) {
             if (liveIn.get(i) == true) {
@@ -85,7 +85,7 @@ public class LiveVariablesProblem extends DataFlowProblem {
     }
 
     @Override
-    public void setup(CFG c) {
+    public void setup(CFGData c) {
         super.setup(c);
 
         // Update setup with info. about variables live on exit.

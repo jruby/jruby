@@ -17,7 +17,7 @@ import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.YieldInstr;
 
 public class InlinerInfo {
-    public final CFG callerCFG;
+    public final CFGData callerCFG;
     public final CallInstr call;
 
     private Operand[] callArgs;
@@ -26,7 +26,7 @@ public class InlinerInfo {
     private Map<BasicBlock, BasicBlock> bbRenameMap;
     private List yieldSites;
 
-    public InlinerInfo(CallInstr call, CFG c) {
+    public InlinerInfo(CallInstr call, CFGData c) {
         this.call = call;
         this.callArgs = call.getCallArgs();
         this.callerCFG = c;

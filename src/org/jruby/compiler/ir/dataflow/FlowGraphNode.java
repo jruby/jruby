@@ -5,7 +5,6 @@ import org.jruby.compiler.ir.instructions.Instr;
 
 import java.util.BitSet;
 import java.util.List;
-import org.jruby.compiler.ir.util.Edge;
 
 /* This framework right now implicitly uses the CFG as the flow graph -- perhaps it is worth abstracting away from this assumption
  * so that we can use this framework over non-CFG flow graphs.
@@ -18,7 +17,7 @@ public abstract class FlowGraphNode {
     public FlowGraphNode(DataFlowProblem p, BasicBlock n) {
         problem = p;
         basicBlock = n;
-        rescuer = problem.getCFG().getRescuerBB(basicBlock);
+        rescuer = problem.getCFGData().cfg().getRescuerBBFor(basicBlock);
     }
    
     /** 
@@ -32,7 +31,7 @@ public abstract class FlowGraphNode {
      * is a predecessor of the current node!  The choice of "IN/OUT" is 
      * determined by the direction of data flow.
      */
-    public abstract void compute_MEET(Edge edge, FlowGraphNode pred);
+    public abstract void compute_MEET(BasicBlock source, FlowGraphNode pred);
 
     /** Compute "OUT/IN" for the current node!  The choice of "IN/OUT" is 
      * determined by the direction of data flow.  OUT/IN = transfer-function
@@ -88,12 +87,12 @@ public abstract class FlowGraphNode {
         // sources & targets depends on direction of the data flow problem
         initSolnForNode();
         if (problem.getFlowDirection() == DataFlowProblem.DF_Direction.FORWARD) {
-            for (Edge<BasicBlock> e: problem.incomingEdgesOf(basicBlock)) {
-                compute_MEET(e, problem.getFlowGraphNode(e.getSource().getData()));
+            for (BasicBlock e: problem.getIncomingSourcesOf(basicBlock)) {
+                compute_MEET(e, problem.getFlowGraphNode(e));
             }
         } else if (problem.getFlowDirection() == DataFlowProblem.DF_Direction.BACKWARD) {
-            for (Edge<BasicBlock> e: problem.outgoingEdgesOf(basicBlock)) {
-                compute_MEET(e, problem.getFlowGraphNode(e.getDestination().getData()));
+            for (BasicBlock e: problem.getOutgoingDestinationsOf(basicBlock)) {
+                compute_MEET(e, problem.getFlowGraphNode(e));
             }
         } else {
             throw new RuntimeException("Bidirectional data flow computation not implemented yet!");
@@ -106,12 +105,12 @@ public abstract class FlowGraphNode {
         boolean changed = applyTransferFunction();
         if (changed) {
             if (problem.getFlowDirection() == DataFlowProblem.DF_Direction.FORWARD) {
-                for (Edge<BasicBlock> e: problem.outgoingEdgesOf(basicBlock)) {
-                    processDestBB(workList, bbSet, e.getDestination().getData());
+                for (BasicBlock e: problem.getOutgoingDestinationsOf(basicBlock)) {
+                    processDestBB(workList, bbSet, e);
                 }
             } else if (problem.getFlowDirection() == DataFlowProblem.DF_Direction.BACKWARD) {
-                for (Edge<BasicBlock> e: problem.incomingEdgesOf(basicBlock)) {
-                    processDestBB(workList, bbSet, e.getSource().getData());
+                for (BasicBlock e: problem.getIncomingSourcesOf(basicBlock)) {
+                    processDestBB(workList, bbSet, e);
                 }
             }
         }
@@ -119,7 +118,7 @@ public abstract class FlowGraphNode {
 
     public FlowGraphNode getExceptionTargetNode() {
         // If there is a rescue node, on exception, control goes to the rescuer bb.  If not, it goes to the scope exit.
-        return problem.getFlowGraphNode(rescuer == null ? problem.getCFG().getExitBB() : rescuer);
+        return problem.getFlowGraphNode(rescuer == null ? problem.getCFGData().cfg().getExitBB() : rescuer);
     }
 
 /* --------- protected fields/methods below --------- */

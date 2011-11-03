@@ -4,15 +4,11 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.JumpInstr;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
 import org.jruby.compiler.ir.operands.Nil;
-import org.jruby.compiler.ir.representations.CFG.EdgeType;
-import org.jruby.compiler.ir.util.DirectedGraph;
-import org.jruby.compiler.ir.util.Edge;
-import org.jruby.compiler.ir.util.Vertex;
+import org.jruby.compiler.ir.representations.CFGData.EdgeType;
 
 /**
  * This produces a linear list of BasicBlocks in the same approximate order
@@ -30,58 +26,53 @@ import org.jruby.compiler.ir.util.Vertex;
  * 4. Dummy Entry and Exit BasicBlocks exist in all CFGs
  * 
  */
-public class Linearizer {
+public class CFGLinearizer {
     public static List<BasicBlock> linearize(CFG cfg) {
         List<BasicBlock> list = new ArrayList<BasicBlock>();
-        DirectedGraph<BasicBlock> graph = cfg.getGraph();
-        BitSet processed = new BitSet(1 + cfg.getMaxNodeID());
+        BitSet processed = new BitSet(cfg.size()); // Assumes all id's are used
         
-        linearizeInner(graph, list, processed, cfg.getEntryBB());
-        verifyAllBasicBlocksProcessed(graph, processed);
-        fixupList(cfg, graph, list);
+        linearizeInner(cfg, list, processed, cfg.getEntryBB());
+        verifyAllBasicBlocksProcessed(cfg, processed);
+        fixupList(cfg, list);
         
         return list;
     }
 
     // If there is no jump at add of block and the next block is not destination insert a valid jump
-    private static void addJumpIfNextNotDestination(DirectedGraph<BasicBlock> graph, BasicBlock next, Instr lastInstr, BasicBlock current) {
-        Set<Edge<BasicBlock>> succs = graph.vertexFor(current).getOutgoingEdges();
+    private static void addJumpIfNextNotDestination(CFG cfg, BasicBlock next, Instr lastInstr, BasicBlock current) {
+        Iterator<BasicBlock> outs = cfg.getOutgoingDestinations(current).iterator();
+        BasicBlock target = outs.hasNext() ? outs.next() : null;
         
-        if (succs.size() == 1) {
-            BasicBlock target = succs.iterator().next().getDestination().getData();                        
-
+        if (target != null && !outs.hasNext()) {
             if ((target != next) && ((lastInstr == null) || !lastInstr.getOperation().transfersControl())) {
                 current.addInstr(new JumpInstr(target.getLabel()));
             }
         }
     }
     
-    private static void linearizeInner(DirectedGraph<BasicBlock> graph, List<BasicBlock> list, 
+    private static void linearizeInner(CFG cfg, List<BasicBlock> list, 
             BitSet processed, BasicBlock current) {
         if (processed.get(current.getID())) return;
 
         // Cannot lay out current block till its fall-through predecessor has been laid out already
-        Edge<BasicBlock> e = graph.vertexFor(current).getIncomingEdgeOfType(EdgeType.FALL_THROUGH);
-        if ((e != null) && !processed.get(e.getSource().getData().getID())) return;
+        BasicBlock source = cfg.getIncomingSourceOfType(current, EdgeType.FALL_THROUGH);
+        if (source != null && !processed.get(source.getID())) return;
 
         list.add(current);
         processed.set(current.getID());
         
-        Vertex<BasicBlock> vertex = graph.vertexFor(current);
-        Edge<BasicBlock> fallThrough = vertex.getOutgoingEdgeOfType(EdgeType.FALL_THROUGH);
-        if (fallThrough != null) {
-            linearizeInner(graph, list, processed, fallThrough.getDestination().getData());
-        }
+        BasicBlock fallThrough = cfg.getOutgoingDestinationOfType(current, EdgeType.FALL_THROUGH);
+        if (fallThrough != null) linearizeInner(cfg, list, processed, fallThrough);
         
-        for (Edge<BasicBlock> edge: vertex.getOutgoingEdgesNotOfType(EdgeType.FALL_THROUGH)) {
-            linearizeInner(graph, list, processed, edge.getDestination().getData());
+        for (BasicBlock destination: cfg.getOutgoingDestinationsNotOfType(current, EdgeType.FALL_THROUGH)) {
+            linearizeInner(cfg, list, processed, destination);
         }
     }
     
     /**
      * Process (fixup) list of instruction and add or remove jumps.
      */
-    private static void fixupList(CFG cfg, DirectedGraph<BasicBlock> graph, List<BasicBlock> list) {
+    private static void fixupList(CFG cfg, List<BasicBlock> list) {
         BasicBlock exitBB = cfg.getExitBB();
         int n = list.size();
         for (int i = 0; i < n - 1; i++) {
@@ -96,18 +87,18 @@ public class Linearizer {
             if (lastInstr instanceof JumpInstr) { // if jumping to next BB then remove it
                 tryAndRemoveUnneededJump(list.get(i + 1), cfg, lastInstr, current);
             } else {
-                addJumpIfNextNotDestination(graph, list.get(i + 1), lastInstr, current);
+                addJumpIfNextNotDestination(cfg, list.get(i + 1), lastInstr, current);
             }
         }
         
         BasicBlock current = list.get(n - 1);
         if (current != exitBB) {
-            Iterator<Edge<BasicBlock>> edges = graph.vertexFor(current).getOutgoingEdgesNotOfType(EdgeType.EXCEPTION).iterator();
-            BasicBlock target = edges.next().getDestination().getData();
+            Iterator<BasicBlock> iter = cfg.getOutgoingDestinationsNotOfType(current, EdgeType.EXCEPTION).iterator();
+            BasicBlock target = iter.next();
 
             // ENEBO: Unsure this ever happens...review this case with subbu
-            if (target != exitBB && edges.hasNext()) {
-                BasicBlock target2 = edges.next().getDestination().getData();
+            if (target != exitBB && iter.hasNext()) {
+                BasicBlock target2 = iter.next();
                 if (target2 == exitBB) target = target2;
             }
 
@@ -120,13 +111,12 @@ public class Linearizer {
     }
 
     private static void tryAndRemoveUnneededJump(BasicBlock next, CFG cfg, Instr lastInstr, BasicBlock current) {
-        if (next == cfg.getBasicBlockOf(((JumpInstr) lastInstr).getJumpTarget())) current.removeInstr(lastInstr);
+        if (next == cfg.getBBForLabel(((JumpInstr) lastInstr).getJumpTarget())) current.removeInstr(lastInstr);
     }
 
-    private static void verifyAllBasicBlocksProcessed(DirectedGraph<BasicBlock> graph, 
-            BitSet processed) throws RuntimeException {
+    private static void verifyAllBasicBlocksProcessed(CFG cfg, BitSet processed) throws RuntimeException {
         // Verify that all bbs have been laid out!
-        for (BasicBlock b : graph.allData()) {
+        for (BasicBlock b : cfg.getBasicBlocks()) {
             if (!processed.get(b.getID())) {
                 throw new RuntimeException("Bad CFG linearization: BB " + b.getID() + " has been missed!");
             }

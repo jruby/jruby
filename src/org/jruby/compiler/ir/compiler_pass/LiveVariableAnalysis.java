@@ -3,7 +3,7 @@ package org.jruby.compiler.ir.compiler_pass;
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.IRClosure;
-import org.jruby.compiler.ir.representations.CFG;
+import org.jruby.compiler.ir.representations.CFGData;
 import org.jruby.compiler.ir.dataflow.analyses.LiveVariablesProblem;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -18,7 +18,7 @@ public class LiveVariableAnalysis implements CompilerPass {
     public void run(IRScope s) {
         if (!(s instanceof IRMethod)) return;
 
-        CFG cfg = ((IRMethod) s).getCFG();
+        CFGData cfg = ((IRMethod) s).getCFGData();
         LiveVariablesProblem lvp = new LiveVariablesProblem();
         String lvpName = lvp.getName();
         
@@ -27,7 +27,7 @@ public class LiveVariableAnalysis implements CompilerPass {
         cfg.setDataFlowSolution(lvp.getName(), lvp);
 //        System.out.println("LVP for " + s + " is: " + lvp);
         for (IRClosure x: ((IRMethod) s).getClosures()) {
-            CFG closureXFG = x.getCFG();
+            CFGData closureXFG = x.getCFGData();
             if (closureXFG != null) {
                 lvp = (LiveVariablesProblem) closureXFG.getDataFlowSolution(lvpName);
             } else {
