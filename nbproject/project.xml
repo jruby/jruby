@@ -155,6 +155,19 @@
                         </arity>
                     </context>
                 </action>
+                <action name="debug.single">
+                    <script>nbproject/ide-file-targets.xml</script>
+                    <target>debug-selected-file-in-src</target>
+                    <context>
+                        <property>debug.class</property>
+                        <folder>${src.dir}</folder>
+                        <pattern>\.java$</pattern>
+                        <format>java-name</format>
+                        <arity>
+                            <one-file-only/>
+                        </arity>
+                    </context>
+                </action>
             </ide-actions>
             <export>
                 <type>folder</type>
