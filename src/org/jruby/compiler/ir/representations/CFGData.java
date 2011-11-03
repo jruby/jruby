@@ -35,7 +35,7 @@ public class CFGData {
     }
 
     IRExecutionScope scope;   // Scope (method/closure) to which this cfg belongs
-    int nextBBId;       // Next available basic block id
+
     CFG cfg = null;
     LinkedList<BasicBlock> postOrderList; // Post order traversal list of the cfg
     Map<String, DataFlowProblem> dfProbs;       // Map of name -> dataflow problem
@@ -45,7 +45,6 @@ public class CFGData {
     private Set<Variable> usedLocalVars;      // Local variables used in this scope
 
     public CFGData(IRExecutionScope s) {
-        nextBBId = 0; // Init before building basic blocks below!
         scope = s;
         postOrderList = null;
         dfProbs = new HashMap<String, DataFlowProblem>();
@@ -80,15 +79,6 @@ public class CFGData {
         assert obj != null: "Unsatisfied dependency and this depends() was set " +
                 "up wrong.  Use depends(build()) not depends(build).";
     }
-
-    public int getNextBBID() {
-        nextBBId++;
-        return nextBBId;
-    }
-
-    public int getMaxNodeID() {
-        return nextBBId;
-    } 
 
     public boolean bbIsProtected(BasicBlock b) {
         // No need to look in ensurerMap because (_bbEnsurerMap(b) != null) => (_bbResucerMap(b) != null)
@@ -212,7 +202,7 @@ public class CFGData {
         depends(cfg());
 
         // FIXME: Add result from this build and add to CFG as a field, then add depends() for htings which use it.
-        builder.buildDominatorTree(cfg, postOrderList(), getMaxNodeID());
+        builder.buildDominatorTree(cfg, postOrderList(), cfg.getMaxNodeID());
     }
     
     public List<BasicBlock> buildLinearization() {
@@ -229,7 +219,7 @@ public class CFGData {
         BasicBlock root = cfg.getEntryBB();
         Stack<BasicBlock> stack = new Stack<BasicBlock>();
         stack.push(root);
-        BitSet bbSet = new BitSet(1 + getMaxNodeID());
+        BitSet bbSet = new BitSet(1 + cfg.getMaxNodeID());
         bbSet.set(root.getID());
 
         // Non-recursive post-order traversal (the added flag is required to handle cycles and common ancestors)

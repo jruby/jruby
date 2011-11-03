@@ -68,7 +68,7 @@ public class InlinerInfo {
     public BasicBlock getOrCreateRenamedBB(BasicBlock bb) {
         BasicBlock renamedBB = getRenamedBB(bb);
         if (renamedBB == null) {
-            renamedBB =  new BasicBlock(this.callerCFG, getRenamedLabel(bb.getLabel()));
+            renamedBB =  new BasicBlock(this.callerCFG.cfg(), getRenamedLabel(bb.getLabel()));
             bbRenameMap.put(bb, renamedBB);
         }
         return renamedBB;

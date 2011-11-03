@@ -59,7 +59,7 @@ public abstract class DataFlowProblem {
             LinkedList<FlowGraphNode> workList = getInitialWorkList();
 
             // 3. Initialize a bitset with a flag set for all basic blocks
-            int numNodes = cfgData.getMaxNodeID();
+            int numNodes = cfgData.cfg().getMaxNodeID();
             BitSet bbSet = new BitSet(1+numNodes);
             bbSet.flip(0, numNodes);
 

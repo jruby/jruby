@@ -20,13 +20,13 @@ import org.jruby.compiler.ir.util.DataInfo;
 
 public class BasicBlock implements DataInfo {
     private int id;                        // Basic Block id
-    private CFGData cfg;                       // CFG that this basic block belongs to
+    private CFG cfg;                       // CFG that this basic block belongs to
     private Label label;                   // All basic blocks have a starting label
     private List<Instr> instrs;         // List of non-label instructions
     private boolean isLive;
     private Instr[] instrsArray = null;    
 
-    public BasicBlock(CFGData c, Label l) {
+    public BasicBlock(CFG c, Label l) {
         instrs = new ArrayList<Instr>();
         label = l;
         isLive = true;
@@ -34,7 +34,7 @@ public class BasicBlock implements DataInfo {
         id = c.getNextBBID();
     }
 
-    public void updateCFG(CFGData c) {
+    public void updateCFG(CFG c) {
         cfg = c;
         id = c.getNextBBID();
     }

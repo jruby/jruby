@@ -80,7 +80,7 @@ public class BindingStorePlacementProblem extends DataFlowProblem {
         }
 
         if ((mightRequireGlobalEnsureBlock == true) && !dirtyVars.isEmpty()) {
-            BasicBlock geb = new BasicBlock(cfg, new Label("_GLOBAL_ENSURE_BLOCK"));
+            BasicBlock geb = new BasicBlock(cfg.cfg(), new Label("_GLOBAL_ENSURE_BLOCK"));
             Variable exc = cfgScope.getNewTemporaryVariable();
             geb.addInstr(new ReceiveExceptionInstr(exc));
             for (LocalVariable v : dirtyVars) {

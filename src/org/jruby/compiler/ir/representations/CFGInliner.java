@@ -182,7 +182,7 @@ public class CFGInliner {
         for (BasicBlock b : closureCFG.getBasicBlocks()) {
             if (b != cEntry && b != cExit) {
                 cfg.putBBForLabel(b.getLabel(), b);
-                b.updateCFG(cfgData);
+                b.updateCFG(cfg);
                 b.processClosureArgAndReturnInstrs(ii, yield);
             }
         }

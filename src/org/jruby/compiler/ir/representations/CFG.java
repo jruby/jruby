@@ -49,10 +49,21 @@ public class CFG {
     private BasicBlock exitBB = null;
     private DirectedGraph<BasicBlock> graph = new DirectedGraph<BasicBlock>();
     
+    private int nextBBId;       // Next available basic block id
+    
     public CFG(CFGData cfgData) {
         this.cfgData = cfgData;
+        nextBBId = 0; // Init before building basic blocks below!
     }
     
+    public int getNextBBID() {
+        nextBBId++;
+        return nextBBId;
+    }
+
+    public int getMaxNodeID() {
+        return nextBBId;
+    }     
     
     public BasicBlock getBBForLabel(Label label) {
         return bbMap.get(label);
@@ -376,7 +387,7 @@ public class CFG {
     }
     
     private BasicBlock createBB(Label label, Stack<ExceptionRegion> nestedExceptionRegions) {
-        BasicBlock basicBlock = new BasicBlock(cfgData, label);
+        BasicBlock basicBlock = new BasicBlock(this, label);
         bbMap.put(label, basicBlock);
         graph.vertexFor(basicBlock);
         
