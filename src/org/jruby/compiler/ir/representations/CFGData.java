@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.IRClosure;
@@ -13,8 +12,6 @@ import org.jruby.compiler.ir.compiler_pass.DominatorTreeBuilder;
 import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.operands.Label;
-import org.jruby.compiler.ir.operands.Variable;
-import org.jruby.compiler.ir.operands.LocalVariable;
 
 import org.jruby.compiler.ir.dataflow.DataFlowProblem;
 import org.jruby.util.log.Logger;
@@ -36,8 +33,7 @@ public class CFGData {
     Map<String, DataFlowProblem> dfProbs;       // Map of name -> dataflow problem
     List<BasicBlock> linearizedBBList;  // Linearized list of bbs
     private Instr[] instrs;
-    private Set<Variable> definedLocalVars;   // Local variables defined in this scope
-    private Set<Variable> usedLocalVars;      // Local variables used in this scope
+
 
     public CFGData(IRExecutionScope s) {
         scope = s;
@@ -260,45 +256,5 @@ public class CFGData {
     @Override
     public String toString() {
         return "CFG[" + scope.getScopeName() + ":" + scope.getName() + "]";
-    }
-
-    public void setUpUseDefLocalVarMaps() {
-        definedLocalVars = new java.util.HashSet<Variable>();
-        usedLocalVars = new java.util.HashSet<Variable>();
-        for (BasicBlock bb : cfg().getBasicBlocks()) {
-            for (Instr i : bb.getInstrs()) {
-                for (Variable v : i.getUsedVariables()) {
-                    if (v instanceof LocalVariable) usedLocalVars.add(v);
-                }
-                Variable v = i.getResult();
-                if ((v != null) && (v instanceof LocalVariable)) definedLocalVars.add(v);
-            }
-        }
-
-        for (IRClosure cl : cfg.getScope().getClosures()) {
-            cl.getCFGData().setUpUseDefLocalVarMaps();
-        }
-    }
-
-    public boolean usesLocalVariable(Variable v) {
-        if (usedLocalVars == null) setUpUseDefLocalVarMaps();
-        if (usedLocalVars.contains(v)) return true;
-
-        for (IRClosure cl : cfg.getScope().getClosures()) {
-            if (cl.getCFGData().usesLocalVariable(v)) return true;
-        }
-
-        return false;
-    }
-
-    public boolean definesLocalVariable(Variable v) {
-        if (definedLocalVars == null) setUpUseDefLocalVarMaps();
-        if (definedLocalVars.contains(v)) return true;
-
-        for (IRClosure cl : cfg.getScope().getClosures()) {
-            if (cl.getCFGData().definesLocalVariable(v)) return true;
-        }
-
-        return false;
     }
 }

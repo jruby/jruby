@@ -44,11 +44,11 @@ public class BindingStorePlacementProblem extends DataFlowProblem {
     }
 
     public boolean scopeDefinesVariable(Variable v) {
-        return getCFGData().definesLocalVariable(v);
+        return getCFGData().cfg().getScope().definesLocalVariable(v);
     }
 
     public boolean scopeUsesVariable(Variable v) {
-        return getCFGData().usesLocalVariable(v);
+        return getCFGData().cfg().getScope().usesLocalVariable(v);
     }
 
     public void addStoreAndBindingAllocInstructions() {

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Stack;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -18,6 +19,7 @@ import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Self;
 import org.jruby.compiler.ir.operands.Variable;
+import org.jruby.compiler.ir.representations.BasicBlock;
 import org.jruby.compiler.ir.representations.CFG;
 import org.jruby.compiler.ir.representations.CFGData;
 import org.jruby.parser.StaticScope;
@@ -28,6 +30,8 @@ public abstract class IRExecutionScope extends IRScopeImpl {
     private List<Instr>     instructions; // List of IR instructions for this method
     private CFGData             cfgData;          // Control flow graph for this scope
     private List<IRClosure> closures;     // List of (nested) closures in this scope
+    private Set<Variable> definedLocalVars;   // Local variables defined in this scope
+    private Set<Variable> usedLocalVars;      // Local variables used in this scope    
 
     protected static class LocalVariableAllocator {
         public int nextSlot;
@@ -427,4 +431,44 @@ public abstract class IRExecutionScope extends IRScopeImpl {
         // %block, # local vars, # flip vars
         return 1 + localVars.nextSlot + getPrefixCountSize("%flip");
     }
+    
+    public void setUpUseDefLocalVarMaps() {
+        definedLocalVars = new java.util.HashSet<Variable>();
+        usedLocalVars = new java.util.HashSet<Variable>();
+        for (BasicBlock bb : cfgData.cfg().getBasicBlocks()) {
+            for (Instr i : bb.getInstrs()) {
+                for (Variable v : i.getUsedVariables()) {
+                    if (v instanceof LocalVariable) usedLocalVars.add(v);
+                }
+                Variable v = i.getResult();
+                if ((v != null) && (v instanceof LocalVariable)) definedLocalVars.add(v);
+            }
+        }
+
+        for (IRClosure cl : getClosures()) {
+            cl.setUpUseDefLocalVarMaps();
+        }
+    }
+
+    public boolean usesLocalVariable(Variable v) {
+        if (usedLocalVars == null) setUpUseDefLocalVarMaps();
+        if (usedLocalVars.contains(v)) return true;
+
+        for (IRClosure cl : getClosures()) {
+            if (cl.usesLocalVariable(v)) return true;
+        }
+
+        return false;
+    }
+
+    public boolean definesLocalVariable(Variable v) {
+        if (definedLocalVars == null) setUpUseDefLocalVarMaps();
+        if (definedLocalVars.contains(v)) return true;
+
+        for (IRClosure cl : getClosures()) {
+            if (cl.definesLocalVariable(v)) return true;
+        }
+
+        return false;
+    }    
 }
