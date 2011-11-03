@@ -79,6 +79,11 @@ public class CFG {
     public int getMaxNodeID() {
         return nextBBId;
     }     
+
+    public boolean bbIsProtected(BasicBlock b) {
+        // No need to look in ensurerMap because (_bbEnsurerMap(b) != null) => (_bbResucerMap(b) != null)
+        return getRescuerBBFor(b) != null;
+    }    
     
     public BasicBlock getBBForLabel(Label label) {
         return bbMap.get(label);
@@ -184,6 +189,19 @@ public class CFG {
     public void addEdge(BasicBlock source, BasicBlock destination, Object type) {
         graph.vertexFor(source).addEdgeTo(destination, type);
     }
+    
+    /* Add 'b' as a global ensure block that protects all unprotected blocks in this scope */
+    public void addGlobalEnsureBlock(BasicBlock geb) {
+        addEdge(geb, getExitBB(), EdgeType.EXIT);
+        
+        for (BasicBlock basicBlock: getBasicBlocks()) {
+            if (basicBlock != geb && !bbIsProtected(basicBlock)) {
+                addEdge(basicBlock, geb, EdgeType.EXCEPTION);
+                setRescuerBB(basicBlock, geb);
+                setEnsurerBB(basicBlock, geb);
+            }
+        }
+    }     
     
     public void putBBForLabel(Label label, BasicBlock block) {
         bbMap.put(label, block);

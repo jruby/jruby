@@ -9,7 +9,6 @@ import org.jruby.compiler.ir.compiler_pass.DominatorTreeBuilder;
 import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.Instr;
 
-import org.jruby.compiler.ir.representations.CFG.EdgeType;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -35,26 +34,6 @@ public class CFGData {
         assert obj != null: "Unsatisfied dependency and this depends() was set " +
                 "up wrong.  Use depends(build()) not depends(build).";
     }
-
-    public boolean bbIsProtected(BasicBlock b) {
-        // No need to look in ensurerMap because (_bbEnsurerMap(b) != null) => (_bbResucerMap(b) != null)
-        return (cfg().getRescuerBBFor(b) != null);
-    }
-
-    /* Add 'b' as a global ensure block that protects all unprotected blocks in this scope */
-    public void addGlobalEnsureBlock(BasicBlock geb) {
-        depends(cfg());
-        
-        cfg.addEdge(geb, cfg.getExitBB(), EdgeType.EXIT);
-        
-        for (BasicBlock basicBlock: cfg.getBasicBlocks()) {
-            if (basicBlock != geb && !bbIsProtected(basicBlock)) {
-                cfg.addEdge(basicBlock, geb, EdgeType.EXCEPTION);
-                cfg.setRescuerBB(basicBlock, geb);
-                cfg.setEnsurerBB(basicBlock, geb);
-            }
-        }
-    } 
 
     public void inlineMethod(IRMethod method, BasicBlock basicBlock, CallInstr call) {
         depends(cfg());
