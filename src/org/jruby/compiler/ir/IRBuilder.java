@@ -384,6 +384,7 @@ public class IRBuilder {
         Label    end;
         Label    dummyRescueBlockLabel;
         Variable returnAddr;
+        Variable savedGlobalException;
 
         public EnsureBlockInfo(IRScope m)
         {
@@ -392,6 +393,7 @@ public class IRBuilder {
             end         = m.getNewLabel();
             returnAddr  = m.getNewTemporaryVariable();
             dummyRescueBlockLabel = m.getNewLabel();
+            savedGlobalException = null;
         }
 
         public static void emitJumpChain(IRScope m, Stack<EnsureBlockInfo> ebStack)
@@ -407,8 +409,12 @@ public class IRBuilder {
             EnsureBlockInfo[] ebArray = ebStack.toArray(new EnsureBlockInfo[n]);
             for (int i = n-1; i >= 0; i--) {
                 Label retLabel = m.getNewLabel();
-                m.addInstr(new SetReturnAddressInstr(ebArray[i].returnAddr, retLabel));
-                m.addInstr(new JumpInstr(ebArray[i].start));
+                EnsureBlockInfo ebi = ebArray[i];
+                if (ebi.savedGlobalException != null) {
+                    m.addInstr(new PutGlobalVarInstr("$!", ebi.savedGlobalException));
+					 }
+                m.addInstr(new SetReturnAddressInstr(ebi.returnAddr, retLabel));
+                m.addInstr(new JumpInstr(ebi.start));
                 m.addInstr(new LabelInstr(retLabel));
             }
         }
@@ -418,7 +424,7 @@ public class IRBuilder {
     private Stack<EnsureBlockInfo> _ensureBlockStack = new Stack<EnsureBlockInfo>();
 
     // Stack encoding nested rescue blocks -- this just tracks the start label of the blocks
-    private Stack<Label> _rescueBlockLabelStack = new Stack<Label>();
+    private Stack<Tuple<Label, Variable>> _rescueBlockStack = new Stack<Tuple<Label, Variable>>();
 
     public static Node buildAST(boolean isCommandLineScript, String arg) {
         Ruby ruby = Ruby.getGlobalRuntime();
@@ -2874,13 +2880,18 @@ public class IRBuilder {
         Label rBeginLabel = ensure == null ? m.getNewLabel() : ensure.regionStart;
         Label rEndLabel   = ensure == null ? m.getNewLabel() : ensure.end;
         Label rescueLabel = m.getNewLabel(); // Label marking start of the first rescue code.
-        _rescueBlockLabelStack.push(rBeginLabel);
 
-        // Otherwise, the ensure node would have emitted this already
         if (ensure == null) m.addInstr(new LabelInstr(rBeginLabel));
 
         // Placeholder rescue instruction that tells rest of the compiler passes the boundaries of the rescue block.
         m.addInstr(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, ensure == null ? null : ensure.dummyRescueBlockLabel, rescueLabel));
+
+        // Save $! in a temp var so it can be restored when the exception gets handled -- Ruby ugliness.
+        // Not sure why an exception needs to be saved!
+        Variable savedGlobalException = m.getNewTemporaryVariable();
+        m.addInstr(new GetGlobalVariableInstr(savedGlobalException, "$!"));
+        if (ensure != null) ensure.savedGlobalException = savedGlobalException;
+        _rescueBlockStack.push(new Tuple<Label, Variable>(rBeginLabel, savedGlobalException));
 
         // Body
         Operand tmp = Nil.NIL;  // default return value if for some strange reason, we neither have the body node or the else node!
@@ -2929,7 +2940,7 @@ public class IRBuilder {
         // End label -- only if there is no ensure block!  With an ensure block, you end at ensureEndLabel.
         if (ensure == null) m.addInstr(new LabelInstr(rEndLabel));
 
-        _rescueBlockLabelStack.pop();
+        _rescueBlockStack.pop();
         return rv;
     }
 
@@ -2989,14 +3000,16 @@ public class IRBuilder {
         Node realBody = skipOverNewlines(m, rescueBodyNode.getBodyNode());
         Operand x = build(realBody, m);
         if (x != U_NIL) { // can be U_NIL if the rescue block has an explicit return
+            // Restore "$!"
+            Tuple<Label, Variable> t = _rescueBlockStack.peek();
+            m.addInstr(new PutGlobalVarInstr("$!", t.b));
             m.addInstr(new CopyInstr(rv, x));
             // Jump to end of rescue block since we've caught and processed the exception
             if (!_ensureBlockStack.empty()) {
                 EnsureBlockInfo ebi = _ensureBlockStack.peek();
                 m.addInstr(new SetReturnAddressInstr(ebi.returnAddr, endLabel));
                 m.addInstr(new JumpInstr(ebi.start));
-            }
-            else {
+            } else {
                 m.addInstr(new JumpInstr(endLabel));
             }
         }
@@ -3009,11 +3022,14 @@ public class IRBuilder {
 
         // Jump back to the innermost rescue block
         // We either find it, or we add code to throw a runtime exception
-        if (_rescueBlockLabelStack.empty()) {
+        if (_rescueBlockStack.empty()) {
             s.addInstr(new ThrowExceptionInstr(IRException.RETURN_LocalJumpError));
         }
         else {
-            s.addInstr(new JumpInstr(_rescueBlockLabelStack.peek()));
+            // Restore $! and jump back to the entry of the rescue block
+            Tuple<Label, Variable> t = _rescueBlockStack.peek();
+            s.addInstr(new PutGlobalVarInstr("$!", t.b));
+            s.addInstr(new JumpInstr(t.a));
         }
         return Nil.NIL;
     }
@@ -3021,8 +3037,12 @@ public class IRBuilder {
     public Operand buildReturn(ReturnNode returnNode, IRScope m) {
         Operand retVal = (returnNode.getValueNode() == null) ? Nil.NIL : build(returnNode.getValueNode(), m);
 
-        // Before we return, have to go execute all the ensure blocks
+        // Before we return, 
+        // - have to go execute all the ensure blocks if there are any.
+        //   this code also takes care of resetting "$!"
+        // - if we dont have any ensure blocks, we have to clear "$!"
         if (!_ensureBlockStack.empty()) EnsureBlockInfo.emitJumpChain(m, _ensureBlockStack);
+        else m.addInstr(new PutGlobalVarInstr("$!", Nil.NIL));
 
         // If 'm' is a block scope, a return returns from the closest enclosing method.
         // The runtime takes care of lambdas
