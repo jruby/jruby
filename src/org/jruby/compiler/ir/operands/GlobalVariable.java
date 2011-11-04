@@ -5,7 +5,7 @@ import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class GlobalVariable extends Variable {
+public class GlobalVariable extends Operand {
     final public String name;
     public GlobalVariable(String name) {
         super();
@@ -13,12 +13,6 @@ public class GlobalVariable extends Variable {
         this.name = name;
     }
 
-    @Override
-    public Operand cloneForInlining(InlinerInfo ii) { 
-       return this;
-    }
-
-    @Override
     public String getName() {
         return name;
     }
