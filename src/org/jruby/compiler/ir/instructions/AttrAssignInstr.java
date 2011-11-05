@@ -5,11 +5,11 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
 import org.jruby.RubyArray;
-import org.jruby.RubyString;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Splat;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
+import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.javasupport.util.RuntimeHelpers;
@@ -18,13 +18,15 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+// Instruction representing Ruby code of the form: "a[i] = 5"
+// which is equivalent to: a.[](i,5)
 public class AttrAssignInstr extends MultiOperandInstr {
-    private Operand   obj;   // SSS: Document this.  What is this?
-    private Operand   attr;  // SSS: Document this.  What is this?
-    private Operand   value; // SSS: Document this.  What is this?
-    private Operand[] args;
+    private Operand   obj;   // Object being updated
+    private MethAddr  attr;  // Attribute being called
+    private Operand[] args;  // Arguments to the attribute call
+    private Operand   value; // Value being assigned
 
-    public AttrAssignInstr(Operand obj, Operand attr, Operand[] args) {
+    public AttrAssignInstr(Operand obj, MethAddr attr, Operand[] args) {
         super(Operation.ATTR_ASSIGN, null);
         this.obj   = obj;
         this.attr  = attr;
@@ -32,7 +34,7 @@ public class AttrAssignInstr extends MultiOperandInstr {
         this.value = null;
     }
 
-    public AttrAssignInstr(Operand obj, Operand attr, Operand[] args, Operand value) {
+    public AttrAssignInstr(Operand obj, MethAddr attr, Operand[] args, Operand value) {
         super(Operation.ATTR_ASSIGN, null);
         this.obj   = obj;
         this.attr  = attr;
@@ -62,7 +64,6 @@ public class AttrAssignInstr extends MultiOperandInstr {
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap) {
         obj = obj.getSimplifiedOperand(valueMap);
-        attr = attr.getSimplifiedOperand(valueMap);
         for (int i = 0; i < args.length; i++) {
             args[i] = args[i].getSimplifiedOperand(valueMap);
         }
@@ -75,13 +76,13 @@ public class AttrAssignInstr extends MultiOperandInstr {
         for (Operand a : args)
             clonedArgs[i++] = a.cloneForInlining(ii);
 
-        return new AttrAssignInstr(obj.cloneForInlining(ii), attr.cloneForInlining(ii), clonedArgs, value == null ? null : value.cloneForInlining(ii));
+        return new AttrAssignInstr(obj.cloneForInlining(ii), attr, clonedArgs, value == null ? null : value.cloneForInlining(ii));
     }
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         IRubyObject receiver = (IRubyObject) obj.retrieve(interp, context, self);
-        String      attrMeth = ((RubyString) attr.retrieve(interp, context, self)).asJavaString();
+        String      attrMeth = attr.getName();
         List<IRubyObject> argList = new ArrayList<IRubyObject>(); 
 
         // Process attr method args -- splats are expanded

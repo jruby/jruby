@@ -57,7 +57,7 @@ public class CallInstr extends MultiOperandInstr {
         this(Operation.CALL, callType, result, methAddr, receiver, args, closure);
     }
 
-    public CallInstr(Operation op, CallType callType, Variable result, MethAddr methAddr, Operand receiver, Operand[] args, Operand closure) {
+    protected CallInstr(Operation op, CallType callType, Variable result, MethAddr methAddr, Operand receiver, Operand[] args, Operand closure) {
         super(op, result);
 
         this.receiver = receiver;
