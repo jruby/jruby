@@ -1,0 +1,1 @@
+fails:Encoding::Converter#source_encoding returns the source encoding as an Encoding object
