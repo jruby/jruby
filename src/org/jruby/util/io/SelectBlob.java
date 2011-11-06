@@ -42,6 +42,7 @@ import org.jruby.RubyArray;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyIO;
+import org.jruby.RubyThread;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -77,7 +78,14 @@ public class SelectBlob {
             // If all streams are nil, just sleep the specified time (JRUBY-4699)
             if (args[0].isNil() && args[1].isNil() && args[2].isNil()) {
                 if (timeout > 0) {
-                    context.getThread().sleep(timeout);
+                    RubyThread thread = context.getThread();
+                    long now = System.currentTimeMillis();
+                    thread.sleep(timeout);
+                    // Guard against spurious wakeup
+                    while (System.currentTimeMillis() < now + timeout) {
+                        thread.sleep(1);
+                    }
+
                 }
             } else {
                 doSelect(has_timeout, timeout);
