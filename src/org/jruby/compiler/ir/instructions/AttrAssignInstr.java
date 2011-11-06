@@ -24,36 +24,21 @@ public class AttrAssignInstr extends MultiOperandInstr {
     private Operand   obj;   // Object being updated
     private MethAddr  attr;  // Attribute being called
     private Operand[] args;  // Arguments to the attribute call
-    private Operand   value; // Value being assigned
 
     public AttrAssignInstr(Operand obj, MethAddr attr, Operand[] args) {
         super(Operation.ATTR_ASSIGN, null);
         this.obj   = obj;
         this.attr  = attr;
         this.args  = args;
-        this.value = null;
-    }
-
-    public AttrAssignInstr(Operand obj, MethAddr attr, Operand[] args, Operand value) {
-        super(Operation.ATTR_ASSIGN, null);
-        this.obj   = obj;
-        this.attr  = attr;
-        this.args  = args;
-        this.value = value;
     }
 
     public Operand[] getOperands() {
-        Operand[] argsArray = new Operand[args.length + ((this.value == null) ? 2 : 3)];
-
-        int i = 2;
+        Operand[] argsArray = new Operand[args.length + 2];
         argsArray[0] = obj;
         argsArray[1] = attr;
-        if (value != null) {
-            argsArray[2] = value;
-            i++;
-        }
 
         // SSS FIXME: Use Arraycopy?
+        int i = 2;
         for (Operand o: args) {
             argsArray[i++] = o;
         }
@@ -67,7 +52,6 @@ public class AttrAssignInstr extends MultiOperandInstr {
         for (int i = 0; i < args.length; i++) {
             args[i] = args[i].getSimplifiedOperand(valueMap);
         }
-        if (value != null) value = value.getSimplifiedOperand(valueMap);
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
@@ -76,7 +60,7 @@ public class AttrAssignInstr extends MultiOperandInstr {
         for (Operand a : args)
             clonedArgs[i++] = a.cloneForInlining(ii);
 
-        return new AttrAssignInstr(obj.cloneForInlining(ii), attr, clonedArgs, value == null ? null : value.cloneForInlining(ii));
+        return new AttrAssignInstr(obj.cloneForInlining(ii), attr, clonedArgs);
     }
 
     @Override
@@ -94,9 +78,6 @@ public class AttrAssignInstr extends MultiOperandInstr {
                 argList.add(rArg);
             }
         }
-
-        // Process value -- splats are NOT expanded
-        if (value != null) argList.add((IRubyObject)value.retrieve(interp, context, self));
 
         // no visibility checks if receiver is self
         RuntimeHelpers.invoke(context, receiver, attrMeth, argList.toArray(new IRubyObject[argList.size()]), (self == receiver) ? CallType.FUNCTIONAL : CallType.NORMAL, Block.NULL_BLOCK);
