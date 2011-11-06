@@ -18,7 +18,7 @@ public abstract class GetInstr extends Instr {
         this.ref = ref;
     }
 
-    public String getName() {
+    public String getRef() {
         return ref;
     }
 

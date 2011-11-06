@@ -18,7 +18,7 @@ public class GetFieldInstr extends GetInstr {
 
     public Instr cloneForInlining(InlinerInfo ii) {
         return new GetFieldInstr(ii.getRenamedVariable(getResult()),
-                getSource().cloneForInlining(ii), getName());
+                getSource().cloneForInlining(ii), getRef());
     }
 
     @Override
@@ -29,7 +29,7 @@ public class GetFieldInstr extends GetInstr {
         RubyClass clazz = object.getMetaClass().getRealClass();
 
         // FIXME: Should add this as a field for instruction
-        VariableAccessor accessor = clazz.getVariableAccessorForRead(getName());
+        VariableAccessor accessor = clazz.getVariableAccessorForRead(getRef());
         Object v = accessor == null ? null : accessor.get(object);
         getResult().store(interp, context, self, v == null ? context.getRuntime().getNil() : v);
         return null;

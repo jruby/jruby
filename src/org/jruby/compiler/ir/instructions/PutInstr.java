@@ -24,7 +24,7 @@ public abstract class PutInstr extends Instr {
         return operands;
     }
 
-    public String getName() {
+    public String getRef() {
         return ref;
     }
 

@@ -30,7 +30,7 @@ public class GetConstInstr extends GetInstr {
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new GetConstInstr(ii.getRenamedVariable(getResult()), getSource().cloneForInlining(ii), getName());
+        return new GetConstInstr(ii.getRenamedVariable(getResult()), getSource().cloneForInlining(ii), getRef());
     }
 
     @Override
@@ -50,8 +50,8 @@ public class GetConstInstr extends GetInstr {
             throw context.getRuntime().newTypeError(source + " is not a type/class");
         }
 
-        Object constant = module.getConstant(getName());
-        if (constant == null) constant = module.getConstantFromConstMissing(getName());
+        Object constant = module.getConstant(getRef());
+        if (constant == null) constant = module.getConstantFromConstMissing(getRef());
 
         //if (container == null) throw runtime.newNameError("unitialized constant " + scope.getName(), scope.getName());
         getResult().store(interp, context, self, constant);

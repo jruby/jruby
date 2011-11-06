@@ -29,7 +29,7 @@ public class PutClassVariableInstr extends PutInstr {
 
         // Modules and classes set this constant as a side-effect
         if (!(getValue() instanceof MetaObject && ((MetaObject) getValue()).isModule())) {
-            module.setClassVar(getName(), value);
+            module.setClassVar(getRef(), value);
         }
         return null;
     }

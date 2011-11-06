@@ -19,7 +19,6 @@ import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
 import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
 import org.jruby.compiler.ir.instructions.ReceiveSelfInstruction;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
-import org.jruby.compiler.ir.operands.FieldRef;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.runtime.Block;
 import org.objectweb.asm.Type;
@@ -115,20 +114,20 @@ public enum JVMEmitter {
     PUT_FIELD {
     public void emit(JVM jvm, Instr instr) {
             PutFieldInstr putField = (PutFieldInstr)instr;
-            String field = ((FieldRef)putField.getOperands()[1]).getName();
+            String field = putField.getRef();
             jvm.declareField(field);
-            jvm.emit(putField.getOperands()[0]);
-            jvm.emit(putField.getOperands()[2]);
+            jvm.emit(putField.getValue());
+            jvm.emit(putField.getTarget());
             jvm.method().putField(Type.getType(Object.class), field, Type.getType(Object.class));
         }
     },
 
     GET_FIELD {
     public void emit(JVM jvm, Instr instr) {
-            GetFieldInstr putField = (GetFieldInstr)instr;
-            String field = ((FieldRef)putField.getOperands()[1]).getName();
+            GetFieldInstr getField = (GetFieldInstr)instr;
+            String field = getField.getRef();
             jvm.declareField(field);
-            jvm.emit(putField.getOperands()[0]);
+            jvm.emit(getField.getSource());
             jvm.method().getField(Type.getType(Object.class), field, Type.getType(Object.class));
         }
     },

@@ -31,7 +31,7 @@ public class PutConstInstr extends PutInstr {
 
         assert module != null : "MODULE should always be something";
 
-        module.setConstant(getName(), value);
+        module.setConstant(getRef(), value);
         return null;
     }
 }
