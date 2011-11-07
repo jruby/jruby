@@ -1,5 +1,6 @@
 package org.jruby.compiler.ir.instructions;
 
+import java.util.Map;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
@@ -12,20 +13,40 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.RubyArray;
 
 // If v2 is an array, compare v1 with every element of v2 and stop on first match!
-public class EQQInstr extends TwoOperandInstr {
+public class EQQInstr extends Instr {
+    private Operand arg1;
+    private Operand arg2;
+
     public EQQInstr(Variable result, Operand v1, Operand v2) {
-        super(Operation.EQQ, result, v1, v2);
+        super(Operation.EQQ, result);
+        this.arg1 = v1;
+        this.arg2 = v2;
+    }
+
+    public Operand[] getOperands() {
+        return new Operand[]{arg1, arg2};
+    }
+
+    @Override
+    public void simplifyOperands(Map<Operand, Operand> valueMap) {
+        arg1 = arg1.getSimplifiedOperand(valueMap);
+        arg2 = arg2.getSimplifiedOperand(valueMap);
+    }
+
+    @Override
+    public String toString() {
+        return super.toString() + "(" + arg1 + ", " + arg2 + ")";
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
         return new EQQInstr(ii.getRenamedVariable(getResult()), 
-                getOperand1().cloneForInlining(ii), getOperand2().cloneForInlining(ii));
+                arg1.cloneForInlining(ii), arg2.cloneForInlining(ii));
     }
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        IRubyObject receiver = (IRubyObject) getOperand1().retrieve(interp, context, self);
-        IRubyObject value = (IRubyObject) getOperand2().retrieve(interp, context, self);
+        IRubyObject receiver = (IRubyObject) arg1.retrieve(interp, context, self);
+        IRubyObject value = (IRubyObject) arg2.retrieve(interp, context, self);
 
         if (value == UndefinedValue.UNDEFINED) {
             getResult().store(interp, context, self, receiver);
