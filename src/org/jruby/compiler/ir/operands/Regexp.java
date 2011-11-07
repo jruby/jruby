@@ -19,6 +19,7 @@ import org.jruby.util.RegexpOptions;
 public class Regexp extends Operand {
     final public RegexpOptions options;
     Operand regexp;
+    private RubyRegexp rubyRegexp;
 
     public Regexp(Operand regexp, RegexpOptions options) {
         this.regexp = regexp;
@@ -59,11 +60,14 @@ public class Regexp extends Operand {
 
     @Override
     public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        RubyRegexp reg = RubyRegexp.newRegexp(context.getRuntime(),
-                ((RubyString) regexp.retrieve(interp, context, self)).getByteList(), options);
+        // If we have a constant regexp string or if the regexp patterns asks for caching, cache the regexp
+        if ((!regexp.isConstant() && !options.isOnce()) || (rubyRegexp == null) || context.getRuntime().getKCode() != rubyRegexp.getKCode()) {
+            RubyRegexp reg = RubyRegexp.newRegexp(context.getRuntime(),
+                    ((RubyString) regexp.retrieve(interp, context, self)).getByteList(), options);
+            reg.setLiteral();
+            rubyRegexp = reg;
+        }
 
-        reg.setLiteral();
-
-        return reg;
+        return rubyRegexp;
     }
 }
