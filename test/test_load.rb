@@ -222,6 +222,19 @@ DEPS
     }
   end
 
+  # JRUBY-6172
+  def test_load_from_jar_with_symlink_in_path
+    Dir.mkdir 'not_A' unless File.exists? 'not_A'
+    File.symlink("not_A", "A") unless File.symlink?('A')
+    with_jruby_shell_spawning do
+      `bin/jruby -e "load File.join('file:', File.join(File.expand_path(File.dirname('#{__FILE__}')), 'requireTest.jar!'), 'A', 'B.rb') ; B"`
+      assert_equal 0, $?
+    end
+  ensure    
+    File.delete("A") if File.symlink?('A')
+    Dir.rmdir 'not_A' if File.exists? 'not_A'
+  end
+
   def test_loading_jar_with_dot_so
     assert_in_sub_runtime %{
       require 'test/jruby-3977.so.jar'
