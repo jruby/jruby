@@ -138,7 +138,7 @@ public class Options {
     public static final BooleanOption INVOKEDYNAMIC_CACHE =
             new BooleanOption(INVOKEDYNAMIC, "invokedynamic.cache", true, "Use invokedynamic to load cached values like literals and constants.");
     public static final BooleanOption INVOKEDYNAMIC_CACHE_CONSTANTS =
-            new BooleanOption(INVOKEDYNAMIC, "invokedynamic.cache.constants", false, "Use invokedynamic to load constants.");
+            new BooleanOption(INVOKEDYNAMIC, "invokedynamic.cache.constants", true, "Use invokedynamic to load constants.");
     public static final BooleanOption INVOKEDYNAMIC_CACHE_LITERALS =
             new BooleanOption(INVOKEDYNAMIC, "invokedynamic.cache.literals", true, "Use invokedynamic to load literals.");
     
