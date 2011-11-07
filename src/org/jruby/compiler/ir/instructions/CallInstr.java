@@ -1,8 +1,12 @@
 package org.jruby.compiler.ir.instructions;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
 
+import org.jruby.RubyArray;
 import org.jruby.RubyMethod;
 import org.jruby.RubyProc;
 import org.jruby.util.TypeConverter;
@@ -13,6 +17,7 @@ import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.MethodHandle;
 import org.jruby.compiler.ir.operands.Operand;
+import org.jruby.compiler.ir.operands.Splat;
 import org.jruby.compiler.ir.operands.StringLiteral;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.IRClass;
@@ -32,7 +37,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /*
  * args field: [self, receiver, *args]
  */
-public class CallInstr extends MultiOperandInstr {
+public class CallInstr extends Instr {
     protected Operand   receiver;
     protected Operand[] arguments;
     protected MethAddr  methAddr;
@@ -68,11 +73,13 @@ public class CallInstr extends MultiOperandInstr {
         flagsComputed = false;
         canBeEval = true;
         targetRequiresCallersBinding = true;
-        switch (callType) {
-            case NORMAL    : callAdapter = MethodIndex.getCallSite(methAddr.toString()); break;
-            case FUNCTIONAL: callAdapter = MethodIndex.getFunctionalCallSite(methAddr.toString()); break;
-            case VARIABLE  : callAdapter = MethodIndex.getVariableCallSite(methAddr.toString()); break;
-            case SUPER     : callAdapter = MethodIndex.getSuperCallSite(); break;
+        if (callType != null) {
+            switch (callType) {
+                case NORMAL    : callAdapter = MethodIndex.getCallSite(methAddr.toString()); break;
+                case FUNCTIONAL: callAdapter = MethodIndex.getFunctionalCallSite(methAddr.toString()); break;
+                case VARIABLE  : callAdapter = MethodIndex.getVariableCallSite(methAddr.toString()); break;
+                case SUPER     : callAdapter = MethodIndex.getSuperCallSite(); break;
+            }
         }
     }
 
@@ -118,11 +125,11 @@ public class CallInstr extends MultiOperandInstr {
     }
 
     public Operand[] cloneCallArgs(InlinerInfo ii) {
-        int length = arguments.length;
-        Operand[] clonedArgs = new Operand[length];
+        int i = 0;
+        Operand[] clonedArgs = new Operand[arguments.length];
 
-        for (int i = 0; i < length; i++) {
-            clonedArgs[i] = arguments[i].cloneForInlining(ii);
+        for (Operand a: arguments) {
+            clonedArgs[i++] = a.cloneForInlining(ii);
         }
 
         return clonedArgs;
@@ -243,36 +250,43 @@ public class CallInstr extends MultiOperandInstr {
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        Object ma = methAddr.retrieve(interp, context, self);
-        IRubyObject[] args = prepareArguments(interp, context, self, getCallArgs());
-        
-        if (ma instanceof MethodHandle) return interpretMethodHandle(interp, context, self, (MethodHandle) ma, args);
-
         IRubyObject object = (IRubyObject) getReceiver().retrieve(interp, context, self);
-        String name = ma.toString(); // SSS FIXME: If this is not a ruby string or a symbol, then this is an error in the source code!
-        Object resultValue;
-        Block  block = prepareBlock(interp, context, self);
-        try {
-             // resultValue = RuntimeHelpers.invoke(context, object, name, args, callType, block);
+        IRubyObject[] args = prepareArguments(interp, context, self, getCallArgs());
 
-             // SSS FIXME:
-             // Some downstream calls dont like if I call the  args[] boxed version with fewer than
-             // 4 arguments!  I think it is bad practice and a bug for those calls to bomb when we
-             // invoke the boxed rather than the unboxed version.  But, since some of this is not
-             // in JRuby core, we'll bite the bullet for now -- this whole CallInstr setup needs
-             // cleaning up to use specialized versions.
-             switch (args.length) {
-             case 0: resultValue = callAdapter.call(context, self, object, block); break;
-             case 1: resultValue = callAdapter.call(context, self, object, args[0], block); break;
-             case 2: resultValue = callAdapter.call(context, self, object, args[0], args[1], block); break;
-             case 3: resultValue = callAdapter.call(context, self, object, args[0], args[1], args[2], block); break;
-             default: resultValue = callAdapter.call(context, self, object, args, block);
+        Object ma = methAddr.retrieve(interp, context, self);
+        if (ma instanceof MethodHandle) return interpretMethodHandle(interp, context, self, (MethodHandle) ma, args);
+        String name = ma.toString(); // SSS FIXME: If this is not a ruby string or a symbol, then this is an error in the source code!
+
+        Block  block = prepareBlock(interp, context, self);
+
+        Object resultValue;
+        try {
+             if (callType == null) {
+                 resultValue = RuntimeHelpers.invoke(context, object, name, args, (self == object) ? CallType.FUNCTIONAL : CallType.NORMAL, block);
+             }
+             else {
+                 // resultValue = RuntimeHelpers.invoke(context, object, name, args, callType, block);
+                 //
+                 // SSS FIXME:
+                 // Some downstream calls dont like if I call the  args[] boxed version with fewer than
+                 // 4 arguments!  I think it is bad practice and a bug for those calls to bomb when we
+                 // invoke the boxed rather than the unboxed version.  But, since some of this is not
+                 // in JRuby core, we'll bite the bullet for now -- this whole CallInstr setup needs
+                 // cleaning up to use specialized versions.
+                 switch (args.length) {
+                 case 0: resultValue = callAdapter.call(context, self, object, block); break;
+                 case 1: resultValue = callAdapter.call(context, self, object, args[0], block); break;
+                 case 2: resultValue = callAdapter.call(context, self, object, args[0], args[1], block); break;
+                 case 3: resultValue = callAdapter.call(context, self, object, args[0], args[1], args[2], block); break;
+                 default: resultValue = callAdapter.call(context, self, object, args, block);
+                 }
              }
         }
         finally {
             block.escape();
         }
-        getResult().store(interp, context, self, resultValue);
+
+        if (getResult() != null) getResult().store(interp, context, self, resultValue);
         return null;
     }
 
@@ -323,6 +337,22 @@ public class CallInstr extends MultiOperandInstr {
         return null;
     }
      */
+    
+    protected IRubyObject[] prepareArguments(InterpreterContext interp, ThreadContext context, IRubyObject self, Operand[] args) {
+        // SSS FIXME: This encoding of arguments as an array penalizes splats, but keeps other argument arrays fast
+        // since there is no array list --> array transformation
+        List<IRubyObject> argList = new ArrayList<IRubyObject>();
+        for (int i = 0; i < args.length; i++) {
+            IRubyObject rArg = (IRubyObject)args[i].retrieve(interp, context, self);
+            if (args[i] instanceof Splat) {
+                argList.addAll(Arrays.asList(((RubyArray)rArg).toJavaArray()));
+            } else {
+                argList.add(rArg);
+            }
+        }
+
+        return argList.toArray(new IRubyObject[argList.size()]);
+    }
 
     protected Block prepareBlock(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         if (closure == null) return Block.NULL_BLOCK;
@@ -369,7 +399,7 @@ public class CallInstr extends MultiOperandInstr {
 
         return allArgs;
     }
-    
+
     private Label interpretMethodHandle(InterpreterContext interp, ThreadContext context, 
             IRubyObject self, MethodHandle mh, IRubyObject[] args) {
         assert mh.getMethodNameOperand() == getReceiver();
@@ -389,5 +419,4 @@ public class CallInstr extends MultiOperandInstr {
         getResult().store(interp, context, self, resultValue);
         return null;        
     }
-
 }
