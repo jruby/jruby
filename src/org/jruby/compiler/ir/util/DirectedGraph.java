@@ -31,6 +31,18 @@ public class DirectedGraph<T extends DataInfo> {
         return vertices.keySet();
     }
     
+    public Collection<T> getSortedData() {
+        ArrayList<T> data = new ArrayList<T>(vertices.keySet());
+        Collections.sort(data, new java.util.Comparator<DataInfo> () {
+            public int compare(DataInfo a, DataInfo b) {
+                if (a.getID() == b.getID()) return 0;
+                if (a.getID() < b.getID()) return -1;
+                return 1;
+            }
+        });
+        return data;
+    }
+    
     public void addEdge(T source, T destination, Object type) {
         vertexFor(source).addEdgeTo(destination, type);
     }
@@ -73,7 +85,6 @@ public class DirectedGraph<T extends DataInfo> {
     @Override
     public String toString() {
         StringBuilder buf = new StringBuilder();
-        
         
         ArrayList<Vertex<T>> verts = new ArrayList<Vertex<T>>(vertices.values());
         Collections.sort(verts);

@@ -3,6 +3,7 @@ package org.jruby.compiler.ir.compiler_pass;
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.IRMethod;
+import org.jruby.compiler.ir.representations.CFG;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -22,11 +23,16 @@ public class IRPrinter implements CompilerPass {
         if (s instanceof IRExecutionScope) {
             IRExecutionScope scope = (IRExecutionScope) s;
 
-            if (scope.getCFG() != null) LOG.info("\nGraph:\n" + scope.cfg());
-        } else if (s instanceof IRMethod) {
-            IRMethod m = (IRMethod)s;
-            LOG.info("\n  instrs:\n" + m.toStringInstrs());
-            LOG.info("\n  live variables:\n" + m.toStringVariables());
+            CFG c = scope.getCFG();
+            if (c != null) {
+                LOG.info("\nGraph:\n" + c.toStringGraph());
+                LOG.info("\nInstructions:\n" + c.toStringInstrs());
+            }
+            else if (s instanceof IRMethod) {
+                IRMethod m = (IRMethod)s;
+                LOG.info("\n  instrs:\n" + m.toStringInstrs());
+                LOG.info("\n  live variables:\n" + m.toStringVariables());
+            }
         }
     }
 }

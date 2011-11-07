@@ -130,6 +130,10 @@ public class CFG {
         return graph.allData();
     }
     
+    public Collection<BasicBlock> getSortedBasicBlocks() {
+        return graph.getSortedData();
+    }
+    
     public Iterable<BasicBlock> getIncomingSources(BasicBlock block) {
         return graph.vertexFor(block).getIncomingSourcesData();
     }
@@ -514,12 +518,15 @@ public class CFG {
 
         deleteOrphanedBlocks(graph);
     }
+
+    public String toStringGraph() {
+        return graph.toString();
+    }
     
     public String toStringInstrs() {
         StringBuilder buf = new StringBuilder();
-
         
-        for (BasicBlock b : getBasicBlocks()) {
+        for (BasicBlock b : getSortedBasicBlocks()) {
             buf.append(b.toStringInstrs());
         }
         buf.append("\n\n------ Rescue block map ------\n");

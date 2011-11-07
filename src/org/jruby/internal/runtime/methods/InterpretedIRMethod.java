@@ -65,7 +65,8 @@ public class InterpretedIRMethod extends DynamicMethod {
         }
 
         if (Interpreter.isDebug() && displayedCFG == false) {
-            LOG.info("CFG:\n" + cfg);
+            LOG.info("Graph:\n" + cfg.toStringGraph());
+            LOG.info("CFG:\n" + cfg.toStringInstrs());
             displayedCFG = true;
         }
 
