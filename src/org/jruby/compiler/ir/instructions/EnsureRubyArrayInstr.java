@@ -14,25 +14,42 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.RubyArray;
 
-public class EnsureRubyArrayInstr extends OneOperandInstr {
+public class EnsureRubyArrayInstr extends Instr {
+    private Operand object;
+
     public EnsureRubyArrayInstr(Variable d, Operand s) {
-        super(Operation.ENSURE_RUBY_ARRAY, d, s);
+        super(Operation.ENSURE_RUBY_ARRAY, d);
+        this.object = s;
     }
 
     @Override
     public Operand simplifyAndGetResult(Map<Operand, Operand> valueMap) {
         simplifyOperands(valueMap);
-        return (getArg() instanceof Array) ? getArg() : null;
+        return (object instanceof Array) ? object : null;
+    }
+
+    public Operand[] getOperands() {
+        return new Operand[]{object};
+    }
+
+    @Override
+    public void simplifyOperands(Map<Operand, Operand> valueMap) {
+        object = object.getSimplifiedOperand(valueMap);
+    }
+
+    @Override
+    public String toString() {
+        return super.toString() + "(" + object + ")";
     }
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new EnsureRubyArrayInstr(ii.getRenamedVariable(getResult()), argument.cloneForInlining(ii));
+        return new EnsureRubyArrayInstr(ii.getRenamedVariable(getResult()), object.cloneForInlining(ii));
     }
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        IRubyObject val = (IRubyObject)getArg().retrieve(interp, context, self);
+        IRubyObject val = (IRubyObject)object.retrieve(interp, context, self);
         if (!(val instanceof RubyArray)) val = ArgsUtil.convertToRubyArray(context.getRuntime(), val, false);
         getResult().store(interp, context, self, val);
         return null;

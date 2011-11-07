@@ -24,17 +24,19 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 
-public class DefineInstanceMethodInstr extends OneOperandInstr {
+public class DefineInstanceMethodInstr extends Instr {
+    private Operand container;
     private final IRMethod method;
 
     public DefineInstanceMethodInstr(Operand container, IRMethod method) {
-        super(Operation.DEF_INST_METH, null, container);
+        super(Operation.DEF_INST_METH, null);
+        this.container = container;
         this.method = method;
     }
 
     @Override
     public String toString() {
-        return getOperation() + "(" + getArg() + ", " + method.getName() + ")";
+        return getOperation() + "(" + container + ", " + method.getName() + ")";
     }
     
     public IRMethod getMethod() {
@@ -43,12 +45,7 @@ public class DefineInstanceMethodInstr extends OneOperandInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new DefineInstanceMethodInstr(getArg().cloneForInlining(ii), method);
-    }
-
-    @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap) {
-        super.simplifyOperands(valueMap);
+        return new DefineInstanceMethodInstr(container.cloneForInlining(ii), method);
     }
 
     // SSS FIXME: Go through this and DefineClassMethodInstr.interpret, clean up, extract common code
@@ -66,16 +63,16 @@ public class DefineInstanceMethodInstr extends OneOperandInstr {
             throw runtime.newTypeError("no class/module to add method");
         }
 
-        if (clazz == runtime.getObject() && name == "initialize") {
+        if (clazz == runtime.getObject() && "initialize".equals(name)) {
             runtime.getWarnings().warn(ID.REDEFINING_DANGEROUS, "redefining Object#initialize may cause infinite loop");
         }
 
-        if (name == "__id__" || name == "__send__") {
+        if ("__id__".equals(name) || "__send__".equals(name)) {
             runtime.getWarnings().warn(ID.REDEFINING_DANGEROUS, "redefining `" + name + "' may cause serious problem"); 
         }
 
         Visibility visibility = context.getCurrentVisibility();
-        if (name == "initialize" || name == "initialize_copy" || visibility == Visibility.MODULE_FUNCTION) {
+        if ("initialize".equals(name) || "initialize_copy".equals(name) || visibility == Visibility.MODULE_FUNCTION) {
             visibility = Visibility.PRIVATE;
         }
 
@@ -95,5 +92,14 @@ public class DefineInstanceMethodInstr extends OneOperandInstr {
             clazz.callMethod(context, "method_added", runtime.fastNewSymbol(name));
         }
         return null;
+    }
+
+    public Operand[] getOperands() {
+        return new Operand[]{container};
+    }
+    
+    @Override
+    public void simplifyOperands(Map<Operand, Operand> valueMap) {
+        container = container.getSimplifiedOperand(valueMap);
     }
 }

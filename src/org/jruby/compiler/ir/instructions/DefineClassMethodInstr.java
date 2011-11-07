@@ -19,17 +19,19 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 // SSS FIXME: Should we merge DefineInstanceMethod and DefineClassMethod instructions?
 // identical except for 1 bit in interpret -- or will they diverge?
-public class DefineClassMethodInstr extends OneOperandInstr {
+public class DefineClassMethodInstr extends Instr {
+    private Operand container;
     private final IRMethod method;
 
     public DefineClassMethodInstr(Operand container, IRMethod method) {
-        super(Operation.DEF_CLASS_METH, null, container);
+        super(Operation.DEF_CLASS_METH, null);
+        this.container = container;
         this.method = method;
     }
 
     @Override
     public String toString() {
-        return super.toString() + "(" + getArg() + ", " + method.getName() + ")";
+        return super.toString() + "(" + container + ", " + method.getName() + ")";
     }
     
     public IRMethod getMethod() {
@@ -38,12 +40,7 @@ public class DefineClassMethodInstr extends OneOperandInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new DefineClassMethodInstr(getArg().cloneForInlining(ii), method);
-    }
-
-    @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap) {
-        super.simplifyOperands(valueMap);
+        return new DefineClassMethodInstr(container.cloneForInlining(ii), method);
     }
 
     // SSS FIXME: Go through this and DefineInstanceMethodInstr.interpret, clean up, extract common code
@@ -51,7 +48,7 @@ public class DefineClassMethodInstr extends OneOperandInstr {
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         String name = method.getName();
         Ruby runtime = context.getRuntime();
-        RubyObject obj = (RubyObject) getArg().retrieve(interp, context, self);
+        RubyObject obj = (RubyObject) container.retrieve(interp, context, self);
 
         if (runtime.getSafeLevel() >= 4 && !obj.isTaint()) {
             throw runtime.newSecurityError("Insecure; can't define singleton method.");
@@ -71,5 +68,14 @@ public class DefineClassMethodInstr extends OneOperandInstr {
         obj.getMetaClass().addMethod(name, new InterpretedIRMethod(method, Visibility.PUBLIC, obj.getMetaClass()));
         obj.callMethod(context, "singleton_method_added", runtime.fastNewSymbol(name));
         return null;
+    }
+
+    public Operand[] getOperands() {
+        return new Operand[]{container};
+    }
+
+    @Override
+    public void simplifyOperands(Map<Operand, Operand> valueMap) {
+        container = container.getSimplifiedOperand(valueMap);
     }
 }

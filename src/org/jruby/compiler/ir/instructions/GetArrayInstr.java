@@ -20,49 +20,60 @@ import org.jruby.runtime.builtin.IRubyObject;
 // FIXME: Rename GetArrayInstr to ArrayArefInstr which would be used
 // in later passes as well when compiler passes replace ruby-array []
 // calls with inlined lookups
-public class GetArrayInstr extends OneOperandInstr {
+public class GetArrayInstr extends Instr {
+    private Operand array;
     private final int index;
     private final boolean all;  // If true, returns the rest of the array starting at the index
 
     public GetArrayInstr(Variable dest, Operand array, int index, boolean getRestOfArray) {
-        super(Operation.GET_ARRAY, dest, array);
+        super(Operation.GET_ARRAY, dest);
+        this.array = array;
         this.index = index;
         all = getRestOfArray;
     }
 
+    public Operand[] getOperands() {
+        return new Operand[]{array};
+    }
+
+    @Override
+    public void simplifyOperands(Map<Operand, Operand> valueMap) {
+        array = array.getSimplifiedOperand(valueMap);
+    }
+
     @Override
     public String toString() {
-        return "" + getResult() + " = " + argument + "[" + index + (all ? ":END" : "") + "] (GET_ARRAY)";
+        return "" + getResult() + " = " + array + "[" + index + (all ? ":END" : "") + "] (GET_ARRAY)";
     }
 
     @Override
     public Operand simplifyAndGetResult(Map<Operand, Operand> valueMap) {
         simplifyOperands(valueMap);
-        Operand val = argument.getValue(valueMap);
+        Operand val = array.getValue(valueMap);
         return val.fetchCompileTimeArrayElement(index, all);
     }
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new GetArrayInstr(ii.getRenamedVariable(getResult()), argument.cloneForInlining(ii), index, all);
+        return new GetArrayInstr(ii.getRenamedVariable(getResult()), array.cloneForInlining(ii), index, all);
     }
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         // ENEBO: Can I assume since IR figured this is an internal array it will be RubyArray like this?
-        RubyArray array = (RubyArray) getArg().retrieve(interp, context, self);
+        RubyArray rubyArray = (RubyArray) array.retrieve(interp, context, self);
         Object val;
         
         if (!all) {
-            val = array.entry(index);
+            val = rubyArray.entry(index);
         } else {
-            int n = array.getLength();
+            int n = rubyArray.getLength();
             int size = n - index;
             if (size <= 0) {
                 val = RubyArray.newEmptyArray(context.getRuntime());
             } else {
                 // FIXME: Perf win to use COW between source Array and this new one (remove toJavaArray)
-                val = RubyArray.newArrayNoCopy(context.getRuntime(), array.toJavaArray(), index);
+                val = RubyArray.newArrayNoCopy(context.getRuntime(), rubyArray.toJavaArray(), index);
             }
         }
         getResult().store(interp, context, self, val);

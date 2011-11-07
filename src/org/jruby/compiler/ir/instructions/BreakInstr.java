@@ -1,5 +1,6 @@
 package org.jruby.compiler.ir.instructions;
 
+import java.util.Map;
 import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
@@ -29,25 +30,36 @@ import org.jruby.runtime.builtin.IRubyObject;
 //
 // def foo(n); break if n > 5; end; foo(100) will throw an exception
 //
-public class BreakInstr extends OneOperandInstr {
+public class BreakInstr extends Instr {
     private final IRExecutionScope scopeToReturnTo;
+    protected Operand returnValue;
 
     public BreakInstr(Operand rv, IRExecutionScope s) {
-        super(Operation.BREAK, null, rv);
+        super(Operation.BREAK, null);
         this.scopeToReturnTo = s;
+        this.returnValue = rv;
+    }
+    
+    public Operand[] getOperands() {
+        return new Operand[] { returnValue };
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new BreakInstr(getArg().cloneForInlining(ii), scopeToReturnTo);
+        return new BreakInstr(returnValue.cloneForInlining(ii), scopeToReturnTo);
     }
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        throw new IRBreakJump(scopeToReturnTo, getArg().retrieve(interp, context, self));
+        throw new IRBreakJump(scopeToReturnTo, returnValue.retrieve(interp, context, self));
     }
 
     @Override
     public String toString() {
-        return getOperation() + "(" + argument + (scopeToReturnTo == null ? "" : ", " + scopeToReturnTo) + ")";
+        return getOperation() + "(" + returnValue + (scopeToReturnTo == null ? "" : ", " + scopeToReturnTo) + ")";
+    }
+
+    @Override
+    public void simplifyOperands(Map<Operand, Operand> valueMap) {
+        returnValue = returnValue.getSimplifiedOperand(valueMap);
     }
 }

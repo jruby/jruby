@@ -1,5 +1,6 @@
 package org.jruby.compiler.ir.instructions;
 
+import java.util.Map;
 import org.jruby.compiler.ir.Interp;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Label;
@@ -9,9 +10,12 @@ import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class ClosureReturnInstr extends OneOperandInstr {
+public class ClosureReturnInstr extends Instr {
+    private Operand returnValue;
+
     public ClosureReturnInstr(Operand rv) {
-        super(Operation.CLOSURE_RETURN, null, rv);
+        super(Operation.CLOSURE_RETURN, null);
+        this.returnValue = rv;
     }
 
     @Override
@@ -19,10 +23,28 @@ public class ClosureReturnInstr extends OneOperandInstr {
         throw new RuntimeException("Not implemented yet!");
     }
 
+    public Operand getReturnValue() {
+        return returnValue;
+    }
+
+    public Operand[] getOperands() {
+        return new Operand[]{returnValue};
+    }
+
+    @Override
+    public void simplifyOperands(Map<Operand, Operand> valueMap) {
+        returnValue = returnValue.getSimplifiedOperand(valueMap);
+    }
+
+    @Override
+    public String toString() {
+        return super.toString() + "(" + returnValue + ")";
+    }
+
     @Interp
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        interp.setReturnValue(getArg().retrieve(interp, context, self));
+        interp.setReturnValue(returnValue.retrieve(interp, context, self));
         return interp.getCurrentIRScope().getCFG().getExitBB().getLabel();
     }
 }

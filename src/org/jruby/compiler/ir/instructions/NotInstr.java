@@ -12,29 +12,42 @@ import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class NotInstr extends OneOperandInstr {
+public class NotInstr extends Instr {
+    private Operand arg;
+
     public NotInstr(Variable dst, Operand arg) {
-        super(Operation.NOT, dst, arg);
+        super(Operation.NOT, dst);
+        this.arg = arg;
+    }
+
+    public Operand[] getOperands() {
+        return new Operand[]{arg};
+    }
+
+    @Override
+    public void simplifyOperands(Map<Operand, Operand> valueMap) {
+        arg = arg.getSimplifiedOperand(valueMap);
+    }
+
+    @Override
+    public String toString() {
+        return super.toString() + "(" + arg + ")";
     }
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new NotInstr(ii.getRenamedVariable(getResult()), argument.cloneForInlining(ii));
+        return new NotInstr(ii.getRenamedVariable(getResult()), arg.cloneForInlining(ii));
     }
 
     @Override
     public Operand simplifyAndGetResult(Map<Operand, Operand> valueMap) {
         simplifyOperands(valueMap);
-        return (argument instanceof BooleanLiteral) ? ((BooleanLiteral) argument).logicalNot() : null;
+        return (arg instanceof BooleanLiteral) ? ((BooleanLiteral) arg).logicalNot() : null;
     }
-
-    // Can this instruction raise exceptions?
-    @Override
-    public boolean canRaiseException() { return false; }
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        boolean not = !((IRubyObject) getArg().retrieve(interp, context, self)).isTrue();
+        boolean not = !((IRubyObject) arg.retrieve(interp, context, self)).isTrue();
 
         getResult().store(interp, context, self, context.getRuntime().newBoolean(not));
         return null;

@@ -14,38 +14,45 @@ import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class CopyInstr extends OneOperandInstr {
+public class CopyInstr extends Instr {
+    private Operand arg;
+
     public CopyInstr(Variable d, Operand s) {
-        super(Operation.COPY, d, s);
+        super(Operation.COPY, d);
         if (s == null) new Exception().printStackTrace();
+        this.arg = s;
+    }
+
+    public Operand[] getOperands() {
+        return new Operand[]{arg};
+    }
+
+    @Override
+    public void simplifyOperands(Map<Operand, Operand> valueMap) {
+        arg = arg.getSimplifiedOperand(valueMap);
     }
 
     @Override
     public Operand simplifyAndGetResult(Map<Operand, Operand> valueMap) {
         simplifyOperands(valueMap);
         
-        return argument;
+        return arg;
     }
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new CopyInstr(ii.getRenamedVariable(getResult()), argument.cloneForInlining(ii));
+        return new CopyInstr(ii.getRenamedVariable(getResult()), arg.cloneForInlining(ii));
     }
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        getResult().store(interp, context, self, getArg().retrieve(interp, context, self));
+        getResult().store(interp, context, self, arg.retrieve(interp, context, self));
         return null;
     }
 
     @Override
     public String toString() { 
-        return (argument instanceof Variable) ? super.toString() : (getResult() + " = " + getArg());
+        return (arg instanceof Variable) ? (super.toString() + "(" + arg + ")") : (getResult() + " = " + arg);
     }
 
-    // Can this instruction raise exceptions?
-    @Override
-    public boolean canRaiseException() {
-        return false;
-    }
 }

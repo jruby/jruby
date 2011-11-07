@@ -129,7 +129,7 @@ public class BasicBlock implements DataInfo {
             Instr i = it.next();
             if (i instanceof ClosureReturnInstr) {
                 // Replace the closure return receive with a simple copy
-                it.set(new CopyInstr(yieldResult, ((ClosureReturnInstr)i).getArg()));
+                it.set(new CopyInstr(yieldResult, ((ClosureReturnInstr)i).getReturnValue()));
             } else if (i instanceof ReceiveSelfInstruction) {
                 ReceiveSelfInstruction rsi = (ReceiveSelfInstruction)i;
                 // SSS FIXME: It is not always the case that the call receiver is also the %self within

@@ -1,5 +1,6 @@
 package org.jruby.compiler.ir.instructions;
 
+import java.util.Map;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Variable;
@@ -9,26 +10,34 @@ import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-// SSS FIXME: Have to find a clean solution to this hackiness of having
-// one or more non-Operand fields  in instructions or maybe rename the
-// base classes to something more appropriate?
-public class InstanceOfInstr extends OneOperandInstr {
+public class InstanceOfInstr extends Instr {
     private Class type;
     private String className;
+    private Operand object;
 
-    public InstanceOfInstr(Variable dst, Operand v, String className) {
-        super(Operation.INSTANCE_OF, dst, v);
+    public InstanceOfInstr(Variable dst, Operand object, String className) {
+        super(Operation.INSTANCE_OF, dst);
         
+        this.object = object;
         this.className = className;
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new InstanceOfInstr(ii.getRenamedVariable(getResult()), getArg().cloneForInlining(ii), className);
+        return new InstanceOfInstr(ii.getRenamedVariable(getResult()), object.cloneForInlining(ii), className);
+    }
+
+    public Operand[] getOperands() {
+        return new Operand[]{object};
+    }
+
+    @Override
+    public void simplifyOperands(Map<Operand, Operand> valueMap) {
+        object = object.getSimplifiedOperand(valueMap);
     }
 
     @Override 
     public String toString() {
-        return (isDead() ? "[DEAD]" : "") + (getResult() + " = ") + getOperation() + "(" + getArg() + ", " + className + ")";
+        return (isDead() ? "[DEAD]" : "") + (getResult() + " = ") + getOperation() + "(" + object + ", " + className + ")";
     }
 
     @Override
@@ -44,7 +53,7 @@ public class InstanceOfInstr extends OneOperandInstr {
             throw new RuntimeException(e);
         }
         getResult().store(interp, context, self, 
-                context.getRuntime().newBoolean(type.isInstance(getArg().retrieve(interp, context, self)))); 
+                context.getRuntime().newBoolean(type.isInstance(object.retrieve(interp, context, self)))); 
         return null;
     }
 }
