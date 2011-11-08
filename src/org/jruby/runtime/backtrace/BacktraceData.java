@@ -46,11 +46,6 @@ public class BacktraceData implements Serializable {
         // a running index into the Ruby backtrace stack, incremented for each
         // interpreter frame we encounter in the Java backtrace.
         int rubyFrameIndex = rubyTrace == null ? -1 : rubyTrace.length - 1;
-        // no Java trace, can't generate hybrid trace
-        // TODO: Perhaps just generate the interpreter trace? Is this path ever hit?
-        if (javaTrace == null) {
-            return null;
-        }
         for (int i = 0; i < javaTrace.length; i++) {
             StackTraceElement element = javaTrace[i];
             if (
