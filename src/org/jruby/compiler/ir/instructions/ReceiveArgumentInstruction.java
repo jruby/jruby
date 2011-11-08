@@ -13,7 +13,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /*
  * Assign Argument passed into scope/method to destination Variable
  */
-public class ReceiveArgumentInstruction extends NoOperandInstr {
+public class ReceiveArgumentInstruction extends Instr {
 	 // SSS FIXME: Fix IR to start offsets from 0
     protected int argIndex;
     protected boolean restOfArgArray; // If true, the argument sub-array starting at this index is passed in via this instruction.
@@ -32,6 +32,10 @@ public class ReceiveArgumentInstruction extends NoOperandInstr {
     
     public boolean isRestOfArgArray() {
         return restOfArgArray;
+    }
+
+    public Operand[] getOperands() {
+        return EMPTY_OPERANDS;
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {

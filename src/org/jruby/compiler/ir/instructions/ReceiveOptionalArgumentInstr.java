@@ -2,6 +2,7 @@ package org.jruby.compiler.ir.instructions;
 
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Label;
+import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.UndefinedValue;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
@@ -10,11 +11,15 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 // Assign the 'index' argument to 'dest'.
-public class ReceiveOptionalArgumentInstr extends NoOperandInstr {
+public class ReceiveOptionalArgumentInstr extends Instr {
     int argIndex;
     public ReceiveOptionalArgumentInstr(Variable dest, int index) {
         super(Operation.RECV_OPT_ARG, dest);
         this.argIndex = index;
+    }
+
+    public Operand[] getOperands() {
+        return EMPTY_OPERANDS;
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {

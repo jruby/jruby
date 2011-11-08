@@ -3,6 +3,7 @@ package org.jruby.compiler.ir.instructions;
 import org.jruby.compiler.ir.Interp;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Label;
+import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
@@ -13,7 +14,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 // This instruction encodes the receive of an argument into a closure
 //   Ex:  .. { |a| .. }
 // The closure receives 'a' via this instruction
-public class ReceiveClosureArgInstr extends NoOperandInstr {
+public class ReceiveClosureArgInstr extends Instr {
     private final int argIndex;
     boolean restOfArgArray;
 
@@ -26,6 +27,10 @@ public class ReceiveClosureArgInstr extends NoOperandInstr {
     
     public boolean isRestOfArgArray() {
         return restOfArgArray;
+    }
+
+    public Operand[] getOperands() {
+        return EMPTY_OPERANDS;
     }
 
     @Override

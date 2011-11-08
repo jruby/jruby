@@ -2,14 +2,19 @@ package org.jruby.compiler.ir.instructions;
 
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Label;
+import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class ThreadPollInstr extends NoOperandInstr {
+public class ThreadPollInstr extends Instr {
     public ThreadPollInstr() {
         super(Operation.THREAD_POLL, null);
+    }
+
+    public Operand[] getOperands() {
+        return EMPTY_OPERANDS;
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
@@ -27,5 +32,4 @@ public class ThreadPollInstr extends NoOperandInstr {
         context.callThreadPoll();
         return null;
     }
-    
 }

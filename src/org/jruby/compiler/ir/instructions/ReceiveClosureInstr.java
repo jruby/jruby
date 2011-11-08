@@ -3,6 +3,7 @@ package org.jruby.compiler.ir.instructions;
 import org.jruby.compiler.ir.Interp;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Label;
+import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
@@ -13,9 +14,13 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /* Receive the closure argument (either implicit or explicit in Ruby source code) */
-public class ReceiveClosureInstr extends NoOperandInstr {
+public class ReceiveClosureInstr extends Instr {
     public ReceiveClosureInstr(Variable dest) {
         super(Operation.RECV_CLOSURE, dest);
+    }
+
+    public Operand[] getOperands() {
+        return EMPTY_OPERANDS;
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
