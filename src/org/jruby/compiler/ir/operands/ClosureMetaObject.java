@@ -14,11 +14,6 @@ public class ClosureMetaObject extends MetaObject {
     }
 
     @Override
-    public boolean isClosure() {
-        return true;
-    }
-
-    @Override
     public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         BlockBody body = ((IRClosure) scope).getBlockBody();
         scope.getStaticScope().determineModule();
