@@ -1,13 +1,20 @@
 package org.jruby.compiler.ir.instructions;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import org.jruby.RubyArray;
 import org.jruby.RubyClass;
+import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
 
+import org.jruby.RubyProc;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.operands.MethAddr;
+import org.jruby.compiler.ir.operands.Splat;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 
 import org.jruby.interpreter.InterpreterContext;
@@ -21,6 +28,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.util.TypeConverter;
 
 public class SuperInstr extends CallInstr {
     public SuperInstr(Variable result, Operand receiver, MethAddr superMeth, Operand[] args, Operand closure) {
@@ -29,7 +37,7 @@ public class SuperInstr extends CallInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new SuperInstr(ii.getRenamedVariable(getResult()), getReceiver().cloneForInlining(ii), methAddr,
+        return new SuperInstr(ii.getRenamedVariable(getResult()), getReceiver().cloneForInlining(ii), getMethodAddr(),
                 cloneCallArgs(ii), closure == null ? null : closure.cloneForInlining(ii));
     }
 
@@ -65,5 +73,45 @@ public class SuperInstr extends CallInstr {
                 throw context.getRuntime().newNoMethodError("super called outside of method", null, context.getRuntime().getNil());
             }
         }
+    }
+    
+    protected IRubyObject[] prepareArguments(InterpreterContext interp, ThreadContext context, IRubyObject self, Operand[] args) {
+        // SSS FIXME: This encoding of arguments as an array penalizes splats, but keeps other argument arrays fast
+        // since there is no array list --> array transformation
+        List<IRubyObject> argList = new ArrayList<IRubyObject>();
+        for (int i = 0; i < args.length; i++) {
+            IRubyObject rArg = (IRubyObject)args[i].retrieve(interp, context, self);
+            if (args[i] instanceof Splat) {
+                argList.addAll(Arrays.asList(((RubyArray)rArg).toJavaArray()));
+            } else {
+                argList.add(rArg);
+            }
+        }
+
+        return argList.toArray(new IRubyObject[argList.size()]);
+    }
+
+    protected Block prepareBlock(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+        if (closure == null) return Block.NULL_BLOCK;
+        
+        Object value = closure.retrieve(interp, context, self);
+        
+        Block b = null;
+        if (value instanceof Block)
+            b = (Block)value;
+        else if (value instanceof RubyProc)
+            b = ((RubyProc) value).getBlock();
+        else if (value instanceof RubyMethod)
+            b = ((RubyProc)((RubyMethod)value).to_proc(context, null)).getBlock();
+        else if ((value instanceof IRubyObject) && ((IRubyObject)value).isNil())
+            b = Block.NULL_BLOCK;
+        else if (value instanceof IRubyObject)
+            b = ((RubyProc)TypeConverter.convertToType((IRubyObject)value, context.getRuntime().getProc(), "to_proc", true)).getBlock();
+        else
+            throw new RuntimeException("Unhandled case in CallInstr:prepareBlock.  Got block arg: " + value);
+
+        // Blocks passed in through calls are always normal blocks, no matter where they came from
+        b.type = Block.Type.NORMAL;
+        return b;
     }
 }

@@ -1,36 +1,22 @@
 package org.jruby.compiler.ir.instructions;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Map;
 import java.util.HashMap;
-
-import org.jruby.RubyArray;
-import org.jruby.RubyMethod;
-import org.jruby.RubyProc;
-import org.jruby.util.TypeConverter;
-
+import java.util.Map;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.operands.MetaObject;
-import org.jruby.compiler.ir.operands.MethodHandle;
 import org.jruby.compiler.ir.operands.Operand;
-import org.jruby.compiler.ir.operands.Splat;
 import org.jruby.compiler.ir.operands.StringLiteral;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.IRClass;
 import org.jruby.compiler.ir.IRScope;
+import org.jruby.compiler.ir.instructions.calladapter.CallAdapter;
 import org.jruby.compiler.ir.operands.Nil;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.interpreter.InterpreterContext;
-import org.jruby.javasupport.util.RuntimeHelpers;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
-import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -40,11 +26,11 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class CallInstr extends Instr {
     protected Operand   receiver;
     protected Operand[] arguments;
-    protected MethAddr  methAddr;
     protected Operand   closure;
-    protected CallType  callType;
-    public CallSite callAdapter;
-
+    private CallAdapter callAdapter = null;
+    protected MethAddr methAddr;
+    private final CallType callType;
+    
     private boolean flagsComputed;
     private boolean canBeEval;
     private boolean targetRequiresCallersBinding;    // Does this call make use of the caller's binding?
@@ -57,7 +43,7 @@ public class CallInstr extends Instr {
     public static CallInstr create(CallType callType, Variable result, MethAddr methAddr, Operand receiver, Operand[] args, Operand closure) {
         return new CallInstr(callType, result, methAddr, receiver, args, closure);
     }
-    
+
     public CallInstr(CallType callType, Variable result, MethAddr methAddr, Operand receiver, Operand[] args, Operand closure) {
         this(Operation.CALL, callType, result, methAddr, receiver, args, closure);
     }
@@ -67,28 +53,17 @@ public class CallInstr extends Instr {
 
         this.receiver = receiver;
         this.arguments = args;
-        this.methAddr = methAddr;
         this.closure = closure;
+        this.methAddr = methAddr;
         this.callType = callType;
         flagsComputed = false;
         canBeEval = true;
         targetRequiresCallersBinding = true;
-        if (callType != null) {
-            switch (callType) {
-                case NORMAL    : callAdapter = MethodIndex.getCallSite(methAddr.toString()); break;
-                case FUNCTIONAL: callAdapter = MethodIndex.getFunctionalCallSite(methAddr.toString()); break;
-                case VARIABLE  : callAdapter = MethodIndex.getVariableCallSite(methAddr.toString()); break;
-                case SUPER     : callAdapter = MethodIndex.getSuperCallSite(); break;
-            }
-        }
+        callAdapter = CallAdapter.createFor(callType, methAddr, arguments, closure);
     }
 
     public Operand[] getOperands() {
-        return buildAllArgs(methAddr, receiver, arguments, closure);
-    }
-
-    public void setMethodAddr(MethAddr mh) {
-        this.methAddr = mh;
+        return buildAllArgs(getMethodAddr(), receiver, arguments, closure);
     }
 
     public MethAddr getMethodAddr() {
@@ -239,55 +214,25 @@ public class CallInstr extends Instr {
     public String toString() {
         return ""
                 + (getResult() == null ? "" : getResult() + " = ")
-                + getOperation() + "(" + methAddr + ", " + receiver + ", " +
+                + getOperation() + "(" + getMethodAddr() + ", " + receiver + ", " +
                 java.util.Arrays.toString(getCallArgs())
                 + (closure == null ? "" : ", &" + closure) + ")";
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new CallInstr(callType, ii.getRenamedVariable(getResult()), (MethAddr) methAddr.cloneForInlining(ii), receiver.cloneForInlining(ii), cloneCallArgs(ii), closure == null ? null : closure.cloneForInlining(ii));
+        return new CallInstr(getCallType(), ii.getRenamedVariable(getResult()), (MethAddr) getMethodAddr().cloneForInlining(ii), receiver.cloneForInlining(ii), cloneCallArgs(ii), closure == null ? null : closure.cloneForInlining(ii));
    }
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         IRubyObject object = (IRubyObject) getReceiver().retrieve(interp, context, self);
-        IRubyObject[] args = prepareArguments(interp, context, self, getCallArgs());
 
+        return callAdapter.call(interp, context, getResult(), self, object);
+
+        /*
         Object ma = methAddr.retrieve(interp, context, self);
         if (ma instanceof MethodHandle) return interpretMethodHandle(interp, context, self, (MethodHandle) ma, args);
-        String name = ma.toString(); // SSS FIXME: If this is not a ruby string or a symbol, then this is an error in the source code!
-
-        Block  block = prepareBlock(interp, context, self);
-
-        Object resultValue;
-        try {
-             if (callType == null) {
-                 resultValue = RuntimeHelpers.invoke(context, object, name, args, (self == object) ? CallType.FUNCTIONAL : CallType.NORMAL, block);
-             }
-             else {
-                 // resultValue = RuntimeHelpers.invoke(context, object, name, args, callType, block);
-                 //
-                 // SSS FIXME:
-                 // Some downstream calls dont like if I call the  args[] boxed version with fewer than
-                 // 4 arguments!  I think it is bad practice and a bug for those calls to bomb when we
-                 // invoke the boxed rather than the unboxed version.  But, since some of this is not
-                 // in JRuby core, we'll bite the bullet for now -- this whole CallInstr setup needs
-                 // cleaning up to use specialized versions.
-                 switch (args.length) {
-                 case 0: resultValue = callAdapter.call(context, self, object, block); break;
-                 case 1: resultValue = callAdapter.call(context, self, object, args[0], block); break;
-                 case 2: resultValue = callAdapter.call(context, self, object, args[0], args[1], block); break;
-                 case 3: resultValue = callAdapter.call(context, self, object, args[0], args[1], args[2], block); break;
-                 default: resultValue = callAdapter.call(context, self, object, args, block);
-                 }
-             }
-        }
-        finally {
-            block.escape();
-        }
-
-        if (getResult() != null) getResult().store(interp, context, self, resultValue);
-        return null;
+         */
     }
 
     /** ENEBO: Dead code for now...
@@ -337,46 +282,6 @@ public class CallInstr extends Instr {
         return null;
     }
      */
-    
-    protected IRubyObject[] prepareArguments(InterpreterContext interp, ThreadContext context, IRubyObject self, Operand[] args) {
-        // SSS FIXME: This encoding of arguments as an array penalizes splats, but keeps other argument arrays fast
-        // since there is no array list --> array transformation
-        List<IRubyObject> argList = new ArrayList<IRubyObject>();
-        for (int i = 0; i < args.length; i++) {
-            IRubyObject rArg = (IRubyObject)args[i].retrieve(interp, context, self);
-            if (args[i] instanceof Splat) {
-                argList.addAll(Arrays.asList(((RubyArray)rArg).toJavaArray()));
-            } else {
-                argList.add(rArg);
-            }
-        }
-
-        return argList.toArray(new IRubyObject[argList.size()]);
-    }
-
-    protected Block prepareBlock(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        if (closure == null) return Block.NULL_BLOCK;
-        
-        Object value = closure.retrieve(interp, context, self);
-        
-        Block b = null;
-        if (value instanceof Block)
-            b = (Block)value;
-        else if (value instanceof RubyProc)
-            b = ((RubyProc) value).getBlock();
-        else if (value instanceof RubyMethod)
-            b = ((RubyProc)((RubyMethod)value).to_proc(context, null)).getBlock();
-        else if ((value instanceof IRubyObject) && ((IRubyObject)value).isNil())
-            b = Block.NULL_BLOCK;
-        else if (value instanceof IRubyObject)
-            b = ((RubyProc)TypeConverter.convertToType((IRubyObject)value, context.getRuntime().getProc(), "to_proc", true)).getBlock();
-        else
-            throw new RuntimeException("Unhandled case in CallInstr:prepareBlock.  Got block arg: " + value);
-
-        // Blocks passed in through calls are always normal blocks, no matter where they came from
-        b.type = Block.Type.NORMAL;
-        return b;
-    }
 
 // --------------- Private methods ---------------
 
@@ -400,6 +305,7 @@ public class CallInstr extends Instr {
         return allArgs;
     }
 
+    /*
     private Label interpretMethodHandle(InterpreterContext interp, ThreadContext context, 
             IRubyObject self, MethodHandle mh, IRubyObject[] args) {
         assert mh.getMethodNameOperand() == getReceiver();
@@ -418,5 +324,5 @@ public class CallInstr extends Instr {
         
         getResult().store(interp, context, self, resultValue);
         return null;        
-    }
+    }*/
 }

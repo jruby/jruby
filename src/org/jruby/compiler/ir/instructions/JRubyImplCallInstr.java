@@ -111,7 +111,7 @@ public class JRubyImplCallInstr extends CallInstr {
         int       offset  = (receiver != null) ? 2 : 1;
         Operand[] allArgs = new Operand[arguments.length + offset];
 
-        allArgs[0] = methAddr;
+        allArgs[0] = getMethodAddr();
         if (receiver != null) allArgs[1] = receiver;
         for (int i = 0; i < arguments.length; i++) {
             assert arguments[i] != null : "ARG " + i + " is null";
@@ -124,6 +124,7 @@ public class JRubyImplCallInstr extends CallInstr {
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap) {
         if (receiver != null) receiver = receiver.getSimplifiedOperand(valueMap);
+        // FIXME: Uh oh...I should not have put this in callAdapter
         methAddr = (MethAddr)methAddr.getSimplifiedOperand(valueMap);
         for (int i = 0; i < arguments.length; i++) {
             arguments[i] = arguments[i].getSimplifiedOperand(valueMap);
