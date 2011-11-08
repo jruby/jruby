@@ -30,5 +30,5 @@
 package org.jruby.runtime;
 
 public enum CallType {
-    NORMAL, FUNCTIONAL, SUPER, VARIABLE;
+    NORMAL, FUNCTIONAL, SUPER, VARIABLE, UNKNOWN;
 }
