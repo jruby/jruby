@@ -298,8 +298,16 @@ public class Main {
         if (memoryMax != null) {
             message = " of " + memoryMax;
         }
-        config.getError().println("Error: Your application used more memory than the safety cap" + message + ".");
-        config.getError().println("Specify -J-Xmx####m to increase it (#### = cap size in MB).");
+        
+        String oomeMessage = oome.getMessage();
+        if (oomeMessage.contains("heap space")) {
+            config.getError().println("Error: Your application used more memory than the safety cap" + message + ".");
+            config.getError().println("Specify -J-Xmx####m to increase it (#### = cap size in MB).");
+        } else if (oomeMessage.contains("Perm gen")) {
+            config.getError().println("Error: Your application exhausted PermGen area of the heap");
+            config.getError().println("Specify -J-XX:MaxPermSize=###m to increase it (### = PermGen size in MB).");
+        }
+        
         if (config.isVerbose()) {
             config.getError().println("Exception trace follows:");
             oome.printStackTrace();
