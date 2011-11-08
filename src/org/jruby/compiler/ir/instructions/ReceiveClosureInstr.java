@@ -14,14 +14,22 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /* Receive the closure argument (either implicit or explicit in Ruby source code) */
-public class ReceiveClosureInstr extends Instr {
-    public ReceiveClosureInstr(Variable dest) {
-        super(Operation.RECV_CLOSURE, dest);
+public class ReceiveClosureInstr extends Instr implements ResultInstr {
+    private Variable result;
+    
+    public ReceiveClosureInstr(Variable result) {
+        super(Operation.RECV_CLOSURE);
+        
+        this.result = result;
     }
 
     public Operand[] getOperands() {
         return EMPTY_OPERANDS;
     }
+    
+    public Variable getResult() {
+        return result;
+    }    
 
     public Instr cloneForInlining(InlinerInfo ii) {
 		  // SSS FIXME: This is not strictly correct -- we have to wrap the block into an

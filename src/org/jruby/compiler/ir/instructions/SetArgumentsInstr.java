@@ -17,20 +17,27 @@ import org.jruby.runtime.ThreadContext;
 // This instruction sets a new newArgs array -- this is used to intepret the block-arg assignment
 // tree of the form  |a,(b,(c,(d,..))),..| by pushing a newArgs array as we go up/down one level
 // of this assignment tree.
-public class SetArgumentsInstr extends Instr {
+public class SetArgumentsInstr extends Instr implements ResultInstr {
     private final boolean coerceToArray;
     private Operand newArgs;
+    private final Variable destination;
 
-    public SetArgumentsInstr(Variable dest, Variable newArgs, boolean coerceToArray) {
-        super(Operation.SET_ARGS, dest);
+    public SetArgumentsInstr(Variable destination, Variable newArgs, boolean coerceToArray) {
+        super(Operation.SET_ARGS);
         
         this.coerceToArray = coerceToArray;
         this.newArgs = newArgs;
+        this.destination = destination;
     }
 
     public Operand[] getOperands() {
         return new Operand[]{newArgs};
     }
+    
+    public Variable getResult() {
+        return destination;
+    }
+
 
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap) {
@@ -49,13 +56,12 @@ public class SetArgumentsInstr extends Instr {
     @Interp
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        Variable dest = getResult();
         Object o = newArgs.retrieve(interp, context, self);
         if (coerceToArray) {
             // run to_ary and convert to java array
             if (!(o instanceof RubyArray)) o = RuntimeHelpers.aryToAry((IRubyObject)o);
             o = ((RubyArray)o).toJavaArray();
-        } else if (dest != null) {
+        } else if (destination != null) {
             if (!(o instanceof RubyArray)) o = ArgsUtil.convertToRubyArray(context.getRuntime(), (IRubyObject)o, false);
             o = ((RubyArray)o).toJavaArray();
 		  }
@@ -64,7 +70,7 @@ public class SetArgumentsInstr extends Instr {
         IRubyObject[] origArgs = interp.setNewParameters((IRubyObject[])o);
 
         // Store it into the destination variable if we have a non-null variable
-        if (dest != null) dest.store(interp, context, self, origArgs);
+        if (destination != null) destination.store(interp, context, self, origArgs);
 
         return null;
     }

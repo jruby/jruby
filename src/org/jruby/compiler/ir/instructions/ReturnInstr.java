@@ -15,7 +15,7 @@ public class ReturnInstr extends Instr {
     private Operand returnValue;
 
     public ReturnInstr(Operand returnValue, IRMethod m) {
-        super(Operation.RETURN, null);
+        super(Operation.RETURN);
         this.methodToReturnFrom = m;
         this.returnValue = returnValue;
 
@@ -29,7 +29,7 @@ public class ReturnInstr extends Instr {
     public Operand[] getOperands() {
         return new Operand[]{returnValue};
     }
-
+    
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap) {
         returnValue = returnValue.getSimplifiedOperand(valueMap);

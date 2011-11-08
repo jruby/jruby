@@ -14,7 +14,7 @@ public class ClosureReturnInstr extends Instr {
     private Operand returnValue;
 
     public ClosureReturnInstr(Operand rv) {
-        super(Operation.CLOSURE_RETURN, null);
+        super(Operation.CLOSURE_RETURN);
         this.returnValue = rv;
     }
 

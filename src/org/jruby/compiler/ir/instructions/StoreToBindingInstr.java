@@ -20,7 +20,7 @@ public class StoreToBindingInstr extends Instr {
     private int bindingSlot;
 
     public StoreToBindingInstr(IRExecutionScope scope, String slotName, Operand value) {
-        super(Operation.BINDING_STORE, null);
+        super(Operation.BINDING_STORE);
 
         this.slotName = slotName;
         this.targetMethod = (IRMethod)scope.getClosestMethodAncestor();

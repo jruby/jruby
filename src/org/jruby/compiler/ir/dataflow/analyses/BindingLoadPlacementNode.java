@@ -19,6 +19,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
+import org.jruby.compiler.ir.instructions.ResultInstr;
 
 public class BindingLoadPlacementNode extends FlowGraphNode {
     public BindingLoadPlacementNode(DataFlowProblem prob, BasicBlock n) {
@@ -61,7 +62,7 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
             if (i.getOperation() == Operation.BINDING_STORE) continue;
 
             // Right away, clear the variable defined by this instruction -- it doesn't have to be loaded!
-            Variable r = i.getResult();
+            Variable r = i instanceof ResultInstr ? ((ResultInstr) i).getResult() : null;
 
             if (r != null) reqdLoads.remove(r);
 
@@ -134,7 +135,7 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
             if (i.getOperation() == Operation.BINDING_STORE) continue;
 
             // Right away, clear the variable defined by this instruction -- it doesn't have to be loaded!
-            Variable r = i.getResult();
+            Variable r = i instanceof ResultInstr ? ((ResultInstr) i).getResult() : null;
 
             if (r != null) reqdLoads.remove(r);
 

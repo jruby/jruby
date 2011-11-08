@@ -11,19 +11,27 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 // Assign the 'index' argument to 'dest'.
-public class ReceiveOptionalArgumentInstr extends Instr {
+public class ReceiveOptionalArgumentInstr extends Instr implements ResultInstr {
     int argIndex;
-    public ReceiveOptionalArgumentInstr(Variable dest, int index) {
-        super(Operation.RECV_OPT_ARG, dest);
+    private final Variable result;
+    
+    public ReceiveOptionalArgumentInstr(Variable result, int index) {
+        super(Operation.RECV_OPT_ARG);
+        
         this.argIndex = index;
+        this.result = result;
     }
 
     public Operand[] getOperands() {
         return EMPTY_OPERANDS;
     }
-
+    
+    public Variable getResult() {
+        return result;
+    }
+    
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new ReceiveOptionalArgumentInstr(ii.getRenamedVariable(getResult()), argIndex);
+        return new ReceiveOptionalArgumentInstr(ii.getRenamedVariable(result), argIndex);
     }
 
     @Override
@@ -35,7 +43,7 @@ public class ReceiveOptionalArgumentInstr extends Instr {
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         Object v = interp.getParameterCount() > argIndex ? 
                 interp.getParameter(argIndex) : UndefinedValue.UNDEFINED;
-        getResult().store(interp, context, self, v);
+        result.store(interp, context, self, v);
         return null;
     }
 }

@@ -23,7 +23,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 /*
  * args field: [self, receiver, *args]
  */
-public class CallInstr extends Instr {
+public class CallInstr extends Instr implements ResultInstr {
+    protected Variable result;
     protected Operand   receiver;
     protected Operand[] arguments;
     protected Operand   closure;
@@ -44,18 +45,20 @@ public class CallInstr extends Instr {
         return new CallInstr(callType, result, methAddr, receiver, args, closure);
     }
 
+
     public CallInstr(CallType callType, Variable result, MethAddr methAddr, Operand receiver, Operand[] args, Operand closure) {
         this(Operation.CALL, callType, result, methAddr, receiver, args, closure);
     }
 
     protected CallInstr(Operation op, CallType callType, Variable result, MethAddr methAddr, Operand receiver, Operand[] args, Operand closure) {
-        super(op, result);
+        super(op);
 
         this.receiver = receiver;
         this.arguments = args;
         this.closure = closure;
         this.methAddr = methAddr;
         this.callType = callType;
+        this.result = result;
         flagsComputed = false;
         canBeEval = true;
         targetRequiresCallersBinding = true;
@@ -325,4 +328,8 @@ public class CallInstr extends Instr {
         getResult().store(interp, context, self, resultValue);
         return null;        
     }*/
+
+    public Variable getResult() {
+        return result;
+    }
 }

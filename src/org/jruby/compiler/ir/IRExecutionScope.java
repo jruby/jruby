@@ -16,6 +16,7 @@ import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.CopyInstr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
+import org.jruby.compiler.ir.instructions.ResultInstr;
 import org.jruby.compiler.ir.instructions.SuperInstr;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.LocalVariable;
@@ -291,9 +292,9 @@ public abstract class IRExecutionScope extends IRScopeImpl {
         
         for (int i = instructions.size() - 1; i >= 0; i--) {
             Instr instr = instructions.get(i);
-            Variable var = instr.getResult();
 
-            if (var != null) {
+            if (instr instanceof ResultInstr) {
+                Variable var = ((ResultInstr) instr).getResult();
                 variables.add(var);
                 starts.put(var, i);
             }
@@ -446,8 +447,11 @@ public abstract class IRExecutionScope extends IRScopeImpl {
                 for (Variable v : i.getUsedVariables()) {
                     if (v instanceof LocalVariable) usedLocalVars.add(v);
                 }
-                Variable v = i.getResult();
-                if ((v != null) && (v instanceof LocalVariable)) definedLocalVars.add(v);
+                
+                if (i instanceof ResultInstr) {
+                    Variable v = ((ResultInstr) i).getResult();
+                    if ((v != null) && (v instanceof LocalVariable)) definedLocalVars.add(v);
+                }
             }
         }
 

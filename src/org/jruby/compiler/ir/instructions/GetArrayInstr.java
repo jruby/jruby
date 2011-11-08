@@ -20,20 +20,26 @@ import org.jruby.runtime.builtin.IRubyObject;
 // FIXME: Rename GetArrayInstr to ArrayArefInstr which would be used
 // in later passes as well when compiler passes replace ruby-array []
 // calls with inlined lookups
-public class GetArrayInstr extends Instr {
+public class GetArrayInstr extends Instr implements ResultInstr {
     private Operand array;
     private final int index;
     private final boolean all;  // If true, returns the rest of the array starting at the index
+    private final Variable result;
 
-    public GetArrayInstr(Variable dest, Operand array, int index, boolean getRestOfArray) {
-        super(Operation.GET_ARRAY, dest);
+    public GetArrayInstr(Variable result, Operand array, int index, boolean getRestOfArray) {
+        super(Operation.GET_ARRAY);
         this.array = array;
         this.index = index;
+        this.result = result;
         all = getRestOfArray;
     }
 
     public Operand[] getOperands() {
         return new Operand[]{array};
+    }
+    
+    public Variable getResult() {
+        return result;
     }
 
     @Override
@@ -43,7 +49,7 @@ public class GetArrayInstr extends Instr {
 
     @Override
     public String toString() {
-        return "" + getResult() + " = " + array + "[" + index + (all ? ":END" : "") + "] (GET_ARRAY)";
+        return "" + result + " = " + array + "[" + index + (all ? ":END" : "") + "] (GET_ARRAY)";
     }
 
     @Override
@@ -55,7 +61,7 @@ public class GetArrayInstr extends Instr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new GetArrayInstr(ii.getRenamedVariable(getResult()), array.cloneForInlining(ii), index, all);
+        return new GetArrayInstr(ii.getRenamedVariable(result), array.cloneForInlining(ii), index, all);
     }
 
     @Override
@@ -76,7 +82,7 @@ public class GetArrayInstr extends Instr {
                 val = RubyArray.newArrayNoCopy(context.getRuntime(), rubyArray.toJavaArray(), index);
             }
         }
-        getResult().store(interp, context, self, val);
+        result.store(interp, context, self, val);
         return null;
     }
 }

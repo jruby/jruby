@@ -18,20 +18,27 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 
-public class DefineClassInstr extends Instr {
+public class DefineClassInstr extends Instr implements ResultInstr {
     private IRClass newIRClass;
     private Operand container;
     private Operand superClass;
+    private Variable result;
     
-    public DefineClassInstr(Variable dest, IRClass newIRClass, Operand container, Operand superClass) {
-        super(Operation.DEF_CLASS, dest);
-		  this.container = container;
-		  this.superClass = superClass == null ? Nil.NIL : superClass;
+    public DefineClassInstr(Variable result, IRClass newIRClass, Operand container, Operand superClass) {
+        super(Operation.DEF_CLASS);
+        
+        this.container = container;
+        this.superClass = superClass == null ? Nil.NIL : superClass;
         this.newIRClass = newIRClass;
+        this.result = result;
     }
 
     public Operand[] getOperands() {
         return new Operand[]{container, superClass};
+    }
+    
+    public Variable getResult() {
+        return result;
     }
 
     @Override
@@ -47,7 +54,7 @@ public class DefineClassInstr extends Instr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new DefineClassInstr(ii.getRenamedVariable(getResult()), this.newIRClass, container.cloneForInlining(ii), superClass.cloneForInlining(ii));
+        return new DefineClassInstr(ii.getRenamedVariable(result), this.newIRClass, container.cloneForInlining(ii), superClass.cloneForInlining(ii));
     }
     
     private RubyModule newClass(InterpreterContext interp, ThreadContext context, IRubyObject self, RubyModule classContainer) {
@@ -82,7 +89,7 @@ public class DefineClassInstr extends Instr {
         Object v = method.call(context, newRubyClass, newRubyClass, "", new IRubyObject[]{}, interp.getBlock());
 
         // Result from interpreting the body
-        getResult().store(interp, context, self, v);
+        result.store(interp, context, self, v);
         return null;
     }
 }

@@ -35,7 +35,7 @@ public class BreakInstr extends Instr {
     protected Operand returnValue;
 
     public BreakInstr(Operand rv, IRExecutionScope s) {
-        super(Operation.BREAK, null);
+        super(Operation.BREAK);
         this.scopeToReturnTo = s;
         this.returnValue = rv;
     }

@@ -22,6 +22,7 @@ import org.jruby.compiler.ir.representations.BasicBlock;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.ListIterator;
+import org.jruby.compiler.ir.instructions.ResultInstr;
 
 public class BindingStorePlacementNode extends FlowGraphNode {
     public BindingStorePlacementNode(DataFlowProblem prob, BasicBlock n) {
@@ -106,7 +107,7 @@ public class BindingStorePlacementNode extends FlowGraphNode {
                 }
             }
 
-            Variable v = i.getResult();
+            Variable v = i instanceof ResultInstr ? ((ResultInstr) i).getResult() : null;
 
             // %self is local to every scope and never crosses scope boundaries and need not be spilled/refilled
             if ((v != null) && (v instanceof LocalVariable) && !((LocalVariable)v).isSelf()) {
@@ -275,7 +276,7 @@ public class BindingStorePlacementNode extends FlowGraphNode {
                 dirtyVars.clear();
             }
 
-            Variable v = i.getResult();
+            Variable v = i instanceof ResultInstr ? ((ResultInstr) i).getResult() : null;
             // %self is local to every scope and never crosses scope boundaries and need not be spilled/refilled
             if ((v != null) && (v instanceof LocalVariable) && !((LocalVariable)v).isSelf()) {
                 dirtyVars.add((LocalVariable)v);

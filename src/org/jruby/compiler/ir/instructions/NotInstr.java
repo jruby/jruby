@@ -12,18 +12,25 @@ import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class NotInstr extends Instr {
+public class NotInstr extends Instr implements ResultInstr {
     private Operand arg;
+    private final Variable result;
 
-    public NotInstr(Variable dst, Operand arg) {
-        super(Operation.NOT, dst);
+    public NotInstr(Variable result, Operand arg) {
+        super(Operation.NOT);
+        
         this.arg = arg;
+        this.result = result;
     }
 
     public Operand[] getOperands() {
         return new Operand[]{arg};
     }
 
+    public Variable getResult() {
+        return result;
+    }
+    
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap) {
         arg = arg.getSimplifiedOperand(valueMap);
@@ -36,7 +43,7 @@ public class NotInstr extends Instr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new NotInstr(ii.getRenamedVariable(getResult()), arg.cloneForInlining(ii));
+        return new NotInstr(ii.getRenamedVariable(result), arg.cloneForInlining(ii));
     }
 
     @Override
@@ -49,7 +56,7 @@ public class NotInstr extends Instr {
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         boolean not = !((IRubyObject) arg.retrieve(interp, context, self)).isTrue();
 
-        getResult().store(interp, context, self, context.getRuntime().newBoolean(not));
+        result.store(interp, context, self, context.getRuntime().newBoolean(not));
         return null;
     }
 }

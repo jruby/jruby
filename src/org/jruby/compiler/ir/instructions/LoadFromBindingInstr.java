@@ -27,17 +27,19 @@ import org.jruby.runtime.builtin.IRubyObject;
  * SSS FIXME: except perhaps when we use class_eval, module_eval, or instance_eval??
  */
 
-public class LoadFromBindingInstr extends Instr {
+public class LoadFromBindingInstr extends Instr implements ResultInstr {
     private IRMethod sourceMethod;
     private int bindingSlot;
     private String slotName;
+    private Variable result;
 
-    public LoadFromBindingInstr(Variable v, IRExecutionScope scope, String slotName) {
-        super(Operation.BINDING_LOAD, v);
+    public LoadFromBindingInstr(Variable result, IRExecutionScope scope, String slotName) {
+        super(Operation.BINDING_LOAD);
 
         this.slotName = slotName;
         this.sourceMethod = (IRMethod)scope.getClosestMethodAncestor();
         bindingSlot = sourceMethod.assignBindingSlot(slotName);
+        this.result = result;
     }
 
     public String getSlotName() {
@@ -47,14 +49,17 @@ public class LoadFromBindingInstr extends Instr {
     public Operand[] getOperands() { 
         return new Operand[] { };
     }
-
+    
+    public Variable getResult() {
+        return result;
+    }
     @Override
     public String toString() {
-        return "" + getResult() + " = BINDING(" + sourceMethod + ")." + getSlotName();
+        return "" + result + " = BINDING(" + sourceMethod + ")." + getSlotName();
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new LoadFromBindingInstr(ii.getRenamedVariable(getResult()), sourceMethod, getSlotName());
+        return new LoadFromBindingInstr(ii.getRenamedVariable(result), sourceMethod, getSlotName());
     }
 
     // Any exception raised by the execution of this instruction is an interpreter/compiler bug
@@ -66,7 +71,7 @@ public class LoadFromBindingInstr extends Instr {
     @Interp
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        LocalVariable v = (LocalVariable)getResult();
+        LocalVariable v = (LocalVariable) result;
         
         if (bindingSlot == -1) bindingSlot = sourceMethod.getBindingSlot(getSlotName());
         

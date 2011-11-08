@@ -15,7 +15,7 @@ public class JumpIndirectInstr extends Instr {
     private Operand target;
 
     public JumpIndirectInstr(Variable target) {
-        super(Operation.JUMP_INDIRECT, null);
+        super(Operation.JUMP_INDIRECT);
         this.target = target;
     }
 

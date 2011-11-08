@@ -14,15 +14,17 @@ import org.jruby.runtime.builtin.IRubyObject;
 // This instruction encodes the receive of an argument into a closure
 //   Ex:  .. { |a| .. }
 // The closure receives 'a' via this instruction
-public class ReceiveClosureArgInstr extends Instr {
+public class ReceiveClosureArgInstr extends Instr implements ResultInstr {
     private final int argIndex;
     boolean restOfArgArray;
+    private Variable result;
 
-    public ReceiveClosureArgInstr(Variable dest, int argIndex, boolean restOfArgArray) {
-        super(Operation.RECV_CLOSURE_ARG, dest);
+    public ReceiveClosureArgInstr(Variable result, int argIndex, boolean restOfArgArray) {
+        super(Operation.RECV_CLOSURE_ARG);
         
         this.argIndex = argIndex;
         this.restOfArgArray = restOfArgArray;
+        this.result = result;
     }
     
     public boolean isRestOfArgArray() {
@@ -32,6 +34,10 @@ public class ReceiveClosureArgInstr extends Instr {
     public Operand[] getOperands() {
         return EMPTY_OPERANDS;
     }
+    
+    public Variable getResult() {
+        return result;
+    }    
 
     @Override
     public String toString() {

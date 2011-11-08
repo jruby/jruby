@@ -10,7 +10,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class ThreadPollInstr extends Instr {
     public ThreadPollInstr() {
-        super(Operation.THREAD_POLL, null);
+        super(Operation.THREAD_POLL);
     }
 
     public Operand[] getOperands() {

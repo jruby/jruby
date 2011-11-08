@@ -11,7 +11,7 @@ public abstract class BranchInstr extends Instr {
     private Operand arg2;
 
     public BranchInstr(Operation op, Operand v1, Operand v2, Label jumpTarget) {
-        super(op, null);
+        super(op);
         this.target = jumpTarget;
         this.arg1 = v1;
         this.arg2 = v2;

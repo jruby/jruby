@@ -15,16 +15,18 @@ import org.jruby.RubyArray;
 import org.jruby.RubyProc;
 import org.jruby.RubyNil;
 
-public class YieldInstr extends Instr {
+public class YieldInstr extends Instr implements ResultInstr {
     Operand block;
     Operand yieldArg;
     private final boolean unwrapArray;
+    private Variable result;
 
     public YieldInstr(Variable result, Variable block, Operand arg, boolean unwrapArray) {
-        super(Operation.YIELD, result);
+        super(Operation.YIELD);
         this.block = block;
         this.yieldArg = arg;
         this.unwrapArray = unwrapArray;
+        this.result = result;
     }
    
     public Instr cloneForInlining(InlinerInfo ii) {
@@ -61,11 +63,16 @@ public class YieldInstr extends Instr {
     public Operand[] getOperands() {
         return (yieldArg == null) ? new Operand[]{block} : new Operand[] {block, yieldArg};
     }
+    
+    public Variable getResult() {
+        return result;
+    }    
 
     public Operand[] getNonBlockOperands() {
         return (yieldArg == null) ? new Operand[]{} : new Operand[] {yieldArg};
     }
 
+    @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap) {
         if (yieldArg != null) yieldArg = yieldArg.getSimplifiedOperand(valueMap);
     }

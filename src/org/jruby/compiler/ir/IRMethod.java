@@ -70,8 +70,11 @@ public class IRMethod extends IRExecutionScope {
     public void addInstr(Instr i) {
         // Accumulate call arguments
         // SSS FIXME: Should we have a base class for receive instrs?
-        if (i instanceof ReceiveArgumentInstruction) callArgs.add(((ReceiveArgumentInstruction) i).isRestOfArgArray() ? new Splat(i.getResult()) : i.getResult());
-        else if (i instanceof ReceiveOptionalArgumentInstr) callArgs.add(i.getResult());
+        if (i instanceof ReceiveArgumentInstruction) {
+            ReceiveArgumentInstruction recv = (ReceiveArgumentInstruction) i;
+            callArgs.add(recv.isRestOfArgArray() ? new Splat(recv.getResult()) : recv.getResult());
+        }
+        else if (i instanceof ReceiveOptionalArgumentInstr) callArgs.add(((ReceiveOptionalArgumentInstr) i).getResult());
 
         super.addInstr(i);
     }

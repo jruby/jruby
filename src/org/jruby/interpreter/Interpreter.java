@@ -20,6 +20,7 @@ import org.jruby.compiler.ir.IRScript;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
 import org.jruby.compiler.ir.instructions.BreakInstr;
 import org.jruby.compiler.ir.instructions.Instr;
+import org.jruby.compiler.ir.instructions.ResultInstr;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
@@ -186,8 +187,9 @@ public class Interpreter {
                     } else if (bj.caughtByLambda || (bj.scopeToReturnTo == scope)) {
                         // We got where we need to get to (because a lambda stopped us, or because we popped to the
                         // lexical scope where we got called from).  Retrieve the result and store it.
-                        Operand r = lastInstr.getResult();
-                        if (r != null) r.store(interp, context, self, bj.breakValue);
+                        if (lastInstr instanceof ResultInstr) {
+                            ((ResultInstr) lastInstr).getResult().store(interp, context, self, bj.breakValue);
+                        }
                         ipc += 1;
                     } else {
                         // We need to continue to break upwards.

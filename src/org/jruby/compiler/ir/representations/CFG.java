@@ -333,7 +333,7 @@ public class CFG {
             }
 
             if (i instanceof SetReturnAddressInstr) {
-                Variable v = i.getResult();
+                Variable v = ((SetReturnAddressInstr) i).getResult();
                 Label tgtLbl = ((SetReturnAddressInstr) i).getReturnAddr();
                 BasicBlock tgtBB = retAddrTargetMap.get(v);
                 // If we have the target bb, add the edge

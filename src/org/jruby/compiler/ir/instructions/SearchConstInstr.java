@@ -23,22 +23,29 @@ import org.jruby.runtime.builtin.IRubyObject;
 // on the meta-object.  In the case of method & closures, the runtime method will delegate
 // this call to the parent scope.
 
-public class SearchConstInstr extends Instr {
+public class SearchConstInstr extends Instr implements ResultInstr {
     IRModule definingModule;
     String constName;
+    private final Variable result;
 
-    public SearchConstInstr(Variable dest, IRModule definingModule, String constName) {
-        super(Operation.SEARCH_CONST, dest);
+    public SearchConstInstr(Variable result, IRModule definingModule, String constName) {
+        super(Operation.SEARCH_CONST);
+        
         this.definingModule = definingModule;
         this.constName = constName;
+        this.result = result;
     }
 
     public Operand[] getOperands() { 
         return new Operand[] {};
     }
+    
+    public Variable getResult() {
+        return result;
+    }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new SearchConstInstr(ii.getRenamedVariable(getResult()), definingModule, constName);
+        return new SearchConstInstr(ii.getRenamedVariable(result), definingModule, constName);
     }
 
     @Override
@@ -61,7 +68,7 @@ public class SearchConstInstr extends Instr {
 
         if (constant == null) constant = UndefinedValue.UNDEFINED;
         
-        getResult().store(interp, context, self, constant);
+        result.store(interp, context, self, constant);
 
         return null;
     }

@@ -30,9 +30,6 @@ public abstract class Instr {
     public static final Operand[] EMPTY_OPERANDS = new Operand[] {};
     
     private final Operation operation;
-    private final Variable result;
-    // Used during optimization passes to propagate type and other information
-    private Attribute[] attributes;
     // Is this instruction live or dead?  During optimization passes, if this instruction
     // causes no side-effects and the result of the instruction is not needed by anyone else,
     // we can remove this instruction altogether without affecting program correctness.
@@ -40,22 +37,11 @@ public abstract class Instr {
 
     public Instr(Operation operation) {
         this.operation = operation;
-        this.result = null;
-    }
-
-    public Instr(Operation operation, Variable result) {
-        this.operation = operation;
-        this.result = result;
     }
 
     @Override
     public String toString() {
-        return "" + (isDead() ? "[DEAD]" : "") + (result == null ? "" : result + " = ") + operation;
-    }
-
-    @Interp
-    public Variable getResult() {
-        return result;
+        return "" + (isDead() ? "[DEAD]" : "") + operation;
     }
 
     @Interp

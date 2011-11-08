@@ -13,14 +13,20 @@ import org.jruby.runtime.builtin.IRubyObject;
 // This is of the form:
 //    v = LBL_..
 // Used in rescue blocks to tell the ensure block where to return to after it is done doing its thing.
-public class SetReturnAddressInstr extends Instr {
+public class SetReturnAddressInstr extends Instr implements ResultInstr {
     private Label returnAddr;
+    private Variable result;
 
-    public SetReturnAddressInstr(Variable d, Label l) {
-        super(Operation.SET_RETADDR, d);
+    public SetReturnAddressInstr(Variable result, Label l) {
+        super(Operation.SET_RETADDR);
         this.returnAddr = l;
+        this.result = result;
     }
 
+    public Variable getResult() {
+        return result;
+    }
+    
     public Label getReturnAddr() {
         return (Label) returnAddr;
     }

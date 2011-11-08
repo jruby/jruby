@@ -24,7 +24,7 @@ public class DefineClassMethodInstr extends Instr {
     private final IRMethod method;
 
     public DefineClassMethodInstr(Operand container, IRMethod method) {
-        super(Operation.DEF_CLASS_METH, null);
+        super(Operation.DEF_CLASS_METH);
         this.container = container;
         this.method = method;
     }

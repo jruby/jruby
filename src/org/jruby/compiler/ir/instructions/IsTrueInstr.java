@@ -17,18 +17,24 @@ import org.jruby.runtime.builtin.IRubyObject;
 //
 // Only nil and false compute to false
 //
-public class IsTrueInstr extends Instr {
+public class IsTrueInstr extends Instr implements ResultInstr {
     private Operand value;
+    private final Variable result;
 
     public IsTrueInstr(Variable result, Operand value) {
-        super(Operation.IS_TRUE, result);
-        this.value = value; 
+        super(Operation.IS_TRUE);
+        this.value = value;
+        this.result = result;
     }
 
     public Operand[] getOperands() {
         return new Operand[]{value};
     }
-
+    
+    public Variable getResult() {
+        return result;
+    }
+    
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap) {
         value = value.getSimplifiedOperand(valueMap);
@@ -50,13 +56,13 @@ public class IsTrueInstr extends Instr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new IsTrueInstr(ii.getRenamedVariable(getResult()), value.cloneForInlining(ii));
+        return new IsTrueInstr(ii.getRenamedVariable(result), value.cloneForInlining(ii));
     }
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         // ENEBO: This seems like a lot of extra work...
-        getResult().store(interp, context, self, 
+        result.store(interp, context, self, 
                 context.getRuntime().newBoolean(((IRubyObject) value.retrieve(interp, context, self)).isTrue()));
         return null;
     }

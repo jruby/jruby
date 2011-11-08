@@ -18,19 +18,25 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class DefineMetaClassInstr extends Instr {
+public class DefineMetaClassInstr extends Instr implements ResultInstr {
     private IRMetaClass dummyMetaClass;
     private Operand object;
+    private final Variable result;
     
-    public DefineMetaClassInstr(Variable dest, Operand object, IRMetaClass dummyMetaClass) {
-        super(Operation.DEF_META_CLASS, dest);
+    public DefineMetaClassInstr(Variable result, Operand object, IRMetaClass dummyMetaClass) {
+        super(Operation.DEF_META_CLASS);
         
         this.dummyMetaClass = dummyMetaClass;
-		  this.object = object;
+        this.object = object;
+        this.result = result;
     }
 
     public Operand[] getOperands() {
         return new Operand[]{object};
+    }
+    
+    public Variable getResult() {
+        return result;
     }
 
     @Override
@@ -45,7 +51,7 @@ public class DefineMetaClassInstr extends Instr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new DefineMetaClassInstr(ii.getRenamedVariable(getResult()), object.cloneForInlining(ii), dummyMetaClass);
+        return new DefineMetaClassInstr(ii.getRenamedVariable(result), object.cloneForInlining(ii), dummyMetaClass);
     }
 
     @Override
@@ -65,7 +71,7 @@ public class DefineMetaClassInstr extends Instr {
             DynamicMethod method = new InterpretedIRMethod(dummyMetaClass.getRootMethod(), Visibility.PUBLIC, singletonClass);
             // SSS FIXME: Rather than pass the block implicitly, should we add %block as another operand to DefineMetaClass instr?
             Object v = method.call(context, singletonClass, singletonClass, "", new IRubyObject[]{}, interp.getBlock());
-            getResult().store(interp, context, self, v);
+            result.store(interp, context, self, v);
             return null;
         }
     }

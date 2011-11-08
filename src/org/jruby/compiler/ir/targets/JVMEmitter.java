@@ -1,9 +1,7 @@
 package org.jruby.compiler.ir.targets;
 
 import java.util.EnumMap;
-import java.util.EnumSet;
 import java.util.HashMap;
-import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.BEQInstr;
 import org.jruby.compiler.ir.instructions.CallInstr;

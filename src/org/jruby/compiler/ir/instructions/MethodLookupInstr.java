@@ -11,12 +11,14 @@ import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class MethodLookupInstr extends Instr {
+public class MethodLookupInstr extends Instr implements ResultInstr {
     private Operand methodHandle;
+    private final Variable result;
 
-    public MethodLookupInstr(Variable dest, MethodHandle mh) {
-        super(Operation.METHOD_LOOKUP, dest);
+    public MethodLookupInstr(Variable result, MethodHandle mh) {
+        super(Operation.METHOD_LOOKUP);
         this.methodHandle = mh;
+        this.result = result;
     }
 
     public MethodLookupInstr(Variable dest, Operand methodName, Operand receiver) {
@@ -30,7 +32,11 @@ public class MethodLookupInstr extends Instr {
     public Operand[] getOperands() {
         return new Operand[]{methodHandle};
     }
-
+    
+    public Variable getResult() {
+        return result;
+    }
+    
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap) {
         methodHandle = methodHandle.getSimplifiedOperand(valueMap);
@@ -42,12 +48,12 @@ public class MethodLookupInstr extends Instr {
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new MethodLookupInstr(ii.getRenamedVariable(getResult()), (MethodHandle)methodHandle.cloneForInlining(ii));
+        return new MethodLookupInstr(ii.getRenamedVariable(result), (MethodHandle)methodHandle.cloneForInlining(ii));
     }
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        getResult().store(interp, context, self, methodHandle.retrieve(interp, context, self));
+        result.store(interp, context, self, methodHandle.retrieve(interp, context, self));
         return null;
     }
 }

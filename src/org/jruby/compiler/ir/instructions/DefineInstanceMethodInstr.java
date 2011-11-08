@@ -29,7 +29,7 @@ public class DefineInstanceMethodInstr extends Instr {
     private final IRMethod method;
 
     public DefineInstanceMethodInstr(Operand container, IRMethod method) {
-        super(Operation.DEF_INST_METH, null);
+        super(Operation.DEF_INST_METH);
         this.container = container;
         this.method = method;
     }

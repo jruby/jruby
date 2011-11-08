@@ -14,17 +14,23 @@ import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class CopyInstr extends Instr {
+public class CopyInstr extends Instr implements ResultInstr {
     private Operand arg;
+    private Variable result;
 
-    public CopyInstr(Variable d, Operand s) {
-        super(Operation.COPY, d);
+    public CopyInstr(Variable result, Operand s) {
+        super(Operation.COPY);
         if (s == null) new Exception().printStackTrace();
         this.arg = s;
+        this.result = result;
     }
 
     public Operand[] getOperands() {
         return new Operand[]{arg};
+    }
+    
+    public Variable getResult() {
+        return result;
     }
 
     @Override
@@ -41,18 +47,18 @@ public class CopyInstr extends Instr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new CopyInstr(ii.getRenamedVariable(getResult()), arg.cloneForInlining(ii));
+        return new CopyInstr(ii.getRenamedVariable(result), arg.cloneForInlining(ii));
     }
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        getResult().store(interp, context, self, arg.retrieve(interp, context, self));
+        result.store(interp, context, self, arg.retrieve(interp, context, self));
         return null;
     }
 
     @Override
     public String toString() { 
-        return (arg instanceof Variable) ? (super.toString() + "(" + arg + ")") : (getResult() + " = " + arg);
+        return (arg instanceof Variable) ? (super.toString() + "(" + arg + ")") : (result + " = " + arg);
     }
 
 }

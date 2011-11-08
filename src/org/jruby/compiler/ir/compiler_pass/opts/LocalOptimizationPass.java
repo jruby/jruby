@@ -17,6 +17,7 @@ import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.compiler_pass.CompilerPass;
+import org.jruby.compiler.ir.instructions.ResultInstr;
 
 public class LocalOptimizationPass implements CompilerPass {
     // Should we run this pass on the current scope before running it on nested scopes?
@@ -90,7 +91,8 @@ public class LocalOptimizationPass implements CompilerPass {
             // Simplify instruction and record mapping between target variable and simplified value
             // System.out.println("BEFORE: " + i);
             Operand  val = i.simplifyAndGetResult(valueMap);
-            Variable res = i.getResult();
+            Variable res = i instanceof ResultInstr ? ((ResultInstr) i).getResult() : null;
+
             // System.out.println("For " + i + "; dst = " + res + "; val = " + val);
             // System.out.println("AFTER: " + i);
 

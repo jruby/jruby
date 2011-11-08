@@ -15,19 +15,25 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 
-public class DefineModuleInstr extends Instr {
+public class DefineModuleInstr extends Instr implements ResultInstr {
     private final IRModule newIRModule;
     private Operand container;
+    private final Variable result;
 
-    public DefineModuleInstr(IRModule newIRModule, Variable dest, Operand container) {
-        super(Operation.DEF_MODULE, dest);
+    public DefineModuleInstr(IRModule newIRModule, Variable result, Operand container) {
+        super(Operation.DEF_MODULE);
         
         this.newIRModule = newIRModule;
         this.container = container;
+        this.result = result;
     }
 
     public Operand[] getOperands() {
         return new Operand[]{container};
+    }
+    
+    public Variable getResult() {
+        return result;
     }
 
     @Override
@@ -42,7 +48,7 @@ public class DefineModuleInstr extends Instr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new DefineModuleInstr(this.newIRModule, ii.getRenamedVariable(getResult()), container.cloneForInlining(ii));
+        return new DefineModuleInstr(this.newIRModule, ii.getRenamedVariable(result), container.cloneForInlining(ii));
     }
 
     @Override
@@ -57,7 +63,7 @@ public class DefineModuleInstr extends Instr {
 
         // SSS FIXME: Rather than pass the block implicitly, should we add %block as another operand to DefineClass, DefineModule instrs?
         Object value = method.call(context, newRubyModule, newRubyModule, "", new IRubyObject[]{}, interp.getBlock());
-        getResult().store(interp, context, self, value);
+        result.store(interp, context, self, value);
         return null;
     }
 }

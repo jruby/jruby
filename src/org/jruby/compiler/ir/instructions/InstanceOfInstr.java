@@ -10,26 +10,32 @@ import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class InstanceOfInstr extends Instr {
+public class InstanceOfInstr extends Instr implements ResultInstr {
     private Class type;
     private String className;
     private Operand object;
+    private final Variable result;
 
-    public InstanceOfInstr(Variable dst, Operand object, String className) {
-        super(Operation.INSTANCE_OF, dst);
+    public InstanceOfInstr(Variable result, Operand object, String className) {
+        super(Operation.INSTANCE_OF);
         
         this.object = object;
         this.className = className;
+        this.result = result;
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new InstanceOfInstr(ii.getRenamedVariable(getResult()), object.cloneForInlining(ii), className);
+        return new InstanceOfInstr(ii.getRenamedVariable(result), object.cloneForInlining(ii), className);
     }
 
     public Operand[] getOperands() {
         return new Operand[]{object};
     }
 
+    public Variable getResult() {
+        return result;
+    }
+    
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap) {
         object = object.getSimplifiedOperand(valueMap);
@@ -37,7 +43,7 @@ public class InstanceOfInstr extends Instr {
 
     @Override 
     public String toString() {
-        return (isDead() ? "[DEAD]" : "") + (getResult() + " = ") + getOperation() + "(" + object + ", " + className + ")";
+        return (isDead() ? "[DEAD]" : "") + (result + " = ") + getOperation() + "(" + object + ", " + className + ")";
     }
 
     @Override
@@ -52,7 +58,7 @@ public class InstanceOfInstr extends Instr {
             // for user ruby code, this may no longer be true and we have to appropriately fix this code then.
             throw new RuntimeException(e);
         }
-        getResult().store(interp, context, self, 
+        result.store(interp, context, self, 
                 context.getRuntime().newBoolean(type.isInstance(object.retrieve(interp, context, self)))); 
         return null;
     }

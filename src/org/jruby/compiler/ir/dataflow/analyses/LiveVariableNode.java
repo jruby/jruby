@@ -17,6 +17,7 @@ import java.util.BitSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
+import org.jruby.compiler.ir.instructions.ResultInstr;
 
 public class LiveVariableNode extends FlowGraphNode {
     public LiveVariableNode(DataFlowProblem prob, BasicBlock n) {
@@ -39,7 +40,8 @@ public class LiveVariableNode extends FlowGraphNode {
 
     public void buildDataFlowVars(Instr i) {
 //        System.out.println("BV: Processing: " + i);
-        addDFVar(i.getResult());
+        Variable v = i instanceof ResultInstr ? ((ResultInstr) i).getResult() : null;        
+        addDFVar(v);
         for (Variable x: i.getUsedVariables()) {
             addDFVar(x);
         }
@@ -91,7 +93,7 @@ public class LiveVariableNode extends FlowGraphNode {
 //            System.out.println("TF: Processing: " + i);
 
             // v is defined => It is no longer live before 'i'
-            Variable v = i.getResult();
+            Variable v = i instanceof ResultInstr ? ((ResultInstr) i).getResult() : null;
             if (v != null) {
                 DataFlowVar dv = lvp.getDFVar(v);
                 tmp.clear(dv.getId());
@@ -253,7 +255,7 @@ public class LiveVariableNode extends FlowGraphNode {
         while (it.hasPrevious()) {
             Instr i = it.previous();
 //            System.out.println("DEAD?? " + i);
-            Variable v = i.getResult();
+            Variable v = i instanceof ResultInstr ? ((ResultInstr) i).getResult() : null;
             if (v != null) {
                 DataFlowVar dv = lvp.getDFVar(v);
                     // If 'v' is not live at the instruction site, and it has no side effects, mark it dead!

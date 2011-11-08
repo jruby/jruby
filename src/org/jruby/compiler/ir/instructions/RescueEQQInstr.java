@@ -18,20 +18,26 @@ import org.jruby.RubyModule;
 // have this requirement unlike case statements.
 //
 // If v2 is an array, compare v1 with every element of v2 and stop on first match!
-public class RescueEQQInstr extends Instr {
+public class RescueEQQInstr extends Instr implements ResultInstr {
     private Operand arg1;
     private Operand arg2;
+    private final Variable result;
 
     public RescueEQQInstr(Variable result, Operand v1, Operand v2) {
-        super(Operation.RESCUE_EQQ, result);
+        super(Operation.RESCUE_EQQ);
         this.arg1 = v1;
         this.arg2 = v2;
+        this.result = result;
     }
 
     public Operand[] getOperands() {
         return new Operand[]{arg1, arg2};
     }
 
+    public Variable getResult() {
+        return result;
+    }
+    
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap) {
         arg1 = arg1.getSimplifiedOperand(valueMap);
@@ -44,7 +50,7 @@ public class RescueEQQInstr extends Instr {
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new RescueEQQInstr(ii.getRenamedVariable(getResult()), 
+        return new RescueEQQInstr(ii.getRenamedVariable(result), 
                 arg1.cloneForInlining(ii), arg2.cloneForInlining(ii));
     }
 
@@ -54,7 +60,7 @@ public class RescueEQQInstr extends Instr {
         IRubyObject value = (IRubyObject) arg2.retrieve(interp, context, self);
 
         if (value == UndefinedValue.UNDEFINED) {
-            getResult().store(interp, context, self, receiver);
+            result.store(interp, context, self, receiver);
         } else if (receiver instanceof RubyArray) {
             RubyArray testVals = (RubyArray)receiver;
             for (int i = 0, n = testVals.getLength(); i < n; i++) {
@@ -64,16 +70,16 @@ public class RescueEQQInstr extends Instr {
                 }
                 IRubyObject eqqVal = excType.callMethod(context, "===", value);
                 if (eqqVal.isTrue()) {
-                    getResult().store(interp, context, self, eqqVal);
+                    result.store(interp, context, self, eqqVal);
                     return null;
                 }
             }
-            getResult().store(interp, context, self, context.getRuntime().newBoolean(false));
+            result.store(interp, context, self, context.getRuntime().newBoolean(false));
         } else {
             if (!(receiver instanceof RubyModule)) {
                throw context.getRuntime().newTypeError("class or module required for rescue clause. Found: " + receiver);
             }
-            getResult().store(interp, context, self, receiver.callMethod(context, "===", value));
+            result.store(interp, context, self, receiver.callMethod(context, "===", value));
         }
         
         return null;

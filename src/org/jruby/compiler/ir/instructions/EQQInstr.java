@@ -13,20 +13,26 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.RubyArray;
 
 // If v2 is an array, compare v1 with every element of v2 and stop on first match!
-public class EQQInstr extends Instr {
+public class EQQInstr extends Instr implements ResultInstr {
     private Operand arg1;
     private Operand arg2;
+    private final Variable result;
 
     public EQQInstr(Variable result, Operand v1, Operand v2) {
-        super(Operation.EQQ, result);
+        super(Operation.EQQ);
         this.arg1 = v1;
         this.arg2 = v2;
+        this.result = result;
     }
 
     public Operand[] getOperands() {
         return new Operand[]{arg1, arg2};
     }
-
+    
+    public Variable getResult() {
+        return result;
+    }
+    
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap) {
         arg1 = arg1.getSimplifiedOperand(valueMap);
@@ -39,7 +45,7 @@ public class EQQInstr extends Instr {
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new EQQInstr(ii.getRenamedVariable(getResult()), 
+        return new EQQInstr(ii.getRenamedVariable(result), 
                 arg1.cloneForInlining(ii), arg2.cloneForInlining(ii));
     }
 
@@ -49,19 +55,19 @@ public class EQQInstr extends Instr {
         IRubyObject value = (IRubyObject) arg2.retrieve(interp, context, self);
 
         if (value == UndefinedValue.UNDEFINED) {
-            getResult().store(interp, context, self, receiver);
+            result.store(interp, context, self, receiver);
         } else if (receiver instanceof RubyArray) {
             RubyArray testVals = (RubyArray)receiver;
             for (int i = 0, n = testVals.getLength(); i < n; i++) {
                 IRubyObject eqqVal = testVals.eltInternal(i).callMethod(context, "===", value);
                 if (eqqVal.isTrue()) {
-                    getResult().store(interp, context, self, eqqVal);
+                    result.store(interp, context, self, eqqVal);
                     return null;
                 }
             }
-            getResult().store(interp, context, self, context.getRuntime().newBoolean(false));
+            result.store(interp, context, self, context.getRuntime().newBoolean(false));
         } else {
-            getResult().store(interp, context, self, receiver.callMethod(context, "===", value));
+            result.store(interp, context, self, receiver.callMethod(context, "===", value));
         }
         
         return null;

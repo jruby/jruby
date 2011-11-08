@@ -13,17 +13,19 @@ import org.jruby.runtime.builtin.IRubyObject;
 /*
  * Assign Argument passed into scope/method to destination Variable
  */
-public class ReceiveArgumentInstruction extends Instr {
+public class ReceiveArgumentInstruction extends Instr implements ResultInstr {
 	 // SSS FIXME: Fix IR to start offsets from 0
     protected int argIndex;
     protected boolean restOfArgArray; // If true, the argument sub-array starting at this index is passed in via this instruction.
+    private final Variable destination;
 
     public ReceiveArgumentInstruction(Variable destination, int argIndex,
             boolean restOfArgArray) {
-        super(Operation.RECV_ARG, destination);
+        super(Operation.RECV_ARG);
         
         this.argIndex = argIndex;
         this.restOfArgArray = restOfArgArray;
+        this.destination = destination;
     }
 
     public ReceiveArgumentInstruction(Variable destination, int index) {
@@ -37,9 +39,13 @@ public class ReceiveArgumentInstruction extends Instr {
     public Operand[] getOperands() {
         return EMPTY_OPERANDS;
     }
+    
+    public Variable getResult() {
+        return destination;
+    }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new CopyInstr(ii.getRenamedVariable(getResult()), ii.getCallArg(argIndex, restOfArgArray));
+        return new CopyInstr(ii.getRenamedVariable(destination), ii.getCallArg(argIndex, restOfArgArray));
     }
 
     @Override
@@ -49,8 +55,6 @@ public class ReceiveArgumentInstruction extends Instr {
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        Operand destination = getResult(); // result is a confusing name
-
         if (restOfArgArray) {
             interpretAsRestArg(interp, context, self, destination);
         } else {

@@ -18,7 +18,7 @@ public class ThrowExceptionInstr extends Instr {
     private Operand exception;
 
     public ThrowExceptionInstr(Operand exception) {
-        super(Operation.THROW, null);
+        super(Operation.THROW);
         this.exception = exception;
     }
 
