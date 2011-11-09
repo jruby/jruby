@@ -159,6 +159,7 @@ import org.jruby.compiler.ir.instructions.ReceiveClosureArgInstr;
 import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
 import org.jruby.compiler.ir.instructions.ReceiveExceptionInstr;
 import org.jruby.compiler.ir.instructions.ReceiveOptionalArgumentInstr;
+import org.jruby.compiler.ir.instructions.RecordEndBlockInstr;
 import org.jruby.compiler.ir.instructions.RescueEQQInstr;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
 import org.jruby.compiler.ir.instructions.RubyInternalCallInstr;
@@ -2808,10 +2809,7 @@ public class IRBuilder {
         build(postExeNode.getBodyNode(), endClosure);
 
         // Add an instruction to record the end block at runtime
-        Variable tmpVar = s.getNewTemporaryVariable();
-		  // SSS FIXME: We dont need to get s.nearestModule(), but without that, we would have to create a WrappedIRMethod just for this one case,
-		  // or create a new instruction for this -- maybe that is what we should do add a new instruction in instructions/jruby/
-        s.addInstr(new JRubyImplCallInstr(tmpVar, JRubyImplementationMethod.RECORD_END_BLOCK, null, new Operand[]{new WrappedIRModule(s.getNearestModule()), new WrappedIRClosure(endClosure)}));
+        s.addInstr(new RecordEndBlockInstr(s, endClosure));
         return Nil.NIL;
     }
 

@@ -65,7 +65,6 @@ public class JRubyImplCallInstr extends CallInstr {
        FRAME_SUPER_METHOD_BOUND("frame_superMethodBound"),
        SET_WITHIN_DEFINED("setWithinDefined"),
        CHECK_ARITY("checkArity"),
-       RECORD_END_BLOCK("recordEndBlock"),
        RAISE_ARGUMENT_ERROR("raiseArgumentError");
 
        public MethAddr methAddr;
@@ -259,13 +258,6 @@ public class JRubyImplCallInstr extends CallInstr {
                     }
                 }
                 rVal = runtime.newBoolean(flag);
-                break;
-            }
-            case RECORD_END_BLOCK: {
-                Operand [] args = getCallArgs();
-                IRScope topLevelScope = ((WrappedIRModule)args[0]).getModule().getTopLevelScope();
-                IRScope endBlock      = ((WrappedIRClosure)args[1]).getClosure();
-                topLevelScope.recordEndBlock((IRClosure)endBlock);
                 break;
             }
             case FRAME_SUPER_METHOD_BOUND:

@@ -105,6 +105,7 @@ public enum Operation {
     /** JRuby-impl instructions **/
     BLOCK_GIVEN(0),
     CHECK_ARITY(OpFlags.f_can_raise_exception),
+    RECORD_END_BLOCK(OpFlags.f_has_side_effect),
 
     /** rest **/
     COPY(0),
