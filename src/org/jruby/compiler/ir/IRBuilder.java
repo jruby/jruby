@@ -550,7 +550,7 @@ public class IRBuilder {
             case OPASGNANDNODE: return buildOpAsgnAnd((OpAsgnAndNode) node, m); // done
             case OPASGNNODE: return buildOpAsgn((OpAsgnNode) node, m); // done
             case OPASGNORNODE: return buildOpAsgnOr((OpAsgnOrNode) node, m); // done
-            case OPELEMENTASGNNODE: return buildOpElementAsgn(node, m); // done
+            case OPELEMENTASGNNODE: return buildOpElementAsgn((OpElementAsgnNode) node, m); // done
             case ORNODE: return buildOr((OrNode) node, m); // done
             case PREEXENODE: return buildPreExe(node, m); // DEFERRED
             case POSTEXENODE: return buildPostExe(node, m); // DEFERRED
@@ -2683,16 +2683,11 @@ public class IRBuilder {
         }
     }
 
-    public Operand buildOpElementAsgn(Node node, IRScope m) {
-        final OpElementAsgnNode opElementAsgnNode = (OpElementAsgnNode) node;
-        
-        if (opElementAsgnNode.getOperatorName() == "||") {
-            return buildOpElementAsgnWithOr(node, m);
-        } else if (opElementAsgnNode.getOperatorName() == "&&") {
-            return buildOpElementAsgnWithAnd(node, m);
-        } else {
-            return buildOpElementAsgnWithMethod(node, m);
-        }
+    public Operand buildOpElementAsgn(OpElementAsgnNode node, IRScope m) {
+        if (node.isOr()) return buildOpElementAsgnWithOr(node, m);
+        if (node.isAnd()) return buildOpElementAsgnWithAnd(node, m);
+            
+        return buildOpElementAsgnWithMethod(node, m);
     }
     
     // Translate "a[x] ||= n" --> "a[x] = n if !is_true(a[x])"
@@ -2706,8 +2701,7 @@ public class IRBuilder {
     //    buildCall([]= tmp, arg, val)
     // L:
     //
-    public Operand buildOpElementAsgnWithOr(Node node, IRScope s) {
-        final OpElementAsgnNode opElementAsgnNode = (OpElementAsgnNode) node;
+    public Operand buildOpElementAsgnWithOr(OpElementAsgnNode opElementAsgnNode, IRScope s) {
         Operand array = build(opElementAsgnNode.getReceiverNode(), s);
         Label    l     = s.getNewLabel();
         Variable elt   = s.getNewTemporaryVariable();
@@ -2725,8 +2719,7 @@ public class IRBuilder {
     }
 
     // Translate "a[x] &&= n" --> "a[x] = n if is_true(a[x])"
-    public Operand buildOpElementAsgnWithAnd(Node node, IRScope s) {
-        final OpElementAsgnNode opElementAsgnNode = (OpElementAsgnNode) node;
+    public Operand buildOpElementAsgnWithAnd(OpElementAsgnNode opElementAsgnNode, IRScope s) {
         Operand array = build(opElementAsgnNode.getReceiverNode(), s);
         Label    l     = s.getNewLabel();
         Variable elt   = s.getNewTemporaryVariable();
@@ -2750,9 +2743,7 @@ public class IRBuilder {
     //    val = build(n) <-- val
     //    val = buildCall(METH, elt, val)
     //    val = buildCall([]=, arr, arg, val)
-    public Operand buildOpElementAsgnWithMethod(Node node, IRScope s) {
-        final OpElementAsgnNode opElementAsgnNode = (OpElementAsgnNode) node;
-
+    public Operand buildOpElementAsgnWithMethod(OpElementAsgnNode opElementAsgnNode, IRScope s) {
         Operand array = build(opElementAsgnNode.getReceiverNode(), s);
         List<Operand> argList = setupCallArgs(opElementAsgnNode.getArgsNode(), s);
         Variable elt = s.getNewTemporaryVariable();

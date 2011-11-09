@@ -112,6 +112,14 @@ public class OpElementAsgnNode extends Node {
     public Node getReceiverNode() {
         return receiverNode;
     }
+    
+    public boolean isOr() {
+        return getOperatorName() == "||";
+    }
+
+    public boolean isAnd() {
+        return getOperatorName() == "&&";
+    }
 
     /**
      * Gets the valueNode.
@@ -131,11 +139,11 @@ public class OpElementAsgnNode extends Node {
         IRubyObject[] args = ASTInterpreter.setupArgs(runtime, context, argsNode, self, aBlock);
         IRubyObject value = elementAdapter.call(context, self, receiver, args);
         
-        if (getOperatorName() == "||") {
+        if (isOr()) {
             if (value.isTrue()) return value;
 
             value = valueNode.interpret(runtime, context, self, aBlock);
-        } else if (getOperatorName() == "&&") {
+        } else if (isAnd()) {
             if (!value.isTrue()) return value;
 
             value = valueNode.interpret(runtime,context, self, aBlock);
