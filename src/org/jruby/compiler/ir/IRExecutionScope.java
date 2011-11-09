@@ -295,8 +295,10 @@ public abstract class IRExecutionScope extends IRScopeImpl {
 
             if (instr instanceof ResultInstr) {
                 Variable var = ((ResultInstr) instr).getResult();
-                variables.add(var);
-                starts.put(var, i);
+                if (var != null) { // FIXME: Remove once all results guaranteed non-null
+                    variables.add(var);
+                    starts.put(var, i);
+                }
             }
 
             for (Operand operand : instr.getOperands()) {
