@@ -1,6 +1,5 @@
 package org.jruby.compiler.ir.instructions;
 
-import java.util.Map;
 import org.jruby.MetaClass;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
@@ -113,15 +112,6 @@ public class JRubyImplCallInstr extends CallInstr {
         return allArgs;
     }
 
-    @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap) {
-        if (receiver != null) receiver = receiver.getSimplifiedOperand(valueMap);
-        // FIXME: Uh oh...I should not have put this in callAdapter
-        methAddr = (MethAddr)methAddr.getSimplifiedOperand(valueMap);
-        for (int i = 0; i < arguments.length; i++) {
-            arguments[i] = arguments[i].getSimplifiedOperand(valueMap);
-        }
-    }
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
