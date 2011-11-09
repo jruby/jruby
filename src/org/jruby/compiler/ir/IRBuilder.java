@@ -519,12 +519,12 @@ public class IRBuilder {
             case DSYMBOLNODE: return buildDSymbol(node, m); // done
             case DVARNODE: return buildDVar((DVarNode) node, m); // done
             case DXSTRNODE: return buildDXStr((DXStrNode) node, m); // done
-            case ENSURENODE: return buildEnsureNode(node, m); // done
+            case ENSURENODE: return buildEnsureNode((EnsureNode) node, m); // done
             case EVSTRNODE: return buildEvStr((EvStrNode) node, m); // done
             case FALSENODE: return buildFalse(node, m); // done
             case FCALLNODE: return buildFCall((FCallNode) node, m); // done
             case FIXNUMNODE: return buildFixnum((FixnumNode) node, m); // done
-            case FLIPNODE: return buildFlip(node, m); // done
+            case FLIPNODE: return buildFlip((FlipNode) node, m); // done
             case FLOATNODE: return buildFloat((FloatNode) node, m); // done
             case FORNODE: return buildFor((ForNode) node, (IRExecutionScope)m); // done
             case GLOBALASGNNODE: return buildGlobalAsgn((GlobalAsgnNode) node, m); // done
@@ -552,13 +552,13 @@ public class IRBuilder {
             case OPASGNORNODE: return buildOpAsgnOr((OpAsgnOrNode) node, m); // done
             case OPELEMENTASGNNODE: return buildOpElementAsgn((OpElementAsgnNode) node, m); // done
             case ORNODE: return buildOr((OrNode) node, m); // done
-            case PREEXENODE: return buildPreExe(node, m); // DEFERRED
-            case POSTEXENODE: return buildPostExe(node, m); // DEFERRED
+            case PREEXENODE: return buildPreExe((PreExeNode) node, m); // DEFERRED
+            case POSTEXENODE: return buildPostExe((PostExeNode) node, m); // DEFERRED
             case REDONODE: return buildRedo(node, (IRExecutionScope)m); // done??
             case REGEXPNODE: return buildRegexp((RegexpNode) node, m); // done
             case RESCUEBODYNODE:
                 throw new NotCompilableException("rescue body is handled by rescue compilation at: " + node.getPosition());
-            case RESCUENODE: return buildRescue(node, m); // done
+            case RESCUENODE: return buildRescue((RescueNode) node, m); // done
             case RETRYNODE: return buildRetry(node, m); // FIXME: done?
             case RETURNNODE: return buildReturn((ReturnNode) node, m); // done
             case ROOTNODE:
@@ -1791,7 +1791,9 @@ public class IRBuilder {
             Node bodyNode = defNode.getBodyNode();
 
             // if root of method is rescue, build as a light rescue
-            Operand rv = (bodyNode instanceof RescueNode) ?  buildRescue(bodyNode, method) : build(bodyNode, method);
+            Operand rv = (bodyNode instanceof RescueNode) ?  
+                    buildRescue((RescueNode) bodyNode, method) : build(bodyNode, method);
+            
             if (rv != null) method.addInstr(new ReturnInstr(rv));
         } else {
             method.addInstr(new ReturnInstr(Nil.NIL));
@@ -2001,9 +2003,8 @@ public class IRBuilder {
           L3:
      
      * ****************************************************************/
-    public Operand buildEnsureNode(Node node, IRScope m) {
-        EnsureNode ensureNode = (EnsureNode)node;
-        Node       bodyNode   = ensureNode.getBodyNode();
+    public Operand buildEnsureNode(EnsureNode ensureNode, IRScope m) {
+        Node bodyNode = ensureNode.getBodyNode();
 
         // Push a new ensure block info node onto the stack of ensure block
         EnsureBlockInfo ebi = new EnsureBlockInfo(m);
@@ -2020,7 +2021,7 @@ public class IRBuilder {
         Operand rv;  
         if (bodyNode instanceof RescueNode) {
             // The rescue code will ensure that the region is ended
-            rv = buildRescueInternal(bodyNode, m, ebi);
+            rv = buildRescueInternal((RescueNode) bodyNode, m, ebi);
         } else {
             rv = build(bodyNode, m);
 
@@ -2109,7 +2110,7 @@ public class IRBuilder {
         return new Fixnum(node.getValue());
     }
 
-    public Operand buildFlip(Node node, IRScope m) {
+    public Operand buildFlip(FlipNode flipNode, IRScope m) {
         /* ----------------------------------------------------------------------
          * Consider a simple 2-state (s1, s2) FSM with the following transitions:
          *
@@ -2132,7 +2133,6 @@ public class IRBuilder {
          * two values are good enough (even true and false), but 1 and 2 is simple
          * enough and also makes the IR output readable 
          * ---------------------------------------------------------------------- */
-        final FlipNode flipNode = (FlipNode)node;
 
         Fixnum s1 = new Fixnum((long)1);
         Fixnum s2 = new Fixnum((long)2);
@@ -2790,8 +2790,7 @@ public class IRBuilder {
         }
     }
 
-    public Operand buildPostExe(Node node, IRScope s) {
-        final PostExeNode postExeNode = (PostExeNode) node;
+    public Operand buildPostExe(PostExeNode postExeNode, IRScope s) {
         IRClosure endClosure = new IRClosure(s, false, postExeNode.getScope(), Arity.procArityOf(postExeNode.getVarNode()), postExeNode.getArgumentType());
         build(postExeNode.getBodyNode(), endClosure);
 
@@ -2800,8 +2799,7 @@ public class IRBuilder {
         return Nil.NIL;
     }
 
-    public Operand buildPreExe(Node node, IRScope s) {
-        final PreExeNode preExeNode = (PreExeNode) node;
+    public Operand buildPreExe(PreExeNode preExeNode, IRScope s) {
         IRClosure beginClosure = new IRClosure(s, false, preExeNode.getScope(), Arity.procArityOf(preExeNode.getVarNode()), preExeNode.getArgumentType());
         build(preExeNode.getBodyNode(), beginClosure);
 
@@ -2825,13 +2823,11 @@ public class IRBuilder {
         return copyAndReturnValue(m, new Regexp(new StringLiteral(reNode.getValue()), reNode.getOptions()));
     }
 
-    public Operand buildRescue(Node node, IRScope m) {
+    public Operand buildRescue(RescueNode node, IRScope m) {
         return buildRescueInternal(node, m, null);
     }
 
-    private Operand buildRescueInternal(Node node, IRScope m, EnsureBlockInfo ensure) {
-        final RescueNode rescueNode = (RescueNode) node;
-
+    private Operand buildRescueInternal(RescueNode rescueNode, IRScope m, EnsureBlockInfo ensure) {
         // Labels marking start, else, end of the begin-rescue(-ensure)-end block
         Label rBeginLabel = ensure == null ? m.getNewLabel() : ensure.regionStart;
         Label rEndLabel   = ensure == null ? m.getNewLabel() : ensure.end;
