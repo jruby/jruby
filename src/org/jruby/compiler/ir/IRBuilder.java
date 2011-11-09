@@ -107,7 +107,6 @@ import org.jruby.ast.WhenNode;
 import org.jruby.ast.XStrNode;
 import org.jruby.ast.ZSuperNode;
 import org.jruby.compiler.NotCompilableException;
-import org.jruby.compiler.ir.compiler_pass.AddBindingInstructions;
 import org.jruby.compiler.ir.compiler_pass.CFGBuilder;
 import org.jruby.compiler.ir.compiler_pass.IRPrinter;
 import org.jruby.compiler.ir.compiler_pass.InlineTest;
@@ -165,8 +164,6 @@ import org.jruby.compiler.ir.instructions.RecordEndBlockInstr;
 import org.jruby.compiler.ir.instructions.RescueEQQInstr;
 import org.jruby.compiler.ir.instructions.RestoreArgumentsInstr;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
-import org.jruby.compiler.ir.instructions.RubyInternalCallInstr;
-import org.jruby.compiler.ir.instructions.RubyInternalCallInstr.RubyInternalsMethod;
 import org.jruby.compiler.ir.instructions.SetReturnAddressInstr;
 import org.jruby.compiler.ir.instructions.SetArgumentsInstr;
 import org.jruby.compiler.ir.instructions.SearchConstInstr;
@@ -175,6 +172,7 @@ import org.jruby.compiler.ir.instructions.ThreadPollInstr;
 import org.jruby.compiler.ir.instructions.ThrowExceptionInstr;
 import org.jruby.compiler.ir.instructions.UndefMethodInstr;
 import org.jruby.compiler.ir.instructions.YieldInstr;
+import org.jruby.compiler.ir.instructions.jruby.ToAryInstr;
 import org.jruby.compiler.ir.operands.Array;
 import org.jruby.compiler.ir.operands.AsString;
 import org.jruby.compiler.ir.operands.Backref;
@@ -475,12 +473,6 @@ public class IRBuilder {
         return n;
     }
 
-    public Variable generateRubyInternalsCall(IRScope m, RubyInternalsMethod meth, boolean hasResult, Operand receiver, Operand[] args) {
-        Variable ret = hasResult ? m.getNewTemporaryVariable() : null;
-        m.addInstr(new RubyInternalCallInstr(ret, meth, receiver, args));
-        return ret;
-    }
-
     public Variable generateJRubyUtilityCall(IRScope m, JRubyImplementationMethod meth, boolean hasResult, Operand receiver, Operand[] args) {
         Variable ret = hasResult ? m.getNewTemporaryVariable() : null;
         m.addInstr(JRubyImplCallInstr.createJRubyImplementationMethod(ret, meth, receiver, args));
@@ -739,7 +731,9 @@ public class IRBuilder {
                 MultipleAsgnNode childNode = (MultipleAsgnNode) node;
                 if (childNode.getHeadNode() != null && ((ListNode)childNode.getHeadNode()).childNodes().size() > 0) {
                     // Invoke to_ary on the operand only if it is not an array already
-                    valuesArg = generateRubyInternalsCall(s, RubyInternalsMethod.TO_ARY, true, v, new Operand[] { BooleanLiteral.FALSE });
+                    Variable result = s.getNewTemporaryVariable();
+                    s.addInstr(new ToAryInstr(result, v, BooleanLiteral.TRUE));
+                    valuesArg = result;
                 } else {
                     s.addInstr(new EnsureRubyArrayInstr(v, v));
                     valuesArg = v;
@@ -3125,13 +3119,13 @@ public class IRBuilder {
         return new Symbol(node.getName());
     }    
 
+    // ENEBO: This is it's own instruction, but an older note pointed out we
+    // could make this an ordinary method and then depend on inlining.
     public Operand buildToAry(ToAryNode node, IRScope s) {
-        // FIXME: Two possibilities
-        // 1. Make this a TO_ARY IR instruction to enable optimization 
-        // 2. Alternatively make this a regular call which would be subject to inlining
-        //    if these utility methods are implemented as ruby ir code.
         Operand array = build(node.getValue(), s);
-        return generateRubyInternalsCall(s, RubyInternalsMethod.TO_ARY, true, array, NO_ARGS);
+        Variable result = s.getNewTemporaryVariable();
+        s.addInstr(new ToAryInstr(result, array, BooleanLiteral.FALSE));
+        return result;
     }
 
     public Operand buildTrue(Node node, IRScope m) {

@@ -110,6 +110,7 @@ public enum Operation {
     BLOCK_GIVEN(0),
     CHECK_ARITY(OpFlags.f_can_raise_exception),
     RECORD_END_BLOCK(OpFlags.f_has_side_effect),
+    TO_ARY(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
 
     /** rest **/
     COPY(0),
