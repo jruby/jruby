@@ -477,8 +477,8 @@ public class IRBuilder {
         return ret;
     }
 
-    public Variable generateJRubyUtilityCall(IRScope m, JRubyImplementationMethod meth, Operand receiver, Operand[] args) {
-        Variable ret = m.getNewTemporaryVariable();
+    public Variable generateJRubyUtilityCall(IRScope m, JRubyImplementationMethod meth, boolean hasResult, Operand receiver, Operand[] args) {
+        Variable ret = hasResult ? m.getNewTemporaryVariable() : null;
         m.addInstr(JRubyImplCallInstr.createJRubyImplementationMethod(ret, meth, receiver, args));
         return ret;
     }
@@ -976,7 +976,7 @@ public class IRBuilder {
         List<Operand> args         = setupCallArgs(callArgsNode, s);
         Operand       block        = setupCallClosure(callNode.getIterNode(), s);
         Variable      callResult   = s.getNewTemporaryVariable();
-        Instr      callInstr    = CallInstr.create(callResult, new MethAddr(callNode.getName()), receiver, args.toArray(new Operand[args.size()]), block);
+        Instr         callInstr    = CallInstr.create(callResult, new MethAddr(callNode.getName()), receiver, args.toArray(new Operand[args.size()]), block);
         s.addInstr(callInstr);
         return callResult;
     }
@@ -1434,9 +1434,8 @@ public class IRBuilder {
 
     private Variable buildDefinitionCheck(IRScope s, JRubyImplementationMethod defnChecker, Operand receiver, String nameToCheck, String definedReturnValue) {
         Label undefLabel = s.getNewLabel();
-        Variable tmpVar  = s.getNewTemporaryVariable();
         Operand[] args   = nameToCheck == null ? NO_ARGS : new Operand[]{new StringLiteral(nameToCheck)};
-        s.addInstr(JRubyImplCallInstr.createJRubyImplementationMethod(tmpVar, defnChecker, receiver, args));
+        Variable tmpVar  = generateJRubyUtilityCall(s, defnChecker, true, receiver, args);
         s.addInstr(new BEQInstr(tmpVar, BooleanLiteral.FALSE, undefLabel));
         return buildDefnCheckIfThenPaths(s, undefLabel, new StringLiteral(definedReturnValue));
     }
@@ -1851,7 +1850,7 @@ public class IRBuilder {
         // For now, we are going explicit instruction route.  But later, perhaps can make this implicit in the method setup preamble?  
         Operand[] args = new Operand[] { new Fixnum((long)required), new Fixnum((long)opt), new Fixnum((long)rest) };
         // FIXME: I added getSelf() just so we won't NPE since this is a callinstr. Can we make this something other than callinstr?
-        generateJRubyUtilityCall(s, JRubyImplementationMethod.CHECK_ARITY, getSelf(s), args);
+        generateJRubyUtilityCall(s, JRubyImplementationMethod.CHECK_ARITY, false, getSelf(s), args);
 
         // self = args[0]
         s.addInstr(new ReceiveSelfInstruction(getSelf(s)));
@@ -2420,19 +2419,19 @@ public class IRBuilder {
 
     public Operand buildMatch(MatchNode matchNode, IRScope m) {
         Operand regexp = build(matchNode.getRegexpNode(), m);
-        return generateJRubyUtilityCall(m, JRubyImplementationMethod.MATCH, regexp, NO_ARGS);
+        return generateJRubyUtilityCall(m, JRubyImplementationMethod.MATCH, true, regexp, NO_ARGS);
     }
 
     public Operand buildMatch2(Match2Node matchNode, IRScope m) {
         Operand receiver = build(matchNode.getReceiverNode(), m);
         Operand value    = build(matchNode.getValueNode(), m);
-        return generateJRubyUtilityCall(m, JRubyImplementationMethod.MATCH2, receiver, new Operand[]{value});
+        return generateJRubyUtilityCall(m, JRubyImplementationMethod.MATCH2, true, receiver, new Operand[]{value});
     }
 
     public Operand buildMatch3(Match3Node matchNode, IRScope m) {
         Operand receiver = build(matchNode.getReceiverNode(), m);
         Operand value    = build(matchNode.getValueNode(), m);
-        return generateJRubyUtilityCall(m, JRubyImplementationMethod.MATCH3, receiver, new Operand[]{value});
+        return generateJRubyUtilityCall(m, JRubyImplementationMethod.MATCH3, true, receiver, new Operand[]{value});
     }
 
     private Operand getContainerFromCPath(Colon3Node cpath, IRScope s) {
