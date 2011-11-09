@@ -7,26 +7,26 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class ModuleMetaObject extends MetaObject {
-    public static final ModuleMetaObject CURRENT_MODULE = new ModuleMetaObject(null);
+public class WrappedIRModule extends Constant {
+    public static final WrappedIRModule CURRENT_MODULE = new WrappedIRModule(null);
 
-    protected ModuleMetaObject(IRModule scope) {
-        super(scope);
+    private final IRModule module;
+
+    public WrappedIRModule(IRModule scope) {
+        this.module = scope;
     }
 
-    @Override
-    public boolean isModule() {
-        return true;
+    public IRModule getModule() {
+        return module;
     }
 
     @Override
     public String toString() {
-        return (scope == null) ? "<current-module>" : scope.getName();
+        return (module == null) ? "<current-module>" : module.getName();
     }
 
     @Override
     public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        IRModule module = (IRModule)scope;
         StaticScope ssc = (module == null) ? context.getCurrentScope().getStaticScope() : module.getStaticScope();
         if (ssc != null) {
             return ssc.getModule();

@@ -9,7 +9,7 @@ import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.LoadFromBindingInstr;
 import org.jruby.compiler.ir.operands.Operand;
-import org.jruby.compiler.ir.operands.MetaObject;
+import org.jruby.compiler.ir.operands.WrappedIRClosure;
 import org.jruby.compiler.ir.operands.ClosureLocalVariable;
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.Variable;
@@ -70,8 +70,8 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
             if (i instanceof CallInstr) {
                 CallInstr call = (CallInstr) i;
                 Operand o = call.getClosureArg();
-                if ((o != null) && (o instanceof MetaObject)) {
-                    IRClosure cl = (IRClosure) ((MetaObject) o).scope;
+                if ((o != null) && (o instanceof WrappedIRClosure)) {
+                    IRClosure cl = ((WrappedIRClosure) o).getClosure();
                     BindingLoadPlacementProblem cl_blp = new BindingLoadPlacementProblem();
                     cl_blp.initLoadsOnScopeExit(reqdLoads);
                     cl_blp.setup(cl);
@@ -142,8 +142,8 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
             if (i instanceof CallInstr) {
                 CallInstr call = (CallInstr) i;
                 Operand o = call.getClosureArg();
-                if ((o != null) && (o instanceof MetaObject)) {
-                    IRClosure scope = (IRClosure) ((MetaObject) o).scope;
+                if ((o != null) && (o instanceof WrappedIRClosure)) {
+                    IRClosure scope = ((WrappedIRClosure) o).getClosure();
                     BindingLoadPlacementProblem cl_blp = (BindingLoadPlacementProblem) scope.getDataFlowSolution(blp.getName());
 
                     // Only those variables that are defined in the closure, and are in the required loads set 

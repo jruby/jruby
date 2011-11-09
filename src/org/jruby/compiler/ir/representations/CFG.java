@@ -25,7 +25,7 @@ import org.jruby.compiler.ir.instructions.LabelInstr;
 import org.jruby.compiler.ir.instructions.SetReturnAddressInstr;
 import org.jruby.compiler.ir.instructions.ThrowExceptionInstr;
 import org.jruby.compiler.ir.operands.Label;
-import org.jruby.compiler.ir.operands.MetaObject;
+import org.jruby.compiler.ir.operands.WrappedIRClosure;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.util.DirectedGraph;
@@ -350,8 +350,8 @@ public class CFG {
                 }
             } else if (i instanceof CallInstr) { // Build CFG for the closure if there exists one
                 Operand closureArg = ((CallInstr) i).getClosureArg();
-                if (closureArg instanceof MetaObject) {
-                    ((IRClosure) ((MetaObject) closureArg).scope).buildCFG();
+                if (closureArg instanceof WrappedIRClosure) {
+                    ((WrappedIRClosure) closureArg).getClosure().buildCFG();
                 }
             }
         }

@@ -38,8 +38,8 @@ public class InlineTest implements CompilerPass {
         // aggressive testing .. super class walking
         while ((mi == null) && (m instanceof IRClass)) {
         Operand sc = ((IRClass)m).superClass;
-        if (!(sc instanceof ModuleMetaObject)) break;
-        m = (IRModule)((ModuleMetaObject)sc).scope;
+        if (!(sc instanceof WrappedIRModule)) break;
+        m = (IRModule)((WrappedIRModule)sc).scope;
         mi = m.getInstanceMethod(methodToInline);
         }
          */

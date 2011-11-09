@@ -5,14 +5,15 @@ import java.util.Map;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.MethAddr;
-import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
+import org.jruby.compiler.ir.operands.Nil;
 import org.jruby.compiler.ir.operands.StringLiteral;
 import org.jruby.compiler.ir.operands.Variable;
+import org.jruby.compiler.ir.operands.WrappedIRModule;
 import org.jruby.compiler.ir.IRClass;
+import org.jruby.compiler.ir.IRModule;
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.instructions.calladapter.CallAdapter;
-import org.jruby.compiler.ir.operands.Nil;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.interpreter.InterpreterContext;
@@ -156,7 +157,7 @@ public class CallInstr extends Instr implements ResultInstr {
 
         if (closure != null) {
             /****
-            IRClosure cl = (IRClosure) ((MetaObject) closure).scope;
+            IRClosure cl = (IRClosure) ((WrappedIRClosure) closure).scope;
             if (cl.requiresBinding()) return true;
             ****/
             // SSS FIXME: This is conservative!
@@ -171,9 +172,9 @@ public class CallInstr extends Instr implements ResultInstr {
             Operand object = getReceiver();
 
             // Unknown receiver -- could be Proc!!
-            if (!(object instanceof MetaObject)) return true;
+            if (!(object instanceof WrappedIRModule)) return true;
 
-            IRScope c = ((MetaObject) object).scope;
+            IRModule c = ((WrappedIRModule) object).getModule();
             if ((c instanceof IRClass) && c.getName().equals("Proc")) return true;
         }
 

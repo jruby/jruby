@@ -4,7 +4,6 @@ import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.IRModule;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Label;
-import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.UndefinedValue;
 import org.jruby.compiler.ir.operands.Variable;

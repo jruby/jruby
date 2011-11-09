@@ -11,7 +11,7 @@ import org.jruby.compiler.ir.IRModule;
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Label;
-import org.jruby.compiler.ir.operands.MetaObject;
+import org.jruby.compiler.ir.operands.WrappedIRClosure;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
@@ -38,7 +38,7 @@ public class GetConstInstr extends GetInstr {
         Object source = getSource().retrieve(interp, context, self);
         RubyModule module;
 
-        // Retrieving a MetaObject which is a closure returns a closure and not
+        // Retrieving a WrappedIRClosure which is a closure returns a closure and not
         // the module which contains it.  We could possible add to operand to have a generic
         // scope() method or resort to if statements :)  So let's figure more out before
         // fixing this.

@@ -10,7 +10,7 @@ import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.Tuple;
 import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.YieldInstr;
-import org.jruby.compiler.ir.operands.MetaObject;
+import org.jruby.compiler.ir.operands.WrappedIRClosure;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.CFG.EdgeType;
 import org.jruby.compiler.ir.util.Edge;
@@ -139,12 +139,12 @@ public class CFGInliner {
                 throw new RuntimeException("Encountered " + yieldSites.size() + " yield sites.  Convert the yield to a call by converting the closure into a dummy method (have to convert all frame vars to call arguments, or at least convert the frame into a call arg");
             }
 
-            if (!(closureArg instanceof MetaObject)) {
+            if (!(closureArg instanceof WrappedIRClosure)) {
                 throw new RuntimeException("Encountered a dynamic closure arg.  Cannot inline it here!  Convert the yield to a call by converting the closure into a dummy method (have to convert all frame vars to call arguments, or at least convert the frame into a call arg");
             }
 
             Tuple t = (Tuple) yieldSites.get(0);
-            inlineClosureAtYieldSite(ii, (IRClosure) ((MetaObject) closureArg).scope, (BasicBlock) t.a, (YieldInstr) t.b);
+            inlineClosureAtYieldSite(ii, ((WrappedIRClosure) closureArg).getClosure(), (BasicBlock) t.a, (YieldInstr) t.b);
         }
 
         // Update the bb array

@@ -22,8 +22,8 @@ import org.jruby.compiler.ir.instructions.BreakInstr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.ResultInstr;
 import org.jruby.compiler.ir.operands.Label;
-import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
+import org.jruby.compiler.ir.operands.WrappedIRClosure;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
 import org.jruby.parser.IRStaticScope;
@@ -96,9 +96,9 @@ public class Interpreter {
         if (beBlocks == null) return;
 
         for (IRClosure b: beBlocks) {
-            // SSS FIXME: Should I piggyback on ClosureMetaObject.retrieve or just copy that code here?
+            // SSS FIXME: Should I piggyback on WrappedIRClosure.retrieve or just copy that code here?
             b.prepareForInterpretation();
-            Block blk = (Block)MetaObject.create(b).retrieve(null, context, self);
+            Block blk = (Block)(new WrappedIRClosure(b)).retrieve(null, context, self);
             blk.yield(context, null);
         }
     }

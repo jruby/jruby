@@ -16,7 +16,8 @@ import org.jruby.compiler.ir.instructions.jruby.CheckArityInstr;
 import org.jruby.compiler.ir.operands.BooleanLiteral;
 import org.jruby.compiler.ir.operands.Fixnum;
 import org.jruby.compiler.ir.operands.Label;
-import org.jruby.compiler.ir.operands.MetaObject;
+import org.jruby.compiler.ir.operands.WrappedIRModule;
+import org.jruby.compiler.ir.operands.WrappedIRClosure;
 import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.operands.Nil;
 import org.jruby.compiler.ir.operands.Operand;
@@ -262,8 +263,8 @@ public class JRubyImplCallInstr extends CallInstr {
             }
             case RECORD_END_BLOCK: {
                 Operand [] args = getCallArgs();
-                IRScope topLevelScope = ((MetaObject)args[0]).getScope().getTopLevelScope();
-                IRScope  endBlock     = ((MetaObject)args[1]).getScope();
+                IRScope topLevelScope = ((WrappedIRModule)args[0]).getModule().getTopLevelScope();
+                IRScope endBlock      = ((WrappedIRClosure)args[1]).getClosure();
                 topLevelScope.recordEndBlock((IRClosure)endBlock);
                 break;
             }

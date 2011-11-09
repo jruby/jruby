@@ -186,8 +186,6 @@ import org.jruby.compiler.ir.operands.IRException;
 import org.jruby.compiler.ir.operands.KeyValuePair;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.LocalVariable;
-import org.jruby.compiler.ir.operands.MetaObject;
-import org.jruby.compiler.ir.operands.ModuleMetaObject;
 import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.operands.Nil;
 import org.jruby.compiler.ir.operands.UnexecutableNil;
@@ -202,6 +200,8 @@ import org.jruby.compiler.ir.operands.Symbol;
 import org.jruby.compiler.ir.operands.TemporaryVariable;
 import org.jruby.compiler.ir.operands.UndefinedValue;
 import org.jruby.compiler.ir.operands.Variable;
+import org.jruby.compiler.ir.operands.WrappedIRClosure;
+import org.jruby.compiler.ir.operands.WrappedIRModule;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.BlockBody;
@@ -1096,7 +1096,7 @@ public class IRBuilder {
         String className = cpath.getName();
         Operand container = getContainerFromCPath(cpath, s);
 
-        IRClass c = new IRClass(s, (superClass instanceof MetaObject) ? (IRClass)((MetaObject)superClass).scope : null, className, classNode.getScope());
+        IRClass c = new IRClass(s, (superClass instanceof WrappedIRModule) ? (IRClass)((WrappedIRModule)superClass).getModule() : null, className, classNode.getScope());
         Variable ret = s.getNewTemporaryVariable();
         s.addInstr(new DefineClassInstr(ret, c, container, superClass));
         // SSS NOTE: This is a debugging tool that works in most cases and is not used
@@ -1213,9 +1213,9 @@ public class IRBuilder {
         return buildConstDeclAssignment(node, s, val);
     }
 
-    private MetaObject findContainerModule(IRScope s) {
+    private WrappedIRModule findContainerModule(IRScope s) {
         IRModule nearestModule = s.getNearestModule();
-        return (nearestModule == null) ? ModuleMetaObject.CURRENT_MODULE : MetaObject.create(nearestModule);
+        return (nearestModule == null) ? WrappedIRModule.CURRENT_MODULE : new WrappedIRModule(nearestModule);
     }
 
     private IRModule startingSearchScope(IRScope s) {
@@ -1231,7 +1231,7 @@ public class IRBuilder {
             Operand module = build(((Colon2Node) constNode).getLeftNode(), s);
             s.addInstr(new PutConstInstr(module, constDeclNode.getName(), val));
         } else { // colon3, assign in Object
-            MetaObject object = MetaObject.create(IRClass.getCoreClass("Object"));            
+            WrappedIRModule object = new WrappedIRModule(IRClass.getCoreClass("Object"));            
             s.addInstr(new PutConstInstr(object, constDeclNode.getName(), val));            
         }
 
@@ -1260,7 +1260,6 @@ public class IRBuilder {
             // 1. Load the module first (lhs of node)
             // 2. Then load the constant from the module
             Operand module = build(leftNode, s);
-            if (module instanceof MetaObject) module = MetaObject.create(((MetaObject)module).scope);
             Variable constVal = s.getNewTemporaryVariable();
             s.addInstr(new GetConstInstr(constVal, module, name));
             return constVal;
@@ -1828,8 +1827,8 @@ public class IRBuilder {
         Operand container =  build(node.getReceiverNode(), s);
         IRMethod method = defineNewMethod(node, s, false);
         // ENEBO: Can all metaobjects be used for this?  closure?
-        //if (container instanceof MetaObject) {
-        //    ((IRModule) ((MetaObject) container).getScope()).addMethod(method);
+        //if (container instanceof WrappedIRModule) {
+        //     ((WrappedIRModule) container).getModule().addMethod(method);
         //}
         if (s.getLexicalParent() instanceof IRModule) {
             ((IRModule)s.getLexicalParent()).addMethod(method);
@@ -2232,7 +2231,7 @@ public class IRBuilder {
         if (closureRetVal != null)  // can be null if the node is an if node with returns in both branches.
             closure.addInstr(new ClosureReturnInstr(closureRetVal));
 
-        return MetaObject.create(closure);
+        return new WrappedIRClosure(closure);
     }
 
     public Operand buildGlobalAsgn(GlobalAsgnNode globalAsgnNode, IRScope m) {
@@ -2378,7 +2377,7 @@ public class IRBuilder {
         if (closureRetVal != U_NIL)  // can be U_NIL if the node is an if node with returns in both branches.
             closure.addInstr(new ClosureReturnInstr(closureRetVal));
 
-        return MetaObject.create(closure);
+        return new WrappedIRClosure(closure);
     }
 
     public Operand buildLiteral(LiteralNode literalNode, IRScope s) {
@@ -2447,7 +2446,7 @@ public class IRBuilder {
                 container = findContainerModule(s);
             }
         } else { //::Bar
-            container = MetaObject.create(IRClass.getCoreClass("Object"));
+            container = new WrappedIRModule(IRClass.getCoreClass("Object"));
         }
 
         return container;
@@ -2809,8 +2808,10 @@ public class IRBuilder {
         build(postExeNode.getBodyNode(), endClosure);
 
         // Add an instruction to record the end block at runtime
-         Variable tmpVar = s.getNewTemporaryVariable();
-        s.addInstr(new JRubyImplCallInstr(tmpVar, JRubyImplementationMethod.RECORD_END_BLOCK, null, new Operand[]{MetaObject.create(s), MetaObject.create(endClosure)}));
+        Variable tmpVar = s.getNewTemporaryVariable();
+		  // SSS FIXME: We dont need to get s.nearestModule(), but without that, we would have to create a WrappedIRMethod just for this one case,
+		  // or create a new instruction for this -- maybe that is what we should do add a new instruction in instructions/jruby/
+        s.addInstr(new JRubyImplCallInstr(tmpVar, JRubyImplementationMethod.RECORD_END_BLOCK, null, new Operand[]{new WrappedIRModule(s.getNearestModule()), new WrappedIRClosure(endClosure)}));
         return Nil.NIL;
     }
 
