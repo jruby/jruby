@@ -7,7 +7,6 @@ package org.jruby.compiler.ir.instructions;
 
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Label;
-import org.jruby.compiler.ir.operands.MetaObject;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.IRMethod;
@@ -28,7 +27,7 @@ public class AllocateBindingInstr extends Instr {
 
     // ENEBO: Should we be reallocing this every time?
     public Operand[] getOperands() { 
-        return new Operand[] { MetaObject.create(scope) };
+        return EMPTY_OPERANDS;
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
