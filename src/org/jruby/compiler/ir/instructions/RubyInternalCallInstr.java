@@ -25,8 +25,7 @@ public class RubyInternalCallInstr extends CallInstr {
        // SSS FIXME: I dont fully understand this method (in the context of multiple assignment).
        // It calls regular to_ary on the object.  But, how does it succeed if it encounters a method_missing?
        // Ex: http://gist.github.com/163551
-       TO_ARY("to_ary"),
-       FOR_EACH("each");
+       TO_ARY("to_ary");
 
        public MethAddr methAddr;
        RubyInternalsMethod(String methodName) {
@@ -88,9 +87,6 @@ public class RubyInternalCallInstr extends CallInstr {
                 else
                     rVal = RuntimeHelpers.aryToAry((IRubyObject) recv);
             }
-                break;
-            case FOR_EACH:
-                super.interpret(interp, context, self); // SSS FIXME: Correct?
                 break;
             default:
                 super.interpret(interp, context, self);

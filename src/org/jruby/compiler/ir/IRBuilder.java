@@ -2201,12 +2201,13 @@ public class IRBuilder {
     }
 
     public Operand buildFor(ForNode forNode, IRExecutionScope m) {
-        Variable ret      = m.getNewTemporaryVariable();
+        Variable result = m.getNewTemporaryVariable();
         Operand  receiver = build(forNode.getIterNode(), m);
         Operand  forBlock = buildForIter(forNode, m);     
         // SSS FIXME: Really?  Why the internal call?
-        m.addInstr(new RubyInternalCallInstr(ret, RubyInternalsMethod.FOR_EACH, receiver, NO_ARGS, forBlock));
-        return ret;
+        m.addInstr(new CallInstr(CallType.NORMAL, result, new MethAddr("each"), receiver, NO_ARGS, forBlock));
+
+        return result;
     }
 
     public Operand buildForIter(final ForNode forNode, IRExecutionScope s) {
