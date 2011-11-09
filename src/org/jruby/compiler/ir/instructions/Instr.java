@@ -41,7 +41,7 @@ public abstract class Instr {
 
     @Override
     public String toString() {
-        return "" + (isDead() ? "[DEAD]" : "") + operation;
+        return "" + (isDead() ? "[DEAD]" : "") + ((this instanceof ResultInstr) ? ((ResultInstr)this).getResult() + " = " : "") + operation;
     }
 
     @Interp
