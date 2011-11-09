@@ -3140,9 +3140,9 @@ public class IRBuilder {
 
     public Operand buildUndef(Node node, IRScope m) {
         Operand methName = build(((UndefNode) node).getName(), m);
-        Variable ret = m.getNewTemporaryVariable();
-        m.addInstr(new UndefMethodInstr(ret, methName));
-        return ret;        
+        Variable result = m.getNewTemporaryVariable();
+        m.addInstr(new UndefMethodInstr(result, methName));
+        return result;        
     }
 
     private Operand buildConditionalLoop(IRExecutionScope s, Node conditionNode, Node bodyNode, boolean isWhile, boolean isLoopHeadCondition)
