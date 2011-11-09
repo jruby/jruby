@@ -23,6 +23,8 @@ public class DefineModuleInstr extends Instr implements ResultInstr {
     public DefineModuleInstr(IRModule newIRModule, Variable result, Operand container) {
         super(Operation.DEF_MODULE);
         
+        assert result != null : "DefineModuleInstr result is null";
+        
         this.newIRModule = newIRModule;
         this.container = container;
         this.result = result;

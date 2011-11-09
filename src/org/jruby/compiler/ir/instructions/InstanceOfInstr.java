@@ -18,6 +18,8 @@ public class InstanceOfInstr extends Instr implements ResultInstr {
 
     public InstanceOfInstr(Variable result, Operand object, String className) {
         super(Operation.INSTANCE_OF);
+
+        assert result != null : "InstanceOfInstr result is null";
         
         this.object = object;
         this.className = className;

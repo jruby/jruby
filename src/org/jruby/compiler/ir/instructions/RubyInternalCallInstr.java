@@ -1,17 +1,12 @@
 package org.jruby.compiler.ir.instructions;
 
-import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.RubyFixnum;
-import org.jruby.RubyModule;
-import org.jruby.RubySymbol;
 
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.operands.BooleanLiteral;
-import org.jruby.compiler.ir.operands.StringLiteral;
 import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 
@@ -31,8 +26,6 @@ public class RubyInternalCallInstr extends CallInstr {
        // It calls regular to_ary on the object.  But, how does it succeed if it encounters a method_missing?
        // Ex: http://gist.github.com/163551
        TO_ARY("to_ary"),
-       DEFINE_ALIAS("defineAlias"),
-       GVAR_ALIAS("aliasGlobalVariable"),
        FOR_EACH("each"),
        //CHECK_ARITY("checkArity"),
        UNDEF_METHOD("undefMethod");
@@ -86,33 +79,8 @@ public class RubyInternalCallInstr extends CallInstr {
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        Ruby     runtime = context.getRuntime();
         Object   rVal = null;
         switch (this.implMethod) {
-            case DEFINE_ALIAS:
-            {
-                Operand[] args = getCallArgs(); // Guaranteed 2 args by parser
-                IRubyObject object = (IRubyObject)getReceiver().retrieve(interp, context, self);
-                
-                if (object == null || object instanceof RubyFixnum || object instanceof RubySymbol) {
-                    throw runtime.newTypeError("no class to make alias");
-                }
-
-                String newName = args[0].retrieve(interp, context, self).toString();
-                String oldName = args[1].retrieve(interp, context, self).toString();
-
-                RubyModule module = (object instanceof RubyModule) ? (RubyModule) object : object.getMetaClass();
-                module.defineAlias(newName, oldName);
-                break;
-            }
-            case GVAR_ALIAS:
-            {
-                Operand[] args = getCallArgs(); // Guaranteed 2 args by parser
-                String newName = ((StringLiteral)args[0])._str_value;
-                String oldName = ((StringLiteral)args[1])._str_value;
-                runtime.getGlobalVariables().alias(newName, oldName);
-                break;
-            }
             case UNDEF_METHOD:
                 rVal = RuntimeHelpers.undefMethod(context, getReceiver().retrieve(interp, context, self));
                 break;
@@ -134,7 +102,7 @@ public class RubyInternalCallInstr extends CallInstr {
         }
 
         // Store the result
-        if (rVal != null) getResult().store(interp, context, self, rVal);
+        getResult().store(interp, context, self, rVal);
 
         return null;
     }

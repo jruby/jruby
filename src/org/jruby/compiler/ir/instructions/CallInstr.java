@@ -54,6 +54,9 @@ public class CallInstr extends Instr implements ResultInstr {
     protected CallInstr(Operation op, CallType callType, Variable result, MethAddr methAddr, Operand receiver, Operand[] args, Operand closure) {
         super(op);
 
+        // FIXME: AttrAssign does not have a result...move to non-return call instr so we can re-enable
+//        assert result != null;
+        
         this.receiver = receiver;
         this.arguments = args;
         this.closure = closure;

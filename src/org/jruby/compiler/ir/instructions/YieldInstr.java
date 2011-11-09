@@ -23,6 +23,9 @@ public class YieldInstr extends Instr implements ResultInstr {
 
     public YieldInstr(Variable result, Variable block, Operand arg, boolean unwrapArray) {
         super(Operation.YIELD);
+        
+        assert result != null: "YieldInstr result is null";
+        
         this.block = block;
         this.yieldArg = arg;
         this.unwrapArray = unwrapArray;

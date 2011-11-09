@@ -21,6 +21,8 @@ public class EnsureRubyArrayInstr extends Instr implements ResultInstr {
     public EnsureRubyArrayInstr(Variable result, Operand s) {
         super(Operation.ENSURE_RUBY_ARRAY);
         
+        assert result != null : "EnsureRubyArray result is null";
+        
         this.object = s;
         this.result = result;
     }

@@ -28,6 +28,9 @@ public class GetArrayInstr extends Instr implements ResultInstr {
 
     public GetArrayInstr(Variable result, Operand array, int index, boolean getRestOfArray) {
         super(Operation.GET_ARRAY);
+        
+        assert result != null : "GetArrayInstr result is null";
+        
         this.array = array;
         this.index = index;
         this.result = result;

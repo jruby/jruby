@@ -25,6 +25,9 @@ public class GetClassVarContainerModuleInstr extends Instr implements ResultInst
 
     public GetClassVarContainerModuleInstr(Variable result, IRMethod candidateScope, Operand object) {
         super(Operation.CLASS_VAR_MODULE);
+        
+        assert result != null;
+        
         this.candidateScope = candidateScope;
         this.object = object;
         this.result = result;

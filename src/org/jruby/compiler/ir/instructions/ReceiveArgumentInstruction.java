@@ -23,6 +23,8 @@ public class ReceiveArgumentInstruction extends Instr implements ResultInstr {
             boolean restOfArgArray) {
         super(Operation.RECV_ARG);
         
+        assert destination != null: "ReceiveArgumentInstr result is null";
+        
         this.argIndex = argIndex;
         this.restOfArgArray = restOfArgArray;
         this.destination = destination;

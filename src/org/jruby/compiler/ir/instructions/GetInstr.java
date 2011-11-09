@@ -15,6 +15,8 @@ public abstract class GetInstr extends Instr implements ResultInstr {
     public GetInstr(Operation op, Variable result, Operand source, String ref) {
         super(op);
         
+        assert result != null: "" + getClass().getSimpleName() + " result is null";
+        
         this.source = source;
         this.ref = ref;
         this.result = result;

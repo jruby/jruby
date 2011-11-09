@@ -27,6 +27,8 @@ public class DefineClassInstr extends Instr implements ResultInstr {
     public DefineClassInstr(Variable result, IRClass newIRClass, Operand container, Operand superClass) {
         super(Operation.DEF_CLASS);
         
+        assert result != null: "DefineClassInstr result is null";
+        
         this.container = container;
         this.superClass = superClass == null ? Nil.NIL : superClass;
         this.newIRClass = newIRClass;

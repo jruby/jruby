@@ -20,6 +20,8 @@ public class ReceiveClosureInstr extends Instr implements ResultInstr {
     public ReceiveClosureInstr(Variable result) {
         super(Operation.RECV_CLOSURE);
         
+        assert result != null: "ReceiveClosureInstr result is null";
+        
         this.result = result;
     }
 

@@ -17,6 +17,9 @@ public class MethodLookupInstr extends Instr implements ResultInstr {
 
     public MethodLookupInstr(Variable result, MethodHandle mh) {
         super(Operation.METHOD_LOOKUP);
+        
+        assert result != null: "MethodLookupInstr result is null";
+        
         this.methodHandle = mh;
         this.result = result;
     }

@@ -17,6 +17,8 @@ public class BlockGivenInstr extends Instr implements ResultInstr {
     public BlockGivenInstr(Variable result) {
         super(Operation.BLOCK_GIVEN);
         
+        assert result != null: "BlockGivenInstr result is null";
+        
         this.result = result;
     }
 

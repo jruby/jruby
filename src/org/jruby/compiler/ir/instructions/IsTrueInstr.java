@@ -23,6 +23,9 @@ public class IsTrueInstr extends Instr implements ResultInstr {
 
     public IsTrueInstr(Variable result, Operand value) {
         super(Operation.IS_TRUE);
+        
+        assert result != null: "IsTrueInstr result is null";
+        
         this.value = value;
         this.result = result;
     }

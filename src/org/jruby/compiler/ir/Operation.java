@@ -44,6 +44,7 @@ public enum Operation {
     RECV_CLOSURE_ARG(OpFlags.f_is_arg_receive),
     RECV_EXCEPTION(OpFlags.f_is_arg_receive),
     SET_ARGS(OpFlags.f_has_side_effect),
+    RESTORE_ARGS(OpFlags.f_has_side_effect),
 
     /* By default, call instructions cannot be deleted even if their results
      * aren't used by anyone unless we know more about what the call is, 
@@ -52,7 +53,7 @@ public enum Operation {
     /** calls **/
     CALL(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     JRUBY_IMPL(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
-    RUBY_INTERNALS(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
+    RUBY_INTERNALS(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),    
     SUPER(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     YIELD(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
 
@@ -66,6 +67,8 @@ public enum Operation {
     BREAK(OpFlags.f_has_side_effect | OpFlags.f_is_return),
 
     /** defines **/
+    ALIAS(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),    
+    GVAR_ALIAS(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),    
     DEF_MODULE(OpFlags.f_has_side_effect),
     DEF_CLASS(OpFlags.f_has_side_effect),
     DEF_META_CLASS(OpFlags.f_has_side_effect),

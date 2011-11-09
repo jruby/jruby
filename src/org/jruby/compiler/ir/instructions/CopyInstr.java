@@ -20,7 +20,10 @@ public class CopyInstr extends Instr implements ResultInstr {
 
     public CopyInstr(Variable result, Operand s) {
         super(Operation.COPY);
-        if (s == null) new Exception().printStackTrace();
+
+        assert result != null: "CopyInstr result is null";
+        assert s != null;
+        
         this.arg = s;
         this.result = result;
     }

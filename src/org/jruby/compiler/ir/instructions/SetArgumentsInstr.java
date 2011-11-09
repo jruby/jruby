@@ -25,6 +25,8 @@ public class SetArgumentsInstr extends Instr implements ResultInstr {
     public SetArgumentsInstr(Variable destination, Variable newArgs, boolean coerceToArray) {
         super(Operation.SET_ARGS);
         
+        assert destination != null : "SetArgumentInstr is null";
+        
         this.coerceToArray = coerceToArray;
         this.newArgs = newArgs;
         this.destination = destination;
@@ -61,16 +63,16 @@ public class SetArgumentsInstr extends Instr implements ResultInstr {
             // run to_ary and convert to java array
             if (!(o instanceof RubyArray)) o = RuntimeHelpers.aryToAry((IRubyObject)o);
             o = ((RubyArray)o).toJavaArray();
-        } else if (destination != null) {
+        } else {
             if (!(o instanceof RubyArray)) o = ArgsUtil.convertToRubyArray(context.getRuntime(), (IRubyObject)o, false);
             o = ((RubyArray)o).toJavaArray();
-		  }
+        }
 
         // Set new newArgss
         IRubyObject[] origArgs = interp.setNewParameters((IRubyObject[])o);
 
         // Store it into the destination variable if we have a non-null variable
-        if (destination != null) destination.store(interp, context, self, origArgs);
+        destination.store(interp, context, self, origArgs);
 
         return null;
     }

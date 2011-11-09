@@ -18,6 +18,8 @@ public class ReceiveOptionalArgumentInstr extends Instr implements ResultInstr {
     public ReceiveOptionalArgumentInstr(Variable result, int index) {
         super(Operation.RECV_OPT_ARG);
         
+        assert result != null: "ReceiveOptionalArgumentInstr result is null";
+        
         this.argIndex = index;
         this.result = result;
     }

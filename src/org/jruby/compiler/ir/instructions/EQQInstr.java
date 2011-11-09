@@ -20,6 +20,9 @@ public class EQQInstr extends Instr implements ResultInstr {
 
     public EQQInstr(Variable result, Operand v1, Operand v2) {
         super(Operation.EQQ);
+        
+        assert result != null: "EQQInstr result is null";
+        
         this.arg1 = v1;
         this.arg2 = v2;
         this.result = result;

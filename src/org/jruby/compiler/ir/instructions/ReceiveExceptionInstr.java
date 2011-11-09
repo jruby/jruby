@@ -15,6 +15,8 @@ public class ReceiveExceptionInstr extends Instr implements ResultInstr {
     public ReceiveExceptionInstr(Variable result) {
         super(Operation.RECV_EXCEPTION);
         
+        assert result != null : "ResultExceptionInstr result is null";
+        
         this.result = result;
     }
 

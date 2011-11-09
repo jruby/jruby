@@ -25,6 +25,9 @@ public class RescueEQQInstr extends Instr implements ResultInstr {
 
     public RescueEQQInstr(Variable result, Operand v1, Operand v2) {
         super(Operation.RESCUE_EQQ);
+        
+        assert result != null: "RescueEQQInstr result is null";
+        
         this.arg1 = v1;
         this.arg2 = v2;
         this.result = result;

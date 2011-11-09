@@ -19,6 +19,8 @@ public class NotInstr extends Instr implements ResultInstr {
     public NotInstr(Variable result, Operand arg) {
         super(Operation.NOT);
         
+        assert result != null: "NotInstr result is null";
+        
         this.arg = arg;
         this.result = result;
     }

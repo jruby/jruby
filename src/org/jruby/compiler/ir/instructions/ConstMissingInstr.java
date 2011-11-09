@@ -20,6 +20,9 @@ public class ConstMissingInstr extends Instr implements ResultInstr {
 
     public ConstMissingInstr(Variable result, IRModule definingModule, String missingConst) {
         super(Operation.CONST_MISSING);
+        
+        assert result != null: "ConstMissingInstr result is null";
+        
         this.definingModule = definingModule;
         this.missingConst = missingConst;
         this.result = result;

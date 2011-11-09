@@ -1,6 +1,5 @@
 package org.jruby.compiler.ir.instructions;
 
-import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.IRModule;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Label;
@@ -29,6 +28,8 @@ public class SearchConstInstr extends Instr implements ResultInstr {
 
     public SearchConstInstr(Variable result, IRModule definingModule, String constName) {
         super(Operation.SEARCH_CONST);
+        
+        assert result != null: "SearchConstInstr result is null";
         
         this.definingModule = definingModule;
         this.constName = constName;

@@ -22,6 +22,8 @@ public class ReceiveClosureArgInstr extends Instr implements ResultInstr {
     public ReceiveClosureArgInstr(Variable result, int argIndex, boolean restOfArgArray) {
         super(Operation.RECV_CLOSURE_ARG);
         
+        assert result != null: "ReceiveClosureArgInstr result is null";
+        
         this.argIndex = argIndex;
         this.restOfArgArray = restOfArgArray;
         this.result = result;

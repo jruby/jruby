@@ -26,6 +26,8 @@ public class DefineMetaClassInstr extends Instr implements ResultInstr {
     public DefineMetaClassInstr(Variable result, Operand object, IRMetaClass dummyMetaClass) {
         super(Operation.DEF_META_CLASS);
         
+        assert result != null: "DefineMetaClassInstr result is null";
+        
         this.dummyMetaClass = dummyMetaClass;
         this.object = object;
         this.result = result;

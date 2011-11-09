@@ -115,6 +115,7 @@ import org.jruby.compiler.ir.compiler_pass.LinearizeCFG;
 import org.jruby.compiler.ir.compiler_pass.LiveVariableAnalysis;
 import org.jruby.compiler.ir.compiler_pass.opts.DeadCodeElimination;
 import org.jruby.compiler.ir.compiler_pass.opts.LocalOptimizationPass;
+import org.jruby.compiler.ir.instructions.AliasInstr;
 import org.jruby.compiler.ir.instructions.AttrAssignInstr;
 import org.jruby.compiler.ir.instructions.BEQInstr;
 import org.jruby.compiler.ir.instructions.BNEInstr;
@@ -133,6 +134,7 @@ import org.jruby.compiler.ir.instructions.EnsureRubyArrayInstr;
 import org.jruby.compiler.ir.instructions.ExceptionRegionStartMarkerInstr;
 import org.jruby.compiler.ir.instructions.ExceptionRegionEndMarkerInstr;
 import org.jruby.compiler.ir.instructions.FilenameInstr;
+import org.jruby.compiler.ir.instructions.GVarAliasInstr;
 import org.jruby.compiler.ir.instructions.GetArrayInstr;
 import org.jruby.compiler.ir.instructions.InstanceOfInstr;
 import org.jruby.compiler.ir.instructions.GetClassVariableInstr;
@@ -161,6 +163,7 @@ import org.jruby.compiler.ir.instructions.ReceiveExceptionInstr;
 import org.jruby.compiler.ir.instructions.ReceiveOptionalArgumentInstr;
 import org.jruby.compiler.ir.instructions.RecordEndBlockInstr;
 import org.jruby.compiler.ir.instructions.RescueEQQInstr;
+import org.jruby.compiler.ir.instructions.RestoreArgumentsInstr;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
 import org.jruby.compiler.ir.instructions.RubyInternalCallInstr;
 import org.jruby.compiler.ir.instructions.RubyInternalCallInstr.RubyInternalsMethod;
@@ -830,9 +833,7 @@ public class IRBuilder {
                 // Build
                 buildMultipleAsgnAssignment(childNode, s, null);
                 // Pop
-                if (!isRoot) {
-                    s.addInstr(new SetArgumentsInstr(null, oldArgs, false));  // restore oldArgs -- no to_ary required
-                }
+                if (!isRoot) s.addInstr(new RestoreArgumentsInstr(oldArgs));
                 break;
             }
             case ZEROARGNODE:
@@ -847,7 +848,7 @@ public class IRBuilder {
     public Operand buildAlias(final AliasNode alias, IRScope s) {
         Operand newName = build(alias.getNewName(), s);
         Operand oldName = build(alias.getOldName(), s);
-        generateRubyInternalsCall(s, RubyInternalsMethod.DEFINE_ALIAS, false, getSelf(s), new Operand[] { newName, oldName });
+        s.addInstr(new AliasInstr(getSelf(s), newName, oldName));
         return Nil.NIL;
     }
 
@@ -3203,7 +3204,7 @@ public class IRBuilder {
     // Is this a ruby-internals or a jruby-internals call?
     public Operand buildVAlias(Node node, IRScope s) {
         VAliasNode valiasNode = (VAliasNode) node;
-        generateRubyInternalsCall(s, RubyInternalsMethod.GVAR_ALIAS, false, getSelf(s), new Operand[] { new StringLiteral(valiasNode.getNewName()), new StringLiteral(valiasNode.getOldName()) });
+        s.addInstr(new GVarAliasInstr(new StringLiteral(valiasNode.getNewName()), new StringLiteral(valiasNode.getOldName())));
         return Nil.NIL;
     }
 

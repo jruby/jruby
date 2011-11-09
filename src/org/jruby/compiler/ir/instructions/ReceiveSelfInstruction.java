@@ -17,6 +17,8 @@ public class ReceiveSelfInstruction extends Instr implements ResultInstr {
     public ReceiveSelfInstruction(Variable result) {
         super(Operation.RECV_SELF);
         
+        assert result != null: "ReceiveSelfInstr result is null";
+        
         this.result = result;
     }
 
