@@ -22,7 +22,7 @@ public abstract class CallAdapter {
         this.callSite = callSite;
     }
         
-    public abstract Label call(InterpreterContext interp, ThreadContext context, Operand result, IRubyObject self, IRubyObject receiver);
+    public abstract Object call(InterpreterContext interp, ThreadContext context, IRubyObject self, IRubyObject receiver);
 
     private static CallSite getCallSiteFor(CallType callType, MethAddr methAddr) {
         assert callType != null: "Calltype should never be null";

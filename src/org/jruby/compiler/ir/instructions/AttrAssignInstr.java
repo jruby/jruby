@@ -8,9 +8,9 @@ import org.jruby.runtime.CallType;
 
 // Instruction representing Ruby code of the form: "a[i] = 5"
 // which is equivalent to: a.[](i,5)
-public class AttrAssignInstr extends CallInstr {
+public class AttrAssignInstr extends NoResultCallInstr {
     public AttrAssignInstr(Operand obj, MethAddr attr, Operand[] args) {
-        super(Operation.ATTR_ASSIGN, CallType.UNKNOWN, null, attr, obj, args, null);
+        super(Operation.ATTR_ASSIGN, CallType.UNKNOWN, attr, obj, args, null);
     }
 
     @Override

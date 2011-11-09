@@ -1,6 +1,5 @@
 package org.jruby.compiler.ir.instructions.calladapter;
 
-import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.Block;
@@ -23,16 +22,14 @@ public class OneArgBlockOperandCallAdapter extends ClosureCallAdapter {
     }
 
     @Override
-    public Label call(InterpreterContext interp, ThreadContext context, Operand result, IRubyObject self, IRubyObject receiver) {
+    public Object call(InterpreterContext interp, ThreadContext context, IRubyObject self, IRubyObject receiver) {
         IRubyObject value1 = (IRubyObject) arg1.retrieve(interp, context, self);        
         Block block = prepareBlock(interp, context, self);
         
         try {
-            result.store(interp, context, self, callSite.call(context, self, receiver, value1, block));
+            return callSite.call(context, self, receiver, value1, block);
         } finally {
             block.escape();
         }
-        
-        return null;
     }    
 }

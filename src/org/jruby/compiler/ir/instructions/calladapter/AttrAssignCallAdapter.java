@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.jruby.RubyArray;
-import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Splat;
 import org.jruby.interpreter.InterpreterContext;
@@ -31,7 +30,7 @@ public class AttrAssignCallAdapter extends CallAdapter {
     }
 
     @Override
-    public Label call(InterpreterContext interp, ThreadContext context, Operand result, IRubyObject self, IRubyObject receiver) {
+    public Object call(InterpreterContext interp, ThreadContext context, IRubyObject self, IRubyObject receiver) {
         IRubyObject[] values = prepareArguments(interp, context, self, args);
         
         if (callSite == null) {

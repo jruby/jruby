@@ -1,6 +1,5 @@
 package org.jruby.compiler.ir.instructions.calladapter;
 
-import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.CallSite;
@@ -23,9 +22,8 @@ public class OneArgNoBlockConstantCallAdapter extends CallAdapter {
     }
 
     @Override
-    public Label call(InterpreterContext interp, ThreadContext context, Operand result, IRubyObject self, IRubyObject receiver) {
+    public Object call(InterpreterContext interp, ThreadContext context, IRubyObject self, IRubyObject receiver) {
         if (constant1 == null) constant1 = (IRubyObject) arg1.retrieve(interp, context, self);
-        result.store(interp, context, self, callSite.call(context, self, receiver, constant1));
-        return null;
+        return callSite.call(context, self, receiver, constant1);
     }
 }

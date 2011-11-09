@@ -1,7 +1,6 @@
 package org.jruby.compiler.ir.instructions.calladapter;
 
 import org.jruby.compiler.ir.operands.Fixnum;
-import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.CallSite;
@@ -22,9 +21,7 @@ class OneArgNoBlockFixnumCallAdapter extends CallAdapter {
     }
 
     @Override
-    public Label call(InterpreterContext interp, ThreadContext context, Operand result, IRubyObject self, IRubyObject receiver) {
-        IRubyObject returnValue = (IRubyObject) callSite.call(context, self, receiver, arg1);
-        result.store(interp, context, self, returnValue);
-        return null;
+    public Object call(InterpreterContext interp, ThreadContext context, IRubyObject self, IRubyObject receiver) {
+        return (IRubyObject) callSite.call(context, self, receiver, arg1);
     }
 }

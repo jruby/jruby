@@ -4,7 +4,6 @@
  */
 package org.jruby.compiler.ir.instructions.calladapter;
 
-import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.CallSite;
@@ -31,11 +30,9 @@ public class TwoArgNoBlockConstantCallAdapter extends CallAdapter {
     }
 
     @Override
-    public Label call(InterpreterContext interp, ThreadContext context, Operand result, IRubyObject self, IRubyObject receiver) {
+    public Object call(InterpreterContext interp, ThreadContext context, IRubyObject self, IRubyObject receiver) {
         if (constant1 == null) generateConstants(interp, context, self);
-        IRubyObject returnValue = (IRubyObject) callSite.call(context, self, receiver, constant1, constant2);
-        result.store(interp, context, self, returnValue);
-        return null;
+        return callSite.call(context, self, receiver, constant1, constant2);
     }
 
     private void generateConstants(InterpreterContext interp, ThreadContext context, IRubyObject self) {

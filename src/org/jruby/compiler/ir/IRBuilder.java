@@ -172,6 +172,7 @@ import org.jruby.compiler.ir.instructions.ThreadPollInstr;
 import org.jruby.compiler.ir.instructions.ThrowExceptionInstr;
 import org.jruby.compiler.ir.instructions.UndefMethodInstr;
 import org.jruby.compiler.ir.instructions.YieldInstr;
+import org.jruby.compiler.ir.instructions.jruby.CheckArityInstr;
 import org.jruby.compiler.ir.instructions.jruby.ToAryInstr;
 import org.jruby.compiler.ir.operands.Array;
 import org.jruby.compiler.ir.operands.AsString;
@@ -1846,9 +1847,8 @@ public class IRBuilder {
         // (a) on inlining, we'll be able to get rid of these checks in almost every case.
         // (b) compiler to bytecode will anyway generate this and this is explicit.
         // For now, we are going explicit instruction route.  But later, perhaps can make this implicit in the method setup preamble?  
-        Operand[] args = new Operand[] { new Fixnum((long)required), new Fixnum((long)opt), new Fixnum((long)rest) };
         // FIXME: I added getSelf() just so we won't NPE since this is a callinstr. Can we make this something other than callinstr?
-        generateJRubyUtilityCall(s, JRubyImplementationMethod.CHECK_ARITY, false, getSelf(s), args);
+        s.addInstr(new CheckArityInstr(new Fixnum((long)required), new Fixnum((long)opt), new Fixnum((long)rest)));
 
         // self = args[0]
         s.addInstr(new ReceiveSelfInstruction(getSelf(s)));

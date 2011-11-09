@@ -8,16 +8,11 @@ import org.jruby.RubyMatchData;
 import org.jruby.RubyModule;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
-import org.jruby.compiler.ir.IRClosure;
-import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.jruby.BlockGivenInstr;
-import org.jruby.compiler.ir.instructions.jruby.CheckArityInstr;
 import org.jruby.compiler.ir.operands.BooleanLiteral;
 import org.jruby.compiler.ir.operands.Fixnum;
 import org.jruby.compiler.ir.operands.Label;
-import org.jruby.compiler.ir.operands.WrappedIRModule;
-import org.jruby.compiler.ir.operands.WrappedIRClosure;
 import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.operands.Nil;
 import org.jruby.compiler.ir.operands.Operand;
@@ -64,7 +59,6 @@ public class JRubyImplCallInstr extends CallInstr {
        CLASS_VAR_DEFINED("isClassVarDefined"),
        FRAME_SUPER_METHOD_BOUND("frame_superMethodBound"),
        SET_WITHIN_DEFINED("setWithinDefined"),
-       CHECK_ARITY("checkArity"),
        RAISE_ARGUMENT_ERROR("raiseArgumentError");
 
        public MethAddr methAddr;
@@ -82,8 +76,6 @@ public class JRubyImplCallInstr extends CallInstr {
         switch (methAddr) {
             case BLOCK_GIVEN:
                 return new BlockGivenInstr(result);
-            case CHECK_ARITY:
-                return new CheckArityInstr(result, receiver, args);
             default:
                 return new JRubyImplCallInstr(result, methAddr, receiver, args);
         }
