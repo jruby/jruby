@@ -839,8 +839,6 @@ public class IRBuilder {
         }
     }
 
-    // SSS FIXME: Got a little lazy?  We could/should define a special instruction ALIAS_METHOD_Instr probably
-    // Is this a ruby-internals or a jruby-internals call?
     public Operand buildAlias(final AliasNode alias, IRScope s) {
         Operand newName = build(alias.getNewName(), s);
         Operand oldName = build(alias.getOldName(), s);
@@ -3185,8 +3183,6 @@ public class IRBuilder {
         return buildConditionalLoop(s, untilNode.getConditionNode(), untilNode.getBodyNode(), false, untilNode.evaluateAtStart());
     }
 
-    // SSS FIXME: Got a little lazy?  We could/should define a special instruction ALIAS_GLOBAL_VAR_Instr probably
-    // Is this a ruby-internals or a jruby-internals call?
     public Operand buildVAlias(Node node, IRScope s) {
         VAliasNode valiasNode = (VAliasNode) node;
         s.addInstr(new GVarAliasInstr(new StringLiteral(valiasNode.getNewName()), new StringLiteral(valiasNode.getOldName())));
@@ -3207,19 +3203,6 @@ public class IRBuilder {
     public Operand buildXStr(XStrNode node, IRScope m) {
         return copyAndReturnValue(m, new BacktickString(new StringLiteral(node.getValue())));
     }
-
-/*
-    private List<Operand> setupYieldArgs(Node args, IRScope s) {
-        List<Operand> argsList = new ArrayList<Operand>();
-        if (args != null) {
-           // unwrap newline nodes to get their actual type
-           args = skipOverNewlines(s, args);
-           buildArgs(argsList, args, s);
-        }
-
-        return argsList;
-    }
-*/
 
     public Operand buildYield(YieldNode node, IRScope s) {
         Variable ret = s.getNewTemporaryVariable();
