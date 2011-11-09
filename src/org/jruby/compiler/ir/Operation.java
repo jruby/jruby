@@ -74,6 +74,7 @@ public enum Operation {
     DEF_META_CLASS(OpFlags.f_has_side_effect),
     DEF_INST_METH(OpFlags.f_has_side_effect),
     DEF_CLASS_METH(OpFlags.f_has_side_effect),
+    UNDEF_METHOD(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),    
 
     THROW(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_is_exception),
 

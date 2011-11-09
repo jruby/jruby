@@ -26,9 +26,7 @@ public class RubyInternalCallInstr extends CallInstr {
        // It calls regular to_ary on the object.  But, how does it succeed if it encounters a method_missing?
        // Ex: http://gist.github.com/163551
        TO_ARY("to_ary"),
-       FOR_EACH("each"),
-       //CHECK_ARITY("checkArity"),
-       UNDEF_METHOD("undefMethod");
+       FOR_EACH("each");
 
        public MethAddr methAddr;
        RubyInternalsMethod(String methodName) {
@@ -81,9 +79,6 @@ public class RubyInternalCallInstr extends CallInstr {
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         Object   rVal = null;
         switch (this.implMethod) {
-            case UNDEF_METHOD:
-                rVal = RuntimeHelpers.undefMethod(context, getReceiver().retrieve(interp, context, self));
-                break;
             case TO_ARY: {
                 Object recv = getReceiver().retrieve(interp, context, self);
                 Operand[] args = getCallArgs();

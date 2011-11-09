@@ -173,6 +173,7 @@ import org.jruby.compiler.ir.instructions.SearchConstInstr;
 import org.jruby.compiler.ir.instructions.SuperInstr;
 import org.jruby.compiler.ir.instructions.ThreadPollInstr;
 import org.jruby.compiler.ir.instructions.ThrowExceptionInstr;
+import org.jruby.compiler.ir.instructions.UndefMethodInstr;
 import org.jruby.compiler.ir.instructions.YieldInstr;
 import org.jruby.compiler.ir.operands.Array;
 import org.jruby.compiler.ir.operands.AsString;
@@ -3139,7 +3140,9 @@ public class IRBuilder {
 
     public Operand buildUndef(Node node, IRScope m) {
         Operand methName = build(((UndefNode) node).getName(), m);
-        return generateRubyInternalsCall(m, RubyInternalsMethod.UNDEF_METHOD, true, methName, NO_ARGS);
+        Variable ret = m.getNewTemporaryVariable();
+        m.addInstr(new UndefMethodInstr(ret, methName));
+        return ret;        
     }
 
     private Operand buildConditionalLoop(IRExecutionScope s, Node conditionNode, Node bodyNode, boolean isWhile, boolean isLoopHeadCondition)
