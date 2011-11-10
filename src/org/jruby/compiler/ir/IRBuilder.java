@@ -177,6 +177,7 @@ import org.jruby.compiler.ir.instructions.UndefMethodInstr;
 import org.jruby.compiler.ir.instructions.YieldInstr;
 import org.jruby.compiler.ir.instructions.defined.SetWithinDefinedInstr;
 import org.jruby.compiler.ir.instructions.jruby.CheckArityInstr;
+import org.jruby.compiler.ir.instructions.jruby.RestoreErrorInfoInstr;
 import org.jruby.compiler.ir.instructions.jruby.ToAryInstr;
 import org.jruby.compiler.ir.operands.Array;
 import org.jruby.compiler.ir.operands.AsString;
@@ -1603,7 +1604,7 @@ public class IRBuilder {
                     public Operand run(Object[] args) {
                         // Nothing to do -- ignore the exception, and restore stashed error info!
                         IRScope  m  = (IRScope)args[0];
-                        m.addInstr(new JRubyImplCallInstr(null, JRubyImplementationMethod.TC_RESTORE_ERR_INFO, null, new Operand[]{(Variable)args[1]}));
+                        m.addInstr(new RestoreErrorInfoInstr((Operand) args[1]));
                         return Nil.NIL;
                     }
                 };

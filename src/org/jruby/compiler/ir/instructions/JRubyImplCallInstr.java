@@ -44,7 +44,6 @@ public class JRubyImplCallInstr extends CallInstr {
        SELF_HAS_INSTANCE_VARIABLE("self_hasInstanceVariable"), // SSS FIXME: Should this be a Ruby internals call rather than a JRUBY internals call?
        SELF_IS_METHOD_BOUND("self_isMethodBound"), // SSS FIXME: Should this be a Ruby internals call rather than a JRUBY internals call?
        TC_SAVE_ERR_INFO("threadContext_saveErrInfo"),
-       TC_RESTORE_ERR_INFO("threadContext_restoreErrInfo"),
        BACKREF_IS_RUBY_MATCH_DATA("backref_isRubyMatchData"),
        METHOD_PUBLIC_ACCESSIBLE("methodIsPublicAccessible"),
        CLASS_VAR_DEFINED("isClassVarDefined"),
@@ -168,9 +167,6 @@ public class JRubyImplCallInstr extends CallInstr {
             }
             case TC_SAVE_ERR_INFO:
                 rVal = context.getErrorInfo();
-                break;
-            case TC_RESTORE_ERR_INFO:
-                context.setErrorInfo((IRubyObject)getCallArgs()[0].retrieve(interp, context, self));
                 break;
             case BACKREF_IS_RUBY_MATCH_DATA:
                 // bRef = getBackref()
