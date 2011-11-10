@@ -606,84 +606,48 @@ public class IRBuilder {
         }
     }
 
-    public void buildArguments(List<Operand> args, Node node, IRScope s) {
-        switch (node.getNodeType()) {
-            case ARGSCATNODE: {
-                ArgsCatNode n = (ArgsCatNode)node;
-                args.add(new Splat(build(n.getFirstNode(), s)));
-                args.add(new Splat(build(n.getSecondNode(), s)));
-                break;
-            }
-            case ARGSPUSHNODE: {
-                ArgsPushNode n = (ArgsPushNode)node;
-                args.add(new Splat(build(n.getFirstNode(), s)));
-                args.add(build(n.getSecondNode(), s));
-                break;
-            }
-            case ARRAYNODE: {
-                args.add(buildArray(node, s));
-                break;
-            }
-            case SPLATNODE: {
-                args.add(buildSplat((SplatNode)node, s));
-                break;
-            }
-            default: {
-                args.add(build(node, s));
-            }
-        }
-    }
-    
-    public void buildVariableArityArguments(List<Operand> args, Node node, IRScope s) {
-       buildArguments(args, node, s);
-    }
-
-    public void buildSpecificArityArguments (List<Operand> args, Node node, IRScope s) {
-        if (node.getNodeType() == NodeType.ARRAYNODE) {
-            ArrayNode arrayNode = (ArrayNode)node;
-            if (arrayNode.isLightweight()) {
-                // explode array, it's an internal "args" array
-                for (Node n : arrayNode.childNodes())
-                    args.add(build(n, s));
-            } else {
-                // use array as-is, it's a literal array
-                args.add(build(arrayNode, s));
-            }
-        } else {
-            args.add(build(node, s));
-        }
-    }
-
     public List<Operand> setupCallArgs(Node args, IRScope s) {
         List<Operand> argsList = new ArrayList<Operand>();
         if (args != null) {
-           // unwrap newline nodes to get their actual type
-           args = skipOverNewlines(s, args);
-           buildArgs(argsList, args, s);
+            // unwrap newline nodes to get their actual type
+            args = skipOverNewlines(s, args);
+            switch (args.getNodeType()) {
+                case ARGSCATNODE: {
+                    ArgsCatNode n = (ArgsCatNode)args;
+                    argsList.add(new Splat(build(n.getFirstNode(), s)));
+                    argsList.add(new Splat(build(n.getSecondNode(), s)));
+                    break;
+                }
+                case ARGSPUSHNODE: {
+                    ArgsPushNode n = (ArgsPushNode)args;
+                    argsList.add(new Splat(build(n.getFirstNode(), s)));
+                    argsList.add(build(n.getSecondNode(), s));
+                    break;
+                }
+                case SPLATNODE: {
+                    argsList.add(buildSplat((SplatNode)args, s));
+                    break;
+                }
+                case ARRAYNODE: {
+                    ArrayNode arrayNode = (ArrayNode)args;
+                    if (arrayNode.isLightweight()) {
+                        // explode array, it's an internal "args" array
+                        for (Node n : arrayNode.childNodes())
+                            argsList.add(build(n, s));
+                    } else {
+                        // use array as-is, it's a literal array
+                        argsList.add(build(arrayNode, s));
+                    }
+                    break;
+                }
+                default: {
+                    argsList.add(build(args, s));
+                    break;
+                }
+            }
         }
 
         return argsList;
-    }
-
-    public void buildArgs(List<Operand> argsList, Node args, IRScope s) {
-        switch (args.getNodeType()) {
-            case ARGSCATNODE:
-            case ARGSPUSHNODE:
-            case SPLATNODE:
-                buildVariableArityArguments(argsList, args, s);
-                break;
-            case ARRAYNODE:
-                ArrayNode arrayNode = (ArrayNode)args;
-                // ENEBO: This is not right.  ArrayNode is not just for boxing
-//                if (arrayNode.size() > 3)
-//                    buildVariableArityArguments(argsList, arrayNode, s);
-//                else if (arrayNode.size() > 0)
-                    buildSpecificArityArguments(argsList, arrayNode, s);
-                break;
-            default:
-                buildSpecificArityArguments(argsList, args, s);
-                break;
-        }
     }
 
     // This method is called to build assignments for a multiple-assignment instruction
