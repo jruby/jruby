@@ -40,7 +40,7 @@ public class RaiseArgumentErrorInstr extends Instr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self, org.jruby.runtime.Block block) {
         int requiredInt = required.value.intValue();
         int optInt = opt.value.intValue();
         int restInt = rest.value.intValue();

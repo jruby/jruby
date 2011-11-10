@@ -42,7 +42,7 @@ public class ThrowExceptionInstr extends Instr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self, org.jruby.runtime.Block block) {
         if (exception instanceof IRException) throw ((IRException) exception).getException(context.getRuntime());
 
         Object excObj = exception.retrieve(interp, context, self);

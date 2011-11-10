@@ -37,8 +37,8 @@ public class BlockGivenInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
-        result.store(interp, context, self, context.getRuntime().newBoolean(interp.getBlock().isGiven()));
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self, org.jruby.runtime.Block block) {
+        result.store(interp, context, self, context.getRuntime().newBoolean(block.isGiven()));
         return null;
     }
 }

@@ -34,7 +34,7 @@ public class LineNumberInstr extends Instr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self, org.jruby.runtime.Block block) {
         context.setLine(lineNumber);
         return null;
     }

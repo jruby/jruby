@@ -26,7 +26,7 @@ public class NoResultCallInstr extends CallBase {
     }    
 
     @Override
-    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self, org.jruby.runtime.Block block) {
         callAdapter.call(interp, context, self, (IRubyObject) getReceiver().retrieve(interp, context, self));
         return null;
     }  

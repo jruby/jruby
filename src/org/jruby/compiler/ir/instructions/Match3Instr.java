@@ -51,7 +51,7 @@ public class Match3Instr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self, org.jruby.runtime.Block block) {
         RubyRegexp regexp = (RubyRegexp) receiver.retrieve(interp, context, self);
         IRubyObject argValue = (IRubyObject) arg.retrieve(interp, context, self);
         

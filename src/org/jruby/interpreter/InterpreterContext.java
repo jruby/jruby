@@ -48,8 +48,6 @@ public interface InterpreterContext {
     public Object getSharedBindingVariable(ThreadContext context, int bindingSlot);
     public void setSharedBindingVariable(int bindingSlot, Object value);
 
-    public Block getBlock();
-
     // Set the most recently raised exception
     public void setException(Object e);
 

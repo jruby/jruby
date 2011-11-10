@@ -69,7 +69,7 @@ public class GetArrayInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self, org.jruby.runtime.Block block) {
         // ENEBO: Can I assume since IR figured this is an internal array it will be RubyArray like this?
         RubyArray rubyArray = (RubyArray) array.retrieve(interp, context, self);
         Object val;

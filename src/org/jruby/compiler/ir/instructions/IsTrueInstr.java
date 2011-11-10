@@ -64,7 +64,7 @@ public class IsTrueInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self, org.jruby.runtime.Block block) {
         // ENEBO: This seems like a lot of extra work...
         result.store(interp, context, self, 
                 context.getRuntime().newBoolean(((IRubyObject) value.retrieve(interp, context, self)).isTrue()));

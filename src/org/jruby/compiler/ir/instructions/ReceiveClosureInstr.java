@@ -42,8 +42,7 @@ public class ReceiveClosureInstr extends Instr implements ResultInstr {
 
     @Interp
     @Override
-    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
-        Block block = interp.getBlock();
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self, org.jruby.runtime.Block block) {
         Ruby  runtime = context.getRuntime();
         result.store(interp, context, self, block == Block.NULL_BLOCK ? runtime.getNil() : runtime.newProc(Type.PROC, block));
         return null;

@@ -43,7 +43,7 @@ public class SuperInstr extends CallInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self, org.jruby.runtime.Block aBlock) {
         // FIXME: Receiver is not being used...should we be retrieving it?
         IRubyObject receiver = (IRubyObject)getReceiver().retrieve(interp, context, self);
         IRubyObject[] args = prepareArguments(interp, context, self, getCallArgs());

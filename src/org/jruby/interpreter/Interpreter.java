@@ -134,7 +134,7 @@ public class Interpreter {
         }
     }
 
-    public static IRubyObject interpret(ThreadContext context, IRubyObject self, IRExecutionScope scope, InterpreterContext interp) {
+    public static IRubyObject interpret(ThreadContext context, IRubyObject self, IRExecutionScope scope, InterpreterContext interp, Block block) {
         Ruby runtime = context.getRuntime();
         boolean inClosure = (scope instanceof IRClosure);
 
@@ -156,7 +156,7 @@ public class Interpreter {
             //   invokes Ruby-level exceptions handlers.
             try {
                 try {
-                    Label jumpTarget = lastInstr.interpret(interp, scope, context, self);
+                    Label jumpTarget = lastInstr.interpret(interp, scope, context, self, block);
                     ipc = (jumpTarget == null) ? ipc + 1 : jumpTarget.getTargetPC();
                 } catch (IRReturnJump rj) {
                     // - If we are in a lambda or if we are in the method scope we are supposed to return from, stop propagating
@@ -239,7 +239,7 @@ public class Interpreter {
     }
 
     public static IRubyObject INTERPRET_METHOD(ThreadContext context, IRExecutionScope scope, 
-        InterpreterContext interp, IRubyObject self, String name, RubyModule implClass, boolean isTraceable) {
+        InterpreterContext interp, IRubyObject self, String name, RubyModule implClass, Block block, boolean isTraceable) {
         Ruby runtime = context.getRuntime();
         boolean syntheticMethod = name == null || name.equals("");
         
@@ -248,7 +248,7 @@ public class Interpreter {
             String className = implClass.getName();
             if (!syntheticMethod) ThreadContext.pushBacktrace(context, className, name, context.getFile(), context.getLine());
             if (isTraceable) methodPreTrace(runtime, context, name, implClass);
-            return interpret(context, self, scope, interp);
+            return interpret(context, self, scope, interp, block);
         } finally {
             callStack.get().pop();
             if (isTraceable) {

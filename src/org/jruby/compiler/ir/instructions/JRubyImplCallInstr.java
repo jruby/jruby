@@ -111,7 +111,7 @@ public class JRubyImplCallInstr extends CallInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self, org.jruby.runtime.Block block) {
         Ruby runtime = context.getRuntime();        
         String name;
         Object receiver;

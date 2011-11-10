@@ -37,7 +37,7 @@ public class ReceiveSelfInstruction extends Instr implements ResultInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self, org.jruby.runtime.Block block) {
         // result is a confusing name
 
         // SSS FIXME: Anything else to do here?? 

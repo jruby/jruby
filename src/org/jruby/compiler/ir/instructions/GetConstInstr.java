@@ -35,7 +35,7 @@ public class GetConstInstr extends GetInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self, org.jruby.runtime.Block block) {
         Object source = getSource().retrieve(interp, context, self);
         RubyModule module;
 

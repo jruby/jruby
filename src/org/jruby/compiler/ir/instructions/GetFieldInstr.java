@@ -23,7 +23,7 @@ public class GetFieldInstr extends GetInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self, org.jruby.runtime.Block block) {
         IRubyObject object = (IRubyObject) getSource().retrieve(interp, context, self);
 
         // FIXME: Why getRealClass? Document

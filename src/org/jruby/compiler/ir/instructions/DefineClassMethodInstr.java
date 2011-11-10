@@ -46,7 +46,7 @@ public class DefineClassMethodInstr extends Instr {
 
     // SSS FIXME: Go through this and DefineInstanceMethodInstr.interpret, clean up, extract common code
     @Override
-    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self, org.jruby.runtime.Block block) {
         String name = method.getName();
         Ruby runtime = context.getRuntime();
         RubyObject obj = (RubyObject) container.retrieve(interp, context, self);

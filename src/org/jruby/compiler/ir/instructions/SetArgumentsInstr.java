@@ -58,7 +58,7 @@ public class SetArgumentsInstr extends Instr implements ResultInstr {
 
     @Interp
     @Override
-    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self, org.jruby.runtime.Block block) {
         Object o = newArgs.retrieve(interp, context, self);
         if (coerceToArray) {
             // run to_ary and convert to java array

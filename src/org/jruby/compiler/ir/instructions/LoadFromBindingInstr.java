@@ -72,7 +72,7 @@ public class LoadFromBindingInstr extends Instr implements ResultInstr {
 
     @Interp
     @Override
-    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self, org.jruby.runtime.Block block) {
         LocalVariable v = (LocalVariable) result;
         
         if (bindingSlot == -1) bindingSlot = sourceMethod.getBindingSlot(getSlotName());

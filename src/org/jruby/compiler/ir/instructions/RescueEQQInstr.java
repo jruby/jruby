@@ -59,7 +59,7 @@ public class RescueEQQInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self, org.jruby.runtime.Block block) {
         IRubyObject receiver = (IRubyObject) arg1.retrieve(interp, context, self);
         IRubyObject value = (IRubyObject) arg2.retrieve(interp, context, self);
 

@@ -43,7 +43,7 @@ public class JumpIndirectInstr extends Instr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self, org.jruby.runtime.Block block) {
         return (Label) (target.retrieve(interp, context, self));
     }
 }

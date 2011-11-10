@@ -22,7 +22,7 @@ public class GetClassVariableInstr extends GetInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self, org.jruby.runtime.Block block) {
         getResult().store(interp, context, self, 
                 ((RubyModule) getSource().retrieve(interp, context, self)).getClassVar(getRef()));
         return null;

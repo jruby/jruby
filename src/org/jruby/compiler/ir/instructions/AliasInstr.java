@@ -46,7 +46,7 @@ public class AliasInstr extends Instr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self, org.jruby.runtime.Block block) {
         IRubyObject object = (IRubyObject) receiver.retrieve(interp, context, self);
                 
         if (object == null || object instanceof RubyFixnum || object instanceof RubySymbol) {

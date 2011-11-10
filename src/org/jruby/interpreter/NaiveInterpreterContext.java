@@ -23,7 +23,6 @@ public class NaiveInterpreterContext implements InterpreterContext {
     protected Object returnValue;
     protected Object[] temporaryVariables;
     protected Frame frame;
-    protected Block block;
     protected Block.Type blockType;
     protected DynamicScope currDynScope = null;
     protected boolean allocatedDynScope = false;
@@ -33,19 +32,14 @@ public class NaiveInterpreterContext implements InterpreterContext {
     // - self if we are executing a class method of 'self'
     // - self.getMetaClass() if we are executing an instance method of 'self'
     // - the class in which the closure is lexically defined in if we are executing a closure
-    public NaiveInterpreterContext(ThreadContext context, IRExecutionScope irScope, RubyModule currentModule, IRubyObject self, String name, IRubyObject[] parameters, Block block, Block.Type blockType) {
+    public NaiveInterpreterContext(ThreadContext context, IRExecutionScope irScope, RubyModule currentModule, IRubyObject self, String name, IRubyObject[] parameters, Block.Type blockType) {
         this.frame = context.getCurrentFrame();
         this.parameters = parameters;
         this.currDynScope = context.getCurrentScope();
 
         int temporaryVariablesSize = irScope.getTemporaryVariableSize();
         this.temporaryVariables = temporaryVariablesSize > 0 ? new Object[temporaryVariablesSize] : null;
-        this.block = block;
         this.blockType = blockType;
-    }
-
-    public Block getBlock() {
-        return block;
     }
 
     public boolean inLambda() {

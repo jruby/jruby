@@ -55,7 +55,7 @@ public class DefineModuleInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self, org.jruby.runtime.Block block) {
         Object rubyContainer = container.retrieve(interp, context, self);
         
         if (!(rubyContainer instanceof RubyModule)) throw context.getRuntime().newTypeError("no outer class/module");
@@ -65,7 +65,7 @@ public class DefineModuleInstr extends Instr implements ResultInstr {
         DynamicMethod method = new InterpretedIRMethod(newIRModule.getRootMethod(), Visibility.PUBLIC, newRubyModule);
 
         // SSS FIXME: Rather than pass the block implicitly, should we add %block as another operand to DefineClass, DefineModule instrs?
-        Object value = method.call(context, newRubyModule, newRubyModule, "", new IRubyObject[]{}, interp.getBlock());
+        Object value = method.call(context, newRubyModule, newRubyModule, "", new IRubyObject[]{}, block);
         result.store(interp, context, self, value);
         return null;
     }

@@ -38,7 +38,7 @@ public class RestoreErrorInfoInstr extends Instr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self, org.jruby.runtime.Block block) {
         context.setErrorInfo((IRubyObject) arg.retrieve(interp, context, self));
         
         return null;

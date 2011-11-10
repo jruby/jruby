@@ -49,7 +49,7 @@ public class ToAryInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self, org.jruby.runtime.Block block) {
         Object receiver = array.retrieve(interp, context, self);
 
         // Don't call to_ary if we we have an array already and we are asked not to run to_ary on arrays

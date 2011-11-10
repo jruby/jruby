@@ -43,7 +43,7 @@ public class ReceiveOptionalArgumentInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self, org.jruby.runtime.Block block) {
         Object v = interp.getParameterCount() > argIndex ? 
                 interp.getParameter(argIndex) : UndefinedValue.UNDEFINED;
         result.store(interp, context, self, v);

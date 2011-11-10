@@ -56,7 +56,7 @@ public class NotInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self, org.jruby.runtime.Block block) {
         boolean not = !((IRubyObject) arg.retrieve(interp, context, self)).isTrue();
 
         result.store(interp, context, self, context.getRuntime().newBoolean(not));

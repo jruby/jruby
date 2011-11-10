@@ -44,7 +44,7 @@ public class UndefMethodInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self, org.jruby.runtime.Block block) {
         result.store(interp, context, self, 
                 RuntimeHelpers.undefMethod(context, methodName.retrieve(interp, context, self)));
         return null;

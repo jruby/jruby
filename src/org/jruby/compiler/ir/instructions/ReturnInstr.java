@@ -48,7 +48,7 @@ public class ReturnInstr extends Instr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self, org.jruby.runtime.Block block) {
         interp.setReturnValue(returnValue.retrieve(interp, context, self));
         return scope.getCFG().getExitBB().getLabel();
     }

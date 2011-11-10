@@ -23,7 +23,7 @@ public class BEQInstr extends BranchInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self, org.jruby.runtime.Block block) {
         Operand arg1 = getArg1();
         Operand arg2 = getArg2();
         Object value1 = arg1.retrieve(interp, context, self);

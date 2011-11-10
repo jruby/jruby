@@ -77,9 +77,9 @@ public class InterpretedIRMethod extends DynamicMethod {
         context.preMethodFrameOnly(currentModule, name, self, block);
         context.getCurrentScope().getStaticScope().setModule(clazz);
         context.setCurrentVisibility(getVisibility());
-        InterpreterContext interp = new NaiveInterpreterContext(context, method, currentModule, self, name, args, block, null);
+        InterpreterContext interp = new NaiveInterpreterContext(context, method, currentModule, self, name, args, null);
         try {
-            return Interpreter.INTERPRET_METHOD(context, method, interp, self, name, currentModule, false);
+            return Interpreter.INTERPRET_METHOD(context, method, interp, self, name, currentModule, block, false);
         } finally {
             context.popFrame();
             context.postMethodScopeOnly();

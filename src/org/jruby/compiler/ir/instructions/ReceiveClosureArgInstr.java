@@ -57,7 +57,7 @@ public class ReceiveClosureArgInstr extends Instr implements ResultInstr {
 
     @Interp
     @Override
-    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self, org.jruby.runtime.Block block) {
         Object o;
         int numArgs = interp.getParameterCount();
         if (restOfArgArray) {
