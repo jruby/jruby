@@ -87,8 +87,8 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
             DynamicScope prevScope = binding.getDynamicScope();
             DynamicScope newScope  = closure.isForLoopBody() ? prevScope : DynamicScope.newDynamicScope(closure.getStaticScope(), prevScope);
             context.pushScope(newScope);
-            NaiveInterpreterContext interp = new NaiveInterpreterContext(context, closure, currentModule, self, null, args, type);
-            return Interpreter.interpret(context, self, closure, interp, block);
+            NaiveInterpreterContext interp = new NaiveInterpreterContext(context, closure, currentModule, self, null, args);
+            return Interpreter.interpret(context, self, closure, interp, block, type);
         }
         finally {
             binding.getFrame().setVisibility(oldVis);

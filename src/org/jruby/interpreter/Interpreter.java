@@ -134,7 +134,7 @@ public class Interpreter {
         }
     }
 
-    public static IRubyObject interpret(ThreadContext context, IRubyObject self, IRExecutionScope scope, InterpreterContext interp, Block block) {
+    public static IRubyObject interpret(ThreadContext context, IRubyObject self, IRExecutionScope scope, InterpreterContext interp, Block block, Block.Type blockType) {
         Ruby runtime = context.getRuntime();
         boolean inClosure = (scope instanceof IRClosure);
 
@@ -160,7 +160,7 @@ public class Interpreter {
                     ipc = (jumpTarget == null) ? ipc + 1 : jumpTarget.getTargetPC();
                 } catch (IRReturnJump rj) {
                     // - If we are in a lambda or if we are in the method scope we are supposed to return from, stop propagating
-                    if (interp.inLambda() || (rj.methodToReturnFrom == scope)) return (IRubyObject) rj.returnValue;
+                    if (inLambda(blockType) || (rj.methodToReturnFrom == scope)) return (IRubyObject) rj.returnValue;
 
                     // - If not, Just pass it along!
                     throw rj;
@@ -171,16 +171,16 @@ public class Interpreter {
                         bj.breakInEval = false;
 
                         // Error
-                        if (!inClosure || interp.inProc()) throw runtime.newLocalJumpError(Reason.BREAK, (IRubyObject)bj.breakValue, "unexpected break");
+                        if (!inClosure || inProc(blockType)) throw runtime.newLocalJumpError(Reason.BREAK, (IRubyObject)bj.breakValue, "unexpected break");
 
                         // Lambda special case.  We are in a lambda and breaking out of it requires popping out exactly one level up.
-                        if (interp.inLambda()) bj.caughtByLambda = true;
+                        if (inLambda(blockType)) bj.caughtByLambda = true;
                         // If we are in an eval, record it so we can account for it
                         else if (scope instanceof IREvalScript) bj.breakInEval = true;
 
                         // Pass it upward
                         throw bj;
-                    } else if (interp.inLambda()) {
+                    } else if (inLambda(blockType)) {
                         // We just unwound all the way up because of a non-local break
                         throw runtime.newLocalJumpError(Reason.BREAK, (IRubyObject)bj.breakValue, "unexpected break");
                     } else if (bj.caughtByLambda || (bj.scopeToReturnTo == scope)) {
@@ -220,7 +220,7 @@ public class Interpreter {
         IRubyObject rv = (IRubyObject) interp.getReturnValue(context);
 
         // If not in a lambda, in a closure, and lastInstr was a return, have to return from the nearest method!
-        if ((lastInstr instanceof ReturnInstr) && !interp.inLambda()) {
+        if ((lastInstr instanceof ReturnInstr) && !inLambda(blockType)) {
             IRMethod methodToReturnFrom = ((ReturnInstr)lastInstr).methodToReturnFrom;
             if (inClosure && !callStack.get().contains(methodToReturnFrom)) {
                 // SSS: better way to do this without having to maintain a call stack?
@@ -239,7 +239,7 @@ public class Interpreter {
     }
 
     public static IRubyObject INTERPRET_METHOD(ThreadContext context, IRExecutionScope scope, 
-        InterpreterContext interp, IRubyObject self, String name, RubyModule implClass, Block block, boolean isTraceable) {
+        InterpreterContext interp, IRubyObject self, String name, RubyModule implClass, Block block, Block.Type blockType, boolean isTraceable) {
         Ruby runtime = context.getRuntime();
         boolean syntheticMethod = name == null || name.equals("");
         
@@ -248,7 +248,7 @@ public class Interpreter {
             String className = implClass.getName();
             if (!syntheticMethod) ThreadContext.pushBacktrace(context, className, name, context.getFile(), context.getLine());
             if (isTraceable) methodPreTrace(runtime, context, name, implClass);
-            return interpret(context, self, scope, interp, block);
+            return interpret(context, self, scope, interp, block, blockType);
         } finally {
             callStack.get().pop();
             if (isTraceable) {
@@ -259,6 +259,14 @@ public class Interpreter {
             }
         }
     }
+    
+    private static boolean inLambda(Block.Type blockType) {
+        return blockType == Block.Type.LAMBDA;
+    }
+
+    public static boolean inProc(Block.Type blockType) {
+        return blockType == Block.Type.PROC;
+    }    
 
     private static void methodPreTrace(Ruby runtime, ThreadContext context, String name, RubyModule implClass) {
         if (runtime.hasEventHooks()) context.trace(RubyEvent.CALL, name, implClass);

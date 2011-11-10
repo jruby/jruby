@@ -53,10 +53,4 @@ public interface InterpreterContext {
 
     // Get the most recently raised exception
     public Object getException();
-
-    // Are we in a lambda context?
-    public boolean inLambda();
-
-    // Are we in a proc context?
-    public boolean inProc();
 }
