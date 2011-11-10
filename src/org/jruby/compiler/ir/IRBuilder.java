@@ -587,20 +587,18 @@ public class IRBuilder {
         }
     }
 
+    private Variable copyAndReturnValue(IRScope s, Operand val) {
+        Variable v = s.getNewTemporaryVariable();
+        s.addInstr(new CopyInstr(v, val));
+        return v;
+    }
+
     private Variable getValueInTemporaryVariable(IRScope s, Operand val) {
         if ((val != null) && (val instanceof TemporaryVariable)) {
             return (Variable)val;
         } else {
-            Variable tmpVar = s.getNewTemporaryVariable();
-            s.addInstr(new CopyInstr(tmpVar, val));
-            return tmpVar;
+            return copyAndReturnValue(s, val);
         }
-    }
-
-    public Operand copyAndReturnValue(IRScope s, Operand val) {
-        Variable v = s.getNewTemporaryVariable();
-        s.addInstr(new CopyInstr(v, val));
-        return v;
     }
 
     public void buildArguments(List<Operand> args, Node node, IRScope s) {
