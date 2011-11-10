@@ -7,7 +7,6 @@ import org.jruby.RubyMatchData;
 import org.jruby.RubyModule;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.jruby.BlockGivenInstr;
-import org.jruby.compiler.ir.operands.BooleanLiteral;
 import org.jruby.compiler.ir.operands.Fixnum;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.MethAddr;
@@ -50,7 +49,6 @@ public class JRubyImplCallInstr extends CallInstr {
        METHOD_PUBLIC_ACCESSIBLE("methodIsPublicAccessible"),
        CLASS_VAR_DEFINED("isClassVarDefined"),
        FRAME_SUPER_METHOD_BOUND("frame_superMethodBound"),
-       SET_WITHIN_DEFINED("setWithinDefined"),
        RAISE_ARGUMENT_ERROR("raiseArgumentError");
 
        public MethAddr methAddr;
@@ -123,9 +121,6 @@ public class JRubyImplCallInstr extends CallInstr {
         Object rVal = null;
 
         switch (this.implMethod) {
-            case SET_WITHIN_DEFINED:
-                context.setWithinDefined(((BooleanLiteral)getCallArgs()[0]).isTrue());
-                break;
             case RTH_GET_DEFINED_CONSTANT_OR_BOUND_METHOD:
             {
                 IRubyObject v = (IRubyObject)getCallArgs()[0].retrieve(interp, context, self);

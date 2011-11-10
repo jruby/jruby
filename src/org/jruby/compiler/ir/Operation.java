@@ -53,7 +53,6 @@ public enum Operation {
     /** calls **/
     CALL(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     JRUBY_IMPL(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
-    RUBY_INTERNALS(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),    
     SUPER(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     YIELD(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
 
@@ -105,6 +104,9 @@ public enum Operation {
     PUT_CVAR(OpFlags.f_is_store | OpFlags.f_has_side_effect),
     BINDING_STORE(OpFlags.f_is_store | OpFlags.f_has_side_effect), 
     ATTR_ASSIGN(OpFlags.f_is_store | OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
+    
+    /* defined */
+    SET_WITHIN_DEFINED(0),
     
     /** JRuby-impl instructions **/
     BLOCK_GIVEN(0),

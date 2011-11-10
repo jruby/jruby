@@ -175,6 +175,7 @@ import org.jruby.compiler.ir.instructions.ThreadPollInstr;
 import org.jruby.compiler.ir.instructions.ThrowExceptionInstr;
 import org.jruby.compiler.ir.instructions.UndefMethodInstr;
 import org.jruby.compiler.ir.instructions.YieldInstr;
+import org.jruby.compiler.ir.instructions.defined.SetWithinDefinedInstr;
 import org.jruby.compiler.ir.instructions.jruby.CheckArityInstr;
 import org.jruby.compiler.ir.instructions.jruby.ToAryInstr;
 import org.jruby.compiler.ir.operands.Array;
@@ -1396,7 +1397,7 @@ public class IRBuilder {
             return buildGetDefinition(node, m);
 
         default:
-            m.addInstr(new JRubyImplCallInstr(null, JRubyImplementationMethod.SET_WITHIN_DEFINED, null, new Operand[]{BooleanLiteral.TRUE}));
+            m.addInstr(new SetWithinDefinedInstr(BooleanLiteral.TRUE));
 
             // Protected code
             CodeBlock protectedCode = new CodeBlock() {
@@ -1409,7 +1410,7 @@ public class IRBuilder {
             CodeBlock ensureCode = new CodeBlock() {
                 public Operand run(Object[] args) {
                     IRScope m = (IRScope)args[0];
-                    m.addInstr(new JRubyImplCallInstr(null, JRubyImplementationMethod.SET_WITHIN_DEFINED, null, new Operand[]{BooleanLiteral.FALSE}));
+                    m.addInstr(new SetWithinDefinedInstr(BooleanLiteral.FALSE));
                     return Nil.NIL;
                 }
             };
