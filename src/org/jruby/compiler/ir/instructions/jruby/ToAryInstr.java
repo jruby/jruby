@@ -25,6 +25,8 @@ public class ToAryInstr extends Instr implements ResultInstr {
     public ToAryInstr(Variable result, Operand array, BooleanLiteral dontToAryArrays) {
         super(Operation.TO_ARY);
         
+        assert result != null: "ToArtInstr result is null";
+        
         this.result = result;
         this.array = array;
         this.dontToAryArrays = dontToAryArrays;

@@ -115,6 +115,7 @@ public enum Operation {
     /** rest **/
     MATCH(OpFlags.f_can_raise_exception),
     MATCH2(OpFlags.f_can_raise_exception),
+    MATCH3(OpFlags.f_can_raise_exception | OpFlags.f_is_call),
     COPY(0),
     NOT(0), // ruby NOT operator
     SET_RETADDR(0),

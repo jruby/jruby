@@ -5,6 +5,7 @@
 package org.jruby.compiler.ir.instructions;
 
 import org.jruby.RubyRegexp;
+import org.jruby.RubyString;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
@@ -18,15 +19,15 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  * @author enebo
  */
-public class Match2Instr extends Instr implements ResultInstr {
+public class Match3Instr extends Instr implements ResultInstr {
     private final Variable result;
     private final Operand receiver;
     private final Operand arg;
     
-    public Match2Instr(Variable result, Operand receiver, Operand arg) {
-        super(Operation.MATCH2);
+    public Match3Instr(Variable result, Operand receiver, Operand arg) {
+        super(Operation.MATCH3);
         
-        assert result != null: "Match2Instr result is null";
+        assert result != null: "Match3Instr result is null";
         
         this.result = result;
         this.receiver = receiver;
@@ -52,7 +53,15 @@ public class Match2Instr extends Instr implements ResultInstr {
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
         RubyRegexp regexp = (RubyRegexp) receiver.retrieve(interp, context, self);
         IRubyObject argValue = (IRubyObject) arg.retrieve(interp, context, self);
-        result.store(interp, context, self, regexp.op_match(context, argValue));
-        return null;
+        
+        Object resultValue;
+        if (argValue instanceof RubyString) {
+            resultValue = regexp.op_match(context, argValue);
+        } else {
+            resultValue = argValue.callMethod(context, "=~", regexp);
+        }
+        
+        result.store(interp, context, self, resultValue);                
+        return null;                
     }
 }

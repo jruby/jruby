@@ -5,8 +5,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyMatchData;
 import org.jruby.RubyModule;
-import org.jruby.RubyRegexp;
-import org.jruby.RubyString;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.jruby.BlockGivenInstr;
 import org.jruby.compiler.ir.operands.BooleanLiteral;
@@ -39,9 +37,6 @@ public class JRubyImplCallInstr extends CallInstr {
     //    first pass of trying to mimic behavior of the previous AST compiler.  This code
     //    can be cleaned up in a later pass.
     public enum JRubyImplementationMethod {
-       // SSS FIXME: Note that compiler/impl/BaseBodyCompiler is using op_match2 for match() and and op_match for match2,
-       // and we are replicating it here ... Is this a bug there?
-       MATCH3("match3"),
        RT_IS_GLOBAL_DEFINED("runtime_isGlobalDefined"),
        RT_GET_OBJECT("runtime_getObject"),
        RT_GET_BACKREF("runtime_getBackref"),
@@ -128,17 +123,6 @@ public class JRubyImplCallInstr extends CallInstr {
         Object rVal = null;
 
         switch (this.implMethod) {
-            case MATCH3: {// ENEBO: Only for rubystring?
-                receiver = getReceiver().retrieve(interp, context, self);
-                IRubyObject value = (IRubyObject) getCallArgs()[0].retrieve(interp, context, self);
-                        
-                if (value instanceof RubyString) {
-                    rVal = ((RubyRegexp) receiver).op_match(context, value);
-                } else {
-                    rVal = value.callMethod(context, "=~", (IRubyObject) receiver);
-                }
-                break;
-            }
             case SET_WITHIN_DEFINED:
                 context.setWithinDefined(((BooleanLiteral)getCallArgs()[0]).isTrue());
                 break;

@@ -150,6 +150,7 @@ import org.jruby.compiler.ir.instructions.JumpIndirectInstr;
 import org.jruby.compiler.ir.instructions.LabelInstr;
 import org.jruby.compiler.ir.instructions.LineNumberInstr;
 import org.jruby.compiler.ir.instructions.Match2Instr;
+import org.jruby.compiler.ir.instructions.Match3Instr;
 import org.jruby.compiler.ir.instructions.MatchInstr;
 import org.jruby.compiler.ir.instructions.NotInstr;
 import org.jruby.compiler.ir.instructions.PutConstInstr;
@@ -2430,7 +2431,9 @@ public class IRBuilder {
     public Operand buildMatch3(Match3Node matchNode, IRScope m) {
         Operand receiver = build(matchNode.getReceiverNode(), m);
         Operand value    = build(matchNode.getValueNode(), m);
-        return generateJRubyUtilityCall(m, JRubyImplementationMethod.MATCH3, true, receiver, new Operand[]{value});
+        Variable result = m.getNewTemporaryVariable();
+        m.addInstr(new Match3Instr(result, receiver, value));
+        return result;
     }
 
     private Operand getContainerFromCPath(Colon3Node cpath, IRScope s) {
