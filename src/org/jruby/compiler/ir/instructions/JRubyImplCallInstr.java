@@ -41,7 +41,6 @@ public class JRubyImplCallInstr extends CallInstr {
     public enum JRubyImplementationMethod {
        // SSS FIXME: Note that compiler/impl/BaseBodyCompiler is using op_match2 for match() and and op_match for match2,
        // and we are replicating it here ... Is this a bug there?
-       MATCH("op_match2"),
        MATCH2("op_match"),
        MATCH3("match3"),
        RT_IS_GLOBAL_DEFINED("runtime_isGlobalDefined"),
@@ -130,12 +129,6 @@ public class JRubyImplCallInstr extends CallInstr {
         Object rVal = null;
 
         switch (this.implMethod) {
-            // SSS FIXME: Note that compiler/impl/BaseBodyCompiler is using op_match2 for match() and and op_match for match2,
-            // and we are replicating it here ... Is this a bug there?
-            case MATCH:
-                receiver = getReceiver().retrieve(interp, context, self);
-                rVal = ((RubyRegexp) receiver).op_match2(context);
-                break;
             case MATCH2:
                 receiver = getReceiver().retrieve(interp, context, self);
                 rVal = ((RubyRegexp) receiver).op_match(context, (IRubyObject) getCallArgs()[0].retrieve(interp, context, self));

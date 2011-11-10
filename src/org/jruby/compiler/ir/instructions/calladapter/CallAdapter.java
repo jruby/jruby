@@ -1,7 +1,6 @@
 package org.jruby.compiler.ir.instructions.calladapter;
 
 import org.jruby.compiler.ir.operands.Fixnum;
-import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Splat;

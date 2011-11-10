@@ -113,6 +113,7 @@ public enum Operation {
     TO_ARY(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
 
     /** rest **/
+    MATCH(OpFlags.f_can_raise_exception),    
     COPY(0),
     NOT(0), // ruby NOT operator
     SET_RETADDR(0),

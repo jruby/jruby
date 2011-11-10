@@ -149,6 +149,7 @@ import org.jruby.compiler.ir.instructions.JumpInstr;
 import org.jruby.compiler.ir.instructions.JumpIndirectInstr;
 import org.jruby.compiler.ir.instructions.LabelInstr;
 import org.jruby.compiler.ir.instructions.LineNumberInstr;
+import org.jruby.compiler.ir.instructions.MatchInstr;
 import org.jruby.compiler.ir.instructions.NotInstr;
 import org.jruby.compiler.ir.instructions.PutConstInstr;
 import org.jruby.compiler.ir.instructions.PutClassVariableInstr;
@@ -2412,7 +2413,9 @@ public class IRBuilder {
 
     public Operand buildMatch(MatchNode matchNode, IRScope m) {
         Operand regexp = build(matchNode.getRegexpNode(), m);
-        return generateJRubyUtilityCall(m, JRubyImplementationMethod.MATCH, true, regexp, NO_ARGS);
+        Variable result = m.getNewTemporaryVariable();
+        m.addInstr(new MatchInstr(result, regexp));
+        return result;
     }
 
     public Operand buildMatch2(Match2Node matchNode, IRScope m) {
