@@ -135,7 +135,7 @@ public class DefaultMethod extends DynamicMethod implements MethodArgs, Position
     }
 
     private DynamicMethod tryJitReturnMethod(ThreadContext context) {
-        context.getRuntime().getJITCompiler().tryJIT(this, context, name);
+        context.getRuntime().getJITCompiler().tryJIT(this, context, implementationClass.getName() + "#" + name);
         return box.actualMethod;
     }
 
