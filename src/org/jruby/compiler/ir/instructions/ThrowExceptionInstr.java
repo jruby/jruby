@@ -9,6 +9,7 @@ import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.RubyKernel;
+import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 
@@ -41,7 +42,7 @@ public class ThrowExceptionInstr extends Instr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
         if (exception instanceof IRException) throw ((IRException) exception).getException(context.getRuntime());
 
         Object excObj = exception.retrieve(interp, context, self);

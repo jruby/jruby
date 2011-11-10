@@ -13,6 +13,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.RubyArray;
+import org.jruby.compiler.ir.IRExecutionScope;
 
 public class EnsureRubyArrayInstr extends Instr implements ResultInstr {
     private Operand object;
@@ -57,7 +58,7 @@ public class EnsureRubyArrayInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
         IRubyObject val = (IRubyObject)object.retrieve(interp, context, self);
         if (!(val instanceof RubyArray)) val = ArgsUtil.convertToRubyArray(context.getRuntime(), val, false);
         result.store(interp, context, self, val);

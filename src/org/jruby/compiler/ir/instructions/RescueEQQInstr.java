@@ -12,6 +12,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
+import org.jruby.compiler.ir.IRExecutionScope;
 
 // This instruction is similar to EQQInstr, except it also verifies that
 // the type to EQQ with is actually a class or a module since rescue clauses
@@ -58,7 +59,7 @@ public class RescueEQQInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
         IRubyObject receiver = (IRubyObject) arg1.retrieve(interp, context, self);
         IRubyObject value = (IRubyObject) arg2.retrieve(interp, context, self);
 

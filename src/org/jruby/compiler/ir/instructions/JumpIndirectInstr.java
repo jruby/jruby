@@ -1,6 +1,7 @@
 package org.jruby.compiler.ir.instructions;
 
 import java.util.Map;
+import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
@@ -42,7 +43,7 @@ public class JumpIndirectInstr extends Instr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
         return (Label) (target.retrieve(interp, context, self));
     }
 }

@@ -5,6 +5,7 @@
 package org.jruby.compiler.ir.instructions;
 
 import java.util.Map;
+import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.Interp;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Label;
@@ -43,7 +44,7 @@ public class RestoreArgumentsInstr extends Instr {
 
     @Interp
     @Override
-    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
         interp.setNewParameters((IRubyObject[]) newArgs.retrieve(interp, context, self));
 
         return null;

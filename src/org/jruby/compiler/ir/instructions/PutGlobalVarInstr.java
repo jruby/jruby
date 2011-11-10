@@ -1,5 +1,6 @@
 package org.jruby.compiler.ir.instructions;
 
+import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.GlobalVariable;
 import org.jruby.compiler.ir.operands.Label;
@@ -20,7 +21,7 @@ public class PutGlobalVarInstr extends PutInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
         getTarget().store(interp, context, self, getValue().retrieve(interp, context, self));
         return null;
     }

@@ -4,6 +4,7 @@
  */
 package org.jruby.compiler.ir.instructions.jruby;
 
+import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.operands.Label;
@@ -37,7 +38,7 @@ public class RestoreErrorInfoInstr extends Instr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
         context.setErrorInfo((IRubyObject) arg.retrieve(interp, context, self));
         
         return null;

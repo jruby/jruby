@@ -1,6 +1,7 @@
 package org.jruby.compiler.ir.instructions;
 
 import java.util.Map;
+import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Label;
@@ -47,8 +48,8 @@ public class ReturnInstr extends Instr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
         interp.setReturnValue(returnValue.retrieve(interp, context, self));
-        return interp.getCurrentIRScope().getCFG().getExitBB().getLabel();
+        return scope.getCFG().getExitBB().getLabel();
     }
 }

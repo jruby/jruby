@@ -12,6 +12,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.RubyArray;
+import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.runtime.ThreadContext;
 
 // This instruction sets a new newArgs array -- this is used to intepret the block-arg assignment
@@ -57,7 +58,7 @@ public class SetArgumentsInstr extends Instr implements ResultInstr {
 
     @Interp
     @Override
-    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
         Object o = newArgs.retrieve(interp, context, self);
         if (coerceToArray) {
             // run to_ary and convert to java array

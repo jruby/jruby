@@ -1,5 +1,6 @@
 package org.jruby.compiler.ir.instructions;
 
+import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.MethAddr;
@@ -50,7 +51,7 @@ public class CallInstr extends CallBase implements ResultInstr {
    }
 
     @Override
-    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
         IRubyObject object = (IRubyObject) getReceiver().retrieve(interp, context, self);
         result.store(interp, context, self, callAdapter.call(interp, context, self, object));
         return null;

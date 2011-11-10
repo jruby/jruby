@@ -2,6 +2,7 @@ package org.jruby.compiler.ir.instructions;
 
 import java.util.Map;
 
+import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.BooleanLiteral;
 import org.jruby.compiler.ir.operands.Label;
@@ -63,7 +64,7 @@ public class IsTrueInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
         // ENEBO: This seems like a lot of extra work...
         result.store(interp, context, self, 
                 context.getRuntime().newBoolean(((IRubyObject) value.retrieve(interp, context, self)).isTrue()));

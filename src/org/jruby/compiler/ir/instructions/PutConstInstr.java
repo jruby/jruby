@@ -1,6 +1,7 @@
 package org.jruby.compiler.ir.instructions;
 
 import org.jruby.RubyModule;
+import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Label;
@@ -20,7 +21,7 @@ public class PutConstInstr extends PutInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
         IRubyObject value = (IRubyObject) getValue().retrieve(interp, context, self);
         RubyModule module = (RubyModule) getTarget().retrieve(interp, context, self);
 

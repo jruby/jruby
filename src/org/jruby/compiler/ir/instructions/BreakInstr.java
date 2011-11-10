@@ -49,7 +49,7 @@ public class BreakInstr extends Instr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
         throw new IRBreakJump(scopeToReturnTo, returnValue.retrieve(interp, context, self));
     }
 

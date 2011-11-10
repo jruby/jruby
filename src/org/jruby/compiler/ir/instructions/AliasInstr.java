@@ -7,6 +7,7 @@ package org.jruby.compiler.ir.instructions;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
+import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
@@ -45,7 +46,7 @@ public class AliasInstr extends Instr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
         IRubyObject object = (IRubyObject) receiver.retrieve(interp, context, self);
                 
         if (object == null || object instanceof RubyFixnum || object instanceof RubySymbol) {

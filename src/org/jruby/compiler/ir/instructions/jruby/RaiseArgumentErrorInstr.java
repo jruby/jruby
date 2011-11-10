@@ -1,5 +1,6 @@
 package org.jruby.compiler.ir.instructions.jruby;
 
+import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.operands.Fixnum;
@@ -39,7 +40,7 @@ public class RaiseArgumentErrorInstr extends Instr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
         int requiredInt = required.value.intValue();
         int optInt = opt.value.intValue();
         int restInt = rest.value.intValue();

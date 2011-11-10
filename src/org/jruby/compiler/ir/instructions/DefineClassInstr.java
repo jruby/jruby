@@ -4,6 +4,7 @@ import java.util.Map;
 import org.jruby.RubyModule;
 import org.jruby.RubyClass;
 import org.jruby.compiler.ir.IRClass;
+import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.IRMetaClass;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Nil;
@@ -77,7 +78,7 @@ public class DefineClassInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
         Object rubyContainer = container.retrieve(interp, context, self);
         
         if (!(rubyContainer instanceof RubyModule)) throw context.getRuntime().newTypeError("no outer class/module");

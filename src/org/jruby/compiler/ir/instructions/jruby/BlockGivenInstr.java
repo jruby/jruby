@@ -1,5 +1,6 @@
 package org.jruby.compiler.ir.instructions.jruby;
 
+import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.ResultInstr;
@@ -36,7 +37,7 @@ public class BlockGivenInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
         result.store(interp, context, self, context.getRuntime().newBoolean(interp.getBlock().isGiven()));
         return null;
     }

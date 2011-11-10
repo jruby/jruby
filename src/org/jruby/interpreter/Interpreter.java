@@ -22,7 +22,6 @@ import org.jruby.compiler.ir.instructions.BreakInstr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.ResultInstr;
 import org.jruby.compiler.ir.operands.Label;
-import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.WrappedIRClosure;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
@@ -157,7 +156,7 @@ public class Interpreter {
             //   invokes Ruby-level exceptions handlers.
             try {
                 try {
-                    Label jumpTarget = lastInstr.interpret(interp, context, self);
+                    Label jumpTarget = lastInstr.interpret(interp, scope, context, self);
                     ipc = (jumpTarget == null) ? ipc + 1 : jumpTarget.getTargetPC();
                 } catch (IRReturnJump rj) {
                     // - If we are in a lambda or if we are in the method scope we are supposed to return from, stop propagating

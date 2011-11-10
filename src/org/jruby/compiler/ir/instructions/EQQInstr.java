@@ -11,6 +11,7 @@ import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.RubyArray;
+import org.jruby.compiler.ir.IRExecutionScope;
 
 // If v2 is an array, compare v1 with every element of v2 and stop on first match!
 public class EQQInstr extends Instr implements ResultInstr {
@@ -53,7 +54,7 @@ public class EQQInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
         IRubyObject receiver = (IRubyObject) arg1.retrieve(interp, context, self);
         IRubyObject value = (IRubyObject) arg2.retrieve(interp, context, self);
 

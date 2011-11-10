@@ -50,9 +50,6 @@ public interface InterpreterContext {
 
     public Block getBlock();
 
-    // Section: Runtime helpers
-    public IRExecutionScope getCurrentIRScope();
-
     // Set the most recently raised exception
     public void setException(Object e);
 

@@ -7,6 +7,7 @@ package org.jruby.compiler.ir.instructions;
 
 import java.util.Map;
 import org.jruby.RubyModule;
+import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.IRModule;
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.Operation;
@@ -34,7 +35,7 @@ public class GetConstInstr extends GetInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
         Object source = getSource().retrieve(interp, context, self);
         RubyModule module;
 

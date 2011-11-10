@@ -6,6 +6,7 @@ import org.jruby.RubyObject;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyClass;
 import org.jruby.RubySymbol;
+import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
@@ -45,7 +46,7 @@ public class DefineClassMethodInstr extends Instr {
 
     // SSS FIXME: Go through this and DefineInstanceMethodInstr.interpret, clean up, extract common code
     @Override
-    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
         String name = method.getName();
         Ruby runtime = context.getRuntime();
         RubyObject obj = (RubyObject) container.retrieve(interp, context, self);

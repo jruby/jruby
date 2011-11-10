@@ -1,6 +1,7 @@
 package org.jruby.compiler.ir.instructions;
 
 import org.jruby.compiler.ir.IRClosure;
+import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.Instr;
@@ -32,7 +33,7 @@ public class RecordEndBlockInstr extends Instr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
 		  declaringScope.getTopLevelScope().recordEndBlock(endBlockClosure);
         return null;
     }

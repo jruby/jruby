@@ -2,6 +2,7 @@ package org.jruby.compiler.ir.instructions;
 
 import java.util.Map;
 
+import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.BooleanLiteral;
 import org.jruby.compiler.ir.operands.Label;
@@ -55,7 +56,7 @@ public class NotInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
         boolean not = !((IRubyObject) arg.retrieve(interp, context, self)).isTrue();
 
         result.store(interp, context, self, context.getRuntime().newBoolean(not));

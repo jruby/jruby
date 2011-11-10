@@ -1,5 +1,6 @@
 package org.jruby.compiler.ir.instructions.defined;
 
+import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.operands.BooleanLiteral;
@@ -33,7 +34,7 @@ public class SetWithinDefinedInstr extends Instr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
         context.setWithinDefined(define.isTrue());
         return null;
     }

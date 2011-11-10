@@ -14,6 +14,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.RubyArray;
 import org.jruby.RubyProc;
 import org.jruby.RubyNil;
+import org.jruby.compiler.ir.IRExecutionScope;
 
 public class YieldInstr extends Instr implements ResultInstr {
     Operand block;
@@ -39,7 +40,7 @@ public class YieldInstr extends Instr implements ResultInstr {
 
     @Interp
     @Override
-    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
         Object resultValue;
         Object blk = (Object)block.retrieve(interp, context, self);
         if (blk instanceof RubyProc) blk = ((RubyProc)blk).getBlock();

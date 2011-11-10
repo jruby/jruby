@@ -5,6 +5,7 @@ import org.jruby.compiler.ir.Interp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Attribute;
 import org.jruby.compiler.ir.operands.Label;
@@ -127,7 +128,7 @@ public abstract class Instr {
     }
 
     @Interp
-    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
         throw new RuntimeException(this.getClass().getSimpleName() + " should not be directly interpreted");
     }
 }

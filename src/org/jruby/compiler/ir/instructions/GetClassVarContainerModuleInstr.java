@@ -10,6 +10,7 @@ import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.RubyModule;
+import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.evaluator.ASTInterpreter;
@@ -57,7 +58,7 @@ public class GetClassVarContainerModuleInstr extends Instr implements ResultInst
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self) {
         // SSS FIXME: This is ugly and needs fixing.  Is there another way of capturing this info?
         RubyModule containerModule = (candidateScope == null) ? null : candidateScope.getStaticScope().getModule();
         if (containerModule == null) containerModule = ASTInterpreter.getClassVariableBase(context, context.getRuntime());

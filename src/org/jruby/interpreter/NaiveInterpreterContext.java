@@ -19,7 +19,6 @@ import org.jruby.compiler.ir.IRExecutionScope;
  * @author enebo
  */
 public class NaiveInterpreterContext implements InterpreterContext {
-    protected IRExecutionScope irScope;
     protected IRubyObject[] parameters;
     protected Object returnValue;
     protected Object[] temporaryVariables;
@@ -35,7 +34,6 @@ public class NaiveInterpreterContext implements InterpreterContext {
     // - self.getMetaClass() if we are executing an instance method of 'self'
     // - the class in which the closure is lexically defined in if we are executing a closure
     public NaiveInterpreterContext(ThreadContext context, IRExecutionScope irScope, RubyModule currentModule, IRubyObject self, String name, IRubyObject[] parameters, Block block, Block.Type blockType) {
-        this.irScope = irScope;
         this.frame = context.getCurrentFrame();
         this.parameters = parameters;
         this.currDynScope = context.getCurrentScope();
@@ -43,7 +41,6 @@ public class NaiveInterpreterContext implements InterpreterContext {
         int temporaryVariablesSize = irScope.getTemporaryVariableSize();
         this.temporaryVariables = temporaryVariablesSize > 0 ? new Object[temporaryVariablesSize] : null;
         this.block = block;
-        // SSS FIXME: Can it happen that (block.type != blockType)?
         this.blockType = blockType;
     }
 
@@ -131,10 +128,6 @@ public class NaiveInterpreterContext implements InterpreterContext {
         System.arraycopy(parameters, argIndex, args, 0, length);
 
         return args;
-    }
-
-    public IRExecutionScope getCurrentIRScope() {
-        return this.irScope;
     }
 
     // Set the most recently raised exception
