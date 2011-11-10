@@ -11,40 +11,31 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class CheckArityInstr extends Instr {
+/**
+ */
+public class RaiseArgumentErrorInstr extends Instr {
     private final Fixnum required;
     private final Fixnum opt;
     private final Fixnum rest;
+    private final Fixnum numArgs;
     
-    public CheckArityInstr(Fixnum required, Fixnum opt, Fixnum rest) {
-        super(Operation.CHECK_ARITY);
+    public RaiseArgumentErrorInstr(Fixnum required, Fixnum opt, Fixnum rest, Fixnum numArgs) {
+        super(Operation.RAISE_ARGUMENT_ERROR);
         
         this.required = required;
         this.opt = opt;
         this.rest = rest;
+        this.numArgs = numArgs;
     }
-    
+
     @Override
     public Operand[] getOperands() {
-        return new Operand[] { required, opt, rest };
+        return new Operand[] { required, opt, rest, numArgs };
     }
-    
-    /**
-     * This will either end up removing this instruction since we know arity
-     * at a callsite or we will add a ArgumentError since we know arity is wrong.
-     */
+
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        int requiredInt = required.value.intValue();
-        int optInt = opt.value.intValue();
-        int restInt = rest.value.intValue();
-        int numArgs = ii.getArgsCount();
-        
-        if ((numArgs < requiredInt) || ((restInt == -1) && (numArgs > (requiredInt + optInt)))) {
-            return new RaiseArgumentErrorInstr(required, opt, rest, rest);
-        }
-
-        return null;
+        return new RaiseArgumentErrorInstr(required, opt, rest, numArgs);
     }
 
     @Override
@@ -52,12 +43,11 @@ public class CheckArityInstr extends Instr {
         int requiredInt = required.value.intValue();
         int optInt = opt.value.intValue();
         int restInt = rest.value.intValue();
-        int numArgs = interp.getParameterCount();
+        int numArgsInt = numArgs.value.intValue();
         
-        if ((numArgs < requiredInt) || ((restInt == -1) && (numArgs > (requiredInt + optInt)))) {
-            Arity.raiseArgumentError(context.getRuntime(), numArgs, requiredInt, requiredInt + optInt);
-        }
-
+        Arity.raiseArgumentError(context.getRuntime(), numArgsInt, requiredInt, requiredInt + optInt);
+        
         return null;
     }
+    
 }

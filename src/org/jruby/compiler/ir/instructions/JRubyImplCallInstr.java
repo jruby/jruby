@@ -7,7 +7,6 @@ import org.jruby.RubyMatchData;
 import org.jruby.RubyModule;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.jruby.BlockGivenInstr;
-import org.jruby.compiler.ir.operands.Fixnum;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.operands.Nil;
@@ -18,7 +17,6 @@ import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -47,8 +45,7 @@ public class JRubyImplCallInstr extends CallInstr {
        BACKREF_IS_RUBY_MATCH_DATA("backref_isRubyMatchData"),
        METHOD_PUBLIC_ACCESSIBLE("methodIsPublicAccessible"),
        CLASS_VAR_DEFINED("isClassVarDefined"),
-       FRAME_SUPER_METHOD_BOUND("frame_superMethodBound"),
-       RAISE_ARGUMENT_ERROR("raiseArgumentError");
+       FRAME_SUPER_METHOD_BOUND("frame_superMethodBound");
 
        public MethAddr methAddr;
        JRubyImplementationMethod(String methodName) {
@@ -140,16 +137,6 @@ public class JRubyImplCallInstr extends CallInstr {
                 // SSS: FIXME: Or use this directly? "context.getCurrentScope().getBackRef(rt)" What is the diff??
                 rVal = RuntimeHelpers.getBackref(runtime, context);
                 break;
-            case RAISE_ARGUMENT_ERROR:
-            {
-                Operand[] args = getCallArgs();
-                int required = ((Fixnum)args[0]).value.intValue();
-                int opt      = ((Fixnum)args[1]).value.intValue();
-                int rest     = ((Fixnum)args[2]).value.intValue();
-                int numArgs  = ((Fixnum)args[3]).value.intValue();
-                Arity.raiseArgumentError(context.getRuntime(), numArgs, required, required+opt);
-                break;
-            }
             case SELF_HAS_INSTANCE_VARIABLE:
             {
                 receiver = getReceiver().retrieve(interp, context, self);
@@ -219,10 +206,11 @@ public class JRubyImplCallInstr extends CallInstr {
                 rVal = runtime.newBoolean(flag);
                 break;
             }
+            default:
+                assert false: "Unknown JRuby impl called";
         }
 
-        // Store the result
-        if (rVal != null) getResult().store(interp, context, self, rVal);
+        getResult().store(interp, context, self, rVal);
 
         return null;
     }
