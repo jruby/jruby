@@ -45,7 +45,7 @@ public class Match3Instr extends Instr implements ResultInstr {
     
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new Match2Instr((Variable) result.cloneForInlining(ii),
+        return new Match3Instr((Variable) result.cloneForInlining(ii),
                 receiver.cloneForInlining(ii), arg.cloneForInlining(ii));
     }
 
