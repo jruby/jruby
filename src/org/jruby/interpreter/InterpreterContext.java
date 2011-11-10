@@ -49,12 +49,8 @@ public interface InterpreterContext {
     public void setSharedBindingVariable(int bindingSlot, Object value);
 
     public Block getBlock();
-    public void setBlock(Block block);
 
     // Section: Runtime helpers
-    public void setFrame(Frame currentFrame);
-    public Frame getFrame();
-
     public IRExecutionScope getCurrentIRScope();
 
     // Set the most recently raised exception

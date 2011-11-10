@@ -13,7 +13,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import org.jruby.compiler.ir.IRExecutionScope;
-import org.jruby.compiler.ir.IRMethod;
 
 /**
  *
@@ -58,10 +57,6 @@ public class NaiveInterpreterContext implements InterpreterContext {
 
     public boolean inProc() {
         return (blockType != null) && (blockType == Block.Type.PROC);
-    }
-
-    public void setBlock(Block block) {
-        this.block = block;
     }
 
     public Object getReturnValue(ThreadContext context) {
@@ -124,13 +119,6 @@ public class NaiveInterpreterContext implements InterpreterContext {
         return parameters.length;
     }
 
-    public Frame getFrame() {
-        return frame;
-    }
-
-    public void setFrame(Frame frame) {
-        this.frame = frame;
-    }
     // FIXME: We have this as a var somewhere else
     private IRubyObject[] NO_PARAMS = new IRubyObject[0];
 
