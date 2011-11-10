@@ -59,7 +59,7 @@ public class ToAryInstr extends Instr implements ResultInstr {
             toAryValue = RuntimeHelpers.aryToAry((IRubyObject) receiver);
         }
         
-        getResult().store(interp, context, self, toAryValue);
+        result.store(interp, context, self, toAryValue);
 
         return null;        
     }

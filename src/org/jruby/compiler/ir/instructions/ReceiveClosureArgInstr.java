@@ -74,7 +74,7 @@ public class ReceiveClosureArgInstr extends Instr implements ResultInstr {
         } else {
             o = (argIndex < numArgs) ? interp.getParameter(argIndex) : context.getRuntime().getNil();
         }
-        getResult().store(interp, context, self, o);
+        result.store(interp, context, self, o);
         return null;
     }
 }

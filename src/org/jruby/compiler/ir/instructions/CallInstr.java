@@ -33,8 +33,7 @@ public class CallInstr extends CallBase implements ResultInstr {
     protected CallInstr(Operation op, CallType callType, Variable result, MethAddr methAddr, Operand receiver, Operand[] args, Operand closure) {
         super(op, callType, methAddr, receiver, args, closure);
 
-        // FIXME: Re-enable after JRubyImplCallInstr non-result instrs are moved out
-//        assert result != null;
+        assert result != null;
         
         this.result = result;
     }
@@ -42,14 +41,12 @@ public class CallInstr extends CallBase implements ResultInstr {
     public Variable getResult() {
         return result;
     }
-    
-    @Override
-    public String toString() {
-        return "" + (getResult() == null ? "" : getResult() + " = ") + super.toString(); 
-    }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new CallInstr(getCallType(), ii.getRenamedVariable(getResult()), (MethAddr) getMethodAddr().cloneForInlining(ii), receiver.cloneForInlining(ii), cloneCallArgs(ii), closure == null ? null : closure.cloneForInlining(ii));
+        return new CallInstr(getCallType(), ii.getRenamedVariable(result), 
+                (MethAddr) getMethodAddr().cloneForInlining(ii), 
+                receiver.cloneForInlining(ii), cloneCallArgs(ii), 
+                closure == null ? null : closure.cloneForInlining(ii));
    }
 
     @Override

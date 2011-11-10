@@ -25,6 +25,10 @@ public class LiveVariablesProblem extends DataFlowProblem {
     public DataFlowVar getDFVar(Variable v) {
         return dfVarMap.get(v);
     }
+    
+    public boolean dfVarExists(Variable v) {
+        return getDFVar(v) != null;
+    }
 
     public Variable getVariable(int id) {
         return varDfVarMap.get(id);

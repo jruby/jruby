@@ -32,7 +32,7 @@ public class ReceiveSelfInstruction extends Instr implements ResultInstr {
     
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new CopyInstr(ii.getRenamedVariable(getResult()), ii.getCallReceiver());
+        return new CopyInstr(ii.getRenamedVariable(result), ii.getCallReceiver());
     }
 
     @Override

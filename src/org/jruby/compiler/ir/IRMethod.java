@@ -73,8 +73,9 @@ public class IRMethod extends IRExecutionScope {
         if (i instanceof ReceiveArgumentInstruction) {
             ReceiveArgumentInstruction recv = (ReceiveArgumentInstruction) i;
             callArgs.add(recv.isRestOfArgArray() ? new Splat(recv.getResult()) : recv.getResult());
+        } else if (i instanceof ReceiveOptionalArgumentInstr) {
+            callArgs.add(((ReceiveOptionalArgumentInstr) i).getResult());
         }
-        else if (i instanceof ReceiveOptionalArgumentInstr) callArgs.add(((ReceiveOptionalArgumentInstr) i).getResult());
 
         super.addInstr(i);
     }

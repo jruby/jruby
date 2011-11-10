@@ -107,12 +107,12 @@ public class BindingStorePlacementNode extends FlowGraphNode {
                 }
             }
 
-            Variable v = i instanceof ResultInstr ? ((ResultInstr) i).getResult() : null;
+            if (i instanceof ResultInstr) {
+                Variable v = ((ResultInstr) i).getResult();
 
-            // %self is local to every scope and never crosses scope boundaries and need not be spilled/refilled
-            if ((v != null) && (v instanceof LocalVariable) && !((LocalVariable)v).isSelf()) {
-                dirtyVars.add((LocalVariable)v);
-            }
+                // %self is local to every scope and never crosses scope boundaries and need not be spilled/refilled
+                if (v instanceof LocalVariable && !((LocalVariable) v).isSelf()) dirtyVars.add((LocalVariable) v);
+            }            
             if (i.getOperation().isReturn()) dirtyVars.clear();
         }
 
@@ -276,11 +276,12 @@ public class BindingStorePlacementNode extends FlowGraphNode {
                 dirtyVars.clear();
             }
 
-            Variable v = i instanceof ResultInstr ? ((ResultInstr) i).getResult() : null;
-            // %self is local to every scope and never crosses scope boundaries and need not be spilled/refilled
-            if ((v != null) && (v instanceof LocalVariable) && !((LocalVariable)v).isSelf()) {
-                dirtyVars.add((LocalVariable)v);
-            }
+            if (i instanceof ResultInstr) {
+                Variable v = ((ResultInstr) i).getResult();
+
+                // %self is local to every scope and never crosses scope boundaries and need not be spilled/refilled
+                if (v instanceof LocalVariable && !((LocalVariable) v).isSelf()) dirtyVars.add((LocalVariable) v);
+            }             
         }
 
         // If this is the exit BB, add binding stores for all vars that are still dirty

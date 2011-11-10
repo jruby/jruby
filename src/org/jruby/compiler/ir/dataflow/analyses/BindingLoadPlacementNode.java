@@ -62,9 +62,7 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
             if (i.getOperation() == Operation.BINDING_STORE) continue;
 
             // Right away, clear the variable defined by this instruction -- it doesn't have to be loaded!
-            Variable r = i instanceof ResultInstr ? ((ResultInstr) i).getResult() : null;
-
-            if (r != null) reqdLoads.remove(r);
+            if (i instanceof ResultInstr) reqdLoads.remove(((ResultInstr) i).getResult());
 
             // Process calls specially -- these are the sites of binding loads!
             if (i instanceof CallInstr) {
@@ -135,9 +133,7 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
             if (i.getOperation() == Operation.BINDING_STORE) continue;
 
             // Right away, clear the variable defined by this instruction -- it doesn't have to be loaded!
-            Variable r = i instanceof ResultInstr ? ((ResultInstr) i).getResult() : null;
-
-            if (r != null) reqdLoads.remove(r);
+            if (i instanceof ResultInstr) reqdLoads.remove(((ResultInstr) i).getResult());
 
             if (i instanceof CallInstr) {
                 CallInstr call = (CallInstr) i;

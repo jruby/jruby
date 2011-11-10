@@ -53,7 +53,9 @@ public class YieldInstr extends Instr implements ResultInstr {
             IRubyObject yieldVal = (IRubyObject)yieldArg.retrieve(interp, context, self);
             resultValue = (unwrapArray && (yieldVal instanceof RubyArray)) ? b.yieldArray(context, yieldVal, null, null) : b.yield(context, yieldVal);
         }
-        getResult().store(interp, context, self, resultValue);
+        
+        result.store(interp, context, self, resultValue);
+        
         return null;
     }
 

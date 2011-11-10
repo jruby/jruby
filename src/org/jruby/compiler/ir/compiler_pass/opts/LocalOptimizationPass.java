@@ -91,6 +91,7 @@ public class LocalOptimizationPass implements CompilerPass {
             // Simplify instruction and record mapping between target variable and simplified value
             // System.out.println("BEFORE: " + i);
             Operand  val = i.simplifyAndGetResult(valueMap);
+            // FIXME: This logic can be simplified based on the number of res != null checks only done if doesn't
             Variable res = i instanceof ResultInstr ? ((ResultInstr) i).getResult() : null;
 
             // System.out.println("For " + i + "; dst = " + res + "; val = " + val);

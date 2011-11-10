@@ -295,10 +295,8 @@ public abstract class IRExecutionScope extends IRScopeImpl {
 
             if (instr instanceof ResultInstr) {
                 Variable var = ((ResultInstr) instr).getResult();
-                if (var != null) { // FIXME: Remove once all results guaranteed non-null
-                    variables.add(var);
-                    starts.put(var, i);
-                }
+                variables.add(var);
+                starts.put(var, i);
             }
 
             for (Operand operand : instr.getOperands()) {
@@ -452,7 +450,8 @@ public abstract class IRExecutionScope extends IRScopeImpl {
                 
                 if (i instanceof ResultInstr) {
                     Variable v = ((ResultInstr) i).getResult();
-                    if ((v != null) && (v instanceof LocalVariable)) definedLocalVars.add(v);
+                    
+                    if (v instanceof LocalVariable) definedLocalVars.add(v);
                 }
             }
         }

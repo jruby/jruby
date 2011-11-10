@@ -44,16 +44,16 @@ public class SetReturnAddressInstr extends Instr implements ResultInstr {
 
     @Override
     public String toString() {
-        return "" + getResult() + " = " + returnAddr;
+        return "" + result + " = " + returnAddr;
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new SetReturnAddressInstr(ii.getRenamedVariable(getResult()), ii.getRenamedLabel(returnAddr));
+        return new SetReturnAddressInstr(ii.getRenamedVariable(result), ii.getRenamedLabel(returnAddr));
     }
 
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        getResult().store(interp, context, self, returnAddr);
+        result.store(interp, context, self, returnAddr);
         
         return null;
     }

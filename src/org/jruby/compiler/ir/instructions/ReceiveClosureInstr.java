@@ -36,15 +36,15 @@ public class ReceiveClosureInstr extends Instr implements ResultInstr {
     public Instr cloneForInlining(InlinerInfo ii) {
 		  // SSS FIXME: This is not strictly correct -- we have to wrap the block into an
 		  // operand type that converts the static code block to a proc which is a closure.
-        return new CopyInstr(ii.getRenamedVariable(getResult()), ii.getCallClosure());
+        return new CopyInstr(ii.getRenamedVariable(result), ii.getCallClosure());
     }
 
     @Interp
     @Override
     public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        Block blk = interp.getBlock();
+        Block block = interp.getBlock();
         Ruby  runtime = context.getRuntime();
-        getResult().store(interp, context, self, blk == Block.NULL_BLOCK ? runtime.getNil() : runtime.newProc(Type.PROC, blk));
+        result.store(interp, context, self, block == Block.NULL_BLOCK ? runtime.getNil() : runtime.newProc(Type.PROC, block));
         return null;
     }
 }

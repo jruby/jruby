@@ -23,7 +23,7 @@ public class LiveVariableNode extends FlowGraphNode {
     public LiveVariableNode(DataFlowProblem prob, BasicBlock n) {
         super(prob, n);
     }
-
+    
     @Override
     public void init() {
         setSize = problem.getDFVarsCount();
@@ -31,17 +31,15 @@ public class LiveVariableNode extends FlowGraphNode {
     }
 
     private void addDFVar(Variable v) {
-        LiveVariablesProblem lvp = (LiveVariablesProblem)problem;
-        if ((v != null) && (lvp.getDFVar(v) == null)) {
-            lvp.addDFVar(v);
+        LiveVariablesProblem lvp = (LiveVariablesProblem) problem;
+        if (!lvp.dfVarExists(v)) lvp.addDFVar(v);
 //            System.out.println("Adding df var for " + v + ":" + lvp.getDFVar(v)._id);
-        }
     }
 
     public void buildDataFlowVars(Instr i) {
-//        System.out.println("BV: Processing: " + i);
-        Variable v = i instanceof ResultInstr ? ((ResultInstr) i).getResult() : null;        
-        addDFVar(v);
+//        System.out.println("BV: Processing: " + i);        
+        if (i instanceof ResultInstr) addDFVar(((ResultInstr) i).getResult());
+
         for (Variable x: i.getUsedVariables()) {
             addDFVar(x);
         }
@@ -54,7 +52,7 @@ public class LiveVariableNode extends FlowGraphNode {
         
         if (basicBlock == p.getScope().cfg().getExitBB()) {
             Collection<Variable> lv = p.getVarsLiveOnExit();
-            if ((lv != null) && !lv.isEmpty()) {
+            if (!lv.isEmpty()) {
                 for (Variable v: lv) {
                     in.set(p.getDFVar(v).getId());
                 }
@@ -93,10 +91,8 @@ public class LiveVariableNode extends FlowGraphNode {
 //            System.out.println("TF: Processing: " + i);
 
             // v is defined => It is no longer live before 'i'
-            Variable v = i instanceof ResultInstr ? ((ResultInstr) i).getResult() : null;
-            if (v != null) {
-                DataFlowVar dv = lvp.getDFVar(v);
-                tmp.clear(dv.getId());
+            if (i instanceof ResultInstr) {
+                tmp.clear(lvp.getDFVar(((ResultInstr) i).getResult()).getId());
 //                System.out.println("cleared live flag for: " + v);
             }
 
@@ -255,9 +251,8 @@ public class LiveVariableNode extends FlowGraphNode {
         while (it.hasPrevious()) {
             Instr i = it.previous();
 //            System.out.println("DEAD?? " + i);
-            Variable v = i instanceof ResultInstr ? ((ResultInstr) i).getResult() : null;
-            if (v != null) {
-                DataFlowVar dv = lvp.getDFVar(v);
+            if (i instanceof ResultInstr) {
+                DataFlowVar dv = lvp.getDFVar(((ResultInstr) i).getResult());
                     // If 'v' is not live at the instruction site, and it has no side effects, mark it dead!
                 if ((tmp.get(dv.getId()) == false) && !i.hasSideEffects() && !i.getOperation().isDebugOp()) {
 //                    System.out.println("YES!");
