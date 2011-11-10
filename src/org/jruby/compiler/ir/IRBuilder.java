@@ -625,7 +625,7 @@ public class IRBuilder {
                     break;
                 }
                 case SPLATNODE: {
-                    argsList.add(buildSplat((SplatNode)args, s));
+                    argsList.add(build((SplatNode)args, s));
                     break;
                 }
                 case ARRAYNODE: {
@@ -954,16 +954,12 @@ public class IRBuilder {
         //   end
         if (value == null) value = UndefinedValue.UNDEFINED;
 
-        // the CASE instruction
         Label     endLabel  = m.getNewLabel();
         boolean   hasElse   = (caseNode.getElseNode() != null);
         Label     elseLabel = m.getNewLabel();
         Variable  result    = m.getNewTemporaryVariable();
 
-        // lists to aggregate variables and bodies for whens
-        List<Operand> variables = new ArrayList<Operand>();
         List<Label> labels = new ArrayList<Label>();
-
         Map<Label, Node> bodies = new HashMap<Label, Node>();
 
         // build each "when"
@@ -972,7 +968,6 @@ public class IRBuilder {
             Label bodyLabel = m.getNewLabel();
 
             Variable eqqResult = m.getNewTemporaryVariable();
-            variables.add(eqqResult);
             labels.add(bodyLabel);
             Operand v1, v2;
             if (whenNode.getExpressionNodes() instanceof ListNode) {
@@ -990,11 +985,11 @@ public class IRBuilder {
                 //   that this a Ruby code bug, we will just try to preserve the order of the == check as it appears
                 //   in the Ruby code.
                 if (value == UndefinedValue.UNDEFINED)  {
-                    v1 = buildArray(whenNode.getExpressionNodes(), m);
+                    v1 = build(whenNode.getExpressionNodes(), m);
                     v2 = BooleanLiteral.TRUE;
                 } else {
                     v1 = value;
-                    v2 = buildArray(whenNode.getExpressionNodes(), m);
+                    v2 = build(whenNode.getExpressionNodes(), m);
                 }
             } else {
                 m.addInstr(new EQQInstr(eqqResult, build(whenNode.getExpressionNodes(), m), value));
