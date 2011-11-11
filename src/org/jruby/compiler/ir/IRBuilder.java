@@ -165,10 +165,8 @@ import org.jruby.compiler.ir.instructions.ReceiveExceptionInstr;
 import org.jruby.compiler.ir.instructions.ReceiveOptionalArgumentInstr;
 import org.jruby.compiler.ir.instructions.RecordEndBlockInstr;
 import org.jruby.compiler.ir.instructions.RescueEQQInstr;
-import org.jruby.compiler.ir.instructions.RestoreArgumentsInstr;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
 import org.jruby.compiler.ir.instructions.SetReturnAddressInstr;
-import org.jruby.compiler.ir.instructions.SetArgumentsInstr;
 import org.jruby.compiler.ir.instructions.SearchConstInstr;
 import org.jruby.compiler.ir.instructions.SuperInstr;
 import org.jruby.compiler.ir.instructions.ThreadPollInstr;
@@ -706,7 +704,7 @@ public class IRBuilder {
                     s.addInstr(new EnsureRubyArrayInstr(v, v));
                     valuesArg = v;
                 }
-                buildMultipleAsgnAssignment(childNode, s, valuesArg);
+                buildMultipleAsgnAssignment(childNode, s, null, valuesArg);
                 break;
             }
             case ZEROARGNODE:
@@ -724,17 +722,24 @@ public class IRBuilder {
         //return cl.isForLoopBody ? cl.getLocalVariable(name, depth) : cl.getNewLocalVariable(name, depth);
     }
 
-    private void receiveBlockArg(IRScope s, Variable v, boolean isClosureArg, int argIndex, boolean isSplat) {
-        s.addInstr(isClosureArg ? new ReceiveClosureInstr(v) : new ReceiveClosureArgInstr(v, argIndex, isSplat));
+    private void receiveBlockArg(IRScope s, Variable v, Operand argsArray, int argIndex, boolean isClosureArg, boolean isSplat) {
+        if (argsArray != null) {
+            // We are in a nested receive situation -- when we are not at the root of a masgn tree
+            // Ex: We are trying to receive (b,c) in this example: "|a, (b,c), d| = ..."
+            s.addInstr(new GetArrayInstr(v, argsArray, argIndex, isSplat));
+        }
+        else {
+            s.addInstr(isClosureArg ? new ReceiveClosureInstr(v) : new ReceiveClosureArgInstr(v, argIndex, isSplat));
+        }
     }
 
     // This method is called to build arguments for a block!
-    public void buildBlockArgsAssignment(Node node, IRScope s, int argIndex, boolean isClosureArg, boolean isRoot, boolean isSplat) {
+    public void buildBlockArgsAssignment(Node node, IRScope s, Operand argsArray, int argIndex, boolean isMasgnRoot, boolean isClosureArg, boolean isSplat) {
         Variable v;
         switch (node.getNodeType()) {
             case ATTRASSIGNNODE: 
                 v = s.getNewTemporaryVariable();
-                receiveBlockArg(s, v, isClosureArg, argIndex, isSplat);
+                receiveBlockArg(s, v, argsArray, argIndex, isClosureArg, isSplat);
                 buildAttrAssignAssignment(node, s, v);
                 break;
             // SSS FIXME:
@@ -744,32 +749,32 @@ public class IRBuilder {
             case DASGNNODE: {
                 DAsgnNode dynamicAsgn = (DAsgnNode) node;
                 v = getBlockArgVariable((IRClosure)s, dynamicAsgn.getName(), dynamicAsgn.getDepth());
-                receiveBlockArg(s, v, isClosureArg, argIndex, isSplat);
+                receiveBlockArg(s, v, argsArray, argIndex, isClosureArg, isSplat);
                 break;
             }
             case CLASSVARASGNNODE:
                 v = s.getNewTemporaryVariable();
-                receiveBlockArg(s, v, isClosureArg, argIndex, isSplat);
+                receiveBlockArg(s, v, argsArray, argIndex, isClosureArg, isSplat);
                 s.addInstr(new PutClassVariableInstr(classVarDefinitionContainer(s, true), ((ClassVarAsgnNode)node).getName(), v));
                 break;
             case CLASSVARDECLNODE:
                 v = s.getNewTemporaryVariable();
-                receiveBlockArg(s, v, isClosureArg, argIndex, isSplat);
+                receiveBlockArg(s, v, argsArray, argIndex, isClosureArg, isSplat);
                 s.addInstr(new PutClassVariableInstr(classVarDefinitionContainer(s, false), ((ClassVarDeclNode)node).getName(), v));
                 break;
             case CONSTDECLNODE:
                 v = s.getNewTemporaryVariable();
-                receiveBlockArg(s, v, isClosureArg, argIndex, isSplat);
+                receiveBlockArg(s, v, argsArray, argIndex, isClosureArg, isSplat);
                 buildConstDeclAssignment((ConstDeclNode) node, s, v);
                 break;
             case GLOBALASGNNODE:
                 v = s.getNewTemporaryVariable();
-                receiveBlockArg(s, v, isClosureArg, argIndex, isSplat);
+                receiveBlockArg(s, v, argsArray, argIndex, isClosureArg, isSplat);
                 s.addInstr(new PutGlobalVarInstr(((GlobalAsgnNode)node).getName(), v));
                 break;
             case INSTASGNNODE:
                 v = s.getNewTemporaryVariable();
-                receiveBlockArg(s, v, isClosureArg, argIndex, isSplat);
+                receiveBlockArg(s, v, argsArray, argIndex, isClosureArg, isSplat);
                 // NOTE: if 's' happens to the a class, this is effectively an assignment of a class instance variable
                 s.addInstr(new PutFieldInstr(getSelf(s), ((InstAsgnNode)node).getName(), v));
                 break;
@@ -777,26 +782,27 @@ public class IRBuilder {
                 LocalAsgnNode localVariable = (LocalAsgnNode) node;
                 int depth = localVariable.getDepth();
                 v = getBlockArgVariable((IRClosure)s, localVariable.getName(), depth);
-                receiveBlockArg(s, v, isClosureArg, argIndex, isSplat);
+                receiveBlockArg(s, v, argsArray, argIndex, isClosureArg, isSplat);
                 break;
             }
             case MULTIPLEASGNNODE: {
                 Variable oldArgs = null;
                 MultipleAsgnNode childNode = (MultipleAsgnNode) node;
-                // Push
-                if (!isRoot) {
+                if (!isMasgnRoot) {
                     v = s.getNewTemporaryVariable();
-                    receiveBlockArg(s, v, isClosureArg, argIndex, isSplat);
-                    oldArgs = s.getNewTemporaryVariable();
+                    receiveBlockArg(s, v, argsArray, argIndex, isClosureArg, isSplat);
                     // SSS FIXME: In 1.9 mode, runToAry will be unconditionally true, but not in 1.8
                     boolean runToAry = childNode.getHeadNode() != null && (((ListNode)childNode.getHeadNode()).childNodes().size() > 0);
-                    s.addInstr(new SetArgumentsInstr(oldArgs, v, runToAry));      // convert to array via to_ary if necessary 
+                    if (runToAry) {
+                        s.addInstr(new ToAryInstr(v, v, BooleanLiteral.FALSE));
+                    } else {
+                        s.addInstr(new EnsureRubyArrayInstr(v, v));
+                    }
+                    argsArray = v;
                     // SSS FIXME: Are we guaranteed that splats dont head to multiple-assignment nodes!  i.e. |*(a,b)|?
                 }
                 // Build
-                buildMultipleAsgnAssignment(childNode, s, null);
-                // Pop
-                if (!isRoot) s.addInstr(new RestoreArgumentsInstr(oldArgs));
+                buildMultipleAsgnAssignment(childNode, s, argsArray, null);
                 break;
             }
             case ZEROARGNODE:
@@ -2177,7 +2183,7 @@ public class IRBuilder {
         if (forNode.getVarNode() != null) {
             argsNodeId = forNode.getVarNode().getNodeType();
             if (argsNodeId != null)
-                buildBlockArgsAssignment(forNode.getVarNode(), closure, 0, false, true, false);
+                buildBlockArgsAssignment(forNode.getVarNode(), closure, null, 0, true, false, false);
         }
 
             // Start label -- used by redo!
@@ -2322,9 +2328,9 @@ public class IRBuilder {
             // Build args
         NodeType argsNodeId = BlockBody.getArgumentTypeWackyHack(iterNode);
         if ((iterNode.getVarNode() != null) && (argsNodeId != null))
-            closureBuilder.buildBlockArgsAssignment(iterNode.getVarNode(), closure, 0, false, true, false);
+            closureBuilder.buildBlockArgsAssignment(iterNode.getVarNode(), closure, null, 0, true, false, false);
         if (iterNode.getBlockVarNode() != null)
-            closureBuilder.buildBlockArgsAssignment(iterNode.getBlockVarNode(), closure, 0, true, true, false);
+            closureBuilder.buildBlockArgsAssignment(iterNode.getBlockVarNode(), closure, null, 0, true, true, false);
 
             // start label -- used by redo!
         closure.addInstr(new LabelInstr(closure.startLabel));
@@ -2440,7 +2446,7 @@ public class IRBuilder {
     public Operand buildMultipleAsgn(MultipleAsgnNode multipleAsgnNode, IRScope s) {
         Operand  values = build(multipleAsgnNode.getValueNode(), s);
         Variable ret = getValueInTemporaryVariable(s, values);
-        buildMultipleAsgnAssignment(multipleAsgnNode, s, ret);
+        buildMultipleAsgnAssignment(multipleAsgnNode, s, null, ret);
         return ret;
     }
 
@@ -2448,7 +2454,7 @@ public class IRBuilder {
     //
     // Ex: a,b,*c=v  is a regular assignment and in this case, the "values" operand will be non-null
     // Ex: { |a,b,*c| ..} is the argument passing case
-    public void buildMultipleAsgnAssignment(final MultipleAsgnNode multipleAsgnNode, IRScope s, Operand values) {
+    public void buildMultipleAsgnAssignment(final MultipleAsgnNode multipleAsgnNode, IRScope s, Operand argsArray, Operand values) {
         final ListNode sourceArray = multipleAsgnNode.getHeadNode();
 
         // First, build assignments for specific named arguments
@@ -2457,7 +2463,7 @@ public class IRBuilder {
             ListNode headNode = (ListNode) sourceArray;
             for (Node an: headNode.childNodes()) {
                 if (values == null) {
-                    buildBlockArgsAssignment(an, s, i, false, false, false);
+                    buildBlockArgsAssignment(an, s, argsArray, i, false, false, false);
                 } else {
                     buildAssignment(an, s, values, i, false);
                 }
@@ -2475,7 +2481,7 @@ public class IRBuilder {
         } else if (values != null) {
             buildAssignment(argsNode, s, values, i, true); // rest of the argument array!
         } else {
-            buildBlockArgsAssignment(argsNode, s, i, false, false, true); // rest of the argument array!
+            buildBlockArgsAssignment(argsNode, s, argsArray, i, false, false, true); // rest of the argument array!
         }
 
     }
