@@ -21,7 +21,7 @@ public class GetClassVariableInstr extends GetInstr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block) {
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception) {
         getResult().store(interp, context, self, 
                 ((RubyModule) getSource().retrieve(interp, context, self)).getClassVar(getRef()));
         return null;

@@ -38,7 +38,7 @@ public class RestoreArgumentsInstr extends Instr {
 
     @Interp
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block) {
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception) {
         interp.setNewParameters((IRubyObject[]) newArgs.retrieve(interp, context, self));
 
         return null;

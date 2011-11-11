@@ -19,7 +19,7 @@ public class PutFieldInstr extends PutInstr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block) {
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception) {
         IRubyObject object = (IRubyObject) getTarget().retrieve(interp, context, self);
 
         // FIXME: Why getRealClass? Document

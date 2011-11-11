@@ -36,7 +36,7 @@ public class BlockGivenInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block) {
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception) {
         result.store(interp, context, self, context.getRuntime().newBoolean(block.isGiven()));
         return null;
     }

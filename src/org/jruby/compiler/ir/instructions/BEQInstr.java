@@ -23,7 +23,7 @@ public class BEQInstr extends BranchInstr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block) {
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception) {
         Operand arg1 = getArg1();
         Operand arg2 = getArg2();
         Object value1 = arg1.retrieve(interp, context, self);

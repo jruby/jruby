@@ -29,10 +29,4 @@ public interface InterpreterContext {
 
     public Object getTemporaryVariable(int offset);
     public Object setTemporaryVariable(int offset, Object value);
-
-    // Set the most recently raised exception
-    public void setException(Object e);
-
-    // Get the most recently raised exception
-    public Object getException();
 }

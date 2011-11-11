@@ -14,36 +14,36 @@ import org.jruby.runtime.ThreadContext;
 // Right now, this is primarily used for JRuby implementation.  Ruby exceptions go through
 // RubyKernel.raise (or RubyThread.raise).
 public class ThrowExceptionInstr extends Instr {
-    private Operand exception;
+    private Operand exceptionArg;
 
     public ThrowExceptionInstr(Operand exception) {
         super(Operation.THROW);
-        this.exception = exception;
+        this.exceptionArg = exception;
     }
 
     public Operand[] getOperands() {
-        return new Operand[]{exception};
+        return new Operand[]{ exceptionArg };
     }
 
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap) {
-        exception = exception.getSimplifiedOperand(valueMap);
+        exceptionArg = exceptionArg.getSimplifiedOperand(valueMap);
     }
 
     @Override
     public String toString() {
-        return super.toString() + "(" + exception + ")";
+        return super.toString() + "(" + exceptionArg + ")";
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new ThrowExceptionInstr(exception.cloneForInlining(ii));
+        return new ThrowExceptionInstr(exceptionArg.cloneForInlining(ii));
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block) {
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception) {
         if (exception instanceof IRException) throw ((IRException) exception).getException(context.getRuntime());
 
-        Object excObj = exception.retrieve(interp, context, self);
+        Object excObj = exceptionArg.retrieve(interp, context, self);
             
         if (excObj instanceof IRubyObject) {
             RubyKernel.raise(context, context.getRuntime().getKernel(), new IRubyObject[] {(IRubyObject)excObj}, Block.NULL_BLOCK);

@@ -57,7 +57,7 @@ public class DefineMetaClassInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block) {
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception) {
         Ruby runtime = context.getRuntime();
         IRubyObject obj = (IRubyObject)object.retrieve(interp, context, self);
         

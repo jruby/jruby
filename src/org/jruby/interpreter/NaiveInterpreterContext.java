@@ -17,7 +17,6 @@ import org.jruby.compiler.ir.IRExecutionScope;
 public class NaiveInterpreterContext implements InterpreterContext {
     protected IRubyObject[] parameters;
     protected Object[] temporaryVariables;
-    protected Object currException = null;
 
     // currentModule is:
     // - self if we are executing a class method of 'self'
@@ -68,16 +67,5 @@ public class NaiveInterpreterContext implements InterpreterContext {
         System.arraycopy(parameters, argIndex, args, 0, length);
 
         return args;
-    }
-
-    // Set the most recently raised exception
-    public void setException(Object e) {
-        currException = e;
-    }
-
-    // SSS FIXME: Should we get-and-clear instead of just get?
-    // Get the most recently raised exception
-    public Object getException() {
-        return currException;
     }
 }

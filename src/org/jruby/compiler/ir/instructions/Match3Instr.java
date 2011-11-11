@@ -50,7 +50,7 @@ public class Match3Instr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block) {
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception) {
         RubyRegexp regexp = (RubyRegexp) receiver.retrieve(interp, context, self);
         IRubyObject argValue = (IRubyObject) arg.retrieve(interp, context, self);
         

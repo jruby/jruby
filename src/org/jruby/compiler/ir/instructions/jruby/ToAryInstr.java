@@ -48,7 +48,7 @@ public class ToAryInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block) {
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception) {
         Object receiver = array.retrieve(interp, context, self);
 
         // Don't call to_ary if we we have an array already and we are asked not to run to_ary on arrays

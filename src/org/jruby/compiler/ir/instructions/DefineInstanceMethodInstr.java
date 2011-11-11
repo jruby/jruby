@@ -50,7 +50,7 @@ public class DefineInstanceMethodInstr extends Instr {
 
     // SSS FIXME: Go through this and DefineClassMethodInstr.interpret, clean up, extract common code
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block) {
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception) {
         // SSS FIXME: This is a temporary solution that uses information from the stack.
         // This instruction and this logic will be re-implemented to not use implicit information from the stack.
         // Till such time, this code implements the correct semantics.

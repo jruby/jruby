@@ -143,6 +143,7 @@ public class Interpreter {
         int ipc = 0;
         Instr lastInstr = null;
         IRubyObject rv = null;
+        Object exception = null;
         while (ipc < n) {
             interpInstrsCount++;
             lastInstr = instrs[ipc];
@@ -157,7 +158,7 @@ public class Interpreter {
             //   invokes Ruby-level exceptions handlers.
             try {
                 try {
-                    Object value = lastInstr.interpret(interp, context, self, block);
+                    Object value = lastInstr.interpret(interp, context, self, block, exception);
                     if (value == null) {
                         ipc++;
                     } else if (value instanceof Label) { // jump to new location
@@ -204,7 +205,7 @@ public class Interpreter {
                         // Quite easy to do this by passing 'bj' as the exception to the ensure block!
                         ipc = scope.getEnsurerPC(lastInstr);
                         if (ipc == -1) throw bj; // No ensure block here, just rethrow bj
-                        interp.setException(bj); // Found an ensure block, set 'bj' as the exception and transfer control
+                        exception = bj; // Found an ensure block, set 'bj' as the exception and transfer control
                     }
                 }
             } catch (RaiseException re) {
@@ -213,15 +214,15 @@ public class Interpreter {
                 if (isDebug()) LOG.info("ipc for rescuer: " + ipc);
                 if (ipc == -1) throw re; // No one rescued exception, pass it on!
 
-                interp.setException(re.getException());
+                exception = re.getException();
             } catch (ThreadKill e) {
                 ipc = scope.getEnsurerPC(lastInstr);
                 if (ipc == -1) throw e; // No ensure block here, pass it on! 
-                interp.setException(e);
+                exception = e;
             } catch (Error e) {
                 ipc = scope.getEnsurerPC(lastInstr);
                 if (ipc == -1) throw e; // No ensure block here, pass it on! 
-                interp.setException(e);
+                exception = e;
             }
         }
 

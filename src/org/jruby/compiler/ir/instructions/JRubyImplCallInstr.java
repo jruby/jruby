@@ -110,7 +110,7 @@ public class JRubyImplCallInstr extends CallInstr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block) {
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception) {
         Ruby runtime = context.getRuntime();        
         String name;
         Object receiver;

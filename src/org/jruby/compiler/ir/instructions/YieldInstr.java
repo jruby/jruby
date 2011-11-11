@@ -38,7 +38,7 @@ public class YieldInstr extends Instr implements ResultInstr {
 
     @Interp
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block) {
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception) {
         Object resultValue;
         Object blk = (Object) blockArg.retrieve(interp, context, self);
         if (blk instanceof RubyProc) blk = ((RubyProc)blk).getBlock();

@@ -41,7 +41,7 @@ public class SuperInstr extends CallInstr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block aBlock) {
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block aBlock, Object exception) {
         // FIXME: Receiver is not being used...should we be retrieving it?
         IRubyObject receiver = (IRubyObject)getReceiver().retrieve(interp, context, self);
         IRubyObject[] args = prepareArguments(interp, context, self, getCallArgs());

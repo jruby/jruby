@@ -20,7 +20,7 @@ public class PutGlobalVarInstr extends PutInstr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block) {
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception) {
         getTarget().store(interp, context, self, getValue().retrieve(interp, context, self));
         return null;
     }

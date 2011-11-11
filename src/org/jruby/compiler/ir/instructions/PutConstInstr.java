@@ -19,7 +19,7 @@ public class PutConstInstr extends PutInstr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block) {
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception) {
         IRubyObject value = (IRubyObject) getValue().retrieve(interp, context, self);
         RubyModule module = (RubyModule) getTarget().retrieve(interp, context, self);
 

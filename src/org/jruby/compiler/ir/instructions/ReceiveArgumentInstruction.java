@@ -56,7 +56,7 @@ public class ReceiveArgumentInstruction extends Instr implements ResultInstr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block) {
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception) {
         if (restOfArgArray) {
             interpretAsRestArg(interp, context, self, destination);
         } else {

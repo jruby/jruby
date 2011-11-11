@@ -49,7 +49,7 @@ public class InstanceOfInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block) {
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception) {
         try {
             if (type == null) type = Class.forName(className);
         } catch (ClassNotFoundException e) {

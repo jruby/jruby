@@ -48,7 +48,7 @@ public class AllocateBindingInstr extends Instr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block) {
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception) {
 /**
  * SSS: This is going to be a NO-OP in the current implementation because of the existing JRuby runtime
  * is structure.  ThreadContext accesses static-scope via a DynamicScope!  This means it expects a

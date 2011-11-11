@@ -25,7 +25,7 @@ public class NoResultCallInstr extends CallBase {
     }    
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block) {
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception) {
         callAdapter.call(interp, context, self, (IRubyObject) getReceiver().retrieve(interp, context, self));
         return null;
     }  

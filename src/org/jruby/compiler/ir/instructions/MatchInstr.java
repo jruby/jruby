@@ -41,7 +41,7 @@ public class MatchInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block) {
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception) {
         RubyRegexp regexp = (RubyRegexp) receiver.retrieve(interp, context, self);
         result.store(interp, context, self, regexp.op_match2(context));
         return null;

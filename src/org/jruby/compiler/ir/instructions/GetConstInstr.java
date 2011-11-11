@@ -24,7 +24,7 @@ public class GetConstInstr extends GetInstr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block) {
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception) {
         Object source = getSource().retrieve(interp, context, self);
         RubyModule module;
 
