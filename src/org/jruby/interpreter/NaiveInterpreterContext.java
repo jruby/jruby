@@ -55,16 +55,6 @@ public class NaiveInterpreterContext implements InterpreterContext {
         return oldValue;
     }
 
-    public Object getSharedBindingVariable(ThreadContext context, int bindingSlot) {
-        Object value = currDynScope.getValue(bindingSlot, 0);
-        if (value == null) value = context.getRuntime().getNil();
-        return value;
-    }
-
-    public void setSharedBindingVariable(int bindingSlot, Object value) {
-        currDynScope.setValueDepthZero((IRubyObject)value, bindingSlot);
-    }
-
     public Object getLocalVariable(ThreadContext context, int depth, int offset) {
         Object value = currDynScope.getValue(offset, depth);
         return (value == null) ? context.getRuntime().getNil() : value;

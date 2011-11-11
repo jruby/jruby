@@ -45,9 +45,6 @@ public interface InterpreterContext {
     public Object getLocalVariable(ThreadContext context, int depth, int offset);
     public Object setLocalVariable(int depth, int offset, Object value);
 
-    public Object getSharedBindingVariable(ThreadContext context, int bindingSlot);
-    public void setSharedBindingVariable(int bindingSlot, Object value);
-
     // Set the most recently raised exception
     public void setException(Object e);
 

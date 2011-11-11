@@ -58,9 +58,9 @@ public class StoreToBindingInstr extends Instr {
         
         // FIXME: This is a pseudo-hack.  bindings set up for blocks in opt arg default values
         // can trip over this since we cannot store somethign which is not a real IRubyObject.
-        Object value = interp.getLocalVariable(context, v.getScopeDepth(), v.getLocation());
-        if (!(value instanceof UndefinedValue)) {
-            interp.setSharedBindingVariable(bindingSlot, value);
+        IRubyObject RubyValue = (IRubyObject) interp.getLocalVariable(context, v.getScopeDepth(), v.getLocation());
+        if (!(RubyValue instanceof UndefinedValue)) {
+            context.getCurrentScope().setValue(RubyValue, bindingSlot, 0);
         }
         return null;
     }
