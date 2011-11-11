@@ -56,17 +56,17 @@ public class ReceiveArgumentInstruction extends Instr implements ResultInstr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception) {
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
         if (restOfArgArray) {
-            interpretAsRestArg(interp, context, self, destination);
+            interpretAsRestArg(interp, context, self, destination, temp);
         } else {
-            destination.store(interp, context, self, interp.getParameter(argIndex));
+            destination.store(interp, context, self, interp.getParameter(argIndex), temp);
         }
         return null;
     }
 
     @Interp
-    private void  interpretAsRestArg(InterpreterContext interp, ThreadContext context, IRubyObject self, Operand destination) {
-        destination.store(interp, context, self, context.getRuntime().newArray(interp.getParametersFrom(argIndex)));
+    private void  interpretAsRestArg(InterpreterContext interp, ThreadContext context, IRubyObject self, Operand destination, Object[] temp) {
+        destination.store(interp, context, self, context.getRuntime().newArray(interp.getParametersFrom(argIndex)), temp);
     }
 }

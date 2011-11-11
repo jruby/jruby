@@ -21,7 +21,7 @@ class OneArgNoBlockFixnumCallAdapter extends CallAdapter {
     }
 
     @Override
-    public Object call(InterpreterContext interp, ThreadContext context, IRubyObject self, IRubyObject receiver) {
+    public Object call(InterpreterContext interp, ThreadContext context, IRubyObject self, IRubyObject receiver, Object[] temp) {
         return (IRubyObject) callSite.call(context, self, receiver, arg1);
     }
 }

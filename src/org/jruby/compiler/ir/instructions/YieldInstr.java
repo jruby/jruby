@@ -38,9 +38,9 @@ public class YieldInstr extends Instr implements ResultInstr {
 
     @Interp
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception) {
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
         Object resultValue;
-        Object blk = (Object) blockArg.retrieve(interp, context, self);
+        Object blk = (Object) blockArg.retrieve(interp, context, self, temp);
         if (blk instanceof RubyProc) blk = ((RubyProc)blk).getBlock();
         if (blk instanceof RubyNil) blk = Block.NULL_BLOCK;
         // Blocks that get yielded are always normal
@@ -49,11 +49,11 @@ public class YieldInstr extends Instr implements ResultInstr {
         if (yieldArg == null) {
             resultValue = b.yieldSpecific(context);
         } else {
-            IRubyObject yieldVal = (IRubyObject)yieldArg.retrieve(interp, context, self);
+            IRubyObject yieldVal = (IRubyObject)yieldArg.retrieve(interp, context, self, temp);
             resultValue = (unwrapArray && (yieldVal instanceof RubyArray)) ? b.yieldArray(context, yieldVal, null, null) : b.yield(context, yieldVal);
         }
         
-        result.store(interp, context, self, resultValue);
+        result.store(interp, context, self, resultValue, temp);
         
         return null;
     }

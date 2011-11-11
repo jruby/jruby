@@ -15,7 +15,7 @@ public class NoArgNoBlockOperandCallAdapter extends CallAdapter {
     }
 
     @Override
-    public Object call(InterpreterContext interp, ThreadContext context, IRubyObject self, IRubyObject receiver) {
+    public Object call(InterpreterContext interp, ThreadContext context, IRubyObject self, IRubyObject receiver, Object[] temp) {
         return callSite.call(context, self, receiver);
     }
 }

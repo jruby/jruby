@@ -49,7 +49,7 @@ public class InstanceOfInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception) {
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
         try {
             if (type == null) type = Class.forName(className);
         } catch (ClassNotFoundException e) {
@@ -61,7 +61,7 @@ public class InstanceOfInstr extends Instr implements ResultInstr {
             throw new RuntimeException(e);
         }
         result.store(interp, context, self, 
-                context.getRuntime().newBoolean(type.isInstance(object.retrieve(interp, context, self)))); 
+                context.getRuntime().newBoolean(type.isInstance(object.retrieve(interp, context, self, temp))), temp); 
         return null;
     }
 }

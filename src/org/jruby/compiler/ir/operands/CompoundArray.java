@@ -86,9 +86,9 @@ public class CompoundArray extends Operand {
     }
 
     @Override
-    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        IRubyObject v1 = (IRubyObject)a1.retrieve(interp, context, self);
-        IRubyObject v2 = (IRubyObject)a2.retrieve(interp, context, self);
+    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self, Object[] temp) {
+        IRubyObject v1 = (IRubyObject)a1.retrieve(interp, context, self, temp);
+        IRubyObject v2 = (IRubyObject)a2.retrieve(interp, context, self, temp);
         return RuntimeHelpers.argsCat(v1, v2);
     }
 }

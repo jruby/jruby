@@ -21,7 +21,7 @@ public abstract class CallAdapter {
         this.callSite = callSite;
     }
         
-    public abstract Object call(InterpreterContext interp, ThreadContext context, IRubyObject self, IRubyObject receiver);
+    public abstract Object call(InterpreterContext interp, ThreadContext context, IRubyObject self, IRubyObject receiver, Object[] temp);
 
     private static CallSite getCallSiteFor(CallType callType, MethAddr methAddr) {
         assert callType != null: "Calltype should never be null";

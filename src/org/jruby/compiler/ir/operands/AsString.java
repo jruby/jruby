@@ -12,8 +12,8 @@ public class AsString extends Operand {
     }
 
     @Override
-    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        return ((IRubyObject)source.retrieve(interp, context, self)).asString();
+    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self, Object[] temp) {
+        return ((IRubyObject)source.retrieve(interp, context, self, temp)).asString();
     }
 
     @Override

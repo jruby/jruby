@@ -65,18 +65,18 @@ public class SValue extends Operand {
     }
 
     @Override
-    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        Object val = array.retrieve(interp, context, self);
+    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self, Object[] temp) {
+        Object val = array.retrieve(interp, context, self, temp);
         
         if (val instanceof RubyArray) {
             int n = ((RubyArray) val).getLength();
             
-            if (n == 0) return Nil.NIL.retrieve(interp, context, self); // SSS FIXME: interp.getRuntime().getNil();
+            if (n == 0) return context.nil;
             if (n == 1) return ((RubyArray) val).entry(0);
             
             return val;
         }
 
-        return Nil.NIL.retrieve(interp, context, self); // SSS FIXME: interp.getRuntime().getNil();
+        return context.nil;
     }
 }

@@ -40,10 +40,10 @@ public class ThrowExceptionInstr extends Instr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception) {
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
         if (exception instanceof IRException) throw ((IRException) exception).getException(context.getRuntime());
 
-        Object excObj = exceptionArg.retrieve(interp, context, self);
+        Object excObj = exceptionArg.retrieve(interp, context, self, temp);
             
         if (excObj instanceof IRubyObject) {
             RubyKernel.raise(context, context.getRuntime().getKernel(), new IRubyObject[] {(IRubyObject)excObj}, Block.NULL_BLOCK);

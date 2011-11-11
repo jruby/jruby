@@ -77,9 +77,9 @@ public class Interpreter {
         evalScript.prepareForInterpretation();
 //        evalScript.runCompilerPass(new CallSplitter());
         ThreadContext context = runtime.getCurrentContext(); 
-        runBeginEndBlocks(evalScript.getBeginBlocks(), context, self);
+        runBeginEndBlocks(evalScript.getBeginBlocks(), context, self, null); // FIXME: No temp vars yet right?
         IRubyObject rv = evalScript.call(context, self, evalScript.getStaticScope().getModule(), rootNode.getScope(), block);
-        runBeginEndBlocks(evalScript.getEndBlocks(), context, self);
+        runBeginEndBlocks(evalScript.getEndBlocks(), context, self, null); // FIXME: No temp vars right?
         return rv;
     }
 
@@ -91,13 +91,13 @@ public class Interpreter {
         return interpretCommonEval(runtime, file, lineNumber, (RootNode)node, self, block);
     }
 
-    public static void runBeginEndBlocks(List<IRClosure> beBlocks, ThreadContext context, IRubyObject self) {
+    public static void runBeginEndBlocks(List<IRClosure> beBlocks, ThreadContext context, IRubyObject self, Object[] temp) {
         if (beBlocks == null) return;
 
         for (IRClosure b: beBlocks) {
             // SSS FIXME: Should I piggyback on WrappedIRClosure.retrieve or just copy that code here?
             b.prepareForInterpretation();
-            Block blk = (Block)(new WrappedIRClosure(b)).retrieve(null, context, self);
+            Block blk = (Block)(new WrappedIRClosure(b)).retrieve(null, context, self, temp);
             blk.yield(context, null);
         }
     }
@@ -122,11 +122,11 @@ public class Interpreter {
         ThreadContext context = runtime.getCurrentContext();
 
         try {
-            runBeginEndBlocks(root.getBeginBlocks(), context, self);
+            runBeginEndBlocks(root.getBeginBlocks(), context, self, null); // FIXME: No temp vars yet...not needed?
             IRMethod rootMethod = root.getRootClass().getRootMethod();
             InterpretedIRMethod method = new InterpretedIRMethod(rootMethod, currModule, true);
             IRubyObject rv =  method.call(context, self, currModule, "", IRubyObject.NULL_ARRAY);
-            runBeginEndBlocks(root.getEndBlocks(), context, self);
+            runBeginEndBlocks(root.getEndBlocks(), context, self, null); // FIXME: No temp vars yet...not needed?
             if (isDebug()) LOG.info("-- Interpreted instructions: {}", interpInstrsCount);
             return rv;
         } catch (IRBreakJump bj) {
@@ -139,6 +139,8 @@ public class Interpreter {
         boolean inClosure = (scope instanceof IRClosure);
 
         Instr[] instrs = scope.prepareInstructionsForInterpretation();
+        int temporaryVariablesSize = scope.getTemporaryVariableSize();
+        Object[] temporaryVariables = temporaryVariablesSize > 0 ? new Object[temporaryVariablesSize] : null;
         int n   = instrs.length;
         int ipc = 0;
         Instr lastInstr = null;
@@ -158,7 +160,7 @@ public class Interpreter {
             //   invokes Ruby-level exceptions handlers.
             try {
                 try {
-                    Object value = lastInstr.interpret(interp, context, self, block, exception);
+                    Object value = lastInstr.interpret(interp, context, self, block, exception, temporaryVariables);
                     if (value == null) {
                         ipc++;
                     } else if (value instanceof Label) { // jump to new location
@@ -196,7 +198,7 @@ public class Interpreter {
                         // We got where we need to get to (because a lambda stopped us, or because we popped to the
                         // lexical scope where we got called from).  Retrieve the result and store it.
                         if (lastInstr instanceof ResultInstr) {
-                            ((ResultInstr) lastInstr).getResult().store(interp, context, self, bj.breakValue);
+                            ((ResultInstr) lastInstr).getResult().store(interp, context, self, bj.breakValue, temporaryVariables);
                         }
                         ipc += 1;
                     } else {

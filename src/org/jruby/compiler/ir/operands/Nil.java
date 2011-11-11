@@ -17,7 +17,7 @@ public class Nil extends Constant {
     }
 
     @Override
-    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self, Object[] temp) {
 /*
 		  if (cachedValue == null)
             cachedValue = interp.getRuntime().getNil();

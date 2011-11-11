@@ -66,14 +66,14 @@ public class LocalVariable extends Variable {
     }
 
     @Override
-    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self, Object[] temp) {
         IRubyObject value = context.getCurrentScope().getValue(offset, scopeDepth);
         if (value == null) value = context.getRuntime().getNil();
         return value;
     }
 
     @Override
-    public Object store(InterpreterContext interp, ThreadContext context, IRubyObject self, Object value) {
+    public Object store(InterpreterContext interp, ThreadContext context, IRubyObject self, Object value, Object[] temp) {
         return context.getCurrentScope().setValue((IRubyObject) value, offset, scopeDepth);
     }
 

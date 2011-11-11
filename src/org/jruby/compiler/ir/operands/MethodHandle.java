@@ -65,13 +65,13 @@ public class MethodHandle extends Operand {
     }
 
     @Override
-    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        receiverObj = (IRubyObject)receiver.retrieve(interp, context, self);
+    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self, Object[] temp) {
+        receiverObj = (IRubyObject)receiver.retrieve(interp, context, self, temp);
 
         if (methodName instanceof MethAddr) {
             resolvedMethodName = ((MethAddr)methodName).getName();
         } else {
-            IRubyObject mnameObj = (IRubyObject)methodName.retrieve(interp, context, self);
+            IRubyObject mnameObj = (IRubyObject)methodName.retrieve(interp, context, self, temp);
 
             // SSS FIXME: If this is not a ruby string or a symbol, then this is an error in the source code!
             // Raise an exception and throw an error.  This should not be an assert.

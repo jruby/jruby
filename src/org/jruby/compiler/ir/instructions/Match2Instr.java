@@ -50,10 +50,10 @@ public class Match2Instr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception) {
-        RubyRegexp regexp = (RubyRegexp) receiver.retrieve(interp, context, self);
-        IRubyObject argValue = (IRubyObject) arg.retrieve(interp, context, self);
-        result.store(interp, context, self, regexp.op_match(context, argValue));
+    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
+        RubyRegexp regexp = (RubyRegexp) receiver.retrieve(interp, context, self, temp);
+        IRubyObject argValue = (IRubyObject) arg.retrieve(interp, context, self, temp);
+        result.store(interp, context, self, regexp.op_match(context, argValue), temp);
         return null;
     }
 }

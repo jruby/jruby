@@ -27,10 +27,10 @@ public abstract class ClosureCallAdapter extends CallAdapter {
         this.closure = closure;
     }
     
-    protected Block prepareBlock(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+    protected Block prepareBlock(InterpreterContext interp, ThreadContext context, IRubyObject self, Object[] temp) {
         if (closure == null) return Block.NULL_BLOCK;
         
-        Object value = closure.retrieve(interp, context, self);
+        Object value = closure.retrieve(interp, context, self, temp);
         
         Block block;
         if (value instanceof Block) {

@@ -33,14 +33,14 @@ public class ThreeArgNoBlockConstantCallAdapter extends CallAdapter {
     }
 
     @Override
-    public Object call(InterpreterContext interp, ThreadContext context, IRubyObject self, IRubyObject receiver) {
-        if (constant1 == null) generateConstants(interp, context, self);
+    public Object call(InterpreterContext interp, ThreadContext context, IRubyObject self, IRubyObject receiver, Object[] temp) {
+        if (constant1 == null) generateConstants(interp, context, self, temp);
         return callSite.call(context, self, receiver, constant1, constant2, constant3);
     }
 
-    private void generateConstants(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        constant1 = (IRubyObject) arg1.retrieve(interp, context, self);
-        constant2 = (IRubyObject) arg2.retrieve(interp, context, self);
-        constant3 = (IRubyObject) arg3.retrieve(interp, context, self);
+    private void generateConstants(InterpreterContext interp, ThreadContext context, IRubyObject self, Object[] temp) {
+        constant1 = (IRubyObject) arg1.retrieve(interp, context, self, temp);
+        constant2 = (IRubyObject) arg2.retrieve(interp, context, self, temp);
+        constant3 = (IRubyObject) arg3.retrieve(interp, context, self, temp);
     }
 }

@@ -10,7 +10,7 @@ public class Symbol extends Reference {
     }
 
     @Override
-    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self, Object[] temp) {
         return context.getRuntime().newSymbol(getName());
     }
 

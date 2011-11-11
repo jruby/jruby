@@ -9,9 +9,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
-import org.jruby.RubyBasicObject;
 import org.jruby.RubyString;
-import org.jruby.RubySymbol;
 
 // This represents a compound string in Ruby
 // Ex: - "Hi " + "there"
@@ -81,18 +79,18 @@ public class CompoundString extends Operand {
     }
 
     // SSS FIXME: Buggy?
-    String retrieveJavaString(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+    String retrieveJavaString(InterpreterContext interp, ThreadContext context, IRubyObject self, Object[] temp) {
         StringBuilder buf = new StringBuilder();
 
         for (Operand p : pieces) {
-            buf.append(p.retrieve(interp, context, self));
+            buf.append(p.retrieve(interp, context, self, temp));
         }
 
         return buf.toString();
     }
 
     @Override
-    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self, Object[] temp) {
         // SSS FIXME: Doesn't work in all cases.  See example below
         //
         //    s = "x\234\355\301\001\001\000\000\000\200\220\376\257\356\b\n#{"\000" * 31}\030\200\000\000\001"
@@ -107,7 +105,7 @@ public class CompoundString extends Operand {
             if (p instanceof StringLiteral) {
                 str.getByteList().append(((StringLiteral)p)._bl_value);
             } else {
-                str.append((IRubyObject)p.retrieve(interp, context, self));
+                str.append((IRubyObject)p.retrieve(interp, context, self, temp));
             }
         }
 

@@ -37,8 +37,8 @@ public class RestoreErrorInfoInstr extends Instr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception) {
-        context.setErrorInfo((IRubyObject) arg.retrieve(interp, context, self));
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
+        context.setErrorInfo((IRubyObject) arg.retrieve(interp, context, self, temp));
         
         return null;
     }

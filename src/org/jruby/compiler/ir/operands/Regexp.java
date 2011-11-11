@@ -59,11 +59,11 @@ public class Regexp extends Operand {
     }
 
     @Override
-    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self, Object[] temp) {
         // If we have a constant regexp string or if the regexp patterns asks for caching, cache the regexp
         if ((!regexp.isConstant() && !options.isOnce()) || (rubyRegexp == null) || context.getRuntime().getKCode() != rubyRegexp.getKCode()) {
             RubyRegexp reg = RubyRegexp.newRegexp(context.getRuntime(),
-                    ((RubyString) regexp.retrieve(interp, context, self)).getByteList(), options);
+                    ((RubyString) regexp.retrieve(interp, context, self, temp)).getByteList(), options);
             reg.setLiteral();
             rubyRegexp = reg;
         }

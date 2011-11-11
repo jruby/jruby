@@ -46,12 +46,14 @@ public class TemporaryVariable extends Variable {
     }
 
     @Override
-    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        return interp.getTemporaryVariable(offset);
+    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self, Object[] temp) {
+        return temp[offset];
     }
 
     @Override
-    public Object store(InterpreterContext interp, ThreadContext context, IRubyObject self, Object value) {
-        return interp.setTemporaryVariable(offset, value);
+    public Object store(InterpreterContext interp, ThreadContext context, IRubyObject self, Object value, Object[] temp) {
+        Object old = temp[offset];
+        temp[offset] = value;
+        return old;
     }
 }

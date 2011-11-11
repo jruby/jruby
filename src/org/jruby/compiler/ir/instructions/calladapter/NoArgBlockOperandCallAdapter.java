@@ -16,8 +16,8 @@ public class NoArgBlockOperandCallAdapter extends ClosureCallAdapter {
     }
 
     @Override
-    public Object call(InterpreterContext interp, ThreadContext context, IRubyObject self, IRubyObject receiver) {
-        Block block = prepareBlock(interp, context, self);
+    public Object call(InterpreterContext interp, ThreadContext context, IRubyObject self, IRubyObject receiver, Object[] temp) {
+        Block block = prepareBlock(interp, context, self, temp);
         
         try {
             return callSite.call(context, self, receiver, block);

@@ -46,15 +46,15 @@ public class AliasInstr extends Instr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception) {
-        IRubyObject object = (IRubyObject) receiver.retrieve(interp, context, self);
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
+        IRubyObject object = (IRubyObject) receiver.retrieve(interp, context, self, temp);
                 
         if (object == null || object instanceof RubyFixnum || object instanceof RubySymbol) {
             throw context.getRuntime().newTypeError("no class to make alias");
         }
 
-        String newNameString = newName.retrieve(interp, context, self).toString();
-        String oldNameString = oldName.retrieve(interp, context, self).toString();
+        String newNameString = newName.retrieve(interp, context, self, temp).toString();
+        String oldNameString = oldName.retrieve(interp, context, self, temp).toString();
 
         RubyModule module = (object instanceof RubyModule) ? (RubyModule) object : object.getMetaClass();
         module.defineAlias(newNameString, oldNameString);

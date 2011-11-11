@@ -23,8 +23,8 @@ public class GetFieldInstr extends GetInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, org.jruby.runtime.Block block, Object exception) {
-        IRubyObject object = (IRubyObject) getSource().retrieve(interp, context, self);
+    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, org.jruby.runtime.Block block, Object exception, Object[] temp) {
+        IRubyObject object = (IRubyObject) getSource().retrieve(interp, context, self, temp);
 
         // FIXME: Why getRealClass? Document
         RubyClass clazz = object.getMetaClass().getRealClass();
@@ -32,7 +32,7 @@ public class GetFieldInstr extends GetInstr {
         // FIXME: Should add this as a field for instruction
         VariableAccessor accessor = clazz.getVariableAccessorForRead(getRef());
         Object v = accessor == null ? null : accessor.get(object);
-        getResult().store(interp, context, self, v == null ? context.getRuntime().getNil() : v);
+        getResult().store(interp, context, self, v == null ? context.getRuntime().getNil() : v, temp);
         return null;
     }
 }

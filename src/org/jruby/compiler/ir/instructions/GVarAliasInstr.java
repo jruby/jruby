@@ -33,9 +33,9 @@ public class GVarAliasInstr extends Instr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception) {
-        String newNameString = newName.retrieve(interp, context, self).toString();
-        String oldNameString = oldName.retrieve(interp, context, self).toString();
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
+        String newNameString = newName.retrieve(interp, context, self, temp).toString();
+        String oldNameString = oldName.retrieve(interp, context, self, temp).toString();
 
         context.getRuntime().getGlobalVariables().alias(newNameString, oldNameString);
         return null;

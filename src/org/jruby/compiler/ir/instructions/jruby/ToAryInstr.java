@@ -48,8 +48,8 @@ public class ToAryInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception) {
-        Object receiver = array.retrieve(interp, context, self);
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
+        Object receiver = array.retrieve(interp, context, self, temp);
 
         // Don't call to_ary if we we have an array already and we are asked not to run to_ary on arrays
         Object toAryValue;
@@ -59,7 +59,7 @@ public class ToAryInstr extends Instr implements ResultInstr {
             toAryValue = RuntimeHelpers.aryToAry((IRubyObject) receiver);
         }
         
-        result.store(interp, context, self, toAryValue);
+        result.store(interp, context, self, toAryValue, temp);
 
         return null;        
     }

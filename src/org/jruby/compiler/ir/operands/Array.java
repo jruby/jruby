@@ -106,11 +106,11 @@ public class Array extends Operand {
     }
 
     @Override
-    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self, Object[] temp) {
         IRubyObject[] elements = new IRubyObject[elts.length];
 
         for (int i = 0; i < elements.length; i++) {
-            elements[i] = (IRubyObject) elts[i].retrieve(interp, context, self);
+            elements[i] = (IRubyObject) elts[i].retrieve(interp, context, self, temp);
         }
 
         return context.getRuntime().newArray(elements);

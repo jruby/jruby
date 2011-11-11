@@ -52,7 +52,7 @@ public class StoreToBindingInstr extends Instr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception) {
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
         LocalVariable v = (LocalVariable) value;
         
         if (bindingSlot == -1) bindingSlot = targetMethod.getBindingSlot(v.getName());

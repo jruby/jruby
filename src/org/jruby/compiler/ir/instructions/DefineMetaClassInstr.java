@@ -57,9 +57,9 @@ public class DefineMetaClassInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception) {
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
         Ruby runtime = context.getRuntime();
-        IRubyObject obj = (IRubyObject)object.retrieve(interp, context, self);
+        IRubyObject obj = (IRubyObject)object.retrieve(interp, context, self, temp);
         
         if (obj instanceof RubyFixnum || obj instanceof RubySymbol) {
             throw runtime.newTypeError("no virtual class for " + obj.getMetaClass().getBaseName());
@@ -73,7 +73,7 @@ public class DefineMetaClassInstr extends Instr implements ResultInstr {
             DynamicMethod method = new InterpretedIRMethod(dummyMetaClass.getRootMethod(), Visibility.PUBLIC, singletonClass);
             // SSS FIXME: Rather than pass the block implicitly, should we add %block as another operand to DefineMetaClass instr?
             Object v = method.call(context, singletonClass, singletonClass, "", new IRubyObject[]{}, block);
-            result.store(interp, context, self, v);
+            result.store(interp, context, self, v, temp);
             return null;
         }
     }

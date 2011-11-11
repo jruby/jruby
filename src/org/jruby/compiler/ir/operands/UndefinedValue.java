@@ -30,7 +30,7 @@ public class UndefinedValue extends Operand implements IRubyObject {
     private UndefinedValue() {}
 
     @Override
-    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self, Object[] temp) {
         return this;
     }
 

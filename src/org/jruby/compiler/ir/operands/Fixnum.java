@@ -62,7 +62,7 @@ public class Fixnum extends Constant {
     }
 
     @Override
-    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self, Object[] temp) {
         if (rubyFixnum == null) rubyFixnum = context.getRuntime().newFixnum(value);
         return rubyFixnum;
     }

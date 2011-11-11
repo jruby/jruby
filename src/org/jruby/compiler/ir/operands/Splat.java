@@ -70,7 +70,7 @@ public class Splat extends Operand {
     }
 
     @Override
-    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        return RuntimeHelpers.splatValue((IRubyObject) array.retrieve(interp, context, self));
+    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self, Object[] temp) {
+        return RuntimeHelpers.splatValue((IRubyObject) array.retrieve(interp, context, self, temp));
     }
 }

@@ -54,8 +54,8 @@ public class DefineModuleInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception) {
-        Object rubyContainer = container.retrieve(interp, context, self);
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
+        Object rubyContainer = container.retrieve(interp, context, self, temp);
         
         if (!(rubyContainer instanceof RubyModule)) throw context.getRuntime().newTypeError("no outer class/module");
 
@@ -65,7 +65,7 @@ public class DefineModuleInstr extends Instr implements ResultInstr {
 
         // SSS FIXME: Rather than pass the block implicitly, should we add %block as another operand to DefineClass, DefineModule instrs?
         Object value = method.call(context, newRubyModule, newRubyModule, "", new IRubyObject[]{}, block);
-        result.store(interp, context, self, value);
+        result.store(interp, context, self, value, temp);
         return null;
     }
 }

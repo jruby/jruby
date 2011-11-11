@@ -55,8 +55,8 @@ public class MethodLookupInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception) {
-        result.store(interp, context, self, methodHandle.retrieve(interp, context, self));
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
+        result.store(interp, context, self, methodHandle.retrieve(interp, context, self, temp), temp);
         return null;
     }
 }

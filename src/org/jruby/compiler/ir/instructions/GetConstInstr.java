@@ -24,8 +24,8 @@ public class GetConstInstr extends GetInstr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception) {
-        Object source = getSource().retrieve(interp, context, self);
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
+        Object source = getSource().retrieve(interp, context, self, temp);
         RubyModule module;
 
         // Retrieving a WrappedIRClosure which is a closure returns a closure and not
@@ -44,7 +44,7 @@ public class GetConstInstr extends GetInstr {
         if (constant == null) constant = module.getConstantFromConstMissing(getRef());
 
         //if (container == null) throw runtime.newNameError("unitialized constant " + scope.getName(), scope.getName());
-        getResult().store(interp, context, self, constant);
+        getResult().store(interp, context, self, constant, temp);
         return null;
     }
 }

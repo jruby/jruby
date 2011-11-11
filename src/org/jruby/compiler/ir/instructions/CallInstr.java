@@ -50,9 +50,9 @@ public class CallInstr extends CallBase implements ResultInstr {
    }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception) {
-        IRubyObject object = (IRubyObject) getReceiver().retrieve(interp, context, self);
-        result.store(interp, context, self, callAdapter.call(interp, context, self, object));
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
+        IRubyObject object = (IRubyObject) getReceiver().retrieve(interp, context, self, temp);
+        result.store(interp, context, self, callAdapter.call(interp, context, self, object, temp), temp);
         return null;
     }
 

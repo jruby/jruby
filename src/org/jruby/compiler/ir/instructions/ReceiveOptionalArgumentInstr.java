@@ -42,10 +42,10 @@ public class ReceiveOptionalArgumentInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception) {
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
         Object v = interp.getParameterCount() > argIndex ? 
                 interp.getParameter(argIndex) : UndefinedValue.UNDEFINED;
-        result.store(interp, context, self, v);
+        result.store(interp, context, self, v, temp);
         return null;
     }
 }

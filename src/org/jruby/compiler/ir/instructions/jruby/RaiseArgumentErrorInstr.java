@@ -39,7 +39,7 @@ public class RaiseArgumentErrorInstr extends Instr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception) {
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
         int requiredInt = required.value.intValue();
         int optInt = opt.value.intValue();
         int restInt = rest.value.intValue();

@@ -16,7 +16,6 @@ import org.jruby.compiler.ir.IRExecutionScope;
  */
 public class NaiveInterpreterContext implements InterpreterContext {
     protected IRubyObject[] parameters;
-    protected Object[] temporaryVariables;
 
     // currentModule is:
     // - self if we are executing a class method of 'self'
@@ -24,21 +23,6 @@ public class NaiveInterpreterContext implements InterpreterContext {
     // - the class in which the closure is lexically defined in if we are executing a closure
     public NaiveInterpreterContext(ThreadContext context, IRExecutionScope irScope, IRubyObject[] parameters) {
         this.parameters = parameters;
-
-        int temporaryVariablesSize = irScope.getTemporaryVariableSize();
-        this.temporaryVariables = temporaryVariablesSize > 0 ? new Object[temporaryVariablesSize] : null;
-    }
-
-    public Object getTemporaryVariable(int offset) {
-        return temporaryVariables[offset];
-    }
-
-    public Object setTemporaryVariable(int offset, Object value) {
-        Object oldValue = temporaryVariables[offset];
-
-        temporaryVariables[offset] = value;
-
-        return oldValue;
     }
 
     public IRubyObject[] setNewParameters(IRubyObject[] newParams) {

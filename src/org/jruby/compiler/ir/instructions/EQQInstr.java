@@ -53,24 +53,24 @@ public class EQQInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception) {
-        IRubyObject receiver = (IRubyObject) arg1.retrieve(interp, context, self);
-        IRubyObject value = (IRubyObject) arg2.retrieve(interp, context, self);
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
+        IRubyObject receiver = (IRubyObject) arg1.retrieve(interp, context, self, temp);
+        IRubyObject value = (IRubyObject) arg2.retrieve(interp, context, self, temp);
 
         if (value == UndefinedValue.UNDEFINED) {
-            result.store(interp, context, self, receiver);
+            result.store(interp, context, self, receiver, temp);
         } else if (receiver instanceof RubyArray) {
             RubyArray testVals = (RubyArray)receiver;
             for (int i = 0, n = testVals.getLength(); i < n; i++) {
                 IRubyObject eqqVal = testVals.eltInternal(i).callMethod(context, "===", value);
                 if (eqqVal.isTrue()) {
-                    result.store(interp, context, self, eqqVal);
+                    result.store(interp, context, self, eqqVal, temp);
                     return null;
                 }
             }
-            result.store(interp, context, self, context.getRuntime().newBoolean(false));
+            result.store(interp, context, self, context.getRuntime().newBoolean(false), temp);
         } else {
-            result.store(interp, context, self, receiver.callMethod(context, "===", value));
+            result.store(interp, context, self, receiver.callMethod(context, "===", value), temp);
         }
         
         return null;

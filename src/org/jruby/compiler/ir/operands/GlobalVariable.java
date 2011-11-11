@@ -26,13 +26,13 @@ public class GlobalVariable extends Operand {
     
     @Interp
     @Override
-    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self, Object[] temp) {
         return context.getRuntime().getGlobalVariables().get(getName());
     }
 
     @Interp
     @Override
-    public Object store(InterpreterContext interp, ThreadContext context, IRubyObject self, Object value) {
+    public Object store(InterpreterContext interp, ThreadContext context, IRubyObject self, Object value, Object[] temp) {
         return context.getRuntime().getGlobalVariables().set(getName(), (IRubyObject) value);
     }
 

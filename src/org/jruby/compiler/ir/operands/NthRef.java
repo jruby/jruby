@@ -24,7 +24,7 @@ public class NthRef extends Operand {
     }
 
     @Override
-    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self, Object[] temp) {
         return RubyRegexp.nth_match(matchNumber,
                 context.getCurrentScope().getBackRef(context.getRuntime()));
     }

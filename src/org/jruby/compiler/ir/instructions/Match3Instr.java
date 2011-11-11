@@ -50,9 +50,9 @@ public class Match3Instr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception) {
-        RubyRegexp regexp = (RubyRegexp) receiver.retrieve(interp, context, self);
-        IRubyObject argValue = (IRubyObject) arg.retrieve(interp, context, self);
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
+        RubyRegexp regexp = (RubyRegexp) receiver.retrieve(interp, context, self, temp);
+        IRubyObject argValue = (IRubyObject) arg.retrieve(interp, context, self, temp);
         
         Object resultValue;
         if (argValue instanceof RubyString) {
@@ -61,7 +61,7 @@ public class Match3Instr extends Instr implements ResultInstr {
             resultValue = argValue.callMethod(context, "=~", regexp);
         }
         
-        result.store(interp, context, self, resultValue);                
+        result.store(interp, context, self, resultValue, temp);                
         return null;                
     }
 }

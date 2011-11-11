@@ -46,7 +46,7 @@ public class StringLiteral extends Constant {
     }
 
     @Override
-    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self, Object[] temp) {
         // ENEBO: This is not only used for full RubyStrings, but also for bytelist retrieval....extra wrapping
         // return interp.getRuntime().newString(_bl_value); 
         // SSS FIXME: AST interpreter passes in a coderange argument.

@@ -74,11 +74,11 @@ public class BacktickString extends Operand {
     }
 
     @Override
-    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self, Object[] temp) {
         RubyString newString = context.getRuntime().newString();
 
         for (Operand p: pieces) {
-            RubyBasicObject piece = (RubyBasicObject) p.retrieve(interp, context, self);
+            RubyBasicObject piece = (RubyBasicObject) p.retrieve(interp, context, self, temp);
             newString.append((piece instanceof RubyString) ? (RubyString)piece : piece.to_s());
         }
         

@@ -49,8 +49,8 @@ public class BreakInstr extends Instr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception) {
-        throw new IRBreakJump(scopeToReturnTo, returnValue.retrieve(interp, context, self));
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
+        throw new IRBreakJump(scopeToReturnTo, returnValue.retrieve(interp, context, self, temp));
     }
 
     @Override

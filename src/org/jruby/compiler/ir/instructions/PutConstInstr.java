@@ -19,9 +19,9 @@ public class PutConstInstr extends PutInstr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception) {
-        IRubyObject value = (IRubyObject) getValue().retrieve(interp, context, self);
-        RubyModule module = (RubyModule) getTarget().retrieve(interp, context, self);
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
+        IRubyObject value = (IRubyObject) getValue().retrieve(interp, context, self, temp);
+        RubyModule module = (RubyModule) getTarget().retrieve(interp, context, self, temp);
 
         assert module != null : "MODULE should always be something";
 

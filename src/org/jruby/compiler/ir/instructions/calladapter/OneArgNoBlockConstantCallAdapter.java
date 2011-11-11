@@ -22,8 +22,8 @@ public class OneArgNoBlockConstantCallAdapter extends CallAdapter {
     }
 
     @Override
-    public Object call(InterpreterContext interp, ThreadContext context, IRubyObject self, IRubyObject receiver) {
-        if (constant1 == null) constant1 = (IRubyObject) arg1.retrieve(interp, context, self);
+    public Object call(InterpreterContext interp, ThreadContext context, IRubyObject self, IRubyObject receiver, Object[] temp) {
+        if (constant1 == null) constant1 = (IRubyObject) arg1.retrieve(interp, context, self, temp);
         return callSite.call(context, self, receiver, constant1);
     }
 }

@@ -30,8 +30,8 @@ public class AttrAssignCallAdapter extends CallAdapter {
     }
 
     @Override
-    public Object call(InterpreterContext interp, ThreadContext context, IRubyObject self, IRubyObject receiver) {
-        IRubyObject[] values = prepareArguments(interp, context, self, args);
+    public Object call(InterpreterContext interp, ThreadContext context, IRubyObject self, IRubyObject receiver, Object[] temp) {
+        IRubyObject[] values = prepareArguments(interp, context, self, args, temp);
         
         if (callSite == null) {
             CallType callType = self == receiver ? CallType.FUNCTIONAL : CallType.NORMAL;
@@ -43,10 +43,10 @@ public class AttrAssignCallAdapter extends CallAdapter {
         return null;
     }
     
-    protected IRubyObject[] prepareArguments(InterpreterContext interp, ThreadContext context, IRubyObject self, Operand[] args) {
+    protected IRubyObject[] prepareArguments(InterpreterContext interp, ThreadContext context, IRubyObject self, Operand[] args, Object[] temp) {
         List<IRubyObject> argList = new ArrayList<IRubyObject>();
         for (int i = 0; i < args.length; i++) {
-            IRubyObject rArg = (IRubyObject) args[i].retrieve(interp, context, self);
+            IRubyObject rArg = (IRubyObject) args[i].retrieve(interp, context, self, temp);
             if (args[i] instanceof Splat) {
                 argList.addAll(Arrays.asList(((RubyArray) rArg).toJavaArray()));
             } else {

@@ -59,14 +59,14 @@ public class DefineClassInstr extends Instr implements ResultInstr {
         return new DefineClassInstr(ii.getRenamedVariable(result), this.newIRClass, container.cloneForInlining(ii), superClass.cloneForInlining(ii));
     }
     
-    private RubyModule newClass(InterpreterContext interp, ThreadContext context, IRubyObject self, RubyModule classContainer) {
+    private RubyModule newClass(InterpreterContext interp, ThreadContext context, IRubyObject self, RubyModule classContainer, Object[] temp) {
         if (newIRClass instanceof IRMetaClass) return classContainer.getMetaClass();
 
         RubyClass sc;
         if (superClass == Nil.NIL) {
             sc = null;
         } else {
-            Object o = superClass.retrieve(interp, context, self);
+            Object o = superClass.retrieve(interp, context, self, temp);
 
             if (!(o instanceof RubyClass)) throw context.getRuntime().newTypeError("superclass must be Class (" + o + " given)");
             
@@ -77,12 +77,12 @@ public class DefineClassInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception) {
-        Object rubyContainer = container.retrieve(interp, context, self);
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
+        Object rubyContainer = container.retrieve(interp, context, self, temp);
         
         if (!(rubyContainer instanceof RubyModule)) throw context.getRuntime().newTypeError("no outer class/module");
         
-        RubyModule newRubyClass = newClass(interp, context, self, (RubyModule) rubyContainer);
+        RubyModule newRubyClass = newClass(interp, context, self, (RubyModule) rubyContainer, temp);
 
         // Interpret the body
         newIRClass.getStaticScope().setModule(newRubyClass);
@@ -91,7 +91,7 @@ public class DefineClassInstr extends Instr implements ResultInstr {
         Object v = method.call(context, newRubyClass, newRubyClass, "", new IRubyObject[]{}, block);
 
         // Result from interpreting the body
-        result.store(interp, context, self, v);
+        result.store(interp, context, self, v, temp);
         return null;
     }
 }

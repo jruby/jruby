@@ -57,19 +57,19 @@ public class GetClassVarContainerModuleInstr extends Instr implements ResultInst
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception) {
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
         // SSS FIXME: This is ugly and needs fixing.  Is there another way of capturing this info?
         RubyModule containerModule = (candidateScope == null) ? null : candidateScope.getStaticScope().getModule();
         if (containerModule == null) containerModule = ASTInterpreter.getClassVariableBase(context, context.getRuntime());
         if (containerModule == null && object != null) {
-            IRubyObject arg = (IRubyObject) object.retrieve(interp, context, self);
+            IRubyObject arg = (IRubyObject) object.retrieve(interp, context, self, temp);
             // SSS: What is the right thing to do here?
             containerModule = arg.getMetaClass(); //(arg instanceof RubyClass) ? ((RubyClass)arg).getRealClass() : arg.getType();
         }
 
         if (containerModule == null) throw context.getRuntime().newTypeError("no class/module to define class variable");
 
-        result.store(interp, context, self, containerModule);
+        result.store(interp, context, self, containerModule, temp);
 
         return null;
     }

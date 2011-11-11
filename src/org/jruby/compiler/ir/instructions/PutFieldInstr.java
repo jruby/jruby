@@ -19,15 +19,15 @@ public class PutFieldInstr extends PutInstr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception) {
-        IRubyObject object = (IRubyObject) getTarget().retrieve(interp, context, self);
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
+        IRubyObject object = (IRubyObject) getTarget().retrieve(interp, context, self, temp);
 
         // FIXME: Why getRealClass? Document
         RubyClass clazz = object.getMetaClass().getRealClass();
 
         // FIXME: Should add this as a field for instruction
         clazz.getVariableAccessorForWrite(getRef()).set(object, 
-                getValue().retrieve(interp, context, self));
+                getValue().retrieve(interp, context, self, temp));
         return null;
     }
 }

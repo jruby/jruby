@@ -21,7 +21,7 @@ public class ArgIndex extends Operand {
     }
 
     @Override
-    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self, Object[] temp) {
         assert false : "Should not retreive ArgIndex as operand";
         return null;
     }

@@ -42,7 +42,7 @@ public class Float extends Constant {
     }
 
     @Override
-    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self, Object[] temp) {
         if (rubyFloat == null) rubyFloat = context.getRuntime().newFloat(value);
         return rubyFloat;
     }

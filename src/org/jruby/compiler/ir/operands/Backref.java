@@ -24,7 +24,7 @@ public class Backref extends Operand {
     }
 
     @Override
-    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self, Object[] temp) {
         IRubyObject backref = context.getCurrentScope().getBackRef(context.getRuntime());
         
         switch (type) {

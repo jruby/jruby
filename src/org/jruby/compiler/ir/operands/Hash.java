@@ -80,13 +80,13 @@ public class Hash extends Operand {
     }
 
     @Override
-    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self, Object[] temp) {
         Ruby runtime = context.getRuntime();
         RubyHash hash = RubyHash.newHash(runtime);
 
         for (KeyValuePair pair : pairs) {
-            IRubyObject key = (IRubyObject) pair.getKey().retrieve(interp, context, self);
-            IRubyObject value = (IRubyObject) pair.getValue().retrieve(interp, context, self);
+            IRubyObject key = (IRubyObject) pair.getKey().retrieve(interp, context, self, temp);
+            IRubyObject value = (IRubyObject) pair.getValue().retrieve(interp, context, self, temp);
             
             hash.fastASetCheckString(runtime, key, value);
         }

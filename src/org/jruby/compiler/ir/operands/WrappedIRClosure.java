@@ -25,7 +25,7 @@ public class WrappedIRClosure extends Constant {
     }
 
     @Override
-    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self, Object[] temp) {
         BlockBody body = closure.getBlockBody();
         closure.getStaticScope().determineModule();
         Binding binding = context.currentBinding(self, context.getCurrentScope());

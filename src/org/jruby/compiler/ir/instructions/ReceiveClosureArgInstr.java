@@ -56,7 +56,7 @@ public class ReceiveClosureArgInstr extends Instr implements ResultInstr {
 
     @Interp
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception) {
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
         Object o;
         int numArgs = interp.getParameterCount();
         if (restOfArgArray) {
@@ -74,7 +74,7 @@ public class ReceiveClosureArgInstr extends Instr implements ResultInstr {
         } else {
             o = (argIndex < numArgs) ? interp.getParameter(argIndex) : context.getRuntime().getNil();
         }
-        result.store(interp, context, self, o);
+        result.store(interp, context, self, o, temp);
         return null;
     }
 }

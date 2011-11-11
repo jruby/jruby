@@ -23,14 +23,14 @@ public class Self extends LocalVariable {
     }
 
     @Override
-    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
+    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self, Object[] temp) {
         // SSS FIXME: Should we have a special case for self?
         //return interp.getLocalVariable(getName());
         return self;
     }
 
     @Override
-    public Object store(InterpreterContext interp, ThreadContext context, IRubyObject self, Object value) {
+    public Object store(InterpreterContext interp, ThreadContext context, IRubyObject self, Object value, Object[] temp) {
         return self;
     }
 
