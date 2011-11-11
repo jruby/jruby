@@ -48,7 +48,7 @@ public class LoadFromBindingInstr extends Instr implements ResultInstr {
     }
 
     public Operand[] getOperands() { 
-        return new Operand[] { };
+        return EMPTY_OPERANDS;
     }
     
     public Variable getResult() {
