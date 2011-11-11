@@ -7,7 +7,6 @@ package org.jruby.interpreter;
 
 import org.jruby.RubyModule;
 import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.Frame;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -21,9 +20,7 @@ public class NaiveInterpreterContext implements InterpreterContext {
     protected IRubyObject[] parameters;
     protected Object returnValue;
     protected Object[] temporaryVariables;
-    protected Frame frame;
     protected DynamicScope currDynScope = null;
-    protected boolean allocatedDynScope = false;
     protected Object currException = null;
 
     // currentModule is:
@@ -31,7 +28,6 @@ public class NaiveInterpreterContext implements InterpreterContext {
     // - self.getMetaClass() if we are executing an instance method of 'self'
     // - the class in which the closure is lexically defined in if we are executing a closure
     public NaiveInterpreterContext(ThreadContext context, IRExecutionScope irScope, RubyModule currentModule, IRubyObject self, String name, IRubyObject[] parameters) {
-        this.frame = context.getCurrentFrame();
         this.parameters = parameters;
         this.currDynScope = context.getCurrentScope();
 
@@ -58,11 +54,6 @@ public class NaiveInterpreterContext implements InterpreterContext {
         temporaryVariables[offset] = value;
 
         return oldValue;
-    }
-
-    // Post-inlining
-    public void updateLocalVariablesCount(int n) {
-       // FIXME: Needs to be done.
     }
 
     public Object getSharedBindingVariable(ThreadContext context, int bindingSlot) {
