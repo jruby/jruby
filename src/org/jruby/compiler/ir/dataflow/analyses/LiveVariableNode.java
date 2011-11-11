@@ -52,7 +52,7 @@ public class LiveVariableNode extends FlowGraphNode {
         
         if (basicBlock == p.getScope().cfg().getExitBB()) {
             Collection<Variable> lv = p.getVarsLiveOnExit();
-            if (!lv.isEmpty()) {
+            if (lv != null && !lv.isEmpty()) {
                 for (Variable v: lv) {
                     in.set(p.getDFVar(v).getId());
                 }
