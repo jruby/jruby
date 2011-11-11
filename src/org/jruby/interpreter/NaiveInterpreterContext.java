@@ -5,7 +5,6 @@
 
 package org.jruby.interpreter;
 
-import org.jruby.RubyModule;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -27,7 +26,7 @@ public class NaiveInterpreterContext implements InterpreterContext {
     // - self if we are executing a class method of 'self'
     // - self.getMetaClass() if we are executing an instance method of 'self'
     // - the class in which the closure is lexically defined in if we are executing a closure
-    public NaiveInterpreterContext(ThreadContext context, IRExecutionScope irScope, RubyModule currentModule, IRubyObject self, String name, IRubyObject[] parameters) {
+    public NaiveInterpreterContext(ThreadContext context, IRExecutionScope irScope, IRubyObject[] parameters) {
         this.parameters = parameters;
         this.currDynScope = context.getCurrentScope();
 

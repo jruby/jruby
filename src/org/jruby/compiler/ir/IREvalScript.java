@@ -92,7 +92,7 @@ public class IREvalScript extends IRClosure {
         }
         try {
             context.pushScope(evalScope);
-            NaiveInterpreterContext interp = new NaiveInterpreterContext(context, this, clazz, self, null, new IRubyObject[]{});
+            NaiveInterpreterContext interp = new NaiveInterpreterContext(context, this, new IRubyObject[]{});
             return Interpreter.interpret(context, self, this, interp, block, null);
         }
         finally {
