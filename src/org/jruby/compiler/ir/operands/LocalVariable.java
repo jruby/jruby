@@ -15,13 +15,13 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class LocalVariable extends Variable {
     protected String name;
     protected int scopeDepth;
-    protected int location;
+    protected int offset;
 
     // FIXME: We should resolve to an index into an array but localvariable has no allocator
     public LocalVariable(String name, int scopeDepth, int location) {
         this.name = name;
         this.scopeDepth = scopeDepth;
-        this.location = location;
+        this.offset = location;
     }
 
     public int getScopeDepth() {
@@ -29,7 +29,7 @@ public class LocalVariable extends Variable {
     }
 
     public int getLocation() {
-        return location;
+        return offset;
     }
 
     @Override
@@ -39,7 +39,7 @@ public class LocalVariable extends Variable {
 
     @Override
     public String toString() {
-        return isSelf() ? name : name + "(" + scopeDepth + ":" + location + ")";
+        return isSelf() ? name : name + "(" + scopeDepth + ":" + offset + ")";
     }
 
     @Override
@@ -67,16 +67,18 @@ public class LocalVariable extends Variable {
 
     @Override
     public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self) {
-        return interp.getLocalVariable(context, scopeDepth, location);
+        IRubyObject value = context.getCurrentScope().getValue(offset, scopeDepth);
+        if (value == null) value = context.getRuntime().getNil();
+        return value;
     }
 
     @Override
     public Object store(InterpreterContext interp, ThreadContext context, IRubyObject self, Object value) {
-        return interp.setLocalVariable(scopeDepth, location, value);
+        return context.getCurrentScope().setValue((IRubyObject) value, offset, scopeDepth);
     }
 
     // SSS FIXME: Better name than this?
     public LocalVariable cloneForDepth(int n) {
-        return new LocalVariable(name, n, location);
+        return new LocalVariable(name, n, offset);
     }
 }

@@ -55,16 +55,6 @@ public class NaiveInterpreterContext implements InterpreterContext {
         return oldValue;
     }
 
-    public Object getLocalVariable(ThreadContext context, int depth, int offset) {
-        Object value = currDynScope.getValue(offset, depth);
-        return (value == null) ? context.getRuntime().getNil() : value;
-    }
-
-    public Object setLocalVariable(int depth, int offset, Object value) {
-        currDynScope.setValue((IRubyObject)value, offset, depth); 
-        return null;
-    }
-
     public IRubyObject[] setNewParameters(IRubyObject[] newParams) {
         IRubyObject[] oldParams = parameters;
         this.parameters = newParams;

@@ -16,7 +16,7 @@ public class ClosureLocalVariable extends LocalVariable {
 
     @Override
     public String toString() {
-        return "<" + name + "(" + scopeDepth + ":" + location + ")>";
+        return "<" + name + "(" + scopeDepth + ":" + offset + ")>";
     }
 
     // SSS FIXME: a = "<v>"; b = ClosureLocalVariable("v"); a.hashCode() == b.hashCode() but a.equals(b) == false
@@ -42,6 +42,6 @@ public class ClosureLocalVariable extends LocalVariable {
 
     @Override
     public LocalVariable clone() {
-        return new ClosureLocalVariable(definingScope, name, scopeDepth, location);
+        return new ClosureLocalVariable(definingScope, name, scopeDepth, offset);
     }
 }

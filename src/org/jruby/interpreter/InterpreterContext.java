@@ -1,17 +1,7 @@
 package org.jruby.interpreter;
 
-import org.jruby.Ruby;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.Frame;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.RubyException;
-
-import org.jruby.compiler.ir.IRExecutionScope;
-import org.jruby.compiler.ir.IRMethod;
-import org.jruby.compiler.ir.operands.Label;
-
 
 /**
  * Meant as a simple interface for all the various methods we will want
@@ -42,8 +32,6 @@ public interface InterpreterContext {
 
     public Object getTemporaryVariable(int offset);
     public Object setTemporaryVariable(int offset, Object value);
-    public Object getLocalVariable(ThreadContext context, int depth, int offset);
-    public Object setLocalVariable(int depth, int offset, Object value);
 
     // Set the most recently raised exception
     public void setException(Object e);
