@@ -1063,7 +1063,8 @@ public class IRBuilder {
         if (nm != null) nm.addClass(c);
 
         IRMethod rootMethod = c.getRootMethod();
-        Operand rv = build(classNode.getBodyNode(), rootMethod);
+        // Create a new nested builder to ensure this gets its own IR builder state 
+        Operand rv = (new IRBuilder()).build(classNode.getBodyNode(), rootMethod);
         if (rv != null) rootMethod.addInstr(new ReturnInstr(rv));
 
         return ret;
@@ -1091,8 +1092,9 @@ public class IRBuilder {
         Variable ret = s.getNewTemporaryVariable();
         s.addInstr(new DefineMetaClassInstr(ret, receiver, mc));
 
+        // Create a new nested builder to ensure this gets its own IR builder state 
         IRMethod rootMethod = mc.getRootMethod();
-        Operand rv = build(sclassNode.getBodyNode(), rootMethod);
+        Operand rv = (new IRBuilder()).build(sclassNode.getBodyNode(), rootMethod);
         if (rv != null) rootMethod.addInstr(new ReturnInstr(rv));
 
         return ret;
@@ -1751,10 +1753,8 @@ public class IRBuilder {
         if (defNode.getBodyNode() != null) {
             Node bodyNode = defNode.getBodyNode();
 
-            // if root of method is rescue, build as a light rescue
-            Operand rv = (bodyNode instanceof RescueNode) ?  
-                    buildRescue((RescueNode) bodyNode, method) : build(bodyNode, method);
-            
+            // Create a new nested builder to ensure this gets its own IR builder state 
+            Operand rv = (new IRBuilder()).build(bodyNode, method);
             if (rv != null) method.addInstr(new ReturnInstr(rv));
         } else {
             method.addInstr(new ReturnInstr(Nil.NIL));
@@ -2430,7 +2430,8 @@ public class IRBuilder {
         if (nm != null) nm.addModule(m);
 
         IRMethod rootMethod = m.getRootMethod();
-        Operand rv = build(moduleNode.getBodyNode(), rootMethod);
+        // Create a new nested builder to ensure this gets its own IR builder state 
+        Operand rv = (new IRBuilder()).build(moduleNode.getBodyNode(), rootMethod);
         if (rv != null) rootMethod.addInstr(new ReturnInstr(rv));
 
         return ret;
