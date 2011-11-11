@@ -9,7 +9,7 @@ public class RenamedVariable extends TemporaryVariable {
 
     public RenamedVariable(String prefix, int offset) {
         super(offset);
-		  this.prefix = prefix;
+        this.prefix = prefix;
     }
 
     @Override

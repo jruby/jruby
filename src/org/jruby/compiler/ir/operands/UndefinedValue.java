@@ -29,6 +29,11 @@ public class UndefinedValue extends Operand implements IRubyObject {
     private UndefinedValue() {}
 
     @Override
+    public void addUsedVariables(List<org.jruby.compiler.ir.operands.Variable> l) { 
+        /* Nothing to do */
+    }
+
+    @Override
     public Object retrieve(ThreadContext context, IRubyObject self, Object[] temp) {
         return this;
     }

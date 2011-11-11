@@ -1,4 +1,6 @@
 package org.jruby.compiler.ir.operands;
+
+import java.util.List;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 
 // SSS FIXME: Should we try to enforce the canonical property that within a method,
@@ -15,6 +17,11 @@ public class Label extends Operand {
     public Label(String l) { _label = l; }
 
     public String toString() { return _label; }
+
+    @Override
+    public void addUsedVariables(List<Variable> l) { 
+        /* Nothing to do */
+    }
 
     public int hashCode() { return _label.hashCode(); }
 

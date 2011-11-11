@@ -1,6 +1,7 @@
 package org.jruby.compiler.ir.operands;
 
 import java.util.Map;
+import java.util.List;
 
 import org.jruby.RubyClass;
 import org.jruby.RubyString;
@@ -44,6 +45,12 @@ public class MethodHandle extends Operand {
 
     public IRubyObject getReceiverObj() {
         return receiverObj;
+    }
+
+    @Override
+    public void addUsedVariables(List<Variable> l) { 
+        methodName.addUsedVariables(l);
+        receiver.addUsedVariables(l);
     }
 
     @Override

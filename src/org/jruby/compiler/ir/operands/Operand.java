@@ -55,8 +55,10 @@ public abstract class Operand {
         return null;
     }
 
-    /** Append the list of variables used in this operand to the input list */
-    public void addUsedVariables(List<Variable> l) { /* Nothing to do by default */ }
+    /** Append the list of variables used in this operand to the input list -- force every operand
+     *  to implement this because a missing implementation can cause bad failures.
+     */
+    public abstract void addUsedVariables(List<Variable> l);
 
     public Operand cloneForInlining(InlinerInfo ii) {
         return this;

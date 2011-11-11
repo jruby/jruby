@@ -47,7 +47,7 @@ public class LocalVariable extends Variable {
     }
 
     public boolean isSelf() {
-		  return false;
+        return false;
     }
 
     @Override

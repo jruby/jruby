@@ -1,6 +1,7 @@
 package org.jruby.compiler.ir.operands;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 
+import java.util.List;
 import java.util.Map;
 
 // Attribute represents some fact discovered during dataflow analysis.
@@ -31,6 +32,8 @@ public class Attribute extends Operand
     }
 
     public boolean isNonAtomicValue() { return true; }
+
+    public void addUsedVariables(List<Variable> l) { _target.addUsedVariables(l); }
 
     public Operand cloneForInlining(InlinerInfo ii) { throw new RuntimeException("Unused & not implemented yet!"); }
 }

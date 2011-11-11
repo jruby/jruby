@@ -1,9 +1,12 @@
 package org.jruby.compiler.ir.dataflow;
 
+import java.util.List;
+
 import org.jruby.compiler.ir.dataflow.analyses.LiveVariablesProblem;
 import org.jruby.compiler.ir.dataflow.analyses.BindingLoadPlacementProblem;
 import org.jruby.compiler.ir.dataflow.analyses.BindingStorePlacementProblem;
 import org.jruby.compiler.ir.operands.Operand;
+import org.jruby.compiler.ir.operands.Variable;
 
 public class DataFlowConstants {
     public static final String LVP_NAME = (new LiveVariablesProblem()).getName();
@@ -18,6 +21,11 @@ public class DataFlowConstants {
   
     private static class LatticeBottom extends Operand {
         @Override
+        public void addUsedVariables(List<Variable> l) { 
+            /* Nothing to do */
+        }
+
+        @Override
         public String toString() {
             return "bottom";
         }
@@ -25,12 +33,20 @@ public class DataFlowConstants {
   
     private static class LatticeTop extends Operand {
         @Override
+        public void addUsedVariables(List<Variable> l) { 
+            /* Nothing to do */
+        }
+        @Override
         public String toString() {
             return "top";
         }
     }
   
     private static class Anything extends Operand {
+        @Override
+        public void addUsedVariables(List<Variable> l) { 
+            /* Nothing to do */
+        }
         @Override
         public String toString() {
             return "anything";

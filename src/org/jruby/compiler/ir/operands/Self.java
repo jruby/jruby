@@ -1,4 +1,3 @@
-
 package org.jruby.compiler.ir.operands;
 
 import org.jruby.runtime.ThreadContext;

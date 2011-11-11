@@ -1,4 +1,6 @@
 package org.jruby.compiler.ir.operands;
+
+import java.util.List;
 import org.jruby.compiler.ir.Interp;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -20,6 +22,11 @@ public class GlobalVariable extends Operand {
         if (!(arg0 instanceof GlobalVariable)) return 0;
 
         return name.compareTo(((GlobalVariable) arg0).name);
+    }
+
+    @Override
+    public void addUsedVariables(List<Variable> l) { 
+        /* Nothing to do */
     }
     
     @Interp

@@ -1,5 +1,7 @@
 package org.jruby.compiler.ir.operands;
 
+import java.util.List;
+
 // Represents a $1 .. $9 node in Ruby code
 
 import org.jruby.RubyRegexp;
@@ -15,6 +17,11 @@ public class NthRef extends Operand {
 
     public NthRef(int matchNumber) {
         this.matchNumber = matchNumber;
+    }
+
+    @Override
+    public void addUsedVariables(List<Variable> l) { 
+        /* Nothing to do */
     }
 
     @Override

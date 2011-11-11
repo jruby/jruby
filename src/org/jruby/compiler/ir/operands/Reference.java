@@ -1,5 +1,7 @@
 package org.jruby.compiler.ir.operands;
 
+import java.util.List;
+
 public abstract class Reference extends Operand {
     final private String name;
 
@@ -9,6 +11,11 @@ public abstract class Reference extends Operand {
 
     public String getName() {
         return name;
+    }
+
+    @Override
+    public void addUsedVariables(List<Variable> l) { 
+        /* Nothing to do */
     }
 
     @Override

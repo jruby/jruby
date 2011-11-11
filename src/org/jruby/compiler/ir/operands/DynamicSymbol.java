@@ -11,8 +11,7 @@ public class DynamicSymbol extends DynamicReference {
         return context.getRuntime().newSymbol(((IRubyObject)_refName.retrieve(context, self, temp)).asJavaString());
     }
 
-    @Override
-	public String toString() {
+    public String toString() {
         return ":" + _refName.toString();
-	}
+    }
 }

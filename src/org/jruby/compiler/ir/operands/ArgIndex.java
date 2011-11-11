@@ -1,5 +1,7 @@
 package org.jruby.compiler.ir.operands;
 
+import java.util.List;
+
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -12,6 +14,11 @@ public class ArgIndex extends Operand {
 
     public int getIndex() {
         return index;
+    }
+
+    @Override
+    public void addUsedVariables(List<Variable> l) { 
+        /* Nothing to do */
     }
 
     @Override

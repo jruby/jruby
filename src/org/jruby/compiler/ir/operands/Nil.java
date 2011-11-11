@@ -17,6 +17,6 @@ public class Nil extends Constant {
 
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, Object[] temp) {
-		  return context.nil;
+        return context.nil;
     }
 }
