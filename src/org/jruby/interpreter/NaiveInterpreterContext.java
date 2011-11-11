@@ -5,7 +5,6 @@
 
 package org.jruby.interpreter;
 
-import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -19,7 +18,6 @@ public class NaiveInterpreterContext implements InterpreterContext {
     protected IRubyObject[] parameters;
     protected Object returnValue;
     protected Object[] temporaryVariables;
-    protected DynamicScope currDynScope = null;
     protected Object currException = null;
 
     // currentModule is:
@@ -28,7 +26,6 @@ public class NaiveInterpreterContext implements InterpreterContext {
     // - the class in which the closure is lexically defined in if we are executing a closure
     public NaiveInterpreterContext(ThreadContext context, IRExecutionScope irScope, IRubyObject[] parameters) {
         this.parameters = parameters;
-        this.currDynScope = context.getCurrentScope();
 
         int temporaryVariablesSize = irScope.getTemporaryVariableSize();
         this.temporaryVariables = temporaryVariablesSize > 0 ? new Object[temporaryVariablesSize] : null;
