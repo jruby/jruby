@@ -2,7 +2,6 @@ package org.jruby.compiler.ir.instructions;
 
 import java.util.Map;
 import org.jruby.compiler.ir.Operation;
-import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.UndefinedValue;
 import org.jruby.compiler.ir.operands.Variable;
@@ -11,7 +10,7 @@ import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.RubyArray;
-import org.jruby.compiler.ir.IRExecutionScope;
+import org.jruby.runtime.Block;
 
 // If v2 is an array, compare v1 with every element of v2 and stop on first match!
 public class EQQInstr extends Instr implements ResultInstr {
@@ -54,7 +53,7 @@ public class EQQInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self, org.jruby.runtime.Block block) {
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block) {
         IRubyObject receiver = (IRubyObject) arg1.retrieve(interp, context, self);
         IRubyObject value = (IRubyObject) arg2.retrieve(interp, context, self);
 

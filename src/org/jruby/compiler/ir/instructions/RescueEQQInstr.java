@@ -2,7 +2,6 @@ package org.jruby.compiler.ir.instructions;
 
 import java.util.Map;
 import org.jruby.compiler.ir.Operation;
-import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.UndefinedValue;
 import org.jruby.compiler.ir.operands.Variable;
@@ -12,7 +11,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
-import org.jruby.compiler.ir.IRExecutionScope;
+import org.jruby.runtime.Block;
 
 // This instruction is similar to EQQInstr, except it also verifies that
 // the type to EQQ with is actually a class or a module since rescue clauses
@@ -59,7 +58,7 @@ public class RescueEQQInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self, org.jruby.runtime.Block block) {
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block) {
         IRubyObject receiver = (IRubyObject) arg1.retrieve(interp, context, self);
         IRubyObject value = (IRubyObject) arg2.retrieve(interp, context, self);
 

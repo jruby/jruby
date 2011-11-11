@@ -3,7 +3,6 @@ package org.jruby.compiler.ir.instructions;
 import java.util.Map;
 import org.jruby.compiler.ir.Interp;
 import org.jruby.compiler.ir.Operation;
-import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
@@ -14,7 +13,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.RubyArray;
 import org.jruby.RubyProc;
 import org.jruby.RubyNil;
-import org.jruby.compiler.ir.IRExecutionScope;
 
 public class YieldInstr extends Instr implements ResultInstr {
     Operand blockArg;
@@ -40,7 +38,7 @@ public class YieldInstr extends Instr implements ResultInstr {
 
     @Interp
     @Override
-    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self, org.jruby.runtime.Block block) {
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block) {
         Object resultValue;
         Object blk = (Object) blockArg.retrieve(interp, context, self);
         if (blk instanceof RubyProc) blk = ((RubyProc)blk).getBlock();

@@ -2,13 +2,11 @@ package org.jruby.compiler.ir.instructions;
 
 import org.jruby.compiler.ir.Interp;
 import org.jruby.compiler.ir.Operation;
-import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.Ruby;
-import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Block.Type;
 import org.jruby.runtime.ThreadContext;
@@ -42,7 +40,7 @@ public class ReceiveClosureInstr extends Instr implements ResultInstr {
 
     @Interp
     @Override
-    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self, org.jruby.runtime.Block block) {
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block) {
         Ruby  runtime = context.getRuntime();
         result.store(interp, context, self, block == Block.NULL_BLOCK ? runtime.getNil() : runtime.newProc(Type.PROC, block));
         return null;

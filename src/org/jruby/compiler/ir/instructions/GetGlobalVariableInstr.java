@@ -20,7 +20,7 @@ public class GetGlobalVariableInstr extends GetInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self, org.jruby.runtime.Block block) {
+    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, org.jruby.runtime.Block block) {
         getResult().store(interp, context, self, getSource().retrieve(interp, context, self));
         return null;
     }

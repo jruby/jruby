@@ -1,14 +1,13 @@
 package org.jruby.compiler.ir.instructions;
 
 import java.util.Map;
-import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.Operation;
-import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.MethodHandle;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -56,7 +55,7 @@ public class MethodLookupInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self, org.jruby.runtime.Block block) {
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block) {
         result.store(interp, context, self, methodHandle.retrieve(interp, context, self));
         return null;
     }

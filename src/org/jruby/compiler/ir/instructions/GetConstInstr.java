@@ -1,18 +1,7 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package org.jruby.compiler.ir.instructions;
 
-import java.util.Map;
 import org.jruby.RubyModule;
-import org.jruby.compiler.ir.IRExecutionScope;
-import org.jruby.compiler.ir.IRModule;
-import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.Operation;
-import org.jruby.compiler.ir.operands.Label;
-import org.jruby.compiler.ir.operands.WrappedIRClosure;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
@@ -35,7 +24,7 @@ public class GetConstInstr extends GetInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self, org.jruby.runtime.Block block) {
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block) {
         Object source = getSource().retrieve(interp, context, self);
         RubyModule module;
 

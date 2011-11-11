@@ -3,13 +3,11 @@ package org.jruby.compiler.ir.instructions;
 import java.util.Map;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.IRException;
-import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.RubyKernel;
-import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 
@@ -42,7 +40,7 @@ public class ThrowExceptionInstr extends Instr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self, org.jruby.runtime.Block block) {
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block) {
         if (exception instanceof IRException) throw ((IRException) exception).getException(context.getRuntime());
 
         Object excObj = exception.retrieve(interp, context, self);

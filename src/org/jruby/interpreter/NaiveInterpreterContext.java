@@ -16,7 +16,6 @@ import org.jruby.compiler.ir.IRExecutionScope;
  */
 public class NaiveInterpreterContext implements InterpreterContext {
     protected IRubyObject[] parameters;
-    protected Object returnValue;
     protected Object[] temporaryVariables;
     protected Object currException = null;
 
@@ -29,15 +28,6 @@ public class NaiveInterpreterContext implements InterpreterContext {
 
         int temporaryVariablesSize = irScope.getTemporaryVariableSize();
         this.temporaryVariables = temporaryVariablesSize > 0 ? new Object[temporaryVariablesSize] : null;
-    }
-
-    public Object getReturnValue(ThreadContext context) {
-        // FIXME: Maybe returnValue is a sure thing and we don't need this check.  Should be this way.
-        return returnValue == null ? context.getRuntime().getNil() : returnValue;
-    }
-
-    public void setReturnValue(Object returnValue) {
-        this.returnValue = returnValue;
     }
 
     public Object getTemporaryVariable(int offset) {

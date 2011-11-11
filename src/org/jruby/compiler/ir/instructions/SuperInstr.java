@@ -9,9 +9,7 @@ import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
 
 import org.jruby.RubyProc;
-import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.Operation;
-import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.operands.MethAddr;
@@ -43,7 +41,7 @@ public class SuperInstr extends CallInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self, org.jruby.runtime.Block aBlock) {
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block aBlock) {
         // FIXME: Receiver is not being used...should we be retrieving it?
         IRubyObject receiver = (IRubyObject)getReceiver().retrieve(interp, context, self);
         IRubyObject[] args = prepareArguments(interp, context, self, getCallArgs());

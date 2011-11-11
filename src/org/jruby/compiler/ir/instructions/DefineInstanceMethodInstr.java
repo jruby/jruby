@@ -7,20 +7,19 @@ import org.jruby.Ruby;
 import org.jruby.RubyModule;
 
 import org.jruby.compiler.ir.IRMethod;
-import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 
 import org.jruby.common.IRubyWarnings.ID;
 
-import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.WrapperMethod;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 
 import org.jruby.interpreter.InterpreterContext;
 
+import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -51,7 +50,7 @@ public class DefineInstanceMethodInstr extends Instr {
 
     // SSS FIXME: Go through this and DefineClassMethodInstr.interpret, clean up, extract common code
     @Override
-    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self, org.jruby.runtime.Block block) {
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block) {
         // SSS FIXME: This is a temporary solution that uses information from the stack.
         // This instruction and this logic will be re-implemented to not use implicit information from the stack.
         // Till such time, this code implements the correct semantics.

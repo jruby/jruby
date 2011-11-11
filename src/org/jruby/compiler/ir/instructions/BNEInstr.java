@@ -1,6 +1,5 @@
 package org.jruby.compiler.ir.instructions;
 
-import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.BooleanLiteral;
 import org.jruby.compiler.ir.operands.Label;
@@ -9,6 +8,7 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.UndefinedValue;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -23,7 +23,7 @@ public class BNEInstr extends BranchInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self, org.jruby.runtime.Block block) {
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block) {
         Operand arg1 = getArg1();
         Operand arg2 = getArg2();
         Object value1 = arg1.retrieve(interp, context, self);

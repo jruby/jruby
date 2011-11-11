@@ -5,10 +5,8 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyMatchData;
 import org.jruby.RubyModule;
-import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.jruby.BlockGivenInstr;
-import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.operands.Nil;
 import org.jruby.compiler.ir.operands.Operand;
@@ -17,6 +15,7 @@ import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.InterpreterContext;
 import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
@@ -111,7 +110,7 @@ public class JRubyImplCallInstr extends CallInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self, org.jruby.runtime.Block block) {
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block) {
         Ruby runtime = context.getRuntime();        
         String name;
         Object receiver;

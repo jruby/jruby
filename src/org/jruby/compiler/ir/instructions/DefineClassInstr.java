@@ -4,9 +4,7 @@ import java.util.Map;
 import org.jruby.RubyModule;
 import org.jruby.RubyClass;
 import org.jruby.compiler.ir.IRClass;
-import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.IRMetaClass;
-import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Nil;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
@@ -18,6 +16,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
+import org.jruby.runtime.Block;
 
 public class DefineClassInstr extends Instr implements ResultInstr {
     private IRClass newIRClass;
@@ -78,7 +77,7 @@ public class DefineClassInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self, org.jruby.runtime.Block block) {
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block) {
         Object rubyContainer = container.retrieve(interp, context, self);
         
         if (!(rubyContainer instanceof RubyModule)) throw context.getRuntime().newTypeError("no outer class/module");

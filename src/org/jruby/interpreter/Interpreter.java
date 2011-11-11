@@ -142,6 +142,7 @@ public class Interpreter {
         int n   = instrs.length;
         int ipc = 0;
         Instr lastInstr = null;
+        IRubyObject rv = null;
         while (ipc < n) {
             interpInstrsCount++;
             lastInstr = instrs[ipc];
@@ -156,8 +157,15 @@ public class Interpreter {
             //   invokes Ruby-level exceptions handlers.
             try {
                 try {
-                    Label jumpTarget = lastInstr.interpret(interp, scope, context, self, block);
-                    ipc = (jumpTarget == null) ? ipc + 1 : jumpTarget.getTargetPC();
+                    Object value = lastInstr.interpret(interp, context, self, block);
+                    if (value == null) {
+                        ipc++;
+                    } else if (value instanceof Label) { // jump to new location
+                        ipc = ((Label) value).getTargetPC();                        
+                    } else {
+                        rv = (IRubyObject) value;
+                        ipc = scope.cfg().getExitBB().getLabel().getTargetPC();
+                    }
                 } catch (IRReturnJump rj) {
                     // - If we are in a lambda or if we are in the method scope we are supposed to return from, stop propagating
                     if (inLambda(blockType) || (rj.methodToReturnFrom == scope)) return (IRubyObject) rj.returnValue;
@@ -216,8 +224,6 @@ public class Interpreter {
                 interp.setException(e);
             }
         }
-
-        IRubyObject rv = (IRubyObject) interp.getReturnValue(context);
 
         // If not in a lambda, in a closure, and lastInstr was a return, have to return from the nearest method!
         if ((lastInstr instanceof ReturnInstr) && !inLambda(blockType)) {

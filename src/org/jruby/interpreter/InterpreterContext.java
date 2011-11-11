@@ -1,6 +1,5 @@
 package org.jruby.interpreter;
 
-import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -27,8 +26,6 @@ public interface InterpreterContext {
     public int getParameterCount(); // How many parameters were passed into a call
 
     public IRubyObject[] getParametersFrom(int argIndex);
-    public Object getReturnValue(ThreadContext context);
-    public void setReturnValue(Object returnValue);
 
     public Object getTemporaryVariable(int offset);
     public Object setTemporaryVariable(int offset, Object value);

@@ -3,7 +3,6 @@ package org.jruby.compiler.ir.instructions;
 import java.util.Map;
 import org.jruby.compiler.ir.Interp;
 import org.jruby.compiler.ir.Operation;
-import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
@@ -12,7 +11,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.RubyArray;
-import org.jruby.compiler.ir.IRExecutionScope;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 
 // This instruction sets a new newArgs array -- this is used to intepret the block-arg assignment
@@ -58,7 +57,7 @@ public class SetArgumentsInstr extends Instr implements ResultInstr {
 
     @Interp
     @Override
-    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self, org.jruby.runtime.Block block) {
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block) {
         Object o = newArgs.retrieve(interp, context, self);
         if (coerceToArray) {
             // run to_ary and convert to java array

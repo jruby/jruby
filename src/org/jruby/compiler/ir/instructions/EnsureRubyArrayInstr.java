@@ -4,7 +4,6 @@ import java.util.Map;
 
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Array;
-import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
@@ -13,7 +12,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.RubyArray;
-import org.jruby.compiler.ir.IRExecutionScope;
+import org.jruby.runtime.Block;
 
 public class EnsureRubyArrayInstr extends Instr implements ResultInstr {
     private Operand object;
@@ -58,7 +57,7 @@ public class EnsureRubyArrayInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, IRExecutionScope scope, ThreadContext context, IRubyObject self, org.jruby.runtime.Block block) {
+    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block) {
         IRubyObject val = (IRubyObject)object.retrieve(interp, context, self);
         if (!(val instanceof RubyArray)) val = ArgsUtil.convertToRubyArray(context.getRuntime(), val, false);
         result.store(interp, context, self, val);
