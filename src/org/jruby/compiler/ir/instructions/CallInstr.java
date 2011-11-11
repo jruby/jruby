@@ -56,6 +56,13 @@ public class CallInstr extends CallBase implements ResultInstr {
         result.store(interp, context, self, callAdapter.call(interp, context, self, object));
         return null;
     }
+
+    @Override
+    public String toString() {
+        return "" + result + " = " + super.toString();
+    }
+    
+    
     
 /* FIXME: Dead code which I think should be a special instr (enebo)
         Object ma = methAddr.retrieve(interp, context, self);
