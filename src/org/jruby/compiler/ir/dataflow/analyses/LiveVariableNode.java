@@ -4,7 +4,7 @@ import org.jruby.compiler.ir.IRClosure;
 import org.jruby.compiler.ir.dataflow.DataFlowProblem;
 import org.jruby.compiler.ir.dataflow.DataFlowVar;
 import org.jruby.compiler.ir.dataflow.FlowGraphNode;
-import org.jruby.compiler.ir.instructions.CallInstr;
+import org.jruby.compiler.ir.instructions.CallBase;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.WrappedIRClosure;
@@ -99,8 +99,8 @@ public class LiveVariableNode extends FlowGraphNode {
 
             // Check if 'i' is a call and uses a closure!
             // If so, we need to process the closure for live variable info.
-            if (i instanceof CallInstr) {
-                CallInstr c = (CallInstr) i;
+            if (i instanceof CallBase) {
+                CallBase c = (CallBase) i;
                 // SSS FIXME: This relies on the local opt. pass having run already
                 // so that the built closure from the previous instr. is propagated to the call site here.
                 // Formalize this dependency somewhere?
@@ -273,8 +273,8 @@ public class LiveVariableNode extends FlowGraphNode {
 //                System.out.println("IGNORING! No result!");
             }
 
-            if (i instanceof CallInstr) {
-                CallInstr c = (CallInstr) i;
+            if (i instanceof CallBase) {
+                CallBase c = (CallBase) i;
                 if (c.isDataflowBarrier()) {
                     // Mark all non-self local variables live if 'c' is a dataflow barrier!
                     for (Variable x: lvp.getNonSelfLocalVars()) {

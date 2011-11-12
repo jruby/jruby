@@ -7,7 +7,7 @@ import org.jruby.compiler.ir.dataflow.DataFlowProblem;
 import org.jruby.compiler.ir.dataflow.DataFlowConstants;
 import org.jruby.compiler.ir.dataflow.FlowGraphNode;
 import org.jruby.compiler.ir.instructions.Instr;
-import org.jruby.compiler.ir.instructions.CallInstr;
+import org.jruby.compiler.ir.instructions.CallBase;
 import org.jruby.compiler.ir.instructions.AllocateBindingInstr;
 import org.jruby.compiler.ir.instructions.StoreToBindingInstr;
 import org.jruby.compiler.ir.instructions.ClosureReturnInstr;
@@ -71,8 +71,8 @@ public class BindingStorePlacementNode extends FlowGraphNode {
             if (i.getOperation() == Operation.BINDING_LOAD) continue;
 
             // Process calls specially -- these are the sites of binding stores!
-            if (i instanceof CallInstr) {
-                CallInstr call = (CallInstr) i;
+            if (i instanceof CallBase) {
+                CallBase call = (CallBase) i;
                 // At this call site, a binding will get allocated if it has not been already!
                 Operand o = call.getClosureArg();
                 if ((o != null) && (o instanceof WrappedIRClosure)) {
@@ -171,8 +171,8 @@ public class BindingStorePlacementNode extends FlowGraphNode {
             Instr i = instrs.next();
             if (i.getOperation() == Operation.BINDING_LOAD) continue;
 
-            if (i instanceof CallInstr) {
-                CallInstr call = (CallInstr) i;
+            if (i instanceof CallBase) {
+                CallBase call = (CallBase) i;
                 Operand o = call.getClosureArg();
                 if ((o != null) && (o instanceof WrappedIRClosure)) {
                     IRClosure scope = ((WrappedIRClosure) o).getClosure();

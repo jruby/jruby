@@ -6,7 +6,7 @@ import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.dataflow.DataFlowProblem;
 import org.jruby.compiler.ir.dataflow.FlowGraphNode;
 import org.jruby.compiler.ir.instructions.Instr;
-import org.jruby.compiler.ir.instructions.CallInstr;
+import org.jruby.compiler.ir.instructions.CallBase;
 import org.jruby.compiler.ir.instructions.LoadFromBindingInstr;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.WrappedIRClosure;
@@ -65,8 +65,8 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
             if (i instanceof ResultInstr) reqdLoads.remove(((ResultInstr) i).getResult());
 
             // Process calls specially -- these are the sites of binding loads!
-            if (i instanceof CallInstr) {
-                CallInstr call = (CallInstr) i;
+            if (i instanceof CallBase) {
+                CallBase call = (CallBase) i;
                 Operand o = call.getClosureArg();
                 if ((o != null) && (o instanceof WrappedIRClosure)) {
                     IRClosure cl = ((WrappedIRClosure) o).getClosure();
@@ -135,8 +135,8 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
             // Right away, clear the variable defined by this instruction -- it doesn't have to be loaded!
             if (i instanceof ResultInstr) reqdLoads.remove(((ResultInstr) i).getResult());
 
-            if (i instanceof CallInstr) {
-                CallInstr call = (CallInstr) i;
+            if (i instanceof CallBase) {
+                CallBase call = (CallBase) i;
                 Operand o = call.getClosureArg();
                 if ((o != null) && (o instanceof WrappedIRClosure)) {
                     IRClosure scope = ((WrappedIRClosure) o).getClosure();

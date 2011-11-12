@@ -8,7 +8,7 @@ import java.util.List;
 import org.jruby.compiler.ir.IRClosure;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.Tuple;
-import org.jruby.compiler.ir.instructions.CallInstr;
+import org.jruby.compiler.ir.instructions.CallBase;
 import org.jruby.compiler.ir.instructions.YieldInstr;
 import org.jruby.compiler.ir.operands.WrappedIRClosure;
 import org.jruby.compiler.ir.operands.Operand;
@@ -26,7 +26,7 @@ public class CFGInliner {
         this.cfg = build;
     }
     
-    public void inlineMethod(IRMethod m, BasicBlock callBB, CallInstr call) {
+    public void inlineMethod(IRMethod m, BasicBlock callBB, CallBase call) {
         // 1. split callsite bb and move outbound edges from callsite bb to split bb.
         InlinerInfo ii = new InlinerInfo(call, cfg);
         BasicBlock splitBB = callBB.splitAtInstruction(call, cfg.getScope().getNewLabel(), false);

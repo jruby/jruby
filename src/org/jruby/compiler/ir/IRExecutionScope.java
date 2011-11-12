@@ -12,7 +12,7 @@ import java.util.TreeSet;
 import org.jruby.compiler.ir.compiler_pass.CompilerPass;
 import org.jruby.compiler.ir.compiler_pass.DominatorTreeBuilder;
 import org.jruby.compiler.ir.dataflow.DataFlowProblem;
-import org.jruby.compiler.ir.instructions.CallInstr;
+import org.jruby.compiler.ir.instructions.CallBase;
 import org.jruby.compiler.ir.instructions.CopyInstr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
@@ -247,8 +247,8 @@ public abstract class IRExecutionScope extends IRScopeImpl {
             if (i instanceof SuperInstr)
                 canCaptureCallersBinding = true;
 
-            if (i instanceof CallInstr) {
-                CallInstr call = (CallInstr) i;
+            if (i instanceof CallBase) {
+                CallBase call = (CallBase) i;
                 if (call.targetRequiresCallersBinding())
                     requiresBinding = true;
 
@@ -627,7 +627,7 @@ public abstract class IRExecutionScope extends IRScopeImpl {
 //        }
     }    
     
-    public void inlineMethod(IRMethod method, BasicBlock basicBlock, CallInstr call) {
+    public void inlineMethod(IRMethod method, BasicBlock basicBlock, CallBase call) {
         depends(cfg());
         
         new CFGInliner(cfg).inlineMethod(method, basicBlock, call);

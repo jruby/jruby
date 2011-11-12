@@ -41,6 +41,10 @@ public class CallInstr extends CallBase implements ResultInstr {
         return result;
     }
 
+    public Instr discardResult() {
+        return new NoResultCallInstr(getOperation(), getCallType(), getMethodAddr(), getReceiver(), getCallArgs(), closure);
+    }
+
     public Instr cloneForInlining(InlinerInfo ii) {
         return new CallInstr(getCallType(), ii.getRenamedVariable(result), 
                 (MethAddr) getMethodAddr().cloneForInlining(ii), 
@@ -48,16 +52,16 @@ public class CallInstr extends CallBase implements ResultInstr {
                 closure == null ? null : closure.cloneForInlining(ii));
    }
 
-    @Override
     public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
         IRubyObject object = (IRubyObject) getReceiver().retrieve(context, self, temp);
-        result.store(context, self, temp, callAdapter.call(context, self, object, temp));
+        Object callResult = callAdapter.call(context, self, object, temp);
+        result.store(context, self, temp, callResult);
         return null;
     }
 
     @Override
     public String toString() {
-        return "" + result + " = " + super.toString();
+        return "" + result + (hasUnusedResult() ? "[DEAD-RESULT]" : "") + " = " + super.toString();
     }
     
     

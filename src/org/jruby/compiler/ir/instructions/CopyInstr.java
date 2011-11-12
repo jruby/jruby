@@ -34,6 +34,10 @@ public class CopyInstr extends Instr implements ResultInstr {
     public Variable getResult() {
         return result;
     }
+    
+    public Operand getSource() {
+        return arg;
+    }
 
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap) {

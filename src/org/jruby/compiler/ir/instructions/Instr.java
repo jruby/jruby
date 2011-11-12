@@ -32,6 +32,7 @@ public abstract class Instr {
     // causes no side-effects and the result of the instruction is not needed by anyone else,
     // we can remove this instruction altogether without affecting program correctness.
     private boolean isDead;
+    private boolean hasUnusedResult;
 
     public Instr(Operation operation) {
         this.operation = operation;
@@ -39,7 +40,7 @@ public abstract class Instr {
 
     @Override
     public String toString() {
-        return "" + (isDead() ? "[DEAD]" : "") + ((this instanceof ResultInstr) ? ((ResultInstr)this).getResult() + " = " : "") + operation;
+        return "" + (isDead() ? "[DEAD]" : "") + (hasUnusedResult ? "[DEAD-RESULT]" : "") + ((this instanceof ResultInstr) ? ((ResultInstr)this).getResult() + " = " : "") + operation;
     }
 
     @Interp
@@ -71,6 +72,14 @@ public abstract class Instr {
     @Interp
     public boolean isDead() {
         return isDead;
+    }
+
+    public void markUnusedResult() {
+        hasUnusedResult = true;
+    }
+
+    public boolean hasUnusedResult() {
+        return hasUnusedResult;
     }
 
     /* --------- "Abstract"/"please-override" methods --------- */
@@ -105,6 +114,11 @@ public abstract class Instr {
      */
     public void simplifyOperands(Map<Operand, Operand> valueMap) {
     }
+
+    /**
+     * Replace all uses of 'v' with 'val'.
+     */
+    public void replaceVariableUse(Variable v, Operand val) { }
 
     /**
      * This method takes as input a map of operands to their values, and outputs

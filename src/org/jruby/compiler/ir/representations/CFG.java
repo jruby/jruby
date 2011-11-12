@@ -15,7 +15,7 @@ import org.jruby.compiler.ir.IRClosure;
 import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.BranchInstr;
-import org.jruby.compiler.ir.instructions.CallInstr;
+import org.jruby.compiler.ir.instructions.CallBase;
 import org.jruby.compiler.ir.instructions.ExceptionRegionEndMarkerInstr;
 import org.jruby.compiler.ir.instructions.ExceptionRegionStartMarkerInstr;
 import org.jruby.compiler.ir.instructions.Instr;
@@ -348,8 +348,8 @@ public class CFG {
                     }
                     addrs.add(tgtLbl);
                 }
-            } else if (i instanceof CallInstr) { // Build CFG for the closure if there exists one
-                Operand closureArg = ((CallInstr) i).getClosureArg();
+            } else if (i instanceof CallBase) { // Build CFG for the closure if there exists one
+                Operand closureArg = ((CallBase) i).getClosureArg();
                 if (closureArg instanceof WrappedIRClosure) {
                     ((WrappedIRClosure) closureArg).getClosure().buildCFG();
                 }
