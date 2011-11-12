@@ -2,6 +2,7 @@ package org.jruby.compiler.ir.dataflow;
 
 import org.jruby.compiler.ir.representations.BasicBlock;
 import org.jruby.compiler.ir.instructions.Instr;
+import org.jruby.compiler.ir.util.Edge;
 
 import java.util.BitSet;
 import java.util.List;
@@ -105,12 +106,12 @@ public abstract class FlowGraphNode {
         boolean changed = applyTransferFunction();
         if (changed) {
             if (problem.getFlowDirection() == DataFlowProblem.DF_Direction.FORWARD) {
-                for (BasicBlock e: problem.getOutgoingDestinationsOf(basicBlock)) {
-                    processDestBB(workList, bbSet, e);
+                for (Edge<BasicBlock> e: problem.getScope().cfg().getOutgoingEdges(basicBlock)) {
+                    processDestBB(workList, bbSet, e.getDestination().getData());
                 }
             } else if (problem.getFlowDirection() == DataFlowProblem.DF_Direction.BACKWARD) {
-                for (BasicBlock e: problem.getIncomingSourcesOf(basicBlock)) {
-                    processDestBB(workList, bbSet, e);
+                for (Edge<BasicBlock> e: problem.getScope().cfg().getIncomingEdges(basicBlock)) {
+                    processDestBB(workList, bbSet, e.getSource().getData());
                 }
             }
         }
