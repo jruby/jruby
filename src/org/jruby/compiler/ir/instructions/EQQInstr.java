@@ -6,7 +6,6 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.UndefinedValue;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
-import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.RubyArray;
@@ -53,24 +52,24 @@ public class EQQInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
-        IRubyObject receiver = (IRubyObject) arg1.retrieve(interp, context, self, temp);
-        IRubyObject value = (IRubyObject) arg2.retrieve(interp, context, self, temp);
+    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
+        IRubyObject receiver = (IRubyObject) arg1.retrieve(context, self, temp);
+        IRubyObject value = (IRubyObject) arg2.retrieve(context, self, temp);
 
         if (value == UndefinedValue.UNDEFINED) {
-            result.store(interp, context, self, receiver, temp);
+            result.store(context, self, temp, receiver);
         } else if (receiver instanceof RubyArray) {
             RubyArray testVals = (RubyArray)receiver;
             for (int i = 0, n = testVals.getLength(); i < n; i++) {
                 IRubyObject eqqVal = testVals.eltInternal(i).callMethod(context, "===", value);
                 if (eqqVal.isTrue()) {
-                    result.store(interp, context, self, eqqVal, temp);
+                    result.store(context, self, temp, eqqVal);
                     return null;
                 }
             }
-            result.store(interp, context, self, context.getRuntime().newBoolean(false), temp);
+            result.store(context, self, temp, context.getRuntime().newBoolean(false));
         } else {
-            result.store(interp, context, self, receiver.callMethod(context, "===", value), temp);
+            result.store(context, self, temp, receiver.callMethod(context, "===", value));
         }
         
         return null;

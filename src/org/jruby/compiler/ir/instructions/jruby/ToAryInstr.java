@@ -8,7 +8,6 @@ import org.jruby.compiler.ir.operands.BooleanLiteral;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
-import org.jruby.interpreter.InterpreterContext;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -48,8 +47,8 @@ public class ToAryInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
-        Object receiver = array.retrieve(interp, context, self, temp);
+    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
+        Object receiver = array.retrieve(context, self, temp);
 
         // Don't call to_ary if we we have an array already and we are asked not to run to_ary on arrays
         Object toAryValue;
@@ -59,7 +58,7 @@ public class ToAryInstr extends Instr implements ResultInstr {
             toAryValue = RuntimeHelpers.aryToAry((IRubyObject) receiver);
         }
         
-        result.store(interp, context, self, toAryValue, temp);
+        result.store(context, self, temp, toAryValue);
 
         return null;        
     }

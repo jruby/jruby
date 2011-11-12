@@ -8,7 +8,6 @@ import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.UndefinedValue;
 import org.jruby.compiler.ir.representations.InlinerInfo;
-import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -52,7 +51,7 @@ public class StoreToBindingInstr extends Instr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
+    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
         LocalVariable v = (LocalVariable) value;
         
         if (bindingSlot == -1) bindingSlot = targetMethod.getBindingSlot(v.getName());

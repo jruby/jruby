@@ -8,7 +8,6 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Nil;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
-import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -63,10 +62,9 @@ public class IsTrueInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
+    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
         // ENEBO: This seems like a lot of extra work...
-        result.store(interp, context, self, 
-                context.getRuntime().newBoolean(((IRubyObject) value.retrieve(interp, context, self, temp)).isTrue()), temp);
+        result.store(context, self, temp, context.getRuntime().newBoolean(((IRubyObject) value.retrieve(context, self, temp)).isTrue()));
         return null;
     }
 }

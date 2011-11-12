@@ -5,7 +5,6 @@ import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.operands.Fixnum;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.InlinerInfo;
-import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -39,7 +38,7 @@ public class RaiseArgumentErrorInstr extends Instr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
+    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
         int requiredInt = required.value.intValue();
         int optInt = opt.value.intValue();
         int restInt = rest.value.intValue();

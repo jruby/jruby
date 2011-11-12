@@ -11,7 +11,6 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
-import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -45,10 +44,10 @@ public class DefineClassMethodInstr extends Instr {
 
     // SSS FIXME: Go through this and DefineInstanceMethodInstr.interpret, clean up, extract common code
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
+    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
         String name = method.getName();
         Ruby runtime = context.getRuntime();
-        RubyObject obj = (RubyObject) container.retrieve(interp, context, self, temp);
+        RubyObject obj = (RubyObject) container.retrieve(context, self, temp);
 
         if (runtime.getSafeLevel() >= 4 && !obj.isTaint()) {
             throw runtime.newSecurityError("Insecure; can't define singleton method.");

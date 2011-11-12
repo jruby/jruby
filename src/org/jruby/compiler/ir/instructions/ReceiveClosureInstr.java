@@ -5,7 +5,6 @@ import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
-import org.jruby.interpreter.InterpreterContext;
 import org.jruby.Ruby;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Block.Type;
@@ -40,9 +39,9 @@ public class ReceiveClosureInstr extends Instr implements ResultInstr {
 
     @Interp
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
+    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
         Ruby  runtime = context.getRuntime();
-        result.store(interp, context, self, block == Block.NULL_BLOCK ? runtime.getNil() : runtime.newProc(Type.PROC, block), temp);
+        result.store(context, self, temp, block == Block.NULL_BLOCK ? runtime.getNil() : runtime.newProc(Type.PROC, block));
         return null;
     }
 }

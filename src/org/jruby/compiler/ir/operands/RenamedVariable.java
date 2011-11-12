@@ -1,7 +1,5 @@
 package org.jruby.compiler.ir.operands;
 
-import org.jruby.interpreter.InterpreterContext;
-
 /**
  * Generic variable with a custom prefix -- mostly used during optimization passes
  * where we need to rename existing variables

@@ -10,7 +10,6 @@ import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
-import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -50,10 +49,10 @@ public class Match2Instr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
-        RubyRegexp regexp = (RubyRegexp) receiver.retrieve(interp, context, self, temp);
-        IRubyObject argValue = (IRubyObject) arg.retrieve(interp, context, self, temp);
-        result.store(interp, context, self, regexp.op_match(context, argValue), temp);
+    public Label interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
+        RubyRegexp regexp = (RubyRegexp) receiver.retrieve(context, self, temp);
+        IRubyObject argValue = (IRubyObject) arg.retrieve(context, self, temp);
+        result.store(context, self, temp, regexp.op_match(context, argValue));
         return null;
     }
 }

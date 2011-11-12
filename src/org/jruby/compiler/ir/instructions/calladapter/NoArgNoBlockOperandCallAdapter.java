@@ -1,7 +1,6 @@
 package org.jruby.compiler.ir.instructions.calladapter;
 
 import org.jruby.compiler.ir.operands.Operand;
-import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -15,7 +14,7 @@ public class NoArgNoBlockOperandCallAdapter extends CallAdapter {
     }
 
     @Override
-    public Object call(InterpreterContext interp, ThreadContext context, IRubyObject self, IRubyObject receiver, Object[] temp) {
+    public Object call(ThreadContext context, IRubyObject self, IRubyObject receiver, Object[] temp) {
         return callSite.call(context, self, receiver);
     }
 }

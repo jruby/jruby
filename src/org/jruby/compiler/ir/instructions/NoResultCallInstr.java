@@ -4,7 +4,6 @@ import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.InlinerInfo;
-import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
@@ -25,8 +24,8 @@ public class NoResultCallInstr extends CallBase {
     }    
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
-        callAdapter.call(interp, context, self, (IRubyObject) getReceiver().retrieve(interp, context, self, temp), temp);
+    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
+        callAdapter.call(context, self, (IRubyObject) getReceiver().retrieve(context, self, temp), temp);
         return null;
     }  
 }

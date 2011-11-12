@@ -14,7 +14,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.builtin.InternalVariables;
 import org.jruby.runtime.builtin.InstanceVariables;
-import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -30,7 +29,7 @@ public class UndefinedValue extends Operand implements IRubyObject {
     private UndefinedValue() {}
 
     @Override
-    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self, Object[] temp) {
+    public Object retrieve(ThreadContext context, IRubyObject self, Object[] temp) {
         return this;
     }
 

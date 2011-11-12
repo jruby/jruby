@@ -3,7 +3,6 @@ package org.jruby.compiler.ir.operands;
 import org.jruby.compiler.ir.IRClass;
 
 import java.math.BigInteger;
-import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -62,7 +61,7 @@ public class Fixnum extends Constant {
     }
 
     @Override
-    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self, Object[] temp) {
+    public Object retrieve(ThreadContext context, IRubyObject self, Object[] temp) {
         if (rubyFixnum == null) rubyFixnum = context.getRuntime().newFixnum(value);
         return rubyFixnum;
     }

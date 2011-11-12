@@ -1,7 +1,6 @@
 package org.jruby.compiler.ir.operands;
 
 import org.jruby.compiler.ir.IRClosure;
-import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
@@ -25,7 +24,7 @@ public class WrappedIRClosure extends Constant {
     }
 
     @Override
-    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self, Object[] temp) {
+    public Object retrieve(ThreadContext context, IRubyObject self, Object[] temp) {
         BlockBody body = closure.getBlockBody();
         closure.getStaticScope().determineModule();
         Binding binding = context.currentBinding(self, context.getCurrentScope());

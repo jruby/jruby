@@ -4,7 +4,6 @@ import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.GlobalVariable;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.InlinerInfo;
-import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -20,8 +19,8 @@ public class PutGlobalVarInstr extends PutInstr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
-        getTarget().store(interp, context, self, getValue().retrieve(interp, context, self, temp), temp);
+    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
+        getTarget().store(context, self, temp, getValue().retrieve(context, self, temp));
         return null;
     }
 }

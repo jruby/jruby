@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.jruby.javasupport.util.RuntimeHelpers;
-import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -70,7 +69,7 @@ public class Splat extends Operand {
     }
 
     @Override
-    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self, Object[] temp) {
-        return RuntimeHelpers.splatValue((IRubyObject) array.retrieve(interp, context, self, temp));
+    public Object retrieve(ThreadContext context, IRubyObject self, Object[] temp) {
+        return RuntimeHelpers.splatValue((IRubyObject) array.retrieve(context, self, temp));
     }
 }

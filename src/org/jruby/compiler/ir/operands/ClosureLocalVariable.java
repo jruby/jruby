@@ -1,7 +1,6 @@
 package org.jruby.compiler.ir.operands;
 
 import org.jruby.compiler.ir.IRClosure;
-import org.jruby.interpreter.InterpreterContext;
 
 /**
  * This represents a variable used in a closure that is

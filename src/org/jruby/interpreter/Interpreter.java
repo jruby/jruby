@@ -97,7 +97,7 @@ public class Interpreter {
         for (IRClosure b: beBlocks) {
             // SSS FIXME: Should I piggyback on WrappedIRClosure.retrieve or just copy that code here?
             b.prepareForInterpretation();
-            Block blk = (Block)(new WrappedIRClosure(b)).retrieve(null, context, self, temp);
+            Block blk = (Block)(new WrappedIRClosure(b)).retrieve(context, self, temp);
             blk.yield(context, null);
         }
     }
@@ -134,7 +134,8 @@ public class Interpreter {
         }
     }
 
-    public static IRubyObject interpret(ThreadContext context, IRubyObject self, IRExecutionScope scope, InterpreterContext interp, Block block, Block.Type blockType) {
+    public static IRubyObject interpret(ThreadContext context, IRubyObject self, 
+            IRExecutionScope scope, IRubyObject[] args, Block block, Block.Type blockType) {
         Ruby runtime = context.getRuntime();
         boolean inClosure = (scope instanceof IRClosure);
 
@@ -160,7 +161,7 @@ public class Interpreter {
             //   invokes Ruby-level exceptions handlers.
             try {
                 try {
-                    Object value = lastInstr.interpret(interp, context, self, block, exception, temporaryVariables);
+                    Object value = lastInstr.interpret(context, self, args, block, exception, temporaryVariables);
                     if (value == null) {
                         ipc++;
                     } else if (value instanceof Label) { // jump to new location
@@ -198,7 +199,7 @@ public class Interpreter {
                         // We got where we need to get to (because a lambda stopped us, or because we popped to the
                         // lexical scope where we got called from).  Retrieve the result and store it.
                         if (lastInstr instanceof ResultInstr) {
-                            ((ResultInstr) lastInstr).getResult().store(interp, context, self, bj.breakValue, temporaryVariables);
+                            ((ResultInstr) lastInstr).getResult().store(context, self, temporaryVariables, bj.breakValue);
                         }
                         ipc += 1;
                     } else {
@@ -248,18 +249,19 @@ public class Interpreter {
     }
 
     public static IRubyObject INTERPRET_METHOD(ThreadContext context, IRExecutionScope scope, 
-        InterpreterContext interp, IRubyObject self, String name, RubyModule implClass, Block block, Block.Type blockType, boolean isTraceable) {
+        IRubyObject self, String name, RubyModule implClass, IRubyObject[] args, Block block, Block.Type blockType, boolean isTraceable) {
         Ruby runtime = context.getRuntime();
         boolean syntheticMethod = name == null || name.equals("");
+        Stack<IRExecutionScope> stack = callStack.get();
         
         try {
-            callStack.get().push(scope);
+            stack.push(scope);
             String className = implClass.getName();
             if (!syntheticMethod) ThreadContext.pushBacktrace(context, className, name, context.getFile(), context.getLine());
             if (isTraceable) methodPreTrace(runtime, context, name, implClass);
-            return interpret(context, self, scope, interp, block, blockType);
+            return interpret(context, self, scope, args, block, blockType);
         } finally {
-            callStack.get().pop();
+            stack.pop();
             if (isTraceable) {
                 try {methodPostTrace(runtime, context, name, implClass);}
                 finally { if (!syntheticMethod) ThreadContext.popBacktrace(context);}

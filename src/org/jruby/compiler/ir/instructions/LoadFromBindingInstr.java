@@ -9,7 +9,6 @@ import org.jruby.compiler.ir.Interp;
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.InlinerInfo;
-import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -72,7 +71,7 @@ public class LoadFromBindingInstr extends Instr implements ResultInstr {
 
     @Interp
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
+    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
         LocalVariable v = (LocalVariable) result;
         
         if (bindingSlot == -1) bindingSlot = sourceMethod.getBindingSlot(getSlotName());

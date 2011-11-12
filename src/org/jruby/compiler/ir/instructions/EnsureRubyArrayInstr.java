@@ -7,7 +7,6 @@ import org.jruby.compiler.ir.operands.Array;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
-import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.ast.util.ArgsUtil;
@@ -57,10 +56,10 @@ public class EnsureRubyArrayInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
-        IRubyObject val = (IRubyObject)object.retrieve(interp, context, self, temp);
+    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
+        IRubyObject val = (IRubyObject)object.retrieve(context, self, temp);
         if (!(val instanceof RubyArray)) val = ArgsUtil.convertToRubyArray(context.getRuntime(), val, false);
-        result.store(interp, context, self, val, temp);
+        result.store(context, self, temp, val);
         return null;
     }
 }

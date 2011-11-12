@@ -1,6 +1,5 @@
 package org.jruby.compiler.ir.operands;
 
-import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -12,8 +11,8 @@ public class AsString extends Operand {
     }
 
     @Override
-    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self, Object[] temp) {
-        return ((IRubyObject)source.retrieve(interp, context, self, temp)).asString();
+    public Object retrieve(ThreadContext context, IRubyObject self, Object[] temp) {
+        return ((IRubyObject)source.retrieve(context, self, temp)).asString();
     }
 
     @Override

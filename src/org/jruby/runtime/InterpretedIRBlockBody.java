@@ -7,7 +7,6 @@ import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.compiler.ir.IRClosure;
 import org.jruby.interpreter.Interpreter;
-import org.jruby.interpreter.NaiveInterpreterContext;
 import org.jruby.runtime.Block.Type;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -87,8 +86,7 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
             DynamicScope prevScope = binding.getDynamicScope();
             DynamicScope newScope  = closure.isForLoopBody() ? prevScope : DynamicScope.newDynamicScope(closure.getStaticScope(), prevScope);
             context.pushScope(newScope);
-            NaiveInterpreterContext interp = new NaiveInterpreterContext(context, closure, args);
-            return Interpreter.interpret(context, self, closure, interp, block, type);
+            return Interpreter.interpret(context, self, closure, args, block, type);
         }
         finally {
             binding.getFrame().setVisibility(oldVis);

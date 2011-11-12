@@ -5,7 +5,6 @@
 package org.jruby.compiler.ir.instructions.calladapter;
 
 import org.jruby.compiler.ir.operands.Operand;
-import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -30,13 +29,13 @@ public class TwoArgNoBlockConstantCallAdapter extends CallAdapter {
     }
 
     @Override
-    public Object call(InterpreterContext interp, ThreadContext context, IRubyObject self, IRubyObject receiver, Object[] temp) {
-        if (constant1 == null) generateConstants(interp, context, self, temp);
+    public Object call(ThreadContext context, IRubyObject self, IRubyObject receiver, Object[] temp) {
+        if (constant1 == null) generateConstants(context, self, temp);
         return callSite.call(context, self, receiver, constant1, constant2);
     }
 
-    private void generateConstants(InterpreterContext interp, ThreadContext context, IRubyObject self, Object[] temp) {
-        constant1 = (IRubyObject) arg1.retrieve(interp, context, self, temp);
-        constant2 = (IRubyObject) arg2.retrieve(interp, context, self, temp);        
+    private void generateConstants(ThreadContext context, IRubyObject self, Object[] temp) {
+        constant1 = (IRubyObject) arg1.retrieve(context, self, temp);
+        constant2 = (IRubyObject) arg2.retrieve(context, self, temp);        
     }
 }

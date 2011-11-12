@@ -10,7 +10,6 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.representations.InlinerInfo;
-import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -59,14 +58,14 @@ public class DefineClassInstr extends Instr implements ResultInstr {
         return new DefineClassInstr(ii.getRenamedVariable(result), this.newIRClass, container.cloneForInlining(ii), superClass.cloneForInlining(ii));
     }
     
-    private RubyModule newClass(InterpreterContext interp, ThreadContext context, IRubyObject self, RubyModule classContainer, Object[] temp) {
+    private RubyModule newClass(ThreadContext context, IRubyObject self, RubyModule classContainer, Object[] temp) {
         if (newIRClass instanceof IRMetaClass) return classContainer.getMetaClass();
 
         RubyClass sc;
         if (superClass == Nil.NIL) {
             sc = null;
         } else {
-            Object o = superClass.retrieve(interp, context, self, temp);
+            Object o = superClass.retrieve(context, self, temp);
 
             if (!(o instanceof RubyClass)) throw context.getRuntime().newTypeError("superclass must be Class (" + o + " given)");
             
@@ -77,12 +76,12 @@ public class DefineClassInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
-        Object rubyContainer = container.retrieve(interp, context, self, temp);
+    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
+        Object rubyContainer = container.retrieve(context, self, temp);
         
         if (!(rubyContainer instanceof RubyModule)) throw context.getRuntime().newTypeError("no outer class/module");
         
-        RubyModule newRubyClass = newClass(interp, context, self, (RubyModule) rubyContainer, temp);
+        RubyModule newRubyClass = newClass(context, self, (RubyModule) rubyContainer, temp);
 
         // Interpret the body
         newIRClass.getStaticScope().setModule(newRubyClass);
@@ -91,7 +90,7 @@ public class DefineClassInstr extends Instr implements ResultInstr {
         Object v = method.call(context, newRubyClass, newRubyClass, "", new IRubyObject[]{}, block);
 
         // Result from interpreting the body
-        result.store(interp, context, self, v, temp);
+        result.store(context, self, temp, v);
         return null;
     }
 }

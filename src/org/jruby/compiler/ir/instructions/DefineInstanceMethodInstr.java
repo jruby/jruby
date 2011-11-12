@@ -16,9 +16,6 @@ import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.WrapperMethod;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
-
-import org.jruby.interpreter.InterpreterContext;
-
 import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ThreadContext;
@@ -50,7 +47,7 @@ public class DefineInstanceMethodInstr extends Instr {
 
     // SSS FIXME: Go through this and DefineClassMethodInstr.interpret, clean up, extract common code
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
+    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
         // SSS FIXME: This is a temporary solution that uses information from the stack.
         // This instruction and this logic will be re-implemented to not use implicit information from the stack.
         // Till such time, this code implements the correct semantics.

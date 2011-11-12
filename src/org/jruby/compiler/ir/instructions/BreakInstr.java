@@ -5,7 +5,6 @@ import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.InlinerInfo;
-import org.jruby.interpreter.InterpreterContext;
 import org.jruby.interpreter.IRBreakJump;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -49,8 +48,8 @@ public class BreakInstr extends Instr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
-        throw new IRBreakJump(scopeToReturnTo, returnValue.retrieve(interp, context, self, temp));
+    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
+        throw new IRBreakJump(scopeToReturnTo, returnValue.retrieve(context, self, temp));
     }
 
     @Override

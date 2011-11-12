@@ -6,7 +6,6 @@ import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
-import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -38,9 +37,9 @@ public class YieldInstr extends Instr implements ResultInstr {
 
     @Interp
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
+    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
         Object resultValue;
-        Object blk = (Object) blockArg.retrieve(interp, context, self, temp);
+        Object blk = (Object) blockArg.retrieve(context, self, temp);
         if (blk instanceof RubyProc) blk = ((RubyProc)blk).getBlock();
         if (blk instanceof RubyNil) blk = Block.NULL_BLOCK;
         // Blocks that get yielded are always normal
@@ -49,11 +48,11 @@ public class YieldInstr extends Instr implements ResultInstr {
         if (yieldArg == null) {
             resultValue = b.yieldSpecific(context);
         } else {
-            IRubyObject yieldVal = (IRubyObject)yieldArg.retrieve(interp, context, self, temp);
+            IRubyObject yieldVal = (IRubyObject)yieldArg.retrieve(context, self, temp);
             resultValue = (unwrapArray && (yieldVal instanceof RubyArray)) ? b.yieldArray(context, yieldVal, null, null) : b.yield(context, yieldVal);
         }
         
-        result.store(interp, context, self, resultValue, temp);
+        result.store(context, self, temp, resultValue);
         
         return null;
     }

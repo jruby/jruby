@@ -13,7 +13,6 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.StringLiteral;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
-import org.jruby.interpreter.InterpreterContext;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -110,7 +109,7 @@ public class JRubyImplCallInstr extends CallInstr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
+    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
         Ruby runtime = context.getRuntime();        
         String name;
         Object receiver;
@@ -119,10 +118,10 @@ public class JRubyImplCallInstr extends CallInstr {
         switch (this.implMethod) {
             case RTH_GET_DEFINED_CONSTANT_OR_BOUND_METHOD:
             {
-                IRubyObject v = (IRubyObject)getCallArgs()[0].retrieve(interp, context, self, temp);
+                IRubyObject v = (IRubyObject)getCallArgs()[0].retrieve(context, self, temp);
                 name = ((StringLiteral)getCallArgs()[1])._str_value;
                 ByteList definedType = RuntimeHelpers.getDefinedConstantOrBoundMethod(v, name);
-                rVal = (definedType == null ? Nil.NIL : (new StringLiteral(definedType))).retrieve(interp, context, self, temp);
+                rVal = (definedType == null ? Nil.NIL : (new StringLiteral(definedType))).retrieve(context, self, temp);
                 break;
             }
             case RT_IS_GLOBAL_DEFINED:
@@ -139,7 +138,7 @@ public class JRubyImplCallInstr extends CallInstr {
                 break;
             case SELF_HAS_INSTANCE_VARIABLE:
             {
-                receiver = getReceiver().retrieve(interp, context, self, temp);
+                receiver = getReceiver().retrieve(context, self, temp);
                 //name = getCallArgs()[0].retrieve(interp).toString();
                 name = ((StringLiteral)getCallArgs()[0])._str_value;
                 rVal = runtime.newBoolean(((IRubyObject)receiver).getInstanceVariables().hasInstanceVariable(name));
@@ -147,7 +146,7 @@ public class JRubyImplCallInstr extends CallInstr {
             }
             case SELF_IS_METHOD_BOUND:
             {
-                receiver = getReceiver().retrieve(interp, context, self, temp);
+                receiver = getReceiver().retrieve(context, self, temp);
                 boolean bound = ((IRubyObject)receiver).getMetaClass().isMethodBound(((StringLiteral)getCallArgs()[0])._str_value, false); 
                 rVal = runtime.newBoolean(bound);
                 break;
@@ -169,7 +168,7 @@ public class JRubyImplCallInstr extends CallInstr {
                  * v  = mc.getVisibility(methodName)
                  * v.isPrivate? || (v.isProtected? && receiver/self? instanceof mc.getRealClass)
                  * ------------------------------------------------------------ */
-                IRubyObject r   = (IRubyObject)getReceiver().retrieve(interp, context, self, temp);
+                IRubyObject r   = (IRubyObject)getReceiver().retrieve(context, self, temp);
                 RubyClass   mc  = r.getMetaClass();
                 String      arg = ((StringLiteral)getCallArgs()[0])._str_value;
                 Visibility  v   = mc.searchMethod(arg).getVisibility();
@@ -180,7 +179,7 @@ public class JRubyImplCallInstr extends CallInstr {
             {
                 // cm.classVarDefined(name) || (cm.isSingleton && !(cm.attached instanceof RubyModule) && cm.attached.classVarDefined(name))
                 boolean flag;
-                RubyModule cm = (RubyModule)getReceiver().retrieve(interp, context, self, temp);
+                RubyModule cm = (RubyModule)getReceiver().retrieve(context, self, temp);
                 name = ((StringLiteral)getCallArgs()[0])._str_value;
                 flag = cm.isClassVarDefined(name);
                 if (!flag) {
@@ -194,7 +193,7 @@ public class JRubyImplCallInstr extends CallInstr {
             }
             case FRAME_SUPER_METHOD_BOUND:
             {
-                receiver = getReceiver().retrieve(interp, context, self, temp);
+                receiver = getReceiver().retrieve(context, self, temp);
                 boolean flag = false;
                 String        fn = context.getFrameName();
                 if (fn != null) {
@@ -210,7 +209,7 @@ public class JRubyImplCallInstr extends CallInstr {
                 assert false: "Unknown JRuby impl called";
         }
 
-        getResult().store(interp, context, self, rVal, temp);
+        getResult().store(context, self, temp, rVal);
 
         return null;
     }

@@ -7,7 +7,6 @@ import java.util.Map;
 import org.jruby.RubyRange;
 
 import org.jruby.compiler.ir.IRClass;
-import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -77,9 +76,9 @@ public class Range extends Operand {
     }
 
     @Override
-    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self, Object[] temp) {
+    public Object retrieve(ThreadContext context, IRubyObject self, Object[] temp) {
         return RubyRange.newRange(context.getRuntime(), context,
-                (IRubyObject) begin.retrieve(interp, context, self, temp), 
-                (IRubyObject) end.retrieve(interp, context, self, temp), exclusive);
+                (IRubyObject) begin.retrieve(context, self, temp), 
+                (IRubyObject) end.retrieve(context, self, temp), exclusive);
     }
 }

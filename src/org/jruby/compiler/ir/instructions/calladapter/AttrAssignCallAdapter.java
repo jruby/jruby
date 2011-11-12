@@ -6,7 +6,6 @@ import java.util.List;
 import org.jruby.RubyArray;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Splat;
-import org.jruby.interpreter.InterpreterContext;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
@@ -30,8 +29,8 @@ public class AttrAssignCallAdapter extends CallAdapter {
     }
 
     @Override
-    public Object call(InterpreterContext interp, ThreadContext context, IRubyObject self, IRubyObject receiver, Object[] temp) {
-        IRubyObject[] values = prepareArguments(interp, context, self, args, temp);
+    public Object call(ThreadContext context, IRubyObject self, IRubyObject receiver, Object[] temp) {
+        IRubyObject[] values = prepareArguments(context, self, args, temp);
         
         if (callSite == null) {
             CallType callType = self == receiver ? CallType.FUNCTIONAL : CallType.NORMAL;
@@ -43,10 +42,10 @@ public class AttrAssignCallAdapter extends CallAdapter {
         return null;
     }
     
-    protected IRubyObject[] prepareArguments(InterpreterContext interp, ThreadContext context, IRubyObject self, Operand[] args, Object[] temp) {
+    protected IRubyObject[] prepareArguments(ThreadContext context, IRubyObject self, Operand[] args, Object[] temp) {
         List<IRubyObject> argList = new ArrayList<IRubyObject>();
         for (int i = 0; i < args.length; i++) {
-            IRubyObject rArg = (IRubyObject) args[i].retrieve(interp, context, self, temp);
+            IRubyObject rArg = (IRubyObject) args[i].retrieve(context, self, temp);
             if (args[i] instanceof Splat) {
                 argList.addAll(Arrays.asList(((RubyArray) rArg).toJavaArray()));
             } else {

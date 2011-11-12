@@ -1,7 +1,6 @@
 package org.jruby.compiler.ir.instructions.calladapter;
 
 import org.jruby.compiler.ir.operands.Operand;
-import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -22,9 +21,9 @@ public class TwoArgNoBlockOperandCallAdapter extends CallAdapter {
     }
 
     @Override
-    public Object call(InterpreterContext interp, ThreadContext context, IRubyObject self, IRubyObject receiver, Object[] temp) {
-        IRubyObject value1 = (IRubyObject) arg1.retrieve(interp, context, self, temp);
-        IRubyObject value2 = (IRubyObject) arg2.retrieve(interp, context, self, temp);        
+    public Object call(ThreadContext context, IRubyObject self, IRubyObject receiver, Object[] temp) {
+        IRubyObject value1 = (IRubyObject) arg1.retrieve(context, self, temp);
+        IRubyObject value2 = (IRubyObject) arg2.retrieve(context, self, temp);        
         return callSite.call(context, self, receiver, value1, value2);
     }
 }

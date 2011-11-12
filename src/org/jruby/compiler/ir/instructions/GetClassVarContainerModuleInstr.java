@@ -7,7 +7,6 @@ import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
-import org.jruby.interpreter.InterpreterContext;
 import org.jruby.RubyModule;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -57,19 +56,19 @@ public class GetClassVarContainerModuleInstr extends Instr implements ResultInst
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
+    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
         // SSS FIXME: This is ugly and needs fixing.  Is there another way of capturing this info?
         RubyModule containerModule = (candidateScope == null) ? null : candidateScope.getStaticScope().getModule();
         if (containerModule == null) containerModule = ASTInterpreter.getClassVariableBase(context, context.getRuntime());
         if (containerModule == null && object != null) {
-            IRubyObject arg = (IRubyObject) object.retrieve(interp, context, self, temp);
+            IRubyObject arg = (IRubyObject) object.retrieve(context, self, temp);
             // SSS: What is the right thing to do here?
             containerModule = arg.getMetaClass(); //(arg instanceof RubyClass) ? ((RubyClass)arg).getRealClass() : arg.getType();
         }
 
         if (containerModule == null) throw context.getRuntime().newTypeError("no class/module to define class variable");
 
-        result.store(interp, context, self, containerModule, temp);
+        result.store(context, self, temp, containerModule);
 
         return null;
     }

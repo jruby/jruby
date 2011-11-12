@@ -5,7 +5,6 @@ import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.GlobalVariable;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
-import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -20,8 +19,8 @@ public class GetGlobalVariableInstr extends GetInstr {
     }
 
     @Override
-    public Label interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
-        getResult().store(interp, context, self, getSource().retrieve(interp, context, self, temp), temp);
+    public Label interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
+        getResult().store(context, self, temp, getSource().retrieve(context, self, temp));
         return null;
     }
 }

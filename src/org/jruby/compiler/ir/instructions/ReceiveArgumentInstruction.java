@@ -5,7 +5,6 @@ import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
-import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -56,17 +55,29 @@ public class ReceiveArgumentInstruction extends Instr implements ResultInstr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
+    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
         if (restOfArgArray) {
-            interpretAsRestArg(interp, context, self, destination, temp);
+            interpretAsRestArg(context, self, args, destination, temp);
         } else {
-            destination.store(interp, context, self, interp.getParameter(argIndex), temp);
+            destination.store(context, self, temp, args[argIndex]);
         }
         return null;
     }
 
     @Interp
-    private void  interpretAsRestArg(InterpreterContext interp, ThreadContext context, IRubyObject self, Operand destination, Object[] temp) {
-        destination.store(interp, context, self, context.getRuntime().newArray(interp.getParametersFrom(argIndex)), temp);
+    private void  interpretAsRestArg(ThreadContext context, IRubyObject self, IRubyObject[] args, Operand destination, Object[] temp) {
+        destination.store(context, self, temp, context.getRuntime().newArray(getParametersFrom(args, argIndex)));
+    }
+    
+    private IRubyObject[] NO_PARAMS = new IRubyObject[0];    
+    private IRubyObject[] getParametersFrom(IRubyObject[] parameters, int argIndex) {
+        int length = parameters.length - argIndex;
+        
+        if (length <= 0) return NO_PARAMS;
+
+        IRubyObject[] args = new IRubyObject[length];
+        System.arraycopy(parameters, argIndex, args, 0, length);
+        
+        return args;
     }
 }

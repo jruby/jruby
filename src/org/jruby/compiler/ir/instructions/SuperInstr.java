@@ -16,7 +16,6 @@ import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.operands.Splat;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 
-import org.jruby.interpreter.InterpreterContext;
 
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
@@ -41,11 +40,11 @@ public class SuperInstr extends CallInstr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block aBlock, Object exception, Object[] temp) {
+    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] frameArgs, Block aBlock, Object exception, Object[] temp) {
         // FIXME: Receiver is not being used...should we be retrieving it?
-        IRubyObject receiver = (IRubyObject)getReceiver().retrieve(interp, context, self, temp);
-        IRubyObject[] args = prepareArguments(interp, context, self, getCallArgs(), temp);
-        Block block = prepareBlock(interp, context, self, temp);
+        IRubyObject receiver = (IRubyObject)getReceiver().retrieve(context, self, temp);
+        IRubyObject[] args = prepareArguments(context, self, getCallArgs(), temp);
+        Block block = prepareBlock(context, self, temp);
         RubyModule klazz = context.getFrameKlazz();
         // SSS FIXME: Even though we may know the method name in some instances,
         // we are not making use of it here.  It is cleaner in the sense of not
@@ -59,7 +58,7 @@ public class SuperInstr extends CallInstr {
         Object rVal = method.isUndefined() ? RuntimeHelpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, args, block)
                                            : method.call(context, self, superClass, methodName, args, block);
 
-        getResult().store(interp, context, self, rVal, temp);
+        getResult().store(context, self, temp, rVal);
 
         return null;
     }
@@ -74,12 +73,12 @@ public class SuperInstr extends CallInstr {
         }
     }
     
-    protected IRubyObject[] prepareArguments(InterpreterContext interp, ThreadContext context, IRubyObject self, Operand[] args, Object[] temp) {
+    protected IRubyObject[] prepareArguments(ThreadContext context, IRubyObject self, Operand[] args, Object[] temp) {
         // SSS FIXME: This encoding of arguments as an array penalizes splats, but keeps other argument arrays fast
         // since there is no array list --> array transformation
         List<IRubyObject> argList = new ArrayList<IRubyObject>();
         for (int i = 0; i < args.length; i++) {
-            IRubyObject rArg = (IRubyObject)args[i].retrieve(interp, context, self, temp);
+            IRubyObject rArg = (IRubyObject)args[i].retrieve(context, self, temp);
             if (args[i] instanceof Splat) {
                 argList.addAll(Arrays.asList(((RubyArray)rArg).toJavaArray()));
             } else {
@@ -90,10 +89,10 @@ public class SuperInstr extends CallInstr {
         return argList.toArray(new IRubyObject[argList.size()]);
     }
 
-    protected Block prepareBlock(InterpreterContext interp, ThreadContext context, IRubyObject self, Object[] temp) {
+    protected Block prepareBlock(ThreadContext context, IRubyObject self, Object[] temp) {
         if (closure == null) return Block.NULL_BLOCK;
         
-        Object value = closure.retrieve(interp, context, self, temp);
+        Object value = closure.retrieve(context, self, temp);
         
         Block b = null;
         if (value instanceof Block)

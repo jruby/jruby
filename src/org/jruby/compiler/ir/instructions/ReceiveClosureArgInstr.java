@@ -5,7 +5,6 @@ import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
-import org.jruby.interpreter.InterpreterContext;
 import org.jruby.RubyArray;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -56,9 +55,9 @@ public class ReceiveClosureArgInstr extends Instr implements ResultInstr {
 
     @Interp
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
+    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
         Object o;
-        int numArgs = interp.getParameterCount();
+        int numArgs = args.length;
         if (restOfArgArray) {
             if (numArgs < argIndex) {
                 o = RubyArray.newArrayNoCopy(context.getRuntime(), new IRubyObject[] {});
@@ -66,15 +65,15 @@ public class ReceiveClosureArgInstr extends Instr implements ResultInstr {
                 IRubyObject[] restOfArgs = new IRubyObject[numArgs-argIndex];
                 int j = 0;
                 for (int i = argIndex; i < numArgs; i++) {
-                    restOfArgs[j] = (IRubyObject)interp.getParameter(i);
+                    restOfArgs[j] = args[i];
                     j++;
                 }
                 o = RubyArray.newArray(context.getRuntime(), restOfArgs);
             }
         } else {
-            o = (argIndex < numArgs) ? interp.getParameter(argIndex) : context.getRuntime().getNil();
+            o = (argIndex < numArgs) ? args[argIndex] : context.getRuntime().getNil();
         }
-        result.store(interp, context, self, o, temp);
+        result.store(context, self, temp, o);
         return null;
     }
 }

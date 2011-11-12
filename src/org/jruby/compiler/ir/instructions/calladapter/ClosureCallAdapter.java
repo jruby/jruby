@@ -7,7 +7,6 @@ package org.jruby.compiler.ir.instructions.calladapter;
 import org.jruby.RubyMethod;
 import org.jruby.RubyProc;
 import org.jruby.compiler.ir.operands.Operand;
-import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ThreadContext;
@@ -27,10 +26,10 @@ public abstract class ClosureCallAdapter extends CallAdapter {
         this.closure = closure;
     }
     
-    protected Block prepareBlock(InterpreterContext interp, ThreadContext context, IRubyObject self, Object[] temp) {
+    protected Block prepareBlock(ThreadContext context, IRubyObject self, Object[] temp) {
         if (closure == null) return Block.NULL_BLOCK;
         
-        Object value = closure.retrieve(interp, context, self, temp);
+        Object value = closure.retrieve(context, self, temp);
         
         Block block;
         if (value instanceof Block) {

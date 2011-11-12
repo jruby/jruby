@@ -5,7 +5,6 @@ import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.IRException;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.InlinerInfo;
-import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.RubyKernel;
 import org.jruby.runtime.Block;
@@ -40,10 +39,10 @@ public class ThrowExceptionInstr extends Instr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
+    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
         if (exception instanceof IRException) throw ((IRException) exception).getException(context.getRuntime());
 
-        Object excObj = exceptionArg.retrieve(interp, context, self, temp);
+        Object excObj = exceptionArg.retrieve(context, self, temp);
             
         if (excObj instanceof IRubyObject) {
             RubyKernel.raise(context, context.getRuntime().getKernel(), new IRubyObject[] {(IRubyObject)excObj}, Block.NULL_BLOCK);

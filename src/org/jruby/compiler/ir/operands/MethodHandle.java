@@ -8,7 +8,6 @@ import org.jruby.RubySymbol;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.callsite.CacheEntry;
 
@@ -65,13 +64,13 @@ public class MethodHandle extends Operand {
     }
 
     @Override
-    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self, Object[] temp) {
-        receiverObj = (IRubyObject)receiver.retrieve(interp, context, self, temp);
+    public Object retrieve(ThreadContext context, IRubyObject self, Object[] temp) {
+        receiverObj = (IRubyObject)receiver.retrieve(context, self, temp);
 
         if (methodName instanceof MethAddr) {
             resolvedMethodName = ((MethAddr)methodName).getName();
         } else {
-            IRubyObject mnameObj = (IRubyObject)methodName.retrieve(interp, context, self, temp);
+            IRubyObject mnameObj = (IRubyObject)methodName.retrieve(context, self, temp);
 
             // SSS FIXME: If this is not a ruby string or a symbol, then this is an error in the source code!
             // Raise an exception and throw an error.  This should not be an assert.

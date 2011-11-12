@@ -5,7 +5,6 @@ import java.util.Map;
 import org.jruby.compiler.ir.IRClass;
 import org.jruby.compiler.ir.Interp;
 import org.jruby.compiler.ir.representations.InlinerInfo;
-import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -64,12 +63,12 @@ public abstract class Operand {
     }
 
     @Interp
-    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self, Object[] temp) {
+    public Object retrieve(ThreadContext context, IRubyObject self, Object[] temp) {
         throw new RuntimeException(this.getClass().getSimpleName() + " should not be directly retrieved.");
     }
 
     @Interp
-    public Object store(InterpreterContext interp, ThreadContext context, IRubyObject self, Object value, Object[] temp) {
+    public Object store(ThreadContext context, IRubyObject self, Object[] temp, Object value) {
         throw new RuntimeException(this.getClass().getSimpleName() + " should not be directly stored.");
     }
 }

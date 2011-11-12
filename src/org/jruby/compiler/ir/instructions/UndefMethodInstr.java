@@ -4,7 +4,6 @@ import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
-import org.jruby.interpreter.InterpreterContext;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -39,9 +38,8 @@ public class UndefMethodInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
-        result.store(interp, context, self, 
-                RuntimeHelpers.undefMethod(context, methodName.retrieve(interp, context, self, temp)), temp);
+    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
+        result.store(context, self, temp, RuntimeHelpers.undefMethod(context, methodName.retrieve(context, self, temp)));
         return null;
     }
     

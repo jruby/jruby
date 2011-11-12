@@ -1,6 +1,5 @@
 package org.jruby.compiler.ir.operands;
 
-import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -21,7 +20,7 @@ public class UnexecutableNil extends Nil {
     }
 
     @Override
-    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self, Object[] temp) {
+    public Object retrieve(ThreadContext context, IRubyObject self, Object[] temp) {
         throw new RuntimeException(this.getClass().getSimpleName() + " should not be directly interpreted");
     }
 }

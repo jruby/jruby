@@ -5,7 +5,6 @@ import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
-import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -41,9 +40,9 @@ public class MatchInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
-        RubyRegexp regexp = (RubyRegexp) receiver.retrieve(interp, context, self, temp);
-        result.store(interp, context, self, regexp.op_match2(context), temp);
+    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
+        RubyRegexp regexp = (RubyRegexp) receiver.retrieve(context, self, temp);
+        result.store(context, self, temp, regexp.op_match2(context));
         return null;
     }
 }

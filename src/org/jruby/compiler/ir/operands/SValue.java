@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.jruby.compiler.ir.representations.InlinerInfo;
-import org.jruby.interpreter.InterpreterContext;
 import org.jruby.RubyArray;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -65,8 +64,8 @@ public class SValue extends Operand {
     }
 
     @Override
-    public Object retrieve(InterpreterContext interp, ThreadContext context, IRubyObject self, Object[] temp) {
-        Object val = array.retrieve(interp, context, self, temp);
+    public Object retrieve(ThreadContext context, IRubyObject self, Object[] temp) {
+        Object val = array.retrieve(context, self, temp);
         
         if (val instanceof RubyArray) {
             int n = ((RubyArray) val).getLength();

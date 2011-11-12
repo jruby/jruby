@@ -4,8 +4,6 @@ import org.jruby.RubyModule;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.representations.CFG;
 import org.jruby.interpreter.Interpreter;
-import org.jruby.interpreter.InterpreterContext;
-import org.jruby.interpreter.NaiveInterpreterContext;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
@@ -77,9 +75,8 @@ public class InterpretedIRMethod extends DynamicMethod {
         context.preMethodFrameOnly(currentModule, name, self, block);
         context.getCurrentScope().getStaticScope().setModule(clazz);
         context.setCurrentVisibility(getVisibility());
-        InterpreterContext interp = new NaiveInterpreterContext(context, method, args);
         try {
-            return Interpreter.INTERPRET_METHOD(context, method, interp, self, name, currentModule, block, null, false);
+            return Interpreter.INTERPRET_METHOD(context, method, self, name, currentModule, args, block, null, false);
         } finally {
             context.popFrame();
             context.postMethodScopeOnly();

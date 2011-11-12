@@ -10,7 +10,6 @@ import java.util.List;
 import org.jruby.RubyArray;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Splat;
-import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -25,10 +24,10 @@ public class ManyArgBlockSplatCallAdapter extends ManyArgBlockOperandCallAdapter
     }
     
     @Override
-    protected IRubyObject[] prepareArguments(InterpreterContext interp, ThreadContext context, IRubyObject self, Operand[] args, Object[] temp) {
+    protected IRubyObject[] prepareArguments(ThreadContext context, IRubyObject self, Operand[] args, Object[] temp) {
         List<IRubyObject> argList = new ArrayList<IRubyObject>();
         for (int i = 0; i < args.length; i++) {
-            IRubyObject rArg = (IRubyObject) args[i].retrieve(interp, context, self, temp);
+            IRubyObject rArg = (IRubyObject) args[i].retrieve(context, self, temp);
             if (args[i] instanceof Splat) {
                 argList.addAll(Arrays.asList(((RubyArray) rArg).toJavaArray()));
             } else {

@@ -11,7 +11,6 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.TemporaryClosureVariable;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.interpreter.Interpreter;
-import org.jruby.interpreter.NaiveInterpreterContext;
 import org.jruby.parser.IRStaticScopeFactory;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
@@ -67,12 +66,14 @@ public class IREvalScript extends IRClosure {
     }
 
     /* Record a begin block -- not all scope implementations can handle them */
+    @Override
     public void recordBeginBlock(IRClosure beginBlockClosure) {
         if (beginBlocks == null) beginBlocks = new ArrayList<IRClosure>();
         beginBlocks.add(beginBlockClosure);
     }
 
     /* Record an end block -- not all scope implementations can handle them */
+    @Override
     public void recordEndBlock(IRClosure endBlockClosure) {
         if (endBlocks == null) endBlocks = new ArrayList<IRClosure>();
         endBlocks.add(endBlockClosure);
@@ -92,8 +93,8 @@ public class IREvalScript extends IRClosure {
         }
         try {
             context.pushScope(evalScope);
-            NaiveInterpreterContext interp = new NaiveInterpreterContext(context, this, new IRubyObject[]{});
-            return Interpreter.interpret(context, self, this, interp, block, null);
+            // FIXME: Do not push new empty arg array in every time
+            return Interpreter.interpret(context, self, this, new IRubyObject[] {}, block, null);
         }
         finally {
             context.popScope();

@@ -4,7 +4,6 @@ import org.jruby.compiler.ir.operands.Fixnum;
 import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Splat;
-import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.MethodIndex;
@@ -21,7 +20,7 @@ public abstract class CallAdapter {
         this.callSite = callSite;
     }
         
-    public abstract Object call(InterpreterContext interp, ThreadContext context, IRubyObject self, IRubyObject receiver, Object[] temp);
+    public abstract Object call(ThreadContext context, IRubyObject self, IRubyObject receiver, Object[] temp);
 
     private static CallSite getCallSiteFor(CallType callType, MethAddr methAddr) {
         assert callType != null: "Calltype should never be null";

@@ -7,7 +7,6 @@ import org.jruby.compiler.ir.operands.Nil;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.UndefinedValue;
 import org.jruby.compiler.ir.representations.InlinerInfo;
-import org.jruby.interpreter.InterpreterContext;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -23,17 +22,17 @@ public class BNEInstr extends BranchInstr {
     }
 
     @Override
-    public Object interpret(InterpreterContext interp, ThreadContext context, IRubyObject self, Block block, Object exception, Object[] temp) {
+    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
         Operand arg1 = getArg1();
         Operand arg2 = getArg2();
-        Object value1 = arg1.retrieve(interp, context, self, temp);
+        Object value1 = arg1.retrieve(context, self, temp);
         
         if (arg2 instanceof BooleanLiteral) {
             boolean v1True  = ((IRubyObject)value1).isTrue();
             boolean arg2True = ((BooleanLiteral)arg2).isTrue();
             return (v1True && !arg2True) || (!v1True && arg2True) ? getJumpTarget() : null;
         } else {
-            Object value2 = arg2.retrieve(interp, context, self, temp);
+            Object value2 = arg2.retrieve(context, self, temp);
             boolean eql = ((arg2 == Nil.NIL) || (arg2 == UndefinedValue.UNDEFINED)) ? 
                     value1 == value2 : ((IRubyObject) value1).op_equal(context, (IRubyObject)value2).isTrue();
             return !eql ? getJumpTarget() : null;
