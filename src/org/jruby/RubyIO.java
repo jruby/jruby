@@ -2378,7 +2378,7 @@ public class RubyIO extends RubyObject {
         return getc(); // Yes 1.8 getc is 1.9 getbyte
     }
     
-    @JRubyMethod(compat = RUBY1_9)
+    @JRubyMethod
     public IRubyObject readbyte(ThreadContext context) {
         int c = getcCommon();
         if (c == -1) {
