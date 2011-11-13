@@ -41,7 +41,6 @@ public class Interpreter {
     private static int interpInstrsCount = 0;
 
     // SSS FIXME: Isn't there a simpler way for doing this?
-    // What am I doing wrong with using the block.escape/isEscaped logic
     private static ThreadLocal<Stack<IRExecutionScope>> callStack = new ThreadLocal<Stack<IRExecutionScope>>() {
         @Override
         protected Stack<IRExecutionScope> initialValue() {
@@ -234,8 +233,6 @@ public class Interpreter {
             IRMethod methodToReturnFrom = ((ReturnInstr)lastInstr).methodToReturnFrom;
             if (inClosure && !callStack.get().contains(methodToReturnFrom)) {
                 // SSS: better way to do this without having to maintain a call stack?
-                // Check with Tom why the block.escape/isEscaped logic isn't working
-                // if (interp.getBlock().isEscaped())
                 if (isDebug()) LOG.info("in scope: " + scope + ", raising unexpected return local jump error");
                 throw runtime.newLocalJumpError(Reason.RETURN, rv, "unexpected return");
             }

@@ -27,11 +27,6 @@ public class TwoArgBlockOperandCallAdapter extends ClosureCallAdapter {
         IRubyObject value1 = (IRubyObject) arg1.retrieve(context, self, temp);
         IRubyObject value2 = (IRubyObject) arg2.retrieve(context, self, temp);
         Block block = prepareBlock(context, self, temp);
-        
-        try {
-            return callSite.call(context, self, receiver, value1, value2, block);
-        } finally {
-            block.escape();
-        }
+        return callSite.call(context, self, receiver, value1, value2, block);
     }    
 }

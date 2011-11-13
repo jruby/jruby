@@ -22,12 +22,7 @@ public class ManyArgBlockOperandCallAdapter extends ClosureCallAdapter {
     public Object call(ThreadContext context, IRubyObject self, IRubyObject receiver, Object[] temp) {
         IRubyObject[] values = prepareArguments(context, self, args, temp);
         Block block = prepareBlock(context, self, temp);
-
-        try {
-            return callSite.call(context, self, receiver, values, block);
-        } finally {
-            block.escape();
-        }
+        return callSite.call(context, self, receiver, values, block);
     }
 
     protected IRubyObject[] prepareArguments(ThreadContext context, IRubyObject self, Operand[] args, Object[] temp) {

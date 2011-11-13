@@ -24,11 +24,6 @@ public class OneArgBlockOperandCallAdapter extends ClosureCallAdapter {
     public Object call(ThreadContext context, IRubyObject self, IRubyObject receiver, Object[] temp) {
         IRubyObject value1 = (IRubyObject) arg1.retrieve(context, self, temp);        
         Block block = prepareBlock(context, self, temp);
-        
-        try {
-            return callSite.call(context, self, receiver, value1, block);
-        } finally {
-            block.escape();
-        }
+        return callSite.call(context, self, receiver, value1, block);
     }    
 }

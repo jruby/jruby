@@ -17,11 +17,6 @@ public class NoArgBlockOperandCallAdapter extends ClosureCallAdapter {
     @Override
     public Object call(ThreadContext context, IRubyObject self, IRubyObject receiver, Object[] temp) {
         Block block = prepareBlock(context, self, temp);
-        
-        try {
-            return callSite.call(context, self, receiver, block);
-        } finally {
-            block.escape();
-        }
+        return callSite.call(context, self, receiver, block);
     }
 }
