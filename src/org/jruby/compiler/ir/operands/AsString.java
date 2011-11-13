@@ -8,6 +8,7 @@ public class AsString extends Operand {
     Operand source; 
 
     public AsString(Operand source) {
+        if (source == null) source = new StringLiteral("");
         this.source = source;
     }
 
