@@ -304,14 +304,6 @@ public class RbConfigLibrary implements Library {
         String libext = "a";
         String objext = "o";
         
-        // override our values with environment varilabes, since presumably
-        // the user knows what they are doing
-        cflags = getRubyEnv(envHash, "CFLAGS", cflags);
-        cppflags = getRubyEnv(envHash, "CPPFLAGS", cppflags);
-        cxxflags = getRubyEnv(envHash, "CXXFLAGS", cxxflags);
-        ldflags = getRubyEnv(envHash, "LDFLAGS", ldflags);
-        dldflags = getRubyEnv(envHash, "DLDFLAGS", dldflags);
-                
         setConfig(mkmfHash, "configure_args", "");
         setConfig(mkmfHash, "CFLAGS", cflags);
         setConfig(mkmfHash, "CPPFLAGS", cppflags);
