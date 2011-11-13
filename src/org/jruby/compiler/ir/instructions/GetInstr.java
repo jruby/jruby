@@ -44,7 +44,7 @@ public abstract class GetInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap) {
-        source = source.getSimplifiedOperand(valueMap);
+    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
+        source = source.getSimplifiedOperand(valueMap, force);
     }
 }

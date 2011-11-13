@@ -28,7 +28,7 @@ public class EnsureRubyArrayInstr extends Instr implements ResultInstr {
 
     @Override
     public Operand simplifyAndGetResult(Map<Operand, Operand> valueMap) {
-        simplifyOperands(valueMap);
+        simplifyOperands(valueMap, false);
         return (object instanceof Array) ? object : null;
     }
 
@@ -41,8 +41,8 @@ public class EnsureRubyArrayInstr extends Instr implements ResultInstr {
     }
     
     @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap) {
-        object = object.getSimplifiedOperand(valueMap);
+    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
+        object = object.getSimplifiedOperand(valueMap, force);
     }
 
     @Override

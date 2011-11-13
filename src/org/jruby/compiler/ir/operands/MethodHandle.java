@@ -54,9 +54,9 @@ public class MethodHandle extends Operand {
     }
 
     @Override
-    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap) {
-        methodName = methodName.getSimplifiedOperand(valueMap);
-        receiver = receiver.getSimplifiedOperand(valueMap);
+    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
+        methodName = methodName.getSimplifiedOperand(valueMap, force);
+        receiver = receiver.getSimplifiedOperand(valueMap, force);
         return this;
     }
 

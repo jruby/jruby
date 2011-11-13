@@ -4,6 +4,8 @@
  */
 package org.jruby.compiler.ir.instructions.jruby;
 
+import java.util.Map;
+
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.operands.Operand;
@@ -17,7 +19,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author enebo
  */
 public class RestoreErrorInfoInstr extends Instr {
-    private final Operand arg;
+    private Operand arg;
     
     public RestoreErrorInfoInstr(Operand arg) {
         super(Operation.RESTORE_ERROR_INFO);
@@ -28,6 +30,11 @@ public class RestoreErrorInfoInstr extends Instr {
     @Override
     public Operand[] getOperands() {
         return new Operand[] { arg };
+    }
+
+    @Override
+    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
+        arg = arg.getSimplifiedOperand(valueMap, force);
     }
 
     @Override

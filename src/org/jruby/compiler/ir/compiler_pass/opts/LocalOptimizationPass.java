@@ -65,10 +65,10 @@ public class LocalOptimizationPass implements CompilerPass {
 
     private static void optimizeTmpVars(IRExecutionScope s) {
         Map<TemporaryVariable, Integer> tmpVarUseCounts = new HashMap<TemporaryVariable, Integer>();
-//        Map<TemporaryVariable, CopyInstr> constCopies = new HashMap<TemporaryVariable, CopyInstr>();
+        Map<TemporaryVariable, Integer> tmpVarDefCounts = new HashMap<TemporaryVariable, Integer>();
+        Map<Operand, Operand> constValMap = new HashMap<Operand, Operand>();
         // Analyze instructions
         // * Find use count of temporary variables
-        // * Find copies where constant values are set
         for (Instr i: s.getInstrs()) {
             for (Variable v: i.getUsedVariables()) {
                  if (v instanceof TemporaryVariable) {
@@ -77,21 +77,19 @@ public class LocalOptimizationPass implements CompilerPass {
                      tmpVarUseCounts.put((TemporaryVariable)v, new Integer(n+1));
                  }
             }
-/*
-            if (i instanceof CopyInstr) {
-                CopyInstr ci = (CopyInstr)i;
-                Variable dst = ci.getResult();
-                if (dst instanceof TemporaryVariable) {
-                    Operand  src = ci.getSource();
-                    if (src.isConstant()) constCopies.put((TemporaryVariable)dst, (CopyInstr)i);
-                }
-            }
-*/
+            if (i instanceof ResultInstr) {
+                Variable v = ((ResultInstr)i).getResult();
+                if (v instanceof TemporaryVariable) {
+                     Integer n = tmpVarDefCounts.get((TemporaryVariable)v);
+                     if (n == null) n = new Integer(0);
+                     tmpVarDefCounts.put((TemporaryVariable)v, new Integer(n+1));
+					 }
+				}
         }
-        // Transform code
+
+        // Transform code and do additional analysis
         // * If the result of this instr. has not been used, mark it dead
-        // * If the src operand is used only once and it has a constant value,
-        //   replace its use with the constant value and mark the copy dead
+        // * Find copies where constant values are set
         ListIterator<Instr> instrs = s.getInstrs().listIterator();
         while (instrs.hasNext()) {
             Instr i = instrs.next();
@@ -100,6 +98,7 @@ public class LocalOptimizationPass implements CompilerPass {
                 Variable v = ((ResultInstr)i).getResult();
                 if (v instanceof TemporaryVariable) {
                     Integer useCount = tmpVarUseCounts.get((TemporaryVariable)v);
+                    Integer defCount = tmpVarDefCounts.get((TemporaryVariable)v);
                     if (useCount == null) {
                         if (i instanceof CopyInstr) {
                             i.markDead();
@@ -110,22 +109,22 @@ public class LocalOptimizationPass implements CompilerPass {
                             i.markUnusedResult();
                         }
                     }
-                }
-            }
-/*
-            for (Variable v: i.getUsedVariables()) {
-                if (v instanceof TemporaryVariable) {
-                    Integer useCount = tmpVarUseCounts.get((TemporaryVariable)v);
-                    if (useCount == 1) {
-                        CopyInstr vWriter = constCopies.get((TemporaryVariable)v);
-                        if (vWriter != null) {
-                            // vWriter.markDead();
-                            i.replaceVariableUse(v, vWriter.getSource());
+                    else if ((useCount == 1) && (defCount == 1) && (i instanceof CopyInstr)) {
+                        CopyInstr ci = (CopyInstr)i;
+                        Operand src = ci.getSource();
+                        if (src.isConstant()) {
+                            i.markDead();
+                            instrs.remove();
+                            constValMap.put(v, src);
                         }
                     }
                 }
             }
-*/
+        }
+
+        // Transform code -- replace all single use operands with constants they were defined to
+        for (Instr i: s.getInstrs()) {
+            i.simplifyOperands(constValMap, true);
         }
     }
 

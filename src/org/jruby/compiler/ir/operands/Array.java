@@ -34,7 +34,7 @@ public class Array extends Operand {
 
     @Override
     public String toString() {
-        return "Array:" + (isBlank() ? "" : java.util.Arrays.toString(elts));
+        return "Array:" + (isBlank() ? "[]" : java.util.Arrays.toString(elts));
     }
 
 // ---------- These methods below are used during compile-time optimizations ------- 
@@ -53,9 +53,9 @@ public class Array extends Operand {
     }
 
     @Override
-    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap) {
+    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
         for (int i = 0; i < elts.length; i++) {
-            elts[i] = elts[i].getSimplifiedOperand(valueMap);
+            elts[i] = elts[i].getSimplifiedOperand(valueMap, force);
         }
 
         return this;

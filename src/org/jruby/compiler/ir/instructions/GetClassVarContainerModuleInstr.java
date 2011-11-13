@@ -51,8 +51,8 @@ public class GetClassVarContainerModuleInstr extends Instr implements ResultInst
     }
 
     @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap) {
-        if (object != null) object = object.getSimplifiedOperand(valueMap);
+    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
+        if (object != null) object = object.getSimplifiedOperand(valueMap, force);
     }
 
     @Override

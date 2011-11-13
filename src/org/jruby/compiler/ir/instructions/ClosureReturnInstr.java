@@ -31,8 +31,8 @@ public class ClosureReturnInstr extends Instr {
     }
 
     @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap) {
-        returnValue = returnValue.getSimplifiedOperand(valueMap);
+    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
+        returnValue = returnValue.getSimplifiedOperand(valueMap, force);
     }
 
     @Override

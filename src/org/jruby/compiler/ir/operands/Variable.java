@@ -10,10 +10,10 @@ public abstract class Variable extends Operand implements Comparable {
     public abstract String getName();
 
     @Override
-    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap) {
+    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
         Operand v = valueMap.get(this);
         // You can only value-replace atomic values
-        return ((v == null) || v.isNonAtomicValue()) ? this : v;
+        return (v != null) && (force || !v.isNonAtomicValue()) ? v : this;
     }
 
     @Override

@@ -43,7 +43,6 @@ public abstract class CallBase extends Instr {
         flagsComputed = false;
         canBeEval = true;
         targetRequiresCallersBinding = true;
-        callAdapter = CallAdapter.createFor(callType, methAddr, arguments, closure);
     }
 
     public Operand[] getOperands() {
@@ -72,15 +71,18 @@ public abstract class CallBase extends Instr {
     }
 
     @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap) {
+    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
         // FIXME: receiver should never be null (checkArity seems to be one culprit)
-        if (receiver != null) receiver = receiver.getSimplifiedOperand(valueMap);
-        methAddr = (MethAddr)methAddr.getSimplifiedOperand(valueMap);
+        if (receiver != null) receiver = receiver.getSimplifiedOperand(valueMap, force);
+        methAddr = (MethAddr)methAddr.getSimplifiedOperand(valueMap, force);
         for (int i = 0; i < arguments.length; i++) {
-            arguments[i] = arguments[i].getSimplifiedOperand(valueMap);
+            arguments[i] = arguments[i].getSimplifiedOperand(valueMap, force);
         }
-        if (closure != null) closure = closure.getSimplifiedOperand(valueMap);
+        if (closure != null) closure = closure.getSimplifiedOperand(valueMap, force);
         flagsComputed = false; // Forces recomputation of flags
+
+        // recompute call adapter whenever instr operands change!
+        callAdapter = CallAdapter.createFor(callType, methAddr, arguments, closure);
     }
 
     public Operand[] cloneCallArgs(InlinerInfo ii) {

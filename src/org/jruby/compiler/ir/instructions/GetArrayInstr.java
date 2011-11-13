@@ -45,8 +45,8 @@ public class GetArrayInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap) {
-        array = array.getSimplifiedOperand(valueMap);
+    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
+        array = array.getSimplifiedOperand(valueMap, force);
     }
 
     @Override
@@ -56,7 +56,7 @@ public class GetArrayInstr extends Instr implements ResultInstr {
 
     @Override
     public Operand simplifyAndGetResult(Map<Operand, Operand> valueMap) {
-        simplifyOperands(valueMap);
+        simplifyOperands(valueMap, false);
         Operand val = array.getValue(valueMap);
         return val.fetchCompileTimeArrayElement(index, all);
     }

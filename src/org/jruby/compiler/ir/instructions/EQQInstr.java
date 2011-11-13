@@ -36,9 +36,9 @@ public class EQQInstr extends Instr implements ResultInstr {
     }
     
     @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap) {
-        arg1 = arg1.getSimplifiedOperand(valueMap);
-        arg2 = arg2.getSimplifiedOperand(valueMap);
+    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
+        arg1 = arg1.getSimplifiedOperand(valueMap, force);
+        arg2 = arg2.getSimplifiedOperand(valueMap, force);
     }
 
     @Override

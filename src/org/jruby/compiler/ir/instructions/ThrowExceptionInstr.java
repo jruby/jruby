@@ -25,8 +25,8 @@ public class ThrowExceptionInstr extends Instr {
     }
 
     @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap) {
-        exceptionArg = exceptionArg.getSimplifiedOperand(valueMap);
+    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
+        exceptionArg = exceptionArg.getSimplifiedOperand(valueMap, force);
     }
 
     @Override

@@ -1,5 +1,7 @@
 package org.jruby.compiler.ir.instructions.jruby;
 
+import java.util.Map;
+
 import org.jruby.RubyArray;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.Instr;
@@ -18,8 +20,8 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class ToAryInstr extends Instr implements ResultInstr {
     private final Variable result;
-    private final Operand array;
     private final BooleanLiteral dontToAryArrays;
+    private Operand array;
     
     public ToAryInstr(Variable result, Operand array, BooleanLiteral dontToAryArrays) {
         super(Operation.TO_ARY);
@@ -34,6 +36,11 @@ public class ToAryInstr extends Instr implements ResultInstr {
     @Override
     public Operand[] getOperands() {
         return new Operand[] { array };
+    }
+
+    @Override
+    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
+        array = array.getSimplifiedOperand(valueMap, force);
     }
     
     public Variable getResult() {

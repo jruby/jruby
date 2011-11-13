@@ -37,8 +37,8 @@ public class StoreToBindingInstr extends Instr {
     }
 
     @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap) {
-        value = value.getSimplifiedOperand(valueMap);
+    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
+        value = value.getSimplifiedOperand(valueMap, force);
     }
 
     @Override

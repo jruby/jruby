@@ -41,8 +41,8 @@ public class Regexp extends Operand {
     }
 
     @Override
-    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap) {
-        regexp = regexp.getSimplifiedOperand(valueMap);
+    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
+        regexp = regexp.getSimplifiedOperand(valueMap, force);
         return this;
     }
 

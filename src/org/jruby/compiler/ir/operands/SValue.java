@@ -36,8 +36,8 @@ public class SValue extends Operand {
     }
 
     @Override
-    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap) {
-        array = array.getSimplifiedOperand(valueMap);
+    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
+        array = array.getSimplifiedOperand(valueMap, force);
         if (array instanceof Array) {
             Array a = (Array) array;
             return (a.elts.length == 1) ? a.elts[0] : a;

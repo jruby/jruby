@@ -38,8 +38,8 @@ public class DefineModuleInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap) {
-        container = container.getSimplifiedOperand(valueMap);
+    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
+        container = container.getSimplifiedOperand(valueMap, force);
     }
 
     @Override

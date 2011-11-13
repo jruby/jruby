@@ -38,8 +38,8 @@ public class IsTrueInstr extends Instr implements ResultInstr {
     }
     
     @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap) {
-        value = value.getSimplifiedOperand(valueMap);
+    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
+        value = value.getSimplifiedOperand(valueMap, force);
     }
 
     @Override
@@ -49,7 +49,7 @@ public class IsTrueInstr extends Instr implements ResultInstr {
 
     @Override
     public Operand simplifyAndGetResult(Map<Operand, Operand> valueMap) {
-        simplifyOperands(valueMap);
+        simplifyOperands(valueMap, false);
         if (!value.isConstant()) return null;
 
         return value == Nil.NIL || value == BooleanLiteral.FALSE ?

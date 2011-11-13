@@ -1,5 +1,7 @@
 package org.jruby.compiler.ir.instructions;
 
+import java.util.Map;
+
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
@@ -13,7 +15,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class UndefMethodInstr extends Instr implements ResultInstr {
     private final Variable result;
-    private final Operand methodName;
+    private Operand methodName;
     
     public UndefMethodInstr(Variable result, Operand methodName) {
         super(Operation.UNDEF_METHOD);
@@ -25,6 +27,11 @@ public class UndefMethodInstr extends Instr implements ResultInstr {
     @Override
     public Operand[] getOperands() {
         return new Operand[] { methodName };
+    }
+
+    @Override
+    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
+        methodName = methodName.getSimplifiedOperand(valueMap, force);
     }
     
     public Variable getResult() {

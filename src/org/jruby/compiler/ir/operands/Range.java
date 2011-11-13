@@ -57,9 +57,9 @@ public class Range extends Operand {
     }
 
     @Override
-    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap) {
-        begin = begin.getSimplifiedOperand(valueMap);
-        end = end.getSimplifiedOperand(valueMap);
+    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
+        begin = begin.getSimplifiedOperand(valueMap, force);
+        end = end.getSimplifiedOperand(valueMap, force);
         return this;
     }
 

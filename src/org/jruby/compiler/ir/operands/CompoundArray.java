@@ -34,13 +34,12 @@ public class CompoundArray extends Operand {
 
     public Operand getAppendedArg() { return a2; }
 
-    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap) {
+    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
+        a1 = a1.getSimplifiedOperand(valueMap, force);
+        a2 = a2.getSimplifiedOperand(valueMap, force);
 /*
  * SSS FIXME:  Cannot convert this to an Array operand!
  *
-        a1 = a1.getSimplifiedOperand(valueMap);
-        a2 = a2.getSimplifiedOperand(valueMap);
-
         // For simplification, get the target value, even if compound
         Operand p1 = a1;
         if (p1 instanceof Variable)

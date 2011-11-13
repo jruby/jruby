@@ -4,6 +4,7 @@
  */
 package org.jruby.compiler.ir.instructions;
 
+import java.util.Map;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
@@ -21,8 +22,8 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class AliasInstr extends Instr {
     final Variable receiver;
-    private final Operand newName;
-    private final Operand oldName;
+    private Operand newName;
+    private Operand oldName;
 
     public AliasInstr(Variable receiver, Operand newName, Operand oldName) {
         super(Operation.ALIAS);
@@ -35,6 +36,12 @@ public class AliasInstr extends Instr {
     @Override
     public Operand[] getOperands() {
         return new Operand[] { receiver, newName, oldName };
+    }
+
+    @Override
+    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
+        oldName = oldName.getSimplifiedOperand(valueMap, force);
+        newName = newName.getSimplifiedOperand(valueMap, force);
     }
 
     @Override

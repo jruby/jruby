@@ -41,11 +41,11 @@ public class Hash extends Operand {
     }
 
     @Override
-    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap) {
+    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
         int i = 0;
         for (KeyValuePair pair : pairs) {
-            pair.setKey(pair.getKey().getSimplifiedOperand(valueMap));
-            pair.setValue(pair.getValue().getSimplifiedOperand(valueMap));
+            pair.setKey(pair.getKey().getSimplifiedOperand(valueMap, force));
+            pair.setValue(pair.getValue().getSimplifiedOperand(valueMap, force));
             i++;
         }
 

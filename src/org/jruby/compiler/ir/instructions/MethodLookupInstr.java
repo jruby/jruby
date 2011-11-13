@@ -40,8 +40,8 @@ public class MethodLookupInstr extends Instr implements ResultInstr {
     }
     
     @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap) {
-        methodHandle = methodHandle.getSimplifiedOperand(valueMap);
+    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
+        methodHandle = methodHandle.getSimplifiedOperand(valueMap, force);
     }
 
     @Override

@@ -4,6 +4,7 @@
  */
 package org.jruby.compiler.ir.instructions;
 
+import java.util.Map;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.compiler.ir.Operation;
@@ -20,8 +21,8 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class Match3Instr extends Instr implements ResultInstr {
     private final Variable result;
-    private final Operand receiver;
-    private final Operand arg;
+    private Operand receiver;
+    private Operand arg;
     
     public Match3Instr(Variable result, Operand receiver, Operand arg) {
         super(Operation.MATCH3);
@@ -36,6 +37,12 @@ public class Match3Instr extends Instr implements ResultInstr {
     @Override
     public Operand[] getOperands() {
         return new Operand[] { receiver, arg };
+    }
+
+    @Override
+    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
+        receiver = receiver.getSimplifiedOperand(valueMap, force);
+        arg = arg.getSimplifiedOperand(valueMap, force);
     }
 
     public Variable getResult() {

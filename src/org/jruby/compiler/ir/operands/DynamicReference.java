@@ -14,8 +14,8 @@ public class DynamicReference extends Operand {
 
     public boolean isNonAtomicValue() { return true; }
 
-    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap) { 
-       _refName = (CompoundString)_refName.getSimplifiedOperand(valueMap);
+    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) { 
+       _refName = (CompoundString)_refName.getSimplifiedOperand(valueMap, force);
        return this;
     }
 

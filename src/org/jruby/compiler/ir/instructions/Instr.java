@@ -112,13 +112,8 @@ public abstract class Instr {
      * It is not required that it do so -- code correctness is not compromised by failure
      * to simplify
      */
-    public void simplifyOperands(Map<Operand, Operand> valueMap) {
+    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
     }
-
-    /**
-     * Replace all uses of 'v' with 'val'.
-     */
-    public void replaceVariableUse(Variable v, Operand val) { }
 
     /**
      * This method takes as input a map of operands to their values, and outputs
@@ -133,7 +128,7 @@ public abstract class Instr {
      * @returns simplified result / output of this instruction
      */
     public Operand simplifyAndGetResult(Map<Operand, Operand> valueMap) {
-        simplifyOperands(valueMap);
+        simplifyOperands(valueMap, false);
 
         return null; // By default, no simplifications!
     }

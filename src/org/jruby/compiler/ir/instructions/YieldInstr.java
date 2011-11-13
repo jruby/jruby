@@ -76,7 +76,8 @@ public class YieldInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap) {
-        if (yieldArg != null) yieldArg = yieldArg.getSimplifiedOperand(valueMap);
+    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
+        blockArg = blockArg.getSimplifiedOperand(valueMap, force);
+        if (yieldArg != null) yieldArg = yieldArg.getSimplifiedOperand(valueMap, force);
     }
 }

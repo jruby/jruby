@@ -33,8 +33,8 @@ public class NotInstr extends Instr implements ResultInstr {
     }
     
     @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap) {
-        arg = arg.getSimplifiedOperand(valueMap);
+    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
+        arg = arg.getSimplifiedOperand(valueMap, force);
     }
 
     @Override
@@ -49,7 +49,7 @@ public class NotInstr extends Instr implements ResultInstr {
 
     @Override
     public Operand simplifyAndGetResult(Map<Operand, Operand> valueMap) {
-        simplifyOperands(valueMap);
+        simplifyOperands(valueMap, false);
         return (arg instanceof BooleanLiteral) ? ((BooleanLiteral) arg).logicalNot() : null;
     }
 

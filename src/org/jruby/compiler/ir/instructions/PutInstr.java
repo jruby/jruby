@@ -43,8 +43,8 @@ public abstract class PutInstr extends Instr {
     }
 
     @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap) {
-        operands[VALUE] = operands[VALUE].getSimplifiedOperand(valueMap);
-        operands[TARGET] = operands[TARGET].getSimplifiedOperand(valueMap);
+    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
+        operands[VALUE] = operands[VALUE].getSimplifiedOperand(valueMap, force);
+        operands[TARGET] = operands[TARGET].getSimplifiedOperand(valueMap, force);
     }
 }

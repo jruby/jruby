@@ -43,9 +43,9 @@ public class DefineClassInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap) {
-        container = container.getSimplifiedOperand(valueMap);
-        superClass = superClass.getSimplifiedOperand(valueMap);
+    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
+        container = container.getSimplifiedOperand(valueMap, force);
+        superClass = superClass.getSimplifiedOperand(valueMap, force);
     }
 
     @Override

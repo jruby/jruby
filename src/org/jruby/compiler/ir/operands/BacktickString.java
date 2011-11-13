@@ -42,10 +42,10 @@ public class BacktickString extends Operand {
     }
 
     @Override
-    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap) {
+    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
         int i = 0;
         for (Operand p : pieces) {
-            pieces.set(i, p.getSimplifiedOperand(valueMap));
+            pieces.set(i, p.getSimplifiedOperand(valueMap, force));
             i++;
         }
 

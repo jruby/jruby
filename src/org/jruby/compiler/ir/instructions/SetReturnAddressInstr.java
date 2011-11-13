@@ -39,7 +39,7 @@ public class SetReturnAddressInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap) {
+    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
     }
 
     @Override

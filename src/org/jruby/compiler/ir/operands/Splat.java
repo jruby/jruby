@@ -40,11 +40,11 @@ public class Splat extends Operand {
     }
 
     @Override
-    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap) {
+    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
+        array = array.getSimplifiedOperand(valueMap, force);
         /*
          * SSS FIXME:  Cannot convert this to an Array operand!
          *
-        _array = _array.getSimplifiedOperand(valueMap);
         if (_array instanceof Variable) {
         _array = ((Variable)_array).getValue(valueMap);
         }

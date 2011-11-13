@@ -37,7 +37,7 @@ public abstract class Operand {
     // Note that b,c,d are all compound objects, and c has a reference to objects a and b, and d has a reference to c.
     // So, if contents of b is modified, the "simplified value"s of c and d also change!  This difference
     // is captured by these two methods.
-    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap) {
+    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
         return this;
     }
 

@@ -22,7 +22,7 @@ public class Attribute extends Operand
 //    DEFERRED
 //    AttributeValue _val;       // Attribute value
 
-    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap)
+    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force)
     {
 /*
         _target = _target.getSimplifiedOperand(valueMap);

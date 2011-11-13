@@ -27,8 +27,8 @@ public class JumpIndirectInstr extends Instr {
     }
 
     @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap) {
-        target = target.getSimplifiedOperand(valueMap);
+    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
+        target = target.getSimplifiedOperand(valueMap, force);
     }
 
     @Override
