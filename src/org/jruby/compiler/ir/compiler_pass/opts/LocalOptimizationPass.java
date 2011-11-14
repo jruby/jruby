@@ -64,11 +64,9 @@ public class LocalOptimizationPass implements CompilerPass {
     }
 
     private static void optimizeTmpVars(IRExecutionScope s) {
+        // Pass 1: Analyze instructions and find use and def count of temporary variables
         Map<TemporaryVariable, Integer> tmpVarUseCounts = new HashMap<TemporaryVariable, Integer>();
         Map<TemporaryVariable, Integer> tmpVarDefCounts = new HashMap<TemporaryVariable, Integer>();
-        Map<Operand, Operand> constValMap = new HashMap<Operand, Operand>();
-        // Analyze instructions
-        // * Find use count of temporary variables
         for (Instr i: s.getInstrs()) {
             for (Variable v: i.getUsedVariables()) {
                  if (v instanceof TemporaryVariable) {
@@ -87,9 +85,10 @@ public class LocalOptimizationPass implements CompilerPass {
 				}
         }
 
-        // Transform code and do additional analysis
+        // Pass 2: Transform code and do additional analysis:
         // * If the result of this instr. has not been used, mark it dead
         // * Find copies where constant values are set
+        Map<Operand, Operand> constValMap = new HashMap<Operand, Operand>();
         ListIterator<Instr> instrs = s.getInstrs().listIterator();
         while (instrs.hasNext()) {
             Instr i = instrs.next();
@@ -122,7 +121,7 @@ public class LocalOptimizationPass implements CompilerPass {
             }
         }
 
-        // Transform code -- replace all single use operands with constants they were defined to
+        // Pass 3: Transform code again -- replace all single use operands with constants they were defined to
         for (Instr i: s.getInstrs()) {
             i.simplifyOperands(constValMap, true);
         }
