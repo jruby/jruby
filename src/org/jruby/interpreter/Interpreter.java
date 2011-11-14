@@ -201,22 +201,18 @@ public class Interpreter {
             }
         }
 
-        // If not in a lambda, in a closure, and lastInstr was a return, have to return from the nearest method!
+        // If not in a lambda, and lastInstr was a return, check if this was a non-local return
         if ((lastInstr instanceof ReturnInstr) && !inLambda(blockType)) {
-            initiateReturnIfInClosure(context, scope, (ReturnInstr) lastInstr, rv, inClosure);
+            handleNonLocalReturn(context, scope, (ReturnInstr) lastInstr, rv, inClosure);
         }
 
         return rv;
     }
 
     /*
-     * If we are in a closure and we encounter a return instruction we need to
-     * decide whether to propagate this up the call stack or whether we need to
-     * throw an error.
-     * 
-     * ENEBO: If this logic is only for closure why the || against inClosure for setting up the jump?
+     * Handle non-local returns (ex: when nested in closures, root scopes of module/class/sclass bodies)
      */
-    private static void initiateReturnIfInClosure(ThreadContext context, IRExecutionScope scope, ReturnInstr returnInstr, IRubyObject returnValue, boolean inClosure) {
+    private static void handleNonLocalReturn(ThreadContext context, IRExecutionScope scope, ReturnInstr returnInstr, IRubyObject returnValue, boolean inClosure) {
         IRMethod methodToReturnFrom = returnInstr.methodToReturnFrom;
 
         if (inClosure) {
@@ -231,9 +227,9 @@ public class Interpreter {
                 if (isDebug()) LOG.info("in scope: " + scope + ", raising unexpected return local jump error");
                 throw IRException.RETURN_LocalJumpError.getException(context.getRuntime());
             }
-        }
-            
-        if (inClosure || (methodToReturnFrom != null)) {
+
+            throw new IRReturnJump(methodToReturnFrom, returnValue);
+        } else if ((methodToReturnFrom != null)) {
             // methodtoReturnFrom will not be null for explicit returns from class/module/sclass bodies
             throw new IRReturnJump(methodToReturnFrom, returnValue);
         }        
