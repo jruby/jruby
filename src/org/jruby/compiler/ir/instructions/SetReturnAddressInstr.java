@@ -30,6 +30,10 @@ public class SetReturnAddressInstr extends Instr implements ResultInstr {
         return result;
     }
     
+    public void updateResult(Variable v) {
+        this.result = v;
+    }
+
     public Label getReturnAddr() {
         return (Label) returnAddr;
     }

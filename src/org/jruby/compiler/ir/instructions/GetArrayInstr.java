@@ -23,7 +23,7 @@ public class GetArrayInstr extends Instr implements ResultInstr {
     private Operand array;
     private final int index;
     private final boolean all;  // If true, returns the rest of the array starting at the index
-    private final Variable result;
+    private Variable result;
 
     public GetArrayInstr(Variable result, Operand array, int index, boolean getRestOfArray) {
         super(Operation.GET_ARRAY);
@@ -42,6 +42,10 @@ public class GetArrayInstr extends Instr implements ResultInstr {
     
     public Variable getResult() {
         return result;
+    }
+
+    public void updateResult(Variable v) {
+        this.result = v;
     }
 
     @Override

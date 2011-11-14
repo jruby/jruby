@@ -50,6 +50,10 @@ public class GetClassVarContainerModuleInstr extends Instr implements ResultInst
         return result;
     }
 
+    public void updateResult(Variable v) {
+        this.result = v;
+    }
+
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
         if (object != null) object = object.getSimplifiedOperand(valueMap, force);

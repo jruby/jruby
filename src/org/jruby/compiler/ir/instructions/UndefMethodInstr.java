@@ -14,7 +14,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  */
 public class UndefMethodInstr extends Instr implements ResultInstr {
-    private final Variable result;
+    private Variable result;
     private Operand methodName;
     
     public UndefMethodInstr(Variable result, Operand methodName) {
@@ -36,6 +36,10 @@ public class UndefMethodInstr extends Instr implements ResultInstr {
     
     public Variable getResult() {
         return result;
+    }
+
+    public void updateResult(Variable v) {
+        this.result = v;
     }
 
     @Override

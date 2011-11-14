@@ -55,6 +55,10 @@ public class LoadFromBindingInstr extends Instr implements ResultInstr {
         return result;
     }
     @Override
+    public void updateResult(Variable v) {
+        this.result = v;
+    }
+
     public String toString() {
         return "" + result + " = BINDING(" + sourceMethod + ")." + getSlotName();
     }

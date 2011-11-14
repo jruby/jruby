@@ -13,7 +13,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class NotInstr extends Instr implements ResultInstr {
     private Operand arg;
-    private final Variable result;
+    private Variable result;
 
     public NotInstr(Variable result, Operand arg) {
         super(Operation.NOT);
@@ -32,6 +32,10 @@ public class NotInstr extends Instr implements ResultInstr {
         return result;
     }
     
+    public void updateResult(Variable v) {
+        this.result = v;
+    }
+
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
         arg = arg.getSimplifiedOperand(valueMap, force);

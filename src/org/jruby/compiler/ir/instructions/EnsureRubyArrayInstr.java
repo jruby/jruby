@@ -15,7 +15,7 @@ import org.jruby.runtime.Block;
 
 public class EnsureRubyArrayInstr extends Instr implements ResultInstr {
     private Operand object;
-    private final Variable result;
+    private Variable result;
 
     public EnsureRubyArrayInstr(Variable result, Operand s) {
         super(Operation.ENSURE_RUBY_ARRAY);
@@ -40,6 +40,10 @@ public class EnsureRubyArrayInstr extends Instr implements ResultInstr {
         return result;
     }
     
+    public void updateResult(Variable v) {
+        this.result = v;
+    }
+
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
         object = object.getSimplifiedOperand(valueMap, force);

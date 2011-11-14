@@ -20,7 +20,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class DefineMetaClassInstr extends Instr implements ResultInstr {
     private IRMetaClass dummyMetaClass;
     private Operand object;
-    private final Variable result;
+    private Variable result;
     
     public DefineMetaClassInstr(Variable result, Operand object, IRMetaClass dummyMetaClass) {
         super(Operation.DEF_META_CLASS);
@@ -38,6 +38,10 @@ public class DefineMetaClassInstr extends Instr implements ResultInstr {
     
     public Variable getResult() {
         return result;
+    }
+
+    public void updateResult(Variable v) {
+        this.result = v;
     }
 
     @Override

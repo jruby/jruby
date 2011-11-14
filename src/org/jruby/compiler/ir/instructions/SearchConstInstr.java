@@ -23,7 +23,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class SearchConstInstr extends Instr implements ResultInstr {
     IRModule definingModule;
     String constName;
-    private final Variable result;
+    private Variable result;
 
     public SearchConstInstr(Variable result, IRModule definingModule, String constName) {
         super(Operation.SEARCH_CONST);
@@ -41,6 +41,10 @@ public class SearchConstInstr extends Instr implements ResultInstr {
     
     public Variable getResult() {
         return result;
+    }
+
+    public void updateResult(Variable v) {
+        this.result = v;
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {

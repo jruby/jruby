@@ -10,27 +10,27 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /*
- * Assign Argument passed into scope/method to destination Variable
+ * Assign Argument passed into scope/method to a result variable
  */
 public class ReceiveArgumentInstruction extends Instr implements ResultInstr {
 	 // SSS FIXME: Fix IR to start offsets from 0
     protected int argIndex;
     protected boolean restOfArgArray; // If true, the argument sub-array starting at this index is passed in via this instruction.
-    private final Variable destination;
+    private Variable result;
 
-    public ReceiveArgumentInstruction(Variable destination, int argIndex,
+    public ReceiveArgumentInstruction(Variable result, int argIndex,
             boolean restOfArgArray) {
         super(Operation.RECV_ARG);
         
-        assert destination != null: "ReceiveArgumentInstr result is null";
+        assert result != null: "ReceiveArgumentInstr result is null";
         
         this.argIndex = argIndex;
         this.restOfArgArray = restOfArgArray;
-        this.destination = destination;
+        this.result = result;
     }
 
-    public ReceiveArgumentInstruction(Variable destination, int index) {
-        this(destination, index, false);
+    public ReceiveArgumentInstruction(Variable result, int index) {
+        this(result, index, false);
     }
     
     public boolean isRestOfArgArray() {
@@ -42,11 +42,15 @@ public class ReceiveArgumentInstruction extends Instr implements ResultInstr {
     }
     
     public Variable getResult() {
-        return destination;
+        return result;
+    }
+
+    public void updateResult(Variable v) {
+        this.result = v;
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new CopyInstr(ii.getRenamedVariable(destination), ii.getCallArg(argIndex, restOfArgArray));
+        return new CopyInstr(ii.getRenamedVariable(result), ii.getCallArg(argIndex, restOfArgArray));
     }
 
     @Override
@@ -57,16 +61,16 @@ public class ReceiveArgumentInstruction extends Instr implements ResultInstr {
     @Override
     public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
         if (restOfArgArray) {
-            interpretAsRestArg(context, self, args, destination, temp);
+            interpretAsRestArg(context, self, args, result, temp);
         } else {
-            destination.store(context, self, temp, args[argIndex]);
+            result.store(context, self, temp, args[argIndex]);
         }
         return null;
     }
 
     @Interp
-    private void  interpretAsRestArg(ThreadContext context, IRubyObject self, IRubyObject[] args, Operand destination, Object[] temp) {
-        destination.store(context, self, temp, context.getRuntime().newArray(getParametersFrom(args, argIndex)));
+    private void  interpretAsRestArg(ThreadContext context, IRubyObject self, IRubyObject[] args, Operand result, Object[] temp) {
+        result.store(context, self, temp, context.getRuntime().newArray(getParametersFrom(args, argIndex)));
     }
     
     private IRubyObject[] NO_PARAMS = new IRubyObject[0];    

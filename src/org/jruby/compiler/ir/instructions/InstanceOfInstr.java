@@ -13,7 +13,7 @@ public class InstanceOfInstr extends Instr implements ResultInstr {
     private Class type;
     private String className;
     private Operand object;
-    private final Variable result;
+    private Variable result;
 
     public InstanceOfInstr(Variable result, Operand object, String className) {
         super(Operation.INSTANCE_OF);
@@ -37,6 +37,10 @@ public class InstanceOfInstr extends Instr implements ResultInstr {
         return result;
     }
     
+    public void updateResult(Variable v) {
+        this.result = v;
+    }
+
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
         object = object.getSimplifiedOperand(valueMap, force);

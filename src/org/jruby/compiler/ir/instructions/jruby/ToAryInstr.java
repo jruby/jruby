@@ -19,7 +19,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  */
 public class ToAryInstr extends Instr implements ResultInstr {
-    private final Variable result;
+    private Variable result;
     private final BooleanLiteral dontToAryArrays;
     private Operand array;
     
@@ -45,6 +45,10 @@ public class ToAryInstr extends Instr implements ResultInstr {
     
     public Variable getResult() {
         return result;
+    }
+
+    public void updateResult(Variable v) {
+        this.result = v;
     }
 
     @Override

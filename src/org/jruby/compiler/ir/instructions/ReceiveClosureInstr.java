@@ -31,6 +31,10 @@ public class ReceiveClosureInstr extends Instr implements ResultInstr {
         return result;
     }    
 
+    public void updateResult(Variable v) {
+        this.result = v;
+    }
+
     public Instr cloneForInlining(InlinerInfo ii) {
 		  // SSS FIXME: This is not strictly correct -- we have to wrap the block into an
 		  // operand type that converts the static code block to a proc which is a closure.

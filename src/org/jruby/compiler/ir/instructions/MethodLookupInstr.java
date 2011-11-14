@@ -12,7 +12,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class MethodLookupInstr extends Instr implements ResultInstr {
     private Operand methodHandle;
-    private final Variable result;
+    private Variable result;
 
     public MethodLookupInstr(Variable result, MethodHandle mh) {
         super(Operation.METHOD_LOOKUP);
@@ -39,6 +39,10 @@ public class MethodLookupInstr extends Instr implements ResultInstr {
         return result;
     }
     
+    public void updateResult(Variable v) {
+        this.result = v;
+    }
+
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
         methodHandle = methodHandle.getSimplifiedOperand(valueMap, force);

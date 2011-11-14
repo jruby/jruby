@@ -34,6 +34,10 @@ public class CopyInstr extends Instr implements ResultInstr {
     public Variable getResult() {
         return result;
     }
+
+    public void updateResult(Variable v) {
+        this.result = v;
+    }
     
     public Operand getSource() {
         return arg;

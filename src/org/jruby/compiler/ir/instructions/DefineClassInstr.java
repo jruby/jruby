@@ -42,6 +42,10 @@ public class DefineClassInstr extends Instr implements ResultInstr {
         return result;
     }
 
+    public void updateResult(Variable v) {
+        this.result = v;
+    }
+
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
         container = container.getSimplifiedOperand(valueMap, force);

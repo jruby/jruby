@@ -14,7 +14,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  */
 public class MatchInstr extends Instr implements ResultInstr {
-    private final Variable result;
+    private Variable result;
     private Operand receiver;
     
     public MatchInstr(Variable result, Operand receiver) {
@@ -40,6 +40,10 @@ public class MatchInstr extends Instr implements ResultInstr {
         return result;
     }
     
+    public void updateResult(Variable v) {
+        this.result = v;
+    }
+
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         return new MatchInstr((Variable) result.cloneForInlining(ii), receiver.cloneForInlining(ii));

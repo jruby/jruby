@@ -9,7 +9,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ReceiveExceptionInstr extends Instr implements ResultInstr {
-    private final Variable result;
+    private Variable result;
     
     public ReceiveExceptionInstr(Variable result) {
         super(Operation.RECV_EXCEPTION);
@@ -25,6 +25,10 @@ public class ReceiveExceptionInstr extends Instr implements ResultInstr {
     
     public Variable getResult() {
         return result;
+    }
+
+    public void updateResult(Variable v) {
+        this.result = v;
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {

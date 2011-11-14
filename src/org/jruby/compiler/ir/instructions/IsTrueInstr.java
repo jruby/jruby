@@ -18,7 +18,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 //
 public class IsTrueInstr extends Instr implements ResultInstr {
     private Operand value;
-    private final Variable result;
+    private Variable result;
 
     public IsTrueInstr(Variable result, Operand value) {
         super(Operation.IS_TRUE);
@@ -37,6 +37,10 @@ public class IsTrueInstr extends Instr implements ResultInstr {
         return result;
     }
     
+    public void updateResult(Variable v) {
+        this.result = v;
+    }
+
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
         value = value.getSimplifiedOperand(valueMap, force);

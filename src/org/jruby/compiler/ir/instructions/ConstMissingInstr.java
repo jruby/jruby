@@ -15,7 +15,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class ConstMissingInstr extends Instr implements ResultInstr {
     private IRModule definingModule;
     private String  missingConst;
-    private final Variable result;
+    private Variable result;
 
     public ConstMissingInstr(Variable result, IRModule definingModule, String missingConst) {
         super(Operation.CONST_MISSING);
@@ -33,6 +33,10 @@ public class ConstMissingInstr extends Instr implements ResultInstr {
     
     public Variable getResult() {
         return result;
+    }
+
+    public void updateResult(Variable v) {
+        this.result = v;
     }
     
     public Instr cloneForInlining(InlinerInfo ii) {

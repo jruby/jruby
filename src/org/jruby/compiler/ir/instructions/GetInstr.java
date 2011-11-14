@@ -10,7 +10,7 @@ import org.jruby.compiler.ir.operands.Variable;
 public abstract class GetInstr extends Instr implements ResultInstr {
     private Operand source;
     private String  ref;
-    private final Variable result;
+    private Variable result;
 
     public GetInstr(Operation op, Variable result, Operand source, String ref) {
         super(op);
@@ -28,6 +28,10 @@ public abstract class GetInstr extends Instr implements ResultInstr {
     
     public Variable getResult() {
         return result;
+    }
+
+    public void updateResult(Variable v) {
+        this.result = v;
     }
 
     public Operand[] getOperands() { 

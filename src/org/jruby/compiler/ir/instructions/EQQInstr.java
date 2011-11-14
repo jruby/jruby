@@ -15,7 +15,7 @@ import org.jruby.runtime.Block;
 public class EQQInstr extends Instr implements ResultInstr {
     private Operand arg1;
     private Operand arg2;
-    private final Variable result;
+    private Variable result;
 
     public EQQInstr(Variable result, Operand v1, Operand v2) {
         super(Operation.EQQ);
@@ -35,6 +35,10 @@ public class EQQInstr extends Instr implements ResultInstr {
         return result;
     }
     
+    public void updateResult(Variable v) {
+        this.result = v;
+    }
+
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
         arg1 = arg1.getSimplifiedOperand(valueMap, force);

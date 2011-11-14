@@ -17,7 +17,7 @@ import org.jruby.runtime.Block;
 public class DefineModuleInstr extends Instr implements ResultInstr {
     private final IRModule newIRModule;
     private Operand container;
-    private final Variable result;
+    private Variable result;
 
     public DefineModuleInstr(IRModule newIRModule, Variable result, Operand container) {
         super(Operation.DEF_MODULE);
@@ -35,6 +35,10 @@ public class DefineModuleInstr extends Instr implements ResultInstr {
     
     public Variable getResult() {
         return result;
+    }
+
+    public void updateResult(Variable v) {
+        this.result = v;
     }
 
     @Override

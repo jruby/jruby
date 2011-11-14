@@ -81,14 +81,15 @@ public class LocalOptimizationPass implements CompilerPass {
                      Integer n = tmpVarDefCounts.get((TemporaryVariable)v);
                      if (n == null) n = new Integer(0);
                      tmpVarDefCounts.put((TemporaryVariable)v, new Integer(n+1));
-					 }
-				}
+                }
+            }
         }
 
         // Pass 2: Transform code and do additional analysis:
         // * If the result of this instr. has not been used, mark it dead
         // * Find copies where constant values are set
         Map<Operand, Operand> constValMap = new HashMap<Operand, Operand>();
+        Map<TemporaryVariable, Variable> removableCopies = new HashMap<TemporaryVariable, Variable>();
         ListIterator<Instr> instrs = s.getInstrs().listIterator();
         while (instrs.hasNext()) {
             Instr i = instrs.next();
@@ -96,6 +97,9 @@ public class LocalOptimizationPass implements CompilerPass {
             if (i instanceof ResultInstr) {
                 Variable v = ((ResultInstr)i).getResult();
                 if (v instanceof TemporaryVariable) {
+                    // Deal with this code pattern:
+                    //    %v = ...
+                    // %v not used anywhere
                     Integer useCount = tmpVarUseCounts.get((TemporaryVariable)v);
                     Integer defCount = tmpVarDefCounts.get((TemporaryVariable)v);
                     if (useCount == null) {
@@ -108,6 +112,11 @@ public class LocalOptimizationPass implements CompilerPass {
                             i.markUnusedResult();
                         }
                     }
+                    // Deal with this code pattern:
+                    //    %v = 5
+                    //    .... %v ...
+                    // %v not used or defined anywhere else
+                    // So, %v can be replaced by 5 (or whichever constant it is)
                     else if ((useCount == 1) && (defCount == 1) && (i instanceof CopyInstr)) {
                         CopyInstr ci = (CopyInstr)i;
                         Operand src = ci.getSource();
@@ -118,11 +127,42 @@ public class LocalOptimizationPass implements CompilerPass {
                         }
                     }
                 }
+                // Deal with this code pattern:
+                //    1: %v = ...
+                //    2: x = %v
+                // If %v is not used anywhere else, the result of 1. can be updated to use x and 2. can be removed
+                //
+                // NOTE: consider this pattern:
+                //    %v = 5
+                //    x = %v
+                // This code will have been captured in the previous if branch which would have deleted %v = 5
+                // Hence the check for constValMap.get(src) == null
+                else if (i instanceof CopyInstr) {
+                    CopyInstr ci = (CopyInstr)i;
+                    Operand src = ci.getSource();
+                    if (src instanceof TemporaryVariable) {
+                        TemporaryVariable vsrc = (TemporaryVariable)src;
+                        Integer useCount = tmpVarUseCounts.get(vsrc);
+                        Integer defCount = tmpVarDefCounts.get(vsrc);
+                        if ((useCount == 1) && (defCount == 1) && (constValMap.get(vsrc) == null)) {
+                            ci.markDead();
+                            instrs.remove();
+                            removableCopies.put(vsrc, ci.getResult());
+                        }
+                    }
+                }
             }
         }
 
         // Pass 3: Transform code again -- replace all single use operands with constants they were defined to
         for (Instr i: s.getInstrs()) {
+            if (i instanceof ResultInstr) {
+                Variable v = ((ResultInstr)i).getResult();
+                if (v instanceof TemporaryVariable) {
+                    Variable ci = removableCopies.get((TemporaryVariable)v);
+                    if (ci != null) ((ResultInstr)i).updateResult(ci);
+                }
+            }
             i.simplifyOperands(constValMap, true);
         }
     }

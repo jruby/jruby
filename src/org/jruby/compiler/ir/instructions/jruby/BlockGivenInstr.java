@@ -11,7 +11,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class BlockGivenInstr extends Instr implements ResultInstr {
-    private final Variable result;
+    private Variable result;
     
     public BlockGivenInstr(Variable result) {
         super(Operation.BLOCK_GIVEN);
@@ -27,6 +27,10 @@ public class BlockGivenInstr extends Instr implements ResultInstr {
     
     public Variable getResult() {
         return result;
+    }
+
+    public void updateResult(Variable v) {
+        this.result = v;
     }
 
     @Override

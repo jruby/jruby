@@ -40,6 +40,10 @@ public class ReceiveClosureArgInstr extends Instr implements ResultInstr {
         return result;
     }    
 
+    public void updateResult(Variable v) {
+        this.result = v;
+    }
+
     @Override
     public String toString() {
         return super.toString() + "(" + argIndex + (restOfArgArray ? ", ALL" : "") + ")";

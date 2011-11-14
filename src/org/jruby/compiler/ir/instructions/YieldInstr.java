@@ -71,6 +71,10 @@ public class YieldInstr extends Instr implements ResultInstr {
         return result;
     }    
 
+    public void updateResult(Variable v) {
+        this.result = v;
+    }
+
     public Operand[] getNonBlockOperands() {
         return (yieldArg == null) ? new Operand[]{} : new Operand[] {yieldArg};
     }
