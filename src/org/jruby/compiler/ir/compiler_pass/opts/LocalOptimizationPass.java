@@ -206,8 +206,16 @@ public class LocalOptimizationPass implements CompilerPass {
             // System.out.println("For " + i + "; dst = " + res + "; val = " + val);
             // System.out.println("AFTER: " + i);
 
-            if (res != null && val != null && res != val) {
-                recordSimplification(res, val, valueMap, simplificationMap);
+            if (res != null && val != null) {
+                if (!res.equals(val)) recordSimplification(res, val, valueMap, simplificationMap);
+                if (!i.hasSideEffects() && !(i instanceof CopyInstr)) {
+                    if (!res.equals(val)) {
+                        instrs.set(new CopyInstr(res, val));
+                    } else {
+                        i.markDead();
+                        instrs.remove();
+                    }
+                }
             } else if (res != null && val == null) {
                 // If we didn't get a simplified value, remove any existing simplifications for the result
                 // to get rid of RAW hazards!
@@ -229,7 +237,7 @@ public class LocalOptimizationPass implements CompilerPass {
             }
 
             // Purge all entries in valueMap that have 'res' as their simplified value to take care of RAW scenarios (because we aren't in SSA form yet!)
-            if (res != null) {
+            if ((res != null) && !res.equals(val)) {
                 List<Variable> simplifiedVars = simplificationMap.get(res);
                 if (simplifiedVars != null) {
                     for (Variable v: simplifiedVars) {
