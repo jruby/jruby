@@ -40,14 +40,6 @@ public class Interpreter {
 
     private static int interpInstrsCount = 0;
 
-    // SSS FIXME: Isn't there a simpler way for doing this?
-    private static ThreadLocal<Stack<IRExecutionScope>> callStack = new ThreadLocal<Stack<IRExecutionScope>>() {
-        @Override
-        protected Stack<IRExecutionScope> initialValue() {
-            return new Stack<IRExecutionScope>();
-        }
-    };
-
     public static boolean isDebug() {
         return RubyInstanceConfig.IR_DEBUG;
     }
@@ -231,8 +223,7 @@ public class Interpreter {
         // If not in a lambda, in a closure, and lastInstr was a return, have to return from the nearest method!
         if ((lastInstr instanceof ReturnInstr) && !inLambda(blockType)) {
             IRMethod methodToReturnFrom = ((ReturnInstr)lastInstr).methodToReturnFrom;
-            if (inClosure && !callStack.get().contains(methodToReturnFrom)) {
-                // SSS: better way to do this without having to maintain a call stack?
+            if (inClosure && !context.scopeExistsOnCallStack(methodToReturnFrom.getStaticScope())) {
                 if (isDebug()) LOG.info("in scope: " + scope + ", raising unexpected return local jump error");
                 throw runtime.newLocalJumpError(Reason.RETURN, rv, "unexpected return");
             }
@@ -249,16 +240,13 @@ public class Interpreter {
         IRubyObject self, String name, RubyModule implClass, IRubyObject[] args, Block block, Block.Type blockType, boolean isTraceable) {
         Ruby runtime = context.getRuntime();
         boolean syntheticMethod = name == null || name.equals("");
-        Stack<IRExecutionScope> stack = callStack.get();
         
         try {
-            stack.push(scope);
             String className = implClass.getName();
             if (!syntheticMethod) ThreadContext.pushBacktrace(context, className, name, context.getFile(), context.getLine());
             if (isTraceable) methodPreTrace(runtime, context, name, implClass);
             return interpret(context, self, scope, args, block, blockType);
         } finally {
-            stack.pop();
             if (isTraceable) {
                 try {methodPostTrace(runtime, context, name, implClass);}
                 finally { if (!syntheticMethod) ThreadContext.popBacktrace(context);}

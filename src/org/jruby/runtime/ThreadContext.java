@@ -113,8 +113,8 @@ public final class ThreadContext {
     
     private boolean isProfiling = false;
     // The flat profile data for this thread
-	private IProfileData profileData;
-	
+   private IProfileData profileData;
+   
     // In certain places, like grep, we don't use real frames for the
     // call blocks. This has the effect of not setting the backref in
     // the correct frame - this delta is activated to the place where
@@ -499,6 +499,22 @@ public final class ThreadContext {
     public boolean isJumpTargetAlive(int target, int skipFrames) {
         for (int i = frameIndex - skipFrames; i >= 0; i--) {
             if (frameStack[i].getJumpTarget() == target) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Check if a static scope is present on the call stack.
+     * This is the IR equivalent of isJumpTargetAlive
+     *
+     * @param s the static scope to look for
+     * @return true if it exists
+     *         false if not
+     **/
+    public boolean scopeExistsOnCallStack(StaticScope s) {
+        DynamicScope[] stack = scopeStack;
+        for (int i = scopeIndex; i >= 0; i--) {
+           if (stack[i].getStaticScope() == s) return true;
         }
         return false;
     }
