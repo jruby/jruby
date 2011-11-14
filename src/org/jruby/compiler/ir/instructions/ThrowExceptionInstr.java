@@ -40,7 +40,7 @@ public class ThrowExceptionInstr extends Instr {
 
     @Override
     public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
-        if (exception instanceof IRException) throw ((IRException) exception).getException(context.getRuntime());
+        if (exceptionArg instanceof IRException) throw ((IRException) exceptionArg).getException(context.getRuntime());
 
         Object excObj = exceptionArg.retrieve(context, self, temp);
             

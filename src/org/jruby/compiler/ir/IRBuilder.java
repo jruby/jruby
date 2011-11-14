@@ -2952,7 +2952,7 @@ public class IRBuilder {
         // Jump back to the innermost rescue block
         // We either find it, or we add code to throw a runtime exception
         if (_rescueBlockStack.empty()) {
-            s.addInstr(new ThrowExceptionInstr(IRException.RETURN_LocalJumpError));
+            s.addInstr(new ThrowExceptionInstr(IRException.RETRY_LocalJumpError));
         } else {
             // Restore $! and jump back to the entry of the rescue block
             Tuple<Label, Variable> t = _rescueBlockStack.peek();
@@ -2972,23 +2972,20 @@ public class IRBuilder {
         if (!_ensureBlockStack.empty()) EnsureBlockInfo.emitJumpChain(m, _ensureBlockStack);
         else m.addInstr(new PutGlobalVarInstr("$!", Nil.NIL));
 
-        // If 'm' is a block scope, a return returns from the closest enclosing method.
-        // The runtime takes care of lambdas
         if (m instanceof IRClosure) {
-            m.addInstr(new ReturnInstr(retVal, ((IRExecutionScope) m).getClosestMethodAncestor()));
-        } else if (!((IRMethod)m).isAModuleRootMethod()) {
-            m.addInstr(new ReturnInstr(retVal));
-        } else {
-            // If 'm' is a root method, find the nearest regular non-root (root methods are synthetic, JRuby-generated) 
-            // method that 'm' is embedded in.  The return will have to snap out of that method.  If there is no such
-            // method, this is a local jump error!
-            IRScope sm = m;
-            while ((sm != null) && (!(sm instanceof IRMethod) || ((IRMethod)sm).isAModuleRootMethod())) {
-                sm = sm.getLexicalParent();
-            }
+            // If 'm' is a block scope, a return returns from the closest enclosing method.
+            // If this happens to be a root method, the runtime throws a local jump error if
+            // the closure is a proc.  If the closure is a lambda, then this is just a normal
+            // return and the static methodToReturnFrom value is ignored 
+            m.addInstr(new ReturnInstr(retVal, ((IRExecutionScope)m).getClosestMethodAncestor()));
+        } else if (((IRMethod)m).isAModuleRootMethod()) {
+            IRMethod sm = ((IRMethod)m).getClosestNonRootMethodAncestor();
 
+            // Cannot return from root methods!
             if (sm == null) m.addInstr(new ThrowExceptionInstr(IRException.RETURN_LocalJumpError));
-            else m.addInstr(new ReturnInstr(retVal, (IRMethod)sm));
+            else m.addInstr(new ReturnInstr(retVal, sm));
+        } else {
+            m.addInstr(new ReturnInstr(retVal));
         }
 
         // The value of the return itself in the containing expression can never be used because of control-flow reasons.

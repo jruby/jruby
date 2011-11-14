@@ -21,6 +21,7 @@ import org.jruby.compiler.ir.instructions.ReturnInstr;
 import org.jruby.compiler.ir.instructions.BreakInstr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.ResultInstr;
+import org.jruby.compiler.ir.operands.IRException;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.WrappedIRClosure;
 import org.jruby.exceptions.RaiseException;
@@ -121,7 +122,7 @@ public class Interpreter {
             if (isDebug()) LOG.info("-- Interpreted instructions: {}", interpInstrsCount);
             return rv;
         } catch (IRBreakJump bj) {
-            throw runtime.newLocalJumpError(Reason.BREAK, (IRubyObject)bj.breakValue, "unexpected break");
+            throw IRException.BREAK_LocalJumpError.getException(context.getRuntime());
         }
     }
 
@@ -174,7 +175,7 @@ public class Interpreter {
                         bj.breakInEval = false;
 
                         // Error
-                        if (!inClosure || inProc(blockType)) throw runtime.newLocalJumpError(Reason.BREAK, (IRubyObject)bj.breakValue, "unexpected break");
+                        if (!inClosure || inProc(blockType)) throw IRException.BREAK_LocalJumpError.getException(runtime);
 
                         // Lambda special case.  We are in a lambda and breaking out of it requires popping out exactly one level up.
                         if (inLambda(blockType)) bj.caughtByLambda = true;
@@ -185,7 +186,7 @@ public class Interpreter {
                         throw bj;
                     } else if (inLambda(blockType)) {
                         // We just unwound all the way up because of a non-local break
-                        throw runtime.newLocalJumpError(Reason.BREAK, (IRubyObject)bj.breakValue, "unexpected break");
+                        throw IRException.BREAK_LocalJumpError.getException(runtime);
                     } else if (bj.caughtByLambda || (bj.scopeToReturnTo == scope)) {
                         // We got where we need to get to (because a lambda stopped us, or because we popped to the
                         // lexical scope where we got called from).  Retrieve the result and store it.
@@ -223,11 +224,22 @@ public class Interpreter {
         // If not in a lambda, in a closure, and lastInstr was a return, have to return from the nearest method!
         if ((lastInstr instanceof ReturnInstr) && !inLambda(blockType)) {
             IRMethod methodToReturnFrom = ((ReturnInstr)lastInstr).methodToReturnFrom;
-            if (inClosure && !context.scopeExistsOnCallStack(methodToReturnFrom.getStaticScope())) {
-                if (isDebug()) LOG.info("in scope: " + scope + ", raising unexpected return local jump error");
-                throw runtime.newLocalJumpError(Reason.RETURN, rv, "unexpected return");
+
+            if (inClosure) {
+                // Cannot return from root methods -- so find out where exactly we need to return.
+                if (methodToReturnFrom.isAModuleRootMethod()) {
+                    methodToReturnFrom = methodToReturnFrom.getClosestNonRootMethodAncestor();
+                    if (methodToReturnFrom == null) throw IRException.RETURN_LocalJumpError.getException(runtime);
+                }
+
+                // Cannot return to the call that we have long since exited.
+                if (!context.scopeExistsOnCallStack(methodToReturnFrom.getStaticScope())) {
+                    if (isDebug()) LOG.info("in scope: " + scope + ", raising unexpected return local jump error");
+                    throw IRException.RETURN_LocalJumpError.getException(runtime);
+                }
             }
-            else if (inClosure || (methodToReturnFrom != null)) {
+
+            if (inClosure || (methodToReturnFrom != null)) {
                 // methodtoReturnFrom will not be null for explicit returns from class/module/sclass bodies
                 throw new IRReturnJump(methodToReturnFrom, rv);
             }

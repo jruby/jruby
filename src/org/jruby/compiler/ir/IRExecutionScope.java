@@ -196,6 +196,15 @@ public abstract class IRExecutionScope extends IRScopeImpl {
         return (IRMethod) s;
     }
 
+    public IRMethod getClosestNonRootMethodAncestor() {
+        IRScope s = this;
+        while ((s != null) && (!(s instanceof IRMethod) || ((IRMethod)s).isAModuleRootMethod())) {
+            s = s.getLexicalParent();
+        }
+
+        return (IRMethod) s;
+    }
+
     public boolean nestedInClosure(IRClosure closure) {
         IRExecutionScope s = this;
         while (!(s instanceof IRMethod) && (s != closure)) {
