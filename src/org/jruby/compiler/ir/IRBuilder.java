@@ -3112,43 +3112,41 @@ public class IRBuilder {
             return Nil.NIL;
         } else {
             IRLoop loop = new IRLoop(s);
-            s.startLoop(loop);
-            s.addInstr(new LabelInstr(loop.loopStartLabel));
             Variable loopResult = loop.loopResult;
+            Label setupResultLabel = s.getNewLabel();
 
+            s.startLoop(loop);
+
+            // End of iteration jumps here
+            s.addInstr(new LabelInstr(loop.loopStartLabel));
             if (isLoopHeadCondition) {
                 Operand cv = build(conditionNode, s);
-                s.addInstr(new BEQInstr(cv, isWhile ? BooleanLiteral.TRUE : BooleanLiteral.FALSE, loop.iterStartLabel));
-                s.addInstr(new CopyInstr((Variable)loopResult, Nil.NIL));
-                s.addInstr(new JumpInstr(loop.loopEndLabel));
+                s.addInstr(new BEQInstr(cv, isWhile ? BooleanLiteral.FALSE : BooleanLiteral.TRUE, setupResultLabel));
             }
+
+            // Redo jumps here 
             s.addInstr(new LabelInstr(loop.iterStartLabel));
 
-            // Looks like while can be treated as an expression!
-            // So, capture the result of the body so that it can be returned.
-            if (bodyNode != null) {
-                Operand v = build(bodyNode, s);
-                if (v != U_NIL) {
-                    s.addInstr(new CopyInstr((Variable)loopResult, v));
-                } else {
-                    // If the body of the while had an explicit return, the value in 'loopResult' will never be used.
-                    // So, we dont need to set it to anything.  We can leave it undefined!
-                }
-            }
+            // Build body
+            if (bodyNode != null) build(bodyNode, s);
 
-                // SSS FIXME: Is this correctly placed ... at the end of the loop iteration?
+            // SSS FIXME: Is this correctly placed ... at the end of the loop iteration?
             addThreadPollInstrIfNeeded(s);
 
+            // Next jumps here
             s.addInstr(new LabelInstr(loop.iterEndLabel));
             if (isLoopHeadCondition) {
-                // Issue a jump back to the head of the while loop
                 s.addInstr(new JumpInstr(loop.loopStartLabel));
             } else {
                 Operand cv = build(conditionNode, s);
                 s.addInstr(new BEQInstr(cv, isWhile ? BooleanLiteral.TRUE : BooleanLiteral.FALSE, loop.iterStartLabel));
-                s.addInstr(new CopyInstr((Variable)loopResult, Nil.NIL));
             }
 
+            // Loop result -- nil always
+            s.addInstr(new LabelInstr(setupResultLabel));
+            s.addInstr(new CopyInstr(loopResult, Nil.NIL));
+
+            // Loop end -- breaks jump here bypassing the result set up above
             s.addInstr(new LabelInstr(loop.loopEndLabel));
             s.endLoop(loop);
 
