@@ -512,7 +512,10 @@ public abstract class IRExecutionScope extends IRScopeImpl {
             buildLinearization(); // FIXME: compiler passes should have done this
             depends(linearization());
         } catch (RuntimeException e) {
-            LOG.error("Error linearizing: " + cfg(), e);
+            LOG.error("Error linearizing cfg: ", e);
+            CFG c = cfg();
+            LOG.error("\nGraph:\n" + c.toStringGraph());
+            LOG.error("\nInstructions:\n" + c.toStringInstrs());
             throw e;
         }
 
