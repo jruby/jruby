@@ -1,5 +1,4 @@
 
-
 require 'spec/profiler/profiler_spec_helpers'
 
 describe JRuby::Profiler, "::ProfileData" do
@@ -7,22 +6,22 @@ describe JRuby::Profiler, "::ProfileData" do
   
   context "after profiling an empty block" do
     before do
-      @top = JRuby::Profiler.profile {}
+      @profile_data = JRuby::Profiler.profile {}
     end
     
     it "should have no invocations" do
-      top.children.size.should == 0
+      top_invocation.children.size.should == 0
     end
     
     it "the top invocation should be named (top)" do
-      method_name(top).should == "(top)"
+      method_name(top_invocation).should == "(top)"
     end
   end
   
   context "after profiling method calls at the top level" do
     before do
       obj = ProfilerTest.new
-      @top = JRuby::Profiler.profile do
+      @profile_data = JRuby::Profiler.profile do
         obj.test_instance_method
         ProfilerTest.test_static_method
         ProfilerTest.test_static_method
@@ -33,7 +32,7 @@ describe JRuby::Profiler, "::ProfileData" do
     end
     
     it "should have invocations for each method called" do
-      top.children.size.should == 3
+      top_invocation.children.size.should == 3
     end
     
     it "the instance method should have a correct invocation" do
@@ -58,13 +57,13 @@ describe JRuby::Profiler, "::ProfileData" do
   context "after profiling methods on several levels" do
     before do
       obj = ProfilerTest.new
-      @top = JRuby::Profiler.profile do
+      @profile_data = JRuby::Profiler.profile do
         obj.level1
       end
     end
     
     it "should should the correct number of invocations at the top level" do
-      top.children.size.should == 1
+      top_invocation.children.size.should == 1
     end
     
     it "should have each level correct" do
@@ -78,12 +77,23 @@ describe JRuby::Profiler, "::ProfileData" do
       level3.count.should == 2
       level3.recursive_depth.should == 1
     end
+    
+    it "should use new data when profiling again" do
+      profile_data = JRuby::Profiler.profile_data
+      profile_data.compute_results.children.size.should == 1
+      
+      new_profile_data = JRuby::Profiler.profile { }
+      new_profile_data.should_not == profile_data
+      new_profile_data.compute_results.children.size.should == 0
+      profile_data.compute_results.children.size.should == 1
+    end
+    
   end
   
   context "after profiling recursive methods" do
     def profile
       obj = ProfilerTest.new
-      @top = JRuby::Profiler.profile do
+      @profile_data = JRuby::Profiler.profile do
         obj.recurse(3)
       end
     end
@@ -93,7 +103,7 @@ describe JRuby::Profiler, "::ProfileData" do
     end
     
     it "should have the correct invocations with recursiveDepths" do
-      current = top
+      current = top_invocation
       4.times do |i|
         current = get_inv("ProfilerTest#recurse", current)
         current.count.should == 1
@@ -108,11 +118,11 @@ describe JRuby::Profiler, "::ProfileData" do
       obj = ProfilerTest.new
       obj.start
       1 + 2
-      @top = obj.stop
+      @profile_data = obj.stop
     end
     
     it "methods that are lower in the tree that the highest level should not be attached to top" do
-      get_inv("ProfilerTest#test_instance_method", top).should be_nil
+      get_inv("ProfilerTest#test_instance_method").should be_nil
     end
     
   end

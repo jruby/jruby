@@ -3,10 +3,10 @@ require 'java'
 
 module JRuby
   module Profiler
-    java_import org.jruby.runtime.profile.AbstractProfilePrinter
-    java_import org.jruby.runtime.profile.GraphProfilePrinter
+    
+    java_import org.jruby.runtime.profile.ProfilePrinter
     java_import org.jruby.runtime.profile.FlatProfilePrinter
-    java_import org.jruby.Ruby
+    java_import org.jruby.runtime.profile.GraphProfilePrinter
     
     def self.profile(&block)
       start
@@ -19,34 +19,34 @@ module JRuby
     end
     
     def self.clear
-      current_thread_context.profile_data.clear
+      profile_data.clear
     end
     
     protected
 
       def self.start
-        clear
         current_thread_context.start_profiling
+        clear
       end
 
       def self.stop
         current_thread_context.stop_profiling
-        profile_data.results
+        profile_data
       end
 
       def self.profile_data
         current_thread_context.profile_data
       end
-
+    
     private
-
+    
       def self.runtime
-        JRuby::Profiler::Ruby.getGlobalRuntime
+        JRuby.runtime
       end
 
       def self.current_thread_context
         runtime.get_thread_service.get_current_context
       end
-    
+      
   end
 end

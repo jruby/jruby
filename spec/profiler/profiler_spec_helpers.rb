@@ -2,15 +2,20 @@
 require 'jruby/profiler'
 
 module JRuby::Profiler::SpecHelpers
-  def top
-    @top
+  
+  def profile_data
+    @profile_data ||= JRuby::Profiler.profile_data
+  end
+    
+  def top_invocation
+    @top_invocation ||= profile_data.compute_results
   end
   
   def method_name(inv)
-    JRuby::Profiler::AbstractProfilePrinter.get_method_name(inv.get_method_serial_number)
+    profile_data.method_name(inv.method_serial_number)
   end
   
-  def get_inv(name, inv=top)
+  def get_inv(name, inv=top_invocation)
     inv.children.values.detect {|inv| method_name(inv) == name}
   end
   
@@ -22,13 +27,20 @@ module JRuby::Profiler::SpecHelpers
   end
 
   def graph_output
-    my_output_stream = java.io.ByteArrayOutputStream.new
-    print_stream = java.io.PrintStream.new(my_output_stream)
-
-    JRuby::Profiler::GraphProfilePrinter.new(top).printProfile(print_stream)
-    my_output_stream.toString
+    data_output JRuby::Profiler::GraphProfilePrinter
   end
-  
+
+  def flat_output
+    data_output JRuby::Profiler::FlatProfilePrinter
+  end
+
+  def data_output(printer)
+    output_stream = java.io.ByteArrayOutputStream.new
+    print_stream = java.io.PrintStream.new(output_stream)
+    printer.new(profile_data).printProfile(print_stream)
+    output_stream.toString
+  end
+      
   def line_for(text, method)
     lines = lines_for(text, method)
     if lines.length == 0
@@ -110,6 +122,7 @@ end
 
 
 class ProfilerTest
+  
   def wait(t)
     sleep t
   end
@@ -168,4 +181,5 @@ class ProfilerTest
     ProfilerTest.test_static_method
     JRuby::Profiler.stop
   end
+  
 end

@@ -25,28 +25,62 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.profile;
 
-import java.util.HashMap;
-import java.util.Map;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.util.collections.IntHashMap.Entry;
+import org.jruby.util.collections.IntHashMap;
+
+import static org.jruby.runtime.profile.ProfilePrinter.PROFILER_PROFILE_METHOD;
+import static org.jruby.runtime.profile.ProfilePrinter.PROFILER_PROFILED_CODE_METHOD;
 
 /**
  * Encapsulates the logic of recording and reporting profiled timings of
  * method invocations. This keeps track of aggregate values for callers and
  * callees of each method.
  *
- * See ProfilingDynamicMethod for the "hook" end of profiling.
+ * @see org.jruby.internal.runtime.methods.ProfilingDynamicMethod
  */
-public class ProfileData implements IProfileData {
-    private Invocation currentInvocation = new Invocation(0);
-    private Invocation topInvocation = currentInvocation;
-    private int[] methodRecursion = new int[1000];
-    private ThreadContext threadContext;
+public class ProfileData {
+    
+    private static final int MAX_PROFILE_METHODS = 100000;
+    
+    private final IntHashMap<ProfiledMethod> profiledMethods = new IntHashMap<ProfiledMethod>(500);
+    
+    private Invocation currentInvocation;
+    private Invocation topInvocation;
+    private int[] methodRecursion;
+    
+    private final ThreadContext threadContext;
     
     public ProfileData(ThreadContext tc) {
         threadContext = tc;
+        clear();
     }
-
+    
+    public IntHashMap<ProfiledMethod> getProfiledMethods() {
+        return profiledMethods;
+    }
+    
+    public void addProfiledMethod(String name, DynamicMethod method) {
+        if (method.isUndefined()) return;
+        final long serial = method.getSerialNumber();
+        if (serial > MAX_PROFILE_METHODS) return;
+        
+        if (profiledMethods.get((int) serial) == null) {
+            profiledMethods.put((int) serial, new ProfiledMethod(name, method));
+        }
+    }
+    
+    protected ProfiledMethod getProfiledMethod(final int serial) {
+        ProfiledMethod profiledMethod = getProfiledMethods().get(serial);
+        if (profiledMethod == null) { // check for the method in the runtime :
+            ProfiledMethod[] runtimeMethods = threadContext.getRuntime().getProfiledMethods();
+            if (serial < runtimeMethods.length) {
+                profiledMethod = runtimeMethods[serial];
+            }
+        }
+        return profiledMethod;
+    }
+    
     /**
      * Begin profiling a new method, aggregating the current time diff in the previous
      * method's profile slot.
@@ -63,7 +97,7 @@ public class ProfileData implements IProfileData {
         currentInvocation = childInvocation;
         return parentInvocation.getMethodSerialNumber();
     }
-
+    
     /**
      * Fall back to previously profiled method after current method has returned.
      *
@@ -83,7 +117,6 @@ public class ProfileData implements IProfileData {
             
             newTopInvocation.addChild(newCurrentInvocation);
             newCurrentInvocation.incrementCount();
-
             
             topInvocation     = newTopInvocation;
             currentInvocation = newCurrentInvocation;
@@ -109,19 +142,79 @@ public class ProfileData implements IProfileData {
         }
     }
 
+    /**
+     * Clear the gathered profiling (invocation) data.
+     */
     public void clear() {
         methodRecursion = new int[1000];
         currentInvocation = new Invocation(0);
         topInvocation = currentInvocation;
+        
+        profiledMethods.clear();
+    }
+
+    public long totalTime() {
+        return topInvocation.childTime();
     }
     
-    public void decRecursionFor(int serial) {
+    /**
+     * @return the topInvocation
+     */
+    public Invocation getTopInvocation() {
+        return topInvocation;
+    }
+    
+    /**
+     * @return the currentInvocation
+     */
+    public Invocation getCurrentInvocation() {
+        return currentInvocation;
+    }
+
+    /**
+     * @return the threadContext
+     */
+    public ThreadContext getThreadContext() {
+        return threadContext;
+    }
+    
+    /**
+     * Compute the profiling results from gathered data.
+     * @return the top invocation
+     */
+    public Invocation computeResults() {
+        setRecursiveDepths();
+        
+        if (topInvocation.getChildren().size() != 1) {
+            return setDuration(topInvocation);
+        }
+        if (topInvocation.getChildren().size() == 1) {
+            Invocation singleTopChild = topInvocation.getChildren().values().iterator().next();
+            int serial = singleTopChild.getMethodSerialNumber();
+            if ( PROFILER_PROFILE_METHOD.equals( methodName(serial) ) ) {
+                for ( Invocation inv : singleTopChild.getChildren().values() ) {
+                    serial = inv.getMethodSerialNumber();
+                    if ( PROFILER_PROFILED_CODE_METHOD.equals( methodName(serial) ) ) {
+                        return setDuration(inv.copyWithNewSerialAndParent(0, null));
+                    }
+                }
+            }
+        }
+        return setDuration(topInvocation);
+    }
+    
+    private static Invocation setDuration(Invocation inv) {
+        inv.setDuration(inv.childTime());
+        return inv;
+    }
+    
+    protected void decRecursionFor(int serial) {
         ensureRecursionSize(serial);
         int[] mr = methodRecursion;
         mr[serial] = mr[serial] - 1;
     }
 
-    public int incRecursionFor(int serial) {
+    protected int incRecursionFor(int serial) {
         ensureRecursionSize(serial);
         int[] mr = methodRecursion;
         int inc = mr[serial] + 1;
@@ -158,58 +251,10 @@ public class ProfileData implements IProfileData {
             decRecursionFor(childSerial);
         }
     }
-
-    public long totalTime() {
-        return topInvocation.childTime();
-    }
-
-    /**
-     * @return the topInvocation
-     */
-    public Invocation getTopInvocation() {
-        return topInvocation;
-    }
-
-    public Invocation getResults() {
-        setRecursiveDepths();
-        
-        if (topInvocation.getChildren().size() != 1) {
-            return addDuration(topInvocation);
-        }
-        if (topInvocation.getChildren().size() == 1) {
-            Invocation singleTopChild = null;
-            for (Invocation inv : topInvocation.getChildren().values() ) {
-                singleTopChild = inv;
-            }
-            String singleTopChildName = AbstractProfilePrinter.getMethodName(singleTopChild.getMethodSerialNumber());
-            if (singleTopChildName.equals("JRuby::Profiler.profile")) {
-                Invocation profiledCodeInvocation = null;
-                for (Invocation inv : singleTopChild.getChildren().values() ) {
-                    if (AbstractProfilePrinter.getMethodName(inv.getMethodSerialNumber()).equals("JRuby::Profiler.profiled_code")) {
-                        return addDuration(inv.copyWithNewSerialAndParent(0, null));
-                    }
-                }
-            }
-        }
-        return addDuration(topInvocation);
+    
+    String methodName(final int serial) {
+        if (serial == 0) return "(top)";
+        return ProfilePrinter.methodName( getProfiledMethod(serial) );
     }
     
-    public Invocation addDuration(Invocation inv) {
-        inv.setDuration(inv.childTime());
-        return inv;
-    }
-    
-    /**
-     * @return the currentInvocation
-     */
-    public Invocation getCurrentInvocation() {
-        return currentInvocation;
-    }
-
-    /**
-     * @return the threadContext
-     */
-    public ThreadContext getThreadContext() {
-        return threadContext;
-    }
 }

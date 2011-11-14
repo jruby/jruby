@@ -28,23 +28,27 @@ package org.jruby.runtime.profile;
 import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.Map;
 
-public class GraphProfilePrinter extends AbstractProfilePrinter {
-    public static MethodData currentData;
-    private Invocation topInvocation;
+import org.jruby.util.collections.IntHashMap;
 
-    public GraphProfilePrinter(Invocation top) {
-        topInvocation = top;
+public class GraphProfilePrinter extends ProfilePrinter {
+
+    public GraphProfilePrinter(ProfileData profileData) {
+        super(profileData);
     }
-
+    
+    GraphProfilePrinter(ProfileData profileData, Invocation topInvocation) {
+        super(profileData, topInvocation);
+    }
+    
     public void printProfile(PrintStream out) {
+        final Invocation topInvocation = getTopInvocation();
         out.printf("\nTotal time: %s\n\n", nanoString(topInvocation.getDuration()));
 
         out.println(" %total   %self       total        self    children                 calls  name");
 
-        Map<Integer, MethodData> methods = methodData(topInvocation);
-        MethodData[] sortedMethods = methods.values().toArray(new MethodData[0]);
+        final IntHashMap<MethodData> methods = methodData(topInvocation);
+        final MethodData[] sortedMethods = methods.values().toArray(new MethodData[methods.size()]);
         
         Arrays.sort(sortedMethods, new Comparator<MethodData>() {
             public int compare(MethodData md1, MethodData md2) {
@@ -54,8 +58,7 @@ public class GraphProfilePrinter extends AbstractProfilePrinter {
             }
         });
 
-        for (MethodData data : sortedMethods) {
-            GraphProfilePrinter.currentData = data;
+        for (final MethodData data : sortedMethods) {
             if (!isProfilerInvocation(data.invocations.get(0))) {
                     
                 out.println("---------------------------------------------------------------------------------------------------------");
@@ -70,8 +73,8 @@ public class GraphProfilePrinter extends AbstractProfilePrinter {
                     
                     Arrays.sort(parentSerials, new Comparator<Integer>() {
                         public int compare(Integer parent1, Integer parent2) {
-                            long time1 = GraphProfilePrinter.currentData.rootInvocationsFromParent(parent1).totalTime();
-                            long time2 = GraphProfilePrinter.currentData.rootInvocationsFromParent(parent2).totalTime();
+                            long time1 = data.rootInvocationsFromParent(parent1).totalTime();
+                            long time2 = data.rootInvocationsFromParent(parent2).totalTime();
                             return time1 == time2 ? 0 : (time1 < time2 ? -1 : 1);
                         }
                     });
@@ -124,8 +127,8 @@ public class GraphProfilePrinter extends AbstractProfilePrinter {
                 
                 Arrays.sort(childSerials, new Comparator<Integer>() {
                     public int compare(Integer child1, Integer child2) {
-                        long time1 = GraphProfilePrinter.currentData.rootInvocationsOfChild(child1).totalTime();
-                        long time2 = GraphProfilePrinter.currentData.rootInvocationsOfChild(child2).totalTime();
+                        long time1 = data.rootInvocationsOfChild(child1).totalTime();
+                        long time2 = data.rootInvocationsOfChild(child2).totalTime();
                         return time1 == time2 ? 0 : (time1 < time2 ? 1 : -1);
                     }
                 });

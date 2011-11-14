@@ -39,7 +39,6 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.Frame;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.profile.IProfileData;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -131,8 +130,7 @@ public class RubyRunnable implements Runnable {
 
                 // dump profile, if any
                 if (runtime.getInstanceConfig().isProfilingEntireRun()) {
-                    IProfileData profileData = (IProfileData) context.getProfileData();
-                    runtime.getInstanceConfig().makeDefaultProfilePrinter(profileData).printProfile(System.err);
+                    runtime.printProfileData(context.getProfileData(), System.err);
                 }
             }
         } catch (ThreadKill tk) {
