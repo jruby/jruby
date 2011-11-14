@@ -1,11 +1,9 @@
 package org.jruby.interpreter;
 
 import java.util.List;
-import java.util.Stack;
 
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
-import org.jruby.RubyLocalJumpError.Reason;
 import org.jruby.RubyModule;
 import org.jruby.ast.Node;
 import org.jruby.ast.RootNode;
@@ -30,6 +28,7 @@ import org.jruby.parser.IRStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.Block.Type;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -128,9 +127,7 @@ public class Interpreter {
 
     public static IRubyObject interpret(ThreadContext context, IRubyObject self, 
             IRExecutionScope scope, IRubyObject[] args, Block block, Block.Type blockType) {
-        Ruby runtime = context.getRuntime();
         boolean inClosure = (scope instanceof IRClosure);
-
         Instr[] instrs = scope.prepareInstructionsForInterpretation();
         int temporaryVariablesSize = scope.getTemporaryVariableSize();
         Object[] temporaryVariables = temporaryVariablesSize > 0 ? new Object[temporaryVariablesSize] : null;
@@ -163,30 +160,13 @@ public class Interpreter {
                         ipc = scope.cfg().getExitBB().getLabel().getTargetPC();
                     }
                 } catch (IRReturnJump rj) {
-                    // - If we are in a lambda or if we are in the method scope we are supposed to return from, stop propagating
-                    if (inLambda(blockType) || (rj.methodToReturnFrom == scope)) return (IRubyObject) rj.returnValue;
-
-                    // - If not, Just pass it along!
-                    throw rj;
+                    return handleReturnJumpInClosure(scope, rj, blockType);
                 } catch (IRBreakJump bj) {
                     if ((lastInstr instanceof BreakInstr) || bj.breakInEval) {
-
-                        // Clear eval flag
-                        bj.breakInEval = false;
-
-                        // Error
-                        if (!inClosure || inProc(blockType)) throw IRException.BREAK_LocalJumpError.getException(runtime);
-
-                        // Lambda special case.  We are in a lambda and breaking out of it requires popping out exactly one level up.
-                        if (inLambda(blockType)) bj.caughtByLambda = true;
-                        // If we are in an eval, record it so we can account for it
-                        else if (scope instanceof IREvalScript) bj.breakInEval = true;
-
-                        // Pass it upward
-                        throw bj;
+                        handleBreakJumpInEval(context, scope, bj, blockType, inClosure);
                     } else if (inLambda(blockType)) {
                         // We just unwound all the way up because of a non-local break
-                        throw IRException.BREAK_LocalJumpError.getException(runtime);
+                        throw IRException.BREAK_LocalJumpError.getException(context.getRuntime());                        
                     } else if (bj.caughtByLambda || (bj.scopeToReturnTo == scope)) {
                         // We got where we need to get to (because a lambda stopped us, or because we popped to the
                         // lexical scope where we got called from).  Retrieve the result and store it.
@@ -223,29 +203,63 @@ public class Interpreter {
 
         // If not in a lambda, in a closure, and lastInstr was a return, have to return from the nearest method!
         if ((lastInstr instanceof ReturnInstr) && !inLambda(blockType)) {
-            IRMethod methodToReturnFrom = ((ReturnInstr)lastInstr).methodToReturnFrom;
-
-            if (inClosure) {
-                // Cannot return from root methods -- so find out where exactly we need to return.
-                if (methodToReturnFrom.isAModuleRootMethod()) {
-                    methodToReturnFrom = methodToReturnFrom.getClosestNonRootMethodAncestor();
-                    if (methodToReturnFrom == null) throw IRException.RETURN_LocalJumpError.getException(runtime);
-                }
-
-                // Cannot return to the call that we have long since exited.
-                if (!context.scopeExistsOnCallStack(methodToReturnFrom.getStaticScope())) {
-                    if (isDebug()) LOG.info("in scope: " + scope + ", raising unexpected return local jump error");
-                    throw IRException.RETURN_LocalJumpError.getException(runtime);
-                }
-            }
-
-            if (inClosure || (methodToReturnFrom != null)) {
-                // methodtoReturnFrom will not be null for explicit returns from class/module/sclass bodies
-                throw new IRReturnJump(methodToReturnFrom, rv);
-            }
+            initiateReturnIfInClosure(context, scope, (ReturnInstr) lastInstr, self, inClosure);
         }
 
         return rv;
+    }
+
+    /*
+     * If we are in a closure and we encounter a return instruction we need to
+     * decide whether to propagate this up the call stack or whether we need to
+     * throw an error.
+     * 
+     * ENEBO: If this logic is only for closure why the || against inClosure for setting up the jump?
+     */
+    private static void initiateReturnIfInClosure(ThreadContext context, IRExecutionScope scope, ReturnInstr returnInstr, IRubyObject returnValue, boolean inClosure) {
+        IRMethod methodToReturnFrom = returnInstr.methodToReturnFrom;
+
+        if (inClosure) {
+            // Cannot return from root methods -- so find out where exactly we need to return.
+            if (methodToReturnFrom.isAModuleRootMethod()) {
+                methodToReturnFrom = methodToReturnFrom.getClosestNonRootMethodAncestor();
+                if (methodToReturnFrom == null) throw IRException.RETURN_LocalJumpError.getException(context.getRuntime());
+            }
+
+            // Cannot return to the call that we have long since exited.
+            if (!context.scopeExistsOnCallStack(methodToReturnFrom.getStaticScope())) {
+                if (isDebug()) LOG.info("in scope: " + scope + ", raising unexpected return local jump error");
+                throw IRException.RETURN_LocalJumpError.getException(context.getRuntime());
+            }
+        }
+            
+        if (inClosure || (methodToReturnFrom != null)) {
+            // methodtoReturnFrom will not be null for explicit returns from class/module/sclass bodies
+            throw new IRReturnJump(methodToReturnFrom, returnValue);
+        }        
+    }
+
+    private static IRubyObject handleReturnJumpInClosure(IRExecutionScope scope, IRReturnJump rj, Type blockType) throws IRReturnJump {
+        // - If we are in a lambda or if we are in the method scope we are supposed to return from, stop propagating
+        if (inLambda(blockType) || (rj.methodToReturnFrom == scope)) return (IRubyObject) rj.returnValue;
+
+        // - If not, Just pass it along!
+        throw rj;
+    }
+
+    private static void handleBreakJumpInEval(ThreadContext context, IRExecutionScope scope, IRBreakJump bj, Type blockType, boolean inClosure) throws RaiseException, IRBreakJump {
+        bj.breakInEval = false;  // Clear eval flag
+
+        // Error
+        if (!inClosure || inProc(blockType)) throw IRException.BREAK_LocalJumpError.getException(context.getRuntime());
+
+        // Lambda special case.  We are in a lambda and breaking out of it requires popping out exactly one level up.
+        if (inLambda(blockType)) bj.caughtByLambda = true;
+        // If we are in an eval, record it so we can account for it
+        else if (scope instanceof IREvalScript) bj.breakInEval = true;
+
+        // Pass it upward
+        throw bj;
     }
 
     public static IRubyObject INTERPRET_METHOD(ThreadContext context, IRExecutionScope scope, 
