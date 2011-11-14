@@ -203,7 +203,7 @@ public class Interpreter {
 
         // If not in a lambda, in a closure, and lastInstr was a return, have to return from the nearest method!
         if ((lastInstr instanceof ReturnInstr) && !inLambda(blockType)) {
-            initiateReturnIfInClosure(context, scope, (ReturnInstr) lastInstr, self, inClosure);
+            initiateReturnIfInClosure(context, scope, (ReturnInstr) lastInstr, rv, inClosure);
         }
 
         return rv;
