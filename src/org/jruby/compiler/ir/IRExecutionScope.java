@@ -149,7 +149,12 @@ public abstract class IRExecutionScope extends IRScopeImpl {
     public void addClosure(IRClosure c) {
         closures.add(c);
     }
-
+    
+    @Override
+    public Instr getLastInstr() {
+        return instructions.get(instructions.size() - 1);
+    }
+    
     @Override
     public void addInstr(Instr i) {
         instructions.add(i);

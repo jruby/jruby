@@ -2038,7 +2038,7 @@ public class IRBuilder {
     }
 
     public Operand buildFalse(Node node, IRScope s) {
-        s.addInstr(new ThreadPollInstr());
+        addThreadPollInstrIfNeeded(s);
         return BooleanLiteral.FALSE; 
     }
 
@@ -2492,7 +2492,7 @@ public class IRBuilder {
 
     public Operand buildNext(final NextNode nextNode, IRExecutionScope s) {
         Operand rv = (nextNode.getValueNode() == null) ? Nil.NIL : build(nextNode.getValueNode(), s);
-        s.addInstr(new ThreadPollInstr()); // SSS FIXME: Is the ordering correct? (poll before next)
+        addThreadPollInstrIfNeeded(s); // SSS FIXME: Is the ordering correct? (poll before next)
 
         // If we have ensure blocks, have to run those first!
         if (!_ensureBlockStack.empty()) EnsureBlockInfo.emitJumpChain(s, _ensureBlockStack);
@@ -2510,9 +2510,14 @@ public class IRBuilder {
     public Operand buildNthRef(NthRefNode nthRefNode, IRScope m) {
         return copyAndReturnValue(m, new NthRef(nthRefNode.getMatchNumber()));
     }
+    
+    public void addThreadPollInstrIfNeeded(IRScope m) {
+        if (m.getLastInstr() instanceof ThreadPollInstr) return;
+        m.addInstr(new ThreadPollInstr());
+    }
 
     public Operand buildNil(Node node, IRScope m) {
-        m.addInstr(new ThreadPollInstr());
+        addThreadPollInstrIfNeeded(m);
         return Nil.NIL;
     }
 
@@ -2942,8 +2947,8 @@ public class IRBuilder {
     public Operand buildRetry(Node node, IRScope s) {
         // JRuby only supports retry when present in rescue blocks!
         // 1.9 doesn't support retry anywhere else.
-        s.addInstr(new ThreadPollInstr());
-
+        addThreadPollInstrIfNeeded(s);
+        
         // Jump back to the innermost rescue block
         // We either find it, or we add code to throw a runtime exception
         if (_rescueBlockStack.empty()) {
@@ -3089,7 +3094,7 @@ public class IRBuilder {
     }
 
     public Operand buildTrue(Node node, IRScope m) {
-        m.addInstr(new ThreadPollInstr());
+        addThreadPollInstrIfNeeded(m);
         return BooleanLiteral.TRUE; 
     }
 
@@ -3135,7 +3140,7 @@ public class IRBuilder {
             }
 
                 // SSS FIXME: Is this correctly placed ... at the end of the loop iteration?
-            s.addInstr(new ThreadPollInstr());
+            addThreadPollInstrIfNeeded(s);
 
             s.addInstr(new LabelInstr(loop.iterEndLabel));
             if (isLoopHeadCondition) {

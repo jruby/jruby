@@ -4,17 +4,14 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.operands.Label;
-import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.compiler_pass.CompilerPass;
 import org.jruby.compiler.ir.operands.TemporaryVariable;
 import org.jruby.compiler.ir.operands.RenamedVariable;
-import org.jruby.compiler.ir.compiler_pass.AddBindingInstructions;
 import org.jruby.compiler.ir.compiler_pass.CFGBuilder;
 import org.jruby.compiler.ir.compiler_pass.IRPrinter;
 import org.jruby.compiler.ir.compiler_pass.InlineTest;
@@ -200,6 +197,10 @@ public abstract class IRScopeImpl implements IRScope {
         return staticScope;
     }
 
+    public Instr getLastInstr() {
+        throw new RuntimeException("Encountered instruction getLast in a non-execution scope!");
+    }
+    
     public void addInstr(Instr i) {
         throw new RuntimeException("Encountered instruction add in a non-execution scope!");
     }

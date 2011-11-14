@@ -38,6 +38,11 @@ public interface IRScope {
      *  methods and closures
      */
     public void addInstr(Instr i);
+    
+    /**
+     * Get the last instr of this IRScope
+     */
+    public Instr getLastInstr();
 
     /**
      *  Record that newName is a new method name for method with oldName
