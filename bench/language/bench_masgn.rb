@@ -75,7 +75,7 @@ def six
 end
 
 def bench_masgn(bm)
-  bm.report 'control, 1m while loop' do one end
+  bm.report 'control, 1m while loop' do zero end
 
   bm.report 'near closure, 1m x10 a,a=a,a' do one end
 
@@ -87,7 +87,7 @@ def bench_masgn(bm)
 
   bm.report 'normal heapless, 1m x 100 a,a=a,a' do five end
 
-  bm.report 'normal heapless, 1m x 100 10-var masgn' do five end
+  bm.report 'normal heapless, 1m x 100 10-var masgn' do six end
 end
 
 if $0 == __FILE__
