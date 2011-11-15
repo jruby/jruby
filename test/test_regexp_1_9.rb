@@ -25,4 +25,10 @@ class TestRegex19 < Test::Unit::TestCase
     re_quoted_string = %r{"\x80"}n
     assert_nothing_raised { %r{#{re_quoted_string}}n }
   end
+
+  def test_matchdata_begin_position_on_unicode_strings
+    rails_scriptlet_re = regexp = /(.)(.)(\d+)(\d)/m
+    match = rails_scriptlet_re.match "TEXG»234"
+    assert_equal 3, match.begin(0)
+  end
 end
