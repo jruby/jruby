@@ -121,7 +121,7 @@ public class RubyMatchData extends RubyObject {
 
         int numPairs = 1;
         if (regs != null) {
-            for (;regs.beg[numPairs] >= 0; numPairs++) {}
+            for (;numPairs < numRegs && regs.beg[numPairs] >= 0; numPairs++) {}
         }
 
         Pair[] pairs = new Pair[numPairs * 2];
