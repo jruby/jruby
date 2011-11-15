@@ -1,5 +1,4 @@
-=begin
-#
+#--
 # benchmark.rb - a performance benchmarking library
 #
 # $Id$
@@ -8,9 +7,8 @@
 #
 # Documentation by Gotoken (original RD), Lyle Johnson (RDoc conversion), and
 # Gavin Sinclair (editing).
+#++
 #
-=end
-
 # == Overview
 #
 # The Benchmark module provides methods for benchmarking Ruby code, giving
@@ -103,10 +101,10 @@
 #   using the #benchmark method:
 #
 #       require 'benchmark'
-#       include Benchmark         # we need the CAPTION and FMTSTR constants
+#       include Benchmark         # we need the CAPTION and FORMAT constants
 #
 #       n = 50000
-#       Benchmark.benchmark(" "*7 + CAPTION, 7, FMTSTR, ">total:", ">avg:") do |x|
+#       Benchmark.benchmark(CAPTION, 7, FORMAT, ">total:", ">avg:") do |x|
 #         tf = x.report("for:")   { for i in 1..n; a = "1"; end }
 #         tt = x.report("times:") { n.times do   ; a = "1"; end }
 #         tu = x.report("upto:")  { 1.upto(n) do ; a = "1"; end }
@@ -126,16 +124,13 @@ module Benchmark
 
   BENCHMARK_VERSION = "2002-04-25" #:nodoc"
 
-  def Benchmark::times() # :nodoc:
-      Process::times()
-  end
-
-
   # Invokes the block with a <tt>Benchmark::Report</tt> object, which
   # may be used to collect and report on the results of individual
   # benchmark tests. Reserves <i>label_width</i> leading spaces for
   # labels on each line. Prints _caption_ at the top of the
-  # report, and uses _fmt_ to format each line.
+  # report, and uses _format_ to format each line.
+  # Returns an array of Benchmark::Tms objects.
+  #
   # If the block returns an array of
   # <tt>Benchmark::Tms</tt> objects, these will be used to format
   # additional lines of output. If _label_ parameters are
@@ -148,10 +143,10 @@ module Benchmark
   # Example:
   #
   #     require 'benchmark'
-  #     include Benchmark          # we need the CAPTION and FMTSTR constants
+  #     include Benchmark          # we need the CAPTION and FORMAT constants
   #
   #     n = 50000
-  #     Benchmark.benchmark(" "*7 + CAPTION, 7, FMTSTR, ">total:", ">avg:") do |x|
+  #     Benchmark.benchmark(CAPTION, 7, FORMAT, ">total:", ">avg:") do |x|
   #       tf = x.report("for:")   { for i in 1..n; a = "1"; end }
   #       tt = x.report("times:") { n.times do   ; a = "1"; end }
   #       tu = x.report("upto:")  { 1.upto(n) do ; a = "1"; end }
@@ -168,19 +163,21 @@ module Benchmark
   #        >avg:    1.333333   0.011111   1.344444 (  0.629761)
   #
 
-  def benchmark(caption = "", label_width = nil, fmtstr = nil, *labels) # :yield: report
+  def benchmark(caption = "", label_width = nil, format = nil, *labels) # :yield: report
     sync = STDOUT.sync
     STDOUT.sync = true
     label_width ||= 0
-    fmtstr ||= FMTSTR
-    raise ArgumentError, "no block" unless iterator?
-    print caption
-    results = yield(Report.new(label_width, fmtstr))
+    label_width += 1
+    format ||= FORMAT
+    print ' '*label_width + caption
+    report = Report.new(label_width, format)
+    results = yield(report)
     Array === results and results.grep(Tms).each {|t|
-      print((labels.shift || t.label || "").ljust(label_width),
-            t.format(fmtstr))
+      print((labels.shift || t.label || "").ljust(label_width), t.format(format))
     }
-    STDOUT.sync = sync
+    report.list
+  ensure
+    STDOUT.sync = sync unless sync.nil?
   end
 
 
@@ -205,7 +202,7 @@ module Benchmark
   #
 
   def bm(label_width = 0, *labels, &blk) # :yield: report
-    benchmark(" "*label_width + CAPTION, label_width, FMTSTR, *labels, &blk)
+    benchmark(CAPTION, label_width, FORMAT, *labels, &blk)
   end
 
 
@@ -249,39 +246,27 @@ module Benchmark
   def bmbm(width = 0, &blk) # :yield: job
     job = Job.new(width)
     yield(job)
-    width = job.width
+    width = job.width + 1
     sync = STDOUT.sync
     STDOUT.sync = true
 
     # rehearsal
-    print "Rehearsal "
-    puts '-'*(width+CAPTION.length - "Rehearsal ".length)
-    list = []
-    job.list.each{|label,item|
-      print(label.ljust(width))
-      res = Benchmark::measure(&item)
-      print res.format()
-      list.push res
-    }
-    sum = Tms.new; list.each{|i| sum += i}
-    ets = sum.format("total: %tsec")
-    printf("%s %s\n\n",
-           "-"*(width+CAPTION.length-ets.length-1), ets)
+    puts 'Rehearsal '.ljust(width+CAPTION.length,'-')
+    ets = job.list.inject(Tms.new) { |sum,(label,item)|
+      print label.ljust(width)
+      res = Benchmark.measure(&item)
+      print res.format
+      sum + res
+    }.format("total: %tsec")
+    print " #{ets}\n\n".rjust(width+CAPTION.length+2,'-')
 
     # take
-    print ' '*width, CAPTION
-    list = []
-    ary = []
-    job.list.each{|label,item|
-      GC::start
+    print ' '*width + CAPTION
+    job.list.map { |label,item|
+      GC.start
       print label.ljust(width)
-      res = Benchmark::measure(&item)
-      print res.format()
-      ary.push res
-      list.push [label, res]
+      Benchmark.measure(label, &item).tap { |res| print res }
     }
-
-    ary
   ensure
     STDOUT.sync = sync unless sync.nil?
   end
@@ -291,9 +276,9 @@ module Benchmark
   # Benchmark::Tms object.
   #
   def measure(label = "") # :yield:
-    t0, r0 = Benchmark.times, Time.now
+    t0, r0 = Process.times, Time.now
     yield
-    t1, r1 = Benchmark.times, Time.now
+    t1, r1 = Process.times, Time.now
     Benchmark::Tms.new(t1.utime  - t0.utime,
                        t1.stime  - t0.stime,
                        t1.cutime - t0.cutime,
@@ -305,14 +290,13 @@ module Benchmark
   #
   # Returns the elapsed real time used to execute the given block.
   #
-  def realtime(&blk) # :yield:
+  def realtime # :yield:
     r0 = Time.now
     yield
-    r1 = Time.now
-    r1.to_f - r0.to_f
+    Time.now - r0
   end
 
-
+  module_function :benchmark, :measure, :realtime, :bm, :bmbm
 
   #
   # A Job is a sequence of labelled blocks to be processed by the
@@ -336,10 +320,10 @@ module Benchmark
     #
     def item(label = "", &blk) # :yield:
       raise ArgumentError, "no block" unless block_given?
-      label += ' '
+      label = label.to_s
       w = label.length
       @width = w if @width < w
-      @list.push [label, blk]
+      @list << [label, blk]
       self
     end
 
@@ -348,13 +332,9 @@ module Benchmark
     # An array of 2-element arrays, consisting of label and block pairs.
     attr_reader :list
 
-    # Length of the widest label in the #list, plus one.
+    # Length of the widest label in the #list.
     attr_reader :width
   end
-
-  module_function :benchmark, :measure, :realtime, :bm, :bmbm
-
-
 
   #
   # This class is used by the Benchmark.benchmark and Benchmark.bm methods.
@@ -365,26 +345,29 @@ module Benchmark
     # Returns an initialized Report instance.
     # Usually, one doesn't call this method directly, as new
     # Report objects are created by the #benchmark and #bm methods.
-    # _width_ and _fmtstr_ are the label offset and
+    # _width_ and _format_ are the label offset and
     # format string used by Tms#format.
     #
-    def initialize(width = 0, fmtstr = nil)
-      @width, @fmtstr = width, fmtstr
+    def initialize(width = 0, format = nil)
+      @width, @format, @list = width, format, []
     end
 
     #
     # Prints the _label_ and measured time for the block,
-    # formatted by _fmt_. See Tms#format for the
+    # formatted by _format_. See Tms#format for the
     # formatting rules.
     #
-    def item(label = "", *fmt, &blk) # :yield:
-      print label.ljust(@width)
-      res = Benchmark::measure(&blk)
-      print res.format(@fmtstr, *fmt)
+    def item(label = "", *format, &blk) # :yield:
+      print label.to_s.ljust(@width)
+      @list << res = Benchmark.measure(label, &blk)
+      print res.format(@format, *format)
       res
     end
 
     alias report item
+
+    # An array of Benchmark::Tms objects representing each item.
+    attr_reader :list
   end
 
 
@@ -394,8 +377,12 @@ module Benchmark
   # measurement.
   #
   class Tms
+
+    # Default caption, see also Benchmark::CAPTION
     CAPTION = "      user     system      total        real\n"
-    FMTSTR = "%10.6u %10.6y %10.6t %10.6r\n"
+
+    # Default format string, see also Benchmark::FORMAT
+    FORMAT = "%10.6u %10.6y %10.6t %10.6r\n"
 
     # User CPU time
     attr_reader :utime
@@ -420,13 +407,12 @@ module Benchmark
 
     #
     # Returns an initialized Tms object which has
-    # _u_ as the user CPU time, _s_ as the system CPU time,
-    # _cu_ as the children's user CPU time, _cs_ as the children's
-    # system CPU time, _real_ as the elapsed real time and _l_
-    # as the label.
+    # _utime_ as the user CPU time, _stime_ as the system CPU time,
+    # _cutime_ as the children's user CPU time, _cstime_ as the children's
+    # system CPU time, _real_ as the elapsed real time and _label_ as the label.
     #
-    def initialize(u = 0.0, s = 0.0, cu = 0.0, cs = 0.0, real = 0.0, l = nil)
-      @utime, @stime, @cutime, @cstime, @real, @label = u, s, cu, cs, real, l
+    def initialize(utime = 0.0, stime = 0.0, cutime = 0.0, cstime = 0.0, real = 0.0, label = nil)
+      @utime, @stime, @cutime, @cstime, @real, @label = utime, stime, cutime, cstime, real, label.to_s
       @total = @utime + @stime + @cutime + @cstime
     end
 
@@ -435,14 +421,14 @@ module Benchmark
     # Tms object, plus the time required to execute the code block (_blk_).
     #
     def add(&blk) # :yield:
-      self + Benchmark::measure(&blk)
+      self + Benchmark.measure(&blk)
     end
 
     #
     # An in-place version of #add.
     #
     def add!(&blk)
-      t = Benchmark::measure(&blk)
+      t = Benchmark.measure(&blk)
       @utime  = utime + t.utime
       @stime  = stime + t.stime
       @cutime = cutime + t.cutime
@@ -493,19 +479,19 @@ module Benchmark
     # <tt>%r</tt>::     Replaced by the elapsed real time, as reported by Tms#real
     # <tt>%n</tt>::     Replaced by the label string, as reported by Tms#label (Mnemonic: n of "*n*ame")
     #
-    # If _fmtstr_ is not given, FMTSTR is used as default value, detailing the
+    # If _format_ is not given, FORMAT is used as default value, detailing the
     # user, system and real elapsed time.
     #
-    def format(arg0 = nil, *args)
-      fmtstr = (arg0 || FMTSTR).dup
-      fmtstr.gsub!(/(%[-+\.\d]*)n/){"#{$1}s" % label}
-      fmtstr.gsub!(/(%[-+\.\d]*)u/){"#{$1}f" % utime}
-      fmtstr.gsub!(/(%[-+\.\d]*)y/){"#{$1}f" % stime}
-      fmtstr.gsub!(/(%[-+\.\d]*)U/){"#{$1}f" % cutime}
-      fmtstr.gsub!(/(%[-+\.\d]*)Y/){"#{$1}f" % cstime}
-      fmtstr.gsub!(/(%[-+\.\d]*)t/){"#{$1}f" % total}
-      fmtstr.gsub!(/(%[-+\.\d]*)r/){"(#{$1}f)" % real}
-      arg0 ? Kernel::format(fmtstr, *args) : fmtstr
+    def format(format = nil, *args)
+      str = (format || FORMAT).dup
+      str.gsub!(/(%[-+\.\d]*)n/) { "#{$1}s" % label }
+      str.gsub!(/(%[-+\.\d]*)u/) { "#{$1}f" % utime }
+      str.gsub!(/(%[-+\.\d]*)y/) { "#{$1}f" % stime }
+      str.gsub!(/(%[-+\.\d]*)U/) { "#{$1}f" % cutime }
+      str.gsub!(/(%[-+\.\d]*)Y/) { "#{$1}f" % cstime }
+      str.gsub!(/(%[-+\.\d]*)t/) { "#{$1}f" % total }
+      str.gsub!(/(%[-+\.\d]*)r/) { "(#{$1}f)" % real }
+      format ? str % args : str
     end
 
     #
@@ -526,6 +512,15 @@ module Benchmark
     end
 
     protected
+    
+    #
+    # Returns a new Tms object obtained by memberwise operation +op+
+    # of the individual times for this Tms object with those of the other
+    # Tms object.
+    #
+    # +op+ can be a mathematical operation such as <tt>+</tt>, <tt>-</tt>,
+    # <tt>*</tt>, <tt>/</tt>
+    #
     def memberwise(op, x)
       case x
       when Benchmark::Tms
@@ -550,7 +545,7 @@ module Benchmark
   CAPTION = Benchmark::Tms::CAPTION
 
   # The default format string used to display times.  See also Benchmark::Tms#format.
-  FMTSTR = Benchmark::Tms::FMTSTR
+  FORMAT = Benchmark::Tms::FORMAT
 end
 
 if __FILE__ == $0
@@ -558,17 +553,17 @@ if __FILE__ == $0
 
   n = ARGV[0].to_i.nonzero? || 50000
   puts %Q([#{n} times iterations of `a = "1"'])
-  benchmark("       " + CAPTION, 7, FMTSTR) do |x|
-    x.report("for:")   {for i in 1..n; a = "1"; end} # Benchmark::measure
-    x.report("times:") {n.times do   ; a = "1"; end}
-    x.report("upto:")  {1.upto(n) do ; a = "1"; end}
+  benchmark("       " + CAPTION, 7, FORMAT) do |x|
+    x.report("for:")   {for _ in 1..n; _ = "1"; end} # Benchmark.measure
+    x.report("times:") {n.times do   ; _ = "1"; end}
+    x.report("upto:")  {1.upto(n) do ; _ = "1"; end}
   end
 
   benchmark do
     [
-      measure{for i in 1..n; a = "1"; end},  # Benchmark::measure
-      measure{n.times do   ; a = "1"; end},
-      measure{1.upto(n) do ; a = "1"; end}
+      measure{for _ in 1..n; _ = "1"; end},  # Benchmark.measure
+      measure{n.times do   ; _ = "1"; end},
+      measure{1.upto(n) do ; _ = "1"; end}
     ]
   end
 end

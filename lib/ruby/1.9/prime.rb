@@ -46,11 +46,17 @@ end
 # The set of all prime numbers.
 #
 # == Example
-#  Prime.each(100) do |prime|
-#    p prime  #=> 2, 3, 5, 7, 11, ...., 97
-#  end
+#
+#   Prime.each(100) do |prime|
+#     p prime  #=> 2, 3, 5, 7, 11, ...., 97
+#   end
+#
+# Prime is Enumerable:
+#
+#   Prime.first 5 # => [2, 3, 5, 7, 11]
 #
 # == Retrieving the instance
+#
 # +Prime+.new is obsolete. Now +Prime+ has the default instance and you can
 # access it as +Prime+.instance.
 #
@@ -58,10 +64,11 @@ end
 # as a class method of +Prime+.
 #
 # e.g.
-#  Prime.instance.prime?(2)  #=> true
-#  Prime.prime?(2)           #=> true
+#   Prime.instance.prime?(2)  #=> true
+#   Prime.prime?(2)           #=> true
 #
 # == Generators
+#
 # A "generator" provides an implementation of enumerating pseudo-prime
 # numbers and it remembers the position of enumeration and upper bound.
 # Futhermore, it is a external iterator of prime enumeration which is
@@ -80,6 +87,7 @@ end
 #   is faster and uses much less memory than other generators. So,
 #   it is suitable for factorizing an integer which is not large but
 #   has many prime factors. e.g. for Prime#prime? .
+
 class Prime
   include Enumerable
   @the_instance = Prime.new
@@ -105,6 +113,7 @@ class Prime
   # Iterates the given block over all prime numbers.
   #
   # == Parameters
+  #
   # +ubound+::
   #   Optional. An arbitrary positive number.
   #   The upper bound of enumeration. The method enumerates
@@ -113,11 +122,13 @@ class Prime
   #   Optional. An implementation of pseudo-prime generator.
   #
   # == Return value
+  #
   # An evaluated value of the given block at the last time.
   # Or an enumerator which is compatible to an +Enumerator+
   # if no block given.
   #
   # == Description
+  #
   # Calls +block+ once for each prime number, passing the prime as
   # a parameter.
   #
@@ -126,6 +137,7 @@ class Prime
   #   yields all prime numbers p <= +ubound+.
   #
   # == Note
+  #
   # +Prime+.+new+ returns a object extended by +Prime+::+OldCompatibility+
   # in order to compatibility to Ruby 1.8, and +Prime+#each is overwritten
   # by +Prime+::+OldCompatibility+#+each+.
@@ -141,6 +153,7 @@ class Prime
   # Returns true if +value+ is prime, false for a composite.
   #
   # == Parameters
+  #
   # +value+:: an arbitrary integer to be checked.
   # +generator+:: optional. A pseudo-prime generator.
   def prime?(value, generator = Prime::Generator23.new)
@@ -161,10 +174,11 @@ class Prime
   #        and a natural number -- an exponent.
   #
   # == Example
-  # For [[p_1, e_1], [p_2, e_2], ...., [p_n, e_n]], it returns
-  # p_1**e_1 * p_2**e_2 * .... * p_n**e_n.
+  # For <tt>[[p_1, e_1], [p_2, e_2], ...., [p_n, e_n]]</tt>, it returns:
   #
-  #  Prime.int_from_prime_division([[2,2], [3,1]])  #=> 12
+  #   p_1**e_1 * p_2**e_2 * .... * p_n**e_n.
+  #
+  #   Prime.int_from_prime_division([[2,2], [3,1]])  #=> 12
   def int_from_prime_division(pd)
     pd.inject(1){|value, (prime, index)|
       value *= prime**index
@@ -185,12 +199,15 @@ class Prime
   # +ZeroDivisionError+:: when +value+ is zero.
   #
   # == Example
-  # For an arbitrary integer
-  # n = p_1**e_1 * p_2**e_2 * .... * p_n**e_n,
-  # prime_division(n) returns
-  # [[p_1, e_1], [p_2, e_2], ...., [p_n, e_n]].
+  # For an arbitrary integer:
   #
-  #  Prime.prime_division(12) #=> [[2,2], [3,1]]
+  #   n = p_1**e_1 * p_2**e_2 * .... * p_n**e_n,
+  #
+  # prime_division(n) returns:
+  #
+  #   [[p_1, e_1], [p_2, e_2], ...., [p_n, e_n]].
+  #
+  #   Prime.prime_division(12) #=> [[2,2], [3,1]]
   #
   def prime_division(value, generator= Prime::Generator23.new)
     raise ZeroDivisionError if value == 0
@@ -203,12 +220,12 @@ class Prime
     for prime in generator
       count = 0
       while (value1, mod = value.divmod(prime)
-	     mod) == 0
-	value = value1
-	count += 1
+             mod) == 0
+        value = value1
+        count += 1
       end
       if count != 0
-	pv.push [prime, count]
+        pv.push [prime, count]
       end
       break if value1 <= prime
     end
@@ -259,16 +276,16 @@ class Prime
     def each(&block)
       return self.dup unless block
       if @ubound
-	last_value = nil
-	loop do
-	  prime = succ
-	  break last_value if prime > @ubound
-	  last_value = block.call(prime)
-	end
+        last_value = nil
+        loop do
+          prime = succ
+          break last_value if prime > @ubound
+          last_value = block.call(prime)
+        end
       else
-	loop do
-	  block.call(succ)
-	end
+        loop do
+          block.call(succ)
+        end
       end
     end
 
@@ -279,7 +296,7 @@ class Prime
     def with_object(obj)
       return enum_for(:with_object) unless block_given?
       each do |prime|
-	yield prime, obj
+        yield prime, obj
       end
     end
   end
@@ -334,17 +351,17 @@ class Prime
 
     def succ
       loop do
-	if (@step)
-	  @prime += @step
-	  @step = 6 - @step
-	else
-	  case @prime
-	  when 1; @prime = 2
-	  when 2; @prime = 3
-	  when 3; @prime = 5; @step = 2
-	  end
-	end
-	return @prime
+        if (@step)
+          @prime += @step
+          @step = 6 - @step
+        else
+          case @prime
+          when 1; @prime = 2
+          when 2; @prime = 3
+          when 3; @prime = 5; @step = 2
+          end
+        end
+        return @prime
       end
     end
     alias next succ
@@ -352,9 +369,6 @@ class Prime
       initialize
     end
   end
-
-
-
 
   # Internal use. An implementation of prime table by trial division method.
   class TrialDivision
@@ -385,20 +399,20 @@ class Prime
     # +index+ is a 0-based index.
     def [](index)
       while index >= @primes.length
-	# Only check for prime factors up to the square root of the potential primes,
-	#   but without the performance hit of an actual square root calculation.
-	if @next_to_check + 4 > @ulticheck_next_squared
-	  @ulticheck_index += 1
-	  @ulticheck_next_squared = @primes.at(@ulticheck_index + 1) ** 2
-	end
-	# Only check numbers congruent to one and five, modulo six. All others
+        # Only check for prime factors up to the square root of the potential primes,
+        #   but without the performance hit of an actual square root calculation.
+        if @next_to_check + 4 > @ulticheck_next_squared
+          @ulticheck_index += 1
+          @ulticheck_next_squared = @primes.at(@ulticheck_index + 1) ** 2
+        end
+        # Only check numbers congruent to one and five, modulo six. All others
 
-	#   are divisible by two or three.  This also allows us to skip checking against
-	#   two and three.
-	@primes.push @next_to_check if @primes[2..@ulticheck_index].find {|prime| @next_to_check % prime == 0 }.nil?
-	@next_to_check += 4
-	@primes.push @next_to_check if @primes[2..@ulticheck_index].find {|prime| @next_to_check % prime == 0 }.nil?
-	@next_to_check += 2
+        #   are divisible by two or three.  This also allows us to skip checking against
+        #   two and three.
+        @primes.push @next_to_check if @primes[2..@ulticheck_index].find {|prime| @next_to_check % prime == 0 }.nil?
+        @next_to_check += 4
+        @primes.push @next_to_check if @primes[2..@ulticheck_index].find {|prime| @next_to_check % prime == 0 }.nil?
+        @next_to_check += 2
       end
       return @primes[index]
     end
@@ -428,16 +442,16 @@ class Prime
       n = (n-1).div(2)*2+3 # the next odd number to given n
       table_index, integer_index, bit_index = indices(n)
       loop do
-	extend_table until @tables.length > table_index
-	for j in integer_index...ENTRIES_PER_TABLE
-	  if !@tables[table_index][j].zero?
-	    for k in bit_index...BITS_PER_ENTRY
-	      return NUMS_PER_TABLE*table_index + NUMS_PER_ENTRY*j + 2*k+1 if !@tables[table_index][j][k].zero?
-	    end
-	  end
-	  bit_index = 0
-	end
-	table_index += 1; integer_index = 0
+        extend_table until @tables.length > table_index
+        for j in integer_index...ENTRIES_PER_TABLE
+          if !@tables[table_index][j].zero?
+            for k in bit_index...BITS_PER_ENTRY
+              return NUMS_PER_TABLE*table_index + NUMS_PER_ENTRY*j + 2*k+1 if !@tables[table_index][j][k].zero?
+            end
+          end
+          bit_index = 0
+        end
+        table_index += 1; integer_index = 0
       end
     end
 
@@ -459,15 +473,15 @@ class Prime
       ubound = lbound + NUMS_PER_TABLE
       new_table = [FILLED_ENTRY] * ENTRIES_PER_TABLE # which represents primarity in lbound...ubound
       (3..Integer(Math.sqrt(ubound))).step(2) do |p|
-	i, j, k = indices(p)
-	next if @tables[i][j][k].zero?
+        i, j, k = indices(p)
+        next if @tables[i][j][k].zero?
 
-	start = (lbound.div(p)+1)*p  # least multiple of p which is >= lbound
-	start += p if start.even?
-	(start...ubound).step(2*p) do |n|
-	  _, j, k = indices(n)
-	  new_table[j] &= FILLED_ENTRY^(1<<k)
-	end
+        start = (lbound.div(p)+1)*p  # least multiple of p which is >= lbound
+        start += p if start.even?
+        (start...ubound).step(2*p) do |n|
+          _, j, k = indices(n)
+          new_table[j] &= FILLED_ENTRY^(1<<k)
+        end
       end
       @tables << new_table.freeze
     end
@@ -483,12 +497,12 @@ class Prime
 
     # Overwrites Prime#each.
     #
-    # Iterates the given block over all prime numbers. Note that enumeration starts from
-    # the current position of internal pointer, not rewound.
+    # Iterates the given block over all prime numbers. Note that enumeration
+    # starts from the current position of internal pointer, not rewound.
     def each(&block)
       return @generator.dup unless block_given?
       loop do
-	yield succ
+        yield succ
       end
     end
   end

@@ -1,4 +1,4 @@
-#
+#--
 # htmlutils.rb -- HTMLUtils Module
 #
 # Author: IPR -- Internet Programming with Ruby -- writers
@@ -10,6 +10,9 @@
 
 module WEBrick
   module HTMLUtils
+
+    ##
+    # Escapes &, ", > and < in +string+
 
     def escape(string)
       str = string ? string.dup : ""

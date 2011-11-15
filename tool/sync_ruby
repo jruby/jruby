@@ -6,9 +6,9 @@
 # against the jruby-specific fork of MRI's repository at
 # github.com/jruby/ruby. 
 #
-# This script selects the branch to use against with the version number, i.e: jruby-ruby_1_8_7 or jruby-ruby_1_9_2.
+# This script selects the branch to use against with the version number, i.e: jruby-ruby_1_8_7 or jruby-ruby_1_9_3.
 #
-# usage: sync_ruby <tests|stdlib|all> <version(1_8_7|1_9_2)> <jruby ruby fork clone> <jruby dir>
+# usage: sync_ruby <tests|stdlib|all> <version(1_8_7|1_9_3)> <jruby ruby fork clone> <jruby dir>
 #
 # Example:
 # 
@@ -100,7 +100,7 @@ end
 
 if $0 == __FILE__
   if ARGV.size != 4
-    puts "usage: sync_ruby <tests|stdlib|rubygems|all> <version(1_8_7|1_9_2)> <jruby ruby(gems) fork clone> <jruby dir>"
+    puts "usage: sync_ruby <tests|stdlib|rubygems|all> <version(1_8_7|1_9_3)> <jruby ruby(gems) fork clone> <jruby dir>"
     exit 1
   end
 

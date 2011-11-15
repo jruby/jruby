@@ -1,15 +1,16 @@
 require 'psych.so'
 require 'psych/nodes'
+require 'psych/streaming'
 require 'psych/visitors'
 require 'psych/handler'
 require 'psych/tree_builder'
-require 'psych/json/tree_builder'
 require 'psych/parser'
 require 'psych/omap'
 require 'psych/set'
 require 'psych/coder'
 require 'psych/core_ext'
 require 'psych/deprecated'
+require 'psych/json'
 
 ###
 # = Overview
@@ -89,10 +90,15 @@ require 'psych/deprecated'
 
 module Psych
   # The version is Psych you're using
-  VERSION         = '1.0.0'
+  VERSION         = '1.2.1'
 
   # The version of libyaml Psych is using
-  # LIBYAML_VERSION = Psych.libyaml_version.join '.'
+  LIBYAML_VERSION = Psych.libyaml_version.join '.' unless RUBY_ENGINE == 'jruby'
+
+  class Exception < RuntimeError
+  end
+
+  autoload :Stream, 'psych/stream'
 
   ###
   # Load +yaml+ in to a Ruby data structure.  If multiple documents are
@@ -150,11 +156,29 @@ module Psych
   end
 
   ###
-  # Dump Ruby object +o+ to a YAML string using +options+.
+  # call-seq:
+  #   Psych.dump(o)               -> string of yaml
+  #   Psych.dump(o, options)      -> string of yaml
+  #   Psych.dump(o, io)           -> io object passed in
+  #   Psych.dump(o, io, options)  -> io object passed in
+  #
+  # Dump Ruby object +o+ to a YAML string.  Optional +options+ may be passed in
+  # to control the output format.  If an IO object is passed in, the YAML will
+  # be dumped to that IO object.
   #
   # Example:
   #
+  #   # Dump an array, get back a YAML string
   #   Psych.dump(['a', 'b'])  # => "---\n- a\n- b\n"
+  #
+  #   # Dump an array to an IO object
+  #   Psych.dump(['a', 'b'], StringIO.new)  # => #<StringIO:0x000001009d0890>
+  #
+  #   # Dump an array with indentation set
+  #   Psych.dump(['a', ['b']], :indentation => 3) # => "---\n- a\n-  - b\n"
+  #
+  #   # Dump an array to an IO with indentation set
+  #   Psych.dump(['a', ['b']], StringIO.new, :indentation => 3)
   def self.dump o, io = nil, options = {}
     if Hash === io
       options = io
@@ -163,7 +187,7 @@ module Psych
 
     visitor = Psych::Visitors::YAMLTree.new options
     visitor << o
-    visitor.tree.to_yaml io
+    visitor.tree.to_yaml io, options
   end
 
   ###

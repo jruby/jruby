@@ -1,13 +1,16 @@
-############################################################
-# This file is imported from a different project.
-# DO NOT make modifications in this repo.
-# File a patch instead and assign it to Ryan Davis
-############################################################
+######################################################################
+# This file is imported from the minitest project.
+# DO NOT make modifications in this repo. They _will_ be reverted!
+# File a patch instead and assign it to Ryan Davis.
+######################################################################
 
 require 'optparse'
+require 'rbconfig'
 
 ##
 # Minimal (mostly drop-in) replacement for test-unit.
+#
+# :include: README.txt
 
 module MiniTest
 
@@ -27,7 +30,8 @@ module MiniTest
            require 'pathname'
            pwd = Pathname.new Dir.pwd
            pn = Pathname.new File.expand_path(__FILE__)
-           pn = File.join(".", pn.relative_path_from(pwd)) unless pn.relative?
+           relpath = pn.relative_path_from(pwd) rescue pn
+           pn = File.join ".", relpath unless pn.relative?
            pn.to_s
          else                             # assume both are expanded
            __FILE__
@@ -40,13 +44,19 @@ module MiniTest
     return ["No backtrace"] unless bt
 
     new_bt = []
-    bt.each do |line|
-      break if line.rindex(MINI_DIR, 0)
-      new_bt << line
+
+    unless $DEBUG then
+      bt.each do |line|
+        break if line.rindex MINI_DIR, 0
+        new_bt << line
+      end
+
+      new_bt = bt.reject { |line| line.rindex MINI_DIR, 0 } if new_bt.empty?
+      new_bt = bt.dup if new_bt.empty?
+    else
+      new_bt = bt.dup
     end
 
-    new_bt = bt.reject { |line| line.rindex(MINI_DIR, 0) } if new_bt.empty?
-    new_bt = bt.dup if new_bt.empty?
     new_bt
   end
 
@@ -56,14 +66,104 @@ module MiniTest
 
   module Assertions
 
+    WINDOZE = RbConfig::CONFIG['host_os'] =~ /mswin|mingw/
+
     ##
-    # mu_pp gives a human-readable version of +obj+.  By default #inspect is
-    # called.  You can override this to use #pretty_print if you want.
+    # Returns the diff command to use in #diff. Tries to intelligently
+    # figure out what diff to use.
+
+    def self.diff
+      @diff = if WINDOZE
+                "diff.exe -u"
+              else
+                if system("gdiff", __FILE__, __FILE__)
+                  "gdiff -u" # solaris and kin suck
+                elsif system("diff", __FILE__, __FILE__)
+                  "diff -u"
+                else
+                  nil
+                end
+              end unless defined? @diff
+
+      @diff
+    end
+
+    ##
+    # Set the diff command to use in #diff.
+
+    def self.diff= o
+      @diff = o
+    end
+
+    ##
+    # Returns a diff between +exp+ and +act+. If there is no known
+    # diff command or if it doesn't make sense to diff the output
+    # (single line, short output), then it simply returns a basic
+    # comparison between the two.
+
+    def diff exp, act
+      require "tempfile"
+
+      expect = mu_pp_for_diff exp
+      butwas = mu_pp_for_diff act
+      result = nil
+
+      need_to_diff =
+        MiniTest::Assertions.diff &&
+        (expect.include?("\n")    ||
+         butwas.include?("\n")    ||
+         expect.size > 30         ||
+         butwas.size > 30         ||
+         expect == butwas)
+
+      return "Expected: #{mu_pp exp}\n  Actual: #{mu_pp act}" unless
+        need_to_diff
+
+      Tempfile.open("expect") do |a|
+        a.puts expect
+        a.flush
+
+        Tempfile.open("butwas") do |b|
+          b.puts butwas
+          b.flush
+
+          result = `#{MiniTest::Assertions.diff} #{a.path} #{b.path}`
+          result.sub!(/^\-\-\- .+/, "--- expected")
+          result.sub!(/^\+\+\+ .+/, "+++ actual")
+
+          if result.empty? then
+            klass = exp.class
+            result = [
+                      "No visible difference.",
+                      "You should look at your implementation of #{klass}#==.",
+                      expect
+                     ].join "\n"
+          end
+        end
+      end
+
+      result
+    end
+
+    ##
+    # This returns a human-readable version of +obj+. By default
+    # #inspect is called. You can override this to use #pretty_print
+    # if you want.
 
     def mu_pp obj
       s = obj.inspect
-      s = s.force_encoding(Encoding.default_external) if defined? Encoding
+      s = s.encode Encoding.default_external if defined? Encoding
       s
+    end
+
+    ##
+    # This returns a diff-able human-readable version of +obj+. This
+    # differs from the regular mu_pp because it expands escaped
+    # newlines and makes hex-values generic (like object_ids). This
+    # uses mu_pp to do the first pass and then cleans it up.
+
+    def mu_pp_for_diff obj # TODO: possibly rename
+      mu_pp(obj).gsub(/\\n/, "\n").gsub(/0x[a-f0-9]+/m, '0xXXXXXX')
     end
 
     def _assertions= n # :nodoc:
@@ -91,7 +191,8 @@ module MiniTest
     # Fails unless the block returns a true value.
 
     def assert_block msg = nil
-      assert yield, "Expected block to return true value."
+      msg = message(msg) { "Expected block to return true value" }
+      assert yield, msg
     end
 
     ##
@@ -104,12 +205,19 @@ module MiniTest
     end
 
     ##
-    # Fails unless <tt>exp == act</tt>.
+    # Fails unless <tt>exp == act</tt> printing the difference between
+    # the two, if possible.
     #
-    # For floats use assert_in_delta
+    # If there is no visible difference but the assertion fails, you
+    # should suspect that your #== is buggy, or your inspect output is
+    # missing crucial details.
+    #
+    # For floats use assert_in_delta.
+    #
+    # See also: MiniTest::Assertions.diff
 
     def assert_equal exp, act, msg = nil
-      msg = message(msg) { "Expected #{mu_pp(exp)}, not #{mu_pp(act)}" }
+      msg = message(msg, "") { diff exp, act }
       assert(exp == act, msg)
     end
 
@@ -171,7 +279,7 @@ module MiniTest
     def assert_match exp, act, msg = nil
       msg = message(msg) { "Expected #{mu_pp(exp)} to match #{mu_pp(act)}" }
       assert_respond_to act, :"=~"
-      exp = /#{Regexp.escape exp}/ if String === exp && String === act
+      exp = Regexp.new Regexp.escape exp if String === exp and String === act
       assert exp =~ act, msg
     end
 
@@ -194,11 +302,29 @@ module MiniTest
     end
 
     ##
+    # Fails if stdout or stderr do not output the expected results.
+    # Pass in nil if you don't care about that streams output. Pass in
+    # "" if you require it to be silent.
+    #
+    # See also: #assert_silent
+
+    def assert_output stdout = nil, stderr = nil
+      out, err = capture_io do
+        yield
+      end
+
+      x = assert_equal stdout, out, "In stdout" if stdout
+      y = assert_equal stderr, err, "In stderr" if stderr
+
+      (!stdout || x) && (!stderr || y)
+    end
+
+    ##
     # Fails unless the block raises one of +exp+
 
     def assert_raises *exp
-      msg = String === exp.last ? exp.pop : nil
-      msg = msg.to_s + "\n" if msg
+      msg = "#{exp.pop}\n" if String === exp.last
+
       should_raise = false
       begin
         yield
@@ -230,8 +356,8 @@ module MiniTest
 
     def assert_respond_to obj, meth, msg = nil
       msg = message(msg) {
-          "Expected #{mu_pp(obj)} (#{obj.class}) to respond to ##{meth}"
-        }
+        "Expected #{mu_pp(obj)} (#{obj.class}) to respond to ##{meth}"
+      }
       assert obj.respond_to?(meth), msg
     end
 
@@ -257,6 +383,17 @@ module MiniTest
       m = message(m) {
         "Expected #{mu_pp(recv)}.#{msg}(*#{mu_pp(args)}) to return true" }
       assert recv.__send__(msg, *args), m
+    end
+
+    ##
+    # Fails if the block outputs anything to stderr or stdout.
+    #
+    # See also: #assert_output
+
+    def assert_silent
+      assert_output "", "" do
+        yield
+      end
     end
 
     ##
@@ -307,7 +444,14 @@ module MiniTest
     # Returns details for exception +e+
 
     def exception_details e, msg
-      "#{msg}\nClass: <#{e.class}>\nMessage: <#{e.message.inspect}>\n---Backtrace---\n#{MiniTest::filter_backtrace(e.backtrace).join("\n")}\n---------------"
+      [
+       "#{msg}",
+       "Class: <#{e.class}>",
+       "Message: <#{e.message.inspect}>",
+       "---Backtrace---",
+       "#{MiniTest::filter_backtrace(e.backtrace).join("\n")}",
+       "---------------",
+      ].join "\n"
     end
 
     ##
@@ -321,16 +465,10 @@ module MiniTest
     ##
     # Returns a proc that will output +msg+ along with the default message.
 
-    def message msg = nil, &default
+    def message msg = nil, ending = ".", &default
       proc {
-        if msg then
-          msg = msg.to_s unless String === msg
-          msg += '.' unless msg.empty?
-          msg += "\n#{default.call}."
-          msg.strip
-        else
-          "#{default.call}."
-        end
+        custom_message = "#{msg}.\n" unless msg.nil? or msg.to_s.empty?
+        "#{custom_message}#{default.call}#{ending}"
       }
     end
 
@@ -353,7 +491,7 @@ module MiniTest
     # Fails if +obj+ is empty.
 
     def refute_empty obj, msg = nil
-      msg = message(msg) { "Expected #{obj.inspect} to not be empty" }
+      msg = message(msg) { "Expected #{mu_pp(obj)} to not be empty" }
       assert_respond_to obj, :empty?
       refute obj.empty?, msg
     end
@@ -439,7 +577,7 @@ module MiniTest
     end
 
     ##
-    # Fails if +o1+ is not +op+ +o2+ nil. eg:
+    # Fails if +o1+ is not +op+ +o2+. Eg:
     #
     #   refute_operator 1, :>, 2 #=> pass
     #   refute_operator 1, :<, 2 #=> fail
@@ -482,14 +620,31 @@ module MiniTest
   end
 
   class Unit
-    VERSION = "1.6.0" # :nodoc:
+    VERSION = "2.5.1" # :nodoc:
 
     attr_accessor :report, :failures, :errors, :skips # :nodoc:
     attr_accessor :test_count, :assertion_count       # :nodoc:
     attr_accessor :start_time                         # :nodoc:
+    attr_accessor :help                               # :nodoc:
+    attr_accessor :verbose                            # :nodoc:
+    attr_writer   :options                            # :nodoc:
+
+    def options
+      @options ||= {}
+    end
 
     @@installed_at_exit ||= false
     @@out = $stdout
+
+    ##
+    # A simple hook allowing you to run a block of code after the
+    # tests are done. Eg:
+    #
+    #   MiniTest::Unit.after_tests { p $debugging_info }
+
+    def self.after_tests
+      at_exit { at_exit { yield } }
+    end
 
     ##
     # Registers MiniTest::Unit to run tests at process exit
@@ -505,9 +660,27 @@ module MiniTest
         exit_code = nil
 
         at_exit { exit false if exit_code && exit_code != 0 }
-        exit_code = MiniTest::Unit.new.run(ARGV)
+
+        exit_code = MiniTest::Unit.new.run ARGV
       } unless @@installed_at_exit
       @@installed_at_exit = true
+    end
+
+    ##
+    # Returns the stream to use for output.
+
+    def self.output
+      @@out
+    end
+
+    ##
+    # Returns the stream to use for output.
+    #
+    # DEPRECATED: use ::output instead.
+
+    def self.out
+      warn "::out deprecated, use ::output instead." if $VERBOSE
+      output
     end
 
     ##
@@ -516,6 +689,112 @@ module MiniTest
 
     def self.output= stream
       @@out = stream
+    end
+
+    ##
+    # Tells MiniTest::Unit to delegate to +runner+, an instance of a
+    # MiniTest::Unit subclass, when MiniTest::Unit#run is called.
+
+    def self.runner= runner
+      @@runner = runner
+    end
+
+    ##
+    # Returns the MiniTest::Unit subclass instance that will be used
+    # to run the tests. A MiniTest::Unit instance is the default
+    # runner.
+
+    def self.runner
+      @@runner ||= self.new
+    end
+
+    ##
+    # Return all plugins' run methods (methods that start with "run_").
+
+    def self.plugins
+      @@plugins ||= (["run_tests"] +
+                     public_instance_methods(false).
+                     grep(/^run_/).map { |s| s.to_s }).uniq
+    end
+
+    def output
+      self.class.output
+    end
+
+    def puts *a  # :nodoc:
+      output.puts(*a)
+    end
+
+    def print *a # :nodoc:
+      output.print(*a)
+    end
+
+    def _run_anything type
+      suites = TestCase.send "#{type}_suites"
+      return if suites.empty?
+
+      start = Time.now
+
+      puts
+      puts "# Running #{type}s:"
+      puts
+
+      @test_count, @assertion_count = 0, 0
+      sync = output.respond_to? :"sync=" # stupid emacs
+      old_sync, output.sync = output.sync, true if sync
+
+      results = _run_suites suites, type
+
+      @test_count      = results.inject(0) { |sum, (tc, _)| sum + tc }
+      @assertion_count = results.inject(0) { |sum, (_, ac)| sum + ac }
+
+      output.sync = old_sync if sync
+
+      t = Time.now - start
+
+      puts
+      puts
+      puts "Finished #{type}s in %.6fs, %.4f tests/s, %.4f assertions/s." %
+        [t, test_count / t, assertion_count / t]
+
+      report.each_with_index do |msg, i|
+        puts "\n%3d) %s" % [i + 1, msg]
+      end
+
+      puts
+
+      status
+    end
+
+    def _run_suites suites, type
+      suites.map { |suite| _run_suite suite, type }
+    end
+
+    def _run_suite suite, type
+      header = "#{type}_suite_header"
+      puts send(header, suite) if respond_to? header
+
+      filter = options[:filter] || '/./'
+      filter = Regexp.new $1 if filter =~ /\/(.*)\//
+
+      assertions = suite.send("#{type}_methods").grep(filter).map { |method|
+        inst = suite.new method
+        inst._assertions = 0
+
+        print "#{suite}##{method} = " if @verbose
+
+        @start_time = Time.now
+        result = inst.run self
+        time = Time.now - @start_time
+
+        print "%.2f s = " % time if @verbose
+        print result
+        puts if @verbose
+
+        inst._assertions
+      }
+
+      return assertions.size, assertions.inject(0) { |sum, n| sum + n }
     end
 
     def location e # :nodoc:
@@ -535,13 +814,14 @@ module MiniTest
       e = case e
           when MiniTest::Skip then
             @skips += 1
+            return "S" unless @verbose
             "Skipped:\n#{meth}(#{klass}) [#{location e}]:\n#{e.message}\n"
           when MiniTest::Assertion then
             @failures += 1
             "Failure:\n#{meth}(#{klass}) [#{location e}]:\n#{e.message}\n"
           else
             @errors += 1
-            bt = MiniTest::filter_backtrace(e.backtrace).join("\n    ")
+            bt = MiniTest::filter_backtrace(e.backtrace).join "\n    "
             "Error:\n#{meth}(#{klass}):\n#{e.class}: #{e.message}\n    #{bt}\n"
           end
       @report << e
@@ -556,6 +836,7 @@ module MiniTest
 
     def process_args args = []
       options = {}
+      orig_args = args.dup
 
       OptionParser.new do |opts|
         opts.banner  = 'minitest options:'
@@ -578,54 +859,43 @@ module MiniTest
           options[:filter] = a
         end
 
-        opts.parse args
+        opts.parse! args
+        orig_args -= args
       end
+
+      unless options[:seed] then
+        srand
+        options[:seed] = srand % 0xFFFF
+        orig_args << "--seed" << options[:seed].to_s
+      end
+
+      srand options[:seed]
+
+      self.verbose = options[:verbose]
+      @help = orig_args.map { |s| s =~ /[\s|&<>$()]/ ? s.inspect : s }.join " "
 
       options
     end
 
     ##
-    # Top level driver, controls all output and filtering.
+    # Begins the full test run. Delegates to +runner+'s #_run method.
 
     def run args = []
-      options = process_args args
+      self.class.runner._run(args)
+    end
 
-      @verbose = options[:verbose]
+    ##
+    # Top level driver, controls all output and filtering.
 
-      filter = options[:filter] || '/./'
-      filter = Regexp.new $1 if filter and filter =~ /\/(.*)\//
+    def _run args = []
+      self.options = process_args args
 
-      seed = options[:seed]
-      unless seed then
-        srand
-        seed = srand % 0xFFFF
+      puts "Run options: #{help}"
+
+      self.class.plugins.each do |plugin|
+        send plugin
+        break unless report.empty?
       end
-
-      srand seed
-
-      @@out.puts "Loaded suite #{$0.sub(/\.rb$/, '')}\nStarted"
-
-      start = Time.now
-      run_test_suites filter
-
-      @@out.puts
-      @@out.puts "Finished in #{'%.6f' % (Time.now - start)} seconds."
-
-      @report.each_with_index do |msg, i|
-        @@out.puts "\n%3d) %s" % [i + 1, msg]
-      end
-
-      @@out.puts
-
-      status
-
-      @@out.puts
-
-      help = ["--seed", seed]
-      help.push "--verbose" if @verbose
-      help.push("--name", options[:filter].inspect) if options[:filter]
-
-      @@out.puts "Test run options: #{help.join(" ")}"
 
       return failures + errors if @test_count > 0 # or return nil...
     rescue Interrupt
@@ -633,42 +903,25 @@ module MiniTest
     end
 
     ##
+    # Runs test suites matching +filter+.
+
+    def run_tests
+      _run_anything :test
+    end
+
+    ##
     # Writes status to +io+
 
-    def status io = @@out
+    def status io = self.output
       format = "%d tests, %d assertions, %d failures, %d errors, %d skips"
       io.puts format % [test_count, assertion_count, failures, errors, skips]
     end
 
     ##
-    # Runs test suites matching +filter+
-
-    def run_test_suites filter = /./
-      @test_count, @assertion_count = 0, 0
-      old_sync, @@out.sync = @@out.sync, true if @@out.respond_to? :sync=
-      TestCase.test_suites.each do |suite|
-        suite.test_methods.grep(filter).each do |test|
-          inst = suite.new test
-          inst._assertions = 0
-          @@out.print "#{suite}##{test}: " if @verbose
-
-          @start_time = Time.now
-          result = inst.run(self)
-
-          @@out.print "%.2f s: " % (Time.now - @start_time) if @verbose
-          @@out.print result
-          @@out.puts if @verbose
-          @test_count += 1
-          @assertion_count += inst._assertions
-        end
-      end
-      @@out.sync = old_sync if @@out.respond_to? :sync=
-      [@test_count, @assertion_count]
-    end
-
-    ##
-    # Subclass TestCase to create your own tests.  Typically you'll want a
+    # Subclass TestCase to create your own tests. Typically you'll want a
     # TestCase subclass per implementation class.
+    #
+    # See MiniTest::Assertions
 
     class TestCase
       attr_reader :__name__ # :nodoc:
@@ -682,30 +935,33 @@ module MiniTest
       # Runs the tests reporting the status to +runner+
 
       def run runner
-        trap 'INFO' do
-          warn '%s#%s %.2fs' % [self.class, self.__name__,
-            (Time.now - runner.start_time)]
+        trap "INFO" do
+          time = runner.start_time ? Time.now - runner.start_time : 0
+          warn "%s#%s %.2fs" % [self.class, self.__name__, time]
           runner.status $stderr
         end if SUPPORTS_INFO_SIGNAL
 
-        result = '.'
+        result = ""
         begin
           @passed = nil
           self.setup
+          self.run_setup_hooks
           self.__send__ self.__name__
+          result = "." unless io?
           @passed = true
         rescue *PASSTHROUGH_EXCEPTIONS
           raise
         rescue Exception => e
           @passed = false
-          result = runner.puke(self.class, self.__name__, e)
+          result = runner.puke self.class, self.__name__, e
         ensure
           begin
+            self.run_teardown_hooks
             self.teardown
           rescue *PASSTHROUGH_EXCEPTIONS
             raise
           rescue Exception => e
-            result = runner.puke(self.class, self.__name__, e)
+            result = runner.puke self.class, self.__name__, e
           end
           trap 'INFO', 'DEFAULT' if SUPPORTS_INFO_SIGNAL
         end
@@ -714,7 +970,17 @@ module MiniTest
 
       def initialize name # :nodoc:
         @__name__ = name
+        @__io__ = nil
         @passed = nil
+      end
+
+      def io
+        @__io__ = true
+        MiniTest::Unit.output
+      end
+
+      def io?
+        @__io__
       end
 
       def self.reset # :nodoc:
@@ -723,21 +989,29 @@ module MiniTest
 
       reset
 
-      def self.inherited klass # :nodoc:
-        @@test_suites[klass] = true
+      ##
+      # Call this at the top of your tests when you absolutely
+      # positively need to have ordered tests. In doing so, you're
+      # admitting that you suck and your tests are weak.
+
+      def self.i_suck_and_my_tests_are_order_dependent!
+        class << self
+          define_method :test_order do :alpha end
+        end
       end
 
-      ##
-      # Defines test order and is subclassable. Defaults to :random
-      # but can be overridden to return :alpha if your tests are order
-      # dependent (read: weak).
+      def self.inherited klass # :nodoc:
+        @@test_suites[klass] = true
+        klass.reset_setup_teardown_hooks
+        super
+      end
 
-      def self.test_order
+      def self.test_order # :nodoc:
         :random
       end
 
       def self.test_suites # :nodoc:
-        @@test_suites.keys.sort_by { |ts| ts.name }
+        @@test_suites.keys.sort_by { |ts| ts.name.to_s }
       end
 
       def self.test_methods # :nodoc:
@@ -746,7 +1020,7 @@ module MiniTest
         case self.test_order
         when :random then
           max = methods.size
-          methods.sort.sort_by { rand(max) }
+          methods.sort.sort_by { rand max }
         when :alpha, :sorted then
           methods.sort
         else
@@ -771,6 +1045,111 @@ module MiniTest
 
       def teardown; end
 
+      def self.reset_setup_teardown_hooks # :nodoc:
+        @setup_hooks = []
+        @teardown_hooks = []
+      end
+
+      reset_setup_teardown_hooks
+
+      ##
+      # Adds a block of code that will be executed before every TestCase is
+      # run. Equivalent to +setup+, but usable multiple times and without
+      # re-opening any classes.
+      #
+      # All of the setup hooks will run in order after the +setup+ method, if
+      # one is defined.
+      #
+      # The argument can be any object that responds to #call or a block.
+      # That means that this call,
+      #
+      #     MiniTest::TestCase.add_setup_hook { puts "foo" }
+      #
+      # ... is equivalent to:
+      #
+      #     module MyTestSetup
+      #       def call
+      #         puts "foo"
+      #       end
+      #     end
+      #
+      #     MiniTest::TestCase.add_setup_hook MyTestSetup
+      #
+      # The blocks passed to +add_setup_hook+ take an optional parameter that
+      # will be the TestCase instance that is executing the block.
+
+      def self.add_setup_hook arg=nil, &block
+        hook = arg || block
+        @setup_hooks << hook
+      end
+
+      def self.setup_hooks # :nodoc:
+        if superclass.respond_to? :setup_hooks then
+          superclass.setup_hooks
+        else
+          []
+        end + @setup_hooks
+      end
+
+      def run_setup_hooks # :nodoc:
+        self.class.setup_hooks.each do |hook|
+          if hook.respond_to?(:arity) && hook.arity == 1
+            hook.call(self)
+          else
+            hook.call
+          end
+        end
+      end
+
+      ##
+      # Adds a block of code that will be executed after every TestCase is
+      # run. Equivalent to +teardown+, but usable multiple times and without
+      # re-opening any classes.
+      #
+      # All of the teardown hooks will run in reverse order after the
+      # +teardown+ method, if one is defined.
+      #
+      # The argument can be any object that responds to #call or a block.
+      # That means that this call,
+      #
+      #     MiniTest::TestCase.add_teardown_hook { puts "foo" }
+      #
+      # ... is equivalent to:
+      #
+      #     module MyTestTeardown
+      #       def call
+      #         puts "foo"
+      #       end
+      #     end
+      #
+      #     MiniTest::TestCase.add_teardown_hook MyTestTeardown
+      #
+      # The blocks passed to +add_teardown_hook+ take an optional parameter
+      # that will be the TestCase instance that is executing the block.
+
+      def self.add_teardown_hook arg=nil, &block
+        hook = arg || block
+        @teardown_hooks << hook
+      end
+
+      def self.teardown_hooks # :nodoc:
+        if superclass.respond_to? :teardown_hooks then
+          superclass.teardown_hooks
+        else
+          []
+        end + @teardown_hooks
+      end
+
+      def run_teardown_hooks # :nodoc:
+        self.class.teardown_hooks.reverse.each do |hook|
+          if hook.respond_to?(:arity) && hook.arity == 1
+            hook.call(self)
+          else
+            hook.call
+          end
+        end
+      end
+
       include MiniTest::Assertions
     end # class TestCase
   end # class Unit
@@ -788,4 +1167,3 @@ if $DEBUG then
     end
   end
 end
-

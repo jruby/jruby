@@ -57,6 +57,8 @@ module Psych
           Complex(o.value)
         when "!ruby/object:Rational"
           Rational(o.value)
+        when "!ruby/class", "!ruby/module"
+          resolve_class o.value
         when "tag:yaml.org,2002:float", "!float"
           Float(@ss.tokenize(o.value))
         when "!ruby/regexp"
@@ -69,9 +71,7 @@ module Psych
             when 'x' then options |= Regexp::EXTENDED
             when 'i' then options |= Regexp::IGNORECASE
             when 'm' then options |= Regexp::MULTILINE
-
-            # FIXME: there is no constant for ARG_ENCODING_NONE
-            when 'n' then options |= 32
+            when 'n' then options |= Regexp::NOENCODING
             else lang = option
             end
           end
@@ -120,6 +120,7 @@ module Psych
 
       def visit_Psych_Nodes_Mapping o
         return revive(Psych.load_tags[o.tag], o) if Psych.load_tags[o.tag]
+        return revive_hash({}, o) unless o.tag
 
         case o.tag
         when '!str', 'tag:yaml.org,2002:str'
@@ -181,32 +182,13 @@ module Psych
         when /^!ruby\/object:?(.*)?$/
           name = $1 || 'Object'
           obj = revive((resolve_class(name) || Object), o)
-          @st[o.anchor] = obj if o.anchor
           obj
+
+        when /^!map:(.*)$/, /^!ruby\/hash:(.*)$/
+          revive_hash resolve_class($1).new, o
+
         else
-          hash = {}
-          @st[o.anchor] = hash if o.anchor
-
-          o.children.each_slice(2) { |k,v|
-            key = accept(k)
-
-            if key == '<<'
-              case v
-              when Nodes::Alias
-                hash.merge! accept(v)
-              when Nodes::Sequence
-                accept(v).reverse_each do |value|
-                  hash.merge! value
-                end
-              else
-                hash[key] = accept(v)
-              end
-            else
-              hash[key] = accept(v)
-            end
-
-          }
-          hash
+          revive_hash({}, o)
         end
       end
 
@@ -223,8 +205,34 @@ module Psych
       end
 
       private
+      def revive_hash hash, o
+        @st[o.anchor] = hash if o.anchor
+
+          o.children.each_slice(2) { |k,v|
+          key = accept(k)
+
+          if key == '<<'
+            case v
+            when Nodes::Alias
+              hash.merge! accept(v)
+            when Nodes::Sequence
+              accept(v).reverse_each do |value|
+                hash.merge! value
+              end
+            else
+              hash[key] = accept(v)
+            end
+          else
+            hash[key] = accept(v)
+          end
+
+        }
+        hash
+      end
+
       def revive klass, node
         s = klass.allocate
+        @st[node.anchor] = s if node.anchor
         h = Hash[*node.children.map { |c| accept c }]
         init_with(s, h, node)
       end

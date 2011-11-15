@@ -4,21 +4,39 @@ require 'rdoc/markup'
 # Base class for RDoc markup formatters
 #
 # Formatters use a visitor pattern to convert content into output.
+#
+# If you'd like to write your own Formatter use
+# RDoc::Markup::FormatterTestCase.  If you're writing a text-output formatter
+# use RDoc::Markup::TextFormatterTestCase which provides extra test cases.
 
 class RDoc::Markup::Formatter
+
+  ##
+  # Tag for inline markup containing a +bit+ for the bitmask and the +on+ and
+  # +off+ triggers.
 
   InlineTag = Struct.new(:bit, :on, :off)
 
   ##
   # Creates a new Formatter
 
-  def initialize
-    @markup = RDoc::Markup.new
-    @am = @markup.attribute_manager
+  def initialize markup = nil
+    @markup = markup || RDoc::Markup.new
+    @am     = @markup.attribute_manager
+
     @attr_tags = []
 
     @in_tt = 0
     @tt_bit = RDoc::Markup::Attribute.bitmap_for :TT
+  end
+
+  ##
+  # Adds +document+ to the output
+
+  def accept_document document
+    document.parts.each do |item|
+      item.accept self
+    end
   end
 
   ##
@@ -70,7 +88,9 @@ class RDoc::Markup::Formatter
   ##
   # Converts added specials.  See RDoc::Markup#add_special
 
-  def convert_special(special)
+  def convert_special special
+    return special.text if in_tt?
+
     handled = false
 
     RDoc::Markup::Attribute.each_name_of special.type do |name|
@@ -101,6 +121,9 @@ class RDoc::Markup::Formatter
     @in_tt > 0
   end
 
+  ##
+  # Turns on tags for +item+ on +res+
+
   def on_tags res, item
     attr_mask = item.turn_on
     return if attr_mask.zero?
@@ -112,6 +135,9 @@ class RDoc::Markup::Formatter
       end
     end
   end
+
+  ##
+  # Turns off tags for +item+ on +res+
 
   def off_tags res, item
     attr_mask = item.turn_off

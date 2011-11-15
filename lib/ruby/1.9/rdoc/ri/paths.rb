@@ -10,10 +10,26 @@ module RDoc::RI::Paths
 
   version = RbConfig::CONFIG['ruby_version']
 
-  base    = File.join RbConfig::CONFIG['ridir'], version
+  base    = if RbConfig::CONFIG.key? 'ridir' then
+              File.join RbConfig::CONFIG['ridir'], version
+            else
+              File.join RbConfig::CONFIG['datadir'], 'ri', version
+            end
+
   SYSDIR  = File.join base, "system"
   SITEDIR = File.join base, "site"
-  HOMEDIR = (File.expand_path('~/.rdoc') rescue nil)
+
+  homedir = begin
+              File.expand_path('~')
+            rescue ArgumentError
+            end
+
+  homedir ||= ENV['HOME'] ||
+              ENV['USERPROFILE'] || ENV['HOMEPATH'] # for 1.8 compatibility
+
+  HOMEDIR = if homedir then
+              File.join homedir, ".rdoc"
+            end
   #:startdoc:
 
   @gemdirs = nil
@@ -26,7 +42,7 @@ module RDoc::RI::Paths
   #           true
   # :site:: Where ri for installed libraries are stored.  Yielded when
   #         +site+ is true.  Normally no ri data is stored here.
-  # :home:: ~/.ri.  Yielded when +home+ is true.
+  # :home:: ~/.rdoc.  Yielded when +home+ is true.
   # :gem:: ri data for an installed gem.  Yielded when +gems+ is true.
   # :extra:: ri data directory from the command line.  Yielded for each
   #          entry in +extra_dirs+
@@ -38,7 +54,7 @@ module RDoc::RI::Paths
 
     yield SYSDIR,  :system if system
     yield SITEDIR, :site   if site
-    yield HOMEDIR, :home   if home
+    yield HOMEDIR, :home   if home and HOMEDIR
 
     gemdirs.each do |dir|
       yield dir, :gem

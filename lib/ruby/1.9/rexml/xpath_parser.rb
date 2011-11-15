@@ -5,20 +5,30 @@ require 'rexml/syncenumerator'
 require 'rexml/parsers/xpathparser'
 
 class Object
+  # provides a unified +clone+ operation, for REXML::XPathParser
+  # to use across multiple Object types
   def dclone
     clone
   end
 end
 class Symbol
+  # provides a unified +clone+ operation, for REXML::XPathParser
+  # to use across multiple Object types
   def dclone ; self ; end
 end
 class Fixnum
+  # provides a unified +clone+ operation, for REXML::XPathParser
+  # to use across multiple Object types
   def dclone ; self ; end
 end
 class Float
+  # provides a unified +clone+ operation, for REXML::XPathParser
+  # to use across multiple Object types
   def dclone ; self ; end
 end
 class Array
+  # provides a unified +clone+ operation, for REXML::XPathParser
+  # to use across multiple Object+ types
   def dclone
     klone = self.clone
     klone.clear
@@ -687,7 +697,7 @@ module REXML
           return rv
         else
           res = []
-          enum = SyncEnumerator.new( set1, set2 ).each { |i1, i2|
+          SyncEnumerator.new( set1, set2 ).each { |i1, i2|
             #puts "i1 = #{i1.inspect} (#{i1.class.name})"
             #puts "i2 = #{i2.inspect} (#{i2.class.name})"
             i1 = norm( i1 )

@@ -6,6 +6,11 @@ begin
 rescue LoadError
 end
 
+begin
+  require 'win32console'
+rescue LoadError
+end
+
 require 'rdoc/ri'
 require 'rdoc/ri/paths'
 require 'rdoc/markup'
@@ -54,6 +59,9 @@ class RDoc::RI::Driver
       "Nothing known about #{super}"
     end
   end
+
+  ##
+  # An RDoc::RI::Store for each entry in the RI path
 
   attr_accessor :stores
 
@@ -120,7 +128,7 @@ Where name can be:
 All class names may be abbreviated to their minimum unambiguous form. If a name
 is ambiguous, all valid options will be listed.
 
-The form '.' method matches either class or instance methods, while #method
+A '.' matches either class or instance methods, while #method
 matches only instance and ::method matches only class methods.
 
 For example:
@@ -130,7 +138,7 @@ For example:
     #{opt.program_name} File.new
     #{opt.program_name} zip
 
-Note that shell quoting may be required for method names containing
+Note that shell quoting or escaping may be required for method names containing
 punctuation:
 
     #{opt.program_name} 'Array.[]'
@@ -185,6 +193,13 @@ Options may also be set in the 'RI' environment variable.
              "In interactive mode you can repeatedly",
              "look up methods with autocomplete.") do
         options[:interactive] = true
+      end
+
+      opt.separator nil
+
+      opt.on("--list", "-l",
+             "List classes ri knows about.") do
+        options[:list] = true
       end
 
       opt.separator nil
@@ -323,13 +338,14 @@ Options may also be set in the 'RI' environment variable.
     require 'profile' if options[:profile]
 
     @names = options[:names]
+    @list = options[:list]
 
     @doc_dirs = []
     @stores   = []
 
     RDoc::RI::Paths.each(options[:use_system], options[:use_site],
-                                   options[:use_home], options[:use_gems],
-                                   *options[:extra_doc_dirs]) do |path, type|
+                         options[:use_home], options[:use_gems],
+                         *options[:extra_doc_dirs]) do |path, type|
       @doc_dirs << path
 
       store = RDoc::RI::Store.new path, type
@@ -354,7 +370,7 @@ Options may also be set in the 'RI' environment variable.
 
     paths = RDoc::Markup::Verbatim.new
     also_in.each do |store|
-      paths.parts.push '  ', store.friendly_path, "\n"
+      paths.parts.push store.friendly_path, "\n"
     end
     out << paths
   end
@@ -370,6 +386,8 @@ Options may also be set in the 'RI' environment variable.
                 superclass = classes.map do |klass|
                   klass.superclass unless klass.module?
                 end.compact.shift || 'Object'
+
+                superclass = superclass.full_name unless String === superclass
 
                 "#{name} < #{superclass}"
               end
@@ -422,7 +440,7 @@ Options may also be set in the 'RI' environment variable.
           verb = RDoc::Markup::Verbatim.new
 
           wout.each do |incl|
-            verb.push '  ', incl.name, "\n"
+            verb.push incl.name, "\n"
           end
 
           out << verb
@@ -435,14 +453,18 @@ Options may also be set in the 'RI' environment variable.
   # Adds a list of +methods+ to +out+ with a heading of +name+
 
   def add_method_list out, methods, name
-    return unless methods
+    return if methods.empty?
 
     out << RDoc::Markup::Heading.new(1, "#{name}:")
     out << RDoc::Markup::BlankLine.new
 
-    out.push(*methods.map do |method|
-      RDoc::Markup::Verbatim.new '  ', method
-    end)
+    if @use_stdout and !@interactive
+      out.push(*methods.map do |method|
+        RDoc::Markup::Verbatim.new method
+      end)
+    else
+      out << RDoc::Markup::IndentedParagraph.new(2, methods.join(', '))
+    end
 
     out << RDoc::Markup::BlankLine.new
   end
@@ -485,6 +507,81 @@ Options may also be set in the 'RI' environment variable.
   end
 
   ##
+  # Builds a RDoc::Markup::Document from +found+, +klasess+ and +includes+
+
+  def class_document name, found, klasses, includes
+    also_in = []
+
+    out = RDoc::Markup::Document.new
+
+    add_class out, name, klasses
+
+    add_includes out, includes
+
+    found.each do |store, klass|
+      comment = klass.comment
+      # TODO the store's cache should always return an empty Array
+      class_methods    = store.class_methods[klass.full_name]    || []
+      instance_methods = store.instance_methods[klass.full_name] || []
+      attributes       = store.attributes[klass.full_name]       || []
+
+      if comment.empty? and
+         instance_methods.empty? and class_methods.empty? then
+        also_in << store
+        next
+      end
+
+      add_from out, store
+
+      unless comment.empty? then
+        out << RDoc::Markup::Rule.new(1)
+
+        if comment.merged? then
+          parts = comment.parts
+          parts = parts.zip [RDoc::Markup::BlankLine.new] * parts.length
+          parts.flatten!
+          parts.pop
+
+          out.push(*parts)
+        else
+          out << comment
+        end
+      end
+
+      if class_methods or instance_methods or not klass.constants.empty? then
+        out << RDoc::Markup::Rule.new(1)
+      end
+
+      unless klass.constants.empty? then
+        out << RDoc::Markup::Heading.new(1, "Constants:")
+        out << RDoc::Markup::BlankLine.new
+        list = RDoc::Markup::List.new :NOTE
+
+        constants = klass.constants.sort_by { |constant| constant.name }
+
+        list.push(*constants.map do |constant|
+          parts = constant.comment.parts if constant.comment
+          parts << RDoc::Markup::Paragraph.new('[not documented]') if
+            parts.empty?
+
+          RDoc::Markup::ListItem.new(constant.name, *parts)
+        end)
+
+        out << list
+        out << RDoc::Markup::BlankLine.new
+      end
+
+      add_method_list out, class_methods,    'Class methods'
+      add_method_list out, instance_methods, 'Instance methods'
+      add_method_list out, attributes,       'Attributes'
+    end
+
+    add_also_in out, also_in
+
+    out
+  end
+
+  ##
   # Hash mapping a known class or module to the stores it can be loaded from
 
   def classes
@@ -504,6 +601,29 @@ Options may also be set in the 'RI' environment variable.
   end
 
   ##
+  # Returns the stores wherin +name+ is found along with the classes and
+  # includes that match it
+
+  def classes_and_includes_for name
+    klasses = []
+    includes = []
+
+    found = @stores.map do |store|
+      begin
+        klass = store.load_class name
+        klasses  << klass
+        includes << [klass.includes, store] if klass.includes
+        [store, klass]
+      rescue Errno::ENOENT
+      end
+    end.compact
+
+    includes.reject! do |modules,| modules.empty? end
+
+    [found, klasses, includes]
+  end
+
+  ##
   # Completes +name+ based on the caches.  For Readline
 
   def complete name
@@ -516,7 +636,11 @@ Options may also be set in the 'RI' environment variable.
     klass_name = method ? name : klass
 
     if name !~ /#|\./ then
-      completions.push(*klasses.grep(/^#{klass_name}/))
+      completions = klasses.grep(/^#{Regexp.escape klass_name}[^:]*$/)
+      completions.concat klasses.grep(/^#{Regexp.escape name}[^:]*$/) if
+        name =~ /::$/
+
+      completions << klass if classes.key? klass # to complete a method name
     elsif selector then
       completions << klass if classes.key? klass
     elsif classes.key? klass_name then
@@ -538,7 +662,7 @@ Options may also be set in the 'RI' environment variable.
       completions.push(*methods)
     end
 
-    completions.sort
+    completions.sort.uniq
   end
 
   ##
@@ -558,79 +682,11 @@ Options may also be set in the 'RI' environment variable.
   def display_class name
     return if name =~ /#|\./
 
-    klasses = []
-    includes = []
-
-    found = @stores.map do |store|
-      begin
-        klass = store.load_class name
-        klasses  << klass
-        includes << [klass.includes, store] if klass.includes
-        [store, klass]
-      rescue Errno::ENOENT
-      end
-    end.compact
+    found, klasses, includes = classes_and_includes_for name
 
     return if found.empty?
 
-    also_in = []
-
-    includes.reject! do |modules,| modules.empty? end
-
-    out = RDoc::Markup::Document.new
-
-    add_class out, name, klasses
-
-    add_includes out, includes
-
-    found.each do |store, klass|
-      comment = klass.comment
-      class_methods    = store.class_methods[klass.full_name]
-      instance_methods = store.instance_methods[klass.full_name]
-      attributes       = store.attributes[klass.full_name]
-
-      if comment.empty? and !(instance_methods or class_methods) then
-        also_in << store
-        next
-      end
-
-      add_from out, store
-
-      unless comment.empty? then
-        out << RDoc::Markup::Rule.new(1)
-        out << comment
-      end
-
-      if class_methods or instance_methods or not klass.constants.empty? then
-        out << RDoc::Markup::Rule.new
-      end
-
-      unless klass.constants.empty? then
-        out << RDoc::Markup::Heading.new(1, "Constants:")
-        out << RDoc::Markup::BlankLine.new
-        list = RDoc::Markup::List.new :NOTE
-
-        constants = klass.constants.sort_by { |constant| constant.name }
-
-        list.push(*constants.map do |constant|
-          parts = constant.comment.parts if constant.comment
-          parts << RDoc::Markup::Paragraph.new('[not documented]') if
-            parts.empty?
-
-          RDoc::Markup::ListItem.new(constant.name, *parts)
-        end)
-
-        out << list
-      end
-
-      add_method_list out, class_methods,    'Class methods'
-      add_method_list out, instance_methods, 'Instance methods'
-      add_method_list out, attributes,       'Attributes'
-
-      out << RDoc::Markup::BlankLine.new
-    end
-
-    add_also_in out, also_in
+    out = class_document name, found, klasses, includes
 
     display out
   end
@@ -643,32 +699,9 @@ Options may also be set in the 'RI' environment variable.
 
     raise NotFoundError, name if found.empty?
 
-    out = RDoc::Markup::Document.new
+    filtered = filter_methods found, name
 
-    out << RDoc::Markup::Heading.new(1, name)
-    out << RDoc::Markup::BlankLine.new
-
-    found.each do |store, methods|
-      methods.each do |method|
-        out << RDoc::Markup::Paragraph.new("(from #{store.friendly_path})")
-
-        unless name =~ /^#{Regexp.escape method.parent_name}/ then
-          out << RDoc::Markup::Heading.new(3, "Implementation from #{method.parent_name}")
-        end
-        out << RDoc::Markup::Rule.new(1)
-
-        if method.arglists then
-          arglists = method.arglists.chomp.split "\n"
-          arglists = arglists.map { |line| ['  ', line, "\n"] }
-          out << RDoc::Markup::Verbatim.new(*arglists.flatten)
-          out << RDoc::Markup::Rule.new(1)
-        end
-
-        out << RDoc::Markup::BlankLine.new
-        out << method.comment
-        out << RDoc::Markup::BlankLine.new
-      end
-    end
+    out = method_document name, filtered
 
     display out
   end
@@ -710,6 +743,7 @@ Options may also be set in the 'RI' environment variable.
       display_name name
     end
   end
+
   ##
   # Expands abbreviated klass +klass+ into a fully-qualified class.  "Zl::Da"
   # will be expanded to Zlib::DataError.
@@ -743,6 +777,21 @@ Options may also be set in the 'RI' environment variable.
     return [selector, method].join if klass.empty?
 
     "#{expand_class klass}#{selector}#{method}"
+  end
+
+  ##
+  # Filters the methods in +found+ trying to find a match for +name+.
+
+  def filter_methods found, name
+    regexp = name_regexp name
+
+    filtered = found.find_all do |store, methods|
+      methods.any? { |method| method.full_name =~ regexp }
+    end
+
+    return filtered unless filtered.empty?
+
+    found
   end
 
   ##
@@ -842,9 +891,21 @@ Options may also be set in the 'RI' environment variable.
   end
 
   ##
-  # Lists classes known to ri
+  # Is +file+ in ENV['PATH']?
 
-  def list_known_classes
+  def in_path? file
+    return true if file =~ %r%\A/% and File.exist? file
+
+    ENV['PATH'].split(File::PATH_SEPARATOR).any? do |path|
+      File.exist? File.join(path, file)
+    end
+  end
+
+  ##
+  # Lists classes known to ri starting with +names+.  If +names+ is empty all
+  # known classes are shown.
+
+  def list_known_classes names = []
     classes = []
 
     stores.each do |store|
@@ -853,9 +914,19 @@ Options may also be set in the 'RI' environment variable.
 
     classes = classes.flatten.uniq.sort
 
+    unless names.empty? then
+      filter = Regexp.union names.map { |name| /^#{name}/ }
+
+      classes = classes.grep filter
+    end
+
     page do |io|
       if paging? or io.tty? then
-        io.puts "Classes and Modules known to ri:"
+        if names.empty? then
+          io.puts "Classes and Modules known to ri:"
+        else
+          io.puts "Classes and Modules starting with #{names.join ', '}:"
+        end
         io.puts
       end
 
@@ -874,7 +945,7 @@ Options may also be set in the 'RI' environment variable.
         methods = store.instance_methods[ancestor]
 
         if methods then
-          matches = methods.grep(/^#{method}/)
+          matches = methods.grep(/^#{Regexp.escape method.to_s}/)
 
           matches = matches.map do |match|
             "#{klass}##{match}"
@@ -888,7 +959,7 @@ Options may also be set in the 'RI' environment variable.
         methods = store.class_methods[ancestor]
 
         next unless methods
-        matches = methods.grep(/^#{method}/)
+        matches = methods.grep(/^#{Regexp.escape method.to_s}/)
 
         matches = matches.map do |match|
           "#{klass}::#{match}"
@@ -929,15 +1000,49 @@ Options may also be set in the 'RI' environment variable.
       methods = []
 
       methods << load_method(store, :class_methods, ancestor, '::',  method) if
-        types == :class or types == :both
+        [:class, :both].include? types
 
       methods << load_method(store, :instance_methods, ancestor, '#',  method) if
-        types == :instance or types == :both
+        [:instance, :both].include? types
 
       found << [store, methods.compact]
     end
 
     found.reject do |path, methods| methods.empty? end
+  end
+
+  ##
+  # Builds a RDoc::Markup::Document from +found+, +klasess+ and +includes+
+
+  def method_document name, filtered
+    out = RDoc::Markup::Document.new
+
+    out << RDoc::Markup::Heading.new(1, name)
+    out << RDoc::Markup::BlankLine.new
+
+    filtered.each do |store, methods|
+      methods.each do |method|
+        out << RDoc::Markup::Paragraph.new("(from #{store.friendly_path})")
+
+        unless name =~ /^#{Regexp.escape method.parent_name}/ then
+          out << RDoc::Markup::Heading.new(3, "Implementation from #{method.parent_name}")
+        end
+        out << RDoc::Markup::Rule.new(1)
+
+        if method.arglists then
+          arglists = method.arglists.chomp.split "\n"
+          arglists = arglists.map { |line| line + "\n" }
+          out << RDoc::Markup::Verbatim.new(*arglists)
+          out << RDoc::Markup::Rule.new(1)
+        end
+
+        out << RDoc::Markup::BlankLine.new
+        out << method.comment
+        out << RDoc::Markup::BlankLine.new
+      end
+    end
+
+    out
   end
 
   ##
@@ -948,6 +1053,21 @@ Options may also be set in the 'RI' environment variable.
     when '.', nil then :both
     when '#'      then :instance
     else               :class
+    end
+  end
+
+  ##
+  # Returns a regular expression for +name+ that will match an
+  # RDoc::AnyMethod's name.
+
+  def name_regexp name
+    klass, type, name = parse_name name
+
+    case type
+    when '#', '::' then
+      /^#{klass}#{type}#{Regexp.escape name}$/
+    else
+      /^#{klass}(#|::)#{Regexp.escape name}$/
     end
   end
 
@@ -977,17 +1097,17 @@ Options may also be set in the 'RI' environment variable.
   end
 
   ##
-  # Extract the class, selector and method name parts from +name+ like
+  # Extracts the class, selector and method name parts from +name+ like
   # Foo::Bar#baz.
   #
   # NOTE: Given Foo::Bar, Bar is considered a class even though it may be a
   #       method
 
-  def parse_name(name)
+  def parse_name name
     parts = name.split(/(::|#|\.)/)
 
     if parts.length == 1 then
-      if parts.first =~ /^[a-z]/ then
+      if parts.first =~ /^[a-z]|^([%&*+\/<>^`|~-]|\+@|-@|<<|<=>?|===?|=>|=~|>>|\[\]=?|~@)$/ then
         type = '.'
         meth = parts.pop
       else
@@ -1013,10 +1133,10 @@ Options may also be set in the 'RI' environment variable.
   def run
     if @list_doc_dirs then
       puts @doc_dirs
-    elsif @interactive then
+    elsif @list then
+      list_known_classes @names
+    elsif @interactive or @names.empty? then
       interactive
-    elsif @names.empty? then
-      list_known_classes
     else
       display_names @names
     end
@@ -1034,9 +1154,13 @@ Options may also be set in the 'RI' environment variable.
     pagers = [ENV['RI_PAGER'], ENV['PAGER'], 'pager', 'less', 'more']
 
     pagers.compact.uniq.each do |pager|
-      next unless File.exist? pager
+      next unless pager
 
-      io = IO.popen pager, "w" rescue next
+      pager_cmd = pager.split.first
+
+      next unless in_path? pager_cmd
+
+      io = IO.popen(pager, 'w') rescue next
 
       next if $? and $?.exited? # pager didn't work
 

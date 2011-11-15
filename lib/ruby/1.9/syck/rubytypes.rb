@@ -10,6 +10,7 @@ end
 class Object
     yaml_as "tag:ruby.yaml.org,2002:object"
     def to_yaml_style; end
+    undef to_yaml_properties rescue nil
     def to_yaml_properties; instance_variables.sort; end
 	def to_yaml( opts = {} )
 		YAML::quick_emit( self, opts ) do |out|
@@ -61,7 +62,7 @@ class Struct
             props = {}
             val.delete_if { |k,v| props[k] = v if k =~ /^@/ }
             begin
-                struct_name, struct_type = YAML.read_type_class( tag, Struct )
+                struct_type = YAML.read_type_class( tag, Struct ).last
             rescue NameError
             end
             if not struct_type
@@ -271,7 +272,7 @@ class Regexp
                 mods |= Regexp::EXTENDED if val['mods'].include?( 'x' )
                 mods |= Regexp::IGNORECASE if val['mods'].include?( 'i' )
                 mods |= Regexp::MULTILINE if val['mods'].include?( 'm' )
-                mods |= 32 if val['mods'].include?( 'n' )
+                mods |= Regexp::NOENCODING if val['mods'].include?( 'n' )
             end
             val.delete( 'mods' )
             r = YAML::object_maker( klass, {} )

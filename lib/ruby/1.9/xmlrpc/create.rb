@@ -206,6 +206,7 @@ module XMLRPC
           end
 
         when Float
+          raise "Wrong value #{param}. Not allowed!" unless param.finite?
           @writer.tag("double", param.to_s)
 
         when Struct

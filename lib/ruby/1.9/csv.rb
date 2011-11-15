@@ -27,7 +27,8 @@
 # hopefully this won't be too radically different.
 #
 # We must have met our goals because FasterCSV was renamed to CSV and replaced
-# the original library.
+# the original library as of Ruby 1.9. If you are migrating code from 1.8 or
+# earlier, you may have to change your code to comply with the new interface.
 #
 # == What's Different From the Old CSV?
 #
@@ -153,6 +154,14 @@ require "stringio"
 #   CSV             { |csv_out| csv_out << %w{my data here} }  # to $stdout
 #   CSV(csv = "")   { |csv_str| csv_str << %w{my data here} }  # to a String
 #   CSV($stderr)    { |csv_err| csv_err << %w{my data here} }  # to $stderr
+#   CSV($stdin)     { |csv_in|  csv_in.each { |row| p row } }  # from $stdin
+#
+# == Advanced Usage
+#
+# === Wrap an IO Object
+#
+#   csv = CSV.new(io, options)
+#   # ... read (with gets() or each()) from and write (with <<) to csv here ...
 #
 # == CSV and Character Encodings (M17n or Multilingualization)
 #
@@ -198,7 +207,7 @@ require "stringio"
 #
 class CSV
   # The version of the installed library.
-  VERSION = "2.4.7".freeze
+  VERSION = "2.4.8".freeze
 
   #
   # A CSV::Row is part Array and part Hash.  It retains an order for the fields
@@ -497,12 +506,12 @@ class CSV
       end
       str << ">"
       begin
-        str.join
+        str.join('')
       rescue  # any encoding error
         str.map do |s|
           e = Encoding::Converter.asciicompat_encoding(s.encoding)
           e ? s.encode(e) : s.force_encoding("ASCII-8BIT")
-        end.join
+        end.join('')
       end
     end
   end
@@ -828,7 +837,7 @@ class CSV
     #
     # This method assumes you want the Table.headers(), unless you explicitly
     # pass <tt>:write_headers => false</tt>.
-    # 
+    #
     def to_csv(options = Hash.new)
       wh = options.fetch(:write_headers, true)
       @table.inject(wh ? [headers.to_csv(options)] : [ ]) do |rows, row|
@@ -837,7 +846,7 @@ class CSV
         else
           rows + [row.fields.to_csv(options)]
         end
-      end.join
+      end.join('')
     end
     alias_method :to_s, :to_csv
 
@@ -1195,10 +1204,7 @@ class CSV
   # but transcode it to UTF-8 before CSV parses it.
   #
   def self.foreach(path, options = Hash.new, &block)
-    encoding =  options.delete(:encoding)
-    mode     =  "rb"
-    mode     << ":#{encoding}" if encoding
-    open(path, mode, options) do |csv|
+    open(path, options) do |csv|
       csv.each(&block)
     end
   end
@@ -1228,7 +1234,7 @@ class CSV
       io.seek(0, IO::SEEK_END)
       args.unshift(io)
     else
-      encoding = args.last.is_a?(Hash) ? args.last.delete(:encoding) : nil
+      encoding = (args[-1] = args[-1].dup).delete(:encoding) if args.last.is_a?(Hash)
       str      = ""
       str.encode!(encoding) if encoding
       args.unshift(str)
@@ -1329,10 +1335,18 @@ class CSV
   def self.open(*args)
     # find the +options+ Hash
     options = if args.last.is_a? Hash then args.pop else Hash.new end
-    # default to a binary open mode
-    args << "rb" if args.size == 1
-    # wrap a File opened with the remaining +args+
-    csv     = new(File.open(*args), options)
+    # wrap a File opened with the remaining +args+ with no newline
+    # decorator
+    file_opts = {universal_newline: false}.merge(options)
+    begin
+      f = File.open(*args, file_opts)
+    rescue ArgumentError => e
+      raise unless /needs binmode/ =~ e.message and args.size == 1
+      args << "rb"
+      file_opts = {encoding: Encoding.default_external}.merge(file_opts)
+      retry
+    end
+    csv = new(f, options)
 
     # handle blocks like Ruby's open(), not like the CSV library
     if block_given?
@@ -1393,11 +1407,8 @@ class CSV
   # <tt>encoding: "UTF-32BE:UTF-8"</tt> would read UTF-32BE data from the file
   # but transcode it to UTF-8 before CSV parses it.
   #
-  def self.read(path, options = Hash.new)
-    encoding =  options.delete(:encoding)
-    mode     =  "rb"
-    mode     << ":#{encoding}" if encoding
-    open(path, mode, options) { |csv| csv.read }
+  def self.read(path, *options)
+    open(path, *options) { |csv| csv.read }
   end
 
   # Alias for CSV::read().
@@ -1546,7 +1557,7 @@ class CSV
   #
   # See CSV::DEFAULT_OPTIONS for the default settings.
   #
-  # Options cannot be overriden in the instance methods for performance reasons,
+  # Options cannot be overridden in the instance methods for performance reasons,
   # so be sure to set what you want here.
   #
   def initialize(data, options = Hash.new)
@@ -1554,24 +1565,36 @@ class CSV
     options = DEFAULT_OPTIONS.merge(options)
 
     # create the IO object we will read from
-    @io       =   if data.is_a? String then StringIO.new(data) else data end
+    @io       = data.is_a?(String) ? StringIO.new(data) : data
     # honor the IO encoding if we can, otherwise default to ASCII-8BIT
-    @encoding = raw_encoding || Encoding.default_internal || Encoding.default_external
+    @encoding = raw_encoding(nil) ||
+                ( if encoding = options.delete(:internal_encoding)
+                    case encoding
+                    when Encoding; encoding
+                    else Encoding.find(encoding)
+                    end
+                  end ) ||
+                ( case encoding = options.delete(:encoding)
+                  when Encoding; encoding
+                  when /\A[^:]+/; Encoding.find($&)
+                  end ) ||
+                Encoding.default_internal || Encoding.default_external
     #
     # prepare for building safe regular expressions in the target encoding,
     # if we can transcode the needed characters
     #
     @re_esc   =   "\\".encode(@encoding) rescue ""
-    @re_chars =   %w[ \\ .  [  ]  -  ^  $  ?
-                      *  +  {  }  (  )  |  #
-                      \  \r \n \t \f \v ].
-                  map { |s| s.encode(@encoding) rescue nil }.compact
+    @re_chars =   /#{%"[-][\\.^$?*+{}()|# \r\n\t\f\v]".encode(@encoding)}/
+    # @re_chars =   /#{%"[-][\\.^$?*+{}()|# \r\n\t\f\v]".encode(@encoding, fallback: proc{""})}/
 
     init_separators(options)
     init_parsers(options)
     init_converters(options)
     init_headers(options)
 
+    options.delete(:encoding)
+    options.delete(:internal_encoding)
+    options.delete(:external_encoding)
     unless options.empty?
       raise ArgumentError, "Unknown options:  #{options.keys.join(', ')}."
     end
@@ -1764,8 +1787,12 @@ class CSV
   # The data source must be open for reading.
   #
   def each
-    while row = shift
-      yield row
+    if block_given?
+      while row = shift
+        yield row
+      end
+    else
+      to_enum
     end
   end
 
@@ -1811,9 +1838,6 @@ class CSV
         return parse_headers
       end
     end
-
-    # begin with a blank line, so we can always add to it
-    line = ""
 
     #
     # it can take multiple calls to <tt>@io.gets()</tt> to get a full line,
@@ -1866,7 +1890,10 @@ class CSV
           if part[-1] == @quote_char && part.count(@quote_char) % 2 != 0
             # extended column ends
             csv.last << part[0..-2]
-            raise MalformedCSVError if csv.last =~ @parsers[:stray_quote]
+            if csv.last =~ @parsers[:stray_quote]
+              raise MalformedCSVError,
+                    "Missing or stray quote in line #{lineno + 1}"
+            end
             csv.last.gsub!(@quote_char * 2, @quote_char)
             in_extended_col = false
           else
@@ -1883,7 +1910,10 @@ class CSV
           else
             # regular quoted column
             csv << part[1..-2]
-            raise MalformedCSVError if csv.last =~ @parsers[:stray_quote]
+            if csv.last =~ @parsers[:stray_quote]
+              raise MalformedCSVError,
+                    "Missing or stray quote in line #{lineno + 1}"
+            end
             csv.last.gsub!(@quote_char * 2, @quote_char)
           end
         elsif part =~ @parsers[:quote_or_nl]
@@ -1892,7 +1922,7 @@ class CSV
             raise MalformedCSVError, "Unquoted fields do not allow " +
                                      "\\r or \\n (line #{lineno + 1})."
           else
-            raise MalformedCSVError, "Illegal quoting on line #{lineno + 1}."
+            raise MalformedCSVError, "Illegal quoting in line #{lineno + 1}."
           end
         else
           # Regular ole unquoted field.
@@ -1967,12 +1997,12 @@ class CSV
     end
     str << ">"
     begin
-      str.join
+      str.join('')
     rescue  # any encoding error
       str.map do |s|
         e = Encoding::Converter.asciicompat_encoding(s.encoding)
         e ? s.encode(e) : s.force_encoding("ASCII-8BIT")
-      end.join
+      end.join('')
     end
   end
 
@@ -2008,27 +2038,29 @@ class CSV
         @row_sep = $INPUT_RECORD_SEPARATOR
       else
         begin
-          saved_pos = @io.pos  # remember where we were
+          #
+          # remember where we were (pos() will raise an axception if @io is pipe
+          # or not opened for reading)
+          #
+          saved_pos = @io.pos
           while @row_sep == :auto
             #
             # if we run out of data, it's probably a single line
-            # (use a sensible default)
+            # (ensure will set default value)
             #
-            if @io.eof?
-              @row_sep = $INPUT_RECORD_SEPARATOR
-              break
+            break unless sample = @io.gets(nil, 1024)
+            # extend sample if we're unsure of the line ending
+            if sample.end_with? encode_str("\r")
+              sample << (@io.gets(nil, 1) || "")
             end
 
-            # read ahead a bit
-            sample =  read_to_char(1024)
-            sample += read_to_char(1) if sample[-1..-1] == encode_str("\r") and
-                                         not @io.eof?
             # try to find a standard separator
             if sample =~ encode_re("\r\n?|\n")
               @row_sep = $&
               break
             end
           end
+
           # tricky seek() clone to work around GzipReader's lack of seek()
           @io.rewind
           # reset back to the remembered position
@@ -2037,8 +2069,18 @@ class CSV
             saved_pos -= 1024
           end
           @io.read(saved_pos) if saved_pos.nonzero?
-        rescue IOError  # stream not opened for reading
-          @row_sep = $INPUT_RECORD_SEPARATOR
+        rescue IOError         # not opened for reading
+          # do nothing:  ensure will set default
+        rescue NoMethodError   # Zlib::GzipWriter doesn't have some IO methods
+          # do nothing:  ensure will set default
+        rescue SystemCallError # pipe
+          # do nothing:  ensure will set default
+        ensure
+          #
+          # set default if we failed to detect
+          # (stream not opened for reading, a pipe, or a single line of data)
+          #
+          @row_sep = $INPUT_RECORD_SEPARATOR if @row_sep == :auto
         end
       end
     end
@@ -2081,7 +2123,6 @@ class CSV
     @field_size_limit = options.delete(:field_size_limit)
 
     # prebuild Regexps for faster parsing
-    esc_col_sep = escape_re(@col_sep)
     esc_row_sep = escape_re(@row_sep)
     esc_quote   = escape_re(@quote_char)
     @parsers = {
@@ -2198,7 +2239,7 @@ class CSV
   end
 
   #
-  # This methods is used to turn a finished +row+ into a CSV::Row.  Header rows
+  # This method is used to turn a finished +row+ into a CSV::Row.  Header rows
   # are also dealt with here, either by returning a CSV::Row with identical
   # headers and fields (save that the fields do not go through the converters)
   # or by reading past them to return a field row. Headers are also saved in
@@ -2237,8 +2278,8 @@ class CSV
   end
 
   #
-  # Thiw methods injects an instance variable <tt>unconverted_fields</tt> into
-  # +row+ and an accessor method for it called unconverted_fields().  The
+  # This method injects an instance variable <tt>unconverted_fields</tt> into
+  # +row+ and an accessor method for +row+ called unconverted_fields().  The
   # variable is set to the contents of +fields+.
   #
   def add_unconverted_fields(row, fields)
@@ -2257,7 +2298,7 @@ class CSV
   # a backslash cannot be transcoded.
   #
   def escape_re(str)
-    str.chars.map { |c| @re_chars.include?(c) ? @re_esc + c : c }.join
+    str.gsub(@re_chars) {|c| @re_esc + c}
   end
 
   #
@@ -2273,36 +2314,16 @@ class CSV
   # that encoding.
   #
   def encode_str(*chunks)
-    chunks.map { |chunk| chunk.encode(@encoding.name) }.join
-  end
-
-  #
-  # Reads at least +bytes+ from <tt>@io</tt>, but will read up 10 bytes ahead if
-  # needed to ensure the data read is valid in the ecoding of that data.  This
-  # should ensure that it is safe to use regular expressions on the read data,
-  # unless it is actually a broken encoding.  The read data will be returned in
-  # <tt>@encoding</tt>.
-  #
-  def read_to_char(bytes)
-    return "" if @io.eof?
-    data = read_io(bytes)
-    begin
-      raise unless data.valid_encoding?
-      encoded = encode_str(data)
-      raise unless encoded.valid_encoding?
-      return encoded
-    rescue  # encoding error or my invalid data raise
-      if @io.eof? or data.size >= bytes + 10
-        return data
-      else
-        data += read_io(1)
-        retry
-      end
-    end
+    chunks.map { |chunk| chunk.encode(@encoding.name) }.join('')
   end
 
   private
-  def raw_encoding
+
+  # 
+  # Returns the encoding of the internal IO object or the +default+ if the 
+  # encoding cannot be determined.
+  #
+  def raw_encoding(default = Encoding::ASCII_8BIT)
     if @io.respond_to? :internal_encoding
       @io.internal_encoding || @io.external_encoding
     elsif @io.is_a? StringIO
@@ -2310,12 +2331,8 @@ class CSV
     elsif @io.respond_to? :encoding
       @io.encoding
     else
-      Encoding::ASCII_8BIT
+      default
     end
-  end
-
-  def read_io(bytes)
-    @io.read(bytes).force_encoding(raw_encoding)
   end
 end
 

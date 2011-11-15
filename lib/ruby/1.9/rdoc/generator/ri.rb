@@ -8,18 +8,22 @@ class RDoc::Generator::RI
 
   RDoc::RDoc.add_generator self
 
-  def self.for options
-    new options
-  end
+  ##
+  # Description of this generator
+
+  DESCRIPTION = 'creates ri data files'
 
   ##
   # Set up a new ri generator
 
   def initialize options #:not-new:
     @options     = options
-    @store       = RDoc::RI::Store.new '.'
     @old_siginfo = nil
     @current     = nil
+
+    @store          = RDoc::RI::Store.new '.'
+    @store.dry_run  = @options.dry_run
+    @store.encoding = @options.encoding if @options.respond_to? :encoding
   end
 
   ##

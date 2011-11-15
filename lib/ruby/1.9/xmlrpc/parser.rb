@@ -54,11 +54,10 @@ module XMLRPC
   class FaultException < StandardError
     attr_reader :faultCode, :faultString
 
-    alias message faultString
-
     def initialize(faultCode, faultString)
       @faultCode   = faultCode
       @faultString = faultString
+      super(@faultString)
     end
 
     # returns a hash
@@ -714,7 +713,7 @@ module XMLRPC
         end
 
         def parse(str)
-          parser = REXML::Document.parse_stream(str, self)
+          REXML::Document.parse_stream(str, self)
         end
       end
 
@@ -743,7 +742,7 @@ module XMLRPC
         end
 
         alias :on_stag :startElement
- 	alias :on_etag :endElement
+        alias :on_etag :endElement
 
         def on_stag_end(name); end
 

@@ -115,6 +115,10 @@ module FileUtils
   #
   #   FileUtils.cd('/', :verbose => true)   # chdir and report it
   #
+  #   FileUtils.cd('/') do  # chdir
+  #     [...]               # do something
+  #   end                   # return to original directory
+  #   
   def cd(dir, options = {}, &block) # :yield: dir
     fu_check_options options, OPT_TABLE['cd']
     fu_output_message "cd #{dir}" if options[:verbose]
@@ -513,7 +517,7 @@ module FileUtils
         end
         begin
           File.rename s, d
-        rescue Errno::EXDEV, Errno::EACCES
+        rescue *MV_RESCUES
           copy_entry s, d, true
           if options[:secure]
             remove_entry_secure s, options[:force]
@@ -527,6 +531,15 @@ module FileUtils
     end
   end
   module_function :mv
+  
+  # JRuby raises EACCES because JDK reports errors differently
+  MV_RESCUES = begin
+    if RUBY_ENGINE == 'jruby'
+      [Errno::EXDEV, Errno::EACCES]
+    else
+      [Errno::EXDEV]
+    end
+  end
 
   alias move mv
   module_function :move
@@ -739,7 +752,7 @@ module FileUtils
   end
   module_function :remove_entry_secure
 
-  def fu_have_symlink?   #:nodoc
+  def fu_have_symlink?   #:nodoc:
     File.symlink nil, nil
   rescue NotImplementedError
     return false
@@ -860,23 +873,110 @@ module FileUtils
 
   OPT_TABLE['install'] = [:mode, :preserve, :noop, :verbose]
 
+  def user_mask(target)  #:nodoc:
+    mask = 0
+    target.each_byte do |byte_chr|
+      case byte_chr.chr
+        when "u"
+          mask |= 04700
+        when "g"
+          mask |= 02070
+        when "o"
+          mask |= 01007
+        when "a"
+          mask |= 07777
+      end
+    end
+    mask
+  end
+  private_module_function :user_mask
+
+  def mode_mask(mode, path)  #:nodoc:
+    mask = 0
+    mode.each_byte do |byte_chr|
+      case byte_chr.chr
+        when "r"
+          mask |= 0444
+        when "w"
+          mask |= 0222
+        when "x"
+          mask |= 0111
+        when "X"
+          mask |= 0111 if FileTest::directory? path
+        when "s"
+          mask |= 06000
+        when "t"
+          mask |= 01000
+      end
+    end
+    mask
+  end
+  private_module_function :mode_mask
+
+  def symbolic_modes_to_i(modes, path)  #:nodoc:
+    current_mode = (File.stat(path).mode & 07777)
+    modes.split(/,/).inject(0) do |mode, mode_sym|
+      mode_sym = "a#{mode_sym}" if mode_sym =~ %r!^[+-=]!
+      target, mode = mode_sym.split %r![+-=]!
+      user_mask = user_mask(target)
+      mode_mask = mode_mask(mode ? mode : "", path)
+
+      case mode_sym
+        when /=/
+          current_mode &= ~(user_mask)
+          current_mode |= user_mask & mode_mask
+        when /\+/
+          current_mode |= user_mask & mode_mask
+        when /-/
+          current_mode &= ~(user_mask & mode_mask)
+      end
+    end
+  end
+  private_module_function :symbolic_modes_to_i
+
+  def fu_mode(mode, path)  #:nodoc:
+    mode.is_a?(String) ? symbolic_modes_to_i(mode, path) : mode
+  end
+  private_module_function :fu_mode
+
   #
   # Options: noop verbose
   #
   # Changes permission bits on the named files (in +list+) to the bit pattern
   # represented by +mode+.
   #
+  # +mode+ is the symbolic and absolute mode can be used.
+  #
+  # Absolute mode is
   #   FileUtils.chmod 0755, 'somecommand'
   #   FileUtils.chmod 0644, %w(my.rb your.rb his.rb her.rb)
   #   FileUtils.chmod 0755, '/usr/bin/ruby', :verbose => true
   #
+  # Symbolic mode is
+  #   FileUtils.chmod "u=wrx,go=rx", 'somecommand'
+  #   FileUtils.chmod "u=wr,go=rr", %w(my.rb your.rb his.rb her.rb)
+  #   FileUtils.chmod "u=wrx,go=rx", '/usr/bin/ruby', :verbose => true
+  #
+  #   "a" is user, group, other mask.
+  #   "u" is user's mask.
+  #   "g" is group's mask.
+  #   "o" is other's mask.
+  #   "w" is write permission.
+  #   "r" is read permission.
+  #   "x" is execute permission.
+  #   "s" is uid, gid.
+  #   "t" is sticky bit.
+  #   "+" is added to a class given the specified mode.
+  #   "-" Is removed from a given class given mode.
+  #   "=" Is the exact nature of the class will be given a specified mode.
+
   def chmod(mode, list, options = {})
     fu_check_options options, OPT_TABLE['chmod']
     list = fu_list(list)
     fu_output_message sprintf('chmod %o %s', mode, list.join(' ')) if options[:verbose]
     return if options[:noop]
     list.each do |path|
-      Entry_.new(path).chmod mode
+      Entry_.new(path).chmod(fu_mode(mode, path))
     end
   end
   module_function :chmod
@@ -890,6 +990,7 @@ module FileUtils
   # to the bit pattern represented by +mode+.
   #
   #   FileUtils.chmod_R 0700, "/tmp/app.#{$$}"
+  #   FileUtils.chmod_R "u=wrx", "/tmp/app.#{$$}"
   #
   def chmod_R(mode, list, options = {})
     fu_check_options options, OPT_TABLE['chmod_R']
@@ -901,7 +1002,7 @@ module FileUtils
     list.each do |root|
       Entry_.new(root).traverse do |ent|
         begin
-          ent.chmod mode
+          ent.chmod(fu_mode(mode, ent.path))
         rescue
           raise unless options[:force]
         end
@@ -1036,7 +1137,7 @@ module FileUtils
     created = nocreate = options[:nocreate]
     t = options[:mtime]
     if options[:verbose]
-      fu_output_message "touch #{nocreate ? ' -c' : ''}#{t ? t.strftime(' -t %Y%m%d%H%M.%S') : ''}#{list.join ' '}"
+      fu_output_message "touch #{nocreate ? '-c ' : ''}#{t ? t.strftime('-t %Y%m%d%H%M.%S ') : ''}#{list.join ' '}"
     end
     return if options[:noop]
     list.each do |path|
@@ -1276,7 +1377,7 @@ module FileUtils
 
     def copy_file(dest)
       File.open(path()) do |s|
-        File.open(dest, 'wb') do |f|
+        File.open(dest, 'wb', s.stat.mode) do |f|
           IO.copy_stream(s, f)
         end
       end

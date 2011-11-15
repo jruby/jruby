@@ -1,3 +1,4 @@
+#--
 # = uri/common.rb
 #
 # Author:: Akira Yamada <akira@ruby-lang.org>
@@ -5,8 +6,13 @@
 # License::
 #   You can redistribute it and/or modify it under the same term as Ruby.
 #
+# See URI for general documentation
+#
 
 module URI
+  #
+  # Includes URI::REGEXP::PATTERN
+  #
   module REGEXP
     #
     # Patterns used to parse URI's
@@ -31,7 +37,7 @@ module URI
       # mark          = "-" | "_" | "." | "!" | "~" | "*" | "'" |
       #                 "(" | ")"
       # unreserved    = alphanum | mark
-      UNRESERVED = "-_.!~*'()#{ALNUM}"
+      UNRESERVED = "\\-_.!~*'()#{ALNUM}"
       # reserved      = ";" | "/" | "?" | ":" | "@" | "&" | "=" | "+" |
       #                 "$" | ","
       # reserved      = ";" | "/" | "?" | ":" | "@" | "&" | "=" | "+" |
@@ -51,6 +57,10 @@ module URI
     # :startdoc:
   end # REGEXP
 
+  # class that Parses String's into URI's
+  #
+  # It contains a Hash set of patterns and Regexp's that match and validate.
+  #
   class Parser
     include REGEXP
 
@@ -68,15 +78,15 @@ module URI
     #
     # You can use the following keys:
     #
-    #   * <tt>:ESCAPED</tt> (URI::PATTERN::ESCAPED in default)
-    #   * <tt>:UNRESERVED</tt> (URI::PATTERN::UNRESERVED in default)
-    #   * <tt>:DOMLABEL</tt> (URI::PATTERN::DOMLABEL in default)
-    #   * <tt>:TOPLABEL</tt> (URI::PATTERN::TOPLABEL in default)
-    #   * <tt>:HOSTNAME</tt> (URI::PATTERN::HOSTNAME in default)
+    #   * :ESCAPED (URI::PATTERN::ESCAPED in default)
+    #   * :UNRESERVED (URI::PATTERN::UNRESERVED in default)
+    #   * :DOMLABEL (URI::PATTERN::DOMLABEL in default)
+    #   * :TOPLABEL (URI::PATTERN::TOPLABEL in default)
+    #   * :HOSTNAME (URI::PATTERN::HOSTNAME in default)
     #
     # == Examples
     #
-    #   p = URI::Parser.new(:ESCPAED => "(?:%[a-fA-F0-9]{2}|%u[a-fA-F0-9]{4})"
+    #   p = URI::Parser.new(:ESCAPED => "(?:%[a-fA-F0-9]{2}|%u[a-fA-F0-9]{4})")
     #   u = p.parse("http://example.jp/%uABCD") #=> #<URI::HTTP:0xb78cf4f8 URL:http://example.jp/%uABCD>
     #   URI.parse(u.to_s) #=> raises URI::InvalidURIError
     #
@@ -95,122 +105,197 @@ module URI
       @regexp.each_value {|v| v.freeze}
       @regexp.freeze
     end
-    attr_reader :pattern, :regexp
 
+    # The Hash of patterns.
+    #
+    # see also URI::Parser.initialize_pattern
+    attr_reader :pattern
+
+    # The Hash of Regexp
+    #
+    # see also URI::Parser.initialize_regexp
+    attr_reader :regexp
+
+    # Returns a split URI against regexp[:ABS_URI]
     def split(uri)
       case uri
       when ''
-	# null uri
+        # null uri
 
       when @regexp[:ABS_URI]
-	scheme, opaque, userinfo, host, port,
-	  registry, path, query, fragment = $~[1..-1]
+        scheme, opaque, userinfo, host, port,
+          registry, path, query, fragment = $~[1..-1]
 
-	# URI-reference = [ absoluteURI | relativeURI ] [ "#" fragment ]
+        # URI-reference = [ absoluteURI | relativeURI ] [ "#" fragment ]
 
-	# absoluteURI   = scheme ":" ( hier_part | opaque_part )
-	# hier_part     = ( net_path | abs_path ) [ "?" query ]
-	# opaque_part   = uric_no_slash *uric
+        # absoluteURI   = scheme ":" ( hier_part | opaque_part )
+        # hier_part     = ( net_path | abs_path ) [ "?" query ]
+        # opaque_part   = uric_no_slash *uric
 
-	# abs_path      = "/"  path_segments
-	# net_path      = "//" authority [ abs_path ]
+        # abs_path      = "/"  path_segments
+        # net_path      = "//" authority [ abs_path ]
 
-	# authority     = server | reg_name
-	# server        = [ [ userinfo "@" ] hostport ]
+        # authority     = server | reg_name
+        # server        = [ [ userinfo "@" ] hostport ]
 
-	if !scheme
-	  raise InvalidURIError,
-	    "bad URI(absolute but no scheme): #{uri}"
-	end
-	if !opaque && (!path && (!host && !registry))
-	  raise InvalidURIError,
-	    "bad URI(absolute but no path): #{uri}"
-	end
+        if !scheme
+          raise InvalidURIError,
+            "bad URI(absolute but no scheme): #{uri}"
+        end
+        if !opaque && (!path && (!host && !registry))
+          raise InvalidURIError,
+            "bad URI(absolute but no path): #{uri}"
+        end
 
       when @regexp[:REL_URI]
-	scheme = nil
-	opaque = nil
+        scheme = nil
+        opaque = nil
 
-	userinfo, host, port, registry,
-	  rel_segment, abs_path, query, fragment = $~[1..-1]
-	if rel_segment && abs_path
-	  path = rel_segment + abs_path
-	elsif rel_segment
-	  path = rel_segment
-	elsif abs_path
-	  path = abs_path
-	end
+        userinfo, host, port, registry,
+          rel_segment, abs_path, query, fragment = $~[1..-1]
+        if rel_segment && abs_path
+          path = rel_segment + abs_path
+        elsif rel_segment
+          path = rel_segment
+        elsif abs_path
+          path = abs_path
+        end
 
-	# URI-reference = [ absoluteURI | relativeURI ] [ "#" fragment ]
+        # URI-reference = [ absoluteURI | relativeURI ] [ "#" fragment ]
 
-	# relativeURI   = ( net_path | abs_path | rel_path ) [ "?" query ]
+        # relativeURI   = ( net_path | abs_path | rel_path ) [ "?" query ]
 
-	# net_path      = "//" authority [ abs_path ]
-	# abs_path      = "/"  path_segments
-	# rel_path      = rel_segment [ abs_path ]
+        # net_path      = "//" authority [ abs_path ]
+        # abs_path      = "/"  path_segments
+        # rel_path      = rel_segment [ abs_path ]
 
-	# authority     = server | reg_name
-	# server        = [ [ userinfo "@" ] hostport ]
+        # authority     = server | reg_name
+        # server        = [ [ userinfo "@" ] hostport ]
 
       else
-	raise InvalidURIError, "bad URI(is not URI?): #{uri}"
+        raise InvalidURIError, "bad URI(is not URI?): #{uri}"
       end
 
       path = '' if !path && !opaque # (see RFC2396 Section 5.2)
       ret = [
-	scheme,
-	userinfo, host, port,         # X
-	registry,                     # X
-	path,                         # Y
-	opaque,                       # Y
-	query,
-	fragment
+        scheme,
+        userinfo, host, port,         # X
+        registry,                     # X
+        path,                         # Y
+        opaque,                       # Y
+        query,
+        fragment
       ]
       return ret
     end
 
+    #
+    # == Args
+    #
+    # +uri+::
+    #    String
+    #
+    # == Description
+    #
+    # parses +uri+ and constructs either matching URI scheme object
+    # (FTP, HTTP, HTTPS, LDAP, LDAPS, or MailTo) or URI::Generic
+    #
+    # == Usage
+    #
+    #   p = URI::Parser.new
+    #   p.parse("ldap://ldap.example.com/dc=example?user=john")
+    #   #=> #<URI::LDAP:0x00000000b9e7e8 URL:ldap://ldap.example.com/dc=example?user=john>
+    #
     def parse(uri)
       scheme, userinfo, host, port,
-       	registry, path, opaque, query, fragment = self.split(uri)
+        registry, path, opaque, query, fragment = self.split(uri)
 
       if scheme && URI.scheme_list.include?(scheme.upcase)
-	URI.scheme_list[scheme.upcase].new(scheme, userinfo, host, port,
+        URI.scheme_list[scheme.upcase].new(scheme, userinfo, host, port,
                                            registry, path, opaque, query,
                                            fragment, self)
       else
-	Generic.new(scheme, userinfo, host, port,
-	   	    registry, path, opaque, query,
-	    	    fragment, self)
+        Generic.new(scheme, userinfo, host, port,
+                    registry, path, opaque, query,
+                    fragment, self)
       end
     end
 
-    def join(*str)
-      u = self.parse(str[0])
-      str[1 .. -1].each do |x|
-	u = u.merge(x)
-      end
-      u
+
+    #
+    # == Args
+    #
+    # +uris+::
+    #    an Array of Strings
+    #
+    # == Description
+    #
+    # Attempts to parse and merge a set of URIs
+    #
+    def join(*uris)
+      uris[0] = convert_to_uri(uris[0])
+      uris.inject :merge
     end
 
+    #
+    # :call-seq:
+    #   extract( str )
+    #   extract( str, schemes )
+    #   extract( str, schemes ) {|item| block }
+    #
+    # == Args
+    #
+    # +str+::
+    #    String to search
+    # +schemes+::
+    #    Patterns to apply to +str+
+    #
+    # == Description
+    #
+    # Attempts to parse and merge a set of URIs
+    # If no +block+ given , then returns the result,
+    # else it calls +block+ for each element in result.
+    #
+    # see also URI::Parser.make_regexp
+    #
     def extract(str, schemes = nil, &block)
       if block_given?
-       	str.scan(make_regexp(schemes)) { yield $& }
-	nil
+        str.scan(make_regexp(schemes)) { yield $& }
+        nil
       else
-	result = []
-	str.scan(make_regexp(schemes)) { result.push $& }
-	result
+        result = []
+        str.scan(make_regexp(schemes)) { result.push $& }
+        result
       end
     end
 
+    # returns Regexp that is default self.regexp[:ABS_URI_REF],
+    # unless +schemes+ is provided. Then it is a Regexp.union with self.pattern[:X_ABS_URI]
     def make_regexp(schemes = nil)
       unless schemes
-       	@regexp[:ABS_URI_REF]
+        @regexp[:ABS_URI_REF]
       else
-	/(?=#{Regexp.union(*schemes)}:)#{@pattern[:X_ABS_URI]}/x
+        /(?=#{Regexp.union(*schemes)}:)#{@pattern[:X_ABS_URI]}/x
       end
     end
 
+    #
+    # :call-seq:
+    #   escape( str )
+    #   escape( str, unsafe )
+    #
+    # == Args
+    #
+    # +str+::
+    #    String to make safe
+    # +unsafe+::
+    #    Regexp to apply. Defaults to self.regexp[:UNSAFE]
+    #
+    # == Description
+    #
+    # constructs a safe String from +str+, removing unsafe characters,
+    # replacing them with codes.
+    #
     def escape(str, unsafe = @regexp[:UNSAFE])
       unless unsafe.kind_of?(Regexp)
         # perhaps unsafe is String object
@@ -226,6 +311,22 @@ module URI
       end.force_encoding(Encoding::US_ASCII)
     end
 
+    #
+    # :call-seq:
+    #   unescape( str )
+    #   unescape( str, unsafe )
+    #
+    # == Args
+    #
+    # +str+::
+    #    String to remove escapes from
+    # +unsafe+::
+    #    Regexp to apply. Defaults to self.regexp[:ESCAPED]
+    #
+    # == Description
+    #
+    # Removes escapes from +str+
+    #
     def unescape(str, escaped = @regexp[:ESCAPED])
       str.gsub(escaped) { [$&[1, 2].hex].pack('C') }.force_encoding(str.encoding)
     end
@@ -237,13 +338,14 @@ module URI
 
     private
 
+    # Constructs the default Hash of patterns
     def initialize_pattern(opts = {})
       ret = {}
       ret[:ESCAPED] = escaped = (opts.delete(:ESCAPED) || PATTERN::ESCAPED)
       ret[:UNRESERVED] = unreserved = opts.delete(:UNRESERVED) || PATTERN::UNRESERVED
       ret[:RESERVED] = reserved = opts.delete(:RESERVED) || PATTERN::RESERVED
-      ret[:DOMLABEL] = domlabel = opts.delete(:DOMLABEL) || PATTERN::DOMLABEL
-      ret[:TOPLABEL] = toplabel = opts.delete(:TOPLABEL) || PATTERN::TOPLABEL
+      ret[:DOMLABEL] = opts.delete(:DOMLABEL) || PATTERN::DOMLABEL
+      ret[:TOPLABEL] = opts.delete(:TOPLABEL) || PATTERN::TOPLABEL
       ret[:HOSTNAME] = hostname = opts.delete(:HOSTNAME)
 
       # RFC 2396 (URI Generic Syntax)
@@ -261,8 +363,9 @@ module URI
       ret[:FRAGMENT] = fragment = "#{uric}*"
 
       # hostname      = *( domainlabel "." ) toplabel [ "." ]
+      # reg-name      = *( unreserved / pct-encoded / sub-delims ) # RFC3986
       unless hostname
-	ret[:HOSTNAME] = hostname = "(?:#{domlabel}\\.)*#{toplabel}\\.?"
+        ret[:HOSTNAME] = hostname = "(?:[a-zA-Z0-9\\-.]|%\\h\\h)+"
       end
 
       # RFC 2373, APPENDIX B:
@@ -329,7 +432,7 @@ module URI
       ret[:REL_SEGMENT] = rel_segment = "(?:[#{unreserved};@&=+$,]|#{escaped})+"
 
       # scheme        = alpha *( alpha | digit | "+" | "-" | "." )
-      ret[:SCHEME] = scheme = "[#{PATTERN::ALPHA}][-+.#{PATTERN::ALPHA}\\d]*"
+      ret[:SCHEME] = scheme = "[#{PATTERN::ALPHA}][\\-+.#{PATTERN::ALPHA}\\d]*"
 
       # abs_path      = "/"  path_segments
       ret[:ABS_PATH] = abs_path = "/#{path_segments}"
@@ -349,7 +452,7 @@ module URI
       ret[:REL_URI] = rel_uri = "(?:#{net_path}|#{abs_path}|#{rel_path})(?:\\?#{query})?"
 
       # URI-reference = [ absoluteURI | relativeURI ] [ "#" fragment ]
-      ret[:URI_REF] = uri_ref = "(?:#{abs_uri}|#{rel_uri})?(?:##{fragment})?"
+      ret[:URI_REF] = "(?:#{abs_uri}|#{rel_uri})?(?:##{fragment})?"
 
       ret[:X_ABS_URI] = "
         (#{scheme}):                           (?# 1: scheme)
@@ -393,6 +496,7 @@ module URI
       ret
     end
 
+    # Constructs the default Hash of Regexp's
     def initialize_regexp(pattern)
       ret = {}
 
@@ -423,8 +527,21 @@ module URI
 
       ret
     end
+
+    def convert_to_uri(uri)
+      if uri.is_a?(URI::Generic)
+        uri
+      elsif uri = String.try_convert(uri)
+        parse(uri)
+      else
+        raise ArgumentError,
+          "bad argument (expected URI object or URI string)"
+      end
+    end
+
   end # class Parser
 
+  # URI::Parser.new
   DEFAULT_PARSER = Parser.new
   DEFAULT_PARSER.pattern.each_pair do |sym, str|
     unless REGEXP::PATTERN.const_defined?(sym)
@@ -467,6 +584,7 @@ module URI
     module_function :make_components_hash
   end
 
+  # module for escaping unsafe characters with codes.
   module Escape
     #
     # == Synopsis
@@ -531,12 +649,13 @@ module URI
       DEFAULT_PARSER.unescape(*arg)
     end
     alias decode unescape
-  end
+  end # module Escape
 
   extend Escape
   include REGEXP
 
   @@schemes = {}
+  # Returns a Hash of the defined schemes
   def self.scheme_list
     @@schemes
   end
@@ -646,8 +765,21 @@ module URI
   #
   #   require 'uri'
   #
-  #   p URI.join("http://localhost/","main.rbx")
+  #   p URI.join("http://example.com/","main.rbx")
   #   # => #<URI::HTTP:0x2022ac02 URL:http://localhost/main.rbx>
+  #
+  #   p URI.join('http://example.com', 'foo')
+  #   # => #<URI::HTTP:0x01ab80a0 URL:http://example.com/foo>
+  #
+  #   p URI.join('http://example.com', '/foo', '/bar')
+  #   # => #<URI::HTTP:0x01aaf0b0 URL:http://example.com/bar>
+  #
+  #   p URI.join('http://example.com', '/foo', 'bar')
+  #   # => #<URI::HTTP:0x801a92af0 URL:http://example.com/bar>
+  #
+  #   p URI.join('http://example.com', '/foo/', 'bar')
+  #   # => #<URI::HTTP:0x80135a3a0 URL:http://example.com/foo/bar>
+  #
   #
   def self.join(*str)
     DEFAULT_PARSER.join(*str)
@@ -723,10 +855,11 @@ module URI
 
   # Encode given +str+ to URL-encoded form data.
   #
-  # This doesn't convert *, -, ., 0-9, A-Z, _, a-z,
-  # does convert SP to +, and convert others to %XX.
+  # This method doesn't convert *, -, ., 0-9, A-Z, _, a-z, but does convert SP
+  # (ASCII space) to + and converts others to %XX.
   #
-  # This refers http://www.w3.org/TR/html5/forms.html#url-encoded-form-data
+  # This is an implementation of
+  # http://www.w3.org/TR/html5/forms.html#url-encoded-form-data
   #
   # See URI.decode_www_form_component, URI.encode_www_form
   def self.encode_www_form_component(str)
@@ -775,7 +908,7 @@ module URI
       rescue
       end
     end
-    raise ArgumentError, "invalid %-encoding (#{str})" unless /\A(?:%\h\h|[^%]+)*\z/ =~ str
+    raise ArgumentError, "invalid %-encoding (#{str})" unless /\A[^%]*(?:%\h\h[^%]*)*\z/ =~ str
     str.gsub(/\+|%\h\h/, TBLDECWWWCOMP_).force_encoding(enc)
   end
 
@@ -786,32 +919,48 @@ module URI
   #
   # This internally uses URI.encode_www_form_component(str).
   #
-  # This doesn't convert encodings of give items, so convert them before call
-  # this method if you want to send data as other than original encoding or
-  # mixed encoding data. (strings which is encoded in HTML5 ASCII incompatible
-  # encoding is converted to UTF-8)
+  # This method doesn't convert the encoding of given items, so convert them
+  # before call this method if you want to send data as other than original
+  # encoding or mixed encoding data. (Strings which are encoded in an HTML5
+  # ASCII incompatible encoding are converted to UTF-8.)
   #
-  # This doesn't treat files. When you send a file, use multipart/form-data.
+  # This method doesn't handle files.  When you send a file, use
+  # multipart/form-data.
   #
-  # This refers http://www.w3.org/TR/html5/forms.html#url-encoded-form-data
+  # This is an implementation of
+  # http://www.w3.org/TR/html5/forms.html#url-encoded-form-data
+  #
+  #    URI.encode_www_form([["q", "ruby"], ["lang", "en"]])
+  #    #=> "q=ruby&lang=en"
+  #    URI.encode_www_form("q" => "ruby", "lang" => "en")
+  #    #=> "q=ruby&lang=en"
+  #    URI.encode_www_form("q" => ["ruby", "perl"], "lang" => "en")
+  #    #=> "q=ruby&q=perl&lang=en"
+  #    URI.encode_www_form([["q", "ruby"], ["q", "perl"], ["lang", "en"]])
+  #    #=> "q=ruby&q=perl&lang=en"
   #
   # See URI.encode_www_form_component, URI.decode_www_form
   def self.encode_www_form(enum)
-    str = nil
-    enum.each do |k,v|
-      if str
-        str << '&'
+    enum.map do |k,v|
+      if v.nil?
+        encode_www_form_component(k)
+      elsif v.respond_to?(:to_ary)
+        v.to_ary.map do |w|
+          str = encode_www_form_component(k)
+          unless w.nil?
+            str << '='
+            str << encode_www_form_component(w)
+          end
+        end.join('&')
       else
-        str = nil.to_s
+        str = encode_www_form_component(k)
+        str << '='
+        str << encode_www_form_component(v)
       end
-      str << encode_www_form_component(k)
-      str << '='
-      str << encode_www_form_component(v)
-    end
-    str
+    end.join('&')
   end
 
-  WFKV_ = '(?:%\h\h|[^%#=;&])' # :nodoc:
+  WFKV_ = '(?:[^%#=;&]*(?:%\h\h[^%#=;&]*)*)' # :nodoc:
 
   # Decode URL-encoded form data from given +str+.
   #
@@ -835,7 +984,7 @@ module URI
   # See URI.decode_www_form_component, URI.encode_www_form
   def self.decode_www_form(str, enc=Encoding::UTF_8)
     return [] if str.empty?
-    unless /\A#{WFKV_}*=#{WFKV_}*(?:[;&]#{WFKV_}*=#{WFKV_}*)*\z/o =~ str
+    unless /\A#{WFKV_}=#{WFKV_}(?:[;&]#{WFKV_}=#{WFKV_})*\z/o =~ str
       raise ArgumentError, "invalid data of application/x-www-form-urlencoded (#{str})"
     end
     ary = []
@@ -844,14 +993,22 @@ module URI
     end
     ary
   end
-end
+end # module URI
 
 module Kernel
-  # alias for URI.parse.
+
   #
-  # This method is introduced at 1.8.2.
-  def URI(uri_str) # :doc:
-    URI.parse(uri_str)
+  # Returns +uri+ converted to a URI object.
+  #
+  def URI(uri)
+    if uri.is_a?(URI::Generic)
+      uri
+    elsif uri = String.try_convert(uri)
+      URI.parse(uri)
+    else
+      raise ArgumentError,
+        "bad argument (expected URI object or URI string)"
+    end
   end
   module_function :URI
 end

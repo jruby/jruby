@@ -1,12 +1,12 @@
 require 'rdoc'
 require 'rdoc/code_objects'
-require 'rdoc/markup/preprocess'
+require 'rdoc/markup/pre_process'
 require 'rdoc/stats'
 
 ##
-# A parser is simple a class that implements
+# A parser is a class that subclasses RDoc::Parser and implements
 #
-#   #initialize(file_name, body, options)
+#   #initialize top_level, file_name, body, options, stats
 #
 # and
 #
@@ -16,17 +16,16 @@ require 'rdoc/stats'
 # and an RDoc::Options object. The scan method is then called to return an
 # appropriately parsed TopLevel code object.
 #
-# The ParseFactory is used to redirect to the correct parser given a
-# filename extension. This magic works because individual parsers have to
-# register themselves with us as they are loaded in. The do this using the
-# following incantation
+# RDoc::Parser::for is a factory that creates the correct parser for a
+# given filename extension.  Parsers have to register themselves RDoc::Parser
+# using parse_files_matching as when they are loaded:
 #
 #   require "rdoc/parser"
 #
 #   class RDoc::Parser::Xyz < RDoc::Parser
 #     parse_files_matching /\.xyz$/ # <<<<
 #
-#     def initialize(file_name, body, options)
+#     def initialize top_level, file_name, body, options, stats
 #       ...
 #     end
 #
@@ -35,15 +34,23 @@ require 'rdoc/stats'
 #     end
 #   end
 #
-# Just to make life interesting, if we suspect a plain text file, we also
-# look for a shebang line just in case it's a potential shell script
+# If a plain text file is detected, RDoc also looks for a shebang line in case
+# the file is a shell script.
 
 class RDoc::Parser
 
   @parsers = []
 
   class << self
+
+    ##
+    # An Array of arrays that maps file extension (or name) regular
+    # expressions to parser classes that will parse matching filenames.
+    #
+    # Use parse_files_matching to register a parser's file extensions.
+
     attr_reader :parsers
+
   end
 
   ##
@@ -67,18 +74,53 @@ class RDoc::Parser
   # content that an RDoc parser shouldn't try to consume.
 
   def self.binary?(file)
+    return false if file =~ /\.(rdoc|txt)$/
+
     s = File.read(file, 1024) or return false
 
-    if s[0, 2] == Marshal.dump('')[0, 2] then
-      true
-    elsif file =~ /erb\.rb$/ then
-      false
-    elsif s.scan(/<%|%>/).length >= 4 || s.index("\x00") then
-      true
-    elsif 0.respond_to? :fdiv then
-      s.count("\x00-\x7F", "^ -~\t\r\n").fdiv(s.size) > 0.3
-    else # HACK 1.8.6
-      (s.count("\x00-\x7F", "^ -~\t\r\n").to_f / s.size) > 0.3
+    have_encoding = s.respond_to? :encoding
+
+    if have_encoding then
+      return false if s.encoding != Encoding::ASCII_8BIT and s.valid_encoding?
+    end
+
+    return true if s[0, 2] == Marshal.dump('')[0, 2] or s.index("\x00")
+
+    if have_encoding then
+      s.force_encoding Encoding.default_external
+
+      not s.valid_encoding?
+    else
+      if 0.respond_to? :fdiv then
+        s.count("\x00-\x7F", "^ -~\t\r\n").fdiv(s.size) > 0.3
+      else # HACK 1.8.6
+        (s.count("\x00-\x7F", "^ -~\t\r\n").to_f / s.size) > 0.3
+      end
+    end
+  end
+
+  ##
+  # Processes common directives for CodeObjects for the C and Ruby parsers.
+  #
+  # Applies +directive+'s +value+ to +code_object+, if appropriate
+
+  def self.process_directive code_object, directive, value
+    warn "RDoc::Parser::process_directive is deprecated and wil be removed in RDoc 4.  Use RDoc::Markup::PreProcess#handle_directive instead" if $-w
+
+    case directive
+    when 'nodoc' then
+      code_object.document_self = nil # notify nodoc
+      code_object.document_children = value.downcase != 'all'
+    when 'doc' then
+      code_object.document_self = true
+      code_object.force_documentation = true
+    when 'yield', 'yields' then
+      # remove parameter &block
+      code_object.params.sub!(/,?\s*&\w+/, '') if code_object.params
+
+      code_object.block_params = value
+    when 'arg', 'args' then
+      code_object.params = value
     end
   end
 
@@ -143,12 +185,21 @@ class RDoc::Parser
     RDoc::Parser.parsers.unshift [regexp, self]
   end
 
+  ##
+  # Creates a new Parser storing +top_level+, +file_name+, +content+,
+  # +options+ and +stats+ in instance variables.
+  #
+  # Usually invoked by +super+
+
   def initialize(top_level, file_name, content, options, stats)
     @top_level = top_level
     @file_name = file_name
     @content = content
     @options = options
     @stats = stats
+
+    @preprocess = RDoc::Markup::PreProcess.new @file_name, @options.rdoc_include
+    @preprocess.options = @options
   end
 
 end
