@@ -197,14 +197,6 @@ public abstract class IRScopeImpl implements IRScope {
         return staticScope;
     }
 
-    public Instr getLastInstr() {
-        throw new RuntimeException("Encountered instruction getLast in a non-execution scope!");
-    }
-    
-    public void addInstr(Instr i) {
-        throw new RuntimeException("Encountered instruction add in a non-execution scope!");
-    }
-
     // Record that newName is a new method name for method with oldName
     // This is for the 'alias' keyword which resolves method names in the static compile/parse-time context
     public void recordMethodAlias(String newName, String oldName) {

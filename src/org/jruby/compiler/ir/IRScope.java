@@ -1,6 +1,5 @@
 package org.jruby.compiler.ir;
 
-import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.compiler_pass.CompilerPass;
@@ -33,16 +32,6 @@ public interface IRScope {
      * Returns the nearest method from this scope which may be itself (can never be null)
      */
     public IRMethod getNearestMethod();
-    
-    /**
-     *  methods and closures
-     */
-    public void addInstr(Instr i);
-    
-    /**
-     * Get the last instr of this IRScope
-     */
-    public Instr getLastInstr();
 
     /**
      *  Record that newName is a new method name for method with oldName
