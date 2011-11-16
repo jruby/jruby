@@ -3087,6 +3087,10 @@ public final class Ruby {
         return newRaiseException(getErrno().fastGetClass("ENOTDIR"), message);
     }
 
+    public RaiseException newErrnoENOTEMPTYError(String message) {
+        return newRaiseException(getErrno().getClass("ENOTEMPTY"), message);
+    }
+
     public RaiseException newErrnoENOTSOCKError(String message) {
         return newRaiseException(getErrno().fastGetClass("ENOTSOCK"), message);
     }
