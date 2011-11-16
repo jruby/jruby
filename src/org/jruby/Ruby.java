@@ -3135,6 +3135,10 @@ public final class Ruby {
         return newRaiseException(getErrno().getClass("ENOTDIR"), message);
     }
 
+    public RaiseException newErrnoENOTEMPTYError(String message) {
+        return newRaiseException(getErrno().getClass("ENOTEMPTY"), message);
+    }
+
     public RaiseException newErrnoENOTSOCKError(String message) {
         return newRaiseException(getErrno().getClass("ENOTSOCK"), message);
     }

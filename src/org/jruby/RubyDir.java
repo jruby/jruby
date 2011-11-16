@@ -49,6 +49,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import jnr.posix.util.Platform;
 
+import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
@@ -499,10 +500,11 @@ public class RubyDir extends RubyObject {
     }
 
     private static IRubyObject rmdirCommon(Ruby runtime, String path) {
-        JRubyFile directory = getDir(runtime, path, true);
-
+        JRubyFile directory = getDirForRmdir(runtime, path);
+        
+        // at this point, only thing preventing delete should be non-emptiness
         if (!directory.delete()) {
-            throw runtime.newSystemCallError("No such directory");
+            throw runtime.newErrnoENOTEMPTYError(path);
         }
 
         return runtime.newFixnum(0);
@@ -742,33 +744,72 @@ public class RubyDir extends RubyObject {
      * @throws  IOError if <code>path</code> is not a directory.
      */
     protected static JRubyFile getDir(final Ruby runtime, final String path, final boolean mustExist) {
+        String dir = dirFromPath(path, runtime);
+
+        JRubyFile result = JRubyFile.create(runtime.getCurrentDirectory(), dir);
+
+        if (mustExist && !result.exists()) {
+            throw runtime.newErrnoENOENTError(dir);
+        }
+
+        boolean isDirectory = result.isDirectory();
+
+        if (mustExist && !isDirectory) {
+            throw runtime.newErrnoENOTDIRError(path);
+        }
+
+        if (!mustExist && isDirectory) {
+            throw runtime.newErrnoEEXISTError(dir);
+        }
+
+        return result;
+    }
+    
+    /**
+     * Similar to getDir, but performs different checks to match rmdir behavior.
+     * @param runtime
+     * @param path
+     * @param mustExist
+     * @return 
+     */
+    protected static JRubyFile getDirForRmdir(final Ruby runtime, final String path) {
+        String dir = dirFromPath(path, runtime);
+
+        JRubyFile directory = JRubyFile.create(runtime.getCurrentDirectory(), dir);
+        
+        // Order is important here...File.exists() will return false if the parent
+        // dir can't be read, so we check permissions first
+        
+        // no permission
+        if (directory.getParentFile().exists() &&
+                !directory.getParentFile().canWrite()) {
+            throw runtime.newErrnoEACCESError(path);
+        }
+
+        // does not exist
+        if (!directory.exists()) {
+            throw runtime.newErrnoENOENTError(path);
+        }
+        
+        // is not directory
+        if (!directory.isDirectory()) {
+            throw runtime.newErrnoENOTDIRError(path);
+        }
+
+        return directory;
+    }
+
+    private static String dirFromPath(final String path, final Ruby runtime) throws RaiseException {
         String dir = path;
         String[] pathParts = RubyFile.splitURI(path);
         if (pathParts != null) {
             if (pathParts[0].equals("file:") && pathParts[1].length() > 0 && pathParts[1].indexOf("!/") == -1) {
                 dir = pathParts[1];
             } else {
-                throw runtime.newErrnoENOTDIRError(dir + " is not a directory");
+                throw runtime.newErrnoENOTDIRError(dir);
             }
         }
-
-        JRubyFile result = JRubyFile.create(runtime.getCurrentDirectory(), dir);
-
-        if (mustExist && !result.exists()) {
-            throw runtime.newErrnoENOENTError("No such file or directory - " + dir);
-        }
-
-        boolean isDirectory = result.isDirectory();
-
-        if (mustExist && !isDirectory) {
-            throw runtime.newErrnoENOTDIRError(path + " is not a directory");
-        }
-
-        if (!mustExist && isDirectory) {
-            throw runtime.newErrnoEEXISTError("File exists - " + dir);
-        }
-
-        return result;
+        return dir;
     }
 
     /**
