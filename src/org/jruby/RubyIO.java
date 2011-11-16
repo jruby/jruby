@@ -2309,6 +2309,35 @@ public class RubyIO extends RubyObject {
             context.getRuntime().unregisterInspecting(array);
         }
     }
+    
+    @Override
+    public IRubyObject inspect() {
+        Ruby runtime = getRuntime();
+        
+        if (!runtime.is1_9()) return super.inspect();
+        OpenFile openFile = getOpenFile();
+        if (openFile == null) return super.inspect();
+        
+        Stream stream = openFile.getMainStream();
+        String className = getMetaClass().getRealClass().getName();
+        String path = openFile.getPath();
+        String status = "";
+        
+        if (path == null) {
+            if (stream == null) {
+                path = "";
+                status = "(closed)";
+            } else {
+                path = "fd " + runtime.getFileno(stream.getDescriptor());
+            }
+        } else if (!openFile.isOpen()) {
+            status = " (closed)";
+        }
+        
+        String inspectStr = "#<" + className + ":" + path + status + ">";
+        
+        return runtime.newString(inspectStr);
+    }
 
     /** Read a line.
      * 
