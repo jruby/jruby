@@ -35,7 +35,7 @@ public class CoverageData {
     private final EventHook COVERAGE_HOOK = new EventHook() {
         @Override
         public synchronized void eventHandler(ThreadContext context, String eventName, String file, int line, String name, IRubyObject type) {
-            if (coverage == null) {
+            if (coverage == null || line <= 0) {
                 return;
             }
             
