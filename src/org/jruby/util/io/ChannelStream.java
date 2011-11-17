@@ -147,6 +147,10 @@ public class ChannelStream implements Stream, Finalizable {
     public void setBinmode() {
         // No-op here, no binmode handling needed.
     }
+    
+    public boolean isBinmode() {
+        return false;
+    }
 
     public boolean isAutoclose() {
         return autoclose;
