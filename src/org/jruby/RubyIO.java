@@ -3807,6 +3807,12 @@ public class RubyIO extends RubyObject {
                 new RubyIO(runtime, process.getError()) :
                 new RubyIO(runtime, process.getErrorStream());
 
+            // ensure the OpenFile knows it's a process; see OpenFile#finalize
+            input.getOpenFile().setProcess(process);
+            output.getOpenFile().setProcess(process);
+            error.getOpenFile().setProcess(process);
+            
+            // process streams are not seekable
             input.getOpenFile().getMainStreamSafe().getDescriptor().
               setCanBeSeekable(false);
             output.getOpenFile().getMainStreamSafe().getDescriptor().
@@ -4198,9 +4204,10 @@ public class RubyIO extends RubyObject {
         Object waitLock = new Object();
         while (true) {
             // only try 1000 times with a 1ms sleep between, so we don't hang
-            // forever on processes that ignore SIGTERM
+            // forever on processes that ignore SIGTERM. After that, not much
+            // we can do...
             if (i >= 1000) {
-                throw new RuntimeException("could not shut down process: " + process);
+                return;
             }
 
             // attempt to destroy (SIGTERM on UNIX, TerminateProcess on Windows)

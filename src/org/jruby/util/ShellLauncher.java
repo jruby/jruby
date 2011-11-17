@@ -872,24 +872,22 @@ public class ShellLauncher {
 
         @Override
         public void destroy() {
-            try {
-                if (input != null) input.close();
-                if (inerr != null) inerr.close();
-                if (output != null) output.close();
-                if (inputChannel != null) inputChannel.close();
-                if (inerrChannel != null) inerrChannel.close();
-                if (outputChannel != null) outputChannel.close();
+            // We try to safely close all streams and channels to the greatest
+            // extent possible.
+            try {if (input != null) input.close();} catch (Exception e) {}
+            try {if (inerr != null) inerr.close();} catch (Exception e) {}
+            try {if (output != null) output.close();} catch (Exception e) {}
+            try {if (inputChannel != null) inputChannel.close();} catch (Exception e) {}
+            try {if (inerrChannel != null) inerrChannel.close();} catch (Exception e) {}
+            try {if (outputChannel != null) outputChannel.close();} catch (Exception e) {}
 
-                // processes seem to have some peculiar locking sequences, so we
-                // need to ensure nobody is trying to close/destroy while we are
-                synchronized (this) {
-                    RubyIO.obliterateProcess(child);
-                    if (inputPumper != null) synchronized(inputPumper) {inputPumper.quit();}
-                    if (inerrPumper != null) synchronized(inerrPumper) {inerrPumper.quit();}
-                    if (outputPumper != null) synchronized(outputPumper) {outputPumper.quit();}
-                }
-            } catch (IOException ioe) {
-                throw new RuntimeException(ioe);
+            // processes seem to have some peculiar locking sequences, so we
+            // need to ensure nobody is trying to close/destroy while we are
+            synchronized (this) {
+                RubyIO.obliterateProcess(child);
+                if (inputPumper != null) synchronized(inputPumper) {inputPumper.quit();}
+                if (inerrPumper != null) synchronized(inerrPumper) {inerrPumper.quit();}
+                if (outputPumper != null) synchronized(outputPumper) {outputPumper.quit();}
             }
         }
 
