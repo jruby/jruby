@@ -301,16 +301,26 @@ public class OpenFile {
         try {
             ChannelDescriptor main = null;
             ChannelDescriptor pipe = null;
+            
+            // NOTE: Recent JDKs shut down streams in the parent when child
+            // terminates, so we can't trust that they'll be open for our
+            // close. Check for that.
+            
+            boolean isProcess = process != null;
 
             synchronized (this) {
                 Stream ps = pipeStream;
                 if (ps != null) {
                     pipe = ps.getDescriptor();
 
-                    // TODO: Ruby logic is somewhat more complicated here, see comments after
                     try {
-                        ps.fflush();
-                        ps.fclose();
+                        // Check for closed channel due to child exit.
+                        // See NOTE above.
+                        if (isProcess && ps.getChannel().isOpen()
+                                || !isProcess) {
+                            ps.fflush();
+                            ps.fclose();
+                        }
                     } finally {
                         // make sure the pipe stream is set to null
                         pipeStream = null;
@@ -322,10 +332,15 @@ public class OpenFile {
                     main = ms.getDescriptor();
                     runtime.removeFilenoIntMap(main.getFileno());
                     try {
-                        if (pipe == null && isWriteBuffered()) {
-                            ms.fflush();
+                        // Check for closed channel due to child exit.
+                        // See NOTE above.
+                        if (isProcess && ms.getChannel().isOpen()
+                                || !isProcess) {
+                            if (pipe == null && isWriteBuffered()) {
+                                ms.fflush();
+                            }
+                            ms.fclose();
                         }
-                        ms.fclose();
                     } catch (BadDescriptorException bde) {
                         if (main == pipe) {
                         } else {
