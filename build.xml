@@ -102,16 +102,9 @@
   </condition>
   
   <property name="version.ruby" value="${version.ruby.major}.${version.ruby.minor}"/>
-  <property name="rdoc.archive" value="docs/rdocs.tar.gz"/>
 
   <!-- Initializes the build -->
   <target name="init" unless="init.hasrun">
-    <!-- do not unpack rdocs if they're already there -->
-    <uptodate property="extract-rdocs.hasrun" srcfile="${rdoc.archive}" targetfile="share/ri.jar"/>
-
-    <!-- do not generate ri cache if it's already generated -->
-    <uptodate property="generate-ri-cache.hasrun" srcfile="${rdoc.archive}" targetfile="share/ri_cache.bin.gz"/>
-
     <!-- do not unpack native libs if they're already there -->
     <uptodate property="native-libs-uptodate" targetfile="${lib.dir}/native/libs.OK">
       <srcfiles dir= "build_lib" includes="jffi-*.jar"/>
@@ -145,7 +138,7 @@
   </target>
 
   <!-- Creates the directories needed for building -->
-  <target name="prepare" depends="init, create-dirs, copy-resources, extract-rdocs, update-constants">
+  <target name="prepare" depends="init, create-dirs, copy-resources, update-constants">
   </target>
   
   <target name="create-dirs" unless="create-dirs.hasrun">
@@ -173,15 +166,6 @@
       </fileset>
     </copy>
     <property name="copy-resources.hasrun" value="true"/>
-  </target>
-
-  <!-- extract rdoc archive into share/ -->
-  <target name="extract-rdocs" depends="init" unless="extract-rdocs.hasrun">
-    <untar src="${rdoc.archive}" dest="${basedir}" compression="gzip"/>
-    <jar file="share/ri.jar">
-      <fileset dir="share" includes="ri/**/*"/>
-    </jar>
-    <property name="RDOCS_EXTRACTED" value="true"/>
   </target>
   
   <macrodef name="update-constants">
@@ -1353,6 +1337,7 @@
     <include name="bin/testrb"/>
     <include name="bin/ast*"/>
     <include name="bin/spec.bat"/>
+    <include name="bin/rake"/>
     <include name="bin/rake.bat"/>
   </patternset>
 
@@ -1382,7 +1367,6 @@
     <exclude name="lib/emma_ant.jar"/>
     <exclude name="lib/junit.jar"/>
     <exclude name="lib/jarjar-1.0.jar"/>
-    <exclude name="docs/rdocs.tar.gz"/>
     <exclude name="bench/**"/>
     <include name="share/**"/>
   </patternset>

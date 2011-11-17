@@ -22,9 +22,6 @@ module RI
     # should we just display a class list and exit
     attr_reader :list_classes
 
-    # should we look for java classes instead of ruby rdoc
-    attr_reader :java_classes
-
     # should we display a list of all names
     attr_reader :list_names
 
@@ -46,9 +43,6 @@ module RI
         [ "--classes",      "-c",   nil,
           "Display the names of classes and modules we\n" +
           "know about"],
-
-        [ "--java",      "-j",   nil,
-          "Interpret arguments as the names of Java classes\n"],
 
         [ "--doc-dir",      "-d",   "<dirname>",
           "A directory to search for documentation. If not\n" +
@@ -233,7 +227,6 @@ module RI
       @width        = 72
       @formatter    = RI::TextFormatter.for("plain") 
       @list_classes = false
-      @java_classes = false
       @list_names   = false
 
       # By default all paths are used.  If any of these are true, only those
@@ -265,7 +258,6 @@ module RI
           when "--list-names" then @list_names = true
           when "--no-pager"   then @use_stdout = true
           when "--classes"    then @list_classes = true
-          when "--java"    then @java_classes = true
 
           when "--system"     then @use_system = true
           when "--site"       then @use_site = true
