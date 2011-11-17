@@ -434,7 +434,7 @@ public class RubyModule extends RubyObject {
             // is to insert the generate the name of form #<Class:01xasdfasd> if 
             // it's a singleton module/class, which this code accomplishes.
             if(pName == null) {
-                pName = p.calculateAnonymousName();
+                pName = p.getName();;
              }
             
             parentNames[i] = pName;
@@ -448,7 +448,7 @@ public class RubyModule extends RubyObject {
         }
         builder.append(name);
         
-        return name;
+        return builder.toString();
     }
 
     private String calculateAnonymousName() {
