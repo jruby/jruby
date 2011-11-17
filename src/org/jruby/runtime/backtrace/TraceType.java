@@ -51,7 +51,8 @@ public class TraceType {
         if (style.equalsIgnoreCase("raw")) return new TraceType(Gather.RAW, Format.JRUBY);
         else if (style.equalsIgnoreCase("ruby_framed")) return new TraceType(Gather.NORMAL, Format.JRUBY);
         else if (style.equalsIgnoreCase("normal")) return new TraceType(Gather.NORMAL, Format.JRUBY);
-        else if (style.equalsIgnoreCase("rubinius")) return new TraceType(Gather.NORMAL, Format.RUBINIUS);
+        // deprecated, just uses jruby format now
+        else if (style.equalsIgnoreCase("rubinius")) return new TraceType(Gather.NORMAL, Format.JRUBY);
         else if (style.equalsIgnoreCase("full")) return new TraceType(Gather.FULL, Format.JRUBY);
         else if (style.equalsIgnoreCase("mri")) return new TraceType(Gather.NORMAL, Format.MRI);
         else return new TraceType(Gather.NORMAL, Format.JRUBY);
@@ -67,8 +68,7 @@ public class TraceType {
                         thread.getStackTrace(),
                         new BacktraceElement[0],
                         true,
-                        false,
-                        this);
+                        false);
             }
         },
 
@@ -81,8 +81,7 @@ public class TraceType {
                         thread.getStackTrace(),
                         context.createBacktrace2(0, nativeException),
                         true,
-                        false,
-                        this);
+                        false);
             }
         },
 
@@ -95,8 +94,7 @@ public class TraceType {
                         thread.getStackTrace(),
                         context.createBacktrace2(0, nativeException),
                         false,
-                        false,
-                        this);
+                        false);
             }
         },
 
@@ -109,8 +107,7 @@ public class TraceType {
                         thread.getStackTrace(),
                         context.createBacktrace2(0, nativeException),
                         false,
-                        true,
-                        this);
+                        true);
             }
         };
 
@@ -136,15 +133,6 @@ public class TraceType {
         JRUBY {
             public String printBacktrace(RubyException exception, boolean console) {
                 return printBacktraceJRuby(exception, console);
-            }
-        },
-
-        /**
-         * Rubinius-style formatting
-         */
-        RUBINIUS {
-            public String printBacktrace(RubyException exception, boolean console) {
-                return printBacktraceRubinius(exception, console);
             }
         };
 
@@ -224,68 +212,6 @@ public class TraceType {
     private static final String KERNEL_COLOR = "\033[0;36m";
     private static final String EVAL_COLOR = "\033[0;33m";
     private static final String CLEAR_COLOR = "\033[0m";
-
-    protected static String printBacktraceRubinius(RubyException exception, boolean console) {
-        Ruby runtime = exception.getRuntime();
-        RubyStackTraceElement[] frames = exception.getBacktraceElements();
-        if (frames == null) frames = new RubyStackTraceElement[0];
-
-        ArrayList firstParts = new ArrayList();
-        int longestFirstPart = 0;
-        for (RubyStackTraceElement frame : frames) {
-            String firstPart = frame.getClassName() + "#" + frame.getMethodName();
-            if (firstPart.length() > longestFirstPart) longestFirstPart = firstPart.length();
-            firstParts.add(firstPart);
-        }
-
-        // determine spacing
-        int center = longestFirstPart
-                + 2 // initial spaces
-                + 1; // spaces before "at"
-
-        StringBuilder buffer = new StringBuilder();
-
-        buffer
-                .append("An exception has occurred:\n")
-                .append("    ");
-
-        if (exception.getMetaClass() == runtime.getRuntimeError() && exception.message(runtime.getCurrentContext()).toString().length() == 0) {
-            buffer.append("No current exception (RuntimeError)");
-        } else {
-            buffer.append(exception.message(runtime.getCurrentContext()).toString());
-        }
-
-        buffer
-                .append('\n')
-                .append('\n')
-                .append("Backtrace:\n");
-
-        int i = 0;
-        for (RubyStackTraceElement frame : frames) {
-            String firstPart = (String)firstParts.get(i);
-            String secondPart = frame.getFileName() + ":" + frame.getLineNumber();
-
-            if (i == 0) {
-                buffer.append(FIRST_COLOR);
-            } else if (frame.isBinding() || frame.getFileName().equals("(eval)")) {
-                buffer.append(EVAL_COLOR);
-            } else if (frame.getFileName().indexOf(".java") != -1) {
-                buffer.append(KERNEL_COLOR);
-            }
-            buffer.append("  ");
-            for (int j = 0; j < center - firstPart.length(); j++) {
-                buffer.append(' ');
-            }
-            buffer.append(firstPart);
-            buffer.append(" at ");
-            buffer.append(secondPart);
-            buffer.append(CLEAR_COLOR);
-            buffer.append('\n');
-            i++;
-        }
-
-        return buffer.toString();
-    }
 
     protected static String printBacktraceJRuby(RubyException exception, boolean console) {
         Ruby runtime = exception.getRuntime();
@@ -374,8 +300,7 @@ public class TraceType {
                 Thread.currentThread().getStackTrace(),
                 context.createBacktrace2(0, nativeException),
                 full,
-                maskNative,
-                gather);
+                maskNative);
     }
 
     private static void printErrorPos(ThreadContext context, PrintStream errorStream) {

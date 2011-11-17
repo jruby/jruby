@@ -60,7 +60,7 @@ public abstract class MethodBlock extends ContextAwareBlockBody {
                 frame,
                 module,
                 dynamicScope,
-                new BacktraceElement(module.getName(), method.getMethodName(), body.getFile(), body.getLine()));
+                new BacktraceElement(method.getMethodName(), body.getFile(), body.getLine()));
 
         return new Block(body, binding);
     }

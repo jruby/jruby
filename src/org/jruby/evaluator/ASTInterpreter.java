@@ -45,7 +45,6 @@ import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.JumpException;
 import org.jruby.javasupport.util.RuntimeHelpers;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
@@ -71,8 +70,7 @@ public class ASTInterpreter {
             Block block,
             boolean isTraceable) {
         try {
-            String className = implClass.getName();
-            ThreadContext.pushBacktrace(context, className, name, file, line);
+            ThreadContext.pushBacktrace(context, name, file, line);
             if (isTraceable) methodPreTrace(runtime, context, name, implClass);
             return node.interpret(runtime, context, self, block);
         } finally {
@@ -86,7 +84,7 @@ public class ASTInterpreter {
     }
     public static IRubyObject INTERPRET_EVAL(Ruby runtime, ThreadContext context, Node node, String name, IRubyObject self, Block block) {
         try {
-            ThreadContext.pushBacktrace(context, self.getMetaClass().getName(), name, node.getPosition());
+            ThreadContext.pushBacktrace(context, name, node.getPosition());
             return node.interpret(runtime, context, self, block);
         } finally {
             ThreadContext.popBacktrace(context);
@@ -94,7 +92,7 @@ public class ASTInterpreter {
     }
     public static IRubyObject INTERPRET_EVAL(Ruby runtime, ThreadContext context, String file, int line, Node node, String name, IRubyObject self, Block block) {
         try {
-            ThreadContext.pushBacktrace(context, self.getMetaClass().getName(), name, file, line);
+            ThreadContext.pushBacktrace(context, name, file, line);
             return node.interpret(runtime, context, self, block);
         } finally {
             ThreadContext.popBacktrace(context);
@@ -102,7 +100,7 @@ public class ASTInterpreter {
     }
     public static IRubyObject INTERPRET_CLASS(Ruby runtime, ThreadContext context, Node node, String name, IRubyObject self, Block block) {
         try {
-            ThreadContext.pushBacktrace(context, self.getMetaClass().getName(), name, node.getPosition());
+            ThreadContext.pushBacktrace(context, name, node.getPosition());
             return node.interpret(runtime, context, self, block);
         } finally {
             ThreadContext.popBacktrace(context);
@@ -110,7 +108,7 @@ public class ASTInterpreter {
     }
     public static IRubyObject INTERPRET_BLOCK(Ruby runtime, ThreadContext context, String file, int line, Node node, String name, IRubyObject self, Block block) {
         try {
-            ThreadContext.pushBacktrace(context, self.getMetaClass().getName(), name, file, line);
+            ThreadContext.pushBacktrace(context, name, file, line);
             return node.interpret(runtime, context, self, block);
         } finally {
             ThreadContext.popBacktrace(context);
@@ -118,7 +116,7 @@ public class ASTInterpreter {
     }
     public static IRubyObject INTERPRET_ROOT(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block block) {
         try {
-            ThreadContext.pushBacktrace(context, self.getMetaClass().getName(), "(root)", node.getPosition());
+            ThreadContext.pushBacktrace(context, "(root)", node.getPosition());
             return node.interpret(runtime, context, self, block);
         } finally {
             ThreadContext.popBacktrace(context);

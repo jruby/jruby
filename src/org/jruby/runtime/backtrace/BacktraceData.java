@@ -14,22 +14,19 @@ public class BacktraceData implements Serializable {
     private final BacktraceElement[] rubyTrace;
     private final boolean fullTrace;
     private final boolean maskNative;
-    private final TraceType.Gather gather;
 
-    public BacktraceData(StackTraceElement[] javaTrace, BacktraceElement[] rubyTrace, boolean fullTrace, boolean maskNative, TraceType.Gather gather) {
+    public BacktraceData(StackTraceElement[] javaTrace, BacktraceElement[] rubyTrace, boolean fullTrace, boolean maskNative) {
         this.javaTrace = javaTrace;
         this.rubyTrace = rubyTrace;
         this.fullTrace = fullTrace;
         this.maskNative = maskNative;
-        this.gather = gather;
     }
 
     public static final BacktraceData EMPTY = new BacktraceData(
             new StackTraceElement[0],
             new BacktraceElement[0],
             false,
-            false,
-            TraceType.Gather.NORMAL);
+            false);
 
     public RubyStackTraceElement[] getBacktrace(Ruby runtime) {
         if (backtraceElements == null) {
@@ -162,7 +159,7 @@ public class BacktraceData implements Serializable {
             if (frameType != null && rubyFrameIndex >= 0) {
                 // Frame matches one of our markers for "interpreted" calls
                 BacktraceElement rubyFrame = rubyTrace[rubyFrameIndex];
-                RubyStackTraceElement rubyElement = new RubyStackTraceElement(rubyFrame.klass, rubyFrame.method, rubyFrame.filename, rubyFrame.line + 1, false);
+                RubyStackTraceElement rubyElement = new RubyStackTraceElement("RUBY", rubyFrame.method, rubyFrame.filename, rubyFrame.line + 1, false);
                 // dup if masking native and previous frame was native
                 if (maskNative && dupFrame) {
                     dupFrame = false;

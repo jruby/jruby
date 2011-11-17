@@ -265,7 +265,7 @@ public class Interpreter {
         
         try {
             String className = implClass.getName();
-            if (!syntheticMethod) ThreadContext.pushBacktrace(context, className, name, context.getFile(), context.getLine());
+            if (!syntheticMethod) ThreadContext.pushBacktrace(context, name, context.getFile(), context.getLine());
             if (isTraceable) methodPreTrace(runtime, context, name, implClass);
             return interpret(context, self, scope, args, block, blockType);
         } finally {

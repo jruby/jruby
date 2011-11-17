@@ -222,7 +222,7 @@ public class Options {
     public static final BooleanOption BACKTRACE_COLOR =
             new BooleanOption(MISCELLANEOUS, "backtrace.color", false, "Enable colorized backtraces.");
     public static final StringOption BACKTRACE_STYLE =
-            new StringOption(MISCELLANEOUS, "backtrace.style", new String[]{"normal","raw","full","mri","rubinius"}, "normal", "Set the style of exception backtraces.");
+            new StringOption(MISCELLANEOUS, "backtrace.style", new String[]{"normal","raw","full","mri"}, "normal", "Set the style of exception backtraces.");
     public static final StringOption THREAD_DUMP_SIGNAL =
             new StringOption(MISCELLANEOUS, "thread.dump.signal", new String[]{"USR1", "USR2", "etc"}, "USR2", "Set the signal used for dumping thread stacks.");
     public static final BooleanOption NATIVE_NET_PROTOCOL =

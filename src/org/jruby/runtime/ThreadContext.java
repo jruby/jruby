@@ -155,8 +155,8 @@ public final class ThreadContext {
         for (int i = 0; i < length2; i++) {
             stack2[i] = new BacktraceElement();
         }
-        ThreadContext.pushBacktrace(this, "", "", "", 0);
-        ThreadContext.pushBacktrace(this, "", "", "", 0);
+        ThreadContext.pushBacktrace(this, "", "", 0);
+        ThreadContext.pushBacktrace(this, "", "", 0);
         fiber = (Fiber) runtime.getRootFiber();
     }
 
@@ -465,19 +465,19 @@ public final class ThreadContext {
         return newBacktrace;
     }
 
-    public static void pushBacktrace(ThreadContext context, String klass, String method, ISourcePosition position) {
+    public static void pushBacktrace(ThreadContext context, String method, ISourcePosition position) {
         int index = ++context.backtraceIndex;
         BacktraceElement[] stack = context.backtrace;
-        BacktraceElement.update(stack[index], klass, method, position);
+        BacktraceElement.update(stack[index], method, position);
         if (index + 1 == stack.length) {
             ThreadContext.expandBacktraceIfNecessary(context);
         }
     }
 
-    public static void pushBacktrace(ThreadContext context, String klass, String method, String file, int line) {
+    public static void pushBacktrace(ThreadContext context, String method, String file, int line) {
         int index = ++context.backtraceIndex;
         BacktraceElement[] stack = context.backtrace;
-        BacktraceElement.update(stack[index], klass, method, file, line);
+        BacktraceElement.update(stack[index], method, file, line);
         if (index + 1 == stack.length) {
             ThreadContext.expandBacktraceIfNecessary(context);
         }

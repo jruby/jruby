@@ -400,6 +400,17 @@ public class RubyModule extends RubyObject {
     public String getName() {
         return calculateName();
     }
+    
+    /**
+     * Get the "simple" name for the class, which is either the "base" name or
+     * the "anonymous" class name.
+     * 
+     * @return the "simple" name of the class
+     */
+    public String getSimpleName() {
+        if (baseName != null) return baseName;
+        return calculateAnonymousName();
+    }
 
     /**
      * Recalculate the fully-qualified name of this class/module.

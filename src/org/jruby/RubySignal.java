@@ -100,7 +100,7 @@ public class RubySignal {
                         RubyException exc = new RubyException(runtime, runtime.getRuntimeError(), "");
                         ThreadContext tc = threadService.getThreadContextForThread(th);
                         if (tc != null) {
-                            exc.setBacktraceData(new BacktraceData(th.javaBacktrace(), tc.createBacktrace2(0, false), false, false, Gather.NORMAL));
+                            exc.setBacktraceData(new BacktraceData(th.javaBacktrace(), tc.createBacktrace2(0, false), false, false));
                             exc.printBacktrace(System.err);
                         } else {
                             System.err.println("    [no longer alive]");
