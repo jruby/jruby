@@ -314,7 +314,10 @@ public class OpenFile {
                     pipe = ps.getDescriptor();
 
                     try {
-                        // check for closed channel due to child exit
+                        // Newer JDKs actively close the process streams when
+                        // the child exits, so we have to confirm it's still
+                        // open to avoid raising an error here when we try to
+                        // flush and close the stream.
                         if (isProcess && ps.getChannel().isOpen()
                                 || !isProcess) {
                             ps.fflush();
@@ -331,7 +334,10 @@ public class OpenFile {
                     main = ms.getDescriptor();
                     runtime.removeFilenoIntMap(main.getFileno());
                     try {
-                        // check for closed channel due to child exit
+                        // Newer JDKs actively close the process streams when
+                        // the child exits, so we have to confirm it's still
+                        // open to avoid raising an error here when we try to
+                        // flush and close the stream.
                         if (isProcess && ms.getChannel().isOpen()
                                 || !isProcess) {
                             if (pipe == null && isWriteBuffered()) {
