@@ -37,10 +37,6 @@
 #include "queue.h"
 #include "ruby.h"
 
-#ifdef	__cplusplus
-extern "C" {
-#endif
-
 namespace jruby {
 
     class Handle;
@@ -246,9 +242,5 @@ namespace jruby {
 
     extern jobject fixnumToObject(JNIEnv* env, VALUE v);
 }
-
-#ifdef	__cplusplus
-}
-#endif
 
 #endif	/* JRUBY_HANDLE_H */
