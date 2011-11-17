@@ -406,7 +406,7 @@ public class RubyModule extends RubyObject {
      */
     private String calculateName() {
         if (getBaseName() == null) {
-            // we are anonymous, don't store calculated name
+            // we are anonymous, use anonymous name
             return calculateAnonymousName();
         }
         
@@ -415,7 +415,17 @@ public class RubyModule extends RubyObject {
         String name = getBaseName();
         RubyClass objectClass = runtime.getObject();
         
+        // First, we count the parents
+        int parentCount = 0;
         for (RubyModule p = getParent() ; p != null && p != objectClass ; p = p.getParent()) {
+            parentCount++;
+        }
+        
+        // Allocate a String array for all of their names and populate it
+        String[] parentNames = new String[parentCount];
+        int i = parentCount - 1;
+        int totalLength = name.length() + parentCount * 2; // name length + enough :: for all parents
+        for (RubyModule p = getParent() ; p != null && p != objectClass ; p = p.getParent(), i--) {
             String pName = p.getBaseName();
             
             // This is needed when the enclosing class or module is a singleton.
@@ -424,19 +434,31 @@ public class RubyModule extends RubyObject {
             // is to insert the generate the name of form #<Class:01xasdfasd> if 
             // it's a singleton module/class, which this code accomplishes.
             if(pName == null) {
-                pName = p.getName();
+                pName = p.calculateAnonymousName();
              }
             
-            name = pName + "::" + name;
+            parentNames[i] = pName;
+            totalLength += pName.length();
         }
+        
+        // Then build from the front using a StringBuilder
+        StringBuilder builder = new StringBuilder(totalLength);
+        for (String parentName : parentNames) {
+            builder.append(parentName).append("::");
+        }
+        builder.append(name);
         
         return name;
     }
 
     private String calculateAnonymousName() {
-        // anonymous classes get the #<Class:0xdeadbeef> format
-        String anonBase = isClass() ? "Class" : "Module";
-        return "#<" + anonBase  + ":0x" + String.format("%x", System.identityHashCode(this)) + ">";
+        if (anonymousName == null) {
+            // anonymous classes get the #<Class:0xdeadbeef> format
+            StringBuilder anonBase = new StringBuilder(isClass() ? "#<Class:0x" : "#<Module:0x");
+            anonBase.append(Integer.toHexString(System.identityHashCode(this))).append('>');
+            anonymousName = anonBase.toString();
+        }
+        return anonymousName;
     }
 
     /**
@@ -3436,6 +3458,12 @@ public class RubyModule extends RubyObject {
      * an anonymous class.
      */
     protected String baseName;
+    
+    /**
+     * The cached anonymous class name, since it never changes and has a nonzero
+     * cost to calculate.
+     */
+    private String anonymousName;
 
     private volatile Map<String, IRubyObject> constants = Collections.EMPTY_MAP;
     
