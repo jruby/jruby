@@ -79,7 +79,6 @@ STDLIB_FILES = %w[
   soap
   sync.rb
   test
-  thread.rb
   thwait.rb
   time.rb
   tmpdir.rb
