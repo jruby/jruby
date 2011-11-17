@@ -51,6 +51,11 @@ public interface IRScope {
     public int getNextClosureId();
 
     /**
+     * reset temporary variable allocation
+     */
+    public void resetTemporaryVariables();
+
+    /**
      *  create a new temporary variable
      */
     public Variable getNewTemporaryVariable();

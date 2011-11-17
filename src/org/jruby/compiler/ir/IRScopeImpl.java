@@ -144,6 +144,10 @@ public abstract class IRScopeImpl implements IRScope {
         return nextClosureIndex;
     }
 
+    public void resetTemporaryVariables() {
+        nextVarIndex.remove("%v");
+    }
+
     public Variable getNewTemporaryVariable() {
         return new TemporaryVariable(allocateNextPrefixedName("%v"));
     }

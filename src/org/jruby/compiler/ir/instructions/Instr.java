@@ -98,6 +98,16 @@ public abstract class Instr {
         return vars;
     }
 
+    public void renameVars(Map<Operand, Operand> renameMap) {
+        simplifyOperands(renameMap, true);
+        if (this instanceof ResultInstr) {
+            ResultInstr ri = (ResultInstr)this;
+            Variable oldVar = ri.getResult();
+            Variable newVar = (Variable)renameMap.get(oldVar);
+            if (newVar != null) ri.updateResult(newVar);
+        }
+    }
+
     /**
      * Clone the instruction for inlining -- this will rename all variables (including local variables and self!)
      * and replace RECV_ARG and RETURN instructions to regular copy instructions,

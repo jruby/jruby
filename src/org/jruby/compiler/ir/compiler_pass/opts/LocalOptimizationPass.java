@@ -1,10 +1,11 @@
 package org.jruby.compiler.ir.compiler_pass.opts;
 
-import java.util.Map;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.ListIterator;
+import java.util.Map;
+import java.util.Set;
 
 import org.jruby.compiler.ir.IRClosure;
 import org.jruby.compiler.ir.IRExecutionScope;
@@ -46,21 +47,17 @@ public class LocalOptimizationPass implements CompilerPass {
         }
     }
 
-    private static void recordSimplification(Variable res, Operand val, Map<Operand, Operand> valueMap, Map<Variable, List<Variable>> simplificationMap) {
-        valueMap.put(res, val);
-
-        // For all variables used by val, record a reverse mapping to let us track
-        // Read-After-Write scenarios when any of these variables are modified.
-        List<Variable> valVars = new ArrayList<Variable>(); 
-        val.addUsedVariables(valVars);
-        for (Variable v: valVars) {
-           List<Variable> x = simplificationMap.get(v);
-           if (x == null) {
-              x = new ArrayList<Variable>();
-              simplificationMap.put(v, x);
-           }
-           x.add(res);
+    private static void allocVar(Operand oldVar, IRExecutionScope s, List<TemporaryVariable> freeVarsList, Map<Operand, Operand> newVarMap) {
+        // If we dont have a var mapping, get a new var -- try the free list first
+        // and if none available, allocate a fresh one
+        if (newVarMap.get(oldVar) == null) {
+            newVarMap.put(oldVar, freeVarsList.isEmpty() ? s.getNewTemporaryVariable() : freeVarsList.remove(0));
         }
+    }
+
+    private static void freeVar(TemporaryVariable newVar, List<TemporaryVariable> freeVarsList) {
+        // Put the new var onto the free list (but only if it is not already there).
+        if (!freeVarsList.contains(newVar)) freeVarsList.add(0, newVar); 
     }
 
     private static void optimizeTmpVars(IRExecutionScope s) {
@@ -70,17 +67,19 @@ public class LocalOptimizationPass implements CompilerPass {
         for (Instr i: s.getInstrs()) {
             for (Variable v: i.getUsedVariables()) {
                  if (v instanceof TemporaryVariable) {
-                     Integer n = tmpVarUseCounts.get((TemporaryVariable)v);
+                     TemporaryVariable tv = (TemporaryVariable)v;
+                     Integer n = tmpVarUseCounts.get(tv);
                      if (n == null) n = new Integer(0);
-                     tmpVarUseCounts.put((TemporaryVariable)v, new Integer(n+1));
+                     tmpVarUseCounts.put(tv, new Integer(n+1));
                  }
             }
             if (i instanceof ResultInstr) {
                 Variable v = ((ResultInstr)i).getResult();
                 if (v instanceof TemporaryVariable) {
-                     Integer n = tmpVarDefCounts.get((TemporaryVariable)v);
+                     TemporaryVariable tv = (TemporaryVariable)v;
+                     Integer n = tmpVarDefCounts.get(tv);
                      if (n == null) n = new Integer(0);
-                     tmpVarDefCounts.put((TemporaryVariable)v, new Integer(n+1));
+                     tmpVarDefCounts.put(tv, new Integer(n+1));
                 }
             }
         }
@@ -154,8 +153,30 @@ public class LocalOptimizationPass implements CompilerPass {
             }
         }
 
-        // Pass 3: Transform code again -- replace all single use operands with constants they were defined to
+/*
+        Set<TemporaryVariable> usedVars = tmpVarUseCounts.keySet();
+        usedVars.removeAll(constValMap.keySet());     // these var defs have been removed
+        usedVars.removeAll(removableCopies.keySet()); // these var defs have been removed
+        System.out.println("For scope: " + s + ", we had " + tmpVarDefCounts.size() + " tmp vars and are now left with " + usedVars.size());
+*/
+
+        // Pass 3: Replace all single use operands with constants they were assigned to.
+        // Using operand -> operand signature because simplifyOperands works on operands
+        //
+        // In parallel, compute last use of temporary variables -- this effectively is the
+        // end of the live range that started with its first definition.  This implicitly
+        // encodes the live range of the temporary variable.  These live ranges are valid
+        // because the instructions that we are processing have come out an AST which means
+        // instruction uses are properly nested and haven't been rearranged yet.
+        //
+        // If anything, the live ranges are conservative -- but given that most temporaries
+        // are very short-lived (2 instructions), this quick analysis is good enough for most cases.
+        Map<TemporaryVariable, Integer> lastVarUse = new HashMap<TemporaryVariable, Integer>();
+        int iCount = -1;
         for (Instr i: s.getInstrs()) {
+            iCount++;
+
+            // rename dest
             if (i instanceof ResultInstr) {
                 Variable v = ((ResultInstr)i).getResult();
                 if (v instanceof TemporaryVariable) {
@@ -163,7 +184,62 @@ public class LocalOptimizationPass implements CompilerPass {
                     if (ci != null) ((ResultInstr)i).updateResult(ci);
                 }
             }
+
+            // rename uses
             i.simplifyOperands(constValMap, true);
+
+            // compute last use
+            for (Variable v: i.getUsedVariables()) {
+                if (v instanceof TemporaryVariable) lastVarUse.put((TemporaryVariable)v, iCount);
+            }
+        }
+
+        // Pass 4: Reallocate temporaries based on last uses to minimize # of unique vars.
+        Map<Operand, Operand>   newVarMap    = new HashMap<Operand, Operand>();
+        List<TemporaryVariable> freeVarsList = new ArrayList<TemporaryVariable>();
+        iCount = -1;
+        s.resetTemporaryVariables();
+        for (Instr i: s.getInstrs()) {
+            iCount++;
+
+            // Assign new vars
+            if (i instanceof ResultInstr) {
+                Variable result = ((ResultInstr)i).getResult();
+                if ((result != null) && result instanceof TemporaryVariable) {
+                    allocVar(result, s, freeVarsList, newVarMap);
+                }
+            }
+            for (Variable v: i.getUsedVariables()) {
+                if (v instanceof TemporaryVariable) allocVar(v, s, freeVarsList, newVarMap);
+            }
+
+            // Free dead vars
+            for (Variable v: i.getUsedVariables()) {
+                if (v instanceof TemporaryVariable) {
+                    TemporaryVariable tv = (TemporaryVariable)v;
+                    if (lastVarUse.get(tv) == iCount) freeVar((TemporaryVariable)newVarMap.get(tv), freeVarsList);
+                }
+            }
+
+            // Rename
+            i.renameVars(newVarMap);
+        }
+    }
+
+    private static void recordSimplification(Variable res, Operand val, Map<Operand, Operand> valueMap, Map<Variable, List<Variable>> simplificationMap) {
+        valueMap.put(res, val);
+
+        // For all variables used by val, record a reverse mapping to let us track
+        // Read-After-Write scenarios when any of these variables are modified.
+        List<Variable> valVars = new ArrayList<Variable>(); 
+        val.addUsedVariables(valVars);
+        for (Variable v: valVars) {
+           List<Variable> x = simplificationMap.get(v);
+           if (x == null) {
+              x = new ArrayList<Variable>();
+              simplificationMap.put(v, x);
+           }
+           x.add(res);
         }
     }
 
