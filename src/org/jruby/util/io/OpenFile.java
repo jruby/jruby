@@ -189,6 +189,9 @@ public class OpenFile {
         if (mainStream != null) {
             mainStream.setBinmode();
         }
+        if (pipeStream != null) {
+            pipeStream.setBinmode();
+        }
     }
 
     public boolean isOpen() {

@@ -171,6 +171,7 @@ public interface Stream {
     void freopen(Ruby runtime, String path, ModeFlags modes) throws DirectoryAsFileException, IOException, InvalidValueException, PipeException, BadDescriptorException;
 
     void setBinmode();
+    boolean isBinmode();
     Channel getChannel();
 
     boolean isAutoclose();

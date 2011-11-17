@@ -46,6 +46,10 @@ public class CRLFStreamWrapper implements Stream {
         binmode = true;
         stream.setBinmode();
     }
+    
+    public boolean isBinmode() {
+        return binmode;
+    }
 
     public boolean isAutoclose() {
         return stream.isAutoclose();
