@@ -57,6 +57,7 @@ public class MethodHandle extends Operand {
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
         methodName = methodName.getSimplifiedOperand(valueMap, force);
         receiver = receiver.getSimplifiedOperand(valueMap, force);
+        // SSS FIXME: This operand is not immutable because of this
         return this;
     }
 

@@ -49,6 +49,7 @@ public class Splat extends Operand {
         _array = ((Variable)_array).getValue(valueMap);
         }
          */
+        // SSS FIXME: This operand is not immutable because of this
         return this;
     }
 

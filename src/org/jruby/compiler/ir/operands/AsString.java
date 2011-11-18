@@ -21,6 +21,7 @@ public class AsString extends Operand {
     @Override
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
         source = source.getSimplifiedOperand(valueMap, force);
+        // SSS FIXME: This operand is not immutable because of this
         return this;
     }
 

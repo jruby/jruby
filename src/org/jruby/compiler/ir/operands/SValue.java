@@ -43,6 +43,7 @@ public class SValue extends Operand {
             return (a.elts.length == 1) ? a.elts[0] : a;
         }
         else {
+            // SSS FIXME: This operand is not immutable because of this
             return this;
         }
     }

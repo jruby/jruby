@@ -43,6 +43,7 @@ public class Regexp extends Operand {
     @Override
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
         regexp = regexp.getSimplifiedOperand(valueMap, force);
+        // SSS FIXME: This operand is not immutable because of this
         return this;
     }
 

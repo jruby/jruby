@@ -58,6 +58,7 @@ public class Array extends Operand {
             elts[i] = elts[i].getSimplifiedOperand(valueMap, force);
         }
 
+        // SSS FIXME: This operand is not immutable because of this -- we could by building a whole new array instead
         return this;
     }
 

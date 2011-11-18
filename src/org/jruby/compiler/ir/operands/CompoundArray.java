@@ -64,6 +64,7 @@ public class CompoundArray extends Operand {
             return this;
         }
 */
+        // SSS FIXME: This operand is not immutable because of this
         return this;
     }
 

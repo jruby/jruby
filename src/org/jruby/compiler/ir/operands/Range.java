@@ -60,6 +60,7 @@ public class Range extends Operand {
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
         begin = begin.getSimplifiedOperand(valueMap, force);
         end = end.getSimplifiedOperand(valueMap, force);
+        // SSS FIXME: This operand is not immutable because of this
         return this;
     }
 

@@ -49,6 +49,7 @@ public class Hash extends Operand {
             i++;
         }
 
+        // SSS FIXME: This operand is not immutable because of this
         return this;
     }
 
