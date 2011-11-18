@@ -19,7 +19,6 @@ import org.jruby.compiler.ir.IRExecutionScope;
 public class LiveVariablesProblem extends DataFlowProblem {
     public LiveVariablesProblem() {
         super(DataFlowProblem.DF_Direction.BACKWARD);
-        udVars = new HashSet<Variable>();
     }
 
     public DataFlowVar getDFVar(Variable v) {
@@ -38,18 +37,13 @@ public class LiveVariablesProblem extends DataFlowProblem {
         return new LiveVariableNode(this, bb);
     }
 
-    private void addDFVar(Variable v, boolean recordVar) {
+    public void addDFVar(Variable v) {
         DataFlowVar dfv = new DataFlowVar(this);
         dfVarMap.put(v, dfv);
         varDfVarMap.put(dfv.id, v);
         if ((v instanceof LocalVariable) && !((LocalVariable) v).isSelf()) {
             localVars.add((LocalVariable) v);
         }
-        if (recordVar) udVars.add(v);
-    }
-
-    public void addDFVar(Variable v) {
-        addDFVar(v, true);
     }
 
     /**
@@ -81,7 +75,7 @@ public class LiveVariablesProblem extends DataFlowProblem {
             if (liveIn.get(i) == true) {
                 Variable v = getVariable(i);
                 liveVars.add(v);
-//                System.out.println("variable " + v + " is live on entry!");
+                // System.out.println("variable " + v + " is live on entry!");
             }
         }
         
@@ -95,9 +89,9 @@ public class LiveVariablesProblem extends DataFlowProblem {
         // Update setup with info. about variables live on exit.
         if ((varsLiveOnExit != null) && !varsLiveOnExit.isEmpty()) {
             for (Variable v : varsLiveOnExit) {
-//                System.out.println("variable " + v + " is live on exit of closure!");
                 // We aren't recording these vars
-                if (getDFVar(v) == null) addDFVar(v, false); 
+                if (getDFVar(v) == null) addDFVar(v); 
+                // System.out.println("variable " + v + ":" + getDFVar(v).getId() + " is live on exit of closure!");
             }
         }
     }
@@ -122,16 +116,6 @@ public class LiveVariablesProblem extends DataFlowProblem {
         return varsLiveOnExit;
     }
 
-    // SSS FIXME: Not used anywhere right now
-    public boolean isDefinedOrUsed(Variable v) {
-        return udVars.contains(v);
-    }
-
-    // SSS FIXME: Not used anywhere right now
-    public Set<Variable> allDefinedOrUsedVariables() {
-        return udVars;
-    }
-
     public Set<Variable> getAllVars() {
         return dfVarMap.keySet();
     }
@@ -149,5 +133,4 @@ public class LiveVariablesProblem extends DataFlowProblem {
     private HashMap<Integer, Variable> varDfVarMap = new HashMap<Integer, Variable>();
     private HashSet<LocalVariable> localVars = new HashSet<LocalVariable>(); // Local variables that can be live across dataflow barriers
     private Collection<Variable> varsLiveOnExit;
-    private Set<Variable> udVars;
 }

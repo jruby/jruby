@@ -33,11 +33,11 @@ public class LiveVariableNode extends FlowGraphNode {
     private void addDFVar(Variable v) {
         LiveVariablesProblem lvp = (LiveVariablesProblem) problem;
         if (!lvp.dfVarExists(v)) lvp.addDFVar(v);
-//        System.out.println("Adding df var for " + v + ":" + lvp.getDFVar(v).id);
+        // System.out.println("Adding df var for " + v + ":" + lvp.getDFVar(v).id);
     }
 
     public void buildDataFlowVars(Instr i) {
-//        System.out.println("BV: Processing: " + i);        
+        // System.out.println("BV: Processing: " + i);        
         if (i instanceof ResultInstr) addDFVar(((ResultInstr) i).getResult());
 
         for (Variable x: i.getUsedVariables()) {
@@ -61,7 +61,7 @@ public class LiveVariableNode extends FlowGraphNode {
     }
 
     public void compute_MEET(BasicBlock source, FlowGraphNode pred) {
-//      System.out.println("computing meet for BB " + basicBlock.getID() + " with BB " + ((LiveVariableNode)pred).basicBlock.getID());
+        // System.out.println("computing meet for BB " + basicBlock.getID() + " with BB " + ((LiveVariableNode)pred).basicBlock.getID());
         // All variables live at the entry of 'pred' are also live at exit of this node
         in.or(((LiveVariableNode) pred).out);
     }
@@ -80,21 +80,20 @@ public class LiveVariableNode extends FlowGraphNode {
         LiveVariablesProblem lvp = (LiveVariablesProblem) problem;
 
         tmp = (BitSet) in.clone();
-//         System.out.println("Apply TF for BB " + basicBlock.getID());
-//         System.out.println("After MEET, df state is:\n" + toString());
+         // System.out.println("Apply TF for BB " + basicBlock.getID());
+         // System.out.println("After MEET, df state is:\n" + toString());
 
         // Traverse the instructions in this basic block in reverse order!
         List<Instr> instrs = basicBlock.getInstrs();
         ListIterator<Instr> it = instrs.listIterator(instrs.size());
         while (it.hasPrevious()) {
             Instr i = it.previous();
-//            System.out.println("TF: Processing: " + i);
+            // System.out.println("TF: Processing: " + i);
 
             // v is defined => It is no longer live before 'i'
             if (i instanceof ResultInstr) {
                 Variable v = ((ResultInstr) i).getResult();
                 tmp.clear(lvp.getDFVar(v).getId());
-//                System.out.println("cleared live flag for: " + v);
             }
 
             // Check if 'i' is a call and uses a closure!
@@ -105,13 +104,13 @@ public class LiveVariableNode extends FlowGraphNode {
                 // so that the built closure from the previous instr. is propagated to the call site here.
                 // Formalize this dependency somewhere?
                 Operand o = c.getClosureArg();
-//                   System.out.println("Processing closure: " + o + "-------");
+                // System.out.println("Processing closure: " + o + "-------");
                 if ((o != null) && (o instanceof WrappedIRClosure)) {
                     IRClosure cl = ((WrappedIRClosure)o).getClosure();
                     if (c.isDataflowBarrier()) {
                         processClosure(cl, lvp.getAllVars());
 
-//                        System.out.println(".. call is a data flow barrier ..");
+                        // System.out.println(".. call is a data flow barrier ..");
                         // Mark all non-self local variables live if 'c' is a dataflow barrier!
                         for (Variable x: lvp.getNonSelfLocalVars()) tmp.set(lvp.getDFVar(x).getId());
                     } else {
@@ -123,11 +122,11 @@ public class LiveVariableNode extends FlowGraphNode {
                         Set<Variable> liveVars = new HashSet<Variable>();
                         for (int j = 0; j < tmp.size(); j++) {
                             if (tmp.get(j) == true) {
-//                                System.out.println(lvp.getVariable(j) + " is live on exit of closure!");
+                                // System.out.println(lvp.getVariable(j) + " is live on exit of closure!");
                                 liveVars.add(lvp.getVariable(j));
                             }
                         }
-//                        System.out.println(" .. collected live on exit ..");
+                        // System.out.println(" .. collected live on exit ..");
 
                         // Collect variables live out of the exception target node.  Since this call can directly jump to
                         // the rescue block (or scope exit) without executing the rest of the instructions in this bb, we
@@ -143,26 +142,26 @@ public class LiveVariableNode extends FlowGraphNode {
                         // Run LVA on the closure
                         LiveVariablesProblem xlvp = processClosure(cl, liveVars);
 
-//                        System.out.println("------- done with closure" + o);
+                        // System.out.println("------- done with closure" + o);
 
                         // Collect variables live on entry of the closure and merge that info into the current problem.
                         for (Variable y: xlvp.getVarsLiveOnEntry()) {
                             DataFlowVar dv = lvp.getDFVar(y);
                             // This can be null for vars used, but not defined!  Yes, the source program is buggy ..
                             if (dv != null) {
-//                                System.out.println(y + " is live on entry of the closure!");
+                                // System.out.println(y + " is live on entry of the closure!");
                                 tmp.set(dv.getId());
                             }
                         } 
                     }
                 } else if (c.isDataflowBarrier()) {
-//                    System.out.println(".. call is a data flow barrier ..");
+                    // System.out.println(".. call is a data flow barrier ..");
                      // Mark all non-self local variables live if 'c' is a dataflow barrier!
                     for (Variable x: lvp.getNonSelfLocalVars()) {
                         tmp.set(lvp.getDFVar(x).getId());
                     }
                 } else if (c.canRaiseException()) {
-//                    System.out.println(".. can raise exception ..");
+                    // System.out.println(".. can raise exception ..");
                     // Collect variables live out of the exception target node.  Since this call can directly jump to
                     // the rescue block (or scope exit) without executing the rest of the instructions in this bb, we
                     // have a control-flow edge from this call to that block.  Since we dont want to add a
@@ -172,7 +171,7 @@ public class LiveVariableNode extends FlowGraphNode {
                     for (int k = 0; k < etOut.size(); k++) {
                         if (etOut.get(k) == true) { 
                             tmp.set(k); 
-//                            System.out.println("marking var live: " + lvp.getVariable(k)); 
+                            // System.out.println("marking var live: " + lvp.getVariable(k)); 
                          }
                     }
                 }
@@ -184,10 +183,12 @@ public class LiveVariableNode extends FlowGraphNode {
                 // This can be null for vars used, but not defined!  Yes, the source program is buggy ..
                 if (dv != null) {
                     tmp.set(dv.getId());
-//                    System.out.println("set live flag for: " + x);
+                    // System.out.println("set live flag for: " + x);
                 }
             }
         }
+
+        // System.out.println("After TF, df state is:\n" + toString());
 
         if (tmp.equals(out)) { // OUT is the same!
             return false;
@@ -229,7 +230,7 @@ public class LiveVariableNode extends FlowGraphNode {
 
 /* ---------- Protected / package fields, methods --------- */
     void markDeadInstructions() {
-//        System.out.println("dead processing for " + basicBlock.getID());
+        // System.out.println("-- Identifying dead instructions for " + basicBlock.getID() + " -- ");
         LiveVariablesProblem lvp = (LiveVariablesProblem) problem;
 
         if (in == null) {
@@ -251,26 +252,27 @@ public class LiveVariableNode extends FlowGraphNode {
         ListIterator<Instr> it = instrs.listIterator(instrs.size());
         while (it.hasPrevious()) {
             Instr i = it.previous();
-//            System.out.println("DEAD?? " + i);
+            // System.out.println("DEAD?? " + i);
             if (i instanceof ResultInstr) {
                 Variable v = ((ResultInstr) i).getResult();
                 DataFlowVar dv = lvp.getDFVar(v);
                     // If 'v' is not live at the instruction site, and it has no side effects, mark it dead!
+					 // System.out.println("df var for " + v + " is " + dv.getId());
                 if ((tmp.get(dv.getId()) == false) && !i.hasSideEffects() && !i.getOperation().isDebugOp()) {
-//                    System.out.println("YES!");
+                    // System.out.println("YES!");
                     i.markDead();
                     it.remove();
                 } else if (tmp.get(dv.getId()) == false) {
-//                    System.out.println("NO!  has side effects! Op is: " + i.getOperation());
+                    // System.out.println("NO! has side effects! Op is: " + i.getOperation());
                 } else {
-//                    System.out.println("NO! LIVE result:" + v);
+                    // System.out.println("NO! LIVE result:" + v);
                     tmp.clear(dv.getId());
                 }
             } else if (!i.hasSideEffects() && !i.getOperation().isDebugOp() && !i.transfersControl()) {
                  i.markDead();
                  it.remove();
             } else {
-//                System.out.println("IGNORING! No result!");
+                // System.out.println("IGNORING! No result!");
             }
 
             if (i instanceof CallBase) {
