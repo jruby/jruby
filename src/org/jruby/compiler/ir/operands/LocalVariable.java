@@ -45,11 +45,6 @@ public class LocalVariable extends Variable {
     public int hashCode() {
         return name.hashCode();
     }
-
-    public boolean isSelf() {
-        return false;
-    }
-
     @Override
     public boolean equals(Object obj) {
         if (obj == null || !(obj instanceof LocalVariable)) return false;
@@ -62,6 +57,11 @@ public class LocalVariable extends Variable {
         if (!(arg0 instanceof LocalVariable)) return 0;
 
         return name.compareTo(((LocalVariable) arg0).name);
+    }
+
+
+    public boolean isSelf() {
+        return false;
     }
 
     @Override

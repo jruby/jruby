@@ -140,12 +140,12 @@ public abstract class IRScopeImpl implements IRScope {
 
     public int getNextClosureId() {
         nextClosureIndex++;
-        
+
         return nextClosureIndex;
     }
 
     public void resetTemporaryVariables() {
-        nextVarIndex.remove("%v");
+        resetVariableCounter("%v");
     }
 
     public Variable getNewTemporaryVariable() {
@@ -188,6 +188,10 @@ public abstract class IRScopeImpl implements IRScope {
         
         return index;
     }
+
+	 protected void resetVariableCounter(String prefix) {
+        nextVarIndex.remove(prefix);
+	 }
 
     protected int getPrefixCountSize(String prefix) {
         Integer index = nextVarIndex.get(prefix);

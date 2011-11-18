@@ -19,6 +19,18 @@ public class TemporaryVariable extends Variable {
         return getPrefix() + offset;
     }
 
+    @Override
+    public int hashCode() {
+        return getName().hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null || !(obj instanceof TemporaryVariable)) return false;
+
+        return getName().equals(((TemporaryVariable) obj).getName());
+    }
+
     public int compareTo(Object other) {
         if (!(other instanceof TemporaryVariable)) return 0;
         

@@ -93,6 +93,10 @@ public class IRClosure extends IRExecutionScope {
         return new TemporaryClosureVariable(closureId, allocateNextPrefixedName("%cl_" + closureId));
     }
 
+    public void resetTemporaryVariables() {
+        resetVariableCounter("%cl_" + closureId);
+    }
+
     @Override
     public Label getNewLabel() {
         return getNewLabel("CL" + closureId + "_LBL");

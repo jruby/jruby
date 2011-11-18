@@ -43,7 +43,7 @@ public class ThrowExceptionInstr extends Instr {
         if (exceptionArg instanceof IRException) throw ((IRException) exceptionArg).getException(context.getRuntime());
 
         Object excObj = exceptionArg.retrieve(context, self, temp);
-            
+
         if (excObj instanceof IRubyObject) {
             RubyKernel.raise(context, context.getRuntime().getKernel(), new IRubyObject[] {(IRubyObject)excObj}, Block.NULL_BLOCK);
         } else if (excObj instanceof Error) { // from regular ensures -- these should get passed through one level.

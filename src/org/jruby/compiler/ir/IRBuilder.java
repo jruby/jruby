@@ -1260,26 +1260,19 @@ public class IRBuilder {
         s.addInstr(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, ebi.dummyRescueBlockLabel, ebi.dummyRescueBlockLabel));
         Operand v1 = protectedCode.run(protectedCodeArgs); // YIELD: Run the protected code block
         s.addInstr(new CopyInstr(ret, v1));
-        s.addInstr(new SetReturnAddressInstr(ebi.returnAddr, rEndLabel));
-
-        _ensureBlockStack.pop();
-
-        // Ensure block code
-        s.addInstr(new LabelInstr(ebi.start));
-        ensureCode.run(ensureCodeArgs); // YIELD: Run the ensure code block
-        s.addInstr(new JumpIndirectInstr(ebi.returnAddr));
-
-        // By moving the exception region end marker here to include the ensure block,
-        // we effectively swallow those exceptions -- but we will end up trying to rerun the ensure code again!
-        // SSS FIXME: Wont this get us stuck in an infinite loop?
+        s.addInstr(new JumpInstr(ebi.start));
         s.addInstr(new ExceptionRegionEndMarkerInstr());
 
         // Rescue block code
         // SSS FIXME: How do we get this to catch all exceptions, not just Ruby exceptions?
         s.addInstr(new LabelInstr(ebi.dummyRescueBlockLabel));
         s.addInstr(new CopyInstr(ret, Nil.NIL));
-        s.addInstr(new SetReturnAddressInstr(ebi.returnAddr, ebi.end));
-        s.addInstr(new JumpInstr(ebi.start));
+
+        _ensureBlockStack.pop();
+
+        // Ensure block code -- this should not throw exceptions
+        s.addInstr(new LabelInstr(ebi.start));
+        ensureCode.run(ensureCodeArgs); // YIELD: Run the ensure code block
 
         // End
         s.addInstr(new LabelInstr(rEndLabel));
@@ -1992,6 +1985,19 @@ public class IRBuilder {
         // Pop the current ensure block info node *BEFORE* generating the ensure code for this block itself!
         _ensureBlockStack.pop();
 
+        // Run the ensure block now
+        s.addInstr(new JumpInstr(ebi.start));
+
+        // Now build the dummy rescue block that:
+        // * catches all exceptions thrown by the body
+        // * jumps to the ensure block code
+        // * returns back (via set_retaddr instr)
+        Label rethrowExcLabel = s.getNewLabel();
+        Variable exc = s.getNewTemporaryVariable();
+        s.addInstr(new LabelInstr(ebi.dummyRescueBlockLabel));
+        s.addInstr(new ReceiveExceptionInstr(exc));
+        s.addInstr(new SetReturnAddressInstr(ebi.returnAddr, rethrowExcLabel));
+
         // Generate the ensure block now
         s.addInstr(new LabelInstr(ebi.start));
 
@@ -2002,19 +2008,10 @@ public class IRBuilder {
         // U_NIL => there was a return from within the ensure block!
         if (ensureRetVal == U_NIL) rv = U_NIL;
 
+        // Return (rethrow exception/end)
         s.addInstr(new JumpIndirectInstr(ebi.returnAddr));
 
-        // Now build the dummy rescue block that:
-        // * catches all exceptions thrown by the body
-        // * jumps to the ensure block code
-        // * returns back (via set_retaddr instr)
-        // * rethrows the caught exception
-        Label rethrowExcLabel = s.getNewLabel();
-        Variable exc = s.getNewTemporaryVariable();
-        s.addInstr(new LabelInstr(ebi.dummyRescueBlockLabel));
-        s.addInstr(new ReceiveExceptionInstr(exc));
-        s.addInstr(new SetReturnAddressInstr(ebi.returnAddr, rethrowExcLabel));
-        s.addInstr(new JumpInstr(ebi.start));
+        // rethrows the caught exception from the dummy ensure block
         s.addInstr(new LabelInstr(rethrowExcLabel));
         s.addInstr(new ThrowExceptionInstr(exc));
 

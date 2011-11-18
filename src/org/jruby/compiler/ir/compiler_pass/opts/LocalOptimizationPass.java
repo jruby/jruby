@@ -171,7 +171,7 @@ public class LocalOptimizationPass implements CompilerPass {
         //
         // If anything, the live ranges are conservative -- but given that most temporaries
         // are very short-lived (2 instructions), this quick analysis is good enough for most cases.
-        Map<TemporaryVariable, Integer> lastVarUse = new HashMap<TemporaryVariable, Integer>();
+        Map<TemporaryVariable, Integer> lastVarUseOrDef = new HashMap<TemporaryVariable, Integer>();
         int iCount = -1;
         for (Instr i: s.getInstrs()) {
             iCount++;
@@ -181,7 +181,12 @@ public class LocalOptimizationPass implements CompilerPass {
                 Variable v = ((ResultInstr)i).getResult();
                 if (v instanceof TemporaryVariable) {
                     Variable ci = removableCopies.get((TemporaryVariable)v);
-                    if (ci != null) ((ResultInstr)i).updateResult(ci);
+                    if (ci != null) {
+                        ((ResultInstr)i).updateResult(ci);
+                        if (ci instanceof TemporaryVariable) lastVarUseOrDef.put((TemporaryVariable)ci, iCount);
+                    } else {
+                        lastVarUseOrDef.put((TemporaryVariable)v, iCount);
+                    }
                 }
             }
 
@@ -190,7 +195,7 @@ public class LocalOptimizationPass implements CompilerPass {
 
             // compute last use
             for (Variable v: i.getUsedVariables()) {
-                if (v instanceof TemporaryVariable) lastVarUse.put((TemporaryVariable)v, iCount);
+                if (v instanceof TemporaryVariable) lastVarUseOrDef.put((TemporaryVariable)v, iCount);
             }
         }
 
@@ -203,21 +208,23 @@ public class LocalOptimizationPass implements CompilerPass {
             iCount++;
 
             // Assign new vars
+            Variable result = null;
             if (i instanceof ResultInstr) {
-                Variable result = ((ResultInstr)i).getResult();
-                if ((result != null) && result instanceof TemporaryVariable) {
-                    allocVar(result, s, freeVarsList, newVarMap);
-                }
+                result = ((ResultInstr)i).getResult();
+                if (result instanceof TemporaryVariable) allocVar(result, s, freeVarsList, newVarMap);
             }
             for (Variable v: i.getUsedVariables()) {
                 if (v instanceof TemporaryVariable) allocVar(v, s, freeVarsList, newVarMap);
             }
 
             // Free dead vars
+            if ((result instanceof TemporaryVariable) && lastVarUseOrDef.get((TemporaryVariable)result) == iCount) {
+                freeVar((TemporaryVariable)newVarMap.get(result), freeVarsList);
+            }
             for (Variable v: i.getUsedVariables()) {
                 if (v instanceof TemporaryVariable) {
                     TemporaryVariable tv = (TemporaryVariable)v;
-                    if (lastVarUse.get(tv) == iCount) freeVar((TemporaryVariable)newVarMap.get(tv), freeVarsList);
+                    if (lastVarUseOrDef.get(tv) == iCount) freeVar((TemporaryVariable)newVarMap.get(tv), freeVarsList);
                 }
             }
 
