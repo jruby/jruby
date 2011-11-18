@@ -127,6 +127,7 @@ public class Interpreter {
 
     public static IRubyObject interpret(ThreadContext context, IRubyObject self, 
             IRExecutionScope scope, IRubyObject[] args, Block block, Block.Type blockType) {
+		  boolean debug = isDebug();
         boolean inClosure = (scope instanceof IRClosure);
         Instr[] instrs = scope.prepareInstructionsForInterpretation();
         int temporaryVariablesSize = scope.getTemporaryVariableSize();
@@ -140,7 +141,7 @@ public class Interpreter {
             interpInstrsCount++;
             lastInstr = instrs[ipc];
             
-            if (isDebug()) LOG.info("I: {}", lastInstr);
+            if (debug) LOG.info("I: {}", lastInstr);
 
             // We need a nested try-catch:
             // - The first try-catch around the instruction captures JRuby-implementation exceptions
@@ -184,9 +185,9 @@ public class Interpreter {
                     }
                 }
             } catch (RaiseException re) {
-                if (isDebug()) LOG.info("in scope: " + scope + ", caught raise exception: " + re.getException() + "; excepting instr: " + lastInstr);
+                if (debug) LOG.info("in scope: " + scope + ", caught raise exception: " + re.getException() + "; excepting instr: " + lastInstr);
                 ipc = scope.getRescuerPC(lastInstr);
-                if (isDebug()) LOG.info("ipc for rescuer: " + ipc);
+                if (debug) LOG.info("ipc for rescuer: " + ipc);
                 if (ipc == -1) throw re; // No one rescued exception, pass it on!
 
                 exception = re.getException();
