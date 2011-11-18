@@ -424,13 +424,14 @@ public class RubyEncoding extends RubyObject {
     }
 
     @JRubyMethod(name = "default_external=", meta = true, compat = RUBY1_9)
-    public static void setDefaultExternal(IRubyObject recv, IRubyObject encoding) {
+    public static IRubyObject setDefaultExternal(IRubyObject recv, IRubyObject encoding) {
         Ruby runtime = recv.getRuntime();
         EncodingService service = runtime.getEncodingService();
         if (encoding.isNil()) {
             throw recv.getRuntime().newArgumentError("default_external can not be nil");
         }
         runtime.setDefaultExternalEncoding(service.getEncodingFromObject(encoding));
+        return encoding;
     }
 
     @JRubyMethod(name = "default_internal", meta = true, compat = RUBY1_9)
@@ -439,13 +440,14 @@ public class RubyEncoding extends RubyObject {
     }
 
     @JRubyMethod(name = "default_internal=", required = 1, meta = true, compat = RUBY1_9)
-    public static void setDefaultInternal(IRubyObject recv, IRubyObject encoding) {
+    public static IRubyObject setDefaultInternal(IRubyObject recv, IRubyObject encoding) {
         Ruby runtime = recv.getRuntime();
         EncodingService service = runtime.getEncodingService();
         if (encoding.isNil()) {
             recv.getRuntime().newArgumentError("default_internal can not be nil");
         }
         recv.getRuntime().setDefaultInternalEncoding(service.getEncodingFromObject(encoding));
+        return encoding;
     }
 
     @Deprecated
