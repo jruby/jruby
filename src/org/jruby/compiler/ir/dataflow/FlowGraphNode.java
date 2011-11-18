@@ -82,18 +82,21 @@ public abstract class FlowGraphNode {
     }
 
     public void computeDataFlowInfo(List<FlowGraphNode> workList, BitSet bbSet) {
+        // System.out.println("----- processing bb " + basicBlock.getID() + " -----");
         bbSet.clear(basicBlock.getID());
 
         // Compute meet over all "sources" and compute "destination" basic blocks that should then be processed. 
         // sources & targets depends on direction of the data flow problem
         initSolnForNode();
         if (problem.getFlowDirection() == DataFlowProblem.DF_Direction.FORWARD) {
-            for (BasicBlock e: problem.getIncomingSourcesOf(basicBlock)) {
-                compute_MEET(e, problem.getFlowGraphNode(e));
+            for (Edge<BasicBlock> e: problem.getScope().cfg().getIncomingEdges(basicBlock)) {
+                BasicBlock b = e.getSource().getData();
+                compute_MEET(b, problem.getFlowGraphNode(b));
             }
         } else if (problem.getFlowDirection() == DataFlowProblem.DF_Direction.BACKWARD) {
-            for (BasicBlock e: problem.getOutgoingDestinationsOf(basicBlock)) {
-                compute_MEET(e, problem.getFlowGraphNode(e));
+            for (Edge<BasicBlock> e: problem.getScope().cfg().getOutgoingEdges(basicBlock)) {
+                BasicBlock b = e.getDestination().getData();
+                compute_MEET(b, problem.getFlowGraphNode(b));
             }
         } else {
             throw new RuntimeException("Bidirectional data flow computation not implemented yet!");
