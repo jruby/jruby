@@ -22,7 +22,7 @@ public class ClosureLocalVariable extends LocalVariable {
     // Strictly speaking, this is inconsistent.  But, as long as we are not comparing strings and local variables, we are okay.
     @Override
     public int hashCode() {
-        return toString().hashCode();
+        return name.hashCode();
     }
 
     @Override
