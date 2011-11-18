@@ -1144,7 +1144,7 @@ public class RubyZlib {
         public RubyGzipFile(Ruby runtime, RubyClass type) {
             super(runtime, type);
             mtime = RubyTime.newTime(runtime, new DateTime());
-            externalEncoding = runtime.getDefaultExternalEncoding();
+            externalEncoding = null;
             internalEncoding = null;
         }
 
