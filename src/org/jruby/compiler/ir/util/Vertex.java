@@ -56,6 +56,14 @@ public class Vertex<T extends DataInfo> implements Comparable<Vertex<T>> {
         }
         outgoing = null;
     }
+
+    public int inDegree() {
+        return (incoming == null) ? 0 : incoming.size();
+    }
+
+    public int outDegree() {
+        return (outgoing == null) ? 0 : outgoing.size();
+    }
     
     public Iterable<Edge<T>> getIncomingEdgesOfType(Object type) {
         return new EdgeTypeIterable<T>(getIncomingEdges(), type);

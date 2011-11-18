@@ -559,25 +559,32 @@ public class CFG {
         BasicBlock root = getEntryBB();
         Stack<BasicBlock> stack = new Stack<BasicBlock>();
         stack.push(root);
-        BitSet bbSet = new BitSet(1 + getMaxNodeID());
-        bbSet.set(root.getID());
+        BitSet visited = new BitSet(1 + getMaxNodeID());
+        visited.set(root.getID());
 
         // Non-recursive post-order traversal (the added flag is required to handle cycles and common ancestors)
         while (!stack.empty()) {
             // Check if all children of the top of the stack have been added
             BasicBlock b = stack.peek();
-            boolean allChildrenDone = true;
-            for (BasicBlock dst : getOutgoingDestinations(b)) {
+            boolean allChildrenVisited = true;
+            for (BasicBlock dst: getOutgoingDestinations(b)) {
                 int dstID = dst.getID();
-                if (!bbSet.get(dstID)) {
-                    allChildrenDone = false;
-                    stack.push(dst);
-                    bbSet.set(dstID);
+                if (!visited.get(dstID)) {
+                    allChildrenVisited = false;
+                    // This ensures that no matter what order we visit children, we process exit nodes before anything.
+                    // else.  Alternatively, getOutgoingDestinations(..) would have to return nodes in a specific order
+                    // that is dependent on basic block numbering -- which would be fragile.
+                    if (graph.vertexFor(dst).outDegree() == 0) {
+                        list.add(dst);
+                    } else {
+                        stack.push(dst);
+                    }
+                    visited.set(dstID);
                 }
             }
 
             // If all children have been added previously, we are ready with 'b' in this round!
-            if (allChildrenDone) {
+            if (allChildrenVisited) {
                 stack.pop();
                 list.add(b);
             }
@@ -585,7 +592,7 @@ public class CFG {
 
         // Sanity check!
         for (BasicBlock b : getBasicBlocks()) {
-            if (!bbSet.get(b.getID())) {
+            if (!visited.get(b.getID())) {
                 printError("BB " + b.getID() + " missing from po list!");
                 break;
             }
