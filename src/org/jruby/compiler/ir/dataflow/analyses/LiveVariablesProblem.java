@@ -55,7 +55,7 @@ public class LiveVariablesProblem extends DataFlowProblem {
      *
      * In the code snippet above, 'sum' is live on exit from the closure.
      **/
-    public void initVarsLiveOnExit(Collection<Variable> vars) {
+    public void initVarsLiveOnExit(Collection<LocalVariable> vars) {
         varsLiveOnExit = vars;
     }
 
@@ -112,7 +112,7 @@ public class LiveVariablesProblem extends DataFlowProblem {
         }
     }
 
-    public Collection<Variable> getVarsLiveOnExit() {
+    public Collection<LocalVariable> getVarsLiveOnExit() {
         return varsLiveOnExit;
     }
 
@@ -132,5 +132,5 @@ public class LiveVariablesProblem extends DataFlowProblem {
     private HashMap<Variable, DataFlowVar> dfVarMap = new HashMap<Variable, DataFlowVar>();
     private HashMap<Integer, Variable> varDfVarMap = new HashMap<Integer, Variable>();
     private HashSet<LocalVariable> localVars = new HashSet<LocalVariable>(); // Local variables that can be live across dataflow barriers
-    private Collection<Variable> varsLiveOnExit;
+    private Collection<LocalVariable> varsLiveOnExit;
 }

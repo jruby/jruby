@@ -158,7 +158,7 @@ public class BindingStorePlacementNode extends FlowGraphNode {
 **/
             LiveVariablesProblem lvp = (LiveVariablesProblem)s.getDataFlowSolution(DataFlowConstants.LVP_NAME);
             if (lvp != null) {
-                java.util.Collection<Variable> liveVars = lvp.getVarsLiveOnExit();
+                java.util.Collection<LocalVariable> liveVars = lvp.getVarsLiveOnExit();
                 if (liveVars != null) {
                     dirtyVars.retainAll(liveVars); // Intersection with variables live on exit from the scope
                 } else {
@@ -259,7 +259,7 @@ public class BindingStorePlacementNode extends FlowGraphNode {
 **/
                     LiveVariablesProblem lvp = (LiveVariablesProblem)s.getDataFlowSolution(DataFlowConstants.LVP_NAME);
                     if (lvp != null) {
-                        java.util.Collection<Variable> liveVars = lvp.getVarsLiveOnExit();
+                        java.util.Collection<LocalVariable> liveVars = lvp.getVarsLiveOnExit();
                         if (liveVars != null) {
                             dirtyVars.retainAll(liveVars); // Intersection with variables live on exit from the scope
                         } else {
