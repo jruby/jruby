@@ -262,9 +262,8 @@ public class Interpreter {
         IRubyObject self, String name, RubyModule implClass, IRubyObject[] args, Block block, Block.Type blockType, boolean isTraceable) {
         Ruby runtime = context.getRuntime();
         boolean syntheticMethod = name == null || name.equals("");
-        
+
         try {
-            String className = implClass.getName();
             if (!syntheticMethod) ThreadContext.pushBacktrace(context, name, context.getFile(), context.getLine());
             if (isTraceable) methodPreTrace(runtime, context, name, implClass);
             return interpret(context, self, scope, args, block, blockType);
