@@ -47,19 +47,6 @@ public class LiveVariablesProblem extends DataFlowProblem {
     }
 
     /**
-     * Initialize the exit cfg with variables that are live on exit
-     * This is the case for closures where vars defined in the closure (or accessed from the surrounding scope)
-     * can be used outside the closure. 
-     *
-     *      sum = 0; a.each { |i| sum += i }; return sum
-     *
-     * In the code snippet above, 'sum' is live on exit from the closure.
-     **/
-    public void initVarsLiveOnExit(Collection<LocalVariable> vars) {
-        varsLiveOnExit = vars;
-    }
-
-    /**
      * Get variables that are live on entry to the cfg.
      * This is the case for closures which access variables from the parent scope.
      *
@@ -67,31 +54,39 @@ public class LiveVariablesProblem extends DataFlowProblem {
      *
      * In the code snippet above, 'sum' is live on entry to the closure
      */
-    public List<Variable> getVarsLiveOnEntry() {
+    public List<Variable> getVarsLiveOnScopeEntry() {
         List<Variable> liveVars = new ArrayList<Variable>();
         BitSet liveIn = ((LiveVariableNode) getFlowGraphNode(getScope().cfg().getEntryBB())).getLiveOutBitSet();
-        
-        for (int i = 0; i < liveIn.size(); i++) {
-            if (liveIn.get(i) == true) {
-                Variable v = getVariable(i);
-                liveVars.add(v);
-                // System.out.println("variable " + v + " is live on entry!");
+
+        // When accessed before LVP is run, this can be null. SSS FIXME: Initialize in bitset to non-null always?
+        if (liveIn != null) {
+            for (int i = 0; i < liveIn.size(); i++) {
+                if (liveIn.get(i) == true) {
+                    Variable v = getVariable(i);
+                    liveVars.add(v);
+                    // System.out.println("variable " + v + " is live on entry!");
+                }
             }
         }
         
         return liveVars;
     }
 
-    @Override
-    public void setup(IRExecutionScope scope) {
-        super.setup(scope);
+    /**
+     * Initialize the problem with all vars from the surrounding scope variables.
+     * In closures, vars defined in the closure (or accessed from the surrounding scope)
+     * can be used outside the closure. 
+     *
+     *      sum = 0; a.each { |i| sum += i }; return sum
+     *
+     * In the code snippet above, 'sum' is live on entry to and exit from the closure.
+     **/
+    public void setup(IRExecutionScope scope, Collection<LocalVariable> allVars) {
+        setup(scope);
 
-        // Update setup with info. about variables live on exit.
-        if ((varsLiveOnExit != null) && !varsLiveOnExit.isEmpty()) {
-            for (Variable v : varsLiveOnExit) {
-                // We aren't recording these vars
+        if ((allVars != null) && !allVars.isEmpty()) {
+            for (Variable v : allVars) {
                 if (getDFVar(v) == null) addDFVar(v); 
-                // System.out.println("variable " + v + ":" + getDFVar(v).getId() + " is live on exit of closure!");
             }
         }
     }
@@ -112,8 +107,12 @@ public class LiveVariablesProblem extends DataFlowProblem {
         }
     }
 
-    public Collection<LocalVariable> getVarsLiveOnExit() {
-        return varsLiveOnExit;
+    public void setVarsLiveOnScopeExit(Collection<LocalVariable> varsLiveOnScopeExit) {
+        this.varsLiveOnScopeExit = varsLiveOnScopeExit;
+    }
+
+    public Collection<LocalVariable> getVarsLiveOnScopeExit() {
+        return varsLiveOnScopeExit;
     }
 
     public Set<Variable> getAllVars() {
@@ -132,5 +131,5 @@ public class LiveVariablesProblem extends DataFlowProblem {
     private HashMap<Variable, DataFlowVar> dfVarMap = new HashMap<Variable, DataFlowVar>();
     private HashMap<Integer, Variable> varDfVarMap = new HashMap<Integer, Variable>();
     private HashSet<LocalVariable> localVars = new HashSet<LocalVariable>(); // Local variables that can be live across dataflow barriers
-    private Collection<LocalVariable> varsLiveOnExit;
+    private Collection<LocalVariable> varsLiveOnScopeExit;
 }

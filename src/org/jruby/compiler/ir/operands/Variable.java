@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 public abstract class Variable extends Operand implements Comparable {
+    public final static String BLOCK = "%block";
 
     public abstract String getName();
 
@@ -14,6 +15,10 @@ public abstract class Variable extends Operand implements Comparable {
         Operand v = valueMap.get(this);
         // You can only value-replace atomic values
         return (v != null) && (force || !v.isNonAtomicValue()) ? v : this;
+    }
+
+    public boolean isImplicitBlockArg() {
+        return getName().equals(BLOCK);
     }
 
     @Override

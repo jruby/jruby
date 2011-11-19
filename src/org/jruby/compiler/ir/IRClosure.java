@@ -187,6 +187,6 @@ public class IRClosure extends IRExecutionScope {
     }
 
     public LocalVariable getImplicitBlockArg() {
-        return getLocalVariable("%block", getNestingDepth());
+        return getLocalVariable(Variable.BLOCK, getNestingDepth());
     }
 }

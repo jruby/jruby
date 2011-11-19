@@ -149,16 +149,16 @@ public class BindingStorePlacementNode extends FlowGraphNode {
         if (amExitBB) {
 /**
             LiveVariablesProblem lvp = (LiveVariablesProblem)cfg.getDataFlowSolution(DataFlowConstants.LVP_NAME);
-            java.util.Collection<Variable> liveVars = lvp.getVarsLiveOnEntry();
+            java.util.Collection<Variable> liveVars = lvp.getVarsLiveOnScopeEntry();
             System.out.println("\n[In Exit BB] For CFG " + cfg + ":");
             System.out.println("\t--> Dirty vars here   : " + java.util.Arrays.toString(dirtyVars.toArray()));
             System.out.println("\t--> Vars live on entry: " + (liveVars == null ? "NONE" : java.util.Arrays.toString(liveVars.toArray())));
-            liveVars = lvp.getVarsLiveOnExit();
+            liveVars = lvp.getVarsLiveOnScopeExit();
             System.out.println("\t--> Vars live on exit : " + (liveVars == null ? "NONE" : java.util.Arrays.toString(liveVars.toArray())));
 **/
             LiveVariablesProblem lvp = (LiveVariablesProblem)s.getDataFlowSolution(DataFlowConstants.LVP_NAME);
             if (lvp != null) {
-                java.util.Collection<LocalVariable> liveVars = lvp.getVarsLiveOnExit();
+                java.util.Collection<LocalVariable> liveVars = lvp.getVarsLiveOnScopeExit();
                 if (liveVars != null) {
                     dirtyVars.retainAll(liveVars); // Intersection with variables live on exit from the scope
                 } else {
@@ -250,16 +250,16 @@ public class BindingStorePlacementNode extends FlowGraphNode {
                 if (!amExitBB) {
 /**
                     LiveVariablesProblem lvp = (LiveVariablesProblem)cfg.getDataFlowSolution(DataFlowConstants.LVP_NAME);
-                    java.util.Collection<Variable> liveVars = lvp.getVarsLiveOnEntry();
+                    java.util.Collection<Variable> liveVars = lvp.getVarsLiveOnScopeEntry();
                     System.out.println("\n[@Closure Instr<" + i + ">] For CFG " + cfg + ":");
                     System.out.println("\t--> Dirty vars here   : " + java.util.Arrays.toString(dirtyVars.toArray()));
                     System.out.println("\t--> Vars live on entry: " + (liveVars == null ? "NONE" : java.util.Arrays.toString(liveVars.toArray())));
-                    liveVars = lvp.getVarsLiveOnExit();
+                    liveVars = lvp.getVarsLiveOnScopeExit();
                     System.out.println("\t--> Vars live on exit : " + (liveVars == null ? "NONE" : java.util.Arrays.toString(liveVars.toArray())));
 **/
                     LiveVariablesProblem lvp = (LiveVariablesProblem)s.getDataFlowSolution(DataFlowConstants.LVP_NAME);
                     if (lvp != null) {
-                        java.util.Collection<LocalVariable> liveVars = lvp.getVarsLiveOnExit();
+                        java.util.Collection<LocalVariable> liveVars = lvp.getVarsLiveOnScopeExit();
                         if (liveVars != null) {
                             dirtyVars.retainAll(liveVars); // Intersection with variables live on exit from the scope
                         } else {

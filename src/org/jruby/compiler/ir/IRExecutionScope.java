@@ -41,6 +41,7 @@ public abstract class IRExecutionScope extends IRScopeImpl {
     private List<IRClosure> closures;     // List of (nested) closures in this scope
     private Set<Variable> definedLocalVars;   // Local variables defined in this scope
     private Set<Variable> usedLocalVars;      // Local variables used in this scope    
+    private boolean hasUnusedImplicitBlockArg = false; // Is %block implicit block arg unused?
     private Map<String, DataFlowProblem> dfProbs = new HashMap<String, DataFlowProblem>();       // Map of name -> dataflow problem    
     private Instr[] instrs = null;
     List<BasicBlock> linearizedBBList = null;  // Linearized list of bbs
@@ -433,6 +434,10 @@ public abstract class IRExecutionScope extends IRScopeImpl {
 
     public abstract LocalVariable getImplicitBlockArg();
 
+    public void markUnusedImplicitBlockArg() {
+        hasUnusedImplicitBlockArg = true;
+    }
+
     public abstract LocalVariable findExistingLocalVariable(String name);
 
     public abstract LocalVariable getLocalVariable(String name, int depth);
@@ -448,7 +453,7 @@ public abstract class IRExecutionScope extends IRScopeImpl {
     public int getUsedVariablesCount() {
         // System.out.println("For " + this + ", # lvs: " + nextLocalVariableSlot);
         // %block, # local vars, # flip vars
-        return 1 + localVars.nextSlot + getPrefixCountSize("%flip");
+        return (hasUnusedImplicitBlockArg ? 0 : 1) + localVars.nextSlot + getPrefixCountSize("%flip");
     }
     
     public void setUpUseDefLocalVarMaps() {

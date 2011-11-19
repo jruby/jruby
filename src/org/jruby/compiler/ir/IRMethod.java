@@ -10,6 +10,7 @@ import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Splat;
+import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.parser.StaticScope;
 import org.jruby.parser.IRStaticScope;
 import org.jruby.parser.IRStaticScopeFactory;
@@ -112,7 +113,7 @@ public class IRMethod extends IRExecutionScope {
     }
 
     public LocalVariable getImplicitBlockArg() {
-        return getLocalVariable("%block", 0);
+        return getLocalVariable(Variable.BLOCK, 0);
     }
 
     public LocalVariable getNewFlipStateVariable() {
