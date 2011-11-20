@@ -1566,9 +1566,9 @@ public class RubyHash extends RubyObject implements Map {
      */
     @JRubyMethod(name = {"merge!", "update"}, required = 1, compat = RUBY1_9)
     public RubyHash merge_bang19(final ThreadContext context, final IRubyObject other, final Block block) {
-        final RubyHash otherHash = other.convertToHash();
         modify();
-
+        final RubyHash otherHash = other.convertToHash();
+        
         if (otherHash.empty_p().isTrue()) {
             return this;
         }
