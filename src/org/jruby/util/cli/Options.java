@@ -4,7 +4,21 @@ import org.jruby.runtime.Constants;
 import org.jruby.util.SafePropertyAccessor;
 import static org.jruby.util.cli.Options.Category.*;
 
+/**
+ * Options defines all configuration settings for JRuby in a consistent form.
+ * Loading of individual settings, printing documentation for settings and their
+ * options and defaults, and categorizing properties by function are all part
+ * of the built-in structure.
+ */
 public class Options {
+    /**
+     * Represents a single option to JRuby, with a category, name, value type,
+     * options, default value, and description.
+     * 
+     * This type should be subclassed for specific types of values.
+     * 
+     * @param <T> the type of value associated with the option
+     */
     public static abstract class Option<T> {
         public Option(Category category, String name, Class<T> type, T[] options, T defval, String description) {
             this.category = category;
@@ -28,6 +42,10 @@ public class Options {
         public final String description;
     }
     
+    /**
+     * Representation of available option categories, with a short name to use
+     * in printing descriptions.
+     */
     public enum Category {
         COMPILER("compiler"),
         INVOKEDYNAMIC("invokedynamic"),
@@ -54,6 +72,9 @@ public class Options {
         }
     }
     
+    /**
+     * A String-based Option.
+     */
     public static class StringOption extends Option<String> {
         public StringOption(Category category, String name, String[] options, String defval, String description) {
             super(category, name, String.class, options, defval, description);
@@ -64,6 +85,9 @@ public class Options {
         }
     }
     
+    /**
+     * A Boolean-based Option.
+     */
     public static class BooleanOption extends Option<Boolean> {
         public BooleanOption(Category category, String name, Boolean defval, String description) {
             super(category, name, Boolean.class, new Boolean[] {true, false}, defval, description);
@@ -74,6 +98,9 @@ public class Options {
         }
     }
     
+    /**
+     * An Integer-based Option.
+     */
     public static class IntegerOption extends Option<Integer> {
         public IntegerOption(Category category, String name, Integer defval, String description) {
             super(category, name, Integer.class, null, defval, description);
