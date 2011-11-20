@@ -747,6 +747,10 @@ public class RubyBigDecimal extends RubyNumeric {
             throw context.getRuntime().newZeroDivisionError();
         }
         
+        if (isInfinity()) {
+            throw context.getRuntime().newFloatDomainError("Computation results to 'Infinity'");
+        }
+        
         return op_div(context, other);
     }
 
