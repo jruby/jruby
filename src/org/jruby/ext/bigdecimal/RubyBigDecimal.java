@@ -756,6 +756,10 @@ public class RubyBigDecimal extends RubyNumeric {
             return RubyFixnum.zero(context.getRuntime());
         }
         
+        if (val.isZero()) {
+            throw context.getRuntime().newZeroDivisionError();
+        }
+        
         return op_div(context, other);
     }
 
