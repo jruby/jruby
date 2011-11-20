@@ -1073,6 +1073,21 @@ public class RubyInstanceConfig {
         this.backtraceColor = backtraceColor;
     }
     
+    /**
+     * Whether to use a single global lock for requires.
+     * @see Options.GLOBAL_REQUIRE_LOCK
+     */
+    public boolean isGlobalRequireLock() {
+        return globalRequireLock;
+    }
+    
+    /**
+     * Set whether to use a single global lock for requires.
+     */
+    public void setGlobalRequireLock(boolean globalRequireLock) {
+        this.globalRequireLock = globalRequireLock;
+    }
+    
     ////////////////////////////////////////////////////////////////////////////
     // Configuration fields.
     ////////////////////////////////////////////////////////////////////////////
@@ -1174,6 +1189,8 @@ public class RubyInstanceConfig {
     private boolean backtraceColor = Options.BACKTRACE_COLOR.load();
 
     private LoadServiceCreator creator = LoadServiceCreator.DEFAULT;
+    
+    private boolean globalRequireLock = Options.GLOBAL_REQUIRE_LOCK.load();
     
     ////////////////////////////////////////////////////////////////////////////
     // Support classes, etc.

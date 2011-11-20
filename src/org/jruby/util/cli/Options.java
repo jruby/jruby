@@ -229,6 +229,8 @@ public class Options {
             new BooleanOption(MISCELLANEOUS, "native.net.protocol", false, "Use native impls for parts of net/protocol.");
     public static final BooleanOption FIBER_COROUTINES =
             new BooleanOption(MISCELLANEOUS, "fiber.coroutines", false, "Use JVM coroutines for Fiber.");
+    public static final BooleanOption GLOBAL_REQUIRE_LOCK =
+            new BooleanOption(MISCELLANEOUS, "global.require.lock", false, "Use a single global lock for requires.");
     
     public static final BooleanOption DEBUG_LOADSERVICE =
             new BooleanOption(DEBUG, "debug.loadService", false, "Log require/load file searches.");

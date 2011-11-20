@@ -376,15 +376,21 @@ public class LoadService {
 
     private ReentrantLock acquireRequireLock(String requireName) {
         ReentrantLock requireLock;
+        
         synchronized (requireLocks) {
             requireLock = requireLocks.get(requireName);
             if (requireLock == null) {
-                requireLock = new ReentrantLock();
+                if (runtime.getInstanceConfig().isGlobalRequireLock()) {
+                    requireLock = globalRequireLock;
+                } else {
+                    requireLock = new ReentrantLock();
+                }
                 requireLocks.put(requireName, requireLock);
             } else if (requireLock.isHeldByCurrentThread()) {
                 return null;
             }
         }
+
         requireLock.lock();
         return requireLock;
     }
@@ -417,7 +423,8 @@ public class LoadService {
         return require(file);
     }
 
-    protected Map<String, ReentrantLock> requireLocks = new HashMap<String, ReentrantLock>();
+    protected final Map<String, ReentrantLock> requireLocks = new HashMap<String, ReentrantLock>();
+    protected final ReentrantLock globalRequireLock = new ReentrantLock(true);
 
     private boolean smartLoadInternal(String file) {
         checkEmptyLoad(file);
