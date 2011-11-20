@@ -725,7 +725,7 @@ public class RubyBigDecimal extends RubyNumeric {
         return op_div(context, other, getRuntime().newFixnum(200));
     }
 
-    @JRubyMethod(name = "div")
+    @JRubyMethod(name = "div", compat = CompatVersion.RUBY1_8)
     public IRubyObject op_div(ThreadContext context, IRubyObject other) {
         // integer division
         RubyBigDecimal val = getVpValue(other, false);
@@ -745,7 +745,17 @@ public class RubyBigDecimal extends RubyNumeric {
                 this.value.divideToIntegralValue(val.value)).setResult();
     }
 
-    @JRubyMethod(name = "div")
+    @JRubyMethod(name = "div", compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_div19(ThreadContext context, IRubyObject other) {
+        RubyBigDecimal val = getVpValue(other, false);
+        if (isNaN() || val.isNaN()) {
+            throw getRuntime().newFloatDomainError("Computation results to 'NaN'");
+        }
+        
+        return op_div(context, other);
+    }
+
+    @JRubyMethod(name = "div", compat = CompatVersion.RUBY1_8)
     public IRubyObject op_div(ThreadContext context, IRubyObject other, IRubyObject digits) {
         // TODO: take BigDecimal.mode into account.
 
@@ -786,6 +796,16 @@ public class RubyBigDecimal extends RubyNumeric {
             return new RubyBigDecimal(getRuntime(),
                     value.divide(val.value, new MathContext(prec, RoundingMode.HALF_UP))).setResult(scale);
         }
+    }
+
+    @JRubyMethod(name = "div", compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_div19(ThreadContext context, IRubyObject other, IRubyObject digits) {
+        RubyBigDecimal val = getVpValue(other, false);
+        if (isNaN() || val.isNaN()) {
+            throw context.getRuntime().newFloatDomainError("Computation results to 'NaN'");
+        }
+        
+        return op_div(context, other, digits);
     }
 
     private IRubyObject cmp(ThreadContext context, IRubyObject r, char op) {
