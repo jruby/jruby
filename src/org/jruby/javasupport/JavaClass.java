@@ -568,7 +568,7 @@ public class JavaClass extends JavaObject {
         return instanceAssignedNames;
     }
     
-    private JavaClass(Ruby runtime, Class<?> javaClass) {
+    public JavaClass(Ruby runtime, Class<?> javaClass) {
         super(runtime, (RubyClass) runtime.getJavaSupport().getJavaClassClass(), javaClass);
         if (javaClass.isInterface()) {
             initializer = new InterfaceInitializer(javaClass);
@@ -1128,11 +1128,7 @@ public class JavaClass extends JavaObject {
     }
     
     public static JavaClass get(Ruby runtime, Class<?> klass) {
-        JavaClass javaClass = runtime.getJavaSupport().getJavaClassFromCache(klass);
-        if (javaClass == null) {
-            javaClass = createJavaClass(runtime,klass);
-        }
-        return javaClass;
+        return runtime.getJavaSupport().getJavaClassFromCache(klass);
     }
     
     public static RubyArray getRubyArray(Ruby runtime, Class<?>[] classes) {
@@ -1141,16 +1137,6 @@ public class JavaClass extends JavaObject {
             javaClasses[i] = get(runtime, classes[i]);
         }
         return runtime.newArrayNoCopy(javaClasses);
-    }
-
-    private static synchronized JavaClass createJavaClass(Ruby runtime, Class<?> klass) {
-        // double-check the cache now that we're synchronized
-        JavaClass javaClass = runtime.getJavaSupport().getJavaClassFromCache(klass);
-        if (javaClass == null) {
-            javaClass = new JavaClass(runtime, klass);
-            runtime.getJavaSupport().putJavaClassIntoCache(javaClass);
-        }
-        return javaClass;
     }
 
     public static RubyClass createJavaClassClass(Ruby runtime, RubyModule javaModule) {

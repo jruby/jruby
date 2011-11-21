@@ -33,17 +33,22 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.javasupport;
 
+import org.jruby.java.proxies.MapBasedProxyCache;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Member;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
+import org.jruby.java.proxies.ProxyCache;
 import org.jruby.javasupport.util.ObjectProxyCache;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.WeakIdentityHashMap;
@@ -79,14 +84,26 @@ public class JavaSupport {
     
     private boolean active;
     
-    // There's not a compelling reason to keep JavaClass instances in a weak map
-    // (any proxies created are [were] kept in a non-weak map, so in most cases they will
-    // stick around anyway), and some good reasons not to (JavaClass creation is
-    // expensive, for one; many lookups are performed when passing parameters to/from
-    // methods; etc.).
-    // TODO: faster custom concurrent map
-    private final ConcurrentHashMap<Class,JavaClass> javaClassCache =
-        new ConcurrentHashMap<Class, JavaClass>(128);
+    private final ProxyCache proxyCache;
+    private static final Constructor<? extends ProxyCache> PROXY_CACHE_CONSTRUCTOR;
+    
+    static {
+        Constructor<? extends ProxyCache> constructor = null;
+        try {
+            // try to load the ClassValue class. If it succeeds, we can use our
+            // ClassValue-based cache.
+            Class.forName("java.lang.ClassValue");
+            constructor = (Constructor<ProxyCache>)Class.forName("org.jruby.java.proxies.ClassValueProxyCache").getConstructor(Ruby.class);
+        }
+        catch (Exception ex) {
+            try {
+                constructor = MapBasedProxyCache.class.getConstructor(Ruby.class);
+            } catch (Exception ex2) {
+                throw new RuntimeException(ex2);
+            }
+        }
+        PROXY_CACHE_CONSTRUCTOR = constructor;
+    }
     
     // FIXME: needs to be rethought
     private final Map matchCache = Collections.synchronizedMap(new HashMap(128));
@@ -115,6 +132,12 @@ public class JavaSupport {
     
     public JavaSupport(Ruby ruby) {
         this.runtime = ruby;
+        
+        try {
+            this.proxyCache = PROXY_CACHE_CONSTRUCTOR.newInstance(ruby);
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        }
     }
     
     final Map getMatchCache() {
@@ -170,11 +193,7 @@ public class JavaSupport {
     }
 
     public JavaClass getJavaClassFromCache(Class clazz) {
-        return javaClassCache.get(clazz);
-    }
-    
-    public void putJavaClassIntoCache(JavaClass clazz) {
-        javaClassCache.put(clazz.javaClass(), clazz);
+        return proxyCache.get(clazz);
     }
 
     public void handleNativeException(Throwable exception, Member target) {
