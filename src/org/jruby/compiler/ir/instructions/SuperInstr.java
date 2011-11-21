@@ -39,6 +39,11 @@ public class SuperInstr extends CallInstr {
                 cloneCallArgs(ii), closure == null ? null : closure.cloneForInlining(ii));
     }
 
+    // We cannot convert this into a NoCallResultInstr
+    public Instr discardResult() {
+        return this;
+    }
+
     @Override
     public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] frameArgs, Block aBlock, Object exception, Object[] temp) {
         // FIXME: Receiver is not being used...should we be retrieving it?
@@ -58,7 +63,7 @@ public class SuperInstr extends CallInstr {
         Object rVal = method.isUndefined() ? RuntimeHelpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, args, block)
                                            : method.call(context, self, superClass, methodName, args, block);
 
-        getResult().store(context, self, temp, rVal);
+        if (!hasUnusedResult()) getResult().store(context, self, temp, rVal);
 
         return null;
     }

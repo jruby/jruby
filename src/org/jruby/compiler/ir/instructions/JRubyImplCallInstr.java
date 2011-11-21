@@ -108,6 +108,11 @@ public class JRubyImplCallInstr extends CallInstr {
                 closure == null ? null : closure.cloneForInlining(ii));
     }
 
+    // We cannot convert this into a NoCallResultInstr
+    public Instr discardResult() {
+        return this;
+    }
+
     @Override
     public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
         Ruby runtime = context.getRuntime();        
@@ -209,7 +214,7 @@ public class JRubyImplCallInstr extends CallInstr {
                 assert false: "Unknown JRuby impl called";
         }
 
-        getResult().store(context, self, temp, rVal);
+        if (!hasUnusedResult()) getResult().store(context, self, temp, rVal);
 
         return null;
     }
