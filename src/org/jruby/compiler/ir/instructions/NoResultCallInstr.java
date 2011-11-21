@@ -22,10 +22,4 @@ public class NoResultCallInstr extends CallBase {
         return new NoResultCallInstr(getOperation(), getCallType(), (MethAddr) getMethodAddr().cloneForInlining(ii), 
                 receiver.cloneForInlining(ii), cloneCallArgs(ii), closure == null ? null : closure.cloneForInlining(ii));
     }    
-
-    @Override
-    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
-        callAdapter.call(context, self, (IRubyObject) getReceiver().retrieve(context, self, temp), temp);
-        return null;
-    }  
 }

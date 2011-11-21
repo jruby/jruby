@@ -50,9 +50,9 @@ public class MatchInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
+    public Object interpret(ThreadContext context, IRubyObject self, Object[] temp, Block block) {
         RubyRegexp regexp = (RubyRegexp) receiver.retrieve(context, self, temp);
-        result.store(context, self, temp, regexp.op_match2(context));
+        result.store(context, temp, regexp.op_match2(context));
         return null;
     }
 }

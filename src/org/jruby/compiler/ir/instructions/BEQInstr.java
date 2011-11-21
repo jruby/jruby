@@ -7,35 +7,21 @@ import org.jruby.compiler.ir.operands.Nil;
 import org.jruby.compiler.ir.operands.UndefinedValue;
 import org.jruby.compiler.ir.operands.BooleanLiteral;
 import org.jruby.compiler.ir.representations.InlinerInfo;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 public class BEQInstr extends BranchInstr {
-    public BEQInstr(Operand v1, Operand v2, Label jmpTarget) {
+    public static BranchInstr create(Operand v1, Operand v2, Label jmpTarget) {
+        if (v2 == BooleanLiteral.TRUE) return new BTrueInstr(v1, jmpTarget);
+        if (v2 == BooleanLiteral.FALSE) return new BFalseInstr(v1, jmpTarget);
+        if (v2 == Nil.NIL) return new BNilInstr(v1, jmpTarget);
+        if (v2 == UndefinedValue.UNDEFINED) return new BUndefInstr(v1, jmpTarget);
+        return new BEQInstr(v1, v2, jmpTarget);
+    }
+
+    protected BEQInstr(Operand v1, Operand v2, Label jmpTarget) {
         super(Operation.BEQ, v1, v2, jmpTarget);
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new BEQInstr(getArg1().cloneForInlining(ii), 
-                getArg2().cloneForInlining(ii), ii.getRenamedLabel(getJumpTarget()));
-    }
-
-    @Override
-    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
-        Operand arg1 = getArg1();
-        Operand arg2 = getArg2();
-        Object value1 = arg1.retrieve(context, self, temp);
-        
-        if (arg2 instanceof BooleanLiteral) {
-            boolean v1True  = ((IRubyObject)value1).isTrue();
-            boolean arg2True = ((BooleanLiteral)arg2).isTrue();
-            return (v1True && arg2True) || (!v1True && !arg2True) ? getJumpTarget() : null;
-        } else {
-            Object value2 = arg2.retrieve(context, self, temp);
-            boolean eql = ((arg2 == Nil.NIL) || (arg2 == UndefinedValue.UNDEFINED)) ?
-                    value1 == value2 : ((IRubyObject) value1).op_equal(context, (IRubyObject)value2).isTrue();
-            return eql ? getJumpTarget() : null;
-        }
+        return new BEQInstr(getArg1().cloneForInlining(ii), getArg2().cloneForInlining(ii), ii.getRenamedLabel(getJumpTarget()));
     }
 }

@@ -15,12 +15,34 @@ import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.IRClosure;
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.IRScript;
+import org.jruby.compiler.ir.instructions.CallInstr;
+import org.jruby.compiler.ir.instructions.NoResultCallInstr;
+import org.jruby.compiler.ir.instructions.CopyInstr;
+import org.jruby.compiler.ir.instructions.JumpInstr;
+import org.jruby.compiler.ir.instructions.JumpIndirectInstr;
+import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
+import org.jruby.compiler.ir.instructions.ReceiveRestArgInstr;
+import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
+import org.jruby.compiler.ir.instructions.ReceiveClosureArgInstr;
+import org.jruby.compiler.ir.instructions.ReceiveClosureRestArgInstr;
+import org.jruby.compiler.ir.instructions.ReceiveExceptionInstr;
+import org.jruby.compiler.ir.instructions.LineNumberInstr;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
+import org.jruby.compiler.ir.instructions.ClosureReturnInstr;
 import org.jruby.compiler.ir.instructions.BreakInstr;
+import org.jruby.compiler.ir.instructions.BEQInstr;
+import org.jruby.compiler.ir.instructions.BNEInstr;
+import org.jruby.compiler.ir.instructions.BranchInstr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.ResultInstr;
+import org.jruby.compiler.ir.instructions.jruby.CheckArityInstr;
+import org.jruby.compiler.ir.operands.BooleanLiteral;
 import org.jruby.compiler.ir.operands.IRException;
 import org.jruby.compiler.ir.operands.Label;
+import org.jruby.compiler.ir.operands.Nil;
+import org.jruby.compiler.ir.operands.Operand;
+import org.jruby.compiler.ir.operands.TemporaryVariable;
+import org.jruby.compiler.ir.operands.UndefinedValue;
 import org.jruby.compiler.ir.operands.WrappedIRClosure;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
@@ -29,7 +51,12 @@ import org.jruby.parser.StaticScope;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Block.Type;
+import org.jruby.RubyArray;
+import org.jruby.RubyProc;
+import org.jruby.RubyNil;
 import org.jruby.runtime.RubyEvent;
+import org.jruby.compiler.ir.instructions.ReceiveOptionalArgumentInstr;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.log.Logger;
@@ -127,11 +154,12 @@ public class Interpreter {
 
     public static IRubyObject interpret(ThreadContext context, IRubyObject self, 
             IRExecutionScope scope, IRubyObject[] args, Block block, Block.Type blockType) {
-		  boolean debug = isDebug();
+        boolean debug = isDebug();
         boolean inClosure = (scope instanceof IRClosure);
         Instr[] instrs = scope.prepareInstructionsForInterpretation();
         int temporaryVariablesSize = scope.getTemporaryVariableSize();
         Object[] temporaryVariables = temporaryVariablesSize > 0 ? new Object[temporaryVariablesSize] : null;
+        Object[] temp = temporaryVariables;
         int n   = instrs.length;
         int ipc = 0;
         Instr lastInstr = null;
@@ -151,14 +179,182 @@ public class Interpreter {
             //   invokes Ruby-level exceptions handlers.
             try {
                 try {
-                    Object value = lastInstr.interpret(context, self, args, block, exception, temporaryVariables);
-                    if (value == null) {
+                    switch(lastInstr.getOperation()) {
+                    case JUMP: {
+                        ipc = ((JumpInstr)lastInstr).getJumpTarget().getTargetPC();
+                        break;
+                    }
+                    case JUMP_INDIRECT: {
+                        ipc = ((Label)((JumpIndirectInstr)lastInstr).getJumpTarget().retrieve(context, self, temp)).getTargetPC();
+                        break;
+                    }
+                    case B_TRUE: {
+                        BranchInstr br = (BranchInstr)lastInstr;
+                        Object value1 = br.getArg1().retrieve(context, self, temp);
+                        ipc = ((IRubyObject)value1).isTrue()? br.getJumpTarget().getTargetPC() : ipc+1;
+                        break;
+                    }
+                    case B_FALSE: {
+                        BranchInstr br = (BranchInstr)lastInstr;
+                        Object value1 = br.getArg1().retrieve(context, self, temp);
+                        ipc = !((IRubyObject)value1).isTrue()? br.getJumpTarget().getTargetPC() : ipc+1;
+                        break;
+                    }
+                    case B_NIL: {
+                        BranchInstr br = (BranchInstr)lastInstr;
+                        Object value1 = br.getArg1().retrieve(context, self, temp);
+                        ipc = value1 == context.nil ? br.getJumpTarget().getTargetPC() : ipc+1;
+                        break;
+                    }
+                    case B_UNDEF: {
+                        BranchInstr br = (BranchInstr)lastInstr;
+                        Object value1 = br.getArg1().retrieve(context, self, temp);
+                        ipc = value1 == UndefinedValue.UNDEFINED ? br.getJumpTarget().getTargetPC() : ipc+1;
+                        break;
+                    }
+                    case BEQ: {
+                        BEQInstr beq = (BEQInstr)lastInstr;
+                        Object value1 = beq.getArg1().retrieve(context, self, temp);
+                        Object value2 = beq.getArg2().retrieve(context, self, temp);
+                        boolean eql = ((IRubyObject) value1).op_equal(context, (IRubyObject)value2).isTrue();
+                        ipc = eql ? beq.getJumpTarget().getTargetPC() : ipc+1;
+                        break;
+                    }
+                    case BNE: {
+                        BNEInstr bne = (BNEInstr)lastInstr;
+                        Operand arg1 = bne.getArg1();
+                        Operand arg2 = bne.getArg2();
+                        Object value1 = arg1.retrieve(context, self, temp);
+                        Object value2 = arg2.retrieve(context, self, temp);
+                        boolean eql = ((arg2 == Nil.NIL) || (arg2 == UndefinedValue.UNDEFINED)) ?
+                                       value1 == value2 : ((IRubyObject) value1).op_equal(context, (IRubyObject)value2).isTrue();
+                        ipc = !eql ? bne.getJumpTarget().getTargetPC() : ipc+1;
+                        break;
+                    }
+                    case RECV_ARG: {
+                        ReceiveArgumentInstruction ra = (ReceiveArgumentInstruction)lastInstr;
+                        ra.getResult().store(context, temp, args[ra.getArgIndex()]);
                         ipc++;
-                    } else if (value instanceof Label) { // jump to new location
-                        ipc = ((Label) value).getTargetPC();                        
-                    } else {
-                        rv = (IRubyObject) value;
-                        ipc = scope.cfg().getExitBB().getLabel().getTargetPC();
+                        break;
+                    }
+                    case RECV_REST_ARG: {
+                        ReceiveRestArgInstr ra = (ReceiveRestArgInstr)lastInstr;
+                        int ai = ra.getArgIndex();
+                        int numArgs = args.length;
+                        IRubyObject val;
+                        int length = numArgs - ai;
+                        if (length <= 0) {
+                            val = context.getRuntime().newArray(ra.NO_PARAMS);
+                        }
+                        else {
+                            IRubyObject[] newArgs = new IRubyObject[length];
+                            System.arraycopy(args, ai, newArgs, 0, length);
+                            val = context.getRuntime().newArray(newArgs);
+                        }
+                        ra.getResult().store(context, temp, val);
+                        ipc++;
+                        break;
+                    }
+                    case RECV_CLOSURE_ARG: {
+                        ReceiveClosureArgInstr ra = (ReceiveClosureArgInstr)lastInstr;
+                        int ai = ra.getArgIndex();
+                        ra.getResult().store(context, temp, ai < args.length ? args[ra.getArgIndex()] : context.nil);
+                        ipc++;
+                        break;
+                    }
+                    case RECV_CLOSURE_REST_ARG: {
+                        ReceiveClosureRestArgInstr ra = (ReceiveClosureRestArgInstr)lastInstr;
+                        int ai = ra.getArgIndex();
+                        int numArgs = args.length;
+                        IRubyObject val;
+                        if (numArgs < ai) {
+                            val = context.getRuntime().newArray(ra.NO_PARAMS);
+                        } else {
+                            IRubyObject[] restOfArgs = new IRubyObject[numArgs-ai];
+                            int j = 0;
+                            for (int i = ai; i < numArgs; i++) {
+                                restOfArgs[j] = args[i];
+                                j++;
+                            }
+                            val = RubyArray.newArray(context.getRuntime(), restOfArgs);
+                        }
+                        ra.getResult().store(context, temp, val);
+                        ipc++;
+                        break;
+                    }
+                    case RECV_OPT_ARG: {
+                        ReceiveOptionalArgumentInstr ra = (ReceiveOptionalArgumentInstr)lastInstr;
+                        int i = ra.getArgIndex();
+                        ra.getResult().store(context, temp, args.length > i ? args[i] : UndefinedValue.UNDEFINED);
+                        ipc++;
+                        break;
+                    }
+                    case RECV_CLOSURE: {
+                        Ruby runtime = context.getRuntime();
+                        ((ReceiveClosureInstr)lastInstr).getResult().store(context, temp, block == Block.NULL_BLOCK ? context.nil : runtime.newProc(Type.PROC, block));
+                        ipc++;
+                        break;
+                    }
+                    case RECV_EXCEPTION: {
+                        ((ReceiveExceptionInstr)lastInstr).getResult().store(context, temp, exception);
+                        ipc++;
+                        break;
+                    }
+                    case ATTR_ASSIGN:
+                    case CALL: {
+                        if (lastInstr instanceof NoResultCallInstr) {
+                            NoResultCallInstr c = ((NoResultCallInstr)lastInstr);
+                            IRubyObject object = (IRubyObject)c.getReceiver().retrieve(context, self, temp);
+                            c.getCallAdapter().call(context, self, object, temp);
+                        } else {
+                            CallInstr c = ((CallInstr)lastInstr);
+                            IRubyObject object = (IRubyObject)c.getReceiver().retrieve(context, self, temp);
+                            Object callResult = c.getCallAdapter().call(context, self, object, temp);
+                            c.getResult().store(context, temp, callResult);
+                        }
+                        ipc++;
+                        break;
+                    }
+                    case RETURN: {
+                        rv = (IRubyObject)((ReturnInstr)lastInstr).getReturnValue().retrieve(context, self, temp);
+                        ipc = n;
+                        break;
+                    }
+                    case CLOSURE_RETURN: {
+                        rv = (IRubyObject)((ClosureReturnInstr)lastInstr).getReturnValue().retrieve(context, self, temp);
+                        ipc = n;
+                        break;
+                    }
+                    case THREAD_POLL: {
+                        context.callThreadPoll();
+                        ipc++;
+                        break;
+                    }
+                    case LINE_NUM: {
+                        context.setLine(((LineNumberInstr)lastInstr).lineNumber);
+                        ipc++;
+                        break;
+                    }
+                    case COPY: {
+                        CopyInstr c = (CopyInstr)lastInstr;
+                        c.getResult().store(context, temp, c.getSource().retrieve(context, self, temp));
+                        ipc++;
+                        break;
+                    }
+                    case CHECK_ARITY: {
+                        CheckArityInstr ca = (CheckArityInstr)lastInstr;
+                        int numArgs = args.length;
+                        if ((numArgs < ca.required) || ((ca.rest == -1) && (numArgs > (ca.required + ca.opt)))) {
+                            Arity.raiseArgumentError(context.getRuntime(), numArgs, ca.required, ca.required + ca.opt);
+                        }
+                         ipc++;
+                        break;
+                    }
+                    default: {
+                        lastInstr.interpret(context, self, temporaryVariables, block);
+                        ipc++;
+                        break;
+                    }
                     }
                 } catch (IRReturnJump rj) {
                     return handleReturnJumpInClosure(scope, rj, blockType);
@@ -172,7 +368,7 @@ public class Interpreter {
                         // We got where we need to get to (because a lambda stopped us, or because we popped to the
                         // lexical scope where we got called from).  Retrieve the result and store it.
                         if (lastInstr instanceof ResultInstr) {
-                            ((ResultInstr) lastInstr).getResult().store(context, self, temporaryVariables, bj.breakValue);
+                            ((ResultInstr) lastInstr).getResult().store(context, temporaryVariables, bj.breakValue);
                         }
                         ipc += 1;
                     } else {

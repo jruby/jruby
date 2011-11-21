@@ -18,7 +18,7 @@ public abstract class BranchInstr extends Instr {
     }
 
     public Operand[] getOperands() {
-        return new Operand[]{arg1, arg2};
+        return arg2 == null ? new Operand[]{arg1} : new Operand[]{arg1, arg2};
     }
 
     public Operand getArg1() {
@@ -36,11 +36,11 @@ public abstract class BranchInstr extends Instr {
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
         arg1 = arg1.getSimplifiedOperand(valueMap, force);
-        arg2 = arg2.getSimplifiedOperand(valueMap, force);
+        if (arg2 != null) arg2 = arg2.getSimplifiedOperand(valueMap, force);
     }
 
     @Override
     public String toString() {
-        return "" + getOperation() + "(" + arg1 + ", " + arg2 + ", " + target + ")";
+        return "" + getOperation() + "(" + arg1 + ", " + (arg2 != null ? arg2 + ", " : "") + target + ")";
     }
 }

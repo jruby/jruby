@@ -19,8 +19,8 @@ public class PutGlobalVarInstr extends PutInstr {
     }
 
     @Override
-    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
-        getTarget().store(context, self, temp, getValue().retrieve(context, self, temp));
+    public Object interpret(ThreadContext context, IRubyObject self, Object[] temp, Block block) {
+        getTarget().store(context, temp, getValue().retrieve(context, self, temp));
         return null;
     }
 }

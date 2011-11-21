@@ -23,7 +23,7 @@ public class GetConstInstr extends GetInstr {
     }
 
     @Override
-    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
+    public Object interpret(ThreadContext context, IRubyObject self, Object[] temp, Block block) {
         Object source = getSource().retrieve(context, self, temp);
         RubyModule module;
 
@@ -43,7 +43,7 @@ public class GetConstInstr extends GetInstr {
         if (constant == null) constant = module.getConstantFromConstMissing(getRef());
 
         //if (container == null) throw runtime.newNameError("unitialized constant " + scope.getName(), scope.getName());
-        getResult().store(context, self, temp, constant);
+        getResult().store(context, temp, constant);
         return null;
     }
 }

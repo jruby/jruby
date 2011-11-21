@@ -32,9 +32,4 @@ public class JumpInstr extends Instr {
     public Instr cloneForInlining(InlinerInfo ii) {
         return new JumpInstr(ii.getRenamedLabel(target));
     }
-
-    @Override
-    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
-        return target;
-    }
 }

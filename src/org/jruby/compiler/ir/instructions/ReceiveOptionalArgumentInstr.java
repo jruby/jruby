@@ -26,6 +26,10 @@ public class ReceiveOptionalArgumentInstr extends Instr implements ResultInstr {
     public Operand[] getOperands() {
         return EMPTY_OPERANDS;
     }
+
+    public int getArgIndex() {
+       return argIndex;
+    }
     
     public Variable getResult() {
         return result;
@@ -42,12 +46,5 @@ public class ReceiveOptionalArgumentInstr extends Instr implements ResultInstr {
     @Override
     public String toString() {
         return super.toString() + "(" + argIndex + ")";
-    }
-
-    @Override
-    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
-        Object v = args.length > argIndex ? args[argIndex] : UndefinedValue.UNDEFINED;
-        result.store(context, self, temp, v);
-        return null;
     }
 }

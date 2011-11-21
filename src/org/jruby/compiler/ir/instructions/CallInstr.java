@@ -54,13 +54,6 @@ public class CallInstr extends CallBase implements ResultInstr {
                 (MethAddr) getMethodAddr().cloneForInlining(ii), 
                 receiver.cloneForInlining(ii), cloneCallArgs(ii), 
                 closure == null ? null : closure.cloneForInlining(ii));
-   }
-
-    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
-        IRubyObject object = (IRubyObject) getReceiver().retrieve(context, self, temp);
-        Object callResult = callAdapter.call(context, self, object, temp);
-        result.store(context, self, temp, callResult);
-        return null;
     }
 
     @Override

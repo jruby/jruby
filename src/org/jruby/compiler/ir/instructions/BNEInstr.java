@@ -3,15 +3,16 @@ package org.jruby.compiler.ir.instructions;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.BooleanLiteral;
 import org.jruby.compiler.ir.operands.Label;
-import org.jruby.compiler.ir.operands.Nil;
 import org.jruby.compiler.ir.operands.Operand;
-import org.jruby.compiler.ir.operands.UndefinedValue;
 import org.jruby.compiler.ir.representations.InlinerInfo;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 public class BNEInstr extends BranchInstr {
+    public static BranchInstr create(Operand v1, Operand v2, Label jmpTarget) {
+        if (v2 == BooleanLiteral.TRUE) return new BFalseInstr(v1, jmpTarget);
+        if (v2 == BooleanLiteral.FALSE) return new BTrueInstr(v1, jmpTarget);
+        return new BNEInstr(v1, v2, jmpTarget);
+    }
+
     public BNEInstr(Operand v1, Operand v2, Label jmpTarget) {
         super(Operation.BNE, v1, v2, jmpTarget);
     }
@@ -19,23 +20,5 @@ public class BNEInstr extends BranchInstr {
     public Instr cloneForInlining(InlinerInfo ii) {
         return new BNEInstr(getArg1().cloneForInlining(ii), 
                 getArg2().cloneForInlining(ii), ii.getRenamedLabel(getJumpTarget()));
-    }
-
-    @Override
-    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
-        Operand arg1 = getArg1();
-        Operand arg2 = getArg2();
-        Object value1 = arg1.retrieve(context, self, temp);
-        
-        if (arg2 instanceof BooleanLiteral) {
-            boolean v1True  = ((IRubyObject)value1).isTrue();
-            boolean arg2True = ((BooleanLiteral)arg2).isTrue();
-            return (v1True && !arg2True) || (!v1True && arg2True) ? getJumpTarget() : null;
-        } else {
-            Object value2 = arg2.retrieve(context, self, temp);
-            boolean eql = ((arg2 == Nil.NIL) || (arg2 == UndefinedValue.UNDEFINED)) ? 
-                    value1 == value2 : ((IRubyObject) value1).op_equal(context, (IRubyObject)value2).isTrue();
-            return !eql ? getJumpTarget() : null;
-        }
     }
 }

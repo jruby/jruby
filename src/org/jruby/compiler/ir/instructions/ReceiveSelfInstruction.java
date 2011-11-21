@@ -39,7 +39,7 @@ public class ReceiveSelfInstruction extends Instr implements ResultInstr {
     }
 
     @Override
-    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
+    public Object interpret(ThreadContext context, IRubyObject self, Object[] temp, Block block) {
         // result is a confusing name
 
         // SSS FIXME: Anything else to do here?? 

@@ -60,7 +60,7 @@ public class DefineMetaClassInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
+    public Object interpret(ThreadContext context, IRubyObject self, Object[] temp, Block block) {
         Ruby runtime = context.getRuntime();
         IRubyObject obj = (IRubyObject)object.retrieve(context, self, temp);
         
@@ -76,7 +76,7 @@ public class DefineMetaClassInstr extends Instr implements ResultInstr {
             DynamicMethod method = new InterpretedIRMethod(dummyMetaClass.getRootMethod(), Visibility.PUBLIC, singletonClass);
             // SSS FIXME: Rather than pass the block implicitly, should we add %block as another operand to DefineMetaClass instr?
             Object v = method.call(context, singletonClass, singletonClass, "", new IRubyObject[]{}, block);
-            result.store(context, self, temp, v);
+            result.store(context, temp, v);
             return null;
         }
     }

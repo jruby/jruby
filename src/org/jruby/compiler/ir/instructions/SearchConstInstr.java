@@ -57,7 +57,7 @@ public class SearchConstInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
+    public Object interpret(ThreadContext context, IRubyObject self, Object[] temp, Block block) {
         StaticScope staticScope = definingModule == null ? context.getCurrentScope().getStaticScope() : definingModule.getStaticScope();
         Ruby runtime = context.getRuntime();
         RubyModule object = runtime.getObject();
@@ -71,7 +71,7 @@ public class SearchConstInstr extends Instr implements ResultInstr {
 
         if (constant == null) constant = UndefinedValue.UNDEFINED;
         
-        result.store(context, self, temp, constant);
+        result.store(context, temp, constant);
 
         return null;
     }

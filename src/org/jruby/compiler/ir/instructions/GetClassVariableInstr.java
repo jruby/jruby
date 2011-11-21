@@ -20,8 +20,8 @@ public class GetClassVariableInstr extends GetInstr {
     }
 
     @Override
-    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
-        getResult().store(context, self, temp, ((RubyModule) getSource().retrieve(context, self, temp)).getClassVar(getRef()));
+    public Object interpret(ThreadContext context, IRubyObject self, Object[] temp, Block block) {
+        getResult().store(context, temp, ((RubyModule) getSource().retrieve(context, self, temp)).getClassVar(getRef()));
         return null;
     }
 }

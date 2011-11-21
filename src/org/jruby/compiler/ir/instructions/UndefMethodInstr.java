@@ -49,8 +49,8 @@ public class UndefMethodInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
-        result.store(context, self, temp, RuntimeHelpers.undefMethod(context, methodName.retrieve(context, self, temp)));
+    public Object interpret(ThreadContext context, IRubyObject self, Object[] temp, Block block) {
+        result.store(context, temp, RuntimeHelpers.undefMethod(context, methodName.retrieve(context, self, temp)));
         return null;
     }
     

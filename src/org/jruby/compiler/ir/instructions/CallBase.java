@@ -49,6 +49,10 @@ public abstract class CallBase extends Instr {
         return buildAllArgs(getMethodAddr(), receiver, arguments, closure);
     }
 
+	 public CallAdapter getCallAdapter() {
+		 return callAdapter;
+	 }
+
     public MethAddr getMethodAddr() {
         return methAddr;
     }

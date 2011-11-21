@@ -56,24 +56,24 @@ public class EQQInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
+    public Object interpret(ThreadContext context, IRubyObject self, Object[] temp, Block block) {
         IRubyObject receiver = (IRubyObject) arg1.retrieve(context, self, temp);
         IRubyObject value = (IRubyObject) arg2.retrieve(context, self, temp);
 
         if (value == UndefinedValue.UNDEFINED) {
-            result.store(context, self, temp, receiver);
+            result.store(context, temp, receiver);
         } else if (receiver instanceof RubyArray) {
             RubyArray testVals = (RubyArray)receiver;
             for (int i = 0, n = testVals.getLength(); i < n; i++) {
                 IRubyObject eqqVal = testVals.eltInternal(i).callMethod(context, "===", value);
                 if (eqqVal.isTrue()) {
-                    result.store(context, self, temp, eqqVal);
+                    result.store(context, temp, eqqVal);
                     return null;
                 }
             }
-            result.store(context, self, temp, context.getRuntime().newBoolean(false));
+            result.store(context, temp, context.getRuntime().newBoolean(false));
         } else {
-            result.store(context, self, temp, receiver.callMethod(context, "===", value));
+            result.store(context, temp, receiver.callMethod(context, "===", value));
         }
         
         return null;

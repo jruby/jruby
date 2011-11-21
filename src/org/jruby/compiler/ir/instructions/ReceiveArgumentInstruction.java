@@ -13,7 +13,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * Assign Argument passed into scope/method to a result variable
  */
 public class ReceiveArgumentInstruction extends Instr implements ResultInstr {
-	 // SSS FIXME: Fix IR to start offsets from 0
+    // SSS FIXME: Fix IR to start offsets from 0
     protected int argIndex;
     private Variable result;
 
@@ -38,6 +38,10 @@ public class ReceiveArgumentInstruction extends Instr implements ResultInstr {
         this.result = v;
     }
 
+    public int getArgIndex() {
+        return argIndex;
+    }
+
     public Instr cloneForInlining(InlinerInfo ii) {
         return new CopyInstr(ii.getRenamedVariable(result), ii.getCallArg(argIndex, false));
     }
@@ -45,11 +49,5 @@ public class ReceiveArgumentInstruction extends Instr implements ResultInstr {
     @Override
     public String toString() {
         return super.toString() + "(" + argIndex + ")";
-    }
-
-    @Override
-    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
-        result.store(context, self, temp, args[argIndex]);
-        return null;
     }
 }

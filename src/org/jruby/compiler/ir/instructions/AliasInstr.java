@@ -51,7 +51,7 @@ public class AliasInstr extends Instr {
     }
 
     @Override
-    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
+    public Object interpret(ThreadContext context, IRubyObject self, Object[] temp, Block block) {
         IRubyObject object = (IRubyObject) receiver.retrieve(context, self, temp);
                 
         if (object == null || object instanceof RubyFixnum || object instanceof RubySymbol) {

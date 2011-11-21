@@ -28,6 +28,10 @@ public class ReturnInstr extends Instr {
     public Operand[] getOperands() {
         return new Operand[]{returnValue};
     }
+
+    public Operand getReturnValue() {
+       return returnValue;
+    }
     
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
@@ -43,10 +47,5 @@ public class ReturnInstr extends Instr {
     public Instr cloneForInlining(InlinerInfo ii) {
         // SSS FIXME: This should also look at the 'methodToReturnFrom' arg
         return new CopyInstr(ii.getCallResultVariable(), returnValue.cloneForInlining(ii));
-    }
-
-    @Override
-    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
-        return returnValue.retrieve(context, self, temp);
     }
 }

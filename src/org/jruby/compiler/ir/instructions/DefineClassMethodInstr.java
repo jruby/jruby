@@ -44,7 +44,7 @@ public class DefineClassMethodInstr extends Instr {
 
     // SSS FIXME: Go through this and DefineInstanceMethodInstr.interpret, clean up, extract common code
     @Override
-    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
+    public Object interpret(ThreadContext context, IRubyObject self, Object[] temp, Block block) {
         String name = method.getName();
         Ruby runtime = context.getRuntime();
         RubyObject obj = (RubyObject) container.retrieve(context, self, temp);

@@ -10,9 +10,9 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class CheckArityInstr extends Instr {
-    private final int required;
-    private final int opt;
-    private final int rest;
+    public final int required;
+    public final int opt;
+    public final int rest;
     
     public CheckArityInstr(int required, int opt, int rest) {
         super(Operation.CHECK_ARITY);
@@ -42,17 +42,6 @@ public class CheckArityInstr extends Instr {
         
         if ((numArgs < required) || ((rest == -1) && (numArgs > (required + opt)))) {
             return new RaiseArgumentErrorInstr(required, opt, rest, rest);
-        }
-
-        return null;
-    }
-
-    @Override
-    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
-        int numArgs = args.length;
-        
-        if ((numArgs < required) || ((rest == -1) && (numArgs > (required + opt)))) {
-            Arity.raiseArgumentError(context.getRuntime(), numArgs, required, required + opt);
         }
 
         return null;

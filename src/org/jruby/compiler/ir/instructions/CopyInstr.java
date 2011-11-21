@@ -61,12 +61,6 @@ public class CopyInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
-        result.store(context, self, temp, arg.retrieve(context, self, temp));
-        return null;
-    }
-
-    @Override
     public String toString() { 
         return (arg instanceof Variable) ? (super.toString() + "(" + arg + ")") : (result + " = " + arg);
     }

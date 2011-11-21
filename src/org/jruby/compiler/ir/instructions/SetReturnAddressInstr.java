@@ -56,8 +56,8 @@ public class SetReturnAddressInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
-        result.store(context, self, temp, returnAddr);
+    public Object interpret(ThreadContext context, IRubyObject self, Object[] temp, Block block) {
+        result.store(context, temp, returnAddr);
         
         return null;
     }

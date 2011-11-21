@@ -43,7 +43,7 @@ public class RestoreErrorInfoInstr extends Instr {
     }
 
     @Override
-    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
+    public Object interpret(ThreadContext context, IRubyObject self, Object[] temp, Block block) {
         context.setErrorInfo((IRubyObject) arg.retrieve(context, self, temp));
         
         return null;

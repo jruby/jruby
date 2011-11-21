@@ -39,10 +39,4 @@ public class ClosureReturnInstr extends Instr {
     public String toString() {
         return super.toString() + "(" + returnValue + ")";
     }
-
-    @Interp
-    @Override
-    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
-        return returnValue.retrieve(context, self, temp);
-    }
 }

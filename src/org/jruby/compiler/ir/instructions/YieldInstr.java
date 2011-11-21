@@ -14,9 +14,9 @@ import org.jruby.RubyProc;
 import org.jruby.RubyNil;
 
 public class YieldInstr extends Instr implements ResultInstr {
-    Operand blockArg;
-    Operand yieldArg;
-    private final boolean unwrapArray;
+    public final boolean unwrapArray;
+    private Operand blockArg;
+    private Operand yieldArg;
     private Variable result;
 
     public YieldInstr(Variable result, Variable block, Operand arg, boolean unwrapArray) {
@@ -35,9 +35,17 @@ public class YieldInstr extends Instr implements ResultInstr {
         return this;  // This is just a placeholder during inlining.
     }
 
+    public Operand getBlockArg() {
+        return blockArg;
+    }
+
+    public Operand getYieldArg() {
+        return yieldArg;
+    }
+
     @Interp
     @Override
-    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
+    public Object interpret(ThreadContext context, IRubyObject self, Object[] temp, Block block) {
         Object resultValue;
         Object blk = (Object) blockArg.retrieve(context, self, temp);
         if (blk instanceof RubyProc) blk = ((RubyProc)blk).getBlock();
@@ -52,7 +60,7 @@ public class YieldInstr extends Instr implements ResultInstr {
             resultValue = (unwrapArray && (yieldVal instanceof RubyArray)) ? b.yieldArray(context, yieldVal, null, null) : b.yield(context, yieldVal);
         }
         
-        result.store(context, self, temp, resultValue);
+        result.store(context, temp, resultValue);
         
         return null;
     }

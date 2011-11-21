@@ -148,7 +148,7 @@ public abstract class Instr {
     }
 
     @Interp
-    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
+    public Object interpret(ThreadContext context, IRubyObject self, Object[] temp, Block block) {
         throw new RuntimeException(this.getClass().getSimpleName() + " should not be directly interpreted");
     }
 }

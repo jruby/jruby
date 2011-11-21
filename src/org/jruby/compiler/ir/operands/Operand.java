@@ -70,7 +70,7 @@ public abstract class Operand {
     }
 
     @Interp
-    public Object store(ThreadContext context, IRubyObject self, Object[] temp, Object value) {
+    public Object store(ThreadContext context, Object[] temp, Object value) {
         throw new RuntimeException(this.getClass().getSimpleName() + " should not be directly stored.");
     }
 }

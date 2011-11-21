@@ -60,7 +60,7 @@ public class Match3Instr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
+    public Object interpret(ThreadContext context, IRubyObject self, Object[] temp, Block block) {
         RubyRegexp regexp = (RubyRegexp) receiver.retrieve(context, self, temp);
         IRubyObject argValue = (IRubyObject) arg.retrieve(context, self, temp);
         
@@ -71,7 +71,7 @@ public class Match3Instr extends Instr implements ResultInstr {
             resultValue = argValue.callMethod(context, "=~", regexp);
         }
         
-        result.store(context, self, temp, resultValue);                
+        result.store(context, temp, resultValue);                
         return null;                
     }
 }

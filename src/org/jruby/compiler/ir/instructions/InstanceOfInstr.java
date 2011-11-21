@@ -52,7 +52,7 @@ public class InstanceOfInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
+    public Object interpret(ThreadContext context, IRubyObject self, Object[] temp, Block block) {
         try {
             if (type == null) type = Class.forName(className);
         } catch (ClassNotFoundException e) {
@@ -63,7 +63,7 @@ public class InstanceOfInstr extends Instr implements ResultInstr {
             // for user ruby code, this may no longer be true and we have to appropriately fix this code then.
             throw new RuntimeException(e);
         }
-        result.store(context, self, temp, context.getRuntime().newBoolean(type.isInstance(object.retrieve(context, self, temp)))); 
+        result.store(context, temp, context.getRuntime().newBoolean(type.isInstance(object.retrieve(context, self, temp)))); 
         return null;
     }
 }

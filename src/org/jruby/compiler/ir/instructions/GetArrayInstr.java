@@ -71,7 +71,7 @@ public class GetArrayInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
+    public Object interpret(ThreadContext context, IRubyObject self, Object[] temp, Block block) {
         // ENEBO: Can I assume since IR figured this is an internal array it will be RubyArray like this?
         RubyArray rubyArray = (RubyArray) array.retrieve(context, self, temp);
         Object val;
@@ -88,7 +88,7 @@ public class GetArrayInstr extends Instr implements ResultInstr {
                 val = RubyArray.newArrayNoCopy(context.getRuntime(), rubyArray.toJavaArray(), index);
             }
         }
-        result.store(context, self, temp, val);
+        result.store(context, temp, val);
         return null;
     }
 }

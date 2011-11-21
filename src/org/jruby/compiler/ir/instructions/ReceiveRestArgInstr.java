@@ -37,6 +37,10 @@ public class ReceiveRestArgInstr extends Instr implements ResultInstr {
         this.result = v;
     }
 
+    public int getArgIndex() {
+        return argIndex;
+    }
+
     public Instr cloneForInlining(InlinerInfo ii) {
         return new CopyInstr(ii.getRenamedVariable(result), ii.getCallArg(argIndex, true));
     }
@@ -46,21 +50,5 @@ public class ReceiveRestArgInstr extends Instr implements ResultInstr {
         return super.toString() + "(" + argIndex + ")";
     }
 
-    private IRubyObject[] NO_PARAMS = new IRubyObject[0];    
-
-    @Override
-    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
-        IRubyObject[] restArg;
-        int available = args.length - argIndex;
-        if (available <= 0) {
-           restArg = NO_PARAMS;
-        } else {
-           restArg = new IRubyObject[available];
-           System.arraycopy(args, argIndex, restArg, 0, available);
-        }
-        
-        result.store(context, self, temp, context.getRuntime().newArray(restArg));
-        return null;
-    }
-
+    public IRubyObject[] NO_PARAMS = new IRubyObject[0];    
 }

@@ -20,7 +20,7 @@ public class PutClassVariableInstr extends PutInstr {
     }
 
     @Override
-    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
+    public Object interpret(ThreadContext context, IRubyObject self, Object[] temp, Block block) {
         IRubyObject value = (IRubyObject) getValue().retrieve(context, self, temp);
         RubyModule module = (RubyModule) getTarget().retrieve(context, self, temp);
 

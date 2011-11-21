@@ -8,7 +8,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * visible to Ruby itself.
  */
 public class TemporaryVariable extends Variable {
-    final int offset;
+    public final int offset;
 	 String name;
 
     public TemporaryVariable(int offset) {
@@ -64,7 +64,7 @@ public class TemporaryVariable extends Variable {
     }
 
     @Override
-    public Object store(ThreadContext context, IRubyObject self, Object[] temp, Object value) {
+    public Object store(ThreadContext context, Object[] temp, Object value) {
         Object old = temp[offset];
         temp[offset] = value;
         return old;

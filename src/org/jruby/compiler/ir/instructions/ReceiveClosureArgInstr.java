@@ -50,11 +50,4 @@ public class ReceiveClosureArgInstr extends Instr implements ResultInstr {
     public Instr cloneForInlining(InlinerInfo ii) {
         throw new RuntimeException("Not implemented yet!");
     }
-
-    @Interp
-    @Override
-    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
-        result.store(context, self, temp, (argIndex < args.length) ? args[argIndex] : context.nil);
-        return null;
-    }
 }

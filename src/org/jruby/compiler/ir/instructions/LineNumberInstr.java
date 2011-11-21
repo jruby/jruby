@@ -30,10 +30,4 @@ public class LineNumberInstr extends Instr {
     public Instr cloneForInlining(InlinerInfo ii) {
         return this;
     }
-
-    @Override
-    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
-        context.setLine(lineNumber);
-        return null;
-    }
 }

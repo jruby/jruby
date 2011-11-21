@@ -835,7 +835,7 @@ public class IRBuilder {
             Label    l   = s.getNewLabel();
             Operand  v1  = build(andNode.getFirstNode(), s);
             Variable ret = getValueInTemporaryVariable(s, v1);
-            s.addInstr(new BEQInstr(v1, BooleanLiteral.FALSE, l));
+            s.addInstr(BEQInstr.create(v1, BooleanLiteral.FALSE, l));
             Operand  v2  = build(andNode.getSecondNode(), s);
             s.addInstr(new CopyInstr(ret, v2));
             s.addInstr(new LabelInstr(l));
@@ -995,7 +995,7 @@ public class IRBuilder {
                 v1 = eqqResult;
                 v2 = BooleanLiteral.TRUE;
             }
-            s.addInstr(new BEQInstr(v1, v2, bodyLabel));
+            s.addInstr(BEQInstr.create(v1, v2, bodyLabel));
 
             // SSS FIXME: This doesn't preserve original order of when clauses.  We could consider
             // preserving the order (or maybe not, since we would have to sort the constants first
@@ -1202,7 +1202,7 @@ public class IRBuilder {
         Variable v = s.getNewTemporaryVariable();
         s.addInstr(new SearchConstInstr(v, startingModule, name));
         Label foundLabel = s.getNewLabel();
-        s.addInstr(new BNEInstr(v, UndefinedValue.UNDEFINED, foundLabel));
+        s.addInstr(BNEInstr.create(v, UndefinedValue.UNDEFINED, foundLabel));
         s.addInstr(new ConstMissingInstr(v, startingModule, name));
         s.addInstr(new LabelInstr(foundLabel));
         return v;
@@ -1309,7 +1309,7 @@ public class IRBuilder {
         // Since this is JRuby implementation Java code, we dont need EQQ here.
         // SSS FIXME: Hardcoded exception class name!
         m.addInstr(new InstanceOfInstr(eqqResult, exc, "org.jruby.RubyException")); 
-        m.addInstr(new BEQInstr(eqqResult, BooleanLiteral.FALSE, uncaughtLabel));
+        m.addInstr(BEQInstr.create(eqqResult, BooleanLiteral.FALSE, uncaughtLabel));
         Object v2 = rescueBlock.run(rescueBlockArgs); // YIELD: Run the protected code block
         if (v2 != null) m.addInstr(new CopyInstr(rv, Nil.NIL));
         m.addInstr(new JumpInstr(rEndLabel));
@@ -1387,7 +1387,7 @@ public class IRBuilder {
         Label undefLabel = s.getNewLabel();
         Operand[] args   = nameToCheck == null ? NO_ARGS : new Operand[]{new StringLiteral(nameToCheck)};
         Variable tmpVar  = generateJRubyUtilityCall(s, defnChecker, true, receiver, args);
-        s.addInstr(new BEQInstr(tmpVar, BooleanLiteral.FALSE, undefLabel));
+        s.addInstr(BEQInstr.create(tmpVar, BooleanLiteral.FALSE, undefLabel));
         return buildDefnCheckIfThenPaths(s, undefLabel, new StringLiteral(definedReturnValue));
     }
 
@@ -1406,7 +1406,7 @@ public class IRBuilder {
                     break;
                 } else if (!def.isConstant()) { // Optimization!
                     failPathReqd = true;
-                    s.addInstr(new BEQInstr(def, Nil.NIL, failLabel));
+                    s.addInstr(BEQInstr.create(def, Nil.NIL, failLabel));
                 }
             }
         } else {
@@ -1415,7 +1415,7 @@ public class IRBuilder {
                 rv = Nil.NIL;
             } else if (!def.isConstant()) { // Optimization!
                 failPathReqd = true;
-                s.addInstr(new BEQInstr(def, Nil.NIL, failLabel));
+                s.addInstr(BEQInstr.create(def, Nil.NIL, failLabel));
             }
         }
 
@@ -1462,7 +1462,7 @@ public class IRBuilder {
                 Label undefLabel = s.getNewLabel();
                 Variable tmpVar  = s.getNewTemporaryVariable();
                 s.addInstr(new SearchConstInstr(tmpVar, startingSearchScope(s), ((ConstNode) node).getName()));
-                s.addInstr(new BEQInstr(tmpVar, UndefinedValue.UNDEFINED, undefLabel));
+                s.addInstr(BEQInstr.create(tmpVar, UndefinedValue.UNDEFINED, undefLabel));
                 return buildDefnCheckIfThenPaths(s, undefLabel, new StringLiteral("constant"));
             }
             case GLOBALVARNODE:
@@ -1485,7 +1485,7 @@ public class IRBuilder {
                 Variable tmpVar = s.getNewTemporaryVariable();
                 StringLiteral mName = new StringLiteral(((FCallNode)node).getName());
                 s.addInstr(new JRubyImplCallInstr(tmpVar, JRubyImplementationMethod.SELF_IS_METHOD_BOUND, getSelf(s), new Operand[]{mName}));
-                s.addInstr(new BEQInstr(tmpVar, BooleanLiteral.FALSE, undefLabel));
+                s.addInstr(BEQInstr.create(tmpVar, BooleanLiteral.FALSE, undefLabel));
                 Operand argsCheckDefn = buildGetArgumentDefinition(((FCallNode) node).getArgsNode(), s, "method");
                 return buildDefnCheckIfThenPaths(s, undefLabel, argsCheckDefn);
             }
@@ -1509,14 +1509,14 @@ public class IRBuilder {
                 Label undefLabel = s.getNewLabel();
                 Variable tmpVar = s.getNewTemporaryVariable();
                 s.addInstr(new JRubyImplCallInstr(tmpVar, JRubyImplementationMethod.BACKREF_IS_RUBY_MATCH_DATA, null, NO_ARGS));
-                s.addInstr(new BEQInstr(tmpVar, BooleanLiteral.FALSE, undefLabel));
+                s.addInstr(BEQInstr.create(tmpVar, BooleanLiteral.FALSE, undefLabel));
                 // SSS FIXME: 
                 // - Can/should I use BEQInstr(new NthRef(n), Nil.NIL, undefLabel)? instead of .nil? & compare with flag?
                 // - Or, even create a new IsNilInstr and NotNilInstr to represent optimized scenarios where
                 //   the nil? method is not monkey-patched?
                 // This matters because if String.nil? is monkey-patched, the two sequences can behave differently.
                 s.addInstr(CallInstr.create(tmpVar, new MethAddr("nil?"), new NthRef(n), NO_ARGS, null));
-                s.addInstr(new BEQInstr(tmpVar, BooleanLiteral.TRUE, undefLabel));
+                s.addInstr(BEQInstr.create(tmpVar, BooleanLiteral.TRUE, undefLabel));
                 return buildDefnCheckIfThenPaths(s, undefLabel, new StringLiteral("$" + n));
             }
             case COLON3NODE:
@@ -1573,7 +1573,7 @@ public class IRBuilder {
                 Label    undefLabel = s.getNewLabel();
                 CallNode iVisited = (CallNode) node;
                 Operand  receiverDefn = buildGetDefinition(iVisited.getReceiverNode(), s);
-                s.addInstr(new BEQInstr(receiverDefn, Nil.NIL, undefLabel));
+                s.addInstr(BEQInstr.create(receiverDefn, Nil.NIL, undefLabel));
 
                 // protected main block
                 CodeBlock protectedCode = new CodeBlock() {
@@ -1597,7 +1597,7 @@ public class IRBuilder {
                         Variable tmpVar     = s.getNewTemporaryVariable();
                         Operand  receiver   = build(iVisited.getReceiverNode(), s);
                         s.addInstr(new JRubyImplCallInstr(tmpVar, JRubyImplementationMethod.METHOD_PUBLIC_ACCESSIBLE, receiver, new Operand[]{new StringLiteral(methodName)}));
-                        s.addInstr(new BEQInstr(tmpVar, BooleanLiteral.FALSE, undefLabel));
+                        s.addInstr(BEQInstr.create(tmpVar, BooleanLiteral.FALSE, undefLabel));
                         Operand argsCheckDefn = buildGetArgumentDefinition(iVisited.getArgsNode(), s, "method");
                         return buildDefnCheckIfThenPaths(s, undefLabel, argsCheckDefn);
                     }
@@ -1629,7 +1629,7 @@ public class IRBuilder {
                 Label  undefLabel = s.getNewLabel();
                 AttrAssignNode iVisited = (AttrAssignNode) node;
                 Operand receiverDefn = buildGetDefinition(iVisited.getReceiverNode(), s);
-                s.addInstr(new BEQInstr(receiverDefn, Nil.NIL, undefLabel));
+                s.addInstr(BEQInstr.create(receiverDefn, Nil.NIL, undefLabel));
 
                 // protected main block
                 CodeBlock protectedCode = new CodeBlock() {
@@ -1655,9 +1655,9 @@ public class IRBuilder {
                         Variable tmpVar     = s.getNewTemporaryVariable();
                         Operand  receiver   = build(iVisited.getReceiverNode(), s);
                         s.addInstr(new JRubyImplCallInstr(tmpVar, JRubyImplementationMethod.METHOD_PUBLIC_ACCESSIBLE, receiver, new Operand[]{attrMethodName}));
-                        s.addInstr(new BEQInstr(tmpVar, BooleanLiteral.FALSE, undefLabel));
+                        s.addInstr(BEQInstr.create(tmpVar, BooleanLiteral.FALSE, undefLabel));
                         s.addInstr(new JRubyImplCallInstr(tmpVar, JRubyImplementationMethod.SELF_IS_METHOD_BOUND, getSelf(s), new Operand[]{attrMethodName}));
-                        s.addInstr(new BEQInstr(tmpVar, BooleanLiteral.FALSE, undefLabel));
+                        s.addInstr(BEQInstr.create(tmpVar, BooleanLiteral.FALSE, undefLabel));
                         Operand argsCheckDefn = buildGetArgumentDefinition(((FCallNode) node).getArgsNode(), s, "assignment");
                         return buildDefnCheckIfThenPaths(s, undefLabel, argsCheckDefn);
                     }
@@ -1677,7 +1677,7 @@ public class IRBuilder {
                 Label undefLabel = s.getNewLabel();
                 Variable tmpVar  = s.getNewTemporaryVariable();
                 s.addInstr(new JRubyImplCallInstr(tmpVar, JRubyImplementationMethod.FRAME_SUPER_METHOD_BOUND, getSelf(s), NO_ARGS));
-                s.addInstr(new BEQInstr(tmpVar, BooleanLiteral.FALSE, undefLabel));
+                s.addInstr(BEQInstr.create(tmpVar, BooleanLiteral.FALSE, undefLabel));
                 Operand superDefnVal = buildGetArgumentDefinition(((SuperNode) node).getArgsNode(), s, "super");
                 return buildDefnCheckIfThenPaths(s, undefLabel, superDefnVal);
             }
@@ -1841,7 +1841,7 @@ public class IRBuilder {
                 LocalAsgnNode n = (LocalAsgnNode)optArgs.get(j);
                 Variable av = s.getLocalVariable(n.getName(), 0);
                 s.addInstr(new ReceiveOptionalArgumentInstr(av, argIndex));
-                s.addInstr(new BNEInstr(av, UndefinedValue.UNDEFINED, l)); // if 'av' is not undefined, go to default
+                s.addInstr(BNEInstr.create(av, UndefinedValue.UNDEFINED, l)); // if 'av' is not undefined, go to default
                 build(n, s);
                 s.addInstr(new LabelInstr(l));
             }
@@ -2110,11 +2110,11 @@ public class IRBuilder {
         s.addInstr(new CopyInstr(returnVal, BooleanLiteral.FALSE));
 
         // Are we in state 1?
-        s.addInstr(new BNEInstr(flipState, s1, s2Label));
+        s.addInstr(BNEInstr.create(flipState, s1, s2Label));
 
         // ----- Code for when we are in state 1 -----
         Operand s1Val = build(flipNode.getBeginNode(), s);
-        s.addInstr(new BNEInstr(s1Val, BooleanLiteral.TRUE, s2Label));
+        s.addInstr(BNEInstr.create(s1Val, BooleanLiteral.TRUE, s2Label));
 
         // s1 condition is true => set returnVal to true & move to state 2
         s.addInstr(new CopyInstr(returnVal, BooleanLiteral.TRUE));
@@ -2124,15 +2124,15 @@ public class IRBuilder {
         s.addInstr(new LabelInstr(s2Label));
 
         // For exclusive ranges/flips, we dont evaluate s2's condition if s1's condition was satisfied
-        if (flipNode.isExclusive()) s.addInstr(new BEQInstr(returnVal, BooleanLiteral.TRUE, doneLabel));
+        if (flipNode.isExclusive()) s.addInstr(BEQInstr.create(returnVal, BooleanLiteral.TRUE, doneLabel));
 
         // Are we in state 2?
-        s.addInstr(new BNEInstr(flipState, s2, doneLabel));
+        s.addInstr(BNEInstr.create(flipState, s2, doneLabel));
 
         // ----- Code for when we are in state 2 -----
         Operand s2Val = build(flipNode.getEndNode(), s);
         s.addInstr(new CopyInstr(returnVal, BooleanLiteral.TRUE));
-        s.addInstr(new BNEInstr(s2Val, BooleanLiteral.TRUE, doneLabel));
+        s.addInstr(BNEInstr.create(s2Val, BooleanLiteral.TRUE, doneLabel));
 
         // s2 condition is true => move to state 1 
         s.addInstr(new CopyInstr(flipState, s1));
@@ -2238,7 +2238,7 @@ public class IRBuilder {
         Label    falseLabel = s.getNewLabel();
         Label    doneLabel  = s.getNewLabel();
         Operand  thenResult = null;
-        s.addInstr(new BEQInstr(build(actualCondition, s), BooleanLiteral.FALSE, falseLabel));
+        s.addInstr(BEQInstr.create(build(actualCondition, s), BooleanLiteral.FALSE, falseLabel));
 
         boolean thenNull = false;
         boolean elseNull = false;
@@ -2532,7 +2532,7 @@ public class IRBuilder {
             l = s.getNewLabel();
             Variable flag = s.getNewTemporaryVariable();
             s.addInstr(new IsTrueInstr(flag, readerValue));
-            s.addInstr(new BEQInstr(flag, opName.equals("||") ? BooleanLiteral.TRUE : BooleanLiteral.FALSE, l));
+            s.addInstr(BEQInstr.create(flag, opName.equals("||") ? BooleanLiteral.TRUE : BooleanLiteral.FALSE, l));
 
             // compute value and set it
             Operand  v2 = build(opAsgnNode.getValueNode(), s);
@@ -2569,7 +2569,7 @@ public class IRBuilder {
         Variable result = getValueInTemporaryVariable(s, v1);
         Variable f = s.getNewTemporaryVariable();
         s.addInstr(new IsTrueInstr(f, v1));
-        s.addInstr(new BEQInstr(f, BooleanLiteral.FALSE, l));
+        s.addInstr(BEQInstr.create(f, BooleanLiteral.FALSE, l));
         Operand v2 = build(andNode.getSecondNode(), s);  // This does the assignment!
         s.addInstr(new CopyInstr(result, v2));
         s.addInstr(new LabelInstr(l));
@@ -2599,7 +2599,7 @@ public class IRBuilder {
             l2 = s.getNewLabel();
             v1 = buildGetDefinitionBase(orNode.getFirstNode(), s);
             s.addInstr(new CopyInstr(flag, v1));
-            s.addInstr(new BEQInstr(flag, Nil.NIL, l2)); // if v1 is undefined, go to v2's computation
+            s.addInstr(BEQInstr.create(flag, Nil.NIL, l2)); // if v1 is undefined, go to v2's computation
         }
         v1 = build(orNode.getFirstNode(), s); // build of 'x'
         Variable result = getValueInTemporaryVariable(s, v1);
@@ -2607,7 +2607,7 @@ public class IRBuilder {
         if (needsDefnCheck) {
             s.addInstr(new LabelInstr(l2));
         }
-        s.addInstr(new BEQInstr(flag, BooleanLiteral.TRUE, l1));  // if v1 is defined and true, we are done! 
+        s.addInstr(BEQInstr.create(flag, BooleanLiteral.TRUE, l1));  // if v1 is defined and true, we are done! 
         Operand v2 = build(orNode.getSecondNode(), s); // This is an AST node that sets x = y, so nothing special to do here.
         s.addInstr(new CopyInstr(result, v2));
         s.addInstr(new LabelInstr(l1));
@@ -2676,7 +2676,7 @@ public class IRBuilder {
         List<Operand> argList = setupCallArgs(opElementAsgnNode.getArgsNode(), s);
         s.addInstr(CallInstr.create(elt, new MethAddr("[]"), array, argList.toArray(new Operand[argList.size()]), null));
         s.addInstr(new IsTrueInstr(flag, elt));
-        s.addInstr(new BEQInstr(flag, BooleanLiteral.TRUE, l));
+        s.addInstr(BEQInstr.create(flag, BooleanLiteral.TRUE, l));
         Operand value = build(opElementAsgnNode.getValueNode(), s);
         argList.add(value);
         s.addInstr(CallInstr.create(elt, new MethAddr("[]="), array, argList.toArray(new Operand[argList.size()]), null));
@@ -2694,7 +2694,7 @@ public class IRBuilder {
         List<Operand> argList = setupCallArgs(opElementAsgnNode.getArgsNode(), s);
         s.addInstr(CallInstr.create(elt, new MethAddr("[]"), array, argList.toArray(new Operand[argList.size()]), null));
         s.addInstr(new IsTrueInstr(flag, elt));
-        s.addInstr(new BEQInstr(flag, BooleanLiteral.FALSE, l));
+        s.addInstr(BEQInstr.create(flag, BooleanLiteral.FALSE, l));
         Operand value = build(opElementAsgnNode.getValueNode(), s);
         argList.add(value);
         s.addInstr(CallInstr.create(elt, new MethAddr("[]="), array, argList.toArray(new Operand[argList.size()]), null));
@@ -2749,7 +2749,7 @@ public class IRBuilder {
             Label    l   = s.getNewLabel();
             Operand  v1  = build(orNode.getFirstNode(), s);
             Variable ret = getValueInTemporaryVariable(s, v1);
-            s.addInstr(new BEQInstr(v1, BooleanLiteral.TRUE, l));
+            s.addInstr(BEQInstr.create(v1, BooleanLiteral.TRUE, l));
             Operand  v2  = build(orNode.getSecondNode(), s);
             s.addInstr(new CopyInstr(ret, v2));
             s.addInstr(new LabelInstr(l));
@@ -2871,7 +2871,7 @@ public class IRBuilder {
     private void outputExceptionCheck(IRExecutionScope s, Operand excType, Operand excObj, Label caughtLabel) {
         Variable eqqResult = s.getNewTemporaryVariable();
         s.addInstr(new RescueEQQInstr(eqqResult, excType, excObj));
-        s.addInstr(new BEQInstr(eqqResult, BooleanLiteral.TRUE, caughtLabel));
+        s.addInstr(BEQInstr.create(eqqResult, BooleanLiteral.TRUE, caughtLabel));
     }
 
     private void buildRescueBodyInternal(IRExecutionScope s, Node node, Variable rv, Label endLabel) {
@@ -3114,7 +3114,7 @@ public class IRBuilder {
             s.addInstr(new LabelInstr(loop.loopStartLabel));
             if (isLoopHeadCondition) {
                 Operand cv = build(conditionNode, s);
-                s.addInstr(new BEQInstr(cv, isWhile ? BooleanLiteral.FALSE : BooleanLiteral.TRUE, setupResultLabel));
+                s.addInstr(BEQInstr.create(cv, isWhile ? BooleanLiteral.FALSE : BooleanLiteral.TRUE, setupResultLabel));
             }
 
             // Redo jumps here 
@@ -3132,7 +3132,7 @@ public class IRBuilder {
                 s.addInstr(new JumpInstr(loop.loopStartLabel));
             } else {
                 Operand cv = build(conditionNode, s);
-                s.addInstr(new BEQInstr(cv, isWhile ? BooleanLiteral.TRUE : BooleanLiteral.FALSE, loop.iterStartLabel));
+                s.addInstr(BEQInstr.create(cv, isWhile ? BooleanLiteral.TRUE : BooleanLiteral.FALSE, loop.iterStartLabel));
             }
 
             // Loop result -- nil always

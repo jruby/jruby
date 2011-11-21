@@ -34,11 +34,4 @@ public class ReceiveExceptionInstr extends Instr implements ResultInstr {
     public Instr cloneForInlining(InlinerInfo ii) {
         return new ReceiveExceptionInstr(ii.getRenamedVariable(result));
     }
-
-    @Override
-    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
-        result.store(context, self, temp, exception);
-        
-        return null;
-    }
 }

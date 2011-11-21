@@ -114,7 +114,7 @@ public class JRubyImplCallInstr extends CallInstr {
     }
 
     @Override
-    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
+    public Object interpret(ThreadContext context, IRubyObject self, Object[] temp, Block block) {
         Ruby runtime = context.getRuntime();        
         String name;
         Object receiver;
@@ -214,7 +214,7 @@ public class JRubyImplCallInstr extends CallInstr {
                 assert false: "Unknown JRuby impl called";
         }
 
-        if (!hasUnusedResult()) getResult().store(context, self, temp, rVal);
+        if (!hasUnusedResult()) getResult().store(context, temp, rVal);
 
         return null;
     }

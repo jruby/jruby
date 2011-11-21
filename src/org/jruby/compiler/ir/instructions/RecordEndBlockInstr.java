@@ -31,7 +31,7 @@ public class RecordEndBlockInstr extends Instr {
     }
 
     @Override
-    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
+    public Object interpret(ThreadContext context, IRubyObject self, Object[] temp, Block block) {
         declaringScope.getTopLevelScope().recordEndBlock(endBlockClosure);
         return null;
     }

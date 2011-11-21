@@ -40,12 +40,4 @@ public class ReceiveClosureInstr extends Instr implements ResultInstr {
 		  // operand type that converts the static code block to a proc which is a closure.
         return new CopyInstr(ii.getRenamedVariable(result), ii.getCallClosure());
     }
-
-    @Interp
-    @Override
-    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
-        Ruby  runtime = context.getRuntime();
-        result.store(context, self, temp, block == Block.NULL_BLOCK ? runtime.getNil() : runtime.newProc(Type.PROC, block));
-        return null;
-    }
 }

@@ -58,10 +58,10 @@ public class NotInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
+    public Object interpret(ThreadContext context, IRubyObject self, Object[] temp, Block block) {
         boolean not = !((IRubyObject) arg.retrieve(context, self, temp)).isTrue();
 
-        result.store(context, self, temp, context.getRuntime().newBoolean(not));
+        result.store(context, temp, context.getRuntime().newBoolean(not));
         return null;
     }
 }

@@ -45,7 +45,7 @@ public class SuperInstr extends CallInstr {
     }
 
     @Override
-    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] frameArgs, Block aBlock, Object exception, Object[] temp) {
+    public Object interpret(ThreadContext context, IRubyObject self, Object[] temp, Block aBlock) {
         // FIXME: Receiver is not being used...should we be retrieving it?
         IRubyObject receiver = (IRubyObject)getReceiver().retrieve(context, self, temp);
         IRubyObject[] args = prepareArguments(context, self, getCallArgs(), temp);
@@ -63,7 +63,7 @@ public class SuperInstr extends CallInstr {
         Object rVal = method.isUndefined() ? RuntimeHelpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, args, block)
                                            : method.call(context, self, superClass, methodName, args, block);
 
-        if (!hasUnusedResult()) getResult().store(context, self, temp, rVal);
+        if (!hasUnusedResult()) getResult().store(context, temp, rVal);
 
         return null;
     }

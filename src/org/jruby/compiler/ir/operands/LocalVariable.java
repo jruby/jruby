@@ -72,7 +72,7 @@ public class LocalVariable extends Variable {
     }
 
     @Override
-    public Object store(ThreadContext context, IRubyObject self, Object[] temp, Object value) {
+    public Object store(ThreadContext context, Object[] temp, Object value) {
         return context.getCurrentScope().setValue((IRubyObject) value, offset, scopeDepth);
     }
 

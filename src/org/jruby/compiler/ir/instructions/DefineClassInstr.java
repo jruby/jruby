@@ -80,7 +80,7 @@ public class DefineClassInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
+    public Object interpret(ThreadContext context, IRubyObject self, Object[] temp, Block block) {
         Object rubyContainer = container.retrieve(context, self, temp);
         
         if (!(rubyContainer instanceof RubyModule)) throw context.getRuntime().newTypeError("no outer class/module");
@@ -94,7 +94,7 @@ public class DefineClassInstr extends Instr implements ResultInstr {
         Object v = method.call(context, newRubyClass, newRubyClass, "", new IRubyObject[]{}, block);
 
         // Result from interpreting the body
-        result.store(context, self, temp, v);
+        result.store(context, temp, v);
         return null;
     }
 }

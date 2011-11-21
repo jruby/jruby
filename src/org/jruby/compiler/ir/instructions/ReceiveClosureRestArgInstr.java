@@ -51,21 +51,5 @@ public class ReceiveClosureRestArgInstr extends Instr implements ResultInstr {
         throw new RuntimeException("Not implemented yet!");
     }
 
-    private IRubyObject[] NO_PARAMS = new IRubyObject[0];    
-
-    @Interp
-    @Override
-    public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
-        IRubyObject[] restArg;
-        int available = args.length - argIndex;
-        if (available <= 0) {
-           restArg = NO_PARAMS;
-        } else {
-           restArg = new IRubyObject[available];
-           System.arraycopy(args, argIndex, restArg, 0, available);
-        }
-        
-        result.store(context, self, temp, context.getRuntime().newArray(restArg));
-        return null;
-    }
+    public IRubyObject[] NO_PARAMS = new IRubyObject[0];    
 }
