@@ -16,6 +16,7 @@ import org.jruby.compiler.ir.instructions.CallBase;
 import org.jruby.compiler.ir.instructions.CopyInstr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
+import org.jruby.compiler.ir.instructions.ReceiveSelfInstruction;
 import org.jruby.compiler.ir.instructions.ResultInstr;
 import org.jruby.compiler.ir.instructions.SuperInstr;
 import org.jruby.compiler.ir.operands.Label;
@@ -522,10 +523,6 @@ public abstract class IRExecutionScope extends IRScopeImpl {
             throw e;
         }
 
-        // Set up a bb array that maps labels to targets -- just to make sure old code continues to work! 
-        // ENEBO: Currently unused
-        // setupFallThruMap();
-
         // Set up IPCs
         HashMap<Label, Integer> labelIPCMap = new HashMap<Label, Integer>();
         List<Label> labelsToFixup = new ArrayList<Label>();
@@ -535,8 +532,10 @@ public abstract class IRExecutionScope extends IRScopeImpl {
             labelIPCMap.put(b.getLabel(), ipc);
             labelsToFixup.add(b.getLabel());
             for (Instr i : b.getInstrs()) {
-                newInstrs.add(i);
-                ipc++;
+                if (!(i instanceof ReceiveSelfInstruction)) {
+                    newInstrs.add(i);
+                    ipc++;
+                }
             }
         }
 
