@@ -376,4 +376,9 @@ public class UndefinedValue extends Operand implements IRubyObject {
 
     public Object getVariable(int index) { throw undefinedOperation(); }
     public void setVariable(int index, Object value) { throw undefinedOperation(); }
+
+    @Override
+    public String toString() {
+        return "%undefined";
+    }
 }
