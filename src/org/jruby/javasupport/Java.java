@@ -169,9 +169,6 @@ public class Java implements Library {
         
         // add some base Java classes everyone will need
         runtime.getJavaSupport().setObjectJavaClass(JavaClass.get(runtime, Object.class));
-        
-        // finally, set JavaSupport.isEnabled to true
-        runtime.getJavaSupport().setActive(true);
 
         return javaModule;
     }

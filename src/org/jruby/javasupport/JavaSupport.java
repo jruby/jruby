@@ -82,8 +82,6 @@ public class JavaSupport {
         }
     };
     
-    private boolean active;
-    
     private final ProxyCache proxyCache;
     private static final Constructor<? extends ProxyCache> PROXY_CACHE_CONSTRUCTOR;
     
@@ -104,9 +102,6 @@ public class JavaSupport {
         }
         PROXY_CACHE_CONSTRUCTOR = constructor;
     }
-    
-    // FIXME: needs to be rethought
-    private final Map matchCache = Collections.synchronizedMap(new HashMap(128));
 
     private RubyModule javaModule;
     private RubyModule javaUtilitiesModule;
@@ -138,18 +133,6 @@ public class JavaSupport {
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
-    }
-    
-    final Map getMatchCache() {
-        return matchCache;
-    }
-    
-    public boolean isActive() {
-        return active;
-    }
-    
-    public void setActive(boolean active) {
-        this.active = active;
     }
     
     public Class loadJavaClass(String className) throws ClassNotFoundException {
