@@ -175,7 +175,7 @@ public class RubyObject extends RubyBasicObject {
      *
      * Will generally return a value from org.jruby.runtime.ClassIndex
      *
-     * @see org.jruby.runtime.ClassInde
+     * @see org.jruby.runtime.ClassIndex
      */
     @Override
     public int getNativeTypeIndex() {
