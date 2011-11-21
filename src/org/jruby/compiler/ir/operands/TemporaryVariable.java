@@ -9,7 +9,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class TemporaryVariable extends Variable {
     final int offset;
-	 final String name;
+	 String name;
 
     public TemporaryVariable(int offset) {
         this.offset = offset;

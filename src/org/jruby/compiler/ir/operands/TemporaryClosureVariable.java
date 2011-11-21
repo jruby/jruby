@@ -10,6 +10,7 @@ public class TemporaryClosureVariable extends TemporaryVariable {
         super(offset);
         this.closureId = closureId;
         this.prefix =  "%cl_" + closureId + "_";
+		  this.name = getPrefix() + offset;
     }
 
     @Override
