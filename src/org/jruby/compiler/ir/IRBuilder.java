@@ -1798,7 +1798,7 @@ public class IRBuilder {
         // (b) compiler to bytecode will anyway generate this and this is explicit.
         // For now, we are going explicit instruction route.  But later, perhaps can make this implicit in the method setup preamble?  
         // FIXME: I added getSelf() just so we won't NPE since this is a callinstr. Can we make this something other than callinstr?
-        s.addInstr(new CheckArityInstr(new Fixnum((long)required), new Fixnum((long)opt), new Fixnum((long)rest)));
+        s.addInstr(new CheckArityInstr(required, opt, rest));
 
         // self = args[0]
         s.addInstr(new ReceiveSelfInstruction(getSelf(s)));

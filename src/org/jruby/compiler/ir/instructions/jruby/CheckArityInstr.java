@@ -2,7 +2,6 @@ package org.jruby.compiler.ir.instructions.jruby;
 
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.Instr;
-import org.jruby.compiler.ir.operands.Fixnum;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.runtime.Arity;
@@ -11,35 +10,37 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class CheckArityInstr extends Instr {
-    private final Fixnum required;
-    private final Fixnum opt;
-    private final Fixnum rest;
+    private final int required;
+    private final int opt;
+    private final int rest;
     
-    public CheckArityInstr(Fixnum required, Fixnum opt, Fixnum rest) {
+    public CheckArityInstr(int required, int opt, int rest) {
         super(Operation.CHECK_ARITY);
         
         this.required = required;
         this.opt = opt;
         this.rest = rest;
     }
-    
+
     @Override
     public Operand[] getOperands() {
-        return new Operand[] { required, opt, rest };
+        return EMPTY_OPERANDS;
     }
-    
+
+    @Override
+    public String toString() {
+        return super.toString() + "(" + required + ", " + opt + ", " + rest + ")";
+    }
+
     /**
      * This will either end up removing this instruction since we know arity
      * at a callsite or we will add a ArgumentError since we know arity is wrong.
      */
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        int requiredInt = required.value.intValue();
-        int optInt = opt.value.intValue();
-        int restInt = rest.value.intValue();
         int numArgs = ii.getArgsCount();
         
-        if ((numArgs < requiredInt) || ((restInt == -1) && (numArgs > (requiredInt + optInt)))) {
+        if ((numArgs < required) || ((rest == -1) && (numArgs > (required + opt)))) {
             return new RaiseArgumentErrorInstr(required, opt, rest, rest);
         }
 
@@ -48,13 +49,10 @@ public class CheckArityInstr extends Instr {
 
     @Override
     public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
-        int requiredInt = required.value.intValue();
-        int optInt = opt.value.intValue();
-        int restInt = rest.value.intValue();
         int numArgs = args.length;
         
-        if ((numArgs < requiredInt) || ((restInt == -1) && (numArgs > (requiredInt + optInt)))) {
-            Arity.raiseArgumentError(context.getRuntime(), numArgs, requiredInt, requiredInt + optInt);
+        if ((numArgs < required) || ((rest == -1) && (numArgs > (required + opt)))) {
+            Arity.raiseArgumentError(context.getRuntime(), numArgs, required, required + opt);
         }
 
         return null;
