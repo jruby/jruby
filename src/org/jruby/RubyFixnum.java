@@ -104,6 +104,15 @@ public class RubyFixnum extends RubyInteger {
         return x;
     }
     
+    private static IRubyObject bitCoerce(IRubyObject x) {
+        do {
+            if (x instanceof RubyFloat)
+                throw x.getRuntime().newTypeError("can't convert Float to Integer");
+            x = x.convertToInteger("to_int");
+        } while (!(x instanceof RubyFixnum) && !(x instanceof RubyBignum));
+        return x;
+    }
+    
     public RubyFixnum(Ruby runtime) {
         this(runtime, 0);
     }
@@ -965,7 +974,7 @@ public class RubyFixnum extends RubyInteger {
     /** fix_and
      * 
      */
-    @JRubyMethod(name = "&")
+    @JRubyMethod(name = "&", compat = CompatVersion.RUBY1_8)
     public IRubyObject op_and(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum || (other = fixCoerce(other)) instanceof RubyFixnum) {
             return newFixnum(context.getRuntime(), value & ((RubyFixnum) other).value);
@@ -977,10 +986,18 @@ public class RubyFixnum extends RubyInteger {
         return newFixnum(context.getRuntime(), value & other);
     }
 
+    @JRubyMethod(name = "&", compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_and19(ThreadContext context, IRubyObject other) {
+        if (!((other = bitCoerce(other)) instanceof RubyFixnum)) {
+            return ((RubyBignum) other).op_and(context, this);
+        }
+        return op_and(context, other);
+    }
+    
     /** fix_or 
      * 
      */
-    @JRubyMethod(name = "|")
+    @JRubyMethod(name = "|", compat = CompatVersion.RUBY1_8)
     public IRubyObject op_or(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum || (other = fixCoerce(other)) instanceof RubyFixnum) {
             return newFixnum(context.getRuntime(), value | ((RubyFixnum) other).value);
@@ -991,11 +1008,19 @@ public class RubyFixnum extends RubyInteger {
     public IRubyObject op_or(ThreadContext context, long other) {
         return newFixnum(context.getRuntime(), value | other);
     }
-
+    
+    @JRubyMethod(name = "|", compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_or19(ThreadContext context, IRubyObject other) {
+        if (!((other = bitCoerce(other)) instanceof RubyFixnum)) {
+            return ((RubyBignum) other).op_or(context, this);
+        }
+        return op_or(context, other);
+    }
+    
     /** fix_xor 
      * 
      */
-    @JRubyMethod(name = "^")
+    @JRubyMethod(name = "^", compat = CompatVersion.RUBY1_8)
     public IRubyObject op_xor(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum || (other = fixCoerce(other)) instanceof RubyFixnum) {
             return newFixnum(context.getRuntime(), value ^ ((RubyFixnum) other).value);
@@ -1007,6 +1032,14 @@ public class RubyFixnum extends RubyInteger {
         return newFixnum(context.getRuntime(), value ^ other);
     }
 
+    @JRubyMethod(name = "^", compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_xor19(ThreadContext context, IRubyObject other) {
+        if (!((other = bitCoerce(other)) instanceof RubyFixnum)) {
+            return ((RubyBignum) other).op_xor(context, this);
+        }
+        return op_xor(context, other);
+    }
+    
     /** fix_aref 
      * 
      */
