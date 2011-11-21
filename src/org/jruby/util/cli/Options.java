@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jruby.runtime.Constants;
 import org.jruby.util.SafePropertyAccessor;
-import static org.jruby.util.cli.Options.Category.*;
+import static org.jruby.util.cli.Category.*;
 
 /**
  * Options defines all configuration settings for JRuby in a consistent form.
@@ -131,107 +131,5 @@ public class Options {
         Option<Integer> option = new IntegerOption(category, name, defval, description);
         _loadedOptions.add(option);
         return option;
-    }
-    
-    /**
-     * Represents a single option to JRuby, with a category, name, value type,
-     * options, default value, and description.
-     * 
-     * This type should be subclassed for specific types of values.
-     * 
-     * @param <T> the type of value associated with the option
-     */
-    public static abstract class Option<T> {
-        public Option(Category category, String name, Class<T> type, T[] options, T defval, String description) {
-            this.category = category;
-            this.name = name;
-            this.type = type;
-            this.options = options == null ? new String[]{type.getSimpleName()} : options;
-            this.defval = defval;
-            this.description = description;
-        }
-        
-        @Override
-        public String toString() {
-            return "jruby." + name;
-        }
-        
-        public abstract T load();
-        
-        public final Category category;
-        public final String name;
-        public final Class type;
-        public final Object[] options;
-        public final T defval;
-        public final String description;
-    }
-    
-    /**
-     * Representation of available option categories, with a short name to use
-     * in printing descriptions.
-     */
-    public enum Category {
-        COMPILER("compiler"),
-        INVOKEDYNAMIC("invokedynamic"),
-        JIT("jit"),
-        IR("intermediate representation"),
-        NATIVE("native"),
-        THREADPOOL("thread pooling"),
-        MISCELLANEOUS("miscellaneous"),
-        DEBUG("debugging and logging"),
-        JAVA_INTEGRATION("java integration");
-        
-        private final String desc;
-        
-        Category(String desc) {
-            this.desc = desc;
-        }
-        
-        public String desc() {
-            return desc;
-        }
-        
-        public String toString() {
-            return desc;
-        }
-    }
-    
-    /**
-     * A String-based Option.
-     */
-    public static class StringOption extends Option<String> {
-        public StringOption(Category category, String name, String[] options, String defval, String description) {
-            super(category, name, String.class, options, defval, description);
-        }
-        
-        public String load() {
-            return SafePropertyAccessor.getProperty("jruby." + name, defval);
-        }
-    }
-    
-    /**
-     * A Boolean-based Option.
-     */
-    public static class BooleanOption extends Option<Boolean> {
-        public BooleanOption(Category category, String name, Boolean defval, String description) {
-            super(category, name, Boolean.class, new Boolean[] {true, false}, defval, description);
-        }
-        
-        public Boolean load() {
-            return SafePropertyAccessor.getBoolean("jruby." + name, defval);
-        }
-    }
-    
-    /**
-     * An Integer-based Option.
-     */
-    public static class IntegerOption extends Option<Integer> {
-        public IntegerOption(Category category, String name, Integer defval, String description) {
-            super(category, name, Integer.class, null, defval, description);
-        }
-        
-        public Integer load() {
-            return SafePropertyAccessor.getInt("jruby." + name, defval);
-        }
     }
 }
