@@ -40,6 +40,16 @@ import org.jruby.util.JRubyFile;
 import org.jruby.util.KCode;
 import org.jruby.util.SafePropertyAccessor;
 
+/**
+ * Encapsulated logic for processing JRuby's command-line arguments.
+ * 
+ * This class holds the processing logic for JRuby's non-JVM command-line arguments.
+ * All standard Ruby options are processed here, as well as nonstandard JRuby-
+ * specific options.
+ * 
+ * Options passed directly to the JVM are processed separately, by either a launch
+ * script or by a native executable.
+ */
 public class ArgumentProcessor {
     private final class Argument {
         public final String originalValue;

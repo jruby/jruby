@@ -6,6 +6,10 @@ import org.jruby.CompatVersion;
 import org.jruby.runtime.Constants;
 import org.jruby.util.SafePropertyAccessor;
 
+/**
+ * Utility methods to generate the command-line output strings for help,
+ * extended options, properties, version, and copyright strings.
+ */
 public class OutputStrings {
     public static String getBasicUsageHelp() {
         StringBuilder sb = new StringBuilder();

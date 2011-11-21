@@ -1306,6 +1306,15 @@
 
   <target name="apidocs" depends="prepare"
           description="Creates the Java API docs">
+    <!-- Run the package_docs.rb script to generate package.html files -->
+    <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true" dir="${basedir}">
+      <classpath refid="jruby.execute.classpath"/>
+      
+      <sysproperty key="jruby.home" value="${basedir}"/>
+      
+      <arg line="tool/package_docs.rb"/>
+    </java>
+    
     <javadoc destdir="${api.docs.dir}" author="true" version="true" use="true"
              windowtitle="JRuby API" source="${javac.version}" useexternalfile="true"
              encoding="UTF-8" maxmemory="256m">
