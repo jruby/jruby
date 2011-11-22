@@ -62,15 +62,10 @@ public class ToAryInstr extends Instr implements ResultInstr {
         Object receiver = array.retrieve(context, self, temp);
 
         // Don't call to_ary if we we have an array already and we are asked not to run to_ary on arrays
-        Object toAryValue;
         if (dontToAryArrays.isTrue() && receiver instanceof RubyArray) {
-            toAryValue = receiver;
+            return receiver;
         } else {
-            toAryValue = RuntimeHelpers.aryToAry((IRubyObject) receiver);
+            return RuntimeHelpers.aryToAry((IRubyObject) receiver);
         }
-        
-        result.store(context, temp, toAryValue);
-
-        return null;        
     }
 }

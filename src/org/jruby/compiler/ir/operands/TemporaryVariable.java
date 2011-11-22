@@ -62,11 +62,4 @@ public class TemporaryVariable extends Variable {
     public Object retrieve(ThreadContext context, IRubyObject self, Object[] temp) {
         return temp[offset];
     }
-
-    @Override
-    public Object store(ThreadContext context, Object[] temp, Object value) {
-        Object old = temp[offset];
-        temp[offset] = value;
-        return old;
-    }
 }

@@ -64,14 +64,10 @@ public class Match3Instr extends Instr implements ResultInstr {
         RubyRegexp regexp = (RubyRegexp) receiver.retrieve(context, self, temp);
         IRubyObject argValue = (IRubyObject) arg.retrieve(context, self, temp);
         
-        Object resultValue;
         if (argValue instanceof RubyString) {
-            resultValue = regexp.op_match(context, argValue);
+            return regexp.op_match(context, argValue);
         } else {
-            resultValue = argValue.callMethod(context, "=~", regexp);
+            return argValue.callMethod(context, "=~", regexp);
         }
-        
-        result.store(context, temp, resultValue);                
-        return null;                
     }
 }

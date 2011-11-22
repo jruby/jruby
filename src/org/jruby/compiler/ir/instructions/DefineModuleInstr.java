@@ -67,8 +67,6 @@ public class DefineModuleInstr extends Instr implements ResultInstr {
         DynamicMethod method = new InterpretedIRMethod(newIRModule.getRootMethod(), Visibility.PUBLIC, newRubyModule);
 
         // SSS FIXME: Rather than pass the block implicitly, should we add %block as another operand to DefineClass, DefineModule instrs?
-        Object value = method.call(context, newRubyModule, newRubyModule, "", new IRubyObject[]{}, block);
-        result.store(context, temp, value);
-        return null;
+        return method.call(context, newRubyModule, newRubyModule, "", new IRubyObject[]{}, block);
     }
 }

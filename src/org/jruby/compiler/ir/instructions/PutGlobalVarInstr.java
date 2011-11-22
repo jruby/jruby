@@ -20,7 +20,9 @@ public class PutGlobalVarInstr extends PutInstr {
 
     @Override
     public Object interpret(ThreadContext context, IRubyObject self, Object[] temp, Block block) {
-        getTarget().store(context, temp, getValue().retrieve(context, self, temp));
+        GlobalVariable target = (GlobalVariable)getTarget();
+        IRubyObject    value  = (IRubyObject) getValue().retrieve(context, self, temp);
+        context.getRuntime().getGlobalVariables().set(target.getName(), value);
         return null;
     }
 }

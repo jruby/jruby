@@ -71,11 +71,6 @@ public class LocalVariable extends Variable {
         return value;
     }
 
-    @Override
-    public Object store(ThreadContext context, Object[] temp, Object value) {
-        return context.getCurrentScope().setValue((IRubyObject) value, offset, scopeDepth);
-    }
-
     // SSS FIXME: Better name than this?
     public LocalVariable cloneForDepth(int n) {
         return new LocalVariable(name, n, offset);

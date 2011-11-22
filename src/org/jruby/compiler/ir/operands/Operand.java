@@ -68,9 +68,4 @@ public abstract class Operand {
     public Object retrieve(ThreadContext context, IRubyObject self, Object[] temp) {
         throw new RuntimeException(this.getClass().getSimpleName() + " should not be directly retrieved.");
     }
-
-    @Interp
-    public Object store(ThreadContext context, Object[] temp, Object value) {
-        throw new RuntimeException(this.getClass().getSimpleName() + " should not be directly stored.");
-    }
 }

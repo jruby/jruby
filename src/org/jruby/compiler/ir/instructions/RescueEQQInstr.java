@@ -66,7 +66,7 @@ public class RescueEQQInstr extends Instr implements ResultInstr {
         IRubyObject value = (IRubyObject) arg2.retrieve(context, self, temp);
 
         if (value == UndefinedValue.UNDEFINED) {
-            result.store(context, temp, receiver);
+				return receiver;
         } else if (receiver instanceof RubyArray) {
             RubyArray testVals = (RubyArray)receiver;
             for (int i = 0, n = testVals.getLength(); i < n; i++) {
@@ -75,19 +75,14 @@ public class RescueEQQInstr extends Instr implements ResultInstr {
                    throw context.getRuntime().newTypeError("class or module required for rescue clause. Found: " + excType);
                 }
                 IRubyObject eqqVal = excType.callMethod(context, "===", value);
-                if (eqqVal.isTrue()) {
-                    result.store(context, temp, eqqVal);
-                    return null;
-                }
+                if (eqqVal.isTrue()) return eqqVal;
             }
-            result.store(context, temp, context.getRuntime().newBoolean(false));
+            return context.getRuntime().newBoolean(false);
         } else {
             if (!(receiver instanceof RubyModule)) {
                throw context.getRuntime().newTypeError("class or module required for rescue clause. Found: " + receiver);
             }
-            result.store(context, temp, receiver.callMethod(context, "===", value));
+            return receiver.callMethod(context, "===", value);
         }
-        
-        return null;
     }
 }

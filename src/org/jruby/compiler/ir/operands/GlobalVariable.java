@@ -36,9 +36,8 @@ public class GlobalVariable extends Operand {
     }
 
     @Interp
-    @Override
-    public Object store(ThreadContext context, Object[] temp, Object value) {
-        return context.getRuntime().getGlobalVariables().set(getName(), (IRubyObject) value);
+    public void store(ThreadContext context, Object value) {
+        context.getRuntime().getGlobalVariables().set(getName(), (IRubyObject) value);
     }
 
     @Override

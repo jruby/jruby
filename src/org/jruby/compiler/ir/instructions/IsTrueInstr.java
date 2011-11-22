@@ -68,7 +68,6 @@ public class IsTrueInstr extends Instr implements ResultInstr {
     @Override
     public Object interpret(ThreadContext context, IRubyObject self, Object[] temp, Block block) {
         // ENEBO: This seems like a lot of extra work...
-        result.store(context, temp, context.getRuntime().newBoolean(((IRubyObject) value.retrieve(context, self, temp)).isTrue()));
-        return null;
+        return context.getRuntime().newBoolean(((IRubyObject) value.retrieve(context, self, temp)).isTrue());
     }
 }

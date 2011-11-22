@@ -75,9 +75,7 @@ public class DefineMetaClassInstr extends Instr implements ResultInstr {
             dummyMetaClass.getStaticScope().setModule(singletonClass);
             DynamicMethod method = new InterpretedIRMethod(dummyMetaClass.getRootMethod(), Visibility.PUBLIC, singletonClass);
             // SSS FIXME: Rather than pass the block implicitly, should we add %block as another operand to DefineMetaClass instr?
-            Object v = method.call(context, singletonClass, singletonClass, "", new IRubyObject[]{}, block);
-            result.store(context, temp, v);
-            return null;
+            return method.call(context, singletonClass, singletonClass, "", new IRubyObject[]{}, block);
         }
     }
 }

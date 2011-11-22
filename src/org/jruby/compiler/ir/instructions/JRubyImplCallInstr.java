@@ -214,8 +214,6 @@ public class JRubyImplCallInstr extends CallInstr {
                 assert false: "Unknown JRuby impl called";
         }
 
-        if (!hasUnusedResult()) getResult().store(context, temp, rVal);
-
-        return null;
+        return hasUnusedResult() ? null : rVal;
     }
 }

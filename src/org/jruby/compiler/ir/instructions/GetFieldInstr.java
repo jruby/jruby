@@ -22,7 +22,7 @@ public class GetFieldInstr extends GetInstr {
     }
 
     @Override
-    public Label interpret(ThreadContext context, IRubyObject self, Object[] temp, Block block) {
+    public Object interpret(ThreadContext context, IRubyObject self, Object[] temp, Block block) {
         IRubyObject object = (IRubyObject) getSource().retrieve(context, self, temp);
 
         // FIXME: Why getRealClass? Document
@@ -31,7 +31,6 @@ public class GetFieldInstr extends GetInstr {
         // FIXME: Should add this as a field for instruction
         VariableAccessor accessor = clazz.getVariableAccessorForRead(getRef());
         Object v = accessor == null ? null : accessor.get(object);
-        getResult().store(context, temp, v == null ? context.getRuntime().getNil() : v);
-        return null;
+        return v == null ? context.getRuntime().getNil() : v;
     }
 }

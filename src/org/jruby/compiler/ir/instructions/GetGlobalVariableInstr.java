@@ -19,8 +19,7 @@ public class GetGlobalVariableInstr extends GetInstr {
     }
 
     @Override
-    public Label interpret(ThreadContext context, IRubyObject self, Object[] temp, Block block) {
-        getResult().store(context, temp, getSource().retrieve(context, self, temp));
-        return null;
+    public Object interpret(ThreadContext context, IRubyObject self, Object[] temp, Block block) {
+        return getSource().retrieve(context, self, temp);
     }
 }

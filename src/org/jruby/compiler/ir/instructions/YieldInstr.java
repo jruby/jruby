@@ -54,15 +54,11 @@ public class YieldInstr extends Instr implements ResultInstr {
         Block b = (Block)blk;
         b.type = Block.Type.NORMAL;
         if (yieldArg == null) {
-            resultValue = b.yieldSpecific(context);
+            return b.yieldSpecific(context);
         } else {
             IRubyObject yieldVal = (IRubyObject)yieldArg.retrieve(context, self, temp);
-            resultValue = (unwrapArray && (yieldVal instanceof RubyArray)) ? b.yieldArray(context, yieldVal, null, null) : b.yield(context, yieldVal);
+            return (unwrapArray && (yieldVal instanceof RubyArray)) ? b.yieldArray(context, yieldVal, null, null) : b.yield(context, yieldVal);
         }
-        
-        result.store(context, temp, resultValue);
-        
-        return null;
     }
 
     @Override

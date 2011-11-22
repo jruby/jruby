@@ -70,9 +70,7 @@ public class SearchConstInstr extends Instr implements ResultInstr {
         }
 
         if (constant == null) constant = UndefinedValue.UNDEFINED;
-        
-        result.store(context, temp, constant);
 
-        return null;
+		  return constant;
     }
 }

@@ -63,9 +63,7 @@ public class SuperInstr extends CallInstr {
         Object rVal = method.isUndefined() ? RuntimeHelpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, args, block)
                                            : method.call(context, self, superClass, methodName, args, block);
 
-        if (!hasUnusedResult()) getResult().store(context, temp, rVal);
-
-        return null;
+        return hasUnusedResult() ? null : rVal;
     }
 
     protected static void checkSuperDisabledOrOutOfMethod(ThreadContext context, RubyModule frameClass, String methodName) {

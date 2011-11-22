@@ -10,9 +10,6 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- *
- */
 public class MatchInstr extends Instr implements ResultInstr {
     private Variable result;
     private Operand receiver;
@@ -52,7 +49,6 @@ public class MatchInstr extends Instr implements ResultInstr {
     @Override
     public Object interpret(ThreadContext context, IRubyObject self, Object[] temp, Block block) {
         RubyRegexp regexp = (RubyRegexp) receiver.retrieve(context, self, temp);
-        result.store(context, temp, regexp.op_match2(context));
-        return null;
+        return regexp.op_match2(context);
     }
 }

@@ -43,7 +43,6 @@ public class GetConstInstr extends GetInstr {
         if (constant == null) constant = module.getConstantFromConstMissing(getRef());
 
         //if (container == null) throw runtime.newNameError("unitialized constant " + scope.getName(), scope.getName());
-        getResult().store(context, temp, constant);
-        return null;
+        return constant;
     }
 }

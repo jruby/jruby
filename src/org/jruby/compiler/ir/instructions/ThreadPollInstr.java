@@ -25,10 +25,4 @@ public class ThreadPollInstr extends Instr {
     public boolean canRaiseException() {
         return false;
     }
-    
-    @Override
-    public Object interpret(ThreadContext context, IRubyObject self, Object[] temp, Block block) {
-        context.callThreadPoll();
-        return null;
-    }
 }
