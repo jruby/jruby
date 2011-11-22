@@ -972,7 +972,8 @@ public class RubyBigDecimal extends RubyNumeric {
         return (RubyNumeric)op_mul(context, value);
     }
 
-    @JRubyMethod(name = "divmod", required = 1)
+    @Override
+    @JRubyMethod(name = "divmod", required = 1, compat = CompatVersion.RUBY1_8)
     public IRubyObject divmod(ThreadContext context, IRubyObject other) {
         // TODO: full-precision divmod is 1000x slower than MRI!
         Ruby runtime = context.getRuntime();
@@ -1002,7 +1003,50 @@ public class RubyBigDecimal extends RubyNumeric {
                 new RubyBigDecimal(runtime, div),
                 new RubyBigDecimal(runtime, mod));
     }
+    
+    @Override
+    @JRubyMethod(name = "divmod", required = 1, compat = CompatVersion.RUBY1_9)
+    public IRubyObject divmod19(ThreadContext context, IRubyObject other) {
+        // TODO: full-precision divmod is 1000x slower than MRI!
+        Ruby runtime = context.getRuntime();
+        RubyBigDecimal val = getVpValue(other, false);
+        if (val == null) {
+            return callCoerced(context, "divmod", other, true);
+        }
+        if (isNaN() || val.isNaN() || (isInfinity() && val.isInfinity())) {
+            return RubyArray.newArray(runtime, newNaN(runtime), newNaN(runtime));
+        }
+        if (val.isZero()) {
+            throw context.getRuntime().newZeroDivisionError();
+        }
+        if (isInfinity()) {
+            int sign = (infinitySign == val.value.signum()) ? 1 : -1;
+            return RubyArray.newArray(runtime, newInfinity(runtime, sign), newNaN(runtime));
+        }
+        if (val.isInfinity()) {
+            return RubyArray.newArray(runtime, newZero(runtime, val.value.signum()), this);
+        }
+        if (isZero()) {
+            return RubyArray.newArray(runtime, newZero(runtime,
+                    value.signum()), newZero(runtime, value.signum()));
+        }
 
+        // Java and MRI definitions of divmod are different.
+        BigDecimal[] divmod = value.divideAndRemainder(val.value);
+
+        BigDecimal div = divmod[0];
+        BigDecimal mod = divmod[1];
+
+        if (mod.signum() * val.value.signum() < 0) {
+            div = div.subtract(BigDecimal.ONE);
+            mod = mod.add(val.value);
+        }
+
+        return RubyArray.newArray(runtime,
+                new RubyBigDecimal(runtime, div),
+                new RubyBigDecimal(runtime, mod));
+    }
+    
     @JRubyMethod(name = "exponent")
     public IRubyObject exponent() {
         return getRuntime().newFixnum(getExponent());
