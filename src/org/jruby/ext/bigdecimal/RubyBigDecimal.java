@@ -1611,16 +1611,17 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod
     public IRubyObject fix() {
-        return truncate(RubyFixnum.zero(getRuntime()));
+        IRubyObject[] ary = { RubyFixnum.zero(getRuntime()) };
+        return truncate(ary);
     }
 
-    @JRubyMethod
-    public IRubyObject truncate() {
-        return truncate(RubyFixnum.zero(getRuntime()));
-    }
-
-    @JRubyMethod
-    public IRubyObject truncate(IRubyObject arg) {
+    @JRubyMethod(name = "truncate", optional = 1, compat = CompatVersion.RUBY1_8)
+    public IRubyObject truncate(IRubyObject[] args) {
+        if (args.length == 0) {
+            IRubyObject[] ary = { RubyFixnum.zero(getRuntime()) };
+            return truncate(ary);
+        }
+        
         if (isNaN) {
             return newNaN(getRuntime());
         }
@@ -1628,7 +1629,7 @@ public class RubyBigDecimal extends RubyNumeric {
             return newInfinity(getRuntime(), infinitySign);
         }
 
-        int n = RubyNumeric.fix2int(arg);
+        int n = RubyNumeric.fix2int(args[0]);
         
         int precision = value.precision() - value.scale() + n;
         
@@ -1639,6 +1640,16 @@ public class RubyBigDecimal extends RubyNumeric {
             // TODO: proper sign
             return new RubyBigDecimal(getRuntime(), BigDecimal.ZERO);
         }
+    }
+
+    @JRubyMethod(name = "truncate", optional = 1, compat = CompatVersion.RUBY1_9)
+    public IRubyObject truncate19(IRubyObject[] args) {
+        if (args.length == 0) {
+            return ((RubyBigDecimal) truncate(args)).to_int19();
+        } else {
+            return truncate(args);
+        }
+            
     }
 
     @JRubyMethod(name = "zero?")

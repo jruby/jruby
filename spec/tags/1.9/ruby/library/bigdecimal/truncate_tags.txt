@@ -1,2 +1,0 @@
-fails:BigDecimal#truncate returns value of type Integer.
-fails:BigDecimal#truncate returns the same value if self is special value
