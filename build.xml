@@ -1314,6 +1314,7 @@
     <include name="bin/testrb"/>
     <include name="bin/ast*"/>
     <include name="bin/spec.bat"/>
+    <include name="bin/rake"/>
     <include name="bin/rake.bat"/>
   </patternset>
 
