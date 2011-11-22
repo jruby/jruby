@@ -716,6 +716,7 @@ public class JavaClass extends JavaObject {
         
         // flag the class as a Java class proxy.
         proxy.setJavaProxy(true);
+        proxy.getSingletonClass().setJavaProxy(true);
         
         // FIXME: bit of a kludge here (non-interface classes assigned to both
         // class and module fields). simplifies proxy extender code, will go away
@@ -1087,6 +1088,7 @@ public class JavaClass extends JavaObject {
         
         // flag the class as a Java class proxy.
         module.setJavaProxy(true);
+        module.getSingletonClass().setJavaProxy(true);
         
         this.proxyModule = module;
         applyProxyExtenders();
