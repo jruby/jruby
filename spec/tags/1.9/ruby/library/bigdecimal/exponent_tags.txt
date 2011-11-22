@@ -1,2 +1,0 @@
-fails:BigDecimal#** returns 0.0 if self is infinite and argument is negative
-fails:BigDecimal#** returns infinite if self is infinite and argument is positive

@@ -59,6 +59,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.Numeric;
 import org.jruby.util.SafeDoubleParser;
 
 /**
@@ -547,7 +548,7 @@ public class RubyBigDecimal extends RubyNumeric {
         return new RubyBigDecimal(runtime, res).setResult();
     }
     
-    @JRubyMethod(name = {"**", "power"}, required = 1)
+    @JRubyMethod(name = {"**", "power"}, required = 1, compat = CompatVersion.RUBY1_8)
     public IRubyObject op_pow(IRubyObject arg) {
         if (!(arg instanceof RubyFixnum)) {
             throw getRuntime().newTypeError("wrong argument type " + arg.getMetaClass() + " (expected Fixnum)");
@@ -558,6 +559,71 @@ public class RubyBigDecimal extends RubyNumeric {
         }
 
         int times = RubyNumeric.fix2int(arg.convertToInteger());
+
+        if (times < 0) {
+            if (isZero()) {
+                return newInfinity(getRuntime(), value.signum());
+            }
+
+            // Note: MRI has a very non-trivial way of calculating the precision,
+            // so we use very simple approximation here:
+            int precision = (-times + 4) * (getAllDigits().length() + 4);
+
+            return new RubyBigDecimal(getRuntime(),
+                    value.pow(times, new MathContext(precision, RoundingMode.HALF_UP)));
+        } else {
+            return new RubyBigDecimal(getRuntime(), value.pow(times));
+        }
+    }
+
+    @JRubyMethod(name = {"**", "power"}, required = 1, compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_pow19(IRubyObject exp) {
+        if (!(exp instanceof RubyFixnum)) {
+            throw getRuntime().newTypeError("wrong argument type " + exp.getMetaClass() + " (expected Fixnum)");
+        }
+        Ruby runtime = getRuntime();
+        ThreadContext context = runtime.getCurrentContext();
+
+        if (isNaN()) {
+            return newNaN(runtime);
+        }
+        if (isInfinity()) {
+            if (Numeric.f_negative_p(context, exp)) {
+                if (infinitySign < 0) {
+                    if (Numeric.f_integer_p(context, exp).isTrue()) {
+                        if (is_even(exp)) {
+                            /* (-Infinity) ** (-even_integer) -> +0 */
+                            return newZero(runtime, 1);
+                        } else {
+                            /* (-Infinity) ** (-odd_integer) -> -0 */
+                            return newZero(runtime, -1);
+                        }
+                    } else {
+                        /* (-Infinity) ** (-non_integer) -> -0 */
+                        return newZero(runtime, -1);
+                    }
+                } else {
+                    return newZero(runtime, 0);
+
+                }
+            } else {
+                if (infinitySign < 0) {
+                    if (Numeric.f_integer_p(context, exp).isTrue()) {
+                        if (is_even(exp)) {
+                            return newInfinity(runtime, 1);
+                        } else {
+                            return newInfinity(runtime, -1);
+                        }
+                    } else {
+                        throw runtime.newMathDomainError("a non-integral exponent for a negative base");
+                    }
+                } else {
+                    return newInfinity(runtime, 1);
+                }
+            }
+        }
+
+        int times = RubyNumeric.fix2int(exp.convertToInteger());
 
         if (times < 0) {
             if (isZero()) {
@@ -1695,5 +1761,15 @@ public class RubyBigDecimal extends RubyNumeric {
                 throw getRuntime().newFloatDomainError("Infinity");
             }
         }
+    }
+    
+    private boolean is_even(IRubyObject x) {
+        if (x instanceof RubyFixnum) {
+            return RubyNumeric.fix2long((RubyFixnum) x) % 2 == 0;
+        }
+        if (x instanceof RubyBignum) {
+            return RubyBignum.big2long((RubyBignum) x) % 2 == 0;
+        }
+        return false;
     }
 }// RubyBigdecimal
