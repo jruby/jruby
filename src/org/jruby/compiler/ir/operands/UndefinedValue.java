@@ -10,6 +10,7 @@ import org.jruby.RubyHash;
 import org.jruby.RubyInteger;
 import org.jruby.RubyString;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.builtin.InternalVariables;
@@ -34,7 +35,7 @@ public class UndefinedValue extends Operand implements IRubyObject {
     }
 
     @Override
-    public Object retrieve(ThreadContext context, IRubyObject self, Object[] temp) {
+    public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         return this;
     }
 

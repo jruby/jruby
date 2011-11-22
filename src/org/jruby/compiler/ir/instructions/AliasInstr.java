@@ -13,6 +13,7 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -51,15 +52,15 @@ public class AliasInstr extends Instr {
     }
 
     @Override
-    public Object interpret(ThreadContext context, IRubyObject self, Object[] temp, Block block) {
-        IRubyObject object = (IRubyObject) receiver.retrieve(context, self, temp);
+    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
+        IRubyObject object = (IRubyObject) receiver.retrieve(context, self, currDynScope, temp);
                 
         if (object == null || object instanceof RubyFixnum || object instanceof RubySymbol) {
             throw context.getRuntime().newTypeError("no class to make alias");
         }
 
-        String newNameString = newName.retrieve(context, self, temp).toString();
-        String oldNameString = oldName.retrieve(context, self, temp).toString();
+        String newNameString = newName.retrieve(context, self, currDynScope, temp).toString();
+        String oldNameString = oldName.retrieve(context, self, currDynScope, temp).toString();
 
         RubyModule module = (object instanceof RubyModule) ? (RubyModule) object : object.getMetaClass();
         module.defineAlias(newNameString, oldNameString);

@@ -13,6 +13,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.DynamicScope;
 
 public class DefineModuleInstr extends Instr implements ResultInstr {
     private final IRModule newIRModule;
@@ -57,8 +58,8 @@ public class DefineModuleInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Object interpret(ThreadContext context, IRubyObject self, Object[] temp, Block block) {
-        Object rubyContainer = container.retrieve(context, self, temp);
+    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
+        Object rubyContainer = container.retrieve(context, self, currDynScope, temp);
         
         if (!(rubyContainer instanceof RubyModule)) throw context.getRuntime().newTypeError("no outer class/module");
 

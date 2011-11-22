@@ -1,6 +1,7 @@
 package org.jruby.compiler.ir.operands;
 
 import org.jruby.compiler.ir.IRClass;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -41,7 +42,7 @@ public class Float extends Constant {
     }
 
     @Override
-    public Object retrieve(ThreadContext context, IRubyObject self, Object[] temp) {
+    public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         if (rubyFloat == null) rubyFloat = context.getRuntime().newFloat(value);
         return rubyFloat;
     }

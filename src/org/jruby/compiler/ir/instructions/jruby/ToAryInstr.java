@@ -12,12 +12,10 @@ import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- *
- */
 public class ToAryInstr extends Instr implements ResultInstr {
     private Variable result;
     private final BooleanLiteral dontToAryArrays;
@@ -58,8 +56,8 @@ public class ToAryInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Object interpret(ThreadContext context, IRubyObject self, Object[] temp, Block block) {
-        Object receiver = array.retrieve(context, self, temp);
+    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
+        Object receiver = array.retrieve(context, self, currDynScope, temp);
 
         // Don't call to_ary if we we have an array already and we are asked not to run to_ary on arrays
         if (dontToAryArrays.isTrue() && receiver instanceof RubyArray) {

@@ -2,6 +2,7 @@ package org.jruby.compiler.ir.operands;
 
 import org.jruby.compiler.ir.IRModule;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -24,7 +25,7 @@ public class WrappedIRModule extends Constant {
     }
 
     @Override
-    public Object retrieve(ThreadContext context, IRubyObject self, Object[] temp) {
+    public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         StaticScope ssc = (module == null) ? context.getCurrentScope().getStaticScope() : module.getStaticScope();
         if (ssc != null) {
             return ssc.getModule();

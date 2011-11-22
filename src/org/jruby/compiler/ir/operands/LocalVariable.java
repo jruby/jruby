@@ -5,6 +5,7 @@
 
 package org.jruby.compiler.ir.operands;
 
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -65,9 +66,9 @@ public class LocalVariable extends Variable {
     }
 
     @Override
-    public Object retrieve(ThreadContext context, IRubyObject self, Object[] temp) {
-        IRubyObject value = context.getCurrentScope().getValue(offset, scopeDepth);
-        if (value == null) value = context.getRuntime().getNil();
+    public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
+        IRubyObject value = currDynScope.getValue(offset, scopeDepth);
+        if (value == null) value = context.nil;
         return value;
     }
 

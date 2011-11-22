@@ -1,5 +1,6 @@
 package org.jruby.compiler.ir.operands;
 
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -59,7 +60,7 @@ public class TemporaryVariable extends Variable {
     }
 
     @Override
-    public Object retrieve(ThreadContext context, IRubyObject self, Object[] temp) {
+    public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         return temp[offset];
     }
 }

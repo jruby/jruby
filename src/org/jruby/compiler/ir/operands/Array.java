@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.jruby.compiler.ir.IRClass;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -106,11 +107,11 @@ public class Array extends Operand {
     }
 
     @Override
-    public Object retrieve(ThreadContext context, IRubyObject self, Object[] temp) {
+    public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         IRubyObject[] elements = new IRubyObject[elts.length];
 
         for (int i = 0; i < elements.length; i++) {
-            elements[i] = (IRubyObject) elts[i].retrieve(context, self, temp);
+            elements[i] = (IRubyObject) elts[i].retrieve(context, self, currDynScope, temp);
         }
 
         return context.getRuntime().newArray(elements);

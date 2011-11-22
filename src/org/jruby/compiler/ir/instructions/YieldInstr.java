@@ -12,6 +12,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.RubyArray;
 import org.jruby.RubyProc;
 import org.jruby.RubyNil;
+import org.jruby.runtime.DynamicScope;
 
 public class YieldInstr extends Instr implements ResultInstr {
     public final boolean unwrapArray;
@@ -45,9 +46,9 @@ public class YieldInstr extends Instr implements ResultInstr {
 
     @Interp
     @Override
-    public Object interpret(ThreadContext context, IRubyObject self, Object[] temp, Block block) {
+    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         Object resultValue;
-        Object blk = (Object) blockArg.retrieve(context, self, temp);
+        Object blk = (Object) blockArg.retrieve(context, self, currDynScope, temp);
         if (blk instanceof RubyProc) blk = ((RubyProc)blk).getBlock();
         if (blk instanceof RubyNil) blk = Block.NULL_BLOCK;
         // Blocks that get yielded are always normal
@@ -56,7 +57,7 @@ public class YieldInstr extends Instr implements ResultInstr {
         if (yieldArg == null) {
             return b.yieldSpecific(context);
         } else {
-            IRubyObject yieldVal = (IRubyObject)yieldArg.retrieve(context, self, temp);
+            IRubyObject yieldVal = (IRubyObject)yieldArg.retrieve(context, self, currDynScope, temp);
             return (unwrapArray && (yieldVal instanceof RubyArray)) ? b.yieldArray(context, yieldVal, null, null) : b.yield(context, yieldVal);
         }
     }

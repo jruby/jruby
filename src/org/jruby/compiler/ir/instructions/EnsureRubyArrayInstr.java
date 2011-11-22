@@ -12,6 +12,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.RubyArray;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.DynamicScope;
 
 public class EnsureRubyArrayInstr extends Instr implements ResultInstr {
     private Operand object;
@@ -60,8 +61,8 @@ public class EnsureRubyArrayInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Object interpret(ThreadContext context, IRubyObject self, Object[] temp, Block block) {
-        IRubyObject val = (IRubyObject)object.retrieve(context, self, temp);
+    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
+        IRubyObject val = (IRubyObject)object.retrieve(context, self, currDynScope, temp);
         if (!(val instanceof RubyArray)) val = ArgsUtil.convertToRubyArray(context.getRuntime(), val, false);
 		  return val;
     }

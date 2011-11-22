@@ -3,6 +3,7 @@ package org.jruby.compiler.ir.operands;
 import org.jruby.util.ByteList;
 import org.jruby.compiler.ir.IRClass;
 import org.jruby.RubyString;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -45,7 +46,7 @@ public class StringLiteral extends Constant {
     }
 
     @Override
-    public Object retrieve(ThreadContext context, IRubyObject self, Object[] temp) {
+    public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         // ENEBO: This is not only used for full RubyStrings, but also for bytelist retrieval....extra wrapping
         // return interp.getRuntime().newString(_bl_value); 
         // SSS FIXME: AST interpreter passes in a coderange argument.

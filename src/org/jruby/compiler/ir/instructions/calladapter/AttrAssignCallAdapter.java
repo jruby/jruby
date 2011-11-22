@@ -10,6 +10,7 @@ import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -29,8 +30,8 @@ public class AttrAssignCallAdapter extends CallAdapter {
     }
 
     @Override
-    public Object call(ThreadContext context, IRubyObject self, IRubyObject receiver, Object[] temp) {
-        IRubyObject[] values = prepareArguments(context, self, args, temp);
+    public Object call(ThreadContext context, IRubyObject self, IRubyObject receiver, DynamicScope currDynScope, Object[] temp) {
+        IRubyObject[] values = prepareArguments(context, self, args, currDynScope, temp);
         
         if (callSite == null) {
             CallType callType = self == receiver ? CallType.FUNCTIONAL : CallType.NORMAL;
@@ -42,10 +43,10 @@ public class AttrAssignCallAdapter extends CallAdapter {
         return null;
     }
     
-    protected IRubyObject[] prepareArguments(ThreadContext context, IRubyObject self, Operand[] args, Object[] temp) {
+    protected IRubyObject[] prepareArguments(ThreadContext context, IRubyObject self, Operand[] args, DynamicScope currDynScope, Object[] temp) {
         List<IRubyObject> argList = new ArrayList<IRubyObject>();
         for (int i = 0; i < args.length; i++) {
-            IRubyObject rArg = (IRubyObject) args[i].retrieve(context, self, temp);
+            IRubyObject rArg = (IRubyObject) args[i].retrieve(context, self, currDynScope, temp);
             if (args[i] instanceof Splat) {
                 argList.addAll(Arrays.asList(((RubyArray) rArg).toJavaArray()));
             } else {

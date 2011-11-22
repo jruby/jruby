@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.RegexpOptions;
@@ -59,11 +60,11 @@ public class Regexp extends Operand {
     }
 
     @Override
-    public Object retrieve(ThreadContext context, IRubyObject self, Object[] temp) {
+    public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         // If we have a constant regexp string or if the regexp patterns asks for caching, cache the regexp
         if ((!regexp.isConstant() && !options.isOnce()) || (rubyRegexp == null) || context.getRuntime().getKCode() != rubyRegexp.getKCode()) {
             RubyRegexp reg = RubyRegexp.newRegexp(context.getRuntime(),
-                    ((RubyString) regexp.retrieve(context, self, temp)).getByteList(), options);
+                    ((RubyString) regexp.retrieve(context, self, currDynScope, temp)).getByteList(), options);
             reg.setLiteral();
             rubyRegexp = reg;
         }

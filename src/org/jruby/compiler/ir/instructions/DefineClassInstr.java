@@ -16,6 +16,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.DynamicScope;
 
 public class DefineClassInstr extends Instr implements ResultInstr {
     private IRClass newIRClass;
@@ -62,14 +63,14 @@ public class DefineClassInstr extends Instr implements ResultInstr {
         return new DefineClassInstr(ii.getRenamedVariable(result), this.newIRClass, container.cloneForInlining(ii), superClass.cloneForInlining(ii));
     }
     
-    private RubyModule newClass(ThreadContext context, IRubyObject self, RubyModule classContainer, Object[] temp) {
+    private RubyModule newClass(ThreadContext context, IRubyObject self, RubyModule classContainer, DynamicScope currDynScope, Object[] temp) {
         if (newIRClass instanceof IRMetaClass) return classContainer.getMetaClass();
 
         RubyClass sc;
         if (superClass == Nil.NIL) {
             sc = null;
         } else {
-            Object o = superClass.retrieve(context, self, temp);
+            Object o = superClass.retrieve(context, self, currDynScope, temp);
 
             if (!(o instanceof RubyClass)) throw context.getRuntime().newTypeError("superclass must be Class (" + o + " given)");
             
@@ -80,12 +81,12 @@ public class DefineClassInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Object interpret(ThreadContext context, IRubyObject self, Object[] temp, Block block) {
-        Object rubyContainer = container.retrieve(context, self, temp);
+    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
+        Object rubyContainer = container.retrieve(context, self, currDynScope, temp);
         
         if (!(rubyContainer instanceof RubyModule)) throw context.getRuntime().newTypeError("no outer class/module");
         
-        RubyModule newRubyClass = newClass(context, self, (RubyModule) rubyContainer, temp);
+        RubyModule newRubyClass = newClass(context, self, (RubyModule) rubyContainer, currDynScope, temp);
 
         // Interpret the body
         newIRClass.getStaticScope().setModule(newRubyClass);

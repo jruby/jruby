@@ -26,6 +26,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.util.TypeConverter;
 
 public class SuperInstr extends CallInstr {
@@ -45,11 +46,11 @@ public class SuperInstr extends CallInstr {
     }
 
     @Override
-    public Object interpret(ThreadContext context, IRubyObject self, Object[] temp, Block aBlock) {
+    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block aBlock) {
         // FIXME: Receiver is not being used...should we be retrieving it?
-        IRubyObject receiver = (IRubyObject)getReceiver().retrieve(context, self, temp);
-        IRubyObject[] args = prepareArguments(context, self, getCallArgs(), temp);
-        Block block = prepareBlock(context, self, temp);
+        IRubyObject receiver = (IRubyObject)getReceiver().retrieve(context, self, currDynScope, temp);
+        IRubyObject[] args = prepareArguments(context, self, getCallArgs(), currDynScope, temp);
+        Block block = prepareBlock(context, self, currDynScope, temp);
         RubyModule klazz = context.getFrameKlazz();
         // SSS FIXME: Even though we may know the method name in some instances,
         // we are not making use of it here.  It is cleaner in the sense of not
@@ -76,12 +77,12 @@ public class SuperInstr extends CallInstr {
         }
     }
     
-    protected IRubyObject[] prepareArguments(ThreadContext context, IRubyObject self, Operand[] args, Object[] temp) {
+    protected IRubyObject[] prepareArguments(ThreadContext context, IRubyObject self, Operand[] args, DynamicScope currDynScope, Object[] temp) {
         // SSS FIXME: This encoding of arguments as an array penalizes splats, but keeps other argument arrays fast
         // since there is no array list --> array transformation
         List<IRubyObject> argList = new ArrayList<IRubyObject>();
         for (int i = 0; i < args.length; i++) {
-            IRubyObject rArg = (IRubyObject)args[i].retrieve(context, self, temp);
+            IRubyObject rArg = (IRubyObject)args[i].retrieve(context, self, currDynScope, temp);
             if (args[i] instanceof Splat) {
                 argList.addAll(Arrays.asList(((RubyArray)rArg).toJavaArray()));
             } else {
@@ -92,10 +93,10 @@ public class SuperInstr extends CallInstr {
         return argList.toArray(new IRubyObject[argList.size()]);
     }
 
-    protected Block prepareBlock(ThreadContext context, IRubyObject self, Object[] temp) {
+    protected Block prepareBlock(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         if (closure == null) return Block.NULL_BLOCK;
         
-        Object value = closure.retrieve(context, self, temp);
+        Object value = closure.retrieve(context, self, currDynScope, temp);
         
         Block b = null;
         if (value instanceof Block)

@@ -3,6 +3,7 @@ package org.jruby.compiler.ir.operands;
 import java.util.List;
 
 import org.jruby.RubyRegexp;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -28,7 +29,7 @@ public class Backref extends Operand {
         /* Nothing to do */
     }
 
-    public Object retrieve(ThreadContext context, IRubyObject self, Object[] temp) {
+    public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         IRubyObject backref = context.getCurrentScope().getBackRef(context.getRuntime());
         
         switch (type) {

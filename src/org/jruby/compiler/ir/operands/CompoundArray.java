@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ThreadContext;
 
@@ -84,9 +85,9 @@ public class CompoundArray extends Operand {
     }
 
     @Override
-    public Object retrieve(ThreadContext context, IRubyObject self, Object[] temp) {
-        IRubyObject v1 = (IRubyObject)a1.retrieve(context, self, temp);
-        IRubyObject v2 = (IRubyObject)a2.retrieve(context, self, temp);
+    public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
+        IRubyObject v1 = (IRubyObject)a1.retrieve(context, self, currDynScope, temp);
+        IRubyObject v2 = (IRubyObject)a2.retrieve(context, self, currDynScope, temp);
         return RuntimeHelpers.argsCat(v1, v2);
     }
 }

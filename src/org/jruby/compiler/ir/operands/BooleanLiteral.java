@@ -1,5 +1,6 @@
 package org.jruby.compiler.ir.operands;
 
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -27,7 +28,7 @@ public class BooleanLiteral extends Constant {
     }
 
     @Override
-    public Object retrieve(ThreadContext context, IRubyObject self, Object[] temp) {
+    public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
 /*
 		  if (cachedValue == null)
             cachedValue = interp.getRuntime().newBoolean(isTrue());

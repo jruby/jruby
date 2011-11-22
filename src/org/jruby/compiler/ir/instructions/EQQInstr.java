@@ -10,6 +10,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.RubyArray;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.DynamicScope;
 
 // If v2 is an array, compare v1 with every element of v2 and stop on first match!
 public class EQQInstr extends Instr implements ResultInstr {
@@ -56,9 +57,9 @@ public class EQQInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Object interpret(ThreadContext context, IRubyObject self, Object[] temp, Block block) {
-        IRubyObject receiver = (IRubyObject) arg1.retrieve(context, self, temp);
-        IRubyObject value = (IRubyObject) arg2.retrieve(context, self, temp);
+    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
+        IRubyObject receiver = (IRubyObject) arg1.retrieve(context, self, currDynScope, temp);
+        IRubyObject value = (IRubyObject) arg2.retrieve(context, self, currDynScope, temp);
 
         if (value == UndefinedValue.UNDEFINED) {
 				return receiver;

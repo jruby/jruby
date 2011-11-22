@@ -45,7 +45,8 @@ public abstract class IRExecutionScope extends IRScopeImpl {
     private boolean hasUnusedImplicitBlockArg = false; // Is %block implicit block arg unused?
     private Map<String, DataFlowProblem> dfProbs = new HashMap<String, DataFlowProblem>();       // Map of name -> dataflow problem    
     private Instr[] instrs = null;
-    List<BasicBlock> linearizedBBList = null;  // Linearized list of bbs
+    private List<BasicBlock> linearizedBBList = null;  // Linearized list of bbs
+    private int scopeExitPC = -1;
 
     protected static class LocalVariableAllocator {
         public int nextSlot;
@@ -546,11 +547,15 @@ public abstract class IRExecutionScope extends IRScopeImpl {
 
         // Exit BB ipc
         cfg().getExitBB().getLabel().setTargetPC(ipc + 1);
+        this.scopeExitPC = ipc+1;
 
         instrs = newInstrs.toArray(new Instr[newInstrs.size()]);
         return instrs;
     }
     
+    public int getScopeExitPC() {
+        return this.scopeExitPC;
+    }
     
     public List<BasicBlock> buildLinearization() {
         if (linearizedBBList != null) return linearizedBBList; // Already linearized

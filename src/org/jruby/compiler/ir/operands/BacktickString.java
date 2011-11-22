@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyString;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -74,11 +75,11 @@ public class BacktickString extends Operand {
     }
 
     @Override
-    public Object retrieve(ThreadContext context, IRubyObject self, Object[] temp) {
+    public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         RubyString newString = context.getRuntime().newString();
 
         for (Operand p: pieces) {
-            RubyBasicObject piece = (RubyBasicObject) p.retrieve(context, self, temp);
+            RubyBasicObject piece = (RubyBasicObject) p.retrieve(context, self, currDynScope, temp);
             newString.append((piece instanceof RubyString) ? (RubyString)piece : piece.to_s());
         }
         

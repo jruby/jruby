@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -70,7 +71,7 @@ public class Splat extends Operand {
     }
 
     @Override
-    public Object retrieve(ThreadContext context, IRubyObject self, Object[] temp) {
-        return RuntimeHelpers.splatValue((IRubyObject) array.retrieve(context, self, temp));
+    public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
+        return RuntimeHelpers.splatValue((IRubyObject) array.retrieve(context, self, currDynScope, temp));
     }
 }

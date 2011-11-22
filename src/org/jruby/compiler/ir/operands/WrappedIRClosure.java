@@ -4,6 +4,7 @@ import org.jruby.compiler.ir.IRClosure;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -24,10 +25,10 @@ public class WrappedIRClosure extends Constant {
     }
 
     @Override
-    public Object retrieve(ThreadContext context, IRubyObject self, Object[] temp) {
+    public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         BlockBody body = closure.getBlockBody();
         closure.getStaticScope().determineModule();
-        Binding binding = context.currentBinding(self, context.getCurrentScope());
+        Binding binding = context.currentBinding(self, currDynScope);
 
         return new Block(body, binding);
     }

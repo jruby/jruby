@@ -5,6 +5,7 @@ import java.util.Map;
 import org.jruby.compiler.ir.IRClass;
 import org.jruby.compiler.ir.Interp;
 import org.jruby.compiler.ir.representations.InlinerInfo;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -65,7 +66,7 @@ public abstract class Operand {
     }
 
     @Interp
-    public Object retrieve(ThreadContext context, IRubyObject self, Object[] temp) {
+    public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         throw new RuntimeException(this.getClass().getSimpleName() + " should not be directly retrieved.");
     }
 }

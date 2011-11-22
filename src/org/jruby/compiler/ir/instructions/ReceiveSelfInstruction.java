@@ -5,6 +5,7 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -36,14 +37,5 @@ public class ReceiveSelfInstruction extends Instr implements ResultInstr {
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         return new CopyInstr(ii.getRenamedVariable(result), ii.getCallReceiver());
-    }
-
-    @Override
-    public Object interpret(ThreadContext context, IRubyObject self, Object[] temp, Block block) {
-        // result is a confusing name
-
-        // SSS FIXME: Anything else to do here?? 
-        // getResult().store(interp, context, self, self);
-        return null;
     }
 }

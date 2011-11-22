@@ -13,6 +13,7 @@ import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -60,9 +61,9 @@ public class DefineMetaClassInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Object interpret(ThreadContext context, IRubyObject self, Object[] temp, Block block) {
+    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         Ruby runtime = context.getRuntime();
-        IRubyObject obj = (IRubyObject)object.retrieve(context, self, temp);
+        IRubyObject obj = (IRubyObject)object.retrieve(context, self, currDynScope, temp);
         
         if (obj instanceof RubyFixnum || obj instanceof RubySymbol) {
             throw runtime.newTypeError("no virtual class for " + obj.getMetaClass().getBaseName());

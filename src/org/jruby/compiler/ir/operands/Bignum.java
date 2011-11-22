@@ -4,6 +4,7 @@ import org.jruby.compiler.ir.IRClass;
 
 import java.math.BigInteger;
 import org.jruby.RubyBignum;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -26,7 +27,7 @@ public class Bignum extends Constant {
     }
 
     @Override
-    public Object retrieve(ThreadContext context, IRubyObject self, Object[] temp) {
+    public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
 /*
         if (cachedValue == null) cachedValue = RubyBignum.newBignum(interp.getRuntime(), value);
         return cachedValue;

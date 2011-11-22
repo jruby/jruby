@@ -6,6 +6,7 @@ import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -52,7 +53,7 @@ public class InstanceOfInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Object interpret(ThreadContext context, IRubyObject self, Object[] temp, Block block) {
+    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         try {
             if (type == null) type = Class.forName(className);
         } catch (ClassNotFoundException e) {
@@ -63,6 +64,6 @@ public class InstanceOfInstr extends Instr implements ResultInstr {
             // for user ruby code, this may no longer be true and we have to appropriately fix this code then.
             throw new RuntimeException(e);
         }
-        return context.getRuntime().newBoolean(type.isInstance(object.retrieve(context, self, temp))); 
+        return context.getRuntime().newBoolean(type.isInstance(object.retrieve(context, self, currDynScope, temp))); 
     }
 }

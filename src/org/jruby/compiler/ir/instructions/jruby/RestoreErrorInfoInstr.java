@@ -11,6 +11,7 @@ import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -43,8 +44,8 @@ public class RestoreErrorInfoInstr extends Instr {
     }
 
     @Override
-    public Object interpret(ThreadContext context, IRubyObject self, Object[] temp, Block block) {
-        context.setErrorInfo((IRubyObject) arg.retrieve(context, self, temp));
+    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
+        context.setErrorInfo((IRubyObject) arg.retrieve(context, self, currDynScope, temp));
         
         return null;
     }

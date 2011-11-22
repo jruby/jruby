@@ -3,6 +3,7 @@ package org.jruby.compiler.ir.instructions.calladapter;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -21,9 +22,9 @@ public class OneArgBlockOperandCallAdapter extends ClosureCallAdapter {
     }
 
     @Override
-    public Object call(ThreadContext context, IRubyObject self, IRubyObject receiver, Object[] temp) {
-        IRubyObject value1 = (IRubyObject) arg1.retrieve(context, self, temp);        
-        Block block = prepareBlock(context, self, temp);
+    public Object call(ThreadContext context, IRubyObject self, IRubyObject receiver, DynamicScope currDynScope, Object[] temp) {
+        IRubyObject value1 = (IRubyObject) arg1.retrieve(context, self, currDynScope, temp);        
+        Block block = prepareBlock(context, self, currDynScope, temp);
         return callSite.call(context, self, receiver, value1, block);
     }    
 }

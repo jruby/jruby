@@ -5,6 +5,7 @@ import java.util.List;
 // Represents a $1 .. $9 node in Ruby code
 
 import org.jruby.RubyRegexp;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -30,7 +31,7 @@ public class NthRef extends Operand {
     }
 
     @Override
-    public Object retrieve(ThreadContext context, IRubyObject self, Object[] temp) {
+    public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         return RubyRegexp.nth_match(matchNumber,
                 context.getCurrentScope().getBackRef(context.getRuntime()));
     }

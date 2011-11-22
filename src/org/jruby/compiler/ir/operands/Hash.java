@@ -7,6 +7,7 @@ import org.jruby.RubyHash;
 
 import org.jruby.compiler.ir.IRClass;
 import org.jruby.compiler.ir.representations.InlinerInfo;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -80,13 +81,13 @@ public class Hash extends Operand {
     }
 
     @Override
-    public Object retrieve(ThreadContext context, IRubyObject self, Object[] temp) {
+    public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         Ruby runtime = context.getRuntime();
         RubyHash hash = RubyHash.newHash(runtime);
 
         for (KeyValuePair pair : pairs) {
-            IRubyObject key = (IRubyObject) pair.getKey().retrieve(context, self, temp);
-            IRubyObject value = (IRubyObject) pair.getValue().retrieve(context, self, temp);
+            IRubyObject key = (IRubyObject) pair.getKey().retrieve(context, self, currDynScope, temp);
+            IRubyObject value = (IRubyObject) pair.getValue().retrieve(context, self, currDynScope, temp);
             
             hash.fastASetCheckString(runtime, key, value);
         }

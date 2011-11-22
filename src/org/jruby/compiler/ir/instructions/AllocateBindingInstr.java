@@ -12,6 +12,7 @@ import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 
 import org.jruby.runtime.Block;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -47,7 +48,7 @@ public class AllocateBindingInstr extends Instr {
     }
 
     @Override
-    public Object interpret(ThreadContext context, IRubyObject self, Object[] temp, Block block) {
+    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
 /**
  * SSS: This is going to be a NO-OP in the current implementation because of the existing JRuby runtime
  * is structure.  ThreadContext accesses static-scope via a DynamicScope!  This means it expects a

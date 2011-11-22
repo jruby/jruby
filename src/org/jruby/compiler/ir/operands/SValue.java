@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.RubyArray;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -65,8 +66,8 @@ public class SValue extends Operand {
     }
 
     @Override
-    public Object retrieve(ThreadContext context, IRubyObject self, Object[] temp) {
-        Object val = array.retrieve(context, self, temp);
+    public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
+        Object val = array.retrieve(context, self, currDynScope, temp);
         
         if (val instanceof RubyArray) {
             int n = ((RubyArray) val).getLength();
