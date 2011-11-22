@@ -1139,7 +1139,11 @@ public final class Ruby {
 
         // Require in all libraries specified on command line
         for (String scriptName : config.getRequiredLibraries()) {
-            loadService.require(scriptName);
+            if (is1_9) {
+                topSelf.callMethod(getCurrentContext(), "require", RubyString.newString(this, scriptName));
+            } else {
+                loadService.require(scriptName);
+            }
         }
     }
 
