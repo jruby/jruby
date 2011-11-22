@@ -35,6 +35,7 @@ import java.lang.invoke.MethodType;
 import static java.lang.invoke.MethodType.*;
 import java.lang.invoke.MutableCallSite;
 import java.lang.invoke.SwitchPoint;
+import java.math.BigInteger;
 import java.util.Arrays;
 import org.jruby.Ruby;
 import org.jruby.RubyBasicObject;
@@ -57,15 +58,21 @@ import org.jruby.internal.runtime.methods.DefaultMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JittedMethod;
 import org.jruby.javasupport.JavaUtil;
+import org.jruby.javasupport.proxy.InternalJavaProxy;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
+import org.jruby.util.ByteList;
+import org.jruby.util.CodegenUtils;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import static org.jruby.runtime.invokedynamic.InvokeDynamicSupport.*;
 
+/**
+ * Bootstrapping logic for invokedynamic-based invocation.
+ */
 public class InvocationLinker {
     private static final Logger LOG = LoggerFactory.getLogger("InvocationLinker");
     
@@ -433,9 +440,15 @@ public class InvocationLinker {
                     throw new IndirectBindingException("direct Java dispatch not enabled");
                  }
                  
-                // if Java, must be no-arg invocation
-                if (nativeCall.getNativeSignature().length != 0 || siteArgCount != 0) {
-                    throw new IndirectBindingException("Java call or receiver with > 0 args");
+                // if Java, must:
+                // * match arity <= 3
+                // * not be passed a block (no coercion yet)
+                // * be a normal wrapper around a class or module (not a Ruby subclass)
+                if (nativeCall.getNativeSignature().length != siteArgCount
+                        || siteArgCount > 3
+                        || site.isIterator()
+                        || !cls.getJavaProxy()) {
+                    throw new IndirectBindingException("Java call arity mismatch or > 3 args");
                 }
             } else {
                 // if non-Java, must:
@@ -938,6 +951,166 @@ public class InvocationLinker {
     ////////////////////////////////////////////////////////////////////////////
     // Dispatch from Ruby to Java via Java integration
     ////////////////////////////////////////////////////////////////////////////
+    
+    private static MethodHandle createJavaHandle(DynamicMethod method) {
+        MethodHandle nativeTarget = null;
+        MethodHandle returnFilter = null;
+
+        Ruby runtime = method.getImplementationClass().getRuntime();
+        DynamicMethod.NativeCall nativeCall = method.getNativeCall();
+        boolean isStatic = nativeCall.isStatic();
+        
+        // the "apparent" type from the NativeCall, excluding receiver
+        MethodType apparentType = methodType(nativeCall.getNativeReturn(), nativeCall.getNativeSignature());
+
+        if (isStatic) {
+            nativeTarget = findStatic(nativeCall.getNativeTarget(), nativeCall.getNativeName(), apparentType);
+        } else {
+            nativeTarget = findVirtual(nativeCall.getNativeTarget(), nativeCall.getNativeName(), apparentType);
+        }
+        
+        // the actual native type with receiver
+        MethodType nativeType = nativeTarget.type();
+        Class[] nativeParams = nativeType.parameterArray();
+        Class nativeReturn = nativeType.returnType();
+
+        // convert arguments
+        MethodHandle[] argConverters = new MethodHandle[nativeType.parameterCount()];
+        for (int i = 0; i < argConverters.length; i++) {
+            MethodHandle converter;
+            if (!isStatic && i == 0) {
+                // handle non-static receiver specially
+                converter = findStatic(JavaUtil.class, "objectFromJavaProxy", methodType(Object.class, IRubyObject.class));
+                converter = explicitCastArguments(
+                        converter,
+                        methodType(nativeParams[0], IRubyObject.class));
+            } else {
+                // all other arguments use toJava
+                converter = findVirtual(IRubyObject.class, "toJava", methodType(Object.class, Class.class));
+                converter = insertArguments(converter, 1, nativeParams[i]);
+                converter = explicitCastArguments(
+                        converter,
+                        methodType(nativeParams[i], IRubyObject.class));
+            }
+            argConverters[i] = converter;
+        }
+        nativeTarget = filterArguments(nativeTarget, 0, argConverters);
+        
+        Class[] convertedParams = CodegenUtils.params(IRubyObject.class, nativeTarget.type().parameterCount());
+
+        // handle return value
+        if (nativeReturn == byte.class
+                || nativeReturn == short.class
+                || nativeReturn == char.class
+                || nativeReturn == int.class
+                || nativeReturn == long.class) {
+            // native integral type, produce a Fixnum
+            nativeTarget = explicitCastArguments(nativeTarget, methodType(long.class, convertedParams));
+            returnFilter = insertArguments(
+                    findStatic(RubyFixnum.class, "newFixnum", methodType(RubyFixnum.class, Ruby.class, long.class)),
+                    0,
+                    runtime);
+        } else if (nativeReturn == Byte.class
+                || nativeReturn == Short.class
+                || nativeReturn == Character.class
+                || nativeReturn == Integer.class
+                || nativeReturn == Long.class) {
+            // boxed integral type, produce a Fixnum or nil
+            returnFilter = insertArguments(
+                    findStatic(InvocationLinker.class, "fixnumOrNil", methodType(IRubyObject.class, Ruby.class, nativeReturn)),
+                    0,
+                    runtime);
+        } else if (nativeReturn == float.class
+                || nativeReturn == double.class) {
+            // native decimal type, produce a Float
+            nativeTarget = explicitCastArguments(nativeTarget, methodType(double.class, convertedParams));
+            returnFilter = insertArguments(
+                    findStatic(RubyFloat.class, "newFloat", methodType(RubyFloat.class, Ruby.class, double.class)),
+                    0,
+                    runtime);
+        } else if (nativeReturn == Float.class
+                || nativeReturn == Double.class) {
+            // boxed decimal type, produce a Float or nil
+            returnFilter = insertArguments(
+                    findStatic(InvocationLinker.class, "floatOrNil", methodType(IRubyObject.class, Ruby.class, nativeReturn)),
+                    0,
+                    runtime);
+        } else if (nativeReturn == boolean.class) {
+            // native boolean type, produce a Boolean
+            nativeTarget = explicitCastArguments(nativeTarget, methodType(boolean.class, convertedParams));
+            returnFilter = insertArguments(
+                    findStatic(RubyBoolean.class, "newBoolean", methodType(RubyBoolean.class, Ruby.class, boolean.class)),
+                    0,
+                    runtime);
+        } else if (nativeReturn == Boolean.class) {
+            // boxed boolean type, produce a Boolean or nil
+            returnFilter = insertArguments(
+                    findStatic(InvocationLinker.class, "booleanOrNil", methodType(IRubyObject.class, Ruby.class, Boolean.class)),
+                    0,
+                    runtime);
+        } else if (CharSequence.class.isAssignableFrom(nativeReturn)) {
+            // character sequence, produce a String or nil
+            nativeTarget = explicitCastArguments(nativeTarget, methodType(CharSequence.class, convertedParams));
+            returnFilter = insertArguments(
+                    findStatic(InvocationLinker.class, "stringOrNil", methodType(IRubyObject.class, Ruby.class, CharSequence.class)),
+                    0,
+                    runtime);
+        } else if (nativeReturn == void.class) {
+            // void return, produce nil
+            returnFilter = constant(IRubyObject.class, runtime.getNil());
+        } else if (nativeReturn == ByteList.class) {
+            // not handled yet
+        } else if (nativeReturn == BigInteger.class) {
+            // not handled yet
+        } else {
+            // all other object types
+            nativeTarget = explicitCastArguments(nativeTarget, methodType(Object.class, convertedParams));
+            returnFilter = insertArguments(
+                    findStatic(JavaUtil.class, "convertJavaToUsableRubyObject", methodType(IRubyObject.class, Ruby.class, Object.class)),
+                    0,
+                    runtime);
+        }
+
+        // we can handle this; do remaining transforms and return
+        if (returnFilter != null) {
+            Class[] newNativeParams = nativeTarget.type().parameterArray();
+            Class newNativeReturn = nativeTarget.type().returnType();
+            
+            // handle exceptions
+            MethodHandle exHandler = insertArguments(HANDLE_JAVA_EXCEPTION, 0, runtime);
+            exHandler = dropArguments(exHandler, 1, newNativeParams);
+            if (nativeReturn != void.class) {
+                // provide a dummy return value from exception handler (it never returns)
+                exHandler = filterReturnValue(exHandler, constant(newNativeReturn, nullValue(newNativeReturn)));
+            }
+            nativeTarget = catchException(nativeTarget, Throwable.class, exHandler);
+
+            // filter return type into a Ruby object
+            nativeTarget = filterReturnValue(nativeTarget, returnFilter);
+            nativeTarget = explicitCastArguments(nativeTarget, methodType(IRubyObject.class, convertedParams));
+
+            // adapt to incoming call signature
+            if (isStatic) {
+                nativeTarget = dropArguments(nativeTarget, 0, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class);
+            } else {
+                // adapt to incoming call signature
+                nativeTarget = dropArguments(nativeTarget, 1, String.class);
+                nativeTarget = dropArguments(nativeTarget, 0, ThreadContext.class, IRubyObject.class);
+
+            }
+
+            method.setHandle(nativeTarget);
+            return nativeTarget;
+        }
+
+        return null;
+    }
+    
+    public static boolean subclassProxyTest(Object target) {
+        return target instanceof InternalJavaProxy;
+    }
+    
+    private static final MethodHandle IS_JAVA_SUBCLASS = findStatic(InvocationLinker.class, "subclassProxyTest", methodType(boolean.class, Object.class));
 
     public static void handleJavaException(Ruby runtime, Throwable exception) {
         if (exception instanceof RaiseException) {
@@ -956,199 +1129,14 @@ public class InvocationLinker {
     
     private static final MethodHandle HANDLE_JAVA_EXCEPTION = findStatic(InvocationLinker.class, "handleJavaException", methodType(void.class, Ruby.class, Throwable.class));
     
-    private static MethodHandle createJavaHandle(DynamicMethod method) {
-        MethodHandle nativeTarget = null;
-        MethodHandle returnFilter = null;
-        Object exceptionReturn = null;
-        
-        Ruby runtime = method.getImplementationClass().getRuntime();
-        DynamicMethod.NativeCall nativeCall = method.getNativeCall();
-        
-        if (nativeCall.isStatic()) {
-            nativeTarget = findStatic(nativeCall.getNativeTarget(), nativeCall.getNativeName(), methodType(nativeCall.getNativeReturn(), nativeCall.getNativeSignature()));
-            
-            if (nativeCall.getNativeSignature().length == 0) {
-                // handle return value
-                if (
-                        nativeCall.getNativeReturn() == byte.class ||
-                        nativeCall.getNativeReturn() == short.class ||
-                        nativeCall.getNativeReturn() == char.class ||
-                        nativeCall.getNativeReturn() == int.class ||
-                        nativeCall.getNativeReturn() == long.class) {
-                    nativeTarget = explicitCastArguments(nativeTarget, methodType(long.class));
-                    returnFilter = insertArguments(
-                            findStatic(RubyFixnum.class, "newFixnum", methodType(RubyFixnum.class, Ruby.class, long.class)),
-                            0,
-                            runtime);
-                    exceptionReturn = 0;
-                } else if (
-                        nativeCall.getNativeReturn() == Byte.class ||
-                        nativeCall.getNativeReturn() == Short.class ||
-                        nativeCall.getNativeReturn() == Character.class ||
-                        nativeCall.getNativeReturn() == Integer.class ||
-                        nativeCall.getNativeReturn() == Long.class) {
-                    returnFilter = insertArguments(
-                            findStatic(InvocationLinker.class, "fixnumOrNil", methodType(IRubyObject.class, Ruby.class, nativeCall.getNativeReturn())),
-                            0,
-                            runtime);
-                    exceptionReturn = 0;
-                } else if (
-                        nativeCall.getNativeReturn() == float.class ||
-                        nativeCall.getNativeReturn() == double.class) {
-                    nativeTarget = explicitCastArguments(nativeTarget, methodType(double.class));
-                    returnFilter = insertArguments(
-                            findStatic(RubyFloat.class, "newFloat", methodType(RubyFloat.class, Ruby.class, double.class)),
-                            0,
-                            runtime);
-                    exceptionReturn = 0.0d;
-                } else if (
-                        nativeCall.getNativeReturn() == Float.class ||
-                        nativeCall.getNativeReturn() == Double.class) {
-                    returnFilter = insertArguments(
-                            findStatic(InvocationLinker.class, "floatOrNil", methodType(RubyFloat.class, Ruby.class, nativeCall.getNativeReturn())),
-                            0,
-                            runtime);
-                    exceptionReturn = 0.0d;
-                } else if (
-                        nativeCall.getNativeReturn() == boolean.class) {
-                    nativeTarget = explicitCastArguments(nativeTarget, methodType(boolean.class));
-                    returnFilter = insertArguments(
-                            findStatic(RubyBoolean.class, "newBoolean", methodType(RubyBoolean.class, Ruby.class, boolean.class)),
-                            0,
-                            runtime);
-                    exceptionReturn = false;
-                } else if (
-                        nativeCall.getNativeReturn() == Boolean.class) {
-                    returnFilter = insertArguments(
-                            findStatic(InvocationLinker.class, "booleanOrNil", methodType(IRubyObject.class, Ruby.class, Boolean.class)),
-                            0,
-                            runtime);
-                    exceptionReturn = false;
-                } else if (CharSequence.class.isAssignableFrom(nativeCall.getNativeReturn())) {
-                    nativeTarget = explicitCastArguments(nativeTarget, methodType(CharSequence.class));
-                    returnFilter = insertArguments(
-                            findStatic(InvocationLinker.class, "stringOrNil", methodType(IRubyObject.class, Ruby.class, CharSequence.class)),
-                            0,
-                            runtime);
-                } else if (nativeCall.getNativeReturn() == void.class) {
-                    returnFilter = constant(IRubyObject.class, runtime.getNil());
-                }
-
-                // we can handle this; do remaining transforms and return
-                if (returnFilter != null) {
-                    MethodHandle exHandler = insertArguments(HANDLE_JAVA_EXCEPTION, 0, runtime);
-                    exHandler = dropArguments(exHandler, 1, nativeTarget.type().parameterArray());
-                    if (nativeCall.getNativeReturn() != void.class) {
-                        // provide a dummy return value from exception handler (it never returns)
-                        exHandler = filterReturnValue(exHandler, constant(nativeCall.getNativeReturn(), exceptionReturn));
-                    }
-                    nativeTarget = catchException(nativeTarget, Throwable.class, exHandler);
-                    nativeTarget = filterReturnValue(nativeTarget, returnFilter);
-                    nativeTarget = explicitCastArguments(nativeTarget, methodType(IRubyObject.class));
-                    nativeTarget = dropArguments(nativeTarget, 0, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class);
-                    
-                    method.setHandle(nativeTarget);
-                    return nativeTarget;
-                }
-            }
-        } else {
-            nativeTarget = findVirtual(nativeCall.getNativeTarget(), nativeCall.getNativeName(), methodType(nativeCall.getNativeReturn(), nativeCall.getNativeSignature()));
-            
-            if (nativeCall.getNativeSignature().length == 0) {
-                // convert target
-                nativeTarget = filterArguments(
-                        nativeTarget,
-                        0,
-                        explicitCastArguments(
-                                findStatic(JavaUtil.class, "objectFromJavaProxy", methodType(Object.class, IRubyObject.class)),
-                                methodType(nativeCall.getNativeTarget(), IRubyObject.class)));
-                
-                // handle return value
-                if (
-                        nativeCall.getNativeReturn() == byte.class ||
-                        nativeCall.getNativeReturn() == short.class ||
-                        nativeCall.getNativeReturn() == char.class ||
-                        nativeCall.getNativeReturn() == int.class ||
-                        nativeCall.getNativeReturn() == long.class) {
-                    nativeTarget = explicitCastArguments(nativeTarget, methodType(long.class, IRubyObject.class));
-                    returnFilter = insertArguments(
-                            findStatic(RubyFixnum.class, "newFixnum", methodType(RubyFixnum.class, Ruby.class, long.class)),
-                            0,
-                            runtime);
-                    exceptionReturn = 0;
-                } else if (
-                        nativeCall.getNativeReturn() == Byte.class ||
-                        nativeCall.getNativeReturn() == Short.class ||
-                        nativeCall.getNativeReturn() == Character.class ||
-                        nativeCall.getNativeReturn() == Integer.class ||
-                        nativeCall.getNativeReturn() == Long.class) {
-                    returnFilter = insertArguments(
-                            findStatic(InvocationLinker.class, "fixnumOrNil", methodType(IRubyObject.class, Ruby.class, nativeCall.getNativeReturn())),
-                            0,
-                            runtime);
-                    exceptionReturn = 0;
-                } else if (
-                        nativeCall.getNativeReturn() == float.class ||
-                        nativeCall.getNativeReturn() == double.class) {
-                    nativeTarget = explicitCastArguments(nativeTarget, methodType(double.class, IRubyObject.class));
-                    returnFilter = insertArguments(
-                            findStatic(RubyFloat.class, "newFloat", methodType(RubyFloat.class, Ruby.class, double.class)),
-                            0,
-                            runtime);
-                    exceptionReturn = 0.0d;
-                } else if (
-                        nativeCall.getNativeReturn() == Float.class ||
-                        nativeCall.getNativeReturn() == Double.class) {
-                    returnFilter = insertArguments(
-                            findStatic(InvocationLinker.class, "floatOrNil", methodType(RubyFloat.class, Ruby.class, nativeCall.getNativeReturn())),
-                            0,
-                            runtime);
-                    exceptionReturn = 0.0d;
-                } else if (
-                        nativeCall.getNativeReturn() == boolean.class) {
-                    returnFilter = insertArguments(
-                            findStatic(RubyBoolean.class, "newBoolean", methodType(RubyBoolean.class, Ruby.class, boolean.class)),
-                            0,
-                            runtime);
-                    exceptionReturn = false;
-                } else if (
-                        nativeCall.getNativeReturn() == Boolean.class) {
-                    returnFilter = insertArguments(
-                            findStatic(InvocationLinker.class, "booleanOrNil", methodType(IRubyObject.class, Ruby.class, Boolean.class)),
-                            0,
-                            runtime);
-                    exceptionReturn = false;
-                } else if (CharSequence.class.isAssignableFrom(nativeCall.getNativeReturn())) {
-                    nativeTarget = explicitCastArguments(nativeTarget, methodType(CharSequence.class, IRubyObject.class));
-                    returnFilter = insertArguments(
-                            findStatic(InvocationLinker.class, "stringOrNil", methodType(IRubyObject.class, Ruby.class, CharSequence.class)),
-                            0,
-                            runtime);
-                } else if (nativeCall.getNativeReturn() == void.class) {
-                    returnFilter = constant(IRubyObject.class, runtime.getNil());
-                }
-
-                // we can handle this; do remaining transforms and return
-                if (returnFilter != null) {
-                    MethodHandle exHandler = insertArguments(HANDLE_JAVA_EXCEPTION, 0, runtime);
-                    exHandler = dropArguments(exHandler, 1, nativeTarget.type().parameterArray());
-                    if (nativeCall.getNativeReturn() != void.class) {
-                        // provide a dummy return value from exception handler (it never returns)
-                        exHandler = filterReturnValue(exHandler, constant(nativeCall.getNativeReturn(), exceptionReturn));
-                    }
-                    nativeTarget = filterReturnValue(nativeTarget, returnFilter);
-                    nativeTarget = explicitCastArguments(nativeTarget, methodType(IRubyObject.class, IRubyObject.class));
-                    nativeTarget = permuteArguments(
-                            nativeTarget,
-                            STANDARD_NATIVE_TYPE_BLOCK,
-                            SELF_PERMUTE);
-                    
-                    method.setHandle(nativeTarget);
-                    return nativeTarget;
-                }
-            }
-        }
-        
+    private static Object nullValue(Class type) {
+        if (type == boolean.class || type == Boolean.class) return false;
+        if (type == byte.class || type == Byte.class) return (byte)0;
+        if (type == short.class || type == Short.class) return (short)0;
+        if (type == int.class || type == Integer.class) return 0;
+        if (type == long.class || type == Long.class) return 0L;
+        if (type == float.class || type == Float.class) return 0.0F;
+        if (type == double.class || type == Double.class)return 0.0;
         return null;
     }
     

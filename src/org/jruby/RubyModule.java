@@ -3539,6 +3539,23 @@ public class RubyModule extends RubyObject {
             return ctx != null && ctx.getThread() == rhs.getThread();
         }
     }
+    
+    /**
+     * Set whether this class is associated with (i.e. a proxy for) a normal
+     * Java class or interface.
+     */
+    public void setJavaProxy(boolean javaProxy) {
+        this.javaProxy = javaProxy;
+    }
+    
+    /**
+     * Get whether this class is associated with (i.e. a proxy for) a normal
+     * Java class or interface.
+     */
+    public boolean getJavaProxy() {
+        return javaProxy;
+    }
+    
     private volatile Map<String, Autoload> autoloads = Collections.EMPTY_MAP;
     private volatile Map<String, DynamicMethod> methods = Collections.EMPTY_MAP;
     protected Map<String, CacheEntry> cachedMethods = Collections.EMPTY_MAP;
@@ -3559,4 +3576,7 @@ public class RubyModule extends RubyObject {
     
     // Invalidator used for method caches
     protected final Invalidator methodInvalidator;
+    
+    /** Whether this class proxies a normal Java class */
+    private boolean javaProxy = false;
 }

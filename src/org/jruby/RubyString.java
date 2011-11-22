@@ -668,19 +668,31 @@ public class RubyString extends RubyObject implements EncodingCapable {
         Ruby runtime = getRuntime();
         // Note: we always choose UTF-8 for outbound strings in 1.8 mode.  This is clearly undesirable
         // but we do not mark any incoming Strings from JI with their real encoding so we just pick utf-8.
-        Encoding encoding = runtime.is1_9() ? getEncoding() : UTF8;
-        Charset charset = encoding.getCharset();
-
-        // charset is not defined for this encoding in jcodings db.  Try letting Java resolve this.
-        if (charset == null) {
-            try {
-                return new String(value.getUnsafeBytes(), value.begin(), value.length(), encoding.toString());
-            } catch (UnsupportedEncodingException uee) {
-                return value.toString();
+        
+        if (runtime.is1_9()) {
+            Encoding encoding = getEncoding();
+            
+            if (encoding == UTF8) {
+                // faster UTF8 decoding
+                return RubyEncoding.decodeUTF8(value.getUnsafeBytes(), value.begin(), value.length());
             }
-        }
+            
+            Charset charset = encoding.getCharset();
 
-        return RubyEncoding.decode(value.getUnsafeBytes(), value.begin(), value.length(), charset);
+            // charset is not defined for this encoding in jcodings db.  Try letting Java resolve this.
+            if (charset == null) {
+                try {
+                    return new String(value.getUnsafeBytes(), value.begin(), value.length(), encoding.toString());
+                } catch (UnsupportedEncodingException uee) {
+                    return value.toString();
+                }
+            }
+            
+            return RubyEncoding.decode(value.getUnsafeBytes(), value.begin(), value.length(), charset);
+        } else {
+            // fast UTF8 decoding
+            return RubyEncoding.decodeUTF8(value.getUnsafeBytes(), value.begin(), value.length());
+        }
     }
 
     /**

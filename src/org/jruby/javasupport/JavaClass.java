@@ -92,7 +92,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callback.Callback;
 import org.jruby.util.ByteList;
 import org.jruby.util.IdUtil;
-import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -715,6 +714,9 @@ public class JavaClass extends JavaObject {
         installClassConstructors(proxy);
         installClassClasses(javaClass, proxy);
         
+        // flag the class as a Java class proxy.
+        proxy.setJavaProxy(true);
+        
         // FIXME: bit of a kludge here (non-interface classes assigned to both
         // class and module fields). simplifies proxy extender code, will go away
         // when JI is overhauled (and proxy extenders are deprecated).
@@ -1082,6 +1084,9 @@ public class JavaClass extends JavaObject {
         }
 
         installClassClasses(javaClass, module);
+        
+        // flag the class as a Java class proxy.
+        module.setJavaProxy(true);
         
         this.proxyModule = module;
         applyProxyExtenders();
