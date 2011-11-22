@@ -10,18 +10,17 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /*
- * Assign Argument passed into scope/method to a result variable
+ * Assign rest arg passed into method to a result variable
  */
-public class ReceiveArgumentInstruction extends Instr implements ResultInstr {
-	 // SSS FIXME: Fix IR to start offsets from 0
+public class ReceiveRestArgInstr extends Instr implements ResultInstr {
     protected int argIndex;
     private Variable result;
 
-    public ReceiveArgumentInstruction(Variable result, int argIndex) {
-        super(Operation.RECV_ARG);
-        
-        assert result != null: "ReceiveArgumentInstruction result is null";
-        
+    public ReceiveRestArgInstr(Variable result, int argIndex) {
+        super(Operation.RECV_REST_ARG);
+
+        assert result != null: "ReceiveRestArg result is null";
+
         this.argIndex = argIndex;
         this.result = result;
     }
@@ -39,7 +38,7 @@ public class ReceiveArgumentInstruction extends Instr implements ResultInstr {
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new CopyInstr(ii.getRenamedVariable(result), ii.getCallArg(argIndex, false));
+        return new CopyInstr(ii.getRenamedVariable(result), ii.getCallArg(argIndex, true));
     }
 
     @Override
@@ -47,9 +46,21 @@ public class ReceiveArgumentInstruction extends Instr implements ResultInstr {
         return super.toString() + "(" + argIndex + ")";
     }
 
+    private IRubyObject[] NO_PARAMS = new IRubyObject[0];    
+
     @Override
     public Object interpret(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block, Object exception, Object[] temp) {
-        result.store(context, self, temp, args[argIndex]);
+        IRubyObject[] restArg;
+        int available = args.length - argIndex;
+        if (available <= 0) {
+           restArg = NO_PARAMS;
+        } else {
+           restArg = new IRubyObject[available];
+           System.arraycopy(args, argIndex, restArg, 0, available);
+        }
+        
+        result.store(context, self, temp, context.getRuntime().newArray(restArg));
         return null;
     }
+
 }

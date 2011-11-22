@@ -159,7 +159,9 @@ import org.jruby.compiler.ir.instructions.PutFieldInstr;
 import org.jruby.compiler.ir.instructions.PutGlobalVarInstr;
 import org.jruby.compiler.ir.instructions.ReceiveSelfInstruction;
 import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
+import org.jruby.compiler.ir.instructions.ReceiveRestArgInstr;
 import org.jruby.compiler.ir.instructions.ReceiveClosureArgInstr;
+import org.jruby.compiler.ir.instructions.ReceiveClosureRestArgInstr;
 import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
 import org.jruby.compiler.ir.instructions.ReceiveExceptionInstr;
 import org.jruby.compiler.ir.instructions.ReceiveOptionalArgumentInstr;
@@ -719,9 +721,8 @@ public class IRBuilder {
             // We are in a nested receive situation -- when we are not at the root of a masgn tree
             // Ex: We are trying to receive (b,c) in this example: "|a, (b,c), d| = ..."
             s.addInstr(new GetArrayInstr(v, argsArray, argIndex, isSplat));
-        }
-        else {
-            s.addInstr(isClosureArg ? new ReceiveClosureInstr(v) : new ReceiveClosureArgInstr(v, argIndex, isSplat));
+        } else {
+            s.addInstr(isClosureArg ? new ReceiveClosureInstr(v) : (isSplat ? new ReceiveClosureRestArgInstr(v, argIndex) : new ReceiveClosureArgInstr(v, argIndex)));
         }
     }
 
@@ -1852,7 +1853,7 @@ public class IRBuilder {
             // So, we generate an implicit arg name
             String argName = argsNode.getRestArgNode().getName();
             argName = (argName.equals("")) ? "%_arg_array" : argName;
-            s.addInstr(new ReceiveArgumentInstruction(s.getLocalVariable(argName, 0), argIndex, true));
+            s.addInstr(new ReceiveRestArgInstr(s.getLocalVariable(argName, 0), argIndex));
         }
 
         // FIXME: Ruby 1.9 post args code needs to come here

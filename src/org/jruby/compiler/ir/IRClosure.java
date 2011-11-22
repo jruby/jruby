@@ -15,6 +15,7 @@ import org.jruby.compiler.ir.operands.TemporaryClosureVariable;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.ReceiveClosureArgInstr;
+import org.jruby.compiler.ir.instructions.ReceiveClosureRestArgInstr;
 import org.jruby.compiler.ir.representations.CFG;
 import org.jruby.parser.StaticScope;
 import org.jruby.parser.IRStaticScope;
@@ -114,8 +115,9 @@ public class IRClosure extends IRExecutionScope {
     public void addInstr(Instr i) {
         // Accumulate block arguments
         if (i instanceof ReceiveClosureArgInstr) {
-            ReceiveClosureArgInstr recv = (ReceiveClosureArgInstr) i;
-            blockArgs.add(recv.isRestOfArgArray() ? new Splat(recv.getResult()) : recv.getResult());
+            blockArgs.add(((ReceiveClosureArgInstr) i).getResult());
+        } else if (i instanceof ReceiveClosureRestArgInstr) {
+            blockArgs.add(new Splat(((ReceiveClosureRestArgInstr) i).getResult()));
         }
 
         super.addInstr(i);

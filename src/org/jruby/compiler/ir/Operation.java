@@ -39,12 +39,12 @@ public enum Operation {
     /** argument receive related in methods and blocks **/
     RECV_SELF(OpFlags.f_is_arg_receive),
     RECV_ARG(OpFlags.f_is_arg_receive),
+    RECV_REST_ARG(OpFlags.f_is_arg_receive),
     RECV_OPT_ARG(OpFlags.f_is_arg_receive),
     RECV_CLOSURE(OpFlags.f_is_arg_receive),
     RECV_CLOSURE_ARG(OpFlags.f_is_arg_receive),
+    RECV_CLOSURE_REST_ARG(OpFlags.f_is_arg_receive),
     RECV_EXCEPTION(OpFlags.f_is_arg_receive),
-    SET_ARGS(OpFlags.f_has_side_effect),
-    RESTORE_ARGS(OpFlags.f_has_side_effect),
 
     /* By default, call instructions cannot be deleted even if their results
      * aren't used by anyone unless we know more about what the call is, 

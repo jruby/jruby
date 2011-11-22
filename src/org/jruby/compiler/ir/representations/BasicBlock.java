@@ -2,6 +2,7 @@ package org.jruby.compiler.ir.representations;
 
 import org.jruby.compiler.ir.operands.Array;
 import org.jruby.compiler.ir.operands.Label;
+import org.jruby.compiler.ir.operands.Nil;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.instructions.Instr;
@@ -9,6 +10,7 @@ import org.jruby.compiler.ir.instructions.CopyInstr;
 import org.jruby.compiler.ir.instructions.ClosureReturnInstr;
 import org.jruby.compiler.ir.instructions.NopInstr;
 import org.jruby.compiler.ir.instructions.ReceiveClosureArgInstr;
+import org.jruby.compiler.ir.instructions.ReceiveClosureRestArgInstr;
 import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
 import org.jruby.compiler.ir.instructions.ReceiveSelfInstruction;
 import org.jruby.compiler.ir.instructions.YieldInstr;
@@ -151,18 +153,29 @@ public class BasicBlock implements DataInfo {
                 Operand closureArg;
                 ReceiveClosureArgInstr rcai = (ReceiveClosureArgInstr)i;
                 int argIndex = rcai.getArgIndex();
-                
+
                 if (argIndex < yieldArgs.length) {
                     closureArg = yieldArgs[argIndex].cloneForInlining(ii);
-                } else if (argIndex >= yieldArgs.length) {
-                    closureArg = new Array();
                 } else {
+                    closureArg = Nil.NIL;
+                }
+
+                // Replace the arg receive with a simple copy
+                it.set(new CopyInstr(rcai.getResult(), closureArg));
+            } else if (i instanceof ReceiveClosureRestArgInstr) {
+                Operand closureArg;
+                ReceiveClosureRestArgInstr rcai = (ReceiveClosureRestArgInstr)i;
+                int argIndex = rcai.getArgIndex();
+
+                if (argIndex < yieldArgs.length) {
                     Operand[] tmp = new Operand[yieldArgs.length - argIndex];
                     for (int j = argIndex; j < yieldArgs.length; j++) {
                         tmp[j-argIndex] = yieldArgs[j].cloneForInlining(ii);
                     }
 
                     closureArg = new Array(tmp);
+                } else {
+                    closureArg = new Array();
                 }
 
                 // Replace the arg receive with a simple copy
