@@ -46,6 +46,8 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.exceptions.JumpException;
+import org.jruby.exceptions.RaiseException;
+import org.jruby.exceptions.Unrescuable;
 import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.AttrReaderMethod;
 import org.jruby.internal.runtime.methods.AttrWriterMethod;
@@ -936,10 +938,28 @@ public class InvocationLinker {
     ////////////////////////////////////////////////////////////////////////////
     // Dispatch from Ruby to Java via Java integration
     ////////////////////////////////////////////////////////////////////////////
+
+    public static void handleJavaException(Ruby runtime, Throwable exception) {
+        if (exception instanceof RaiseException) {
+            // allow RaiseExceptions to propagate
+            throw (RaiseException) exception;
+        } else if (exception instanceof Unrescuable) {
+            // allow "unrescuable" flow-control exceptions to propagate
+            if (exception instanceof Error) {
+                throw (Error)exception;
+            } else if (exception instanceof RuntimeException) {
+                throw (RuntimeException)exception;
+            }
+        }
+        throw RaiseException.createNativeRaiseException(runtime, exception);
+    }
+    
+    private static final MethodHandle HANDLE_JAVA_EXCEPTION = findStatic(InvocationLinker.class, "handleJavaException", methodType(void.class, Ruby.class, Throwable.class));
     
     private static MethodHandle createJavaHandle(DynamicMethod method) {
         MethodHandle nativeTarget = null;
         MethodHandle returnFilter = null;
+        Object exceptionReturn = null;
         
         Ruby runtime = method.getImplementationClass().getRuntime();
         DynamicMethod.NativeCall nativeCall = method.getNativeCall();
@@ -960,6 +980,7 @@ public class InvocationLinker {
                             findStatic(RubyFixnum.class, "newFixnum", methodType(RubyFixnum.class, Ruby.class, long.class)),
                             0,
                             runtime);
+                    exceptionReturn = 0;
                 } else if (
                         nativeCall.getNativeReturn() == Byte.class ||
                         nativeCall.getNativeReturn() == Short.class ||
@@ -970,6 +991,7 @@ public class InvocationLinker {
                             findStatic(InvocationLinker.class, "fixnumOrNil", methodType(IRubyObject.class, Ruby.class, nativeCall.getNativeReturn())),
                             0,
                             runtime);
+                    exceptionReturn = 0;
                 } else if (
                         nativeCall.getNativeReturn() == float.class ||
                         nativeCall.getNativeReturn() == double.class) {
@@ -978,6 +1000,7 @@ public class InvocationLinker {
                             findStatic(RubyFloat.class, "newFloat", methodType(RubyFloat.class, Ruby.class, double.class)),
                             0,
                             runtime);
+                    exceptionReturn = 0.0d;
                 } else if (
                         nativeCall.getNativeReturn() == Float.class ||
                         nativeCall.getNativeReturn() == Double.class) {
@@ -985,6 +1008,7 @@ public class InvocationLinker {
                             findStatic(InvocationLinker.class, "floatOrNil", methodType(RubyFloat.class, Ruby.class, nativeCall.getNativeReturn())),
                             0,
                             runtime);
+                    exceptionReturn = 0.0d;
                 } else if (
                         nativeCall.getNativeReturn() == boolean.class) {
                     nativeTarget = explicitCastArguments(nativeTarget, methodType(boolean.class));
@@ -992,12 +1016,14 @@ public class InvocationLinker {
                             findStatic(RubyBoolean.class, "newBoolean", methodType(RubyBoolean.class, Ruby.class, boolean.class)),
                             0,
                             runtime);
+                    exceptionReturn = false;
                 } else if (
                         nativeCall.getNativeReturn() == Boolean.class) {
                     returnFilter = insertArguments(
                             findStatic(InvocationLinker.class, "booleanOrNil", methodType(IRubyObject.class, Ruby.class, Boolean.class)),
                             0,
                             runtime);
+                    exceptionReturn = false;
                 } else if (CharSequence.class.isAssignableFrom(nativeCall.getNativeReturn())) {
                     nativeTarget = explicitCastArguments(nativeTarget, methodType(CharSequence.class));
                     returnFilter = insertArguments(
@@ -1010,6 +1036,13 @@ public class InvocationLinker {
 
                 // we can handle this; do remaining transforms and return
                 if (returnFilter != null) {
+                    MethodHandle exHandler = insertArguments(HANDLE_JAVA_EXCEPTION, 0, runtime);
+                    exHandler = dropArguments(exHandler, 1, nativeTarget.type().parameterArray());
+                    if (nativeCall.getNativeReturn() != void.class) {
+                        // provide a dummy return value from exception handler (it never returns)
+                        exHandler = filterReturnValue(exHandler, constant(nativeCall.getNativeReturn(), exceptionReturn));
+                    }
+                    nativeTarget = catchException(nativeTarget, Throwable.class, exHandler);
                     nativeTarget = filterReturnValue(nativeTarget, returnFilter);
                     nativeTarget = explicitCastArguments(nativeTarget, methodType(IRubyObject.class));
                     nativeTarget = dropArguments(nativeTarget, 0, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class);
@@ -1042,6 +1075,7 @@ public class InvocationLinker {
                             findStatic(RubyFixnum.class, "newFixnum", methodType(RubyFixnum.class, Ruby.class, long.class)),
                             0,
                             runtime);
+                    exceptionReturn = 0;
                 } else if (
                         nativeCall.getNativeReturn() == Byte.class ||
                         nativeCall.getNativeReturn() == Short.class ||
@@ -1052,6 +1086,7 @@ public class InvocationLinker {
                             findStatic(InvocationLinker.class, "fixnumOrNil", methodType(IRubyObject.class, Ruby.class, nativeCall.getNativeReturn())),
                             0,
                             runtime);
+                    exceptionReturn = 0;
                 } else if (
                         nativeCall.getNativeReturn() == float.class ||
                         nativeCall.getNativeReturn() == double.class) {
@@ -1060,6 +1095,7 @@ public class InvocationLinker {
                             findStatic(RubyFloat.class, "newFloat", methodType(RubyFloat.class, Ruby.class, double.class)),
                             0,
                             runtime);
+                    exceptionReturn = 0.0d;
                 } else if (
                         nativeCall.getNativeReturn() == Float.class ||
                         nativeCall.getNativeReturn() == Double.class) {
@@ -1067,18 +1103,21 @@ public class InvocationLinker {
                             findStatic(InvocationLinker.class, "floatOrNil", methodType(RubyFloat.class, Ruby.class, nativeCall.getNativeReturn())),
                             0,
                             runtime);
+                    exceptionReturn = 0.0d;
                 } else if (
                         nativeCall.getNativeReturn() == boolean.class) {
                     returnFilter = insertArguments(
                             findStatic(RubyBoolean.class, "newBoolean", methodType(RubyBoolean.class, Ruby.class, boolean.class)),
                             0,
                             runtime);
+                    exceptionReturn = false;
                 } else if (
                         nativeCall.getNativeReturn() == Boolean.class) {
                     returnFilter = insertArguments(
                             findStatic(InvocationLinker.class, "booleanOrNil", methodType(IRubyObject.class, Ruby.class, Boolean.class)),
                             0,
                             runtime);
+                    exceptionReturn = false;
                 } else if (CharSequence.class.isAssignableFrom(nativeCall.getNativeReturn())) {
                     nativeTarget = explicitCastArguments(nativeTarget, methodType(CharSequence.class, IRubyObject.class));
                     returnFilter = insertArguments(
@@ -1091,6 +1130,12 @@ public class InvocationLinker {
 
                 // we can handle this; do remaining transforms and return
                 if (returnFilter != null) {
+                    MethodHandle exHandler = insertArguments(HANDLE_JAVA_EXCEPTION, 0, runtime);
+                    exHandler = dropArguments(exHandler, 1, nativeTarget.type().parameterArray());
+                    if (nativeCall.getNativeReturn() != void.class) {
+                        // provide a dummy return value from exception handler (it never returns)
+                        exHandler = filterReturnValue(exHandler, constant(nativeCall.getNativeReturn(), exceptionReturn));
+                    }
                     nativeTarget = filterReturnValue(nativeTarget, returnFilter);
                     nativeTarget = explicitCastArguments(nativeTarget, methodType(IRubyObject.class, IRubyObject.class));
                     nativeTarget = permuteArguments(
