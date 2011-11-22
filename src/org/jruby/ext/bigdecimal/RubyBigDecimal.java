@@ -454,6 +454,7 @@ public class RubyBigDecimal extends RubyNumeric {
         return this;
     }
     
+    @Override
     @JRubyMethod(name = "hash")
     public RubyFixnum hash() {
         return getRuntime().newFixnum(value.hashCode());
@@ -483,6 +484,7 @@ public class RubyBigDecimal extends RubyNumeric {
         return new RubyBigDecimal(runtime, modulo).setResult();
     }
 
+    @Override
     @JRubyMethod(name = "remainder", required = 1)
     public IRubyObject remainder(ThreadContext context, IRubyObject arg) {
         // TODO: full-precision remainder is 1000x slower than MRI!
@@ -710,6 +712,7 @@ public class RubyBigDecimal extends RubyNumeric {
         return null;
     }
 
+    @Override
     @JRubyMethod(name = "+@")
     public IRubyObject op_uplus() {
         return this;
@@ -923,11 +926,13 @@ public class RubyBigDecimal extends RubyNumeric {
         return getRuntime().getNil();
     }
 
+    @Override
     @JRubyMethod(name = "<=>", required = 1)
     public IRubyObject op_cmp(ThreadContext context, IRubyObject arg) {
         return cmp(context, arg,'*');
     }
 
+    @Override
     @JRubyMethod(name = {"eql?", "==", "==="}, required = 1)
     public IRubyObject eql_p(ThreadContext context, IRubyObject arg) {
         return cmp(context, arg,'=');
