@@ -656,6 +656,8 @@ public class RubyFixnum extends RubyInteger {
     public IRubyObject quo(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum) {
             return RubyFloat.newFloat(context.getRuntime(), (double) value / (double) ((RubyFixnum) other).value);
+        } else if (other instanceof RubyBignum) {
+            return RubyFloat.newFloat(context.getRuntime(), (double) value / (double) ((RubyBignum) other).getDoubleValue());
         }
         return coerceBin(context, "quo", other);
     }
