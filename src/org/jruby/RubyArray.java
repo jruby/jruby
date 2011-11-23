@@ -2961,7 +2961,7 @@ public class RubyArray extends RubyObject implements List {
 
         long len = RubyNumeric.num2long(times);
         Ruby runtime = context.getRuntime();
-        if (len == 0) return new RubyArray(runtime, getMetaClass(), IRubyObject.NULL_ARRAY).infectBy(this);
+        if (len == 0) return new RubyArray(runtime, getMetaClass(), IRubyObject.NULL_ARRAY);
         if (len < 0) throw runtime.newArgumentError("negative argument");
 
         if (Long.MAX_VALUE / len < realLength) {
