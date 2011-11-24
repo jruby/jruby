@@ -16,7 +16,7 @@ public class PutGlobalVarInstr extends PutInstr {
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new PutGlobalVarInstr(((GlobalVariable) operands[TARGET]).name, operands[VALUE].cloneForInlining(ii));
+        return new PutGlobalVarInstr(((GlobalVariable) operands[TARGET]).getName(), operands[VALUE].cloneForInlining(ii));
     }
 
     @Override

@@ -2,6 +2,8 @@ package org.jruby.compiler.ir.operands;
 
 import java.util.List;
 
+// A ruby value that is not a local variable
+// (method name, symbol, global var, $ vars)
 public abstract class Reference extends Operand {
     final private String name;
 

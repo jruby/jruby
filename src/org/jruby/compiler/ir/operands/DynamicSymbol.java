@@ -1,18 +1,44 @@
 package org.jruby.compiler.ir.operands;
 
+import java.util.List;
+import java.util.Map;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.compiler.ir.representations.InlinerInfo;
 
-public class DynamicSymbol extends DynamicReference {
-    public DynamicSymbol(CompoundString s) { super(s); }
+public class DynamicSymbol extends Operand {
+    // SSS FIXME: Should this be Operand or CompoundString?
+    // Can it happen that symbols are built out of other than compound strings?  
+    // Or can it happen during optimizations that this becomes a generic operand?
+    CompoundString symbolName;
+
+    public DynamicSymbol(CompoundString n) { symbolName = n; }
+
+    public boolean isNonAtomicValue() { return true; }
+
+    public String toString() {
+        return ":" + symbolName.toString();
+    }
+
+    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) { 
+        symbolName = (CompoundString)symbolName.getSimplifiedOperand(valueMap, force);
+        // SSS FIXME: This operand is not immutable because of this
+        return this;
+    }
+
+    /** Append the list of variables used in this operand to the input list */
+    @Override
+    public void addUsedVariables(List<Variable> l) {
+        symbolName.addUsedVariables(l);
+    }
+
+    public Operand cloneForInlining(InlinerInfo ii) {
+        return symbolName.cloneForInlining(ii);
+    }
 
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
-        return context.getRuntime().newSymbol(((IRubyObject)_refName.retrieve(context, self, currDynScope, temp)).asJavaString());
-    }
-
-    public String toString() {
-        return ":" + _refName.toString();
+        return context.getRuntime().newSymbol(((IRubyObject)symbolName.retrieve(context, self, currDynScope, temp)).asJavaString());
     }
 }

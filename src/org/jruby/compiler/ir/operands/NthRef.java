@@ -9,25 +9,14 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-//
 // NOTE: This operand is only used in the initial stages of optimization
 // Further down the line, it could get converted to calls
-//
-public class NthRef extends Operand {
+public class NthRef extends Reference {
     final public int matchNumber;
 
     public NthRef(int matchNumber) {
+        super("$" + matchNumber);
         this.matchNumber = matchNumber;
-    }
-
-    @Override
-    public void addUsedVariables(List<Variable> l) { 
-        /* Nothing to do */
-    }
-
-    @Override
-    public String toString() {
-        return "$" + matchNumber;
     }
 
     @Override
