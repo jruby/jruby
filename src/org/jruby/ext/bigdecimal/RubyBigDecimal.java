@@ -460,7 +460,7 @@ public class RubyBigDecimal extends RubyNumeric {
         return getRuntime().newFixnum(value.hashCode());
     }
 
-    @JRubyMethod(name = {"%", "modulo"}, required = 1)
+    @JRubyMethod(name = {"%", "modulo"}, required = 1, compat = CompatVersion.RUBY1_8)
     public IRubyObject op_mod(ThreadContext context, IRubyObject arg) {
         // TODO: full-precision remainder is 1000x slower than MRI!
         Ruby runtime = context.getRuntime();
@@ -473,6 +473,39 @@ public class RubyBigDecimal extends RubyNumeric {
         }
         if (val.isInfinity() || val.isNaN() || val.isZero()) {
             return newNaN(runtime);
+        }
+
+        // Java and MRI definitions of modulo are different.
+        BigDecimal modulo = value.remainder(val.value);
+        if (modulo.signum() * val.value.signum() < 0) {
+            modulo = modulo.add(val.value);
+        }
+
+        return new RubyBigDecimal(runtime, modulo).setResult();
+    }
+
+    @JRubyMethod(name = {"%", "modulo"}, required = 1, compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_mod19(ThreadContext context, IRubyObject other) {
+        // TODO: full-precision divmod is 1000x slower than MRI!
+        Ruby runtime = context.getRuntime();
+        RubyBigDecimal val = getVpValue(other, false);
+        if (val == null) {
+            return callCoerced(context, "%", other, true);
+        }
+        if (isNaN() || val.isNaN() || (isInfinity() && val.isInfinity())) {
+            return newNaN(runtime);
+        }
+        if (val.isZero()) {
+            throw context.getRuntime().newZeroDivisionError();
+        }
+        if (isInfinity()) {
+            return newNaN(runtime);
+        }
+        if (val.isInfinity()) {
+            return this;
+        }
+        if (isZero()) {
+            return newZero(runtime, value.signum());
         }
 
         // Java and MRI definitions of modulo are different.
