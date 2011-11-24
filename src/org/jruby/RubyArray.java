@@ -1981,10 +1981,19 @@ public class RubyArray extends RubyObject implements List {
     /** rb_ary_compact
      *
      */
-    @JRubyMethod(name = "compact")
+    @JRubyMethod(name = "compact", compat = RUBY1_8)
     public IRubyObject compact() {
         RubyArray ary = aryDup();
         ary.compact_bang();
+        return ary;
+    }
+    
+    @JRubyMethod(name = "compact", compat = RUBY1_9)
+    public IRubyObject compatc19() {
+        RubyArray ary = aryDup();
+        ary.compact_bang();
+        ary.untaint(getRuntime().getCurrentContext());
+        ary.trust(getRuntime().getCurrentContext());
         return ary;
     }
 
