@@ -3605,10 +3605,10 @@ public class RubyArray extends RubyObject implements List {
             for (int i = 0; i < realLength; i++) {
                 block.yield(context, newArray(context.getRuntime(), eltOk(i)));
             }
-        } else if (r >= 0 && realLength >= r) {
+        } else if (r >= 0) {
             int n = realLength;
             permute(context, n, r,
-                    new int[n], 0,
+                    new int[r], 0,
                     new boolean[n],
                     repeat,
                     makeShared(begin, n, getMetaClass()), block);
