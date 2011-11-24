@@ -1,1 +1,0 @@
-fails:OpenStruct#[]= raises a NoMethodError
