@@ -999,6 +999,17 @@ public class RubyArray extends RubyObject implements List {
         // rb_copy_generic_ivar from DUP_SETUP here ...unlikely..
         return dup;
     }
+    
+    public final RubyArray aryDup19() {
+        // In 1.9, rb_ary_dup logic changed so that on subclasses of Array,
+        // dup returns an instance of Array, rather than an instance of the subclass
+        // Also, taintedness and trustedness are not inherited to duplicates
+        RubyArray dup = new RubyArray(metaClass.getClassRuntime(), values, begin, realLength);
+        dup.isShared = true;
+        isShared = true;
+        // rb_copy_generic_ivar from DUP_SETUP here ...unlikely..
+        return dup;
+    }
 
     /** rb_ary_transpose
      * 
@@ -1990,10 +2001,8 @@ public class RubyArray extends RubyObject implements List {
     
     @JRubyMethod(name = "compact", compat = RUBY1_9)
     public IRubyObject compatc19() {
-        RubyArray ary = aryDup();
+        RubyArray ary = aryDup19();
         ary.compact_bang();
-        ary.untaint(getRuntime().getCurrentContext());
-        ary.trust(getRuntime().getCurrentContext());
         return ary;
     }
 
@@ -3200,7 +3209,7 @@ public class RubyArray extends RubyObject implements List {
 
     @JRubyMethod(name = "sort", compat = RUBY1_9)
     public RubyArray sort19(ThreadContext context, Block block) {
-        RubyArray ary = aryDup();
+        RubyArray ary = aryDup19();
         ary.sort_bang19(context, block);
         return ary;
     }
@@ -3670,7 +3679,7 @@ public class RubyArray extends RubyObject implements List {
 
     @JRubyMethod(name = "shuffle", optional = 1, compat = RUBY1_9)
     public IRubyObject shuffle(ThreadContext context, IRubyObject[] args) {
-        RubyArray ary = aryDup();
+        RubyArray ary = aryDup19();
         ary.shuffle_bang(context, args);
         return ary;
     }
