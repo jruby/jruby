@@ -13,5 +13,8 @@ def fib_iter_ruby(n)
    i
 end
 
-puts Benchmark.measure { fib_iter_ruby(300000) }
-puts Benchmark.measure { fib_iter_ruby(300000) }
+TIMES = (ARGV[0] || 5).to_i
+N = (ARGV[1] || 300000).to_i
+TIMES.times {
+   puts Benchmark.measure { fib_iter_ruby(300000) }
+}
