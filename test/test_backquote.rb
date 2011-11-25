@@ -26,7 +26,7 @@ class TestBackquote < Test::Unit::TestCase
   end
 
   def test_backquote_ruby
-    assert_equal "true\n", `ruby -e "puts true"`
+    assert_equal "true\n", `jruby -e "puts true"`
   end
 
   #JRUBY-2251
