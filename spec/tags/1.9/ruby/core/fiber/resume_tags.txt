@@ -1,9 +1,3 @@
-fails:Fiber#resume can be invoked from the root Fiber
-fails:Fiber#resume passes control to the beginning of the block on first invocation
 error:Fiber#resume returns the last value encountered on first invocation
 error:Fiber#resume runs until the end of the block or Fiber.yield on first invocation
 error:Fiber#resume runs until the end of the block or Fiber.yield on first invocation
-fails:Fiber#resume returns the last value encountered on first invocation
-fails:Fiber#resume resumes from the last call to Fiber.yield on subsequent invocations
-fails(compiler):Fiber#resume runs until the end of the block or Fiber.yield on first invocation
-fails(compiler):Fiber#resume sets the block parameters to its arguments on the first invocation
