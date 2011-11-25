@@ -228,13 +228,20 @@ public class RubyException extends RubyObject {
         }
     }
 
-    @JRubyMethod(name = "to_s")
+    @JRubyMethod(name = "to_s", compat = CompatVersion.RUBY1_8)
     public IRubyObject to_s(ThreadContext context) {
         if (message.isNil()) return context.getRuntime().newString(getMetaClass().getRealClass().getName());
         message.setTaint(isTaint());
         return message;
     }
-
+    
+    @JRubyMethod(name = "to_s", compat = CompatVersion.RUBY1_9)
+    public IRubyObject to_s19(ThreadContext context) {
+        if (message.isNil()) return context.getRuntime().newString(getMetaClass().getRealClass().getName());
+        message.setTaint(isTaint());
+        return message.asString();
+    }
+    
     @JRubyMethod(name = "to_str", compat = CompatVersion.RUBY1_8)
     public IRubyObject to_str(ThreadContext context) {
         return callMethod(context, "to_s");
