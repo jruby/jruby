@@ -919,34 +919,35 @@ public class JavaClass extends JavaObject {
     }
 
     private static String fixScalaNames(String name) {
+        String s = name;
         for (Map.Entry<String, String> entry : SCALA_OPERATORS.entrySet()) {
-            name.replaceAll(entry.getKey(), entry.getValue());
+            s = s.replaceAll(entry.getKey(), entry.getValue());
         }
 
-        return name;
+        return s;
     }
 
     private static final Map<String, String> SCALA_OPERATORS;
     static {
         Map<String, String> tmp = new HashMap();
-        tmp.put("$plus", "+");
-        tmp.put("$minus", "-");
-        tmp.put("$colon", ":");
-        tmp.put("$div", "/");
-        tmp.put("$eq", "=");
-        tmp.put("$less", "<");
-        tmp.put("$greater", ">");
-        tmp.put("$bslash", "\\");
-        tmp.put("$hash", "#");
-        tmp.put("$times", "*");
-        tmp.put("$bang", "!");
-        tmp.put("$at", "@");
-        tmp.put("$percent", "%");
-        tmp.put("$up", "^");
-        tmp.put("$amp", "&");
-        tmp.put("$tilde", "~");
-        tmp.put("$qmark", "?");
-        tmp.put("$bar", "|");
+        tmp.put("\\$plus", "+");
+        tmp.put("\\$minus", "-");
+        tmp.put("\\$colon", ":");
+        tmp.put("\\$div", "/");
+        tmp.put("\\$eq", "=");
+        tmp.put("\\$less", "<");
+        tmp.put("\\$greater", ">");
+        tmp.put("\\$bslash", "\\");
+        tmp.put("\\$hash", "#");
+        tmp.put("\\$times", "*");
+        tmp.put("\\$bang", "!");
+        tmp.put("\\$at", "@");
+        tmp.put("\\$percent", "%");
+        tmp.put("\\$up", "^");
+        tmp.put("\\$amp", "&");
+        tmp.put("\\$tilde", "~");
+        tmp.put("\\$qmark", "?");
+        tmp.put("\\$bar", "|");
         SCALA_OPERATORS = Collections.unmodifiableMap(tmp);
     }
 
