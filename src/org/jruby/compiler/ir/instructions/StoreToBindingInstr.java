@@ -58,10 +58,9 @@ public class StoreToBindingInstr extends Instr {
         
         // FIXME: This is a pseudo-hack.  bindings set up for blocks in opt arg default values
         // can trip over this since we cannot store somethign which is not a real IRubyObject.
-        DynamicScope variableScope = context.getCurrentScope();
-        Object rubyValue = variableScope.getValue(v.getLocation(), v.getScopeDepth());
+        Object rubyValue = currDynScope.getValue(v.getLocation(), v.getScopeDepth());
         if (rubyValue == null) rubyValue = context.getRuntime().getNil();
-        if (!(rubyValue instanceof UndefinedValue)) variableScope.setValue((IRubyObject) rubyValue, bindingSlot, 0);
+        if (!(rubyValue instanceof UndefinedValue)) currDynScope.setValue((IRubyObject) rubyValue, bindingSlot, 0);
 
         return null;
     }

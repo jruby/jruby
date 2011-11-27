@@ -64,7 +64,7 @@ public class SearchConstInstr extends Instr implements ResultInstr {
         RubyModule object = runtime.getObject();
         Object constant;
         
-        if (staticScope == null) { // FIXME: CORE CLASSES have no staticscope yet...hack for now
+        if (staticScope == null) { // FIXME: Object scope has no staticscope yet
             constant = object.getConstant(constName);
         } else {
             constant = staticScope.getConstant(runtime, constName, object);

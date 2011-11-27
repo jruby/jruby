@@ -80,9 +80,7 @@ public class LoadFromBindingInstr extends Instr implements ResultInstr {
         
         if (bindingSlot == -1) bindingSlot = sourceMethod.getBindingSlot(getSlotName());
         int depth = 0; // All binding slots are in the top-most scope
-        DynamicScope variableScope = context.getCurrentScope();
-        
-        variableScope.setValue(v.getLocation(), variableScope.getValue(bindingSlot, depth), v.getScopeDepth());
+        currDynScope.setValue(v.getLocation(), currDynScope.getValue(bindingSlot, depth), v.getScopeDepth());
         
         return null;
     }

@@ -51,7 +51,7 @@ public class ConstMissingInstr extends Instr implements ResultInstr {
 
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
-        StaticScope staticScope = definingModule == null ? context.getCurrentScope().getStaticScope() : definingModule.getStaticScope();
+        StaticScope staticScope = definingModule == null ? currDynScope.getStaticScope() : definingModule.getStaticScope();
         return staticScope.getModule().callMethod(context, "const_missing", context.getRuntime().fastNewSymbol(missingConst));
     }
 }

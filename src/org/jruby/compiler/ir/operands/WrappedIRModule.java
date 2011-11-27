@@ -26,7 +26,7 @@ public class WrappedIRModule extends Constant {
 
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
-        StaticScope ssc = (module == null) ? context.getCurrentScope().getStaticScope() : module.getStaticScope();
+        StaticScope ssc = (module == null) ? currDynScope.getStaticScope() : module.getStaticScope();
         if (ssc != null) {
             return ssc.getModule();
         } else if (module.isACoreClass()) {
