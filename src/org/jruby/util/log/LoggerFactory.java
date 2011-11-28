@@ -27,8 +27,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util.log;
 
-import org.jruby.util.SafePropertyAccessor;
-
 import java.lang.reflect.Constructor;
 import org.jruby.util.cli.Options;
 

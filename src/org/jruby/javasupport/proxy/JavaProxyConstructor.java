@@ -30,7 +30,6 @@ package org.jruby.javasupport.proxy;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Modifier;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
