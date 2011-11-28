@@ -19,8 +19,7 @@ import org.jruby.runtime.DynamicScope;
 // Further down the line, this string operand could get converted to calls
 // that appends the components of the compound string into a single string object
 public class CompoundString extends Operand {
-
-    final public List<Operand> pieces;
+    final private List<Operand> pieces;
 
     public CompoundString(List<Operand> pieces) {
         this.pieces = pieces;
@@ -49,14 +48,12 @@ public class CompoundString extends Operand {
 
     @Override
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
-        int i = 0;
+        List<Operand> newPieces = new java.util.ArrayList<Operand>();
         for (Operand p : pieces) {
-            pieces.set(i, p.getSimplifiedOperand(valueMap, force));
-            i++;
+            newPieces.add(p.getSimplifiedOperand(valueMap, force));
         }
 
-        // SSS FIXME: This operand is not immutable because of this
-        return this;
+        return new CompoundString(newPieces);
     }
 
     /** Append the list of variables used in this operand to the input list */

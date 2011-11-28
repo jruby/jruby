@@ -11,7 +11,7 @@ public class DynamicSymbol extends Operand {
     // SSS FIXME: Should this be Operand or CompoundString?
     // Can it happen that symbols are built out of other than compound strings?  
     // Or can it happen during optimizations that this becomes a generic operand?
-    CompoundString symbolName;
+    final private CompoundString symbolName;
 
     public DynamicSymbol(CompoundString n) { symbolName = n; }
 
@@ -21,10 +21,9 @@ public class DynamicSymbol extends Operand {
         return ":" + symbolName.toString();
     }
 
-    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) { 
-        symbolName = (CompoundString)symbolName.getSimplifiedOperand(valueMap, force);
-        // SSS FIXME: This operand is not immutable because of this
-        return this;
+    public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
+        CompoundString newSymbol = (CompoundString)symbolName.getSimplifiedOperand(valueMap, force);
+        return symbolName == newSymbol ? this : new DynamicSymbol(newSymbol);
     }
 
     /** Append the list of variables used in this operand to the input list */

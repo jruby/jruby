@@ -18,7 +18,7 @@ import org.jruby.util.RegexpOptions;
 // that actually build the Regexp object
 public class Regexp extends Operand {
     final public RegexpOptions options;
-    Operand regexp;
+    final private Operand regexp;
     private RubyRegexp rubyRegexp;
 
     public Regexp(Operand regexp, RegexpOptions options) {
@@ -43,9 +43,8 @@ public class Regexp extends Operand {
 
     @Override
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
-        regexp = regexp.getSimplifiedOperand(valueMap, force);
-        // SSS FIXME: This operand is not immutable because of this
-        return this;
+        Operand newRegexp = regexp.getSimplifiedOperand(valueMap, force); 
+        return newRegexp == regexp ? this : new Regexp(newRegexp, options);
     }
 
     /** Append the list of variables used in this operand to the input list */

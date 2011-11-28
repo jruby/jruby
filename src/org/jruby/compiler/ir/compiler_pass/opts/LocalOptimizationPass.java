@@ -266,7 +266,6 @@ public class LocalOptimizationPass implements CompilerPass {
         //   - etc.
         //
         // This information is probably already present in the AST Inspector
-        Label deoptLabel = s.getNewLabel();
         Map<Operand,Operand> valueMap = new HashMap<Operand,Operand>();
         Map<Variable,List<Variable>> simplificationMap = new HashMap<Variable,List<Variable>>();
         Map<String,CodeVersion> versionMap = new HashMap<String,CodeVersion>();

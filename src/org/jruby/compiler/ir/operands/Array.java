@@ -15,7 +15,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 // Further down the line, this array operand could get converted to calls
 // that actually build a Ruby object
 public class Array extends Operand {
-    public final Operand[] elts;
+    final public Operand[] elts;
 
     public Array() {
         elts = new Operand[0];
@@ -55,12 +55,12 @@ public class Array extends Operand {
 
     @Override
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
+        Operand[] newElts = new Operand[elts.length];
         for (int i = 0; i < elts.length; i++) {
-            elts[i] = elts[i].getSimplifiedOperand(valueMap, force);
+            newElts[i] = elts[i].getSimplifiedOperand(valueMap, force);
         }
 
-        // SSS FIXME: This operand is not immutable because of this -- we could by building a whole new array instead
-        return this;
+        return new Array(newElts);
     }
 
     @Override

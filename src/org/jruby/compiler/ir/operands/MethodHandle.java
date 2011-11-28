@@ -19,8 +19,8 @@ import org.jruby.runtime.callsite.CacheEntry;
 // During interpretation / compilation, we may get a fully resolved method handle
 // which might be stored in an inline cache.
 public class MethodHandle extends Operand {
-    protected Operand methodName;
-    protected Operand receiver;
+    final protected Operand methodName;
+    final protected Operand receiver;
 
     // Used during interpretation
     private String      resolvedMethodName;
@@ -56,10 +56,9 @@ public class MethodHandle extends Operand {
 
     @Override
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
-        methodName = methodName.getSimplifiedOperand(valueMap, force);
-        receiver = receiver.getSimplifiedOperand(valueMap, force);
-        // SSS FIXME: This operand is not immutable because of this
-        return this;
+        Operand newMethodName = methodName.getSimplifiedOperand(valueMap, force);
+        Operand newReceiver = receiver.getSimplifiedOperand(valueMap, force);
+        return (newMethodName == methodName && newReceiver == receiver) ? this : new MethodHandle(newMethodName, newReceiver);
     }
 
     @Override

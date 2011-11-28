@@ -7,7 +7,8 @@ import org.jruby.compiler.ir.IRClosure;
  * local to the closure and is not defined in any ancestor lexical scope
  */
 public class ClosureLocalVariable extends LocalVariable {
-    public final IRClosure definingScope;
+    final public IRClosure definingScope;
+
     public ClosureLocalVariable(IRClosure scope, String name, int scopeDepth, int location) {
         super(name, scopeDepth, location);
         this.definingScope = scope;

@@ -44,14 +44,12 @@ public class BacktickString extends Operand {
 
     @Override
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
-        int i = 0;
+        List<Operand> newPieces = new ArrayList<Operand>();
         for (Operand p : pieces) {
-            pieces.set(i, p.getSimplifiedOperand(valueMap, force));
-            i++;
+            newPieces.add(p.getSimplifiedOperand(valueMap, force));
         }
 
-        // SSS FIXME: This operand is not immutable because of this
-        return this;
+        return new BacktickString(newPieces);
     }
 
     /** Append the list of variables used in this operand to the input list */

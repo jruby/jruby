@@ -7,7 +7,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class AsString extends Operand {
-    Operand source; 
+    final private Operand source; 
 
     public AsString(Operand source) {
         if (source == null) source = new StringLiteral("");
@@ -21,9 +21,8 @@ public class AsString extends Operand {
 
     @Override
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
-        source = source.getSimplifiedOperand(valueMap, force);
-        // SSS FIXME: This operand is not immutable because of this
-        return this;
+        Operand newSource = source.getSimplifiedOperand(valueMap, force);
+        return (newSource == source) ? this : new AsString(newSource);
     }
 
     @Override

@@ -15,7 +15,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 // NOTE: This operand is only used in the initial stages of optimization
 // Further down the line, it could get converted to calls that implement splat semantics
 public class Splat extends Operand {
-    private Operand array;
+    final private Operand array;
 
     public Splat(Operand array) {
         this.array = array;
@@ -42,7 +42,7 @@ public class Splat extends Operand {
 
     @Override
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
-        array = array.getSimplifiedOperand(valueMap, force);
+        Operand newArray = array.getSimplifiedOperand(valueMap, force); 
         /*
          * SSS FIXME:  Cannot convert this to an Array operand!
          *
@@ -50,8 +50,7 @@ public class Splat extends Operand {
         _array = ((Variable)_array).getValue(valueMap);
         }
          */
-        // SSS FIXME: This operand is not immutable because of this
-        return this;
+        return (newArray == array) ? this : new Splat(newArray);
     }
 
     @Override

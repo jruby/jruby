@@ -20,7 +20,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 // Further down the line, it could get converted to calls
 //
 public class SValue extends Operand {
-    Operand array;
+    final private Operand array;
 
     public SValue(Operand array) {
         this.array = array;
@@ -38,14 +38,12 @@ public class SValue extends Operand {
 
     @Override
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
-        array = array.getSimplifiedOperand(valueMap, force);
-        if (array instanceof Array) {
-            Array a = (Array) array;
+        Operand newArray = array.getSimplifiedOperand(valueMap, force);
+        if (newArray instanceof Array) {
+            Array a = (Array) newArray;
             return (a.elts.length == 1) ? a.elts[0] : a;
-        }
-        else {
-            // SSS FIXME: This operand is not immutable because of this
-            return this;
+        } else {
+            return (newArray == array) ? this : new SValue(newArray);
         }
     }
 

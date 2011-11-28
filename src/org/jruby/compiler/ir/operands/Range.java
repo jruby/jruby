@@ -17,9 +17,9 @@ import org.jruby.runtime.builtin.IRubyObject;
 // Further down the line, this range operand could get converted to calls
 // that actually build the Range object
 public class Range extends Operand {
-    Operand begin;
-    Operand end;
-    boolean exclusive;
+    final private Operand begin;
+    final private Operand end;
+    private boolean exclusive;
 
     public Range(Operand begin, Operand end, boolean exclusive) {
         this.begin = begin;
@@ -59,10 +59,9 @@ public class Range extends Operand {
 
     @Override
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
-        begin = begin.getSimplifiedOperand(valueMap, force);
-        end = end.getSimplifiedOperand(valueMap, force);
-        // SSS FIXME: This operand is not immutable because of this
-        return this;
+        Operand newBegin = begin.getSimplifiedOperand(valueMap, force);
+        Operand newEnd = end.getSimplifiedOperand(valueMap, force);
+        return (newBegin == begin && newEnd == end) ? this : new Range(newBegin, newEnd, exclusive);
     }
 
     /** Append the list of variables used in this operand to the input list */

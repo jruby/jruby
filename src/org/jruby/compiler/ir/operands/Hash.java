@@ -43,15 +43,12 @@ public class Hash extends Operand {
 
     @Override
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
-        int i = 0;
+        List<KeyValuePair> newPairs = new java.util.ArrayList<KeyValuePair>();
         for (KeyValuePair pair : pairs) {
-            pair.setKey(pair.getKey().getSimplifiedOperand(valueMap, force));
-            pair.setValue(pair.getValue().getSimplifiedOperand(valueMap, force));
-            i++;
+            newPairs.add(new KeyValuePair(pair.getKey().getSimplifiedOperand(valueMap, force), pair.getValue().getSimplifiedOperand(valueMap, force)));
         }
 
-        // SSS FIXME: This operand is not immutable because of this
-        return this;
+        return new Hash(newPairs);
     }
 
     @Override
@@ -74,8 +71,7 @@ public class Hash extends Operand {
 
         List<KeyValuePair> newPairs = new java.util.ArrayList<KeyValuePair>();
         for (KeyValuePair pair : pairs) {
-            newPairs.add(new KeyValuePair(pair.getKey().cloneForInlining(ii),
-                    pair.getValue().cloneForInlining(ii)));
+            newPairs.add(new KeyValuePair(pair.getKey().cloneForInlining(ii), pair.getValue().cloneForInlining(ii)));
         }
         return new Hash(newPairs);
     }

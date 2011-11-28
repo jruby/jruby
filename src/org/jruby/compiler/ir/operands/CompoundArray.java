@@ -16,8 +16,8 @@ import org.jruby.runtime.ThreadContext;
 // NOTE: This operand is only used in the initial stages of optimization.
 // Further down the line, this might get built into an actual array object.
 public class CompoundArray extends Operand {
-    Operand a1;
-    Operand a2;
+    final private Operand a1;
+    final private Operand a2;
 
     public CompoundArray(Operand a1, Operand a2) { 
         this.a1 = a1;
@@ -36,8 +36,8 @@ public class CompoundArray extends Operand {
     public Operand getAppendedArg() { return a2; }
 
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
-        a1 = a1.getSimplifiedOperand(valueMap, force);
-        a2 = a2.getSimplifiedOperand(valueMap, force);
+        Operand newA1 = a1.getSimplifiedOperand(valueMap, force); 
+        Operand newA2 = a2.getSimplifiedOperand(valueMap, force);
 /*
  * SSS FIXME:  Cannot convert this to an Array operand!
  *
@@ -65,8 +65,7 @@ public class CompoundArray extends Operand {
             return this;
         }
 */
-        // SSS FIXME: This operand is not immutable because of this
-        return this;
+        return (a1 == newA1 && a2 == newA2) ? this : new CompoundArray(newA1, newA2);
     }
 
     @Override
