@@ -1,0 +1,1 @@
+fails(spec-ci):Module#class_variables returns an Array of Symbols of class variable names defined in a metaclass
