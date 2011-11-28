@@ -387,6 +387,11 @@ public class Interpreter {
                 if (ipc == -1) throw re; // No one rescued exception, pass it on!
 
                 exception = re.getException();
+                // SSS: Copied this comment and line from ast/RescueNode.java:handleException
+                // TODO: Rubicon TestKernel dies without this line.  A cursory glance implies we
+                // falsely set $! to nil and this sets it back to something valid.  This should 
+                // get fixed at the same time we address bug #1296484.
+                runtime.getGlobalVariables().set("$!", (IRubyObject)exception);
             } catch (ThreadKill e) {
                 ipc = scope.getEnsurerPC(lastInstr);
                 if (ipc == -1) throw e; // No ensure block here, pass it on! 
@@ -416,7 +421,13 @@ public class Interpreter {
             // Cannot return from root methods -- so find out where exactly we need to return.
             if (methodToReturnFrom.isAModuleRootMethod()) {
                 methodToReturnFrom = methodToReturnFrom.getClosestNonRootMethodAncestor();
-                if (methodToReturnFrom == null) throw IRException.RETURN_LocalJumpError.getException(context.getRuntime());
+                if (methodToReturnFrom == null) {
+                    if (context.getThread() == context.getRuntime().getThreadService().getMainThread()) {
+                        throw IRException.RETURN_LocalJumpError.getException(context.getRuntime());
+                    } else {
+                        throw context.getRuntime().newThreadError("return can't jump across threads");
+                    }
+                }
             }
 
             // Cannot return to the call that we have long since exited.
