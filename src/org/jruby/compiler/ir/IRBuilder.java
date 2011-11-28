@@ -2597,11 +2597,12 @@ public class IRBuilder {
             s.addInstr(BEQInstr.create(flag, Nil.NIL, l2)); // if v1 is undefined, go to v2's computation
         }
         v1 = build(orNode.getFirstNode(), s); // build of 'x'
+        s.addInstr(new CopyInstr(flag, v1));
         Variable result = getValueInTemporaryVariable(s, v1);
         if (needsDefnCheck) {
             s.addInstr(new LabelInstr(l2));
         }
-        s.addInstr(BEQInstr.create(v1, BooleanLiteral.TRUE, l1));  // if v1 is defined and true, we are done! 
+        s.addInstr(BEQInstr.create(flag, BooleanLiteral.TRUE, l1));  // if v1 is defined and true, we are done! 
         Operand v2 = build(orNode.getSecondNode(), s); // This is an AST node that sets x = y, so nothing special to do here.
         s.addInstr(new CopyInstr(result, v2));
         s.addInstr(new LabelInstr(l1));
