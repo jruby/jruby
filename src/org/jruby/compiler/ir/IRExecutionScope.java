@@ -689,14 +689,4 @@ public abstract class IRExecutionScope extends IRScopeImpl {
         // FIXME: Add result from this build and add to CFG as a field, then add depends() for htings which use it.
         builder.buildDominatorTree(cfg, cfg.postOrderList(), cfg.getMaxNodeID());
     }
-    
-    /* Record a begin block -- not all scope implementations can handle them */
-    public void recordBeginBlock(IRClosure beginBlockClosure) {
-        throw new RuntimeException("BEGIN blocks cannot be added to: " + this.getClass().getName());
-    }
-
-    /* Record an end block -- not all scope implementations can handle them */
-    public void recordEndBlock(IRClosure endBlockClosure) {
-        throw new RuntimeException("END blocks cannot be added to: " + this.getClass().getName());
-    }
 }
