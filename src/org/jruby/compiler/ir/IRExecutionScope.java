@@ -49,6 +49,7 @@ public abstract class IRExecutionScope extends IRScopeImpl {
     private Instr[] instrs = null;
     private List<BasicBlock> linearizedBBList = null;  // Linearized list of bbs
     private int scopeExitPC = -1;
+    protected int temporaryVariableIndex = -1;
 
     protected static class LocalVariableAllocator {
         public int nextSlot;
@@ -133,7 +134,9 @@ public abstract class IRExecutionScope extends IRScopeImpl {
     protected int optionalArgs = 0;
     protected int restArg = -1;
 
-    private void init() {
+    public IRExecutionScope(IRScope lexicalParent, String name, StaticScope staticScope) {
+        super(lexicalParent, name, staticScope);
+        
         instructions = new ArrayList<Instr>();
         closures = new ArrayList<IRClosure>();
         loopStack = new Stack<IRLoop>();
@@ -144,11 +147,6 @@ public abstract class IRExecutionScope extends IRScopeImpl {
         requiresBinding = true;
 
         localVars = new LocalVariableAllocator();
-    }
-
-    public IRExecutionScope(IRScope lexicalParent, String name, StaticScope staticScope) {
-        super(lexicalParent, name, staticScope);
-        init();
     }
 
     public void addClosure(IRClosure c) {
@@ -451,15 +449,16 @@ public abstract class IRExecutionScope extends IRScopeImpl {
     }
     
     public Variable getNewTemporaryVariable() {
-        return new TemporaryVariable(allocateNextPrefixedName("%v"));
+        temporaryVariableIndex++;
+        return new TemporaryVariable(temporaryVariableIndex);
     }    
 
     public void resetTemporaryVariables() {
-        resetVariableCounter("%v");
+        temporaryVariableIndex = -1;
     }
     
     public int getTemporaryVariableSize() {
-        return getPrefixCountSize("%v");
+        return temporaryVariableIndex + 1;
     }
     
     // Generate a new variable for inlined code (for ease of debugging, use differently named variables for inlined code)
