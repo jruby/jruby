@@ -22,7 +22,9 @@ import org.jruby.compiler.ir.instructions.SuperInstr;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.Operand;
+import org.jruby.compiler.ir.operands.RenamedVariable;
 import org.jruby.compiler.ir.operands.Self;
+import org.jruby.compiler.ir.operands.TemporaryVariable;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.BasicBlock;
 import org.jruby.compiler.ir.representations.CFG;
@@ -447,7 +449,25 @@ public abstract class IRExecutionScope extends IRScopeImpl {
     protected void initEvalScopeVariableAllocator(boolean reset) {
         if (reset || evalScopeVars == null) evalScopeVars = new LocalVariableAllocator();
     }
+    
+    public Variable getNewTemporaryVariable() {
+        return new TemporaryVariable(allocateNextPrefixedName("%v"));
+    }    
 
+    public void resetTemporaryVariables() {
+        resetVariableCounter("%v");
+    }
+    
+    public int getTemporaryVariableSize() {
+        return getPrefixCountSize("%v");
+    }
+    
+    // Generate a new variable for inlined code (for ease of debugging, use differently named variables for inlined code)
+    public Variable getNewInlineVariable() {
+        // Use the temporary variable counters for allocating temporary variables
+        return new RenamedVariable("%i", allocateNextPrefixedName("%v"));
+    }    
+    
     public int getLocalVariablesCount() {
         return localVars.nextSlot;
     }

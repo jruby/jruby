@@ -45,6 +45,7 @@ public class IRClosure extends IRExecutionScope {
 
     // Block parameters
     private List<Operand> blockArgs;
+    private final String tempVarPrefix;
 
     public IRClosure(IRScope lexicalParent, boolean isForLoopBody, StaticScope staticScope, Arity arity, int argumentType) {
         this(lexicalParent, staticScope, isForLoopBody ? "_FOR_LOOP_" : "_CLOSURE_");
@@ -77,6 +78,7 @@ public class IRClosure extends IRExecutionScope {
             n++;
         }
         this.nestingDepth = n;
+        this.tempVarPrefix = "%cl_" + closureId;
     }
 
     @Override
@@ -86,16 +88,16 @@ public class IRClosure extends IRExecutionScope {
 
     @Override
     public int getTemporaryVariableSize() {
-        return getPrefixCountSize("%cl_" + closureId);
+        return getPrefixCountSize(tempVarPrefix);
     }
 
     @Override
     public Variable getNewTemporaryVariable() {
-        return new TemporaryClosureVariable(closureId, allocateNextPrefixedName("%cl_" + closureId));
+        return new TemporaryClosureVariable(closureId, allocateNextPrefixedName(tempVarPrefix));
     }
 
     public void resetTemporaryVariables() {
-        resetVariableCounter("%cl_" + closureId);
+        resetVariableCounter(tempVarPrefix);
     }
 
     @Override

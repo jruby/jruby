@@ -10,7 +10,6 @@ import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.compiler_pass.CompilerPass;
-import org.jruby.compiler.ir.operands.TemporaryVariable;
 import org.jruby.compiler.ir.operands.RenamedVariable;
 import org.jruby.compiler.ir.compiler_pass.CFGBuilder;
 import org.jruby.compiler.ir.compiler_pass.IRPrinter;
@@ -142,24 +141,6 @@ public abstract class IRScopeImpl implements IRScope {
         nextClosureIndex++;
 
         return nextClosureIndex;
-    }
-
-    public void resetTemporaryVariables() {
-        resetVariableCounter("%v");
-    }
-
-    public Variable getNewTemporaryVariable() {
-        return new TemporaryVariable(allocateNextPrefixedName("%v"));
-    }
-
-    // Generate a new variable for inlined code (for ease of debugging, use differently named variables for inlined code)
-    public Variable getNewInlineVariable() {
-        // Use the temporary variable counters for allocating temporary variables
-        return new RenamedVariable("%i", allocateNextPrefixedName("%v"));
-    }
-
-    public int getTemporaryVariableSize() {
-        return getPrefixCountSize("%v");
     }
 
     public String getName() {

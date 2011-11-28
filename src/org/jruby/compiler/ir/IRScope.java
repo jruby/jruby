@@ -1,7 +1,6 @@
 package org.jruby.compiler.ir;
 
 import org.jruby.compiler.ir.operands.Label;
-import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.compiler_pass.CompilerPass;
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.parser.StaticScope;
@@ -51,23 +50,8 @@ public interface IRScope {
     public int getNextClosureId();
 
     /**
-     * reset temporary variable allocation
-     */
-    public void resetTemporaryVariables();
-
-    /**
-     *  create a new temporary variable
-     */
-    public Variable getNewTemporaryVariable();
-
-    /**
      */
     public StaticScope getStaticScope();
-
-    /**
-     * How many temporary variables are in this scope?
-     */
-    public int getTemporaryVariableSize();
 
     /**
      * Get Local Variable from this scope
