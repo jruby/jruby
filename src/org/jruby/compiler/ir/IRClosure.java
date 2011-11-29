@@ -71,7 +71,7 @@ public class IRClosure extends IRExecutionScope {
 
         // set nesting depth
         int n = 0;
-        IRScope s = this;
+        IRExecutionScope s = this;
         while (s instanceof IRClosure) {
             s = ((IRClosure)s).getLexicalParent();
             n++;

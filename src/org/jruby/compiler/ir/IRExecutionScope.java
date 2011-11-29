@@ -10,6 +10,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import org.jruby.RubyInstanceConfig;
+import org.jruby.RubyModule;
 import org.jruby.compiler.ir.compiler_pass.CFGBuilder;
 import org.jruby.compiler.ir.compiler_pass.CompilerPass;
 import org.jruby.compiler.ir.compiler_pass.DominatorTreeBuilder;
@@ -71,7 +72,7 @@ import org.jruby.util.log.LoggerFactory;
  *
  * and so on ...
  */
-public abstract class IRExecutionScope extends IRScopeImpl {
+public abstract class IRExecutionScope {
     private static final Logger LOG = LoggerFactory.getLogger("IRExecutionScope");
     
     private List<Instr>     instructions; // List of IR instructions for this method
@@ -86,6 +87,17 @@ public abstract class IRExecutionScope extends IRScopeImpl {
     private int scopeExitPC = -1;
     protected int temporaryVariableIndex = -1;
 
+    // Keeps track of types of prefix indexes for variables and labels
+    private Map<String, Integer> nextVarIndex = new HashMap<String, Integer>();
+    
+    private RubyModule containerModule; // Live version of container
+
+    // ENEBO: These collections are initliazed on construction, but the rest
+    //   are init()'d.  This can't be right can it?
+
+    // Index values to guarantee we don't assign same internal index twice
+    private int nextClosureIndex = 0;    
+    
     protected static class LocalVariableAllocator {
         public int nextSlot;
         public Map<String, LocalVariable> varMap;
@@ -214,6 +226,14 @@ public abstract class IRExecutionScope extends IRScopeImpl {
     public void endLoop(IRLoop l) {
         loopStack.pop(); /* SSS FIXME: Do we need to check if l is same as whatever popped? */
     }
+    
+    public Label getNewLabel(String prefix) {
+        return new Label(prefix + "_" + allocateNextPrefixedName(prefix));
+    }
+
+    public Label getNewLabel() {
+        return getNewLabel("LBL");
+    }    
 
     public IRLoop getCurrentLoop() {
         return loopStack.isEmpty() ? null : loopStack.peek();
@@ -861,4 +881,36 @@ public abstract class IRExecutionScope extends IRScopeImpl {
     public void recordEndBlock(IRClosure endBlockClosure) {
         throw new RuntimeException("END blocks cannot be added to: " + this.getClass().getName());
     } 
+    
+    // Enebo: We should just make n primitive int and not take the hash hit
+    protected int allocateNextPrefixedName(String prefix) {
+        int index = getPrefixCountSize(prefix);
+        
+        nextVarIndex.put(prefix, index + 1);
+        
+        return index;
+    }
+
+	 protected void resetVariableCounter(String prefix) {
+        nextVarIndex.remove(prefix);
+	 }
+
+    protected int getPrefixCountSize(String prefix) {
+        Integer index = nextVarIndex.get(prefix);
+
+        if (index == null) return 0;
+
+        return index.intValue();
+    }
+    
+    public RubyModule getContainerModule() {
+//        System.out.println("GET: container module of " + getName() + " with hc " + hashCode() + " to " + containerModule.getName());
+        return containerModule;
+    }
+
+    public int getNextClosureId() {
+        nextClosureIndex++;
+
+        return nextClosureIndex;
+    }
 }

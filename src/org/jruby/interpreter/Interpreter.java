@@ -13,7 +13,6 @@ import org.jruby.compiler.ir.IRModule;
 import org.jruby.compiler.ir.IREvalScript;
 import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.IRClosure;
-import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.IRScript;
 import org.jruby.compiler.ir.instructions.CallBase;
 import org.jruby.compiler.ir.instructions.CopyInstr;
@@ -75,7 +74,7 @@ public class Interpreter {
         // I have used the hack below where I first unwrap once and see if I get a non-null IR scope.  If that doesn't
         // work, I unwarp once more and I am guaranteed to get the IR scope I want.
         StaticScope ss = rootNode.getStaticScope();
-        IRScope containingIRScope = ((IRStaticScope)ss.getEnclosingScope()).getIRScope();
+        IRExecutionScope containingIRScope = ((IRStaticScope)ss.getEnclosingScope()).getIRScope();
         if (containingIRScope == null) containingIRScope = ((IRStaticScope)ss.getEnclosingScope().getEnclosingScope()).getIRScope();
 
         IREvalScript evalScript = new IRBuilder().buildEvalRoot(ss, (IRExecutionScope) containingIRScope, file, lineNumber, rootNode);

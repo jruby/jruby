@@ -17,7 +17,6 @@ import org.jruby.compiler.ir.CompilerTarget;
 import org.jruby.compiler.ir.IRBuilder;
 import org.jruby.compiler.ir.IRClass;
 import org.jruby.compiler.ir.IRMethod;
-import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.IRScript;
 import org.jruby.compiler.ir.compiler_pass.InlineTest;
 import org.jruby.compiler.ir.compiler_pass.opts.DeadCodeElimination;
@@ -153,7 +152,7 @@ public class JVM implements CompilerTarget {
         clsData().popmethod();
     }
 
-    public void codegen(IRScope scope) {
+    public void codegen(IRExecutionScope scope) {
         if (scope instanceof IRScript) {
             codegen((IRScript)scope);
         }

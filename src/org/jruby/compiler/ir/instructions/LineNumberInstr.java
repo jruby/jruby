@@ -1,18 +1,15 @@
 package org.jruby.compiler.ir.instructions;
 
-import org.jruby.compiler.ir.IRScope;
+import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.InlinerInfo;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 public class LineNumberInstr extends Instr {
     public final int lineNumber;
-    public final IRScope scope; // We need to keep scope info here so that line number is meaningful across inlinings.
+    public final IRExecutionScope scope; // We need to keep scope info here so that line number is meaningful across inlinings.
 
-    public LineNumberInstr(IRScope scope, int lineNumber) {
+    public LineNumberInstr(IRExecutionScope scope, int lineNumber) {
         super(Operation.LINE_NUM);
         this.scope = scope;
         this.lineNumber = lineNumber;
