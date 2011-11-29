@@ -42,8 +42,35 @@ import org.jruby.parser.StaticScope;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
-/* IRMethod, IRClosure, IREvalScript -- basically scopes that represent execution contexts.
- * This is just an abstraction over methods and closures */
+/**
+ * Right now, this class abstracts 5 different scopes: Script, Module, Class, 
+ * Method, and Closure.
+ *
+ * In the compiler-land, IR_* versions of these scopes encapsulate only as much 
+ * information as is required to convert Ruby code into equivalent Java code.
+ *
+ * But, in the non-compiler land, there will be a corresponding java object for
+ * each of these scopes which encapsulates the runtime semantics and data needed
+ * for implementing them.  In the case of Module, Class, and Method, they also
+ * happen to be instances of the corresponding Ruby classes -- so, in addition
+ * to providing code that help with this specific ruby implementation, they also
+ * have code that let them behave as ruby instances of their corresponding
+ * classes.  Script and Closure have no such Ruby companions, as far as I can
+ * tell.
+ *
+ * Examples:
+ * - the runtime class object might have refs. to the runtime method objects.
+ * - the runtime method object might have a slot for a heap frame (for when it
+ *   has closures that need access to the method's local variables), it might
+ *   have version information, it might have references to other methods that
+ *   were optimized with the current version number, etc.
+ * - the runtime closure object will have a slot for a heap frame (for when it 
+ *   has closures within) and might get reified as a method in the java land
+ *   (but inaccessible in ruby land).  So, passing closures in Java land might
+ *   be equivalent to passing around the method handles.
+ *
+ * and so on ...
+ */
 public abstract class IRExecutionScope extends IRScopeImpl {
     private static final Logger LOG = LoggerFactory.getLogger("IRExecutionScope");
     
@@ -143,11 +170,13 @@ public abstract class IRExecutionScope extends IRScopeImpl {
     protected int restArg = -1;
     private IRExecutionScope lexicalParent;  // Lexical parent scope    
     private StaticScope staticScope;
+    private String name;
     
     public IRExecutionScope(IRExecutionScope lexicalParent, String name, StaticScope staticScope) {
-        super(name);
-    
+        super();
+            
         this.lexicalParent = lexicalParent;        
+        this.name = name;
         this.staticScope = staticScope;
         instructions = new ArrayList<Instr>();
         closures = new ArrayList<IRClosure>();
@@ -237,6 +266,15 @@ public abstract class IRExecutionScope extends IRScopeImpl {
         return (IRModule) current;
     }
     
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) { // This is for IRClosure ;(
+        this.name = name;
+    }
+    
     /**
      * Returns the top level scope
      */
@@ -251,7 +289,6 @@ public abstract class IRExecutionScope extends IRScopeImpl {
     }
     
     // SSS FIXME: Deprecated!  Going forward, all instructions should come from the CFG
-    @Override
     public List<Instr> getInstrs() {
         return instructions;
     }
@@ -396,7 +433,13 @@ public abstract class IRExecutionScope extends IRScopeImpl {
         }
     }
 
+    public abstract String getScopeName();
+    
     @Override
+    public String toString() {
+        return getScopeName() + " " + getName();
+    }    
+
     public String toStringInstrs() {
         StringBuilder b = new StringBuilder();
 
@@ -419,7 +462,6 @@ public abstract class IRExecutionScope extends IRScopeImpl {
         return b.toString();
     }
 
-    @Override
     public String toStringVariables() {
         Map<Variable, Integer> ends = new HashMap<Variable, Integer>();
         Map<Variable, Integer> starts = new HashMap<Variable, Integer>();

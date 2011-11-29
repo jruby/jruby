@@ -14,8 +14,6 @@ public interface IRScope {
      */
     public int getNextClosureId();
 
-    public String getName();
-
     /**
      *  Get a new label using the provided label prefix
      */
