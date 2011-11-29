@@ -66,14 +66,6 @@ public class Interpreter {
         return RubyInstanceConfig.IR_DEBUG;
     }
 
-    public static IRubyObject interpret(Ruby runtime, Node rootNode, IRubyObject self) {
-        IRScope scope = new IRBuilder().buildRoot((RootNode) rootNode);
-        scope.prepareForInterpretation();
-//        scope.runCompilerPass(new CallSplitter());
-
-        return interpretTop(runtime, scope, self);
-    }
-
     public static IRubyObject interpretCommonEval(Ruby runtime, String file, int lineNumber, RootNode rootNode, IRubyObject self, Block block) {
         // SSS FIXME: Weirdness here.  We cannot get the containing IR scope from ss because of static-scope wrapping that is going on
         // 1. In all cases, DynamicScope.getEvalScope wraps the executing static scope in a new local scope.
@@ -115,12 +107,8 @@ public class Interpreter {
         }
     }
 
-    // SSS FIXME: We have two different 'prepareForInterpretation' methods
-    // one in IRScopeImpl, and another in CFG.  See if they can be merged into one
-    public static IRubyObject interpretTop(Ruby runtime, IRScope scope, IRubyObject self) {
-        assert scope instanceof IRScript : "Must be an IRScript scope at Top!!!";
-
-        IRScript root = (IRScript) scope;
+    public static IRubyObject interpret(Ruby runtime, Node rootNode, IRubyObject self) {
+        IRScript root = (IRScript) new IRBuilder().buildRoot((RootNode) rootNode);
 
         // We get the live object ball rolling here.  This give a valid value for the top
         // of this lexical tree.  All new scope can then retrieve and set based on lexical parent.

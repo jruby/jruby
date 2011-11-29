@@ -300,7 +300,7 @@ public class IRBuilder {
             long t1 = new Date().getTime();
             Node ast = buildAST(isCommandLineScript, args[i]);
             long t2 = new Date().getTime();
-            IRScope scope = new IRBuilder().buildRoot((RootNode) ast);
+            IRExecutionScope scope = new IRBuilder().buildRoot((RootNode) ast);
             long t3 = new Date().getTime();
             if (isDebug) {
                 LOG.debug("################## Before local optimization pass ##################");
@@ -1174,7 +1174,7 @@ public class IRBuilder {
         return (nearestModule == null) ? WrappedIRModule.CURRENT_MODULE : new WrappedIRModule(nearestModule);
     }
 
-    private IRModule startingSearchScope(IRScope s) {
+    private IRModule startingSearchScope(IRExecutionScope s) {
         return s.getNearestModule();
     }
 
@@ -1194,7 +1194,7 @@ public class IRBuilder {
         return val;
     }
 
-    private Operand searchConst(IRExecutionScope s, IRScope startingScope, String name) {
+    private Operand searchConst(IRExecutionScope s, IRExecutionScope startingScope, String name) {
         IRModule startingModule = startingSearchScope(startingScope);
         Variable v = s.getNewTemporaryVariable();
         s.addInstr(new SearchConstInstr(v, startingModule, name));
@@ -2992,7 +2992,7 @@ public class IRBuilder {
         return script;
     }
 
-    public IRScope buildRoot(RootNode rootNode) {
+    public IRExecutionScope buildRoot(RootNode rootNode) {
         String file = rootNode.getPosition().getFile();
         StaticScope staticScope = rootNode.getStaticScope();
 

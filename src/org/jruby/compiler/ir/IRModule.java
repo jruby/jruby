@@ -118,15 +118,15 @@ public class IRModule extends IRExecutionScope {
 
     @Override
     public void runCompilerPassOnNestedScopes(CompilerPass p) {
-        for (IRScope m : modules) {
+        for (IRExecutionScope m : modules) {
             m.runCompilerPass(p);
         }
 
-        for (IRScope c : classes) {
+        for (IRExecutionScope c : classes) {
             c.runCompilerPass(p);
         }
 
-        for (IRScope meth : methods) {
+        for (IRExecutionScope meth : methods) {
             meth.runCompilerPass(p);
         }
     }

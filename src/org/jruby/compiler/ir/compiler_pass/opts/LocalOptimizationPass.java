@@ -5,18 +5,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
-import java.util.Set;
 
 import org.jruby.compiler.ir.IRClosure;
 import org.jruby.compiler.ir.IRExecutionScope;
-import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.CallBase;
 import org.jruby.compiler.ir.instructions.CopyInstr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.CodeVersion;
-import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.operands.TemporaryVariable;
@@ -29,22 +26,18 @@ public class LocalOptimizationPass implements CompilerPass {
         return false;
     }
 
-    public void run(IRScope s) {
-        if (s instanceof IRExecutionScope) {
-            IRExecutionScope es = (IRExecutionScope)s;
-
-            // Run this pass on nested closures first!
-            // This let us compute execute scope flags for a method based on what all nested closures do
-            for (IRClosure c: es.getClosures()) {
-                run(c);
-            }
-
-            // Now, run on current scope
-            runLocalOpts(es);
-
-            // Only after running local opts, compute various execution scope flags
-            es.computeExecutionScopeFlags();
+    public void run(IRExecutionScope s) {
+        // Run this pass on nested closures first!
+        // This let us compute execute scope flags for a method based on what all nested closures do
+        for (IRClosure c: s.getClosures()) {
+            run(c);
         }
+
+        // Now, run on current scope
+        runLocalOpts(s);
+
+        // Only after running local opts, compute various execution scope flags
+        s.computeExecutionScopeFlags();
     }
 
     private static void allocVar(Operand oldVar, IRExecutionScope s, List<TemporaryVariable> freeVarsList, Map<Operand, Operand> newVarMap) {

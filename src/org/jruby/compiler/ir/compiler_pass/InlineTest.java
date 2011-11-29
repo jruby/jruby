@@ -1,8 +1,8 @@
 package org.jruby.compiler.ir.compiler_pass;
 
+import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.IRModule;
-import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.representations.BasicBlock;
 import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.Instr;
@@ -25,7 +25,7 @@ public class InlineTest implements CompilerPass {
         return true;
     }
 
-    public void run(IRScope s) {
+    public void run(IRExecutionScope s) {
         if (!(s instanceof IRMethod)) return;
 
         IRMethod method = ((IRMethod) s);

@@ -13,11 +13,6 @@ import org.jruby.parser.StaticScope;
  */
 public interface IRScope {
     /**
-     * Returns the nearest module/class from this scope which may be itself.
-     */
-    public IRModule getNearestModule();
-
-    /**
      *  Record that newName is a new method name for method with oldName
      * This is for the 'alias' keyword which resolves method names in the
      * static compile/parse-time context
@@ -54,12 +49,4 @@ public interface IRScope {
      *  Get a new label using a generic prefix
      */
     public Label getNewLabel();
-
-    /**
-     *  Run the passed in compiler pass on this scope!
-     */
-    public void runCompilerPass(CompilerPass opt);
-
-    /* Run any necessary passes to get the IR ready for interpretation */
-    public void prepareForInterpretation();
 }

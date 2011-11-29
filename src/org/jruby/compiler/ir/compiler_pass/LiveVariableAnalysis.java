@@ -1,8 +1,8 @@
 package org.jruby.compiler.ir.compiler_pass;
 
-import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.IRClosure;
+import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.dataflow.analyses.LiveVariablesProblem;
 
 public class LiveVariableAnalysis implements CompilerPass {
@@ -10,7 +10,8 @@ public class LiveVariableAnalysis implements CompilerPass {
         return false;
     }
 
-    public void run(IRScope s) {
+    // ENEBO: Seems like other scopes beyond methods should be able to do this: module/class/metaclass
+    public void run(IRExecutionScope s) {
         if (!(s instanceof IRMethod)) return;
 
         IRMethod method = ((IRMethod) s);

@@ -1,8 +1,5 @@
 package org.jruby.compiler.ir.compiler_pass.opts;
 
-import java.util.List;
-
-import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.IRClosure;
 import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.compiler_pass.CompilerPass;
@@ -14,26 +11,22 @@ public class DeadCodeElimination implements CompilerPass {
         return false;
     }
 
-    public void run(IRScope s) {
-        if (!(s instanceof IRExecutionScope)) return;
-        if ((s instanceof IRClosure) && ((IRClosure)s).hasBeenInlined()) return;
-        
-        IRExecutionScope executionScope = (IRExecutionScope) s;
+    public void run(IRExecutionScope scope) {
+        if (scope instanceof IRClosure && ((IRClosure)scope).hasBeenInlined()) return;
 
-        LiveVariablesProblem lvp = (LiveVariablesProblem) executionScope.getDataFlowSolution(DataFlowConstants.LVP_NAME);
+        LiveVariablesProblem lvp = (LiveVariablesProblem) scope.getDataFlowSolution(DataFlowConstants.LVP_NAME);
         
         if (lvp == null) {
             lvp = new LiveVariablesProblem();
-            lvp.setup(executionScope);
+            lvp.setup(scope);
             lvp.compute_MOP_Solution();
-            executionScope.setDataFlowSolution(lvp.getName(), lvp);
+            scope.setDataFlowSolution(lvp.getName(), lvp);
         }
         
         lvp.markDeadInstructions();
 
         // Run on nested closures!
-        List<IRClosure> closures = ((IRExecutionScope)s).getClosures();
-        for (IRClosure cl: closures) {
+        for (IRClosure cl: scope.getClosures()) {
             run(cl);
         }
     }

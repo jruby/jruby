@@ -1,6 +1,5 @@
 package org.jruby.compiler.ir.compiler_pass;
 
-import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.representations.CFG;
@@ -15,24 +14,19 @@ public class IRPrinter implements CompilerPass {
         return true;
     }
 
-    public void run(IRScope s) {
+    public void run(IRExecutionScope scope) {
         LOG.info("----------------------------------------");
-        LOG.info(s.toString());
+        LOG.info(scope.toString());
 
         // If the cfg of the method is around, print the CFG!
-        if (s instanceof IRExecutionScope) {
-            IRExecutionScope scope = (IRExecutionScope) s;
-
-            CFG c = scope.getCFG();
-            if (c != null) {
-                LOG.info("\nGraph:\n" + c.toStringGraph());
-                LOG.info("\nInstructions:\n" + c.toStringInstrs());
-            }
-            else if (s instanceof IRMethod) {
-                IRMethod m = (IRMethod)s;
-                LOG.info("\n  instrs:\n" + m.toStringInstrs());
-                LOG.info("\n  live variables:\n" + m.toStringVariables());
-            }
+        CFG c = scope.getCFG();
+        if (c != null) {
+            LOG.info("\nGraph:\n" + c.toStringGraph());
+            LOG.info("\nInstructions:\n" + c.toStringInstrs());
+        } else {
+            IRMethod m = (IRMethod)scope;
+            LOG.info("\n  instrs:\n" + m.toStringInstrs());
+            LOG.info("\n  live variables:\n" + m.toStringVariables());
         }
     }
 }

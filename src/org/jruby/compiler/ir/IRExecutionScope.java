@@ -9,8 +9,16 @@ import java.util.Stack;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import org.jruby.RubyInstanceConfig;
+import org.jruby.compiler.ir.compiler_pass.CFGBuilder;
 import org.jruby.compiler.ir.compiler_pass.CompilerPass;
 import org.jruby.compiler.ir.compiler_pass.DominatorTreeBuilder;
+import org.jruby.compiler.ir.compiler_pass.IRPrinter;
+import org.jruby.compiler.ir.compiler_pass.InlineTest;
+import org.jruby.compiler.ir.compiler_pass.LinearizeCFG;
+import org.jruby.compiler.ir.compiler_pass.LiveVariableAnalysis;
+import org.jruby.compiler.ir.compiler_pass.opts.DeadCodeElimination;
+import org.jruby.compiler.ir.compiler_pass.opts.LocalOptimizationPass;
 import org.jruby.compiler.ir.dataflow.DataFlowProblem;
 import org.jruby.compiler.ir.instructions.CallBase;
 import org.jruby.compiler.ir.instructions.CopyInstr;
@@ -295,11 +303,63 @@ public abstract class IRExecutionScope extends IRScopeImpl {
         return cfg;
     }
 
-    // Nothing to do -- every compiler pass decides whether to
-    // run it on nested closures or not.
-    @Override
-    public void runCompilerPassOnNestedScopes(CompilerPass p) { }
+    public void runCompilerPassOnNestedScopes(CompilerPass p) {
+        // Do nothing...subclasses should override
+    }
 
+    public void runCompilerPass(CompilerPass p) {
+        boolean isPreOrder = p.isPreOrder();
+
+        if (isPreOrder) p.run(this);
+
+        runCompilerPassOnNestedScopes(p);
+
+        if (!isPreOrder) p.run(this);
+    }
+    
+    /* Run any necessary passes to get the IR ready for interpretation */
+    public void prepareForInterpretation() {
+        // Should be an execution scope
+        if (!(this instanceof IRExecutionScope)) return;
+
+        // forcibly clear out the shared eval-scope variable allocator each time this method executes
+        ((IRExecutionScope)this).initEvalScopeVariableAllocator(true); 
+
+        // SSS FIXME: We should configure different optimization levels
+        // and run different kinds of analysis depending on time budget.  Accordingly, we need to set
+        // IR levels/states (basic, optimized, etc.) and the
+        // ENEBO: If we use a MT optimization mechanism we cannot mutate CFG
+        // while another thread is using it.  This may need to happen on a clone()
+        // and we may need to update the method to return the new method.  Also,
+        // if this scope is held in multiple locations how do we update all references?
+
+        printPass("Before local optimization pass");
+        runCompilerPass(new LocalOptimizationPass());
+        printPass("After local optimization pass");
+
+        runCompilerPass(new CFGBuilder());
+        if (!RubyInstanceConfig.IR_TEST_INLINER.equals("none")) {
+            if (RubyInstanceConfig.IR_COMPILER_DEBUG) {
+                LOG.info("Asked to inline " + RubyInstanceConfig.IR_TEST_INLINER);
+            }
+            runCompilerPass(new InlineTest(RubyInstanceConfig.IR_TEST_INLINER));
+            runCompilerPass(new LocalOptimizationPass());
+            printPass("After inline");
+        }        
+        if (RubyInstanceConfig.IR_LIVE_VARIABLE) runCompilerPass(new LiveVariableAnalysis());
+        if (RubyInstanceConfig.IR_DEAD_CODE) runCompilerPass(new DeadCodeElimination());
+        if (RubyInstanceConfig.IR_DEAD_CODE) printPass("After DCE ");
+        runCompilerPass(new LinearizeCFG());
+        printPass("After CFG Linearize");
+    }
+    
+    private void printPass(String message) {
+        if (RubyInstanceConfig.IR_COMPILER_DEBUG) {
+            LOG.info("################## " + message + "##################");
+            runCompilerPass(new IRPrinter());        
+        }
+    }
+    
     public void computeExecutionScopeFlags() {
         // init
         canModifyCode = true;

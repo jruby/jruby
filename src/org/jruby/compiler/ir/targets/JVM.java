@@ -1,5 +1,6 @@
 package org.jruby.compiler.ir.targets;
 
+import org.jruby.compiler.ir.IRExecutionScope;
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -101,7 +102,7 @@ public class JVM implements CompilerTarget {
                 }
             }
             
-            IRScope scope = new IRBuilder().buildRoot((RootNode) ast);
+            IRExecutionScope scope = new IRBuilder().buildRoot((RootNode) ast);
             
             // additional passes not enabled in builder yet
             if (deadCode) scope.runCompilerPass(new DeadCodeElimination());
