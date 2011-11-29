@@ -702,6 +702,10 @@ public class RuntimeHelpers {
         return value != null ? value : runtime.getNil();
     }
     
+    public static IRubyObject nullToNil(IRubyObject value, IRubyObject nil) {
+        return value != null ? value : nil;
+    }
+    
     public static RubyClass prepareSuperClass(Ruby runtime, IRubyObject rubyClass) {
         RubyClass.checkInheritable(rubyClass); // use the same logic as in EvaluationState
         return (RubyClass)rubyClass;

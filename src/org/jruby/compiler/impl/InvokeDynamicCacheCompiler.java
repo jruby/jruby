@@ -38,6 +38,7 @@ import org.jruby.RubySymbol;
 import org.jruby.ast.NodeType;
 import org.jruby.ast.executable.AbstractScript;
 import org.jruby.compiler.ASTInspector;
+import org.jruby.compiler.CompilerCallback;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.BlockBody;
@@ -397,5 +398,34 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
                 sig(RubySymbol.class, ThreadContext.class),
                 InvokeDynamicSupport.getSymbolHandle(),
                 symbol);
+    }
+
+    public void cachedGetVariable(BaseBodyCompiler method, String name) {
+        if (!RubyInstanceConfig.INVOKEDYNAMIC_IVARS) {
+            super.cachedGetVariable(method, name);
+            return;
+        }
+        
+        method.loadSelf();
+        
+        method.method.invokedynamic(
+                "get:" + name,
+                sig(IRubyObject.class, IRubyObject.class),
+                InvokeDynamicSupport.getVariableHandle());
+    }
+
+    public void cachedSetVariable(BaseBodyCompiler method, String name, CompilerCallback valueCallback) {
+        if (!RubyInstanceConfig.INVOKEDYNAMIC_IVARS) {
+            super.cachedSetVariable(method, name, valueCallback);
+            return;
+        }
+        
+        method.loadSelf();
+        valueCallback.call(method);
+        
+        method.method.invokedynamic(
+                "set:" + name,
+                sig(IRubyObject.class, IRubyObject.class, IRubyObject.class),
+                InvokeDynamicSupport.getVariableHandle());
     }
 }
