@@ -1,9 +1,6 @@
 package org.jruby.compiler.ir;
 
 import org.jruby.compiler.ir.operands.Label;
-import org.jruby.compiler.ir.compiler_pass.CompilerPass;
-import org.jruby.compiler.ir.operands.LocalVariable;
-import org.jruby.parser.StaticScope;
 
 /**
  * IRScope is the interface for all lexically scoped constructs: Script, Module,
@@ -16,11 +13,6 @@ public interface IRScope {
      *  Get the next available unique closure id for closures in this scope
      */
     public int getNextClosureId();
-
-    /**
-     */
-    public StaticScope getStaticScope();
-
 
     public String getName();
 

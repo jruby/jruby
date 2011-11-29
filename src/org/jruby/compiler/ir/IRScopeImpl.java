@@ -4,19 +4,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.operands.Label;
-import org.jruby.compiler.ir.compiler_pass.CompilerPass;
-import org.jruby.compiler.ir.compiler_pass.CFGBuilder;
-import org.jruby.compiler.ir.compiler_pass.IRPrinter;
-import org.jruby.compiler.ir.compiler_pass.InlineTest;
-import org.jruby.compiler.ir.compiler_pass.LinearizeCFG;
-import org.jruby.compiler.ir.compiler_pass.LiveVariableAnalysis;
-import org.jruby.compiler.ir.compiler_pass.opts.DeadCodeElimination;
-import org.jruby.compiler.ir.compiler_pass.opts.LocalOptimizationPass;
-import org.jruby.parser.StaticScope;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -68,11 +58,8 @@ public abstract class IRScopeImpl implements IRScope {
     // Keeps track of types of prefix indexes for variables and labels
     private Map<String, Integer> nextVarIndex = new HashMap<String, Integer>();
 
-    private StaticScope staticScope;
-
-    public IRScopeImpl(String name, StaticScope staticScope) {
+    public IRScopeImpl(String name) {
         this.name = name;
-        this.staticScope = staticScope;
     }
 
     public RubyModule getContainerModule() {
@@ -123,10 +110,6 @@ public abstract class IRScopeImpl implements IRScope {
         if (index == null) return 0;
 
         return index.intValue();
-    }
-
-    public StaticScope getStaticScope() {
-        return staticScope;
     }
 
     public List<Instr> getInstrs() {

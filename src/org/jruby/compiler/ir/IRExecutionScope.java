@@ -142,11 +142,13 @@ public abstract class IRExecutionScope extends IRScopeImpl {
     protected int optionalArgs = 0;
     protected int restArg = -1;
     private IRExecutionScope lexicalParent;  // Lexical parent scope    
-
+    private StaticScope staticScope;
+    
     public IRExecutionScope(IRExecutionScope lexicalParent, String name, StaticScope staticScope) {
-        super(name, staticScope);
+        super(name);
     
         this.lexicalParent = lexicalParent;        
+        this.staticScope = staticScope;
         instructions = new ArrayList<Instr>();
         closures = new ArrayList<IRClosure>();
         loopStack = new Stack<IRLoop>();
@@ -198,6 +200,10 @@ public abstract class IRExecutionScope extends IRScopeImpl {
     public IRExecutionScope getLexicalParent() {
         return lexicalParent;
     }
+    
+    public StaticScope getStaticScope() {
+        return staticScope;
+    }    
     
     public IRMethod getNearestMethod() {
         IRExecutionScope current = this;
