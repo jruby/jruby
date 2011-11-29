@@ -1796,11 +1796,12 @@ public class IRBuilder {
         final int opt = argsNode.getOptionalArgsCount();
         final int rest = argsNode.getRestArg();
 
+        s.getStaticScope().setArities(required, opt, rest);
+
         // FIXME: Expensive to this explicitly?  But, 2 advantages:
         // (a) on inlining, we'll be able to get rid of these checks in almost every case.
         // (b) compiler to bytecode will anyway generate this and this is explicit.
         // For now, we are going explicit instruction route.  But later, perhaps can make this implicit in the method setup preamble?  
-        // FIXME: I added getSelf() just so we won't NPE since this is a callinstr. Can we make this something other than callinstr?
         s.addInstr(new CheckArityInstr(required, opt, rest));
 
         // self = args[0]

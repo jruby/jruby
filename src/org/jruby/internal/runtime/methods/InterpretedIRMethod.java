@@ -7,6 +7,7 @@ import org.jruby.interpreter.Interpreter;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -18,32 +19,41 @@ public class InterpretedIRMethod extends DynamicMethod {
 
     private final boolean  isTopLevel;
     private final IRMethod method;
+    private Arity arity;
     boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
+
+    private InterpretedIRMethod(IRMethod method, Visibility visibility, RubyModule implementationClass, boolean isTopLevel) {
+        super(implementationClass, visibility, CallConfiguration.FrameNoneScopeNone);
+        this.method = method;
+        this.isTopLevel = isTopLevel;
+        this.arity = calculateArity();
+    }
 
     // We can probably use IRMethod callArgs for something (at least arity)
     public InterpretedIRMethod(IRMethod method, RubyModule implementationClass) {
-        super(implementationClass, Visibility.PRIVATE, CallConfiguration.FrameNoneScopeNone);
-        this.method = method;
-        this.isTopLevel = false;
+        this(method, Visibility.PRIVATE, implementationClass, false);
     }
 
     // We can probably use IRMethod callArgs for something (at least arity)
     public InterpretedIRMethod(IRMethod method, RubyModule implementationClass, boolean isTopLevel) {
-        super(implementationClass, Visibility.PRIVATE, CallConfiguration.FrameNoneScopeNone);
-        this.method = method;
-        this.isTopLevel = isTopLevel;
+        this(method, Visibility.PRIVATE, implementationClass, isTopLevel);
     }
 
     // We can probably use IRMethod callArgs for something (at least arity)
     public InterpretedIRMethod(IRMethod method, Visibility visibility, RubyModule implementationClass) {
-        super(implementationClass, visibility, CallConfiguration.FrameNoneScopeNone);
-        this.method = method;
-        this.isTopLevel = false;
+        this(method, visibility, implementationClass, false);
     }
-    
+
+    private Arity calculateArity() {
+        StaticScope s = method.getStaticScope();
+        if (s.getOptionalArgs() > 0 || s.getRestArg() >= 0) return Arity.required(s.getRequiredArgs());
+
+        return Arity.createArity(s.getRequiredArgs());
+    }
+
     @Override
     public Arity getArity() {
-        return method.getStaticScope().getArity();
+        return this.arity;
     }
 
     @Override
