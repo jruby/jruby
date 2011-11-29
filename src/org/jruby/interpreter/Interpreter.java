@@ -445,7 +445,7 @@ public class Interpreter {
 
     private static IRubyObject handleReturnJumpInClosure(IRExecutionScope scope, IRReturnJump rj, Type blockType) throws IRReturnJump {
         // - If we are in a lambda or if we are in the method scope we are supposed to return from, stop propagating
-        if (inLambda(blockType) || (rj.methodToReturnFrom == scope)) return (IRubyObject) rj.returnValue;
+        if (inNonMethodBodyLambda(scope, blockType) || (rj.methodToReturnFrom == scope)) return (IRubyObject) rj.returnValue;
 
         // - If not, Just pass it along!
         throw rj;
@@ -483,6 +483,15 @@ public class Interpreter {
                 if (!syntheticMethod) ThreadContext.popBacktrace(context);
             }
         }
+    }
+    
+    private static boolean inNonMethodBodyLambda(IRScope scope, Block.Type blockType) {
+        // SSS FIXME: Hack! AST interpreter and JIT compiler marks a proc's static scope as
+        // an argument scope if it is used to define a method's body via :define_method.
+        // Since that is exactly what we want to figure out here, am just using that flag here.
+        // But, this is ugly (as is the original hack in the current runtime).  What is really
+        // needed is a new block type -- a block that is used to define a method body.
+        return blockType == Block.Type.LAMBDA && !scope.getStaticScope().isArgumentScope();
     }
     
     private static boolean inLambda(Block.Type blockType) {
