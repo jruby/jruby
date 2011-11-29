@@ -21,10 +21,6 @@ public interface IRScope {
      */
     public StaticScope getStaticScope();
 
-    /**
-     * Get Local Variable from this scope
-     */
-    public LocalVariable getLocalVariable(String name, int depth);
 
     public String getName();
 
