@@ -29,7 +29,7 @@ public class IREvalScript extends IRClosure {
         super(lexicalParent, staticScope, "EVAL_");
         IRScope s = lexicalParent;
         while (s instanceof IREvalScript) s = s.getLexicalParent();
-        this.nearestNonEvalScope = (IRScope)s;
+        this.nearestNonEvalScope = s;
         this.nearestNonEvalScope.initEvalScopeVariableAllocator(false);
     }
 

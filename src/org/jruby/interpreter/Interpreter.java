@@ -77,7 +77,7 @@ public class Interpreter {
         IRScope containingIRScope = ((IRStaticScope)ss.getEnclosingScope()).getIRScope();
         if (containingIRScope == null) containingIRScope = ((IRStaticScope)ss.getEnclosingScope().getEnclosingScope()).getIRScope();
 
-        IREvalScript evalScript = new IRBuilder().buildEvalRoot(ss, (IRScope) containingIRScope, file, lineNumber, rootNode);
+        IREvalScript evalScript = new IRBuilder().buildEvalRoot(ss, containingIRScope, file, lineNumber, rootNode);
         evalScript.prepareForInterpretation();
 //        evalScript.runCompilerPass(new CallSplitter());
         ThreadContext context = runtime.getCurrentContext(); 

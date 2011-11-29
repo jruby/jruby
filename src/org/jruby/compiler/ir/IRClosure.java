@@ -153,7 +153,7 @@ public class IRClosure extends IRScope {
     public LocalVariable findExistingLocalVariable(String name) {
         LocalVariable lvar = localVars.getVariable(name);
         if (lvar != null) return lvar;
-        else return ((IRScope)getLexicalParent()).findExistingLocalVariable(name);
+        else return getLexicalParent().findExistingLocalVariable(name);
     }
 
     public LocalVariable getNewLocalVariable(String name, int scopeDepth) {

@@ -915,7 +915,7 @@ public class IRBuilder {
             if (s instanceof IRClosure) {
                 // This lexical scope value is only used (and valid) in regular block contexts.
                 // If this instruction is executed in a Proc or Lambda context, the lexical scope value is useless.
-                s.addInstr(new BreakInstr(rv, (IRScope)(s.getLexicalParent())));
+                s.addInstr(new BreakInstr(rv, s.getLexicalParent()));
             } else {
                 // SSS FIXME: If we are not in a closure or a loop, the break instruction will throw a runtime exception
                 // Since we know this right now, should we build an exception instruction here?
@@ -2977,9 +2977,9 @@ public class IRBuilder {
         return UnexecutableNil.U_NIL;
     }
 
-    public IREvalScript buildEvalRoot(StaticScope staticScope, IRScope containingIRExecutionScope, String file, int lineNumber, RootNode rootNode) {
+    public IREvalScript buildEvalRoot(StaticScope staticScope, IRScope containingScope, String file, int lineNumber, RootNode rootNode) {
         // Top-level script!
-        IREvalScript script = new IREvalScript(containingIRExecutionScope, staticScope);
+        IREvalScript script = new IREvalScript(containingScope, staticScope);
 
         // Debug info: record file name and line number
         script.addInstr(new FilenameInstr(file));

@@ -316,7 +316,7 @@ public abstract class IRScope {
     public IRMethod getClosestMethodAncestor() {
         IRScope s = this;
         while (!(s instanceof IRMethod)) {
-            s = (IRScope)s.getLexicalParent();
+            s = s.getLexicalParent();
         }
 
         return (IRMethod) s;
@@ -334,7 +334,7 @@ public abstract class IRScope {
     public boolean nestedInClosure(IRClosure closure) {
         IRScope s = this;
         while (!(s instanceof IRMethod) && (s != closure)) {
-            s = (IRScope)s.getLexicalParent();
+            s = s.getLexicalParent();
         }
         return (s == closure);
     }
@@ -381,11 +381,8 @@ public abstract class IRScope {
     
     /* Run any necessary passes to get the IR ready for interpretation */
     public void prepareForInterpretation() {
-        // Should be an execution scope
-        if (!(this instanceof IRScope)) return;
-
         // forcibly clear out the shared eval-scope variable allocator each time this method executes
-        ((IRScope)this).initEvalScopeVariableAllocator(true); 
+        initEvalScopeVariableAllocator(true); 
 
         // SSS FIXME: We should configure different optimization levels
         // and run different kinds of analysis depending on time budget.  Accordingly, we need to set
