@@ -90,7 +90,7 @@ public class DefineClassInstr extends Instr implements ResultInstr {
 
         // Interpret the body
         newIRClass.getStaticScope().setModule(newRubyClass);
-        DynamicMethod method = new InterpretedIRMethod(newIRClass.getRootMethod(), Visibility.PUBLIC, newRubyClass);
+        DynamicMethod method = new InterpretedIRMethod(newIRClass, Visibility.PUBLIC, newRubyClass);
         // SSS FIXME: Rather than pass the block implicitly, should we add %block as another operand to DefineClass, DefineModule instrs?
         return method.call(context, newRubyClass, newRubyClass, "", new IRubyObject[]{}, block);
     }

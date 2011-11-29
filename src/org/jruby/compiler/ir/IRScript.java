@@ -28,10 +28,6 @@ public class IRScript extends IRScopeImpl {
         return "Script";
     }
 
-    public IRMethod getRootMethod() {
-        return dummyClass.getRootMethod();
-    }
-
     public IRClass getRootClass() {
         return dummyClass;
     }

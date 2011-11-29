@@ -1,7 +1,7 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
-import org.jruby.compiler.ir.IRMethod;
+import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.representations.CFG;
 import org.jruby.interpreter.Interpreter;
 import org.jruby.runtime.Arity;
@@ -18,11 +18,11 @@ public class InterpretedIRMethod extends DynamicMethod {
     private static final Logger LOG = LoggerFactory.getLogger("InterpretedIRMethod");
 
     private final boolean  isTopLevel;
-    private final IRMethod method;
+    private final IRExecutionScope method;
     private Arity arity;
     boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
 
-    private InterpretedIRMethod(IRMethod method, Visibility visibility, RubyModule implementationClass, boolean isTopLevel) {
+    private InterpretedIRMethod(IRExecutionScope method, Visibility visibility, RubyModule implementationClass, boolean isTopLevel) {
         super(implementationClass, visibility, CallConfiguration.FrameNoneScopeNone);
         this.method = method;
         this.isTopLevel = isTopLevel;
@@ -30,17 +30,17 @@ public class InterpretedIRMethod extends DynamicMethod {
     }
 
     // We can probably use IRMethod callArgs for something (at least arity)
-    public InterpretedIRMethod(IRMethod method, RubyModule implementationClass) {
+    public InterpretedIRMethod(IRExecutionScope method, RubyModule implementationClass) {
         this(method, Visibility.PRIVATE, implementationClass, false);
     }
 
     // We can probably use IRMethod callArgs for something (at least arity)
-    public InterpretedIRMethod(IRMethod method, RubyModule implementationClass, boolean isTopLevel) {
+    public InterpretedIRMethod(IRExecutionScope method, RubyModule implementationClass, boolean isTopLevel) {
         this(method, Visibility.PRIVATE, implementationClass, isTopLevel);
     }
 
     // We can probably use IRMethod callArgs for something (at least arity)
-    public InterpretedIRMethod(IRMethod method, Visibility visibility, RubyModule implementationClass) {
+    public InterpretedIRMethod(IRExecutionScope method, Visibility visibility, RubyModule implementationClass) {
         this(method, visibility, implementationClass, false);
     }
 

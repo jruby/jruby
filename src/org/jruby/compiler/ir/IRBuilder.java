@@ -1060,10 +1060,9 @@ public class IRBuilder {
         IRModule nm = s.getNearestModule();
         if (nm != null) nm.addClass(c);
 
-        IRMethod rootMethod = c.getRootMethod();
         // Create a new nested builder to ensure this gets its own IR builder state 
-        Operand rv = (new IRBuilder()).build(classNode.getBodyNode(), rootMethod);
-        if (rv != null) rootMethod.addInstr(new ReturnInstr(rv));
+        Operand rv = (new IRBuilder()).build(classNode.getBodyNode(), c);
+        if (rv != null) c.addInstr(new ReturnInstr(rv));
 
         return ret;
     }
@@ -1091,9 +1090,8 @@ public class IRBuilder {
         s.addInstr(new DefineMetaClassInstr(ret, receiver, mc));
 
         // Create a new nested builder to ensure this gets its own IR builder state 
-        IRMethod rootMethod = mc.getRootMethod();
-        Operand rv = (new IRBuilder()).build(sclassNode.getBodyNode(), rootMethod);
-        if (rv != null) rootMethod.addInstr(new ReturnInstr(rv));
+        Operand rv = (new IRBuilder()).build(sclassNode.getBodyNode(), mc);
+        if (rv != null) mc.addInstr(new ReturnInstr(rv));
 
         return ret;
     }
@@ -2425,10 +2423,9 @@ public class IRBuilder {
         IRModule nm = s.getNearestModule();
         if (nm != null) nm.addModule(m);
 
-        IRMethod rootMethod = m.getRootMethod();
         // Create a new nested builder to ensure this gets its own IR builder state 
-        Operand rv = (new IRBuilder()).build(moduleNode.getBodyNode(), rootMethod);
-        if (rv != null) rootMethod.addInstr(new ReturnInstr(rv));
+        Operand rv = (new IRBuilder()).build(moduleNode.getBodyNode(), m);
+        if (rv != null) m.addInstr(new ReturnInstr(rv));
 
         return ret;
     }
@@ -3002,13 +2999,12 @@ public class IRBuilder {
         // Top-level script!
         IRScript script = new IRScript("__file__", file, staticScope);
         IRClass  rootClass = script.getRootClass();
-        IRMethod rootMethod = rootClass.getRootMethod();
 
         // Debug info: record file name
-        rootMethod.addInstr(new FilenameInstr(file));
+        rootClass.addInstr(new FilenameInstr(file));
 
         // Build IR for the tree and return the result of the expression tree
-        rootMethod.addInstr(new ReturnInstr(build(rootNode.getBodyNode(), rootMethod)));
+        rootClass.addInstr(new ReturnInstr(build(rootNode.getBodyNode(), rootClass)));
 
         return script;
     }

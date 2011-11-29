@@ -20,37 +20,20 @@ import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.IRScript;
 import org.jruby.compiler.ir.compiler_pass.InlineTest;
 import org.jruby.compiler.ir.compiler_pass.opts.DeadCodeElimination;
-import org.jruby.compiler.ir.instructions.BEQInstr;
-import org.jruby.compiler.ir.instructions.CallInstr;
-import org.jruby.compiler.ir.instructions.CopyInstr;
-import org.jruby.compiler.ir.instructions.DefineClassMethodInstr;
-import org.jruby.compiler.ir.instructions.DefineInstanceMethodInstr;
-import org.jruby.compiler.ir.instructions.GetFieldInstr;
 import org.jruby.compiler.ir.instructions.Instr;
-import org.jruby.compiler.ir.instructions.JumpInstr;
-import org.jruby.compiler.ir.instructions.LabelInstr;
-import org.jruby.compiler.ir.instructions.PutFieldInstr;
-import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
-import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
-import org.jruby.compiler.ir.instructions.ReceiveSelfInstruction;
-import org.jruby.compiler.ir.instructions.ReturnInstr;
 import org.jruby.compiler.ir.operands.Constant;
 import org.jruby.compiler.ir.operands.Fixnum;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
-import org.jruby.runtime.Block;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Type;
-import org.objectweb.asm.commons.GeneratorAdapter;
-import org.objectweb.asm.commons.Method;
 import org.objectweb.asm.util.TraceClassVisitor;
 import static org.objectweb.asm.Opcodes.*;
 import static org.jruby.util.CodegenUtils.*;
-import static org.objectweb.asm.commons.GeneratorAdapter.*;
 
 // This class represents JVM as the target of compilation
 // and outputs bytecode
@@ -193,7 +176,7 @@ public class JVM implements CompilerTarget {
         popmethod();
 
         // Root method
-        emit(cls.getRootMethod());
+        emit(cls);
 
         // Additional methods
         for (IRMethod method : cls.getMethods()) {
