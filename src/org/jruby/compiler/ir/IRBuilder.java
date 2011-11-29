@@ -2998,13 +2998,12 @@ public class IRBuilder {
 
         // Top-level script!
         IRScript script = new IRScript("__file__", file, staticScope);
-        IRClass  rootClass = script.getRootClass();
 
         // Debug info: record file name
-        rootClass.addInstr(new FilenameInstr(file));
+        script.addInstr(new FilenameInstr(file));
 
         // Build IR for the tree and return the result of the expression tree
-        rootClass.addInstr(new ReturnInstr(build(rootNode.getBodyNode(), rootClass)));
+        script.addInstr(new ReturnInstr(build(rootNode.getBodyNode(), script)));
 
         return script;
     }

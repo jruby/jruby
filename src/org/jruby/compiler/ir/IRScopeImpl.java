@@ -103,10 +103,6 @@ public abstract class IRScopeImpl implements IRScope {
             return null;
         }
 
-        if (current instanceof IRScript) { // Possible we are a method at top-level.
-            current = ((IRScript) current).getRootClass();
-        }
-
         return (IRModule) current;
     }
     

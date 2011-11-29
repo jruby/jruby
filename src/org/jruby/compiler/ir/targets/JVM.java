@@ -160,7 +160,7 @@ public class JVM implements CompilerTarget {
 
     public void codegen(IRScript script) {
         this.script = script;
-        emit(script.getRootClass());
+        emit(script);
     }
 
     public void emit(IRClass cls) {
@@ -190,6 +190,16 @@ public class JVM implements CompilerTarget {
 
         cls().visitEnd();
         popclass();
+    }
+    
+    public void emit(IRScript script) {
+        pushmethod("__script__", 0);
+        
+        for (Instr instr: script.getInstrs()) {
+            emit(instr);
+        }
+        
+        popmethod();
     }
 
     public void emit(IRMethod method) {
