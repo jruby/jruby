@@ -1,7 +1,7 @@
 package org.jruby.compiler.ir.instructions;
 
 import org.jruby.compiler.ir.IRClosure;
-import org.jruby.compiler.ir.IRScope;
+import org.jruby.compiler.ir.IRExecutionScope;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.InlinerInfo;
@@ -11,10 +11,10 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class RecordEndBlockInstr extends Instr {
-	 private IRScope declaringScope;
+	 private IRExecutionScope declaringScope;
 	 private IRClosure endBlockClosure;
 
-    public RecordEndBlockInstr(IRScope declaringScope, IRClosure endBlockClosure) {
+    public RecordEndBlockInstr(IRExecutionScope declaringScope, IRClosure endBlockClosure) {
         super(Operation.RECORD_END_BLOCK);
         
         this.declaringScope = declaringScope;

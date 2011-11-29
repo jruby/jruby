@@ -689,4 +689,28 @@ public abstract class IRExecutionScope extends IRScopeImpl {
         // FIXME: Add result from this build and add to CFG as a field, then add depends() for htings which use it.
         builder.buildDominatorTree(cfg, cfg.postOrderList(), cfg.getMaxNodeID());
     }
+    
+    /**
+     * Returns the top level executable scope
+     */
+    public IRExecutionScope getTopLevelScope() {
+        IRScope current = this;
+
+        while (!(current instanceof IREvalScript) && !(current instanceof IRScript)) {
+            current = current.getLexicalParent();
+        }
+        
+        // FIXME: Remove case once lexical parent is resolved to execution scope
+        return (IRExecutionScope) current;
+    }
+    
+    /* Record a begin block -- not all scope implementations can handle them */
+    public void recordBeginBlock(IRClosure beginBlockClosure) {
+        throw new RuntimeException("BEGIN blocks cannot be added to: " + this.getClass().getName());
+    }
+
+    /* Record an end block -- not all scope implementations can handle them */
+    public void recordEndBlock(IRClosure endBlockClosure) {
+        throw new RuntimeException("END blocks cannot be added to: " + this.getClass().getName());
+    }    
 }

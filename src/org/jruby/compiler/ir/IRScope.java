@@ -77,10 +77,4 @@ public interface IRScope {
 
     /* Run any necessary passes to get the IR ready for interpretation */
     public void prepareForInterpretation();
-
-    /* Record a begin block -- not all scope implementations can handle them */
-    public void recordBeginBlock(IRClosure beginBlockClosure);
-
-    /* Record an end block -- not all scope implementations can handle them */
-    public void recordEndBlock(IRClosure endBlockClosure);
 }
