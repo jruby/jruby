@@ -13,18 +13,6 @@ import org.jruby.parser.StaticScope;
  */
 public interface IRScope {
     /**
-     *  Record that newName is a new method name for method with oldName
-     * This is for the 'alias' keyword which resolves method names in the
-     * static compile/parse-time context
-     */
-    public void recordMethodAlias(String newName, String oldName);
-
-    /**
-     *  Unalias 'name' and return new name
-     */
-    public String unaliasMethodName(String name);
-
-    /**
      *  Get the next available unique closure id for closures in this scope
      */
     public int getNextClosureId();

@@ -58,7 +58,6 @@ public abstract class IRExecutionScope extends IRScopeImpl {
     private List<BasicBlock> linearizedBBList = null;  // Linearized list of bbs
     private int scopeExitPC = -1;
     protected int temporaryVariableIndex = -1;
-    
 
     protected static class LocalVariableAllocator {
         public int nextSlot;
@@ -813,5 +812,5 @@ public abstract class IRExecutionScope extends IRScopeImpl {
     /* Record an end block -- not all scope implementations can handle them */
     public void recordEndBlock(IRClosure endBlockClosure) {
         throw new RuntimeException("END blocks cannot be added to: " + this.getClass().getName());
-    }    
+    } 
 }

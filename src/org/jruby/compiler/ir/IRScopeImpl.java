@@ -62,9 +62,6 @@ public abstract class IRScopeImpl implements IRScope {
     // ENEBO: These collections are initliazed on construction, but the rest
     //   are init()'d.  This can't be right can it?
 
-    // oldName -> newName for methods
-    private Map<String, String> aliases = new HashMap<String, String>();
-
     // Index values to guarantee we don't assign same internal index twice
     private int nextClosureIndex = 0;
 
@@ -130,24 +127,6 @@ public abstract class IRScopeImpl implements IRScope {
 
     public StaticScope getStaticScope() {
         return staticScope;
-    }
-
-    // Record that newName is a new method name for method with oldName
-    // This is for the 'alias' keyword which resolves method names in the static compile/parse-time context
-    public void recordMethodAlias(String newName, String oldName) {
-        aliases.put(oldName, newName);
-    }
-
-    // Unalias 'name' and return new name
-    public String unaliasMethodName(String name) {
-        String n = name;
-        String a = null;
-        do {
-            a = aliases.get(n);
-            if (a != null) n = a;
-        } while (a != null);
-
-        return n;
     }
 
     public List<Instr> getInstrs() {
