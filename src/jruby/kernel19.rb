@@ -12,5 +12,6 @@ load 'jruby/kernel19/jruby/process_util.rb'
 load 'jruby/kernel19/enumerator.rb'
 load 'jruby/kernel19/enumerable.rb'
 load 'jruby/kernel19/io.rb'
+load 'jruby/kernel19/time.rb'
 
 load 'jruby/kernel19/rubygems.rb' unless JRuby::CONFIG.rubygems_disabled?
