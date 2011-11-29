@@ -203,7 +203,7 @@ public class Ruby19Parser implements RubyParser {
 %type <RestArgNode> f_rest_arg 
 %type <Node> singleton strings string string1 xstring regexp
 %type <Node> string_contents xstring_contents string_content method_call
-%type <Node> words qwords word literal numeric dsym cpath command_call
+%type <Node> words qwords word literal numeric dsym cpath command_asgn command_call
 %type <Node> compstmt bodystmt stmts stmt expr arg primary command 
 %type <Node> expr_value primary_value opt_else cases if_tail exc_var
    // ENEBO: missing call_args2, open_args
@@ -395,10 +395,7 @@ stmt            : kALIAS fitem {
                     }
                     $$ = new PostExeNode($1.getPosition(), $3);
                 }
-                | lhs '=' command_call {
-                    support.checkExpression($3);
-                    $$ = support.node_assign($1, $3);
-                }
+                | command_asgn
                 | mlhs '=' command_call {
                     support.checkExpression($3);
                     $1.setValueNode($3);
@@ -450,6 +447,15 @@ stmt            : kALIAS fitem {
                     $1.setPosition(support.getPosition($1));
                 }
                 | expr
+
+command_asgn    : lhs '=' command_call {
+                    support.checkExpression($3);
+                    $$ = support.node_assign($1, $3);
+                }
+                | lhs '=' command_asgn {
+                    support.checkExpression($3);
+                    $$ = support.node_assign($1, $3);
+                }
 
 // Node:expr *CURRENT* all but arg so far
 expr            : command_call
