@@ -72,8 +72,8 @@ import org.jruby.util.log.LoggerFactory;
  *
  * and so on ...
  */
-public abstract class IRExecutionScope {
-    private static final Logger LOG = LoggerFactory.getLogger("IRExecutionScope");
+public abstract class IRScope {
+    private static final Logger LOG = LoggerFactory.getLogger("IRScope");
     
     private List<Instr>     instructions; // List of IR instructions for this method
     private CFG cfg = null;
@@ -180,11 +180,11 @@ public abstract class IRExecutionScope {
     protected int requiredArgs = 0;
     protected int optionalArgs = 0;
     protected int restArg = -1;
-    private IRExecutionScope lexicalParent;  // Lexical parent scope    
+    private IRScope lexicalParent;  // Lexical parent scope    
     private StaticScope staticScope;
     private String name;
     
-    public IRExecutionScope(IRExecutionScope lexicalParent, String name, StaticScope staticScope) {
+    public IRScope(IRScope lexicalParent, String name, StaticScope staticScope) {
         super();
             
         this.lexicalParent = lexicalParent;        
@@ -246,7 +246,7 @@ public abstract class IRExecutionScope {
     /**
      *  Returns the lexical scope that contains this scope definition
      */
-    public IRExecutionScope getLexicalParent() {
+    public IRScope getLexicalParent() {
         return lexicalParent;
     }
     
@@ -255,7 +255,7 @@ public abstract class IRExecutionScope {
     }    
     
     public IRMethod getNearestMethod() {
-        IRExecutionScope current = this;
+        IRScope current = this;
 
         while (current != null && !(current instanceof IRMethod)) {
             current = current.getLexicalParent();
@@ -270,7 +270,7 @@ public abstract class IRExecutionScope {
      * Returns the nearest method from this scope which may be itself (can never be null)
      */
     public IRModule getNearestModule() {
-        IRExecutionScope current = this;
+        IRScope current = this;
 
         while (current != null && !((current instanceof IRModule) || (current instanceof IREvalScript))) {
             current = current.getLexicalParent();
@@ -298,8 +298,8 @@ public abstract class IRExecutionScope {
     /**
      * Returns the top level scope
      */
-    public IRExecutionScope getTopLevelScope() {
-        IRExecutionScope current = this;
+    public IRScope getTopLevelScope() {
+        IRScope current = this;
 
         while (!(current instanceof IREvalScript) && !(current instanceof IRScript)) {
             current = current.getLexicalParent();
@@ -314,16 +314,16 @@ public abstract class IRExecutionScope {
     }
 
     public IRMethod getClosestMethodAncestor() {
-        IRExecutionScope s = this;
+        IRScope s = this;
         while (!(s instanceof IRMethod)) {
-            s = (IRExecutionScope)s.getLexicalParent();
+            s = (IRScope)s.getLexicalParent();
         }
 
         return (IRMethod) s;
     }
 
     public IRMethod getClosestNonRootMethodAncestor() {
-        IRExecutionScope s = this;
+        IRScope s = this;
         while ((s != null) && (!(s instanceof IRMethod) || ((IRMethod)s).isAModuleRootMethod())) {
             s = s.getLexicalParent();
         }
@@ -332,9 +332,9 @@ public abstract class IRExecutionScope {
     }
 
     public boolean nestedInClosure(IRClosure closure) {
-        IRExecutionScope s = this;
+        IRScope s = this;
         while (!(s instanceof IRMethod) && (s != closure)) {
-            s = (IRExecutionScope)s.getLexicalParent();
+            s = (IRScope)s.getLexicalParent();
         }
         return (s == closure);
     }
@@ -382,10 +382,10 @@ public abstract class IRExecutionScope {
     /* Run any necessary passes to get the IR ready for interpretation */
     public void prepareForInterpretation() {
         // Should be an execution scope
-        if (!(this instanceof IRExecutionScope)) return;
+        if (!(this instanceof IRScope)) return;
 
         // forcibly clear out the shared eval-scope variable allocator each time this method executes
-        ((IRExecutionScope)this).initEvalScopeVariableAllocator(true); 
+        ((IRScope)this).initEvalScopeVariableAllocator(true); 
 
         // SSS FIXME: We should configure different optimization levels
         // and run different kinds of analysis depending on time budget.  Accordingly, we need to set

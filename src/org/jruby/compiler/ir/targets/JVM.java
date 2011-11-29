@@ -1,6 +1,6 @@
 package org.jruby.compiler.ir.targets;
 
-import org.jruby.compiler.ir.IRExecutionScope;
+import org.jruby.compiler.ir.IRScope;
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -101,7 +101,7 @@ public class JVM implements CompilerTarget {
                 }
             }
             
-            IRExecutionScope scope = new IRBuilder().buildRoot((RootNode) ast);
+            IRScope scope = new IRBuilder().buildRoot((RootNode) ast);
             
             // additional passes not enabled in builder yet
             if (deadCode) scope.runCompilerPass(new DeadCodeElimination());
@@ -152,7 +152,7 @@ public class JVM implements CompilerTarget {
         clsData().popmethod();
     }
 
-    public void codegen(IRExecutionScope scope) {
+    public void codegen(IRScope scope) {
         if (scope instanceof IRScript) {
             codegen((IRScript)scope);
         }

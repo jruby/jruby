@@ -7,7 +7,7 @@ package org.jruby.compiler.ir.instructions;
 
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
-import org.jruby.compiler.ir.IRExecutionScope;
+import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 
@@ -19,7 +19,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class AllocateBindingInstr extends Instr {
     private IRMethod scope;   // Scope for which frame is needed
 
-    public AllocateBindingInstr(IRExecutionScope scope) {
+    public AllocateBindingInstr(IRScope scope) {
         super(Operation.ALLOC_BINDING);
         
         this.scope = scope.getClosestMethodAncestor();

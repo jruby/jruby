@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.jruby.compiler.ir.Tuple;
-import org.jruby.compiler.ir.IRExecutionScope;
+import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.operands.Array;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.LocalVariable;
@@ -49,7 +49,7 @@ public class InlinerInfo {
     public Variable getRenamedVariable(Variable v) {
         Variable newVar = this.varRenameMap.get(v);
         if (newVar == null) {
-            IRExecutionScope m = this.callerCFG.getScope();
+            IRScope m = this.callerCFG.getScope();
             newVar = m.getNewInlineVariable();
             if ((v instanceof LocalVariable) && !(v instanceof ClosureLocalVariable)) {
                 // Frame load/store placement dataflow pass (and possible other passes later on) exploit

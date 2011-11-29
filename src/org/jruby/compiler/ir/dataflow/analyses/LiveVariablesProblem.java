@@ -14,7 +14,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import org.jruby.compiler.ir.IRExecutionScope;
+import org.jruby.compiler.ir.IRScope;
 
 public class LiveVariablesProblem extends DataFlowProblem {
     public LiveVariablesProblem() {
@@ -81,7 +81,7 @@ public class LiveVariablesProblem extends DataFlowProblem {
      *
      * In the code snippet above, 'sum' is live on entry to and exit from the closure.
      **/
-    public void setup(IRExecutionScope scope, Collection<LocalVariable> allVars) {
+    public void setup(IRScope scope, Collection<LocalVariable> allVars) {
         setup(scope);
 
         if ((allVars != null) && !allVars.isEmpty()) {

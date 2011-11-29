@@ -1,7 +1,7 @@
 package org.jruby.compiler.ir.dataflow.analyses;
 
 import org.jruby.compiler.ir.IRClosure;
-import org.jruby.compiler.ir.IRExecutionScope;
+import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.dataflow.DataFlowProblem;
 import org.jruby.compiler.ir.dataflow.DataFlowConstants;
@@ -132,7 +132,7 @@ public class BindingStorePlacementNode extends FlowGraphNode {
         boolean addAllocateBindingInstructions = false; // SSS: This is going to be useful during JIT -- we are far away from there at this time
 
         BindingStorePlacementProblem bsp = (BindingStorePlacementProblem) problem;
-        IRExecutionScope s = bsp.getScope();
+        IRScope s = bsp.getScope();
         ListIterator<Instr> instrs = basicBlock.getInstrs().listIterator();
         Set<LocalVariable> dirtyVars = new HashSet<LocalVariable>(inDirtyVars);
         boolean bindingAllocated = inBindingAllocated;
@@ -288,7 +288,7 @@ public class BindingStorePlacementNode extends FlowGraphNode {
         if (amExitBB) addClosureExitBindingStores(s, instrs, dirtyVars);
     }
 
-    private void addClosureExitBindingStores(IRExecutionScope s, ListIterator<Instr> instrs, Set<LocalVariable> dirtyVars) {
+    private void addClosureExitBindingStores(IRScope s, ListIterator<Instr> instrs, Set<LocalVariable> dirtyVars) {
         for (Variable v : dirtyVars) {
             if (v instanceof ClosureLocalVariable) {
                 IRClosure definingScope = ((ClosureLocalVariable)v).definingScope;

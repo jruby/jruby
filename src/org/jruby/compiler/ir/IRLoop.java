@@ -6,7 +6,7 @@ import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Variable;
 
 public class IRLoop {
-    public final IRExecutionScope container;
+    public final IRScope container;
     public final IRLoop  parentLoop;
     public final Label    loopStartLabel;
     public final Label    loopEndLabel;
@@ -14,7 +14,7 @@ public class IRLoop {
     public final Label    iterEndLabel;
     public final Variable loopResult;
 
-    public IRLoop(IRExecutionScope s) {
+    public IRLoop(IRScope s) {
         container = s;
         parentLoop = s.getCurrentLoop();
         loopStartLabel = s.getNewLabel("_LOOP_BEGIN");

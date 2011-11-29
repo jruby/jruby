@@ -16,7 +16,7 @@ import org.jruby.parser.StaticScope;
 import org.jruby.parser.IRStaticScope;
 import org.jruby.parser.IRStaticScopeFactory;
 
-public class IRMethod extends IRExecutionScope {
+public class IRMethod extends IRScope {
     public final boolean isInstanceMethod;
 
     public final Label startLabel; // Label for the start of the method
@@ -38,7 +38,7 @@ public class IRMethod extends IRExecutionScope {
     private int nextAvailableBindingSlot;
     private Map<String, Integer> bindingSlotMap;
 
-    public IRMethod(IRExecutionScope lexicalParent, String name, boolean isInstanceMethod, StaticScope staticScope) {
+    public IRMethod(IRScope lexicalParent, String name, boolean isInstanceMethod, StaticScope staticScope) {
         super(lexicalParent, name, staticScope);
         this.isInstanceMethod = isInstanceMethod;
         startLabel = getNewLabel("_METH_START");

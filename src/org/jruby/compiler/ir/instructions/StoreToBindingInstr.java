@@ -3,7 +3,7 @@ package org.jruby.compiler.ir.instructions;
 import java.util.Map;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
-import org.jruby.compiler.ir.IRExecutionScope;
+import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.UndefinedValue;
@@ -19,7 +19,7 @@ public class StoreToBindingInstr extends Instr {
     private Operand value;
     private int bindingSlot;
 
-    public StoreToBindingInstr(IRExecutionScope scope, String slotName, Operand value) {
+    public StoreToBindingInstr(IRScope scope, String slotName, Operand value) {
         super(Operation.BINDING_STORE);
 
         this.slotName = slotName;

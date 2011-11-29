@@ -3,7 +3,7 @@ package org.jruby.compiler.ir.instructions;
 
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Variable;
-import org.jruby.compiler.ir.IRExecutionScope;
+import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.Interp;
 import org.jruby.compiler.ir.operands.LocalVariable;
@@ -32,7 +32,7 @@ public class LoadFromBindingInstr extends Instr implements ResultInstr {
     private String slotName;
     private Variable result;
 
-    public LoadFromBindingInstr(Variable result, IRExecutionScope scope, String slotName) {
+    public LoadFromBindingInstr(Variable result, IRScope scope, String slotName) {
         super(Operation.BINDING_LOAD);
 
         assert result != null: "LoadFromBindingInstr result is null";

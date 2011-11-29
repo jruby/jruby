@@ -6,7 +6,7 @@ public class IRMetaClass extends IRClass {
     static int dummyMetaClassCount = 0;
     static IRMetaClass CLASS_METACLASS = new IRMetaClass(null, null);
 
-    public IRMetaClass(IRExecutionScope s, StaticScope staticScope) {
+    public IRMetaClass(IRScope s, StaticScope staticScope) {
         // Super class is always <Class:Class>
         super(s, CLASS_METACLASS, "<DUMMY_MC:" + dummyMetaClassCount + ">", staticScope);
         dummyMetaClassCount += 1;

@@ -1,7 +1,7 @@
 package org.jruby.compiler.ir.compiler_pass.opts;
 
 import org.jruby.compiler.ir.IRClosure;
-import org.jruby.compiler.ir.IRExecutionScope;
+import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.compiler_pass.CompilerPass;
 import org.jruby.compiler.ir.dataflow.DataFlowConstants;
 import org.jruby.compiler.ir.dataflow.analyses.LiveVariablesProblem;
@@ -11,7 +11,7 @@ public class DeadCodeElimination implements CompilerPass {
         return false;
     }
 
-    public void run(IRExecutionScope scope) {
+    public void run(IRScope scope) {
         if (scope instanceof IRClosure && ((IRClosure)scope).hasBeenInlined()) return;
 
         LiveVariablesProblem lvp = (LiveVariablesProblem) scope.getDataFlowSolution(DataFlowConstants.LVP_NAME);

@@ -24,7 +24,7 @@ import org.jruby.runtime.Arity;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.InterpretedIRBlockBody;
 
-public class IRClosure extends IRExecutionScope {
+public class IRClosure extends IRScope {
     public final Label startLabel; // Label for the start of the closure (used to implement redo)
     public final Label endLabel;   // Label for the end of the closure (used to implement retry)
     public final int closureId;    // Unique id for this closure within the nearest ancestor method.
@@ -46,7 +46,7 @@ public class IRClosure extends IRExecutionScope {
     // Block parameters
     private List<Operand> blockArgs;
 
-    public IRClosure(IRExecutionScope lexicalParent, boolean isForLoopBody, StaticScope staticScope, Arity arity, int argumentType) {
+    public IRClosure(IRScope lexicalParent, boolean isForLoopBody, StaticScope staticScope, Arity arity, int argumentType) {
         this(lexicalParent, staticScope, isForLoopBody ? "_FOR_LOOP_" : "_CLOSURE_");
         this.isForLoopBody = isForLoopBody;
         this.hasBeenInlined = false;
@@ -60,7 +60,7 @@ public class IRClosure extends IRExecutionScope {
     }
 
     // Used by IREvalScript
-    protected IRClosure(IRExecutionScope lexicalParent, StaticScope staticScope, String prefix) {
+    protected IRClosure(IRScope lexicalParent, StaticScope staticScope, String prefix) {
         super(lexicalParent, null, staticScope);
         this.isForLoopBody = false;
         this.startLabel = getNewLabel(prefix + "START");
@@ -71,7 +71,7 @@ public class IRClosure extends IRExecutionScope {
 
         // set nesting depth
         int n = 0;
-        IRExecutionScope s = this;
+        IRScope s = this;
         while (s instanceof IRClosure) {
             s = ((IRClosure)s).getLexicalParent();
             n++;
@@ -153,7 +153,7 @@ public class IRClosure extends IRExecutionScope {
     public LocalVariable findExistingLocalVariable(String name) {
         LocalVariable lvar = localVars.getVariable(name);
         if (lvar != null) return lvar;
-        else return ((IRExecutionScope)getLexicalParent()).findExistingLocalVariable(name);
+        else return ((IRScope)getLexicalParent()).findExistingLocalVariable(name);
     }
 
     public LocalVariable getNewLocalVariable(String name, int scopeDepth) {

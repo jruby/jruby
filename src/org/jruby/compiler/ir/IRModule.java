@@ -13,7 +13,7 @@ import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.parser.IRStaticScopeFactory;
 import org.jruby.parser.StaticScope;
 
-public class IRModule extends IRExecutionScope {
+public class IRModule extends IRScope {
     private final static StaticScope rootObjectScope = IRStaticScopeFactory.newIRLocalScope(null);
 
     // The "root" method of a class -- the scope in which all definitions, and class code executes, equivalent to java clinit
@@ -39,7 +39,7 @@ public class IRModule extends IRExecutionScope {
     }
     
 
-    public IRModule(IRExecutionScope lexicalParent, String name, StaticScope scope) {
+    public IRModule(IRScope lexicalParent, String name, StaticScope scope) {
         super(lexicalParent, name, scope);
         
         addInstr(new ReceiveSelfInstruction(getSelf()));   // Set up self!
@@ -47,7 +47,7 @@ public class IRModule extends IRExecutionScope {
         updateVersion();
     }    
 
-    static private IRClass addCoreClass(String name, IRExecutionScope parent, String[] coreMethods, StaticScope staticScope) {
+    static private IRClass addCoreClass(String name, IRScope parent, String[] coreMethods, StaticScope staticScope) {
         IRClass c = new IRClass(parent, null, name, staticScope);
         coreClasses.put(c.getName(), c);
         if (coreMethods != null) {
@@ -118,15 +118,15 @@ public class IRModule extends IRExecutionScope {
 
     @Override
     public void runCompilerPassOnNestedScopes(CompilerPass p) {
-        for (IRExecutionScope m : modules) {
+        for (IRScope m : modules) {
             m.runCompilerPass(p);
         }
 
-        for (IRExecutionScope c : classes) {
+        for (IRScope c : classes) {
             c.runCompilerPass(p);
         }
 
-        for (IRExecutionScope meth : methods) {
+        for (IRScope meth : methods) {
             meth.runCompilerPass(p);
         }
     }

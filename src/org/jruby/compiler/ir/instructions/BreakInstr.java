@@ -1,7 +1,7 @@
 package org.jruby.compiler.ir.instructions;
 
 import java.util.Map;
-import org.jruby.compiler.ir.IRExecutionScope;
+import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.InlinerInfo;
@@ -31,10 +31,10 @@ import org.jruby.runtime.builtin.IRubyObject;
 // def foo(n); break if n > 5; end; foo(100) will throw an exception
 //
 public class BreakInstr extends Instr {
-    private final IRExecutionScope scopeToReturnTo;
+    private final IRScope scopeToReturnTo;
     protected Operand returnValue;
 
-    public BreakInstr(Operand rv, IRExecutionScope s) {
+    public BreakInstr(Operand rv, IRScope s) {
         super(Operation.BREAK);
         this.scopeToReturnTo = s;
         this.returnValue = rv;

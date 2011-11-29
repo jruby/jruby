@@ -21,15 +21,15 @@ import org.jruby.util.log.LoggerFactory;
 public class IREvalScript extends IRClosure {
     private static final Logger LOG = LoggerFactory.getLogger("IREvalScript");
 
-    private IRExecutionScope nearestNonEvalScope;
+    private IRScope nearestNonEvalScope;
     private List<IRClosure> beginBlocks;
     private List<IRClosure> endBlocks;
 
-    public IREvalScript(IRExecutionScope lexicalParent, StaticScope staticScope) {
+    public IREvalScript(IRScope lexicalParent, StaticScope staticScope) {
         super(lexicalParent, staticScope, "EVAL_");
-        IRExecutionScope s = lexicalParent;
+        IRScope s = lexicalParent;
         while (s instanceof IREvalScript) s = s.getLexicalParent();
-        this.nearestNonEvalScope = (IRExecutionScope)s;
+        this.nearestNonEvalScope = (IRScope)s;
         this.nearestNonEvalScope.initEvalScopeVariableAllocator(false);
     }
 

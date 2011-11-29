@@ -8,7 +8,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import org.jruby.compiler.ir.IRExecutionScope;
+import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.representations.BasicBlock;
 
 public abstract class DataFlowProblem {
@@ -37,12 +37,12 @@ public abstract class DataFlowProblem {
         return direction;
     }
 
-    public void setup(IRExecutionScope scope) {
+    public void setup(IRScope scope) {
         this.scope = scope;
         buildFlowGraph();
     }
 
-    public IRExecutionScope getScope() {
+    public IRScope getScope() {
         return scope;
     }
 
@@ -130,7 +130,7 @@ public abstract class DataFlowProblem {
 
 /* -------------- Protected fields and methods below ---------------- */
     protected List<FlowGraphNode>    flowGraphNodes;
-    protected IRExecutionScope scope;
+    protected IRScope scope;
     protected FlowGraphNode getFlowGraphNode(BasicBlock b) {
         return basicBlockToFlowGraph.get(b.getID());
     }

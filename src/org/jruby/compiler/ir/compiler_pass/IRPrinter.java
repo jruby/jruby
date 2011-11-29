@@ -1,6 +1,6 @@
 package org.jruby.compiler.ir.compiler_pass;
 
-import org.jruby.compiler.ir.IRExecutionScope;
+import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.representations.CFG;
 import org.jruby.util.log.Logger;
@@ -14,7 +14,7 @@ public class IRPrinter implements CompilerPass {
         return true;
     }
 
-    public void run(IRExecutionScope scope) {
+    public void run(IRScope scope) {
         LOG.info("----------------------------------------");
         LOG.info(scope.toString());
 

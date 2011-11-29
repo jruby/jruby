@@ -1,7 +1,7 @@
 package org.jruby.compiler.ir.dataflow.analyses;
 
 import org.jruby.compiler.ir.IRClosure;
-import org.jruby.compiler.ir.IRExecutionScope;
+import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.dataflow.DataFlowProblem;
 import org.jruby.compiler.ir.dataflow.FlowGraphNode;
@@ -123,7 +123,7 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
 
     public void addLoads() {
         BindingLoadPlacementProblem blp = (BindingLoadPlacementProblem) problem;
-        IRExecutionScope s = blp.getScope().cfg().getScope();
+        IRScope s = blp.getScope().cfg().getScope();
         List<Instr> instrs = basicBlock.getInstrs();
         ListIterator<Instr> it = instrs.listIterator(instrs.size());
         Set<LocalVariable> reqdLoads = new HashSet<LocalVariable>(inRequiredLoads);

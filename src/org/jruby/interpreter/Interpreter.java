@@ -11,7 +11,7 @@ import org.jruby.compiler.ir.IRBuilder;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.IRModule;
 import org.jruby.compiler.ir.IREvalScript;
-import org.jruby.compiler.ir.IRExecutionScope;
+import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.IRClosure;
 import org.jruby.compiler.ir.IRScript;
 import org.jruby.compiler.ir.instructions.CallBase;
@@ -74,10 +74,10 @@ public class Interpreter {
         // I have used the hack below where I first unwrap once and see if I get a non-null IR scope.  If that doesn't
         // work, I unwarp once more and I am guaranteed to get the IR scope I want.
         StaticScope ss = rootNode.getStaticScope();
-        IRExecutionScope containingIRScope = ((IRStaticScope)ss.getEnclosingScope()).getIRScope();
+        IRScope containingIRScope = ((IRStaticScope)ss.getEnclosingScope()).getIRScope();
         if (containingIRScope == null) containingIRScope = ((IRStaticScope)ss.getEnclosingScope().getEnclosingScope()).getIRScope();
 
-        IREvalScript evalScript = new IRBuilder().buildEvalRoot(ss, (IRExecutionScope) containingIRScope, file, lineNumber, rootNode);
+        IREvalScript evalScript = new IRBuilder().buildEvalRoot(ss, (IRScope) containingIRScope, file, lineNumber, rootNode);
         evalScript.prepareForInterpretation();
 //        evalScript.runCompilerPass(new CallSplitter());
         ThreadContext context = runtime.getCurrentContext(); 
@@ -134,7 +134,7 @@ public class Interpreter {
     }
 
     public static IRubyObject interpret(ThreadContext context, IRubyObject self, 
-            IRExecutionScope scope, IRubyObject[] args, Block block, Block.Type blockType) {
+            IRScope scope, IRubyObject[] args, Block block, Block.Type blockType) {
         boolean debug = isDebug();
         boolean inClosure = (scope instanceof IRClosure);
         Instr[] instrs = scope.prepareInstructionsForInterpretation();
@@ -391,7 +391,7 @@ public class Interpreter {
     /*
      * Handle non-local returns (ex: when nested in closures, root scopes of module/class/sclass bodies)
      */
-    private static void handleNonLocalReturn(ThreadContext context, IRExecutionScope scope, ReturnInstr returnInstr, IRubyObject returnValue, boolean inClosure) {
+    private static void handleNonLocalReturn(ThreadContext context, IRScope scope, ReturnInstr returnInstr, IRubyObject returnValue, boolean inClosure) {
         IRMethod methodToReturnFrom = returnInstr.methodToReturnFrom;
 
         if (inClosure) {
@@ -420,7 +420,7 @@ public class Interpreter {
         }        
     }
 
-    private static IRubyObject handleReturnJumpInClosure(IRExecutionScope scope, IRReturnJump rj, Type blockType) throws IRReturnJump {
+    private static IRubyObject handleReturnJumpInClosure(IRScope scope, IRReturnJump rj, Type blockType) throws IRReturnJump {
         // - If we are in a lambda or if we are in the method scope we are supposed to return from, stop propagating
         if (inNonMethodBodyLambda(scope, blockType) || (rj.methodToReturnFrom == scope)) return (IRubyObject) rj.returnValue;
 
@@ -428,7 +428,7 @@ public class Interpreter {
         throw rj;
     }
 
-    private static void handleBreakJumpInEval(ThreadContext context, IRExecutionScope scope, IRBreakJump bj, Type blockType, boolean inClosure) throws RaiseException, IRBreakJump {
+    private static void handleBreakJumpInEval(ThreadContext context, IRScope scope, IRBreakJump bj, Type blockType, boolean inClosure) throws RaiseException, IRBreakJump {
         bj.breakInEval = false;  // Clear eval flag
 
         // Error
@@ -443,7 +443,7 @@ public class Interpreter {
         throw bj;
     }
 
-    public static IRubyObject INTERPRET_METHOD(ThreadContext context, IRExecutionScope scope, 
+    public static IRubyObject INTERPRET_METHOD(ThreadContext context, IRScope scope, 
         IRubyObject self, String name, RubyModule implClass, IRubyObject[] args, Block block, Block.Type blockType, boolean isTraceable) {
         Ruby runtime = context.getRuntime();
         boolean syntheticMethod = name == null || name.equals("");

@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 import org.jruby.compiler.ir.IRClosure;
-import org.jruby.compiler.ir.IRExecutionScope;
+import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.BranchInstr;
 import org.jruby.compiler.ir.instructions.CallBase;
@@ -48,7 +48,7 @@ public class CFG {
     
     private static final Logger LOG = LoggerFactory.getLogger("CFG");
     
-    private IRExecutionScope scope;
+    private IRScope scope;
     private Map<Label, BasicBlock> bbMap = new HashMap<Label, BasicBlock>();
         
     // Map of bb -> first bb of the rescue block that initiates exception handling for all exceptions thrown within this bb
@@ -67,7 +67,7 @@ public class CFG {
     
     LinkedList<BasicBlock> postOrderList = null; // Post order traversal list of the cfg    
     
-    public CFG(IRExecutionScope scope) {
+    public CFG(IRScope scope) {
         this.scope = scope;
     }
     
@@ -118,7 +118,7 @@ public class CFG {
         return postOrderList().listIterator(size());
     }    
     
-    public IRExecutionScope getScope() {
+    public IRScope getScope() {
         return scope;
     }    
     
