@@ -50,6 +50,7 @@ public abstract class IRExecutionScope extends IRScopeImpl {
     private List<BasicBlock> linearizedBBList = null;  // Linearized list of bbs
     private int scopeExitPC = -1;
     protected int temporaryVariableIndex = -1;
+    
 
     protected static class LocalVariableAllocator {
         public int nextSlot;
@@ -133,10 +134,12 @@ public abstract class IRExecutionScope extends IRScopeImpl {
     protected int requiredArgs = 0;
     protected int optionalArgs = 0;
     protected int restArg = -1;
+    private IRExecutionScope lexicalParent;  // Lexical parent scope    
 
-    public IRExecutionScope(IRScope lexicalParent, String name, StaticScope staticScope) {
-        super(lexicalParent, name, staticScope);
-        
+    public IRExecutionScope(IRExecutionScope lexicalParent, String name, StaticScope staticScope) {
+        super(name, staticScope);
+    
+        this.lexicalParent = lexicalParent;        
         instructions = new ArrayList<Instr>();
         closures = new ArrayList<IRClosure>();
         loopStack = new Stack<IRLoop>();
@@ -181,7 +184,59 @@ public abstract class IRExecutionScope extends IRScopeImpl {
     public List<IRClosure> getClosures() {
         return closures;
     }
+    
+    /**
+     *  Returns the lexical scope that contains this scope definition
+     */
+    public IRExecutionScope getLexicalParent() {
+        return lexicalParent;
+    }
+    
+    public IRMethod getNearestMethod() {
+        IRExecutionScope current = this;
 
+        while (current != null && !(current instanceof IRMethod)) {
+            current = current.getLexicalParent();
+        }
+        
+        assert current instanceof IRMethod : "All scopes must be surrounded by at least one method";
+        
+        return (IRMethod) current;
+    }
+    
+    /**
+     * Returns the nearest method from this scope which may be itself (can never be null)
+     */
+    public IRModule getNearestModule() {
+        IRExecutionScope current = this;
+
+        while (current != null && !((current instanceof IRModule) || (current instanceof IREvalScript))) {
+            current = current.getLexicalParent();
+        }
+
+        // In eval mode, we dont have a lexical view of what module we are nested in
+        // because binding_eval, class_eval, module_eval, instance_eval can switch
+        // around the lexical scope for evaluation to be something else.
+        if (current instanceof IREvalScript) {
+            return null;
+        }
+
+        return (IRModule) current;
+    }
+    
+    /**
+     * Returns the top level scope
+     */
+    public IRExecutionScope getTopLevelScope() {
+        IRExecutionScope current = this;
+
+        while (!(current instanceof IREvalScript) && !(current instanceof IRScript)) {
+            current = current.getLexicalParent();
+        }
+        
+        return current;
+    }
+    
     // SSS FIXME: Deprecated!  Going forward, all instructions should come from the CFG
     @Override
     public List<Instr> getInstrs() {
@@ -198,7 +253,7 @@ public abstract class IRExecutionScope extends IRScopeImpl {
     }
 
     public IRMethod getClosestNonRootMethodAncestor() {
-        IRScope s = this;
+        IRExecutionScope s = this;
         while ((s != null) && (!(s instanceof IRMethod) || ((IRMethod)s).isAModuleRootMethod())) {
             s = s.getLexicalParent();
         }
@@ -688,20 +743,6 @@ public abstract class IRExecutionScope extends IRScopeImpl {
 
         // FIXME: Add result from this build and add to CFG as a field, then add depends() for htings which use it.
         builder.buildDominatorTree(cfg, cfg.postOrderList(), cfg.getMaxNodeID());
-    }
-    
-    /**
-     * Returns the top level executable scope
-     */
-    public IRExecutionScope getTopLevelScope() {
-        IRScope current = this;
-
-        while (!(current instanceof IREvalScript) && !(current instanceof IRScript)) {
-            current = current.getLexicalParent();
-        }
-        
-        // FIXME: Remove case once lexical parent is resolved to execution scope
-        return (IRExecutionScope) current;
     }
     
     /* Record a begin block -- not all scope implementations can handle them */

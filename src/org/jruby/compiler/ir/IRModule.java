@@ -37,8 +37,17 @@ public class IRModule extends IRExecutionScope {
     static {
         bootStrap();
     }
+    
 
-    static private IRClass addCoreClass(String name, IRScope parent, String[] coreMethods, StaticScope staticScope) {
+    public IRModule(IRExecutionScope lexicalParent, String name, StaticScope scope) {
+        super(lexicalParent, name, scope);
+        
+        addInstr(new ReceiveSelfInstruction(getSelf()));   // Set up self!
+        
+        updateVersion();
+    }    
+
+    static private IRClass addCoreClass(String name, IRExecutionScope parent, String[] coreMethods, StaticScope staticScope) {
         IRClass c = new IRClass(parent, null, name, staticScope);
         coreClasses.put(c.getName(), c);
         if (coreMethods != null) {
@@ -125,14 +134,6 @@ public class IRModule extends IRExecutionScope {
     @Override
     public IRModule getNearestModule() {
         return this;
-    }
-
-    public IRModule(IRScope lexicalParent, String name, StaticScope scope) {
-        super(lexicalParent, name, scope);
-        
-        addInstr(new ReceiveSelfInstruction(getSelf()));   // Set up self!
-        
-        updateVersion();
     }
 
     public void updateVersion() {

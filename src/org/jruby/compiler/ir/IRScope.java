@@ -13,24 +13,9 @@ import org.jruby.parser.StaticScope;
  */
 public interface IRScope {
     /**
-     *  Returns the lexical scope that contains this scope definition
-     */
-    public IRScope getLexicalParent();
-
-    /**
      * Returns the nearest module/class from this scope which may be itself.
      */
     public IRModule getNearestModule();
-
-    /**
-     * Returns the top level scope
-     */
-    public IRScope getTopLevelScope();
-
-    /**
-     * Returns the nearest method from this scope which may be itself (can never be null)
-     */
-    public IRMethod getNearestMethod();
 
     /**
      *  Record that newName is a new method name for method with oldName

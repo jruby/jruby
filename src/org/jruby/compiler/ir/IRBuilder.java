@@ -1151,7 +1151,7 @@ public class IRBuilder {
          * where the eval happens.  So, when we hit an eval-script boundary at compile-time,
          * defer scope traversal to when we know where this scope has been spliced in.
          * ------------------------------------------------------------------------------- */
-        IRScope current = s;
+        IRExecutionScope current = s;
         while (current != null && (   !(current instanceof IREvalScript)
                                    && !(    (current instanceof IRMethod) 
                                          && ((IRMethod)current).isAModuleRootMethod()

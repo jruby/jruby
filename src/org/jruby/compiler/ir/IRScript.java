@@ -14,7 +14,7 @@ public class IRScript extends IRModule {
     private List<IRClosure> endBlocks;
 
     public IRScript(String className, String sourceName, StaticScope staticScope) {
-        super((IRScope) null, sourceName, staticScope);
+        super(null, sourceName, staticScope);
     }
 
     public StringLiteral getFileName() {

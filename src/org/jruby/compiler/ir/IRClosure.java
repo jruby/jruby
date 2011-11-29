@@ -46,7 +46,7 @@ public class IRClosure extends IRExecutionScope {
     // Block parameters
     private List<Operand> blockArgs;
 
-    public IRClosure(IRScope lexicalParent, boolean isForLoopBody, StaticScope staticScope, Arity arity, int argumentType) {
+    public IRClosure(IRExecutionScope lexicalParent, boolean isForLoopBody, StaticScope staticScope, Arity arity, int argumentType) {
         this(lexicalParent, staticScope, isForLoopBody ? "_FOR_LOOP_" : "_CLOSURE_");
         this.isForLoopBody = isForLoopBody;
         this.hasBeenInlined = false;
@@ -60,7 +60,7 @@ public class IRClosure extends IRExecutionScope {
     }
 
     // Used by IREvalScript
-    protected IRClosure(IRScope lexicalParent, StaticScope staticScope, String prefix) {
+    protected IRClosure(IRExecutionScope lexicalParent, StaticScope staticScope, String prefix) {
         super(lexicalParent, null, staticScope);
         this.isForLoopBody = false;
         this.startLabel = getNewLabel(prefix + "START");

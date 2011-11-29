@@ -55,7 +55,6 @@ import org.jruby.util.log.LoggerFactory;
 public abstract class IRScopeImpl implements IRScope {
     private static final Logger LOG = LoggerFactory.getLogger("IRScope");
 
-    private IRScope lexicalParent;  // Lexical parent scope
     private RubyModule containerModule; // Live version of container
 
     private String name;
@@ -74,8 +73,7 @@ public abstract class IRScopeImpl implements IRScope {
 
     private StaticScope staticScope;
 
-    public IRScopeImpl(IRScope lexicalParent, String name, StaticScope staticScope) {
-        this.lexicalParent = lexicalParent;
+    public IRScopeImpl(String name, StaticScope staticScope) {
         this.name = name;
         this.staticScope = staticScope;
     }
@@ -83,39 +81,6 @@ public abstract class IRScopeImpl implements IRScope {
     public RubyModule getContainerModule() {
 //        System.out.println("GET: container module of " + getName() + " with hc " + hashCode() + " to " + containerModule.getName());
         return containerModule;
-    }
-
-    public IRScope getLexicalParent() {
-        return lexicalParent;
-    }
-
-    public IRModule getNearestModule() {
-        IRScope current = this;
-
-        while (current != null && !((current instanceof IRModule) || (current instanceof IRScript) || (current instanceof IREvalScript))) {
-            current = current.getLexicalParent();
-        }
-
-        // In eval mode, we dont have a lexical view of what module we are nested in
-        // because binding_eval, class_eval, module_eval, instance_eval can switch
-        // around the lexical scope for evaluation to be something else.
-        if (current instanceof IREvalScript) {
-            return null;
-        }
-
-        return (IRModule) current;
-    }
-    
-    public IRMethod getNearestMethod() {
-        IRScope current = this;
-
-        while (current != null && !(current instanceof IRMethod)) {
-            current = current.getLexicalParent();
-        }
-        
-        assert current instanceof IRMethod : "All scopes must be surrounded by at least one method";
-        
-        return (IRMethod) current;
     }
 
     public int getNextClosureId() {

@@ -38,7 +38,7 @@ public class IRMethod extends IRExecutionScope {
     private int nextAvailableBindingSlot;
     private Map<String, Integer> bindingSlotMap;
 
-    public IRMethod(IRScope lexicalParent, String name, boolean isInstanceMethod, StaticScope staticScope) {
+    public IRMethod(IRExecutionScope lexicalParent, String name, boolean isInstanceMethod, StaticScope staticScope) {
         super(lexicalParent, name, staticScope);
         this.isInstanceMethod = isInstanceMethod;
         startLabel = getNewLabel("_METH_START");

@@ -6,7 +6,7 @@ public class IRClass extends IRModule {
     // This is static information where available and may be null
     final public IRClass superClass;
 
-    public IRClass(IRScope lexicalParent, IRClass superClass, String className, StaticScope staticScope) {
+    public IRClass(IRExecutionScope lexicalParent, IRClass superClass, String className, StaticScope staticScope) {
         super(lexicalParent, className, staticScope);
         this.superClass = superClass;
     }
