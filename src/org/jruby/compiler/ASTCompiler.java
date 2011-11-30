@@ -1097,22 +1097,12 @@ public class ASTCompiler {
                     if (foundType == null) foundType = FastSwitchType.SINGLE_CHAR_STRING;
 
                     continue;
-                } else {
-                    if (foundType != null && foundType != FastSwitchType.STRING) return null;
-                    if (foundType == null) foundType = FastSwitchType.STRING;
-
-                    continue;
                 }
             } else if (whenNode.getExpressionNodes() instanceof SymbolNode) {
                 SymbolNode symbolNode = (SymbolNode)whenNode.getExpressionNodes();
                 if (symbolNode.getName().length() == 1) {
                     if (foundType != null && foundType != FastSwitchType.SINGLE_CHAR_SYMBOL) return null;
                     if (foundType == null) foundType = FastSwitchType.SINGLE_CHAR_SYMBOL;
-
-                    continue;
-                } else {
-                    if (foundType != null && foundType != FastSwitchType.SYMBOL) return null;
-                    if (foundType == null) foundType = FastSwitchType.SYMBOL;
 
                     continue;
                 }
@@ -1137,10 +1127,10 @@ public class ASTCompiler {
         Map<CompilerCallback, int[]> switchCases = null;
         FastSwitchType switchType = getHomogeneousSwitchType(whenNodes);
         if (switchType != null && !RubyInstanceConfig.FULL_TRACE_ENABLED) {
-            // NOTE: Currently this optimization is limited to the following situations:
+            // NOTE: Currently this optimization is limited to the following scenarios:
             // * All expressions are int-ranged literal fixnums
-            // * All expressions are literal symbols
-            // * All expressions are literal strings
+            // * All expressions are single-character literal symbols
+            // * All expressions are single-character literal strings
             // If the case value is not of the same type as the when values, the
             // default === logic applies.
             switchCases = new HashMap<CompilerCallback, int[]>();

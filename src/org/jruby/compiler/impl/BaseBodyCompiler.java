@@ -2780,26 +2780,12 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
                     getCaseValue.call(this);
                     invokeUtilityMethod("getFastSwitchSingleCharString", sig(int.class, IRubyObject.class));
                     break;
-                case STRING:
-                    getCaseValue.call(this);
-                    invokeUtilityMethod("isFastSwitchableString", sig(boolean.class, IRubyObject.class));
-                    method.ifeq(slowPath);
-                    getCaseValue.call(this);
-                    invokeUtilityMethod("getFastSwitchString", sig(int.class, IRubyObject.class));
-                    break;
                 case SINGLE_CHAR_SYMBOL:
                     getCaseValue.call(this);
                     invokeUtilityMethod("isFastSwitchableSingleCharSymbol", sig(boolean.class, IRubyObject.class));
                     method.ifeq(slowPath);
                     getCaseValue.call(this);
                     invokeUtilityMethod("getFastSwitchSingleCharSymbol", sig(int.class, IRubyObject.class));
-                    break;
-                case SYMBOL:
-                    getCaseValue.call(this);
-                    invokeUtilityMethod("isFastSwitchableSymbol", sig(boolean.class, IRubyObject.class));
-                    method.ifeq(slowPath);
-                    getCaseValue.call(this);
-                    invokeUtilityMethod("getFastSwitchSymbol", sig(int.class, IRubyObject.class));
                     break;
                 }
 

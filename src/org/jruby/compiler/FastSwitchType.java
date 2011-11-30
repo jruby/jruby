@@ -16,9 +16,7 @@ import org.jruby.RubySymbol;
 public enum FastSwitchType {
     FIXNUM(RubyFixnum.class),
     SINGLE_CHAR_STRING(RubyString.class),
-    STRING(RubyString.class),
-    SINGLE_CHAR_SYMBOL(RubySymbol.class),
-    SYMBOL(RubySymbol.class);
+    SINGLE_CHAR_SYMBOL(RubySymbol.class);
 
     private final Class associatedClass;
 
