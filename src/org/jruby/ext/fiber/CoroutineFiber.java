@@ -5,7 +5,6 @@
 package org.jruby.ext.fiber;
 
 import java.dyn.Coroutine;
-import java.dyn.CoroutineBase;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyLocalJumpError.Reason;
