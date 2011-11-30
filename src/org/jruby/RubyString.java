@@ -1016,7 +1016,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return op_equalCommon(context, other);
     }
 
-    @JRubyMethod(name = "==", compat = RUBY1_9)
+    @JRubyMethod(name = {"==", "==="}, compat = RUBY1_9)
     public IRubyObject op_equal19(ThreadContext context, IRubyObject other) {
         Ruby runtime = context.getRuntime();
         if (this == other) return runtime.getTrue();
