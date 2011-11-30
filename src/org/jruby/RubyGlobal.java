@@ -311,6 +311,8 @@ public class RubyGlobal {
             verboseValue = runtime.getFalse();
         }
         runtime.defineVariable(new VerboseGlobalVariable(runtime, "$VERBOSE", verboseValue));
+        runtime.defineVariable(new VerboseGlobalVariable(runtime, "$-v", verboseValue));
+        runtime.defineVariable(new VerboseGlobalVariable(runtime, "$-w", verboseValue));
         
         IRubyObject debug = runtime.newBoolean(runtime.getInstanceConfig().isDebug());
         runtime.defineVariable(new DebugGlobalVariable(runtime, "$DEBUG", debug));
