@@ -638,17 +638,7 @@ public class RubyGlobal {
     private static class WarningGlobalVariable extends ReadonlyGlobalVariable {
         public WarningGlobalVariable(Ruby runtime, String name, IRubyObject initialValue) {
             super(runtime, name, initialValue);
-            set(initialValue);
         }
-        
-        @Override
-        public IRubyObject set(IRubyObject newValue) {
-            // We don't do anything with runtime here, since the value is read-only
-            // and by the time we get here, verbosity on the runtime should be
-            // set already by org.jruby.util.cli.ArgumentProcessor.processArgument()
-            return newValue;
-        }
-        
     }
 
     private static class DebugGlobalVariable extends GlobalVariable {
