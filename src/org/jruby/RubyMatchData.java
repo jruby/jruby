@@ -111,69 +111,88 @@ public class RubyMatchData extends RubyObject {
             return bytePos - ((Pair)o).bytePos;
         }
     }
-
-    // FIXME: many regs == null checks...some part of this should be refactored into multiple methods
-    private void updateCharOffset() {
-        if (charOffsetUpdated) return;
-
-        int numRegs = regs == null ? 1 : regs.numRegs;
-        if (charOffsets == null || charOffsets.numRegs < numRegs) charOffsets = new Region(numRegs);
-
-        int numPairs = 1;
-        if (regs != null) {
-            for (;numPairs < numRegs && regs.beg[numPairs] >= 0; numPairs++) {}
+    
+    private void updateCharOffsetOnlyOneReg(ByteList value, Encoding encoding) {
+        if (charOffsets == null || charOffsets.numRegs < 1) charOffsets = new Region(1);
+        
+        if (encoding.maxLength() == 1) {
+            charOffsets.beg[0] = begin;
+            charOffsets.end[0] = end;
+            charOffsetUpdated = true;
+            return;
         }
+        
+        Pair[] pairs = new Pair[2];
+        pairs[0] = new Pair();
+        pairs[0].bytePos = begin;
+        pairs[1] = new Pair();
+        pairs[1].bytePos = end;
 
-        Pair[] pairs = new Pair[numPairs * 2];
-        for (int i = 0; i < pairs.length; i++) pairs[i] = new Pair();
-
-        int numPos = 0;
-        if (regs == null) {
-            pairs[numPos++].bytePos = begin;
-            pairs[numPos++].bytePos = end;
-        } else {
-            for (int i = 0; i < numRegs; i++) {
-                if (regs.beg[i] < 0) continue;
-                pairs[numPos++].bytePos = regs.beg[i];
-                pairs[numPos++].bytePos = regs.end[i];
-            }
-        }
-
+        updatePairs(value, encoding, pairs);
+        
+        charOffsetUpdated = true;        
+    }
+    
+    private void updatePairs(ByteList value, Encoding encoding, Pair[] pairs) {
         Arrays.sort(pairs);
 
-        ByteList value = str.getByteList();
-        Encoding enc = value.getEncoding();
+        int length = pairs.length;
         byte[]bytes = value.getUnsafeBytes();
         int p = value.getBegin();
         int s = p;
-
         int c = 0;
-        for (int i = 0; i < numPos; i++) {
+        
+        for (int i = 0; i < length; i++) {
             int q = s + pairs[i].bytePos;
-            c += StringSupport.strLength(enc, bytes, p, q);
+            c += StringSupport.strLength(encoding, bytes, p, q);
             pairs[i].charPos = c;
             p = q;
         }
 
         Pair key = new Pair();
-        if (regs == null) {
-            key.bytePos = begin;
-            charOffsets.beg[0] = pairs[Arrays.binarySearch(pairs, key)].charPos;
-            key.bytePos = end;
-            charOffsets.end[0] = pairs[Arrays.binarySearch(pairs, key)].charPos;
-        } else {
-            for (int i = 0; i < numRegs; i++) {
-                if (regs.beg[i] < 0) {
-                    charOffsets.beg[i] = charOffsets.end[i] = -1;
-                    continue;
-                }
-                key.bytePos = regs.beg[i];
-                charOffsets.beg[i] = pairs[Arrays.binarySearch(pairs, key)].charPos;
-                key.bytePos = regs.end[i];
-                charOffsets.end[i] = pairs[Arrays.binarySearch(pairs, key)].charPos;
-            }
+        key.bytePos = begin;
+        charOffsets.beg[0] = pairs[Arrays.binarySearch(pairs, key)].charPos;
+        key.bytePos = end;
+        charOffsets.end[0] = pairs[Arrays.binarySearch(pairs, key)].charPos;        
+    }
 
+    private void updateCharOffset() {
+        if (charOffsetUpdated) return;
+
+        ByteList value = str.getByteList();
+        Encoding enc = value.getEncoding();
+        
+        if (regs == null) {
+            updateCharOffsetOnlyOneReg(value, enc);
+            return;
         }
+        
+        int numRegs = regs.numRegs;
+
+        if (charOffsets == null || charOffsets.numRegs < numRegs) charOffsets = new Region(numRegs);
+        
+        if (enc.maxLength() == 1) {
+            for (int i = 0; i < numRegs; i++) {
+                charOffsets.beg[i] = regs.beg[i];
+                charOffsets.end[i] = regs.end[i];
+            }
+            
+            charOffsetUpdated = true;
+            return;
+        }
+        
+        Pair[] pairs = new Pair[numRegs * 2];
+        for (int i = 0; i < pairs.length; i++) pairs[i] = new Pair();
+
+        int numPos = 0;
+        for (int i = 0; i < numRegs; i++) {
+            if (regs.beg[i] < 0) continue;
+            pairs[numPos++].bytePos = regs.beg[i];
+            pairs[numPos++].bytePos = regs.end[i];
+        }
+        
+        updatePairs(value, enc, pairs);
+
         charOffsetUpdated = true;
     }
 
