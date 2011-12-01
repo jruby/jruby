@@ -275,6 +275,21 @@ public class RubyGlobal {
         if (runtime.is1_9()) {
             // needs to be a fixnum, but our revision is a sha1 hash from git
             runtime.defineGlobalConstant("RUBY_REVISION", runtime.newFixnum(Constants.RUBY1_9_REVISION));
+            
+            // We switch on RubyInstanceConfig.Verbosity here, so that we can
+            // set the value of $-W via a RubyFixnum.
+            IRubyObject warningLevel;
+            RubyInstanceConfig.Verbosity verbosity = runtime.getInstanceConfig().getVerbosity();
+            if (verbosity == RubyInstanceConfig.Verbosity.NIL) {
+                warningLevel = RubyFixnum.newFixnum(runtime, 0);
+            } else if (verbosity == RubyInstanceConfig.Verbosity.FALSE) {
+                warningLevel = RubyFixnum.newFixnum(runtime, 1);
+            } else if (verbosity == RubyInstanceConfig.Verbosity.TRUE) {
+                warningLevel = RubyFixnum.newFixnum(runtime, 2);
+            } else {
+                warningLevel = runtime.getNil();
+            }
+            runtime.defineVariable(new WarningGlobalVariable(runtime, "$-W", warningLevel));
         }
 		
         GlobalVariable kcodeGV = new KCodeGlobalVariable(runtime, "$KCODE", runtime.newString("NONE"));
@@ -618,6 +633,22 @@ public class RubyGlobal {
 
             return newValue;
         }
+    }
+    
+    private static class WarningGlobalVariable extends ReadonlyGlobalVariable {
+        public WarningGlobalVariable(Ruby runtime, String name, IRubyObject initialValue) {
+            super(runtime, name, initialValue);
+            set(initialValue);
+        }
+        
+        @Override
+        public IRubyObject set(IRubyObject newValue) {
+            // We don't do anything with runtime here, since the value is read-only
+            // and by the time we get here, verbosity on the runtime should be
+            // set already by org.jruby.util.cli.ArgumentProcessor.processArgument()
+            return newValue;
+        }
+        
     }
 
     private static class DebugGlobalVariable extends GlobalVariable {
