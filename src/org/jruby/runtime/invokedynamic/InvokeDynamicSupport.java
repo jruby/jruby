@@ -450,6 +450,7 @@ public class InvokeDynamicSupport {
         
         getValue = guardWithTest(test, getValue, fallback);
         
+        if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name + "\tget on class " + self.getMetaClass().id + " bound directly");
         site.setTarget(getValue);
         
         return (IRubyObject)getValue.invokeWithArguments(self);
@@ -479,6 +480,7 @@ public class InvokeDynamicSupport {
         
         setValue = guardWithTest(test, setValue, fallback);
         
+        if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name + "\tset on class " + self.getMetaClass().id + " bound directly");
         site.setTarget(setValue);
         
         return (IRubyObject)setValue.invokeWithArguments(self, value);
@@ -518,6 +520,7 @@ public class InvokeDynamicSupport {
         test = test.bindTo(context.runtime);
         test = permuteArguments(test, methodType(boolean.class, ThreadContext.class, IRubyObject.class, IRubyObject.class), new int[] {2});
         
+        if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tFixnum operation bound directly");
         site.setTarget(guardWithTest(test, target, fallback));
         return (IRubyObject)site.getTarget().invokeWithArguments(context, caller, self);
     }
@@ -630,6 +633,7 @@ public class InvokeDynamicSupport {
         test = test.bindTo(context.runtime);
         test = permuteArguments(test, methodType(boolean.class, ThreadContext.class, IRubyObject.class, IRubyObject.class), new int[] {2});
         
+        if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tFloat operation bound directly");
         site.setTarget(guardWithTest(test, target, fallback));
         return (IRubyObject)site.getTarget().invokeWithArguments(context, caller, self);
     }

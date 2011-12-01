@@ -30,8 +30,9 @@ package org.jruby.runtime.invokedynamic;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.callsite.CacheEntry;
 
@@ -39,10 +40,11 @@ public class JRubyCallSite extends MutableCallSite {
     private final Lookup lookup;
     private final CallType callType;
     public CacheEntry entry = CacheEntry.NULL_CACHE;
-    private final List<Integer> seenTypes = new ArrayList<Integer>(2);
+    private final Set<Integer> seenTypes = new HashSet<Integer>();
     private final boolean attrAssign;
     private final boolean iterator;
     private final boolean expression;
+    private int clearCount;
 
     public JRubyCallSite(Lookup lookup, MethodType type, CallType callType, boolean attrAssign, boolean iterator, boolean expression) {
         super(type);
@@ -81,8 +83,20 @@ public class JRubyCallSite extends MutableCallSite {
         seenTypes.add(typeCode);
     }
     
-    public synchronized int seenTypes() {
+    public synchronized int seenTypesCount() {
         return seenTypes.size();
     }
     
+    public synchronized Set<Integer> seenTypes() {
+        return Collections.unmodifiableSet(seenTypes);
+    }
+    
+    public synchronized void clearTypes() {
+        seenTypes.clear();
+        clearCount++;
+    }
+    
+    public int clearCount() {
+        return clearCount;
+    }
 }

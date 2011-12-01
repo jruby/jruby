@@ -1501,6 +1501,9 @@ public class RubyInstanceConfig {
     // max times an indy call site can fail before it goes to simple IC
     public static final int MAX_FAIL_COUNT = Options.INVOKEDYNAMIC_MAXFAIL.load();
     
+    // max polymorphism at a call site to build a chained method handle PIC
+    public static final int MAX_POLY_COUNT = Options.INVOKEDYNAMIC_MAXPOLY.load();
+    
     // logging of various indy aspects
     public static final boolean LOG_INDY_BINDINGS = Options.INVOKEDYNAMIC_LOG_BINDING.load();
     public static final boolean LOG_INDY_CONSTANTS = Options.INVOKEDYNAMIC_LOG_CONSTANTS.load();
