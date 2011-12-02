@@ -5,6 +5,7 @@ module JRuby
   module Profiler
     java_import org.jruby.runtime.profile.AbstractProfilePrinter
     java_import org.jruby.runtime.profile.GraphProfilePrinter
+    java_import org.jruby.runtime.profile.HtmlProfilePrinter
     java_import org.jruby.runtime.profile.FlatProfilePrinter
     java_import org.jruby.Ruby
     

@@ -405,6 +405,9 @@ public class ArgumentProcessor {
                     } else if (argument.equals("--profile.graph")) {
                         config.setProfilingMode(RubyInstanceConfig.ProfilingMode.GRAPH);
                         break FOR;
+                    } else if (argument.equals("--profile.html")) {
+                        config.setProfilingMode(RubyInstanceConfig.ProfilingMode.HTML);
+                        break FOR;
                     } else if (argument.equals("--1.9")) {
                         config.setCompatVersion(CompatVersion.RUBY1_9);
                         break FOR;

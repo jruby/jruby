@@ -64,6 +64,7 @@ import org.jruby.runtime.profile.IProfileData;
 import org.jruby.runtime.profile.AbstractProfilePrinter;
 import org.jruby.runtime.profile.FlatProfilePrinter;
 import org.jruby.runtime.profile.GraphProfilePrinter;
+import org.jruby.runtime.profile.HtmlProfilePrinter;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.runtime.load.LoadService19;
 import org.jruby.util.ClassCache;
@@ -476,6 +477,10 @@ public class RubyInstanceConfig {
         else if (profilingMode == ProfilingMode.GRAPH) {
             return new GraphProfilePrinter(profileData.getResults());
         }
+        else if (profilingMode == ProfilingMode.HTML){
+            return new HtmlProfilePrinter(profileData.getResults());
+        }
+
         return null;
     }
     
@@ -1268,7 +1273,7 @@ public class RubyInstanceConfig {
     }
 
     public enum ProfilingMode {
-		OFF, API, FLAT, GRAPH
+		OFF, API, FLAT, GRAPH, HTML
 	}
 
     public enum CompileMode {
