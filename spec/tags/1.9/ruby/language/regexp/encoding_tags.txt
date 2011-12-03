@@ -6,3 +6,5 @@ fails(compiler):Regexps with encoding modifiers supports /s (Windows_31J encodin
 fails(compiler):Regexps with encoding modifiers supports /u (UTF8 encoding)
 fails(compiler):Regexps with encoding modifiers supports /u (UTF8 encoding) with interpolation
 fails(compiler):Regexps with encoding modifiers supports /u (UTF8 encoding) with interpolation and /o
+fails:Regexps with encoding modifiers supports /n (No encoding) with interpolation
+fails:Regexps with encoding modifiers supports /n (No encoding) with interpolation /o
