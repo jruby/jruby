@@ -43,7 +43,7 @@ using namespace jruby;
 
 RubyArray::RubyArray(JNIEnv* env, jobject obj_): Handle(env, obj_, T_ARRAY)
 {
-    rwdata.rarray = NULL;
+    memset(&rwdata, 0, sizeof(rwdata));
 }
 
 RubyArray::~RubyArray()

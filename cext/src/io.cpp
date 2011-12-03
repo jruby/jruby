@@ -84,6 +84,7 @@ RubyIO::RubyIO(FILE* native_file, int native_fd, int mode_)
 {
     JLocalEnv env;
     setType(T_FILE);
+    memset(&rio, 0, sizeof(rio));
     rio.fd = native_fd;
     rio.f = native_file;
     rio.mode = mode_;
@@ -92,7 +93,9 @@ RubyIO::RubyIO(FILE* native_file, int native_fd, int mode_)
     obj = valueToObject(env, callMethod(rb_cIO, "new", 2, INT2FIX(native_fd), INT2FIX(mode_)));
 }
 
-RubyIO::RubyIO(JNIEnv* env, jobject obj_, jint fileno, jint mode_): Handle(env, obj_, T_FILE) {
+RubyIO::RubyIO(JNIEnv* env, jobject obj_, jint fileno, jint mode_): Handle(env, obj_, T_FILE) 
+{
+    memset(&rio, 0, sizeof(rio));
     rio.fd = (int)fileno;
     rio.f = NULL;
     rio.mode = (int)mode_;

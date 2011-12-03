@@ -45,6 +45,7 @@ using namespace jruby;
 
 RubyString::RubyString(JNIEnv* env, jobject obj_): Handle(env, obj_, T_STRING)
 {
+    memset(&rwdata, 0, sizeof(rwdata));
     rwdata.rstring = NULL;
 }
 
