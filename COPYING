@@ -50,9 +50,9 @@ lib/ruby/1.9, and lib/ruby/site_ruby/1.8/rubygems*.
  build_lib/jnr-constants.jar (http://github.com/jnr/jnr-constants),
  build_lib/jarjar-1.0rc8.jar (http://code.google.com/p/jarjar),
  build_lib/joda-time-1.6.2.jar (http://joda-time.sourceforge.net),
- build_lib/jffi*jar (https://github.com/wmeissner/jffi),
- build_lib/jaffl.jar (https://github.com/wmeissner/jaffl),
- build_lib/jnr-netdb.jar (http://github.com/wmeissner/jnr-netdb),
+ build_lib/jffi*jar (https://github.com/jnr/jffi),
+ build_lib/jnr-ffi.jar (https://github.com/jnr/jnr-jffi),
+ build_lib/jnr-netdb.jar (http://github.com/jnr/jnr-netdb),
  build_lib/dynalang-0.3.jar (http://dynalang.sourceforge.net),
  build_lib/nailgun-0.7.1.jar and tool/nailgun/ng.exe
  (http://martiansoftware.com/nailgun) are distributed under the
