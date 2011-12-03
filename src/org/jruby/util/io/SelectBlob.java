@@ -160,7 +160,7 @@ public class SelectBlob {
     }
 
     private void trySelectRead(ThreadContext context, Map<Character,Integer> attachment, RubyIO ioObj) throws IOException {
-        if (ioObj.getChannel() instanceof SelectableChannel && registerSelect(context, getSelector(context), attachment, ioObj, SelectionKey.OP_READ | SelectionKey.OP_ACCEPT)) {
+        if (ioObj.getChannel() instanceof SelectableChannel && registerSelect(context, getSelector(context, ioObj.getChannel()), attachment, ioObj, SelectionKey.OP_READ | SelectionKey.OP_ACCEPT)) {
             selectedReads++;
             if (ioObj.writeDataBuffered()) {
                 getPendingReads()[(Integer)attachment.get('r')] = true;
@@ -220,7 +220,7 @@ public class SelectBlob {
     }
 
     private void trySelectWrite(ThreadContext context, Map<Character,Integer> attachment, RubyIO ioObj) throws IOException {
-        if (!registerSelect(context, getSelector(context), attachment, ioObj, SelectionKey.OP_WRITE)) {
+        if (!registerSelect(context, getSelector(context, ioObj.getChannel()), attachment, ioObj, SelectionKey.OP_WRITE)) {
             selectedReads++;
             if ((ioObj.getOpenFile().getMode() & OpenFile.WRITABLE) != 0) {
                 getUnselectableWrites()[(Integer)attachment.get('w')] = true;
@@ -374,9 +374,9 @@ public class SelectBlob {
         return errorResults;
     }
 
-    private Selector getSelector(ThreadContext context) throws IOException {
+    private Selector getSelector(ThreadContext context, Channel channel) throws IOException {
         if (selector == null) {
-            selector = SelectorFactory.openWithRetryFrom(context.getRuntime(), SelectorProvider.provider());
+            selector = SelectorFactory.openWithRetryFrom(context.getRuntime(), ((SelectableChannel)channel).provider());
         }
         return selector;
     }
