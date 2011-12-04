@@ -2785,9 +2785,44 @@ public class ASTCompiler {
             };
             
             // normal
-            compile(actualCondition, context, true);
-            context.performBooleanBranch(trueCallback, falseCallback);
+            compileCondition(actualCondition, context, true);
+            context.performBooleanBranch2(trueCallback, falseCallback);
         }
+    }
+    
+    public void compileCondition(Node node, BodyCompiler context, boolean expr) {
+        switch (node.getNodeType()) {
+            case CALLNODE:
+            {
+                final CallNode callNode = (CallNode)node;
+                if (callNode.getArgsNode() != null) {
+                    List<Node> args = callNode.getArgsNode().childNodes();
+                    if (args.size() == 1 && args.get(0) instanceof FixnumNode) {
+                        final FixnumNode fixnumNode = (FixnumNode)args.get(0);
+
+                        if (callNode.getName().equals("<") ||
+                                callNode.getName().equals(">") ||
+                                callNode.getName().equals("<=") ||
+                                callNode.getName().equals(">=") ||
+                                callNode.getName().equals("==")) {
+                            context.getInvocationCompiler().invokeBinaryBooleanFixnumRHS(
+                                    callNode.getName(),
+                                    new CompilerCallback() {
+                                        public void call(BodyCompiler context) {
+                                            compile(callNode.getReceiverNode(), context, true);
+                                        }
+                                    },
+                                    fixnumNode.getValue());
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+        
+        // otherwise normal call
+        compile(node, context, expr);
+        context.isTrue();
     }
 
     public void compileInstAsgn(Node node, BodyCompiler context, boolean expr) {

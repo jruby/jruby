@@ -802,6 +802,10 @@ public class RubyFixnum extends RubyInteger {
         return RubyBoolean.newBoolean(context.getRuntime(), value == other);
     }
 
+    public boolean op_equal_boolean(ThreadContext context, long other) {
+        return value == other;
+    }
+
     public boolean fastEqual(RubyFixnum other) {
         return value == other.value;
     }
@@ -874,6 +878,10 @@ public class RubyFixnum extends RubyInteger {
         return RubyBoolean.newBoolean(context.getRuntime(), value > other);
     }
 
+    public boolean op_gt_boolean(ThreadContext context, long other) {
+        return value > other;
+    }
+
     @JRubyMethod(name = ">", compat = RUBY1_9)
     public IRubyObject op_gt19(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum) return RubyBoolean.newBoolean(context.getRuntime(), value > ((RubyFixnum) other).value);
@@ -898,6 +906,10 @@ public class RubyFixnum extends RubyInteger {
 
     public IRubyObject op_ge(ThreadContext context, long other) {
         return RubyBoolean.newBoolean(context.getRuntime(), value >= other);
+    }
+
+    public boolean op_ge_boolean(ThreadContext context, long other) {
+        return value >= other;
     }
 
     @JRubyMethod(name = ">=", compat = RUBY1_9)
@@ -926,6 +938,10 @@ public class RubyFixnum extends RubyInteger {
         return RubyBoolean.newBoolean(context.getRuntime(), value < other);
     }
 
+    public boolean op_lt_boolean(ThreadContext context, long other) {
+        return value < other;
+    }
+
     @JRubyMethod(name = "<", compat = RUBY1_9)
     public IRubyObject op_lt19(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum) return RubyBoolean.newBoolean(context.getRuntime(), value < ((RubyFixnum) other).value);
@@ -950,6 +966,10 @@ public class RubyFixnum extends RubyInteger {
 
     public IRubyObject op_le(ThreadContext context, long other) {
         return RubyBoolean.newBoolean(context.getRuntime(), value <= other);
+    }
+
+    public boolean op_le_boolean(ThreadContext context, long other) {
+        return value <= other;
     }
 
     @JRubyMethod(name = "<=", compat = RUBY1_9)

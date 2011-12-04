@@ -62,6 +62,19 @@ public class MathLinker {
         return site;
     }
     
+    public static CallSite fixnumBooleanBootstrap(Lookup lookup, String name, MethodType type, long value) throws NoSuchMethodException, IllegalAccessException {
+        String[] names = name.split(":");
+        String operator = JavaNameMangler.demangleMethodName(names[1]);
+        JRubyCallSite site = new JRubyCallSite(lookup, type, CallType.NORMAL, operator, false, false, true);
+        
+        MethodHandle target = lookup.findStatic(MathLinker.class, "fixnumBoolean", 
+                methodType(boolean.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, JRubyCallSite.class, long.class));
+        target = insertArguments(target, 3, site, value);
+        
+        site.setTarget(target);
+        return site;
+    }
+    
     public static CallSite floatOperatorBootstrap(Lookup lookup, String name, MethodType type, double value) throws NoSuchMethodException, IllegalAccessException {
         String[] names = name.split(":");
         String operator = JavaNameMangler.demangleMethodName(names[1]);
@@ -111,6 +124,32 @@ public class MathLinker {
         return (IRubyObject)site.getTarget().invokeWithArguments(context, caller, self);
     }
     
+    public static boolean fixnumBoolean(ThreadContext context, IRubyObject caller, IRubyObject self, JRubyCallSite site, long value) throws Throwable {
+        String operator = site.name();
+        String opMethod = MethodIndex.getFastFixnumOpsMethod(operator);
+        String name = "fixnum_boolean_" + opMethod;
+        MethodType type = methodType(boolean.class, ThreadContext.class, IRubyObject.class, IRubyObject.class);
+        MethodHandle target = null;
+        
+        if (target == null) {
+            type = type.insertParameterTypes(3, long.class);
+            target = lookup().findStatic(MathLinker.class, name, type);
+            target = insertArguments(target, 3, value);
+        }
+
+        MethodHandle fallback = lookup().findStatic(MathLinker.class, "fixnumBooleanFail", 
+                methodType(boolean.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, JRubyCallSite.class, RubyFixnum.class));
+        fallback = insertArguments(fallback, 3, site, context.runtime.newFixnum(value));
+        
+        MethodHandle test = lookup().findStatic(MathLinker.class, "fixnumTest", methodType(boolean.class, Ruby.class, IRubyObject.class));
+        test = test.bindTo(context.runtime);
+        test = permuteArguments(test, methodType(boolean.class, ThreadContext.class, IRubyObject.class, IRubyObject.class), new int[] {2});
+        
+        if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tFixnum operation bound directly");
+        site.setTarget(guardWithTest(test, target, fallback));
+        return (Boolean)site.getTarget().invokeWithArguments(context, caller, self);
+    }
+    
     public static boolean fixnumTest(Ruby runtime, IRubyObject self) {
         return self instanceof RubyFixnum && !runtime.isFixnumReopened();
     }
@@ -131,6 +170,10 @@ public class MathLinker {
             return entry.method.call(context, self, selfClass, operator, value);
         }
     }
+    
+    public static boolean fixnumBooleanFail(ThreadContext context, IRubyObject caller, IRubyObject self, JRubyCallSite site, RubyFixnum value) throws Throwable {
+        return fixnumOperatorFail(context, caller, self, site, value).isTrue();
+    }
 
     public static IRubyObject fixnum_op_plus(ThreadContext context, IRubyObject caller, IRubyObject self, long value) throws Throwable {
         return ((RubyFixnum)self).op_plus(context, value);
@@ -142,6 +185,10 @@ public class MathLinker {
 
     public static IRubyObject fixnum_op_mul(ThreadContext context, IRubyObject caller, IRubyObject self, long value) throws Throwable {
         return ((RubyFixnum)self).op_mul(context, value);
+    }
+
+    public static IRubyObject fixnum_op_equal(ThreadContext context, IRubyObject caller, IRubyObject self, long value) throws Throwable {
+        return ((RubyFixnum)self).op_equal(context, value);
     }
 
     public static IRubyObject fixnum_op_lt(ThreadContext context, IRubyObject caller, IRubyObject self, long value) throws Throwable {
@@ -158,6 +205,26 @@ public class MathLinker {
 
     public static IRubyObject fixnum_op_ge(ThreadContext context, IRubyObject caller, IRubyObject self, long value) throws Throwable {
         return ((RubyFixnum)self).op_ge(context, value);
+    }
+
+    public static boolean fixnum_boolean_op_equal(ThreadContext context, IRubyObject caller, IRubyObject self, long value) throws Throwable {
+        return ((RubyFixnum)self).op_equal_boolean(context, value);
+    }
+
+    public static boolean fixnum_boolean_op_lt(ThreadContext context, IRubyObject caller, IRubyObject self, long value) throws Throwable {
+        return ((RubyFixnum)self).op_lt_boolean(context, value);
+    }
+
+    public static boolean fixnum_boolean_op_le(ThreadContext context, IRubyObject caller, IRubyObject self, long value) throws Throwable {
+        return ((RubyFixnum)self).op_le_boolean(context, value);
+    }
+
+    public static boolean fixnum_boolean_op_gt(ThreadContext context, IRubyObject caller, IRubyObject self, long value) throws Throwable {
+        return ((RubyFixnum)self).op_gt_boolean(context, value);
+    }
+
+    public static boolean fixnum_boolean_op_ge(ThreadContext context, IRubyObject caller, IRubyObject self, long value) throws Throwable {
+        return ((RubyFixnum)self).op_ge_boolean(context, value);
     }
 
     public static IRubyObject fixnum_op_cmp(ThreadContext context, IRubyObject caller, IRubyObject self, long value) throws Throwable {

@@ -774,11 +774,15 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     }
 
     public void performBooleanBranch(BranchCallback trueBranch, BranchCallback falseBranch) {
-        Label afterJmp = new Label();
-        Label falseJmp = new Label();
-
         // call isTrue on the result
         isTrue();
+        
+        performBooleanBranch2(trueBranch, falseBranch);
+    }
+
+    public void performBooleanBranch2(BranchCallback trueBranch, BranchCallback falseBranch) {
+        Label afterJmp = new Label();
+        Label falseJmp = new Label();
 
         method.ifeq(falseJmp); // EQ == 0 (i.e. false)
         trueBranch.branch(this);

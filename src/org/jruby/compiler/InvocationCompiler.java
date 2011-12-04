@@ -98,6 +98,7 @@ public interface InvocationCompiler {
     public void invokeEqq(ArgumentsCallback receivers, CompilerCallback argument);
 
     public void invokeBinaryFixnumRHS(String name, CompilerCallback receiverCallback, long fixnum);
+    public void invokeBinaryBooleanFixnumRHS(String name, CompilerCallback receiverCallback, long fixnum);
     public void invokeBinaryFloatRHS(String name, CompilerCallback receiverCallback, double flote);
 
     public void invokeFixnumLong(String rubyName, int moduleGeneration, CompilerCallback receiverCallback, String methodName, long fixnum);

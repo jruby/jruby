@@ -346,6 +346,12 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         method.invokevirtual(p(CallSite.class), callSiteMethod, signature);
     }
 
+    public void invokeBinaryBooleanFixnumRHS(String name, CompilerCallback receiverCallback, long fixnum) {
+        invokeBinaryFixnumRHS(name, receiverCallback, fixnum);
+        
+        methodCompiler.isTrue();
+    }
+
     public void invokeBinaryFloatRHS(String name, CompilerCallback receiverCallback, double flote) {
         methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, name, CallType.NORMAL);
         methodCompiler.loadThreadContext(); // [adapter, tc]

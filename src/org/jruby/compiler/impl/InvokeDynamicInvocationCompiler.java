@@ -245,6 +245,30 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
 
         method.invokedynamic("fixnumOperator:" + JavaNameMangler.mangleMethodName(name), signature, InvokeDynamicSupport.getFixnumOperatorHandle(), fixnum);
     }
+
+    @Override
+    public void invokeBinaryBooleanFixnumRHS(String name, CompilerCallback receiverCallback, long fixnum) {
+        if (!RubyInstanceConfig.INVOKEDYNAMIC_FASTOPS) {
+            super.invokeBinaryFixnumRHS(name, receiverCallback, fixnum);
+            return;
+        }
+        
+        methodCompiler.loadThreadContext(); // [adapter, tc]
+
+        // for visibility checking without requiring frame self
+        // TODO: don't bother passing when fcall or vcall, and adjust callsite appropriately
+        methodCompiler.loadSelf();
+
+        if (receiverCallback != null) {
+            receiverCallback.call(methodCompiler);
+        } else {
+            methodCompiler.loadSelf();
+        }
+
+        String signature = sig(boolean.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class));
+
+        method.invokedynamic("fixnumBoolean:" + JavaNameMangler.mangleMethodName(name), signature, InvokeDynamicSupport.getFixnumBooleanHandle(), fixnum);
+    }
     
     public void invokeBinaryFloatRHS(String name, CompilerCallback receiverCallback, double flote) {
         if (!RubyInstanceConfig.INVOKEDYNAMIC_FASTOPS) {

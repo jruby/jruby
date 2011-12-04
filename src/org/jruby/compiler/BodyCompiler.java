@@ -236,6 +236,15 @@ public interface BodyCompiler {
     public void performBooleanBranch(BranchCallback trueBranch, BranchCallback falseBranch);
     
     /**
+     * Perform a boolean branch operation based on the boolean top value
+     * on the stack. If true, invoke the true branch callback. Otherwise, invoke the false branch callback.
+     * 
+     * @param trueBranch The callback for generating code for the "true" condition
+     * @param falseBranch The callback for generating code for the "false" condition
+     */
+    public void performBooleanBranch2(BranchCallback trueBranch, BranchCallback falseBranch);
+    
+    /**
      * Perform a logical short-circuited Ruby "and" operation, using Ruby notions of true and false.
      * If the value on top of the stack is false, it remains and the branch is not executed. If it is true,
      * the top of the stack is replaced with the result of the branch.
@@ -656,4 +665,10 @@ public interface BodyCompiler {
      * @stack: String defined for contained expression
      */
     public void definedNot();
+    
+    /**
+     * Convert the top IRubyObject value on the stack to a primitive boolean
+     * using IRubyObject.isTrue();
+     */
+    public void isTrue();
 }

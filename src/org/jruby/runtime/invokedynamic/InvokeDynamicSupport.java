@@ -162,6 +162,10 @@ public class InvokeDynamicSupport {
         return getBootstrapHandle("fixnumOperatorBootstrap", MathLinker.class, BOOTSTRAP_LONG_SIG);
     }
     
+    public static Handle getFixnumBooleanHandle() {
+        return getBootstrapHandle("fixnumBooleanBootstrap", MathLinker.class, BOOTSTRAP_LONG_SIG);
+    }
+    
     public static Handle getFloatOperatorHandle() {
         return getBootstrapHandle("floatOperatorBootstrap", MathLinker.class, BOOTSTRAP_DOUBLE_SIG);
     }
