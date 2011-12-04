@@ -31,10 +31,12 @@ package org.jruby.util.io;
 
 import java.io.IOException;
 import java.nio.channels.Selector;
-import java.util.ArrayList;
 import java.util.List;
 
 import java.nio.channels.spi.SelectorProvider;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Map;
 
 /**
  * This is a simple implementation of a hard-referenced java.nio.channels.Selector
@@ -49,7 +51,7 @@ import java.nio.channels.spi.SelectorProvider;
  * @author headius
  */
 public class SelectorPool {
-    private final List<Selector> pool = new ArrayList<Selector>();
+    private final Map<SelectorProvider, List<Selector>> pool = new HashMap<SelectorProvider, List<Selector>>();
 
     /**
      * Get a selector from the pool (or create a new one). Selectors come from
@@ -59,7 +61,18 @@ public class SelectorPool {
      * @throws IOException if there's a problem opening a new selector
      */
     public synchronized Selector get() throws IOException{
-        return retrieveFromPool();
+        return retrieveFromPool(SelectorProvider.provider());
+    }
+
+    /**
+     * Get a selector from the pool (or create a new one). Selectors come from
+     * the given provider.
+     *
+     * @return a java.nio.channels.Selector
+     * @throws IOException if there's a problem opening a new selector
+     */
+    public synchronized Selector get(SelectorProvider provider) throws IOException{
+        return retrieveFromPool(provider);
     }
 
     /**
@@ -78,25 +91,36 @@ public class SelectorPool {
      * 
      */
     public synchronized void cleanup() {
-        while (!pool.isEmpty()) {
-            Selector selector = pool.remove(pool.size() - 1);
-            try {
-                selector.close();
-            } catch (IOException ioe) {
-                // ignore IOException at termination.
+        for (Map.Entry<SelectorProvider, List<Selector>> entry : pool.entrySet()) {
+            List<Selector> providerPool = entry.getValue();
+            while (!providerPool.isEmpty()) {
+                Selector selector = providerPool.remove(providerPool.size() - 1);
+                try {
+                    selector.close();
+                } catch (IOException ioe) {
+                    // ignore IOException at termination.
+                }
             }
         }
+        pool.clear();
     }
 
-    private Selector retrieveFromPool() throws IOException {
-        if (!pool.isEmpty()) {
-            return pool.remove(pool.size() - 1);
+    private Selector retrieveFromPool(SelectorProvider provider) throws IOException {
+        List<Selector> providerPool = pool.get(provider);
+        if (providerPool != null && !providerPool.isEmpty()) {
+            return providerPool.remove(providerPool.size() - 1);
         }
 
-        return SelectorFactory.openWithRetryFrom(null, SelectorProvider.provider());
+        return SelectorFactory.openWithRetryFrom(null, provider);
     }
 
     private void returnToPool(Selector selector) {
-        pool.add(selector);
+        SelectorProvider provider = selector.provider();
+        List<Selector> providerPool = pool.get(provider);
+        if (providerPool == null) {
+            providerPool = new LinkedList<Selector>();
+            pool.put(provider, providerPool);
+        }
+        providerPool.add(selector);
     }
 }
