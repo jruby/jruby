@@ -37,6 +37,7 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
+import org.jruby.util.JavaNameMangler;
 import static org.jruby.util.CodegenUtils.*;
 
 /**
@@ -62,27 +63,29 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
             methodCompiler.loadSelf();
         }
 
-        methodCompiler.method.ldc(name);
         String signature;
 
         argsCallback.call(methodCompiler);
         // with args, no block
         switch (argsCallback.getArity()) {
         case 1:
-            signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class));
+            signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
             break;
         case 2:
-            signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class));
+            signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
             break;
         case 3:
-            signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
+            signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
             break;
         default:
-            signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class));
+            signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject[].class));
         }
         
         // adapter, tc, recv, args{0,1}, block{0,1}]
-        method.invokedynamic("attrAssign" + (selfCall ? "Self" : "") + (expr ? "Expr" : ""), signature, InvokeDynamicSupport.getInvocationHandle());
+        method.invokedynamic(
+                "attrAssign" + (selfCall ? "Self" : "") + (expr ? "Expr" : "") + ":" + JavaNameMangler.mangleMethodName(name),
+                signature,
+                InvokeDynamicSupport.getInvocationHandle());
         
         // TODO: void invokedynamic to avoid pop
         if (!expr) method.pop();
@@ -107,14 +110,13 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
             methodCompiler.loadSelf();
         }
 
-        methodCompiler.method.ldc(name);
-
         String invokeName;
         if (iterator) {
             invokeName = callType == CallType.NORMAL ? "callIter" : "fcallIter";
         } else {
             invokeName = callType == CallType.NORMAL ? "call" : "fcall";
         }
+        invokeName += ":" + JavaNameMangler.mangleMethodName(name);
         String signature;
 
         // args
@@ -122,11 +124,11 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
             // block
             if (closureArg == null) {
                 // no args, no block
-                signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class));
+                signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class));
             } else {
                 // no args, with block
                 closureArg.call(methodCompiler);
-                signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, Block.class));
+                signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, Block.class));
             }
         } else {
             argsCallback.call(methodCompiler);
@@ -135,16 +137,16 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
                 // with args, no block
                 switch (argsCallback.getArity()) {
                 case 1:
-                    signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class));
+                    signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
                     break;
                 case 2:
-                    signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class));
+                    signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
                     break;
                 case 3:
-                    signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
+                    signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
                     break;
                 default:
-                    signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class));
+                    signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject[].class));
                 }
             } else {
                 // with args, with block
@@ -152,16 +154,16 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
                 
                 switch (argsCallback.getArity()) {
                 case 1:
-                    signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, Block.class));
+                    signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
                     break;
                 case 2:
-                    signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, Block.class));
+                    signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
                     break;
                 case 3:
-                    signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
+                    signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
                     break;
                 default:
-                    signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class, Block.class));
+                    signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject[].class, Block.class));
                 }
             }
         }
@@ -241,7 +243,7 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
 
         String signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class));
 
-        method.invokedynamic("fixnumOperator", signature, InvokeDynamicSupport.getFixnumOperatorHandle(), name, fixnum);
+        method.invokedynamic("fixnumOperator:" + JavaNameMangler.mangleMethodName(name), signature, InvokeDynamicSupport.getFixnumOperatorHandle(), fixnum);
     }
     
     public void invokeBinaryFloatRHS(String name, CompilerCallback receiverCallback, double flote) {
@@ -264,6 +266,6 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
 
         String signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class));
 
-        method.invokedynamic("floatOperator", signature, InvokeDynamicSupport.getFloatOperatorHandle(), name, flote);
+        method.invokedynamic("floatOperator:" + JavaNameMangler.mangleMethodName(name), signature, InvokeDynamicSupport.getFloatOperatorHandle(), flote);
     }
 }

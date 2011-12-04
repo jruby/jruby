@@ -66,6 +66,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.util.ByteList;
 import org.jruby.util.CodegenUtils;
+import org.jruby.util.JavaNameMangler;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import static org.jruby.runtime.invokedynamic.InvokeDynamicSupport.*;
@@ -78,6 +79,8 @@ public class InvocationLinker {
     
     public static CallSite invocationBootstrap(Lookup lookup, String name, MethodType type) throws NoSuchMethodException, IllegalAccessException {
         CallSite site;
+        String[] names = name.split(":");
+        String operation = names[0];
 
         if (name.equals("yieldSpecific")) {
             site = new MutableCallSite(type);
@@ -85,22 +88,25 @@ public class InvocationLinker {
             target = insertArguments(target, 0, site);
             site.setTarget(target);
             return site;
-        } else if (name.equals("call")) {
-            site = new JRubyCallSite(lookup, type, CallType.NORMAL, false, false, true);
-        } else if (name.equals("fcall")) {
-            site = new JRubyCallSite(lookup, type, CallType.FUNCTIONAL, false, false, true);
-        } else if (name.equals("callIter")) {
-            site = new JRubyCallSite(lookup, type, CallType.NORMAL, false, true, true);
-        } else if (name.equals("fcallIter")) {
-            site = new JRubyCallSite(lookup, type, CallType.FUNCTIONAL, false, true, true);
-        } else if (name.equals("attrAssign")) {
-            site = new JRubyCallSite(lookup, type, CallType.NORMAL, true, false, false);
-        } else if (name.equals("attrAssignSelf")) {
-            site = new JRubyCallSite(lookup, type, CallType.VARIABLE, true, false, false);
-        } else if (name.equals("attrAssignExpr")) {
-            site = new JRubyCallSite(lookup, type, CallType.NORMAL, true, false, true);
-        } else if (name.equals("attrAssignSelfExpr")) {
-            site = new JRubyCallSite(lookup, type, CallType.VARIABLE, true, false, true);
+        }
+        
+        String method = JavaNameMangler.demangleMethodName(names[1]);
+        if (operation.equals("call")) {
+            site = new JRubyCallSite(lookup, type, CallType.NORMAL, method, false, false, true);
+        } else if (operation.equals("fcall")) {
+            site = new JRubyCallSite(lookup, type, CallType.FUNCTIONAL, method, false, false, true);
+        } else if (operation.equals("callIter")) {
+            site = new JRubyCallSite(lookup, type, CallType.NORMAL, method, false, true, true);
+        } else if (operation.equals("fcallIter")) {
+            site = new JRubyCallSite(lookup, type, CallType.FUNCTIONAL, method, false, true, true);
+        } else if (operation.equals("attrAssign")) {
+            site = new JRubyCallSite(lookup, type, CallType.NORMAL, method, true, false, false);
+        } else if (operation.equals("attrAssignSelf")) {
+            site = new JRubyCallSite(lookup, type, CallType.VARIABLE, method, true, false, false);
+        } else if (operation.equals("attrAssignExpr")) {
+            site = new JRubyCallSite(lookup, type, CallType.NORMAL, method, true, false, true);
+        } else if (operation.equals("attrAssignSelfExpr")) {
+            site = new JRubyCallSite(lookup, type, CallType.VARIABLE, method, true, false, true);
         } else {
             throw new RuntimeException("wrong invokedynamic target: " + name);
         }
@@ -118,88 +124,93 @@ public class InvocationLinker {
     public static IRubyObject invocationFallback(JRubyCallSite site, 
             ThreadContext context,
             IRubyObject caller,
-            IRubyObject self,
-            String name) throws Throwable {
+            IRubyObject self) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
-        CacheEntry entry = selfClass.searchWithCache(name);
+        String method = site.name();
+        CacheEntry entry = selfClass.searchWithCache(method);
         
-        if (methodMissing(entry, site.callType(), name, caller)) {
-            return callMethodMissing(entry, site.callType(), context, self, name);
+        if (methodMissing(entry, site.callType(), method, caller)) {
+            return callMethodMissing(entry, site.callType(), context, self, method);
         }
         
-        MethodHandle target = getTarget(site, selfClass, name, entry, 0);
-        target = updateInvocationTarget(target, site, selfClass, name, entry, false, 0);
+        MethodHandle target = getTarget(site, selfClass, method, entry, 0);
+        target = updateInvocationTarget(target, site, selfClass, method, entry, false, 0);
 
-        return (IRubyObject)target.invokeWithArguments(context, caller, self, name);
+        return (IRubyObject)target.invokeWithArguments(context, caller, self);
     }
 
-    public static IRubyObject invocationFallback(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject arg0) throws Throwable {
+    public static IRubyObject invocationFallback(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
-        CacheEntry entry = selfClass.searchWithCache(name);
-        if (methodMissing(entry, site.callType(), name, caller)) {
-            IRubyObject mmResult = callMethodMissing(entry, site.callType(), context, self, name, arg0);
+        String method = site.name();
+        CacheEntry entry = selfClass.searchWithCache(method);
+        if (methodMissing(entry, site.callType(), method, caller)) {
+            IRubyObject mmResult = callMethodMissing(entry, site.callType(), context, self, method, arg0);
             // TODO: replace with handle logic
             return site.isAttrAssign() ? arg0 : mmResult;
         }
         
-        MethodHandle target = getTarget(site, selfClass, name, entry, 1);
-        target = updateInvocationTarget(target, site, selfClass, name, entry, false, 1);
+        MethodHandle target = getTarget(site, selfClass, method, entry, 1);
+        target = updateInvocationTarget(target, site, selfClass, method, entry, false, 1);
 
-        return (IRubyObject)target.invokeWithArguments(context, caller, self, name, arg0);
+        return (IRubyObject)target.invokeWithArguments(context, caller, self, arg0);
     }
 
-    public static IRubyObject invocationFallback(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1) throws Throwable {
+    public static IRubyObject invocationFallback(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
-        CacheEntry entry = selfClass.searchWithCache(name);
-        if (methodMissing(entry, site.callType(), name, caller)) {
-            IRubyObject mmResult = callMethodMissing(entry, site.callType(), context, self, name, arg0, arg1);
+        String method = site.name();
+        CacheEntry entry = selfClass.searchWithCache(method);
+        if (methodMissing(entry, site.callType(), method, caller)) {
+            IRubyObject mmResult = callMethodMissing(entry, site.callType(), context, self, method, arg0, arg1);
             // TODO: replace with handle logic
             return site.isAttrAssign() ? arg1 : mmResult;
         }
         
-        MethodHandle target = getTarget(site, selfClass, name, entry, 2);
-        target = updateInvocationTarget(target, site, selfClass, name, entry, false, 2);
+        MethodHandle target = getTarget(site, selfClass, method, entry, 2);
+        target = updateInvocationTarget(target, site, selfClass, method, entry, false, 2);
 
-        return (IRubyObject)target.invokeWithArguments(context, caller, self, name, arg0, arg1);
+        return (IRubyObject)target.invokeWithArguments(context, caller, self, arg0, arg1);
     }
 
-    public static IRubyObject invocationFallback(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) throws Throwable {
+    public static IRubyObject invocationFallback(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
-        CacheEntry entry = selfClass.searchWithCache(name);
-        if (methodMissing(entry, site.callType(), name, caller)) {
-            IRubyObject mmResult = callMethodMissing(entry, site.callType(), context, self, name, arg0, arg1, arg2);
+        String method = site.name();
+        CacheEntry entry = selfClass.searchWithCache(method);
+        if (methodMissing(entry, site.callType(), method, caller)) {
+            IRubyObject mmResult = callMethodMissing(entry, site.callType(), context, self, method, arg0, arg1, arg2);
             // TODO: replace with handle logic
             return site.isAttrAssign() ? arg2 : mmResult;
         }
         
-        MethodHandle target = getTarget(site, selfClass, name, entry, 3);
-        target = updateInvocationTarget(target, site, selfClass, name, entry, false, 3);
+        MethodHandle target = getTarget(site, selfClass, method, entry, 3);
+        target = updateInvocationTarget(target, site, selfClass, method, entry, false, 3);
 
-        return (IRubyObject)target.invokeWithArguments(context, caller, self, name, arg0, arg1, arg2);
+        return (IRubyObject)target.invokeWithArguments(context, caller, self, arg0, arg1, arg2);
     }
     
-    public static IRubyObject invocationFallback(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject[] args) throws Throwable {
+    public static IRubyObject invocationFallback(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
-        CacheEntry entry = selfClass.searchWithCache(name);
-        if (methodMissing(entry, site.callType(), name, caller)) {
-            IRubyObject mmResult = callMethodMissing(entry, site.callType(), context, self, name, args);
+        String method = site.name();
+        CacheEntry entry = selfClass.searchWithCache(method);
+        if (methodMissing(entry, site.callType(), method, caller)) {
+            IRubyObject mmResult = callMethodMissing(entry, site.callType(), context, self, method, args);
             // TODO: replace with handle logic
             return site.isAttrAssign() ? args[args.length - 1] : mmResult;
         }
         
-        MethodHandle target = getTarget(site, selfClass, name, entry, -1);
-        target = updateInvocationTarget(target, site, selfClass, name, entry, false, 4);
+        MethodHandle target = getTarget(site, selfClass, method, entry, -1);
+        target = updateInvocationTarget(target, site, selfClass, method, entry, false, 4);
 
-        return (IRubyObject)target.invokeWithArguments(context, caller, self, name, args);
+        return (IRubyObject)target.invokeWithArguments(context, caller, self, args);
     }
 
-    public static IRubyObject invocationFallback(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, String name, Block block) throws Throwable {
+    public static IRubyObject invocationFallback(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, Block block) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
-        CacheEntry entry = selfClass.searchWithCache(name);
+        String method = site.name();
+        CacheEntry entry = selfClass.searchWithCache(method);
 
-        if (methodMissing(entry, site.callType(), name, caller)) {
+        if (methodMissing(entry, site.callType(), method, caller)) {
             try {
-                return callMethodMissing(entry, site.callType(), context, self, name, block);
+                return callMethodMissing(entry, site.callType(), context, self, method, block);
             } catch (JumpException.BreakJump bj) {
                 return handleBreakJump(context, bj);
             } catch (JumpException.RetryJump rj) {
@@ -209,19 +220,20 @@ public class InvocationLinker {
             }
         }
 
-        MethodHandle target = getTarget(site, selfClass, name, entry, 0);
-        target = updateInvocationTarget(target, site, selfClass, name, entry, true, 0);
+        MethodHandle target = getTarget(site, selfClass, method, entry, 0);
+        target = updateInvocationTarget(target, site, selfClass, method, entry, true, 0);
 
-        return (IRubyObject) target.invokeWithArguments(context, caller, self, name, block);
+        return (IRubyObject) target.invokeWithArguments(context, caller, self, block);
     }
 
-    public static IRubyObject invocationFallback(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject arg0, Block block) throws Throwable {
+    public static IRubyObject invocationFallback(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, Block block) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
-        CacheEntry entry = selfClass.searchWithCache(name);
+        String method = site.name();
+        CacheEntry entry = selfClass.searchWithCache(method);
 
-        if (methodMissing(entry, site.callType(), name, caller)) {
+        if (methodMissing(entry, site.callType(), method, caller)) {
             try {
-                return callMethodMissing(entry, site.callType(), context, self, name, arg0, block);
+                return callMethodMissing(entry, site.callType(), context, self, method, arg0, block);
             } catch (JumpException.BreakJump bj) {
                 return handleBreakJump(context, bj);
             } catch (JumpException.RetryJump rj) {
@@ -231,19 +243,20 @@ public class InvocationLinker {
             }
         }
 
-        MethodHandle target = getTarget(site, selfClass, name, entry, 1);
-        target = updateInvocationTarget(target, site, selfClass, name, entry, true, 1);
+        MethodHandle target = getTarget(site, selfClass, method, entry, 1);
+        target = updateInvocationTarget(target, site, selfClass, method, entry, true, 1);
 
-        return (IRubyObject) target.invokeWithArguments(context, caller, self, name, arg0, block);
+        return (IRubyObject) target.invokeWithArguments(context, caller, self, arg0, block);
     }
 
-    public static IRubyObject invocationFallback(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1, Block block) throws Throwable {
+    public static IRubyObject invocationFallback(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, Block block) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
-        CacheEntry entry = selfClass.searchWithCache(name);
+        String method = site.name();
+        CacheEntry entry = selfClass.searchWithCache(method);
 
-        if (methodMissing(entry, site.callType(), name, caller)) {
+        if (methodMissing(entry, site.callType(), method, caller)) {
             try {
-                return callMethodMissing(entry, site.callType(), context, self, name, arg0, arg1, block);
+                return callMethodMissing(entry, site.callType(), context, self, method, arg0, arg1, block);
             } catch (JumpException.BreakJump bj) {
                 return handleBreakJump(context, bj);
             } catch (JumpException.RetryJump rj) {
@@ -253,19 +266,20 @@ public class InvocationLinker {
             }
         }
 
-        MethodHandle target = getTarget(site, selfClass, name, entry, 2);
-        target = updateInvocationTarget(target, site, selfClass, name, entry, true, 2);
+        MethodHandle target = getTarget(site, selfClass, method, entry, 2);
+        target = updateInvocationTarget(target, site, selfClass, method, entry, true, 2);
 
-        return (IRubyObject) target.invokeWithArguments(context, caller, self, name, arg0, arg1, block);
+        return (IRubyObject) target.invokeWithArguments(context, caller, self, arg0, arg1, block);
     }
 
-    public static IRubyObject invocationFallback(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) throws Throwable {
+    public static IRubyObject invocationFallback(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
-        CacheEntry entry = selfClass.searchWithCache(name);
+        String method = site.name();
+        CacheEntry entry = selfClass.searchWithCache(method);
 
-        if (methodMissing(entry, site.callType(), name, caller)) {
+        if (methodMissing(entry, site.callType(), method, caller)) {
             try {
-                return callMethodMissing(entry, site.callType(), context, self, name, arg0, arg1, arg2, block);
+                return callMethodMissing(entry, site.callType(), context, self, method, arg0, arg1, arg2, block);
             } catch (JumpException.BreakJump bj) {
                 return handleBreakJump(context, bj);
             } catch (JumpException.RetryJump rj) {
@@ -275,19 +289,20 @@ public class InvocationLinker {
             }
         }
 
-        MethodHandle target = getTarget(site, selfClass, name, entry, 3);
-        target = updateInvocationTarget(target, site, selfClass, name, entry, true, 3);
+        MethodHandle target = getTarget(site, selfClass, method, entry, 3);
+        target = updateInvocationTarget(target, site, selfClass, method, entry, true, 3);
 
-        return (IRubyObject) target.invokeWithArguments(context, caller, self, name, arg0, arg1, arg2, block);
+        return (IRubyObject) target.invokeWithArguments(context, caller, self, arg0, arg1, arg2, block);
     }
 
-    public static IRubyObject invocationFallback(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject[] args, Block block) throws Throwable {
+    public static IRubyObject invocationFallback(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
-        CacheEntry entry = selfClass.searchWithCache(name);
+        String method = site.name();
+        CacheEntry entry = selfClass.searchWithCache(method);
 
-        if (methodMissing(entry, site.callType(), name, caller)) {
+        if (methodMissing(entry, site.callType(), method, caller)) {
             try {
-                return callMethodMissing(entry, site.callType(), context, self, name, args, block);
+                return callMethodMissing(entry, site.callType(), context, self, method, args, block);
             } catch (JumpException.BreakJump bj) {
                 return handleBreakJump(context, bj);
             } catch (JumpException.RetryJump rj) {
@@ -297,10 +312,10 @@ public class InvocationLinker {
             }
         }
 
-        MethodHandle target = getTarget(site, selfClass, name, entry, -1);
-        target = updateInvocationTarget(target, site, selfClass, name, entry, true, 4);
+        MethodHandle target = getTarget(site, selfClass, method, entry, -1);
+        target = updateInvocationTarget(target, site, selfClass, method, entry, true, 4);
 
-        return (IRubyObject) target.invokeWithArguments(context, caller, self, name, args, block);
+        return (IRubyObject) target.invokeWithArguments(context, caller, self, args, block);
     }
 
     /**
@@ -418,7 +433,7 @@ public class InvocationLinker {
         
         DynamicMethod.NativeCall nativeCall = method.getNativeCall();
         
-        MethodType trimmed = site.type().dropParameterTypes(2, 4);
+        MethodType trimmed = site.type().dropParameterTypes(2, 3);
         int siteArgCount = getArgCount(trimmed.parameterArray(), true);
         
         if (method instanceof AttrReaderMethod) {
@@ -497,7 +512,11 @@ public class InvocationLinker {
         // no direct native path, use DynamicMethod.call
         if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tbound indirectly to #" + entry.method.getSerialNumber() + ": " + ibe.getMessage());
         
-        return insertArguments(getDynamicMethodTarget(site.type(), arity, entry.method), 0, entry);
+        MethodHandle dynMethodTarget = getDynamicMethodTarget(site.type(), arity, entry.method);
+        dynMethodTarget = insertArguments(dynMethodTarget, 4, name);
+        dynMethodTarget = insertArguments(dynMethodTarget, 0, entry);
+        
+        return dynMethodTarget;
     }
     
     private static MethodHandle handleForMethod(JRubyCallSite site, String name, RubyClass cls, DynamicMethod method) {
@@ -624,14 +643,14 @@ public class InvocationLinker {
             }
             
             // drop standard preamble args plus extra args
-            newTarget = dropArguments(newTarget, 0, IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class);
+            newTarget = dropArguments(newTarget, 0, IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class);
             
             // drop extra arguments, if any
-            MethodType dropped = target.type().dropParameterTypes(0, 4);
+            MethodType dropped = target.type().dropParameterTypes(0, 3);
             if (dropped.parameterCount() > 1) {
                 Class[] drops = new Class[dropped.parameterCount() - 1];
                 Arrays.fill(drops, IRubyObject.class);
-                newTarget = dropArguments(newTarget, 5, drops);
+                newTarget = dropArguments(newTarget, 4, drops);
             }
             
             // fold using target
@@ -648,9 +667,9 @@ public class InvocationLinker {
     public static IRubyObject fail(JRubyCallSite site, 
             ThreadContext context,
             IRubyObject caller,
-            IRubyObject self,
-            String name) throws Throwable {
+            IRubyObject self) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
+        String name = site.name();
         CacheEntry entry = site.entry;
         
         if (entry.typeOk(selfClass)) {
@@ -665,8 +684,9 @@ public class InvocationLinker {
         }
     }
 
-    public static IRubyObject fail(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject arg0) throws Throwable {
+    public static IRubyObject fail(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
+        String name = site.name();
         CacheEntry entry = site.entry;
         
         if (entry.typeOk(selfClass)) {
@@ -681,8 +701,9 @@ public class InvocationLinker {
         }
     }
 
-    public static IRubyObject fail(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1) throws Throwable {
+    public static IRubyObject fail(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
+        String name = site.name();
         CacheEntry entry = site.entry;
         
         if (entry.typeOk(selfClass)) {
@@ -697,8 +718,9 @@ public class InvocationLinker {
         }
     }
 
-    public static IRubyObject fail(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) throws Throwable {
+    public static IRubyObject fail(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
+        String name = site.name();
         CacheEntry entry = site.entry;
         
         if (entry.typeOk(selfClass)) {
@@ -713,8 +735,9 @@ public class InvocationLinker {
         }
     }
 
-    public static IRubyObject fail(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject[] args) throws Throwable {
+    public static IRubyObject fail(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
+        String name = site.name();
         CacheEntry entry = site.entry;
         
         if (entry.typeOk(selfClass)) {
@@ -729,8 +752,9 @@ public class InvocationLinker {
         }
     }
 
-    public static IRubyObject fail(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, String name, Block block) throws Throwable {
+    public static IRubyObject fail(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, Block block) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
+        String name = site.name();
         CacheEntry entry = site.entry;
         
         if (entry.typeOk(selfClass)) {
@@ -745,8 +769,9 @@ public class InvocationLinker {
         }
     }
 
-    public static IRubyObject fail(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject arg0, Block block) throws Throwable {
+    public static IRubyObject fail(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, Block block) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
+        String name = site.name();
         CacheEntry entry = site.entry;
         
         if (entry.typeOk(selfClass)) {
@@ -761,8 +786,9 @@ public class InvocationLinker {
         }
     }
 
-    public static IRubyObject fail(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1, Block block) throws Throwable {
+    public static IRubyObject fail(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, Block block) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
+        String name = site.name();
         CacheEntry entry = site.entry;
         
         if (entry.typeOk(selfClass)) {
@@ -777,8 +803,9 @@ public class InvocationLinker {
         }
     }
 
-    public static IRubyObject fail(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) throws Throwable {
+    public static IRubyObject fail(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
+        String name = site.name();
         CacheEntry entry = site.entry;
         
         if (entry.typeOk(selfClass)) {
@@ -793,8 +820,9 @@ public class InvocationLinker {
         }
     }
 
-    public static IRubyObject fail(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject[] args, Block block) throws Throwable {
+    public static IRubyObject fail(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
+        String name = site.name();
         CacheEntry entry = site.entry;
 
         if (entry.typeOk(selfClass)) {
@@ -809,8 +837,9 @@ public class InvocationLinker {
         }
     }
 
-    public static IRubyObject failIter(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, String name, Block block) throws Throwable {
+    public static IRubyObject failIter(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, Block block) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
+        String name = site.name();
         CacheEntry entry = site.entry;
         try {
             if (entry.typeOk(selfClass)) {
@@ -832,8 +861,9 @@ public class InvocationLinker {
         }
     }
 
-    public static IRubyObject failIter(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject arg0, Block block) throws Throwable {
+    public static IRubyObject failIter(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, Block block) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
+        String name = site.name();
         CacheEntry entry = site.entry;
         try {
             if (entry.typeOk(selfClass)) {
@@ -855,8 +885,9 @@ public class InvocationLinker {
         }
     }
 
-    public static IRubyObject failIter(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1, Block block) throws Throwable {
+    public static IRubyObject failIter(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, Block block) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
+        String name = site.name();
         CacheEntry entry = site.entry;
         try {
             if (entry.typeOk(selfClass)) {
@@ -878,8 +909,9 @@ public class InvocationLinker {
         }
     }
 
-    public static IRubyObject failIter(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) throws Throwable {
+    public static IRubyObject failIter(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
+        String name = site.name();
         CacheEntry entry = site.entry;
         try {
             if (entry.typeOk(selfClass)) {
@@ -901,8 +933,9 @@ public class InvocationLinker {
         }
     }
 
-    public static IRubyObject failIter(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, String name, IRubyObject[] args, Block block) throws Throwable {
+    public static IRubyObject failIter(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
+        String name = site.name();
         CacheEntry entry = site.entry;
         try {
             if (entry.typeOk(selfClass)) {
@@ -1098,10 +1131,9 @@ public class InvocationLinker {
 
             // adapt to incoming call signature
             if (isStatic) {
-                nativeTarget = dropArguments(nativeTarget, 0, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class);
+                nativeTarget = dropArguments(nativeTarget, 0, ThreadContext.class, IRubyObject.class, IRubyObject.class);
             } else {
                 // adapt to incoming call signature
-                nativeTarget = dropArguments(nativeTarget, 1, String.class);
                 nativeTarget = dropArguments(nativeTarget, 0, ThreadContext.class, IRubyObject.class);
 
             }
@@ -1327,17 +1359,17 @@ public class InvocationLinker {
             int argCount = getRubyArgCount(nativeCall.getNativeSignature());
             switch (argCount) {
                 case 0:
-                    nativeTarget = permuteArguments(nativeTarget, STANDARD_NATIVE_TYPE_BLOCK, new int[] {0, 2, 4});
+                    nativeTarget = permuteArguments(nativeTarget, STANDARD_NATIVE_TYPE_BLOCK, new int[] {0, 2, 3});
                     break;
                 case -1:
                 case 1:
-                    nativeTarget = permuteArguments(nativeTarget, STANDARD_NATIVE_TYPE_1ARG_BLOCK, new int[] {0, 2, 4, 5});
+                    nativeTarget = permuteArguments(nativeTarget, STANDARD_NATIVE_TYPE_1ARG_BLOCK, new int[] {0, 2, 3, 4});
                     break;
                 case 2:
-                    nativeTarget = permuteArguments(nativeTarget, STANDARD_NATIVE_TYPE_2ARG_BLOCK, new int[] {0, 2, 4, 5, 6});
+                    nativeTarget = permuteArguments(nativeTarget, STANDARD_NATIVE_TYPE_2ARG_BLOCK, new int[] {0, 2, 3, 4, 5});
                     break;
                 case 3:
-                    nativeTarget = permuteArguments(nativeTarget, STANDARD_NATIVE_TYPE_3ARG_BLOCK, new int[] {0, 2, 4, 5, 6, 7});
+                    nativeTarget = permuteArguments(nativeTarget, STANDARD_NATIVE_TYPE_3ARG_BLOCK, new int[] {0, 2, 3, 4, 5, 6});
                     break;
                 default:
                     throw new RuntimeException("unknown arg count: " + argCount);
@@ -1559,6 +1591,43 @@ public class InvocationLinker {
             throw new RuntimeException("Invalid arg count (" + count + ") while preparing method handle:\n\t" + original);
         }
     }
+
+    private static MethodHandle dropArgs(MethodHandle original, int index, int count, boolean block) {
+        switch (count) {
+        case -1:
+            if (block) {
+                return dropArguments(original, index, IRubyObject[].class, Block.class);
+            } else {
+                return dropArguments(original, index, IRubyObject[].class);
+            }
+        case 0:
+            if (block) {
+                return dropArguments(original, index, Block.class);
+            } else {
+                return dropArguments(original, index);
+            }
+        case 1:
+            if (block) {
+                return dropArguments(original, index, IRubyObject.class, Block.class);
+            } else {
+                return dropArguments(original, index, IRubyObject.class);
+            }
+        case 2:
+            if (block) {
+                return dropArguments(original, index, IRubyObject.class, IRubyObject.class, Block.class);
+            } else {
+                return dropArguments(original, index, IRubyObject.class, IRubyObject.class);
+            }
+        case 3:
+            if (block) {
+                return dropArguments(original, index, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class);
+            } else {
+                return dropArguments(original, index, IRubyObject.class, IRubyObject.class, IRubyObject.class);
+            }
+        default:
+            throw new RuntimeException("Invalid arg count (" + count + ") while preparing method handle:\n\t" + original);
+        }
+    }
     
     ////////////////////////////////////////////////////////////////////////////
     // Support handles for DynamicMethod.call paths
@@ -1567,7 +1636,7 @@ public class InvocationLinker {
     private static final MethodHandle PGC_0 = dropNameAndArgs(PGC, 4, 0, false);
     private static final MethodHandle PGC2_0 = dropNameAndArgs(PGC2, 3, 0, false);
     private static final MethodHandle GETMETHOD_0 = dropNameAndArgs(GETMETHOD, 5, 0, false);
-    private static final MethodHandle TEST_0 = dropNameAndArgs(TEST, 4, 0, false);
+    private static final MethodHandle TEST_0 = dropArgs(TEST, 4, 0, false);
     private static final MethodHandle TARGET_0;
     static {
         MethodHandle target = findVirtual(DynamicMethod.class, "call",
@@ -1585,14 +1654,14 @@ public class InvocationLinker {
         TARGET_0 = target;
     }
     private static final MethodHandle FALLBACK_0 = findStatic(InvocationLinker.class, "invocationFallback",
-            methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class));
+            methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class));
     private static final MethodHandle FAIL_0 = findStatic(InvocationLinker.class, "fail",
-            methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class));
+            methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class));
 
     private static final MethodHandle PGC_1 = dropNameAndArgs(PGC, 4, 1, false);
     private static final MethodHandle PGC2_1 = dropNameAndArgs(PGC2, 3, 1, false);
     private static final MethodHandle GETMETHOD_1 = dropNameAndArgs(GETMETHOD, 5, 1, false);
-    private static final MethodHandle TEST_1 = dropNameAndArgs(TEST, 4, 1, false);
+    private static final MethodHandle TEST_1 = dropArgs(TEST, 4, 1, false);
     private static final MethodHandle TARGET_1;
     static {
         MethodHandle target = findVirtual(DynamicMethod.class, "call",
@@ -1612,13 +1681,13 @@ public class InvocationLinker {
         TARGET_1 = target;
     }
     private static final MethodHandle FALLBACK_1 = findStatic(InvocationLinker.class, "invocationFallback",
-            methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class));
+            methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
     private static final MethodHandle FAIL_1 = findStatic(InvocationLinker.class, "fail",
-            methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class));
+            methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
 
     private static final MethodHandle PGC_2 = dropNameAndArgs(PGC, 4, 2, false);
     private static final MethodHandle GETMETHOD_2 = dropNameAndArgs(GETMETHOD, 5, 2, false);
-    private static final MethodHandle TEST_2 = dropNameAndArgs(TEST, 4, 2, false);
+    private static final MethodHandle TEST_2 = dropArgs(TEST, 4, 2, false);
     private static final MethodHandle TARGET_2;
     static {
         MethodHandle target = findVirtual(DynamicMethod.class, "call",
@@ -1636,13 +1705,13 @@ public class InvocationLinker {
         TARGET_2 = target;
     }
     private static final MethodHandle FALLBACK_2 = findStatic(InvocationLinker.class, "invocationFallback",
-            methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class));
+            methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
     private static final MethodHandle FAIL_2 = findStatic(InvocationLinker.class, "fail",
-            methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class));
+            methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
 
     private static final MethodHandle PGC_3 = dropNameAndArgs(PGC, 4, 3, false);
     private static final MethodHandle GETMETHOD_3 = dropNameAndArgs(GETMETHOD, 5, 3, false);
-    private static final MethodHandle TEST_3 = dropNameAndArgs(TEST, 4, 3, false);
+    private static final MethodHandle TEST_3 = dropArgs(TEST, 4, 3, false);
     private static final MethodHandle TARGET_3;
     static {
         MethodHandle target = findVirtual(DynamicMethod.class, "call",
@@ -1660,13 +1729,13 @@ public class InvocationLinker {
         TARGET_3 = target;
     }
     private static final MethodHandle FALLBACK_3 = findStatic(InvocationLinker.class, "invocationFallback",
-            methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
+            methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
     private static final MethodHandle FAIL_3 = findStatic(InvocationLinker.class, "fail",
-            methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
+            methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
 
     private static final MethodHandle PGC_N = dropNameAndArgs(PGC, 4, -1, false);
     private static final MethodHandle GETMETHOD_N = dropNameAndArgs(GETMETHOD, 5, -1, false);
-    private static final MethodHandle TEST_N = dropNameAndArgs(TEST, 4, -1, false);
+    private static final MethodHandle TEST_N = dropArgs(TEST, 4, -1, false);
     private static final MethodHandle TARGET_N;
     static {
         MethodHandle target = findVirtual(DynamicMethod.class, "call",
@@ -1684,9 +1753,9 @@ public class InvocationLinker {
         TARGET_N = target;
     }
     private static final MethodHandle FALLBACK_N = findStatic(InvocationLinker.class, "invocationFallback",
-            methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class));
+            methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject[].class));
     private static final MethodHandle FAIL_N = findStatic(InvocationLinker.class, "fail",
-            methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class));
+            methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject[].class));
 
     private static final MethodHandle BREAKJUMP;
     static {
@@ -1720,7 +1789,7 @@ public class InvocationLinker {
 
     private static final MethodHandle PGC_0_B = dropNameAndArgs(PGC, 4, 0, true);
     private static final MethodHandle GETMETHOD_0_B = dropNameAndArgs(GETMETHOD, 5, 0, true);
-    private static final MethodHandle TEST_0_B = dropNameAndArgs(TEST, 4, 0, true);
+    private static final MethodHandle TEST_0_B = dropArgs(TEST, 4, 0, true);
     private static final MethodHandle TARGET_0_B;
     static {
         MethodHandle target = findVirtual(DynamicMethod.class, "call",
@@ -1739,15 +1808,15 @@ public class InvocationLinker {
         TARGET_0_B = target;
     }
     private static final MethodHandle FALLBACK_0_B = findStatic(InvocationLinker.class, "invocationFallback",
-            methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, Block.class));
+            methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, Block.class));
     private static final MethodHandle FAIL_0_B = findStatic(InvocationLinker.class, "fail",
-            methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, Block.class));
+            methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, Block.class));
     private static final MethodHandle FAIL_ITER_0_B = findStatic(InvocationLinker.class, "failIter",
-            methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, Block.class));
+            methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, Block.class));
 
     private static final MethodHandle PGC_1_B = dropNameAndArgs(PGC, 4, 1, true);
     private static final MethodHandle GETMETHOD_1_B = dropNameAndArgs(GETMETHOD, 5, 1, true);
-    private static final MethodHandle TEST_1_B = dropNameAndArgs(TEST, 4, 1, true);
+    private static final MethodHandle TEST_1_B = dropArgs(TEST, 4, 1, true);
     private static final MethodHandle TARGET_1_B;
     static {
         MethodHandle target = findVirtual(DynamicMethod.class, "call",
@@ -1766,15 +1835,15 @@ public class InvocationLinker {
         TARGET_1_B = target;
     }
     private static final MethodHandle FALLBACK_1_B = findStatic(InvocationLinker.class, "invocationFallback",
-            methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, Block.class));
+            methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
     private static final MethodHandle FAIL_1_B = findStatic(InvocationLinker.class, "fail",
-            methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, Block.class));
+            methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
     private static final MethodHandle FAIL_ITER_1_B = findStatic(InvocationLinker.class, "failIter",
-            methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, Block.class));
+            methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
 
     private static final MethodHandle PGC_2_B = dropNameAndArgs(PGC, 4, 2, true);
     private static final MethodHandle GETMETHOD_2_B = dropNameAndArgs(GETMETHOD, 5, 2, true);
-    private static final MethodHandle TEST_2_B = dropNameAndArgs(TEST, 4, 2, true);
+    private static final MethodHandle TEST_2_B = dropArgs(TEST, 4, 2, true);
     private static final MethodHandle TARGET_2_B;
     static {
         MethodHandle target = findVirtual(DynamicMethod.class, "call",
@@ -1793,15 +1862,15 @@ public class InvocationLinker {
         TARGET_2_B = target;
     }
     private static final MethodHandle FALLBACK_2_B = findStatic(InvocationLinker.class, "invocationFallback",
-            methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, Block.class));
+            methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
     private static final MethodHandle FAIL_2_B = findStatic(InvocationLinker.class, "fail",
-            methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, Block.class));
+            methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
     private static final MethodHandle FAIL_ITER_2_B = findStatic(InvocationLinker.class, "failIter",
-            methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, Block.class));
+            methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
 
     private static final MethodHandle PGC_3_B = dropNameAndArgs(PGC, 4, 3, true);
     private static final MethodHandle GETMETHOD_3_B = dropNameAndArgs(GETMETHOD, 5, 3, true);
-    private static final MethodHandle TEST_3_B = dropNameAndArgs(TEST, 4, 3, true);
+    private static final MethodHandle TEST_3_B = dropArgs(TEST, 4, 3, true);
     private static final MethodHandle TARGET_3_B;
     static {
         MethodHandle target = findVirtual(DynamicMethod.class, "call",
@@ -1820,15 +1889,15 @@ public class InvocationLinker {
         TARGET_3_B = target;
     }
     private static final MethodHandle FALLBACK_3_B = findStatic(InvocationLinker.class, "invocationFallback",
-            methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
+            methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
     private static final MethodHandle FAIL_3_B = findStatic(InvocationLinker.class, "fail",
-            methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
+            methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
     private static final MethodHandle FAIL_ITER_3_B = findStatic(InvocationLinker.class, "failIter",
-            methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
+            methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
 
     private static final MethodHandle PGC_N_B = dropNameAndArgs(PGC, 4, -1, true);
     private static final MethodHandle GETMETHOD_N_B = dropNameAndArgs(GETMETHOD, 5, -1, true);
-    private static final MethodHandle TEST_N_B = dropNameAndArgs(TEST, 4, -1, true);
+    private static final MethodHandle TEST_N_B = dropArgs(TEST, 4, -1, true);
     private static final MethodHandle TARGET_N_B;
     static {
         MethodHandle target = findVirtual(DynamicMethod.class, "call",
@@ -1847,11 +1916,11 @@ public class InvocationLinker {
         TARGET_N_B = target;
     }
     private static final MethodHandle FALLBACK_N_B = findStatic(InvocationLinker.class, "invocationFallback",
-                    methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class, Block.class));
+                    methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject[].class, Block.class));
     private static final MethodHandle FAIL_N_B = findStatic(InvocationLinker.class, "fail",
-                    methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class, Block.class));
+                    methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject[].class, Block.class));
     private static final MethodHandle FAIL_ITER_N_B = findStatic(InvocationLinker.class, "failIter",
-                    methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class, Block.class));
+                    methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject[].class, Block.class));
     
     private static final MethodHandle[] TESTS = new MethodHandle[] {
         TEST_0,
@@ -1909,8 +1978,7 @@ public class InvocationLinker {
             IRubyObject.class, // return value
             ThreadContext.class, //context
             IRubyObject.class, // caller
-            IRubyObject.class, // self
-            String.class // method name
+            IRubyObject.class // self
             );
     private static final MethodType STANDARD_NATIVE_TYPE_1ARG = STANDARD_NATIVE_TYPE.appendParameterTypes(IRubyObject.class);
     private static final MethodType STANDARD_NATIVE_TYPE_2ARG = STANDARD_NATIVE_TYPE_1ARG.appendParameterTypes(IRubyObject.class);
@@ -2023,10 +2091,10 @@ public class InvocationLinker {
     };
     
     private static final int[] SELF_TC_PERMUTE = {2, 0};
-    private static final int[] SELF_TC_1ARG_PERMUTE = {2, 0, 4};
-    private static final int[] SELF_TC_2ARG_PERMUTE = {2, 0, 4, 5};
-    private static final int[] SELF_TC_3ARG_PERMUTE = {2, 0, 4, 5, 6};
-    private static final int[] SELF_TC_NARG_PERMUTE = {2, 0, 4};
+    private static final int[] SELF_TC_1ARG_PERMUTE = {2, 0, 3};
+    private static final int[] SELF_TC_2ARG_PERMUTE = {2, 0, 3, 4};
+    private static final int[] SELF_TC_3ARG_PERMUTE = {2, 0, 3, 4, 5};
+    private static final int[] SELF_TC_NARG_PERMUTE = {2, 0, 3};
     private static final int[][] SELF_TC_ARGS_PERMUTES = {
         SELF_TC_PERMUTE,
         SELF_TC_1ARG_PERMUTE,
@@ -2035,10 +2103,10 @@ public class InvocationLinker {
         SELF_TC_NARG_PERMUTE
     };
     private static final int[] SELF_PERMUTE = {2};
-    private static final int[] SELF_1ARG_PERMUTE = {2, 4};
-    private static final int[] SELF_2ARG_PERMUTE = {2, 4, 5};
-    private static final int[] SELF_3ARG_PERMUTE = {2, 4, 5, 6};
-    private static final int[] SELF_NARG_PERMUTE = {2, 4};
+    private static final int[] SELF_1ARG_PERMUTE = {2, 3};
+    private static final int[] SELF_2ARG_PERMUTE = {2, 3, 4};
+    private static final int[] SELF_3ARG_PERMUTE = {2, 3, 4, 5};
+    private static final int[] SELF_NARG_PERMUTE = {2, 3};
     private static final int[][] SELF_ARGS_PERMUTES = {
         SELF_PERMUTE,
         SELF_1ARG_PERMUTE,
@@ -2046,11 +2114,11 @@ public class InvocationLinker {
         SELF_3ARG_PERMUTE,
         SELF_NARG_PERMUTE
     };
-    private static final int[] SELF_TC_BLOCK_PERMUTE = {2, 0, 4};
-    private static final int[] SELF_TC_1ARG_BLOCK_PERMUTE = {2, 0, 4, 5};
-    private static final int[] SELF_TC_2ARG_BLOCK_PERMUTE = {2, 0, 4, 5, 6};
-    private static final int[] SELF_TC_3ARG_BLOCK_PERMUTE = {2, 0, 4, 5, 6, 7};
-    private static final int[] SELF_TC_NARG_BLOCK_PERMUTE = {2, 0, 4, 5};
+    private static final int[] SELF_TC_BLOCK_PERMUTE = {2, 0, 3};
+    private static final int[] SELF_TC_1ARG_BLOCK_PERMUTE = {2, 0, 3, 4};
+    private static final int[] SELF_TC_2ARG_BLOCK_PERMUTE = {2, 0, 3, 4, 5};
+    private static final int[] SELF_TC_3ARG_BLOCK_PERMUTE = {2, 0, 3, 4, 5, 6};
+    private static final int[] SELF_TC_NARG_BLOCK_PERMUTE = {2, 0, 3, 4};
     private static final int[][] SELF_TC_ARGS_BLOCK_PERMUTES = {
         SELF_TC_BLOCK_PERMUTE,
         SELF_TC_1ARG_BLOCK_PERMUTE,
@@ -2058,11 +2126,11 @@ public class InvocationLinker {
         SELF_TC_3ARG_BLOCK_PERMUTE,
         SELF_TC_NARG_BLOCK_PERMUTE
     };
-    private static final int[] SELF_BLOCK_PERMUTE = {2, 4};
-    private static final int[] SELF_1ARG_BLOCK_PERMUTE = {2, 4, 5};
-    private static final int[] SELF_2ARG_BLOCK_PERMUTE = {2, 4, 5, 6};
-    private static final int[] SELF_3ARG_BLOCK_PERMUTE = {2, 4, 5, 6, 7};
-    private static final int[] SELF_NARG_BLOCK_PERMUTE = {2, 4, 5};
+    private static final int[] SELF_BLOCK_PERMUTE = {2, 3};
+    private static final int[] SELF_1ARG_BLOCK_PERMUTE = {2, 3, 4};
+    private static final int[] SELF_2ARG_BLOCK_PERMUTE = {2, 3, 4, 5};
+    private static final int[] SELF_3ARG_BLOCK_PERMUTE = {2, 3, 4, 5, 6};
+    private static final int[] SELF_NARG_BLOCK_PERMUTE = {2, 3, 4};
     private static final int[][] SELF_ARGS_BLOCK_PERMUTES = {
         SELF_BLOCK_PERMUTE,
         SELF_1ARG_BLOCK_PERMUTE,
@@ -2071,10 +2139,10 @@ public class InvocationLinker {
         SELF_NARG_BLOCK_PERMUTE
     };
     private static final int[] TC_SELF_PERMUTE = {0, 2};
-    private static final int[] TC_SELF_1ARG_PERMUTE = {0, 2, 4};
-    private static final int[] TC_SELF_2ARG_PERMUTE = {0, 2, 4, 5};
-    private static final int[] TC_SELF_3ARG_PERMUTE = {0, 2, 4, 5, 6};
-    private static final int[] TC_SELF_NARG_PERMUTE = {0, 2, 4};
+    private static final int[] TC_SELF_1ARG_PERMUTE = {0, 2, 3};
+    private static final int[] TC_SELF_2ARG_PERMUTE = {0, 2, 3, 4};
+    private static final int[] TC_SELF_3ARG_PERMUTE = {0, 2, 3, 4, 5};
+    private static final int[] TC_SELF_NARG_PERMUTE = {0, 2, 3};
     private static final int[][] TC_SELF_ARGS_PERMUTES = {
         TC_SELF_PERMUTE,
         TC_SELF_1ARG_PERMUTE,
@@ -2082,11 +2150,11 @@ public class InvocationLinker {
         TC_SELF_3ARG_PERMUTE,
         TC_SELF_NARG_PERMUTE,
     };
-    private static final int[] TC_SELF_BLOCK_PERMUTE = {0, 2, 4};
-    private static final int[] TC_SELF_1ARG_BLOCK_PERMUTE = {0, 2, 4, 5};
-    private static final int[] TC_SELF_2ARG_BLOCK_PERMUTE = {0, 2, 4, 5, 6};
-    private static final int[] TC_SELF_3ARG_BLOCK_PERMUTE = {0, 2, 4, 5, 6, 7};
-    private static final int[] TC_SELF_NARG_BLOCK_PERMUTE = {0, 2, 4, 5};
+    private static final int[] TC_SELF_BLOCK_PERMUTE = {0, 2, 3};
+    private static final int[] TC_SELF_1ARG_BLOCK_PERMUTE = {0, 2, 3, 4};
+    private static final int[] TC_SELF_2ARG_BLOCK_PERMUTE = {0, 2, 3, 4, 5};
+    private static final int[] TC_SELF_3ARG_BLOCK_PERMUTE = {0, 2, 3, 4, 5, 6};
+    private static final int[] TC_SELF_NARG_BLOCK_PERMUTE = {0, 2, 3, 4};
     private static final int[][] TC_SELF_ARGS_BLOCK_PERMUTES = {
         TC_SELF_BLOCK_PERMUTE,
         TC_SELF_1ARG_BLOCK_PERMUTE,

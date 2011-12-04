@@ -59,6 +59,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.util.ByteList;
+import org.jruby.util.JavaNameMangler;
 import org.jruby.util.RegexpOptions;
 import static org.jruby.util.CodegenUtils.*;
 
@@ -158,11 +159,11 @@ public class InvokeDynamicSupport {
     }
     
     public static Handle getFixnumOperatorHandle() {
-        return getBootstrapHandle("fixnumOperatorBootstrap", BOOTSTRAP_STRING_LONG_SIG);
+        return getBootstrapHandle("fixnumOperatorBootstrap", BOOTSTRAP_LONG_SIG);
     }
     
     public static Handle getFloatOperatorHandle() {
-        return getBootstrapHandle("floatOperatorBootstrap", BOOTSTRAP_STRING_DOUBLE_SIG);
+        return getBootstrapHandle("floatOperatorBootstrap", BOOTSTRAP_DOUBLE_SIG);
     }
     
     public static Handle getVariableHandle() {
@@ -173,23 +174,27 @@ public class InvokeDynamicSupport {
     // BOOTSTRAP METHODS
     ////////////////////////////////////////////////////////////////////////////
     
-    public static CallSite fixnumOperatorBootstrap(Lookup lookup, String name, MethodType type, String operator, long value) throws NoSuchMethodException, IllegalAccessException {
-        JRubyCallSite site = new JRubyCallSite(lookup, type, CallType.NORMAL, false, false, true);
+    public static CallSite fixnumOperatorBootstrap(Lookup lookup, String name, MethodType type, long value) throws NoSuchMethodException, IllegalAccessException {
+        String[] names = name.split(":");
+        String operator = JavaNameMangler.demangleMethodName(names[1]);
+        JRubyCallSite site = new JRubyCallSite(lookup, type, CallType.NORMAL, operator, false, false, true);
         
         MethodHandle target = lookup.findStatic(InvokeDynamicSupport.class, "fixnumOperator", 
-                methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, JRubyCallSite.class, String.class, long.class));
-        target = insertArguments(target, 3, site, operator, value);
+                methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, JRubyCallSite.class, long.class));
+        target = insertArguments(target, 3, site, value);
         
         site.setTarget(target);
         return site;
     }
     
-    public static CallSite floatOperatorBootstrap(Lookup lookup, String name, MethodType type, String operator, double value) throws NoSuchMethodException, IllegalAccessException {
-        JRubyCallSite site = new JRubyCallSite(lookup, type, CallType.NORMAL, false, false, true);
+    public static CallSite floatOperatorBootstrap(Lookup lookup, String name, MethodType type, double value) throws NoSuchMethodException, IllegalAccessException {
+        String[] names = name.split(":");
+        String operator = JavaNameMangler.demangleMethodName(names[1]);
+        JRubyCallSite site = new JRubyCallSite(lookup, type, CallType.NORMAL, operator, false, false, true);
         
         MethodHandle target = lookup.findStatic(InvokeDynamicSupport.class, "floatOperator", 
-                methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, JRubyCallSite.class, String.class, double.class));
-        target = insertArguments(target, 3, site, operator, value);
+                methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, JRubyCallSite.class, double.class));
+        target = insertArguments(target, 3, site, value);
         
         site.setTarget(target);
         return site;
@@ -490,7 +495,8 @@ public class InvokeDynamicSupport {
     // INITIAL AND FALLBACK METHODS FOR POST BOOTSTRAP
     ////////////////////////////////////////////////////////////////////////////
     
-    public static IRubyObject fixnumOperator(ThreadContext context, IRubyObject caller, IRubyObject self, JRubyCallSite site, String operator, long value) throws Throwable {
+    public static IRubyObject fixnumOperator(ThreadContext context, IRubyObject caller, IRubyObject self, JRubyCallSite site, long value) throws Throwable {
+        String operator = site.name();
         String opMethod = MethodIndex.getFastFixnumOpsMethod(operator);
         String name = "fixnum_" + opMethod;
         MethodType type = methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class);
@@ -513,8 +519,8 @@ public class InvokeDynamicSupport {
         }
 
         MethodHandle fallback = lookup().findStatic(InvokeDynamicSupport.class, "fixnumOperatorFail", 
-                methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, JRubyCallSite.class, String.class, RubyFixnum.class));
-        fallback = insertArguments(fallback, 3, site, operator, context.runtime.newFixnum(value));
+                methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, JRubyCallSite.class, RubyFixnum.class));
+        fallback = insertArguments(fallback, 3, site, context.runtime.newFixnum(value));
         
         MethodHandle test = lookup().findStatic(InvokeDynamicSupport.class, "fixnumTest", methodType(boolean.class, Ruby.class, IRubyObject.class));
         test = test.bindTo(context.runtime);
@@ -529,7 +535,8 @@ public class InvokeDynamicSupport {
         return self instanceof RubyFixnum && !runtime.isFixnumReopened();
     }
     
-    public static IRubyObject fixnumOperatorFail(ThreadContext context, IRubyObject caller, IRubyObject self, JRubyCallSite site, String operator, RubyFixnum value) throws Throwable {
+    public static IRubyObject fixnumOperatorFail(ThreadContext context, IRubyObject caller, IRubyObject self, JRubyCallSite site, RubyFixnum value) throws Throwable {
+        String operator = site.name();
         RubyClass selfClass = pollAndGetClass(context, self);
         CacheEntry entry = site.entry;
         
@@ -613,7 +620,8 @@ public class InvokeDynamicSupport {
         return ((RubyFixnum)self).op_minus_two(context);
     }
     
-    public static IRubyObject floatOperator(ThreadContext context, IRubyObject caller, IRubyObject self, JRubyCallSite site, String operator, double value) throws Throwable {
+    public static IRubyObject floatOperator(ThreadContext context, IRubyObject caller, IRubyObject self, JRubyCallSite site, double value) throws Throwable {
+        String operator = site.name();
         String opMethod = MethodIndex.getFastFixnumOpsMethod(operator);
         String name = "float_" + opMethod;
         MethodType type = methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class);
@@ -626,8 +634,8 @@ public class InvokeDynamicSupport {
         }
 
         MethodHandle fallback = lookup().findStatic(InvokeDynamicSupport.class, "floatOperatorFail", 
-                methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, JRubyCallSite.class, String.class, RubyFloat.class));
-        fallback = insertArguments(fallback, 3, site, operator, context.runtime.newFloat(value));
+                methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, JRubyCallSite.class, RubyFloat.class));
+        fallback = insertArguments(fallback, 3, site, context.runtime.newFloat(value));
         
         MethodHandle test = lookup().findStatic(InvokeDynamicSupport.class, "floatTest", methodType(boolean.class, Ruby.class, IRubyObject.class));
         test = test.bindTo(context.runtime);
@@ -642,7 +650,8 @@ public class InvokeDynamicSupport {
         return self instanceof RubyFloat && !runtime.isFloatReopened();
     }
     
-    public static IRubyObject floatOperatorFail(ThreadContext context, IRubyObject caller, IRubyObject self, JRubyCallSite site, String operator, RubyFloat value) throws Throwable {
+    public static IRubyObject floatOperatorFail(ThreadContext context, IRubyObject caller, IRubyObject self, JRubyCallSite site, RubyFloat value) throws Throwable {
+        String operator = site.name();
         RubyClass selfClass = pollAndGetClass(context, self);
         CacheEntry entry = site.entry;
         

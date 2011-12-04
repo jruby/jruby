@@ -44,15 +44,17 @@ public class JRubyCallSite extends MutableCallSite {
     private final boolean attrAssign;
     private final boolean iterator;
     private final boolean expression;
+    private final String name;
     private int clearCount;
 
-    public JRubyCallSite(Lookup lookup, MethodType type, CallType callType, boolean attrAssign, boolean iterator, boolean expression) {
+    public JRubyCallSite(Lookup lookup, MethodType type, CallType callType, String name, boolean attrAssign, boolean iterator, boolean expression) {
         super(type);
         this.lookup = lookup;
         this.callType = callType;
         this.attrAssign = attrAssign;
         this.iterator = iterator;
         this.expression = expression;
+        this.name = name;
     }
     
     public Lookup lookup() {
@@ -73,6 +75,10 @@ public class JRubyCallSite extends MutableCallSite {
     
     public boolean isExpression() {
         return expression;
+    }
+    
+    public String name() {
+        return name;
     }
     
     public synchronized boolean hasSeenType(int typeCode) {
