@@ -1322,7 +1322,7 @@ public class InvocationLinker {
         target = insertArguments(target, 1, accessor.getIndex());
         target = explicitCastArguments(target, methodType(void.class, IRubyObject.class, IRubyObject.class));
         target = filterReturnValue(target, constant(IRubyObject.class, cls.getRuntime().getNil()));
-        target = permuteArguments(target, site.type(), new int[] {2, 4});
+        target = permuteArguments(target, site.type(), new int[] {2, 3});
         
         method.setHandle(nativeTarget);
         return target;
