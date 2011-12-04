@@ -414,13 +414,15 @@ public class InvokeDynamicSupport {
     }
     
     public static CallSite variableBootstrap(Lookup lookup, String name, MethodType type) throws Throwable {
-        String varName = name.substring(4);
+        String[] names = name.split(":");
+        String operation = names[0];
+        String varName = names[1];
         VariableSite site = new VariableSite(type, varName);
         MethodHandle handle;
         
-        if (name.startsWith("get:")) {
+        if (operation.equals("get")) {
             handle = lookup.findStatic(InvokeDynamicSupport.class, "getVariableFallback", methodType(IRubyObject.class, VariableSite.class, IRubyObject.class));
-        } else if (name.startsWith("set:")) {
+        } else if (operation.equals("set")) {
             handle = lookup.findStatic(InvokeDynamicSupport.class, "setVariableFallback", methodType(IRubyObject.class, VariableSite.class, IRubyObject.class, IRubyObject.class));
         } else {
             throw new RuntimeException("invalid variable access type");
