@@ -1383,55 +1383,6 @@ public class InvocationLinker {
     }
     
     ////////////////////////////////////////////////////////////////////////////
-    // Dispatch via DynamicMethod.call to attribute access method
-    ////////////////////////////////////////////////////////////////////////////
-
-    private static MethodHandle getAttrTarget(JRubyCallSite site, DynamicMethod method) {
-        MethodHandle target = (MethodHandle)method.getHandle();
-        if (target != null) return target;
-        
-        try {
-            if (method instanceof AttrReaderMethod) {
-                AttrReaderMethod reader = (AttrReaderMethod)method;
-                target = site.lookup().findVirtual(
-                        AttrReaderMethod.class,
-                        "call",
-                        methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class));
-                target = explicitCastArguments(target, methodType(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class));
-                target = permuteArguments(
-                        target,
-                        methodType(IRubyObject.class, DynamicMethod.class, RubyClass.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class),
-                        new int[] {0,2,4,1,5});
-                // IRubyObject, DynamicMethod, RubyClass, ThreadContext, IRubyObject, IRubyObject, String
-                target = insertArguments(target, 0, reader);
-                // IRubyObject, RubyClass, ThreadContext, IRubyObject, IRubyObject, String
-                target = foldArguments(target, PGC2_0);
-                // IRubyObject, ThreadContext, IRubyObject, IRubyObject, String
-            } else {
-                AttrWriterMethod writer = (AttrWriterMethod)method;
-                target = site.lookup().findVirtual(
-                        AttrWriterMethod.class,
-                        "call",
-                        methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class));
-                target = explicitCastArguments(target, methodType(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject.class));
-                target = permuteArguments(
-                        target,
-                        methodType(IRubyObject.class, DynamicMethod.class, RubyClass.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class),
-                        new int[] {0,2,4,1,5,6});
-                // IRubyObject, DynamicMethod, RubyClass, ThreadContext, IRubyObject, IRubyObject, String
-                target = insertArguments(target, 0, writer);
-                // IRubyObject, RubyClass, ThreadContext, IRubyObject, IRubyObject, String
-                target = foldArguments(target, PGC2_1);
-                // IRubyObject, ThreadContext, IRubyObject, IRubyObject, String
-            }
-            method.setHandle(target);
-            return target;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-    
-    ////////////////////////////////////////////////////////////////////////////
     // Additional support code
     ////////////////////////////////////////////////////////////////////////////
 
