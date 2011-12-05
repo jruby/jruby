@@ -26,17 +26,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util.io;
 
-import java.io.IOException;
-import java.nio.channels.CancelledKeyException;
-import java.nio.channels.Channel;
-import java.nio.channels.SelectableChannel;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.spi.SelectorProvider;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyFixnum;
@@ -45,6 +34,16 @@ import org.jruby.RubyIO;
 import org.jruby.RubyThread;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.io.IOException;
+import java.nio.channels.CancelledKeyException;
+import java.nio.channels.Channel;
+import java.nio.channels.SelectableChannel;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * This is a reimplementation of MRI's IO#select logic. It has been rewritten
@@ -160,7 +159,7 @@ public class SelectBlob {
     }
 
     private void trySelectRead(ThreadContext context, Map<Character,Integer> attachment, RubyIO ioObj) throws IOException {
-        if (ioObj.getChannel() instanceof SelectableChannel && registerSelect(context, getSelector(context, ioObj.getChannel()), attachment, ioObj, SelectionKey.OP_READ | SelectionKey.OP_ACCEPT)) {
+        if (ioObj.getChannel() instanceof SelectableChannel && registerSelect(context, getSelector(context, (SelectableChannel)ioObj.getChannel()), attachment, ioObj, SelectionKey.OP_READ | SelectionKey.OP_ACCEPT)) {
             selectedReads++;
             if (ioObj.writeDataBuffered()) {
                 getPendingReads()[(Integer)attachment.get('r')] = true;
@@ -220,7 +219,8 @@ public class SelectBlob {
     }
 
     private void trySelectWrite(ThreadContext context, Map<Character,Integer> attachment, RubyIO ioObj) throws IOException {
-        if (!registerSelect(context, getSelector(context, ioObj.getChannel()), attachment, ioObj, SelectionKey.OP_WRITE)) {
+        if (!(ioObj.getChannel() instanceof SelectableChannel)
+                || !registerSelect(context, getSelector(context, (SelectableChannel)ioObj.getChannel()), attachment, ioObj, SelectionKey.OP_WRITE)) {
             selectedReads++;
             if ((ioObj.getOpenFile().getMode() & OpenFile.WRITABLE) != 0) {
                 getUnselectableWrites()[(Integer)attachment.get('w')] = true;
@@ -374,9 +374,9 @@ public class SelectBlob {
         return errorResults;
     }
 
-    private Selector getSelector(ThreadContext context, Channel channel) throws IOException {
+    private Selector getSelector(ThreadContext context, SelectableChannel channel) throws IOException {
         if (selector == null) {
-            selector = SelectorFactory.openWithRetryFrom(context.getRuntime(), ((SelectableChannel)channel).provider());
+            selector = SelectorFactory.openWithRetryFrom(context.getRuntime(), channel.provider());
         }
         return selector;
     }
