@@ -335,13 +335,15 @@ public class InvocationLinker {
             boolean curry;
             MethodHandle fallback;
             MethodHandle gwt;
-            if (site.getTarget() != null && !site.hasSeenType(selfClass.id)) {
-                // new type for site, stack it up
+
+            // if we've cached no types, and the site is bound and we haven't seen this new type...
+            if (site.seenTypes().size() > 0 && site.getTarget() != null && !site.hasSeenType(selfClass.id)) {
+                // stack it up into a PIC
                 if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tadded to PIC (#" +entry.method.getSerialNumber() + ")");
                 fallback = site.getTarget();
                 curry = false;
             } else {
-                // no existing target or rebinding a seen class, wipe out site
+                // wipe out site with this new type and method
                 if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\ttriggered site rebind (#" +entry.method.getSerialNumber() + ")");
                 fallback = (block?FALLBACKS_B:FALLBACKS)[arity];
                 site.clearTypes();
