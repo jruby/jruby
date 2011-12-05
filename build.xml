@@ -992,7 +992,7 @@
 
         <!-- force client VM to improve test run times AND -->
         <!-- set a larger max permgen, since the tests load a lot of bytecode -->
-        <jvmarg line="-ea ${java.opts} -client -XX:MaxPermSize=256M"/>
+        <jvmarg line="-ea ${java.opts} -client -XX:MaxPermSize=${jruby.test.memory.permgen}"/>
         
         <!-- additional flags -->
         <jvmarg line="@{jvm.flags}"/>
