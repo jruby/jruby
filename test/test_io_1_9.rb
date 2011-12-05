@@ -1,6 +1,7 @@
 require 'test/unit'
 require 'stringio'
 
+# Still used by test/org/jruby/embedMultipleScriptsRunner.java
 class TestIO19 < Test::Unit::TestCase
 
   def setup

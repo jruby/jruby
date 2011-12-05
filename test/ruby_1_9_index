@@ -1,22 +1,6 @@
 # Tests for behavior that has changed in Ruby 1.9, used to confirm JRuby 1.9
 # compat mode is working.
-test_kernel_1_9_features
-test_fixnum_1_9
-test_integer_1_9
-test_object_1_9
-test_symbol_1_9
-test_loop_1_9
-test_assignment_1_9
-test_regexp_1_9
-test_io_1_9
-test_jruby_4084
-test_string_1_9
-test_win32
-test_time_1_9
 test_yaml_1_9
-test_dir_1_9
-test_nkf_1_9
-test_runaway_magic_comment_1_9
 externals/ruby1.9/psych/test_alias_and_anchor
 externals/ruby1.9/psych/test_array
 externals/ruby1.9/psych/test_boolean
