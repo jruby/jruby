@@ -55,7 +55,6 @@ test_java_accessible_object
 test_java_extension
 test_java_wrapper_deadlock
 test_jruby_internals
-test_jruby_4084
 compiler/test_jrubyc
 #test_local_jump_error
 test_marshal_with_instance_variables
