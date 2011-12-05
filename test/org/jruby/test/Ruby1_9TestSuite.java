@@ -39,7 +39,7 @@ public class Ruby1_9TestSuite extends TestUnitTestSuite {
             script.append("require 'minitest/unit'\n");
             script.append("require '" + scriptName + "'\n");
             script.append("unit = MiniTest::Unit.new\n");
-            script.append("unit.run_test_suites\n");
+            script.append("unit.run\n");
             script.append("unit.report\n");
 
             return script.toString();
