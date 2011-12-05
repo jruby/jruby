@@ -1087,6 +1087,24 @@ public class RubyInstanceConfig {
     public void setGlobalRequireLock(boolean globalRequireLock) {
         this.globalRequireLock = globalRequireLock;
     }
+
+    /**
+     * Set whether the JIT compiler should run in a background thread (Executor-based).
+     *
+     * @param jitBackground whether to run the JIT compiler in a background thread
+     */
+    public void setJitBackground(boolean jitBackground) {
+        this.jitBackground = jitBackground;
+    }
+
+    /**
+     * Get whether the JIT compiler will run in a background thread.
+     *
+     * @return whether the JIT compiler will run in a background thread
+     */
+    public boolean getJitBackground() {
+        return jitBackground;
+    }
     
     ////////////////////////////////////////////////////////////////////////////
     // Configuration fields.
@@ -1191,6 +1209,8 @@ public class RubyInstanceConfig {
     private LoadServiceCreator creator = LoadServiceCreator.DEFAULT;
     
     private boolean globalRequireLock = Options.GLOBAL_REQUIRE_LOCK.load();
+
+    private boolean jitBackground = Options.JIT_BACKGROUND.load();
     
     ////////////////////////////////////////////////////////////////////////////
     // Support classes, etc.

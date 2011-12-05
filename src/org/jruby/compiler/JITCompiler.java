@@ -56,6 +56,7 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.util.ClassCache;
 import org.jruby.util.JavaNameMangler;
+import org.jruby.util.cli.Options;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.util.TraceClassVisitor;
 import org.jruby.util.log.Logger;
@@ -181,7 +182,12 @@ public class JITCompiler implements JITCompilerMBean {
             }
         };
 
-        if (context.runtime.getExecutor() != null) {
+        // if background JIT is enabled and threshold is > 0 and we have an executor...
+        RubyInstanceConfig config = context.runtime.getInstanceConfig();
+        if (config.getJitBackground() &&
+                config.getJitThreshold() > 0 &&
+                context.runtime.getExecutor() != null) {
+            // JIT in background
             try {
                 context.runtime.getExecutor().submit(jitTask);
             } catch (RejectedExecutionException ree) {
@@ -189,7 +195,7 @@ public class JITCompiler implements JITCompilerMBean {
                 jitTask.run();
             }
         } else {
-            // no executor, just run directly
+            // just run directly
             jitTask.run();
         }
     }

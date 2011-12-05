@@ -88,6 +88,7 @@ public class Options {
     public static final Option<Boolean> JIT_CACHE = bool(JIT, "jit.cache", true, "Cache jitted method in-memory bodies across runtimes and loads.");
     public static final Option<String> JIT_CODECACHE = string(JIT, "jit.codeCache", new String[]{"dir"}, null, "Save jitted methods to <dir> as they're compiled, for future runs.");
     public static final Option<Boolean> JIT_DEBUG = bool(JIT, "jit.debug", false, "Log loading of JITed bytecode.");
+    public static final Option<Boolean> JIT_BACKGROUND = bool(JIT, "jit.background", true, "Run the JIT compiler in a background thread.");
     
     public static final Option<Boolean> IR_DEBUG = bool(IR, "ir.debug", false, "Debug generation of JRuby IR.");
     public static final Option<Boolean> IR_COMPILER_DEBUG = bool(IR, "ir.compiler.debug", false, "Debug compilation of JRuby IR.");
