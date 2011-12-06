@@ -853,6 +853,7 @@
 
   <target name="test-all" depends="
       copy-test-files,
+      install-gems,
       test-security-manager,
       run-junit-interpreted,
       run-junit-compiled,
