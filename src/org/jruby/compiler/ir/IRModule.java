@@ -190,15 +190,6 @@ public class IRModule extends IRScope {
     }
 
     @Override
-    protected StaticScope constructStaticScope(StaticScope unused) {
-        this.requiredArgs = 0;
-        this.optionalArgs = 0;
-        this.restArg = -1;
-
-        return IRStaticScopeFactory.newIRLocalScope(null); // method scopes cannot see any lower
-    }
-
-    @Override
     public LocalVariable getImplicitBlockArg() {
         return getLocalVariable(Variable.BLOCK, 0);
     }

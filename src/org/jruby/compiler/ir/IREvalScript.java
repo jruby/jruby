@@ -48,11 +48,6 @@ public class IREvalScript extends IRClosure {
         return new Operand[0];
     }
 
-    @Override
-    protected StaticScope constructStaticScope(StaticScope parent) {
-        return IRStaticScopeFactory.newIREvalScope(parent);
-    }
-
     /* Record a begin block -- not all scope implementations can handle them */
     @Override
     public void recordBeginBlock(IRClosure beginBlockClosure) {

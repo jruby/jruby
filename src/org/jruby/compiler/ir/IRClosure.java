@@ -133,11 +133,6 @@ public class IRClosure extends IRScope {
         return buf.toString();
     }
 
-    @Override
-    protected StaticScope constructStaticScope(StaticScope parent) {
-        return IRStaticScopeFactory.newIRBlockScope(parent);
-    }
-
     public BlockBody getBlockBody() {
         return body;
     }

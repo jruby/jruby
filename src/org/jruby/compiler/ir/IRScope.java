@@ -177,9 +177,6 @@ public abstract class IRScope {
     // This lets us implement next/redo/break/retry easily for the non-closure cases
     private Stack<IRLoop> loopStack;
 
-    protected int requiredArgs = 0;
-    protected int optionalArgs = 0;
-    protected int restArg = -1;
     private IRScope lexicalParent;  // Lexical parent scope    
     private StaticScope staticScope;
     private String name;
@@ -598,16 +595,6 @@ public abstract class IRScope {
         }
     }
      ------------------------------------------ **/
-
-    /**
-     * Closures and Methods have different static scopes.  This returns the
-     * correct instance.
-     *
-     * @param parent scope should be non-null for all closures and null for methods
-     * @return a newly allocated static scope
-     */
-    @Interp
-    protected abstract StaticScope constructStaticScope(StaticScope parent);
 
     public LocalVariable getSelf() {
         return Self.SELF;
