@@ -54,7 +54,7 @@ public class LoadFromBindingInstr extends Instr implements ResultInstr {
     public Variable getResult() {
         return result;
     }
-    @Override
+    
     public void updateResult(Variable v) {
         this.result = v;
     }
