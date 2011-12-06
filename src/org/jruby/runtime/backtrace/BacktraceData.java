@@ -68,8 +68,9 @@ public class BacktraceData implements Serializable {
                 // FIXME: Formalize jitted method structure so this isn't quite as hacky
                 if (className.startsWith(JITCompiler.RUBY_JIT_PREFIX)) {
                     // pull out and demangle the method name
-                    methodName = className.substring(JITCompiler.RUBY_JIT_PREFIX.length() + 1, className.lastIndexOf("_"));
-                    methodName = JavaNameMangler.demangleMethodName(methodName);
+                    String classAndMethod[] = className.substring(JITCompiler.RUBY_JIT_PREFIX.length() + 1, className.lastIndexOf("_")).split("#");
+                    className = classAndMethod[0];
+                    methodName = JavaNameMangler.demangleMethodName(classAndMethod[1]);
                     RubyStackTraceElement rubyElement = new RubyStackTraceElement(className, methodName, element.getFileName(), element.getLineNumber(), false);
                     // dup if masking native and previous frame was native
                     if (maskNative && dupFrame) {
