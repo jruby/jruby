@@ -56,7 +56,6 @@ def jruby(java_options = {}, &code)
     classpath :refid => 'build.classpath'
     classpath :path => JRUBY_CLASSES_DIR
     jvmarg :line => JVM_MODEL if JVM_MODEL
-    jvmarg :line => '-XX:MaxPermSize=512M'
     sysproperty :key => "jruby.home", :value => BASE_DIR
     instance_eval(&code) if block_given?
   end
@@ -111,6 +110,7 @@ def mspec(mspec_options = {}, java_options = {}, &code)
     arg :line => "-T -J-Demma.coverage.out.merge=true"
     arg :line => "-T -J-Demma.verbosity.level=silent"
     arg :line => "-T -J#{JVM_MODEL}" if JVM_MODEL
+    arg :line => "-T -J-XX:MaxPermSize=512M"
     arg :line => "-f m"
     arg :line => "-B #{ms[:spec_config]}" if ms[:spec_config]
   end
