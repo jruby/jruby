@@ -344,7 +344,6 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     public void assignConstantInObject(String name) {
         // load Object under value
         loadObject();
-        method.swap();
 
         assignConstantInModule(name);
     }

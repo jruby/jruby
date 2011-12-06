@@ -620,5 +620,13 @@ describe "JRuby's compiler" do
     lambda {
       JRuby5871B.new("foo", :each_byte)
     }.should_not raise_error
+
+    class JRUBY4925
+    end
+
+    x = compile_and_run 'JRUBY4925::BLAH, a = 1, 2'
+    JRUBY4925::BLAH.should == 1
+    x = compile_and_run '::JRUBY4925_BLAH, a = 1, 2'
+    JRUBY4925_BLAH.should == 1
   end
 end
