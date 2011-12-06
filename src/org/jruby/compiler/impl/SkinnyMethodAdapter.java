@@ -905,7 +905,7 @@ public class SkinnyMethodAdapter extends MethodVisitor implements Opcodes {
 
     @Override
     public void visitTableSwitchInsn(int arg0, int arg1, Label arg2,
-                                     Label[] arg3) {
+                                     Label... arg3) {
         getMethodVisitor().visitTableSwitchInsn(arg0, arg1, arg2, arg3);
     }
 
