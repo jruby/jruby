@@ -80,6 +80,11 @@ class MSpecScript
     set :ci_xtags, ['windows']
   end
 
+  if ENV_JAVA['java.specification.version'] == '1.5'
+    # File.flock does not observe the same rules on Java 5
+    get(:core) << '^' + SPEC_DIR + '/core/file/flock'
+  end
+
   set :ci_files, get(:language) + get(:core) + get(:command_line) + get(:library)
 
   # The default implementation to run the specs.
