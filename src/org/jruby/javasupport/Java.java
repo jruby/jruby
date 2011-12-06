@@ -874,7 +874,7 @@ public class Java implements Library {
     }
 
     private static RubyModule getProxyOrPackageUnderPackage(ThreadContext context, final Ruby runtime,
-            RubyModule parentPackage, String sym) throws Exception {
+            RubyModule parentPackage, String sym) {
         IRubyObject packageNameObj = parentPackage.getInstanceVariable("@package_name");
         if (packageNameObj == null) {
             throw runtime.newArgumentError("invalid package module");
@@ -930,7 +930,7 @@ public class Java implements Library {
                     // we'll try as a package
                     return getJavaPackageModule(runtime, fullName);
                 } else {
-                    throw e;
+                    throw runtime.newNameError("uppercase package names not accessible this way (`" + fullName + "')", fullName);
                 }
             }
 
@@ -941,7 +941,7 @@ public class Java implements Library {
             ThreadContext context,
             IRubyObject recv,
             IRubyObject parentPackage,
-            IRubyObject sym) throws Exception {
+            IRubyObject sym) {
         Ruby runtime = recv.getRuntime();
         if (!(parentPackage instanceof RubyModule)) {
             throw runtime.newTypeError(parentPackage, runtime.getModule());
