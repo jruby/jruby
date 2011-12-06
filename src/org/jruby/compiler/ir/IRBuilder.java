@@ -1053,6 +1053,7 @@ public class IRBuilder {
         Operand container = getContainerFromCPath(cpath, s);
 
         IRClass c = new IRClass(s, (superClass instanceof WrappedIRModule) ? (IRClass)((WrappedIRModule)superClass).getModule() : null, className, classNode.getScope());
+        c.addInstr(new ReceiveSelfInstruction(c.getSelf()));
         Variable ret = s.getNewTemporaryVariable();
         s.addInstr(new DefineClassInstr(ret, c, container, superClass));
         // SSS NOTE: This is a debugging tool that works in most cases and is not used
@@ -1082,6 +1083,7 @@ public class IRBuilder {
 
         // Create a dummy meta class and record it as being lexically defined in scope s
         IRMetaClass mc = new IRMetaClass(s, sclassNode.getScope());
+        mc.addInstr(new ReceiveSelfInstruction(mc.getSelf()));
         // SSS NOTE: This is a debugging tool that works in most cases and is not used
         // at runtime by the executing code since this static nesting might be wrong.
         IRModule nm = s.getNearestModule();
@@ -2416,6 +2418,7 @@ public class IRBuilder {
 
         // Build the new module
         IRModule m = new IRModule(s, moduleName, moduleNode.getScope());
+        m.addInstr(new ReceiveSelfInstruction(m.getSelf()));
         Variable ret = s.getNewTemporaryVariable();
         s.addInstr(new DefineModuleInstr(m, ret, container));
         // SSS NOTE: This is a debugging tool that works in most cases and is not used
@@ -2998,7 +3001,8 @@ public class IRBuilder {
 
         // Top-level script!
         IRScript script = new IRScript("__file__", file, staticScope);
-
+        script.addInstr(new ReceiveSelfInstruction(script.getSelf()));
+        
         // Debug info: record file name
         script.addInstr(new FilenameInstr(file));
 

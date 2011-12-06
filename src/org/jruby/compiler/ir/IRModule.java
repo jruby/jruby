@@ -42,13 +42,12 @@ public class IRModule extends IRScope {
     public IRModule(IRScope lexicalParent, String name, StaticScope scope) {
         super(lexicalParent, name, scope);
         
-        addInstr(new ReceiveSelfInstruction(getSelf()));   // Set up self!
-        
         updateVersion();
     }    
 
     static private IRClass addCoreClass(String name, IRScope parent, String[] coreMethods, StaticScope staticScope) {
         IRClass c = new IRClass(parent, null, name, staticScope);
+        c.addInstr(new ReceiveSelfInstruction(c.getSelf()));
         coreClasses.put(c.getName(), c);
         if (coreMethods != null) {
             for (String m : coreMethods) {
@@ -66,6 +65,7 @@ public class IRModule extends IRScope {
     static public void bootStrap() {
         coreClasses = new HashMap<String, IRClass>();
         IRScript boostrapScript = new IRScript("[bootstrap]", "[bootstrap]", null);
+        boostrapScript.addInstr(new ReceiveSelfInstruction(boostrapScript.getSelf()));
         addCoreClass("Object", boostrapScript, null, null);
         addCoreClass("Module", boostrapScript, null, null);
         addCoreClass("Class", boostrapScript, null, null);
