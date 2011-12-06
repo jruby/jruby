@@ -9,11 +9,11 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: asm:asm:3.3.1" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: asm:asm-commons:3.3.1" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: asm:asm-tree:3.3.1" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: asm:asm-util:3.3.1" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: asm:asm-analysis:3.3.1" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: asm:asm:4.0" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: asm:asm-commons:4.0" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: asm:asm-util:4.0" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: asm:asm-analysis:4.0" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: asm:asm-tree:4.0" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: junit:junit:4.7" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="Maven: bsf:bsf:2.3.0" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="Maven: org.apache.ant:ant:1.7.0" level="project" />
