@@ -685,7 +685,7 @@
 
   <target name="compile-test" depends="jar" description="Compile the unit tests">
     <javac destdir="${test.classes.dir}" deprecation="true" encoding="UTF-8" debug="true"
-           source="${javac.version}" includeantruntime="false">
+           source="${javac.version}" target="${javac.version}" includeantruntime="false">
       <classpath>
         <path refid="jruby.execute.classpath"/>
         <pathelement path="${lib.dir}/jruby.jar"/>
