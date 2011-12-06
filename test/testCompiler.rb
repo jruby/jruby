@@ -654,3 +654,11 @@ end
 test_no_exception {
   JRuby5871B.new("foo", :each_byte)
 }
+
+class JRUBY4925
+end
+
+x = compile_and_run 'JRUBY4925::BLAH, a = 1, 2'
+test_equal(1, JRUBY4925::BLAH)
+x = compile_and_run '::JRUBY4925_BLAH, a = 1, 2'
+test_equal(1, JRUBY4925_BLAH)
