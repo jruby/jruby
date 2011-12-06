@@ -36,6 +36,8 @@
 
 package org.jruby.internal.runtime.methods;
 
+import org.jruby.MetaClass;
+import org.jruby.RubyClass;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.ast.ArgsNode;
@@ -135,7 +137,25 @@ public class DefaultMethod extends DynamicMethod implements MethodArgs, Position
     }
 
     private DynamicMethod tryJitReturnMethod(ThreadContext context) {
-        context.getRuntime().getJITCompiler().tryJIT(this, context, implementationClass.getName() + "#" + name);
+        String className;
+        if (implementationClass.isSingleton()) {
+            MetaClass metaClass = (MetaClass)implementationClass;
+            RubyClass realClass = metaClass.getRealClass();
+            // if real class is Class
+            if (realClass == context.runtime.getClassClass()) {
+                // use the attached class's name
+                className = ((RubyClass)metaClass.getAttached()).getName();
+            } else {
+                // use the real class name
+                className = realClass.getName();
+            }
+        } else {
+            // use the class name
+            className = implementationClass.getName();
+        }
+        // replace double-colons with dots, to match Java
+        className.replaceAll("::", ".");
+        context.getRuntime().getJITCompiler().tryJIT(this, context, className, name);
         return box.actualMethod;
     }
 

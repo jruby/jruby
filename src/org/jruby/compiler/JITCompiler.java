@@ -86,38 +86,39 @@ public class JITCompiler implements JITCompilerMBean {
         ruby.getBeanManager().register(this);
     }
 
-    public void tryJIT(final DefaultMethod method, final ThreadContext context, final String name) {
+    public void tryJIT(DefaultMethod method, ThreadContext context, String className, String methodName) {
         if (context.getRuntime().getInstanceConfig().getCompileMode().shouldJIT()) {
-            jitIsEnabled(method, context, name);
+            jitIsEnabled(method, context, className, methodName);
         }
     }
 
-    private void jitIsEnabled(final DefaultMethod method, final ThreadContext context, final String name) {
+    private void jitIsEnabled(DefaultMethod method, ThreadContext context, String className, String methodName) {
         RubyInstanceConfig instanceConfig = context.getRuntime().getInstanceConfig();
         
         if (method.incrementCallCount() >= instanceConfig.getJitThreshold()) {
-            jitThresholdReached(method, instanceConfig, context, name);
+            jitThresholdReached(method, instanceConfig, context, className, methodName);
         }
     }
     
-    private void jitThresholdReached(final DefaultMethod method, final RubyInstanceConfig instanceConfig, final ThreadContext context, final String name) {
+    private void jitThresholdReached(final DefaultMethod method, final RubyInstanceConfig config, ThreadContext context, final String className, final String methodName) {
         // Disable any other jit tasks from entering queue
         method.setCallCount(-1);
+
+        final Ruby runtime = context.runtime;
         
         Runnable jitTask = new Runnable() {
             public void run() {
                 try {
                     // The cache is full. Abandon JIT for this method and bail out.
-                    ClassCache classCache = instanceConfig.getClassCache();
+                    ClassCache classCache = config.getClassCache();
                     if (classCache.isFull()) {
                         counts.abandonCount.incrementAndGet();
                         return;
                     }
 
                     // Check if the method has been explicitly excluded
-                    String moduleName = method.getImplementationClass().getName();
-                    if (instanceConfig.getExcludedMethods().size() > 0) {
-                        String excludeModuleName = moduleName;
+                    if (config.getExcludedMethods().size() > 0) {
+                        String excludeModuleName = className;
                         if (method.getImplementationClass().isSingleton()) {
                             IRubyObject possibleRealClass = ((MetaClass) method.getImplementationClass()).getAttached();
                             if (possibleRealClass instanceof RubyModule) {
@@ -125,18 +126,19 @@ public class JITCompiler implements JITCompilerMBean {
                             }
                         }
 
-                        if ((instanceConfig.getExcludedMethods().contains(excludeModuleName)
-                                || instanceConfig.getExcludedMethods().contains(excludeModuleName + "#" + name)
-                                || instanceConfig.getExcludedMethods().contains(name))) {
+                        if ((config.getExcludedMethods().contains(excludeModuleName)
+                                || config.getExcludedMethods().contains(excludeModuleName + "#" + methodName)
+                                || config.getExcludedMethods().contains(methodName))) {
                             method.setCallCount(-1);
+                            log(method, methodName, "skipping method: " + excludeModuleName + "#" + methodName);
                             return;
                         }
                     }
 
-                    String key = SexpMaker.create(name, method.getArgsNode(), method.getBodyNode());
-                    JITClassGenerator generator = new JITClassGenerator(name, key, context.getRuntime(), method, context, counts);
+                    String key = SexpMaker.create(methodName, method.getArgsNode(), method.getBodyNode());
+                    JITClassGenerator generator = new JITClassGenerator(className, methodName, key, runtime, method, counts);
 
-                    Class<Script> sourceClass = (Class<Script>) instanceConfig.getClassCache().cacheClassByKey(key, generator);
+                    Class<Script> sourceClass = (Class<Script>) config.getClassCache().cacheClassByKey(key, generator);
 
                     if (sourceClass == null) {
                         // class could not be found nor generated; give up on JIT and bail out
@@ -151,29 +153,29 @@ public class JITCompiler implements JITCompilerMBean {
                     Script jitCompiledScript = sourceClass.newInstance();
 
                     // add to the jitted methods set
-                    Set<Script> jittedMethods = context.getRuntime().getJittedMethods();
+                    Set<Script> jittedMethods = runtime.getJittedMethods();
                     jittedMethods.add(jitCompiledScript);
 
                     // logEvery n methods based on configuration
-                    if (instanceConfig.getJitLogEvery() > 0) {
+                    if (config.getJitLogEvery() > 0) {
                         int methodCount = jittedMethods.size();
-                        if (methodCount % instanceConfig.getJitLogEvery() == 0) {
-                            log(method, name, "live compiled methods: " + methodCount);
+                        if (methodCount % config.getJitLogEvery() == 0) {
+                            log(method, methodName, "live compiled methods: " + methodCount);
                         }
                     }
 
-                    if (instanceConfig.isJitLogging()) {
-                        log(method, name, "done jitting");
+                    if (config.isJitLogging()) {
+                        log(method, className + "." + methodName, "done jitting");
                     }
 
                     method.switchToJitted(jitCompiledScript, generator.callConfig());
                     return;
                 } catch (Throwable t) {
-                    if (context.getRuntime().getDebug().isTrue()) {
+                    if (runtime.getDebug().isTrue()) {
                         t.printStackTrace();
                     }
-                    if (instanceConfig.isJitLoggingVerbose()) {
-                        log(method, name, "could not compile", t.getMessage());
+                    if (config.isJitLoggingVerbose()) {
+                        log(method, className + "." + methodName, "could not compile", t.getMessage());
                     }
 
                     counts.failCount.incrementAndGet();
@@ -183,13 +185,12 @@ public class JITCompiler implements JITCompilerMBean {
         };
 
         // if background JIT is enabled and threshold is > 0 and we have an executor...
-        RubyInstanceConfig config = context.runtime.getInstanceConfig();
         if (config.getJitBackground() &&
                 config.getJitThreshold() > 0 &&
-                context.runtime.getExecutor() != null) {
+                runtime.getExecutor() != null) {
             // JIT in background
             try {
-                context.runtime.getExecutor().submit(jitTask);
+                runtime.getExecutor().submit(jitTask);
             } catch (RejectedExecutionException ree) {
                 // failed to submit, just run it directly
                 jitTask.run();
@@ -251,17 +252,17 @@ public class JITCompiler implements JITCompilerMBean {
     }
     
     public static class JITClassGenerator implements ClassCache.ClassGenerator {
-        public JITClassGenerator(String name, String key, Ruby ruby, DefaultMethod method, ThreadContext context, JITCounts counts) {
+        public JITClassGenerator(String className, String methodName, String key, Ruby ruby, DefaultMethod method, JITCounts counts) {
             this.packageName = JITCompiler.RUBY_JIT_PREFIX;
             this.digestString = getHashForString(key);
-            this.className = packageName + "/" + JavaNameMangler.mangleMethodName(name) + "_" + digestString;
-            this.name = className.replaceAll("/", ".");
+            this.className = packageName + "/" + className.replace('.', '/') + "#" + JavaNameMangler.mangleMethodName(methodName) + "_" + digestString;
+            this.name = this.className.replaceAll("/", ".");
             this.bodyNode = method.getBodyNode();
             this.argsNode = method.getArgsNode();
-            this.methodName = name;
+            this.methodName = methodName;
             filename = calculateFilename(argsNode, bodyNode);
             staticScope = method.getStaticScope();
-            asmCompiler = new StandardASMCompiler(className, filename);
+            asmCompiler = new StandardASMCompiler(this.className, filename);
             this.ruby = ruby;
             this.counts = counts;
         }
