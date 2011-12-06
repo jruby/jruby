@@ -56,6 +56,7 @@ def jruby(java_options = {}, &code)
     classpath :refid => 'build.classpath'
     classpath :path => JRUBY_CLASSES_DIR
     jvmarg :line => JVM_MODEL if JVM_MODEL
+    jvmarg :line => '-XX:MaxPermSize=512M'
     sysproperty :key => "jruby.home", :value => BASE_DIR
     instance_eval(&code) if block_given?
   end
