@@ -50,7 +50,7 @@ public class BreakInstr extends Instr {
 
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
-        throw new IRBreakJump(scopeToReturnTo, returnValue.retrieve(context, self, currDynScope, temp));
+        throw IRBreakJump.create(scopeToReturnTo, returnValue.retrieve(context, self, currDynScope, temp));
     }
 
     @Override
