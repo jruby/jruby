@@ -72,40 +72,34 @@ public class CoroutineFiber extends Fiber {
     protected IRubyObject resumeOrTransfer(ThreadContext context, IRubyObject arg, boolean transfer) {
         CoroutineFiber current = (CoroutineFiber)context.getFiber();
         slot = arg;
-        try {
-            switch (state) {
-                case SUSPENDED_YIELD:
-                    if (transfer) {
-                        current.state = CoroutineFiberState.SUSPENDED_TRANSFER;
-                    } else {
-                        current.state = CoroutineFiberState.SUSPENDED_RESUME;
-                        lastFiber = (CoroutineFiber)context.getFiber();
-                    }
-                    state = CoroutineFiberState.RUNNING;
-                    context.getRuntime().getThreadService().setCurrentContext(context);
-                    context.setThread(context.getThread());
-                    Coroutine.yieldTo(coro);
-                    break;
-                case SUSPENDED_TRANSFER:
-                    if (!transfer) {
-                        throw context.getRuntime().newFiberError("double resume");
-                    }
+
+        switch (state) {
+            case SUSPENDED_YIELD:
+                if (transfer) {
                     current.state = CoroutineFiberState.SUSPENDED_TRANSFER;
-                    state = CoroutineFiberState.RUNNING;
-                    context.getRuntime().getThreadService().setCurrentContext(context);
-                    context.setThread(context.getThread());
-                    Coroutine.yieldTo(coro);
-                    break;
-                case FINISHED:
-                    throw context.getRuntime().newFiberError("dead fiber called");
-                default:
-                    throw context.getRuntime().newFiberError("fiber in an invalid state: " + state);
-            }
-        } catch (OutOfMemoryError oome) {
-            if (oome.getMessage().equals("unable to create new native thread")) {
-                throw context.runtime.newThreadError("too many threads, can't create a new Fiber");
-            }
-            throw oome;
+                } else {
+                    current.state = CoroutineFiberState.SUSPENDED_RESUME;
+                    lastFiber = (CoroutineFiber)context.getFiber();
+                }
+                state = CoroutineFiberState.RUNNING;
+                context.getRuntime().getThreadService().setCurrentContext(context);
+                context.setThread(context.getThread());
+                Coroutine.yieldTo(coro);
+                break;
+            case SUSPENDED_TRANSFER:
+                if (!transfer) {
+                    throw context.getRuntime().newFiberError("double resume");
+                }
+                current.state = CoroutineFiberState.SUSPENDED_TRANSFER;
+                state = CoroutineFiberState.RUNNING;
+                context.getRuntime().getThreadService().setCurrentContext(context);
+                context.setThread(context.getThread());
+                Coroutine.yieldTo(coro);
+                break;
+            case FINISHED:
+                throw context.getRuntime().newFiberError("dead fiber called");
+            default:
+                throw context.getRuntime().newFiberError("fiber in an invalid state: " + state);
         }
         // back from fiber, poll events and proceed out of resume
         context.pollThreadEvents();
