@@ -6,3 +6,5 @@ fails:String#encode! raises UndefinedConversionError if the String contains char
 fails:String#encode! replaces invalid characters
 fails:String#encode! replaces xml characters
 fails:String#encode! replaces xml characters and quotes the result
+java1.5:String#encode raises an Encoding::InvalidByteSequenceError for invalid byte sequences
+java1.5:String#encode! raises an Encoding::InvalidByteSequenceError for invalid byte sequences

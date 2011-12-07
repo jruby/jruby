@@ -1,0 +1,1 @@
+java1.5:File#flock returns false if trying to lock an exclusively locked file
