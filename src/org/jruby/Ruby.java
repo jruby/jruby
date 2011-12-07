@@ -215,6 +215,7 @@ public final class Ruby {
             myRandom = new Random();
         }
         this.random = myRandom;
+        this.hashSeed = this.random.nextInt();
         
         this.beanManager.register(new Config(this));
         this.beanManager.register(parserStats);
@@ -4032,6 +4033,10 @@ public final class Ruby {
         return random;
     }
     
+    public int getHashSeed() {
+        return hashSeed;
+    }
+    
     public StaticScopeFactory getStaticScopeFactory() {
         return staticScopeFactory;
     }
@@ -4265,6 +4270,9 @@ public final class Ruby {
     
     /** The runtime-local random number generator. Uses SecureRandom if permissions allow. */
     private final Random random;
+
+    /** The runtime-local seed for hash randomization */
+    private int hashSeed;
     
     private final StaticScopeFactory staticScopeFactory;
     

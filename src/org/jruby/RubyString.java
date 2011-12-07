@@ -91,6 +91,7 @@ import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
+import org.jruby.util.MurmurHash;
 import org.jruby.util.Numeric;
 import org.jruby.util.Pack;
 import org.jruby.util.RegexpOptions;
@@ -1142,11 +1143,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     private int strHashCode(Ruby runtime) {
+        int hash = MurmurHash.hash32(value.getUnsafeBytes(), value.getBegin(), value.getRealSize(), runtime.getHashSeed());
         if (runtime.is1_9()) {
-            return value.hashCode() ^ (value.getEncoding().isAsciiCompatible() && scanForCodeRange() == CR_7BIT ? 0 : value.getEncoding().getIndex());
-        } else {
-            return value.hashCode();
+            hash ^= (value.getEncoding().isAsciiCompatible() && scanForCodeRange() == CR_7BIT ? 0 : value.getEncoding().getIndex());
         }
+        return hash;
     }
 
     @Override
