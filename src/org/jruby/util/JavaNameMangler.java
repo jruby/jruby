@@ -5,6 +5,8 @@
 
 package org.jruby.util;
 
+import org.jruby.platform.Platform;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.regex.Pattern;
@@ -224,6 +226,18 @@ public class JavaNameMangler {
         }
 
         return builder.toString();
+    }
+    
+    public static boolean willMethodMangleOk(String name) {
+        if (Platform.IS_IBM) {
+            // IBM's JVM is much less forgiving, so we disallow anythign with non-alphanumeric, _, and $
+            for (char c : name.toCharArray()) {
+                if (!Character.isJavaIdentifierPart(c)) return false;
+            }
+        }
+
+        // other JVMs will accept our mangling algorithm
+        return true;
     }
 
     private static int escapeChar(char character) {

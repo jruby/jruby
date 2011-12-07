@@ -2046,6 +2046,9 @@ public class JavaClass extends JavaObject {
     private static int addNewMethods(HashMap<String, List<Method>> nameMethods, Method[] methods, boolean includeStatic, boolean removeDuplicate) {
         int added = 0;
         Methods: for (Method m : methods) {
+            // Skip private methods, since they may mess with dispatch
+            if (Modifier.isPrivate(m.getModifiers())) continue;
+
             if (!includeStatic && Modifier.isStatic(m.getModifiers())) {
                 // Skip static methods if we're not suppose to include them.
                 // Generally for superclasses; we only bind statics from the actual

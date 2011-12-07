@@ -1218,7 +1218,7 @@ public class RubyClass extends RubyModule {
         // calculate an appropriate name, using "Anonymous####" if none is present
         String name;
         if (getBaseName() == null) {
-            name = "AnonymousRubyClass#" + id;
+            name = "AnonymousRubyClass__" + id;
         } else {
             name = getName();
         }
@@ -1309,7 +1309,11 @@ public class RubyClass extends RubyModule {
         // define instance methods
         for (Map.Entry<String,DynamicMethod> methodEntry : getMethods().entrySet()) {
             String methodName = methodEntry.getKey();
+
+            if (!JavaNameMangler.willMethodMangleOk(methodName)) continue;
+
             String javaMethodName = JavaNameMangler.mangleMethodName(methodName);
+
             Map<Class,Map<String,Object>> methodAnnos = getMethodAnnotations().get(methodName);
             List<Map<Class,Map<String,Object>>> parameterAnnos = getParameterAnnotations().get(methodName);
             Class[] methodSignature = getMethodSignatures().get(methodName);
@@ -1379,7 +1383,11 @@ public class RubyClass extends RubyModule {
         // define class/static methods
         for (Map.Entry<String,DynamicMethod> methodEntry : getMetaClass().getMethods().entrySet()) {
             String methodName = methodEntry.getKey();
+
+            if (!JavaNameMangler.willMethodMangleOk(methodName)) continue;
+
             String javaMethodName = JavaNameMangler.mangleMethodName(methodName);
+
             Map<Class,Map<String,Object>> methodAnnos = getMetaClass().getMethodAnnotations().get(methodName);
             List<Map<Class,Map<String,Object>>> parameterAnnos = getMetaClass().getParameterAnnotations().get(methodName);
             Class[] methodSignature = getMetaClass().getMethodSignatures().get(methodName);
