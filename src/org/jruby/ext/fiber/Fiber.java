@@ -18,11 +18,11 @@ import org.jruby.runtime.builtin.IRubyObject;
 @JRubyClass(name = "Fiber")
 public abstract class Fiber extends RubyObject implements ExecutionContext {
     private final Map<Object, IRubyObject> contextVariables = new WeakHashMap<Object, IRubyObject>();
-    protected Block block;
-    protected RubyThread parent;
+    protected volatile Block block;
+    protected volatile RubyThread parent;
     protected boolean root;
-    private Fiber transferredFrom;
-    private Fiber transferredTo;
+    protected volatile Fiber transferredFrom;
+    protected volatile Fiber transferredTo;
 
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, Block block) {
