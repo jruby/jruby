@@ -79,7 +79,7 @@ class MSpecScript
   MSpec.enable_feature :readline
 
   # prepare additional tags for CI
-  set(:ci_xtags, ["java#{ENV_JAVA['java.specification.version']}"] # Java version
+  set(:ci_xtags, ["java#{ENV_JAVA['java.specification.version']}"]) # Java version
 
   if WINDOWS
     # Some specs on Windows will fail in we launch JRuby via
