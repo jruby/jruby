@@ -68,7 +68,7 @@ class TestTimeout < Test::Unit::TestCase
   # JRUBY-3817
   def test_net_http_timeout
     assert_raises Timeout::Error do
-      http = Net::HTTP.new('www.google.de')
+      http = Net::HTTP.new('8.8.8.8')
       http.open_timeout = 0.001
       response = http.start do |h|
         h.request_get '/index.html'

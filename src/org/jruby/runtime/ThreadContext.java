@@ -698,7 +698,6 @@ public final class ThreadContext {
      * Create an Array with backtrace information.
      * @param runtime
      * @param level
-     * @param nativeException
      * @return an Array with the backtrace
      */
     public IRubyObject createCallerBacktrace(Ruby runtime, int level) {
@@ -733,7 +732,6 @@ public final class ThreadContext {
     
     /**
      * Create an Array with backtrace information.
-     * @param runtime
      * @param level
      * @param nativeException
      * @return an Array with the backtrace
@@ -767,7 +765,6 @@ public final class ThreadContext {
     
     /**
      * Create an Array with backtrace information.
-     * @param runtime
      * @param level
      * @param nativeException
      * @return an Array with the backtrace
@@ -1151,7 +1148,7 @@ public final class ThreadContext {
      * Is this thread actively tracing at this moment.
      *
      * @return true if so
-     * @see org.jruby.Ruby#callTraceFunction(String, ISourcePosition, IRubyObject, String, IRubyObject)
+     * @see org.jruby.Ruby#callEventHooks(ThreadContext, RubyEvent, String, int, String, org.jruby.runtime.builtin.IRubyObject)
      */
     public boolean isWithinTrace() {
         return isWithinTrace;
@@ -1161,7 +1158,7 @@ public final class ThreadContext {
      * Set whether we are actively tracing or not on this thread.
      *
      * @param isWithinTrace true is so
-     * @see org.jruby.Ruby#callTraceFunction(String, ISourcePosition, IRubyObject, String, IRubyObject)
+     * @see org.jruby.Ruby#callEventHooks(ThreadContext, RubyEvent, String, int, String, org.jruby.runtime.builtin.IRubyObject)
      */
     public void setWithinTrace(boolean isWithinTrace) {
         this.isWithinTrace = isWithinTrace;
@@ -1220,7 +1217,7 @@ public final class ThreadContext {
      * Return a binding representing the current call's state but with the
      * specified scope and self.
      * @param self the self object to use
-     * @param visibility the scope to use
+     * @param scope the scope to use
      * @return the current binding using the specified self and scope
      */
     public Binding currentBinding(IRubyObject self, DynamicScope scope) {

@@ -3,11 +3,19 @@ package org.jruby.interpreter;
 import org.jruby.compiler.ir.IRMethod;
 
 public class IRReturnJump extends RuntimeException {
-    public final IRMethod methodToReturnFrom;
-    public final Object returnValue;
+    public IRMethod methodToReturnFrom;
+    public Object returnValue;
 
-    public IRReturnJump(IRMethod m, Object rv) {
-        this.methodToReturnFrom = m;
-        this.returnValue = rv;
+    private IRReturnJump() {} 
+
+    private static ThreadLocal<IRReturnJump> threadLocalRJ = new ThreadLocal<IRReturnJump>() {
+       public IRReturnJump initialValue() { return new IRReturnJump(); }
+    };
+
+    public static IRReturnJump create(IRMethod m, Object rv) {
+        IRReturnJump rj = threadLocalRJ.get();
+        rj.methodToReturnFrom = m;
+        rj.returnValue = rv;
+        return rj;
     }
 }

@@ -1,5 +1,7 @@
 package org.jruby.ext.fiber;
 
+import java.util.concurrent.Exchanger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
@@ -13,13 +15,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 @JRubyClass(name = "Fiber")
 public class ThreadFiber extends Fiber {
-    private volatile IRubyObject result;
-    private Runnable runnable;
-    private ThreadFiberState state = ThreadFiberState.NOT_STARTED;
-    private ThreadFiber transferredFrom;
-    private ThreadFiber transferredTo;
-    private volatile Thread waiter = null;
-    private volatile Thread fiber = null;
+    private final Exchanger<IRubyObject> exchanger = new Exchanger<IRubyObject>();
+    private volatile ThreadFiberState state = ThreadFiberState.NOT_STARTED;
 
     public ThreadFiber(Ruby runtime, RubyClass type) {
         super(runtime, type);
@@ -28,19 +25,14 @@ public class ThreadFiber extends Fiber {
     protected void initFiber(ThreadContext context) {
         final Ruby runtime = context.runtime;
         
-        this.result = runtime.getNil();
-        this.waiter = Thread.currentThread();
-        
-        this.runnable = new Runnable() {
+        Runnable runnable = new Runnable() {
 
             public void run() {
+                // initialize and yield back to launcher
                 ThreadContext context = runtime.getCurrentContext();
                 context.setFiber(ThreadFiber.this);
-                // initialize fiber state and transfer back to launching thread
-                fiber = Thread.currentThread();
-                state = ThreadFiberState.YIELDED;
-                LockSupport.unpark(waiter);
-                LockSupport.park();
+                IRubyObject result = yield(context, context.nil);
+
                 try {
                     // first resume, dive into the block
                     result = block.yieldArray(context, result, null, null);
@@ -56,54 +48,72 @@ public class ThreadFiber extends Fiber {
                     parent.raise(new IRubyObject[]{re.getException()}, Block.NULL_BLOCK);
                 } finally {
                     state = ThreadFiberState.FINISHED;
-                    LockSupport.unpark(waiter);
+                    try {
+                        // ensure we do a final exchange to release any waiters
+                        exchanger.exchange(result);
+                    } catch (InterruptedException e) {
+                        // ignore
+                    }
                 }
             }
         };
+
         // submit job and wait to be resumed
         context.runtime.getExecutor().execute(runnable);
-        LockSupport.park();
+        try {
+            exchanger.exchange(context.nil);
+        } catch (InterruptedException ie) {
+            throw runtime.newConcurrencyError("interrupted while waiting for fiber to start");
+        }
     }
 
     protected IRubyObject resumeOrTransfer(ThreadContext context, IRubyObject arg, boolean transfer) {
-        result = arg;
         try {
             switch (state) {
                 case NOT_STARTED:
                     if (isRoot()) {
                         state = ThreadFiberState.RUNNING;
-                        return result;
+                        return arg;
+                    } else if (context.getThread() != parent) {
+                        throw context.runtime.newFiberError("resuming fiber from different thread: " + ThreadFiber.this);
                     }
-                    context.runtime.getExecutor().execute(runnable);
+                    throw context.runtime.newRuntimeError("BUG: resume before fiber is started: " + ThreadFiber.this);
                 case YIELDED:
                     if (!transfer && transferredTo != null) {
-                        throw context.getRuntime().newFiberError("double resume");
+                        throw context.getRuntime().newFiberError("double resume: " + ThreadFiber.this);
                     }
+
+                    // update transfer fibers
                     if (transfer) {
                         transferredFrom = (ThreadFiber)context.getFiber();
                         transferredFrom.transferredTo = this;
                     }
-                    // update result and transfer to fiber
-                    waiter = Thread.currentThread();
-                    LockSupport.unpark(fiber);
-                    LockSupport.park();
-                    // back from fiber, poll events and proceed out of resume
+
+                    // transfer to fiber
+                    exchanger.exchange(arg);
+                    arg = exchanger.exchange(context.nil);
+
+                    // back from fiber, poll events
                     context.pollThreadEvents();
+
+                    // complete transfer
                     if (transfer) {
                         if (!transferredFrom.isRoot()) {
-                            result = transferredFrom.yield(context, result);
+                            arg = transferredFrom.yield(context, arg);
                         }
                         transferredFrom.transferredTo = null;
                         transferredFrom = null;
                     }
-                    return result;
+
+                    // return new result
+                    return arg;
                 case RUNNING:
                     if (transfer && context.getFiber() == this) {
-                        return result;
+                        return arg;
                     }
-                    throw context.getRuntime().newFiberError("double resume");
+                    throw context.getRuntime().newFiberError("double resume: " + ThreadFiber.this);
                 case FINISHED:
-                    throw context.getRuntime().newFiberError("dead fiber called");
+                    throw context.getRuntime().newFiberError("dead fiber called: " + ThreadFiber.this);
                 default:
                     throw context.getRuntime().newFiberError("fiber in an unknown state");
             }
@@ -112,18 +122,24 @@ public class ThreadFiber extends Fiber {
                 throw context.runtime.newThreadError("too many threads, can't create a new Fiber");
             }
             throw oome;
+        } catch (InterruptedException ie) {
+            throw context.runtime.newConcurrencyError("interrupted waiting for fiber");
         }
     }
 
     public IRubyObject yield(ThreadContext context, IRubyObject res) {
-        result = res;
-        state = ThreadFiberState.YIELDED;
-        LockSupport.unpark(waiter);
-        LockSupport.park();
-        // back into fiber
-        context.pollThreadEvents();
-        state = ThreadFiberState.RUNNING;
-        return result;
+        try {
+            state = ThreadFiberState.YIELDED;
+            exchanger.exchange(res);
+            res = exchanger.exchange(context.nil);
+            
+            // back into fiber
+            context.pollThreadEvents();
+            state = ThreadFiberState.RUNNING;
+            return res;
+        } catch (InterruptedException ie) {
+            throw context.runtime.newConcurrencyError("interrupted while waiting for fiber to start");
+        }
     }
     
     public boolean isAlive() {

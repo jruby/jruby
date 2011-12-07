@@ -282,13 +282,14 @@ public class LocalOptimizationPass implements CompilerPass {
             // System.out.println("AFTER: " + i);
 
             if (res != null && val != null) {
-                if (!res.equals(val)) recordSimplification(res, val, valueMap, simplificationMap);
-                if (!i.hasSideEffects() && !(i instanceof CopyInstr)) {
-                    if (!res.equals(val)) {
-                        instrs.set(new CopyInstr(res, val));
-                    } else {
+                if (!res.equals(val)) { 
+                    recordSimplification(res, val, valueMap, simplificationMap);
+                } else if (!i.hasSideEffects()) {
+                    if (i instanceof CopyInstr) {
                         i.markDead();
                         instrs.remove();
+                    } else {
+                        instrs.set(new CopyInstr(res, val));
                     }
                 }
             } else if (res != null && val == null) {

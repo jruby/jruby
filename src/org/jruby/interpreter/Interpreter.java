@@ -413,10 +413,10 @@ public class Interpreter {
                 throw IRException.RETURN_LocalJumpError.getException(context.getRuntime());
             }
 
-            throw new IRReturnJump(methodToReturnFrom, returnValue);
+            throw IRReturnJump.create(methodToReturnFrom, returnValue);
         } else if ((methodToReturnFrom != null)) {
             // methodtoReturnFrom will not be null for explicit returns from class/module/sclass bodies
-            throw new IRReturnJump(methodToReturnFrom, returnValue);
+            throw IRReturnJump.create(methodToReturnFrom, returnValue);
         }        
     }
 

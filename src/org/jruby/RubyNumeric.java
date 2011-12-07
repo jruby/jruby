@@ -462,7 +462,10 @@ public class RubyNumeric extends RubyObject {
         }
     
         if (!(result instanceof RubyArray) || ((RubyArray) result).getLength() != 2) {
-            throw getRuntime().newTypeError("coerce must return [x, y]");
+            if (err) {
+                throw getRuntime().newTypeError("coerce must return [x, y]");
+            }
+            return null;
         }
         return (RubyArray) result;
     }

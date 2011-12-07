@@ -5,7 +5,7 @@ require 'java'
 h = java.util.HashMap.new
 test_ok(h.kind_of? java.util.Map)
 h.put(1, 2); h.put(3, 4); h.put(5, 6)
-test_equal("{1=>2, 3=>4, 5=>6}", h.inspect)
+test_equal({1=>2, 3=>4, 5=>6}, eval(h.inspect))
 test_equal(4, h[3])
 test_equal(nil, h[10])
 
@@ -116,11 +116,6 @@ k1 = [1]
 h[k1] = 1
 k1[0] = 100
 test_equal(nil, h[k1])
-# CON: Removed these tests because Map does not support rehash
-#h.rehash
-#test_equal(1, h[k1])
-#test_equal(Java::JavaUtil::HashMap, h.class)
-test_exception(NotImplementedError) {h.rehash}
 
 h.put(1, 2); h.put(3, 4);
 test_equal(1, h.index(2))

@@ -63,6 +63,7 @@ public class Platform {
     private static final String OPENVMS = "openvms";
 
     private static final String GCJ = "GNU libgcj";
+    private static final String IBM = "IBM J9 VM";
 
     public static final Map<String, String> OS_NAMES = new HashMap<String, String>() {{
         put("Mac OS X", DARWIN);
@@ -110,6 +111,7 @@ public class Platform {
     public static final int BYTE_ORDER = ByteOrder.nativeOrder().equals(ByteOrder.BIG_ENDIAN) ? BIG_ENDIAN : LITTLE_ENDIAN;
 
     public static final boolean IS_GCJ = JVM.equals(GCJ);
+    public static final boolean IS_IBM = JVM.equals(IBM);
     
     /**
      * An extension over <code>System.getProperty</code> method.
