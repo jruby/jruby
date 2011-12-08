@@ -988,13 +988,16 @@ public class Java implements Library {
         } else {
             RubyModule javaModule = null;
             try {
-                javaModule = getProxyClass(runtime, JavaClass.forNameQuiet(runtime, name));
-            } catch (RaiseException re) { /* not a class */
-                RubyException rubyEx = re.getException();
-                if (rubyEx.kind_of_p(context, runtime.getStandardError()).isTrue()) {
-                    RuntimeHelpers.setErrorInfo(runtime, runtime.getNil());
-                }
-            } catch (Exception e) { /* not a class */ }
+                // we do loadJavaClass here to handle things like LinkageError through
+                Class cls = runtime.getJavaSupport().loadJavaClass(name);
+                javaModule = getProxyClass(runtime, JavaClass.get(runtime, cls));
+            } catch (ExceptionInInitializerError eiie) {
+                throw runtime.newNameError("cannot initialize Java class " + name, name, eiie, false);
+            } catch (LinkageError le) {
+                throw runtime.newNameError("cannot link Java class " + name, name, le, false);
+            } catch (SecurityException se) {
+                throw runtime.newSecurityError(se.getLocalizedMessage());
+            } catch (ClassNotFoundException e) { /* not a class */ }
 
             // upper-case package name
             // TODO: top-level upper-case package was supported in the previous (Ruby-based)

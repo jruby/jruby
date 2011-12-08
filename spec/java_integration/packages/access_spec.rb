@@ -51,4 +51,10 @@ describe "A class in the default package" do
     Java::DefaultPackageClass.new.bar.should == "bar"
     Java::DefaultPackageClass.new.foo.should == "foo"
   end
+
+  it "does not failover to a package if there are classloading errors" do
+    lambda do
+      Java::BadStaticInit.new
+    end.should raise_error(NameError)
+  end
 end
