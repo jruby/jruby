@@ -159,12 +159,6 @@
         <include name="**/*.rb"/>
       </fileset>
     </copy>
-    <copy todir="${jruby.classes.dir}/builtin" preservelastmodified="true">
-      <fileset dir="${lib.dir}/ruby/site_ruby/shared/builtin">
-        <include name="**/*.rb"/>
-        <include name="**/*.jar"/>
-      </fileset>
-    </copy>
     <property name="copy-resources.hasrun" value="true"/>
   </target>
   
@@ -539,9 +533,7 @@
 
     <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${build.lib.dir}/jarjar-1.0.jar"/>
     <jarjar destfile="${dest.lib.dir}/${filename}">
-      <fileset dir="${build.dir}/jar-stdlib">
-        <exclude name="META-INF/jruby.home/lib/ruby/site_ruby/shared/builtin/**"/>
-      </fileset>
+      <fileset dir="${build.dir}/jar-stdlib"/>
       <metainf dir="spi">
         <include name="services/**"/>
       </metainf>
@@ -596,9 +588,7 @@
     <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${build.lib.dir}/jarjar-1.0.jar"/>
     <jarjar destfile="${dest.lib.dir}/${filename}">
       <fileset dir="${jruby.classes.dir}"/>
-      <fileset dir="${build.dir}/jar-complete">
-        <exclude name="META-INF/jruby.home/lib/ruby/site_ruby/shared/builtin/**"/>
-      </fileset>
+      <fileset dir="${build.dir}/jar-complete"/>
       <zipfileset src="${asm.jar}"/>
       <zipfileset src="${asm.commons.jar}"/>
       <zipfileset src="${asm.util.jar}"/>
