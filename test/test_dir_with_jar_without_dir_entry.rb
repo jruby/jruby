@@ -13,7 +13,7 @@ class TestDirWithJarWithoutDirEntry < TestDir # < Test::Unit::TestCase
 
   def teardown
     super
-    FileUtils.mv JAR_BAK, JAR if File.exists? JAR_BAK
+    FileUtils.mv JAR_BAK, JAR, :force => true if File.exists? JAR_BAK
   end
 
 end
