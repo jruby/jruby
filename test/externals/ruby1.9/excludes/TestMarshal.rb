@@ -1,0 +1,7 @@
+exclude :test_change_struct
+exclude :test_inconsistent_struct
+exclude :test_modify_array_during_dump
+exclude :test_regexp
+exclude :test_struct_invalid_members
+exclude :test_time_subclass
+exclude :test_userdef_encoding

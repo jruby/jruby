@@ -1,0 +1,12 @@
+exclude :test_body
+exclude :test_call
+exclude :test_callee
+exclude :test_callee_top_level
+exclude :test_caller_top_level
+exclude :test_clone
+exclude :test_define_method
+exclude :test_eq
+exclude :test_inspect
+exclude :test_instance_method
+exclude :test_public_methods_with_extended
+exclude :test_super_in_proc_from_define_method

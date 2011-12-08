@@ -1,0 +1,3 @@
+exclude :test_autoload_p
+exclude :test_autoload_so
+exclude :test_non_realpath_in_loadpath

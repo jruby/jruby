@@ -48,6 +48,8 @@ import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.RandomAccess;
+
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
 
@@ -87,7 +89,7 @@ import static org.jruby.runtime.MethodIndex.OP_CMP;
  *
  */
 @JRubyClass(name="Array")
-public class RubyArray extends RubyObject implements List {
+public class RubyArray extends RubyObject implements List, RandomAccess {
     public static final int DEFAULT_INSPECT_STR_SIZE = 10;
 
     public static RubyClass createArrayClass(Ruby runtime) {

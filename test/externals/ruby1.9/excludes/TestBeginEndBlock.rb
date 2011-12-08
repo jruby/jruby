@@ -1,0 +1,7 @@
+exclude :test_beginendblock
+exclude :test_endblock_raise
+exclude :test_endblockwarn
+exclude :test_nested_at_exit
+exclude :test_raise_in_at_exit
+exclude :test_should_propagate_exit_code
+exclude :test_should_propagate_signaled

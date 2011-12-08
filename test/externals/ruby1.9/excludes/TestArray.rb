@@ -1,0 +1,16 @@
+exclude :test_aset_error
+exclude :test_combination_with_callcc
+exclude :test_delete_if
+exclude :test_flatten_with_callcc
+exclude :test_join
+exclude :test_join2
+exclude :test_modify_check
+exclude :test_permutation_with_callcc
+exclude :test_product_with_callcc
+exclude :test_reject!
+exclude :test_repeated_combination_with_callcc
+exclude :test_repeated_permutation_with_callcc
+exclude :test_rindex2
+exclude :test_sample_random
+exclude :test_shuffle_random
+exclude :test_sort_with_callcc
