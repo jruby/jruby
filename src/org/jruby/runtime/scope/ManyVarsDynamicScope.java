@@ -87,50 +87,39 @@ public class ManyVarsDynamicScope extends DynamicScope {
         // &foo are not getting set from somewhere...I want the following assert to be true though
         //assert variableValues[offset] != null : "Getting unassigned: " + staticScope.getVariables()[offset];
         IRubyObject value = variableValues[offset];
-        if (value == null) {
-            return setValueDepthZero(value, offset);
-        }
-        return value;
+        return value == null ? setValueDepthZero(nil, offset) : value;
     }
+    
     public IRubyObject getValueZeroDepthZeroOrNil(IRubyObject nil) {
         assertGetValueZeroDepthZeroOrNil();
         // &foo are not getting set from somewhere...I want the following assert to be true though
         //assert variableValues[offset] != null : "Getting unassigned: " + staticScope.getVariables()[offset];
         IRubyObject value = variableValues[0];
-        if (value == null) {
-            return setValueZeroDepthZero(value);
-        }
-        return value;
+        return value == null ? setValueZeroDepthZero(nil) : value;
     }
+    
     public IRubyObject getValueOneDepthZeroOrNil(IRubyObject nil) {
         assertGetValueOneDepthZeroOrNil();
         // &foo are not getting set from somewhere...I want the following assert to be true though
         //assert variableValues[offset] != null : "Getting unassigned: " + staticScope.getVariables()[offset];
         IRubyObject value = variableValues[1];
-        if (value == null) {
-            return setValueOneDepthZero(value);
-        }
-        return value;
+        return value == null ? setValueOneDepthZero(nil) : value;
     }
+    
     public IRubyObject getValueTwoDepthZeroOrNil(IRubyObject nil) {
         assertGetValueTwoDepthZeroOrNil();
         // &foo are not getting set from somewhere...I want the following assert to be true though
         //assert variableValues[offset] != null : "Getting unassigned: " + staticScope.getVariables()[offset];
         IRubyObject value = variableValues[2];
-        if (value == null) {
-            return setValueTwoDepthZero(value);
-        }
-        return value;
+        return value == null ? setValueTwoDepthZero(nil) : value;
     }
+    
     public IRubyObject getValueThreeDepthZeroOrNil(IRubyObject nil) {
         assertGetValueThreeDepthZeroOrNil();
         // &foo are not getting set from somewhere...I want the following assert to be true though
         //assert variableValues[offset] != null : "Getting unassigned: " + staticScope.getVariables()[offset];
         IRubyObject value = variableValues[3];
-        if (value == null) {
-            return setValueThreeDepthZero(value);
-        }
-        return value;
+        return value == null ? setValueThreeDepthZero(nil) : value;
     }
 
     /**
