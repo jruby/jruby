@@ -144,6 +144,10 @@ public class RubyFileStat extends RubyObject {
         }
             
         file = JRubyFile.create(getRuntime().getCurrentDirectory(), filename);
+        
+        if (file instanceof JRubyNonExistentFile) {
+            throw getRuntime().newErrnoENOENTError("No such file or directory - " + filename);
+        }
 
         if (lstat) {
             stat = getRuntime().getPosix().lstat(file.getAbsolutePath());
