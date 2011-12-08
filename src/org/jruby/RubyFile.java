@@ -1836,8 +1836,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return entry;
     }
 
-    public static ZipEntry getDirOrFileEntry(ZipFile zf, String path) throws IOException {
+    public static ZipEntry getDirOrFileEntry(String jar, String path) throws IOException {
         String dirPath = path + "/";
+        ZipFile zf = Ruby.getGlobalRuntime().getCurrentContext().getRuntime().getLoadService().getJarFile(jar);
         ZipEntry entry = zf.getEntry(dirPath); // first try as directory
         if (entry == null) {
             // try canonicalizing the path to eliminate . and .. (JRUBY-4760, JRUBY-4879)
@@ -1854,7 +1855,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                     }
                 }
             }
-            
+
             if (entry == null) {
                 // try as file
                 entry = getFileEntry(zf, path);

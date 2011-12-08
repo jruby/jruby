@@ -621,15 +621,13 @@ public class Dir {
                 break;
             }
         }
+        if (ix == end) return null;
 
-        File file = new JavaSecuredFile(newStringFromUTF8(bytes, begin + 5, ix - 5));
+        String fileName = newStringFromUTF8(bytes, begin + 5, ix - 5);
+        String entryName = newStringFromUTF8(bytes, begin + ix + 1, end - (ix + 1));
+        if (entryName.startsWith("/")) entryName = entryName.substring(1);
         try {
-            String jar = newStringFromUTF8(bytes, begin + ix + 1, end - (ix + 1));
-            JarFile jf = new JarFile(file);
-
-            if (jar.startsWith("/")) jar = jar.substring(1);
-
-            return RubyFile.getDirOrFileEntry(jf, jar);
+            return RubyFile.getDirOrFileEntry(fileName, entryName);
         } catch (Exception e) {}
         
         return null;

@@ -155,7 +155,7 @@ describe "Dir.glob and Dir[] with multiple magic modifiers" do
     FileUtils.rm_rf("jruby-4396")
   end
 
-  it "returns directories when the magic modifier is an star" do
+  it "returns directories when the magic modifier is a star" do
     FileUtils.cd('jruby-4396') do
       Dir["file:#{File.expand_path(Dir.pwd)}/top.jar!top/builtin/*/"].size.should == 3
     end

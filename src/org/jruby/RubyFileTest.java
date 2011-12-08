@@ -576,9 +576,7 @@ public class RubyFileTest {
             String jar = file.substring(0, bang);
             String after = file.substring(bang + 2);
             try {
-                JarFile jf = new JarFile(jar);
-                ZipEntry entry = RubyFile.getDirOrFileEntry(jf, after);
-                return entry;
+                return RubyFile.getDirOrFileEntry(jar, after);
             } catch (Exception e) {
             }
         }

@@ -383,7 +383,7 @@ public class RubyDir extends RubyObject {
 
     private static List<String> getEntries(Ruby runtime, String path) {
         if (!RubyFileTest.directory_p(runtime, RubyString.newString(runtime, path)).isTrue()) {
-            throw runtime.newErrnoENOENTError("No such directory");
+            throw runtime.newErrnoENOENTError("No such directory: " + path);
         }
 
         if (path.startsWith("file:")) return entriesIntoAJarFile(runtime, path);

@@ -461,6 +461,11 @@ class TestFile < Test::Unit::TestCase
         assert require('foo')
         assert $LOADED_FEATURES.pop =~ /foo\.rb$/
       end
+      
+      with_load_path("file:" + File.expand_path("test/dir with spaces/test_jar.jar") + "!") do
+        assert require('abc/foo')
+        assert $LOADED_FEATURES.pop =~ /foo\.rb$/
+      end
 
       with_load_path(File.expand_path("test/dir with spaces/test_jar.jar")) do
         assert require('abc/foo')
