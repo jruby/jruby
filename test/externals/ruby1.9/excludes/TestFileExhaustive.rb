@@ -1,0 +1,15 @@
+exclude :test_basename
+exclude :test_dirname
+exclude :test_expand_path
+exclude :test_extname
+exclude :test_find_file
+exclude :test_stat
+exclude :test_stat_init
+exclude :test_umask
+exclude :test_unlink
+exclude :test_utime
+exclude :test_world_readable_p
+exclude :test_world_writable_p
+exclude :test_writable_p
+exclude :test_writable_real_p
+exclude :test_zero_p

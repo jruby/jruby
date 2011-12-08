@@ -1,0 +1,4 @@
+exclude :test_errat
+exclude :test_nomethoderror
+exclude :test_set_backtrace
+exclude :test_thread_signal_location

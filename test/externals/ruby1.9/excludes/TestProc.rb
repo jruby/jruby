@@ -1,0 +1,14 @@
+exclude :test_attr_source_location
+exclude :test_block_propagation
+exclude :test_curry
+exclude :test_curry_from_knownbug
+exclude :test_curry_ski_fib
+exclude :test_curry_with_trace
+exclude :test_dup_clone
+exclude :test_parameters
+exclude :test_proc_args_opt_and_post
+exclude :test_proc_args_opt_and_post_and_block
+exclude :test_proc_lambda
+exclude :test_proc_location
+exclude :test_safe
+exclude :test_to_s

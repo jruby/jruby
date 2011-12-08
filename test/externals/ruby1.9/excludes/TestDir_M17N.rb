@@ -1,0 +1,9 @@
+exclude :test_filename_as_bytes_extutf8
+exclude :test_filename_bytes_euc_jp
+exclude :test_filename_euc_jp
+exclude :test_filename_ext_euc_jp_and_int_utf_8
+exclude :test_filename_extutf8
+exclude :test_filename_extutf8_inteucjp_representable
+exclude :test_filename_extutf8_inteucjp_unrepresentable
+exclude :test_filename_extutf8_invalid
+exclude :test_filename_utf8_raw_name
