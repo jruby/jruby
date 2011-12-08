@@ -48,6 +48,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JRubyFile;
+import org.jruby.util.JRubyNonExistentFile;
 
 /**
  * Implements File::Stat
@@ -144,6 +145,9 @@ public class RubyFileStat extends RubyObject {
         }
             
         file = JRubyFile.create(getRuntime().getCurrentDirectory(), filename);
+        if (file instanceof JRubyNonExistentFile) {
+            throw getRuntime().newErrnoENOENTError("No such file or directory - " + filename);
+        }
 
         if (lstat) {
             stat = getRuntime().getPosix().lstat(file.getAbsolutePath());
