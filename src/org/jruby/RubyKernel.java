@@ -1514,7 +1514,7 @@ public class RubyKernel {
     }
 
     /**
-     * Now implemented in Ruby code. See Process::spawn in src/builtin/prelude.rb
+     * Now implemented in Ruby code. See Process::spawn in src/jruby/kernel19/process.rb
      * 
      * @deprecated 
      */

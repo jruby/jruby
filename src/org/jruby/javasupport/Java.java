@@ -106,7 +106,7 @@ public class Java implements Library {
 
     public void load(Ruby runtime, boolean wrap) throws IOException {
         createJavaModule(runtime);
-        runtime.getLoadService().require("builtin/javasupport");
+        runtime.getLoadService().require("jruby/java");
         
         // rewite ArrayJavaProxy superclass to point at Object, so it inherits Object behaviors
         RubyClass ajp = runtime.getClass("ArrayJavaProxy");

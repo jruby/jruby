@@ -965,7 +965,7 @@ public class RubyProcess {
         return RubyKernel.fork(context, recv, block);
     }
 
-    // See Process#spawn in src/builtin/prelude.rb
+    // See Process#spawn in src/jruby/kernel19/process.rb
     @JRubyMethod(required = 4, module = true, compat = CompatVersion.RUBY1_9, visibility = PRIVATE)
     public static RubyFixnum _spawn_internal(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.getRuntime();

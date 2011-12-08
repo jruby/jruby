@@ -33,13 +33,9 @@
 # the terms of any one of the CPL, the GPL or the LGPL.
 ###### END LICENSE BLOCK ######
 
-require 'builtin/javasupport/java'
-require 'builtin/javasupport/utilities/base'
-require 'builtin/javasupport/core_ext'
+require 'jruby/java/java_module'
+require 'jruby/java/java_package_module_template'
+require 'jruby/java/java_utilities'
 
-require 'builtin/java/java.lang'
-require 'builtin/java/java.util'
-require 'builtin/java/java.util.regex'
-require 'builtin/java/java.io'
-require 'builtin/java/java.net'
-require 'builtin/java/org.jruby.ast'
+require 'jruby/java/core_ext'
+require 'jruby/java/java_ext'
