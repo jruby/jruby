@@ -1014,8 +1014,8 @@ class TestFile < Test::Unit::TestCase
   # JRUBY-3634: File.read or File.open with a url to a file resource fails with StringIndexOutOfBounds exception
   def test_file_url
     path = File.expand_path(__FILE__)
-    expect = File.read(__FILE__)[0..100]
-    got = File.read("file:///#{path}")[0..100]
+    expect = File.open(__FILE__, mode_string = "rb").read(100)
+    got = File.open("file:///#{path}", mode_string = "rb").read(100)
 
     assert_equal(expect, got)
   end
