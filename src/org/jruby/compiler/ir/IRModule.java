@@ -10,11 +10,9 @@ import org.jruby.compiler.ir.compiler_pass.CompilerPass;
 import org.jruby.compiler.ir.instructions.ReceiveSelfInstruction;
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.Variable;
-import org.jruby.parser.IRStaticScopeFactory;
 import org.jruby.parser.StaticScope;
 
 public class IRModule extends IRScope {
-    private final static StaticScope rootObjectScope = IRStaticScopeFactory.newIRLocalScope(null);
 
     // The "root" method of a class -- the scope in which all definitions, and class code executes, equivalent to java clinit
     private final static String ROOT_METHOD_PREFIX = "[root]:";
@@ -76,10 +74,6 @@ public class IRModule extends IRScope {
         addCoreClass("Hash", boostrapScript, new String[]{"each"}, null);
         addCoreClass("String", boostrapScript, null, null);
         addCoreClass("Proc", boostrapScript, null, null);
-    }
-
-    public static StaticScope getRootObjectScope() {
-        return rootObjectScope;
     }
 
     public static IRClass getCoreClass(String n) {

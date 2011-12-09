@@ -46,6 +46,7 @@ import org.jruby.exceptions.ThreadKill;
 import org.jruby.parser.IRStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
+import org.jruby.parser.IRStaticScopeFactory;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Block.Type;
 import org.jruby.runtime.RubyEvent;
@@ -118,7 +119,7 @@ public class Interpreter {
         RubyModule currModule = root.getStaticScope().getModule();
 
         // Scope state for root?
-        IRModule.getRootObjectScope().setModule(currModule);
+        IRStaticScopeFactory.newIRLocalScope(null).setModule(currModule);
         ThreadContext context = runtime.getCurrentContext();
 
         try {
