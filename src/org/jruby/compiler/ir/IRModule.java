@@ -9,7 +9,6 @@ import org.jruby.RubyModule;
 import org.jruby.compiler.ir.compiler_pass.CompilerPass;
 import org.jruby.compiler.ir.instructions.ReceiveSelfInstruction;
 import org.jruby.compiler.ir.operands.LocalVariable;
-import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.parser.StaticScope;
 
 public class IRModule extends IRScope {
@@ -143,14 +142,6 @@ public class IRModule extends IRScope {
         return null;
     }
 
-    public IRMethod getClassMethod(String name) {
-        for (IRMethod m : methods) {
-            if (!m.isInstanceMethod && getName().equals(name)) return m;
-        }
-
-        return null;
-    }
-
     public boolean isACoreClass() {
         return this == IRClass.getCoreClass(getName());
     }
@@ -188,6 +179,7 @@ public class IRModule extends IRScope {
         return localVars.getVariable(name);
     }
     
+    @Override
     public boolean isScriptBody() {
         return true;
     }
