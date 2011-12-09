@@ -48,6 +48,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JRubyFile;
+import org.jruby.util.JRubyNonExistentFile;
 
 /**
  * Implements File::Stat
