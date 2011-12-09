@@ -37,8 +37,6 @@ public class IRMethod extends IRScope {
     private int nextAvailableBindingSlot;
     private Map<String, Integer> bindingSlotMap;
     
-    private boolean rootMethod = false;
-
     public IRMethod(IRScope lexicalParent, String name, boolean isInstanceMethod, StaticScope staticScope) {
         super(lexicalParent, name, staticScope);
         this.isInstanceMethod = isInstanceMethod;
@@ -68,10 +66,6 @@ public class IRMethod extends IRScope {
     public CodeVersion getVersion() {
         return version;
     }
-    
-    public void setRootMethod(boolean rootMethod) {
-        this.rootMethod = rootMethod;
-    }
 
     @Override
     public void addInstr(Instr i) {
@@ -90,10 +84,6 @@ public class IRMethod extends IRScope {
 
     public Operand[] getCallArgs() {
         return callArgs.toArray(new Operand[callArgs.size()]);
-    }
-
-    public boolean isRootMethod() { 
-        return rootMethod;
     }
 
     public LocalVariable findExistingLocalVariable(String name) {

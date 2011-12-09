@@ -1154,10 +1154,8 @@ public class IRBuilder {
          * defer scope traversal to when we know where this scope has been spliced in.
          * ------------------------------------------------------------------------------- */
         IRScope current = s;
-        while (current != null && (   !(current instanceof IREvalScript)
-                                   && !(    (current instanceof IRMethod) 
-                                         && ((IRMethod)current).isRootMethod()
-                                         && !(current.getLexicalParent() instanceof IRMetaClass)))) {
+        while (current != null && !(current instanceof IREvalScript) &&
+                !(current.isScriptBody() && !(current.getLexicalParent() instanceof IRMetaClass))) {
             current = current.getLexicalParent();
         }
 
@@ -1757,20 +1755,7 @@ public class IRBuilder {
     }
 
     public Operand buildDefn(MethodDefNode node, IRScope s) { // Instance method
-        Operand container;
-        IRMethod method;
-
-        // statically determine container where possible?
-        // DefineIstanceMethod IR interpretation currently relies on this static determination for handling top-level methods
-        if ((s instanceof IRMethod) && ((IRMethod)s).isRootMethod()) {
-            method = defineNewMethod(node, s, true);
-            // SSS NOTE: This is a debugging tool that works in most cases and is not used
-            // at runtime by the executing code since this static nesting might be wrong.
-            IRModule nm = s.getNearestModule();
-            if (nm != null) nm.addMethod(method);
-        } else {
-            method = defineNewMethod(node, s, true);
-        }
+        IRMethod method = defineNewMethod(node, s, true);
         s.addInstr(new DefineInstanceMethodInstr(new StringLiteral("--unused--"), method));
         return Nil.NIL;
     }
@@ -2964,7 +2949,7 @@ public class IRBuilder {
             // the closure is a proc.  If the closure is a lambda, then this is just a normal
             // return and the static methodToReturnFrom value is ignored 
             s.addInstr(new ReturnInstr(retVal, s.getClosestMethodAncestor()));
-        } else if (((IRMethod)s).isRootMethod()) {
+        } else if (s.isScriptBody()) {
             IRMethod sm = ((IRMethod)s).getClosestNonRootMethodAncestor();
 
             // Cannot return from root methods!
@@ -3039,10 +3024,7 @@ public class IRBuilder {
             // to 'define_method'.
             maddr = MethAddr.UNKNOWN_SUPER_TARGET;
         } else {
-            // The case where the method is a class root method is an error in the Ruby code.
-            // SSS FIXME: Should we insert an exception instruction here since we know this lexically?
-            IRMethod method = (IRMethod) s;
-            maddr = method.isRootMethod() ? MethAddr.NO_METHOD : new MethAddr(method.getName());
+            maddr = new MethAddr(s.getName());
         }
         Variable ret = s.getNewTemporaryVariable();
         s.addInstr(new SuperInstr(ret, getSelf(s), maddr, args, block));
@@ -3050,10 +3032,18 @@ public class IRBuilder {
     }
 
     public Operand buildSuper(SuperNode superNode, IRScope s) {
+        if (s.isScriptBody()) return buildSuperInScriptBody(s);
+        
         List<Operand> args = setupCallArgs(superNode.getArgsNode(), s);
         Operand  block = setupCallClosure(superNode.getIterNode(), s);
         if (block == null) block = s.getImplicitBlockArg();
         return buildSuperInstr(s, block, args.toArray(new Operand[args.size()]));
+    }
+    
+    private Operand buildSuperInScriptBody(IRScope s) {
+        Variable ret = s.getNewTemporaryVariable();
+        s.addInstr(new SuperInstr(ret, getSelf(s), MethAddr.NO_METHOD, NO_ARGS, null));
+        return ret;
     }
 
     public Operand buildSValue(SValueNode node, IRScope s) {
@@ -3189,6 +3179,8 @@ public class IRBuilder {
     }
 
     public Operand buildZSuper(ZSuperNode zsuperNode, IRScope s) {
+        if (s.isScriptBody()) return buildSuperInScriptBody(s);
+        
         Operand[] args = getZSuperArgs(s);
         Operand block = setupCallClosure(zsuperNode.getIterNode(), s);
         if (block == null) block = s.getImplicitBlockArg();

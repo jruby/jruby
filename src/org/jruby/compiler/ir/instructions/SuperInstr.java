@@ -47,8 +47,6 @@ public class SuperInstr extends CallInstr {
 
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block aBlock) {
-        // FIXME: Receiver is not being used...should we be retrieving it?
-        IRubyObject receiver = (IRubyObject)getReceiver().retrieve(context, self, currDynScope, temp);
         IRubyObject[] args = prepareArguments(context, self, getCallArgs(), currDynScope, temp);
         Block block = prepareBlock(context, self, currDynScope, temp);
         RubyModule klazz = context.getFrameKlazz();
@@ -68,8 +66,9 @@ public class SuperInstr extends CallInstr {
     }
 
     protected static void checkSuperDisabledOrOutOfMethod(ThreadContext context, RubyModule frameClass, String methodName) {
+        // FIXME: super/zsuper in top-level script still seems to have a frameClass so it will not make it into this if
         if (frameClass == null) {
-            if ((methodName == null) || (methodName != "")) {
+            if (methodName == null || methodName != "") {
                 throw context.getRuntime().newNameError("superclass method '" + methodName + "' disabled", methodName);
             } else {
                 throw context.getRuntime().newNoMethodError("super called outside of method", null, context.getRuntime().getNil());

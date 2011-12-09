@@ -98,7 +98,7 @@ public class IRModule extends IRScope {
     }
 
     public void addMethod(IRMethod method) {
-        assert !method.isRootMethod();
+        assert !method.isScriptBody();
 
         methods.add(method);
     }
@@ -178,11 +178,17 @@ public class IRModule extends IRScope {
 
     @Override
     public LocalVariable getImplicitBlockArg() {
-        return getLocalVariable(Variable.BLOCK, 0);
+        assert false: "A Script body never accepts block args";
+        
+        return null;
     }
 
     @Override
     public LocalVariable findExistingLocalVariable(String name) {
         return localVars.getVariable(name);
+    }
+    
+    public boolean isScriptBody() {
+        return true;
     }
 }

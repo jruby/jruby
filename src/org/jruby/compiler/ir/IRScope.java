@@ -321,7 +321,7 @@ public abstract class IRScope {
 
     public IRMethod getClosestNonRootMethodAncestor() {
         IRScope s = this;
-        while ((s != null) && (!(s instanceof IRMethod) || ((IRMethod)s).isRootMethod())) {
+        while (s != null && (!(s instanceof IRMethod) || s.isScriptBody())) {
             s = s.getLexicalParent();
         }
 
@@ -896,5 +896,13 @@ public abstract class IRScope {
         nextClosureIndex++;
 
         return nextClosureIndex;
+    }
+    
+    /**
+     * Does this scope represent a method and is it one defined at the root
+     * of a script?
+     */
+    public boolean isScriptBody() {
+        return false;
     }
 }
