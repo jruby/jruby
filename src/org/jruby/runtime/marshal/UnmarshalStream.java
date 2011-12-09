@@ -42,6 +42,7 @@ import org.jcodings.specific.UTF8Encoding;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyBignum;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
@@ -55,6 +56,7 @@ import org.jruby.RubyStruct;
 import org.jruby.RubySymbol;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.Constants;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingCapable;
@@ -412,8 +414,20 @@ public class UnmarshalStream extends InputStream {
 
         RubyClass type = (RubyClass)runtime.getClassFromPath(className.asJavaString());
 
-        // All "C" marshalled objects descend from core classes, which are all RubyObject
+        // singleton, raise error
+        if (type.isSingleton()) throw runtime.newTypeError("singleton can't be loaded");
+
+        // All "C" marshalled objects descend from core classes, which are all at least RubyObject
         RubyObject result = (RubyObject)unmarshalObject();
+
+        // if result is a module or type doesn't extend result's class...
+        if (result.getMetaClass() == runtime.getModule() || !type.isKindOfModule(result.getMetaClass())) {
+            // if allocators do not match, error
+            // Note: MRI is a bit different here, and tests TYPE(type.allocate()) != TYPE(result)
+            if (type.getAllocator() != result.getMetaClass().getRealClass().getAllocator()) {
+                throw runtime.newArgumentError("dump format error (user class)");
+            }
+        }
 
         result.setMetaClass(type);
 
