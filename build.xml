@@ -753,7 +753,8 @@
         <fileset dir="${basedir}" >
           <include name="*.ec" />
         </fileset>
-        <html outfile="${html.test.coverage.results.dir}/coverage.html" />
+        <html outfile="${test.coverage.results.dir}/coverage.html"/>
+        <xml outfile="${test.coverage.results.dir}/coverage.xml"/>
       </report>
     </emma>
   </target>
