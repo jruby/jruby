@@ -75,12 +75,12 @@ public class ThreadFiber extends Fiber {
                         state = ThreadFiberState.RUNNING;
                         return arg;
                     } else if (context.getThread() != parent) {
-                        throw context.runtime.newFiberError("resuming fiber from different thread: " + ThreadFiber.this);
+                        throw context.runtime.newFiberError("resuming fiber from different thread");
                     }
-                    throw context.runtime.newRuntimeError("BUG: resume before fiber is started: " + ThreadFiber.this);
+                    throw context.runtime.newRuntimeError("BUG: resume before fiber is started");
                 case YIELDED:
                     if (!transfer && transferredTo != null) {
-                        throw context.getRuntime().newFiberError("double resume: " + ThreadFiber.this);
+                        throw context.getRuntime().newFiberError("double resume");
                     }
 
                     // update transfer fibers
@@ -111,9 +111,9 @@ public class ThreadFiber extends Fiber {
                     if (transfer && context.getFiber() == this) {
                         return arg;
                     }
-                    throw context.getRuntime().newFiberError("double resume: " + ThreadFiber.this);
+                    throw context.getRuntime().newFiberError("double resume");
                 case FINISHED:
-                    throw context.getRuntime().newFiberError("dead fiber called: " + ThreadFiber.this);
+                    throw context.getRuntime().newFiberError("dead fiber called");
                 default:
                     throw context.getRuntime().newFiberError("fiber in an unknown state");
             }
