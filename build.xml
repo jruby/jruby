@@ -737,8 +737,8 @@
     <emma enabled="${emma.enabled}" >
       <instr instrpathref="classes_to_instrument"
              mode="overwrite"
-             metadatafile="${test.results.dir}/metadata.emma"
-             merge="false">
+             metadatafile="${test.results.dir}/coverage.emma"
+             merge="true">
         <filter excludes="*INVOKER*"/>
       </instr>
     </emma>
@@ -749,6 +749,9 @@
       <report sourcepath="${src.dir}" >
         <fileset dir="${test.results.dir}" >
           <include name="*.emma" />
+        </fileset>
+        <fileset dir="${basedir}" >
+          <include name="*.ec" />
         </fileset>
         <html outfile="${html.test.coverage.results.dir}/coverage.html" />
       </report>
