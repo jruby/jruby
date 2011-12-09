@@ -6,7 +6,7 @@ package org.jruby.compiler.ir.representations;
 
 import java.util.List;
 import org.jruby.compiler.ir.IRClosure;
-import org.jruby.compiler.ir.IRMethod;
+import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.Tuple;
 import org.jruby.compiler.ir.instructions.CallBase;
 import org.jruby.compiler.ir.instructions.YieldInstr;
@@ -26,7 +26,7 @@ public class CFGInliner {
         this.cfg = build;
     }
     
-    public void inlineMethod(IRMethod m, BasicBlock callBB, CallBase call) {
+    public void inlineMethod(IRScope scope, BasicBlock callBB, CallBase call) {
         // 1. split callsite bb and move outbound edges from callsite bb to split bb.
         InlinerInfo ii = new InlinerInfo(call, cfg);
         BasicBlock splitBB = callBB.splitAtInstruction(call, cfg.getScope().getNewLabel(), false);
@@ -40,7 +40,7 @@ public class CFGInliner {
         }
 
         // 2. clone callee
-        CFG methodCFG = m.getCFG();
+        CFG methodCFG = scope.getCFG();
         BasicBlock mEntry = methodCFG.getEntryBB();
         BasicBlock mExit = methodCFG.getExitBB();
 

@@ -319,15 +319,6 @@ public abstract class IRScope {
         return (IRMethod) s;
     }
 
-    public IRMethod getClosestNonRootMethodAncestor() {
-        IRScope s = this;
-        while (s != null && (!(s instanceof IRMethod) || s.isScriptBody())) {
-            s = s.getLexicalParent();
-        }
-
-        return (IRMethod) s;
-    }
-
     public boolean nestedInClosure(IRClosure closure) {
         IRScope s = this;
         while (!(s instanceof IRMethod) && (s != closure)) {
