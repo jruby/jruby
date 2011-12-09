@@ -1156,7 +1156,7 @@ public class IRBuilder {
         IRScope current = s;
         while (current != null && (   !(current instanceof IREvalScript)
                                    && !(    (current instanceof IRMethod) 
-                                         && ((IRMethod)current).isAModuleRootMethod()
+                                         && ((IRMethod)current).isRootMethod()
                                          && !(current.getLexicalParent() instanceof IRMetaClass)))) {
             current = current.getLexicalParent();
         }
@@ -1762,7 +1762,7 @@ public class IRBuilder {
 
         // statically determine container where possible?
         // DefineIstanceMethod IR interpretation currently relies on this static determination for handling top-level methods
-        if ((s instanceof IRMethod) && ((IRMethod)s).isAModuleRootMethod()) {
+        if ((s instanceof IRMethod) && ((IRMethod)s).isRootMethod()) {
             method = defineNewMethod(node, s, true);
             // SSS NOTE: This is a debugging tool that works in most cases and is not used
             // at runtime by the executing code since this static nesting might be wrong.
@@ -2964,7 +2964,7 @@ public class IRBuilder {
             // the closure is a proc.  If the closure is a lambda, then this is just a normal
             // return and the static methodToReturnFrom value is ignored 
             s.addInstr(new ReturnInstr(retVal, s.getClosestMethodAncestor()));
-        } else if (((IRMethod)s).isAModuleRootMethod()) {
+        } else if (((IRMethod)s).isRootMethod()) {
             IRMethod sm = ((IRMethod)s).getClosestNonRootMethodAncestor();
 
             // Cannot return from root methods!
@@ -3042,7 +3042,7 @@ public class IRBuilder {
             // The case where the method is a class root method is an error in the Ruby code.
             // SSS FIXME: Should we insert an exception instruction here since we know this lexically?
             IRMethod method = (IRMethod) s;
-            maddr = IRModule.isAModuleRootMethod(method) ? MethAddr.NO_METHOD : new MethAddr(method.getName());
+            maddr = method.isRootMethod() ? MethAddr.NO_METHOD : new MethAddr(method.getName());
         }
         Variable ret = s.getNewTemporaryVariable();
         s.addInstr(new SuperInstr(ret, getSelf(s), maddr, args, block));

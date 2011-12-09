@@ -321,7 +321,7 @@ public abstract class IRScope {
 
     public IRMethod getClosestNonRootMethodAncestor() {
         IRScope s = this;
-        while ((s != null) && (!(s instanceof IRMethod) || ((IRMethod)s).isAModuleRootMethod())) {
+        while ((s != null) && (!(s instanceof IRMethod) || ((IRMethod)s).isRootMethod())) {
             s = s.getLexicalParent();
         }
 

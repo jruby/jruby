@@ -13,9 +13,6 @@ import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.parser.StaticScope;
 
 public class IRModule extends IRScope {
-
-    // The "root" method of a class -- the scope in which all definitions, and class code executes, equivalent to java clinit
-    private final static String ROOT_METHOD_PREFIX = "[root]:";
     private static Map<String, IRClass> coreClasses;
 
     private CodeVersion version;    // Current code version for this module
@@ -80,10 +77,6 @@ public class IRModule extends IRScope {
         return coreClasses.get(n);
     }
 
-    public static boolean isAModuleRootMethod(IRMethod m) {
-        return m.getName().startsWith(ROOT_METHOD_PREFIX);
-    }
-
     public List<IRModule> getModules() {
         return modules;
     }
@@ -105,7 +98,7 @@ public class IRModule extends IRScope {
     }
 
     public void addMethod(IRMethod method) {
-        assert !IRModule.isAModuleRootMethod(method);
+        assert !method.isRootMethod();
 
         methods.add(method);
     }

@@ -14,7 +14,6 @@ import org.jruby.compiler.ir.operands.Splat;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.parser.StaticScope;
 import org.jruby.parser.IRStaticScope;
-import org.jruby.parser.IRStaticScopeFactory;
 
 public class IRMethod extends IRScope {
     public final boolean isInstanceMethod;
@@ -37,6 +36,8 @@ public class IRMethod extends IRScope {
     // dataflow passes in dataflow/analyses/
     private int nextAvailableBindingSlot;
     private Map<String, Integer> bindingSlotMap;
+    
+    private boolean rootMethod = false;
 
     public IRMethod(IRScope lexicalParent, String name, boolean isInstanceMethod, StaticScope staticScope) {
         super(lexicalParent, name, staticScope);
@@ -67,6 +68,10 @@ public class IRMethod extends IRScope {
     public CodeVersion getVersion() {
         return version;
     }
+    
+    public void setRootMethod(boolean rootMethod) {
+        this.rootMethod = rootMethod;
+    }
 
     @Override
     public void addInstr(Instr i) {
@@ -87,8 +92,8 @@ public class IRMethod extends IRScope {
         return callArgs.toArray(new Operand[callArgs.size()]);
     }
 
-    public boolean isAModuleRootMethod() { 
-        return IRModule.isAModuleRootMethod(this);
+    public boolean isRootMethod() { 
+        return rootMethod;
     }
 
     public LocalVariable findExistingLocalVariable(String name) {

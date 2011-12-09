@@ -9,7 +9,6 @@ import org.jruby.ast.Node;
 import org.jruby.ast.RootNode;
 import org.jruby.compiler.ir.IRBuilder;
 import org.jruby.compiler.ir.IRMethod;
-import org.jruby.compiler.ir.IRModule;
 import org.jruby.compiler.ir.IREvalScript;
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.IRClosure;
@@ -397,7 +396,7 @@ public class Interpreter {
 
         if (inClosure) {
             // Cannot return from root methods -- so find out where exactly we need to return.
-            if (methodToReturnFrom.isAModuleRootMethod()) {
+            if (methodToReturnFrom.isRootMethod()) {
                 methodToReturnFrom = methodToReturnFrom.getClosestNonRootMethodAncestor();
                 if (methodToReturnFrom == null) {
                     if (context.getThread() == context.getRuntime().getThreadService().getMainThread()) {
