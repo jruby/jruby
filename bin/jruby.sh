@@ -142,7 +142,9 @@ if [ -z "$JAVA_STACK" ] ; then
   JAVA_STACK=-Xss2048k
 fi
 
-JAVA_VM=-client
+if [ -z "$JAVA_VM" ]; then
+  JAVA_VM=-client
+fi
 JAVA_ENCODING=""
 
 #declare -a java_args
