@@ -1,7 +1,6 @@
 package org.jruby.compiler.ir.compiler_pass;
 
 import org.jruby.compiler.ir.IRScope;
-import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.representations.CFG;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -24,9 +23,8 @@ public class IRPrinter implements CompilerPass {
             LOG.info("\nGraph:\n" + c.toStringGraph());
             LOG.info("\nInstructions:\n" + c.toStringInstrs());
         } else {
-            IRMethod m = (IRMethod)scope;
-            LOG.info("\n  instrs:\n" + m.toStringInstrs());
-            LOG.info("\n  live variables:\n" + m.toStringVariables());
+            LOG.info("\n  instrs:\n" + scope.toStringInstrs());
+            LOG.info("\n  live variables:\n" + scope.toStringVariables());
         }
     }
 }
