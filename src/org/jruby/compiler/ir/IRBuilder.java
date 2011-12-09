@@ -2950,11 +2950,7 @@ public class IRBuilder {
             // return and the static methodToReturnFrom value is ignored 
             s.addInstr(new ReturnInstr(retVal, s.getClosestMethodAncestor()));
         } else if (s.isScriptBody()) {
-            IRMethod sm = ((IRMethod)s).getClosestNonRootMethodAncestor();
-
-            // Cannot return from root methods!
-            if (sm == null) s.addInstr(new ThrowExceptionInstr(IRException.RETURN_LocalJumpError));
-            else s.addInstr(new ReturnInstr(retVal, sm));
+            s.addInstr(new ThrowExceptionInstr(IRException.RETURN_LocalJumpError));
         } else {
             s.addInstr(new ReturnInstr(retVal));
         }

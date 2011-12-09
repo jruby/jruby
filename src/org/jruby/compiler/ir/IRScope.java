@@ -312,7 +312,7 @@ public abstract class IRScope {
 
     public IRMethod getClosestMethodAncestor() {
         IRScope s = this;
-        while (!(s instanceof IRMethod)) {
+        while (s != null && !(s instanceof IRMethod)) {
             s = s.getLexicalParent();
         }
 

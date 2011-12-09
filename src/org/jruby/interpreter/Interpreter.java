@@ -395,18 +395,6 @@ public class Interpreter {
         IRMethod methodToReturnFrom = returnInstr.methodToReturnFrom;
 
         if (inClosure) {
-            // Cannot return from root methods -- so find out where exactly we need to return.
-            if (methodToReturnFrom.isScriptBody()) {
-                methodToReturnFrom = methodToReturnFrom.getClosestNonRootMethodAncestor();
-                if (methodToReturnFrom == null) {
-                    if (context.getThread() == context.getRuntime().getThreadService().getMainThread()) {
-                        throw IRException.RETURN_LocalJumpError.getException(context.getRuntime());
-                    } else {
-                        throw context.getRuntime().newThreadError("return can't jump across threads");
-                    }
-                }
-            }
-
             // Cannot return to the call that we have long since exited.
             if (!context.scopeExistsOnCallStack(methodToReturnFrom.getStaticScope())) {
                 if (isDebug()) LOG.info("in scope: " + scope + ", raising unexpected return local jump error");
