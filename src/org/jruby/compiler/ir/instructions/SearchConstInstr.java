@@ -26,6 +26,10 @@ public class SearchConstInstr extends Instr implements ResultInstr {
     String constName;
     private Variable result;
 
+    // Constant caching 
+    private volatile transient Object cachedConstant = null;
+    private Object generation = -1;
+
     public SearchConstInstr(Variable result, IRModule definingModule, String constName) {
         super(Operation.SEARCH_CONST);
         
@@ -57,20 +61,32 @@ public class SearchConstInstr extends Instr implements ResultInstr {
         return super.toString() + "(" + (definingModule == null ? "-dynamic-" : definingModule.getName()) + "," + constName  + ")";
     }
 
+    private boolean isCached(Ruby runtime, Object value) {
+        return value != null && generation == runtime.getConstantInvalidator().getData();
+    }
+
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
-        StaticScope staticScope = definingModule == null ? currDynScope.getStaticScope() : definingModule.getStaticScope();
         Ruby runtime = context.getRuntime();
-        RubyModule object = runtime.getObject();
-        Object constant;
-        
-        if (staticScope == null) { // FIXME: Object scope has no staticscope yet
-            constant = object.getConstant(constName);
-        } else {
-            constant = staticScope.getConstant(runtime, constName, object);
-        }
+        Object constant = cachedConstant; // Store to temp so it does null out on us mid-stream
+        if (!isCached(runtime, constant)) {
+            StaticScope staticScope = definingModule == null ? currDynScope.getStaticScope() : definingModule.getStaticScope();
+            RubyModule object = runtime.getObject();
+            
+            if (staticScope == null) { // FIXME: Object scope has no staticscope yet
+                constant = object.getConstant(constName);
+            } else {
+                constant = staticScope.getConstant(runtime, constName, object);
+            }
 
-        if (constant == null) constant = UndefinedValue.UNDEFINED;
-		  return constant;
+            if (constant == null) {
+                constant = UndefinedValue.UNDEFINED;
+            } else {
+                // recache
+                generation = runtime.getConstantInvalidator().getData();
+                cachedConstant = constant;
+            }
+        }
+        return constant;
     }
 }
