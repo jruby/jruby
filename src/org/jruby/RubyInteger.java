@@ -352,14 +352,14 @@ public abstract class RubyInteger extends RubyNumeric {
     @JRubyMethod(name = "round", compat = CompatVersion.RUBY1_9)
     public IRubyObject round19(ThreadContext context, IRubyObject arg) {
         int ndigits = RubyNumeric.num2int(arg);
-        long bytes = 8; // 8 bytes in a Java 'long'
         if (ndigits > 0) return RubyKernel.new_float(this, this);
         if (ndigits == 0) return this;
         Ruby runtime = context.getRuntime();
         
+        long bytes = (this instanceof RubyFixnum) ? 8 : RubyFixnum.fix2long(callMethod("size"));
         /* If 10**N/2 > this, return 0 */
         /* We have log_256(10) > 0.415241 and log_256(1/2)=-0.125 */
-        if ( -0.415241 * ndigits - 0.125 > bytes) {
+        if (-0.415241 * ndigits - 0.125 > bytes) {
             return RubyFixnum.zero(runtime);
         }
         
@@ -379,7 +379,8 @@ public abstract class RubyInteger extends RubyNumeric {
             IRubyObject h = f.callMethod(context, "/", RubyFixnum.two(runtime));
             IRubyObject r = callMethod(context, "%", f);
             IRubyObject n = callMethod(context, "-", r);
-            if (!r.callMethod(context, "<", h).isTrue()) n = n.callMethod(context, "+", f);
+            String op = callMethod(context, "<", RubyFixnum.zero(runtime)).isTrue() ? "<=" : "<";
+            if (!r.callMethod(context, op, h).isTrue()) n = n.callMethod(context, "+", f);
             return n;
         }
     }
