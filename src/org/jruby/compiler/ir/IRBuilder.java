@@ -95,6 +95,7 @@ import org.jruby.ast.ForNode;
 import org.jruby.ast.LiteralNode;
 import org.jruby.ast.ModuleNode;
 import org.jruby.ast.MultipleAsgnNode;
+import org.jruby.ast.MultipleAsgn19Node;
 import org.jruby.ast.OpAsgnNode;
 import org.jruby.ast.OpElementAsgnNode;
 import org.jruby.ast.PreExeNode;
@@ -267,7 +268,6 @@ import org.jruby.util.log.LoggerFactory;
 // this is not a big deal.  Think this through!
 
 public class IRBuilder {
-
     private static final Logger LOG = LoggerFactory.getLogger("IRBuilder");
 
     private static final UnexecutableNil U_NIL = UnexecutableNil.U_NIL;
@@ -300,7 +300,7 @@ public class IRBuilder {
             long t1 = new Date().getTime();
             Node ast = buildAST(isCommandLineScript, args[i]);
             long t2 = new Date().getTime();
-            IRScope scope = new IRBuilder().buildRoot((RootNode) ast);
+            IRScope scope = createIRBuilder().buildRoot((RootNode) ast);
             long t3 = new Date().getTime();
             if (isDebug) {
                 LOG.debug("################## Before local optimization pass ##################");
@@ -457,6 +457,14 @@ public class IRBuilder {
         }
     }
 
+    public static IRBuilder createIRBuilder() {
+/*
+        Ruby ruby = Ruby.getGlobalRuntime();
+        return ruby.is1_9() ? new IRBuilder19() : new IRBuilder();
+*/
+        return new IRBuilder19();
+    }
+
     public Node skipOverNewlines(IRScope s, Node n) {
         if (n.getNodeType() == NodeType.NEWLINENODE) {
             // Do not emit multiple line number instrs for the same line
@@ -540,7 +548,8 @@ public class IRBuilder {
             case MATCH3NODE: return buildMatch3((Match3Node) node, s);
             case MATCHNODE: return buildMatch((MatchNode) node, s);
             case MODULENODE: return buildModule((ModuleNode) node, s);
-            case MULTIPLEASGNNODE: return buildMultipleAsgn((MultipleAsgnNode) node, s);
+            case MULTIPLEASGNNODE: return buildMultipleAsgn((MultipleAsgnNode) node, s); // Only for 1.8
+            case MULTIPLEASGN19NODE: return buildMultipleAsgn19((MultipleAsgn19Node) node, s); // Only for 1.9
             case NEWLINENODE: return buildNewline((NewlineNode) node, s);
             case NEXTNODE: return buildNext((NextNode) node, s);
             case NTHREFNODE: return buildNthRef((NthRefNode) node, s);
@@ -551,8 +560,8 @@ public class IRBuilder {
             case OPASGNORNODE: return buildOpAsgnOr((OpAsgnOrNode) node, s);
             case OPELEMENTASGNNODE: return buildOpElementAsgn((OpElementAsgnNode) node, s);
             case ORNODE: return buildOr((OrNode) node, s);
-            case PREEXENODE: return buildPreExe((PreExeNode) node, s); // DEFERRED
-            case POSTEXENODE: return buildPostExe((PostExeNode) node, s); // DEFERRED
+            case PREEXENODE: return buildPreExe((PreExeNode) node, s);
+            case POSTEXENODE: return buildPostExe((PostExeNode) node, s);
             case REDONODE: return buildRedo(node, s);
             case REGEXPNODE: return buildRegexp((RegexpNode) node, s);
             case RESCUEBODYNODE:
@@ -581,17 +590,17 @@ public class IRBuilder {
             case YIELDNODE: return buildYield((YieldNode) node, s);
             case ZARRAYNODE: return buildZArray(node, s);
             case ZSUPERNODE: return buildZSuper((ZSuperNode) node, s);
-            default: new Exception().printStackTrace(); throw new NotCompilableException("Unknown node encountered in builder: " + node.getClass());
+            default: throw new NotCompilableException("Unknown node encountered in builder: " + node.getClass());
         }
     }
 
-    private Variable copyAndReturnValue(IRScope s, Operand val) {
+    protected Variable copyAndReturnValue(IRScope s, Operand val) {
         Variable v = s.getNewTemporaryVariable();
         s.addInstr(new CopyInstr(v, val));
         return v;
     }
 
-    private Variable getValueInTemporaryVariable(IRScope s, Operand val) {
+    protected Variable getValueInTemporaryVariable(IRScope s, Operand val) {
         if (val != null && val instanceof TemporaryVariable) return (Variable) val;
 
         return copyAndReturnValue(s, val);
@@ -641,6 +650,36 @@ public class IRBuilder {
         return argsList;
     }
 
+    public void buildVersionSpecificAssignment(Node node, IRScope s, Variable v) {
+        switch (node.getNodeType()) {
+        case MULTIPLEASGNNODE: {
+            /* --------------------------------------------------------------------------------------------
+             * SSS FIXME: For 1.9 mode, this code would be:
+             *
+             * Operand valuesArg = generateRubyInternalsCall(s, RubyInternalsMethod.TO_ARY, true, v, new Operand[] { BooleanLiteral.FALSE });
+             * buildMultipleAsgnAssignment(childNode, s, valuesArg);
+             *
+             * But in 1.8 mode, we do that only in some cases .. so, this is complicated!
+             * ------------------------------------------------------------------------------------------ */
+            Operand valuesArg;
+            MultipleAsgnNode childNode = (MultipleAsgnNode) node;
+            if (childNode.getHeadNode() != null && ((ListNode)childNode.getHeadNode()).childNodes().size() > 0) {
+                // Invoke to_ary on the operand only if it is not an array already
+                Variable result = s.getNewTemporaryVariable();
+                s.addInstr(new ToAryInstr(result, v, BooleanLiteral.TRUE));
+                valuesArg = result;
+            } else {
+                s.addInstr(new EnsureRubyArrayInstr(v, v));
+                valuesArg = v;
+            }
+            buildMultipleAsgnAssignment(childNode, s, null, valuesArg);
+            break;
+        }
+        default: 
+            throw new NotCompilableException("Can't build assignment node: " + node);
+        }
+    }
+
     // This method is called to build assignments for a multiple-assignment instruction
     public void buildAssignment(Node node, IRScope s, Operand values, int argIndex, boolean isSplat) {
         Variable v = s.getNewTemporaryVariable();
@@ -677,51 +716,49 @@ public class IRBuilder {
                 s.addInstr(new CopyInstr(s.getLocalVariable(localVariable.getName(), depth), v));
                 break;
             }
-            case MULTIPLEASGNNODE: {
-                /* --------------------------------------------------------------------------------------------
-                 * SSS FIXME: For 1.9 mode, this code would be:
-                 *
-                 * Operand valuesArg = generateRubyInternalsCall(s, RubyInternalsMethod.TO_ARY, true, v, new Operand[] { BooleanLiteral.FALSE });
-                 * buildMultipleAsgnAssignment(childNode, s, valuesArg);
-                 *
-                 * But in 1.8 mode, we do that only in some cases .. so, this is complicated!
-                 * ------------------------------------------------------------------------------------------ */
-                Operand valuesArg;
-                MultipleAsgnNode childNode = (MultipleAsgnNode) node;
-                if (childNode.getHeadNode() != null && ((ListNode)childNode.getHeadNode()).childNodes().size() > 0) {
-                    // Invoke to_ary on the operand only if it is not an array already
-                    Variable result = s.getNewTemporaryVariable();
-                    s.addInstr(new ToAryInstr(result, v, BooleanLiteral.TRUE));
-                    valuesArg = result;
-                } else {
-                    s.addInstr(new EnsureRubyArrayInstr(v, v));
-                    valuesArg = v;
-                }
-                buildMultipleAsgnAssignment(childNode, s, null, valuesArg);
-                break;
-            }
             case ZEROARGNODE:
                 throw new NotCompilableException("Shouldn't get here; zeroarg does not do assignment: " + node);
             default:
-                throw new NotCompilableException("Can't build assignment node: " + node);
+                buildVersionSpecificAssignment(node, s, v);
         }
     }
 
-    private LocalVariable getBlockArgVariable(IRScope cl, String name, int depth) {
+    protected LocalVariable getBlockArgVariable(IRScope cl, String name, int depth) {
         return cl.getLocalVariable(name, depth);
-        // SSS FIXME: The code below is probably 1.9 semantics?
-        //
-        // For non-loops, this name will override any name that exists in outer scopes
-        //return cl.isForLoopBody ? cl.getLocalVariable(name, depth) : cl.getNewLocalVariable(name, depth);
     }
 
-    private void receiveBlockArg(IRScope s, Variable v, Operand argsArray, int argIndex, boolean isClosureArg, boolean isSplat) {
+    protected void receiveBlockArg(IRScope s, Variable v, Operand argsArray, int argIndex, boolean isClosureArg, boolean isSplat) {
         if (argsArray != null) {
             // We are in a nested receive situation -- when we are not at the root of a masgn tree
             // Ex: We are trying to receive (b,c) in this example: "|a, (b,c), d| = ..."
             s.addInstr(new GetArrayInstr(v, argsArray, argIndex, isSplat));
         } else {
             s.addInstr(isClosureArg ? new ReceiveClosureInstr(v) : (isSplat ? new ReceiveClosureRestArgInstr(v, argIndex) : new ReceiveClosureArgInstr(v, argIndex)));
+        }
+    }
+
+    public void buildVersionSpecificBlockArgsAssignment(Node node, IRScope s, Operand argsArray, int argIndex, boolean isMasgnRoot, boolean isClosureArg, boolean isSplat) {
+        switch (node.getNodeType()) {
+            case MULTIPLEASGNNODE: {
+                Variable oldArgs = null;
+                MultipleAsgnNode childNode = (MultipleAsgnNode) node;
+                if (!isMasgnRoot) {
+                    Variable v = s.getNewTemporaryVariable();
+                    receiveBlockArg(s, v, argsArray, argIndex, isClosureArg, isSplat);
+                    boolean runToAry = childNode.getHeadNode() != null && (((ListNode)childNode.getHeadNode()).childNodes().size() > 0);
+                    if (runToAry) {
+                        s.addInstr(new ToAryInstr(v, v, BooleanLiteral.FALSE));
+                    } else {
+                        s.addInstr(new EnsureRubyArrayInstr(v, v));
+                    }
+                    argsArray = v;
+                    // SSS FIXME: Are we guaranteed that splats dont head to multiple-assignment nodes!  i.e. |*(a,b)|?
+                }
+                // Build
+                buildMultipleAsgnAssignment(childNode, s, argsArray, null);
+                break;
+            }
+            default: throw new NotCompilableException("Can't build assignment node: " + node);
         }
     }
 
@@ -734,10 +771,6 @@ public class IRBuilder {
                 receiveBlockArg(s, v, argsArray, argIndex, isClosureArg, isSplat);
                 buildAttrAssignAssignment(node, s, v);
                 break;
-            // SSS FIXME:
-            //
-            // There are also differences in variable scoping between 1.8 and 1.9 
-            // Ruby 1.8 is the buggy semantics if I understand correctly.
             case DASGNNODE: {
                 DAsgnNode dynamicAsgn = (DAsgnNode) node;
                 v = getBlockArgVariable((IRClosure)s, dynamicAsgn.getName(), dynamicAsgn.getDepth());
@@ -777,30 +810,10 @@ public class IRBuilder {
                 receiveBlockArg(s, v, argsArray, argIndex, isClosureArg, isSplat);
                 break;
             }
-            case MULTIPLEASGNNODE: {
-                Variable oldArgs = null;
-                MultipleAsgnNode childNode = (MultipleAsgnNode) node;
-                if (!isMasgnRoot) {
-                    v = s.getNewTemporaryVariable();
-                    receiveBlockArg(s, v, argsArray, argIndex, isClosureArg, isSplat);
-                    // SSS FIXME: In 1.9 mode, runToAry will be unconditionally true, but not in 1.8
-                    boolean runToAry = childNode.getHeadNode() != null && (((ListNode)childNode.getHeadNode()).childNodes().size() > 0);
-                    if (runToAry) {
-                        s.addInstr(new ToAryInstr(v, v, BooleanLiteral.FALSE));
-                    } else {
-                        s.addInstr(new EnsureRubyArrayInstr(v, v));
-                    }
-                    argsArray = v;
-                    // SSS FIXME: Are we guaranteed that splats dont head to multiple-assignment nodes!  i.e. |*(a,b)|?
-                }
-                // Build
-                buildMultipleAsgnAssignment(childNode, s, argsArray, null);
-                break;
-            }
             case ZEROARGNODE:
                 throw new NotCompilableException("Shouldn't get here; zeroarg does not do assignment: " + node);
             default:
-                throw new NotCompilableException("Can't build assignment node: " + node);
+                buildVersionSpecificBlockArgsAssignment(node, s, argsArray, argIndex, isMasgnRoot, isClosureArg, isSplat);
         }
     }
 
@@ -1062,7 +1075,7 @@ public class IRBuilder {
         if (nm != null) nm.addClass(c);
 
         // Create a new nested builder to ensure this gets its own IR builder state 
-        Operand rv = (new IRBuilder()).build(classNode.getBodyNode(), c);
+        Operand rv = createIRBuilder().build(classNode.getBodyNode(), c);
         if (rv != null) c.addInstr(new ReturnInstr(rv));
 
         return ret;
@@ -1092,7 +1105,7 @@ public class IRBuilder {
         s.addInstr(new DefineMetaClassInstr(ret, receiver, mc));
 
         // Create a new nested builder to ensure this gets its own IR builder state 
-        Operand rv = (new IRBuilder()).build(sclassNode.getBodyNode(), mc);
+        Operand rv = createIRBuilder().build(sclassNode.getBodyNode(), mc);
         if (rv != null) mc.addInstr(new ReturnInstr(rv));
 
         return ret;
@@ -1745,7 +1758,7 @@ public class IRBuilder {
             Node bodyNode = defNode.getBodyNode();
 
             // Create a new nested builder to ensure this gets its own IR builder state 
-            Operand rv = (new IRBuilder()).build(bodyNode, method);
+            Operand rv = createIRBuilder().build(bodyNode, method);
             if (rv != null) method.addInstr(new ReturnInstr(rv));
         } else {
             method.addInstr(new ReturnInstr(Nil.NIL));
@@ -1774,8 +1787,21 @@ public class IRBuilder {
         return Nil.NIL;
     }
 
-    // ENEBO: Since we are now targeting 1.9 semantics then it can be assumed that all
-    // method parameters are now going to be local to this scope.
+    protected int receiveOptArgs(final ArgsNode argsNode, IRScope s, int opt, int argIndex) {
+        ListNode optArgs = argsNode.getOptArgs();
+        for (int j = 0; j < opt; j++, argIndex++) {
+                // Jump to 'l' if this arg is not null.  If null, fall through and build the default value!
+            Label l = s.getNewLabel();
+            LocalAsgnNode n = (LocalAsgnNode)optArgs.get(j);
+            Variable av = s.getLocalVariable(n.getName(), 0);
+            s.addInstr(new ReceiveOptionalArgumentInstr(av, argIndex));
+            s.addInstr(BNEInstr.create(av, UndefinedValue.UNDEFINED, l)); // if 'av' is not undefined, go to default
+            build(n, s);
+            s.addInstr(new LabelInstr(l));
+        }
+        return argIndex;
+    }
+
     public void receiveArgs(final ArgsNode argsNode, IRScope s) {
         final int required = argsNode.getRequiredArgsCount();
         final int opt = argsNode.getOptionalArgsCount();
@@ -1819,17 +1845,7 @@ public class IRBuilder {
 
             // Now for the rest
         if (opt > 0) {
-            ListNode optArgs = argsNode.getOptArgs();
-            for (int j = 0; j < opt; j++, argIndex++) {
-                    // Jump to 'l' if this arg is not null.  If null, fall through and build the default value!
-                Label l = s.getNewLabel();
-                LocalAsgnNode n = (LocalAsgnNode)optArgs.get(j);
-                Variable av = s.getLocalVariable(n.getName(), 0);
-                s.addInstr(new ReceiveOptionalArgumentInstr(av, argIndex));
-                s.addInstr(BNEInstr.create(av, UndefinedValue.UNDEFINED, l)); // if 'av' is not undefined, go to default
-                build(n, s);
-                s.addInstr(new LabelInstr(l));
-            }
+            argIndex = receiveOptArgs(argsNode, s, opt, argIndex);
         }
 
         if (rest > -1) {
@@ -2295,7 +2311,7 @@ public class IRBuilder {
 
         // Create a new nested builder to ensure this gets its own IR builder state 
         // like the ensure block stack
-        IRBuilder closureBuilder = new IRBuilder();
+        IRBuilder closureBuilder = createIRBuilder();
 
             // Receive self
         closure.addInstr(new ReceiveSelfInstruction(getSelf(closure)));
@@ -2412,10 +2428,14 @@ public class IRBuilder {
         if (nm != null) nm.addModule(m);
 
         // Create a new nested builder to ensure this gets its own IR builder state 
-        Operand rv = (new IRBuilder()).build(moduleNode.getBodyNode(), m);
+        Operand rv = createIRBuilder().build(moduleNode.getBodyNode(), m);
         if (rv != null) m.addInstr(new ReturnInstr(rv));
 
         return ret;
+    }
+
+    public Operand buildMultipleAsgn19(MultipleAsgn19Node multipleAsgnNode, IRScope s) {
+        throw new NotCompilableException("Encountered 1.9 multiple assignment node in ruby 1.8 IR builder.");
     }
 
     public Operand buildMultipleAsgn(MultipleAsgnNode multipleAsgnNode, IRScope s) {
