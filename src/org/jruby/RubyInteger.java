@@ -70,6 +70,7 @@ public abstract class RubyInteger extends RubyNumeric {
         integer.setReifiedClass(RubyInteger.class);
         
         integer.kindOf = new RubyModule.KindOf() {
+            @Override
             public boolean isKindOf(IRubyObject obj, RubyModule type) {
                 return obj instanceof RubyInteger;
             }
@@ -103,6 +104,7 @@ public abstract class RubyInteger extends RubyNumeric {
         super(runtime, rubyClass, useObjectSpace, canBeTainted);
     }     
 
+    @Override
     public RubyInteger convertToInteger() {
     	return this;
     }
@@ -120,6 +122,7 @@ public abstract class RubyInteger extends RubyNumeric {
     /** int_int_p
      * 
      */
+    @Override
     @JRubyMethod(name = "integer?")
     public IRubyObject integer_p() {
         return getRuntime().getTrue();
@@ -339,6 +342,7 @@ public abstract class RubyInteger extends RubyNumeric {
         return this;
     }
 
+    @Override
     @JRubyMethod(name = "round", compat = CompatVersion.RUBY1_8)
     public IRubyObject round() {
         return this;
@@ -453,11 +457,13 @@ public abstract class RubyInteger extends RubyNumeric {
         return context.getRuntime().newArray(f_gcd(context, this, other), f_lcm(context, this, other));
     }
 
+    @Override
     @JRubyMethod(name = "numerator", compat = CompatVersion.RUBY1_9)
     public IRubyObject numerator(ThreadContext context) {
         return this;
     }
 
+    @Override
     @JRubyMethod(name = "denominator", compat = CompatVersion.RUBY1_9)
     public IRubyObject denominator(ThreadContext context) {
         return RubyFixnum.one(context.getRuntime());
