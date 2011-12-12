@@ -100,6 +100,11 @@ public class IRBuilder19 extends IRBuilder {
     public void buildVersionSpecificBlockArgsAssignment(Node node, IRScope s, Operand argsArray, int argIndex, boolean isMasgnRoot, boolean isClosureArg, boolean isSplat) {
         Variable v;
         switch (node.getNodeType()) {
+            case ARGUMENTNODE: {
+                Variable av = getBlockArgVariable((IRClosure)s, ((ArgumentNode)node).getName(), 0);
+                receiveBlockArg(s, av, argsArray, argIndex, isClosureArg, isSplat);
+                break;
+            }
             case MULTIPLEASGN19NODE: {
                 Variable oldArgs = null;
                 MultipleAsgn19Node childNode = (MultipleAsgn19Node) node;
@@ -121,9 +126,7 @@ public class IRBuilder19 extends IRBuilder {
                 // pre
                 ListNode preArgs  = argsNode.getPre();
                 for (int i = 0; i < required; i++, argIndex++) {
-                    ArgumentNode a = (ArgumentNode)preArgs.get(i);
-                    Variable av = getBlockArgVariable((IRClosure)s, a.getName(), 0);
-                    receiveBlockArg(s, av, argsArray, argIndex, isClosureArg, isSplat);
+                    buildBlockArgsAssignment(preArgs.get(i), s, argsArray, argIndex, isMasgnRoot, isClosureArg, false);
                 }
 
                 // opt
@@ -133,7 +136,7 @@ public class IRBuilder19 extends IRBuilder {
                     Label l = s.getNewLabel();
                     OptArgNode n = (OptArgNode)optArgs.get(j);
                     Variable av = getBlockArgVariable((IRClosure)s, n.getName(), 0);
-                    receiveBlockArg(s, av, argsArray, argIndex, isClosureArg, isSplat);
+                    receiveBlockArg(s, av, argsArray, argIndex, isClosureArg, false);
                     s.addInstr(BNEInstr.create(av, UndefinedValue.UNDEFINED, l)); // if 'av' is not undefined, go to default
                     build(n.getValue(), s);
                     s.addInstr(new LabelInstr(l));
@@ -144,7 +147,7 @@ public class IRBuilder19 extends IRBuilder {
                     String argName = argsNode.getRestArgNode().getName();
                     argName = (argName.equals("")) ? "%_arg_array" : argName;
                     Variable av = getBlockArgVariable((IRClosure)s, argName, 0);
-                    receiveBlockArg(s, av, argsArray, argIndex, isClosureArg, isSplat);
+                    receiveBlockArg(s, av, argsArray, argIndex, isClosureArg, true);
                 }
 
                 // FIXME: post??
