@@ -1538,6 +1538,16 @@ public class RubyKernel {
     @JRubyMethod(name = "system", required = 1, rest = true, module = true, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
     public static IRubyObject system19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.getRuntime();
+        if (args[0] instanceof RubyHash) {
+            RubyHash env = (RubyHash) args[0].convertToHash();
+            if (env != null) {
+                runtime.getENV().merge_bang(context, env, Block.NULL_BLOCK);
+            }
+            // drop the first element for calling systemCommon()
+            IRubyObject[] rest = new IRubyObject[args.length - 1];
+            System.arraycopy(args, 1, rest, 0, args.length - 1);
+            args = rest;
+        }
         int resultCode = systemCommon(context, recv, args);
         switch (resultCode) {
             case 0: return runtime.getTrue();
