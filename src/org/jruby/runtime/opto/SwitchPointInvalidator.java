@@ -30,13 +30,15 @@ import java.lang.invoke.SwitchPoint;
 import java.util.List;
 
 public class SwitchPointInvalidator implements Invalidator {
-    private volatile SwitchPoint switchPoint;
-    
-    public SwitchPointInvalidator() {
-        switchPoint = new SwitchPoint();
-    }
+    // a dummy switchpoint to use until we actually need a real one
+    private static final SwitchPoint DUMMY = new SwitchPoint();
+    static {SwitchPoint.invalidateAll(new SwitchPoint[]{DUMMY});}
+
+    private volatile SwitchPoint switchPoint = DUMMY;
     
     public synchronized void invalidate() {
+        if (switchPoint == DUMMY) return;
+
         SwitchPoint.invalidateAll(new SwitchPoint[]{switchPoint});
         switchPoint = new SwitchPoint();
     }
@@ -53,11 +55,13 @@ public class SwitchPointInvalidator implements Invalidator {
         SwitchPoint.invalidateAll(switchPoints);
     }
     
-    public Object getData() {
-        return switchPoint;
+    public synchronized Object getData() {
+        return switchPoint == DUMMY ? switchPoint = new SwitchPoint() : switchPoint;
     }
     
-    public SwitchPoint replaceSwitchPoint() {
+    public synchronized SwitchPoint replaceSwitchPoint() {
+        if (switchPoint == DUMMY) return switchPoint;
+
         SwitchPoint oldSwitchPoint = switchPoint;
         switchPoint = new SwitchPoint();
         return oldSwitchPoint;
