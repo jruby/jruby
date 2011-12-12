@@ -77,7 +77,9 @@ public class Interpreter {
         IRScope containingIRScope = ((IRStaticScope)ss.getEnclosingScope()).getIRScope();
         if (containingIRScope == null) containingIRScope = ((IRStaticScope)ss.getEnclosingScope().getEnclosingScope()).getIRScope();
 
-        IREvalScript evalScript = new IRBuilder().buildEvalRoot(ss, containingIRScope, file, lineNumber, rootNode);
+        // SSS FIXME: Is this required here since the IR version cannot change from eval-to-eval? This is much more of a global setting.
+        if (runtime.is1_9()) IRBuilder.setRubyVersion("1.9");
+        IREvalScript evalScript = IRBuilder.createIRBuilder().buildEvalRoot(ss, containingIRScope, file, lineNumber, rootNode);
         evalScript.prepareForInterpretation();
 //        evalScript.runCompilerPass(new CallSplitter());
         ThreadContext context = runtime.getCurrentContext(); 
@@ -107,7 +109,9 @@ public class Interpreter {
     }
 
     public static IRubyObject interpret(Ruby runtime, Node rootNode, IRubyObject self) {
-        IRScript root = (IRScript) new IRBuilder().buildRoot((RootNode) rootNode);
+        if (runtime.is1_9()) IRBuilder.setRubyVersion("1.9");
+
+        IRScript root = (IRScript) IRBuilder.createIRBuilder().buildRoot((RootNode) rootNode);
 
         // We get the live object ball rolling here.  This give a valid value for the top
         // of this lexical tree.  All new scope can then retrieve and set based on lexical parent.

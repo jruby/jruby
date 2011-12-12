@@ -270,14 +270,17 @@ import org.jruby.util.log.LoggerFactory;
 public class IRBuilder {
     private static final Logger LOG = LoggerFactory.getLogger("IRBuilder");
 
-    private static final UnexecutableNil U_NIL = UnexecutableNil.U_NIL;
-    // FIXME: Move this
-    public static final Operand[] NO_ARGS = new Operand[]{};
-
+    private static final   UnexecutableNil U_NIL = UnexecutableNil.U_NIL;
+    private static final   Operand[] NO_ARGS = new Operand[]{};
+    private static String  rubyVersion = "1.8"; // default is 1.8
     private static boolean inIRGenOnlyMode = false;
 
     public static boolean inIRGenOnlyMode() {
         return inIRGenOnlyMode;
+    }
+
+    public static void setRubyVersion(String rubyVersion) {
+        IRBuilder.rubyVersion = rubyVersion;
     }
 
     public static void main(String[] args) {
@@ -458,11 +461,7 @@ public class IRBuilder {
     }
 
     public static IRBuilder createIRBuilder() {
-/*
-        Ruby ruby = Ruby.getGlobalRuntime();
-        return ruby.is1_9() ? new IRBuilder19() : new IRBuilder();
-*/
-        return new IRBuilder19();
+        return rubyVersion.equals("1.9") ? new IRBuilder19() : new IRBuilder();
     }
 
     public Node skipOverNewlines(IRScope s, Node n) {
