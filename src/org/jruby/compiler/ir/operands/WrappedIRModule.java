@@ -27,14 +27,7 @@ public class WrappedIRModule extends Constant {
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         StaticScope ssc = (module == null) ? currDynScope.getStaticScope() : module.getStaticScope();
-        if (ssc != null) {
-            return ssc.getModule();
-        } else if (module.isACoreClass()) {
-            // static scope would be null for core classes
-            return module.getCoreClassModule(context.getRuntime());
-        } else {
-            // IR/Interpretation BUG?
-            return null;
-        }
+        // FIXME: Seems like this should never be null currently?
+        return ssc != null ? ssc.getModule() : context.runtime.getClass(module.getName());
     }
 }
