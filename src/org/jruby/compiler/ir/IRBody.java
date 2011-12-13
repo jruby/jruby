@@ -15,6 +15,8 @@ public class IRBody extends IRScope {
     public IRBody(IRScope lexicalParent, String name, StaticScope scope, BodyType bodyType) {
         super(lexicalParent, name, scope);
         
+        this.bodyType = bodyType;
+        
         updateVersion();
     }
 
