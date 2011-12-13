@@ -1,7 +1,5 @@
 package org.jruby.compiler.ir.operands;
 
-import org.jruby.compiler.ir.IRClass;
-
 import java.math.BigInteger;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -27,11 +25,6 @@ public class Fixnum extends Constant {
     }
 
 // ---------- These methods below are used during compile-time optimizations ------- 
-
-    @Override
-    public IRClass getTargetClass() {
-        return IRClass.getCoreClass("Fixnum");
-    }
 
     public Constant computeValue(String methodName, Constant arg) {
         if (arg instanceof Fixnum) {

@@ -22,11 +22,6 @@ public class StringLiteral extends Constant {
         return "\"" + _str_value + "\"";
     }
 
-    @Override
-    public IRClass getTargetClass() {
-        return IRClass.getCoreClass("String");
-    }
-
     // SSS: Yes, this is non-atomic because you cannot create multiple copies of the string-literal by propagating it.
     // Because of being able to define singleton methods on strings, "abc" != "abc" for 2 separate instances of the
     // string literal.  This is similar to the java equality / intern issues with non-atomic objects

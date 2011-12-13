@@ -5,7 +5,6 @@ import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.RubyHash;
 
-import org.jruby.compiler.ir.IRClass;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -49,11 +48,6 @@ public class Hash extends Operand {
         }
 
         return new Hash(newPairs);
-    }
-
-    @Override
-    public IRClass getTargetClass() {
-        return IRClass.getCoreClass("Hash");
     }
 
     /** Append the list of variables used in this operand to the input list */

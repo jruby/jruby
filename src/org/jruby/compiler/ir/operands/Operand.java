@@ -2,7 +2,6 @@ package org.jruby.compiler.ir.operands;
 
 import java.util.List;
 import java.util.Map;
-import org.jruby.compiler.ir.IRClass;
 import org.jruby.compiler.ir.Interp;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.runtime.DynamicScope;
@@ -48,11 +47,6 @@ public abstract class Operand {
 
     // if (getSubArray) is false, returns the 'index' element of the array, else returns the subarray starting at that element
     public Operand fetchCompileTimeArrayElement(int index, boolean getSubArray) {
-        return null;
-    }
-
-    // Get the target class of this operand, if we know it!
-    public IRClass getTargetClass() {
         return null;
     }
 

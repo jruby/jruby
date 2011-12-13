@@ -101,7 +101,7 @@ public class JVM implements CompilerTarget {
                 }
             }
             
-            IRScope scope = new IRBuilder().buildRoot((RootNode) ast);
+            IRScope scope = new IRBuilder(ruby.getIRManager()).buildRoot((RootNode) ast);
             
             // additional passes not enabled in builder yet
             if (deadCode) scope.runCompilerPass(new DeadCodeElimination());

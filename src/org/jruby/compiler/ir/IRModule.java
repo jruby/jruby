@@ -2,17 +2,11 @@ package org.jruby.compiler.ir;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
-import org.jruby.Ruby;
-import org.jruby.RubyModule;
 import org.jruby.compiler.ir.compiler_pass.CompilerPass;
-import org.jruby.compiler.ir.instructions.ReceiveSelfInstruction;
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.parser.StaticScope;
 
 public class IRModule extends IRScope {
-    private static Map<String, IRClass> coreClasses;
 
     private CodeVersion version;    // Current code version for this module
 
@@ -28,52 +22,10 @@ public class IRModule extends IRScope {
     private List<IRClass> classes = new ArrayList<IRClass>();
     private List<IRMethod> methods = new ArrayList<IRMethod>();
     
-    static {
-        bootStrap();
-    }
-    
-
     public IRModule(IRScope lexicalParent, String name, StaticScope scope) {
         super(lexicalParent, name, scope);
         
         updateVersion();
-    }    
-
-    static private IRClass addCoreClass(String name, IRScope parent, String[] coreMethods, StaticScope staticScope) {
-        IRClass c = new IRClass(parent, null, name, staticScope);
-        c.addInstr(new ReceiveSelfInstruction(c.getSelf()));
-        coreClasses.put(c.getName(), c);
-        if (coreMethods != null) {
-            for (String m : coreMethods) {
-                IRMethod meth = new IRMethod(c, m, true, null);
-                meth.setCodeModificationFlag(false);
-                c.addMethod(meth);
-            }
-        }
-        return c;
-    }
-
-    // SSS FIXME: These should get normally compiled or initialized some other way ... 
-    // SSS FIXME: Parent/super-type info is incorrect!
-    // These are just placeholders for now .. this needs to be updated with *real* class objects later!
-    static public void bootStrap() {
-        coreClasses = new HashMap<String, IRClass>();
-        IRScript boostrapScript = new IRScript("[bootstrap]", "[bootstrap]", null);
-        boostrapScript.addInstr(new ReceiveSelfInstruction(boostrapScript.getSelf()));
-        addCoreClass("Object", boostrapScript, null, null);
-        addCoreClass("Module", boostrapScript, null, null);
-        addCoreClass("Class", boostrapScript, null, null);
-        addCoreClass("Fixnum", boostrapScript, new String[]{"+", "-", "/", "*"}, null);
-        addCoreClass("Float", boostrapScript, new String[]{"+", "-", "/", "*"}, null);
-        addCoreClass("Array", boostrapScript, new String[]{"[]", "each", "inject"}, null);
-        addCoreClass("Range", boostrapScript, new String[]{"each"}, null);
-        addCoreClass("Hash", boostrapScript, new String[]{"each"}, null);
-        addCoreClass("String", boostrapScript, null, null);
-        addCoreClass("Proc", boostrapScript, null, null);
-    }
-
-    public static IRClass getCoreClass(String n) {
-        return coreClasses.get(n);
     }
 
     public List<IRModule> getModules() {

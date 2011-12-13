@@ -4,7 +4,6 @@ import org.jruby.compiler.ir.representations.InlinerInfo;
 import java.util.List;
 import java.util.Map;
 
-import org.jruby.compiler.ir.IRClass;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -75,11 +74,6 @@ public class Array extends Operand {
         }
 
         return new Array();
-    }
-
-    @Override
-    public IRClass getTargetClass() {
-        return IRClass.getCoreClass("Array");
     }
 
     public Operand toArray() {

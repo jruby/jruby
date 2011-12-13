@@ -1,6 +1,5 @@
 package org.jruby.compiler.ir.operands;
 
-import org.jruby.compiler.ir.IRClass;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -17,11 +16,6 @@ public class Float extends Constant {
     @Override
     public String toString() {
         return value + ":float";
-    }
-
-    @Override
-    public IRClass getTargetClass() {
-        return IRClass.getCoreClass("Float");
     }
 
     public Constant computeValue(String methodName, Constant arg) {

@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 import org.jruby.RubyRange;
 
-import org.jruby.compiler.ir.IRClass;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -45,11 +44,6 @@ public class Range extends Operand {
         // SSS FIXME: Cannot optimize this without assuming that Range.to_ary method has not redefined.
         // So for now, return null!
         return null;
-    }
-
-    @Override
-    public IRClass getTargetClass() {
-        return IRClass.getCoreClass("Range");
     }
 
     @Override

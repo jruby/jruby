@@ -133,12 +133,12 @@ import java.util.regex.Pattern;
 import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.ast.RootNode;
 import org.jruby.ast.executable.RuntimeCache;
+import org.jruby.compiler.ir.IRManager;
 import org.jruby.runtime.opto.Invalidator;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.ext.coverage.CoverageData;
 import org.jruby.ext.jruby.JRubyConfigLibrary;
-import org.jruby.ext.jruby.JRubyLibrary;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.interpreter.Interpreter;
 import org.jruby.javasupport.util.RuntimeHelpers;
@@ -1114,6 +1114,8 @@ public final class Ruby {
         // Initialize all the core classes
         bootstrap();
         
+        irManager = new IRManager();
+        
         // Initialize the "dummy" class used as a marker
         dummyClass = new RubyClass(this, classClass);
         dummyClass.freeze(tc);
@@ -1578,6 +1580,10 @@ public final class Ruby {
 
     public void setRespondToMethod(Object rtm) {
         this.respondToMethod = rtm;
+    }
+    
+    public IRManager getIRManager() {
+        return irManager;
     }
 
     /** Getter for property rubyTopSelf.
@@ -4248,4 +4254,6 @@ public final class Ruby {
     private final Random random;
     
     private final StaticScopeFactory staticScopeFactory;
+    
+    private IRManager irManager;
 }

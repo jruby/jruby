@@ -267,7 +267,7 @@ import org.jruby.util.log.LoggerFactory;
 // this is not a big deal.  Think this through!
 
 public class IRBuilder {
-
+    
     private static final Logger LOG = LoggerFactory.getLogger("IRBuilder");
 
     private static final UnexecutableNil U_NIL = UnexecutableNil.U_NIL;
@@ -300,7 +300,8 @@ public class IRBuilder {
             long t1 = new Date().getTime();
             Node ast = buildAST(isCommandLineScript, args[i]);
             long t2 = new Date().getTime();
-            IRScope scope = new IRBuilder().buildRoot((RootNode) ast);
+            IRManager manager = new IRManager();
+            IRScope scope = new IRBuilder(manager).buildRoot((RootNode) ast);
             long t3 = new Date().getTime();
             if (isDebug) {
                 LOG.debug("################## Before local optimization pass ##################");
@@ -430,6 +431,12 @@ public class IRBuilder {
 
     // Stack encoding nested rescue blocks -- this just tracks the start label of the blocks
     private Stack<Tuple<Label, Variable>> _rescueBlockStack = new Stack<Tuple<Label, Variable>>();
+    
+    private IRManager manager;
+    
+    public IRBuilder(IRManager manager) {
+        this.manager = manager;
+    }
 
     public static Node buildAST(boolean isCommandLineScript, String arg) {
         Ruby ruby = Ruby.getGlobalRuntime();
@@ -1062,7 +1069,7 @@ public class IRBuilder {
         if (nm != null) nm.addClass(c);
 
         // Create a new nested builder to ensure this gets its own IR builder state 
-        Operand rv = (new IRBuilder()).build(classNode.getBodyNode(), c);
+        Operand rv = (new IRBuilder(manager)).build(classNode.getBodyNode(), c);
         if (rv != null) c.addInstr(new ReturnInstr(rv));
 
         return ret;
@@ -1092,7 +1099,7 @@ public class IRBuilder {
         s.addInstr(new DefineMetaClassInstr(ret, receiver, mc));
 
         // Create a new nested builder to ensure this gets its own IR builder state 
-        Operand rv = (new IRBuilder()).build(sclassNode.getBodyNode(), mc);
+        Operand rv = (new IRBuilder(manager)).build(sclassNode.getBodyNode(), mc);
         if (rv != null) mc.addInstr(new ReturnInstr(rv));
 
         return ret;
@@ -1187,7 +1194,7 @@ public class IRBuilder {
             Operand module = build(((Colon2Node) constNode).getLeftNode(), s);
             s.addInstr(new PutConstInstr(module, constDeclNode.getName(), val));
         } else { // colon3, assign in Object
-            WrappedIRModule object = new WrappedIRModule(IRClass.getCoreClass("Object"));            
+            WrappedIRModule object = new WrappedIRModule(manager.getModule("Object"));            
             s.addInstr(new PutConstInstr(object, constDeclNode.getName(), val));            
         }
 
@@ -1234,7 +1241,7 @@ public class IRBuilder {
     }
 
     public Operand buildColon3(Colon3Node node, IRScope s) {
-        return searchConst(s, IRClass.getCoreClass("Object"), node.getName());
+        return searchConst(s, manager.getModule("Object"), node.getName());
     }
 
     interface CodeBlock {
@@ -1745,7 +1752,7 @@ public class IRBuilder {
             Node bodyNode = defNode.getBodyNode();
 
             // Create a new nested builder to ensure this gets its own IR builder state 
-            Operand rv = (new IRBuilder()).build(bodyNode, method);
+            Operand rv = (new IRBuilder(manager)).build(bodyNode, method);
             if (rv != null) method.addInstr(new ReturnInstr(rv));
         } else {
             method.addInstr(new ReturnInstr(Nil.NIL));
@@ -2295,7 +2302,7 @@ public class IRBuilder {
 
         // Create a new nested builder to ensure this gets its own IR builder state 
         // like the ensure block stack
-        IRBuilder closureBuilder = new IRBuilder();
+        IRBuilder closureBuilder = new IRBuilder(manager);
 
             // Receive self
         closure.addInstr(new ReceiveSelfInstruction(getSelf(closure)));
@@ -2390,7 +2397,7 @@ public class IRBuilder {
                 container = findContainerModule(s);
             }
         } else { //::Bar
-            container = new WrappedIRModule(IRClass.getCoreClass("Object"));
+            container = new WrappedIRModule(manager.getModule("Object"));
         }
 
         return container;
@@ -2412,7 +2419,7 @@ public class IRBuilder {
         if (nm != null) nm.addModule(m);
 
         // Create a new nested builder to ensure this gets its own IR builder state 
-        Operand rv = (new IRBuilder()).build(moduleNode.getBodyNode(), m);
+        Operand rv = (new IRBuilder(manager)).build(moduleNode.getBodyNode(), m);
         if (rv != null) m.addInstr(new ReturnInstr(rv));
 
         return ret;
