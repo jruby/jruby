@@ -1172,7 +1172,7 @@ public class IRBuilder {
 
     private WrappedIRModule findContainerModule(IRScope s) {
         IRBody nearestModule = s.getNearestModule();
-        return (nearestModule == null) ? WrappedIRModule.CURRENT_MODULE : new WrappedIRModule(nearestModule);
+        return (nearestModule == null) ? new WrappedIRModule(manager.getObject()) : new WrappedIRModule(nearestModule);
     }
 
     private IRBody startingSearchScope(IRScope s) {
@@ -1188,7 +1188,7 @@ public class IRBuilder {
             Operand module = build(((Colon2Node) constNode).getLeftNode(), s);
             s.addInstr(new PutConstInstr(module, constDeclNode.getName(), val));
         } else { // colon3, assign in Object
-            WrappedIRModule object = new WrappedIRModule(manager.getModule("Object"));            
+            WrappedIRModule object = new WrappedIRModule(manager.getObject());            
             s.addInstr(new PutConstInstr(object, constDeclNode.getName(), val));            
         }
 
@@ -1235,7 +1235,7 @@ public class IRBuilder {
     }
 
     public Operand buildColon3(Colon3Node node, IRScope s) {
-        return searchConst(s, manager.getModule("Object"), node.getName());
+        return searchConst(s, manager.getObject(), node.getName());
     }
 
     interface CodeBlock {
@@ -2385,7 +2385,7 @@ public class IRBuilder {
                 container = findContainerModule(s);
             }
         } else { //::Bar
-            container = new WrappedIRModule(manager.getModule("Object"));
+            container = new WrappedIRModule(manager.getObject());
         }
 
         return container;

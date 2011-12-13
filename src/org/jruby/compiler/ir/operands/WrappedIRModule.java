@@ -7,12 +7,12 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class WrappedIRModule extends Constant {
-    public static final WrappedIRModule CURRENT_MODULE = new WrappedIRModule(null);
-
     private final IRBody module;
 
     public WrappedIRModule(IRBody scope) {
         this.module = scope;
+        
+        assert module != null: "We should never wrap nothing";
     }
 
     public IRBody getModule() {
@@ -26,8 +26,8 @@ public class WrappedIRModule extends Constant {
 
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
-        StaticScope ssc = (module == null) ? currDynScope.getStaticScope() : module.getStaticScope();
-        // FIXME: Seems like this should never be null currently?
-        return ssc != null ? ssc.getModule() : context.runtime.getClass(module.getName());
+        StaticScope staticScope = module.getStaticScope();
+
+        return staticScope != null ? staticScope.getModule() : context.runtime.getClass(module.getName());
     }
 }
