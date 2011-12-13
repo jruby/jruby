@@ -6,6 +6,7 @@ import org.jruby.compiler.ir.instructions.ReceiveOptArgBase;
 import org.jruby.compiler.ir.operands.UndefinedValue;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
+import org.jruby.runtime.builtin.IRubyObject;
 
 // Assign the 'index' argument to 'dest'.
 public class ReceiveOptArgInstr extends ReceiveOptArgBase {
@@ -15,5 +16,9 @@ public class ReceiveOptArgInstr extends ReceiveOptArgBase {
 
     public Instr cloneForInlining(InlinerInfo ii) {
         throw new RuntimeException("Not implemented yet!");
-	 }
+    }
+
+    public Object receiveOptArg(IRubyObject[] args) {
+        return (argIndex < args.length ? args[argIndex] : UndefinedValue.UNDEFINED);
+    }
 }

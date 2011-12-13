@@ -20,6 +20,7 @@ import org.jruby.compiler.ir.instructions.JumpIndirectInstr;
 import org.jruby.compiler.ir.instructions.ReceiveArgBase;
 import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
 import org.jruby.compiler.ir.instructions.ReceiveOptArgBase;
+import org.jruby.compiler.ir.instructions.ReceiveRestArgBase;
 import org.jruby.compiler.ir.instructions.LineNumberInstr;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
 import org.jruby.compiler.ir.instructions.ClosureReturnInstr;
@@ -30,6 +31,7 @@ import org.jruby.compiler.ir.instructions.BranchInstr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.ResultInstr;
 import org.jruby.compiler.ir.instructions.jruby.CheckArityInstr;
+import org.jruby.compiler.ir.instructions.ruby19.ReceiveRequiredArgInstr;
 import org.jruby.compiler.ir.operands.IRException;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Nil;
@@ -227,17 +229,23 @@ public class Interpreter {
                         ipc++;
                         break;
                     }
+                    case RECV_REQD_ARG: {
+                        ReceiveRequiredArgInstr ra = (ReceiveRequiredArgInstr)lastInstr;
+                        result = ra.receiveRequiredArg(args);
+                        resultVar = ra.getResult();
+                        ipc++;
+                        break;
+                    }
                     case RECV_OPT_ARG: {
                         ReceiveOptArgBase ra = (ReceiveOptArgBase)lastInstr;
-                        int argIndex = ra.getArgIndex();
-                        result = (argIndex < args.length ? args[argIndex] : UndefinedValue.UNDEFINED);
+                        result = ra.receiveOptArg(args);
                         resultVar = ra.getResult();
                         ipc++;
                         break;
                     }
                     case RECV_REST_ARG: {
-                        ReceiveArgBase ra = (ReceiveArgBase)lastInstr;
-                        result = ra.retrieveRestArg(runtime, args);
+                        ReceiveRestArgBase ra = (ReceiveRestArgBase)lastInstr;
+                        result = ra.receiveRestArg(runtime, args);
                         resultVar = ra.getResult();
                         ipc++;
                         break;

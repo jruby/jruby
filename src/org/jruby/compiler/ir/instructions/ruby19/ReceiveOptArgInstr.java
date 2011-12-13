@@ -6,6 +6,7 @@ import org.jruby.compiler.ir.instructions.ReceiveOptArgBase;
 import org.jruby.compiler.ir.operands.UndefinedValue;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public class ReceiveOptArgInstr extends ReceiveOptArgBase {
     /** This instruction gets to pick an argument off the incoming list only if
@@ -24,5 +25,9 @@ public class ReceiveOptArgInstr extends ReceiveOptArgBase {
 
     public Instr cloneForInlining(InlinerInfo ii) {
         throw new RuntimeException("Not implemented yet!");
+    }
+
+    public Object receiveOptArg(IRubyObject[] args) {
+        return (minArgsLength <= args.length ? args[argIndex] : UndefinedValue.UNDEFINED);
     }
 }

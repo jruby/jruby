@@ -40,8 +40,8 @@ public class IRBuilder19 extends IRBuilder {
         final int requiredPre = argsNode.getPreCount();
         final int requiredPost = argsNode.getPostCount();
         final int required = argsNode.getRequiredArgsCount(); // requiredPre + requiredPost
-        final int opt = argsNode.getOptionalArgsCount();
-        final int rest = argsNode.getRestArg();
+        int opt = argsNode.getOptionalArgsCount();
+        int rest = argsNode.getRestArg();
 
         s.getStaticScope().setArities(required, opt, rest);
 
@@ -64,6 +64,10 @@ public class IRBuilder19 extends IRBuilder {
             s.addInstr(new ReceiveArgumentInstruction(s.getLocalVariable(a.getName(), 0), argIndex));
         }
 
+        // Fixup opt/rest
+        opt = opt > 0 ? opt : 0;
+        rest = rest > -1 ? 1 : 0;
+
         // Now for opt args
         if (opt > 0) {
             ListNode optArgs = argsNode.getOptArgs();
@@ -81,24 +85,25 @@ public class IRBuilder19 extends IRBuilder {
         }
 
         // Rest arg
-        if (rest > -1) {
+        if (rest > 0) {
             // Consider: def foo(*); .. ; end
             // For this code, there is no argument name available from the ruby code.
             // So, we generate an implicit arg name
             String argName = argsNode.getRestArgNode().getName();
             argName = (argName.equals("")) ? "%_arg_array" : argName;
 
-            // You need at least required+opt+2 incoming args for the rest arg to get any args at all
-            // If it is going to get something, then it should ignore requiredPre+opt args from the beginning
-            // because they have been accounted for by the preceding 'requiredPre' required args and 'opt' optional args
-            s.addInstr(new ReceiveRestArgInstr(s.getLocalVariable(argName, 0), argIndex, required+opt+2, requiredPre+opt));
+            // You need at least required+opt+1 incoming args for the rest arg to get any args at all
+            // If it is going to get something, then it should ignore required+opt args from the beginning
+            // because they have been accounted for already.
+            s.addInstr(new ReceiveRestArgInstr(s.getLocalVariable(argName, 0), argIndex, required+opt+1, required+opt));
+            argIndex++;
         }
 
         // Post(-opt and rest) required args
         ListNode postArgs = argsNode.getPost();
         for (int i = 0; i < requiredPost; i++, argIndex++) {
             ArgumentNode a = (ArgumentNode)postArgs.get(i);
-            s.addInstr(new ReceiveRequiredArgInstr(s.getLocalVariable(a.getName(), 0), argIndex, required, (opt > 0 ? opt : 0) + (rest > 0 ? rest : 0)));
+            s.addInstr(new ReceiveRequiredArgInstr(s.getLocalVariable(a.getName(), 0), argIndex, required, opt+rest));
         }
     }
 
@@ -121,7 +126,10 @@ public class IRBuilder19 extends IRBuilder {
         if (args instanceof ArgsNode) { // regular blocks
             receiveArgs((ArgsNode)args, s);
         } else if (args instanceof LocalAsgnNode) { // for loops
-            s.addInstr(new ReceiveArgumentInstruction(s.getLocalVariable(((LocalAsgnNode)args).getName(), 0), 0));
+            // Use local var depth because for-loop uses vars from the surrounding scope
+            // SSS FIXME: Verify that this is correct
+            LocalAsgnNode lan = (LocalAsgnNode)args;
+            s.addInstr(new ReceiveArgumentInstruction(s.getLocalVariable(lan.getName(), lan.getDepth()), 0));
         }
     }
 
