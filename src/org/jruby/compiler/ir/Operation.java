@@ -46,8 +46,6 @@ public enum Operation {
     RECV_REST_ARG(OpFlags.f_is_arg_receive),
     RECV_OPT_ARG(OpFlags.f_is_arg_receive),
     RECV_CLOSURE(OpFlags.f_is_arg_receive),
-    RECV_CLOSURE_ARG(OpFlags.f_is_arg_receive),
-    RECV_CLOSURE_REST_ARG(OpFlags.f_is_arg_receive),
     RECV_EXCEPTION(OpFlags.f_is_arg_receive),
 
     /* By default, call instructions cannot be deleted even if their results

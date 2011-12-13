@@ -19,7 +19,6 @@ import org.jruby.compiler.ir.instructions.JumpInstr;
 import org.jruby.compiler.ir.instructions.JumpIndirectInstr;
 import org.jruby.compiler.ir.instructions.ReceiveArgBase;
 import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
-import org.jruby.compiler.ir.instructions.ReceiveClosureArgInstr;
 import org.jruby.compiler.ir.instructions.ReceiveOptionalArgumentInstr;
 import org.jruby.compiler.ir.instructions.LineNumberInstr;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
@@ -222,15 +221,8 @@ public class Interpreter {
                     }
                     case RECV_ARG: {
                         ReceiveArgumentInstruction ra = (ReceiveArgumentInstruction)lastInstr;
-                        result = args[ra.getArgIndex()];
-                        resultVar = ra.getResult();
-                        ipc++;
-                        break;
-                    }
-                    case RECV_CLOSURE_ARG: {
-                        ReceiveClosureArgInstr ra = (ReceiveClosureArgInstr)lastInstr;
                         int argIndex = ra.getArgIndex();
-                        result = (argIndex < args.length) ? args[argIndex] : context.nil;
+                        result = (argIndex < args.length) ? args[argIndex] : context.nil; // SSS FIXME: This check is only required for closures, not methods
                         resultVar = ra.getResult();
                         ipc++;
                         break;
@@ -243,8 +235,7 @@ public class Interpreter {
                         ipc++;
                         break;
                     }
-                    case RECV_REST_ARG: 
-                    case RECV_CLOSURE_REST_ARG: {
+                    case RECV_REST_ARG: {
                         ReceiveArgBase ra = (ReceiveArgBase)lastInstr;
                         result = ra.retrieveRestArg(runtime, args);
                         resultVar = ra.getResult();

@@ -160,8 +160,6 @@ import org.jruby.compiler.ir.instructions.PutGlobalVarInstr;
 import org.jruby.compiler.ir.instructions.ReceiveSelfInstruction;
 import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
 import org.jruby.compiler.ir.instructions.ReceiveRestArgInstr;
-import org.jruby.compiler.ir.instructions.ReceiveClosureArgInstr;
-import org.jruby.compiler.ir.instructions.ReceiveClosureRestArgInstr;
 import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
 import org.jruby.compiler.ir.instructions.ReceiveExceptionInstr;
 import org.jruby.compiler.ir.instructions.ReceiveOptionalArgumentInstr;
@@ -732,7 +730,7 @@ public class IRBuilder {
             // Ex: We are trying to receive (b,c) in this example: "|a, (b,c), d| = ..."
             s.addInstr(new GetArrayInstr(v, argsArray, argIndex, isSplat));
         } else {
-            s.addInstr(isClosureArg ? new ReceiveClosureInstr(v) : (isSplat ? new ReceiveClosureRestArgInstr(v, argIndex) : new ReceiveClosureArgInstr(v, argIndex)));
+            s.addInstr(isClosureArg ? new ReceiveClosureInstr(v) : (isSplat ? new ReceiveRestArgInstr(v, argIndex) : new ReceiveArgumentInstruction(v, argIndex)));
         }
     }
 
