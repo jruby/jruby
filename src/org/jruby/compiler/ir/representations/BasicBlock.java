@@ -10,7 +10,7 @@ import org.jruby.compiler.ir.instructions.CopyInstr;
 import org.jruby.compiler.ir.instructions.ClosureReturnInstr;
 import org.jruby.compiler.ir.instructions.NopInstr;
 import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
-import org.jruby.compiler.ir.instructions.ReceiveRestArgInstr;
+import org.jruby.compiler.ir.instructions.ReceiveRestArgBase;
 import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
 import org.jruby.compiler.ir.instructions.ReceiveSelfInstruction;
 import org.jruby.compiler.ir.instructions.YieldInstr;
@@ -156,9 +156,9 @@ public class BasicBlock implements DataInfo {
 
                 // Replace the arg receive with a simple copy
                 it.set(new CopyInstr(rai.getResult(), closureArg));
-            } else if (i instanceof ReceiveRestArgInstr) {
+            } else if (i instanceof ReceiveRestArgBase) {
                 Operand closureArg;
-                ReceiveRestArgInstr rai = (ReceiveRestArgInstr)i;
+                ReceiveRestArgBase rai = (ReceiveRestArgBase)i;
                 int argIndex = rai.getArgIndex();
 
                 if (argIndex < yieldArgs.length) {

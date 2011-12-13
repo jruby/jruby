@@ -19,7 +19,7 @@ import org.jruby.compiler.ir.instructions.JumpInstr;
 import org.jruby.compiler.ir.instructions.JumpIndirectInstr;
 import org.jruby.compiler.ir.instructions.ReceiveArgBase;
 import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
-import org.jruby.compiler.ir.instructions.ReceiveOptionalArgumentInstr;
+import org.jruby.compiler.ir.instructions.ReceiveOptArgBase;
 import org.jruby.compiler.ir.instructions.LineNumberInstr;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
 import org.jruby.compiler.ir.instructions.ClosureReturnInstr;
@@ -228,7 +228,7 @@ public class Interpreter {
                         break;
                     }
                     case RECV_OPT_ARG: {
-                        ReceiveOptionalArgumentInstr ra = (ReceiveOptionalArgumentInstr)lastInstr;
+                        ReceiveOptArgBase ra = (ReceiveOptArgBase)lastInstr;
                         int argIndex = ra.getArgIndex();
                         result = (argIndex < args.length ? args[argIndex] : UndefinedValue.UNDEFINED);
                         resultVar = ra.getResult();

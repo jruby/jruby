@@ -159,10 +159,10 @@ import org.jruby.compiler.ir.instructions.PutFieldInstr;
 import org.jruby.compiler.ir.instructions.PutGlobalVarInstr;
 import org.jruby.compiler.ir.instructions.ReceiveSelfInstruction;
 import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
-import org.jruby.compiler.ir.instructions.ReceiveRestArgInstr;
 import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
 import org.jruby.compiler.ir.instructions.ReceiveExceptionInstr;
-import org.jruby.compiler.ir.instructions.ReceiveOptionalArgumentInstr;
+import org.jruby.compiler.ir.instructions.ruby18.ReceiveRestArgInstr;
+import org.jruby.compiler.ir.instructions.ruby18.ReceiveOptArgInstr;
 import org.jruby.compiler.ir.instructions.RecordEndBlockInstr;
 import org.jruby.compiler.ir.instructions.RescueEQQInstr;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
@@ -1791,7 +1791,7 @@ public class IRBuilder {
             Label l = s.getNewLabel();
             LocalAsgnNode n = (LocalAsgnNode)optArgs.get(j);
             Variable av = s.getLocalVariable(n.getName(), 0);
-            s.addInstr(new ReceiveOptionalArgumentInstr(av, argIndex));
+            s.addInstr(new ReceiveOptArgInstr(av, argIndex));
             s.addInstr(BNEInstr.create(av, UndefinedValue.UNDEFINED, l)); // if 'av' is not undefined, go to default
             build(n, s);
             s.addInstr(new LabelInstr(l));

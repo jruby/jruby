@@ -16,7 +16,8 @@ import org.jruby.compiler.ir.operands.UndefinedValue;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.instructions.BNEInstr;
 import org.jruby.compiler.ir.instructions.LabelInstr;
-import org.jruby.compiler.ir.instructions.ReceiveOptionalArgumentInstr;
+import org.jruby.compiler.ir.instructions.ruby19.ReceiveOptArgInstr;
+import org.jruby.compiler.ir.instructions.ruby19.ReceiveRestArgInstr;
 import org.jruby.compiler.ir.instructions.jruby.ToAryInstr;
 
 public class IRBuilder19 extends IRBuilder {
@@ -27,7 +28,7 @@ public class IRBuilder19 extends IRBuilder {
             Label l = s.getNewLabel();
             OptArgNode n = (OptArgNode)optArgs.get(j);
             Variable av = s.getLocalVariable(n.getName(), 0);
-            s.addInstr(new ReceiveOptionalArgumentInstr(av, argIndex));
+            s.addInstr(new ReceiveOptArgInstr(av, argIndex, 0));
             s.addInstr(BNEInstr.create(av, UndefinedValue.UNDEFINED, l)); // if 'av' is not undefined, go to default
             build(n.getValue(), s);
             s.addInstr(new LabelInstr(l));

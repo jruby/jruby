@@ -4,9 +4,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.ArrayList;
 import org.jruby.compiler.ir.instructions.Instr;
-import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
-import org.jruby.compiler.ir.instructions.ReceiveRestArgInstr;
-import org.jruby.compiler.ir.instructions.ReceiveOptionalArgumentInstr;
+import org.jruby.compiler.ir.instructions.ReceiveArgBase;
+import org.jruby.compiler.ir.instructions.ReceiveRestArgBase;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.Operand;
@@ -26,8 +25,8 @@ public class IRMethod extends IRScope {
     // it seems the first one ... but let us see ...
     private CodeVersion version;   // Current code version for this method -- can change during execution as methods get redefined!
 
-	 // SSS FIXME: Note that if operands from the method are modified,
-	 // callArgs would have to be updated as well
+    // SSS FIXME: Note that if operands from the method are modified,
+    // callArgs would have to be updated as well
     // Call parameters
     private List<Operand> callArgs;
 
@@ -70,14 +69,8 @@ public class IRMethod extends IRScope {
     @Override
     public void addInstr(Instr i) {
         // Accumulate call arguments
-        // SSS FIXME: Should we have a base class for receive instrs?
-        if (i instanceof ReceiveArgumentInstruction) {
-            callArgs.add(((ReceiveArgumentInstruction) i).getResult());
-        } else if (i instanceof ReceiveRestArgInstr) {
-            callArgs.add(new Splat(((ReceiveRestArgInstr)i).getResult()));
-        } else if (i instanceof ReceiveOptionalArgumentInstr) {
-            callArgs.add(((ReceiveOptionalArgumentInstr) i).getResult());
-        }
+        if (i instanceof ReceiveRestArgBase) callArgs.add(new Splat(((ReceiveRestArgBase)i).getResult()));
+        else if (i instanceof ReceiveArgBase) callArgs.add(((ReceiveArgBase) i).getResult());
 
         super.addInstr(i);
     }
