@@ -12,7 +12,7 @@ import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.IREvalScript;
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.IRClosure;
-import org.jruby.compiler.ir.IRScript;
+import org.jruby.compiler.ir.IRScriptBody;
 import org.jruby.compiler.ir.instructions.CallBase;
 import org.jruby.compiler.ir.instructions.CopyInstr;
 import org.jruby.compiler.ir.instructions.JumpInstr;
@@ -107,7 +107,7 @@ public class Interpreter {
     }
 
     public static IRubyObject interpret(Ruby runtime, Node rootNode, IRubyObject self) {
-        IRScript root = (IRScript) new IRBuilder(runtime.getIRManager()).buildRoot((RootNode) rootNode);
+        IRScriptBody root = (IRScriptBody) new IRBuilder(runtime.getIRManager()).buildRoot((RootNode) rootNode);
 
         // We get the live object ball rolling here.  This give a valid value for the top
         // of this lexical tree.  All new scope can then retrieve and set based on lexical parent.

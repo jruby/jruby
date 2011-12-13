@@ -1,7 +1,6 @@
 package org.jruby.compiler.ir.operands;
 
 import org.jruby.util.ByteList;
-import org.jruby.compiler.ir.IRClass;
 import org.jruby.RubyString;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;

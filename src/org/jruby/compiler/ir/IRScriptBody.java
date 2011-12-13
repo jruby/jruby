@@ -9,21 +9,16 @@ import org.jruby.parser.StaticScope;
 // FIXME: I made this IRModule because any methods placed in top-level script goes
 // into something which an IRScript is basically a module that is special in that
 // it represents a lexical unit.  Fix what now?
-public class IRScript extends IRModule {
+public class IRScriptBody extends IRBody {
     private List<IRClosure> beginBlocks;
     private List<IRClosure> endBlocks;
 
-    public IRScript(String className, String sourceName, StaticScope staticScope) {
-        super(null, sourceName, staticScope);
+    public IRScriptBody(String className, String sourceName, StaticScope staticScope) {
+        super(null, sourceName, staticScope, BodyType.Script);
     }
 
     public StringLiteral getFileName() {
         return new StringLiteral(getName());
-    }
-
-    @Override
-    public String getScopeName() {
-        return "Script";
     }
 
     @Override

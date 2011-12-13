@@ -19,7 +19,6 @@ import org.jruby.compiler.ir.instructions.ReceiveClosureRestArgInstr;
 import org.jruby.compiler.ir.representations.CFG;
 import org.jruby.parser.StaticScope;
 import org.jruby.parser.IRStaticScope;
-import org.jruby.parser.IRStaticScopeFactory;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.InterpretedIRBlockBody;
@@ -145,6 +144,7 @@ public class IRClosure extends IRScope {
         return this.hasBeenInlined;
     }
 
+    @Override
     public LocalVariable findExistingLocalVariable(String name) {
         LocalVariable lvar = localVars.getVariable(name);
         if (lvar != null) return lvar;
@@ -157,6 +157,7 @@ public class IRClosure extends IRScope {
         return lvar;
     }
 
+    @Override
     public LocalVariable getLocalVariable(String name, int scopeDepth) {
         if (isForLoopBody) return getLexicalParent().getLocalVariable(name, scopeDepth);
 

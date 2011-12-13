@@ -7,7 +7,6 @@ import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
 import org.jruby.compiler.ir.instructions.ReceiveRestArgInstr;
 import org.jruby.compiler.ir.instructions.ReceiveOptionalArgumentInstr;
-import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Splat;
@@ -17,9 +16,6 @@ import org.jruby.parser.IRStaticScope;
 
 public class IRMethod extends IRScope {
     public final boolean isInstanceMethod;
-
-    public final Label startLabel; // Label for the start of the method
-    public final Label endLabel;   // Label for the end of the method
 
     // SSS FIXME: Token can be final for a method -- implying that the token is only for this particular implementation of the method
     // But, if the method is modified, we create a new method object which in turn gets a new token.  What makes sense??  Intuitively,
@@ -39,9 +35,8 @@ public class IRMethod extends IRScope {
     
     public IRMethod(IRScope lexicalParent, String name, boolean isInstanceMethod, StaticScope staticScope) {
         super(lexicalParent, name, staticScope);
+        
         this.isInstanceMethod = isInstanceMethod;
-        startLabel = getNewLabel("_METH_START");
-        endLabel = getNewLabel("_METH_END");
         callArgs = new ArrayList<Operand>();
         if (!IRBuilder.inIRGenOnlyMode()) {
            if (staticScope != null) ((IRStaticScope)staticScope).setIRScope(this);
@@ -84,20 +79,6 @@ public class IRMethod extends IRScope {
 
     public Operand[] getCallArgs() {
         return callArgs.toArray(new Operand[callArgs.size()]);
-    }
-
-    public LocalVariable findExistingLocalVariable(String name) {
-        return localVars.getVariable(name);
-    }
-
-    public LocalVariable getLocalVariable(String name, int scopeDepth) {
-        LocalVariable lvar = findExistingLocalVariable(name);
-        if (lvar == null) {
-            lvar = new LocalVariable(name, scopeDepth, localVars.nextSlot);
-            localVars.putVariable(name, lvar);
-        }
-
-        return lvar;
     }
 
     public LocalVariable getImplicitBlockArg() {

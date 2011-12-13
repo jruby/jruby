@@ -3,8 +3,7 @@ package org.jruby.compiler.ir.instructions;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import org.jruby.compiler.ir.IRClass;
-import org.jruby.compiler.ir.IRModule;
+import org.jruby.compiler.ir.IRBody;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.calladapter.CallAdapter;
 import org.jruby.compiler.ir.operands.MethAddr;
@@ -160,8 +159,8 @@ public abstract class CallBase extends Instr {
             // Unknown receiver -- could be Proc!!
             if (!(object instanceof WrappedIRModule)) return true;
 
-            IRModule c = ((WrappedIRModule) object).getModule();
-            if ((c instanceof IRClass) && c.getName().equals("Proc")) return true;
+            IRBody c = ((WrappedIRModule) object).getModule();
+            if (c != null && c.isClass() && c.getName().equals("Proc")) return true;
         }
 
         // SSS FIXME: Are all bases covered?

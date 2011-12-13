@@ -1,6 +1,6 @@
 package org.jruby.compiler.ir.instructions;
 
-import org.jruby.compiler.ir.IRModule;
+import org.jruby.compiler.ir.IRBody;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.UndefinedValue;
@@ -22,7 +22,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 // this call to the parent scope.
 
 public class SearchConstInstr extends Instr implements ResultInstr {
-    IRModule definingModule;
+    IRBody definingModule;
     String constName;
     private Variable result;
 
@@ -30,7 +30,7 @@ public class SearchConstInstr extends Instr implements ResultInstr {
     private volatile transient Object cachedConstant = null;
     private Object generation = -1;
 
-    public SearchConstInstr(Variable result, IRModule definingModule, String constName) {
+    public SearchConstInstr(Variable result, IRBody definingModule, String constName) {
         super(Operation.SEARCH_CONST);
         
         assert result != null: "SearchConstInstr result is null";

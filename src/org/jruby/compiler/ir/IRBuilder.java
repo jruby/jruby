@@ -107,6 +107,7 @@ import org.jruby.ast.WhenNode;
 import org.jruby.ast.XStrNode;
 import org.jruby.ast.ZSuperNode;
 import org.jruby.compiler.NotCompilableException;
+import org.jruby.compiler.ir.IRBody.BodyType;
 import org.jruby.compiler.ir.compiler_pass.CFGBuilder;
 import org.jruby.compiler.ir.compiler_pass.IRPrinter;
 import org.jruby.compiler.ir.compiler_pass.InlineTest;
@@ -1059,7 +1060,7 @@ public class IRBuilder {
         String className = cpath.getName();
         Operand container = getContainerFromCPath(cpath, s);
 
-        IRClass c = new IRClass(s, (superClass instanceof WrappedIRModule) ? (IRClass)((WrappedIRModule)superClass).getModule() : null, className, classNode.getScope());
+        IRBody c = new IRBody(s, className, classNode.getScope(), BodyType.Class);
         c.addInstr(new ReceiveSelfInstruction(c.getSelf()));
         Variable ret = s.getNewTemporaryVariable();
         s.addInstr(new DefineClassInstr(ret, c, container, superClass));
@@ -1085,7 +1086,7 @@ public class IRBuilder {
         Operand receiver = build(sclassNode.getReceiverNode(), s);
 
         // Create a dummy meta class and record it as being lexically defined in scope s
-        IRMetaClass mc = new IRMetaClass(s, sclassNode.getScope());
+        IRBody mc = new IRBody(s, manager.getMetaClassName(), sclassNode.getScope(), BodyType.MetaClass);
         mc.addInstr(new ReceiveSelfInstruction(mc.getSelf()));
 
         Variable ret = s.getNewTemporaryVariable();
@@ -1155,7 +1156,7 @@ public class IRBuilder {
          * ------------------------------------------------------------------------------- */
         IRScope current = s;
         while (current != null && !(current instanceof IREvalScript) &&
-                !(current.isScriptBody() && !(current.getLexicalParent() instanceof IRMetaClass))) {
+                !(current.isScriptBody() && !(current.getLexicalParent() != null && current.getLexicalParent().isScriptBody()))) {
             current = current.getLexicalParent();
         }
 
@@ -1170,11 +1171,11 @@ public class IRBuilder {
     }
 
     private WrappedIRModule findContainerModule(IRScope s) {
-        IRModule nearestModule = s.getNearestModule();
+        IRBody nearestModule = s.getNearestModule();
         return (nearestModule == null) ? WrappedIRModule.CURRENT_MODULE : new WrappedIRModule(nearestModule);
     }
 
-    private IRModule startingSearchScope(IRScope s) {
+    private IRBody startingSearchScope(IRScope s) {
         return s.getNearestModule();
     }
 
@@ -1195,7 +1196,7 @@ public class IRBuilder {
     }
 
     private Operand searchConst(IRScope s, IRScope startingScope, String name) {
-        IRModule startingModule = startingSearchScope(startingScope);
+        IRBody startingModule = startingSearchScope(startingScope);
         Variable v = s.getNewTemporaryVariable();
         s.addInstr(new SearchConstInstr(v, startingModule, name));
         Label foundLabel = s.getNewLabel();
@@ -2396,7 +2397,7 @@ public class IRBuilder {
         Operand container = getContainerFromCPath(cpath, s);
 
         // Build the new module
-        IRModule m = new IRModule(s, moduleName, moduleNode.getScope());
+        IRBody m = new IRBody(s, moduleName, moduleNode.getScope(), BodyType.Module);
         m.addInstr(new ReceiveSelfInstruction(m.getSelf()));
         Variable ret = s.getNewTemporaryVariable();
         s.addInstr(new DefineModuleInstr(m, ret, container));
@@ -2971,7 +2972,7 @@ public class IRBuilder {
         StaticScope staticScope = rootNode.getStaticScope();
 
         // Top-level script!
-        IRScript script = new IRScript("__file__", file, staticScope);
+        IRScriptBody script = new IRScriptBody("__file__", file, staticScope);
         script.addInstr(new ReceiveSelfInstruction(script.getSelf()));
         
         // Debug info: record file name

@@ -266,10 +266,10 @@ public abstract class IRScope {
     /**
      * Returns the nearest method from this scope which may be itself (can never be null)
      */
-    public IRModule getNearestModule() {
+    public IRBody getNearestModule() {
         IRScope current = this;
 
-        while (current != null && !((current instanceof IRModule) || (current instanceof IREvalScript))) {
+        while (current != null && !((current instanceof IRBody) || (current instanceof IREvalScript))) {
             current = current.getLexicalParent();
         }
 
@@ -280,7 +280,7 @@ public abstract class IRScope {
             return null;
         }
 
-        return (IRModule) current;
+        return (IRBody) current;
     }
     
 
@@ -298,7 +298,7 @@ public abstract class IRScope {
     public IRScope getTopLevelScope() {
         IRScope current = this;
 
-        while (!(current instanceof IREvalScript) && !(current instanceof IRScript)) {
+        while (!(current instanceof IREvalScript) && !(current instanceof IRScriptBody)) {
             current = current.getLexicalParent();
         }
         
@@ -597,9 +597,24 @@ public abstract class IRScope {
         hasUnusedImplicitBlockArg = true;
     }
 
-    public abstract LocalVariable findExistingLocalVariable(String name);
+    public LocalVariable findExistingLocalVariable(String name) {
+        return localVars.getVariable(name);
+    }
 
-    public abstract LocalVariable getLocalVariable(String name, int depth);
+    /**
+     * Find or create a local variable.  By default, scopes are assumed to
+     * only check current depth.  Blocks/Closures override this because they
+     * have special nesting rules.
+     */
+    public LocalVariable getLocalVariable(String name, int scopeDepth) {
+        LocalVariable lvar = findExistingLocalVariable(name);
+        if (lvar == null) {
+            lvar = new LocalVariable(name, scopeDepth, localVars.nextSlot);
+            localVars.putVariable(name, lvar);
+        }
+
+        return lvar;
+    }
 
     protected void initEvalScopeVariableAllocator(boolean reset) {
         if (reset || evalScopeVars == null) evalScopeVars = new LocalVariableAllocator();

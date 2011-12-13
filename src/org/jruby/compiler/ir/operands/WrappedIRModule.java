@@ -1,6 +1,6 @@
 package org.jruby.compiler.ir.operands;
 
-import org.jruby.compiler.ir.IRModule;
+import org.jruby.compiler.ir.IRBody;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -9,13 +9,13 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class WrappedIRModule extends Constant {
     public static final WrappedIRModule CURRENT_MODULE = new WrappedIRModule(null);
 
-    private final IRModule module;
+    private final IRBody module;
 
-    public WrappedIRModule(IRModule scope) {
+    public WrappedIRModule(IRBody scope) {
         this.module = scope;
     }
 
-    public IRModule getModule() {
+    public IRBody getModule() {
         return module;
     }
 
