@@ -298,7 +298,7 @@ public abstract class IRScope {
     public IRScope getTopLevelScope() {
         IRScope current = this;
 
-        while (!(current instanceof IREvalScript) && !(current instanceof IRScriptBody)) {
+        while (current != null && !current.isScriptScope()) {
             current = current.getLexicalParent();
         }
         
@@ -908,7 +908,14 @@ public abstract class IRScope {
      * Does this scope represent a method and is it one defined at the root
      * of a script?
      */
-    public boolean isScriptBody() {
+    public boolean isBody() {
+        return false;
+    }
+    
+    /**
+     * Is this an eval script or a regular file script?
+     */
+    public boolean isScriptScope() {
         return false;
     }
 }

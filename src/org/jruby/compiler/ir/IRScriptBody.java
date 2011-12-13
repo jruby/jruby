@@ -47,4 +47,9 @@ public class IRScriptBody extends IRBody {
     public List<IRClosure> getEndBlocks() {
         return endBlocks;
     }
+    
+    @Override
+    public boolean isScriptScope() {
+        return true;
+    }
 }

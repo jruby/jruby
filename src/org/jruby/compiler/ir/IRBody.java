@@ -50,8 +50,10 @@ public class IRBody extends IRScope {
         return bodyType == BodyType.MetaClass;
     }
     
+    // FIXME: This is a poor name.  It is used for super and some complex exprs for
+    // figuring out class bodys for cvars
     @Override
-    public boolean isScriptBody() {
+    public boolean isBody() {
         return true;
     }
 }

@@ -2,12 +2,12 @@ package org.jruby.compiler.ir.instructions;
 
 import java.util.Map;
 
-import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.RubyModule;
+import org.jruby.compiler.ir.IRScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.evaluator.ASTInterpreter;
@@ -19,11 +19,11 @@ import org.jruby.runtime.DynamicScope;
  * A candidate static IRScope is also passed in.
  */
 public class GetClassVarContainerModuleInstr extends Instr implements ResultInstr {
-    private IRMethod candidateScope;
+    private IRScope candidateScope;
     private Operand object;
     private Variable result;
 
-    public GetClassVarContainerModuleInstr(Variable result, IRMethod candidateScope, Operand object) {
+    public GetClassVarContainerModuleInstr(Variable result, IRScope candidateScope, Operand object) {
         super(Operation.CLASS_VAR_MODULE);
         
         assert result != null;

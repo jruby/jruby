@@ -9,7 +9,6 @@ import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.ClosureLocalVariable;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.interpreter.Interpreter;
-import org.jruby.parser.IRStaticScopeFactory;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
@@ -103,5 +102,10 @@ public class IREvalScript extends IRClosure {
     @Override
     public int getUsedVariablesCount() {
         return 1 + nearestNonEvalScope.evalScopeVars.nextSlot + getPrefixCountSize("%flip");
+    }
+    
+    @Override
+    public boolean isScriptScope() {
+        return true;
     }
 }
