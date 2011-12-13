@@ -27,6 +27,11 @@ public class ReceiveRestArgInstr extends ReceiveRestArgBase {
         this.usedArgsCount = usedArgsCount;
     }
 
+    @Override
+    public String toString() {
+        return (isDead() ? "[DEAD]" : "") + (hasUnusedResult() ? "[DEAD-RESULT]" : "") + getResult() + " = " + getOperation() + "(" + argIndex + ", " + minArgsLength + ", " + usedArgsCount + ")";
+    }
+
     public Instr cloneForInlining(InlinerInfo ii) {
         return new CopyInstr(ii.getRenamedVariable(result), ii.getCallArg(argIndex, true));
     }

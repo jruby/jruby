@@ -17,6 +17,11 @@ public class ReceiveOptArgInstr extends ReceiveOptArgBase {
         this.minArgsLength = minArgsLength;
     }
 
+    @Override
+    public String toString() {
+        return (isDead() ? "[DEAD]" : "") + (hasUnusedResult() ? "[DEAD-RESULT]" : "") + getResult() + " = " + getOperation() + "(" + argIndex + ", " + minArgsLength + ")";
+    }
+
     public Instr cloneForInlining(InlinerInfo ii) {
         throw new RuntimeException("Not implemented yet!");
     }

@@ -591,6 +591,10 @@ public class IRBuilder {
         }
     }
 
+    protected Variable getSelf(IRScope s) {
+        return s.getSelf();
+    }
+
     protected Variable copyAndReturnValue(IRScope s, Operand val) {
         Variable v = s.getNewTemporaryVariable();
         s.addInstr(new CopyInstr(v, val));
@@ -1745,7 +1749,10 @@ public class IRBuilder {
         IRMethod method = new IRMethod(s, defNode.getName(), isInstanceMethod, defNode.getScope());
 
         // Build IR for arguments
-        receiveArgs(defNode.getArgsNode(), method);
+        receiveMethodArgs(defNode.getArgsNode(), method);
+
+        // Receive block
+        receiveMethodClosureArg(defNode.getArgsNode(), method);
 
         // Thread poll on entry to method
         addThreadPollInstrIfNeeded(s);
@@ -1799,7 +1806,7 @@ public class IRBuilder {
         return argIndex;
     }
 
-    public void receiveArgs(final ArgsNode argsNode, IRScope s) {
+    public void receiveMethodArgs(final ArgsNode argsNode, IRScope s) {
         final int required = argsNode.getRequiredArgsCount();
         final int opt = argsNode.getOptionalArgsCount();
         final int rest = argsNode.getRestArg();
@@ -1825,22 +1832,7 @@ public class IRBuilder {
             s.addInstr(new ReceiveArgumentInstruction(s.getLocalVariable(a.getName(), 0), argIndex));
         }
 
-            // IMPORTANT: Receive the block argument before the opt and splat args
-            // This is so that the *arg can be encoded as 'rest of the array'.  This
-            // won't work if the block argument hasn't been received yet!
-        Variable blockVar = null;
-        if (argsNode.getBlock() != null) {
-            blockVar = s.getLocalVariable(argsNode.getBlock().getName(), 0);
-            s.addInstr(new ReceiveClosureInstr(blockVar));
-        }
-
-        // SSS FIXME: This instruction is only needed if there is an yield instr somewhere!
-        // In addition, store the block argument in an implicit block variable
-        Variable implicitBlockArg = s.getImplicitBlockArg();
-        if (blockVar == null) s.addInstr(new ReceiveClosureInstr(implicitBlockArg));
-        else s.addInstr(new CopyInstr(implicitBlockArg, blockVar));
-
-            // Now for the rest
+      
         if (opt > 0) {
             argIndex = receiveOptArgs(argsNode, s, opt, argIndex);
         }
@@ -1853,8 +1845,28 @@ public class IRBuilder {
             argName = (argName.equals("")) ? "%_arg_array" : argName;
             s.addInstr(new ReceiveRestArgInstr(s.getLocalVariable(argName, 0), argIndex));
         }
+    }
 
-        // FIXME: Ruby 1.9 post args code needs to come here
+    public void receiveMethodClosureArg(ArgsNode argsNode, IRScope s) {
+        Variable blockVar = null;
+        if (argsNode.getBlock() != null) {
+            blockVar = s.getLocalVariable(argsNode.getBlock().getName(), 0);
+            s.addInstr(new ReceiveClosureInstr(blockVar));
+        }
+
+        // SSS FIXME: This instruction is only needed if there is an yield instr somewhere!
+        // In addition, store the block argument in an implicit block variable
+        Variable implicitBlockArg = s.getImplicitBlockArg();
+        if (blockVar == null) s.addInstr(new ReceiveClosureInstr(implicitBlockArg));
+        else s.addInstr(new CopyInstr(implicitBlockArg, blockVar));
+    }
+
+    public void receiveBlockArgs(final IterNode node, IRScope s) {
+        buildBlockArgsAssignment(node.getVarNode(), s, null, 0, true, false, false);
+    }
+
+    public void receiveBlockClosureArg(final Node node, IRScope s) {
+        if (node != null) buildBlockArgsAssignment(node, s, null, 0, true, true, false);
     }
 
     public String buildType(Node typeNode) {
@@ -2170,8 +2182,7 @@ public class IRBuilder {
         NodeType argsNodeId = null;
         if (forNode.getVarNode() != null) {
             argsNodeId = forNode.getVarNode().getNodeType();
-            if (argsNodeId != null)
-                buildBlockArgsAssignment(forNode.getVarNode(), closure, null, 0, true, false, false);
+            if (argsNodeId != null) receiveBlockArgs(forNode, closure);
         }
 
             // Start label -- used by redo!
@@ -2310,20 +2321,19 @@ public class IRBuilder {
         // like the ensure block stack
         IRBuilder closureBuilder = createIRBuilder();
 
-            // Receive self
+        // Receive self
         closure.addInstr(new ReceiveSelfInstruction(getSelf(closure)));
 
-            // Build args
+        // Build args
         NodeType argsNodeId = BlockBody.getArgumentTypeWackyHack(iterNode);
         if ((iterNode.getVarNode() != null) && (argsNodeId != null))
-            closureBuilder.buildBlockArgsAssignment(iterNode.getVarNode(), closure, null, 0, true, false, false);
-        if (iterNode.getBlockVarNode() != null)
-            closureBuilder.buildBlockArgsAssignment(iterNode.getBlockVarNode(), closure, null, 0, true, true, false);
+            closureBuilder.receiveBlockArgs(iterNode, closure);
+        closureBuilder.receiveBlockClosureArg(iterNode.getBlockVarNode(), closure);
 
-            // start label -- used by redo!
+        // start label -- used by redo!
         closure.addInstr(new LabelInstr(closure.startLabel));
 
-            // Build closure body and return the result of the closure
+        // Build closure body and return the result of the closure
         Operand closureRetVal = iterNode.getBodyNode() == null ? Nil.NIL : closureBuilder.build(iterNode.getBodyNode(), closure);
         if (closureRetVal != U_NIL)  // can be U_NIL if the node is an if node with returns in both branches.
             closure.addInstr(new ClosureReturnInstr(closureRetVal));
@@ -3008,10 +3018,6 @@ public class IRBuilder {
         script.addInstr(new ReturnInstr(build(rootNode.getBodyNode(), script)));
 
         return script;
-    }
-
-    private Variable getSelf(IRScope s) {
-        return s.getSelf();
     }
 
     public Operand buildSelf(Node node, IRScope s) {
