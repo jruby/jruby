@@ -1063,10 +1063,6 @@ public class IRBuilder {
         c.addInstr(new ReceiveSelfInstruction(c.getSelf()));
         Variable ret = s.getNewTemporaryVariable();
         s.addInstr(new DefineClassInstr(ret, c, container, superClass));
-        // SSS NOTE: This is a debugging tool that works in most cases and is not used
-        // at runtime by the executing code since this static nesting might be wrong.
-        IRModule nm = s.getNearestModule();
-        if (nm != null) nm.addClass(c);
 
         // Create a new nested builder to ensure this gets its own IR builder state 
         Operand rv = (new IRBuilder(manager)).build(classNode.getBodyNode(), c);
@@ -1091,10 +1087,7 @@ public class IRBuilder {
         // Create a dummy meta class and record it as being lexically defined in scope s
         IRMetaClass mc = new IRMetaClass(s, sclassNode.getScope());
         mc.addInstr(new ReceiveSelfInstruction(mc.getSelf()));
-        // SSS NOTE: This is a debugging tool that works in most cases and is not used
-        // at runtime by the executing code since this static nesting might be wrong.
-        IRModule nm = s.getNearestModule();
-        if (nm != null) nm.addClass(mc);
+
         Variable ret = s.getNewTemporaryVariable();
         s.addInstr(new DefineMetaClassInstr(ret, receiver, mc));
 
@@ -1770,13 +1763,7 @@ public class IRBuilder {
     public Operand buildDefs(DefsNode node, IRScope s) { // Class method
         Operand container =  build(node.getReceiverNode(), s);
         IRMethod method = defineNewMethod(node, s, false);
-        // ENEBO: Can all metaobjects be used for this?  closure?
-        //if (container instanceof WrappedIRModule) {
-        //     ((WrappedIRModule) container).getModule().addMethod(method);
-        //}
-        if (s.getLexicalParent() instanceof IRModule) {
-            ((IRModule)s.getLexicalParent()).addMethod(method);
-        }
+
         s.addInstr(new DefineClassMethodInstr(container, method));
         return Nil.NIL;
     }
@@ -2413,10 +2400,6 @@ public class IRBuilder {
         m.addInstr(new ReceiveSelfInstruction(m.getSelf()));
         Variable ret = s.getNewTemporaryVariable();
         s.addInstr(new DefineModuleInstr(m, ret, container));
-        // SSS NOTE: This is a debugging tool that works in most cases and is not used
-        // at runtime by the executing code since this static nesting might be wrong.
-        IRModule nm = s.getNearestModule();
-        if (nm != null) nm.addModule(m);
 
         // Create a new nested builder to ensure this gets its own IR builder state 
         Operand rv = (new IRBuilder(manager)).build(moduleNode.getBodyNode(), m);

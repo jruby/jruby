@@ -163,6 +163,7 @@ public class JVM implements CompilerTarget {
         emit(script);
     }
 
+    // FIXME: In-flux and soon to be impossible
     public void emit(IRClass cls) {
         pushclass();
         cls().visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, cls.getName(), null, p(RubyObject.class), null);
@@ -177,16 +178,6 @@ public class JVM implements CompilerTarget {
 
         // Root method
         emit(cls);
-
-        // Additional methods
-        for (IRMethod method : cls.getMethods()) {
-            emit(method);
-        }
-
-        // Nested classes
-        for (IRClass cls2 : cls.getClasses()) {
-            emit(cls2);
-        }
 
         cls().visitEnd();
         popclass();

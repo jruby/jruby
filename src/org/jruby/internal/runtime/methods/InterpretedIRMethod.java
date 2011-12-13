@@ -21,7 +21,7 @@ public class InterpretedIRMethod extends DynamicMethod {
     private final IRScope method;
     private Arity arity;
     boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
-
+    
     private InterpretedIRMethod(IRScope method, Visibility visibility, RubyModule implementationClass, boolean isTopLevel) {
         super(implementationClass, visibility, CallConfiguration.FrameNoneScopeNone);
         this.method = method;
@@ -42,6 +42,10 @@ public class InterpretedIRMethod extends DynamicMethod {
     // We can probably use IRMethod callArgs for something (at least arity)
     public InterpretedIRMethod(IRScope method, Visibility visibility, RubyModule implementationClass) {
         this(method, visibility, implementationClass, false);
+    }
+    
+    public IRScope getIRMethod() {
+        return method;
     }
 
     private Arity calculateArity() {

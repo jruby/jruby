@@ -28,32 +28,6 @@ public class IRModule extends IRScope {
         updateVersion();
     }
 
-    public List<IRModule> getModules() {
-        return modules;
-    }
-
-    public List<IRClass> getClasses() {
-        return classes;
-    }
-
-    public List<IRMethod> getMethods() {
-        return methods;
-    }
-
-    public void addModule(IRModule m) {
-        modules.add(m);
-    }
-
-    public void addClass(IRClass c) {
-        classes.add(c);
-    }
-
-    public void addMethod(IRMethod method) {
-        assert !method.isScriptBody();
-
-        methods.add(method);
-    }
-
     @Override
     public void runCompilerPassOnNestedScopes(CompilerPass p) {
         for (IRScope m : modules) {
@@ -84,14 +58,6 @@ public class IRModule extends IRScope {
 
     public CodeVersion getVersion() {
         return version;
-    }
-
-    public IRMethod getInstanceMethod(String name) {
-        for (IRMethod m : methods) {
-            if (m.isInstanceMethod && m.getName().equals(name)) return m;
-        }
-
-        return null;
     }
 
     public LocalVariable getLocalVariable(String name, int scopeDepth) {

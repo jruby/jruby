@@ -827,7 +827,7 @@ public abstract class IRScope {
 //        }
     }    
     
-    public void inlineMethod(IRMethod method, BasicBlock basicBlock, CallBase call) {
+    public void inlineMethod(IRScope method, BasicBlock basicBlock, CallBase call) {
         depends(cfg());
         
         new CFGInliner(cfg).inlineMethod(method, basicBlock, call);
