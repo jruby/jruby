@@ -146,10 +146,6 @@ public class IRModule extends IRScope {
         return this == IRClass.getCoreClass(getName());
     }
 
-    public boolean isCoreClassType(String className) {
-        return this == IRClass.getCoreClass(className);
-    }
-
     public RubyModule getCoreClassModule(Ruby runtime) {
         // SSS FIXME: Here, I dont really care if this is a core class module or not .. so, why the charade?
         String n = getName();
