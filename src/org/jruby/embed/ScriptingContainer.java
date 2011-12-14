@@ -48,6 +48,7 @@ import org.jruby.RubyGlobal.OutputGlobalVariable;
 import org.jruby.RubyIO;
 import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.RubyInstanceConfig.LoadServiceCreator;
+import org.jruby.RubyInstanceConfig.ProfilingMode;
 import org.jruby.embed.internal.BiVariableMap;
 import org.jruby.embed.internal.ConcurrentLocalContextProvider;
 import org.jruby.embed.internal.EmbedRubyInterfaceAdapterImpl;
@@ -704,6 +705,37 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      */
     public void setProfile(Profile profile) {
         provider.getRubyInstanceConfig().setProfile(profile);
+    }
+    
+    /**
+     * Returns a ProfilingMode currently used. The default value is ProfilingMode.OFF.
+     *
+     * @since JRuby 1.6.6.
+     *
+     * @return a current profiling mode.
+     */
+    public ProfilingMode getProfilingMode() {
+        return provider.getRubyInstanceConfig().getProfilingMode();
+    }
+
+    /**
+     * Changes a ProfilingMode to a given one. The default value is Profiling.OFF.
+     * Call this method before you use put/get, runScriptlet, and parse methods so that
+     * initial configurations will work.
+     *
+     * ProfilingMode allows you to change profiling style.
+     * 
+     * Profiling.OFF - default. profiling off.
+     * Profiling.API - activates Ruby profiler API. equivalent to --profile.api command line option
+     * Profiling.FLAT - synonym for --profile command line option equivalent to --profile.flat command line option
+     * Profiling.GRAPH - runs with instrumented (timed) profiling, graph format. equivalent to --profile.graph command line option.
+     *
+     * @since JRuby 1.6.6.
+     *
+     * @param mode a new profiling mode to be set.
+     */
+    public void setProfile(ProfilingMode mode) {
+        provider.getRubyInstanceConfig().setProfilingMode(mode);
     }
 
     /**
