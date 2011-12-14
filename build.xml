@@ -274,6 +274,8 @@
       <patternset refid="java.src.pattern"/>
       <compilerarg line="-XDignore.symbol.file=true"/>
       <compilerarg line="-J-Xmx${jruby.compile.memory}"/>
+      <compilerarg line="-J-Dfile.encoding=UTF-8"/>
+      <compilerarg line="-J-Duser.language=en"/>
     </apt>
 
     <!-- Apply any instrumentation that is enabled (code coverage, etc) -->
