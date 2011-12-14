@@ -4,4 +4,5 @@ exclude :test_invalid_jump_from_class_definition
 exclude :test_method_redefinition
 exclude :test_module_function
 exclude :test_nested_class_removal
+exclude :test_redefine_private_class
 exclude :test_singleton_class
