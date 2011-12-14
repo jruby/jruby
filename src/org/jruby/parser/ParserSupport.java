@@ -907,7 +907,7 @@ public class ParserSupport {
     public WhenNode newWhenNode(ISourcePosition position, Node expressionNodes, Node bodyNode, Node nextCase) {
         if (bodyNode == null) bodyNode = NilImplicitNode.NIL;
 
-        if (expressionNodes instanceof SplatNode || expressionNodes instanceof ArgsCatNode) {
+        if (expressionNodes instanceof SplatNode || expressionNodes instanceof ArgsCatNode || expressionNodes instanceof ArgsPushNode) {
             return new WhenNode(position, expressionNodes, bodyNode, nextCase);
         }
 
