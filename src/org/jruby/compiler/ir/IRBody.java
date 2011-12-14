@@ -1,6 +1,5 @@
 package org.jruby.compiler.ir;
 
-import com.sun.xml.internal.messaging.saaj.soap.ver1_1.Body1_1Impl;
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.parser.StaticScope;
 
