@@ -211,6 +211,10 @@ public abstract class IRScope {
         instructions.add(i);
     }
 
+    public LocalVariable getNewFlipStateVariable() {
+        return getLocalVariable("%flip_" + allocateNextPrefixedName("%flip"), 0);
+    }
+
     public void initFlipStateVariable(Variable v, Operand initState) {
         // Add it to the beginning
         instructions.add(0, new CopyInstr(v, initState));
@@ -261,6 +265,16 @@ public abstract class IRScope {
         assert current instanceof IRMethod : "All scopes must be surrounded by at least one method";
         
         return (IRMethod) current;
+    }
+    
+    public IRScope getNearestNonClosureScope() {
+        IRScope current = this;
+
+        while (current != null && (current instanceof IRClosure)) {
+            current = current.getLexicalParent();
+        }
+        
+        return current;
     }
     
     /**

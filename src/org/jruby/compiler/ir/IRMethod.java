@@ -85,10 +85,6 @@ public class IRMethod extends IRScope {
         return getLocalVariable(Variable.BLOCK, 0);
     }
 
-    public LocalVariable getNewFlipStateVariable() {
-        return getLocalVariable("%flip_" + allocateNextPrefixedName("%flip"), 0);
-    }
-
     public int assignBindingSlot(String varName) {
         Integer slot = bindingSlotMap.get(varName);
         if (slot == null) {

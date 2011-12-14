@@ -84,6 +84,16 @@ public class IRClosure extends IRScope {
     }
 
     @Override
+    public LocalVariable getNewFlipStateVariable() {
+        throw new RuntimeException("Cannot get flip variables from closures or evals.");
+    }
+
+    @Override
+    public void initFlipStateVariable(Variable v, Operand initState) {
+        throw new RuntimeException("Cannot init flip variables from closures or evals.");
+    }
+
+    @Override
     public Variable getNewTemporaryVariable() {
         temporaryVariableIndex++;
         return new TemporaryClosureVariable(closureId, temporaryVariableIndex);
