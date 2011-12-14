@@ -1797,6 +1797,10 @@ public class RubyInstanceConfig {
         return profilingMode;
     }
     
+    public void setProfilingMode(ProfilingMode profilingMode) {
+        this.profilingMode = profilingMode;
+    }
+    
     public AbstractProfilePrinter makeDefaultProfilePrinter(IProfileData profileData) {
         if (profilingMode == ProfilingMode.FLAT) {
             return new FlatProfilePrinter(profileData.getResults());
