@@ -1,8 +1,8 @@
-require_relative 'gemutilities'
+require 'rubygems/test_case'
 require 'stringio'
 require 'rubygems/specification'
 
-class TestGemSpecification < RubyGemTestCase
+class TestGemSpecification < Gem::TestCase
 
   LEGACY_YAML_SPEC = <<-EOF
 --- !ruby/object:Gem::Specification
@@ -29,8 +29,8 @@ Gem::Specification.new do |s|
   s.version = %q{0.4.0}
   s.has_rdoc = true
   s.summary = %q{A Hash which automatically computes keys.}
-  s.files = ["lib/keyedlist.rb"]
-  s.require_paths = ["lib"]
+  s.files = [%q{lib/keyedlist.rb}]
+  s.require_paths = [%q{lib}]
   s.autorequire = %q{keyedlist}
   s.author = %q{Florian Gross}
   s.email = %q{flgr@ccan.de}
@@ -40,10 +40,9 @@ end
   def setup
     super
 
-    @a1 = quick_gem 'a', '1' do |s|
+    @a1 = quick_spec 'a', '1' do |s|
       s.executable = 'exec'
       s.extensions << 'ext/a/extconf.rb'
-      s.has_rdoc = 'true'
       s.test_file = 'test/suite.rb'
       s.requirements << 'A working computer'
       s.rubyforge_project = 'example'
@@ -57,13 +56,8 @@ end
       s.files = %w[lib/code.rb]
     end
 
-    @a2 = quick_gem 'a', '2' do |s|
+    @a2 = quick_spec 'a', '2' do |s|
       s.files = %w[lib/code.rb]
-    end
-
-    FileUtils.mkdir_p File.join(@tempdir, 'bin')
-    File.open File.join(@tempdir, 'bin', 'exec'), 'w' do |fp|
-      fp.puts "#!#{Gem.ruby}"
     end
 
     @current_version = Gem::Specification::CURRENT_SPECIFICATION_VERSION
@@ -76,7 +70,6 @@ end
       bindir
       cert_chain
       date
-      default_executable
       dependencies
       description
       email
@@ -84,7 +77,6 @@ end
       extensions
       extra_rdoc_files
       files
-      has_rdoc
       homepage
       licenses
       name
@@ -122,18 +114,119 @@ end
     assert_equal @current_version, new_spec.specification_version
   end
 
-  def test_self_load
-    spec = File.join @gemhome, 'specifications', @a2.spec_name
-    gs = Gem::Specification.load spec
+  def test_self_from_yaml_syck_date_bug
+    # This is equivalent to (and totally valid) psych 1.0 output and
+    # causes parse errors on syck.
+    yaml = @a1.to_yaml
+    yaml.sub!(/^date:.*/, "date: 2011-04-26 00:00:00.000000000Z")
 
-    assert_equal @a2, gs
+    new_spec = with_syck do
+      Gem::Specification.from_yaml yaml
+    end
+
+    assert_kind_of Time, @a1.date
+    assert_kind_of Time, new_spec.date
+  end
+
+  def test_self_from_yaml_syck_default_key_bug
+    skip 'syck default_key bug is only for ruby 1.8' unless RUBY_VERSION < '1.9'
+    # This is equivalent to (and totally valid) psych 1.0 output and
+    # causes parse errors on syck.
+    yaml = <<-YAML
+--- !ruby/object:Gem::Specification
+name: posix-spawn
+version: !ruby/object:Gem::Version
+  version: 0.3.6
+  prerelease: 
+dependencies:
+- !ruby/object:Gem::Dependency
+  name: rake-compiler
+  requirement: &70243867725240 !ruby/object:Gem::Requirement
+    none: false
+    requirements:
+    - - =
+      - !ruby/object:Gem::Version
+        version: 0.7.6
+  type: :development
+  prerelease: false
+  version_requirements: *70243867725240
+platform: ruby
+files: []
+test_files: []
+bindir:
+    YAML
+
+    new_spec = with_syck do
+      Gem::Specification.from_yaml yaml
+    end
+
+    refute_match %r%DefaultKey%, new_spec.to_ruby
+  end
+
+  def test_self_load
+    full_path = @a2.spec_file
+    write_file full_path do |io|
+      io.write @a2.to_ruby_for_cache
+    end
+
+    spec = Gem::Specification.load full_path
+
+    @a2.files.clear
+
+    assert_equal @a2, spec
+  end
+
+  def test_self_load_escape_curly
+    @a2.name = 'a};raise "improper escaping";%q{'
+
+    full_path = @a2.spec_file
+    write_file full_path do |io|
+      io.write @a2.to_ruby_for_cache
+    end
+
+    spec = Gem::Specification.load full_path
+
+    @a2.files.clear
+
+    assert_equal @a2, spec
+  end
+
+  def test_self_load_escape_interpolation
+    @a2.name = 'a#{raise %<improper escaping>}'
+
+    full_path = @a2.spec_file
+    write_file full_path do |io|
+      io.write @a2.to_ruby_for_cache
+    end
+
+    spec = Gem::Specification.load full_path
+
+    @a2.files.clear
+
+    assert_equal @a2, spec
+  end
+
+  def test_self_load_escape_quote
+    @a2.name = 'a";raise "improper escaping";"'
+
+    full_path = @a2.spec_file
+    write_file full_path do |io|
+      io.write @a2.to_ruby_for_cache
+    end
+
+    spec = Gem::Specification.load full_path
+
+    @a2.files.clear
+
+    assert_equal @a2, spec
   end
 
   def test_self_load_legacy_ruby
-    spec = eval LEGACY_RUBY_SPEC
+    spec = Gem::Deprecate.skip_during do
+      eval LEGACY_RUBY_SPEC
+    end
     assert_equal 'keyedlist', spec.name
     assert_equal '0.4.0', spec.version.to_s
-    assert_equal true, spec.has_rdoc?
     assert_equal Gem::Specification::TODAY, spec.date
     assert spec.required_ruby_version.satisfied_by?(Gem::Version.new('1'))
     assert_equal false, spec.has_unit_tests?
@@ -161,6 +254,13 @@ end
       Gem::Specification.normalize_yaml_input(StringIO.new(input))
   end
 
+  def test_self_normalize_yaml_input_with_192_yaml
+    input = "--- !ruby/object:Gem::Specification \nblah: !!null \n"
+    expected = "--- !ruby/object:Gem::Specification \nblah: \n"
+
+    assert_equal expected, Gem::Specification.normalize_yaml_input(input)
+  end
+
   def test_initialize
     spec = Gem::Specification.new do |s|
       s.name = "blah"
@@ -181,8 +281,6 @@ end
     assert_equal [], spec.requirements
     assert_equal [], spec.dependencies
     assert_equal 'bin', spec.bindir
-    assert_equal true, spec.has_rdoc
-    assert_equal true, spec.has_rdoc?
     assert_equal '>= 0', spec.required_ruby_version.to_s
     assert_equal '>= 0', spec.required_rubygems_version.to_s
   end
@@ -265,15 +363,29 @@ end
     assert_equal 'bin', spec.bindir
     assert_same spec.bindir, new_spec.bindir
 
-    assert_equal true, spec.has_rdoc
-    assert_same spec.has_rdoc, new_spec.has_rdoc
-
     assert_equal '>= 0', spec.required_ruby_version.to_s
     assert_same spec.required_ruby_version, new_spec.required_ruby_version
 
     assert_equal '>= 0', spec.required_rubygems_version.to_s
     assert_same spec.required_rubygems_version,
                 new_spec.required_rubygems_version
+  end
+
+  def test_initialize_copy_broken
+    spec = Gem::Specification.new do |s|
+      s.name = 'a'
+      s.version = '1'
+    end
+
+    spec.instance_variable_set :@licenses, :blah
+    spec.loaded_from = '/path/to/file'
+
+    e = assert_raises Gem::FormatException do
+      spec.dup
+    end
+
+    assert_equal 'a-1 has an invalid value for @licenses', e.message
+    assert_equal '/path/to/file', e.file_path
   end
 
   def test__dump
@@ -287,8 +399,18 @@ end
     assert_equal 'old_platform', same_spec.original_platform
   end
 
+  def test_activate
+    @a2.activate
+
+    assert @a2.activated?
+
+    Gem::Deprecate.skip_during do
+      assert @a2.loaded?
+    end
+  end
+
   def test_add_dependency_with_explicit_type
-    gem = quick_gem "awesome", "1.0" do |awesome|
+    gem = quick_spec "awesome", "1.0" do |awesome|
       awesome.add_development_dependency "monkey"
     end
 
@@ -324,59 +446,48 @@ end
 
   def test_date_equals_date
     @a1.date = Date.new(2003, 9, 17)
-    assert_equal Time.local(2003, 9, 17, 0,0,0), @a1.date
+    assert_equal Time.utc(2003, 9, 17, 0,0,0), @a1.date
   end
 
   def test_date_equals_string
     @a1.date = '2003-09-17'
-    assert_equal Time.local(2003, 9, 17, 0,0,0), @a1.date
+    assert_equal Time.utc(2003, 9, 17, 0,0,0), @a1.date
+  end
+
+  def test_date_equals_string_bad
+    assert_raises Gem::InvalidSpecificationException do
+      @a1.date = '9/11/2003'
+    end
   end
 
   def test_date_equals_time
     @a1.date = Time.local(2003, 9, 17, 0,0,0)
-    assert_equal Time.local(2003, 9, 17, 0,0,0), @a1.date
+    assert_equal Time.utc(2003, 9, 17, 0,0,0), @a1.date
   end
 
   def test_date_equals_time_local
-    # HACK PDT
-    @a1.date = Time.local(2003, 9, 17, 19,50,0)
-    assert_equal Time.local(2003, 9, 17, 0,0,0), @a1.date
+    @a1.date = Time.local(2003, 9, 17, 19,50,0) # may not pass in utc >= +4
+    assert_equal Time.utc(2003, 9, 17, 0,0,0), @a1.date
   end
 
   def test_date_equals_time_utc
-    # HACK PDT
-    @a1.date = Time.local(2003, 9, 17, 19,50,0)
-    assert_equal Time.local(2003, 9, 17, 0,0,0), @a1.date
-  end
-
-  def test_default_executable
-    assert_equal 'exec', @a1.default_executable
-
-    @a1.default_executable = nil
-    @a1.instance_variable_set :@executables, nil
-    assert_equal nil, @a1.default_executable
+    @a1.date = Time.utc(2003, 9, 17, 19,50,0)
+    assert_equal Time.utc(2003, 9, 17, 0,0,0), @a1.date
   end
 
   def test_dependencies
-    rake = Gem::Dependency.new 'rake', '> 0.4'
-    jabber = Gem::Dependency.new 'jabber4r', '> 0.0.0'
-    pqa = Gem::Dependency.new 'pqa', ['> 0.4', '<= 0.6']
-
-    assert_equal [rake, jabber, pqa], @a1.dependencies
+    util_setup_deps
+    assert_equal [@bonobo, @monkey], @gem.dependencies
   end
 
-  def test_dependencies_scoped_by_type
-    gem = quick_gem "awesome", "1.0" do |awesome|
-      awesome.add_runtime_dependency "bonobo", []
-      awesome.add_development_dependency "monkey", []
-    end
+  def test_runtime_dependencies
+    util_setup_deps
+    assert_equal [@bonobo], @gem.runtime_dependencies
+  end
 
-    bonobo = Gem::Dependency.new("bonobo", [])
-    monkey = Gem::Dependency.new("monkey", [], :development)
-
-    assert_equal([bonobo, monkey], gem.dependencies)
-    assert_equal([bonobo], gem.runtime_dependencies)
-    assert_equal([monkey], gem.development_dependencies)
+  def test_development_dependencies
+    util_setup_deps
+    assert_equal [@monkey], @gem.development_dependencies
   end
 
   def test_description
@@ -384,60 +495,20 @@ end
   end
 
   def test_eql_eh
-    g1 = quick_gem 'gem'
-    g2 = quick_gem 'gem'
+    g1 = new_spec 'gem', 1
+    g2 = new_spec 'gem', 1
 
     assert_equal g1, g2
     assert_equal g1.hash, g2.hash
     assert_equal true, g1.eql?(g2)
   end
 
-  def test_equals2
-    assert_equal @a1, @a1
-    assert_equal @a1, @a1.dup
-    refute_equal @a1, @a2
-    refute_equal @a1, Object.new
-  end
-
-  # The cgikit specification was reported to be causing trouble in at least
-  # one version of RubyGems, so we test explicitly for it.
-  def test_equals2_cgikit
-    cgikit = Gem::Specification.new do |s|
-      s.name = %q{cgikit}
-      s.version = "1.1.0"
-      s.date = %q{2004-03-13}
-      s.summary = %q{CGIKit is a componented-oriented web application } +
-      %q{framework like Apple Computers WebObjects.  } +
-      %{This framework services Model-View-Controller architecture } +
-      %q{programming by components based on a HTML file, a definition } +
-      %q{file and a Ruby source.  }
-      s.email = %q{info@spice-of-life.net}
-      s.homepage = %q{http://www.spice-of-life.net/download/cgikit/}
-      s.autorequire = %q{cgikit}
-      s.bindir = nil
-      s.has_rdoc = true
-      s.required_ruby_version = nil
-      s.platform = nil
-      s.files = ["lib/cgikit", "lib/cgikit.rb", "lib/cgikit/components", "..."]
-    end
-
-    assert_equal cgikit, cgikit
-  end
-
-  def test_equals2_default_executable
-    spec = @a1.dup
-    spec.default_executable = 'xx'
-
-    refute_equal @a1, spec
-    refute_equal spec, @a1
-  end
-
-  def test_equals2_extensions
+  def test_eql_eh_extensions
     spec = @a1.dup
     spec.extensions = 'xx'
 
-    refute_equal @a1, spec
-    refute_equal spec, @a1
+    refute_operator @a1, :eql?, spec
+    refute_operator spec, :eql?, @a1
   end
 
   def test_executables
@@ -535,9 +606,26 @@ end
     assert_kind_of Integer, @a1.hash
   end
 
+  def test_for_cache
+    @a2.add_runtime_dependency 'b', '1'
+    @a2.dependencies.first.instance_variable_set :@type, nil
+    @a2.required_rubygems_version = Gem::Requirement.new '> 0'
+    @a2.test_files = %w[test/test_b.rb]
+
+    refute_empty @a2.files
+    refute_empty @a2.test_files
+
+    spec = @a2.for_cache
+
+    assert_empty spec.files
+    assert_empty spec.test_files
+
+    refute_empty @a2.files
+    refute_empty @a2.test_files
+  end
+
   def test_full_gem_path
-    assert_equal File.join(@gemhome, 'gems', @a1.full_name),
-                 @a1.full_gem_path
+    assert_equal File.join(@gemhome, 'gems', @a1.full_name), @a1.full_gem_path
 
     @a1.original_platform = 'mswin32'
 
@@ -546,11 +634,11 @@ end
   end
 
   def test_full_gem_path_double_slash
-    gemhome = @gemhome.sub(/\w\//, '\&/')
-    @a1.loaded_from = File.join gemhome, 'specifications', @a1.spec_name
+    gemhome = @gemhome.to_s.sub(/\w\//, '\&/')
+    @a1.loaded_from = File.join gemhome, "specifications", @a1.spec_name
 
-    assert_equal File.join(@gemhome, 'gems', @a1.full_name),
-                 @a1.full_gem_path
+    expected = File.join @gemhome, "gems", @a1.full_name
+    assert_equal expected, @a1.full_gem_path
   end
 
   def test_full_name
@@ -582,21 +670,6 @@ end
     end
   end
 
-  def test_has_rdoc_eh
-    assert @a1.has_rdoc?
-  end
-
-  def test_has_rdoc_equals
-
-    use_ui @ui do
-      @a1.has_rdoc = false
-    end
-
-    assert_equal '', @ui.output
-
-    assert_equal true, @a1.has_rdoc
-  end
-
   def test_hash
     assert_equal @a1.hash, @a1.hash
     assert_equal @a1.hash, @a1.dup.hash
@@ -604,15 +677,14 @@ end
   end
 
   def test_installation_path
-    assert_equal @gemhome, @a1.installation_path
+    Gem::Deprecate.skip_during do
+      assert_equal @gemhome, @a1.installation_path
 
-    @a1.instance_variable_set :@loaded_from, nil
+      @a1.instance_variable_set :@loaded_from, nil
+      @a1.instance_variable_set :@loaded, false
 
-    e = assert_raises Gem::Exception do
-      @a1.installation_path
+      assert_nil @a1.installation_path
     end
-
-    assert_equal 'spec a-1 is not from an installed gem', e.message
   end
 
   def test_lib_files
@@ -684,7 +756,7 @@ end
   end
 
   def test_prerelease_spec_adds_required_rubygems_version
-    @prerelease = quick_gem('tardis', '2.2.0.a')
+    @prerelease = quick_spec('tardis', '2.2.0.a')
     refute @prerelease.required_rubygems_version.satisfied_by?(Gem::Version.new('1.3.1'))
     assert @prerelease.required_rubygems_version.satisfied_by?(Gem::Version.new('1.4.0'))
   end
@@ -710,8 +782,8 @@ end
   end
 
   def test_spaceship_name
-    s1 = quick_gem 'a', '1'
-    s2 = quick_gem 'b', '1'
+    s1 = new_spec 'a', '1'
+    s2 = new_spec 'b', '1'
 
     assert_equal(-1, (s1 <=> s2))
     assert_equal( 0, (s1 <=> s1))
@@ -719,8 +791,8 @@ end
   end
 
   def test_spaceship_platform
-    s1 = quick_gem 'a', '1'
-    s2 = quick_gem 'a', '1' do |s|
+    s1 = new_spec 'a', '1'
+    s2 = new_spec 'a', '1' do |s|
       s.platform = Gem::Platform.new 'x86-my_platform1'
     end
 
@@ -730,8 +802,8 @@ end
   end
 
   def test_spaceship_version
-    s1 = quick_gem 'a', '1'
-    s2 = quick_gem 'a', '2'
+    s1 = new_spec 'a', '1'
+    s2 = new_spec 'a', '2'
 
     assert_equal( -1, (s1 <=> s2))
     assert_equal(  0, (s1 <=> s1))
@@ -762,22 +834,21 @@ end
 # -*- encoding: utf-8 -*-
 
 Gem::Specification.new do |s|
-  s.name = %q{a}
-  s.version = \"2\"
+  s.name = "a"
+  s.version = "2"
 
   s.required_rubygems_version = Gem::Requirement.new(\"> 0\") if s.respond_to? :required_rubygems_version=
-  s.authors = [\"A User\"]
-  s.date = %q{#{Gem::Specification::TODAY.strftime "%Y-%m-%d"}}
-  s.description = %q{This is a test description}
-  s.email = %q{example@example.com}
-  s.files = [\"lib/code.rb\"]
-  s.homepage = %q{http://example.com}
-  s.require_paths = [\"lib\"]
-  s.rubygems_version = %q{#{Gem::VERSION}}
-  s.summary = %q{this is a summary}
+  s.authors = ["A User"]
+  s.date = "#{Gem::Specification::TODAY.strftime "%Y-%m-%d"}"
+  s.description = "This is a test description"
+  s.email = "example@example.com"
+  s.files = ["lib/code.rb"]
+  s.homepage = "http://example.com"
+  s.require_paths = ["lib"]
+  s.rubygems_version = "#{Gem::VERSION}"
+  s.summary = "this is a summary"
 
   if s.respond_to? :specification_version then
-    current_version = Gem::Specification::CURRENT_SPECIFICATION_VERSION
     s.specification_version = #{Gem::Specification::CURRENT_SPECIFICATION_VERSION}
 
     if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then
@@ -798,6 +869,54 @@ end
     assert_equal @a2, same_spec
   end
 
+  def test_to_ruby_for_cache
+    @a2.add_runtime_dependency 'b', '1'
+    @a2.dependencies.first.instance_variable_set :@type, nil
+    @a2.required_rubygems_version = Gem::Requirement.new '> 0'
+
+    # cached specs do not have spec.files populated:
+    ruby_code = @a2.to_ruby_for_cache
+
+    expected = <<-SPEC
+# -*- encoding: utf-8 -*-
+
+Gem::Specification.new do |s|
+  s.name = "a"
+  s.version = "2"
+
+  s.required_rubygems_version = Gem::Requirement.new(\"> 0\") if s.respond_to? :required_rubygems_version=
+  s.authors = ["A User"]
+  s.date = "#{Gem::Specification::TODAY.strftime "%Y-%m-%d"}"
+  s.description = "This is a test description"
+  s.email = "example@example.com"
+  s.homepage = "http://example.com"
+  s.require_paths = ["lib"]
+  s.rubygems_version = "#{Gem::VERSION}"
+  s.summary = "this is a summary"
+
+  if s.respond_to? :specification_version then
+    s.specification_version = #{Gem::Specification::CURRENT_SPECIFICATION_VERSION}
+
+    if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then
+      s.add_runtime_dependency(%q<b>, [\"= 1\"])
+    else
+      s.add_dependency(%q<b>, [\"= 1\"])
+    end
+  else
+    s.add_dependency(%q<b>, [\"= 1\"])
+  end
+end
+    SPEC
+
+    assert_equal expected, ruby_code
+
+    same_spec = eval ruby_code
+
+    # cached specs do not have spec.files populated:
+    @a2.files = []
+    assert_equal @a2, same_spec
+  end
+
   def test_to_ruby_fancy
     @a1.platform = Gem::Platform.local
     ruby_code = @a1.to_ruby
@@ -809,45 +928,43 @@ end
 # -*- encoding: utf-8 -*-
 
 Gem::Specification.new do |s|
-  s.name = %q{a}
-  s.version = \"1\"
+  s.name = "a"
+  s.version = "1"
   s.platform = Gem::Platform.new(#{expected_platform})
 
   s.required_rubygems_version = Gem::Requirement.new(\">= 0\") if s.respond_to? :required_rubygems_version=
-  s.authors = [\"A User\"]
-  s.date = %q{#{Gem::Specification::TODAY.strftime "%Y-%m-%d"}}
-  s.default_executable = %q{exec}
-  s.description = %q{This is a test description}
-  s.email = %q{example@example.com}
-  s.executables = [\"exec\"]
-  s.extensions = [\"ext/a/extconf.rb\"]
-  s.files = [\"lib/code.rb\", \"test/suite.rb\", \"bin/exec\", \"ext/a/extconf.rb\"]
-  s.homepage = %q{http://example.com}
-  s.licenses = [\"MIT\"]
-  s.require_paths = [\"lib\"]
-  s.requirements = [\"A working computer\"]
-  s.rubyforge_project = %q{example}
-  s.rubygems_version = %q{#{Gem::VERSION}}
-  s.summary = %q{this is a summary}
-  s.test_files = [\"test/suite.rb\"]
+  s.authors = ["A User"]
+  s.date = "#{Gem::Specification::TODAY.strftime "%Y-%m-%d"}"
+  s.description = "This is a test description"
+  s.email = "example@example.com"
+  s.executables = ["exec"]
+  s.extensions = ["ext/a/extconf.rb"]
+  s.files = ["lib/code.rb", "test/suite.rb", "bin/exec", "ext/a/extconf.rb"]
+  s.homepage = "http://example.com"
+  s.licenses = ["MIT"]
+  s.require_paths = ["lib"]
+  s.requirements = ["A working computer"]
+  s.rubyforge_project = "example"
+  s.rubygems_version = "#{Gem::VERSION}"
+  s.summary = "this is a summary"
+  s.test_files = ["test/suite.rb"]
 
   if s.respond_to? :specification_version then
-    current_version = Gem::Specification::CURRENT_SPECIFICATION_VERSION
     s.specification_version = 3
 
     if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then
       s.add_runtime_dependency(%q<rake>, [\"> 0.4\"])
       s.add_runtime_dependency(%q<jabber4r>, [\"> 0.0.0\"])
-      s.add_runtime_dependency(%q<pqa>, [\"> 0.4\", \"<= 0.6\"])
+      s.add_runtime_dependency(%q<pqa>, [\"<= 0.6\", \"> 0.4\"])
     else
       s.add_dependency(%q<rake>, [\"> 0.4\"])
       s.add_dependency(%q<jabber4r>, [\"> 0.0.0\"])
-      s.add_dependency(%q<pqa>, [\"> 0.4\", \"<= 0.6\"])
+      s.add_dependency(%q<pqa>, [\"<= 0.6\", \"> 0.4\"])
     end
   else
     s.add_dependency(%q<rake>, [\"> 0.4\"])
     s.add_dependency(%q<jabber4r>, [\"> 0.0.0\"])
-    s.add_dependency(%q<pqa>, [\"> 0.4\", \"<= 0.6\"])
+    s.add_dependency(%q<pqa>, [\"<= 0.6\", \"> 0.4\"])
   end
 end
     SPEC
@@ -860,7 +977,9 @@ end
   end
 
   def test_to_ruby_legacy
-    gemspec1 = eval LEGACY_RUBY_SPEC
+    gemspec1 = Gem::Deprecate.skip_during do
+      eval LEGACY_RUBY_SPEC
+    end
     ruby_code = gemspec1.to_ruby
     gemspec2 = eval ruby_code
 
@@ -880,7 +999,10 @@ end
 
   def test_to_yaml
     yaml_str = @a1.to_yaml
-    same_spec = YAML.load(yaml_str)
+
+    refute_match '!!null', yaml_str
+
+    same_spec = Gem::Specification.from_yaml(yaml_str)
 
     assert_equal @a1, same_spec
   end
@@ -889,7 +1011,7 @@ end
     @a1.platform = Gem::Platform.local
     yaml_str = @a1.to_yaml
 
-    same_spec = YAML.load(yaml_str)
+    same_spec = Gem::Specification.from_yaml(yaml_str)
 
     assert_equal Gem::Platform.local, same_spec.platform
 
@@ -928,41 +1050,48 @@ end
     end
   end
 
+  def x s; s.gsub(/xxx/, ''); end
+  def w; x "WARxxxNING"; end
+  def t; x "TOxxxDO"; end
+  def f; x "FxxxIXME"; end
+
   def test_validate_authors
     util_setup_validate
 
     Dir.chdir @tempdir do
-      @a1.authors = []
+      @a1.authors = [""]
 
       use_ui @ui do
         @a1.validate
       end
 
-      assert_equal "WARNING:  no author specified\n", @ui.error, 'error'
+      assert_equal "#{w}:  no author specified\n", @ui.error, 'error'
 
       @a1.authors = [Object.new]
 
-      e = assert_raises Gem::InvalidSpecificationException do
-        @a1.validate
-      end
-
-      assert_equal 'authors must be Array of Strings', e.message
-
-      @a1.authors = ['FIXME (who is writing this software)']
+      assert_equal [], @a1.authors
 
       e = assert_raises Gem::InvalidSpecificationException do
         @a1.validate
       end
 
-      assert_equal '"FIXME" or "TODO" is not an author', e.message
+      assert_equal "authors may not be empty", e.message
 
-      @a1.authors = ['TODO (who is writing this software)']
+      @a1.authors = ["#{f} (who is writing this software)"]
 
       e = assert_raises Gem::InvalidSpecificationException do
         @a1.validate
       end
 
-      assert_equal '"FIXME" or "TODO" is not an author', e.message
+      assert_equal %{"#{f}" or "#{t}" is not an author}, e.message
+
+      @a1.authors = ["#{t} (who is writing this software)"]
+
+      e = assert_raises Gem::InvalidSpecificationException do
+        @a1.validate
+      end
+
+      assert_equal %{"#{f}" or "#{t}" is not an author}, e.message
     end
   end
 
@@ -976,7 +1105,7 @@ end
         @a1.validate
       end
 
-      assert_equal "WARNING:  deprecated autorequire specified\n",
+      assert_equal "#{w}:  deprecated autorequire specified\n",
                    @ui.error, 'error'
     end
   end
@@ -991,34 +1120,34 @@ end
         @a1.validate
       end
 
-      assert_equal "WARNING:  no description specified\n", @ui.error, 'error'
+      assert_equal "#{w}:  no description specified\n", @ui.error, "error"
 
-      @ui = MockGemUi.new
-      @a1.summary = 'this is my summary'
+      @ui = Gem::MockGemUi.new
+      @a1.summary = "this is my summary"
       @a1.description = @a1.summary
 
       use_ui @ui do
         @a1.validate
       end
 
-      assert_equal "WARNING:  description and summary are identical\n",
-                   @ui.error, 'error'
+      assert_equal "#{w}:  description and summary are identical\n",
+                   @ui.error, "error"
 
-      @a1.description = 'FIXME (describe your package)'
-
-      e = assert_raises Gem::InvalidSpecificationException do
-        @a1.validate
-      end
-
-      assert_equal '"FIXME" or "TODO" is not a description', e.message
-
-      @a1.description = 'TODO (describe your package)'
+      @a1.description = "#{f} (describe your package)"
 
       e = assert_raises Gem::InvalidSpecificationException do
         @a1.validate
       end
 
-      assert_equal '"FIXME" or "TODO" is not a description', e.message
+      assert_equal %{"#{f}" or "#{t}" is not a description}, e.message
+
+      @a1.description = "#{t} (describe your package)"
+
+      e = assert_raises Gem::InvalidSpecificationException do
+        @a1.validate
+      end
+
+      assert_equal %{"#{f}" or "#{t}" is not a description}, e.message
     end
   end
 
@@ -1026,35 +1155,33 @@ end
     util_setup_validate
 
     Dir.chdir @tempdir do
-      @a1.email = ''
+      @a1.email = ""
 
       use_ui @ui do
         @a1.validate
       end
 
-      assert_equal "WARNING:  no email specified\n", @ui.error, 'error'
+      assert_equal "#{w}:  no email specified\n", @ui.error, "error"
 
-      @a1.email = 'FIXME (your e-mail)'
-
-      e = assert_raises Gem::InvalidSpecificationException do
-        @a1.validate
-      end
-
-      assert_equal '"FIXME" or "TODO" is not an email address', e.message
-
-      @a1.email = 'TODO (your e-mail)'
+      @a1.email = "FIxxxXME (your e-mail)".sub(/xxx/, "")
 
       e = assert_raises Gem::InvalidSpecificationException do
         @a1.validate
       end
 
-      assert_equal '"FIXME" or "TODO" is not an email address', e.message
+      assert_equal %{"#{f}" or "#{t}" is not an email}, e.message
+
+      @a1.email = "#{t} (your e-mail)"
+
+      e = assert_raises Gem::InvalidSpecificationException do
+        @a1.validate
+      end
+
+      assert_equal %{"#{f}" or "#{t}" is not an email}, e.message
     end
   end
 
   def test_validate_empty
-    util_setup_validate
-
     e = assert_raises Gem::InvalidSpecificationException do
       Gem::Specification.new.validate
     end
@@ -1078,7 +1205,7 @@ end
     assert_equal %w[exec], @a1.executables
 
     assert_equal '', @ui.output, 'output'
-    assert_equal "WARNING:  bin/exec is missing #! line\n", @ui.error, 'error'
+    assert_equal "#{w}:  bin/exec is missing #! line\n", @ui.error, 'error'
   end
 
   def test_validate_empty_require_paths
@@ -1127,9 +1254,9 @@ end
         @a1.validate
       end
 
-      assert_equal "WARNING:  no homepage specified\n", @ui.error, 'error'
+      assert_equal "#{w}:  no homepage specified\n", @ui.error, 'error'
 
-      @ui = MockGemUi.new
+      @ui = Gem::MockGemUi.new
 
       @a1.homepage = ''
 
@@ -1137,7 +1264,7 @@ end
         @a1.validate
       end
 
-      assert_equal "WARNING:  no homepage specified\n", @ui.error, 'error'
+      assert_equal "#{w}:  no homepage specified\n", @ui.error, 'error'
 
       @a1.homepage = 'over at my cool site'
 
@@ -1160,6 +1287,26 @@ end
     assert_equal 'invalid value for attribute name: ":json"', e.message
   end
 
+  def test_validate_non_nil
+    util_setup_validate
+
+    Dir.chdir @tempdir do
+      assert @a1.validate
+
+      Gem::Specification.non_nil_attributes.each do |name|
+        next if name == :files # set by #normalize
+        spec = @a1.dup
+        spec.instance_variable_set "@#{name}", nil
+
+        e = assert_raises Gem::InvalidSpecificationException do
+          spec.validate
+        end
+
+        assert_match %r%^#{name}%, e.message
+      end
+    end
+  end
+
   def test_validate_platform_legacy
     util_setup_validate
 
@@ -1172,21 +1319,6 @@ end
 
       @a1.platform = 'powerpc-darwin'
       assert @a1.validate
-    end
-  end
-
-  def test_validate_rubyforge_project
-    util_setup_validate
-
-    Dir.chdir @tempdir do
-      @a1.rubyforge_project = ''
-
-      use_ui @ui do
-        @a1.validate
-      end
-
-      assert_equal "WARNING:  no rubyforge_project specified\n",
-                   @ui.error, 'error'
     end
   end
 
@@ -1229,23 +1361,23 @@ end
         @a1.validate
       end
 
-      assert_equal "WARNING:  no summary specified\n", @ui.error, 'error'
+      assert_equal "#{w}:  no summary specified\n", @ui.error, 'error'
 
-      @a1.summary = 'FIXME (describe your package)'
-
-      e = assert_raises Gem::InvalidSpecificationException do
-        @a1.validate
-      end
-
-      assert_equal '"FIXME" or "TODO" is not a summary', e.message
-
-      @a1.summary = 'TODO (describe your package)'
+      @a1.summary = "#{f} (describe your package)"
 
       e = assert_raises Gem::InvalidSpecificationException do
         @a1.validate
       end
 
-      assert_equal '"FIXME" or "TODO" is not a summary', e.message
+      assert_equal %{"#{f}" or "#{t}" is not a summary}, e.message
+
+      @a1.summary = "#{t} (describe your package)"
+
+      e = assert_raises Gem::InvalidSpecificationException do
+        @a1.validate
+      end
+
+      assert_equal %{"#{f}" or "#{t}" is not a summary}, e.message
     end
   end
 
@@ -1258,7 +1390,9 @@ end
     specfile.write "raise 'boom'"
     specfile.close
     begin
-      Gem::Specification.load(specfile.path)
+      capture_io do
+        Gem::Specification.load(specfile.path)
+      end
     rescue => e
       name_rexp = Regexp.new(Regexp.escape(specfile.path))
       assert e.backtrace.grep(name_rexp).any?
@@ -1267,17 +1401,109 @@ end
     specfile.delete
   end
 
+  ##
+  # KEEP p-1-x86-darwin-8
+  # KEEP p-1
+  # KEEP c-1.2
+  # KEEP a_evil-9
+  #      a-1
+  #      a-1-x86-my_platform-1
+  # KEEP a-2
+  #      a-2-x86-other_platform-1
+  # KEEP a-2-x86-my_platform-1
+  #      a-3.a
+  # KEEP a-3-x86-other_platform-1
+
+  def test_latest_specs
+    util_clear_gems
+    util_setup_fake_fetcher
+
+    quick_spec 'p', '1'
+
+    p1_curr = quick_spec 'p', '1' do |spec|
+      spec.platform = Gem::Platform::CURRENT
+    end
+
+    quick_spec @a1.name, @a1.version do |s|
+      s.platform = Gem::Platform.new 'x86-my_platform1'
+    end
+
+    quick_spec @a1.name, @a1.version do |s|
+      s.platform = Gem::Platform.new 'x86-third_platform1'
+    end
+
+    quick_spec @a2.name, @a2.version do |s|
+      s.platform = Gem::Platform.new 'x86-my_platform1'
+    end
+
+    quick_spec @a2.name, @a2.version do |s|
+      s.platform = Gem::Platform.new 'x86-other_platform1'
+    end
+
+    quick_spec @a2.name, @a2.version.bump do |s|
+      s.platform = Gem::Platform.new 'x86-other_platform1'
+    end
+
+    Gem::Specification.remove_spec @b2
+    Gem::Specification.remove_spec @pl1
+
+    expected = %W[
+                  a-2
+                  a-2-x86-my_platform-1
+                  a-3-x86-other_platform-1
+                  a_evil-9
+                  c-1.2
+                  p-1
+                  #{p1_curr.full_name}
+                 ]
+
+    latest_specs = Gem::Specification.latest_specs.map(&:full_name).sort
+
+    assert_equal expected, latest_specs
+  end
+
+  def util_setup_deps
+    @gem = quick_spec "awesome", "1.0" do |awesome|
+      awesome.add_runtime_dependency "bonobo", []
+      awesome.add_development_dependency "monkey", []
+    end
+
+    @bonobo = Gem::Dependency.new("bonobo", [])
+    @monkey = Gem::Dependency.new("monkey", [], :development)
+  end
+
   def util_setup_validate
     Dir.chdir @tempdir do
-      FileUtils.mkdir_p File.join('ext', 'a')
-      FileUtils.mkdir_p 'lib'
-      FileUtils.mkdir_p 'test'
+      FileUtils.mkdir_p File.join("ext", "a")
+      FileUtils.mkdir_p "lib"
+      FileUtils.mkdir_p "test"
+      FileUtils.mkdir_p "bin"
 
-      FileUtils.touch File.join('ext', 'a', 'extconf.rb')
-      FileUtils.touch File.join('lib', 'code.rb')
-      FileUtils.touch File.join('test', 'suite.rb')
+      FileUtils.touch File.join("ext", "a", "extconf.rb")
+      FileUtils.touch File.join("lib", "code.rb")
+      FileUtils.touch File.join("test", "suite.rb")
+
+      File.open "bin/exec", "w" do |fp|
+        fp.puts "#!#{Gem.ruby}"
+      end
     end
   end
 
-end
+  def with_syck
+    begin
+      require "yaml"
+      old_engine = YAML::ENGINE.yamler
+      YAML::ENGINE.yamler = 'syck'
+    rescue NameError
+      # probably on 1.8, ignore
+    end
 
+    yield
+  ensure
+    begin
+      YAML::ENGINE.yamler = old_engine
+    rescue NameError
+      # ignore
+    end
+  end
+end

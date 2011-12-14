@@ -1,4 +1,4 @@
-require_relative 'helper'
+require 'psych/helper'
 
 module Psych
   class TestOmap < TestCase
@@ -30,13 +30,15 @@ module Psych
       assert_equal 'c', map['b']
     end
 
-    # def test_dump
-    #   map = Psych::Omap['a', 'b', 'c', 'd']
-    #   yaml = Psych.dump(map)
-    #   assert_match('!omap', yaml)
-    #   assert_match('- a: b', yaml)
-    #   assert_match('- c: d', yaml)
-    # end
+    unless RUBY_ENGINE == 'jruby'
+      def test_dump
+        map = Psych::Omap['a', 'b', 'c', 'd']
+        yaml = Psych.dump(map)
+        assert_match('!omap', yaml)
+        assert_match('- a: b', yaml)
+        assert_match('- c: d', yaml)
+      end
+    end
 
     def test_round_trip
       list = [["a", "b"], ["b", "c"]]

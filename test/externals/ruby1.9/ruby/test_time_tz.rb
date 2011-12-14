@@ -17,17 +17,48 @@ class TestTimeTZ < Test::Unit::TestCase
     end
   end
 
-  def format_gmtoff(gmtoff)
-    if gmtoff < 0
-      expected = "-"
-      gmtoff = -gmtoff
-    else
-      expected = "+"
+  module Util
+    def format_gmtoff(gmtoff, colon=false)
+      if gmtoff < 0
+        expected = "-"
+        gmtoff = -gmtoff
+      else
+        expected = "+"
+      end
+      gmtoff /= 60
+      expected << "%02d" % [gmtoff / 60]
+      expected << ":" if colon
+      expected << "%02d" % [gmtoff % 60]
+      expected
     end
-    gmtoff /= 60
-    expected << "%02d%02d" % [gmtoff / 60, gmtoff % 60]
-    expected
+
+    def format_gmtoff2(gmtoff)
+      if gmtoff < 0
+        expected = "-"
+        gmtoff = -gmtoff
+      else
+        expected = "+"
+      end
+      expected << "%02d:%02d:%02d" % [gmtoff / 3600, gmtoff % 3600 / 60, gmtoff % 60]
+      expected
+    end
+
+    def group_by(e, &block)
+      if e.respond_to? :group_by
+        e.group_by(&block)
+      else
+        h = {}
+        e.each {|o|
+          (h[yield(o)] ||= []) << o
+        }
+        h
+      end
+    end
+
   end
+
+  include Util
+  extend Util
 
   def time_to_s(t)
     if RUBY_VERSION < "1.9"
@@ -37,9 +68,10 @@ class TestTimeTZ < Test::Unit::TestCase
     end
   end
 
+
   def assert_time_constructor(tz, expected, method, args, message=nil)
     m = message ? "#{message}\n" : ""
-    m << "TZ=#{tz} Time.#{method}(#{args.map(&:inspect).join(', ')})"
+    m << "TZ=#{tz} Time.#{method}(#{args.map {|arg| arg.inspect }.join(', ')})"
     real = time_to_s(Time.send(method, *args))
     assert_equal(expected, real, m)
   end
@@ -48,6 +80,10 @@ class TestTimeTZ < Test::Unit::TestCase
     with_tz(tz="America/Los_Angeles") {
       assert_time_constructor(tz, "2007-03-11 03:00:00 -0700", :local, [2007,3,11,2,0,0])
       assert_time_constructor(tz, "2007-03-11 03:59:59 -0700", :local, [2007,3,11,2,59,59])
+      assert_equal("PST", Time.new(0x1_0000_0000_0000_0000, 1).zone)
+      assert_equal("PDT", Time.new(0x1_0000_0000_0000_0000, 8).zone)
+      assert_equal(false, Time.new(0x1_0000_0000_0000_0000, 1).isdst)
+      assert_equal(true, Time.new(0x1_0000_0000_0000_0000, 8).isdst)
     }
   end
 
@@ -99,6 +135,12 @@ class TestTimeTZ < Test::Unit::TestCase
     }
   end
 
+  def test_europe_lisbon
+    with_tz(tz="Europe/Lisbon") {
+      assert_equal("LMT", Time.new(-0x1_0000_0000_0000_0000).zone)
+    }
+  end
+
   def test_europe_moscow
     with_tz(tz="Europe/Moscow") {
       assert_time_constructor(tz, "1992-03-29 00:00:00 +0400", :local, [1992,3,28,23,0,0])
@@ -115,12 +157,36 @@ class TestTimeTZ < Test::Unit::TestCase
     }
   end
 
+  def test_right_utc
+    with_tz(tz="right/UTC") {
+      assert_time_constructor(tz, "2008-12-31 23:59:59 UTC", :utc, [2008,12,31,23,59,59])
+      assert_time_constructor(tz, "2008-12-31 23:59:60 UTC", :utc, [2008,12,31,23,59,60])
+      assert_time_constructor(tz, "2009-01-01 00:00:00 UTC", :utc, [2008,12,31,24,0,0])
+      assert_time_constructor(tz, "2009-01-01 00:00:00 UTC", :utc, [2009,1,1,0,0,0])
+    }
+  end
+
+  def test_right_america_los_angeles
+    with_tz(tz="right/America/Los_Angeles") {
+      assert_time_constructor(tz, "2008-12-31 15:59:59 -0800", :local, [2008,12,31,15,59,59])
+      assert_time_constructor(tz, "2008-12-31 15:59:60 -0800", :local, [2008,12,31,15,59,60])
+      assert_time_constructor(tz, "2008-12-31 16:00:00 -0800", :local, [2008,12,31,16,0,0])
+    }
+  end
+
   MON2NUM = {
     "Jan" => 1, "Feb" => 2, "Mar" => 3, "Apr" => 4, "May" => 5, "Jun" => 6,
     "Jul" => 7, "Aug" => 8, "Sep" => 9, "Oct" => 10, "Nov" => 11, "Dec" => 12
   }
 
-  def test_zdump
+  @testnum = 0
+  def self.gen_test_name(hint)
+    @testnum += 1
+    s = "test_gen_#{@testnum}"
+    s.sub(/gen_/) { "gen" + "_#{hint}_".gsub(/[^0-9A-Za-z]+/, '_') }
+  end
+
+  def self.gen_zdump_test
     sample = []
     ZDUMP_SAMPLE.each_line {|line|
       next if /\A\#/ =~ line || /\A\s*\z/ =~ line
@@ -151,38 +217,59 @@ class TestTimeTZ < Test::Unit::TestCase
                  gmtoff]
     }
     sample.each {|tz, u, l, gmtoff|
-      with_tz(tz) {
-        expected = "%04d-%02d-%02d %02d:%02d:%02d %s" % (l+[format_gmtoff(gmtoff)])
-        mesg = "TZ=#{tz} Time.utc(#{u.map(&:inspect).join(', ')}).localtime"
-        t = nil
-        assert_nothing_raised(mesg) { t = Time.utc(*u).localtime }
-        assert_equal(expected, time_to_s(t), mesg)
-        assert_equal(gmtoff, t.gmtoff)
+      expected_utc = "%04d-%02d-%02d %02d:%02d:%02d UTC" % u
+      expected = "%04d-%02d-%02d %02d:%02d:%02d %s" % (l+[format_gmtoff(gmtoff)])
+      mesg_utc = "TZ=#{tz} Time.utc(#{u.map {|arg| arg.inspect }.join(', ')})"
+      mesg = "#{mesg_utc}.localtime"
+      define_method(gen_test_name(tz)) {
+        with_tz(tz) {
+          t = nil
+          assert_nothing_raised(mesg) { t = Time.utc(*u) }
+          assert_equal(expected_utc, time_to_s(t), mesg_utc)
+          assert_nothing_raised(mesg) { t.localtime }
+          assert_equal(expected, time_to_s(t), mesg)
+          assert_equal(gmtoff, t.gmtoff)
+          assert_equal(format_gmtoff(gmtoff), t.strftime("%z"))
+          assert_equal(format_gmtoff(gmtoff, true), t.strftime("%:z"))
+          assert_equal(format_gmtoff2(gmtoff), t.strftime("%::z"))
+        }
       }
     }
-    sample.group_by {|tz, _, _, _| tz }.each {|tz, a|
-      with_tz(tz) {
-        a.each_with_index {|(_, u, l, gmtoff), i|
-          expected = "%04d-%02d-%02d %02d:%02d:%02d %s" % (l+[format_gmtoff(gmtoff)])
-          monotonic_to_past = i == 0 || (a[i-1][2] <=> l) < 0
-          monotonic_to_future = i == a.length-1 || (l <=> a[i+1][2]) < 0
-          if monotonic_to_past && monotonic_to_future
-            assert_time_constructor(tz, expected, :local, l)
-            assert_time_constructor(tz, expected, :local, l.reverse+[nil, nil, false, nil])
-            assert_time_constructor(tz, expected, :local, l.reverse+[nil, nil, true, nil])
-            assert_time_constructor(tz, expected, :new, l)
-            assert_time_constructor(tz, expected, :new, l+[:std])
-            assert_time_constructor(tz, expected, :new, l+[:dst])
-          elsif monotonic_to_past && !monotonic_to_future
-            assert_time_constructor(tz, expected, :local, l.reverse+[nil, nil, true, nil])
-            assert_time_constructor(tz, expected, :new, l+[:dst])
-          elsif !monotonic_to_past && monotonic_to_future
-            assert_time_constructor(tz, expected, :local, l.reverse+[nil, nil, false, nil])
-            assert_time_constructor(tz, expected, :new, l+[:std])
-          else
+    group_by(sample) {|tz, _, _, _| tz }.each {|tz, a|
+      a.each_with_index {|(_, u, l, gmtoff), i|
+        expected = "%04d-%02d-%02d %02d:%02d:%02d %s" % (l+[format_gmtoff(gmtoff)])
+        monotonic_to_past = i == 0 || (a[i-1][2] <=> l) < 0
+        monotonic_to_future = i == a.length-1 || (l <=> a[i+1][2]) < 0
+        if monotonic_to_past && monotonic_to_future
+          define_method(gen_test_name(tz)) {
+            with_tz(tz) {
+              assert_time_constructor(tz, expected, :local, l)
+              assert_time_constructor(tz, expected, :local, l.reverse+[nil, nil, false, nil])
+              assert_time_constructor(tz, expected, :local, l.reverse+[nil, nil, true, nil])
+              assert_time_constructor(tz, expected, :new, l)
+              assert_time_constructor(tz, expected, :new, l+[:std])
+              assert_time_constructor(tz, expected, :new, l+[:dst])
+            }
+          }
+        elsif monotonic_to_past && !monotonic_to_future
+          define_method(gen_test_name(tz)) {
+            with_tz(tz) {
+              assert_time_constructor(tz, expected, :local, l.reverse+[nil, nil, true, nil])
+              assert_time_constructor(tz, expected, :new, l+[:dst])
+            }
+          }
+        elsif !monotonic_to_past && monotonic_to_future
+          define_method(gen_test_name(tz)) {
+            with_tz(tz) {
+              assert_time_constructor(tz, expected, :local, l.reverse+[nil, nil, false, nil])
+              assert_time_constructor(tz, expected, :new, l+[:std])
+            }
+          }
+        else
+          define_method(gen_test_name(tz)) {
             flunk("time in reverse order: TZ=#{tz} #{expected}")
-          end
-        }
+          }
+        end
       }
     }
   end
@@ -245,5 +332,7 @@ right/America/Los_Angeles  Wed Dec 31 23:59:60 2008 UTC = Wed Dec 31 15:59:60 20
 #right/Asia/Tokyo  Sat Dec 31 23:59:60 2005 UTC = Sun Jan  1 08:59:60 2006 JST isdst=0 gmtoff=32400
 right/Europe/Paris  Fri Jun 30 23:59:60 1972 UTC = Sat Jul  1 00:59:60 1972 CET isdst=0 gmtoff=3600
 right/Europe/Paris  Wed Dec 31 23:59:60 2008 UTC = Thu Jan  1 00:59:60 2009 CET isdst=0 gmtoff=3600
+Europe/Lisbon  Mon Jan  1 00:36:31 1912 UTC = Sun Dec 31 23:59:59 1911 LMT isdst=0 gmtoff=-2192
 End
+  gen_zdump_test
 end

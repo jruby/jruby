@@ -1,4 +1,7 @@
-require_relative 'helper'
+begin
+  require_relative 'helper'
+rescue LoadError
+end
 
 module Fiddle
   class TestClosure < Fiddle::TestCase
@@ -45,5 +48,12 @@ module Fiddle
       func = Function.new(cb, [TYPE_INT], TYPE_INT)
       assert_equal 11, func.call(11)
     end
+
+    def test_memsize
+      require 'objspace'
+      bug = '[ruby-dev:42480]'
+      n = 10000
+      assert_equal(n, n.times {ObjectSpace.memsize_of(Closure.allocate)}, bug)
+    end
   end
-end
+end if defined?(Fiddle)

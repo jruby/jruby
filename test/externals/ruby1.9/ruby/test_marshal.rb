@@ -40,6 +40,11 @@ class TestMarshal < Test::Unit::TestCase
       obj = (x.to_f + y.to_f / z.to_f) * Math.exp(w.to_f / (x.to_f + y.to_f / z.to_f))
       assert_equal obj, Marshal.load(Marshal.dump(obj))
     }
+
+    bug3659 = '[ruby-dev:41936]'
+    [1.0, 10.0, 100.0, 110.0].each {|x|
+      assert_equal(x, Marshal.load(Marshal.dump(x)), bug3659)
+    }
   end
 
   StrClone = String.clone
@@ -426,7 +431,7 @@ class TestMarshal < Test::Unit::TestCase
       m = Marshal.dump(o)
     }
     o2 = Marshal.load(m)
-    assert_equal(STDIN, o.stdin)
+    assert_equal(STDIN, o2.stdin)
   end
 
   def test_marshal_string_encoding
@@ -449,5 +454,19 @@ class TestMarshal < Test::Unit::TestCase
     o2 = Marshal.load(m)
     assert_equal(o1, o2)
   end
-  
+
+  class PrivateClass
+    def initialize(foo)
+      @foo = foo
+    end
+    attr_reader :foo
+  end
+  private_constant :PrivateClass
+
+  def test_marshal_private_class
+    o1 = PrivateClass.new("test")
+    o2 = Marshal.load(Marshal.dump(o1))
+    assert_equal(o1.class, o2.class)
+    assert_equal(o1.foo, o2.foo)
+  end
 end

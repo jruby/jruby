@@ -51,6 +51,8 @@ class TestStringIO < Test::Unit::TestCase
     assert_equal("abc\n", StringIO.new("abc\n\ndef\n").gets)
     assert_equal("abc\n\ndef\n", StringIO.new("abc\n\ndef\n").gets(nil))
     assert_equal("abc\n\n", StringIO.new("abc\n\ndef\n").gets(""))
+    assert_raise(TypeError){StringIO.new("").gets(1, 1)}
+    assert_raise(TypeError){StringIO.new("").gets(nil, nil)}
   end
 
   def test_readlines
@@ -378,6 +380,12 @@ class TestStringIO < Test::Unit::TestCase
     assert_equal("a" * 10000 + "zz", f.gets("zz"))
     f = StringIO.new("a" * 10000 + "zz!")
     assert_equal("a" * 10000 + "zz!", f.gets("zzz"))
+
+    bug4112 = '[ruby-dev:42674]'
+    ["a".encode("utf-16be"), "\u3042"].each do |s|
+      assert_equal(s, StringIO.new(s).gets(1), bug4112)
+      assert_equal(s, StringIO.new(s).gets(nil, 1), bug4112)
+    end
   end
 
   def test_each
@@ -410,6 +418,14 @@ class TestStringIO < Test::Unit::TestCase
     assert_equal("\u3042\u3044", f.read)
     f.rewind
     assert_equal("\u3042\u3044".force_encoding(Encoding::ASCII_8BIT), f.read(f.size))
+
+    bug5207 = '[ruby-core:39026]'
+    f.rewind
+    assert_equal("\u3042\u3044", f.read(nil, nil), bug5207)
+    f.rewind
+    s = ""
+    f.read(nil, s)
+    assert_equal("\u3042\u3044", s, bug5207)
   end
 
   def test_readpartial
@@ -464,5 +480,23 @@ class TestStringIO < Test::Unit::TestCase
 
       expected_pos += 1
     end
+  end
+
+  def test_frozen
+    s = StringIO.new
+    s.freeze
+    bug = '[ruby-core:33648]'
+    assert_raise(RuntimeError, bug) {s.puts("foo")}
+    assert_raise(RuntimeError, bug) {s.string = "foo"}
+    assert_raise(RuntimeError, bug) {s.reopen("")}
+  end
+
+  def test_readlines_limit_0
+    assert_raise(ArgumentError, "[ruby-dev:43392]") { StringIO.new.readlines(0) }
+  end
+
+  def test_each_line_limit_0
+    assert_raise(ArgumentError, "[ruby-dev:43392]") { StringIO.new.each_line(0){} }
+    assert_raise(ArgumentError, "[ruby-dev:43392]") { StringIO.new.each_line("a",0){} }
   end
 end

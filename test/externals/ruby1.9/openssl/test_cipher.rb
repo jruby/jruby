@@ -1,8 +1,4 @@
-begin
-  require "openssl"
-rescue LoadError
-end
-require "test/unit"
+require_relative 'utils'
 
 if defined?(OpenSSL)
 
@@ -68,6 +64,11 @@ class OpenSSL::TestCipher < Test::Unit::TestCase
     assert_raise(ArgumentError){ @c1.update("") }
   end
 
+  def test_initialize
+    assert_raise(RuntimeError) {@c1.__send__(:initialize, "DES-EDE3-CBC")}
+    assert_raise(RuntimeError) {OpenSSL::Cipher.allocate.final}
+  end
+
   if OpenSSL::OPENSSL_VERSION_NUMBER > 0x00907000
     def test_ciphers
       OpenSSL::Cipher.ciphers.each{|name|
@@ -88,6 +89,15 @@ class OpenSSL::TestCipher < Test::Unit::TestCase
         c2.pkcs5_keyivgen("passwd")
         assert_equal(pt, c2.update(ct) + c2.final)
       }
+    end
+
+    def test_AES_crush
+      500.times do
+        assert_nothing_raised("[Bug #2768]") do
+          # it caused OpenSSL SEGV by uninitialized key
+          OpenSSL::Cipher::AES128.new("ECB").update "." * 17
+        end
+      end
     end
   end
 end

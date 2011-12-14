@@ -1,17 +1,13 @@
-require_relative 'gemutilities'
-require_relative 'gem_installer_test_case'
+require 'rubygems/installer_test_case'
 require 'rubygems/commands/uninstall_command'
 
-class TestGemCommandsUninstallCommand < GemInstallerTestCase
+class TestGemCommandsUninstallCommand < Gem::InstallerTestCase
 
   def setup
     super
 
-    ui = MockGemUi.new
-    util_setup_gem ui
-
     build_rake_in do
-      use_ui ui do
+      use_ui @ui do
         @installer.install
       end
     end
@@ -21,18 +17,69 @@ class TestGemCommandsUninstallCommand < GemInstallerTestCase
     @executable = File.join(@gemhome, 'bin', 'executable')
   end
 
+  def test_execute_mulitple
+    @other = quick_gem 'c'
+    util_make_exec @other
+    util_build_gem @other
+
+    @other_installer = util_installer @other, @gemhome
+
+    ui = Gem::MockGemUi.new
+    util_setup_gem ui
+
+    build_rake_in do
+      use_ui ui do
+        @other_installer.install
+      end
+    end
+
+    @cmd.options[:args] = [@spec.name, @other.name]
+
+    use_ui @ui do
+      @cmd.execute
+    end
+
+    output = @ui.output.split "\n"
+
+    assert_includes output, "Successfully uninstalled #{@spec.full_name}"
+    assert_includes output, "Successfully uninstalled #{@other.full_name}"
+  end
+
+  def test_execute_mulitple_nonexistent
+    @cmd.options[:args] = %w[x y]
+
+    use_ui @ui do
+      @cmd.execute
+    end
+
+    output = @ui.output.split "\n"
+
+    assert_includes output, 'INFO:  gem "x" is not installed'
+    assert_includes output, 'INFO:  gem "y" is not installed'
+  end
+
   def test_execute_removes_executable
-    if win_platform?
-      assert_equal true, File.exist?(@executable)
+    ui = Gem::MockGemUi.new
+    util_setup_gem ui
+
+    build_rake_in do
+      use_ui ui do
+        @installer.install
+      end
+    end
+
+    if win_platform? then
+      assert File.exist?(@executable)
     else
-      assert_equal true, File.symlink?(@executable)
+      assert File.symlink?(@executable)
     end
 
     # Evil hack to prevent false removal success
     FileUtils.rm_f @executable
-    File.open(@executable, "wb+") {|f| f.puts "binary"}
 
-    @cmd.options[:args] = Array(@spec.name)
+    open @executable, "wb+" do |f| f.puts "binary" end
+
+    @cmd.options[:args] = [@spec.name]
     use_ui @ui do
       @cmd.execute
     end
@@ -44,21 +91,27 @@ class TestGemCommandsUninstallCommand < GemInstallerTestCase
     assert_nil output.shift, "UI output should have contained only two lines"
   end
 
-  def test_execute_not_installed
-    @cmd.options[:args] = ["foo"]
-    e = assert_raises Gem::InstallError do
-      use_ui @ui do
-        @cmd.execute
-      end
-    end
+  def test_execute_removes_formatted_executable
+    FileUtils.rm_f @executable # Wish this didn't happen in #setup
 
-    assert_match(/\Acannot uninstall, check `gem list -d foo`$/, e.message)
-    output = @ui.output.split "\n"
-    assert_empty output, "UI output should be empty after an uninstall error"
+    Gem::Installer.exec_format = 'foo-%s-bar'
+
+    @installer.format_executable = true
+    @installer.install
+
+    formatted_executable = File.join @gemhome, 'bin', 'foo-executable-bar'
+    assert_equal true, File.exist?(formatted_executable)
+
+    @cmd.options[:format_executable] = true
+    @cmd.execute
+
+    assert_equal false, File.exist?(formatted_executable)
+  rescue
+    Gem::Installer.exec_format = nil
   end
 
   def test_execute_prerelease
-    @spec = quick_gem "pre", "2.b"
+    @spec = quick_spec "pre", "2.b"
     @gem = File.join @tempdir, @spec.file_name
     FileUtils.touch @gem
 
@@ -79,5 +132,6 @@ class TestGemCommandsUninstallCommand < GemInstallerTestCase
     output = @ui.output
     assert_match(/Successfully uninstalled/, output)
   end
+
 end
 

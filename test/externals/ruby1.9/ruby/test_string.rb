@@ -175,9 +175,11 @@ class TestString < Test::Unit::TestCase
     def o.<=>(x); nil; end
     assert_nil("foo" <=> o)
 
+    class << o;remove_method :<=>;end
     def o.<=>(x); 1; end
     assert_equal(-1, "foo" <=> o)
 
+    class << o;remove_method :<=>;end
     def o.<=>(x); 2**100; end
     assert_equal(-(2**100), "foo" <=> o)
   end
@@ -200,6 +202,7 @@ class TestString < Test::Unit::TestCase
     def o.to_str; end
     def o.==(x); false; end
     assert_equal(false, "foo" == o)
+    class << o;remove_method :==;end
     def o.==(x); true; end
     assert_equal(true, "foo" == o)
   end
@@ -479,6 +482,9 @@ class TestString < Test::Unit::TestCase
     assert_equal(4, a.count(S("hello"), S("^l")))
     assert_equal(4, a.count(S("ej-m")))
     assert_equal(0, S("y").count(S("a\\-z")))
+    assert_equal(5, "abc\u{3042 3044 3046}".count("^a"))
+    assert_equal(5, "abc\u{3042 3044 3046}".count("^\u3042"))
+    assert_equal(2, "abc\u{3042 3044 3046}".count("a-z", "^a"))
 
     assert_raise(ArgumentError) { "foo".count }
   end
@@ -498,6 +504,10 @@ class TestString < Test::Unit::TestCase
     assert_equal(true, "a\u0101".delete("\u0101").ascii_only?)
     assert_equal(true, "a\u3041".delete("\u3041").ascii_only?)
     assert_equal(false, "a\u3041\u3042".tr("\u3041", "a").ascii_only?)
+
+    assert_equal("a", "abc\u{3042 3044 3046}".delete("^a"))
+    assert_equal("bc\u{3042 3044 3046}", "abc\u{3042 3044 3046}".delete("a"))
+    assert_equal("\u3042", "abc\u{3042 3044 3046}".delete("^\u3042"))
   end
 
   def test_delete!
@@ -664,6 +674,21 @@ class TestString < Test::Unit::TestCase
     assert_raise(ArgumentError) { "foo".gsub }
   end
 
+  def test_gsub_encoding
+    a = S("hello world")
+    a.force_encoding Encoding::UTF_8
+
+    b = S("hi")
+    b.force_encoding Encoding::US_ASCII
+
+    assert_equal Encoding::UTF_8, a.gsub(/hello/, b).encoding
+
+    c = S("everybody")
+    c.force_encoding Encoding::US_ASCII
+
+    assert_equal Encoding::UTF_8, a.gsub(/world/, c).encoding
+  end
+
   def test_gsub!
     a = S("hello")
     b = a.dup
@@ -717,6 +742,8 @@ class TestString < Test::Unit::TestCase
   def test_hash
     assert_equal(S("hello").hash, S("hello").hash)
     assert(S("hello").hash != S("helLO").hash)
+    bug4104 = '[ruby-core:33500]'
+    assert_not_equal(S("a").hash, S("a\0").hash, bug4104)
   end
 
   def test_hash_random
@@ -956,6 +983,14 @@ class TestString < Test::Unit::TestCase
     res = []
     a.scan(/(...)/) { |w| res << w }
     assert_equal([[S("cru")], [S("el ")], [S("wor")]],res)
+
+    a = S("hello")
+    a.taint
+    a.untrust
+    res = []
+    a.scan(/./) { |w| res << w }
+    assert(res[0].tainted?, '[ruby-core:33338] #4087')
+    assert(res[0].untrusted?, '[ruby-core:33338] #4087')
   end
 
   def test_size
@@ -1658,14 +1693,6 @@ class TestString < Test::Unit::TestCase
     }
   end
 
-  def test_tainted_str_new
-    a = []
-    a << a
-    s = a.inspect
-    assert(s.tainted?)
-    assert_equal("[[...]]", s)
-  end
-
   class S2 < String
   end
   def test_str_new4
@@ -1808,6 +1835,7 @@ class TestString < Test::Unit::TestCase
       c.class_eval { attr 1 }
     end
 
+    class << o;remove_method :to_str;end
     def o.to_str; "foo"; end
     assert_nothing_raised do
       c.class_eval { attr o }
@@ -1832,11 +1860,13 @@ class TestString < Test::Unit::TestCase
     assert_equal("\u3042", ("\u3042" * 100)[-1])
   end
 
+=begin
   def test_compare_different_encoding_string
     s1 = "\xff".force_encoding("UTF-8")
     s2 = "\xff".force_encoding("ISO-2022-JP")
-    #assert_equal([-1, 1], [s1 <=> s2, s2 <=> s1].sort)
+    assert_equal([-1, 1], [s1 <=> s2, s2 <=> s1].sort)
   end
+=end
 
   def test_casecmp
     assert_equal(1, "\u3042B".casecmp("\u3042a"))
@@ -1855,12 +1885,13 @@ class TestString < Test::Unit::TestCase
     assert_raise(Encoding::CompatibilityError) { "\u3042".encode("ISO-2022-JP").rstrip }
   end
 
+=begin
   def test_symbol_table_overflow
-    return
     assert_in_out_err([], <<-INPUT, [], /symbol table overflow \(symbol [a-z]{8}\) \(RuntimeError\)/)
       ("aaaaaaaa".."zzzzzzzz").each {|s| s.to_sym }
     INPUT
   end
+=end
 
   def test_shared_force_encoding
     s = "\u{3066}\u{3059}\u{3068}".gsub(//, '')
@@ -1876,10 +1907,73 @@ class TestString < Test::Unit::TestCase
   end
 
   def test_ascii_incomat_inspect
+    bug4081 = '[ruby-core:33283]'
     [Encoding::UTF_16LE, Encoding::UTF_16BE,
      Encoding::UTF_32LE, Encoding::UTF_32BE].each do |e|
       assert_equal('"abc"', "abc".encode(e).inspect)
       assert_equal('"\\u3042\\u3044\\u3046"', "\u3042\u3044\u3046".encode(e).inspect)
+      assert_equal('"ab\\"c"', "ab\"c".encode(e).inspect, bug4081)
     end
+    begin
+      ext = Encoding.default_external
+      Encoding.default_external = "us-ascii"
+      i = "abc\"\\".force_encoding("utf-8").inspect
+    ensure
+      Encoding.default_external = ext
+    end
+    assert_equal('"abc\\"\\\\"', i, bug4081)
+  end
+
+  def test_dummy_inspect
+    assert_equal('"\e\x24\x42\x22\x4C\x22\x68\e\x28\x42"',
+                 "\u{ffe2}\u{2235}".encode("cp50220").inspect)
+  end
+
+  def test_prepend
+    assert_equal(S("hello world!"), "world!".prepend("hello "))
+
+    foo = Object.new
+    def foo.to_str
+      "b"
+    end
+    assert_equal(S("ba"), "a".prepend(foo))
+
+    a = S("world")
+    b = S("hello ")
+    a.prepend(b)
+    assert_equal(S("hello world"), a)
+    assert_equal(S("hello "), b)
+  end
+
+  def u(str)
+    str.force_encoding(Encoding::UTF_8)
+  end
+
+  def test_byteslice
+    assert_equal("h", "hello".byteslice(0))
+    assert_equal(nil, "hello".byteslice(5))
+    assert_equal("o", "hello".byteslice(-1))
+    assert_equal(nil, "hello".byteslice(-6))
+
+    assert_equal("", "hello".byteslice(0, 0))
+    assert_equal("hello", "hello".byteslice(0, 6))
+    assert_equal("hello", "hello".byteslice(0, 6))
+    assert_equal("", "hello".byteslice(5, 1))
+    assert_equal("o", "hello".byteslice(-1, 6))
+    assert_equal(nil, "hello".byteslice(-6, 1))
+    assert_equal(nil, "hello".byteslice(0, -1))
+
+    assert_equal("h", "hello".byteslice(0..0))
+    assert_equal("", "hello".byteslice(5..0))
+    assert_equal("o", "hello".byteslice(4..5))
+    assert_equal(nil, "hello".byteslice(6..0))
+    assert_equal("", "hello".byteslice(-1..0))
+    assert_equal("llo", "hello".byteslice(-3..5))
+
+    assert_equal(u("\x81"), "\u3042".byteslice(1))
+    assert_equal(u("\x81\x82"), "\u3042".byteslice(1, 2))
+    assert_equal(u("\x81\x82"), "\u3042".byteslice(1..2))
+
+    assert_equal(u("\x82")+("\u3042"*9), ("\u3042"*10).byteslice(2, 28))
   end
 end

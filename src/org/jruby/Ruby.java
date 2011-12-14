@@ -1529,6 +1529,15 @@ public final class Ruby {
             addLazyBuiltin("fiber.rb", "fiber", "org.jruby.ext.fiber.FiberExtLibrary");
             addLazyBuiltin("psych.jar", "psych", "org.jruby.ext.psych.PsychLibrary");
             addLazyBuiltin("coverage.jar", "coverage", "org.jruby.ext.coverage.CoverageLibrary");
+
+            // TODO: implement something for these?
+            Library dummy = new Library() {
+                public void load(Ruby runtime, boolean wrap) throws IOException {
+                    // dummy library that does nothing right now
+                }
+            };
+            addBuiltinIfAllowed("continuation.rb", dummy);
+            addBuiltinIfAllowed("io/nonblock.rb", dummy);
         }
 
         if(RubyInstanceConfig.NATIVE_NET_PROTOCOL) {

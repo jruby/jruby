@@ -1,7 +1,7 @@
-require_relative 'gemutilities'
+require 'rubygems/test_case'
 require 'rubygems/commands/list_command'
 
-class TestGemCommandsListCommand < RubyGemTestCase
+class TestGemCommandsListCommand < Gem::TestCase
 
   def setup
     super
@@ -20,16 +20,13 @@ class TestGemCommandsListCommand < RubyGemTestCase
   def test_execute_installed
     @cmd.handle_options %w[c --installed]
 
-    e = assert_raises Gem::SystemExitException do
+    assert_raises Gem::MockGemUi::SystemExitException do
       use_ui @ui do
         @cmd.execute
       end
     end
 
-    assert_equal 0, e.exit_code
-
     assert_equal "true\n", @ui.output
-
     assert_equal '', @ui.error
   end
 

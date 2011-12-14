@@ -6,7 +6,12 @@
 # If in doubt, ask your admin.
 
 require 'test/unit'
-require 'syslog'
+
+begin
+  require 'syslog'
+rescue LoadError
+  # suppress error messages.
+end
 
 class TestSyslog < Test::Unit::TestCase
   def test_new
@@ -43,10 +48,11 @@ class TestSyslog < Test::Unit::TestCase
     Syslog.close
 
     # given parameters
-    Syslog.open("foo", Syslog::LOG_NDELAY | Syslog::LOG_PERROR, Syslog::LOG_DAEMON)
+    options = Syslog::LOG_NDELAY | Syslog::LOG_PID
+    Syslog.open("foo", options, Syslog::LOG_DAEMON)
 
     assert_equal('foo', Syslog.ident)
-    assert_equal(Syslog::LOG_NDELAY | Syslog::LOG_PERROR, Syslog.options)
+    assert_equal(options, Syslog.options)
     assert_equal(Syslog::LOG_DAEMON, Syslog.facility)
 
     Syslog.close
@@ -109,6 +115,10 @@ class TestSyslog < Test::Unit::TestCase
     Syslog.close if Syslog.opened?
   end
 
+  def syslog_line_regex(ident, message)
+    /(?:^| )#{Regexp.quote(ident)}(?:\[([1-9][0-9]*)\])?(?: |[: ].* )#{Regexp.quote(message)}$/
+  end
+
   def test_log
     stderr = IO::pipe
 
@@ -134,15 +144,28 @@ class TestSyslog < Test::Unit::TestCase
     stderr[1].close
     Process.waitpid(pid)
 
-    # LOG_PERROR is not yet implemented on Cygwin.
-    return if RUBY_PLATFORM =~ /cygwin/
+    # LOG_PERROR is not implemented on Cygwin or Solaris.  Only test
+    # these on systems that define it.
+    return unless Syslog.const_defined?(:LOG_PERROR)
 
     2.times {
-      assert_equal("syslog_test: test1 - hello, world!\n", stderr[0].gets)
+      re = syslog_line_regex("syslog_test", "test1 - hello, world!")
+      line = stderr[0].gets
+      m = re.match(line)
+      assert_not_nil(m)
+      if m[1]
+        # pid is written regardless of LOG_PID on OS X 10.7+
+        assert_equal(pid, m[1].to_i)
+      end
     }
 
     2.times {
-      assert_equal(format("syslog_test[%d]: test2 - pid\n", pid), stderr[0].gets)
+      re = syslog_line_regex("syslog_test", "test2 - pid")
+      line = stderr[0].gets
+      m = re.match(line)
+      assert_not_nil(m)
+      assert_not_nil(m[1])
+      assert_equal(pid, m[1].to_i)
     }
   end
 
@@ -159,4 +182,4 @@ class TestSyslog < Test::Unit::TestCase
 
     assert_equal(format('<#%s: opened=false>', Syslog), Syslog.inspect)
   end
-end
+end if defined?(Syslog)

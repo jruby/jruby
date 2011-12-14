@@ -94,8 +94,9 @@ public class RubyContinuation extends RubyObject {
     @JRubyMethod(name = {"call", "[]"}, rest = true)
     public IRubyObject call(ThreadContext context, IRubyObject[] args) {
         if (disabled) {
-            throw context.getRuntime().newLocalJumpError(
-                    RubyLocalJumpError.Reason.NOREASON, this, "continuations can not be called from outside their scope");
+            RubyKernel.raise(context, context.runtime.getThreadError(),
+                    new IRubyObject[]{context.runtime.newString("continuations can not be called from outside their scope")},
+                    Block.NULL_BLOCK);
         }
         continuation.args = args;
         throw continuation;

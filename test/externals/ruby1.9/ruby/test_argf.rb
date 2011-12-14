@@ -210,6 +210,7 @@ class TestArgf < Test::Unit::TestCase
         assert_equal([], e)
         assert_equal([], r)
         assert_equal("foo.new\nbar.new\nbaz.new\n", File.read(t.path))
+        File.unlink(t.path + ".~~~") rescue nil
       else
         assert_match(/Can't rename .* to .*: .*. skipping file/, e.first) #'
         assert_equal([], r)
@@ -647,11 +648,22 @@ class TestArgf < Test::Unit::TestCase
   end
 
   def test_binmode
+    bug5268 = '[ruby-core:39234]'
+    open(@t3.path, "wb") {|f| f.write "5\r\n6\r\n"}
     ruby('-e', "ARGF.binmode; STDOUT.binmode; puts ARGF.read", @t1.path, @t2.path, @t3.path) do |f|
       f.binmode
-      assert_equal("1\n2\n3\n4\n5\n6\n", f.read)
+      assert_equal("1\n2\n3\n4\n5\r\n6\r\n", f.read, bug5268)
     end
   end
+
+  def test_textmode
+    bug5268 = '[ruby-core:39234]'
+    open(@t3.path, "wb") {|f| f.write "5\r\n6\r\n"}
+    ruby('-e', "STDOUT.binmode; puts ARGF.read", @t1.path, @t2.path, @t3.path) do |f|
+      f.binmode
+      assert_equal("1\n2\n3\n4\n5\n6\n", f.read, bug5268)
+    end
+  end unless IO::BINARY.zero?
 
   def test_skip
     ruby('-e', <<-SRC, @t1.path, @t2.path, @t3.path) do |f|
@@ -693,5 +705,47 @@ class TestArgf < Test::Unit::TestCase
       assert_equal([@t1.path, @t2.path, @t3.path].inspect, f.gets.chomp)
       assert_equal([@t1.path, @t2.path, @t3.path].inspect, f.gets.chomp)
     end
+  end
+
+  def test_readlines_limit_0
+    bug4024 = '[ruby-dev:42538]'
+    t = make_tempfile
+    argf = ARGF.class.new(t.path)
+    begin
+      assert_raise(ArgumentError, bug4024) do
+        argf.readlines(0)
+      end
+    ensure
+      argf.close
+    end
+  end
+
+  def test_each_line_limit_0
+    bug4024 = '[ruby-dev:42538]'
+    t = make_tempfile
+    argf = ARGF.class.new(t.path)
+    begin
+      assert_raise(ArgumentError, bug4024) do
+        argf.each_line(0).next
+      end
+    ensure
+      argf.close
+    end
+  end
+
+  def test_unreadable
+    bug4274 = '[ruby-core:34446]'
+    paths = (1..2).map do
+      t = Tempfile.new("bug4274-")
+      path = t.path
+      t.close!
+      path
+    end
+    argf = ARGF.class.new(*paths)
+    paths.each do |path|
+      e = assert_raise(Errno::ENOENT) {argf.gets}
+      assert_match(/- #{Regexp.quote(path)}\z/, e.message)
+    end
+    assert_nil(argf.gets, bug4274)
   end
 end

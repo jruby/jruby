@@ -3,17 +3,6 @@ require 'tmpdir'
 require_relative 'envutil'
 
 class TestSystem < Test::Unit::TestCase
-  def valid_syntax?(code, fname)
-    code = code.dup.force_encoding("ascii-8bit")
-    code.sub!(/\A(?:\xef\xbb\xbf)?(\s*\#.*$)*(\n)?/n) {
-      "#$&#{"\n" if $1 && !$2}BEGIN{throw tag, :ok}\n"
-    }
-    code.force_encoding("us-ascii")
-    catch {|tag| eval(code, binding, fname, 0)}
-  rescue SyntaxError
-    false
-  end
-
   def test_system
     ruby = EnvUtil.rubybin
     assert_equal("foobar\n", `echo foobar`)
@@ -99,15 +88,52 @@ class TestSystem < Test::Unit::TestCase
     }
   end
 
-  def test_syntax
-    assert_nothing_raised(Exception) do
-      for script in Dir[File.expand_path("../../../{lib,sample,ext}/**/*.rb", __FILE__)]
-        valid_syntax? IO::read(script), script
+  def test_system_at
+      if /mswin|mingw/ =~ RUBY_PLATFORM
+        bug4393 = '[ruby-core:35218]'
+
+        # @ + builtin command
+        assert_equal("foo\n", `@echo foo`, bug4393);
+        assert_equal("foo\n", `@@echo foo`, bug4393);
+        assert_equal("@@foo\n", `@@echo @@foo`, bug4393);
+
+        # @ + non builtin command
+        Dir.mktmpdir("ruby_script_tmp") {|tmpdir|
+          tmpfilename = "#{tmpdir}/ruby_script_tmp.#{$$}"
+
+          tmp = open(tmpfilename, "w")
+          tmp.print "foo\nbar\nbaz\n@foo";
+          tmp.close
+
+          assert_match(/\Abar\nbaz\n?\z/, `@@findstr "ba" #{tmpfilename.gsub("/", "\\")}`, bug4393);
+        }
       end
+  end
+
+  def test_system_redirect_win
+    if /mswin|mingw/ !~ RUBY_PLATFORM
+      return
     end
+
+    cmd = "%WINDIR%/system32/ping.exe \"BFI3CHL671\" > out.txt 2>NUL"
+    assert_equal(false, system(cmd), '[ruby-talk:258939]');
+
+    cmd = "\"%WINDIR%/system32/ping.exe BFI3CHL671\" > out.txt 2>NUL"
+    assert_equal(false, system(cmd), '[ruby-talk:258939]');
   end
 
   def test_empty_evstr
     assert_equal("", eval('"#{}"', nil, __FILE__, __LINE__), "[ruby-dev:25113]")
   end
+
+  def test_fallback_to_sh
+    Dir.mktmpdir("ruby_script_tmp") {|tmpdir|
+      tmpfilename = "#{tmpdir}/ruby_script_tmp.#{$$}"
+      open(tmpfilename, "w") {|f|
+        f.puts ": ;"
+        f.chmod(0755)
+      }
+      assert_equal(true, system(tmpfilename), '[ruby-core:32745]')
+    }
+  end if File.executable?("/bin/sh")
 end

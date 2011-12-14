@@ -1,4 +1,4 @@
-require_relative '../helper'
+require 'psych/helper'
 
 module Psych
   module Visitors
@@ -7,6 +7,26 @@ module Psych
         super
         @io = StringIO.new
         @visitor = Visitors::Emitter.new @io
+      end
+
+      def test_options
+        io = StringIO.new
+        visitor = Visitors::Emitter.new io, :indentation => 3
+
+        s       = Nodes::Stream.new
+        doc     = Nodes::Document.new
+        mapping = Nodes::Mapping.new
+        m2      = Nodes::Mapping.new
+        m2.children << Nodes::Scalar.new('a')
+        m2.children << Nodes::Scalar.new('b')
+
+        mapping.children << Nodes::Scalar.new('key')
+        mapping.children << m2
+        doc.children << mapping
+        s.children << doc
+
+        visitor.accept s
+        assert_match(/^[ ]{3}a/, io.string)
       end
 
       def test_stream

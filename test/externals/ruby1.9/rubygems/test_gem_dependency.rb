@@ -1,19 +1,7 @@
-require_relative 'gemutilities'
+require 'rubygems/test_case'
 require 'rubygems/dependency'
 
-class TestGemDependency < RubyGemTestCase
-
-  def test_subclass
-    sc = Class.new Gem::Dependency
-    def sc.requirement() bogus; end
-
-    out, err = capture_io do
-      assert_equal Gem::Requirement.default, sc.new('a').version_requirement
-    end
-
-    assert_match %r%deprecated%, err
-  end
-
+class TestGemDependency < Gem::TestCase
   def test_initialize
     d = dep "pkg", "> 1.0"
 
@@ -70,19 +58,23 @@ class TestGemDependency < RubyGemTestCase
   def test_equals_tilde
     d = dep "a", "0"
 
-    assert_match d,                  d,             "matche self"
+    assert_match d,                  d,             "match self"
     assert_match dep("a", ">= 0"),   d,             "match version exact"
     assert_match dep("a", ">= 0"),   dep("a", "1"), "match version"
-    assert_match dep(/a/, ">= 0"),   d,             "match simple regexp"
-    assert_match dep(/a|b/, ">= 0"), d,             "match scary regexp"
-
-    refute_match dep(/a/), dep("b")
     refute_match dep("a"), Object.new
+
+    Gem::Deprecate.skip_during do
+      assert_match dep(/a/, ">= 0"),   d,             "match simple regexp"
+      assert_match dep(/a|b/, ">= 0"), d,             "match scary regexp"
+      refute_match dep(/a/), dep("b")
+    end
   end
 
   def test_equals_tilde_escape
     refute_match dep("a|b"), dep("a", "1")
-    assert_match dep(/a|b/), dep("a", "1")
+    Gem::Deprecate.skip_during do
+      assert_match dep(/a|b/), dep("a", "1")
+    end
   end
 
   def test_equals_tilde_object
@@ -96,9 +88,11 @@ class TestGemDependency < RubyGemTestCase
   def test_equals_tilde_spec
     assert_match dep("a", ">= 0"),   spec("a", "0")
     assert_match dep("a", "1"),      spec("a", "1")
-    assert_match dep(/a/, ">= 0"),   spec("a", "0")
-    assert_match dep(/a|b/, ">= 0"), spec("b", "0")
-    refute_match dep(/a/, ">= 0"),   spec("b", "0")
+    Gem::Deprecate.skip_during do
+      assert_match dep(/a/, ">= 0"),   spec("a", "0")
+      assert_match dep(/a|b/, ">= 0"), spec("b", "0")
+      refute_match dep(/a/, ">= 0"),   spec("b", "0")
+    end
   end
 
   def test_hash
@@ -110,6 +104,45 @@ class TestGemDependency < RubyGemTestCase
     refute_equal dep("pkg", "1.0").hash,   dep("pkg", "2.0").hash, "requirement"
     refute_equal dep("pkg", "1.0").hash,   dep("abc", "1.0").hash, "name"
     refute_equal dep("pkg", :development), dep("pkg", :runtime), "type"
+  end
+
+  def test_merge
+    a1 = dep 'a', '~> 1.0'
+    a2 = dep 'a', '= 1.0'
+
+    a3 = a1.merge a2
+
+    assert_equal dep('a', '~> 1.0', '= 1.0'), a3
+  end
+
+  def test_merge_default
+    a1 = dep 'a'
+    a2 = dep 'a', '1'
+
+    a3 = a1.merge a2
+
+    assert_equal dep('a', '1'), a3
+  end
+
+  def test_merge_name_mismatch
+    a = dep 'a'
+    b = dep 'b'
+
+    e = assert_raises ArgumentError do
+      a.merge b
+    end
+
+    assert_equal 'a (>= 0) and b (>= 0) have different names',
+                 e.message
+  end
+
+  def test_merge_other_default
+    a1 = dep 'a', '1'
+    a2 = dep 'a'
+
+    a3 = a1.merge a2
+
+    assert_equal dep('a', '1'), a3
   end
 
   def test_prerelease_eh
@@ -134,15 +167,10 @@ class TestGemDependency < RubyGemTestCase
     assert d.prerelease?
   end
 
-  def test_version_requirements_equals_deprecated
-    d = dep "pkg", "1.0"
+  def test_specific
+    refute dep('a', '> 1').specific?
 
-    out, err = capture_io do
-      d.version_requirements = '2.0'
-      assert_equal Gem::Requirement.new(%w[2.0]), d.requirement
-    end
-
-    assert_match %r%deprecated%, err
+    assert dep('a', '= 1').specific?
   end
 
 end

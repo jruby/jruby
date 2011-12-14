@@ -1,4 +1,4 @@
-require_relative 'helper'
+require 'psych/helper'
 
 require 'stringio'
 require 'tempfile'
@@ -8,18 +8,55 @@ class TestPsych < Psych::TestCase
     Psych.domain_types.clear
   end
 
+  def test_line_width
+    yml = Psych.dump('123456 7', { :line_width => 5 })
+    assert_match(/^\s*7/, yml)
+  end
+
+  def test_indent
+    yml = Psych.dump({:a => {'b' => 'c'}}, {:indentation => 5})
+    assert_match(/^[ ]{5}b/, yml)
+  end
+
+  def test_canonical
+    yml = Psych.dump({:a => {'b' => 'c'}}, {:canonical => true})
+    assert_match(/\? ! "b/, yml)
+  end
+
+  def test_header
+    yml = Psych.dump({:a => {'b' => 'c'}}, {:header => true})
+    assert_match(/YAML/, yml)
+  end
+
+  def test_version_array
+    yml = Psych.dump({:a => {'b' => 'c'}}, {:version => [1,1]})
+    assert_match(/1.1/, yml)
+  end
+
+  def test_version_string
+    yml = Psych.dump({:a => {'b' => 'c'}}, {:version => '1.1'})
+    assert_match(/1.1/, yml)
+  end
+
+  def test_version_bool
+    yml = Psych.dump({:a => {'b' => 'c'}}, {:version => true})
+    assert_match(/1.1/, yml)
+  end
+
   def test_load_argument_error
     assert_raises(TypeError) do
       Psych.load nil
     end
   end
 
-  # def test_non_existing_class_on_deserialize
-  #   e = assert_raises(ArgumentError) do
-  #     Psych.load("--- !ruby/object:NonExistent\nfoo: 1")
-  #   end
-  #   assert_equal 'undefined class/module NonExistent', e.message
-  # end
+  unless RUBY_ENGINE == 'jruby'
+    def test_non_existing_class_on_deserialize
+      e = assert_raises(ArgumentError) do
+        Psych.load("--- !ruby/object:NonExistent\nfoo: 1")
+      end
+      assert_equal 'undefined class/module NonExistent', e.message
+    end
+  end
 
   def test_dump_stream
     things = [22, "foo \n", {}]
@@ -47,10 +84,12 @@ class TestPsych < Psych::TestCase
     assert_equal 'foo', Psych.load("--- foo\n")
   end
 
-  # def test_libyaml_version
-  #   assert Psych.libyaml_version
-  #   assert_equal Psych.libyaml_version.join('.'), Psych::LIBYAML_VERSION
-  # end
+  unless RUBY_ENGINE == 'jruby'
+    def test_libyaml_version
+      assert Psych.libyaml_version
+      assert_equal Psych.libyaml_version.join('.'), Psych::LIBYAML_VERSION
+    end
+  end
 
   def test_load_documents
     docs = Psych.load_documents("--- foo\n...\n--- bar\n...")
@@ -64,7 +103,7 @@ class TestPsych < Psych::TestCase
 
   def test_add_builtin_type
     got = nil
-    Psych.add_builtin_type 'omap', do |type, val|
+    Psych.add_builtin_type 'omap' do |type, val|
       got = val
     end
     Psych.load('--- !!omap hello')

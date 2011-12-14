@@ -133,7 +133,6 @@ module DL
     end
 
     def test_NEXT
-      skip "DL::Handle::NEXT is not supported" if /mswin|mingw/ =~ RUBY_PLATFORM
       begin
         # Linux / Darwin
         #
@@ -163,12 +162,23 @@ module DL
         handle = DL::Handle::NEXT
         assert_not_nil handle['Init_objspace']
       end
-    end
+    end unless /mswin|mingw/ =~ RUBY_PLATFORM
 
     def test_DEFAULT
       skip "DL::Handle::DEFAULT is not supported" if /mswin|mingw/ =~ RUBY_PLATFORM
       handle = DL::Handle::DEFAULT
       assert_not_nil handle['malloc']
-    end
+    end unless /mswin|mingw/ =~ RUBY_PLATFORM
+
+    def test_dlerror
+      # FreeBSD (at least 7.2 to 7.2) calls nsdispatch(3) when it calls
+      # getaddrinfo(3). And nsdispatch(3) doesn't call dlerror(3) even if
+      # it calls _nss_cache_cycle_prevention_function with dlsym(3).
+      # So our DL::Handle#sym must call dlerror(3) before call dlsym.
+      # In general uses of dlerror(3) should call it before use it.
+      require 'socket'
+      Socket.gethostbyname("localhost")
+      DL.dlopen("/usr/lib/libc.so").sym('strcpy')
+    end if /freebsd/=~ RUBY_PLATFORM
   end
 end

@@ -48,4 +48,28 @@ class TC_OpenStruct < Test::Unit::TestCase
     o.freeze
     assert_raise(TypeError, '[ruby-core:22559]') {o.a = 1764}
   end
+
+  def test_delete_field
+    bug = '[ruby-core:33010]'
+    o = OpenStruct.new
+    assert_not_respond_to(o, :a)
+    assert_not_respond_to(o, :a=)
+    o.a = 'a'
+    assert_respond_to(o, :a)
+    assert_respond_to(o, :a=)
+    o.delete_field :a
+    assert_not_respond_to(o, :a, bug)
+    assert_not_respond_to(o, :a=, bug)
+  end
+
+  def test_method_missing_handles_square_bracket_equals
+    o = OpenStruct.new
+    assert_raise(NoMethodError) { o[:foo] = :bar }
+  end
+
+  def test_method_missing_handles_square_brackets
+    o = OpenStruct.new
+    assert_raise(NoMethodError) { o[:foo] }
+  end
+
 end

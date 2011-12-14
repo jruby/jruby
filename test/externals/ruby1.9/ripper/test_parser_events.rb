@@ -20,7 +20,7 @@ class TestRipper::ParserEvents < Test::Unit::TestCase
 
   def parse(str, nm = nil, &bl)
     dp = DummyParser.new(str)
-    dp.hook(nm, &bl) if nm
+    dp.hook(*nm, &bl) if nm
     dp.parse.to_s
   end
 
@@ -46,9 +46,13 @@ class TestRipper::ParserEvents < Test::Unit::TestCase
   end
 
   def test_var_ref
-    assert_equal '[ref(a)]', parse('a')
+    assert_equal '[assign(var_field(a),ref(a))]', parse('a=a')
     assert_equal '[ref(nil)]', parse('nil')
     assert_equal '[ref(true)]', parse('true')
+  end
+
+  def test_vcall
+    assert_equal '[vcall(a)]', parse('a')
   end
 
   def test_BEGIN
@@ -77,15 +81,15 @@ class TestRipper::ParserEvents < Test::Unit::TestCase
     assert_equal '[fcall(m,[])]', parse('m()')
     assert_equal '[fcall(m,[1])]', parse('m(1)')
     assert_equal '[fcall(m,[1,2])]', parse('m(1,2)')
-    assert_equal '[fcall(m,[*ref(r)])]', parse('m(*r)')
-    assert_equal '[fcall(m,[1,*ref(r)])]', parse('m(1,*r)')
-    assert_equal '[fcall(m,[1,2,*ref(r)])]', parse('m(1,2,*r)')
-    assert_equal '[fcall(m,[&ref(r)])]', parse('m(&r)')
-    assert_equal '[fcall(m,[1,&ref(r)])]', parse('m(1,&r)')
-    assert_equal '[fcall(m,[1,2,&ref(r)])]', parse('m(1,2,&r)')
-    assert_equal '[fcall(m,[*ref(a),&ref(b)])]', parse('m(*a,&b)')
-    assert_equal '[fcall(m,[1,*ref(a),&ref(b)])]', parse('m(1,*a,&b)')
-    assert_equal '[fcall(m,[1,2,*ref(a),&ref(b)])]', parse('m(1,2,*a,&b)')
+    assert_equal '[fcall(m,[*vcall(r)])]', parse('m(*r)')
+    assert_equal '[fcall(m,[1,*vcall(r)])]', parse('m(1,*r)')
+    assert_equal '[fcall(m,[1,2,*vcall(r)])]', parse('m(1,2,*r)')
+    assert_equal '[fcall(m,[&vcall(r)])]', parse('m(&r)')
+    assert_equal '[fcall(m,[1,&vcall(r)])]', parse('m(1,&r)')
+    assert_equal '[fcall(m,[1,2,&vcall(r)])]', parse('m(1,2,&r)')
+    assert_equal '[fcall(m,[*vcall(a),&vcall(b)])]', parse('m(*a,&b)')
+    assert_equal '[fcall(m,[1,*vcall(a),&vcall(b)])]', parse('m(1,*a,&b)')
+    assert_equal '[fcall(m,[1,2,*vcall(a),&vcall(b)])]', parse('m(1,2,*a,&b)')
   end
 
   def test_args_add
@@ -120,8 +124,8 @@ class TestRipper::ParserEvents < Test::Unit::TestCase
   end
 
   def test_aref
-    assert_equal '[aref(ref(v),[1])]', parse('v[1]')
-    assert_equal '[aref(ref(v),[1,2])]', parse('v[1,2]')
+    assert_equal '[aref(vcall(v),[1])]', parse('v[1]')
+    assert_equal '[aref(vcall(v),[1,2])]', parse('v[1,2]')
   end
 
   def test_assoclist_from_args
@@ -143,7 +147,7 @@ class TestRipper::ParserEvents < Test::Unit::TestCase
   end
 
   def test_aref_field
-    assert_equal '[assign(aref_field(ref(a),[1]),2)]', parse('a[1]=2')
+    assert_equal '[assign(aref_field(vcall(a),[1]),2)]', parse('a[1]=2')
   end
 
   def test_arg_ambiguous
@@ -160,6 +164,8 @@ class TestRipper::ParserEvents < Test::Unit::TestCase
 
   def test_array   # array literal
     assert_equal '[array([1,2,3])]', parse('[1,2,3]')
+    assert_equal '[array([abc,def])]', parse('%w[abc def]')
+    assert_equal '[array([abc,def])]', parse('%W[abc def]')
   end
 
   def test_assign   # generic assignment
@@ -321,7 +327,7 @@ class TestRipper::ParserEvents < Test::Unit::TestCase
       tree = parse("foo.()", :on_call) {thru_call = true}
     }
     assert_equal true, thru_call
-    assert_equal "[call(ref(foo),.,call,[])]", tree
+    assert_equal "[call(vcall(foo),.,call,[])]", tree
   end
 
   def test_excessed_comma
@@ -347,10 +353,10 @@ class TestRipper::ParserEvents < Test::Unit::TestCase
     assert_equal true, thru_heredoc_beg
     assert_match(/string_content\(\),heredoc\n/, tree, bug1921)
     heredoc = nil
-    parse("<<EOS\nheredoc1\nheredoc2\nEOS\n", :on_string_add) {|n, s| heredoc = s}
+    parse("<<EOS\nheredoc1\nheredoc2\nEOS\n", :on_string_add) {|e, n, s| heredoc = s}
     assert_equal("heredoc1\nheredoc2\n", heredoc, bug1921)
     heredoc = nil
-    parse("<<-EOS\nheredoc1\nheredoc2\n\tEOS\n", :on_string_add) {|n, s| heredoc = s}
+    parse("<<-EOS\nheredoc1\nheredoc2\n\tEOS\n", :on_string_add) {|e, n, s| heredoc = s}
     assert_equal("heredoc1\nheredoc2\n", heredoc, bug1921)
   end
 
@@ -368,6 +374,7 @@ class TestRipper::ParserEvents < Test::Unit::TestCase
 
   def test_mlhs_add_star
     bug2232 = '[ruby-core:26163]'
+    bug4364 = '[ruby-core:35078]'
 
     thru_mlhs_add_star = false
     tree = parse("a, *b = 1, 2", :on_mlhs_add_star) {thru_mlhs_add_star = true}
@@ -377,6 +384,18 @@ class TestRipper::ParserEvents < Test::Unit::TestCase
     tree = parse("a, *b, c = 1, 2", :on_mlhs_add_star) {thru_mlhs_add_star = true}
     assert_equal true, thru_mlhs_add_star
     assert_match(/mlhs_add\(mlhs_add_star\(mlhs_add\(mlhs_new\(\),a\),b\),mlhs_add\(mlhs_new\(\),c\)\)/, tree, bug2232)
+    thru_mlhs_add_star = false
+    tree = parse("a, *, c = 1, 2", :on_mlhs_add_star) {thru_mlhs_add_star = true}
+    assert_equal true, thru_mlhs_add_star
+    assert_match(/mlhs_add\(mlhs_add_star\(mlhs_add\(mlhs_new\(\),a\)\),mlhs_add\(mlhs_new\(\),c\)\)/, tree, bug4364)
+    thru_mlhs_add_star = false
+    tree = parse("*b, c = 1, 2", :on_mlhs_add_star) {thru_mlhs_add_star = true}
+    assert_equal true, thru_mlhs_add_star
+    assert_match(/mlhs_add\(mlhs_add_star\(mlhs_new\(\),b\),mlhs_add\(mlhs_new\(\),c\)\)/, tree, bug4364)
+    thru_mlhs_add_star = false
+    tree = parse("*, c = 1, 2", :on_mlhs_add_star) {thru_mlhs_add_star = true}
+    assert_equal true, thru_mlhs_add_star
+    assert_match(/mlhs_add\(mlhs_add_star\(mlhs_new\(\)\),mlhs_add\(mlhs_new\(\),c\)\)/, tree, bug4364)
   end
 
   def test_mlhs_new
@@ -676,6 +695,15 @@ class TestRipper::ParserEvents < Test::Unit::TestCase
     assert_equal true, thru_opassign
   end
 
+  def test_opassign_error
+    thru_opassign = []
+    events = [:on_opassign, :on_assign_error]
+    parse('a::X ||= c 1', events) {|a,*b|
+      thru_opassign << a
+    }
+    assert_equal events, thru_opassign
+  end
+
   def test_param_error
     thru_param_error = false
     parse('def foo(A) end', :on_param_error) {thru_param_error = true}
@@ -753,14 +781,18 @@ class TestRipper::ParserEvents < Test::Unit::TestCase
 
   def test_rescue
     thru_rescue = false
-    parse('begin; rescue; end', :on_rescue) {thru_rescue = true}
+    parsed = parse('begin; 1; rescue => e; 2; end', :on_rescue) {thru_rescue = true}
     assert_equal true, thru_rescue
+    assert_match /1.*rescue/, parsed
+    assert_match /rescue\(,var_field\(e\),\[2\]\)/, parsed
   end
 
   def test_rescue_mod
     thru_rescue_mod = false
-    parse('nil rescue nil', :on_rescue_mod) {thru_rescue_mod = true}
+    parsed = parse('1 rescue 2', :on_rescue_mod) {thru_rescue_mod = true}
     assert_equal true, thru_rescue_mod
+    bug4716 = '[ruby-core:36248]'
+    assert_equal "[rescue_mod(1,2)]", parsed, bug4716
   end
 
   def test_rest_param
@@ -1097,14 +1129,14 @@ class TestRipper::ParserEvents < Test::Unit::TestCase
     assert_equal("[fcall(proc,[],&block([],[void()]))]", parse("proc{|;y|}"))
     if defined?(Process::RLIMIT_AS)
       assert_in_out_err(["-I#{File.dirname(__FILE__)}", "-rdummyparser"],
-                        'Process.setrlimit(Process::RLIMIT_AS,102400); puts DummyParser.new("proc{|;y|}").parse',
-                        ["[fcall(proc,[],&block([],[void()]))]"], [], '[ruby-dev:39423]')
+                        'Process.setrlimit(Process::RLIMIT_AS,100*1024*1024); puts DummyParser.new("proc{|;y|!y}").parse',
+                        ["[fcall(proc,[],&block([],[unary(!,ref(y))]))]"], [], '[ruby-dev:39423]')
     end
   end
 
   def test_unterminated_regexp
     compile_error = false
-    parse('/', :compile_error) {|msg| compile_error = msg}
+    parse('/', :compile_error) {|e, msg| compile_error = msg}
     assert_equal("unterminated regexp meets end of file", compile_error)
   end
 end if ripper_test

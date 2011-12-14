@@ -31,9 +31,11 @@ module TestNetHTTPUtils
   end
 
   def teardown
-    @server.shutdown
-    until @server.status == :Stop
-      sleep 0.1
+    if @server
+      @server.shutdown
+      until @server.status == :Stop
+        sleep 0.1
+      end
     end
     # resume global state
     Net::HTTP.version_1_2
@@ -88,6 +90,13 @@ module TestNetHTTPUtils
 
     # echo server
     def do_POST(req, res)
+      res['Content-Type'] = req['Content-Type']
+      res['X-request-uri'] = req.request_uri.to_s
+      res.body = req.body
+      res.chunked = @chunked
+    end
+
+    def do_PATCH(req, res)
       res['Content-Type'] = req['Content-Type']
       res.body = req.body
       res.chunked = @chunked

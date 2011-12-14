@@ -52,14 +52,16 @@ class TestAlias < Test::Unit::TestCase
     end
   end
 
-  def test_JVN_83768862
-    d = lambda {
-      $SAFE = 4
-      dclass = Class.new(C)
-      dclass.send(:alias_method, :mm, :m)
-      dclass.new
-    }.call
-    assert_raise(SecurityError) { d.mm }
+  unless RUBY_ENGINE == 'jruby'
+    def test_JVN_83768862
+      d = lambda {
+        $SAFE = 4
+        dclass = Class.new(C)
+        dclass.send(:alias_method, :mm, :m)
+        dclass.new
+      }.call
+      assert_raise(SecurityError) { d.mm }
+    end
   end
 
   def test_nonexistmethod

@@ -56,11 +56,64 @@ EOF
     end
   end
 
+  def test_flag_xlist_inbox
+    parser = Net::IMAP::ResponseParser.new
+	response = parser.parse(<<EOF.gsub(/\n/, "\r\n").taint)
+* XLIST (\\Inbox) "." "INBOX"
+EOF
+    assert_equal [:Inbox], response.data.attr
+  end
+
   def test_resp_text_code
     parser = Net::IMAP::ResponseParser.new
     response = parser.parse(<<EOF.gsub(/\n/, "\r\n").taint)
 * OK [CLOSED] Previous mailbox closed.
 EOF
     assert_equal "CLOSED", response.data.code.name
+  end
+
+  def test_search_response
+    parser = Net::IMAP::ResponseParser.new
+    response = parser.parse(<<EOF.gsub(/\n/, "\r\n").taint)
+* SEARCH
+EOF
+    assert_equal [], response.data
+    response = parser.parse(<<EOF.gsub(/\n/, "\r\n").taint)
+* SEARCH 1
+EOF
+    assert_equal [1], response.data
+    response = parser.parse(<<EOF.gsub(/\n/, "\r\n").taint)
+* SEARCH 1 2 3
+EOF
+    assert_equal [1, 2, 3], response.data
+  end
+
+  def test_search_response_of_yahoo
+    parser = Net::IMAP::ResponseParser.new
+    response = parser.parse(<<EOF.gsub(/\n/, "\r\n").taint)
+* SEARCH 1 
+EOF
+    assert_equal [1], response.data
+    response = parser.parse(<<EOF.gsub(/\n/, "\r\n").taint)
+* SEARCH 1 2 3 
+EOF
+    assert_equal [1, 2, 3], response.data
+  end
+
+  def test_msg_att_extra_space
+    parser = Net::IMAP::ResponseParser.new
+    response = parser.parse(<<EOF.gsub(/\n/, "\r\n").taint)
+* 1 FETCH (UID 92285)
+EOF
+    assert_equal 92285, response.data.attr["UID"]
+
+    response = parser.parse(<<EOF.gsub(/\n/, "\r\n").taint)
+* 1 FETCH (UID 92285 )
+EOF
+    assert_equal 92285, response.data.attr["UID"]
+
+    response = parser.parse(<<EOF.gsub(/\n/, "\r\n").taint)
+* 1 FETCH (UID 92285  )
+EOF
   end
 end

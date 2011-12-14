@@ -656,6 +656,9 @@ class TestDateParse < Test::Unit::TestCase
       Date.parse('')
     end
     assert_raise(ArgumentError) do
+      DateTime.parse('')
+    end
+    assert_raise(ArgumentError) do
       Date.parse('2001-02-29')
     end
     assert_raise(ArgumentError) do
@@ -667,14 +670,17 @@ class TestDateParse < Test::Unit::TestCase
   end
 
   def test__iso8601
-    h = Date._iso8601('01-02-03')
-    assert_equal([2001, 2, 3, nil, nil, nil, nil],
+    h = Date._iso8601('01-02-03T04:05:06Z')
+    assert_equal([2001, 2, 3, 4, 5, 6, 0],
 		 h.values_at(:year, :mon, :mday, :hour, :min, :sec, :offset))
-    h = Date._iso8601('2001-02-03')
-    assert_equal([2001, 2, 3, nil, nil, nil, nil],
+    h = Date._iso8601('2001-02-03T04:05:06Z')
+    assert_equal([2001, 2, 3, 4, 5, 6, 0],
 		 h.values_at(:year, :mon, :mday, :hour, :min, :sec, :offset))
-    h = Date._iso8601('--02-03')
-    assert_equal([nil, 2, 3, nil, nil, nil, nil],
+    h = Date._iso8601('--02-03T04:05:06Z')
+    assert_equal([nil, 2, 3, 4, 5, 6, 0],
+		 h.values_at(:year, :mon, :mday, :hour, :min, :sec, :offset))
+    h = Date._iso8601('---03T04:05:06Z')
+    assert_equal([nil, nil, 3, 4, 5, 6, 0],
 		 h.values_at(:year, :mon, :mday, :hour, :min, :sec, :offset))
 
     h = Date._iso8601('2001-02-03T04:05')
@@ -693,14 +699,17 @@ class TestDateParse < Test::Unit::TestCase
     assert_equal([2001, 2, 3, 4, 5, 6, 3600],
 		 h.values_at(:year, :mon, :mday, :hour, :min, :sec, :offset))
 
-    h = Date._iso8601('010203')
-    assert_equal([2001, 2, 3, nil, nil, nil, nil],
+    h = Date._iso8601('010203T040506Z')
+    assert_equal([2001, 2, 3, 4, 5, 6, 0],
 		 h.values_at(:year, :mon, :mday, :hour, :min, :sec, :offset))
-    h = Date._iso8601('20010203')
-    assert_equal([2001, 2, 3, nil, nil, nil, nil],
+    h = Date._iso8601('20010203T040506Z')
+    assert_equal([2001, 2, 3, 4, 5, 6, 0],
 		 h.values_at(:year, :mon, :mday, :hour, :min, :sec, :offset))
-    h = Date._iso8601('--0203')
-    assert_equal([nil, 2, 3, nil, nil, nil, nil],
+    h = Date._iso8601('--0203T040506Z')
+    assert_equal([nil, 2, 3, 4, 5, 6, 0],
+		 h.values_at(:year, :mon, :mday, :hour, :min, :sec, :offset))
+    h = Date._iso8601('---03T040506Z')
+    assert_equal([nil, nil, 3, 4, 5, 6, 0],
 		 h.values_at(:year, :mon, :mday, :hour, :min, :sec, :offset))
 
     h = Date._iso8601('010203T0405')
@@ -738,15 +747,51 @@ class TestDateParse < Test::Unit::TestCase
     assert_equal([2001, 2, 3, 4, 5, 6, 3600],
 		 h.values_at(:year, :mon, :mday, :hour, :min, :sec, :offset))
 
-    h = Date._iso8601('01-023')
-    assert_equal([2001, 23, nil, nil, nil, nil],
+    h = Date._iso8601('01-023T04:05:06Z')
+    assert_equal([2001, 23, 4, 5, 6, 0],
 		 h.values_at(:year, :yday, :hour, :min, :sec, :offset))
-    h = Date._iso8601('2001-023')
-    assert_equal([2001, 23, nil, nil, nil, nil],
+    h = Date._iso8601('2001-023T04:05:06Z')
+    assert_equal([2001, 23, 4, 5, 6, 0],
 		 h.values_at(:year, :yday, :hour, :min, :sec, :offset))
-    h = Date._iso8601('-023')
-    assert_equal([nil, 23, nil, nil, nil, nil],
+    h = Date._iso8601('-023T04:05:06Z')
+    assert_equal([nil, 23, 4, 5, 6, 0],
 		 h.values_at(:year, :yday, :hour, :min, :sec, :offset))
+
+    h = Date._iso8601('01023T040506Z')
+    assert_equal([2001, 23, 4, 5, 6, 0],
+		 h.values_at(:year, :yday, :hour, :min, :sec, :offset))
+    h = Date._iso8601('2001023T040506Z')
+    assert_equal([2001, 23, 4, 5, 6, 0],
+		 h.values_at(:year, :yday, :hour, :min, :sec, :offset))
+    h = Date._iso8601('-023T040506Z')
+    assert_equal([nil, 23, 4, 5, 6, 0],
+		 h.values_at(:year, :yday, :hour, :min, :sec, :offset))
+
+    h = Date._iso8601('01-w02-3T04:05:06Z')
+    assert_equal([2001, 2, 3, 4, 5, 6, 0],
+		 h.values_at(:cwyear, :cweek, :cwday, :hour, :min, :sec, :offset))
+    h = Date._iso8601('2001-w02-3T04:05:06Z')
+    assert_equal([2001, 2, 3, 4, 5, 6, 0],
+		 h.values_at(:cwyear, :cweek, :cwday, :hour, :min, :sec, :offset))
+    h = Date._iso8601('-w02-3T04:05:06Z')
+    assert_equal([nil, 2, 3, 4, 5, 6, 0],
+		 h.values_at(:cwyear, :cweek, :cwday, :hour, :min, :sec, :offset))
+    h = Date._iso8601('-w-3T04:05:06Z')
+    assert_equal([nil, nil, 3, 4, 5, 6, 0],
+		 h.values_at(:cwyear, :cweek, :cwday, :hour, :min, :sec, :offset))
+
+    h = Date._iso8601('01w023T040506Z')
+    assert_equal([2001, 2, 3, 4, 5, 6, 0],
+		 h.values_at(:cwyear, :cweek, :cwday, :hour, :min, :sec, :offset))
+    h = Date._iso8601('2001w023T040506Z')
+    assert_equal([2001, 2, 3, 4, 5, 6, 0],
+		 h.values_at(:cwyear, :cweek, :cwday, :hour, :min, :sec, :offset))
+    h = Date._iso8601('-w023T040506Z')
+    assert_equal([nil, 2, 3, 4, 5, 6, 0],
+		 h.values_at(:cwyear, :cweek, :cwday, :hour, :min, :sec, :offset))
+    h = Date._iso8601('-w-3T040506Z')
+    assert_equal([nil, nil, 3, 4, 5, 6, 0],
+		 h.values_at(:cwyear, :cweek, :cwday, :hour, :min, :sec, :offset))
 
     h = Date._iso8601('04:05')
     assert_equal([nil, nil, nil, 4, 5, nil, nil],
@@ -771,21 +816,6 @@ class TestDateParse < Test::Unit::TestCase
     assert_equal([nil, nil, nil, 4, 5, 6, 3600],
 		 h.values_at(:year, :mon, :mday, :hour, :min, :sec, :offset))
 
-    h = Date._iso8601('01-w02-3')
-    assert_equal([2001, 2, 3, nil, nil, nil, nil],
-		 h.values_at(:cwyear, :cweek, :cwday, :hour, :min, :sec, :offset))
-    h = Date._iso8601('2001-w02-3')
-    assert_equal([2001, 2, 3, nil, nil, nil, nil],
-		 h.values_at(:cwyear, :cweek, :cwday, :hour, :min, :sec, :offset))
-    h = Date._iso8601('2001w023')
-    assert_equal([2001, 2, 3, nil, nil, nil, nil],
-		 h.values_at(:cwyear, :cweek, :cwday, :hour, :min, :sec, :offset))
-    h = Date._iso8601('-w02-3')
-    assert_equal([nil, 2, 3, nil, nil, nil, nil],
-		 h.values_at(:cwyear, :cweek, :cwday, :hour, :min, :sec, :offset))
-    h = Date._iso8601('-w-3')
-    assert_equal([nil, nil, 3, nil, nil, nil, nil],
-		 h.values_at(:cwyear, :cweek, :cwday, :hour, :min, :sec, :offset))
   end
 
   def test__rfc3339
@@ -953,16 +983,40 @@ class TestDateParse < Test::Unit::TestCase
   def test_iso8601
     assert_instance_of(Date, Date.iso8601)
     assert_instance_of(DateTime, DateTime.iso8601)
+
+    d = Date.iso8601('2001-02-03', Date::ITALY + 10)
+    assert_equal(Date.new(2001,2,3), d)
+    assert_equal(Date::ITALY + 10, d.start)
+
+    d = DateTime.iso8601('2001-02-03T04:05:06+07:00', Date::ITALY + 10)
+    assert_equal(DateTime.new(2001,2,3,4,5,6,'+07:00'), d)
+    assert_equal(Date::ITALY + 10, d.start)
   end
 
   def test_rfc3339
     assert_instance_of(Date, Date.rfc3339)
     assert_instance_of(DateTime, DateTime.rfc3339)
+
+    d = Date.rfc3339('2001-02-03T04:05:06+07:00', Date::ITALY + 10)
+    assert_equal(Date.new(2001,2,3), d)
+    assert_equal(Date::ITALY + 10, d.start)
+
+    d = DateTime.rfc3339('2001-02-03T04:05:06+07:00', Date::ITALY + 10)
+    assert_equal(DateTime.new(2001,2,3,4,5,6,'+07:00'), d)
+    assert_equal(Date::ITALY + 10, d.start)
   end
 
   def test_xmlschema
     assert_instance_of(Date, Date.xmlschema)
     assert_instance_of(DateTime, DateTime.xmlschema)
+
+    d = Date.xmlschema('2001-02-03', Date::ITALY + 10)
+    assert_equal(Date.new(2001,2,3), d)
+    assert_equal(Date::ITALY + 10, d.start)
+
+    d = DateTime.xmlschema('2001-02-03T04:05:06+07:00', Date::ITALY + 10)
+    assert_equal(DateTime.new(2001,2,3,4,5,6,'+07:00'), d)
+    assert_equal(Date::ITALY + 10, d.start)
   end
 
   def test_rfc2822
@@ -970,16 +1024,40 @@ class TestDateParse < Test::Unit::TestCase
     assert_instance_of(DateTime, DateTime.rfc2822)
     assert_instance_of(Date, Date.rfc822)
     assert_instance_of(DateTime, DateTime.rfc822)
+
+    d = Date.rfc2822('Sat, 3 Feb 2001 04:05:06 +0700', Date::ITALY + 10)
+    assert_equal(Date.new(2001,2,3), d)
+    assert_equal(Date::ITALY + 10, d.start)
+
+    d = DateTime.rfc2822('Sat, 3 Feb 2001 04:05:06 +0700', Date::ITALY + 10)
+    assert_equal(DateTime.new(2001,2,3,4,5,6,'+07:00'), d)
+    assert_equal(Date::ITALY + 10, d.start)
   end
 
   def test_httpdate
     assert_instance_of(Date, Date.httpdate)
     assert_instance_of(DateTime, DateTime.httpdate)
+
+    d = Date.httpdate('Sat, 03 Feb 2001 04:05:06 GMT', Date::ITALY + 10)
+    assert_equal(Date.new(2001,2,3), d)
+    assert_equal(Date::ITALY + 10, d.start)
+
+    d = DateTime.httpdate('Sat, 03 Feb 2001 04:05:06 GMT', Date::ITALY + 10)
+    assert_equal(DateTime.new(2001,2,3,4,5,6,'+00:00'), d)
+    assert_equal(Date::ITALY + 10, d.start)
   end
 
   def test_jisx0301
     assert_instance_of(Date, Date.jisx0301)
     assert_instance_of(DateTime, DateTime.jisx0301)
+
+    d = Date.jisx0301('H13.02.03', Date::ITALY + 10)
+    assert_equal(Date.new(2001,2,3), d)
+    assert_equal(Date::ITALY + 10, d.start)
+
+    d = DateTime.jisx0301('H13.02.03T04:05:06+07:00', Date::ITALY + 10)
+    assert_equal(DateTime.new(2001,2,3,4,5,6,'+07:00'), d)
+    assert_equal(Date::ITALY + 10, d.start)
   end
 
 end

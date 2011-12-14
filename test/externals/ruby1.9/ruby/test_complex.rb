@@ -13,6 +13,11 @@ class Complex_Test < Test::Unit::TestCase
     @unify = $".grep(/(?:^|#{seps})mathn(?:\.(?:rb|so))?/).size != 0
   end
 
+  def test_rationalize
+    assert_equal(1.quo(3), Complex(1/3.0, 0).rationalize, '[ruby-core:38885]')
+    assert_equal(1.quo(5), Complex(0.2, 0).rationalize, '[ruby-core:38885]')
+  end
+
   def test_compsub
     c = ComplexSub.__send__(:convert, 1)
 
@@ -517,6 +522,23 @@ class Complex_Test < Test::Unit::TestCase
     assert_equal([Complex(2),Complex(1)], Complex(1).coerce(Complex(2)))
   end
 
+  class ObjectX
+    def + (x) Rational(1) end
+    alias - +
+    alias * +
+    alias / +
+    alias quo +
+    alias ** +
+    def coerce(x) [x, Complex(1)] end
+  end
+
+  def test_coerce2
+    x = ObjectX.new
+    %w(+ - * / quo **).each do |op|
+      assert_kind_of(Numeric, Complex(1).__send__(op, x))
+    end
+  end
+
   def test_unify
     if @unify
       assert_instance_of(Fixnum, Complex(1,2) + Complex(-1,-2))
@@ -672,6 +694,15 @@ class Complex_Test < Test::Unit::TestCase
     assert_equal(Complex(0.0,3.0), '3.0i'.to_c)
     assert_equal(Complex(0.0,-3.0), '-3.0i'.to_c)
 
+    assert_equal(Complex(5.1), '5.1'.to_c)
+    assert_equal(Complex(-5.2), '-5.2'.to_c)
+    assert_equal(Complex(5.3,3.4), '5.3+3.4i'.to_c)
+    assert_equal(Complex(-5.5,3.6), '-5.5+3.6i'.to_c)
+    assert_equal(Complex(5.3,-3.4), '5.3-3.4i'.to_c)
+    assert_equal(Complex(-5.5,-3.6), '-5.5-3.6i'.to_c)
+    assert_equal(Complex(0.0,3.1), '3.1i'.to_c)
+    assert_equal(Complex(0.0,-3.2), '-3.2i'.to_c)
+
     assert_equal(Complex(5.0), '5e0'.to_c)
     assert_equal(Complex(-5.0), '-5e0'.to_c)
     assert_equal(Complex(5.0,3.0), '5e0+3e0i'.to_c)
@@ -680,6 +711,15 @@ class Complex_Test < Test::Unit::TestCase
     assert_equal(Complex(-5.0,-3.0), '-5e0-3e0i'.to_c)
     assert_equal(Complex(0.0,3.0), '3e0i'.to_c)
     assert_equal(Complex(0.0,-3.0), '-3e0i'.to_c)
+
+    assert_equal(Complex(5e1), '5e1'.to_c)
+    assert_equal(Complex(-5e2), '-5e2'.to_c)
+    assert_equal(Complex(5e3,3e4), '5e003+3e4i'.to_c)
+    assert_equal(Complex(-5e5,3e6), '-5e5+3e006i'.to_c)
+    assert_equal(Complex(5e3,-3e4), '5e003-3e4i'.to_c)
+    assert_equal(Complex(-5e5,-3e6), '-5e5-3e006i'.to_c)
+    assert_equal(Complex(0.0,3e1), '3e1i'.to_c)
+    assert_equal(Complex(0.0,-3e2), '-3e2i'.to_c)
 
     assert_equal(Complex(0.33), '.33'.to_c)
     assert_equal(Complex(0.33), '0.33'.to_c)
@@ -723,6 +763,15 @@ class Complex_Test < Test::Unit::TestCase
     assert_equal(Complex(0.0,3.0), Complex('3.0i'))
     assert_equal(Complex(0.0,-3.0), Complex('-3.0i'))
 
+    assert_equal(Complex(5.1), Complex('5.1'))
+    assert_equal(Complex(-5.2), Complex('-5.2'))
+    assert_equal(Complex(5.3,3.4), Complex('5.3+3.4i'))
+    assert_equal(Complex(-5.5,3.6), Complex('-5.5+3.6i'))
+    assert_equal(Complex(5.3,-3.4), Complex('5.3-3.4i'))
+    assert_equal(Complex(-5.5,-3.6), Complex('-5.5-3.6i'))
+    assert_equal(Complex(0.0,3.1), Complex('3.1i'))
+    assert_equal(Complex(0.0,-3.2), Complex('-3.2i'))
+
     assert_equal(Complex(5.0), Complex('5e0'))
     assert_equal(Complex(-5.0), Complex('-5e0'))
     assert_equal(Complex(5.0,3.0), Complex('5e0+3e0i'))
@@ -731,6 +780,15 @@ class Complex_Test < Test::Unit::TestCase
     assert_equal(Complex(-5.0,-3.0), Complex('-5e0-3e0i'))
     assert_equal(Complex(0.0,3.0), Complex('3e0i'))
     assert_equal(Complex(0.0,-3.0), Complex('-3e0i'))
+
+    assert_equal(Complex(5e1), Complex('5e1'))
+    assert_equal(Complex(-5e2), Complex('-5e2'))
+    assert_equal(Complex(5e3,3e4), Complex('5e003+3e4i'))
+    assert_equal(Complex(-5e5,3e6), Complex('-5e5+3e006i'))
+    assert_equal(Complex(5e3,-3e4), Complex('5e003-3e4i'))
+    assert_equal(Complex(-5e5,-3e6), Complex('-5e5-3e006i'))
+    assert_equal(Complex(0.0,3e1), Complex('3e1i'))
+    assert_equal(Complex(0.0,-3e2), Complex('-3e2i'))
 
     assert_equal(Complex(0.33), Complex('.33'))
     assert_equal(Complex(0.33), Complex('0.33'))
@@ -1082,6 +1140,8 @@ class Complex_Test < Test::Unit::TestCase
       assert_equal(Complex(1), 1 ** Complex(1))
     end
     assert_equal('-1.0-0.0i', Complex(-1.0, -0.0).to_s)
+    assert_in_delta(Math::PI, Complex(-0.0).arg, 0.001)
+    assert_equal(Complex(2e3, 2e4), '2e3+2e4i'.to_c)
   end
 
   def test_known_bug

@@ -36,7 +36,10 @@ public class Ruby1_9TestSuite extends TestUnitTestSuite {
         protected String generateTestScript(String scriptName, String testClass) {
             StringBuffer script = new StringBuffer();
             script.append("$: << '.' unless $:.include? '.'").append('\n');
+            script.append("$: << 'test/externals/ruby1.9' unless $:.include? 'test/externals/ruby1.9'").append('\n');
             script.append("require 'minitest/unit'\n");
+            script.append("ENV['EXCLUDE_DIR'] = 'test/externals/ruby1.9/excludes'\n");
+            script.append("require 'minitest/excludes'\n");
             script.append("require '" + scriptName + "'\n");
             script.append("unit = MiniTest::Unit.new\n");
             script.append("unit.run\n");

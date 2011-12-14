@@ -1,7 +1,7 @@
-require_relative 'gemutilities'
+require 'rubygems/test_case'
 require 'rubygems/ext'
 
-class TestGemExtConfigureBuilder < RubyGemTestCase
+class TestGemExtConfigureBuilder < Gem::TestCase
 
   def setup
     super

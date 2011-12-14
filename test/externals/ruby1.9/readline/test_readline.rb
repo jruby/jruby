@@ -118,8 +118,8 @@ class TestReadline < Test::Unit::TestCase
         stdin.close(true)
         stdout.close(true)
       end
-    end 
-    
+    end
+
     # line_buffer
     # point
     def test_line_buffer__point
@@ -129,7 +129,7 @@ class TestReadline < Test::Unit::TestCase
       rescue NotImplementedError
         return
       end
-      
+
       stdin = Tempfile.new("test_readline_stdin")
       stdout = Tempfile.new("test_readline_stdout")
       begin
@@ -153,6 +153,8 @@ class TestReadline < Test::Unit::TestCase
         assert_equal("first second", actual_line_buffer)
         assert_equal(12, actual_point)
         assert_equal("first complete finish", Readline.line_buffer)
+        assert_equal(Encoding.find("locale"), Readline.line_buffer.encoding)
+        assert_equal(true, Readline.line_buffer.tainted?)
         assert_equal(21, Readline.point)
       ensure
         stdin.close(true)

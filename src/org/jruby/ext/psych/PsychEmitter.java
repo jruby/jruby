@@ -260,6 +260,17 @@ public class PsychEmitter extends RubyObject {
         return context.runtime.newFixnum(options.getIndent());
     }
 
+    @JRubyMethod(name = "line_width=")
+    public IRubyObject line_width_set(ThreadContext context, IRubyObject width) {
+        options.setWidth((int)width.convertToInteger().getLongValue());
+        return width;
+    }
+
+    @JRubyMethod
+    public IRubyObject line_width(ThreadContext context) {
+        return context.runtime.newFixnum(options.getWidth());
+    }
+
     private void emit(ThreadContext context, Event event) {
         try {
             emitter.emit(event);

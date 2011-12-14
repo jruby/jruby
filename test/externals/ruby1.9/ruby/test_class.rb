@@ -236,4 +236,26 @@ class TestClass < Test::Unit::TestCase
     copy.send(:include, mod)
     assert_equal("mod#foo", copy.new.foo)
   end
+
+  def test_nested_class_removal
+    assert_normal_exit('File.__send__(:remove_const, :Stat); at_exit{File.stat(".")}; GC.start')
+  end
+
+  class PrivateClass
+  end
+  private_constant :PrivateClass
+
+  def test_redefine_private_class
+    assert_raise(NameError) do
+      eval("class ::TestClass::PrivateClass; end")
+    end
+    eval <<-END
+      class ::TestClass
+        class PrivateClass
+          def foo; 42; end
+        end
+      end
+    END
+    assert_equal(42, PrivateClass.new.foo)
+  end
 end

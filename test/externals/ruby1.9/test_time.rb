@@ -1,5 +1,6 @@
 require 'time'
 require 'test/unit'
+require_relative 'ruby/envutil.rb'
 
 class TestTimeExtension < Test::Unit::TestCase # :nodoc:
   def test_rfc822
@@ -391,10 +392,16 @@ class TestTimeExtension < Test::Unit::TestCase # :nodoc:
 
   def test_strptime
     assert_equal(Time.utc(2005, 8, 28, 06, 54, 20), Time.strptime("28/Aug/2005:06:54:20 +0000", "%d/%b/%Y:%T %z"))
+    assert_equal(Time.at(1).localtime, Time.strptime("1", "%s"))
   end
 
   def test_nsec
     assert_equal(123456789, Time.xmlschema("2000-01-01T00:00:00.123456789+00:00").tv_nsec)
     assert_equal(123456789, Time.parse("2000-01-01T00:00:00.123456789+00:00").tv_nsec)
+  end
+
+  def test_huge_precision
+    bug4456 = '[ruby-dev:43284]'
+    assert_normal_exit %q{ Time.now.strftime("%1000000000F") }, bug4456
   end
 end

@@ -77,6 +77,15 @@ public final class IdUtil {
         }
         return false;
     }
+
+    public static boolean isValidConstantName19(String id) {
+        char c;
+        int len;
+        if ((len = id.length()) > 0 && (c = id.charAt(0)) <= 'Z' && c >= 'A') {
+            return isNameString19(id, 1, len);
+        }
+        return false;
+    }
     
     // Pickaxe says @ must be followed by a name character, but MRI
     // does not require this.
@@ -120,10 +129,24 @@ public final class IdUtil {
             c == '_' ||
             (c <= '9' && c >= '0');
     }
+
+    public static boolean isNameCharacter19(char c) {
+        int letter;
+        return Character.isLetterOrDigit(c) || c == '_';
+    }
     
     public static boolean isNameString(String id, int start, int limit) {
         for (int i = start; i < limit; i++) {
             if (!isNameCharacter(id.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static boolean isNameString19(String id, int start, int limit) {
+        for (int i = start; i < limit; i++) {
+            if (!isNameCharacter19(id.charAt(i))) {
                 return false;
             }
         }

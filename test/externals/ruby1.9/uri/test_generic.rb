@@ -228,8 +228,19 @@ class URI::TestGeneric < Test::Unit::TestCase
     url = URI.parse('http://hoge/a/b/').route_to('http://MOGE/b/')
     assert_equal('//MOGE/b/', url.to_s)
 
+    url = URI.parse('http://hoge/b').route_to('http://hoge/b/')
+    assert_equal('b/', url.to_s)
+    url = URI.parse('http://hoge/b/a').route_to('http://hoge/b/')
+    assert_equal('./', url.to_s)
+    url = URI.parse('http://hoge/b/').route_to('http://hoge/b')
+    assert_equal('../b', url.to_s)
+    url = URI.parse('http://hoge/b').route_to('http://hoge/b:c')
+    assert_equal('./b:c', url.to_s)
+
     url = URI.parse('file:///a/b/').route_to('file:///a/b/')
     assert_equal('', url.to_s)
+    url = URI.parse('file:///a/b/').route_to('file:///a/b')
+    assert_equal('../b', url.to_s)
 
     url = URI.parse('mailto:foo@example.com').route_to('mailto:foo@example.com#bar')
     assert_equal('#bar', url.to_s)
@@ -694,5 +705,15 @@ class URI::TestGeneric < Test::Unit::TestCase
     assert_raise(URI::InvalidURIError) { uri.port = 'bar' }
     assert_raise(URI::InvalidURIError) { uri.path = 'bar' }
     assert_raise(URI::InvalidURIError) { uri.query = 'bar' }
+  end
+
+  def test_ipv6
+    assert_equal("[::1]", URI("http://[::1]/bar/baz").host)
+    assert_equal("::1", URI("http://[::1]/bar/baz").hostname)
+
+    u = URI("http://foo/bar")
+    assert_equal("http://foo/bar", u.to_s)
+    u.hostname = "::1"
+    assert_equal("http://[::1]/bar", u.to_s)
   end
 end

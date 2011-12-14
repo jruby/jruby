@@ -17,6 +17,12 @@ module TestDigest
   Data1 = "abc"
   Data2 = "abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq"
 
+  def test_s_new
+    self.class::DATA.each do |str, hexdigest|
+      assert_raise(ArgumentError) { self.class::ALGO.new("") }
+    end
+  end
+
   def test_s_hexdigest
     self.class::DATA.each do |str, hexdigest|
       assert_equal(hexdigest, self.class::ALGO.hexdigest(str))
@@ -69,6 +75,15 @@ module TestDigest
   def test_instance_eval
     assert_nothing_raised {
       self.class::ALGO.new.instance_eval { update "a" }
+    }
+  end
+
+  def test_alignment
+    md = self.class::ALGO.new
+    assert_nothing_raised('#4320') {
+      md.update('a' * 97)
+      md.update('a' * 97)
+      md.hexdigest
     }
   end
 
@@ -125,4 +140,11 @@ module TestDigest
       Data2 => "12a053384a9c0c88e405a06c27dcf49ada62eb2b",
     }
   end if defined?(Digest::RMD160)
+
+  class TestBase < Test::Unit::TestCase
+    def test_base
+      bug3810 = '[ruby-core:32231]'
+      assert_raise(NotImplementedError, bug3810) {Digest::Base.new}
+    end
+  end
 end

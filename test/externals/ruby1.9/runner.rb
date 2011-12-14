@@ -1,25 +1,15 @@
 require 'rbconfig'
-exit if CROSS_COMPILING
 
 require 'test/unit'
 
 src_testdir = File.dirname(File.expand_path(__FILE__))
-srcdir = File.dirname(src_testdir)
+$LOAD_PATH << src_testdir
+module Gem
+end
+class Gem::TestCase < MiniTest::Unit::TestCase
+  @@project_dir = File.dirname($LOAD_PATH.last)
+end
 
-Test::Unit.setup_argv {|files|
-  if files.empty?
-    [src_testdir]
-  else
-    files.map {|f|
-      if File.exist? "#{src_testdir}/#{f}"
-        "#{src_testdir}/#{f}"
-      elsif File.exist? "#{srcdir}/#{f}"
-        "#{srcdir}/#{f}"
-      elsif File.exist? f
-        f
-      else
-        raise ArgumentError, "not found: #{f}"
-      end
-    }
-  end
-}
+require_relative 'profile_test_all' if ENV['RUBY_TEST_ALL_PROFILE'] == 'true'
+
+exit Test::Unit::AutoRunner.run(true, src_testdir)

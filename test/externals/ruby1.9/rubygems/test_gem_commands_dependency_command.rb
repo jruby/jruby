@@ -1,7 +1,7 @@
-require_relative 'gemutilities'
+require 'rubygems/test_case'
 require 'rubygems/commands/dependency_command'
 
-class TestGemCommandsDependencyCommand < RubyGemTestCase
+class TestGemCommandsDependencyCommand < Gem::TestCase
 
   def setup
     super
@@ -18,22 +18,18 @@ class TestGemCommandsDependencyCommand < RubyGemTestCase
       gem.add_dependency 'baz', '> 1'
     end
 
-    Gem.source_index = nil
-
     @cmd.options[:args] = %w[foo]
 
     use_ui @ui do
       @cmd.execute
     end
 
-    assert_equal "Gem foo-2\n  bar (> 1, runtime)\n  baz (> 1, runtime)\n\n",
+    assert_equal "Gem foo-2\n  bar (> 1)\n  baz (> 1)\n\n",
                  @ui.output
     assert_equal '', @ui.error
   end
 
   def test_execute_no_args
-    Gem.source_index = nil
-
     @cmd.options[:args] = []
 
     use_ui @ui do
@@ -66,7 +62,7 @@ Gem pl-1-x86-linux
   def test_execute_no_match
     @cmd.options[:args] = %w[foo]
 
-    assert_raises MockGemUi::TermError do
+    assert_raises Gem::MockGemUi::TermError do
       use_ui @ui do
         @cmd.execute
       end
@@ -77,7 +73,7 @@ Gem pl-1-x86-linux
   end
 
   def test_execute_pipe_format
-    quick_gem 'foo' do |gem|
+    quick_spec 'foo' do |gem|
       gem.add_dependency 'bar', '> 1'
     end
 
@@ -93,8 +89,6 @@ Gem pl-1-x86-linux
   end
 
   def test_execute_regexp
-    Gem.source_index = nil
-
     @cmd.options[:args] = %w[/[ab]/]
 
     use_ui @ui do
@@ -121,6 +115,7 @@ Gem b-2
   end
 
   def test_execute_reverse
+    # FIX: this shouldn't need to write out, but fails if you switch it
     quick_gem 'foo' do |gem|
       gem.add_dependency 'bar', '> 1'
     end
@@ -128,8 +123,6 @@ Gem b-2
     quick_gem 'baz' do |gem|
       gem.add_dependency 'foo'
     end
-
-    Gem.source_index = nil
 
     @cmd.options[:args] = %w[foo]
     @cmd.options[:reverse_dependencies] = true
@@ -140,9 +133,9 @@ Gem b-2
 
     expected = <<-EOF
 Gem foo-2
-  bar (> 1, runtime)
+  bar (> 1)
   Used by
-    baz-2 (foo (>= 0, runtime))
+    baz-2 (foo (>= 0))
 
     EOF
 
@@ -155,7 +148,7 @@ Gem foo-2
     @cmd.options[:reverse_dependencies] = true
     @cmd.options[:domain] = :remote
 
-    assert_raises MockGemUi::TermError do
+    assert_raises Gem::MockGemUi::TermError do
       use_ui @ui do
         @cmd.execute
       end
@@ -188,7 +181,25 @@ ERROR:  Only reverse dependencies for local gems are supported.
       @cmd.execute
     end
 
-    assert_equal "Gem foo-2\n  bar (> 1, runtime)\n\n", @ui.output
+    assert_equal "Gem foo-2\n  bar (> 1)\n\n", @ui.output
+    assert_equal '', @ui.error
+  end
+
+  def test_execute_remote_version
+    @fetcher = Gem::FakeFetcher.new
+    Gem::RemoteFetcher.fetcher = @fetcher
+
+    util_setup_spec_fetcher @a1, @a2
+
+    @cmd.options[:args] = %w[a]
+    @cmd.options[:domain] = :remote
+    @cmd.options[:version] = req '= 1'
+
+    use_ui @ui do
+      @cmd.execute
+    end
+
+    assert_equal "Gem a-1\n\n", @ui.output
     assert_equal '', @ui.error
   end
 
@@ -196,9 +207,8 @@ ERROR:  Only reverse dependencies for local gems are supported.
     @fetcher = Gem::FakeFetcher.new
     Gem::RemoteFetcher.fetcher = @fetcher
 
+    util_clear_gems
     util_setup_spec_fetcher @a2_pre
-
-    FileUtils.rm File.join(@gemhome, 'specifications', @a2_pre.spec_name)
 
     @cmd.options[:args] = %w[a]
     @cmd.options[:domain] = :remote

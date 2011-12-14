@@ -1,4 +1,4 @@
-require_relative '../helper'
+require 'psych/helper'
 
 module Psych
   module Visitors
@@ -36,6 +36,12 @@ module Psych
         s = Struct.new(:foo).new('bar')
         obj =  Psych.load(Psych.dump(s))
         assert_equal s.foo, obj.foo
+      end
+
+      def test_override_method
+        s = Struct.new(:method).new('override')
+        obj =  Psych.load(Psych.dump(s))
+        assert_equal s.method, obj.method
       end
 
       def test_exception

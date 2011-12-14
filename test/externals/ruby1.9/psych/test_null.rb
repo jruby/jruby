@@ -1,4 +1,4 @@
-require_relative 'helper'
+require 'psych/helper'
 
 module Psych
   ###
@@ -10,7 +10,7 @@ module Psych
 ---
 - ~
 - null
-- 
+-
 - Null
 - NULL
       eoyml

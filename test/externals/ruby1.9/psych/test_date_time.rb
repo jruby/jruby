@@ -1,4 +1,4 @@
-require_relative 'helper'
+require 'psych/helper'
 require 'date'
 
 module Psych
@@ -11,12 +11,6 @@ module Psych
 
     def test_round_trip
       dt = DateTime.now
-      assert_cycle dt
-    end
-
-    def test_round_trip_with_offset
-      dt = DateTime.now
-      dt = dt.new_offset(Rational(3671, 60 * 60 * 24))
       assert_cycle dt
     end
   end

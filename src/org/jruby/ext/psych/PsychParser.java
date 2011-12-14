@@ -51,6 +51,7 @@ import org.jruby.util.IOInputStream;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.jruby.util.unsafe.UnsafeFactory;
+import org.yaml.snakeyaml.error.Mark;
 import org.yaml.snakeyaml.events.AliasEvent;
 import org.yaml.snakeyaml.events.DocumentEndEvent;
 import org.yaml.snakeyaml.events.DocumentStartEvent;
@@ -112,9 +113,8 @@ public class PsychParser extends RubyObject {
         } else {
             reader = new StreamReader(new StringReader(target.convertToString().asJavaString()));
         }
-        Parser parser = new ParserImpl(reader);
+        parser = new ParserImpl(reader);
         IRubyObject handler = getInstanceVariable("@handler");
-        Event event;
 
         while (true) {
             try {
@@ -157,14 +157,14 @@ public class PsychParser extends RubyObject {
                             "start_document",
                             version,
                             tags,
-                            runtime.newBoolean(dse.getExplicit()));
+                            runtime.newBoolean(!dse.getExplicit()));
                 } else if (event.is(ID.DocumentEnd)) {
                     DocumentEndEvent dee = (DocumentEndEvent)event;
                     invoke(
                             context,
                             handler,
                             "end_document",
-                            runtime.newBoolean(dee.getExplicit()));
+                            runtime.newBoolean(!dee.getExplicit()));
                 } else if (event.is(ID.Alias)) {
                     AliasEvent ae = (AliasEvent)event;
                     IRubyObject alias = runtime.getNil();
@@ -188,7 +188,7 @@ public class PsychParser extends RubyObject {
                         RubyString.newString(runtime, se.getTag());
                     IRubyObject plain_implicit = runtime.newBoolean(se.getImplicit().canOmitTagInPlainScalar());
                     IRubyObject quoted_implicit = runtime.newBoolean(se.getImplicit().canOmitTagInNonPlainScalar());
-                    IRubyObject style = runtime.newFixnum(se.getStyle());
+                    IRubyObject style = runtime.newFixnum(translateStyle(se.getStyle()));
                     IRubyObject val = RubyString.newString(runtime, se.getValue());
 
                     val.setTaint(tainted);
@@ -214,7 +214,7 @@ public class PsychParser extends RubyObject {
                         runtime.getNil() :
                         RubyString.newString(runtime, sse.getTag());
                     IRubyObject implicit = runtime.newBoolean(sse.getImplicit());
-                    IRubyObject style = runtime.newFixnum(sse.getFlowStyle() ? 1 : 0);
+                    IRubyObject style = runtime.newFixnum(translateFlowStyle(sse.getFlowStyle()));
 
                     anchor.setTaint(tainted);
                     tag.setTaint(tainted);
@@ -241,7 +241,7 @@ public class PsychParser extends RubyObject {
                         runtime.getNil() :
                         RubyString.newString(runtime, mse.getTag());
                     IRubyObject implicit = runtime.newBoolean(mse.getImplicit());
-                    IRubyObject style = runtime.newFixnum(mse.getFlowStyle() ? 1 : 0);
+                    IRubyObject style = runtime.newFixnum(translateFlowStyle(mse.getFlowStyle()));
 
                     anchor.setTaint(tainted);
                     tag.setTaint(tainted);
@@ -292,4 +292,67 @@ public class PsychParser extends RubyObject {
 
         return this;
     }
+
+    private static int translateStyle(Character style) {
+        if (style == null) return 0; // any
+
+        switch (style) {
+            case 0: return 1; // plain
+            case '\'': return 2; // single-quoted
+            case '"': return 3; // double-quoted
+            case '|': return 4; // literal
+            case '>': return 5; // folded
+            default: return 0; // any
+        }
+    }
+    
+    private static int translateFlowStyle(Boolean flowStyle) {
+        if (flowStyle == null) return 0; // any
+
+        if (flowStyle) return 2;
+        return 1;
+    }
+
+    @JRubyMethod
+    public IRubyObject mark(ThreadContext context) {
+        Ruby runtime = context.runtime;
+
+        Event event = null;
+
+        if (parser != null) {
+            event = parser.peekEvent();
+            if (event == null) {
+                event = this.event;
+            }
+        }
+
+        if (event == null) {
+            return ((RubyClass)context.runtime.getClassFromPath("Psych::Parser::Mark")).newInstance(
+                    context,
+                    runtime.newFixnum(0),
+                    runtime.newFixnum(0),
+                    runtime.newFixnum(0),
+                    Block.NULL_BLOCK
+            );
+        }
+
+        Mark mark = event.getStartMark();
+
+        return ((RubyClass)context.runtime.getClassFromPath("Psych::Parser::Mark")).newInstance(
+                context,
+                runtime.newFixnum(mark.getIndex()),
+                runtime.newFixnum(mark.getLine()),
+                runtime.newFixnum(mark.getColumn()),
+                Block.NULL_BLOCK
+        );
+    }
+
+    @JRubyMethod(name = "external_encoding=")
+    public IRubyObject external_encoding_set(ThreadContext context, IRubyObject encoding) {
+        // stubbed
+        return encoding;
+    }
+
+    private Parser parser;
+    private Event event;
 }

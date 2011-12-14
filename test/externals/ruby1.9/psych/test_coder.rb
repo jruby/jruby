@@ -1,4 +1,4 @@
-require_relative 'helper'
+require 'psych/helper'
 
 module Psych
   class TestCoder < TestCase
@@ -89,6 +89,21 @@ module Psych
       end
     end
 
+    class RepresentWithObject
+      def encode_with coder
+        coder.represent_object self.class.name, 20
+      end
+    end
+
+    def test_represent_with_object
+      thing = Psych.load(Psych.dump(RepresentWithObject.new))
+      assert_equal 20, thing
+    end
+
+    def test_json_dump_exclude_tag
+      refute_match('TestCoder::InitApi', Psych.to_json(InitApi.new))
+    end
+
     def test_map_takes_block
       coder = Psych::Coder.new 'foo'
       tag = coder.tag
@@ -146,12 +161,14 @@ module Psych
       assert_equal "!ruby/object:Psych::TestCoder::InitApi", bar.tag
       assert_equal Psych::Nodes::Mapping::BLOCK, bar.style
     end
-    
-    # def test_dump_with_tag
-    #   foo = TaggingCoder.new
-    #   assert_match(/hello/, Psych.dump(foo))
-    #   assert_match(/\{aa/, Psych.dump(foo))
-    # end
+
+    unless RUBY_ENGINE == 'jruby'
+      def test_dump_with_tag
+        foo = TaggingCoder.new
+        assert_match(/hello/, Psych.dump(foo))
+        assert_match(/\{aa/, Psych.dump(foo))
+      end
+    end
 
     def test_dump_encode_with
       foo = InitApi.new

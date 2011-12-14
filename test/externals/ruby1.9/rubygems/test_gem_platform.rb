@@ -1,8 +1,8 @@
-require_relative 'gemutilities'
+require 'rubygems/test_case'
 require 'rubygems/platform'
 require 'rbconfig'
 
-class TestGemPlatform < RubyGemTestCase
+class TestGemPlatform < Gem::TestCase
 
   def test_self_local
     util_set_arch 'i686-darwin8.10.1'
@@ -117,7 +117,6 @@ class TestGemPlatform < RubyGemTestCase
 
   def test_initialize_platform
     platform = Gem::Platform.new 'cpu-my_platform1'
-    expected = Gem::Platform.new platform
 
     assert_equal 'cpu', platform.cpu
     assert_equal 'my_platform', platform.os
@@ -139,7 +138,7 @@ class TestGemPlatform < RubyGemTestCase
   def test_empty
     platform = Gem::Platform.new 'cpu-other_platform1'
     assert_respond_to platform, :empty?
-    assert_equal false, platform.empty?
+    assert_equal false, Gem::Deprecate.skip_during { platform.empty? }
   end
 
   def test_to_s
@@ -230,7 +229,7 @@ class TestGemPlatform < RubyGemTestCase
     util_set_arch 'java'
     assert_match 'java',  Gem::Platform.local
     assert_match 'jruby', Gem::Platform.local
-      
+
     util_set_arch 'universal-dotnet2.0'
     assert_match 'universal-dotnet',     Gem::Platform.local
     assert_match 'universal-dotnet-2.0', Gem::Platform.local
@@ -238,13 +237,13 @@ class TestGemPlatform < RubyGemTestCase
     assert_match 'dotnet',               Gem::Platform.local
     assert_match 'dotnet-2.0',           Gem::Platform.local
     refute_match 'dotnet-4.0',           Gem::Platform.local
-    
+
     util_set_arch 'universal-dotnet4.0'
     assert_match 'universal-dotnet',      Gem::Platform.local
-    refute_match 'universal-dotnet-2.0',  Gem::Platform.local  
+    refute_match 'universal-dotnet-2.0',  Gem::Platform.local
     assert_match 'universal-dotnet-4.0',  Gem::Platform.local
     assert_match 'dotnet',                Gem::Platform.local
-    refute_match 'dotnet-2.0',            Gem::Platform.local  
+    refute_match 'dotnet-2.0',            Gem::Platform.local
     assert_match 'dotnet-4.0',            Gem::Platform.local
 
     util_set_arch 'powerpc-darwin'

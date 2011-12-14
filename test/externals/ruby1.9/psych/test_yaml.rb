@@ -2,7 +2,8 @@
 #												vim:sw=4:ts=4
 # $Id$
 #
-require_relative 'helper'
+require 'psych/helper'
+require 'ostruct'
 
 # [ruby-core:01946]
 module Psych_Tests
@@ -12,6 +13,23 @@ end
 class Psych_Unit_Tests < Psych::TestCase
     def teardown
         Psych.domain_types.clear
+    end
+
+    def test_y_method
+      assert_raises(NoMethodError) do
+        OpenStruct.new.y 1
+      end
+    end
+
+    def test_syck_compat
+      time = Time.utc(2010, 10, 10)
+      yaml = Psych.dump time
+      assert_match "2010-10-10 00:00:00.000000000 Z", yaml
+    end
+
+    # [ruby-core:34969]
+    def test_regexp_with_n
+        assert_cycle(Regexp.new('',0,'n'))
     end
 	#
 	# Tests modified from 00basic.t in Psych.pm
@@ -935,20 +953,22 @@ EOY
 		)
 	end
 
-# 	def test_spec_builtin_time
-# 		# Time
-# 		assert_parse_only(
-# 			{ "space separated" => mktime( 2001, 12, 14, 21, 59, 43, ".10", "-05:00" ),
-# 			  "canonical" => mktime( 2001, 12, 15, 2, 59, 43, ".10" ),
-# 			  "date (noon UTC)" => Date.new( 2002, 12, 14),
-# 			  "valid iso8601" => mktime( 2001, 12, 14, 21, 59, 43, ".10", "-05:00" ) }, <<EOY
-# canonical: 2001-12-15T02:59:43.1Z
-# valid iso8601: 2001-12-14t21:59:43.10-05:00
-# space separated: 2001-12-14 21:59:43.10 -05:00
-# date (noon UTC): 2002-12-14
-# EOY
-# 		)
-# 	end
+  unless RUBY_ENGINE == 'jruby'
+    	def test_spec_builtin_time
+		  # Time
+		  assert_parse_only(
+			  { "space separated" => mktime( 2001, 12, 14, 21, 59, 43, ".10", "-05:00" ),
+			    "canonical" => mktime( 2001, 12, 15, 2, 59, 43, ".10" ),
+			    "date (noon UTC)" => Date.new( 2002, 12, 14),
+			    "valid iso8601" => mktime( 2001, 12, 14, 21, 59, 43, ".10", "-05:00" ) }, <<EOY
+canonical: 2001-12-15T02:59:43.1Z
+valid iso8601: 2001-12-14t21:59:43.10-05:00
+space separated: 2001-12-14 21:59:43.10 -05:00
+date (noon UTC): 2002-12-14
+EOY
+		  )
+	  end
+  end
 
 	def test_spec_builtin_binary
 		arrow_gif = "GIF89a\f\000\f\000\204\000\000\377\377\367\365\365\356\351\351\345fff\000\000\000\347\347\347^^^\363\363\355\216\216\216\340\340\340\237\237\237\223\223\223\247\247\247\236\236\236iiiccc\243\243\243\204\204\204\377\376\371\377\376\371\377\376\371\377\376\371\377\376\371\377\376\371\377\376\371\377\376\371\377\376\371\377\376\371\377\376\371\377\376\371\377\376\371\377\376\371!\376\016Made with GIMP\000,\000\000\000\000\f\000\f\000\000\005,  \216\2010\236\343@\024\350i\020\304\321\212\010\034\317\200M$z\357\3770\205p\270\2601f\r\e\316\001\303\001\036\020' \202\n\001\000;"

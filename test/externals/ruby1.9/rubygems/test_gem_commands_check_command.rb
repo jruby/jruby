@@ -1,7 +1,7 @@
-require_relative 'gemutilities'
+require 'rubygems/test_case'
 require 'rubygems/commands/check_command'
 
-class TestGemCommandsCheckCommand < RubyGemTestCase
+class TestGemCommandsCheckCommand < Gem::TestCase
 
   def setup
     super

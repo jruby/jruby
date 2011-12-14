@@ -1,9 +1,9 @@
-require_relative 'gemutilities'
+require 'rubygems/test_case'
 require 'rubygems/package'
 require 'rubygems/security'
 require 'rubygems/commands/fetch_command'
 
-class TestGemCommandsFetchCommand < RubyGemTestCase
+class TestGemCommandsFetchCommand < Gem::TestCase
 
   def setup
     super
@@ -16,7 +16,7 @@ class TestGemCommandsFetchCommand < RubyGemTestCase
     util_setup_spec_fetcher @a2
 
     @fetcher.data["#{@gem_repo}gems/#{@a2.file_name}"] =
-      File.read(File.join(@gemhome, 'cache', @a2.file_name))
+      File.read(@a2.cache_file)
 
     @cmd.options[:args] = [@a2.name]
 
@@ -32,12 +32,13 @@ class TestGemCommandsFetchCommand < RubyGemTestCase
 
   def test_execute_prerelease
     util_setup_fake_fetcher true
+    util_clear_gems
     util_setup_spec_fetcher @a2, @a2_pre
 
     @fetcher.data["#{@gem_repo}gems/#{@a2.file_name}"] =
-      File.read(File.join(@gemhome, 'cache', @a2.file_name))
+      File.read(@a2.cache_file)
     @fetcher.data["#{@gem_repo}gems/#{@a2_pre.file_name}"] =
-      File.read(File.join(@gemhome, 'cache', @a2_pre.file_name))
+      File.read(@a2_pre.cache_file)
 
     @cmd.options[:args] = [@a2.name]
     @cmd.options[:prerelease] = true
@@ -57,7 +58,7 @@ class TestGemCommandsFetchCommand < RubyGemTestCase
     util_setup_spec_fetcher @a1, @a2
 
     @fetcher.data["#{@gem_repo}gems/#{@a1.file_name}"] =
-      File.read(File.join(@gemhome, 'cache', @a1.file_name))
+      File.read(@a1.cache_file)
 
     @cmd.options[:args] = [@a2.name]
     @cmd.options[:version] = Gem::Requirement.new '1'

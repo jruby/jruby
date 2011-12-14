@@ -2663,6 +2663,17 @@ public class RubyModule extends RubyObject {
         return constantNames;
     }
 
+    @JRubyMethod(compat = RUBY1_9)
+    public IRubyObject private_constant(ThreadContext context, IRubyObject name) {
+        // does nothing yet
+        return this;
+    }
+
+    @JRubyMethod(compat = RUBY1_9, rest = true)
+    public IRubyObject private_constant(ThreadContext context, IRubyObject[] names) {
+        // does nothing yet
+        return this;
+    }
 
     //
     ////////////////// CLASS VARIABLE API METHODS ////////////////
@@ -3278,7 +3289,9 @@ public class RubyModule extends RubyObject {
     }
    
     protected final String validateConstant(String name) {
-        if (IdUtil.isValidConstantName(name)) {
+        if (getRuntime().is1_9() ?
+                IdUtil.isValidConstantName19(name) :
+                IdUtil.isValidConstantName(name)) {
             return name;
         }
         throw getRuntime().newNameError("wrong constant name " + name, name);

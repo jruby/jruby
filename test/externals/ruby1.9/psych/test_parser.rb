@@ -1,11 +1,16 @@
-require_relative 'helper'
+# coding: utf-8
+
+require 'psych/helper'
 
 module Psych
   class TestParser < TestCase
     class EventCatcher < Handler
-      attr_reader :calls
+      attr_accessor :parser
+      attr_reader :calls, :marks
       def initialize
-        @calls = []
+        @parser = nil
+        @calls  = []
+        @marks  = []
       end
 
       (Handler.instance_methods(true) -
@@ -13,6 +18,7 @@ module Psych
         class_eval %{
           def #{m} *args
             super
+            @marks << @parser.mark if @parser
             @calls << [:#{m}, args]
           end
         }
@@ -21,7 +27,83 @@ module Psych
 
     def setup
       super
-      @parser = Psych::Parser.new EventCatcher.new
+      @handler        = EventCatcher.new
+      @parser         = Psych::Parser.new @handler
+      @handler.parser = @parser
+    end
+
+    def test_line_numbers
+      assert_equal 0, @parser.mark.line
+      @parser.parse "---\n- hello\n- world"
+      line_calls = @handler.marks.map(&:line).zip(@handler.calls.map(&:first))
+      assert_equal [[0, :start_stream],
+                    [0, :start_document],
+                    [1, :start_sequence],
+                    [2, :scalar],
+                    [3, :scalar],
+                    [3, :end_sequence],
+                    [3, :end_document],
+                    [3, :end_stream]], line_calls
+
+      assert_equal 3, @parser.mark.line
+    end
+
+    def test_column_numbers
+      assert_equal 0, @parser.mark.column
+      @parser.parse "---\n- hello\n- world"
+      col_calls = @handler.marks.map(&:column).zip(@handler.calls.map(&:first))
+      assert_equal [[0, :start_stream],
+                    [3, :start_document],
+                    [1, :start_sequence],
+                    [0, :scalar],
+                    [0, :scalar],
+                    [0, :end_sequence],
+                    [0, :end_document],
+                    [0, :end_stream]], col_calls
+
+      assert_equal 0, @parser.mark.column
+    end
+
+    def test_index_numbers
+      assert_equal 0, @parser.mark.index
+      @parser.parse "---\n- hello\n- world"
+      idx_calls = @handler.marks.map(&:index).zip(@handler.calls.map(&:first))
+      assert_equal [[0, :start_stream],
+                    [3, :start_document],
+                    [5, :start_sequence],
+                    [12, :scalar],
+                    [19, :scalar],
+                    [19, :end_sequence],
+                    [19, :end_document],
+                    [19, :end_stream]], idx_calls
+
+      assert_equal 19, @parser.mark.index
+    end
+
+    def test_set_encoding_twice
+      @parser.external_encoding = Psych::Parser::UTF16LE
+
+      e = assert_raises(Psych::Exception) do
+        @parser.external_encoding = Psych::Parser::UTF16LE
+      end
+      assert_equal "don't set the encoding twice!", e.message
+    end
+
+    def test_bom
+      tadpole = 'おたまじゃくし'
+
+      # BOM + text
+      yml = "\uFEFF#{tadpole}".encode('UTF-16LE')
+      @parser.parse yml
+      assert_equal tadpole, @parser.handler.calls[2][1].first
+    end
+
+    def test_external_encoding
+      tadpole = 'おたまじゃくし'
+
+      @parser.external_encoding = Psych::Parser::UTF16LE
+      @parser.parse tadpole.encode 'UTF-16LE'
+      assert_equal tadpole, @parser.handler.calls[2][1].first
     end
 
     def test_bogus_io
@@ -44,6 +126,33 @@ module Psych
       assert_raises(Psych::SyntaxError) do
         @parser.parse("---\n\"foo\"\n\"bar\"\n")
       end
+    end
+
+    def test_syntax_error_twice
+      assert_raises(Psych::SyntaxError) do
+        @parser.parse("---\n\"foo\"\n\"bar\"\n")
+      end
+
+      assert_raises(Psych::SyntaxError) do
+        @parser.parse("---\n\"foo\"\n\"bar\"\n")
+      end
+    end
+
+    def test_syntax_error_has_path_for_string
+      e = assert_raises(Psych::SyntaxError) do
+        @parser.parse("---\n\"foo\"\n\"bar\"\n")
+      end
+      assert_match '(<unknown>):', e.message
+    end
+
+    def test_syntax_error_has_path_for_io
+      io = StringIO.new "---\n\"foo\"\n\"bar\"\n"
+      def io.path; "hello!"; end
+
+      e = assert_raises(Psych::SyntaxError) do
+        @parser.parse(io)
+      end
+      assert_match "(#{io.path}):", e.message
     end
 
     def test_mapping_end

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-require_relative 'helper'
+require 'psych/helper'
 
 module Psych
   class TestEmitter < TestCase
@@ -8,6 +8,12 @@ module Psych
       super
       @out = StringIO.new('')
       @emitter = Psych::Emitter.new @out
+    end
+
+    def test_line_width
+      assert_equal 0, @emitter.line_width
+      assert_equal 10, @emitter.line_width = 10
+      assert_equal 10, @emitter.line_width
     end
 
     def test_set_canonical
@@ -33,11 +39,13 @@ module Psych
       assert_match('日本語', @out.string)
     end
 
-    # def test_start_stream_arg_error
-    #   assert_raises(TypeError) do
-    #     @emitter.start_stream 'asdfasdf'
-    #   end
-    # end
+    unless RUBY_ENGINE == 'jruby'
+      def test_start_stream_arg_error
+        assert_raises(TypeError) do
+          @emitter.start_stream 'asdfasdf'
+        end
+      end
+    end
 
     def test_start_doc_arg_error
       @emitter.start_stream Psych::Nodes::Stream::UTF8
@@ -55,21 +63,24 @@ module Psych
       end
     end
 
-    # def test_scalar_arg_error
-    #   @emitter.start_stream Psych::Nodes::Stream::UTF8
-    #   @emitter.start_document [], [], false
-    # 
-    #   [
-    #     [:foo, nil, nil, false, true, 1],
-    #     ['foo', Object.new, nil, false, true, 1],
-    #     ['foo', nil, Object.new, false, true, 1],
-    #     ['foo', nil, nil, false, true, :foo],
-    #   ].each do |args|
-    #     assert_raises(TypeError) do
-    #       @emitter.scalar(*args)
-    #     end
-    #   end
-    # end
+    unless RUBY_ENGINE = 'jruby'
+      def test_scalar_arg_error
+        @emitter.start_stream Psych::Nodes::Stream::UTF8
+        @emitter.start_document [], [], false
+        
+        [
+          [:foo, nil, nil, false, true, 1],
+          ['foo', Object.new, nil, false, true, 1],
+          ['foo', nil, Object.new, false, true, 1],
+          ['foo', nil, nil, false, true, :foo],
+          [nil, nil, nil, false, true, 1],
+        ].each do |args|
+          assert_raises(TypeError) do
+            @emitter.scalar(*args)
+          end
+        end
+      end
+    end
 
     def test_start_sequence_arg_error
       @emitter.start_stream Psych::Nodes::Stream::UTF8

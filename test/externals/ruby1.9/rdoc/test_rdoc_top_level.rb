@@ -12,7 +12,10 @@ class TestRDocTopLevel < XrefTestCase
 
   def test_class_all_classes_and_modules
     expected = %w[
-      C1 C2 C2::C3 C2::C3::H1 C3 C3::H1 C3::H2 C4 C4::C4 C5 C5::C1 M1 M1::M2
+      C1 C2 C2::C3 C2::C3::H1 C3 C3::H1 C3::H2 C4 C4::C4 C5 C5::C1
+      Child
+      M1 M1::M2
+      Parent
     ]
 
     assert_equal expected,
@@ -22,9 +25,21 @@ class TestRDocTopLevel < XrefTestCase
   def test_class_classes
     expected = %w[
       C1 C2 C2::C3 C2::C3::H1 C3 C3::H1 C3::H2 C4 C4::C4 C5 C5::C1
+      Child Parent
     ]
 
     assert_equal expected, RDoc::TopLevel.classes.map { |m| m.full_name }.sort
+  end
+
+  def test_class_complete
+    @c2.add_module_alias @c2_c3, 'A1', @top_level
+
+    RDoc::TopLevel.complete :public
+
+    a1 = @xref_data.find_class_or_module 'C2::A1'
+
+    assert_equal 'C2::A1', a1.full_name
+    refute_empty a1.aliases
   end
 
   def test_class_files
@@ -66,6 +81,15 @@ class TestRDocTopLevel < XrefTestCase
                  RDoc::TopLevel.modules.map { |m| m.full_name }.sort
   end
 
+  def test_class_new
+    tl1 = RDoc::TopLevel.new 'file.rb'
+    tl2 = RDoc::TopLevel.new 'file.rb'
+    tl3 = RDoc::TopLevel.new 'other.rb'
+
+    assert_same tl1, tl2
+    refute_same tl1, tl3
+  end
+
   def test_class_reset
     RDoc::TopLevel.reset
 
@@ -74,8 +98,107 @@ class TestRDocTopLevel < XrefTestCase
     assert_empty RDoc::TopLevel.files
   end
 
+  def test_add_alias
+    a = RDoc::Alias.new nil, 'old', 'new', nil
+    @top_level.add_alias a
+
+    object = RDoc::TopLevel.find_class_named 'Object'
+    expected = { '#old' => [a] }
+    assert_equal expected, object.unmatched_alias_lists
+    assert_includes object.in_files, @top_level
+  end
+
+  def test_add_alias_nodoc
+    @top_level.document_self = false
+
+    a = RDoc::Alias.new nil, 'old', 'new', nil
+    @top_level.add_alias a
+
+    object = RDoc::TopLevel.find_class_named('Object')
+    assert_empty object.unmatched_alias_lists
+    assert_includes object.in_files, @top_level
+  end
+
+  def test_add_constant
+    const = RDoc::Constant.new 'C', nil, nil
+    @top_level.add_constant const
+
+    object = RDoc::TopLevel.find_class_named 'Object'
+    assert_equal [const], object.constants
+    assert_includes object.in_files, @top_level
+  end
+
+  def test_add_constant_nodoc
+    @top_level.document_self = false
+
+    const = RDoc::Constant.new 'C', nil, nil
+    @top_level.add_constant const
+
+    object = RDoc::TopLevel.find_class_named 'Object'
+    assert_empty object.constants
+    assert_includes object.in_files, @top_level
+  end
+
+  def test_add_include
+    include = RDoc::Include.new 'C', nil
+    @top_level.add_include include
+
+    object = RDoc::TopLevel.find_class_named 'Object'
+    assert_equal [include], object.includes
+    assert_includes object.in_files, @top_level
+  end
+
+  def test_add_include_nodoc
+    @top_level.document_self = false
+
+    include = RDoc::Include.new 'C', nil
+    @top_level.add_include include
+
+    object = RDoc::TopLevel.find_class_named('Object')
+    assert_empty object.includes
+    assert_includes object.in_files, @top_level
+  end
+
+  def test_add_method
+    method = RDoc::AnyMethod.new nil, 'm'
+    @top_level.add_method method
+
+    object = RDoc::TopLevel.find_class_named 'Object'
+    assert_equal [method], object.method_list
+    assert_includes object.in_files, @top_level
+  end
+
+  def test_add_method_stopdoc
+    @top_level.document_self = false
+
+    method = RDoc::AnyMethod.new nil, 'm'
+    @top_level.add_method method
+
+    object = RDoc::TopLevel.find_class_named('Object')
+    assert_empty object.method_list
+    assert_includes object.in_files, @top_level
+  end
+
   def test_base_name
     assert_equal 'top_level.rb', @top_level.base_name
+  end
+
+  def test_eql_eh
+    top_level2 = RDoc::TopLevel.new 'path/top_level.rb'
+    other_level = RDoc::TopLevel.new 'path/other_level.rb'
+
+    assert_operator @top_level, :eql?, top_level2
+
+    refute_operator other_level, :eql?, @top_level
+  end
+
+  def test_equals2
+    top_level2 = RDoc::TopLevel.new 'path/top_level.rb'
+    other_level = RDoc::TopLevel.new 'path/other_level.rb'
+
+    assert_equal @top_level, top_level2
+
+    refute_equal other_level, @top_level
   end
 
   def test_find_class_or_module
@@ -89,18 +212,24 @@ class TestRDocTopLevel < XrefTestCase
     assert_equal 'path/top_level.rb', @top_level.full_name
   end
 
+  def test_hash
+    tl2 = RDoc::TopLevel.new 'path/top_level.rb'
+    tl3 = RDoc::TopLevel.new 'other/top_level.rb'
+
+    assert_equal @top_level.hash, tl2.hash
+    refute_equal @top_level.hash, tl3.hash
+  end
+
   def test_http_url
     assert_equal 'prefix/path/top_level_rb.html', @top_level.http_url('prefix')
   end
 
   def test_last_modified
-    assert_equal 'Unknown', @top_level.last_modified
-
+    assert_equal nil, @top_level.last_modified
     stat = Object.new
     def stat.mtime() 0 end
     @top_level.file_stat = stat
-
-    assert_equal '0', @top_level.last_modified
+    assert_equal 0, @top_level.last_modified
   end
 
   def test_name

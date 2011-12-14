@@ -1,5 +1,7 @@
 require 'test/unit'
 require 'timeout'
+require 'tempfile'
+require_relative 'envutil'
 
 class TestSignal < Test::Unit::TestCase
   def have_fork?
@@ -35,18 +37,33 @@ class TestSignal < Test::Unit::TestCase
     end
   end
 
+  def test_signal_process_group
+    return unless Process.respond_to?(:kill)
+    return unless Process.respond_to?(:pgroup) # for mswin32
+
+    bug4362 = '[ruby-dev:43169]'
+    assert_nothing_raised(bug4362) do
+      pid = Process.spawn(EnvUtil.rubybin, '-e', '"sleep 10"', :pgroup => true)
+      Process.kill(:"-TERM", pid)
+      Process.waitpid(pid)
+      assert_equal(true, $?.signaled?)
+      assert_equal(Signal.list["TERM"], $?.termsig)
+    end
+  end
+
   def test_exit_action
     return unless have_fork?	# skip this test
     begin
       r, w = IO.pipe
       r0, w0 = IO.pipe
-      pid = Process.fork {
+      pid = Process.spawn(EnvUtil.rubybin, '-e', <<-'End', 3=>w, 4=>r0)
+        w = IO.new(3, "w")
+        r0 = IO.new(4, "r")
         Signal.trap(:USR1, "EXIT")
-        w0.close
         w.syswrite("a")
         Thread.start { sleep(2) }
         r0.sysread(4096)
-      }
+      End
       r.sysread(1)
       sleep 0.1
       assert_nothing_raised("[ruby-dev:26128]") {
@@ -102,21 +119,21 @@ class TestSignal < Test::Unit::TestCase
       Timeout.timeout(10) do
         x = false
         Process.kill(SignalException.new(:INT).signo, $$)
-        nil until x
+        sleep(0.01) until x
 
         x = false
         Process.kill("INT", $$)
-        nil until x
+        sleep(0.01) until x
 
         x = false
         Process.kill("SIGINT", $$)
-        nil until x
+        sleep(0.01) until x
 
         x = false
         o = Object.new
         def o.to_str; "SIGINT"; end
         Process.kill(o, $$)
-        nil until x
+        sleep(0.01) until x
       end
 
       assert_raise(ArgumentError) { Process.kill(Object.new, $$) }
@@ -178,5 +195,29 @@ class TestSignal < Test::Unit::TestCase
     end
     w.close
     assert_equal(r.read, "foo")
+  end
+
+  def test_signal_requiring
+    t = Tempfile.new(%w"require_ensure_test .rb")
+    t.puts "sleep"
+    t.close
+    error = IO.popen([EnvUtil.rubybin, "-e", <<EOS, t.path, :err => File::NULL]) do |child|
+trap(:INT, "DEFAULT")
+th = Thread.new do
+  begin
+    require ARGV[0]
+  ensure
+    Marshal.dump($!, STDOUT)
+    STDOUT.flush
+  end
+end
+Thread.pass while th.running?
+Process.kill(:INT, $$)
+th.join
+EOS
+      Marshal.load(child)
+    end
+    t.close!
+    assert_nil(error)
   end
 end
