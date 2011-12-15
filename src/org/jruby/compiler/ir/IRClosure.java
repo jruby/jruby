@@ -23,6 +23,7 @@ import org.jruby.parser.IRStaticScopeFactory;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.InterpretedIRBlockBody;
+import org.jruby.runtime.InterpretedIRBlockBody19;
 
 public class IRClosure extends IRScope {
     public final Label startLabel; // Label for the start of the closure (used to implement redo)
@@ -46,13 +47,14 @@ public class IRClosure extends IRScope {
     // Block parameters
     private List<Operand> blockArgs;
 
-    public IRClosure(IRScope lexicalParent, boolean isForLoopBody, StaticScope staticScope, Arity arity, int argumentType) {
+    public IRClosure(IRScope lexicalParent, boolean isForLoopBody, StaticScope staticScope, Arity arity, int argumentType, boolean is1_9) {
         this(lexicalParent, staticScope, isForLoopBody ? "_FOR_LOOP_" : "_CLOSURE_");
         this.isForLoopBody = isForLoopBody;
         this.hasBeenInlined = false;
         this.blockArgs = new ArrayList<Operand>();
         if (!IRBuilder.inIRGenOnlyMode()) {
-            this.body = new InterpretedIRBlockBody(this, arity, argumentType);
+            this.body = is1_9 ? new InterpretedIRBlockBody19(this, arity, argumentType)
+                              : new InterpretedIRBlockBody(this, arity, argumentType);
             if ((staticScope != null) && !isForLoopBody) ((IRStaticScope)staticScope).setIRScope(this);
         } else {
             this.body = null;

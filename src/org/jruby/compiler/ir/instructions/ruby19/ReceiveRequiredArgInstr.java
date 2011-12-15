@@ -38,7 +38,8 @@ public class ReceiveRequiredArgInstr extends ReceiveArgBase {
 
     public IRubyObject receiveRequiredArg(IRubyObject[] args) {
         int remaining = args.length - totalReqdParams; 
-        return (remaining < totalOptParams) ? args[argIndex - (totalOptParams-remaining)]
-                                            : args[argIndex + (args.length - totalReqdParams - totalOptParams)];
+        if (remaining < 0) return null;  // For blocks!
+        else return (remaining < totalOptParams) ? args[argIndex - (totalOptParams-remaining)]
+                                                 : args[argIndex + (args.length - totalReqdParams - totalOptParams)];
     }
 }

@@ -232,6 +232,7 @@ public class Interpreter {
                     case RECV_REQD_ARG: {
                         ReceiveRequiredArgInstr ra = (ReceiveRequiredArgInstr)lastInstr;
                         result = ra.receiveRequiredArg(args);
+                        if (result == null) result = context.nil; // For blocks
                         resultVar = ra.getResult();
                         ipc++;
                         break;

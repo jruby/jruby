@@ -281,6 +281,10 @@ public class IRBuilder {
         IRBuilder.rubyVersion = rubyVersion;
     }
 
+    public static boolean is1_9() {
+        return rubyVersion.equals("1.9");
+    }
+
     public static void main(String[] args) {
         boolean isDebug = args.length > 0 && args[0].equals("-debug");
         int     i = isDebug ? 1 : 0;
@@ -459,7 +463,7 @@ public class IRBuilder {
     }
 
     public static IRBuilder createIRBuilder() {
-        return rubyVersion.equals("1.9") ? new IRBuilder19() : new IRBuilder();
+        return is1_9() ? new IRBuilder19() : new IRBuilder();
     }
 
     public Node skipOverNewlines(IRScope s, Node n) {
@@ -2172,7 +2176,7 @@ public class IRBuilder {
 
     public Operand buildForIter(final ForNode forNode, IRScope s) {
             // Create a new closure context
-        IRClosure closure = new IRClosure(s, true, forNode.getScope(), Arity.procArityOf(forNode.getVarNode()), forNode.getArgumentType());
+        IRClosure closure = new IRClosure(s, true, forNode.getScope(), Arity.procArityOf(forNode.getVarNode()), forNode.getArgumentType(), is1_9());
         s.addClosure(closure);
 
             // Receive self
@@ -2314,7 +2318,7 @@ public class IRBuilder {
     }
 
     public Operand buildIter(final IterNode iterNode, IRScope s) {
-        IRClosure closure = new IRClosure(s, false, iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()), iterNode.getArgumentType());
+        IRClosure closure = new IRClosure(s, false, iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()), iterNode.getArgumentType(), is1_9());
         s.addClosure(closure);
 
         // Create a new nested builder to ensure this gets its own IR builder state 
@@ -2762,7 +2766,7 @@ public class IRBuilder {
     }
 
     public Operand buildPostExe(PostExeNode postExeNode, IRScope s) {
-        IRClosure endClosure = new IRClosure(s, false, postExeNode.getScope(), Arity.procArityOf(postExeNode.getVarNode()), postExeNode.getArgumentType());
+        IRClosure endClosure = new IRClosure(s, false, postExeNode.getScope(), Arity.procArityOf(postExeNode.getVarNode()), postExeNode.getArgumentType(), is1_9());
         build(postExeNode.getBodyNode(), endClosure);
 
         // Add an instruction to record the end block at runtime
@@ -2771,7 +2775,7 @@ public class IRBuilder {
     }
 
     public Operand buildPreExe(PreExeNode preExeNode, IRScope s) {
-        IRClosure beginClosure = new IRClosure(s, false, preExeNode.getScope(), Arity.procArityOf(preExeNode.getVarNode()), preExeNode.getArgumentType());
+        IRClosure beginClosure = new IRClosure(s, false, preExeNode.getScope(), Arity.procArityOf(preExeNode.getVarNode()), preExeNode.getArgumentType(), is1_9());
         build(preExeNode.getBodyNode(), beginClosure);
 
         // Record the begin block at IR build time

@@ -49,7 +49,7 @@ public class IRBuilder19 extends IRBuilder {
         // (a) on inlining, we'll be able to get rid of these checks in almost every case.
         // (b) compiler to bytecode will anyway generate this and this is explicit.
         // For now, we are going explicit instruction route.  But later, perhaps can make this implicit in the method setup preamble?  
-        s.addInstr(new CheckArityInstr(required, opt, rest));
+		  if (s instanceof IRMethod) s.addInstr(new CheckArityInstr(required, opt, rest));
 
         // self = args[0]
         s.addInstr(new ReceiveSelfInstruction(getSelf(s)));
