@@ -718,13 +718,24 @@ public class RubyHash extends RubyObject implements Map {
         final boolean[] firstEntry = new boolean[1];
 
         firstEntry[0] = true;
+        final boolean is19 = context.runtime.is1_9();
         visitAll(new Visitor() {
             public void visit(IRubyObject key, IRubyObject value) {
                 if (!firstEntry[0]) str.cat((byte)',').cat((byte)' ');
 
-                str.cat19(inspect(context, key));
-                str.cat((byte)'=').cat((byte)'>');
-                str.cat19(inspect(context, value));
+                RubyString inspectedKey = inspect(context, key);
+                RubyString inspectedValue = inspect(context, value);
+
+                if (is19) {
+                    str.cat19(inspectedKey);
+                    str.cat((byte)'=').cat((byte)'>');
+                    str.cat19(inspectedValue);
+                } else {
+                    str.cat(inspectedKey);
+                    str.cat((byte)'=').cat((byte)'>');
+                    str.cat(inspectedValue);
+                }
+                
                 firstEntry[0] = false;
             }
         });
