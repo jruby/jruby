@@ -66,20 +66,40 @@ public class Interpreter {
         return RubyInstanceConfig.IR_DEBUG;
     }
 
-    public static IRubyObject interpretCommonEval(Ruby runtime, String file, int lineNumber, RootNode rootNode, IRubyObject self, Block block) {
-        // SSS FIXME: Weirdness here.  We cannot get the containing IR scope from ss because of static-scope wrapping that is going on
+	 private static IRScope getEvalContainerScope(Ruby runtime, StaticScope evalScope) {
+        // SSS FIXME: Weirdness here.  We cannot get the containing IR scope from evalScope because of static-scope wrapping
+		  // that is going on
         // 1. In all cases, DynamicScope.getEvalScope wraps the executing static scope in a new local scope.
         // 2. For instance-eval (module-eval, class-eval) scenarios, there is an extra scope that is added to 
         //    the stack in ThreadContext.java:preExecuteUnder
         // I dont know what rule to apply when.  However, in both these cases, since there is no IR-scope associated,
         // I have used the hack below where I first unwrap once and see if I get a non-null IR scope.  If that doesn't
         // work, I unwarp once more and I am guaranteed to get the IR scope I want.
-        StaticScope ss = rootNode.getStaticScope();
-        IRScope containingIRScope = ((IRStaticScope)ss.getEnclosingScope()).getIRScope();
-        if (containingIRScope == null) containingIRScope = ((IRStaticScope)ss.getEnclosingScope().getEnclosingScope()).getIRScope();
+        IRScope containingIRScope = ((IRStaticScope)evalScope.getEnclosingScope()).getIRScope();
+        if (containingIRScope == null) containingIRScope = ((IRStaticScope)evalScope.getEnclosingScope().getEnclosingScope()).getIRScope();
+		  return containingIRScope;
+	 }
 
+	 private static IRScope getEvalContainerScope19(Ruby runtime, StaticScope evalScope) {
+        // SSS FIXME: Weirdness here.  Different from 1.8.  There is no localvar scope wrapping.
+        // 1. For instance-eval (module-eval, class-eval) scenarios, there is an extra scope that is added to 
+        //    the stack in ThreadContext.java:preExecuteUnder
+        // I dont know what rule to apply when.  However, in both these cases, since there is no IR-scope associated,
+        // I have used the hack below where I first unwrap once and see if I get a non-null IR scope.  If that doesn't
+        // work, I unwarp once more and I am guaranteed to get the IR scope I want.
+        IRScope containingIRScope = ((IRStaticScope)evalScope).getIRScope();
+        if (containingIRScope == null) containingIRScope = ((IRStaticScope)evalScope.getEnclosingScope()).getIRScope();
+        if (containingIRScope == null) containingIRScope = ((IRStaticScope)evalScope.getEnclosingScope().getEnclosingScope()).getIRScope();
+		  return containingIRScope;
+	 }
+
+    public static IRubyObject interpretCommonEval(Ruby runtime, String file, int lineNumber, RootNode rootNode, IRubyObject self, Block block) {
+		  boolean is_1_9 = runtime.is1_9();
         // SSS FIXME: Is this required here since the IR version cannot change from eval-to-eval? This is much more of a global setting.
-        if (runtime.is1_9()) IRBuilder.setRubyVersion("1.9");
+        if (is_1_9) IRBuilder.setRubyVersion("1.9");
+
+        StaticScope ss = rootNode.getStaticScope();
+		  IRScope containingIRScope = is_1_9 ? getEvalContainerScope19(runtime, ss) : getEvalContainerScope(runtime, ss);
         IREvalScript evalScript = IRBuilder.createIRBuilder().buildEvalRoot(ss, containingIRScope, file, lineNumber, rootNode);
         evalScript.prepareForInterpretation();
 //        evalScript.runCompilerPass(new CallSplitter());
