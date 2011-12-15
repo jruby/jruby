@@ -61,32 +61,34 @@ public class SearchConstInstr extends Instr implements ResultInstr {
         return super.toString() + "(" + (definingModule == null ? "-dynamic-" : definingModule.getName()) + "," + constName  + ")";
     }
 
+    private Object cache(DynamicScope currDynScope, Ruby runtime, Object constant) {
+        StaticScope staticScope = definingModule == null ? currDynScope.getStaticScope() : definingModule.getStaticScope();
+        RubyModule object = runtime.getObject();
+        if (staticScope == null) { // FIXME: Object scope has no staticscope yet
+            constant = object.getConstant(constName);
+        } else {
+            constant = staticScope.getConstant(runtime, constName, object);
+        }
+        if (constant == null) {
+            constant = UndefinedValue.UNDEFINED;
+        } else {
+            // recache
+            generation = runtime.getConstantInvalidator().getData();
+            cachedConstant = constant;
+        }
+        return constant;
+    }
+
     private boolean isCached(Ruby runtime, Object value) {
         return value != null && generation == runtime.getConstantInvalidator().getData();
     }
-
+    
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         Ruby runtime = context.getRuntime();
         Object constant = cachedConstant; // Store to temp so it does null out on us mid-stream
-        if (!isCached(runtime, constant)) {
-            StaticScope staticScope = definingModule == null ? currDynScope.getStaticScope() : definingModule.getStaticScope();
-            RubyModule object = runtime.getObject();
-            
-            if (staticScope == null) { // FIXME: Object scope has no staticscope yet
-                constant = object.getConstant(constName);
-            } else {
-                constant = staticScope.getConstant(runtime, constName, object);
-            }
+        if (!isCached(runtime, constant)) constant = cache(currDynScope, runtime, constant);
 
-            if (constant == null) {
-                constant = UndefinedValue.UNDEFINED;
-            } else {
-                // recache
-                generation = runtime.getConstantInvalidator().getData();
-                cachedConstant = constant;
-            }
-        }
         return constant;
     }
 }
