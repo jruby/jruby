@@ -1222,6 +1222,10 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return this;
     }
 
+    public final RubyString cat(RubyString str) {
+        return cat(str.getByteList());
+    }
+
     public final RubyString cat(ByteList str) {
         modify(value.getRealSize() + str.getRealSize());
         System.arraycopy(str.getUnsafeBytes(), str.getBegin(), value.getUnsafeBytes(), value.getBegin() + value.getRealSize(), str.getRealSize());
