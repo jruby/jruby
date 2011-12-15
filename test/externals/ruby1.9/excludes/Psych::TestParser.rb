@@ -1,3 +1,4 @@
+exclude :test_bogus_io, "needs investigation"
 exclude :test_column_numbers, "column numbers are off"
 exclude :test_index_numbers, "indices are off"
 exclude :test_line_numbers, "line numbers are off"

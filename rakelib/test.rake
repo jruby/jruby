@@ -34,6 +34,31 @@ namespace :test do
       t.ruby_opts << '--debug'
     end
   end
+  desc "Run tracing tests (do not forget to pass --debug)"
+
+  task :mri19 do
+    require 'rake/testtask'
+    Rake::TestTask.new('test:mri19') do |t|
+      files = []
+      File.open('test/ruby_1_9_index') do |f|
+        f.lines.each do |line|
+          filename = "test/#{line.chomp}.rb"
+          next unless File.exist? filename
+          files << filename
+        end
+      end
+      t.test_files = files
+      p files
+      t.verbose = true
+      ENV['EXCLUDE_DIR'] = 'test/externals/ruby1.9/excludes'
+      t.ruby_opts << '--debug'
+      t.ruby_opts << '--1.9'
+      t.ruby_opts << '-I test/externals/ruby1.9'
+      t.ruby_opts << '-r minitest/excludes'
+      t.ruby_opts << '-X-C'
+    end
+  end
+
 
   task :rails => [:jar, :install_build_gems, :fetch_latest_rails_repo] do
     # Need to disable assertions because of a rogue assert in OpenSSL

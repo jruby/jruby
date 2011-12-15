@@ -5,3 +5,5 @@ exclude :test_regexp
 exclude :test_struct_invalid_members
 exclude :test_time_subclass
 exclude :test_userdef_encoding
+exclude :test_context_switch
+exclude :test_class_nonascii
