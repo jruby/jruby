@@ -29,14 +29,11 @@
  */
 package org.jruby.embed.util;
 
+
 import java.io.File;
-import java.io.UnsupportedEncodingException;
-import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.List;
-import org.jruby.embed.PropertyName;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jruby.CompatVersion;
@@ -45,7 +42,9 @@ import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.embed.internal.LocalContextProvider;
 import org.jruby.embed.LocalContextScope;
 import org.jruby.embed.LocalVariableBehavior;
+import org.jruby.embed.PropertyName;
 import org.jruby.embed.ScriptingContainer;
+import org.jruby.util.SafePropertyAccessor;
 
 import static org.jruby.util.URLUtil.getPath;
 
@@ -66,7 +65,7 @@ public class SystemPropertyCatcher {
      */
     public static LocalContextScope getScope(LocalContextScope defaultScope) {
         LocalContextScope scope = defaultScope;
-        String s = System.getProperty(PropertyName.LOCALCONTEXT_SCOPE.toString());
+        String s = SafePropertyAccessor.getProperty(PropertyName.LOCALCONTEXT_SCOPE.toString());
         if (s == null) {
             return scope;
         }
@@ -89,7 +88,7 @@ public class SystemPropertyCatcher {
      */
     public static LocalVariableBehavior getBehavior(LocalVariableBehavior defaultBehavior) {
         LocalVariableBehavior behavior = defaultBehavior;
-        String s = System.getProperty(PropertyName.LOCALVARIABLE_BEHAVIOR.toString());
+        String s = SafePropertyAccessor.getProperty(PropertyName.LOCALVARIABLE_BEHAVIOR.toString());
         if (s == null) {
             return behavior;
         }
@@ -114,7 +113,7 @@ public class SystemPropertyCatcher {
      */
     public static boolean isLazy(boolean defaultLaziness) {
         boolean lazy = defaultLaziness;
-        String s = System.getProperty(PropertyName.LAZINESS.toString());
+        String s = SafePropertyAccessor.getProperty(PropertyName.LAZINESS.toString());
         if (s == null) {
             return lazy;
         }
@@ -129,7 +128,7 @@ public class SystemPropertyCatcher {
      */
     
     public static void setClassLoader(ScriptingContainer container) {
-        String s = System.getProperty(PropertyName.CLASSLOADER.toString());
+        String s = SafePropertyAccessor.getProperty(PropertyName.CLASSLOADER.toString());
         
         // current should be removed later
         if (s == null || "container".equals(s) || "current".equals(s)) { // default
@@ -154,7 +153,7 @@ public class SystemPropertyCatcher {
     public static void setConfiguration(ScriptingContainer container) {
         LocalContextProvider provider = container.getProvider();
         RubyInstanceConfig config = provider.getRubyInstanceConfig();
-        String s = System.getProperty(PropertyName.COMPILEMODE.toString());
+        String s = SafePropertyAccessor.getProperty(PropertyName.COMPILEMODE.toString());
         if (s != null) {
             if ("jit".equalsIgnoreCase(s)) {
                 config.setCompileMode(CompileMode.JIT);
@@ -164,7 +163,7 @@ public class SystemPropertyCatcher {
                 config.setCompileMode(CompileMode.OFF);
             }
         }
-        s = System.getProperty(PropertyName.COMPATVERSION.toString());
+        s = SafePropertyAccessor.getProperty(PropertyName.COMPATVERSION.toString());
         if (s != null) {
             if (isRuby19(s)) {
                 config.setCompatVersion(CompatVersion.RUBY1_9);
@@ -196,9 +195,9 @@ public class SystemPropertyCatcher {
      */
     public static String findJRubyHome(Object instance) {
         String jrubyhome;
-        if ((jrubyhome = System.getenv("JRUBY_HOME")) != null) {
+        if ((jrubyhome = SafePropertyAccessor.getenv("JRUBY_HOME")) != null) {
             return jrubyhome;
-        } else if ((jrubyhome = System.getProperty("jruby.home")) != null) {
+        } else if ((jrubyhome = SafePropertyAccessor.getProperty("jruby.home")) != null) {
             return jrubyhome;
         } else if ((jrubyhome = findFromJar(instance)) != null) {
             return jrubyhome;
@@ -239,10 +238,10 @@ public class SystemPropertyCatcher {
      * @return a list of load paths.
      */
     public static List<String> findLoadPaths() {
-        String paths = System.getProperty(PropertyName.CLASSPATH.toString());
+        String paths = SafePropertyAccessor.getProperty(PropertyName.CLASSPATH.toString());
         List<String> loadPaths = new ArrayList<String>();
         if (paths == null) {
-            paths = System.getProperty("java.class.path");
+            paths = SafePropertyAccessor.getProperty("java.class.path");
         }
         if (paths == null) return loadPaths;
         String[] possiblePaths = paths.split(File.pathSeparator);
@@ -289,9 +288,9 @@ public class SystemPropertyCatcher {
      * @return a base directory.
      */
     public static String getBaseDir() {
-        String baseDir = System.getenv("PWD");
+        String baseDir = SafePropertyAccessor.getenv("PWD");
         if (baseDir == null || "/".equals(baseDir)) {
-            baseDir = System.getProperty("user.dir");
+            baseDir = SafePropertyAccessor.getProperty("user.dir");
         }
         return baseDir;
     }
