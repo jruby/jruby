@@ -28,6 +28,8 @@
 
 package org.jruby.util;
 
+import java.util.Map;
+
 /**
  * Utility class to safely access system properties in security-sensitive
  * environments.
@@ -148,6 +150,37 @@ public class SafePropertyAccessor {
             return false;
         } catch (SecurityException se) {
             return true;
+        }
+    }
+    
+    /**
+     * An extension over <code>System.getenv</code> method.
+     * Handles security restrictions, and returns <code>null</code>
+     * if the access to the environment variable is restricted.
+     * @param name The environment variable name.
+     * @return The value of the environment variable,
+     *         or null.
+     */
+    public static String getenv(String name) {
+        try {
+            return System.getenv(name);
+        } catch (SecurityException se) {
+            return null;
+        }
+    }
+    
+    /**
+     * An extension over <code>System.getenv</code> method.
+     * Handles security restrictions, and returns <code>null</code>
+     * if the access to the environment map is restricted.
+     * @return The map of the environment variables,
+     *         or null.
+     */
+    public static Map<String,String> getenv() {
+        try {
+            return System.getenv();
+        } catch (SecurityException se) {
+            return null;
         }
     }
 }
