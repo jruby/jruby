@@ -36,6 +36,34 @@ public class IRBuilder19 extends IRBuilder {
         return cl.isForLoopBody() ? cl.getLocalVariable(name, depth) : cl.getNewLocalVariable(name, depth);
     }
 
+    public void receiveRequiredArg(Node node, IRScope s, int argIndex, boolean post, int totalRequired, int totalOptional) {
+        Variable v;
+        switch (node.getNodeType()) {
+            case ARGUMENTNODE: {
+                ArgumentNode a = (ArgumentNode)node;
+                if (post) {
+                    s.addInstr(new ReceiveRequiredArgInstr(s.getLocalVariable(a.getName(), 0), argIndex, totalRequired, totalOptional));
+                } else {
+                    s.addInstr(new ReceiveArgumentInstruction(s.getLocalVariable(a.getName(), 0), argIndex));
+                }
+                break;
+            }
+            case MULTIPLEASGN19NODE: {
+                MultipleAsgn19Node childNode = (MultipleAsgn19Node) node;
+                v = s.getNewTemporaryVariable();
+                if (post) {
+                    s.addInstr(new ReceiveRequiredArgInstr(v, argIndex, totalRequired, totalOptional));
+                } else {
+                    s.addInstr(new ReceiveArgumentInstruction(v, argIndex));
+                }
+                s.addInstr(new ToAryInstr(v, v, BooleanLiteral.FALSE));
+                buildMultipleAsgn19Assignment(childNode, s, v, null);
+                break;
+            }
+            default: throw new NotCompilableException("Can't build assignment node: " + node);
+        }
+    }
+
     public void receiveArgs(final ArgsNode argsNode, IRScope s) {
         final int requiredPre = argsNode.getPreCount();
         final int requiredPost = argsNode.getPostCount();
@@ -49,7 +77,7 @@ public class IRBuilder19 extends IRBuilder {
         // (a) on inlining, we'll be able to get rid of these checks in almost every case.
         // (b) compiler to bytecode will anyway generate this and this is explicit.
         // For now, we are going explicit instruction route.  But later, perhaps can make this implicit in the method setup preamble?  
-		  if (s instanceof IRMethod) s.addInstr(new CheckArityInstr(required, opt, rest));
+        if (s instanceof IRMethod) s.addInstr(new CheckArityInstr(required, opt, rest));
 
         // self = args[0]
         s.addInstr(new ReceiveSelfInstruction(getSelf(s)));
@@ -60,8 +88,7 @@ public class IRBuilder19 extends IRBuilder {
         // Pre(-opt and rest) required args
         ListNode preArgs = argsNode.getPre();
         for (int i = 0; i < requiredPre; i++, argIndex++) {
-            ArgumentNode a = (ArgumentNode)preArgs.get(i);
-            s.addInstr(new ReceiveArgumentInstruction(s.getLocalVariable(a.getName(), 0), argIndex));
+            receiveRequiredArg(preArgs.get(i), s, argIndex, false, 0, 0);
         }
 
         // Fixup opt/rest
@@ -90,7 +117,7 @@ public class IRBuilder19 extends IRBuilder {
             // For this code, there is no argument name available from the ruby code.
             // So, we generate an implicit arg name
             String argName = argsNode.getRestArgNode().getName();
-            argName = (argName.equals("")) ? "%_arg_array" : argName;
+            argName = (argName == null || argName.equals("")) ? "%_arg_array" : argName;
 
             // You need at least required+opt+1 incoming args for the rest arg to get any args at all
             // If it is going to get something, then it should ignore required+opt args from the beginning
@@ -102,8 +129,7 @@ public class IRBuilder19 extends IRBuilder {
         // Post(-opt and rest) required args
         ListNode postArgs = argsNode.getPost();
         for (int i = 0; i < requiredPost; i++, argIndex++) {
-            ArgumentNode a = (ArgumentNode)postArgs.get(i);
-            s.addInstr(new ReceiveRequiredArgInstr(s.getLocalVariable(a.getName(), 0), argIndex, required, opt+rest));
+            receiveRequiredArg(postArgs.get(i), s, argIndex, true, required, opt+rest);
         }
     }
 
@@ -134,7 +160,7 @@ public class IRBuilder19 extends IRBuilder {
     }
 
     public void receiveBlockClosureArg(Node node, IRScope s) {
-        receiveClosureArg((BlockArgNode)node, s);
+        if (node != null) receiveClosureArg((BlockArgNode)node, s);
     }
 
     public void receiveMethodArgs(final ArgsNode argsNode, IRScope s) {
@@ -202,62 +228,6 @@ public class IRBuilder19 extends IRBuilder {
     }
 
     public void buildVersionSpecificBlockArgsAssignment(Node node, IRScope s, Operand argsArray, int argIndex, boolean isMasgnRoot, boolean isClosureArg, boolean isSplat) {
-        Variable v;
-        switch (node.getNodeType()) {
-            case ARGUMENTNODE: {
-                Variable av = getBlockArgVariable((IRClosure)s, ((ArgumentNode)node).getName(), 0);
-                receiveBlockArg(s, av, argsArray, argIndex, isClosureArg, isSplat);
-                break;
-            }
-            case MULTIPLEASGN19NODE: {
-                Variable oldArgs = null;
-                MultipleAsgn19Node childNode = (MultipleAsgn19Node) node;
-                if (!isMasgnRoot) {
-                    v = s.getNewTemporaryVariable();
-                    receiveBlockArg(s, v, argsArray, argIndex, isClosureArg, isSplat);
-                    s.addInstr(new ToAryInstr(v, v, BooleanLiteral.FALSE));
-                    argsArray = v;
-                }
-                buildMultipleAsgn19Assignment(childNode, s, argsArray, null);
-                break;
-            }
-            case ARGSNODE: {
-                ArgsNode argsNode = (ArgsNode)node;
-                final int required = argsNode.getRequiredArgsCount();
-                final int opt = argsNode.getOptionalArgsCount();
-                final int rest = argsNode.getRestArg();
-
-                // pre
-                ListNode preArgs  = argsNode.getPre();
-                for (int i = 0; i < required; i++, argIndex++) {
-                    buildBlockArgsAssignment(preArgs.get(i), s, argsArray, argIndex, isMasgnRoot, isClosureArg, false);
-                }
-
-                // opt
-                ListNode optArgs = argsNode.getOptArgs();
-                for (int j = 0; j < opt; j++, argIndex++) {
-                    // Jump to 'l' if this arg is not null.  If null, fall through and build the default value!
-                    Label l = s.getNewLabel();
-                    OptArgNode n = (OptArgNode)optArgs.get(j);
-                    Variable av = getBlockArgVariable((IRClosure)s, n.getName(), 0);
-                    receiveBlockArg(s, av, argsArray, argIndex, isClosureArg, false);
-                    s.addInstr(BNEInstr.create(av, UndefinedValue.UNDEFINED, l)); // if 'av' is not undefined, go to default
-                    build(n.getValue(), s);
-                    s.addInstr(new LabelInstr(l));
-                }
-                
-                // rest
-                if (rest > -1) {
-                    String argName = argsNode.getRestArgNode().getName();
-                    argName = (argName.equals("")) ? "%_arg_array" : argName;
-                    Variable av = getBlockArgVariable((IRClosure)s, argName, 0);
-                    receiveBlockArg(s, av, argsArray, argIndex, isClosureArg, true);
-                }
-
-                // FIXME: post??
-                break;
-            }
-            default: throw new NotCompilableException("Can't build assignment node: " + node);
-        }
-    }
+		 throw new NotCompilableException("Should not have come here for block args assignment in 1.9 mode: " + node);
+	 }
 }
