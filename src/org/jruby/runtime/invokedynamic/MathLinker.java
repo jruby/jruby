@@ -326,6 +326,10 @@ public class MathLinker {
         return ((RubyFloat)self).op_mul(context, value);
     }
 
+    public static IRubyObject float_op_equal(ThreadContext context, IRubyObject caller, IRubyObject self, double value) throws Throwable {
+        return ((RubyFloat)self).op_equal(context, value);
+    }
+
     public static IRubyObject float_op_lt(ThreadContext context, IRubyObject caller, IRubyObject self, double value) throws Throwable {
         return ((RubyFloat)self).op_lt(context, value);
     }
