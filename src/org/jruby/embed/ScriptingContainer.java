@@ -1750,7 +1750,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * @since JRuby 1.5.0
      */
     public void terminate() {
-        getProvider().getRuntime().tearDown(false);
+        if (getProvider().isRuntimeInitialized()) getProvider().getRuntime().tearDown(false);
         getProvider().terminate();
     }
 
