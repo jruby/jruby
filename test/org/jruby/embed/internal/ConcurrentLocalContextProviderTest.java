@@ -246,5 +246,16 @@ public class ConcurrentLocalContextProviderTest {
         if (Ruby.isGlobalRuntimeReady()) assertTrue(result);
         else assertFalse(result);
     }
-
+    
+    @Test
+    public void testTerminate() {
+        logger1.info("isTerminate");
+        ConcurrentLocalContextProvider cook =
+                new ConcurrentLocalContextProvider(LocalVariableBehavior.TRANSIENT, true);
+        try {
+            cook.terminate();
+        } catch (Exception e) {
+            fail();
+        }
+    }
 }
