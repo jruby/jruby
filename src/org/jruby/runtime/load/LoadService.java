@@ -341,10 +341,8 @@ public class LoadService {
     };
 
     private RequireState requireCommon(String requireName, boolean circularRequireWarning) {
-        ReentrantLock requireLock = null;
         try {
-            requireLock = acquireRequireLock(requireName);
-            if (requireLock == null) {
+            if (!requireLocks.lock(requireName)) {
                 if (circularRequireWarning && runtime.isVerbose() && runtime.is1_9()) {
                     warnCircularRequire(requireName);
                 }
@@ -368,39 +366,79 @@ public class LoadService {
                 loadTimer.endLoad(requireName, startTime);
             }
         } finally {
-            if (requireLock != null) {
-                releaseRequireLock(requireName, requireLock);
-            }
+            requireLocks.unlock(requireName);
         }
     }
+    
+    protected final RequireLocks requireLocks = new RequireLocks();
 
-    private ReentrantLock acquireRequireLock(String requireName) {
-        ReentrantLock requireLock;
-        
-        synchronized (requireLocks) {
-            requireLock = requireLocks.get(requireName);
-            if (requireLock == null) {
-                if (runtime.getInstanceConfig().isGlobalRequireLock()) {
-                    requireLock = globalRequireLock;
-                } else {
-                    requireLock = new ReentrantLock();
+    private class RequireLocks {
+        private final Map<String, ReentrantLock> pool;
+        // global lock for require must be fair
+        private final ReentrantLock globalLock;
+
+        private RequireLocks() {
+            this.pool = new HashMap<String, ReentrantLock>();
+            this.globalLock = new ReentrantLock(true);
+        }
+
+        /**
+         * Get exclusive lock for the specified requireName. Acquire sync object
+         * for the requireName from the pool, then try to lock it. NOTE: This
+         * lock is not fair for now.
+         * 
+         * @param requireName
+         *            just a name for the lock.
+         * @return If the sync object already locked by current thread, it just
+         *         returns false without getting a lock. Otherwise true.
+         */
+        private boolean lock(String requireName) {
+            ReentrantLock lock;
+
+            while (true) {
+                synchronized (pool) {
+                    lock = pool.get(requireName);
+                    if (lock == null) {
+                        if (runtime.getInstanceConfig().isGlobalRequireLock()) {
+                            lock = globalLock;
+                        } else {
+                            lock = new ReentrantLock();
+                        }
+                        pool.put(requireName, lock);
+                    } else if (lock.isHeldByCurrentThread()) {
+                        return false;
+                    }
                 }
-                requireLocks.put(requireName, requireLock);
-            } else if (requireLock.isHeldByCurrentThread()) {
-                return null;
+
+                lock.lock();
+
+                // repeat until locked object still in requireLocks.
+                synchronized (pool) {
+                    if (pool.get(requireName) == lock) {
+                        // the object is locked && the lock is in the pool
+                        return true;
+                    }
+                    // go next try
+                    lock.unlock();
+                }
             }
         }
 
-        requireLock.lock();
-        return requireLock;
-    }
-
-    private void releaseRequireLock(String requireName, ReentrantLock requireLock) {
-        synchronized (requireLocks) {
-            if (requireLock.isLocked()) {
-                requireLock.unlock();
+        /**
+         * Unlock the lock for the specified requireName.
+         * 
+         * @param requireName
+         *            name of the lock to be unlocked.
+         */
+        private void unlock(String requireName) {
+            synchronized (pool) {
+                ReentrantLock lock = pool.get(requireName);
+                if (lock != null) {
+                    assert lock.isHeldByCurrentThread();
+                    lock.unlock();
+                    pool.remove(requireName);
+                }
             }
-            requireLocks.remove(requireName);
         }
     }
 
@@ -422,9 +460,6 @@ public class LoadService {
     public boolean smartLoad(String file) {
         return require(file);
     }
-
-    protected final Map<String, ReentrantLock> requireLocks = new HashMap<String, ReentrantLock>();
-    protected final ReentrantLock globalRequireLock = new ReentrantLock(true);
 
     private boolean smartLoadInternal(String file) {
         checkEmptyLoad(file);
