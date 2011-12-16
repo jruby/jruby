@@ -12,7 +12,8 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.PhantomReferenceReaper;
+import org.jruby.util.WeakReferenceReaper;
+
 import static org.jruby.runtime.Visibility.*;
 
 @JRubyClass(name = "FFI::" + AutoPointer.AUTOPTR_CLASS_NAME, parent = "FFI::Pointer")
@@ -20,9 +21,11 @@ public final class AutoPointer extends Pointer {
     static final String AUTOPTR_CLASS_NAME = "AutoPointer";
     
     /** Keep strong references to the Reaper until cleanup */
-    private static final ConcurrentMap<Reaper, Boolean> referenceSet = new ConcurrentHashMap<Reaper, Boolean>();
+    private static final ConcurrentMap<ReaperGroup, Boolean> referenceSet = new ConcurrentHashMap<ReaperGroup, Boolean>();
+    private static final ThreadLocal<ReaperGroup> currentReaper = new ThreadLocal<ReaperGroup>();
     
     private Pointer pointer;
+    private Object referent;
     private transient volatile Reaper reaper;
     
     public static RubyClass createAutoPointerClass(Ruby runtime, RubyModule module) {
@@ -76,8 +79,8 @@ public final class AutoPointer extends Pointer {
         }
 
         setMemoryIO(((Pointer) pointerArg).getMemoryIO());
-        this.pointer = (Pointer) pointerArg;
-        referenceSet.put(reaper = new Reaper(this, pointer, getMetaClass(), "release"), Boolean.TRUE);
+        this.pointer = (Pointer) pointerArg;        
+        setReaper(new Reaper(pointer, getMetaClass(), "release"));
 
         return this;
     }
@@ -90,7 +93,7 @@ public final class AutoPointer extends Pointer {
 
         setMemoryIO(((Pointer) pointerArg).getMemoryIO());
         this.pointer = (Pointer) pointerArg;
-        referenceSet.put(reaper = new Reaper(this, pointer, releaser, "call"), Boolean.TRUE);
+        setReaper(new Reaper(pointer, releaser, "call"));
 
         return this;
     }
@@ -99,12 +102,13 @@ public final class AutoPointer extends Pointer {
     public final IRubyObject free(ThreadContext context) {
         Reaper r = reaper;
 
-        if (r == null) {
+        if (r == null || r.released) {
             throw context.getRuntime().newRuntimeError("pointer already freed");
         }
 
-        r.release(context, true);
+        r.release(context);
         reaper = null;
+        referent = null;
         
         return context.getRuntime().getNil();
     }
@@ -113,7 +117,7 @@ public final class AutoPointer extends Pointer {
     public final IRubyObject autorelease(ThreadContext context, IRubyObject autorelease) {
         Reaper r = reaper;
 
-        if (r == null) {
+        if (r == null || r.released) {
             throw context.getRuntime().newRuntimeError("pointer already freed");
         }
 
@@ -122,38 +126,89 @@ public final class AutoPointer extends Pointer {
         return context.getRuntime().getNil();
     }
 
-    private static final class Reaper extends PhantomReferenceReaper<AutoPointer> implements Runnable {
-        private final Pointer pointer;
-        private final IRubyObject proc;
-        private final String methodName;
-        private volatile boolean autorelease;
+    private void setReaper(Reaper reaper) {
+        ReaperGroup reaperGroup = currentReaper.get();
+        Object referent = reaperGroup != null ? reaperGroup.get() : null;
+        if (referent == null || !reaperGroup.canAccept()) {
+            reaperGroup = new ReaperGroup(referent = new Object());
+            currentReaper.set(reaperGroup);
+            referenceSet.put(reaperGroup, Boolean.TRUE);
+        }
+        this.referent = referent;
+        this.reaper = reaper;
+        reaperGroup.add(reaper);
+    }
 
-        private Reaper(AutoPointer pointer, Pointer ptr, IRubyObject proc, String methodName) {
-            super(pointer);
+    private static final class ReaperGroup extends WeakReferenceReaper<Object> implements Runnable {
+        private static int MAX_REAPERS_PER_GROUP = 100;
+        private int reaperCount;
+        private volatile Reaper head;
+        
+        ReaperGroup(Object referent) {
+            super(referent);
+        }
+        
+        boolean canAccept() {
+            return reaperCount < MAX_REAPERS_PER_GROUP;
+        }
+        
+        void add(Reaper r) {
+            ++reaperCount;
+            r.next = head;
+            head = r;
+        }
+        
+        public void run() {
+            referenceSet.remove(this);
+            Ruby runtime = null;
+            ThreadContext ctx = null;
+            Reaper r = head;
+            
+            while (r != null) {
+                if (!r.released && !r.unmanaged) {
+                    if (r.getRuntime() != runtime) {
+                        runtime = r.getRuntime();
+                        ctx = runtime.getCurrentContext();
+                    }
+                    r.dispose(ctx);
+                }
+                r = r.next;
+            }
+        } 
+    }
+
+    private static final class Reaper {
+        final Pointer pointer;
+        final IRubyObject proc;
+        final String methodName;
+        volatile Reaper next;
+        volatile boolean released;
+        volatile boolean unmanaged;
+
+
+        private Reaper(Pointer ptr, IRubyObject proc, String methodName) {
             this.pointer = ptr;
             this.proc = proc;
             this.methodName = methodName;
-            this.autorelease = true;
+        }
+        
+        final Ruby getRuntime() {
+            return proc.getRuntime();
+        }
+        
+        void dispose(ThreadContext context) {
+            proc.callMethod(context, methodName, pointer);
         }
 
-        public synchronized final void release(ThreadContext context, boolean always) {
-            referenceSet.remove(this);
-            if (autorelease || always) {
-                proc.callMethod(context, methodName, pointer);
+        public final void release(ThreadContext context) {
+            if (!released) {
+                released = true;
+                dispose(context);
             }
         }
 
-        public synchronized final void autorelease(boolean autorelease) {
-            if (!autorelease) {
-                referenceSet.remove(this);
-            } else {
-                referenceSet.putIfAbsent(this, Boolean.TRUE);
-            }
-            this.autorelease = autorelease;
-        }
-
-        public void run() {
-            release(pointer.getRuntime().getCurrentContext(), false);
+        public final void autorelease(boolean autorelease) {
+            this.unmanaged = !autorelease;
         }
     }
 }

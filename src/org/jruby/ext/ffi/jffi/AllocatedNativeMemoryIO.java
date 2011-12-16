@@ -85,8 +85,10 @@ final class AllocatedNativeMemoryIO extends BoundedNativeMemoryIO implements All
         allocation.free();
     }
 
-    public void setAutoRelease(boolean release) {
-        allocation.autorelease = release;
+    public void setAutoRelease(boolean autorelease) {
+        if (autorelease && !allocation.released) {
+            allocation.unmanaged = !autorelease;
+        }
     }
 
 
@@ -95,7 +97,7 @@ final class AllocatedNativeMemoryIO extends BoundedNativeMemoryIO implements All
      */
     private static final class AllocationGroup extends WeakReferenceReaper<Object> implements Runnable {
         public static final int MAX_BYTES_PER_BUCKET = 4096;
-        private MemoryAllocation head = null;
+        private volatile MemoryAllocation head = null;
         private long bytesUsed = 0;
         
         AllocationGroup(Object referent) {
@@ -116,7 +118,7 @@ final class AllocatedNativeMemoryIO extends BoundedNativeMemoryIO implements All
             referenceSet.remove(this);
             MemoryAllocation m = head;
             while (m != null) {
-                if (!m.released && m.autorelease) {
+                if (!m.unmanaged) {
                     m.dispose();
                 }
                 m = m.next;
@@ -129,9 +131,9 @@ final class AllocatedNativeMemoryIO extends BoundedNativeMemoryIO implements All
      */
     private static final class MemoryAllocation {
         private final long address;
-        boolean released;
-        boolean autorelease = true;
-        MemoryAllocation next;
+        volatile boolean released;
+        volatile boolean unmanaged;
+        volatile MemoryAllocation next;
 
         MemoryAllocation(long address) {
             this.address = address;
@@ -144,6 +146,7 @@ final class AllocatedNativeMemoryIO extends BoundedNativeMemoryIO implements All
         final void free() {
             if (!released) {
                 released = true;
+                unmanaged = true;
                 dispose();
             }
         }
