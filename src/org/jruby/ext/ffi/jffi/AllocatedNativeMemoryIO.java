@@ -4,13 +4,15 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import org.jruby.Ruby;
 import org.jruby.ext.ffi.AllocatedDirectMemoryIO;
-import org.jruby.util.PhantomReferenceReaper;
+import org.jruby.util.WeakReferenceReaper;
 
 final class AllocatedNativeMemoryIO extends BoundedNativeMemoryIO implements AllocatedDirectMemoryIO {
-    /** Keeps strong references to the MemoryHolder until cleanup */
-    private static final Map<MemoryHolder, Boolean> referenceSet = new ConcurrentHashMap<MemoryHolder, Boolean>();
+    /** Keeps strong references to the memory bucket until cleanup */
+    private static final Map<AllocationGroup, Boolean> referenceSet = new ConcurrentHashMap<AllocationGroup, Boolean>();
+    private static final ThreadLocal<AllocationGroup> currentBucket = new ThreadLocal<AllocationGroup>();
 
-    private final MemoryHolder holder;
+    private final MemoryAllocation allocation;
+    private final Object referent;
 
     /**
      * Allocates native memory
@@ -40,53 +42,109 @@ final class AllocatedNativeMemoryIO extends BoundedNativeMemoryIO implements All
         }
 
         try {
-            return new AllocatedNativeMemoryIO(runtime, address, size, align);
+            /*
+            * Instead of using a WeakReference per memory allocation to free the native memory, memory allocations
+            * are grouped together into a bucket with a reference to a common object which has a WeakReference.
+            *
+            * When all the MemoryIO instances are no longer referenced, the common object can be garbage collected
+            * and its WeakReference en-queued, and then the group of memory allocations will be freed in one hit.
+            *
+            * This reduces the overhead of automatically freed native memory allocations by about 70%
+            */
+            AllocationGroup allocationGroup = currentBucket.get();
+            Object referent = allocationGroup != null ? allocationGroup.get() : null;
+
+            if (referent == null || !allocationGroup.canAccept(size)) {
+                referent = new Object();
+                referenceSet.put(allocationGroup = new AllocationGroup(referent), Boolean.TRUE);
+                currentBucket.set(allocationGroup);
+            }
+
+            AllocatedNativeMemoryIO io = new AllocatedNativeMemoryIO(runtime, referent, address, size, align);
+            allocationGroup.add(io.allocation, size);
+
+            return io;
+
         } catch (Throwable t) {
             IO.freeMemory(address);
             throw new RuntimeException(t);
         }
     }
     
-    private AllocatedNativeMemoryIO(Ruby runtime, long address, int size, int align) {
+    private AllocatedNativeMemoryIO(Ruby runtime, Object referent, long address, int size, int align) {
         super(runtime, ((address - 1) & ~(align - 1)) + align, size);
-        referenceSet.put(holder = new MemoryHolder(this, address), Boolean.TRUE);
+        this.referent = referent;
+        this.allocation = new MemoryAllocation(address);
     }
 
     public void free() {
-        if (holder.released) {
+        if (allocation.released) {
             throw getRuntime().newRuntimeError("memory already freed");
         }
         
-        holder.free();
-        referenceSet.remove(holder); // No auto cleanup needed
+        allocation.free();
     }
 
     public void setAutoRelease(boolean release) {
-        holder.autorelease = release;
+        allocation.autorelease = release;
     }
 
-    private static final class MemoryHolder extends PhantomReferenceReaper<AllocatedNativeMemoryIO> implements Runnable {
 
-        private final long storage;
-        private volatile boolean released = false;
-        private volatile boolean autorelease = true;
+    /**
+     * Holder for a group of memory allocations.
+     */
+    private static final class AllocationGroup extends WeakReferenceReaper<Object> implements Runnable {
+        public static final int MAX_BYTES_PER_BUCKET = 4096;
+        private MemoryAllocation head = null;
+        private long bytesUsed = 0;
+        
+        AllocationGroup(Object referent) {
+            super(referent);
+        }
 
-        MemoryHolder(AllocatedNativeMemoryIO mem, long storage) {
-            super(mem);
-            this.storage = storage;
+        void add(MemoryAllocation m, int size) {
+            bytesUsed += size;
+            m.next = head;
+            head = m;
+        }
+
+        boolean canAccept(int size) {
+            return bytesUsed + size < MAX_BYTES_PER_BUCKET;
         }
 
         public final void run() {
             referenceSet.remove(this);
-            if (autorelease) {
-                free();
+            MemoryAllocation m = head;
+            while (m != null) {
+                if (!m.released && m.autorelease) {
+                    m.dispose();
+                }
+                m = m.next;
             }
+        }
+    }
+
+    /**
+     * Represents a single native memory allocation
+     */
+    private static final class MemoryAllocation {
+        private final long address;
+        boolean released;
+        boolean autorelease = true;
+        MemoryAllocation next;
+
+        MemoryAllocation(long address) {
+            this.address = address;
+        }
+
+        final void dispose() {
+            IO.freeMemory(address);
         }
 
         final void free() {
             if (!released) {
                 released = true;
-                IO.freeMemory(storage);
+                dispose();
             }
         }
     }
