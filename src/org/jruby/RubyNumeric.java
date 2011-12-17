@@ -118,6 +118,7 @@ public class RubyNumeric extends RubyObject {
         super(runtime, metaClass, useObjectSpace);
     }    
 
+    @Deprecated
     public RubyNumeric(Ruby runtime, RubyClass metaClass, boolean useObjectSpace, boolean canBeTainted) {
         super(runtime, metaClass, useObjectSpace, canBeTainted);
     }    

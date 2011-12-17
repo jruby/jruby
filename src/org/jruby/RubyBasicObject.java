@@ -227,7 +227,14 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * Path for objects that don't taint and don't enter objectspace.
      */
     public RubyBasicObject(RubyClass metaClass) {
+        assert metaClass != null: "NULL Metaclass!!?!?!";
+
         this.metaClass = metaClass;
+    }
+
+    @Deprecated
+    protected RubyBasicObject(Ruby runtime, RubyClass metaClass, boolean useObjectSpace, boolean canBeTainted) {
+        this(runtime, metaClass, useObjectSpace);
     }
 
     /**
@@ -235,13 +242,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * ObjectSpace even when it is on. (notably used by objects being
      * considered immediate, they'll always pass false here)
      */
-    protected RubyBasicObject(Ruby runtime, RubyClass metaClass, boolean useObjectSpace, boolean canBeTainted) {
-        this.metaClass = metaClass;
-
-        if (useObjectSpace) addToObjectSpace(runtime);
-    }
-
     protected RubyBasicObject(Ruby runtime, RubyClass metaClass, boolean useObjectSpace) {
+        assert metaClass != null: "NULL Metaclass!!?!?!";
+
         this.metaClass = metaClass;
 
         if (useObjectSpace) addToObjectSpace(runtime);

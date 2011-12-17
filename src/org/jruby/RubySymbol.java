@@ -77,7 +77,7 @@ public class RubySymbol extends RubyObject {
      *                       have been previously interned
      */
     private RubySymbol(Ruby runtime, String internedSymbol, ByteList symbolBytes) {
-        super(runtime, runtime.getSymbol(), false, false);
+        super(runtime, runtime.getSymbol(), false);
         // symbol string *must* be interned
 
         //        assert internedSymbol == internedSymbol.intern() : internedSymbol + " is not interned";

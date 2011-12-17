@@ -101,15 +101,16 @@ public class RubyObject extends RubyBasicObject {
         super(metaClass);
     }
 
+    @Deprecated
+    protected RubyObject(Ruby runtime, RubyClass metaClass, boolean useObjectSpace, boolean canBeTainted) {
+        super(runtime, metaClass, useObjectSpace, canBeTainted);
+    }
+
     /**
      * Path for objects who want to decide whether they don't want to be in
      * ObjectSpace even when it is on. (notably used by objects being
      * considered immediate, they'll always pass false here)
      */
-    protected RubyObject(Ruby runtime, RubyClass metaClass, boolean useObjectSpace, boolean canBeTainted) {
-        super(runtime, metaClass, useObjectSpace, canBeTainted);
-    }
-
     protected RubyObject(Ruby runtime, RubyClass metaClass, boolean useObjectSpace) {
         super(runtime, metaClass, useObjectSpace);
     }

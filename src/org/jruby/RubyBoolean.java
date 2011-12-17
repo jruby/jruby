@@ -47,9 +47,10 @@ import org.jruby.runtime.marshal.MarshalStream;
 @JRubyClass(name={"TrueClass", "FalseClass"})
 public class RubyBoolean extends RubyObject {
     
-    public RubyBoolean(Ruby runtime, boolean value) {
-        super(runtime, (value ? runtime.getTrueClass() : runtime.getFalseClass()), // Don't initialize with class
-                false, false); // Don't put in object space and don't taint
+    RubyBoolean(Ruby runtime, boolean value) {
+        super(runtime,
+                (value ? runtime.getTrueClass() : runtime.getFalseClass()),
+                false); // Don't put in object space
 
         if (!value) flags = FALSE_F;
     }
