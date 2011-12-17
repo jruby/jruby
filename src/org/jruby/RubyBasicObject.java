@@ -243,8 +243,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * considered immediate, they'll always pass false here)
      */
     protected RubyBasicObject(Ruby runtime, RubyClass metaClass, boolean useObjectSpace) {
-        assert metaClass != null: "NULL Metaclass!!?!?!";
-
         this.metaClass = metaClass;
 
         if (useObjectSpace) addToObjectSpace(runtime);
