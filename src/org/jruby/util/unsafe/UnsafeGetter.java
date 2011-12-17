@@ -26,40 +26,33 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util.unsafe;
 
+import sun.misc.*;
+
 import java.lang.reflect.Field;
 
-public class UnsafeFactory {
-    private static final Unsafe unsafe = loadUnsafe();
-    private static final boolean DEBUG = false;
+/**
+ * Wrapper for the sun.misc.Unsafe reflection dance.
+ */
+public class UnsafeGetter {
+    public static sun.misc.Unsafe getUnsafe() throws UnsafeInaccessibleException {
+        sun.misc.Unsafe _unsafe = unsafe;
+        if (_unsafe == null) throw new UnsafeInaccessibleException();
+        return _unsafe;
+    }
 
-    private static Unsafe loadUnsafe() {
-        Unsafe unsafe = null;
-        // first try our custom-generated Unsafe
-        try {
-            Class unsafeClass = Class.forName("org.jruby.util.unsafe.GeneratedUnsafe");
-            unsafe = (Unsafe)unsafeClass.newInstance();
-        } catch (Throwable ignore) {
-            if (DEBUG) ignore.printStackTrace();
-        }
-        
-        // then try Sun's Unsafe
+    static {
+        sun.misc.Unsafe _unsafe;
         try {
             Class unsafeClass = Class.forName("sun.misc.Unsafe");
             Field field = unsafeClass.getDeclaredField("theUnsafe");
             field.setAccessible(true);
-            // if we get here, the class and field exist; construct our Unsafe impl
-            // that calls it directly
-            unsafe = (Unsafe)Class.forName("org.jruby.util.unsafe.SunUnsafeWrapper").newInstance();
-        } catch (Throwable ignore) {
-            if (DEBUG) ignore.printStackTrace();
+            _unsafe = (sun.misc.Unsafe)field.get(null);
+        } catch (Exception e) {
+            _unsafe = null;
         }
-        
-        // else leave it null
-        if (DEBUG && unsafe == null) System.err.println("No Unsafe implementation available");
-        return unsafe;
+        unsafe = _unsafe;
     }
-
-    public static Unsafe getUnsafe() {
-        return unsafe;
-    }
+    
+    public static class UnsafeInaccessibleException extends Exception {}
+    private static final sun.misc.Unsafe unsafe;
 }
