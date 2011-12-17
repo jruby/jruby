@@ -341,13 +341,13 @@ public class LoadService {
     };
 
     private RequireState requireCommon(String requireName, boolean circularRequireWarning) {
-        try {
-            if (!requireLocks.lock(requireName)) {
-                if (circularRequireWarning && runtime.isVerbose() && runtime.is1_9()) {
-                    warnCircularRequire(requireName);
-                }
-                return RequireState.CIRCULAR;
+        if (!requireLocks.lock(requireName)) {
+            if (circularRequireWarning && runtime.isVerbose() && runtime.is1_9()) {
+                warnCircularRequire(requireName);
             }
+            return RequireState.CIRCULAR;
+        }
+        try {
             if (!runtime.getProfile().allowRequire(requireName)) {
                 throw runtime.newLoadError("no such file to load -- " + requireName);
             }
