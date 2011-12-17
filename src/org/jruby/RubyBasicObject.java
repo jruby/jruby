@@ -291,17 +291,17 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *
      * <ul>
      *  <li>{@link #FALSE_F}</li>
-     *  <li>{@link NIL_F}</li>
-     *  <li>{@link FROZEN_F}</li>
-     *  <li>{@link TAINTED_F}</li>
-     *  <li>{@link USER0_F}</li>
-     *  <li>{@link USER1_F}</li>
-     *  <li>{@link USER2_F}</li>
-     *  <li>{@link USER3_F}</li>
-     *  <li>{@link USER4_F}</li>
-     *  <li>{@link USER5_F}</li>
-     *  <li>{@link USER6_F}</li>
-     *  <li>{@link USER7_F}</li>
+     *  <li>{@link #NIL_F}</li>
+     *  <li>{@link #FROZEN_F}</li>
+     *  <li>{@link #TAINTED_F}</li>
+     *  <li>{@link #USER0_F}</li>
+     *  <li>{@link #USER1_F}</li>
+     *  <li>{@link #USER2_F}</li>
+     *  <li>{@link #USER3_F}</li>
+     *  <li>{@link #USER4_F}</li>
+     *  <li>{@link #USER5_F}</li>
+     *  <li>{@link #USER6_F}</li>
+     *  <li>{@link #USER7_F}</li>
      * </ul>
      *
      * @param flag the actual flag to set or unset.
@@ -321,17 +321,17 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *
      * <ul>
      *  <li>{@link #FALSE_F}</li>
-     *  <li>{@link NIL_F}</li>
-     *  <li>{@link FROZEN_F}</li>
-     *  <li>{@link TAINTED_F}</li>
-     *  <li>{@link USER0_F}</li>
-     *  <li>{@link USER1_F}</li>
-     *  <li>{@link USER2_F}</li>
-     *  <li>{@link USER3_F}</li>
-     *  <li>{@link USER4_F}</li>
-     *  <li>{@link USER5_F}</li>
-     *  <li>{@link USER6_F}</li>
-     *  <li>{@link USER7_F}</li>
+     *  <li>{@link #NIL_F}</li>
+     *  <li>{@link #FROZEN_F}</li>
+     *  <li>{@link #TAINTED_F}</li>
+     *  <li>{@link #USER0_F}</li>
+     *  <li>{@link #USER1_F}</li>
+     *  <li>{@link #USER2_F}</li>
+     *  <li>{@link #USER3_F}</li>
+     *  <li>{@link #USER4_F}</li>
+     *  <li>{@link #USER5_F}</li>
+     *  <li>{@link #USER6_F}</li>
+     *  <li>{@link #USER7_F}</li>
      * </ul>
      *
      * @param flag the flag to get
@@ -522,10 +522,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     /**
-     * Sets whether this object is frozen or not. Shortcut for doing
-     * setFlag(FROZEN_F, frozen).
+     * Sets whether this object is untrusted or not. Shortcut for doing
+     * setFlag(UNTRUSTED_F, untrusted).
      *
-     * @param frozen should this object be frozen?
+     * @param untrusted should this object be frozen?
      */
     public void setUntrusted(boolean untrusted) {
         if (untrusted) {
@@ -810,7 +810,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     /**
-     * @see IRubyObject.toJava
+     * @see IRubyObject#toJava
      */
     public Object toJava(Class target) {
         // for callers that unconditionally pass null retval type (JRUBY-4737)
@@ -958,7 +958,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
 
     /**
-     * @see org.jruby.runtime.builtin.IRubyObject#dataWrapStruct()
+     * @see org.jruby.runtime.builtin.IRubyObject#dataWrapStruct(Object)
      */
     public synchronized void dataWrapStruct(Object obj) {
         if (obj == null) {
