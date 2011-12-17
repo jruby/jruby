@@ -67,7 +67,7 @@ class MiniTest::Unit::TestCase
     @__load_excludes__ ||=
       begin
         if name and not name.empty? then
-          file = File.join EXCLUDE_DIR, "#{name}.rb"
+          file = File.join EXCLUDE_DIR, "#{name.gsub(/:/, '@')}.rb"
           if File.exist? file
             instance_eval File.read(file), file, 1
             
