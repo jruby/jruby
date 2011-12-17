@@ -17,6 +17,7 @@ import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
 
+import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.internal.runtime.ValueAccessor;
@@ -28,6 +29,7 @@ public class IRBConsole extends JFrame {
 
     public static void main(final String[] args) {
         final IRBConsole console = new IRBConsole("JRuby IRB Console");
+        final ArrayList<String> list = new ArrayList(Arrays.asList(args));
 
         console.getContentPane().setLayout(new BorderLayout());
         console.setSize(700, 600);
@@ -56,10 +58,20 @@ public class IRBConsole extends JFrame {
         });
 
         final RubyInstanceConfig config = new RubyInstanceConfig() {{
+            CompatVersion compat = CompatVersion.RUBY1_8;
+            if (args.length > 0) {
+                if (args[0].equals("1.8")) {
+                    list.remove(0);
+                } else if (args[0].equals("1.9")) {
+                    compat = CompatVersion.RUBY1_9;
+                    list.remove(0);
+                }
+            }
             setInput(tar.getInputStream());
             setOutput(new PrintStream(tar.getOutputStream()));
             setError(new PrintStream(tar.getOutputStream()));
-            setArgv(args);
+            setArgv(list.toArray(new String[0]));
+            setCompatVersion(compat);
         }};
         final Ruby runtime = Ruby.newInstance(config);
 
