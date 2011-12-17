@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
@@ -1217,33 +1218,33 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     protected final Object[] getVariableTableForRead() {
         return varTable;
     }
+    
+    private static final AtomicReferenceFieldUpdater VARTABLE_UPDATER =
+            AtomicReferenceFieldUpdater.newUpdater(RubyBasicObject.class, Object[].class, "varTable");
 
     /**
      * Get variable table for write purposes. Initializes if uninitialized, and
      * resizes if necessary.
      */
     protected final Object[] getVariableTableForWrite(int index) {
-        Object[] myVarTable = varTable;
-        if (myVarTable == null) {
-            synchronized (this) {
-                myVarTable = varTable;
-                if (myVarTable == null) {
-                    if (DEBUG) LOG.debug("allocating varTable with size {}", getMetaClass().getRealClass().getVariableTableSizeWithExtras());
-                    varTable = myVarTable = new Object[getMetaClass().getRealClass().getVariableTableSizeWithExtras()];
-                }
+        while (true) {
+            Object[] myVarTable = varTable;
+            Object[] newTable;
+
+            if (myVarTable == null) {
+                newTable = new Object[getMetaClass().getRealClass().getVariableTableSizeWithExtras()];
+            } else if (myVarTable.length <= index) {
+                newTable = new Object[getMetaClass().getRealClass().getVariableTableSizeWithExtras()];
+                System.arraycopy(myVarTable, 0, newTable, 0, myVarTable.length);
+            } else {
+                return myVarTable;
             }
-        } else if (myVarTable.length <= index) {
-            synchronized (this) {
-                myVarTable = varTable;
-                if (myVarTable.length <= index) {
-                    if (DEBUG) LOG.debug("resizing from {} to {}", myVarTable.length, getMetaClass().getRealClass().getVariableTableSizeWithExtras());
-                    Object[] newTable = new Object[getMetaClass().getRealClass().getVariableTableSizeWithExtras()];
-                    System.arraycopy(myVarTable, 0, newTable, 0, myVarTable.length);
-                    varTable = myVarTable = newTable;
-                }
+
+            // proceed with atomic update of table, or retry
+            if (VARTABLE_UPDATER.compareAndSet(this, myVarTable, newTable)) {
+                return newTable;
             }
         }
-        return myVarTable;
     }
 
     public Object getVariable(int index) {
