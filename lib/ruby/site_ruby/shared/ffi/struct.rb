@@ -51,14 +51,6 @@ module FFI
 
   
   class Struct
-
-    def size
-      self.class.size
-    end
-
-    def alignment
-      self.class.alignment
-    end
     alias_method :align, :alignment
 
     def offset_of(name)
@@ -86,21 +78,13 @@ module FFI
       pointer
     end
 
-    def self.size
-      defined?(@layout) ? @layout.size : defined?(@size) ? @size : 0
-    end
-
     def self.size=(size)
       raise ArgumentError, "Size already set" if defined?(@size) || defined?(@layout)
       @size = size
     end
 
-    def self.alignment
-      @layout.alignment
-    end
-
     def self.align
-      @layout.alignment
+      self.alignment
     end
 
     def self.members

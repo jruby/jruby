@@ -2,10 +2,8 @@
 package org.jruby.ext.ffi;
 
 import java.nio.ByteOrder;
-import org.jruby.Ruby;
-import org.jruby.RubyClass;
-import org.jruby.RubyModule;
-import org.jruby.RubyObject;
+
+import org.jruby.*;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
@@ -187,6 +185,25 @@ public class Struct extends RubyObject implements StructLayout.Storage {
         return allocateStruct(context, klass, Buffer.IN | Buffer.OUT);
     }
 
+    @JRubyMethod(name = { "size" }, meta = true)
+    public static IRubyObject size(ThreadContext context, IRubyObject structClass) {
+        IRubyObject obj = ((RubyClass) structClass).getInstanceVariable("@layout");
+        if (obj instanceof StructLayout) {
+            return ((StructLayout) obj).size(context);
+
+        } else {
+            obj = ((RubyClass) structClass).getInstanceVariable("@size");
+        }
+
+        return obj instanceof RubyFixnum ? obj : RubyFixnum.zero(context.getRuntime());
+    }
+
+    @JRubyMethod(name = { "alignment" }, meta = true)
+    public static IRubyObject alignment(ThreadContext context, IRubyObject structClass) {
+        return getStructLayout(context.getRuntime(), structClass).alignment(context);
+    }
+
+
     @JRubyMethod(name = "[]")
     public IRubyObject getFieldValue(ThreadContext context, IRubyObject fieldName) {
         return layout.getValue(context, fieldName, this, getMemory());
@@ -212,6 +229,16 @@ public class Struct extends RubyObject implements StructLayout.Storage {
     @JRubyMethod(name = "members")
     public IRubyObject members(ThreadContext context) {
         return layout.members(context);
+    }
+
+    @JRubyMethod(name = "size")
+    public IRubyObject size(ThreadContext context) {
+        return layout.size(context);
+    }
+
+    @JRubyMethod(name = { "alignment" })
+    public IRubyObject alignment(ThreadContext context) {
+        return layout.alignment(context);
     }
 
     @JRubyMethod(name="null?")
