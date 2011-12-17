@@ -83,13 +83,15 @@ public class IRMethod extends IRScope {
         return localVars.getVariable(name);
     }
 
+    public LocalVariable getNewLocalVariable(String name) {
+        LocalVariable lvar = new LocalVariable(name, 0, localVars.nextSlot);
+        localVars.putVariable(name, lvar);
+        return lvar;
+    }
+
     public LocalVariable getLocalVariable(String name, int scopeDepth) {
         LocalVariable lvar = findExistingLocalVariable(name);
-        if (lvar == null) {
-            lvar = new LocalVariable(name, scopeDepth, localVars.nextSlot);
-            localVars.putVariable(name, lvar);
-        }
-
+        if (lvar == null) lvar = getNewLocalVariable(name);
         return lvar;
     }
 

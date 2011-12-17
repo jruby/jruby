@@ -150,7 +150,7 @@ public class IRClosure extends IRScope {
         else return getLexicalParent().findExistingLocalVariable(name);
     }
 
-    public LocalVariable getNewLocalVariable(String name, int scopeDepth) {
+    public LocalVariable getNewLocalVariable(String name) {
         LocalVariable lvar = new ClosureLocalVariable(this, name, 0, localVars.nextSlot);
         localVars.putVariable(name, lvar);
         return lvar;
@@ -161,7 +161,7 @@ public class IRClosure extends IRScope {
 
         LocalVariable lvar = findExistingLocalVariable(name);
         if (lvar == null) {
-            lvar = getNewLocalVariable(name, scopeDepth);
+            lvar = getNewLocalVariable(name);
         } else if (lvar.getScopeDepth() != scopeDepth) {
             // Create a copy of the variable usable at a different scope depth
             lvar = lvar.cloneForDepth(scopeDepth);

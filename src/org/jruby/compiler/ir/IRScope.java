@@ -601,6 +601,10 @@ public abstract class IRScope {
 
     public abstract LocalVariable getLocalVariable(String name, int depth);
 
+    public LocalVariable getNewLocalVariable(String name) {
+        throw new RuntimeException("getNewLocalVariable should be called for: " + this.getClass().getName());
+    }
+
     protected void initEvalScopeVariableAllocator(boolean reset) {
         if (reset || evalScopeVars == null) evalScopeVars = new LocalVariableAllocator();
     }

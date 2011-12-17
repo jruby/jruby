@@ -3,6 +3,7 @@ package org.jruby.compiler.ir;
 import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.BlockArgNode;
+import org.jruby.ast.DAsgnNode;
 import org.jruby.ast.IterNode;
 import org.jruby.ast.LocalAsgnNode;
 import org.jruby.ast.ListNode;
@@ -19,6 +20,7 @@ import org.jruby.compiler.ir.operands.UndefinedValue;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.instructions.BNEInstr;
 import org.jruby.compiler.ir.instructions.CopyInstr;
+import org.jruby.compiler.ir.instructions.GetArrayInstr;
 import org.jruby.compiler.ir.instructions.LabelInstr;
 import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
 import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
@@ -31,9 +33,16 @@ import org.jruby.compiler.ir.instructions.jruby.ToAryInstr;
 
 public class IRBuilder19 extends IRBuilder {
     protected LocalVariable getBlockArgVariable(IRScope s, String name, int depth) {
+        throw new NotCompilableException("Cannot ask for block-arg variable in 1.9 mode");
+    }
+
+    public void buildVersionSpecificBlockArgsAssignment(Node node, IRScope s, Operand argsArray, int argIndex, boolean isMasgnRoot, boolean isClosureArg, boolean isSplat) {
+		 throw new NotCompilableException("Should not have come here for block args assignment in 1.9 mode: " + node);
+	 }
+
+    protected LocalVariable getArgVariable(IRScope s, String name, int depth) {
         // For non-loops, this name will override any name that exists in outer scopes
-        IRClosure cl = (IRClosure)s;
-        return cl.isForLoopBody() ? cl.getLocalVariable(name, depth) : cl.getNewLocalVariable(name, depth);
+        return ((s instanceof IRClosure) && ((IRClosure)s).isForLoopBody()) ? s.getLocalVariable(name, depth) : s.getNewLocalVariable(name);
     }
 
     public void receiveRequiredArg(Node node, IRScope s, int argIndex, boolean post, int totalRequired, int totalOptional) {
@@ -42,9 +51,9 @@ public class IRBuilder19 extends IRBuilder {
             case ARGUMENTNODE: {
                 ArgumentNode a = (ArgumentNode)node;
                 if (post) {
-                    s.addInstr(new ReceiveRequiredArgInstr(s.getLocalVariable(a.getName(), 0), argIndex, totalRequired, totalOptional));
+                    s.addInstr(new ReceiveRequiredArgInstr(s.getNewLocalVariable(a.getName()), argIndex, totalRequired, totalOptional));
                 } else {
-                    s.addInstr(new ReceiveArgumentInstruction(s.getLocalVariable(a.getName(), 0), argIndex));
+                    s.addInstr(new ReceiveArgumentInstruction(s.getNewLocalVariable(a.getName()), argIndex));
                 }
                 break;
             }
@@ -73,14 +82,15 @@ public class IRBuilder19 extends IRBuilder {
 
         s.getStaticScope().setArities(required, opt, rest);
 
-        // FIXME: Expensive to this explicitly?  But, 2 advantages:
-        // (a) on inlining, we'll be able to get rid of these checks in almost every case.
-        // (b) compiler to bytecode will anyway generate this and this is explicit.
-        // For now, we are going explicit instruction route.  But later, perhaps can make this implicit in the method setup preamble?  
-        if (s instanceof IRMethod) s.addInstr(new CheckArityInstr(required, opt, rest));
-
-        // self = args[0]
-        s.addInstr(new ReceiveSelfInstruction(getSelf(s)));
+        // For closures, we don't need the check arity call + self would have been received already
+        if (s instanceof IRMethod) {
+            // FIXME: Expensive to this explicitly?  But, 2 advantages:
+            // (a) on inlining, we'll be able to get rid of these checks in almost every case.
+            // (b) compiler to bytecode will anyway generate this and this is explicit.
+            // For now, we are going explicit instruction route.  But later, perhaps can make this implicit in the method setup preamble?  
+            s.addInstr(new CheckArityInstr(required, opt, rest));
+            s.addInstr(new ReceiveSelfInstruction(getSelf(s)));
+        }
 
         // Other args begin at index 0
         int argIndex = 0;
@@ -102,7 +112,7 @@ public class IRBuilder19 extends IRBuilder {
                 // Jump to 'l' if this arg is not null.  If null, fall through and build the default value!
                 Label l = s.getNewLabel();
                 OptArgNode n = (OptArgNode)optArgs.get(j);
-                Variable av = s.getLocalVariable(n.getName(), 0);
+                Variable av = s.getNewLocalVariable(n.getName());
                 // You need at least required+j+1 incoming args for this opt arg to get an arg at all
                 s.addInstr(new ReceiveOptArgInstr(av, argIndex, required+j+1));
                 s.addInstr(BNEInstr.create(av, UndefinedValue.UNDEFINED, l)); // if 'av' is not undefined, go to default
@@ -122,7 +132,7 @@ public class IRBuilder19 extends IRBuilder {
             // You need at least required+opt+1 incoming args for the rest arg to get any args at all
             // If it is going to get something, then it should ignore required+opt args from the beginning
             // because they have been accounted for already.
-            s.addInstr(new ReceiveRestArgInstr(s.getLocalVariable(argName, 0), argIndex, required+opt+1, required+opt));
+            s.addInstr(new ReceiveRestArgInstr(s.getNewLocalVariable(argName), argIndex, required+opt+1, required+opt));
             argIndex++;
         }
 
@@ -136,7 +146,7 @@ public class IRBuilder19 extends IRBuilder {
     public void receiveClosureArg(BlockArgNode blockVarNode, IRScope s) {
         Variable blockVar = null;
         if (blockVarNode != null) {
-            blockVar = s.getLocalVariable(blockVarNode.getName(), 0);
+            blockVar = s.getNewLocalVariable(blockVarNode.getName());
             s.addInstr(new ReceiveClosureInstr(blockVar));
         }
 
@@ -171,6 +181,46 @@ public class IRBuilder19 extends IRBuilder {
         receiveClosureArg(argsNode.getBlock(), s);
     }
 
+    protected void receiveArg(IRScope s, Variable v, Operand argsArray, int argIndex, boolean isSplat) {
+        // We are in a nested receive situation -- when we are not at the root of a masgn tree
+        // Ex: We are trying to receive (b,c) in this example: "|a, (b,c), d| = ..."
+    }
+
+    // This method is called to build arguments
+    public void buildArgsMasgn(Node node, IRScope s, Operand argsArray, int argIndex, boolean isMasgnRoot, boolean isSplat) {
+        Variable v;
+        switch (node.getNodeType()) {
+            case DASGNNODE: {
+                DAsgnNode dynamicAsgn = (DAsgnNode) node;
+                v = getArgVariable((IRClosure)s, dynamicAsgn.getName(), dynamicAsgn.getDepth());
+                s.addInstr(new GetArrayInstr(v, argsArray, argIndex, isSplat));
+                break;
+            }
+            case LOCALASGNNODE: {
+                LocalAsgnNode localVariable = (LocalAsgnNode) node;
+                int depth = localVariable.getDepth();
+                v = getArgVariable((IRClosure)s, localVariable.getName(), depth);
+                s.addInstr(new GetArrayInstr(v, argsArray, argIndex, isSplat));
+                break;
+            }
+            case MULTIPLEASGN19NODE: {
+                Variable oldArgs = null;
+                MultipleAsgn19Node childNode = (MultipleAsgn19Node) node;
+                if (!isMasgnRoot) {
+                    v = s.getNewTemporaryVariable();
+                    s.addInstr(new GetArrayInstr(v, argsArray, argIndex, isSplat));
+                    s.addInstr(new ToAryInstr(v, v, BooleanLiteral.FALSE));
+                    argsArray = v;
+                }
+                // Build
+                buildMultipleAsgn19Assignment(childNode, s, argsArray, null);
+                break;
+            }
+            default:
+                throw new NotCompilableException("Shouldn't get here: " + node);
+        }
+    }
+
     // SSS: This method is called both for regular multiple assignment as well as argument passing
     //
     // Ex: a,b,*c=v  is a regular assignment and in this case, the "values" operand will be non-null
@@ -184,7 +234,7 @@ public class IRBuilder19 extends IRBuilder {
             ListNode headNode = (ListNode) sourceArray;
             for (Node an: headNode.childNodes()) {
                 if (values == null) {
-                    buildBlockArgsAssignment(an, s, argsArray, i, false, false, false);
+                    buildArgsMasgn(an, s, argsArray, i, false, false);
                 } else {
                     buildAssignment(an, s, values, i, false);
                 }
@@ -202,32 +252,31 @@ public class IRBuilder19 extends IRBuilder {
         } else if (values != null) {
             buildAssignment(argsNode, s, values, i, true); // rest of the argument array!
         } else {
-            buildBlockArgsAssignment(argsNode, s, argsArray, i, false, false, true); // rest of the argument array!
+            buildArgsMasgn(argsNode, s, argsArray, i, false, true); // rest of the argument array!
         }
 
         // SSS FIXME: Deal with post as well
     }
 
+	 // Non-arg masgn
     public Operand buildMultipleAsgn19(MultipleAsgn19Node multipleAsgnNode, IRScope s) {
         Operand  values = build(multipleAsgnNode.getValueNode(), s);
         Variable ret = getValueInTemporaryVariable(s, values);
+        s.addInstr(new ToAryInstr(ret, ret, BooleanLiteral.FALSE));
         buildMultipleAsgn19Assignment(multipleAsgnNode, s, null, ret);
         return ret;
     }
 
+	 // Non-arg masgn (actually a nested masgn)
     public void buildVersionSpecificAssignment(Node node, IRScope s, Variable v) {
         switch (node.getNodeType()) {
         case MULTIPLEASGN19NODE: {
             s.addInstr(new ToAryInstr(v, v, BooleanLiteral.FALSE));
-            buildMultipleAsgn19Assignment((MultipleAsgn19Node)node, s, v, null);
+            buildMultipleAsgn19Assignment((MultipleAsgn19Node)node, s, null, v);
             break;
         }
         default: 
             throw new NotCompilableException("Can't build assignment node: " + node);
         }
     }
-
-    public void buildVersionSpecificBlockArgsAssignment(Node node, IRScope s, Operand argsArray, int argIndex, boolean isMasgnRoot, boolean isClosureArg, boolean isSplat) {
-		 throw new NotCompilableException("Should not have come here for block args assignment in 1.9 mode: " + node);
-	 }
 }
