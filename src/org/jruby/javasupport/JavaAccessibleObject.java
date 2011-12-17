@@ -78,7 +78,7 @@ public abstract class JavaAccessibleObject extends RubyObject {
 
     @JRubyMethod(name = "accessible?")
     public RubyBoolean isAccessible() {
-        return new RubyBoolean(getRuntime(), accessibleObject().isAccessible());
+        return RubyBoolean.newBoolean(getRuntime(), accessibleObject().isAccessible());
     }
 
     @JRubyMethod(name = "accessible=")
