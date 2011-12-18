@@ -597,7 +597,7 @@ public abstract class IRScope {
         hasUnusedImplicitBlockArg = true;
     }
 
-    public abstract LocalVariable findExistingLocalVariable(String name);
+    public abstract LocalVariable findExistingLocalVariable(String name, int depth);
 
     public abstract LocalVariable getLocalVariable(String name, int depth);
 

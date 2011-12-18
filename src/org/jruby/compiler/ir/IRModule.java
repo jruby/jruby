@@ -162,7 +162,7 @@ public class IRModule extends IRScope {
     }
 
     public LocalVariable getLocalVariable(String name, int scopeDepth) {
-        LocalVariable lvar = findExistingLocalVariable(name);
+        LocalVariable lvar = findExistingLocalVariable(name, scopeDepth);
         if (lvar == null) {
             lvar = new LocalVariable(name, scopeDepth, localVars.nextSlot);
             localVars.putVariable(name, lvar);
@@ -179,7 +179,7 @@ public class IRModule extends IRScope {
     }
 
     @Override
-    public LocalVariable findExistingLocalVariable(String name) {
+    public LocalVariable findExistingLocalVariable(String name, int scopeDepth) {
         return localVars.getVariable(name);
     }
     

@@ -79,7 +79,7 @@ public class IRMethod extends IRScope {
         return callArgs.toArray(new Operand[callArgs.size()]);
     }
 
-    public LocalVariable findExistingLocalVariable(String name) {
+    public LocalVariable findExistingLocalVariable(String name, int scopeDepth) {
         return localVars.getVariable(name);
     }
 
@@ -90,7 +90,7 @@ public class IRMethod extends IRScope {
     }
 
     public LocalVariable getLocalVariable(String name, int scopeDepth) {
-        LocalVariable lvar = findExistingLocalVariable(name);
+        LocalVariable lvar = findExistingLocalVariable(name, scopeDepth);
         if (lvar == null) lvar = getNewLocalVariable(name);
         return lvar;
     }

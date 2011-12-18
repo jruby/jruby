@@ -144,10 +144,11 @@ public class IRClosure extends IRScope {
         return this.hasBeenInlined;
     }
 
-    public LocalVariable findExistingLocalVariable(String name) {
+    public LocalVariable findExistingLocalVariable(String name, int scopeDepth) {
         LocalVariable lvar = localVars.getVariable(name);
         if (lvar != null) return lvar;
-        else return getLexicalParent().findExistingLocalVariable(name);
+        else if (scopeDepth > 0) return getLexicalParent().findExistingLocalVariable(name, scopeDepth - 1);
+        else return null;
     }
 
     public LocalVariable getNewLocalVariable(String name) {
@@ -159,7 +160,7 @@ public class IRClosure extends IRScope {
     public LocalVariable getLocalVariable(String name, int scopeDepth) {
         if (isForLoopBody) return getLexicalParent().getLocalVariable(name, scopeDepth);
 
-        LocalVariable lvar = findExistingLocalVariable(name);
+        LocalVariable lvar = findExistingLocalVariable(name, scopeDepth);
         if (lvar == null) {
             lvar = getNewLocalVariable(name);
         } else if (lvar.getScopeDepth() != scopeDepth) {
