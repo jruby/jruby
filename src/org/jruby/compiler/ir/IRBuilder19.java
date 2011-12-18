@@ -4,6 +4,7 @@ import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.BlockArgNode;
 import org.jruby.ast.DAsgnNode;
+import org.jruby.ast.EncodingNode;
 import org.jruby.ast.IterNode;
 import org.jruby.ast.LocalAsgnNode;
 import org.jruby.ast.ListNode;
@@ -25,6 +26,7 @@ import org.jruby.compiler.ir.instructions.LabelInstr;
 import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
 import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
 import org.jruby.compiler.ir.instructions.ReceiveSelfInstruction;
+import org.jruby.compiler.ir.instructions.ruby19.GetEncodingInstr;
 import org.jruby.compiler.ir.instructions.ruby19.ReceiveOptArgInstr;
 import org.jruby.compiler.ir.instructions.ruby19.ReceiveRestArgInstr;
 import org.jruby.compiler.ir.instructions.ruby19.ReceiveRequiredArgInstr;
@@ -32,13 +34,27 @@ import org.jruby.compiler.ir.instructions.jruby.CheckArityInstr;
 import org.jruby.compiler.ir.instructions.jruby.ToAryInstr;
 
 public class IRBuilder19 extends IRBuilder {
+    protected Operand buildVersionSpecificNodes(Node node, IRScope s) {
+        switch (node.getNodeType()) {
+            case ENCODINGNODE: return buildEncoding((EncodingNode)node, s);
+            case MULTIPLEASGN19NODE: return buildMultipleAsgn19((MultipleAsgn19Node) node, s);
+            default: throw new NotCompilableException("Unknown node encountered in builder: " + node.getClass());
+        }
+    }
+
+    public Operand buildEncoding(EncodingNode node, IRScope s) {
+        Variable ret = s.getNewTemporaryVariable();
+        s.addInstr(new GetEncodingInstr(ret, node.getEncoding()));
+        return ret;
+    }
+
     protected LocalVariable getBlockArgVariable(IRScope s, String name, int depth) {
         throw new NotCompilableException("Cannot ask for block-arg variable in 1.9 mode");
     }
 
     public void buildVersionSpecificBlockArgsAssignment(Node node, IRScope s, Operand argsArray, int argIndex, boolean isMasgnRoot, boolean isClosureArg, boolean isSplat) {
-		 throw new NotCompilableException("Should not have come here for block args assignment in 1.9 mode: " + node);
-	 }
+       throw new NotCompilableException("Should not have come here for block args assignment in 1.9 mode: " + node);
+    }
 
     protected LocalVariable getArgVariable(IRScope s, String name, int depth) {
         // For non-loops, this name will override any name that exists in outer scopes
@@ -258,7 +274,7 @@ public class IRBuilder19 extends IRBuilder {
         // SSS FIXME: Deal with post as well
     }
 
-	 // Non-arg masgn
+    // Non-arg masgn
     public Operand buildMultipleAsgn19(MultipleAsgn19Node multipleAsgnNode, IRScope s) {
         Operand  values = build(multipleAsgnNode.getValueNode(), s);
         Variable ret = getValueInTemporaryVariable(s, values);
@@ -267,7 +283,7 @@ public class IRBuilder19 extends IRBuilder {
         return ret;
     }
 
-	 // Non-arg masgn (actually a nested masgn)
+    // Non-arg masgn (actually a nested masgn)
     public void buildVersionSpecificAssignment(Node node, IRScope s, Variable v) {
         switch (node.getNodeType()) {
         case MULTIPLEASGN19NODE: {

@@ -135,6 +135,7 @@ public enum Operation {
     THREAD_POLL(OpFlags.f_has_side_effect),
     CONST_MISSING(OpFlags.f_can_raise_exception),
     ENSURE_RUBY_ARRAY(0),
+    GET_ENCODING(0),
 
     /** for splitting calls into method-lookup and call -- unused **/
     METHOD_LOOKUP(0),

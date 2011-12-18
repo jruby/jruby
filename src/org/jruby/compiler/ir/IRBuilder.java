@@ -35,8 +35,8 @@ import org.jruby.ast.DStrNode;
 import org.jruby.ast.DVarNode;
 import org.jruby.ast.DefinedNode;
 import org.jruby.ast.DotNode;
-import org.jruby.ast.EvStrNode;
 import org.jruby.ast.EnsureNode;
+import org.jruby.ast.EvStrNode;
 import org.jruby.ast.FCallNode;
 import org.jruby.ast.FixnumNode;
 import org.jruby.ast.FlipNode;
@@ -95,7 +95,6 @@ import org.jruby.ast.ForNode;
 import org.jruby.ast.LiteralNode;
 import org.jruby.ast.ModuleNode;
 import org.jruby.ast.MultipleAsgnNode;
-import org.jruby.ast.MultipleAsgn19Node;
 import org.jruby.ast.OpAsgnNode;
 import org.jruby.ast.OpElementAsgnNode;
 import org.jruby.ast.PreExeNode;
@@ -550,7 +549,6 @@ public class IRBuilder {
             case MATCHNODE: return buildMatch((MatchNode) node, s);
             case MODULENODE: return buildModule((ModuleNode) node, s);
             case MULTIPLEASGNNODE: return buildMultipleAsgn((MultipleAsgnNode) node, s); // Only for 1.8
-            case MULTIPLEASGN19NODE: return buildMultipleAsgn19((MultipleAsgn19Node) node, s); // Only for 1.9
             case NEWLINENODE: return buildNewline((NewlineNode) node, s);
             case NEXTNODE: return buildNext((NextNode) node, s);
             case NTHREFNODE: return buildNthRef((NthRefNode) node, s);
@@ -591,8 +589,12 @@ public class IRBuilder {
             case YIELDNODE: return buildYield((YieldNode) node, s);
             case ZARRAYNODE: return buildZArray(node, s);
             case ZSUPERNODE: return buildZSuper((ZSuperNode) node, s);
-            default: throw new NotCompilableException("Unknown node encountered in builder: " + node.getClass());
+            default: return buildVersionSpecificNodes(node, s);
         }
+    }
+
+    protected Operand buildVersionSpecificNodes(Node node, IRScope s) {
+        throw new NotCompilableException("Unknown node encountered in builder: " + node.getClass());
     }
 
     protected Variable getSelf(IRScope s) {
@@ -2443,10 +2445,6 @@ public class IRBuilder {
         if (rv != null) m.addInstr(new ReturnInstr(rv));
 
         return ret;
-    }
-
-    public Operand buildMultipleAsgn19(MultipleAsgn19Node multipleAsgnNode, IRScope s) {
-        throw new NotCompilableException("Encountered 1.9 multiple assignment node in ruby 1.8 IR builder.");
     }
 
     public Operand buildMultipleAsgn(MultipleAsgnNode multipleAsgnNode, IRScope s) {
