@@ -10,6 +10,7 @@ import org.jruby.compiler.ir.compiler_pass.CompilerPass;
 import org.jruby.compiler.ir.instructions.ReceiveSelfInstruction;
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.parser.StaticScope;
+import org.jruby.parser.IRStaticScope;
 
 public class IRModule extends IRScope {
     private static Map<String, IRClass> coreClasses;
@@ -36,7 +37,10 @@ public class IRModule extends IRScope {
     public IRModule(IRScope lexicalParent, String name, StaticScope scope) {
         super(lexicalParent, name, scope);
         
-        updateVersion();
+        if (!IRBuilder.inIRGenOnlyMode()) {
+            if (scope != null) ((IRStaticScope)scope).setIRScope(this);
+            updateVersion();
+        }
     }    
 
     static private IRClass addCoreClass(String name, IRScope parent, String[] coreMethods, StaticScope staticScope) {
