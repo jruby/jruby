@@ -16,6 +16,15 @@ public class InterpretedIRBlockBody19 extends InterpretedIRBlockBody {
     }
 
     private IRubyObject[] convertValueIntoArgArray(ThreadContext context, IRubyObject value, boolean isArray) {
+        // Eliminate the additional array-wrap when arrays are being passed in
+        if (isArray) {
+            RubyArray valArray = (RubyArray)value;
+            if (valArray.size() == 1) {
+                value = valArray.eltInternal(0);
+                isArray = false;
+            }
+        }
+
         int blockArity = arity().getValue();
         switch (blockArity) {
             case 0  : return IRubyObject.NULL_ARRAY;

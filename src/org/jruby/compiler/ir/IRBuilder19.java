@@ -2,6 +2,7 @@ package org.jruby.compiler.ir;
 
 import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.ArgsNode;
+import org.jruby.ast.ArrayNode;
 import org.jruby.ast.BlockArgNode;
 import org.jruby.ast.DAsgnNode;
 import org.jruby.ast.EncodingNode;
@@ -13,6 +14,7 @@ import org.jruby.ast.Node;
 import org.jruby.ast.OptArgNode;
 import org.jruby.ast.StarNode;
 import org.jruby.compiler.NotCompilableException;
+import org.jruby.compiler.ir.operands.Array;
 import org.jruby.compiler.ir.operands.BooleanLiteral;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.LocalVariable;
@@ -26,12 +28,12 @@ import org.jruby.compiler.ir.instructions.LabelInstr;
 import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
 import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
 import org.jruby.compiler.ir.instructions.ReceiveSelfInstruction;
+import org.jruby.compiler.ir.instructions.jruby.CheckArityInstr;
+import org.jruby.compiler.ir.instructions.jruby.ToAryInstr;
 import org.jruby.compiler.ir.instructions.ruby19.GetEncodingInstr;
 import org.jruby.compiler.ir.instructions.ruby19.ReceiveOptArgInstr;
 import org.jruby.compiler.ir.instructions.ruby19.ReceiveRestArgInstr;
 import org.jruby.compiler.ir.instructions.ruby19.ReceiveRequiredArgInstr;
-import org.jruby.compiler.ir.instructions.jruby.CheckArityInstr;
-import org.jruby.compiler.ir.instructions.jruby.ToAryInstr;
 
 public class IRBuilder19 extends IRBuilder {
     protected Operand buildVersionSpecificNodes(Node node, IRScope s) {
@@ -40,12 +42,6 @@ public class IRBuilder19 extends IRBuilder {
             case MULTIPLEASGN19NODE: return buildMultipleAsgn19((MultipleAsgn19Node) node, s);
             default: throw new NotCompilableException("Unknown node encountered in builder: " + node.getClass());
         }
-    }
-
-    public Operand buildEncoding(EncodingNode node, IRScope s) {
-        Variable ret = s.getNewTemporaryVariable();
-        s.addInstr(new GetEncodingInstr(ret, node.getEncoding()));
-        return ret;
     }
 
     protected LocalVariable getBlockArgVariable(IRScope s, String name, int depth) {
@@ -274,16 +270,8 @@ public class IRBuilder19 extends IRBuilder {
         // SSS FIXME: Deal with post as well
     }
 
-    // Non-arg masgn
-    public Operand buildMultipleAsgn19(MultipleAsgn19Node multipleAsgnNode, IRScope s) {
-        Operand  values = build(multipleAsgnNode.getValueNode(), s);
-        Variable ret = getValueInTemporaryVariable(s, values);
-        s.addInstr(new ToAryInstr(ret, ret, BooleanLiteral.FALSE));
-        buildMultipleAsgn19Assignment(multipleAsgnNode, s, null, ret);
-        return ret;
-    }
-
     // Non-arg masgn (actually a nested masgn)
+    @Override
     public void buildVersionSpecificAssignment(Node node, IRScope s, Variable v) {
         switch (node.getNodeType()) {
         case MULTIPLEASGN19NODE: {
@@ -294,5 +282,20 @@ public class IRBuilder19 extends IRBuilder {
         default: 
             throw new NotCompilableException("Can't build assignment node: " + node);
         }
+    }
+
+    public Operand buildEncoding(EncodingNode node, IRScope s) {
+        Variable ret = s.getNewTemporaryVariable();
+        s.addInstr(new GetEncodingInstr(ret, node.getEncoding()));
+        return ret;
+    }
+
+    // Non-arg masgn
+    public Operand buildMultipleAsgn19(MultipleAsgn19Node multipleAsgnNode, IRScope s) {
+        Operand  values = build(multipleAsgnNode.getValueNode(), s);
+        Variable ret = getValueInTemporaryVariable(s, values);
+        s.addInstr(new ToAryInstr(ret, ret, BooleanLiteral.FALSE));
+        buildMultipleAsgn19Assignment(multipleAsgnNode, s, null, ret);
+        return ret;
     }
 }
