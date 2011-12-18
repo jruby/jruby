@@ -32,19 +32,16 @@ class RedBlackTree
   class NilNode < Node
     class << self
       private :new
-      @instance = nil
 
       # it's not thread safe
       def instance
-        if @instance.nil?
-          @instance = new
-
+        @instance ||= begin
           def instance
             return @instance
           end
-        end
 
-        return @instance
+          new
+        end
       end
     end
 
