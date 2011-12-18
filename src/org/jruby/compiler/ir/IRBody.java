@@ -2,6 +2,7 @@ package org.jruby.compiler.ir;
 
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.parser.StaticScope;
+import org.jruby.parser.IRStaticScope;
 
 public class IRBody extends IRScope {
     public enum BodyType {
@@ -16,7 +17,10 @@ public class IRBody extends IRScope {
         
         this.bodyType = bodyType;
         
-        updateVersion();
+        if (!IRBuilder.inIRGenOnlyMode()) {
+            if (scope != null) ((IRStaticScope)scope).setIRScope(this);
+            updateVersion();
+        }
     }
 
     @Override

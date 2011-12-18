@@ -22,8 +22,8 @@ public class IRMethod extends IRScope {
     // it seems the first one ... but let us see ...
     private CodeVersion version;   // Current code version for this method -- can change during execution as methods get redefined!
 
-	 // SSS FIXME: Note that if operands from the method are modified,
-	 // callArgs would have to be updated as well
+    // SSS FIXME: Note that if operands from the method are modified,
+    // callArgs would have to be updated as well
     // Call parameters
     private List<Operand> callArgs;
 
@@ -39,8 +39,8 @@ public class IRMethod extends IRScope {
         this.isInstanceMethod = isInstanceMethod;
         callArgs = new ArrayList<Operand>();
         if (!IRBuilder.inIRGenOnlyMode()) {
-           if (staticScope != null) ((IRStaticScope)staticScope).setIRScope(this);
-           updateVersion();
+            if (staticScope != null) ((IRStaticScope)staticScope).setIRScope(this);
+            updateVersion();
         }
 /*
  * SSS: Only necessary when we run the add binding load/store dataflow pass to promote all ruby local vars to java local vars
