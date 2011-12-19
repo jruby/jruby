@@ -229,8 +229,8 @@ public class JRubyEngine extends BSFEngineImpl {
     }
 
     private static class FunctionsGlobalVariable implements IAccessor {
-        private Ruby runtime;
-        private BSFFunctions functions;
+        private final Ruby runtime;
+        private final BSFFunctions functions;
 
         public FunctionsGlobalVariable(Ruby runtime, BSFFunctions functions) {
             this.runtime = runtime;

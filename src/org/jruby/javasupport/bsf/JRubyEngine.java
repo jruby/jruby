@@ -166,8 +166,8 @@ public class JRubyEngine extends BSFEngineImpl {
     }
 
     private static class BeanGlobalVariable implements IAccessor {
-        private Ruby runtime;
-        private BSFDeclaredBean bean;
+        private final Ruby runtime;
+        private final BSFDeclaredBean bean;
 
         public BeanGlobalVariable(Ruby runtime, BSFDeclaredBean bean) {
             this.runtime = runtime;
@@ -187,8 +187,8 @@ public class JRubyEngine extends BSFEngineImpl {
     }
 
     private static class FunctionsGlobalVariable implements IAccessor {
-        private Ruby runtime;
-        private BSFFunctions functions;
+        private final Ruby runtime;
+        private final BSFFunctions functions;
 
         public FunctionsGlobalVariable(Ruby runtime, BSFFunctions functions) {
             this.runtime = runtime;

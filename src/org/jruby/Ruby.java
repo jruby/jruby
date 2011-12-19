@@ -4108,14 +4108,14 @@ public final class Ruby {
     private GlobalVariable recordSeparatorVar;
 
     // former java.lang.System concepts now internalized for MVM
-    private String currentDirectory;
+    private volatile String currentDirectory;
 
     // The "current line" global variable
-    private int currentLine = 0;
+    private volatile int currentLine = 0;
 
-    private IRubyObject argsFile;
+    private volatile IRubyObject argsFile;
 
-    private long startTime = System.currentTimeMillis();
+    private final long startTime = System.currentTimeMillis();
 
     private final RubyInstanceConfig config;
     private final boolean is1_9;

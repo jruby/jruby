@@ -35,7 +35,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author jpetersen
  */
 public class ValueAccessor implements IAccessor {
-    private IRubyObject value;
+    private volatile IRubyObject value;
 
     public ValueAccessor(IRubyObject value) {
         assert value != null;
