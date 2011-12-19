@@ -490,7 +490,7 @@ public class InvocationLinker {
                 }
             }
         } else {
-            throw new IndirectBindingException("no direct path available");
+            throw new IndirectBindingException("no direct path available for " + method.getClass().getName());
         }
         
         return handleForMethod(site, name, cls, method);
