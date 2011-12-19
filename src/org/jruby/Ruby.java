@@ -1012,7 +1012,7 @@ public final class Ruby {
     /** 
      * Retrieve the current safe level.
      * 
-     * @see org.jruby.Ruby#setSaveLevel
+     * @see org.jruby.Ruby#setSafeLevel
      */
     public int getSafeLevel() {
         return this.safeLevel;
@@ -1028,8 +1028,8 @@ public final class Ruby {
      * 3 - all generated objects are tainted
      * 4 - no global (non-tainted) variable modification/no direct output
      * 
-     * The safe level is set using $SAFE in Ruby code. It is not particularly
-     * well supported in JRuby.
+     * The safe level is set using $SAFE in Ruby code. It is not supported
+     * in JRuby.
     */
     public void setSafeLevel(int safeLevel) {
         this.safeLevel = safeLevel;
