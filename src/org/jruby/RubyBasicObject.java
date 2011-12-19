@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -1218,15 +1219,73 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     protected final Object[] getVariableTableForRead() {
         return varTable;
     }
-    
-    private static final AtomicReferenceFieldUpdater VARTABLE_UPDATER =
-            AtomicReferenceFieldUpdater.newUpdater(RubyBasicObject.class, Object[].class, "varTable");
+
+    private static final AtomicReferenceFieldUpdater VARTABLE_UPDATER;
+
+    static {
+        AtomicReferenceFieldUpdater updater = null;
+        try {
+            updater = AtomicReferenceFieldUpdater.newUpdater(RubyBasicObject.class, Object[].class, "varTable");
+        } catch (RuntimeException re) {
+            if (re.getCause() instanceof AccessControlException) {
+                // security prevented creation; fall back on synchronized assignment
+            } else {
+                throw re;
+            }
+        }
+        VARTABLE_UPDATER = updater;
+    }
+
 
     /**
      * Get variable table for write purposes. Initializes if uninitialized, and
      * resizes if necessary.
      */
     protected final Object[] getVariableTableForWrite(int index) {
+        if (VARTABLE_UPDATER == null) {
+            return getVariableTableForWriteSynchronized(index);
+        } else {
+            return getVariableTableForWriteAtomic(index);
+        }
+    }
+
+    /**
+     * Get the variable table for write. If it is not set or not of the right size,
+     * synchronize against the object and prepare it accordingly.
+     *
+     * @param index the index of the value soon to be set
+     * @return the var table, ready for setting
+     */
+    private Object[] getVariableTableForWriteSynchronized(int index) {
+        Object[] myVarTable = varTable;
+        if (myVarTable == null || myVarTable.length <= index) {
+            synchronized (this) {
+                myVarTable = varTable;
+
+                if (myVarTable == null) {
+                    return varTable = new Object[getMetaClass().getRealClass().getVariableTableSizeWithExtras()];
+                } else if (myVarTable.length <= index) {
+                    Object[] newTable = new Object[getMetaClass().getRealClass().getVariableTableSizeWithExtras()];
+                    System.arraycopy(myVarTable, 0, newTable, 0, myVarTable.length);
+                    return varTable = newTable;
+                } else {
+                    return myVarTable;
+                }
+            }
+        }
+
+        return varTable;
+    }
+
+
+    /**
+     * Get the variable table for write. If it is not set or not of the right size,
+     * atomically update it with an appropriate value.
+     *
+     * @param index the index of the value soon to be set
+     * @return the var table, ready for setting
+     */
+    private Object[] getVariableTableForWriteAtomic(int index) {
         while (true) {
             Object[] myVarTable = varTable;
             Object[] newTable;
