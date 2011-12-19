@@ -77,9 +77,7 @@ public class RubyStruct extends RubyObject {
 
         values = new IRubyObject[size];
 
-        for (int i = 0; i < size; i++) {
-            values[i] = getRuntime().getNil();
-        }
+        RuntimeHelpers.fillNil(values, runtime);
     }
 
     public static RubyClass createStructClass(Ruby runtime) {
@@ -373,7 +371,6 @@ public class RubyStruct extends RubyObject {
         checkSize(args.length);
 
         System.arraycopy(args, 0, values, 0, args.length);
-        RuntimeHelpers.fillNil(values, args.length, values.length, context.runtime);
 
         return context.nil;
     }
@@ -411,9 +408,6 @@ public class RubyStruct extends RubyObject {
             values[1] = arg1;
         case 1:
             values[0] = arg0;
-        }
-        if (provided < values.length) {
-            RuntimeHelpers.fillNil(values, provided, values.length, context.runtime);
         }
 
         return getRuntime().getNil();
