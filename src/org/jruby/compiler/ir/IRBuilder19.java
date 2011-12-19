@@ -3,11 +3,13 @@ package org.jruby.compiler.ir;
 import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArrayNode;
+import org.jruby.ast.AssignableNode;
 import org.jruby.ast.BlockArgNode;
 import org.jruby.ast.DAsgnNode;
+import org.jruby.ast.GlobalAsgnNode;
+import org.jruby.ast.LocalAsgnNode;
 import org.jruby.ast.EncodingNode;
 import org.jruby.ast.IterNode;
-import org.jruby.ast.LocalAsgnNode;
 import org.jruby.ast.ListNode;
 import org.jruby.ast.MultipleAsgn19Node;
 import org.jruby.ast.Node;
@@ -45,11 +47,34 @@ public class IRBuilder19 extends IRBuilder {
     }
 
     protected LocalVariable getBlockArgVariable(IRScope s, String name, int depth) {
-        throw new NotCompilableException("Cannot ask for block-arg variable in 1.9 mode");
+        IRClosure cl = (IRClosure)s;
+        if (cl.isForLoopBody()) {
+            return cl.getLocalVariable(name, depth);
+        } else {
+            throw new NotCompilableException("Cannot ask for block-arg variable in 1.9 mode");
+        }
     }
 
     public void buildVersionSpecificBlockArgsAssignment(Node node, IRScope s, Operand argsArray, int argIndex, boolean isMasgnRoot, boolean isClosureArg, boolean isSplat) {
-       throw new NotCompilableException("Should not have come here for block args assignment in 1.9 mode: " + node);
+        IRClosure cl = (IRClosure)s;
+        if (!cl.isForLoopBody())
+            throw new NotCompilableException("Should not have come here for block args assignment in 1.9 mode: " + node);
+
+        // Argh!  For-loop bodies and regular iterators are different in terms of block-args!
+        switch (node.getNodeType()) {
+            case MULTIPLEASGN19NODE: {
+                ListNode sourceArray = ((MultipleAsgn19Node) node).getPre();
+                int i = 0; 
+                for (Node an: sourceArray.childNodes()) {
+                    // Use 1.8 mode version for this
+                    buildBlockArgsAssignment(an, s, null, i, false, false, false);
+                    i++;
+                }
+                break;
+            }
+            default: 
+                throw new NotCompilableException("Can't build assignment node: " + node);
+        }
     }
 
     protected LocalVariable getArgVariable(IRScope s, String name, int depth) {
@@ -57,26 +82,25 @@ public class IRBuilder19 extends IRBuilder {
         return ((s instanceof IRClosure) && ((IRClosure)s).isForLoopBody()) ? s.getLocalVariable(name, depth) : s.getNewLocalVariable(name);
     }
 
+    private void addArgReceiveInstr(IRScope s, Variable v, int argIndex, boolean post, int totalRequired, int totalOptional) {
+        if (post) {
+            s.addInstr(new ReceiveRequiredArgInstr(v, argIndex, totalRequired, totalOptional));
+        } else {
+            s.addInstr(new ReceiveArgumentInstruction(v, argIndex));
+        }
+    }
+
     public void receiveRequiredArg(Node node, IRScope s, int argIndex, boolean post, int totalRequired, int totalOptional) {
-        Variable v;
         switch (node.getNodeType()) {
             case ARGUMENTNODE: {
                 ArgumentNode a = (ArgumentNode)node;
-                if (post) {
-                    s.addInstr(new ReceiveRequiredArgInstr(s.getNewLocalVariable(a.getName()), argIndex, totalRequired, totalOptional));
-                } else {
-                    s.addInstr(new ReceiveArgumentInstruction(s.getNewLocalVariable(a.getName()), argIndex));
-                }
+                addArgReceiveInstr(s, s.getNewLocalVariable(a.getName()), argIndex, post, totalRequired, totalOptional);
                 break;
             }
             case MULTIPLEASGN19NODE: {
                 MultipleAsgn19Node childNode = (MultipleAsgn19Node) node;
-                v = s.getNewTemporaryVariable();
-                if (post) {
-                    s.addInstr(new ReceiveRequiredArgInstr(v, argIndex, totalRequired, totalOptional));
-                } else {
-                    s.addInstr(new ReceiveArgumentInstruction(v, argIndex));
-                }
+                Variable v = s.getNewTemporaryVariable();
+                addArgReceiveInstr(s, v, argIndex, post, totalRequired, totalOptional);
                 s.addInstr(new ToAryInstr(v, v, BooleanLiteral.FALSE));
                 buildMultipleAsgn19Assignment(childNode, s, v, null);
                 break;
@@ -173,11 +197,9 @@ public class IRBuilder19 extends IRBuilder {
         Node args = node.getVarNode();
         if (args instanceof ArgsNode) { // regular blocks
             receiveArgs((ArgsNode)args, s);
-        } else if (args instanceof LocalAsgnNode) { // for loops
-            // Use local var depth because for-loop uses vars from the surrounding scope
-            // SSS FIXME: Verify that this is correct
-            LocalAsgnNode lan = (LocalAsgnNode)args;
-            s.addInstr(new ReceiveArgumentInstruction(s.getLocalVariable(lan.getName(), lan.getDepth()), 0));
+        } else  { 
+            // for loops -- reuse code in IRBuilder:buildBlockArgsAssignment
+            buildBlockArgsAssignment(args, s, null, 0, false, false, false);
         }
     }
 

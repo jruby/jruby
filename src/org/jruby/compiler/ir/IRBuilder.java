@@ -660,14 +660,6 @@ public class IRBuilder {
     public void buildVersionSpecificAssignment(Node node, IRScope s, Variable v) {
         switch (node.getNodeType()) {
         case MULTIPLEASGNNODE: {
-            /* --------------------------------------------------------------------------------------------
-             * SSS FIXME: For 1.9 mode, this code would be:
-             *
-             * Operand valuesArg = generateRubyInternalsCall(s, RubyInternalsMethod.TO_ARY, true, v, new Operand[] { BooleanLiteral.FALSE });
-             * buildMultipleAsgnAssignment(childNode, s, valuesArg);
-             *
-             * But in 1.8 mode, we do that only in some cases .. so, this is complicated!
-             * ------------------------------------------------------------------------------------------ */
             Operand valuesArg;
             MultipleAsgnNode childNode = (MultipleAsgnNode) node;
             if (childNode.getHeadNode() != null && ((ListNode)childNode.getHeadNode()).childNodes().size() > 0) {
@@ -740,6 +732,8 @@ public class IRBuilder {
             // Ex: We are trying to receive (b,c) in this example: "|a, (b,c), d| = ..."
             s.addInstr(new GetArrayInstr(v, argsArray, argIndex, isSplat));
         } else {
+			   // argsArray can be null when the first node in the args-node-ast is a multiple-assignment
+				// For example, for-nodes
             s.addInstr(isClosureArg ? new ReceiveClosureInstr(v) : (isSplat ? new ReceiveRestArgInstr(v, argIndex) : new ReceiveArgumentInstruction(v, argIndex)));
         }
     }
