@@ -489,12 +489,22 @@ public class ASTInspector {
             inspect(globalAsgnNode.getValueNode());
             break;
         case GLOBALVARNODE:
-            if (((GlobalVarNode)node).getName().equals("$_")) {
+        {
+            String name = ((GlobalVarNode)node).getName();
+            if (name.equals("$_") || name.equals("$LAST_READ_LINE")) {
                 setFlag(node, LASTLINE);
-            } else if (((GlobalVarNode)node).getName().equals("$~")) {
+            } else if (name.equals("$~") ||
+                    name.equals("$`") ||
+                    name.equals("$'") ||
+                    name.equals("$+") ||
+                    name.equals("$LAST_MATCH_INFO") ||
+                    name.equals("$PREMATCH") ||
+                    name.equals("$POSTMATCH") ||
+                    name.equals("$LAST_PAREN_MATCH")) {
                 setFlag(node, BACKREF);
             }
             break;
+        }
         case HASHNODE:
             HashNode hashNode = (HashNode)node;
             inspect(hashNode.getListNode());

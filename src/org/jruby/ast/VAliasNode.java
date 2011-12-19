@@ -87,6 +87,19 @@ public class VAliasNode extends Node {
 
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        if (oldName.equals("$_") ||
+                oldName.equals("$LAST_READ_LINE") ||
+                oldName.equals("$~") ||
+                oldName.equals("$`") ||
+                oldName.equals("$'") ||
+                oldName.equals("$+") ||
+                oldName.equals("$LAST_MATCH_INFO") ||
+                oldName.equals("$PREMATCH") ||
+                oldName.equals("$POSTMATCH") ||
+                oldName.equals("$LAST_PAREN_MATCH")) {
+            runtime.getWarnings().warn(oldName + " is treated specially in JRuby and should not be aliased");
+        }
+        
         runtime.getGlobalVariables().alias(newName, oldName);
    
         return runtime.getNil();
