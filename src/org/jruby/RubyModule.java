@@ -535,7 +535,6 @@ public class RubyModule extends RubyObject {
         infectBy(module);
 
         doIncludeModule(module);
-        invalidateConstantCache();
         invalidateCoreClasses();
         invalidateCacheDescendants();
     }
@@ -1083,6 +1082,13 @@ public class RubyModule extends RubyObject {
 
     public void invalidateCacheDescendants() {
         if (DEBUG) LOG.debug("invalidating descendants: {}", baseName);
+
+        if (includingHierarchies.isEmpty()) {
+            // it's only us; just invalidate directly
+            methodInvalidator.invalidate();
+            return;
+        }
+
         List<Invalidator> invalidators = new ArrayList();
         invalidators.add(methodInvalidator);
         

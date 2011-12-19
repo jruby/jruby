@@ -1001,7 +1001,7 @@ public class RubyClass extends RubyModule {
     @Override
     public void invalidateCacheDescendants() {
         super.invalidateCacheDescendants();
-        
+
         synchronized (runtime.getHierarchyLock()) {
             Set<RubyClass> mySubclasses = subclasses;
             if (mySubclasses != null) for (RubyClass subclass : mySubclasses) {
@@ -1016,6 +1016,9 @@ public class RubyClass extends RubyModule {
         
         // if we're not at boot time, don't bother fully clearing caches
         if (!runtime.isBooting()) cachedMethods.clear();
+
+        // no subclasses, don't bother with lock and iteration
+        if (subclasses == null || subclasses.isEmpty()) return;
         
         // cascade into subclasses
         synchronized (runtime.getHierarchyLock()) {
