@@ -70,7 +70,7 @@ public class RubyStruct extends RubyObject {
      * @param runtime
      * @param rubyClass
      */
-    public RubyStruct(Ruby runtime, RubyClass rubyClass) {
+    private RubyStruct(Ruby runtime, RubyClass rubyClass) {
         super(runtime, rubyClass);
         
         int size = RubyNumeric.fix2int(getInternalVariable((RubyClass)rubyClass, "__size__"));
@@ -371,6 +371,7 @@ public class RubyStruct extends RubyObject {
         checkSize(args.length);
 
         System.arraycopy(args, 0, values, 0, args.length);
+        RuntimeHelpers.fillNil(values, args.length, values.length, context.runtime);
 
         return context.nil;
     }
@@ -408,6 +409,9 @@ public class RubyStruct extends RubyObject {
             values[1] = arg1;
         case 1:
             values[0] = arg0;
+        }
+        if (provided < values.length) {
+            RuntimeHelpers.fillNil(values, provided, values.length, context.runtime);
         }
 
         return getRuntime().getNil();
