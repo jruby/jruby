@@ -4051,8 +4051,8 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     public Object[] toArray() {
         // no catch for ArrayIndexOutOfBounds here because this impls a List method
         Object[] array = new Object[realLength];
-        for (int i = begin; i < realLength; i++) {
-            array[i - begin] = values[i].toJava(Object.class);
+        for (int i = 0; i < realLength; i++) {
+            array[i] = values[i + begin].toJava(Object.class);
         }
         return array;
     }
