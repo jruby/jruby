@@ -35,21 +35,19 @@ public class ConvertBytes {
     }
 
     public static final byte[] intToBinaryBytes(int i) {
-        return ByteList.plain(Integer.toBinaryString(i));
+        return intToUnsignedByteList(i, 1, LOWER_DIGITS).bytes();
     }
 
     public static final byte[] intToOctalBytes(int i) {
-        return ByteList.plain(Integer.toOctalString(i));
+        return intToUnsignedByteList(i, 3, LOWER_DIGITS).bytes();
     }
 
     public static final byte[] intToHexBytes(int i) {
-        return ByteList.plain(Integer.toHexString(i).toLowerCase());
+        return intToUnsignedByteList(i, 4, LOWER_DIGITS).bytes();
     }
 
     public static final byte[] intToHexBytes(int i, boolean upper) {
-        String s = Integer.toHexString(i);
-        s = upper ? s.toUpperCase() : s.toLowerCase();
-        return ByteList.plain(s);
+        return intToUnsignedByteList(i, 4, upper ? UPPER_DIGITS : LOWER_DIGITS).bytes();
     }
 
     public static final ByteList intToBinaryByteList(int i) {
@@ -66,62 +64,104 @@ public class ConvertBytes {
     }
 
     public static final byte[] intToByteArray(int i, int radix, boolean upper) {
-        String s = Integer.toString(i, radix);
-        s = upper ? s.toUpperCase() : s.toLowerCase();
-        return ByteList.plain(s);
+        return longToByteArray(i, radix, upper);
     }
 
     public static final byte[] intToCharBytes(int i) {
-        return ByteList.plain(Integer.toString(i));
+        return longToByteList(i, 10, LOWER_DIGITS).bytes();
     }
 
     public static final byte[] longToBinaryBytes(long i) {
-        return ByteList.plain(Long.toBinaryString(i));
+        return longToUnsignedByteList(i, 1, LOWER_DIGITS).bytes();
     }
 
     public static final byte[] longToOctalBytes(long i) {
-        return ByteList.plain(Long.toOctalString(i));
+        return longToUnsignedByteList(i, 3, LOWER_DIGITS).bytes();
     }
 
     public static final byte[] longToHexBytes(long i) {
-        return ByteList.plain(Long.toHexString(i).toLowerCase());
+        return longToUnsignedByteList(i, 4, LOWER_DIGITS).bytes();
     }
 
     public static final byte[] longToHexBytes(long i, boolean upper) {
-        String s = Long.toHexString(i);
-        s = upper ? s.toUpperCase() : s.toLowerCase();
-        return ByteList.plain(s);
+        return longToUnsignedByteList(i, 4, upper ? UPPER_DIGITS : LOWER_DIGITS).bytes();
     }
 
     public static final ByteList longToBinaryByteList(long i) {
-        return new ByteList(longToBinaryBytes(i));
+        return longToByteList(i, 2, LOWER_DIGITS);
     }
     public static final ByteList longToOctalByteList(long i) {
-        return new ByteList(longToOctalBytes(i));
+        return longToByteList(i, 8, LOWER_DIGITS);
     }
     public static final ByteList longToHexByteList(long i) {
-        return new ByteList(longToHexBytes(i));
+        return longToByteList(i, 16, LOWER_DIGITS);
     }
     public static final ByteList longToHexByteList(long i, boolean upper) {
-        return new ByteList(longToHexBytes(i, upper));
+        return longToByteList(i, 16, upper ? UPPER_DIGITS : LOWER_DIGITS);
     }
 
     public static final byte[] longToByteArray(long i, int radix, boolean upper) {
-        String s = Long.toString(i, radix);
-        s = upper ? s.toUpperCase() : s.toLowerCase();
-        return ByteList.plain(s);
+        return longToByteList(i, radix, upper ? UPPER_DIGITS : LOWER_DIGITS).bytes();
     }
 
     public static final byte[] longToCharBytes(long i) {
-        return ByteList.plain(Long.toString(i));
+        return longToByteList(i, 10, LOWER_DIGITS).bytes();
     }
 
     public static final ByteList longToByteList(long i) {
-        return new ByteList(ByteList.plain(Long.toString(i)), false);
+        return longToByteList(i, 10, LOWER_DIGITS);
     }
 
     public static final ByteList longToByteList(long i, int radix) {
-        return new ByteList(ByteList.plain(Long.toString(i, radix)), false);
+        return longToByteList(i, radix, LOWER_DIGITS);
+    }
+
+    public static final ByteList longToByteList(long i, int radix, byte[] digitmap) {
+        if (i == 0) return new ByteList(ZERO_BYTES);
+        
+        if (i == Long.MIN_VALUE) return new ByteList(MIN_VALUE_BYTES[radix]);
+
+        boolean neg = false;
+        if (i < 0) {
+            i = -i;
+            neg = true;
+        }
+
+        // max 64 chars for 64-bit 2's complement integer
+        int len = 64;
+        byte[] buf = new byte[len];
+
+        int pos = len;
+        do {
+            buf[--pos] = digitmap[(int)(i % radix)];
+        } while ((i /= radix) > 0);
+        if (neg) buf[--pos] = (byte)'-';
+        
+        return new ByteList(buf, pos, len - pos, false);
+    }
+
+    private static final ByteList intToUnsignedByteList(int i, int shift, byte[] digitmap) {
+        byte[] buf = new byte[32];
+        int charPos = 32;
+        int radix = 1 << shift;
+        long mask = radix - 1;
+        do {
+            buf[--charPos] = digitmap[(int)(i & mask)];
+            i >>>= shift;
+        } while (i != 0);
+        return new ByteList(buf, charPos, (32 - charPos), false);
+    }
+
+    private static final ByteList longToUnsignedByteList(long i, int shift, byte[] digitmap) {
+        byte[] buf = new byte[64];
+        int charPos = 64;
+        int radix = 1 << shift;
+        long mask = radix - 1;
+        do {
+            buf[--charPos] = digitmap[(int)(i & mask)];
+            i >>>= shift;
+        } while (i != 0);
+        return new ByteList(buf, charPos, (64 - charPos), false);
     }
 
     public static final byte[] twosComplementToBinaryBytes(byte[] in) {
@@ -132,6 +172,16 @@ public class ConvertBytes {
     }
     public static final byte[] twosComplementToHexBytes(byte[] in, boolean upper) {
         return twosComplementToUnsignedBytes(in, 4, upper);
+    }
+
+    private static final byte[] ZERO_BYTES = new byte[] {(byte)'0'};
+
+    private static final byte[][] MIN_VALUE_BYTES;
+    static {
+        MIN_VALUE_BYTES = new byte[37][];
+        for (int i = 2; i <= 36; i++) {
+            MIN_VALUE_BYTES[i] =  ByteList.plain(Long.toString(Long.MIN_VALUE, i));
+        }
     }
 
     private static final byte[] LOWER_DIGITS = {
