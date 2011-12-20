@@ -13,19 +13,30 @@ import org.jruby.ast.IterNode;
 import org.jruby.ast.ListNode;
 import org.jruby.ast.MultipleAsgn19Node;
 import org.jruby.ast.Node;
+import org.jruby.ast.NotNode;
+import org.jruby.ast.NthRefNode;
 import org.jruby.ast.OptArgNode;
 import org.jruby.ast.StarNode;
+import org.jruby.ast.VCallNode;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.ir.operands.Array;
 import org.jruby.compiler.ir.operands.BooleanLiteral;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.LocalVariable;
+import org.jruby.compiler.ir.operands.MethAddr;
+import org.jruby.compiler.ir.operands.Nil;
+import org.jruby.compiler.ir.operands.NthRef;
 import org.jruby.compiler.ir.operands.Operand;
+import org.jruby.compiler.ir.operands.StringLiteral;
 import org.jruby.compiler.ir.operands.UndefinedValue;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.instructions.BNEInstr;
+import org.jruby.compiler.ir.instructions.BEQInstr;
+import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.CopyInstr;
 import org.jruby.compiler.ir.instructions.GetArrayInstr;
+import org.jruby.compiler.ir.instructions.JRubyImplCallInstr;
+import org.jruby.compiler.ir.instructions.JRubyImplCallInstr.JRubyImplementationMethod;
 import org.jruby.compiler.ir.instructions.LabelInstr;
 import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
 import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
@@ -319,5 +330,77 @@ public class IRBuilder19 extends IRBuilder {
         s.addInstr(new ToAryInstr(ret, ret, BooleanLiteral.FALSE));
         buildMultipleAsgn19Assignment(multipleAsgnNode, s, null, ret);
         return ret;
+    }
+
+    // 1.9 specific defined? logic  
+    @Override
+    public Operand buildVersionSpecificGetDefinitionIR(Node node, IRScope s) {
+        switch (node.getNodeType()) {
+            case ORNODE:
+            case ANDNODE: {
+                return new StringLiteral("expression");
+            }
+            case MULTIPLEASGN19NODE: {
+                return new StringLiteral("assignment");
+            }
+            case DVARNODE: {
+                return new StringLiteral("local-variable");
+            }
+            case BACKREFNODE: {
+                return buildDefinitionCheck(s, JRubyImplementationMethod.BACKREF_IS_RUBY_MATCH_DATA, null, null, "global-variable");
+            }
+            case DREGEXPNODE:
+            case DSTRNODE: {
+                Operand v = super.buildVersionSpecificGetDefinitionIR(node, s);
+                Label doneLabel = s.getNewLabel();
+                Variable tmpVar = getValueInTemporaryVariable(s, v);
+                s.addInstr(BNEInstr.create(tmpVar, Nil.NIL, doneLabel));
+                s.addInstr(new CopyInstr(tmpVar, new StringLiteral("expression")));
+                s.addInstr(new LabelInstr(doneLabel));
+                return tmpVar;
+            }
+            case NOTNODE: {
+                Operand v = buildGetDefinitionBase(((NotNode)node).getConditionNode(), s);
+                Label doneLabel = s.getNewLabel();
+                Variable tmpVar = getValueInTemporaryVariable(s, v);
+                s.addInstr(BEQInstr.create(tmpVar, Nil.NIL, doneLabel));
+                s.addInstr(new CopyInstr(tmpVar, new StringLiteral("method")));
+                s.addInstr(new LabelInstr(doneLabel));
+                return tmpVar;
+            }
+            case NTHREFNODE: {
+            // SSS FIXME: Is there a reason to do this all with low-level IR?
+            // Can't this all be folded into a Java method that would be part
+            // of the runtime library, which then can be used by buildDefinitionCheck method above?
+            // This runtime library would be used both by the interpreter & the compiled code!
+
+                /* -------------------------------------------------------------------------------------
+                 * We have to generate IR for this:
+                 *    v = backref; (!(v instanceof RubyMatchData) || v.group(n).nil?) ? nil : "global-variable"
+                 *
+                 * which happens to be identical to: (where nthRef implicitly fetches backref again!)
+                 *    v = backref; (!(v instanceof RubyMatchData) || nthRef(n).nil?) ? nil : "global-variable"
+                 *
+                 * I am using the second form since it let us encode it in fewer IR instructions.
+                 * But, note that this second form is not as clean as the first one plus it fetches backref twice!
+                 * ------------------------------------------------------------------------------------- */
+                int n = ((NthRefNode) node).getMatchNumber();
+                Label undefLabel = s.getNewLabel();
+                Variable tmpVar = s.getNewTemporaryVariable();
+                s.addInstr(new JRubyImplCallInstr(tmpVar, JRubyImplementationMethod.BACKREF_IS_RUBY_MATCH_DATA, null, NO_ARGS));
+                s.addInstr(BEQInstr.create(tmpVar, BooleanLiteral.FALSE, undefLabel));
+                // SSS FIXME: 
+                // - Can/should I use BEQInstr(new NthRef(n), Nil.NIL, undefLabel)? instead of .nil? & compare with flag?
+                // - Or, even create a new IsNilInstr and NotNilInstr to represent optimized scenarios where
+                //   the nil? method is not monkey-patched?
+                // This matters because if String.nil? is monkey-patched, the two sequences can behave differently.
+                s.addInstr(CallInstr.create(tmpVar, new MethAddr("nil?"), new NthRef(n), NO_ARGS, null));
+                s.addInstr(BEQInstr.create(tmpVar, BooleanLiteral.TRUE, undefLabel));
+                return buildDefnCheckIfThenPaths(s, undefLabel, new StringLiteral("global-variable"));
+            }
+            default: {
+                return buildGenericGetDefinitionIR(node, s);
+            }
+        }
     }
 }
