@@ -166,6 +166,16 @@ public abstract class Factory {
     public abstract AllocatedDirectMemoryIO allocateDirectMemory(Ruby runtime, int size, int align, boolean clear);
 
     /**
+     * Allocates transient native memory (not from C heap) and wraps it in a <tt>MemoryIO</tt> accessor.
+     *
+     * @param size The number of bytes to allocate.
+     * @param align The minimum alignment of the memory
+     * @param clear If the memory should be cleared.
+     * @return A new <tt>AllocatedDirectMemoryIO</tt>.
+     */
+    public abstract DirectMemoryIO allocateTransientDirectMemory(Ruby runtime, int size, int align, boolean clear);
+
+    /**
      * Wraps a  native C memory address in a <tt>MemoryIO</tt> accessor.
      *
      * @param address The native address to wrap.

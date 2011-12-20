@@ -1,5 +1,7 @@
 package org.jruby.ext.ffi.jffi;
 
+import org.jruby.ext.ffi.AbstractMemory;
+import org.jruby.ext.ffi.DirectMemoryIO;
 import org.jruby.ext.ffi.Pointer;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -13,7 +15,8 @@ public final class DirectPointerParameterStrategy extends PointerParameterStrate
 
     @Override
     public final long getAddress(IRubyObject parameter) {
-        return ((Pointer) parameter).getAddress();
+//        System.out.printf("direct pointer strategy returning address=%x\n", ((DirectMemoryIO) ((AbstractMemory) parameter).getMemoryIO()).getAddress());
+        return ((DirectMemoryIO) ((AbstractMemory) parameter).getMemoryIO()).getAddress();
     }
 
     @Override

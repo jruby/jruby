@@ -1,5 +1,7 @@
 package org.jruby.ext.ffi.jffi;
 
+import org.jruby.ext.ffi.AbstractMemory;
+import org.jruby.ext.ffi.DirectMemoryIO;
 import org.jruby.ext.ffi.Pointer;
 import org.jruby.ext.ffi.Struct;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -14,7 +16,7 @@ public final class DirectStructParameterStrategy extends PointerParameterStrateg
 
     @Override
     public long getAddress(IRubyObject parameter) {
-        return ((Pointer) ((Struct) parameter).getMemory()).getAddress();
+        return ((DirectMemoryIO) ((Struct) parameter).getMemory().getMemoryIO()).getAddress();
     }
 
     @Override

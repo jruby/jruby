@@ -438,8 +438,27 @@ public final class DefaultMethodFactory extends MethodFactory {
         }
 
         public final IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args) {
-            Buffer buf = new Buffer(context.getRuntime(), invoker.invokeStruct(function, args), 0, info.getStructLayout().getSize());
-            return info.getStructClass().newInstance(context, new IRubyObject[] { buf }, Block.NULL_BLOCK);
+            int size = info.getStructLayout().getSize();
+            Buffer buf = new Buffer(context.getRuntime(), size);
+            MemoryIO mem = buf.getMemoryIO();
+            byte[] array;
+            int arrayOffset;
+            if (mem instanceof ArrayMemoryIO) {
+                ArrayMemoryIO arrayMemoryIO = (ArrayMemoryIO) mem;
+                array = arrayMemoryIO.array();
+                arrayOffset = arrayMemoryIO.arrayOffset();
+            } else {
+                array = new byte[size];
+                arrayOffset = 0;
+            }
+
+            invoker.invokeStruct(function, args, array, arrayOffset);
+
+            if (!(mem instanceof ArrayMemoryIO)) {
+                mem.put(0, array, 0, array.length);
+            }
+
+            return info.getStructClass().newInstance(context, buf, Block.NULL_BLOCK);
         }
     }
 
@@ -664,13 +683,21 @@ public final class DefaultMethodFactory extends MethodFactory {
             return false;
         }
         private static final void addBufferParameter(InvocationBuffer buffer, IRubyObject parameter, int flags) {
-            ArrayMemoryIO memory = (ArrayMemoryIO) ((Buffer) parameter).getMemoryIO();
-                buffer.putArray(memory.array(), memory.arrayOffset(), memory.arrayLength(),
+            MemoryIO memory = ((AbstractMemory) parameter).getMemoryIO();
+            if (memory instanceof DirectMemoryIO) {
+                buffer.putAddress(((DirectMemoryIO) memory).getAddress());
+
+            } else {
+                ArrayMemoryIO arrayMemoryIO = (ArrayMemoryIO) memory;
+                buffer.putArray(arrayMemoryIO.array(), arrayMemoryIO.arrayOffset(), arrayMemoryIO.arrayLength(),
                         flags & bufferFlags((Buffer) parameter));
+            }
         }
+
         private static final long getAddress(Pointer ptr) {
             return ((DirectMemoryIO) ptr.getMemoryIO()).getAddress();
         }
+
         public final void marshal(ThreadContext context, InvocationBuffer buffer, IRubyObject parameter) {
             if (parameter instanceof Buffer) {
                 addBufferParameter(buffer, parameter, flags);

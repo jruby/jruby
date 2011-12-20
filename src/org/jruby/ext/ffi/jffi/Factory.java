@@ -73,6 +73,10 @@ public class Factory extends org.jruby.ext.ffi.Factory {
         return AllocatedNativeMemoryIO.allocateAligned(runtime, size, align, clear);
     }
 
+    public DirectMemoryIO allocateTransientDirectMemory(Ruby runtime, int size, int align, boolean clear) {
+        return TransientNativeMemoryIO.allocateAligned(runtime, size, align, clear);
+    }
+
     public DirectMemoryIO wrapDirectMemory(Ruby runtime, long address) {
         return NativeMemoryIO.wrap(runtime, address);
     }

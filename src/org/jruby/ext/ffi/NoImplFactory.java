@@ -31,6 +31,11 @@ public class NoImplFactory extends Factory {
     }
 
     @Override
+    public DirectMemoryIO allocateTransientDirectMemory(Ruby runtime, int size, int align, boolean clear) {
+        throw runtime.newNotImplementedError(msg);
+    }
+
+    @Override
     public DirectMemoryIO wrapDirectMemory(Ruby runtime, long address) {
         throw runtime.newNotImplementedError(msg);
     }

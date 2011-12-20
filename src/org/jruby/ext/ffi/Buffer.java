@@ -56,12 +56,7 @@ public final class Buffer extends AbstractMemory {
     
     public Buffer(Ruby runtime, int size, int flags) {
         this(runtime, runtime.getModule("FFI").getClass("Buffer"),
-            new ArrayMemoryIO(runtime, size), size, 1, flags);
-    }
-    
-    public Buffer(Ruby runtime, byte[] data, int offset, int size) {
-        this(runtime, runtime.getModule("FFI").getClass("Buffer"),
-            new ArrayMemoryIO(runtime, data, offset, size), size, 1, IN | OUT);
+            Factory.getInstance().allocateTransientDirectMemory(runtime, size, 8, true), size, 1, flags);
     }
 
     private Buffer(Ruby runtime, IRubyObject klass, MemoryIO io, long size, int typeSize, int inout) {
@@ -77,15 +72,15 @@ public final class Buffer extends AbstractMemory {
             IRubyObject sizeArg, int count, int flags) {
         final int typeSize = calculateTypeSize(context, sizeArg);
         final int total = typeSize * count;
-        return new Buffer(context.getRuntime(), recv, 
-                new ArrayMemoryIO(context.getRuntime(), total), total, typeSize, flags);
+        return new Buffer(context.getRuntime(), recv,
+                Factory.getInstance().allocateTransientDirectMemory(context.getRuntime(), total, 8, true), total, typeSize, flags);
     }
 
     private IRubyObject init(ThreadContext context, IRubyObject rbTypeSize, int count, int flags) {
         this.typeSize = calculateTypeSize(context, rbTypeSize);
         this.size = this.typeSize * count;
         this.inout = flags;
-        setMemoryIO(new ArrayMemoryIO(context.getRuntime(), (int) this.size));
+        setMemoryIO(Factory.getInstance().allocateTransientDirectMemory(context.getRuntime(), (int) this.size, 8, true));
 
         return this;
     }
@@ -187,10 +182,7 @@ public final class Buffer extends AbstractMemory {
                 order.equals(getMemoryIO().order()) ? getMemoryIO() : new SwappedMemoryIO(runtime, getMemoryIO()),
                 size, typeSize, inout);
     }
-    
-    ArrayMemoryIO getArrayMemoryIO() {
-        return (ArrayMemoryIO) getMemoryIO();
-    }
+
     protected AbstractMemory slice(Ruby runtime, long offset) {
         return new Buffer(runtime, getMetaClass(), this.io.slice(offset), this.size - offset, this.typeSize, this.inout);
     }
@@ -200,7 +192,7 @@ public final class Buffer extends AbstractMemory {
     }
 
     protected Pointer getPointer(Ruby runtime, long offset) {
-        return new Pointer(runtime, (DirectMemoryIO) getMemoryIO().getMemoryIO(offset));
+        return new Pointer(runtime, getMemoryIO().getMemoryIO(offset));
     }
     public int getInOutFlags() {
         return inout;

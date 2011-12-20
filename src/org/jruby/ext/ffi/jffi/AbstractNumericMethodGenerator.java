@@ -131,7 +131,7 @@ abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
                         mv.istore(heapPointerCountVar);
                     }
 
-                    mv.invokestatic(p(JITRuntime.class), "pointerParameterStrategy",
+                    mv.invokestatic(p(JITRuntime.class), parameterType == NativeType.STRING ? "stringParameterStrategy" : "pointerParameterStrategy",
                             sig(PointerParameterStrategy.class, IRubyObject.class));
                     mv.astore(nextStrategyVar);
                     mv.aload(nextStrategyVar);

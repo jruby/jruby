@@ -11,10 +11,7 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
-import org.jruby.ext.ffi.AbstractMemory;
-import org.jruby.ext.ffi.Buffer;
-import org.jruby.ext.ffi.Pointer;
-import org.jruby.ext.ffi.Struct;
+import org.jruby.ext.ffi.*;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.StringSupport;
@@ -60,13 +57,13 @@ public final class JITRuntime {
     public static int u8Value32(IRubyObject parameter) {
         return (int) ((parameter instanceof RubyFixnum
                 ? ((RubyFixnum) parameter).getLongValue()
-                : other2long(parameter)) & 0xff);
+                : other2long(parameter)) & 0xffL);
     }
 
     public static long u8Value64(IRubyObject parameter) {
-        return (int) ((parameter instanceof RubyFixnum
+        return (parameter instanceof RubyFixnum
                 ? ((RubyFixnum) parameter).getLongValue()
-                : other2long(parameter)) & 0xff);
+                : other2long(parameter)) & 0xffL;
     }
 
     public static int s16Value32(IRubyObject parameter) {
@@ -84,13 +81,13 @@ public final class JITRuntime {
     public static int u16Value32(IRubyObject parameter) {
         return (int) (((parameter instanceof RubyFixnum)
                 ? ((RubyFixnum) parameter).getLongValue()
-                : other2long(parameter)) & 0xffffL);
+                : other2long(parameter))  & 0xffffL);
     }
 
     public static long u16Value64(IRubyObject parameter) {
-        return (short) (((parameter instanceof RubyFixnum)
+        return ((parameter instanceof RubyFixnum)
                 ? ((RubyFixnum) parameter).getLongValue()
-                : other2long(parameter)) & 0xffffL);
+                : other2long(parameter)) & 0xffffL;
     }
 
     public static int s32Value32(IRubyObject parameter) {
@@ -352,22 +349,34 @@ public final class JITRuntime {
             return DIRECT_POINTER;
 
         } else if (parameter instanceof Buffer) {
-            return HEAP_POINTER_STRATEGY;
+            return ((AbstractMemory) parameter).getMemoryIO().isDirect() ? DIRECT_POINTER : HEAP_POINTER_STRATEGY;
 
         } else if (parameter instanceof Struct) {
-            return ((Struct) parameter).getMemory() instanceof Pointer ? DIRECT_STRUCT : HEAP_STRUCT;
+            return ((Struct) parameter).getMemory().getMemoryIO().isDirect() ? DIRECT_STRUCT : HEAP_STRUCT;
 
         } else if (parameter.isNil()) {
             return NIL_POINTER_STRATEGY;
 
         } else if (parameter instanceof RubyString) {
-            StringSupport.checkStringSafety(parameter.getRuntime(), parameter);
             return STRING_POINTER_STRATEGY;
 
         } else if (parameter.respondsTo("to_ptr")) {
             IRubyObject ptr = parameter.callMethod(parameter.getRuntime().getCurrentContext(), "to_ptr");
 
             return new DelegatingPointerParameterStrategy(ptr, pointerParameterStrategy(ptr));
+
+        } else {
+            throw parameter.getRuntime().newTypeError("cannot convert parameter to native pointer");
+        }
+    }
+
+    public static PointerParameterStrategy stringParameterStrategy(IRubyObject parameter) {
+        if (parameter instanceof RubyString) {
+            StringSupport.checkStringSafety(parameter.getRuntime(), parameter);
+            return STRING_POINTER_STRATEGY;
+
+        } else if (parameter.isNil()) {
+            return NIL_POINTER_STRATEGY;
 
         } else {
             throw parameter.getRuntime().newTypeError("cannot convert parameter to native pointer");
