@@ -5,75 +5,82 @@ require 'yaml'
 # This test demonstrates and verifies the marshalling fix for JRUBY-1877.
 class TestMarshalGemspec < Test::Unit::TestCase
   def setup
-    @index = YAML::load <<-YAML
---- !ruby/object:Gem::Cache
-gems:
-  activerecord-jdbcderby-adapter-0.6: !ruby/object:Gem::Specification
-    rubygems_version: 0.9.4
-    specification_version: 1
-    name: activerecord-jdbcderby-adapter
-    version: !ruby/object:Gem::Version
-      version: "0.6"
-    date: 2007-11-04 22:00:00 -08:00
-    summary: Derby JDBC adapter for JRuby on Rails.
-    require_paths:
-    - lib
-    email: nick@nicksieger.com, ola.bini@gmail.com
-    homepage: http://jruby-extras.rubyforge.org/ActiveRecord-JDBC
-    rubyforge_project: jruby-extras
-    description: Install this gem to use Derby with JRuby on Rails.
-    autorequire:
-    default_executable:
-    bindir: bin
-    has_rdoc: true
-    required_ruby_version: !ruby/object:Gem::Version::Requirement
-      requirements:
-      - - ">"
-        - !ruby/object:Gem::Version
-          version: 0.0.0
-      version:
-    platform: ruby
-    signing_key:
-    cert_chain: []
+    @gemspec = YAML::load <<-YAML
+--- !ruby/object:Gem::Specification 
+name: activerecord-jdbcderby-adapter
+version: !ruby/object:Gem::Version 
+  prerelease: 
+  version: 1.2.1
+platform: ruby
+authors: 
+  - Nick Sieger, Ola Bini and JRuby contributors
+autorequire: 
+bindir: bin
+cert_chain: []
 
-    post_install_message:
-    authors:
-    - Nick Sieger, Ola Bini and JRuby contributors
-    files: []
+date: 2011-11-23 00:00:00 Z
+dependencies: 
+  - !ruby/object:Gem::Dependency 
+    name: activerecord-jdbc-adapter
+    prerelease: false
+    requirement: &id001 !ruby/object:Gem::Requirement 
+      none: false
+      requirements: 
+        - - ~>
+          - !ruby/object:Gem::Version 
+            version: 1.2.1
+    type: :runtime
+    version_requirements: *id001
+  - !ruby/object:Gem::Dependency 
+    name: jdbc-derby
+    prerelease: false
+    requirement: &id002 !ruby/object:Gem::Requirement 
+      none: false
+      requirements: 
+        - - ~>
+          - !ruby/object:Gem::Version 
+            version: 10.6.0
+    type: :runtime
+    version_requirements: *id002
+description: Install this gem to use Derby with JRuby on Rails.
+email: nick@nicksieger.com, ola.bini@gmail.com
+executables: []
 
-    test_files: []
+extensions: []
 
-    rdoc_options: []
+extra_rdoc_files: []
 
-    extra_rdoc_files: []
+files: []
 
-    executables: []
+homepage: https://github.com/jruby/activerecord-jdbc-adapter
+licenses: []
 
-    extensions: []
+post_install_message: 
+rdoc_options: []
 
-    requirements: []
+require_paths: 
+  - lib
+required_ruby_version: !ruby/object:Gem::Requirement 
+  none: false
+  requirements: 
+    - - ">="
+      - !ruby/object:Gem::Version 
+        version: "0"
+required_rubygems_version: !ruby/object:Gem::Requirement 
+  none: false
+  requirements: 
+    - - ">="
+      - !ruby/object:Gem::Version 
+        version: "0"
+requirements: []
 
-    dependencies:
-    - !ruby/object:Gem::Dependency
-      name: activerecord-jdbc-adapter
-      version_requirement:
-      version_requirements: !ruby/object:Gem::Version::Requirement
-        requirements:
-        - - ">="
-          - !ruby/object:Gem::Version
-            version: "0.6"
-        version:
-    - !ruby/object:Gem::Dependency
-      name: jdbc-derby
-      version_requirement:
-      version_requirements: !ruby/object:Gem::Version::Requirement
-        requirements:
-        - - ">="
-          - !ruby/object:Gem::Version
-            version: 10.2.2.0
-        version:
+rubyforge_project: jruby-extras
+rubygems_version: 1.8.12
+signing_key: 
+specification_version: 3
+summary: Derby JDBC adapter for JRuby on Rails.
+test_files: []
 YAML
-    @gemspec = @index.search("activerecord-jdbcderby-adapter").first
   end
 
   def assert_gemspec(newspec)
@@ -87,12 +94,6 @@ YAML
 
   def test_dump_and_load_gemspec_from_yaml
     assert_gemspec(Marshal.load(Marshal.dump(@gemspec)))
-  end
-
-  def test_dump_and_load_index_from_yaml
-    newindex = Marshal.load(Marshal.dump(@index))
-    newspec = newindex.search("activerecord-jdbcderby-adapter").first
-    assert_gemspec(newspec)
   end
 
   def test_dump_and_load_from_source
