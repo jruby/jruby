@@ -341,8 +341,28 @@ public class OpenFile {
                         // the child exits, so we have to confirm it's still
                         // open to avoid raising an error here when we try to
                         // flush and close the stream.
-                        if (isProcess && ms.getChannel().isOpen()
-                                || !isProcess) {
+                        if (isProcess) {
+                            if (ms.getChannel().isOpen()) {
+                                if (pipe == null && isWriteBuffered()) {
+                                    ms.fflush();
+                                }
+                                try {
+                                    ms.fclose();
+                                } catch (IOException ioe) {
+                                    // OpenJDK 7 seems to leave the FileChannel in a state where
+                                    // the fd is no longer valid, but the channel is not marked
+                                    // as open, so we get IOException: Bad file descriptor here.
+
+                                    if (!ioe.getMessage().equals("Bad file descriptor")) throw ioe;
+
+                                    // If the process is still alive, allow the error to propagate
+
+                                    boolean isAlive = false;
+                                    try { process.exitValue(); } catch (IllegalThreadStateException itse) { isAlive = true; }
+                                    if (isAlive) throw ioe;
+                                }
+                            }
+                        } else {
                             if (pipe == null && isWriteBuffered()) {
                                 ms.fflush();
                             }
