@@ -681,6 +681,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         
         for (int i = 0; i < strings.length; i++) {
             RubyString str = strings[i].convertToString();
+            str.scanForCodeRange(); // FIXME: Move to better location
             Encoding strEnc = str.getEncoding();
             
             if (options.isEncodingNone() && strEnc != ASCIIEncoding.INSTANCE) {
