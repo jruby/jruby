@@ -256,6 +256,7 @@ public class RubyGlobal {
         globals.alias("$LAST_MATCH_INFO", "$~");
         globals.alias("$IGNORECASE", "$=");
         globals.alias("$ARGV", "$*");
+        globals.alias("$MATCH", "$&");
         globals.alias("$PREMATCH", "$`");
         globals.alias("$POSTMATCH", "$'");
         globals.alias("$LAST_PAREN_MATCH", "$+");
