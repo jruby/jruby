@@ -1,28 +1,5 @@
 require "rubygems/version"
 
-# :stopdoc:
-
-# Hack to handle syck's DefaultKey bug with psych
-#
-# Quick note! If/when psych loads in 1.9, it will redefine
-# YAML to point to Psych by removing the YAML constant.
-# Thusly, over in Gem.load_yaml, we define DefaultKey again
-# after proper yaml library has been loaded.
-#
-# All this is so that there is always a YAML::Syck::DefaultKey
-# class no matter if the full yaml library has loaded or not.
-#
-module YAML
-  if !defined? Syck
-    module Syck
-      class DefaultKey
-      end
-    end
-  end
-end
-
-# :startdoc:
-
 ##
 # A Requirement is a set of one or more version restrictions. It supports a
 # few (<tt>=, !=, >, <, >=, <=, ~></tt>) different restriction operators.
@@ -144,6 +121,18 @@ class Gem::Requirement
     fix_syck_default_key_in_requirements
   end
 
+  def yaml_initialize(tag, vals) # :nodoc:
+    vals.each do |ivar, val|
+      instance_variable_set "@#{ivar}", val
+    end
+
+    fix_syck_default_key_in_requirements
+  end
+
+  def init_with coder # :nodoc:
+    yaml_initialize coder.tag, coder.map
+  end
+
   def prerelease?
     requirements.any? { |r| r.last.prerelease? }
   end
@@ -187,7 +176,7 @@ class Gem::Requirement
   def fix_syck_default_key_in_requirements
     # Fixup the Syck DefaultKey bug
     @requirements.each do |r|
-      if r[0].kind_of? YAML::Syck::DefaultKey
+      if r[0].kind_of? Gem::SyckDefaultKey
         r[0] = "="
       end
     end
