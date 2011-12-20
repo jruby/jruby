@@ -126,6 +126,7 @@ class Gem::Requirement
       instance_variable_set "@#{ivar}", val
     end
 
+    Gem.load_yaml
     fix_syck_default_key_in_requirements
   end
 
