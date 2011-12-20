@@ -16,7 +16,7 @@ import static org.objectweb.asm.Opcodes.*;
  * 
  */
 final class AsmClassBuilder {
-    public static final boolean DEBUG = false || Options.FFI_COMPILE_DUMP.load();
+    public static final boolean DEBUG = false || Options.FFI_COMPILE_DUMP.load() || Options.COMPILE_DUMP.load();
     private static final AtomicLong nextClassID = new AtomicLong(0);
     private final JITSignature signature;
     private final ClassWriter classWriter;

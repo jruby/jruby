@@ -15,6 +15,7 @@ import org.jruby.ext.ffi.MappedType;
 import org.jruby.ext.ffi.NativeType;
 import org.jruby.ext.ffi.Type;
 import org.jruby.util.WeakIdentityHashMap;
+import org.jruby.util.cli.Options;
 
 /**
  *
@@ -101,7 +102,7 @@ class JITCompiler {
             HandleRef ref = handles.get(jitSignature);
             JITHandle handle = ref != null ? ref.get() : null;
             if (handle == null) {
-                handle = new JITHandle(this, jitSignature, false);
+                handle = new JITHandle(this, jitSignature, "OFF".equalsIgnoreCase(Options.COMPILE_MODE.load()));
                 handles.put(jitSignature, new HandleRef(handle, jitSignature, referenceQueue));
             }
             

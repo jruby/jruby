@@ -34,7 +34,7 @@ final class JITHandle {
     }
 
     final NativeInvoker compile(com.kenai.jffi.Function function, Signature signature) {
-        if (compilationFailed || counter.incrementAndGet() < THRESHOLD) {
+        if (compilationFailed || (counter.incrementAndGet() < THRESHOLD && !"force".equalsIgnoreCase(Options.COMPILE_MODE.load()))) {
             return null;
         }
 
