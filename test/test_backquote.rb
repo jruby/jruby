@@ -25,10 +25,6 @@ class TestBackquote < Test::Unit::TestCase
     end
   end
 
-  def test_backquote_ruby
-    assert_equal "true\n", `ruby -e "puts true"`
-  end
-
   #JRUBY-2251
   def test_empty_backquotes
     if (!WINDOWS)
