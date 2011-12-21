@@ -2022,8 +2022,9 @@ public class RubyIO extends RubyObject {
         openFile.cleanup(runtime, true);
         
         // TODO: notify threads waiting on descriptors/IO? probably not...
-        
-        if (openFile.getProcess() != null) {
+
+        // If this is not a popen3/popen4 stream and it has a process, attempt to shut down that process
+        if (!popenSpecial && openFile.getProcess() != null) {
             obliterateProcess(openFile.getProcess());
             IRubyObject processResult = RubyProcess.RubyStatus.newProcessStatus(runtime, openFile.getProcess().exitValue(), openFile.getPid());
             runtime.getCurrentContext().setLastExitStatus(processResult);
@@ -3836,6 +3837,11 @@ public class RubyIO extends RubyObject {
             input.getOpenFile().setProcess(process);
             output.getOpenFile().setProcess(process);
             error.getOpenFile().setProcess(process);
+
+            // set all streams as popenSpecial streams, so we don't shut down process prematurely
+            input.popenSpecial = true;
+            output.popenSpecial = true;
+            error.popenSpecial = true;
             
             // process streams are not seekable
             input.getOpenFile().getMainStreamSafe().getDescriptor().
@@ -4307,4 +4313,9 @@ public class RubyIO extends RubyObject {
     protected List<RubyThread> blockingThreads;
     protected Encoding externalEncoding;
     protected Encoding internalEncoding;
+    /**
+     * If the stream is being used for popen, we don't want to destroy the process
+     * when we close the stream.
+     */
+    protected boolean popenSpecial;
 }
