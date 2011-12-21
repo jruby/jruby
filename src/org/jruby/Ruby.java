@@ -1138,6 +1138,10 @@ public final class Ruby {
             getLoadService().require("jruby/profiler/shutdown_hook");
         }
 
+        if (config.getLoadGemfile()) {
+            loadService.load("jruby/bundler/startup.rb", false);
+        }
+
         // Require in all libraries specified on command line
         for (String scriptName : config.getRequiredLibraries()) {
             if (is1_9) {

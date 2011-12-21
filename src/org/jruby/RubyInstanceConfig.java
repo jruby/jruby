@@ -1105,6 +1105,20 @@ public class RubyInstanceConfig {
     public boolean getJitBackground() {
         return jitBackground;
     }
+
+    /**
+     * Set whether to load and setup bundler on startup.
+     */
+    public void setLoadGemfile(boolean loadGemfile) {
+        this.loadGemfile = loadGemfile;
+    }
+
+    /**
+     * Whether to load and setup bundler on startup.
+     */
+    public boolean getLoadGemfile() {
+        return loadGemfile;
+    }
     
     ////////////////////////////////////////////////////////////////////////////
     // Configuration fields.
@@ -1211,6 +1225,8 @@ public class RubyInstanceConfig {
     private boolean globalRequireLock = Options.GLOBAL_REQUIRE_LOCK.load();
 
     private boolean jitBackground = Options.JIT_BACKGROUND.load();
+
+    private boolean loadGemfile = false;
     
     ////////////////////////////////////////////////////////////////////////////
     // Support classes, etc.

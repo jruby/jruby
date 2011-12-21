@@ -243,6 +243,9 @@ public class ArgumentProcessor {
                 case 's':
                     config.setArgvGlobalsOn(true);
                     break;
+                case 'G':
+                    config.setLoadGemfile(true);
+                    break;
                 case 'S':
                     runBinScript();
                     break FOR;
@@ -408,6 +411,9 @@ public class ArgumentProcessor {
                         break FOR;
                     } else if (argument.equals("--disable-gems")) {
                         config.setDisableGems(true);
+                        break FOR;
+                    } else if (argument.equals("--gemfile")) {
+                        config.setLoadGemfile(true);
                         break FOR;
                     } else {
                         if (argument.equals("--")) {
