@@ -12,6 +12,7 @@ import org.jruby.compiler.ir.instructions.GetFieldInstr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.JumpInstr;
 import org.jruby.compiler.ir.instructions.LabelInstr;
+import org.jruby.compiler.ir.instructions.LineNumberInstr;
 import org.jruby.compiler.ir.instructions.PutFieldInstr;
 import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
 import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
@@ -19,10 +20,11 @@ import org.jruby.compiler.ir.instructions.ReceiveSelfInstruction;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.objectweb.asm.Type;
 
-public enum JVMEmitter {
-    BEQ {
+public abstract class JVMEmitter {
+    static class BEQ extends JVMEmitter {
         public void emit(JVM jvm, Instr instr) {
             BEQInstr beq = (BEQInstr)instr;
             Operand[] args = beq.getOperands();
@@ -31,9 +33,9 @@ public enum JVMEmitter {
             jvm.emit(args[1]);
             jvm.method().invokeOtherBoolean("==", 1);
         }
-    },
+    }
     
-    CALL {
+    static class CALL extends JVMEmitter {
         public void emit(JVM jvm, Instr instr) {
             CallInstr call = (CallInstr)instr;
 
@@ -55,20 +57,23 @@ public enum JVMEmitter {
                     jvm.method().invokeSuper(call.getMethodAddr().getName(), call.getCallArgs().length);
                     break;
             }
+
+            int index = jvm.methodData().local(call.getResult());
+            jvm.method().storeLocal(index);
         }
-    },
+    }
     
-    COPY {
+    static class COPY extends JVMEmitter {
         public void emit(JVM jvm, Instr instr) {
             CopyInstr copy = (CopyInstr)instr;
             
-            int index = jvm.getVariableIndex(copy.getResult());
-            jvm.emit(copy.getOperands()[0]);
+            int index = jvm.methodData().local(copy.getResult());
+            jvm.emit(copy.getSource());
             jvm.method().storeLocal(index);
         }
-    },
+    }
     
-    DEF_INST_METH {
+    static class DEF_INST_METH extends JVMEmitter {
         public void emit(JVM jvm, Instr instr) {
             DefineInstanceMethodInstr defInstMethInstr = (DefineInstanceMethodInstr)instr;
             
@@ -77,13 +82,13 @@ public enum JVMEmitter {
 //            GeneratorAdapter adapter = new GeneratorAdapter(ACC_PUBLIC, Method.getMethod("void " + irMethod.getName() + " ()"), null, null, cls());
 //            adapter.loadThis();
 //            adapter.loadArgs();
-//            adapter.invokeStatic(Type.getType(Object.class), Method.getMethod("Object __ruby__" + irMethod.getName() + " (Object)"));
+//            adapter.invokeStatic(OBJECT_TYPE, Method.getMethod("Object __ruby__" + irMethod.getName() + " (Object)"));
 //            adapter.returnValue();
 //            adapter.endMethod();
         }
-    },
+    }
     
-    DEF_CLASS_METH {
+    static class DEF_CLASS_METH extends JVMEmitter {
         public void emit(JVM jvm, Instr instr) {
             DefineClassMethodInstr defClassMethInstr = (DefineClassMethodInstr)instr;
             
@@ -93,74 +98,82 @@ public enum JVMEmitter {
 //            adapter.returnValue();
 //            adapter.endMethod();
         }
-    },
+    }
     
-    JUMP {
+    static class JUMP extends JVMEmitter {
         public void emit(JVM jvm, Instr instr) {
             JumpInstr jump = (JumpInstr)instr;
             jvm.method().goTo(jvm.getLabel(jump.target));
         }
-    },
+    }
 
-    LABEL {
+    static class LABEL extends JVMEmitter {
         public void emit(JVM jvm, Instr instr) {
                 LabelInstr lbl = (LabelInstr)instr;
                 jvm.method().mark(jvm.getLabel(lbl.label));
         }
-    },
+    }
 
-    PUT_FIELD {
+    static class LINE_NUM extends JVMEmitter {
+        @Override
+        public void emit(JVM jvm, Instr instr) {
+            LineNumberInstr lineNumber = (LineNumberInstr)instr;
+            jvm.method().adapter.line(lineNumber.lineNumber);
+        }
+    }
+
+    static class PUT_FIELD extends JVMEmitter {
     public void emit(JVM jvm, Instr instr) {
             PutFieldInstr putField = (PutFieldInstr)instr;
             String field = putField.getRef();
             jvm.declareField(field);
             jvm.emit(putField.getValue());
             jvm.emit(putField.getTarget());
-            jvm.method().putField(Type.getType(Object.class), field, Type.getType(Object.class));
+            jvm.method().putField(JVM.OBJECT_TYPE, field, JVM.OBJECT_TYPE);
         }
-    },
+    }
 
-    GET_FIELD {
+    static class GET_FIELD extends JVMEmitter {
     public void emit(JVM jvm, Instr instr) {
             GetFieldInstr getField = (GetFieldInstr)instr;
             String field = getField.getRef();
             jvm.declareField(field);
             jvm.emit(getField.getSource());
-            jvm.method().getField(Type.getType(Object.class), field, Type.getType(Object.class));
+            jvm.method().getField(JVM.OBJECT_TYPE, field, JVM.OBJECT_TYPE);
         }
-    },
+    }
 
-    RETURN {
+    static class RETURN extends JVMEmitter {
         public void emit(JVM jvm, Instr instr) {
             ReturnInstr ret = (ReturnInstr)instr;
             jvm.emit(ret.getOperands()[0]);
             jvm.method().returnValue();
         }
-    },
+    }
     
-    RECV_SELF {
+    static class RECV_SELF extends JVMEmitter {
         public void emit(JVM jvm, Instr instr) {
             ReceiveSelfInstruction recvSelf = (ReceiveSelfInstruction)instr;
-            int selfIndex = jvm.method().newLocal(Type.getType(Object.class));
+            int $selfIndex = jvm.methodData().local(recvSelf.getResult());
             jvm.method().loadLocal(1);
-            jvm.method().storeLocal(selfIndex);
+            jvm.method().storeLocal($selfIndex);
         }
-    },
+    }
     
-    RECV_CLOSURE {
+    static class RECV_CLOSURE extends JVMEmitter {
         public void emit(JVM jvm, Instr instr) {
             ReceiveClosureInstr recvClosure = (ReceiveClosureInstr)instr;
-            int closureIndex = jvm.method().newLocal(Type.getType(Block.class));
+            int closureIndex = jvm.method().newLocal("$block", Type.getType(Block.class));
             // TODO: receive closure
 //          method().loadLocal(1);
 //          method().storeLocal(closureIndex);
         }
-    },
+    }
 
-    RECV_ARG {
+    static class RECV_ARG extends JVMEmitter {
         public void emit(JVM jvm, Instr instr) {
             ReceiveArgumentInstruction recvArg = (ReceiveArgumentInstruction)instr;
-            int index = jvm.getVariableIndex(recvArg.getResult());
+            int index = jvm.methodData().local(recvArg.getResult());
             // TODO: ideally, reuse args from signature
         }
     };
@@ -170,19 +183,20 @@ public enum JVMEmitter {
     public static final EnumMap<Operation, JVMEmitter> MAP;
     static {
         HashMap map = new HashMap();
-        map.put(Operation.BEQ, BEQ);
-        map.put(Operation.CALL, CALL);
-        map.put(Operation.COPY, COPY);
-        map.put(Operation.DEF_INST_METH, DEF_INST_METH);
-        map.put(Operation.DEF_CLASS_METH, DEF_CLASS_METH);
-        map.put(Operation.JUMP, JUMP);
-        map.put(Operation.LABEL, LABEL);
-        map.put(Operation.PUT_FIELD, PUT_FIELD);
-        map.put(Operation.GET_FIELD, GET_FIELD);
-        map.put(Operation.RETURN, RETURN);
-        map.put(Operation.RECV_SELF, RECV_SELF);
-        map.put(Operation.RECV_CLOSURE, RECV_CLOSURE);
-        map.put(Operation.RECV_ARG, RECV_ARG);
+        map.put(Operation.BEQ, new BEQ());
+        map.put(Operation.CALL, new CALL());
+        map.put(Operation.COPY, new COPY());
+        map.put(Operation.DEF_INST_METH, new DEF_INST_METH());
+        map.put(Operation.DEF_CLASS_METH, new DEF_CLASS_METH());
+        map.put(Operation.JUMP, new JUMP());
+        map.put(Operation.LABEL, new LABEL());
+        map.put(Operation.LINE_NUM, new LINE_NUM());
+        map.put(Operation.PUT_FIELD, new PUT_FIELD());
+        map.put(Operation.GET_FIELD, new GET_FIELD());
+        map.put(Operation.RETURN, new RETURN());
+        map.put(Operation.RECV_SELF, new RECV_SELF());
+        map.put(Operation.RECV_CLOSURE, new RECV_CLOSURE());
+        map.put(Operation.RECV_ARG, new RECV_ARG());
         
         MAP = new EnumMap<Operation, JVMEmitter>(map);
     }

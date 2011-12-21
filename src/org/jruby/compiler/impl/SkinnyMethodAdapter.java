@@ -12,6 +12,8 @@ package org.jruby.compiler.impl;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.util.Map;
+import java.util.concurrent.Callable;
+
 import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.cli.Options;
 import static org.jruby.util.CodegenUtils.*;
@@ -25,6 +27,7 @@ import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 import org.objectweb.asm.util.Printer;
 import org.objectweb.asm.util.Textifier;
 import org.objectweb.asm.util.TraceMethodVisitor;
@@ -39,12 +42,16 @@ public class SkinnyMethodAdapter extends MethodVisitor implements Opcodes {
     private Printer printer;
     private String name;
     private ClassVisitor cv;
+    private Label start;
+    private Label end;
 
     public SkinnyMethodAdapter(ClassVisitor cv, int flags, String name, String signature, String something, String[] exceptions) {
         super(flags);
         setMethodVisitor(cv.visitMethod(flags, name, signature, something, exceptions));
         this.cv = cv;
         this.name = name;
+        this.start = new Label();
+        this.end = new Label();
     }
     
     public MethodVisitor getMethodVisitor() {
@@ -526,9 +533,17 @@ public class SkinnyMethodAdapter extends MethodVisitor implements Opcodes {
     
     public void start() {
         getMethodVisitor().visitCode();
+        getMethodVisitor().visitLabel(start);
     }
     
     public void end() {
+        end(new Runnable() {
+            public void run() {
+            }
+        });
+    }
+
+    public void end(Runnable locals) {
         if (DEBUG) {
             PrintWriter pw = new PrintWriter(System.out);
             String className = "(unknown class)";
@@ -543,8 +558,18 @@ public class SkinnyMethodAdapter extends MethodVisitor implements Opcodes {
             printer.print(pw);
             pw.flush();
         }
+        getMethodVisitor().visitLabel(end);
+        locals.run();
         getMethodVisitor().visitMaxs(1, 1);
         getMethodVisitor().visitEnd();
+    }
+
+    public void local(int index, String name, Class type) {
+        method.visitLocalVariable(name, ci(type), null, start, end, index);
+    }
+
+    public void local(int index, String name, Type type) {
+        method.visitLocalVariable(name, type.getDescriptor(), null, start, end, index);
     }
 
     public void line(int line) {

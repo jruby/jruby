@@ -10,6 +10,7 @@ import java.util.Stack;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
 
 /**
@@ -30,20 +31,21 @@ class ClassData {
         return methodStack.peek();
     }
 
+    private static final Type[][] PARAMS = new Type[][] {
+            new Type[]{JVM.THREADCONTEXT_TYPE, JVM.OBJECT_TYPE},
+            new Type[]{JVM.THREADCONTEXT_TYPE, JVM.OBJECT_TYPE, JVM.OBJECT_TYPE},
+            new Type[]{JVM.THREADCONTEXT_TYPE, JVM.OBJECT_TYPE, JVM.OBJECT_TYPE, JVM.OBJECT_TYPE},
+            new Type[]{JVM.THREADCONTEXT_TYPE, JVM.OBJECT_TYPE, JVM.OBJECT_TYPE, JVM.OBJECT_TYPE, JVM.OBJECT_TYPE}
+    };
+
     public void pushmethod(String name, int arity) {
         Method m;
         switch (arity) {
             case 0:
-                m = Method.getMethod("java.lang.Object " + name + " (org.jruby.runtime.ThreadContext, java.lang.Object)");
-                break;
             case 1:
-                m = Method.getMethod("java.lang.Object " + name + " (org.jruby.runtime.ThreadContext, java.lang.Object, java.lang.Object)");
-                break;
             case 2:
-                m = Method.getMethod("java.lang.Object " + name + " (org.jruby.runtime.ThreadContext, java.lang.Object, java.lang.Object, java.lang.Object)");
-                break;
             case 3:
-                m = Method.getMethod("java.lang.Object " + name + " (org.jruby.runtime.ThreadContext, java.lang.Object, java.lang.Object, java.lang.Object, java.lang.Object)");
+                m = new Method(name, JVM.OBJECT_TYPE, PARAMS[arity]);
                 break;
             default:
                 throw new RuntimeException("Unsupported arity " + arity + " for " + name);

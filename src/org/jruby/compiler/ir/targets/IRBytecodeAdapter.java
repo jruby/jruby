@@ -20,27 +20,44 @@ import static org.jruby.util.CodegenUtils.*;
  * @author headius
  */
 class IRBytecodeAdapter {
-
-    public IRBytecodeAdapter(SkinnyMethodAdapter adapter, int arity) {
+    public IRBytecodeAdapter(SkinnyMethodAdapter adapter, int arity, String... params) {
         this.adapter = adapter;
-        newLocal(Type.getType(ThreadContext.class));
-        newLocal(Type.getType(Object.class));
-        for (int i = 0; i < arity; i++) {
-            newLocal(Type.getType(Object.class));
-        }
+        this.arity = arity;
+        this.params = params;
     }
 
     public void startMethod() {
         adapter.start();
+
+        newLocal("context", JVM.THREADCONTEXT_TYPE);
     }
 
     public void endMethod() {
-        //            adapter.end();
-        adapter.visitEnd();
+        adapter.end();
+//        adapter.end(new Runnable() {
+//            public void run() {
+//                for (Map.Entry<Integer, Type> entry : fields.entrySet()) {
+//                    int i = entry.getKey();
+//                    String name;
+//                    switch (i) {
+//                        case 0:
+//                            name = "context";
+//                            break;
+//                        case 1:
+//                            name = "self";
+//                            break;
+//                        default:
+//                            name = variables.get(i);
+//                    }
+//                    adapter.local(i, name, entry.getValue());
+//                }
+//            }
+//        });
     }
 
     public void push(Long l) {
-        adapter.invokedynamic("fixnum", "()Ljava/lang/Object;", new Handle(Opcodes.H_INVOKESTATIC, "dummy", "dummy", "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;J)Ljava/lang/invoke/CallSite;"), l);
+        adapter.aload(0);
+        adapter.invokedynamic("fixnum", sig(JVM.OBJECT, ThreadContext.class), Bootstrap.fixnum(), l);
     }
 
     public void loadLocal(int i) {
@@ -52,23 +69,23 @@ class IRBytecodeAdapter {
     }
 
     public void invokeOther(String name, int arity) {
-        adapter.invokedynamic("invoke:" + JavaNameMangler.mangleMethodName(name), sig(Object.class, params(ThreadContext.class, Object.class, Object.class, arity)), new Handle(Opcodes.H_INVOKESTATIC, "dummy", "dummy", "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;J)Ljava/lang/invoke/CallSite;"));
+        adapter.invokedynamic("invoke:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, arity)), Bootstrap.invoke());
     }
 
     public void invokeSelf(String name, int arity) {
-        adapter.invokedynamic("invokeSelf:" + JavaNameMangler.mangleMethodName(name), sig(Object.class, params(ThreadContext.class, Object.class, Object.class, arity)), new Handle(Opcodes.H_INVOKESTATIC, "dummy", "dummy", "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;J)Ljava/lang/invoke/CallSite;"));
+        adapter.invokedynamic("invokeSelf:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, arity)), Bootstrap.invokeSelf());
     }
 
     public void invokeSuper(String name, int arity) {
-        adapter.invokedynamic("invokeSuper:" + JavaNameMangler.mangleMethodName(name), sig(Object.class, params(ThreadContext.class, Object.class, Object.class, arity)), new Handle(Opcodes.H_INVOKESTATIC, "dummy", "dummy", "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;J)Ljava/lang/invoke/CallSite;"));
+        adapter.invokedynamic("invokeSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, arity)), new Handle(Opcodes.H_INVOKESTATIC, "dummy", "dummy", "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;J)Ljava/lang/invoke/CallSite;"));
     }
 
     public void invokeOtherBoolean(String name, int arity) {
-        adapter.invokedynamic("invoke:" + JavaNameMangler.mangleMethodName(name), sig(boolean.class, params(ThreadContext.class, Object.class, Object.class, arity)), new Handle(Opcodes.H_INVOKESTATIC, "dummy", "dummy", "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;J)Ljava/lang/invoke/CallSite;"));
+        adapter.invokedynamic("invoke:" + JavaNameMangler.mangleMethodName(name), sig(boolean.class, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, arity)), new Handle(Opcodes.H_INVOKESTATIC, "dummy", "dummy", "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;J)Ljava/lang/invoke/CallSite;"));
     }
 
     public void invokeSelfBoolean(String name, int arity) {
-        adapter.invokedynamic("invokeSelf:" + JavaNameMangler.mangleMethodName(name), sig(boolean.class, params(ThreadContext.class, Object.class, Object.class, arity)), new Handle(Opcodes.H_INVOKESTATIC, "dummy", "dummy", "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;J)Ljava/lang/invoke/CallSite;"));
+        adapter.invokedynamic("invokeSelf:" + JavaNameMangler.mangleMethodName(name), sig(boolean.class, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, arity)), new Handle(Opcodes.H_INVOKESTATIC, "dummy", "dummy", "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;J)Ljava/lang/invoke/CallSite;"));
     }
 
     public void invokeVirtual(Type type, Method method) {
@@ -95,10 +112,10 @@ class IRBytecodeAdapter {
         adapter.areturn();
     }
 
-    public int newLocal(Type type) {
+    public int newLocal(String name, Type type) {
         int index = fieldCount++;
         fields.put(index, type);
-        // TODO: declare local variable
+        variables.put(index, name);
         return index;
     }
 
@@ -108,5 +125,7 @@ class IRBytecodeAdapter {
     public SkinnyMethodAdapter adapter;
     private int fieldCount = 0;
     private Map<Integer, Type> fields = new HashMap<Integer, Type>();
-    
+    private Map<Integer, String> variables = new HashMap<Integer, String>();
+    private int arity;
+    private String[] params;
 }

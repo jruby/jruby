@@ -85,7 +85,7 @@ public class StackBasedVariableCompiler extends AbstractVariableCompiler {
         // declare locals for Java debugging purposes
         String[] variables = scope.getVariables();
         for (int i = 0; i < variables.length; i++) {
-            method.visitLocalVariable(variables[i], ci(IRubyObject.class), null, start, end, baseVariableIndex + i);
+            method.local(baseVariableIndex + i, variables[i], IRubyObject.class);
         }
     }
 
