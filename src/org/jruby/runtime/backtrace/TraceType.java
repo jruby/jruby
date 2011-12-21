@@ -8,6 +8,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyException;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyString;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -32,6 +33,13 @@ public class TraceType {
 
     public String printBacktrace(RubyException exception, boolean console) {
         return format.printBacktrace(exception, console);
+    }
+
+    public static void logBacktrace(RubyStackTraceElement[] trace) {
+        LOG.info("Backtrace generated:");
+        for (RubyStackTraceElement element : trace) {
+            LOG.info("  " + element.getFileName() + ":" + element.getLineNumber() + " in " + element.getMethodName());
+        }
     }
     
     public static void dumpException(RubyException exception) {
@@ -112,7 +120,12 @@ public class TraceType {
         };
 
         public BacktraceData getBacktraceData(ThreadContext context, boolean nativeException) {
-            return getBacktraceData(context, Thread.currentThread(), nativeException);
+            BacktraceData data = getBacktraceData(context, Thread.currentThread(), nativeException);
+
+            context.runtime.incrementBacktraceCount();
+            if (RubyInstanceConfig.LOG_BACKTRACES) logBacktrace(data.getBacktrace(context.runtime));
+
+            return data;
         }
         public abstract BacktraceData getBacktraceData(ThreadContext context, Thread thread, boolean nativeException);
     }

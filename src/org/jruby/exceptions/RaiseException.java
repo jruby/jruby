@@ -201,9 +201,7 @@ public class RaiseException extends JumpException {
         doCallEventHook(context);
         
         if (backtrace == null) {
-            context.runtime.incrementBacktraceCount();
             exception.prepareBacktrace(context, nativeException);
-            if (RubyInstanceConfig.LOG_BACKTRACES) TraceType.dumpBacktrace(exception);
         } else {
             exception.forceBacktrace(backtrace);
         }
