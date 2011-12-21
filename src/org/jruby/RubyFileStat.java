@@ -368,7 +368,7 @@ public class RubyFileStat extends RubyObject {
 
     @JRubyMethod(name = "<=>", required = 1)
     public IRubyObject cmp(IRubyObject other) {
-        if (!(other instanceof RubyFileStat)) getRuntime().getNil();
+        if (!(other instanceof RubyFileStat)) return getRuntime().getNil();
         
         long time1 = stat.mtime();
         long time2 = ((RubyFileStat) other).stat.mtime();
