@@ -893,14 +893,18 @@ public class RubyDir extends RubyObject {
         Ruby runtime = context.getRuntime();
         RubyHash systemHash = (RubyHash) runtime.getObject().getConstant("ENV_JAVA");
         RubyHash envHash = (RubyHash) runtime.getObject().getConstant("ENV");
-        IRubyObject home = envHash.op_aref(context, runtime.newString("HOME"));
-
-        if (home == null || home.isNil()) {
-            home = systemHash.op_aref(context, runtime.newString("user.home"));
-        }
+        IRubyObject home = null;
 
         if (home == null || home.isNil()) {
             home = envHash.op_aref(context, runtime.newString("LOGDIR"));
+        }
+
+        if (home == null || home.isNil()) {
+            home = envHash.op_aref(context, runtime.newString("HOME"));
+        }
+
+        if (home == null || home.isNil()) {
+            home = systemHash.op_aref(context, runtime.newString("user.home"));
         }
 
         if (home == null || home.isNil()) {
