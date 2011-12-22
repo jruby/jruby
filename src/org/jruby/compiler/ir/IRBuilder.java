@@ -680,45 +680,43 @@ public class IRBuilder {
     }
 
     // This method is called to build assignments for a multiple-assignment instruction
-    public void buildAssignment(Node node, IRScope s, Operand values, int argIndex, boolean isSplat) {
-        Variable v = s.getNewTemporaryVariable();
-        s.addInstr(new GetArrayInstr(v, values, argIndex, isSplat));
+    public void buildAssignment(Node node, IRScope s, Variable rhsVal) {
         switch (node.getNodeType()) {
             case ATTRASSIGNNODE: 
-                buildAttrAssignAssignment(node, s, v);
+                buildAttrAssignAssignment(node, s, rhsVal);
                 break;
             case CLASSVARASGNNODE:
-                s.addInstr(new PutClassVariableInstr(classVarDefinitionContainer(s, true), ((ClassVarAsgnNode)node).getName(), v));
+                s.addInstr(new PutClassVariableInstr(classVarDefinitionContainer(s, true), ((ClassVarAsgnNode)node).getName(), rhsVal));
                 break;
             case CLASSVARDECLNODE:
-                s.addInstr(new PutClassVariableInstr(classVarDefinitionContainer(s, false), ((ClassVarDeclNode)node).getName(), v));
+                s.addInstr(new PutClassVariableInstr(classVarDefinitionContainer(s, false), ((ClassVarDeclNode)node).getName(), rhsVal));
                 break;
             case CONSTDECLNODE:
-                buildConstDeclAssignment((ConstDeclNode) node, s, v);
+                buildConstDeclAssignment((ConstDeclNode) node, s, rhsVal);
                 break;
             case DASGNNODE: {
                 DAsgnNode variable = (DAsgnNode) node;
                 int depth = variable.getDepth();
-                s.addInstr(new CopyInstr(s.getLocalVariable(variable.getName(), depth), v));
+                s.addInstr(new CopyInstr(s.getLocalVariable(variable.getName(), depth), rhsVal));
                 break;
             }
             case GLOBALASGNNODE:
-                s.addInstr(new PutGlobalVarInstr(((GlobalAsgnNode)node).getName(), v));
+                s.addInstr(new PutGlobalVarInstr(((GlobalAsgnNode)node).getName(), rhsVal));
                 break;
             case INSTASGNNODE:
                 // NOTE: if 's' happens to the a class, this is effectively an assignment of a class instance variable
-                s.addInstr(new PutFieldInstr(getSelf(s), ((InstAsgnNode)node).getName(), v));
+                s.addInstr(new PutFieldInstr(getSelf(s), ((InstAsgnNode)node).getName(), rhsVal));
                 break;
             case LOCALASGNNODE: {
                 LocalAsgnNode localVariable = (LocalAsgnNode) node;
                 int depth = localVariable.getDepth();
-                s.addInstr(new CopyInstr(s.getLocalVariable(localVariable.getName(), depth), v));
+                s.addInstr(new CopyInstr(s.getLocalVariable(localVariable.getName(), depth), rhsVal));
                 break;
             }
             case ZEROARGNODE:
                 throw new NotCompilableException("Shouldn't get here; zeroarg does not do assignment: " + node);
             default:
-                buildVersionSpecificAssignment(node, s, v);
+                buildVersionSpecificAssignment(node, s, rhsVal);
         }
     }
 
@@ -2455,12 +2453,13 @@ public class IRBuilder {
         // First, build assignments for specific named arguments
         int i = 0; 
         if (sourceArray != null) {
-            ListNode headNode = (ListNode) sourceArray;
-            for (Node an: headNode.childNodes()) {
+            for (Node an: sourceArray.childNodes()) {
                 if (values == null) {
                     buildBlockArgsAssignment(an, s, argsArray, i, false, false, false);
                 } else {
-                    buildAssignment(an, s, values, i, false);
+                    Variable rhsVal = s.getNewTemporaryVariable();
+                    s.addInstr(new GetArrayInstr(rhsVal, values, i, false));
+                    buildAssignment(an, s, rhsVal);
                 }
                 i++;
             }
@@ -2474,7 +2473,9 @@ public class IRBuilder {
         } else if (argsNode instanceof StarNode) {
             // do nothing
         } else if (values != null) {
-            buildAssignment(argsNode, s, values, i, true); // rest of the argument array!
+            Variable rhsVal = s.getNewTemporaryVariable();
+            s.addInstr(new GetArrayInstr(rhsVal, values, i, true));
+            buildAssignment(argsNode, s, rhsVal); // rest of the argument array!
         } else {
             buildBlockArgsAssignment(argsNode, s, argsArray, i, false, false, true); // rest of the argument array!
         }

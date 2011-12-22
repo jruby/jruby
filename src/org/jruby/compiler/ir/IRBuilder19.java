@@ -53,6 +53,7 @@ public class IRBuilder19 extends IRBuilder {
         switch (node.getNodeType()) {
             case ENCODINGNODE: return buildEncoding((EncodingNode)node, s);
             case MULTIPLEASGN19NODE: return buildMultipleAsgn19((MultipleAsgn19Node) node, s);
+            case LAMBDANODE: throw new NotCompilableException("Unknown node encountered in builder: " + node.getClass());
             default: throw new NotCompilableException("Unknown node encountered in builder: " + node.getClass());
         }
     }
@@ -271,36 +272,56 @@ public class IRBuilder19 extends IRBuilder {
     // Ex: a,b,*c=v  is a regular assignment and in this case, the "values" operand will be non-null
     // Ex: { |a,b,*c| ..} is the argument passing case
     public void buildMultipleAsgn19Assignment(final MultipleAsgn19Node multipleAsgnNode, IRScope s, Operand argsArray, Operand values) {
-        final ListNode sourceArray = multipleAsgnNode.getPre();
+        final ListNode masgnPre = multipleAsgnNode.getPre();
 
-        // First, build assignments for specific named arguments
+        // Build assignments for specific named arguments
         int i = 0; 
-        if (sourceArray != null) {
-            ListNode headNode = (ListNode) sourceArray;
-            for (Node an: headNode.childNodes()) {
+        if (masgnPre != null) {
+            for (Node an: masgnPre.childNodes()) {
                 if (values == null) {
                     buildArgsMasgn(an, s, argsArray, i, false, false);
                 } else {
-                    buildAssignment(an, s, values, i, false);
+                    Variable rhsVal = s.getNewTemporaryVariable();
+                    s.addInstr(new GetArrayInstr(rhsVal, values, i, false));
+                    buildAssignment(an, s, rhsVal);
                 }
                 i++;
             }
         }
 
-        // First, build an assignment for a splat, if any, with the rest of the args!
-        Node argsNode = multipleAsgnNode.getRest();
-        if (argsNode == null) {
-            if (sourceArray == null)
+        // Build an assignment for a splat, if any, with the rest of the operands!
+        Node restNode = multipleAsgnNode.getRest();
+        if (restNode == null) {
+            if (masgnPre == null)
                 throw new NotCompilableException("Something's wrong, multiple assignment with no head or args at: " + multipleAsgnNode.getPosition());
-        } else if (argsNode instanceof StarNode) {
-            // do nothing
-        } else if (values != null) {
-            buildAssignment(argsNode, s, values, i, true); // rest of the argument array!
         } else {
-            buildArgsMasgn(argsNode, s, argsArray, i, false, true); // rest of the argument array!
+            if (restNode instanceof StarNode) {
+                // do nothing
+            } else if (values != null) {
+                Variable rhsVal = s.getNewTemporaryVariable();
+                s.addInstr(new GetArrayInstr(rhsVal, values, i, multipleAsgnNode.getPostCount()));
+                buildAssignment(restNode, s, rhsVal); // rest of the argument array!
+            } else {
+                buildArgsMasgn(restNode, s, argsArray, i, false, true); // rest of the argument array!
+            }
+            i++;
         }
 
-        // SSS FIXME: Deal with post as well
+
+        // Build assignments for rest of the operands
+        final ListNode masgnPost = multipleAsgnNode.getPost();
+        if (masgnPost != null) {
+            for (Node an: masgnPost.childNodes()) {
+                if (values == null) {
+                    buildArgsMasgn(an, s, argsArray, i, false, false);
+                } else {
+                    Variable rhsVal = s.getNewTemporaryVariable();
+                    s.addInstr(new GetArrayInstr(rhsVal, values, i, false));
+                    buildAssignment(an, s, rhsVal);
+                }
+                i++;
+            }
+        }
     }
 
     // Non-arg masgn (actually a nested masgn)

@@ -19,22 +19,36 @@ import org.jruby.runtime.builtin.IRubyObject;
 //
 // FIXME: Rename GetArrayInstr to ArrayArefInstr which would be used
 // in later passes as well when compiler passes replace ruby-array []
-// calls with inlined lookups
+// cgetArraySlices with inlined lookups
 public class GetArrayInstr extends Instr implements ResultInstr {
     private Operand array;
-    private final int index;
-    private final boolean all;  // If true, returns the rest of the array starting at the index
+    private final int indexFromStart;
+    private final int indexFromEnd;
+    private final boolean getArraySlice;  // If true, returns an array slice between indexFromStart and indexFromEnd (rest of the array if indexFromEnd is -1)
     private Variable result;
 
-    public GetArrayInstr(Variable result, Operand array, int index, boolean getRestOfArray) {
+    public GetArrayInstr(Variable result, Operand array, int indexFromStart, boolean getRestOfArray) {
         super(Operation.GET_ARRAY);
         
         assert result != null : "GetArrayInstr result is null";
         
-        this.array = array;
-        this.index = index;
         this.result = result;
-        all = getRestOfArray;
+        this.array = array;
+        getArraySlice = getRestOfArray;
+        this.indexFromStart = indexFromStart;
+        this.indexFromEnd = 0;
+    }
+
+    public GetArrayInstr(Variable result, Operand array, int indexFromStart, int indexFromEnd) {
+        super(Operation.GET_ARRAY);
+        
+        assert result != null : "GetArrayInstr result is null";
+        
+        this.result = result;
+        this.array = array;
+        getArraySlice = true;
+        this.indexFromStart = indexFromStart;
+        this.indexFromEnd = indexFromEnd;
     }
 
     public Operand[] getOperands() {
@@ -56,19 +70,19 @@ public class GetArrayInstr extends Instr implements ResultInstr {
 
     @Override
     public String toString() {
-        return "" + result + " = " + array + "[" + index + (all ? ":END" : "") + "] (GET_ARRAY)";
+        return "" + result + " = " + array + "[" + indexFromStart + (getArraySlice ? ":END" : "") + "] (GET_ARRAY)";
     }
 
     @Override
     public Operand simplifyAndGetResult(Map<Operand, Operand> valueMap) {
         simplifyOperands(valueMap, false);
         Operand val = array.getValue(valueMap);
-        return val.fetchCompileTimeArrayElement(index, all);
+        return val.fetchCompileTimeArrayElement(indexFromStart, getArraySlice);
     }
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new GetArrayInstr(ii.getRenamedVariable(result), array.cloneForInlining(ii), index, all);
+        return new GetArrayInstr(ii.getRenamedVariable(result), array.cloneForInlining(ii), indexFromStart, getArraySlice);
     }
 
     @Override
@@ -77,16 +91,16 @@ public class GetArrayInstr extends Instr implements ResultInstr {
         RubyArray rubyArray = (RubyArray) array.retrieve(context, self, currDynScope, temp);
         Object val;
         
-        if (!all) {
-            return rubyArray.entry(index);
+        if (!getArraySlice) {
+            return rubyArray.entry(indexFromStart);
         } else {
             int n = rubyArray.getLength();
-            int size = n - index;
+            int size = n - indexFromStart;
             if (size <= 0) {
                 return RubyArray.newEmptyArray(context.getRuntime());
             } else {
                 // FIXME: Perf win to use COW between source Array and this new one (remove toJavaArray)
-                return RubyArray.newArrayNoCopy(context.getRuntime(), rubyArray.toJavaArray(), index);
+                return RubyArray.newArrayNoCopy(context.getRuntime(), rubyArray.toJavaArray(), indexFromStart, (size - indexFromEnd));
             }
         }
     }
