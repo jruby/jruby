@@ -18,6 +18,7 @@ import org.jruby.ast.NthRefNode;
 import org.jruby.ast.OptArgNode;
 import org.jruby.ast.StarNode;
 import org.jruby.ast.VCallNode;
+import org.jruby.ast.YieldNode;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.ir.operands.Array;
 import org.jruby.compiler.ir.operands.BooleanLiteral;
@@ -41,6 +42,7 @@ import org.jruby.compiler.ir.instructions.LabelInstr;
 import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
 import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
 import org.jruby.compiler.ir.instructions.ReceiveSelfInstruction;
+import org.jruby.compiler.ir.instructions.YieldInstr;
 import org.jruby.compiler.ir.instructions.jruby.CheckArityInstr;
 import org.jruby.compiler.ir.instructions.jruby.ToAryInstr;
 import org.jruby.compiler.ir.instructions.ruby19.GetEncodingInstr;
@@ -350,6 +352,20 @@ public class IRBuilder19 extends IRBuilder {
         Variable ret = getValueInTemporaryVariable(s, values);
         s.addInstr(new ToAryInstr(ret, ret, BooleanLiteral.FALSE));
         buildMultipleAsgn19Assignment(multipleAsgnNode, s, null, ret);
+        return ret;
+    }
+
+    public Operand buildYield(YieldNode node, IRScope s) {
+        boolean unwrap = node.getExpandArguments();
+        Node argNode = node.getArgsNode();
+        // Get rid of one level of array wrapping
+        if (argNode != null && (argNode instanceof ArrayNode) && ((ArrayNode)argNode).size() == 1) {
+            argNode = ((ArrayNode)argNode).getLast();
+            unwrap = false;
+        }
+
+        Variable ret = s.getNewTemporaryVariable();
+        s.addInstr(new YieldInstr(ret, s.getImplicitBlockArg(), build(argNode, s), unwrap));
         return ret;
     }
 

@@ -16,6 +16,9 @@ public class InterpretedIRBlockBody19 extends InterpretedIRBlockBody {
     }
 
     private IRubyObject[] convertValueIntoArgArray(ThreadContext context, IRubyObject value, boolean isArray) {
+        // SSS FIXME: But this should not happen -- so, some places in the runtime library is breaking this contract.
+        if (isArray && !(value instanceof RubyArray)) isArray = false;
+
         // Eliminate the additional array-wrap when arrays are being passed in
         if (isArray) {
             RubyArray valArray = (RubyArray)value;
@@ -30,12 +33,8 @@ public class InterpretedIRBlockBody19 extends InterpretedIRBlockBody {
             case 0  : return IRubyObject.NULL_ARRAY;
             case -1 : return isArray ? ((RubyArray)value).toJavaArray() : new IRubyObject[] { value };
             case 1  : {
-               if (isArray) {
-                   RubyArray a = (RubyArray)value;
-                   return new IRubyObject[] { a.size() > 0 ? a.eltInternal(0) : context.nil};
-               } else {
-                   return new IRubyObject[] { value };
-               }
+               if (isArray && ((RubyArray)value).size() == 0) value = context.nil;
+               return new IRubyObject[] { value };
             }
             default : 
                if (!isArray) {
