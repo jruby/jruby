@@ -2543,14 +2543,14 @@ public class RubyIO extends RubyObject {
             RubyString str = (RubyString) value;
             if (str.isEmpty()) {
                 Ruby ruby = context.getRuntime();
+                RaiseException eagain = ruby.newErrnoEAGAINError("");
 
                 // FIXME: *oif* 1.9 actually does this
                 if (ruby.is1_9()) {
-                    // will throw
-                    return RubyKernel.raise(context, ruby.getKernel(), new IRubyObject[]{ruby.getClassFromPath("JRuby::EAGAINReadable")}, Block.NULL_BLOCK);
-                } else {
-                    throw ruby.newErrnoEAGAINError("");
+                    eagain.getException().extend(new IRubyObject[] {ruby.getIO().getConstant("WaitReadable")});
                 }
+
+                throw eagain;
             }
         }
 
