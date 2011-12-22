@@ -28,8 +28,15 @@ public class InterpretedIRBlockBody19 extends InterpretedIRBlockBody {
         int blockArity = arity().getValue();
         switch (blockArity) {
             case 0  : return IRubyObject.NULL_ARRAY;
-            case 1  : return isArray ? new IRubyObject[] { ((RubyArray)value).eltInternal(0) } : new IRubyObject[] { value };
             case -1 : return isArray ? ((RubyArray)value).toJavaArray() : new IRubyObject[] { value };
+            case 1  : {
+               if (isArray) {
+                   RubyArray a = (RubyArray)value;
+                   return new IRubyObject[] { a.size() > 0 ? a.eltInternal(0) : context.nil};
+               } else {
+                   return new IRubyObject[] { value };
+               }
+            }
             default : 
                if (!isArray) {
                    value = RuntimeHelpers.aryToAry(value);
