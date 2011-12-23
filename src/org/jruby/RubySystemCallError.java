@@ -218,7 +218,13 @@ public class RubySystemCallError extends RubyException {
             if (Errno.valueOf(errnoVal) != Errno.__UNKNOWN_CONSTANT__) {
                 // we got a valid errno value
                 isErrnoClass = true;
-                setMetaClass(runtime.getErrno(errnoVal));
+
+                // set the metaclass to an Errno, if something other than SystemCallError or Errno wasn't provided
+                if (metaClass == runtime.getSystemCallError() ||
+                        metaClass == runtime.getErrno()) {
+                    setMetaClass(runtime.getErrno(errnoVal));
+                }
+                
                 klass = getMetaClass().getRealClass();
 
                 // FIXME: Errno descriptions from Constantine
