@@ -64,7 +64,7 @@ public class YieldInstr extends Instr implements ResultInstr {
 
     @Override
     public String toString() { 
-        return unwrapArray ? (super.toString() + "(" + blockArg + ", " + yieldArg + ")") : (super.toString() + "(" + blockArg + ", UNWRAP(" + yieldArg + "))");
+        return unwrapArray ? (super.toString() + "(" + blockArg + ", UNWRAP(" + yieldArg + "))") : (super.toString() + "(" + blockArg + ", " + yieldArg + ")");
     }
 
     // if unwrapArray, maybe convert yieldArg into a CompoundArray operand?
