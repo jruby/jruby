@@ -88,7 +88,8 @@ public class InterpretedIRBlockBody19 extends InterpretedIRBlockBody {
             if (args.length == 1) {
                 args = convertValueIntoArgArray(context, args[0], false, false);
             } else if (blockArity == 1) {
-                args = convertToRubyArray(context, args);
+                // discard excess arguments
+                args = (args.length == 0) ? context.getRuntime().getSingleNilArray() : new IRubyObject[] { args[0] };
             }
             break;
         }
