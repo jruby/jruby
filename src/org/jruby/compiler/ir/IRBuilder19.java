@@ -191,6 +191,10 @@ public class IRBuilder19 extends IRBuilder {
         for (int i = 0; i < requiredPost; i++, argIndex++) {
             receiveRequiredArg(postArgs.get(i), s, argIndex, true, required, opt+rest);
         }
+
+        // Optional block arg
+        BlockArgNode blockArg = argsNode.getBlock();
+        if (blockArg != null) receiveClosureArg(blockArg, s);
     }
 
     public void receiveClosureArg(BlockArgNode blockVarNode, IRScope s) {
@@ -218,6 +222,11 @@ public class IRBuilder19 extends IRBuilder {
     }
 
     public void receiveBlockClosureArg(Node node, IRScope s) {
+        // SSS FIXME: Baffled.  How can both forms occur?  Why isn't one or the other
+        // form consistently showing up in the AST?
+        //
+        // 1. iterNode -> receiveBlockArgs -> receiveArgs -> argsNode.getBlock -> receiveClosureArg
+        // 2. iterNode -> receiveBlockClosureArg -> receiveClosureArg
         if (node != null) receiveClosureArg((BlockArgNode)node, s);
     }
 
