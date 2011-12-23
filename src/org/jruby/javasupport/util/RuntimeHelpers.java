@@ -1707,7 +1707,7 @@ public class RuntimeHelpers {
         Ruby runtime = value.getRuntime();
         return arrayValue(runtime.getCurrentContext(), runtime, value);
     }
-
+    
     public static RubyArray arrayValue(ThreadContext context, Ruby runtime, IRubyObject value) {
         IRubyObject tmp = value.checkArrayType();
 
@@ -1776,6 +1776,20 @@ public class RuntimeHelpers {
         return arrayValue(value);
     }
     
+    public static IRubyObject unsplatValue19(IRubyObject argsResult) {
+        if (argsResult instanceof RubyArray) {
+            RubyArray array = (RubyArray) argsResult;
+                    
+            if (array.size() == 1) {
+                IRubyObject newResult = array.eltInternal(0);
+                if (!((newResult instanceof RubyArray) && ((RubyArray) newResult).size() == 0)) {
+                    argsResult = newResult;
+                }
+            }
+        }        
+        return argsResult;
+    }
+        
     public static IRubyObject[] splatToArguments(IRubyObject value) {
         Ruby runtime = value.getRuntime();
         
