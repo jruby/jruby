@@ -36,6 +36,7 @@ public class InterpretedIRBlockBody19 extends InterpretedIRBlockBody {
                 if (isArray) {
                     RubyArray valArray = (RubyArray)value;
                     if (valArray.size() == 1) value = valArray.eltInternal(0);
+                    value = RuntimeHelpers.aryToAry(value);
                     return (value instanceof RubyArray) ? ((RubyArray)value).toJavaArray() : new IRubyObject[] { value };
                 } else {
                     value = RuntimeHelpers.aryToAry(value);
