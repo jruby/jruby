@@ -34,7 +34,9 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.Ruby;
+import org.jruby.RubyArray;
 import org.jruby.ast.visitor.NodeVisitor;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -106,11 +108,15 @@ public class YieldNode extends Node {
     
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        IRubyObject argsResult = argsNode.interpret(runtime, context, self, aBlock);
+        
         if (expandedArguments) {
-            return context.getCurrentFrame().getBlock().yieldArray(context, argsNode.interpret(runtime, context, self, aBlock), null, null);
+            if (argsNode instanceof Splat19Node) argsResult = RuntimeHelpers.unsplatValue19(argsResult);
+
+            return context.getCurrentFrame().getBlock().yieldArray(context, argsResult, null, null);
         } 
 
-        return context.getCurrentFrame().getBlock().yield(context, argsNode.interpret(runtime, context, self, aBlock));
+        return context.getCurrentFrame().getBlock().yield(context, argsResult);
     }
     
     @Override
