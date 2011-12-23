@@ -33,13 +33,17 @@ public class InterpretedIRBlockBody19 extends InterpretedIRBlockBody {
                return new IRubyObject[] { value };
             }
             default : 
-               if (!isArray) {
-                   value = RuntimeHelpers.aryToAry(value);
-                   if (!(value instanceof RubyArray)) {
-                       throw context.getRuntime().newTypeError(value.getType().getName() + "#to_ary should return Array");
-                   }
-               }
-               return ((RubyArray)value).toJavaArray();
+                if (isArray) {
+                    RubyArray valArray = (RubyArray)value;
+                    if (valArray.size() == 1) value = valArray.eltInternal(0);
+                    return (value instanceof RubyArray) ? ((RubyArray)value).toJavaArray() : new IRubyObject[] { value };
+                } else {
+                    value = RuntimeHelpers.aryToAry(value);
+                    if (!(value instanceof RubyArray)) {
+                        throw context.getRuntime().newTypeError(value.getType().getName() + "#to_ary should return Array");
+                    }
+                    return ((RubyArray)value).toJavaArray();
+                }
         }
     }
 
