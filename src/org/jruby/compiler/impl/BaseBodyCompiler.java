@@ -5,7 +5,9 @@
 package org.jruby.compiler.impl;
 
 import java.io.PrintStream;
+import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -66,6 +68,7 @@ import org.jruby.runtime.builtin.InstanceVariables;
 import org.jruby.util.ByteList;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.SafePropertyAccessor;
+import org.jruby.util.StringSupport;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 import static org.objectweb.asm.Opcodes.*;

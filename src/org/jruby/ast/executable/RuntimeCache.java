@@ -168,7 +168,7 @@ public class RuntimeCache {
         return regexp;
     }
 
-    public final BigInteger getBigInteger(Runtime runtime, int index, String pattern) {
+    public final BigInteger getBigInteger(Ruby runtime, int index, String pattern) {
         BigInteger bigint = bigIntegers[index];
         if (bigint == null) {
             return bigIntegers[index] = new BigInteger(pattern, 16);
