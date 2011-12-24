@@ -27,7 +27,7 @@ public class InterpretedIRBlockBody19 extends InterpretedIRBlockBody {
                if (isArray) {
                    RubyArray a = ((RubyArray)value);
                    int n = a.size();
-                   if (a.size() == 0) value = context.nil;
+                   if (a.size() == 0) value = isYieldSpecific ? RubyArray.newEmptyArray(context.getRuntime()) : context.nil;
                    else if (!isYieldSpecific) value = a.eltInternal(0);
                }
                return new IRubyObject[] { value };
@@ -91,7 +91,8 @@ public class InterpretedIRBlockBody19 extends InterpretedIRBlockBody {
         case NORMAL: 
         case PROC: {
             if (args.length == 1) {
-                args = convertValueIntoArgArray(context, args[0], false, false);
+                // Convert value to arg-array, unwrapping where necessary
+                args = convertValueIntoArgArray(context, args[0], false, (type == Block.Type.NORMAL) && (args[0] instanceof RubyArray));
             } else if (blockArity == 1) {
                 // discard excess arguments
                 args = (args.length == 0) ? context.getRuntime().getSingleNilArray() : new IRubyObject[] { args[0] };
