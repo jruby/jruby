@@ -2,6 +2,8 @@ package org.jruby.ext.ffi.jffi;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.jruby.Ruby;
 import org.jruby.ext.ffi.AllocatedDirectMemoryIO;
 import org.jruby.util.WeakReferenceReaper;
@@ -10,9 +12,11 @@ final class AllocatedNativeMemoryIO extends BoundedNativeMemoryIO implements All
     /** Keeps strong references to the memory bucket until cleanup */
     private static final Map<AllocationGroup, Boolean> referenceSet = new ConcurrentHashMap<AllocationGroup, Boolean>();
     private static final ThreadLocal<AllocationGroup> currentBucket = new ThreadLocal<AllocationGroup>();
+    static final AtomicLong nativeMemoryUsed = new AtomicLong(0);
+    static final long NATIVE_MEMORY_HIGHWATER = 128L * 1024 * 1024;
 
     private final MemoryAllocation allocation;
-    private final Object referent;
+    private final Object sentinel;
 
     /**
      * Allocates native memory
@@ -52,15 +56,17 @@ final class AllocatedNativeMemoryIO extends BoundedNativeMemoryIO implements All
             * This reduces the overhead of automatically freed native memory allocations by about 70%
             */
             AllocationGroup allocationGroup = currentBucket.get();
-            Object referent = allocationGroup != null ? allocationGroup.get() : null;
+            Object sentinel = allocationGroup != null ? allocationGroup.get() : null;
 
-            if (referent == null || !allocationGroup.canAccept(size)) {
-                referent = new Object();
-                referenceSet.put(allocationGroup = new AllocationGroup(referent), Boolean.TRUE);
+            if (sentinel == null || !allocationGroup.canAccept(size)) {
+                if (nativeMemoryUsed.addAndGet(AllocationGroup.MAX_BYTES_PER_BUCKET) >= NATIVE_MEMORY_HIGHWATER) {
+                    System.gc();
+                }
+                referenceSet.put(allocationGroup = new AllocationGroup(sentinel = new Object()), Boolean.TRUE);
                 currentBucket.set(allocationGroup);
             }
 
-            AllocatedNativeMemoryIO io = new AllocatedNativeMemoryIO(runtime, referent, address, size, align);
+            AllocatedNativeMemoryIO io = new AllocatedNativeMemoryIO(runtime, sentinel, address, size, align);
             allocationGroup.add(io.allocation, size);
 
             return io;
@@ -71,9 +77,9 @@ final class AllocatedNativeMemoryIO extends BoundedNativeMemoryIO implements All
         }
     }
     
-    private AllocatedNativeMemoryIO(Ruby runtime, Object referent, long address, int size, int align) {
+    private AllocatedNativeMemoryIO(Ruby runtime, Object sentinel, long address, int size, int align) {
         super(runtime, ((address - 1) & ~(align - 1)) + align, size);
-        this.referent = referent;
+        this.sentinel = sentinel;
         this.allocation = new MemoryAllocation(address);
     }
 
@@ -100,8 +106,8 @@ final class AllocatedNativeMemoryIO extends BoundedNativeMemoryIO implements All
         private volatile MemoryAllocation head = null;
         private long bytesUsed = 0;
         
-        AllocationGroup(Object referent) {
-            super(referent);
+        AllocationGroup(Object sentinel) {
+            super(sentinel);
         }
 
         void add(MemoryAllocation m, int size) {
@@ -123,6 +129,7 @@ final class AllocatedNativeMemoryIO extends BoundedNativeMemoryIO implements All
                 }
                 m = m.next;
             }
+            nativeMemoryUsed.addAndGet(0L - MAX_BYTES_PER_BUCKET);
         }
     }
 

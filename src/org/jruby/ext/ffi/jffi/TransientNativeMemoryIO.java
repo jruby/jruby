@@ -35,11 +35,14 @@ import org.jruby.util.WeakReferenceReaper;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 final class TransientNativeMemoryIO extends BoundedNativeMemoryIO implements DirectMemoryIO {
     /** Keeps strong references to the memory bucket until cleanup */
     private static final Map<Magazine, Boolean> referenceSet = new ConcurrentHashMap<Magazine, Boolean>();
     private static final ThreadLocal<Magazine> currentMagazine = new ThreadLocal<Magazine>();
+    private static final AtomicLong nativeMemoryUsed = AllocatedNativeMemoryIO.nativeMemoryUsed;
+    private static final long MAX_NATIVE_MEMORY = AllocatedNativeMemoryIO.NATIVE_MEMORY_HIGHWATER;
 
     private final Object sentinel;
 
@@ -62,10 +65,19 @@ final class TransientNativeMemoryIO extends BoundedNativeMemoryIO implements Dir
         long address = 0;
 
         if (sentinel == null || (address = magazine.allocate(size, align)) == 0) {
-            referenceSet.put(magazine = new Magazine(sentinel = new Object()), Boolean.TRUE);
+            PageManager pm = PageManager.getInstance();
+            if (nativeMemoryUsed.addAndGet(pm.pageSize()) >= MAX_NATIVE_MEMORY) {
+                System.gc();
+            }
+
+            long memory = pm.allocatePages(1, PageManager.PROT_READ | PageManager.PROT_WRITE);
+            long end = memory + pm.pageSize();
+
+            referenceSet.put(magazine = new Magazine(sentinel = new Object(), pm, memory, end), Boolean.TRUE);
             currentMagazine.set(magazine);
             address = magazine.allocate(size, align);
         }
+        
 
         return new TransientNativeMemoryIO(runtime, sentinel, address, size);
     }
@@ -88,11 +100,11 @@ final class TransientNativeMemoryIO extends BoundedNativeMemoryIO implements Dir
         private final long end;
         private long memory;
 
-        Magazine(Object sentinel) {
+        Magazine(Object sentinel, PageManager pm, long page, long end) {
             super(sentinel);
-            this.pm = PageManager.getInstance();
-            this.memory = this.page = pm.allocatePages(1, PageManager.PROT_READ | PageManager.PROT_WRITE);
-            this.end = this.page + pm.pageSize();
+            this.pm = pm;
+            this.memory = this.page = page;
+            this.end = end;
         }
 
         long allocate(int size, int align) {
@@ -104,15 +116,11 @@ final class TransientNativeMemoryIO extends BoundedNativeMemoryIO implements Dir
 
             return 0L;
         }
-        
-        long getBytesUsed() {
-            return memory - page;
-        }
 
         public final void run() {
             pm.freePages(page, 1);
+            nativeMemoryUsed.addAndGet(0L - pm.pageSize());
             referenceSet.remove(this);
-
         }
     }
 }
