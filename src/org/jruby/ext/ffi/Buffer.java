@@ -46,7 +46,7 @@ public final class Buffer extends AbstractMemory {
 
 
     public Buffer(Ruby runtime, RubyClass klass) {
-        super(runtime, klass, new ArrayMemoryIO(runtime, 0), 0, 0);
+        super(runtime, klass, new NullMemoryIO(runtime), 0, 0);
         this.inout = IN | OUT;
     }
     
@@ -56,7 +56,7 @@ public final class Buffer extends AbstractMemory {
     
     public Buffer(Ruby runtime, int size, int flags) {
         this(runtime, runtime.getModule("FFI").getClass("Buffer"),
-            Factory.getInstance().allocateTransientDirectMemory(runtime, size, 8, true), size, 1, flags);
+            allocateMemoryIO(runtime, size), size, 1, flags);
     }
 
     private Buffer(Ruby runtime, IRubyObject klass, MemoryIO io, long size, int typeSize, int inout) {
@@ -73,14 +73,14 @@ public final class Buffer extends AbstractMemory {
         final int typeSize = calculateTypeSize(context, sizeArg);
         final int total = typeSize * count;
         return new Buffer(context.getRuntime(), recv,
-                Factory.getInstance().allocateTransientDirectMemory(context.getRuntime(), total, 8, true), total, typeSize, flags);
+                allocateMemoryIO(context.getRuntime(), total), total, typeSize, flags);
     }
 
     private IRubyObject init(ThreadContext context, IRubyObject rbTypeSize, int count, int flags) {
         this.typeSize = calculateTypeSize(context, rbTypeSize);
         this.size = this.typeSize * count;
         this.inout = flags;
-        setMemoryIO(Factory.getInstance().allocateTransientDirectMemory(context.getRuntime(), (int) this.size, 8, true));
+        setMemoryIO(allocateMemoryIO(context.getRuntime(), (int) this.size));
 
         return this;
     }
@@ -196,5 +196,9 @@ public final class Buffer extends AbstractMemory {
     }
     public int getInOutFlags() {
         return inout;
+    }
+    
+    private static MemoryIO allocateMemoryIO(Ruby runtime, int size) {
+        return new ArrayMemoryIO(runtime, size);
     }
 }

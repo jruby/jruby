@@ -13,7 +13,7 @@ final class AllocatedNativeMemoryIO extends BoundedNativeMemoryIO implements All
     private static final Map<AllocationGroup, Boolean> referenceSet = new ConcurrentHashMap<AllocationGroup, Boolean>();
     private static final ThreadLocal<AllocationGroup> currentBucket = new ThreadLocal<AllocationGroup>();
     static final AtomicLong nativeMemoryUsed = new AtomicLong(0);
-    static final long NATIVE_MEMORY_HIGHWATER = 128L * 1024 * 1024;
+    static final long NATIVE_MEMORY_HIGHWATER = 512L * 1024 * 1024;
 
     private final MemoryAllocation allocation;
     private final Object sentinel;
