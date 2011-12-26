@@ -106,7 +106,7 @@ public class PsychParser extends RubyObject {
         // FIXME? only supports Unicode, since we have to produces strings...
         StreamReader reader;
         if (target.respondsTo("read")) {
-            reader = new StreamReader(new InputStreamReader(new IOInputStream(target)));
+            reader = new StreamReader(new InputStreamReader(new IOInputStream(target), RubyEncoding.UTF8));
             if (target instanceof RubyIO) {
                 tainted = true;
             }
