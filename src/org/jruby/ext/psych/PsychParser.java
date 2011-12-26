@@ -36,6 +36,7 @@ import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
+import org.jruby.RubyEncoding;
 import org.jruby.RubyException;
 import org.jruby.RubyIO;
 import org.jruby.RubyKernel;
