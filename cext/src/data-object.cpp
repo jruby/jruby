@@ -45,7 +45,7 @@ static void rubydata_finalize(Handle *);
 extern "C" VALUE
 rb_data_object_alloc(VALUE klass, void* data, RUBY_DATA_FUNC dmark, RUBY_DATA_FUNC dfree)
 {
-    Jlocalenv env;
+    JLocalEnv env;
 
     RubyData* h = new RubyData(data, dmark, dfree);
 
@@ -65,12 +65,12 @@ rb_data_object_alloc(VALUE klass, void* data, RUBY_DATA_FUNC dmark, RUBY_DATA_FU
 
 RubyData::RubyData(void* data, RUBY_DATA_FUNC dmark, RUBY_DATA_FUNC dfree)
 {
-    memset(&rwdata, 0, sizeof(rwdata));
-    rwdata.data = data;
-    rwdata.dmark = dmark;
-    rwdata.dfree = dfree;
+    memset(&rdata, 0, sizeof(rdata));
+    rdata.data = data;
+    rdata.dmark = dmark;
+    rdata.dfree = dfree;
     setType(T_DATA);
-    TAILQ_INSERT_TAIL(&dataHandles, h, dataList);
+    TAILQ_INSERT_TAIL(&dataHandles, this, dataList);
 }
 
 RubyData::~RubyData()

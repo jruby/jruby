@@ -37,13 +37,13 @@ using namespace jruby;
 RubyFloat::RubyFloat(double value): registered_(false)
 {
     setType(T_FLOAT);
-    memset(&rfloat, 0, sizeof(rfloat));
+    memset(&rfloat_, 0, sizeof(rfloat_));
     rfloat_.value = value;
 }
 
 RubyFloat::RubyFloat(JNIEnv* env, jobject obj_, jdouble value_): Handle(env, obj_, T_FLOAT)
 {
-    memset(&rfloat, 0, sizeof(rfloat));
+    memset(&rfloat_, 0, sizeof(rfloat_));
     rfloat_.value = value_;
 }
 

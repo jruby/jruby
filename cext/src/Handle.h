@@ -138,6 +138,7 @@ namespace jruby {
         RData rdata;
 
     public:
+        RubyData(void* data, RUBY_DATA_FUNC dmark, RUBY_DATA_FUNC dfree);
         virtual ~RubyData();
 
         inline struct RData* toRData() {
