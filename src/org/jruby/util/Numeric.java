@@ -27,6 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util;
 
+import java.math.BigInteger;
 import org.joni.Regex;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.Ruby;
@@ -472,13 +473,14 @@ public class Numeric {
                 y >>= 1;
             }
             
-            long xz = x * x;
-            if (xz  / x != z) {
+            BigInteger bigX = BigInteger.valueOf(x);
+            BigInteger bigXZ = bigX.multiply(bigX);
+            if (bigXZ.divide(bigX).longValue() != z) {
                 IRubyObject v = RubyBignum.newBignum(runtime, RubyBignum.fix2big(RubyFixnum.newFixnum(runtime, x))).op_pow(context, RubyFixnum.newFixnum(runtime, y));
                 if (z != 1) v = RubyBignum.newBignum(runtime, RubyBignum.fix2big(RubyFixnum.newFixnum(runtime, neg ? -z : z))).op_mul19(context, v);
                 return v;
             }
-            z = xz;
+            z = bigXZ.longValue();
         } while(--y != 0);
         if (neg) z = -z;
         return RubyFixnum.newFixnum(runtime, z);
