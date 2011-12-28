@@ -267,10 +267,10 @@ public abstract class IRScope {
         return (IRMethod) current;
     }
     
-    public IRScope getNearestNonClosureScope() {
+    public IRScope getNearestTopLocalVariableScope() {
         IRScope current = this;
 
-        while (current != null && (current instanceof IRClosure)) {
+        while (current != null && !current.isTopLocalVariableScope()) {
             current = current.getLexicalParent();
         }
         
@@ -283,15 +283,13 @@ public abstract class IRScope {
     public IRScope getNearestModule() {
         IRScope current = this;
 
-        while (current != null && !((current instanceof IRModuleBody) || (current instanceof IREvalScript))) {
+        while (!(current instanceof IRModuleBody)) {
+            // When eval'ing, we dont have a lexical view of what module we are nested in
+            // because binding_eval, class_eval, module_eval, instance_eval can switch
+            // around the lexical scope for evaluation to be something else.            
+            if (current == null || current instanceof IREvalScript) return null;
+            
             current = current.getLexicalParent();
-        }
-
-        // In eval mode, we dont have a lexical view of what module we are nested in
-        // because binding_eval, class_eval, module_eval, instance_eval can switch
-        // around the lexical scope for evaluation to be something else.
-        if (current instanceof IREvalScript) {
-            return null;
         }
 
         return current;
@@ -311,10 +309,8 @@ public abstract class IRScope {
      */
     public IRScope getTopLevelScope() {
         IRScope current = this;
-
-        while (current != null && !current.isScriptScope()) {
-            current = current.getLexicalParent();
-        }
+        
+        for (; current != null && !current.isScriptScope(); current = current.getLexicalParent()) {}
         
         return current;
     }
@@ -324,21 +320,12 @@ public abstract class IRScope {
         return instructions;
     }
 
-    public IRMethod getClosestMethodAncestor() {
-        IRScope s = this;
-        while (s != null && !(s instanceof IRMethod)) {
-            s = s.getLexicalParent();
+    public boolean isNestedInClosure(IRClosure closure) {
+        for (IRScope s = this; s != null && !s.isTopLocalVariableScope(); s = s.getLexicalParent()) {
+            if (s == closure) return true;
         }
-
-        return (IRMethod) s;
-    }
-
-    public boolean nestedInClosure(IRClosure closure) {
-        IRScope s = this;
-        while (!(s instanceof IRMethod) && (s != closure)) {
-            s = s.getLexicalParent();
-        }
-        return (s == closure);
+        
+        return false;
     }
 
     public void setCodeModificationFlag(boolean f) { 
@@ -924,6 +911,10 @@ public abstract class IRScope {
      */
     public boolean isBody() {
         return false;
+    }
+    
+    public boolean isTopLocalVariableScope() {
+        return true;
     }
     
     /**

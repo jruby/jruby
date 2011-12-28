@@ -23,7 +23,7 @@ public class StoreToBindingInstr extends Instr {
         super(Operation.BINDING_STORE);
 
         this.slotName = slotName;
-        this.targetMethod = (IRMethod)scope.getClosestMethodAncestor();
+        this.targetMethod = (IRMethod)scope.getNearestMethod();
         this.value = value;
         bindingSlot = targetMethod.assignBindingSlot(slotName);
     }

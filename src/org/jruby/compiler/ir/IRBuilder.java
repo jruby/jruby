@@ -2073,7 +2073,7 @@ public class IRBuilder {
         Fixnum s2 = new Fixnum((long)2);
 
         // Create a variable to hold the flip state 
-        IRScope nearestNonClosure = s.getNearestNonClosureScope();
+        IRScope nearestNonClosure = s.getNearestTopLocalVariableScope();
         Variable flipState = nearestNonClosure.getNewFlipStateVariable();
         nearestNonClosure.initFlipStateVariable(flipState, s1);
         if (s instanceof IRClosure) {
@@ -2938,7 +2938,7 @@ public class IRBuilder {
             // If this happens to be a root method, the runtime throws a local jump error if
             // the closure is a proc.  If the closure is a lambda, then this is just a normal
             // return and the static methodToReturnFrom value is ignored 
-            s.addInstr(new ReturnInstr(retVal, s.getClosestMethodAncestor()));
+            s.addInstr(new ReturnInstr(retVal, s.getNearestMethod()));
         } else if (s.isBody()) {
             s.addInstr(new ThrowExceptionInstr(IRException.RETURN_LocalJumpError));
         } else {

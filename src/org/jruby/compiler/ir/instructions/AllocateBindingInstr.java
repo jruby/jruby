@@ -22,7 +22,7 @@ public class AllocateBindingInstr extends Instr {
     public AllocateBindingInstr(IRScope scope) {
         super(Operation.ALLOC_BINDING);
         
-        this.scope = scope.getClosestMethodAncestor();
+        this.scope = scope.getNearestMethod();
     }
 
     // ENEBO: Should we be reallocing this every time?

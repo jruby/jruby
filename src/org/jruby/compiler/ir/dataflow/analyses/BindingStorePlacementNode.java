@@ -293,7 +293,7 @@ public class BindingStorePlacementNode extends FlowGraphNode {
             if (v instanceof ClosureLocalVariable) {
                 IRClosure definingScope = ((ClosureLocalVariable)v).definingScope;
                 
-                if ((s != definingScope) && s.nestedInClosure(definingScope)) {
+                if ((s != definingScope) && s.isNestedInClosure(definingScope)) {
                     instrs.add(new StoreToBindingInstr(s, v.getName(), v));
                 }
             } else {

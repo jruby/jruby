@@ -113,6 +113,11 @@ public class IRClosure extends IRScope {
     }
 
     @Override
+    public boolean isTopLocalVariableScope() {
+        return false;
+    }
+
+    @Override
     public void addInstr(Instr i) {
         // Accumulate block arguments
         if (i instanceof ReceiveClosureArgInstr) {

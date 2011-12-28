@@ -190,7 +190,7 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
                     if (v instanceof ClosureLocalVariable) {
                         IRClosure definingScope = ((ClosureLocalVariable)v).definingScope;
                         
-                        if ((s != definingScope) && s.nestedInClosure(definingScope)) {
+                        if ((s != definingScope) && s.isNestedInClosure(definingScope)) {
                             it.add(new LoadFromBindingInstr(v, s, v.getName()));
                         }
                     } else {

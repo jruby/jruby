@@ -38,7 +38,7 @@ public class LoadFromBindingInstr extends Instr implements ResultInstr {
         assert result != null: "LoadFromBindingInstr result is null";
         
         this.slotName = slotName;
-        this.sourceMethod = (IRMethod)scope.getClosestMethodAncestor();
+        this.sourceMethod = (IRMethod)scope.getNearestMethod();
         bindingSlot = sourceMethod.assignBindingSlot(slotName);
         this.result = result;
     }

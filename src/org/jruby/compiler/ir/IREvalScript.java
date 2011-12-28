@@ -108,4 +108,9 @@ public class IREvalScript extends IRClosure {
     public boolean isScriptScope() {
         return true;
     }
+    
+    @Override
+    public boolean isTopLocalVariableScope() {
+        return false;
+    }    
 }
