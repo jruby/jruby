@@ -1,6 +1,6 @@
 package org.jruby.compiler.ir.instructions;
 
-import org.jruby.compiler.ir.IRBody;
+import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
@@ -14,11 +14,11 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ConstMissingInstr extends Instr implements ResultInstr {
-    private IRBody definingModule;
+    private IRScope definingModule;
     private String  missingConst;
     private Variable result;
 
-    public ConstMissingInstr(Variable result, IRBody definingModule, String missingConst) {
+    public ConstMissingInstr(Variable result, IRScope definingModule, String missingConst) {
         super(Operation.CONST_MISSING);
         
         assert result != null: "ConstMissingInstr result is null";

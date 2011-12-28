@@ -3,7 +3,6 @@ package org.jruby.compiler.ir.compiler_pass;
 import org.jruby.RubyModule;
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.IRMethod;
-import org.jruby.compiler.ir.IRBody;
 import org.jruby.compiler.ir.representations.BasicBlock;
 import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.Instr;
@@ -30,7 +29,7 @@ public class InlineTest implements CompilerPass {
     
     // ENEBO - FIXME: This is fragile and will not work on non-interpreted IR
     private IRScope getIRMethod(IRScope s) {
-        IRBody m = s.getNearestModule();
+        IRScope m = s.getNearestModule();
 
         if (m == null) return null;
         
@@ -51,7 +50,7 @@ public class InlineTest implements CompilerPass {
         IRMethod method = ((IRMethod) s);
         CFG cfg = method.cfg();
 
-        IRBody m = s.getNearestModule();
+        IRScope m = s.getNearestModule();
         IRScope mi = getIRMethod(s);
         
         // Cannot inline something not IR

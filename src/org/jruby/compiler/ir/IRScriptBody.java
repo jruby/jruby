@@ -3,24 +3,41 @@ package org.jruby.compiler.ir;
 import java.util.List;
 import java.util.ArrayList;
 
+import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.StringLiteral;
 import org.jruby.parser.StaticScope;
 
 // FIXME: I made this IRModule because any methods placed in top-level script goes
 // into something which an IRScript is basically a module that is special in that
 // it represents a lexical unit.  Fix what now?
-public class IRScriptBody extends IRBody {
+public class IRScriptBody extends IRScope {
     private List<IRClosure> beginBlocks;
     private List<IRClosure> endBlocks;
 
     public IRScriptBody(String className, String sourceName, StaticScope staticScope) {
-        super(null, sourceName, staticScope, BodyType.Script);
+        super(null, sourceName, staticScope);
     }
-
+    
     public StringLiteral getFileName() {
         return new StringLiteral(getName());
     }
-
+    
+    @Override
+    public IRScope getNearestModule() {
+        return this;
+    }
+    
+    @Override
+    public LocalVariable getImplicitBlockArg() {
+        assert false: "A Script body never accepts block args";
+        
+        return null;
+    }
+    
+    public String getScopeName() {
+        return "ScriptBody";
+    }
+    
     @Override
     public String toString() {
         return "Script: file: " + getFileName() + super.toString();

@@ -24,7 +24,7 @@ public class IRBody extends IRScope {
     }
 
     @Override
-    public IRBody getNearestModule() {
+    public IRScope getNearestModule() {
         return this;
     }
 
@@ -42,7 +42,7 @@ public class IRBody extends IRScope {
 
     @Override
     public LocalVariable getImplicitBlockArg() {
-        assert false: "A Script body never accepts block args";
+        assert false: "A module/class/metaclass body never accepts block args";
         
         return null;
     }

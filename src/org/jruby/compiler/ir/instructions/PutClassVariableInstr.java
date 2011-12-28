@@ -2,7 +2,7 @@ package org.jruby.compiler.ir.instructions;
 
 import org.jruby.RubyModule;
 import org.jruby.compiler.ir.Operation;
-import org.jruby.compiler.ir.operands.WrappedIRModule;
+import org.jruby.compiler.ir.operands.WrappedIRScope;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.runtime.Block;
@@ -28,7 +28,7 @@ public class PutClassVariableInstr extends PutInstr {
         assert module != null : "MODULE should always be something";
 
         // Modules and classes set this constant as a side-effect
-        if (!(getValue() instanceof WrappedIRModule)) module.setClassVar(getRef(), value);
+        if (!(getValue() instanceof WrappedIRScope)) module.setClassVar(getRef(), value);
         return null;
     }
 }

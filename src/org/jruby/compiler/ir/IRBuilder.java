@@ -210,7 +210,7 @@ import org.jruby.compiler.ir.operands.TemporaryVariable;
 import org.jruby.compiler.ir.operands.UndefinedValue;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.operands.WrappedIRClosure;
-import org.jruby.compiler.ir.operands.WrappedIRModule;
+import org.jruby.compiler.ir.operands.WrappedIRScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.BlockBody;
@@ -1170,12 +1170,12 @@ public class IRBuilder {
         return buildConstDeclAssignment(node, s, val);
     }
 
-    private WrappedIRModule findContainerModule(IRScope s) {
-        IRBody nearestModule = s.getNearestModule();
-        return (nearestModule == null) ? new WrappedIRModule(manager.getObject()) : new WrappedIRModule(nearestModule);
+    private WrappedIRScope findContainerModule(IRScope s) {
+        IRScope nearestModule = s.getNearestModule();
+        return (nearestModule == null) ? new WrappedIRScope(manager.getObject()) : new WrappedIRScope(nearestModule);
     }
 
-    private IRBody startingSearchScope(IRScope s) {
+    private IRScope startingSearchScope(IRScope s) {
         return s.getNearestModule();
     }
 
@@ -1188,7 +1188,7 @@ public class IRBuilder {
             Operand module = build(((Colon2Node) constNode).getLeftNode(), s);
             s.addInstr(new PutConstInstr(module, constDeclNode.getName(), val));
         } else { // colon3, assign in Object
-            WrappedIRModule object = new WrappedIRModule(manager.getObject());            
+            WrappedIRScope object = new WrappedIRScope(manager.getObject());            
             s.addInstr(new PutConstInstr(object, constDeclNode.getName(), val));            
         }
 
@@ -1196,7 +1196,7 @@ public class IRBuilder {
     }
 
     private Operand searchConst(IRScope s, IRScope startingScope, String name) {
-        IRBody startingModule = startingSearchScope(startingScope);
+        IRScope startingModule = startingSearchScope(startingScope);
         Variable v = s.getNewTemporaryVariable();
         s.addInstr(new SearchConstInstr(v, startingModule, name));
         Label foundLabel = s.getNewLabel();
@@ -2385,7 +2385,7 @@ public class IRBuilder {
                 container = findContainerModule(s);
             }
         } else { //::Bar
-            container = new WrappedIRModule(manager.getObject());
+            container = new WrappedIRScope(manager.getObject());
         }
 
         return container;

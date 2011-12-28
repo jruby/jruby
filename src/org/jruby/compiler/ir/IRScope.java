@@ -280,7 +280,7 @@ public abstract class IRScope {
     /**
      * Returns the nearest method from this scope which may be itself (can never be null)
      */
-    public IRBody getNearestModule() {
+    public IRScope getNearestModule() {
         IRScope current = this;
 
         while (current != null && !((current instanceof IRBody) || (current instanceof IREvalScript))) {
@@ -294,7 +294,7 @@ public abstract class IRScope {
             return null;
         }
 
-        return (IRBody) current;
+        return current;
     }
     
 

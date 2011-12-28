@@ -4,13 +4,14 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import org.jruby.compiler.ir.IRBody;
+import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.calladapter.CallAdapter;
 import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.operands.Nil;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.StringLiteral;
-import org.jruby.compiler.ir.operands.WrappedIRModule;
+import org.jruby.compiler.ir.operands.WrappedIRScope;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.CallType;
@@ -157,10 +158,10 @@ public abstract class CallBase extends Instr {
             Operand object = getReceiver();
 
             // Unknown receiver -- could be Proc!!
-            if (!(object instanceof WrappedIRModule)) return true;
+            if (!(object instanceof WrappedIRScope)) return true;
 
-            IRBody c = ((WrappedIRModule) object).getModule();
-            if (c != null && c.isClass() && c.getName().equals("Proc")) return true;
+            IRScope c = ((WrappedIRScope) object).getScope();
+            if (c != null && c instanceof IRBody && ((IRBody) c).isClass() && c.getName().equals("Proc")) return true;
         }
 
         // SSS FIXME: Are all bases covered?
