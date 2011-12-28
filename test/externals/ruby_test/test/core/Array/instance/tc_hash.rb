@@ -26,7 +26,8 @@ class TC_Array_Hash_InstanceMethod < Test::Unit::TestCase
    # There's no way to verify the exact hash value of a float because it's
    # platform dependent.
    #
-   def test_hash
+   # Now JRuby returns non-deterministic hash valus like CRuby.
+   def OLD_test_hash
       assert_equal(292, @array_chr.hash)
       
       if JRUBY
