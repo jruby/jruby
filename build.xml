@@ -1053,7 +1053,6 @@
           <test name="org.jruby.test.SlowTestSuite" todir="${test.results.dir}" unless="test"/>
           <test name="org.jruby.test.MRITestSuite" todir="${test.results.dir}" unless="test"/>
           <test name="org.jruby.test.RubiconTestSuite" todir="${test.results.dir}" unless="test"/>
-          <test name="org.jruby.test.RubyTestTestSuite" todir="${test.results.dir}" unless="test"/>
           <test name="org.jruby.test.ObjectSpaceTestSuite" todir="${test.results.dir}" unless="test"/>
           <test name="org.jruby.test.MainTestSuite" todir="${test.results.dir}" unless="test"/>
         </junit-tests>
