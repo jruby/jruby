@@ -3,7 +3,8 @@ package org.jruby.compiler.ir.instructions;
 import java.util.Map;
 import org.jruby.RubyModule;
 import org.jruby.RubyClass;
-import org.jruby.compiler.ir.IRBody;
+import org.jruby.compiler.ir.IRClassBody;
+import org.jruby.compiler.ir.IRMetaClassBody;
 import org.jruby.compiler.ir.operands.Nil;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
@@ -18,12 +19,12 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 
 public class DefineClassInstr extends Instr implements ResultInstr {
-    private IRBody newIRClass;
+    private IRClassBody newIRClass;
     private Operand container;
     private Operand superClass;
     private Variable result;
     
-    public DefineClassInstr(Variable result, IRBody newIRClass, Operand container, Operand superClass) {
+    public DefineClassInstr(Variable result, IRClassBody newIRClass, Operand container, Operand superClass) {
         super(Operation.DEF_CLASS);
         
         assert result != null: "DefineClassInstr result is null";
@@ -63,7 +64,7 @@ public class DefineClassInstr extends Instr implements ResultInstr {
     }
     
     private RubyModule newClass(ThreadContext context, IRubyObject self, RubyModule classContainer, DynamicScope currDynScope, Object[] temp) {
-        if (newIRClass.isMetaClass()) return classContainer.getMetaClass();
+        if (newIRClass instanceof IRMetaClassBody) return classContainer.getMetaClass();
 
         RubyClass sc;
         if (superClass == Nil.NIL) {

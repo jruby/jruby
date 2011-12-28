@@ -1,22 +1,20 @@
 package org.jruby.compiler.ir;
 
-import org.jruby.compiler.ir.IRBody.BodyType;
-
 /**
  */
 public class IRManager {
     private int dummyMetaClassCount = 0;
-    private IRBody classMetaClass = new IRBody(null, getMetaClassName(), null, BodyType.MetaClass);
-    private IRBody object = new IRBody(null, "Object", null, BodyType.Class);
+    private IRModuleBody classMetaClass = new IRMetaClassBody(null, getMetaClassName(), null);
+    private IRModuleBody object = new IRClassBody(null, "Object", null);
     
     public IRManager() {
     }
 
-    public IRBody getObject() {
+    public IRModuleBody getObject() {
         return object;
     }
     
-    public IRBody getClassMetaClass() {
+    public IRModuleBody getClassMetaClass() {
         return classMetaClass;
     }
     

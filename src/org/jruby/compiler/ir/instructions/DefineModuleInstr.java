@@ -2,7 +2,7 @@ package org.jruby.compiler.ir.instructions;
 
 import java.util.Map;
 import org.jruby.RubyModule;
-import org.jruby.compiler.ir.IRBody;
+import org.jruby.compiler.ir.IRModuleBody;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.Operation;
@@ -16,11 +16,11 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 
 public class DefineModuleInstr extends Instr implements ResultInstr {
-    private final IRBody newIRModule;
+    private final IRModuleBody newIRModule;
     private Operand container;
     private Variable result;
 
-    public DefineModuleInstr(IRBody newIRModule, Variable result, Operand container) {
+    public DefineModuleInstr(IRModuleBody newIRModule, Variable result, Operand container) {
         super(Operation.DEF_MODULE);
         
         assert result != null : "DefineModuleInstr result is null";

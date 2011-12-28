@@ -283,7 +283,7 @@ public abstract class IRScope {
     public IRScope getNearestModule() {
         IRScope current = this;
 
-        while (current != null && !((current instanceof IRBody) || (current instanceof IREvalScript))) {
+        while (current != null && !((current instanceof IRModuleBody) || (current instanceof IREvalScript))) {
             current = current.getLexicalParent();
         }
 

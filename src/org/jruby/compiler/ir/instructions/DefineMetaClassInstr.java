@@ -5,7 +5,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubySymbol;
-import org.jruby.compiler.ir.IRBody;
+import org.jruby.compiler.ir.IRModuleBody;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.Operation;
@@ -19,11 +19,11 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class DefineMetaClassInstr extends Instr implements ResultInstr {
-    private IRBody dummyMetaClass;
+    private IRModuleBody dummyMetaClass;
     private Operand object;
     private Variable result;
     
-    public DefineMetaClassInstr(Variable result, Operand object, IRBody dummyMetaClass) {
+    public DefineMetaClassInstr(Variable result, Operand object, IRModuleBody dummyMetaClass) {
         super(Operation.DEF_META_CLASS);
         
         assert result != null: "DefineMetaClassInstr result is null";

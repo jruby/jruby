@@ -4,18 +4,11 @@ import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.parser.StaticScope;
 import org.jruby.parser.IRStaticScope;
 
-public class IRBody extends IRScope {
-    public enum BodyType {
-        Module, Class, MetaClass, Script;
-    }
-
+public class IRModuleBody extends IRScope {
     private CodeVersion version;    // Current code version for this module
-    private BodyType bodyType;
     
-    public IRBody(IRScope lexicalParent, String name, StaticScope scope, BodyType bodyType) {
+    public IRModuleBody(IRScope lexicalParent, String name, StaticScope scope) {
         super(lexicalParent, name, scope);
-        
-        this.bodyType = bodyType;
         
         if (!IRBuilder.inIRGenOnlyMode()) {
             if (scope != null) ((IRStaticScope)scope).setIRScope(this);
@@ -33,7 +26,7 @@ public class IRBody extends IRScope {
     }
 
     public String getScopeName() {
-        return bodyType.name();
+        return "ModuleBody";
     }
 
     public CodeVersion getVersion() {
@@ -47,16 +40,6 @@ public class IRBody extends IRScope {
         return null;
     }
     
-    public boolean isClass() {
-        return bodyType == BodyType.Class;
-    }
-    
-    public boolean isMetaClass() {
-        return bodyType == BodyType.MetaClass;
-    }
-    
-    // FIXME: This is a poor name.  It is used for super and some complex exprs for
-    // figuring out class bodys for cvars
     @Override
     public boolean isBody() {
         return true;

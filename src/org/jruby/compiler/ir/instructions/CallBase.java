@@ -3,7 +3,7 @@ package org.jruby.compiler.ir.instructions;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import org.jruby.compiler.ir.IRBody;
+import org.jruby.compiler.ir.IRClassBody;
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.calladapter.CallAdapter;
@@ -161,7 +161,7 @@ public abstract class CallBase extends Instr {
             if (!(object instanceof WrappedIRScope)) return true;
 
             IRScope c = ((WrappedIRScope) object).getScope();
-            if (c != null && c instanceof IRBody && ((IRBody) c).isClass() && c.getName().equals("Proc")) return true;
+            if (c != null && c instanceof IRClassBody && c.getName().equals("Proc")) return true;
         }
 
         // SSS FIXME: Are all bases covered?

@@ -107,7 +107,6 @@ import org.jruby.ast.WhenNode;
 import org.jruby.ast.XStrNode;
 import org.jruby.ast.ZSuperNode;
 import org.jruby.compiler.NotCompilableException;
-import org.jruby.compiler.ir.IRBody.BodyType;
 import org.jruby.compiler.ir.compiler_pass.CFGBuilder;
 import org.jruby.compiler.ir.compiler_pass.IRPrinter;
 import org.jruby.compiler.ir.compiler_pass.InlineTest;
@@ -1060,7 +1059,7 @@ public class IRBuilder {
         String className = cpath.getName();
         Operand container = getContainerFromCPath(cpath, s);
 
-        IRBody c = new IRBody(s, className, classNode.getScope(), BodyType.Class);
+        IRClassBody c = new IRClassBody(s, className, classNode.getScope());
         c.addInstr(new ReceiveSelfInstruction(c.getSelf()));
         Variable ret = s.getNewTemporaryVariable();
         s.addInstr(new DefineClassInstr(ret, c, container, superClass));
@@ -1086,7 +1085,7 @@ public class IRBuilder {
         Operand receiver = build(sclassNode.getReceiverNode(), s);
 
         // Create a dummy meta class and record it as being lexically defined in scope s
-        IRBody mc = new IRBody(s, manager.getMetaClassName(), sclassNode.getScope(), BodyType.MetaClass);
+        IRModuleBody mc = new IRMetaClassBody(s, manager.getMetaClassName(), sclassNode.getScope());
         mc.addInstr(new ReceiveSelfInstruction(mc.getSelf()));
 
         Variable ret = s.getNewTemporaryVariable();
@@ -2397,7 +2396,7 @@ public class IRBuilder {
         Operand container = getContainerFromCPath(cpath, s);
 
         // Build the new module
-        IRBody m = new IRBody(s, moduleName, moduleNode.getScope(), BodyType.Module);
+        IRModuleBody m = new IRModuleBody(s, moduleName, moduleNode.getScope());
         m.addInstr(new ReceiveSelfInstruction(m.getSelf()));
         Variable ret = s.getNewTemporaryVariable();
         s.addInstr(new DefineModuleInstr(m, ret, container));
