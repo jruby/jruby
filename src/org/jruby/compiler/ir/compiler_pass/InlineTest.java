@@ -29,7 +29,7 @@ public class InlineTest implements CompilerPass {
     
     // ENEBO - FIXME: This is fragile and will not work on non-interpreted IR
     private IRScope getIRMethod(IRScope s) {
-        IRScope m = s.getNearestModule();
+        IRScope m = s.getNearestModuleReferencingScope();
 
         if (m == null) return null;
         
@@ -50,7 +50,7 @@ public class InlineTest implements CompilerPass {
         IRMethod method = ((IRMethod) s);
         CFG cfg = method.cfg();
 
-        IRScope m = s.getNearestModule();
+        IRScope m = s.getNearestModuleReferencingScope();
         IRScope mi = getIRMethod(s);
         
         // Cannot inline something not IR

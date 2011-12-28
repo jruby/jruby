@@ -278,9 +278,11 @@ public abstract class IRScope {
     }
     
     /**
-     * Returns the nearest method from this scope which may be itself (can never be null)
+     * Returns the nearest scope which we can extract a live module from.  If
+     * this returns null (like for evals), then it means it cannot be statically
+     * determined.
      */
-    public IRScope getNearestModule() {
+    public IRScope getNearestModuleReferencingScope() {
         IRScope current = this;
 
         while (!(current instanceof IRModuleBody)) {

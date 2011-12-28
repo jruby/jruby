@@ -1170,12 +1170,12 @@ public class IRBuilder {
     }
 
     private WrappedIRScope findContainerModule(IRScope s) {
-        IRScope nearestModule = s.getNearestModule();
+        IRScope nearestModule = s.getNearestModuleReferencingScope();
         return (nearestModule == null) ? new WrappedIRScope(manager.getObject()) : new WrappedIRScope(nearestModule);
     }
 
     private IRScope startingSearchScope(IRScope s) {
-        return s.getNearestModule();
+        return s.getNearestModuleReferencingScope();
     }
 
     public Operand buildConstDeclAssignment(ConstDeclNode constDeclNode, IRScope s, Operand val) {
