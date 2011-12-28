@@ -2350,7 +2350,7 @@ public class RuntimeHelpers {
     }
 
     public static boolean isModuleAndHasConstant(IRubyObject left, String name) {
-        return left instanceof RubyModule && ((RubyModule) left).getConstantFromNoConstMissing(name) != null;
+        return left instanceof RubyModule && ((RubyModule) left).getConstantFromNoConstMissing(name, false) != null;
     }
 
     public static ByteList getDefinedConstantOrBoundMethod(IRubyObject left, String name) {

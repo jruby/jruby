@@ -194,12 +194,12 @@ public class RubyModule extends RubyObject {
         return kindOf.isKindOf(object, this);
     }
 
-    public Map<String, IRubyObject> getConstantMap() {
+    public Map<String, ConstantEntry> getConstantMap() {
         return constants;
     }
 
-    public synchronized Map<String, IRubyObject> getConstantMapForWrite() {
-        return constants == Collections.EMPTY_MAP ? constants = new ConcurrentHashMap<String, IRubyObject>(4, 0.9f, 1) : constants;
+    public synchronized Map<String, ConstantEntry> getConstantMapForWrite() {
+        return constants == Collections.EMPTY_MAP ? constants = new ConcurrentHashMap<String, ConstantEntry>(4, 0.9f, 1) : constants;
     }
     
     /**
@@ -2633,7 +2633,7 @@ public class RubyModule extends RubyObject {
         Ruby runtime = context.getRuntime();
         RubyArray array = runtime.newArray();
         
-        Collection<String> constantNames = constantsCommon(runtime, replaceModule, allConstants);
+        Collection<String> constantNames = constantsCommon(runtime, replaceModule, allConstants, false);
         
         for (String name : constantNames) {
             array.add(runtime.newSymbol(name));
@@ -2645,24 +2645,29 @@ public class RubyModule extends RubyObject {
      *
      */
     public Collection<String> constantsCommon(Ruby runtime, boolean replaceModule, boolean allConstants) {
+        return constantsCommon(runtime, replaceModule, allConstants, true);
+    }
+
+
+    public Collection<String> constantsCommon(Ruby runtime, boolean replaceModule, boolean allConstants, boolean includePrivate) {
         RubyModule objectClass = runtime.getObject();
 
         Collection<String> constantNames = new HashSet<String>();
         if (allConstants) {
             if ((replaceModule && runtime.getModule() == this) || objectClass == this) {
-                constantNames = objectClass.getConstantNames();
+                constantNames = objectClass.getConstantNames(includePrivate);
             } else {
                 Set<String> names = new HashSet<String>();
                 for (RubyModule module = this; module != null && module != objectClass; module = module.getSuperClass()) {
-                    names.addAll(module.getConstantNames());
+                    names.addAll(module.getConstantNames(includePrivate));
                 }
                 constantNames = names;
             }
         } else {
             if ((replaceModule && runtime.getModule() == this) || objectClass == this) {
-                constantNames = objectClass.getConstantNames();
+                constantNames = objectClass.getConstantNames(includePrivate);
             } else {
-                constantNames = getConstantNames();
+                constantNames = getConstantNames(includePrivate);
             }
         }
 
@@ -2670,14 +2675,21 @@ public class RubyModule extends RubyObject {
     }
 
     @JRubyMethod(compat = RUBY1_9)
-    public IRubyObject private_constant(ThreadContext context, IRubyObject name) {
-        // does nothing yet
+    public IRubyObject private_constant(ThreadContext context, IRubyObject _name) {
+        String name = validateConstant(_name.asJavaString());
+        ConstantEntry entry = getConstantMap().get(name);
+
+        if (entry == null) {
+            throw context.runtime.newNameError("constant " + getName() + "::" + _name + " not defined", name);
+        }
+
+        getConstantMapForWrite().put(name, new ConstantEntry(entry.value, true));
         return this;
     }
 
-    @JRubyMethod(compat = RUBY1_9, rest = true)
+    @JRubyMethod(compat = RUBY1_9, required = 1, rest = true)
     public IRubyObject private_constant(ThreadContext context, IRubyObject[] names) {
-        // does nothing yet
+        private_constant(context, names[0]);
         return this;
     }
 
@@ -2802,9 +2814,13 @@ public class RubyModule extends RubyObject {
         
         return value == UNDEF ? resolveUndefConstant(getRuntime(), name) : value;
     }
-    
+
     public IRubyObject getConstantAt(String name) {
-        IRubyObject value = fetchConstant(name);
+        return getConstantAt(name, true);
+    }
+    
+    public IRubyObject getConstantAt(String name, boolean includePrivate) {
+        IRubyObject value = fetchConstant(name, includePrivate);
 
         return value == UNDEF ? resolveUndefConstant(getRuntime(), name) : value;
     }
@@ -2881,6 +2897,10 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject getConstantFromNoConstMissing(String name) {
+        return getConstantFromNoConstMissing(name, true);
+    }
+
+    public IRubyObject getConstantFromNoConstMissing(String name, boolean includePrivate) {
         assert name == name.intern() : name + " is not interned";
         assert IdUtil.isConstant(name);
         Ruby runtime = getRuntime();
@@ -2890,7 +2910,7 @@ public class RubyModule extends RubyObject {
         RubyModule p = this;
 
         while (p != null) {
-            if ((value = p.constantTableFetch(name)) != null) {
+            if ((value = p.fetchConstant(name, false)) != null) {
                 if (value == UNDEF) {
                     return p.resolveUndefConstant(runtime, name);
                 }
@@ -3250,8 +3270,20 @@ public class RubyModule extends RubyObject {
 
     // returns the stored value without processing undefs (autoloads)
     public IRubyObject fetchConstant(String name) {
+        return fetchConstant(name, true);
+    }
+
+    public IRubyObject fetchConstant(String name, boolean includePrivate) {
         assert IdUtil.isConstant(name);
-        return constantTableFetch(name);
+        ConstantEntry entry = constantEntryFetch(name);
+
+        if (entry == null) return null;
+
+        if (entry.hidden && !includePrivate) {
+            throw getRuntime().newNameError("private constant " + getName() + "::" + name + " referenced", name);
+        }
+
+        return entry.value;
     }
 
     @Deprecated
@@ -3293,6 +3325,22 @@ public class RubyModule extends RubyObject {
     public Collection<String> getConstantNames() {
         return getConstantMap().keySet();
     }
+
+    public Collection<String> getConstantNames(boolean includePrivate) {
+        if (includePrivate) return getConstantNames();
+
+        if (getConstantMap().size() == 0) {
+            return Collections.EMPTY_SET;
+        }
+
+        HashSet<String> publicNames = new HashSet<String>(getConstantMap().size());
+        
+        for (Map.Entry<String, ConstantEntry> entry : getConstantMap().entrySet()) {
+            if (entry.getValue().hidden) continue;
+            publicNames.add(entry.getKey());
+        }
+        return publicNames;
+    }
    
     protected final String validateConstant(String name) {
         if (getRuntime().is1_9() ?
@@ -3315,16 +3363,30 @@ public class RubyModule extends RubyObject {
     }
     
     protected IRubyObject constantTableFetch(String name) {
+        ConstantEntry entry = getConstantMap().get(name);
+        if (entry == null) return null;
+        return entry.value;
+    }
+
+    protected ConstantEntry constantEntryFetch(String name) {
         return getConstantMap().get(name);
     }
     
     protected IRubyObject constantTableStore(String name, IRubyObject value) {
-        getConstantMapForWrite().put(name, value);
+        Map<String, ConstantEntry> constMap = getConstantMapForWrite();
+        boolean hidden = false;
+
+        ConstantEntry entry = constMap.get(name);
+        if (entry != null) hidden = entry.hidden;
+
+        constMap.put(name, new ConstantEntry(value, hidden));
         return value;
     }
     
     protected IRubyObject constantTableRemove(String name) {
-        return getConstantMapForWrite().remove(name);
+        ConstantEntry entry = getConstantMapForWrite().remove(name);
+        if (entry == null) return null;
+        return entry.value;
     }
     
     /**
@@ -3495,7 +3557,20 @@ public class RubyModule extends RubyObject {
      */
     private String anonymousName;
 
-    private volatile Map<String, IRubyObject> constants = Collections.EMPTY_MAP;
+    private volatile Map<String, ConstantEntry> constants = Collections.EMPTY_MAP;
+
+    /**
+     * Represents a constant value, possibly hidden (private).
+     */
+    public static class ConstantEntry {
+        public final IRubyObject value;
+        public final boolean hidden;
+
+        public ConstantEntry(IRubyObject value, boolean hidden) {
+            this.value = value;
+            this.hidden = hidden;
+        }
+    }
     
     /**
      * Objects for holding autoload state for the defined constant.

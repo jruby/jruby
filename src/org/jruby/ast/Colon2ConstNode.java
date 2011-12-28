@@ -67,7 +67,7 @@ public class Colon2ConstNode extends Colon2Node {
 
     public IRubyObject reCache(ThreadContext context, RubyModule target) {
         Object newGeneration = context.getRuntime().getConstantInvalidator().getData();
-        IRubyObject value = target.getConstantFromNoConstMissing(name);
+        IRubyObject value = target.getConstantFromNoConstMissing(name, false);
 
         cachedValue = value;
 

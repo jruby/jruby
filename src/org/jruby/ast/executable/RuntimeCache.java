@@ -428,7 +428,7 @@ public class RuntimeCache {
 
     public IRubyObject reCacheFrom(RubyModule target, ThreadContext context, String name, int index) {
         Object newGeneration = context.getRuntime().getConstantInvalidator().getData();
-        IRubyObject value = target.getConstantFromNoConstMissing(name);
+        IRubyObject value = target.getConstantFromNoConstMissing(name, false);
         constants[index] = value;
         if (value != null) {
             constantGenerations[index] = newGeneration;

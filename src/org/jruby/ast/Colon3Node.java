@@ -116,7 +116,7 @@ public class Colon3Node extends Node implements INameNode {
     }
     
     private boolean hasConstant(RubyModule left) {
-        return left.getConstantAt(name) != null;
+        return left.getConstantAt(name, false) != null;
     }
     
     private boolean hasMethod(IRubyObject left) {
@@ -136,7 +136,7 @@ public class Colon3Node extends Node implements INameNode {
     public IRubyObject reCache(ThreadContext context, String name) {
         Ruby runtime = context.getRuntime();
         Object newGeneration = runtime.getConstantInvalidator().getData();
-        IRubyObject value = runtime.getObject().getConstantFromNoConstMissing(name);
+        IRubyObject value = runtime.getObject().getConstantFromNoConstMissing(name, false);
 
         cachedValue = value;
 

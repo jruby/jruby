@@ -140,7 +140,7 @@ public class Utils {
         Ruby runtime = container.getProvider().getRuntime();
         RubyIO io = getRubyIO(runtime, writer);
         runtime.defineVariable(new OutputGlobalVariable(runtime, "$stdout", io));
-        runtime.getObject().getConstantMapForWrite().put("STDOUT", io);
+        runtime.getObject().storeConstant("STDOUT", io);
         runtime.getGlobalVariables().alias("$>", "$stdout");
         runtime.getGlobalVariables().alias("$defout", "$stdout");
     }
@@ -161,7 +161,7 @@ public class Utils {
         Ruby runtime = container.getProvider().getRuntime();
         RubyIO io = getRubyIO(runtime, writer);
         runtime.defineVariable(new OutputGlobalVariable(runtime, "$stderr", io));
-        runtime.getObject().getConstantMapForWrite().put("STDERR", io);
+        runtime.getObject().storeConstant("STDERR", io);
         runtime.getGlobalVariables().alias("$deferr", "$stderr");
     }
     

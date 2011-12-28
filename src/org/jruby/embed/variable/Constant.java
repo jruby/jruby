@@ -121,14 +121,14 @@ public class Constant extends AbstractVariable {
     private static void updateConstantsOfSuperClass(RubyObject receiver, BiVariableMap vars) {
         // Super class has many many constants, so this method updates only
         // constans in BiVariableMap.
-        Map<String, IRubyObject> map =
+        Map<String, RubyModule.ConstantEntry> map =
             receiver.getRuntime().getTopSelf().getMetaClass().getSuperClass().getConstantMap();
         List<BiVariable> variables = vars.getVariables();
             // Need to check that this constant has been stored in BiVariableMap.
         for (BiVariable variable : variables) {
             if (variable.getType() == Type.Constant) {
                 if (map.containsKey(variable.getName())) {
-                    IRubyObject value = map.get(variable.getName());
+                    IRubyObject value = map.get(variable.getName()).value;
                     variable.setRubyObject(value);
                 }
             }
