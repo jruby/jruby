@@ -1,0 +1,1 @@
+fails:Encoding.default_internal= calls #to_s on arguments that are neither Strings nor Encodings
