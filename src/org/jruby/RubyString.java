@@ -3498,6 +3498,21 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return op_aref19(runtime, RubyNumeric.num2int(arg));
     }
 
+    @JRubyMethod(reads = BACKREF, writes = BACKREF, compat = RUBY1_9)
+    public IRubyObject byteslice(ThreadContext context, IRubyObject arg1, IRubyObject arg2) {
+        return op_aref(context, arg1, arg2);
+    }
+
+    @JRubyMethod(reads = BACKREF, writes = BACKREF, compat = RUBY1_9)
+    public IRubyObject byteslice(ThreadContext context, IRubyObject arg) {
+        IRubyObject result = op_aref(context, arg);
+        if (result instanceof RubyFixnum) {
+            // turn back into a String
+            return ((RubyFixnum)result).chr19(context);
+        }
+        return result;
+    }
+
     private IRubyObject op_aref19(Ruby runtime, int idx) {
         IRubyObject str = substr19(runtime, idx, 1);
         return !str.isNil() && ((RubyString) str).value.getRealSize() == 0 ? runtime.getNil() : str;
