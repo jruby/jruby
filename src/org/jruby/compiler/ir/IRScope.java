@@ -266,12 +266,10 @@ public abstract class IRScope {
         while (current != null && !(current instanceof IRMethod)) {
             current = current.getLexicalParent();
         }
-        
-        assert current instanceof IRMethod : "All scopes must be surrounded by at least one method";
-        
+
         return (IRMethod) current;
     }
-    
+
     public IRScope getNearestTopLocalVariableScope() {
         IRScope current = this;
 
