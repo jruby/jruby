@@ -308,10 +308,7 @@ public class IRBuilder19 extends IRBuilder {
 
         // Build an assignment for a splat, if any, with the rest of the operands!
         Node restNode = multipleAsgnNode.getRest();
-        if (restNode == null) {
-            if (masgnPre == null)
-                throw new NotCompilableException("Something's wrong, multiple assignment with no head or args at: " + multipleAsgnNode.getPosition());
-        } else {
+        if (restNode != null) {
             if (restNode instanceof StarNode) {
                 // do nothing
             } else if (values != null) {
