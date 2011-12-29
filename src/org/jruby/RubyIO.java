@@ -3517,6 +3517,27 @@ public class RubyIO extends RubyObject {
         return read19(context, recv, path, length, offset, (RubyHash) options);
     }
 
+    @JRubyMethod(meta = true, required = 2, optional = 1, compat = RUBY1_9)
+    public static IRubyObject binwrite(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        IRubyObject nil = context.getRuntime().getNil();
+        IRubyObject path = args[0];
+        IRubyObject str = args[1];
+        IRubyObject offset = nil;
+        Ruby runtime = context.runtime;
+
+        if (args.length > 2) {
+            offset = args[2];
+        }
+        RubyIO file = (RubyIO)RuntimeHelpers.invoke(context, runtime.getFile(), "new", path, runtime.newString("wb:ASCII-8BIT"));
+
+        try {
+            if (!offset.isNil()) file.seek(context, offset);
+            return file.write(context, str);
+        } finally  {
+            file.close();
+        }
+    }
+
     @JRubyMethod(name = "write", meta = true, required = 2, optional = 2, compat = RUBY1_9)
     public static IRubyObject writeStatic(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
         IRubyObject nil = context.nil;
