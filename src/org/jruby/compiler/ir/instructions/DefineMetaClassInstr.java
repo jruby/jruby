@@ -19,16 +19,16 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class DefineMetaClassInstr extends Instr implements ResultInstr {
-    private IRModuleBody dummyMetaClass;
+    private IRModuleBody dummyMetaClassBody;
     private Operand object;
     private Variable result;
     
-    public DefineMetaClassInstr(Variable result, Operand object, IRModuleBody dummyMetaClass) {
+    public DefineMetaClassInstr(Variable result, Operand object, IRModuleBody dummyMetaClassBody) {
         super(Operation.DEF_META_CLASS);
         
         assert result != null: "DefineMetaClassInstr result is null";
         
-        this.dummyMetaClass = dummyMetaClass;
+        this.dummyMetaClassBody = dummyMetaClassBody;
         this.object = object;
         this.result = result;
     }
@@ -57,7 +57,7 @@ public class DefineMetaClassInstr extends Instr implements ResultInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new DefineMetaClassInstr(ii.getRenamedVariable(result), object.cloneForInlining(ii), dummyMetaClass);
+        return new DefineMetaClassInstr(ii.getRenamedVariable(result), object.cloneForInlining(ii), dummyMetaClassBody);
     }
 
     @Override
@@ -73,8 +73,8 @@ public class DefineMetaClassInstr extends Instr implements ResultInstr {
             }
             
             RubyClass singletonClass = obj.getSingletonClass();
-            dummyMetaClass.getStaticScope().setModule(singletonClass);
-            DynamicMethod method = new InterpretedIRMethod(dummyMetaClass, Visibility.PUBLIC, singletonClass);
+            dummyMetaClassBody.getStaticScope().setModule(singletonClass);
+            DynamicMethod method = new InterpretedIRMethod(dummyMetaClassBody, Visibility.PUBLIC, singletonClass);
             // SSS FIXME: Rather than pass the block implicitly, should we add %block as another operand to DefineMetaClass instr?
             return method.call(context, singletonClass, singletonClass, "", new IRubyObject[]{}, block);
         }

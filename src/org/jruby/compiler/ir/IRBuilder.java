@@ -1155,7 +1155,7 @@ public class IRBuilder {
          * ------------------------------------------------------------------------------- */
         IRScope current = s;
         while (current != null && !(current instanceof IREvalScript) &&
-                !(current.isBody() && !(current.getLexicalParent() != null && current.getLexicalParent().isBody()))) {
+                !(current.isModuleBody() && !(current.getLexicalParent() != null && current.getLexicalParent().isModuleBody()))) {
             current = current.getLexicalParent();
         }
 
@@ -2939,7 +2939,7 @@ public class IRBuilder {
             // the closure is a proc.  If the closure is a lambda, then this is just a normal
             // return and the static methodToReturnFrom value is ignored 
             s.addInstr(new ReturnInstr(retVal, s.getNearestMethod()));
-        } else if (s.isBody()) {
+        } else if (s.isModuleBody()) {
             s.addInstr(new ThrowExceptionInstr(IRException.RETURN_LocalJumpError));
         } else {
             s.addInstr(new ReturnInstr(retVal));
@@ -3018,7 +3018,7 @@ public class IRBuilder {
     }
 
     public Operand buildSuper(SuperNode superNode, IRScope s) {
-        if (s.isBody()) return buildSuperInScriptBody(s);
+        if (s.isModuleBody()) return buildSuperInScriptBody(s);
         
         List<Operand> args = setupCallArgs(superNode.getArgsNode(), s);
         Operand  block = setupCallClosure(superNode.getIterNode(), s);
@@ -3165,7 +3165,7 @@ public class IRBuilder {
     }
 
     public Operand buildZSuper(ZSuperNode zsuperNode, IRScope s) {
-        if (s.isBody()) return buildSuperInScriptBody(s);
+        if (s.isModuleBody()) return buildSuperInScriptBody(s);
         
         Operand[] args = getZSuperArgs(s);
         Operand block = setupCallClosure(zsuperNode.getIterNode(), s);

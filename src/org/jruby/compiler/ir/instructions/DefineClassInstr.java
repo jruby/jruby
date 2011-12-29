@@ -19,19 +19,19 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 
 public class DefineClassInstr extends Instr implements ResultInstr {
-    private IRClassBody newIRClass;
+    private IRClassBody newIRClassBody;
     private Operand container;
     private Operand superClass;
     private Variable result;
     
-    public DefineClassInstr(Variable result, IRClassBody newIRClass, Operand container, Operand superClass) {
+    public DefineClassInstr(Variable result, IRClassBody newIRClassBody, Operand container, Operand superClass) {
         super(Operation.DEF_CLASS);
         
         assert result != null: "DefineClassInstr result is null";
         
         this.container = container;
         this.superClass = superClass == null ? Nil.NIL : superClass;
-        this.newIRClass = newIRClass;
+        this.newIRClassBody = newIRClassBody;
         this.result = result;
     }
 
@@ -60,11 +60,11 @@ public class DefineClassInstr extends Instr implements ResultInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new DefineClassInstr(ii.getRenamedVariable(result), this.newIRClass, container.cloneForInlining(ii), superClass.cloneForInlining(ii));
+        return new DefineClassInstr(ii.getRenamedVariable(result), this.newIRClassBody, container.cloneForInlining(ii), superClass.cloneForInlining(ii));
     }
     
     private RubyModule newClass(ThreadContext context, IRubyObject self, RubyModule classContainer, DynamicScope currDynScope, Object[] temp) {
-        if (newIRClass instanceof IRMetaClassBody) return classContainer.getMetaClass();
+        if (newIRClassBody instanceof IRMetaClassBody) return classContainer.getMetaClass();
 
         RubyClass sc;
         if (superClass == Nil.NIL) {
@@ -77,7 +77,7 @@ public class DefineClassInstr extends Instr implements ResultInstr {
             sc = (RubyClass) o;
         }
 
-        return classContainer.defineOrGetClassUnder(newIRClass.getName(), sc);
+        return classContainer.defineOrGetClassUnder(newIRClassBody.getName(), sc);
     }
 
     @Override
@@ -89,8 +89,8 @@ public class DefineClassInstr extends Instr implements ResultInstr {
         RubyModule newRubyClass = newClass(context, self, (RubyModule) rubyContainer, currDynScope, temp);
 
         // Interpret the body
-        newIRClass.getStaticScope().setModule(newRubyClass);
-        DynamicMethod method = new InterpretedIRMethod(newIRClass, Visibility.PUBLIC, newRubyClass);
+        newIRClassBody.getStaticScope().setModule(newRubyClass);
+        DynamicMethod method = new InterpretedIRMethod(newIRClassBody, Visibility.PUBLIC, newRubyClass);
         // SSS FIXME: Rather than pass the block implicitly, should we add %block as another operand to DefineClass, DefineModule instrs?
         return method.call(context, newRubyClass, newRubyClass, "", new IRubyObject[]{}, block);
     }

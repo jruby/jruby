@@ -45,20 +45,20 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
 /**
- * Right now, this class abstracts 5 different scopes: Script, Module, Class, 
- * Method, and Closure.
+ * Right now, this class abstracts the following execution scopes:
+ * Method, Closure, Module, Class, MetaClass
+ * Top-level Script, and Eval Script
  *
- * In the compiler-land, IR_* versions of these scopes encapsulate only as much 
+ * In the compiler-land, IR versions of these scopes encapsulate only as much 
  * information as is required to convert Ruby code into equivalent Java code.
  *
  * But, in the non-compiler land, there will be a corresponding java object for
- * each of these scopes which encapsulates the runtime semantics and data needed
- * for implementing them.  In the case of Module, Class, and Method, they also
- * happen to be instances of the corresponding Ruby classes -- so, in addition
- * to providing code that help with this specific ruby implementation, they also
- * have code that let them behave as ruby instances of their corresponding
- * classes.  Script and Closure have no such Ruby companions, as far as I can
- * tell.
+ * some of these scopes which encapsulates the runtime semantics and data needed
+ * for implementing them.  In the case of Module, Class, MetaClass, and Method,
+ * they also happen to be instances of the corresponding Ruby classes -- so,
+ * in addition to providing code that help with this specific ruby implementation,
+ * they also have code that let them behave as ruby instances of their corresponding
+ * classes.
  *
  * Examples:
  * - the runtime class object might have refs. to the runtime method objects.
@@ -75,25 +75,49 @@ import org.jruby.util.log.LoggerFactory;
  */
 public abstract class IRScope {
     private static final Logger LOG = LoggerFactory.getLogger("IRScope");
+
+	 /** Name */
+    private String name;
+
+	 /** Lexical parent scope */
+    private IRScope lexicalParent;
+
+	 /** Parser static-scope that this IR scope corresponds to */
+    private StaticScope staticScope;
     
-    private List<Instr>     instructions; // List of IR instructions for this method
+	 /** Live version of module within whose context this method executes */
+    private RubyModule containerModule; 
+    
+	 /** List of IR instructions for this method */
+    private List<Instr> instructions; 
+
+	 /** Control flow graph representation of this method's instructions */
     private CFG cfg = null;
-    private List<IRClosure> closures;     // List of (nested) closures in this scope
-    private Set<Variable> definedLocalVars;   // Local variables defined in this scope
-    private Set<Variable> usedLocalVars;      // Local variables used in this scope    
-    private boolean hasUnusedImplicitBlockArg = false; // Is %block implicit block arg unused?
-    private Map<String, DataFlowProblem> dfProbs = new HashMap<String, DataFlowProblem>();       // Map of name -> dataflow problem    
+
+	 /** List of (nested) closures in this scope */
+    private List<IRClosure> closures;
+
+	 /** Local variables defined in this scope */
+    private Set<Variable> definedLocalVars;
+
+	 /** Local variables used in this scope */
+    private Set<Variable> usedLocalVars;
+
+	 /** Is %block implicit block arg unused? */
+    private boolean hasUnusedImplicitBlockArg = false;
+
+	 /** Map of name -> dataflow problem */
+    private Map<String, DataFlowProblem> dfProbs = new HashMap<String, DataFlowProblem>();
+
     private Instr[] instrs = null;
-    private List<BasicBlock> linearizedBBList = null;  // Linearized list of bbs
+    private List<BasicBlock> linearizedBBList = null;
     private int scopeExitPC = -1;
     protected int temporaryVariableIndex = -1;
 
-    // Keeps track of types of prefix indexes for variables and labels
+    /** Keeps track of types of prefix indexes for variables and labels */
     private Map<String, Integer> nextVarIndex = new HashMap<String, Integer>();
-    
-    private RubyModule containerModule; // Live version of container
 
-    // ENEBO: These collections are initliazed on construction, but the rest
+    // ENEBO: These collections are initialized on construction, but the rest
     //   are init()'d.  This can't be right can it?
 
     // Index values to guarantee we don't assign same internal index twice
@@ -177,10 +201,6 @@ public abstract class IRScope {
     // So, we can keep track of loops in a loop stack which  keeps track of loops as they are encountered.
     // This lets us implement next/redo/break/retry easily for the non-closure cases
     private Stack<IRLoop> loopStack;
-
-    private IRScope lexicalParent;  // Lexical parent scope    
-    private StaticScope staticScope;
-    private String name;
     
     public IRScope(IRScope lexicalParent, String name, StaticScope staticScope) {
         super();
@@ -911,10 +931,9 @@ public abstract class IRScope {
     }
     
     /**
-     * Does this scope represent a method and is it one defined at the root
-     * of a script?
+     * Does this scope represent a module body?  (SSS FIXME: what about script or eval script bodies?)
      */
-    public boolean isBody() {
+    public boolean isModuleBody() {
         return false;
     }
     

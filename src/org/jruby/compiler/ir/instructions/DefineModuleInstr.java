@@ -16,16 +16,16 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 
 public class DefineModuleInstr extends Instr implements ResultInstr {
-    private final IRModuleBody newIRModule;
+    private final IRModuleBody newIRModuleBody;
     private Operand container;
     private Variable result;
 
-    public DefineModuleInstr(IRModuleBody newIRModule, Variable result, Operand container) {
+    public DefineModuleInstr(IRModuleBody newIRModuleBody, Variable result, Operand container) {
         super(Operation.DEF_MODULE);
         
         assert result != null : "DefineModuleInstr result is null";
         
-        this.newIRModule = newIRModule;
+        this.newIRModuleBody = newIRModuleBody;
         this.container = container;
         this.result = result;
     }
@@ -54,7 +54,7 @@ public class DefineModuleInstr extends Instr implements ResultInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new DefineModuleInstr(this.newIRModule, ii.getRenamedVariable(result), container.cloneForInlining(ii));
+        return new DefineModuleInstr(this.newIRModuleBody, ii.getRenamedVariable(result), container.cloneForInlining(ii));
     }
 
     @Override
@@ -63,9 +63,9 @@ public class DefineModuleInstr extends Instr implements ResultInstr {
         
         if (!(rubyContainer instanceof RubyModule)) throw context.getRuntime().newTypeError("no outer class/module");
 
-        RubyModule newRubyModule = ((RubyModule) rubyContainer).defineOrGetModuleUnder(newIRModule.getName());
-        newIRModule.getStaticScope().setModule(newRubyModule);
-        DynamicMethod method = new InterpretedIRMethod(newIRModule, Visibility.PUBLIC, newRubyModule);
+        RubyModule newRubyModule = ((RubyModule) rubyContainer).defineOrGetModuleUnder(newIRModuleBody.getName());
+        newIRModuleBody.getStaticScope().setModule(newRubyModule);
+        DynamicMethod method = new InterpretedIRMethod(newIRModuleBody, Visibility.PUBLIC, newRubyModule);
 
         // SSS FIXME: Rather than pass the block implicitly, should we add %block as another operand to DefineClass, DefineModule instrs?
         return method.call(context, newRubyModule, newRubyModule, "", new IRubyObject[]{}, block);

@@ -41,7 +41,7 @@ public class IRModuleBody extends IRScope {
     }
     
     @Override
-    public boolean isBody() {
+    public boolean isModuleBody() {
         return true;
     }
 }
