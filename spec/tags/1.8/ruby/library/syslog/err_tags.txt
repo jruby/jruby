@@ -1,3 +1,0 @@
-fails:Syslog.err logs a message
-fails:Syslog.err accepts sprintf arguments
-fails:Syslog.err works as an alias for Syslog.log

@@ -1,4 +1,0 @@
-fails:Syslog::Constants Syslog::Constants.LOG_MASK returns the mask value for a priority
-fails:Syslog::Constants Syslog::Constants.LOG_MASK works on undefined constants
-fails:Syslog::Constants Syslog::Constants.LOG_UPTO returns a mask for the priorities up to a given argument
-fails:Syslog::Constants Syslog::Constants.LOG_UPTO works on undefined constants

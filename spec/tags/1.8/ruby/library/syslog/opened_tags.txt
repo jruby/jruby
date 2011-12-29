@@ -1,3 +1,0 @@
-fails:Syslog.opened? returns true if the log is opened
-fails:Syslog.opened? returns false otherwise
-fails:Syslog.opened? works inside a block
