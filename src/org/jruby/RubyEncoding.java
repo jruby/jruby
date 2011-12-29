@@ -469,4 +469,4 @@ public class RubyEncoding extends RubyObject {
     public static Encoding getEncodingFromObject(Ruby runtime, IRubyObject arg) {
         return runtime.getEncodingService().getEncodingFromObject(arg);
     }
-    }
+}
