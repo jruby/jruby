@@ -9,7 +9,7 @@ public class IRModuleBody extends IRScope {
     
     public IRModuleBody(IRScope lexicalParent, String name, StaticScope scope) {
         super(lexicalParent, name, scope);
-        
+
         if (!IRBuilder.inIRGenOnlyMode()) {
             if (scope != null) ((IRStaticScope)scope).setIRScope(this);
             updateVersion();

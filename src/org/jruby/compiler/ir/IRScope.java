@@ -39,6 +39,7 @@ import org.jruby.compiler.ir.representations.BasicBlock;
 import org.jruby.compiler.ir.representations.CFG;
 import org.jruby.compiler.ir.representations.CFGInliner;
 import org.jruby.compiler.ir.representations.CFGLinearizer;
+import org.jruby.parser.IRStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -226,6 +227,10 @@ public abstract class IRScope {
 
     public void endLoop(IRLoop l) {
         loopStack.pop(); /* SSS FIXME: Do we need to check if l is same as whatever popped? */
+    }
+
+    public boolean isForLoopBody() {
+        return false;
     }
     
     public Label getNewLabel(String prefix) {
@@ -884,9 +889,9 @@ public abstract class IRScope {
         return index;
     }
 
-	 protected void resetVariableCounter(String prefix) {
+    protected void resetVariableCounter(String prefix) {
         nextVarIndex.remove(prefix);
-	 }
+    }
 
     protected int getPrefixCountSize(String prefix) {
         Integer index = nextVarIndex.get(prefix);

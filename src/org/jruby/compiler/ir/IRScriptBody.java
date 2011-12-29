@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.StringLiteral;
 import org.jruby.parser.StaticScope;
+import org.jruby.parser.IRStaticScope;
 
 // FIXME: I made this IRModule because any methods placed in top-level script goes
 // into something which an IRScript is basically a module that is special in that
@@ -16,6 +17,9 @@ public class IRScriptBody extends IRScope {
 
     public IRScriptBody(String className, String sourceName, StaticScope staticScope) {
         super(null, sourceName, staticScope);
+        if (!IRBuilder.inIRGenOnlyMode()) {
+            if (staticScope != null) ((IRStaticScope)staticScope).setIRScope(this);
+        }
     }
     
     public StringLiteral getFileName() {

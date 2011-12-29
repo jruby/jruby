@@ -108,6 +108,7 @@ public class IRClosure extends IRScope {
         return "Closure";
     }
 
+    @Override
     public boolean isForLoopBody() {
         return isForLoopBody;
     }
