@@ -4,9 +4,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.ArrayList;
 import org.jruby.compiler.ir.instructions.Instr;
-import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
-import org.jruby.compiler.ir.instructions.ReceiveRestArgInstr;
-import org.jruby.compiler.ir.instructions.ReceiveOptionalArgumentInstr;
+import org.jruby.compiler.ir.instructions.ReceiveArgBase;
+import org.jruby.compiler.ir.instructions.ReceiveRestArgBase;
+import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Splat;
@@ -65,20 +65,30 @@ public class IRMethod extends IRScope {
     @Override
     public void addInstr(Instr i) {
         // Accumulate call arguments
-        // SSS FIXME: Should we have a base class for receive instrs?
-        if (i instanceof ReceiveArgumentInstruction) {
-            callArgs.add(((ReceiveArgumentInstruction) i).getResult());
-        } else if (i instanceof ReceiveRestArgInstr) {
-            callArgs.add(new Splat(((ReceiveRestArgInstr)i).getResult()));
-        } else if (i instanceof ReceiveOptionalArgumentInstr) {
-            callArgs.add(((ReceiveOptionalArgumentInstr) i).getResult());
-        }
+        if (i instanceof ReceiveRestArgBase) callArgs.add(new Splat(((ReceiveRestArgBase)i).getResult()));
+        else if (i instanceof ReceiveArgBase) callArgs.add(((ReceiveArgBase) i).getResult());
 
         super.addInstr(i);
     }
 
     public Operand[] getCallArgs() {
         return callArgs.toArray(new Operand[callArgs.size()]);
+    }
+
+    public LocalVariable findExistingLocalVariable(String name, int scopeDepth) {
+        return localVars.getVariable(name);
+    }
+
+    public LocalVariable getNewLocalVariable(String name) {
+        LocalVariable lvar = new LocalVariable(name, 0, localVars.nextSlot);
+        localVars.putVariable(name, lvar);
+        return lvar;
+    }
+
+    public LocalVariable getLocalVariable(String name, int scopeDepth) {
+        LocalVariable lvar = findExistingLocalVariable(name, scopeDepth);
+        if (lvar == null) lvar = getNewLocalVariable(name);
+        return lvar;
     }
 
     public LocalVariable getImplicitBlockArg() {

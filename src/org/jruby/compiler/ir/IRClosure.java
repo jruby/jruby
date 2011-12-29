@@ -14,14 +14,15 @@ import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.TemporaryClosureVariable;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.instructions.Instr;
-import org.jruby.compiler.ir.instructions.ReceiveClosureArgInstr;
-import org.jruby.compiler.ir.instructions.ReceiveClosureRestArgInstr;
+import org.jruby.compiler.ir.instructions.ReceiveArgBase;
+import org.jruby.compiler.ir.instructions.ReceiveRestArgBase;
 import org.jruby.compiler.ir.representations.CFG;
 import org.jruby.parser.StaticScope;
 import org.jruby.parser.IRStaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.InterpretedIRBlockBody;
+import org.jruby.runtime.InterpretedIRBlockBody19;
 
 public class IRClosure extends IRScope {
     public final Label startLabel; // Label for the start of the closure (used to implement redo)
@@ -45,13 +46,14 @@ public class IRClosure extends IRScope {
     // Block parameters
     private List<Operand> blockArgs;
 
-    public IRClosure(IRScope lexicalParent, boolean isForLoopBody, StaticScope staticScope, Arity arity, int argumentType) {
+    public IRClosure(IRScope lexicalParent, boolean isForLoopBody, StaticScope staticScope, Arity arity, int argumentType, boolean is1_9) {
         this(lexicalParent, staticScope, isForLoopBody ? "_FOR_LOOP_" : "_CLOSURE_");
         this.isForLoopBody = isForLoopBody;
         this.hasBeenInlined = false;
         this.blockArgs = new ArrayList<Operand>();
         if (!IRBuilder.inIRGenOnlyMode()) {
-            this.body = new InterpretedIRBlockBody(this, arity, argumentType);
+            this.body = is1_9 ? new InterpretedIRBlockBody19(this, arity, argumentType)
+                              : new InterpretedIRBlockBody(this, arity, argumentType);
             if ((staticScope != null) && !isForLoopBody) ((IRStaticScope)staticScope).setIRScope(this);
         } else {
             this.body = null;
@@ -121,11 +123,8 @@ public class IRClosure extends IRScope {
     @Override
     public void addInstr(Instr i) {
         // Accumulate block arguments
-        if (i instanceof ReceiveClosureArgInstr) {
-            blockArgs.add(((ReceiveClosureArgInstr) i).getResult());
-        } else if (i instanceof ReceiveClosureRestArgInstr) {
-            blockArgs.add(new Splat(((ReceiveClosureRestArgInstr) i).getResult()));
-        }
+        if (i instanceof ReceiveRestArgBase) blockArgs.add(new Splat(((ReceiveRestArgBase)i).getResult()));
+        else if (i instanceof ReceiveArgBase) blockArgs.add(((ReceiveArgBase) i).getResult());
 
         super.addInstr(i);
     }
@@ -161,13 +160,14 @@ public class IRClosure extends IRScope {
     }
 
     @Override
-    public LocalVariable findExistingLocalVariable(String name) {
+    public LocalVariable findExistingLocalVariable(String name, int scopeDepth) {
         LocalVariable lvar = localVars.getVariable(name);
         if (lvar != null) return lvar;
-        else return getLexicalParent().findExistingLocalVariable(name);
+        else if (scopeDepth > 0) return getLexicalParent().findExistingLocalVariable(name, scopeDepth - 1);
+        else return null;
     }
 
-    public LocalVariable getNewLocalVariable(String name, int scopeDepth) {
+    public LocalVariable getNewLocalVariable(String name) {
         LocalVariable lvar = new ClosureLocalVariable(this, name, 0, localVars.nextSlot);
         localVars.putVariable(name, lvar);
         return lvar;
@@ -177,9 +177,9 @@ public class IRClosure extends IRScope {
     public LocalVariable getLocalVariable(String name, int scopeDepth) {
         if (isForLoopBody) return getLexicalParent().getLocalVariable(name, scopeDepth);
 
-        LocalVariable lvar = findExistingLocalVariable(name);
+        LocalVariable lvar = findExistingLocalVariable(name, scopeDepth);
         if (lvar == null) {
-            lvar = getNewLocalVariable(name, scopeDepth);
+            lvar = getNewLocalVariable(name);
         } else if (lvar.getScopeDepth() != scopeDepth) {
             // Create a copy of the variable usable at a different scope depth
             lvar = lvar.cloneForDepth(scopeDepth);

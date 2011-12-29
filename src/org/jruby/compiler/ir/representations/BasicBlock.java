@@ -9,8 +9,8 @@ import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.CopyInstr;
 import org.jruby.compiler.ir.instructions.ClosureReturnInstr;
 import org.jruby.compiler.ir.instructions.NopInstr;
-import org.jruby.compiler.ir.instructions.ReceiveClosureArgInstr;
-import org.jruby.compiler.ir.instructions.ReceiveClosureRestArgInstr;
+import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
+import org.jruby.compiler.ir.instructions.ReceiveRestArgBase;
 import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
 import org.jruby.compiler.ir.instructions.ReceiveSelfInstruction;
 import org.jruby.compiler.ir.instructions.YieldInstr;
@@ -149,23 +149,17 @@ public class BasicBlock implements DataInfo {
                 } else {
                     it.set(NopInstr.NOP);
                 }
-            } else if (i instanceof ReceiveClosureArgInstr) {
-                Operand closureArg;
-                ReceiveClosureArgInstr rcai = (ReceiveClosureArgInstr)i;
-                int argIndex = rcai.getArgIndex();
-
-                if (argIndex < yieldArgs.length) {
-                    closureArg = yieldArgs[argIndex].cloneForInlining(ii);
-                } else {
-                    closureArg = Nil.NIL;
-                }
+            } else if (i instanceof ReceiveArgumentInstruction) {
+                ReceiveArgumentInstruction rai = (ReceiveArgumentInstruction)i;
+                int argIndex = rai.getArgIndex();
+                Operand closureArg = (argIndex < yieldArgs.length) ? yieldArgs[argIndex].cloneForInlining(ii) : Nil.NIL;
 
                 // Replace the arg receive with a simple copy
-                it.set(new CopyInstr(rcai.getResult(), closureArg));
-            } else if (i instanceof ReceiveClosureRestArgInstr) {
+                it.set(new CopyInstr(rai.getResult(), closureArg));
+            } else if (i instanceof ReceiveRestArgBase) {
                 Operand closureArg;
-                ReceiveClosureRestArgInstr rcai = (ReceiveClosureRestArgInstr)i;
-                int argIndex = rcai.getArgIndex();
+                ReceiveRestArgBase rai = (ReceiveRestArgBase)i;
+                int argIndex = rai.getArgIndex();
 
                 if (argIndex < yieldArgs.length) {
                     Operand[] tmp = new Operand[yieldArgs.length - argIndex];
@@ -179,7 +173,7 @@ public class BasicBlock implements DataInfo {
                 }
 
                 // Replace the arg receive with a simple copy
-                it.set(new CopyInstr(rcai.getResult(), closureArg));
+                it.set(new CopyInstr(rai.getResult(), closureArg));
             }
         }
     }

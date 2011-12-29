@@ -5,6 +5,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyMatchData;
 import org.jruby.RubyModule;
+import org.jruby.RubyString;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.jruby.BlockGivenInstr;
 import org.jruby.compiler.ir.operands.MethAddr;
@@ -43,6 +44,7 @@ public class JRubyImplCallInstr extends CallInstr {
        SELF_IS_METHOD_BOUND("self_isMethodBound"), // SSS FIXME: Should this be a Ruby internals call rather than a JRUBY internals call?
        TC_SAVE_ERR_INFO("threadContext_saveErrInfo"),
        BACKREF_IS_RUBY_MATCH_DATA("backref_isRubyMatchData"),
+       METHOD_DEFINED("getDefinedCall"),
        METHOD_PUBLIC_ACCESSIBLE("methodIsPublicAccessible"),
        CLASS_VAR_DEFINED("isClassVarDefined"),
        FRAME_SUPER_METHOD_BOUND("frame_superMethodBound");
@@ -67,7 +69,7 @@ public class JRubyImplCallInstr extends CallInstr {
         }
     }
 
-    JRubyImplementationMethod implMethod;
+    protected JRubyImplementationMethod implMethod;
 
     public JRubyImplCallInstr(Variable result, JRubyImplementationMethod methAddr, Operand receiver, Operand[] args) {
         super(Operation.JRUBY_IMPL, CallType.FUNCTIONAL, result, methAddr.getMethAddr(), receiver, args, null);
@@ -122,53 +124,61 @@ public class JRubyImplCallInstr extends CallInstr {
         Object rVal = null;
 
         switch (this.implMethod) {
-            case RTH_GET_DEFINED_CONSTANT_OR_BOUND_METHOD:
-            {
+            case RTH_GET_DEFINED_CONSTANT_OR_BOUND_METHOD: {
                 IRubyObject v = (IRubyObject)getCallArgs()[0].retrieve(context, self, currDynScope, temp);
                 name = ((StringLiteral)getCallArgs()[1])._str_value;
                 ByteList definedType = RuntimeHelpers.getDefinedConstantOrBoundMethod(v, name);
                 rVal = (definedType == null ? Nil.NIL : (new StringLiteral(definedType))).retrieve(context, self, currDynScope, temp);
                 break;
             }
-            case RT_IS_GLOBAL_DEFINED:
+            case RT_IS_GLOBAL_DEFINED: {
                 //name = getCallArgs()[0].retrieve(interp).toString();
                 name = ((StringLiteral)getCallArgs()[0])._str_value;
                 rVal = runtime.newBoolean(runtime.getGlobalVariables().isDefined(name));
                 break;
-            case RT_GET_OBJECT:
+            }
+            case RT_GET_OBJECT: {
                 rVal = runtime.getObject();
                 break;
-            case RT_GET_BACKREF:
+            }
+            case RT_GET_BACKREF: {
                 // SSS: FIXME: Or use this directly? "context.getCurrentScope().getBackRef(rt)" What is the diff??
                 rVal = RuntimeHelpers.getBackref(runtime, context);
                 break;
-            case SELF_HAS_INSTANCE_VARIABLE:
-            {
+            }
+            case SELF_HAS_INSTANCE_VARIABLE: {
                 receiver = getReceiver().retrieve(context, self, currDynScope, temp);
                 //name = getCallArgs()[0].retrieve(interp).toString();
                 name = ((StringLiteral)getCallArgs()[0])._str_value;
                 rVal = runtime.newBoolean(((IRubyObject)receiver).getInstanceVariables().hasInstanceVariable(name));
                 break;
             }
-            case SELF_IS_METHOD_BOUND:
-            {
+            case SELF_IS_METHOD_BOUND: {
                 receiver = getReceiver().retrieve(context, self, currDynScope, temp);
                 boolean bound = ((IRubyObject)receiver).getMetaClass().isMethodBound(((StringLiteral)getCallArgs()[0])._str_value, false); 
                 rVal = runtime.newBoolean(bound);
                 break;
             }
-            case TC_SAVE_ERR_INFO:
+            case TC_SAVE_ERR_INFO: {
                 rVal = context.getErrorInfo();
                 break;
-            case BACKREF_IS_RUBY_MATCH_DATA:
+            }
+            case BACKREF_IS_RUBY_MATCH_DATA: {
                 // bRef = getBackref()
                 // flag = bRef instanceof RubyMatchData
                 // SSS: FIXME: Or use this directly? "context.getCurrentScope().getBackRef(rt)" What is the diff??
                 IRubyObject bRef = RuntimeHelpers.getBackref(runtime, context);
                 rVal = runtime.newBoolean(RubyMatchData.class.isInstance(bRef));
                 break;
-            case METHOD_PUBLIC_ACCESSIBLE:
-            {
+            }
+            case METHOD_DEFINED: {
+                receiver = getReceiver().retrieve(context, self, currDynScope, temp);
+                String methodName = ((StringLiteral)getCallArgs()[0])._str_value;
+                ByteList boundVal = RuntimeHelpers.getDefinedCall(context, self, (IRubyObject)receiver, methodName);
+                rVal = boundVal == null ? context.nil : RubyString.newStringShared(runtime, boundVal);
+                break;
+            }
+            case METHOD_PUBLIC_ACCESSIBLE: {
                 /* ------------------------------------------------------------
                  * mc = r.metaClass
                  * v  = mc.getVisibility(methodName)
@@ -181,8 +191,7 @@ public class JRubyImplCallInstr extends CallInstr {
                 rVal = runtime.newBoolean((v != null) && !v.isPrivate() && !(v.isProtected() && mc.getRealClass().isInstance(r)));
                 break;
             }
-            case CLASS_VAR_DEFINED:
-            {
+            case CLASS_VAR_DEFINED: {
                 // cm.classVarDefined(name) || (cm.isSingleton && !(cm.attached instanceof RubyModule) && cm.attached.classVarDefined(name))
                 boolean flag;
                 RubyModule cm = (RubyModule)getReceiver().retrieve(context, self, currDynScope, temp);
@@ -197,8 +206,7 @@ public class JRubyImplCallInstr extends CallInstr {
                 rVal = runtime.newBoolean(flag);
                 break;
             }
-            case FRAME_SUPER_METHOD_BOUND:
-            {
+            case FRAME_SUPER_METHOD_BOUND: {
                 receiver = getReceiver().retrieve(context, self, currDynScope, temp);
                 boolean flag = false;
                 String        fn = context.getFrameName();
@@ -211,8 +219,9 @@ public class JRubyImplCallInstr extends CallInstr {
                 rVal = runtime.newBoolean(flag);
                 break;
             }
-            default:
+            default: {
                 assert false: "Unknown JRuby impl called";
+            }
         }
 
         return hasUnusedResult() ? null : rVal;

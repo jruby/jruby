@@ -69,14 +69,14 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
         return commonYieldPath(context, args, self, klass, binding, type, Block.NULL_BLOCK);
     }
 
-    private IRubyObject prepareSelf(Binding binding) {
+    protected IRubyObject prepareSelf(Binding binding) {
         IRubyObject self = binding.getSelf();
         binding.getFrame().setSelf(self);
 
         return self;
     }
 
-    private IRubyObject commonYieldPath(ThreadContext context, IRubyObject[] args, IRubyObject self, RubyModule klass, Binding binding, Type type, Block block) {
+    protected IRubyObject commonYieldPath(ThreadContext context, IRubyObject[] args, IRubyObject self, RubyModule klass, Binding binding, Type type, Block block) {
         Visibility oldVis = binding.getFrame().getVisibility();
         RubyModule currentModule = closure.getStaticScope().getModule();
 
@@ -93,6 +93,11 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
             context.postYield(binding, prevFrame);
         }
     }
+
+    protected void blockArgWarning(Ruby ruby, int length) {
+        ruby.getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (" +
+                    length + " for 1)");
+    }
     
     private IRubyObject prepareArrayArgsForCall(Ruby ruby, IRubyObject value) {
         int length = (value instanceof RubyArray) ? ((RubyArray)value).getLength() : 0;
@@ -104,12 +109,7 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
         return value;
     }
 
-    private void blockArgWarning(Ruby ruby, int length) {
-        ruby.getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (" +
-                    length + " for 1)");
-    }
-
-    protected IRubyObject[] assignArrayToBlockArgs(Ruby ruby, IRubyObject value) {
+    private IRubyObject[] assignArrayToBlockArgs(Ruby ruby, IRubyObject value) {
         switch (argumentType) {
         case ZERO_ARGS:
             return IRubyObject.NULL_ARRAY;
@@ -121,7 +121,12 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
         }
     }
 
-    public IRubyObject[] prepareArgumentsForYield(ThreadContext context, IRubyObject[] args, Block.Type type) {
+    protected IRubyObject[] convertToRubyArray(ThreadContext context, IRubyObject[] args) {
+        return (args.length == 0) ? context.getRuntime().getSingleNilArray()
+                                  : new IRubyObject[] {context.getRuntime().newArrayNoCopy(args)};
+    }
+
+    protected IRubyObject[] prepareArgumentsForYield(ThreadContext context, IRubyObject[] args, Block.Type type) {
         int blockArity = arity().getValue();
         if (type != Block.Type.NORMAL) throw new RuntimeException("JRuby Internal Error.  Trying to yield to a " + type + " block.  Only NORMAL blocks can be yielded to.");
 
@@ -135,17 +140,13 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
                 else throw context.getRuntime().newTypeError(soleArg.getType().getName() + "#to_ary should return Array");
             }
         } else if (argumentType == ARRAY) {
-            context.getRuntime().getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (" + args.length + " for " + blockArity + ")");
-            if (args.length == 0) {
-                args = context.getRuntime().getSingleNilArray();
-            } else {
-                args = new IRubyObject[] {context.getRuntime().newArrayNoCopy(args)};
-            }
+            args = convertToRubyArray(context, args);
         }
 
         return args;
     }
 
+    @Override
     public IRubyObject[] prepareArgumentsForCall(ThreadContext context, IRubyObject[] args, Block.Type type) {
         int blockArity = arity().getValue();
         switch (type) {
@@ -165,23 +166,16 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
                     else throw context.getRuntime().newTypeError(soleArg.getType().getName() + "#to_ary should return Array");
                 }
             } else if (argumentType == ARRAY) {
-                context.getRuntime().getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (" + args.length + " for " + blockArity + ")");
-                if (args.length == 0) {
-                    args = context.getRuntime().getSingleNilArray();
-                } else {
-                    args = new IRubyObject[] {context.getRuntime().newArrayNoCopy(args)};
-                }
+                args = convertToRubyArray(context, args);
             }
             break;
         }
         case LAMBDA:
             if (argumentType == ARRAY && args.length != 1) {
-                context.getRuntime().getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (" + args.length + " for " + blockArity + ")");
-                if (args.length == 0) {
-                    args = context.getRuntime().getSingleNilArray();
-                } else {
-                    args = new IRubyObject[] {context.getRuntime().newArrayNoCopy(args)};
+                if (blockArity != args.length) {
+                    context.getRuntime().getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (" + args.length + " for " + blockArity + ")");
                 }
+                args = convertToRubyArray(context, args);
             } else {
                 arity().checkArity(context.getRuntime(), args);
             }

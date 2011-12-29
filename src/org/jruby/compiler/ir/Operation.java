@@ -40,14 +40,13 @@ public enum Operation {
     B_TRUE(OpFlags.f_is_jump_or_branch),
     B_FALSE(OpFlags.f_is_jump_or_branch),
 
-    /** argument receive related in methods and blocks **/
+    /** argument receive in methods and blocks **/
     RECV_SELF(OpFlags.f_is_arg_receive),
     RECV_ARG(OpFlags.f_is_arg_receive),
+    RECV_REQD_ARG(OpFlags.f_is_arg_receive),
     RECV_REST_ARG(OpFlags.f_is_arg_receive),
     RECV_OPT_ARG(OpFlags.f_is_arg_receive),
     RECV_CLOSURE(OpFlags.f_is_arg_receive),
-    RECV_CLOSURE_ARG(OpFlags.f_is_arg_receive),
-    RECV_CLOSURE_REST_ARG(OpFlags.f_is_arg_receive),
     RECV_EXCEPTION(OpFlags.f_is_arg_receive),
 
     /* By default, call instructions cannot be deleted even if their results
@@ -136,6 +135,7 @@ public enum Operation {
     THREAD_POLL(OpFlags.f_has_side_effect),
     CONST_MISSING(OpFlags.f_can_raise_exception),
     ENSURE_RUBY_ARRAY(0),
+    GET_ENCODING(0),
 
     /** for splitting calls into method-lookup and call -- unused **/
     METHOD_LOOKUP(0),

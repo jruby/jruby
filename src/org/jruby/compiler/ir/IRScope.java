@@ -623,7 +623,7 @@ public abstract class IRScope {
         hasUnusedImplicitBlockArg = true;
     }
 
-    public LocalVariable findExistingLocalVariable(String name) {
+    public LocalVariable findExistingLocalVariable(String name, int depth) {
         return localVars.getVariable(name);
     }
 
@@ -633,13 +633,17 @@ public abstract class IRScope {
      * have special nesting rules.
      */
     public LocalVariable getLocalVariable(String name, int scopeDepth) {
-        LocalVariable lvar = findExistingLocalVariable(name);
+        LocalVariable lvar = findExistingLocalVariable(name, scopeDepth);
         if (lvar == null) {
             lvar = new LocalVariable(name, scopeDepth, localVars.nextSlot);
             localVars.putVariable(name, lvar);
         }
 
         return lvar;
+    }
+
+    public LocalVariable getNewLocalVariable(String name) {
+        throw new RuntimeException("getNewLocalVariable should be called for: " + this.getClass().getName());
     }
 
     protected void initEvalScopeVariableAllocator(boolean reset) {
