@@ -2675,22 +2675,45 @@ public class RubyModule extends RubyObject {
     }
 
     @JRubyMethod(compat = RUBY1_9)
-    public IRubyObject private_constant(ThreadContext context, IRubyObject _name) {
-        String name = validateConstant(_name.asJavaString());
-        ConstantEntry entry = getConstantMap().get(name);
-
-        if (entry == null) {
-            throw context.runtime.newNameError("constant " + getName() + "::" + _name + " not defined", name);
-        }
-
-        getConstantMapForWrite().put(name, new ConstantEntry(entry.value, true));
+    public IRubyObject private_constant(ThreadContext context, IRubyObject name) {
+        setConstantVisibility(context, validateConstant(name.asJavaString()), true);
+        invalidateConstantCache();
         return this;
     }
 
     @JRubyMethod(compat = RUBY1_9, required = 1, rest = true)
     public IRubyObject private_constant(ThreadContext context, IRubyObject[] names) {
-        private_constant(context, names[0]);
+        for (IRubyObject name : names) {
+            setConstantVisibility(context, validateConstant(name.asJavaString()), true);
+        }
+        invalidateConstantCache();
         return this;
+    }
+
+    @JRubyMethod(compat = RUBY1_9)
+    public IRubyObject public_constant(ThreadContext context, IRubyObject name) {
+        setConstantVisibility(context, validateConstant(name.asJavaString()), false);
+        invalidateConstantCache();
+        return this;
+    }
+
+    @JRubyMethod(compat = RUBY1_9, required = 1, rest = true)
+    public IRubyObject public_constant(ThreadContext context, IRubyObject[] names) {
+        for (IRubyObject name : names) {
+            setConstantVisibility(context, validateConstant(name.asJavaString()), false);
+        }
+        invalidateConstantCache();
+        return this;
+    }
+
+    private void setConstantVisibility(ThreadContext context, String name, boolean hidden) {
+        ConstantEntry entry = getConstantMap().get(name);
+
+        if (entry == null) {
+            throw context.runtime.newNameError("constant " + getName() + "::" + name + " not defined", name);
+        }
+
+        getConstantMapForWrite().put(name, new ConstantEntry(entry.value, hidden));
     }
 
     //
