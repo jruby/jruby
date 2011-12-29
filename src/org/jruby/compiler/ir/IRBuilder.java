@@ -1183,7 +1183,7 @@ public class IRBuilder {
 
     private WrappedIRScope findContainerModule(IRScope s) {
         IRScope nearestModule = s.getNearestModuleReferencingScope();
-        return (nearestModule == null) ? new WrappedIRScope(manager.getObject()) : new WrappedIRScope(nearestModule);
+        return (nearestModule == null) ? WrappedIRScope.CURRENT_SCOPE : new WrappedIRScope(nearestModule);
     }
 
     private IRScope startingSearchScope(IRScope s) {
