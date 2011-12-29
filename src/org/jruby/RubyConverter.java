@@ -25,15 +25,31 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jcodings.Encoding;
+import org.jcodings.specific.UTF16BEEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
+
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CharsetEncoder;
+import java.nio.charset.CoderResult;
+
+import static org.jruby.CompatVersion.*;
+import static org.jruby.runtime.Visibility.*;
 
 @JRubyClass(name="Converter")
 public class RubyConverter extends RubyObject {
+    private RubyEncoding srcEncoding;
+    private RubyEncoding destEncoding;
+    private CharsetDecoder srcDecoder;
+    private CharsetEncoder destEncoder;
 
     public static RubyClass createConverterClass(Ruby runtime) {
         RubyClass converterc = runtime.defineClassUnder("Converter", runtime.getClass("Data"), CONVERTER_ALLOCATOR, runtime.getEncoding());
@@ -57,6 +73,8 @@ public class RubyConverter extends RubyObject {
         }
     };
 
+    private static final Encoding UTF16 = UTF16BEEncoding.INSTANCE;
+
     public RubyConverter(Ruby runtime, RubyClass klass) {
         super(runtime, klass);
     }
@@ -65,8 +83,83 @@ public class RubyConverter extends RubyObject {
         super(runtime, runtime.getConverter());
     }
 
-    @JRubyMethod(name = "convpath", compat = CompatVersion.RUBY1_9)
-    public IRubyObject convpath(ThreadContext context) {
+    @JRubyMethod(visibility = PRIVATE, compat = RUBY1_9)
+    public IRubyObject initialize(ThreadContext context, IRubyObject convpath) {
         return context.getRuntime().getNil();
+    }
+
+    @JRubyMethod(visibility = PRIVATE, compat = RUBY1_9)
+    public IRubyObject initialize(ThreadContext context, IRubyObject src, IRubyObject dest) {
+        srcEncoding = (RubyEncoding)context.runtime.getEncodingService().rubyEncodingFromObject(src);
+        destEncoding = (RubyEncoding)context.runtime.getEncodingService().rubyEncodingFromObject(dest);
+
+        srcDecoder = context.runtime.getEncodingService().charsetForEncoding(srcEncoding.getEncoding()).newDecoder();
+        destEncoder = context.runtime.getEncodingService().charsetForEncoding(destEncoding.getEncoding()).newEncoder();
+
+        return context.getRuntime().getNil();
+    }
+
+    @JRubyMethod(visibility = PRIVATE, compat = RUBY1_9)
+    public IRubyObject initialize(ThreadContext context, IRubyObject src, IRubyObject dest, IRubyObject opt) {
+        // TODO: opt
+        initialize(context, src, dest);
+        return context.getRuntime().getNil();
+    }
+
+    @JRubyMethod(compat = RUBY1_9)
+    public IRubyObject inspect(ThreadContext context) {
+        return RubyString.newString(context.runtime, "#<Encoding::Converter: " + srcDecoder.charset().name() + " to " + destEncoder.charset().name());
+    }
+
+    @JRubyMethod(name = "convpath", compat = RUBY1_9)
+    public IRubyObject convpath(ThreadContext context) {
+        // we always pass through UTF-16
+        IRubyObject utf16Encoding = context.runtime.getEncodingService().getEncodingList()[UTF16.getIndex()];
+        return RubyArray.newArray(
+                context.runtime,
+                RubyArray.newArray(context.runtime, srcEncoding, utf16Encoding),
+                RubyArray.newArray(context.runtime, utf16Encoding, destEncoding)
+        );
+    }
+
+    @JRubyMethod(compat = RUBY1_9)
+    public IRubyObject source_encoding() {
+        return srcEncoding;
+    }
+
+    @JRubyMethod(compat = RUBY1_9)
+    public IRubyObject destination_encoding() {
+        return destEncoding;
+    }
+
+    @JRubyMethod(compat = RUBY1_9)
+    public IRubyObject convert(ThreadContext context, IRubyObject srcBuffer) {
+        if (!(srcBuffer instanceof RubyString)) {
+            throw context.runtime.newTypeError(srcBuffer, context.runtime.getString());
+        }
+
+        RubyString srcString = (RubyString)srcBuffer;
+
+        ByteList srcBL = srcString.getByteList();
+
+        if (srcBL.getRealSize() == 0) return context.runtime.newSymbol("source_buffer_empty");
+
+        ByteBuffer srcBB = ByteBuffer.wrap(srcBL.getUnsafeBytes(), srcBL.begin(), srcBL.getRealSize());
+        try {
+            CharBuffer srcCB = CharBuffer.allocate((int) (srcDecoder.maxCharsPerByte() * srcBL.getRealSize()) + 1);
+            CoderResult decodeResult = srcDecoder.decode(srcBB, srcCB, true);
+            srcCB.flip();
+
+            ByteBuffer destBB = ByteBuffer.allocate((int) (destEncoder.maxBytesPerChar() * srcCB.limit()) + 1);
+            CoderResult encodeResult = destEncoder.encode(srcCB, destBB, true);
+            destBB.flip();
+
+            byte[] destBytes = new byte[destBB.limit()];
+            destBB.get(destBytes);
+            
+            return context.runtime.newString(new ByteList(destBytes, destEncoding.getEncoding(), false));
+        } catch (Exception e) {
+            throw context.runtime.newRuntimeError(e.getLocalizedMessage());
+        }
     }
 }

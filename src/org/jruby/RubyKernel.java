@@ -1749,7 +1749,7 @@ public class RubyKernel {
         return ((RubyBasicObject)self).respond_to_p19(mname, includePrivate);
     }
 
-    @JRubyMethod(name = {"object_id", "__id__"})
+    @JRubyMethod(name = {"object_id", "__id__"}, compat = RUBY1_8)
     public static IRubyObject id(IRubyObject self) {
         return ((RubyBasicObject)self).id();
     }

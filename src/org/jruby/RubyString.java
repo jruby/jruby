@@ -678,7 +678,9 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 return RubyEncoding.decodeUTF8(value.getUnsafeBytes(), value.begin(), value.length());
             }
             
-            Charset charset = encoding.getCharset();
+            Charset charset = runtime.getEncodingService().charsetForEncoding(encoding);
+
+            encoding.getCharset();
 
             // charset is not defined for this encoding in jcodings db.  Try letting Java resolve this.
             if (charset == null) {

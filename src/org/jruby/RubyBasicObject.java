@@ -993,6 +993,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *
      * Return the internal id of an object.
      */
+    @JRubyMethod(name = {"object_id", "__id__"}, compat = RUBY1_9)
     public IRubyObject id() {
         return getRuntime().newFixnum(getObjectId());
     }

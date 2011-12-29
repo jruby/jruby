@@ -1,6 +1,5 @@
 package org.jruby.runtime.encoding;
 
-import java.nio.charset.Charset;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
 import org.jcodings.EncodingDB.Entry;
@@ -14,6 +13,9 @@ import org.jruby.RubyEncoding;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+
+import java.nio.charset.Charset;
+import java.nio.charset.UnsupportedCharsetException;
 
 public final class EncodingService {
     private final CaseInsensitiveBytesHash<Entry> encodings;
@@ -290,6 +292,26 @@ public final class EncodingService {
         Entry entry = findEntry(str);
         if (entry == null) return runtime.getNil();
         return getEncodingList()[entry.getIndex()];
+    }
+
+    /**
+     * Get a java.nio Charset for the given encoding, or null if impossible
+     * 
+     * @param encoding the encoding
+     * @return the charset
+     */
+    public Charset charsetForEncoding(Encoding encoding) {
+        Charset charset = encoding.getCharset();
+
+        if (encoding.toString().equals("ASCII-8BIT")) {
+            return Charset.forName("ASCII");
+        }
+
+        try {
+            return Charset.forName(encoding.toString());
+        } catch (UnsupportedCharsetException uce) {
+            throw runtime.newEncodingCompatibilityError("no java.nio.charset.Charset found for encoding `" + encoding.toString() + "'");
+        }
     }
 
     private void checkAsciiEncodingName(ByteList name) {
