@@ -3432,6 +3432,28 @@ public class RubyIO extends RubyObject {
     }
 
     /**
+     *  options is a hash which can contain:
+     *    encoding: string or encoding
+     *    mode: string
+     *    open_args: array of string
+     */
+    private static IRubyObject write19(ThreadContext context, IRubyObject recv, IRubyObject path, IRubyObject str, IRubyObject offset, RubyHash options) {
+        // FIXME: process options
+
+        RubyString pathStr = RubyFile.get_path(context, path);
+        Ruby runtime = context.getRuntime();
+        failIfDirectory(runtime, pathStr);
+        RubyIO file = newFile(context, recv, pathStr, context.runtime.newString("w"));
+
+        try {
+            if (!offset.isNil()) file.seek(context, offset);
+            return file.write(context, str);
+        } finally  {
+            file.close();
+        }
+    }
+
+    /**
      * binread is just like read, except it doesn't take options and it forces
      * mode to be "rb:ASCII-8BIT"
      *
@@ -3493,6 +3515,28 @@ public class RubyIO extends RubyObject {
         }
 
         return read19(context, recv, path, length, offset, (RubyHash) options);
+    }
+
+    @JRubyMethod(name = "write", meta = true, required = 2, optional = 2, compat = RUBY1_9)
+    public static IRubyObject writeStatic(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
+        IRubyObject nil = context.nil;
+        IRubyObject path = args[0];
+        IRubyObject str = args[1];
+        IRubyObject offset = nil;
+        RubyHash options = null;
+        if (args.length > 3) {
+            if (!(args[3] instanceof RubyHash)) throw context.getRuntime().newTypeError("Must be a hash");
+            options = (RubyHash) args[3];
+            offset = args[2];
+        } else if (args.length > 2) {
+            if (args[2] instanceof RubyHash) {
+                options = (RubyHash) args[2];
+            } else {
+                offset = args[2];
+            }
+        }
+
+        return write19(context, recv, path, str, offset, (RubyHash) options);
     }
 
     @JRubyMethod(name = "readlines", required = 1, optional = 1, meta = true)
@@ -4217,7 +4261,6 @@ public class RubyIO extends RubyObject {
      * the intent that the target process ought to be "ready to die" fairly
      * quickly and we don't get stuck in a blocking waitFor call.
      *
-     * @param runtime The Ruby runtime, for raising an error
      * @param process The process to obliterate
      */
     public static void obliterateProcess(Process process) {
