@@ -2469,6 +2469,14 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return this;
     }
 
+    /**
+     * rb_str_prepend
+     */
+    @JRubyMethod(compat = RUBY1_9)
+    public IRubyObject prepend(ThreadContext context, IRubyObject other) {
+        return replace19(other.convertToString().op_plus19(context, this));
+    }
+
     /** rb_str_crypt
      *
      */
