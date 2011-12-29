@@ -4,6 +4,7 @@ import org.jruby.compiler.ir.representations.InlinerInfo;
 import java.util.List;
 import java.util.Map;
 
+import org.jruby.RubyArray;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -18,20 +19,23 @@ import org.jruby.runtime.ThreadContext;
 public class CompoundArray extends Operand {
     final private Operand a1;
     final private Operand a2;
+    private boolean isArgsPush;
 
     public CompoundArray(Operand a1, Operand a2) { 
         this.a1 = a1;
         this.a2 = a2; 
+        this.isArgsPush = false;
     }
 
-    public CompoundArray(Operand a1, Operand a2, boolean argsPushNode) { 
+    public CompoundArray(Operand a1, Operand a2, boolean isArgsPush) { 
         this.a1 = a1;
         this.a2 = a2;
+        this.isArgsPush = true;
     }
 
     public boolean isConstant() { return false; /*return a1.isConstant() && a2.isConstant();*/ }
 
-    public String toString() { return "ArgsCat[" + a1 + ", " + a2 + "]"; }
+    public String toString() { return (isArgsPush ? "ArgsPush[" : "ArgsCat[") + a1 + ", " + a2 + "]"; }
 
     public Operand getAppendedArg() { return a2; }
 
@@ -87,6 +91,6 @@ public class CompoundArray extends Operand {
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         IRubyObject v1 = (IRubyObject)a1.retrieve(context, self, currDynScope, temp);
         IRubyObject v2 = (IRubyObject)a2.retrieve(context, self, currDynScope, temp);
-        return RuntimeHelpers.argsCat(v1, v2);
+        return isArgsPush ? RuntimeHelpers.argsPush((RubyArray)v1, v2) : RuntimeHelpers.argsCat(v1, v2);
     }
 }

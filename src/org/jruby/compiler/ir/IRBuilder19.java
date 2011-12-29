@@ -2,6 +2,7 @@ package org.jruby.compiler.ir;
 
 import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.ArgsNode;
+import org.jruby.ast.ArgsPushNode;
 import org.jruby.ast.ArrayNode;
 import org.jruby.ast.AssignableNode;
 import org.jruby.ast.BlockArgNode;
@@ -22,6 +23,7 @@ import org.jruby.ast.YieldNode;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.ir.operands.Array;
 import org.jruby.compiler.ir.operands.BooleanLiteral;
+import org.jruby.compiler.ir.operands.CompoundArray;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.MethAddr;
@@ -351,6 +353,12 @@ public class IRBuilder19 extends IRBuilder {
         default: 
             throw new NotCompilableException("Can't build assignment node: " + node);
         }
+    }
+
+    public Operand buildArgsPush(final ArgsPushNode node, IRScope s) {
+        Operand v1 = build(node.getFirstNode(), s);
+        Operand v2 = build(node.getSecondNode(), s);
+        return new CompoundArray(v1, v2, true);
     }
 
     public Operand buildEncoding(EncodingNode node, IRScope s) {

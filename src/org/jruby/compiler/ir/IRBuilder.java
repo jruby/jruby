@@ -620,45 +620,50 @@ public class IRBuilder {
         return copyAndReturnValue(s, val);
     }
 
+    protected void buildCallArgNode(List<Operand> argsList, Node args, IRScope s) {
+        switch (args.getNodeType()) {
+            case ARGSCATNODE: {
+                ArgsCatNode n = (ArgsCatNode)args;
+                argsList.add(new Splat(build(n.getFirstNode(), s)));
+                argsList.add(new Splat(build(n.getSecondNode(), s)));
+                break;
+            }
+            case ARGSPUSHNODE: {
+                ArgsPushNode n = (ArgsPushNode)args;
+                argsList.add(new Splat(build(n.getFirstNode(), s)));
+                buildCallArgNode(argsList, n.getSecondNode(), s);
+                break;
+            }
+            case SPLATNODE: {
+                argsList.add(build((SplatNode)args, s));
+                break;
+            }
+            case ARRAYNODE: {
+                ArrayNode arrayNode = (ArrayNode)args;
+                if (arrayNode.isLightweight()) {
+                    // explode array, it's an internal "args" array
+                    for (Node n : arrayNode.childNodes()) {
+                        buildCallArgNode(argsList, n, s);
+                    }
+                } else {
+                    // use array as-is, it's a literal array
+                    argsList.add(build(arrayNode, s));
+                }
+                break;
+            }
+            default: {
+                argsList.add(build(args, s));
+                break;
+            }
+        }
+    }
+
     public List<Operand> setupCallArgs(Node args, IRScope s) {
         List<Operand> argsList = new ArrayList<Operand>();
         if (args != null) {
             // unwrap newline nodes to get their actual type
             args = skipOverNewlines(s, args);
-            switch (args.getNodeType()) {
-                case ARGSCATNODE: {
-                    ArgsCatNode n = (ArgsCatNode)args;
-                    argsList.add(new Splat(build(n.getFirstNode(), s)));
-                    argsList.add(new Splat(build(n.getSecondNode(), s)));
-                    break;
-                }
-                case ARGSPUSHNODE: {
-                    ArgsPushNode n = (ArgsPushNode)args;
-                    argsList.add(new Splat(build(n.getFirstNode(), s)));
-                    argsList.add(build(n.getSecondNode(), s));
-                    break;
-                }
-                case SPLATNODE: {
-                    argsList.add(build((SplatNode)args, s));
-                    break;
-                }
-                case ARRAYNODE: {
-                    ArrayNode arrayNode = (ArrayNode)args;
-                    if (arrayNode.isLightweight()) {
-                        // explode array, it's an internal "args" array
-                        for (Node n : arrayNode.childNodes())
-                            argsList.add(build(n, s));
-                    } else {
-                        // use array as-is, it's a literal array
-                        argsList.add(build(arrayNode, s));
-                    }
-                    break;
-                }
-                default: {
-                    argsList.add(build(args, s));
-                    break;
-                }
-            }
+            buildCallArgNode(argsList, args, s);
         }
 
         return argsList;
@@ -876,7 +881,7 @@ public class IRBuilder {
     }
 
     public Operand buildArgsPush(final ArgsPushNode node, IRScope s) {
-        throw new NotCompilableException("ArgsPush should never be encountered bare in 1.8");
+        throw new NotCompilableException("ArgsPush should never be encountered bare in 1.8" + node);
     }
 
     private Operand buildAttrAssign(final AttrAssignNode attrAssignNode, IRScope s) {
