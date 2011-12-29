@@ -109,6 +109,17 @@ module JRuby
       script
     end
   end
+
+  # NOTE: This is not a public API and is subject to change at our whim
+  module IR
+    def self.debug=(value)
+      org.jruby.RubyInstanceConfig.IR_DEBUG = !!value
+    end
+
+    def self.compiler_debug=(value)
+      org.jruby.RubyInstanceConfig.IR_COMPILER_DEBUG = !!value
+    end
+  end
   
   class CompiledScript
     attr_accessor :name, :class_name, :original_script, :code
