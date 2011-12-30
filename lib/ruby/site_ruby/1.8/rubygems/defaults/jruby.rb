@@ -28,7 +28,7 @@ module Gem
   # to preserve the old location: lib/ruby/gems.
   def self.default_dir
     dir = RbConfig::CONFIG["default_gem_home"]
-    dir ||= File.join(ConfigMap[:libdir], 'ruby', 'gems', '1.8')
+    dir ||= File.join(ConfigMap[:libdir], 'ruby', 'gems', ConfigMap[:ruby_version])
     dir
   end
 
