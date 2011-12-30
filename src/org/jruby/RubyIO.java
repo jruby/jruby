@@ -2705,6 +2705,8 @@ public class RubyIO extends RubyObject {
             throw getRuntime().newIOError(e.getMessage());
         } else if ("An established connection was aborted by the software in your host machine".equals(errorMessage)) {
             throw getRuntime().newErrnoECONNABORTEDError();
+        } else if ("Connection reset by peer".equals(e.getMessage())) {
+            throw getRuntime().newErrnoECONNRESETError();
         }
 
         throw getRuntime().newSystemCallError(e.getMessage());
