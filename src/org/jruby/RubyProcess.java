@@ -30,7 +30,6 @@
 package org.jruby;
 
 import jnr.constants.platform.Signal;
-import java.util.EnumSet;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
@@ -44,9 +43,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
 import org.jruby.util.ShellLauncher;
-import org.jruby.util.TypeConverter;
 import static org.jruby.CompatVersion.*;
 
 import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
