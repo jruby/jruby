@@ -56,6 +56,11 @@ public class ToAryInstr extends Instr implements ResultInstr {
     }
 
     @Override
+    public String toString() { 
+        return super.toString() + "(" + array + ", dont_to_ary_arrays: " + dontToAryArrays + ")";
+    }
+
+    @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         Object receiver = array.retrieve(context, self, currDynScope, temp);
 
