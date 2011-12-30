@@ -1,0 +1,1 @@
+fails:The yield call taking a single splatted argument passes the element of a single element Array

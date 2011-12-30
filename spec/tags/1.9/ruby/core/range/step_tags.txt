@@ -1,2 +1,16 @@
 fails:Range#step given Float values and step returns float values of the form step * n + begin and never the end value if the range is exclusive
 fails:Range#step given Float values and step returns float values of the form step * n + begin and never bigger than the end value if the range is inclusive
+critical(hangs):Range#step returns self
+fails:Range#step with inclusive end and Integer values yields Integer values incremented by 1 and less than or equal to end when not passed a step
+fails:Range#step with inclusive end and Float values yields Float values incremented by 1 and less than or equal to end when not passed a step
+fails:Range#step with inclusive end and Float values returns Float values of 'step * n + begin <= end'
+fails:Range#step with inclusive end and Integer, Float values yields Float values incremented by 1 and less than or equal to end when not passed a step
+fails:Range#step with inclusive end and Float, Integer values yields Float values incremented by 1 and less than or equal to end when not passed a step
+fails:Range#step with inclusive end and String values yields String values incremented by #succ and less than or equal to end when not passed a step
+fails:Range#step with inclusive end and String values calls #succ on begin and each element returned by #succ
+fails:Range#step with exclusive end and Integer values yields Integer values incremented by 1 and less than end when not passed a step
+fails:Range#step with exclusive end and Integer values yields Float values incremented by a Float step
+fails:Range#step with exclusive end and Float values yields Float values incremented by 1 and less than end when not passed a step
+fails:Range#step with exclusive end and Integer, Float values yields Float values incremented by 1 and less than end when not passed a step
+fails:Range#step with exclusive end and Float, Integer values yields Float values incremented by 1 and less than end when not passed a step
+fails:Range#step with exclusive end and String values yields String values incremented by #succ and less than or equal to end when not passed a step

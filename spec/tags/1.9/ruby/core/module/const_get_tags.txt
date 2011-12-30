@@ -1,0 +1,1 @@
+fails:Module#const_get raises a NameError when the receiver is a Module, the constant is defined at toplevel and the inherit flag is false

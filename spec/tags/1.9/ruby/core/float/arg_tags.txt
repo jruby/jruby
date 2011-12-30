@@ -1,0 +1,1 @@
+fails:Float#arg returns self if NaN

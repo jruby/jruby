@@ -1,0 +1,1 @@
+fails:#enum_for exposes multi-arg yields as an array

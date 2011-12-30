@@ -1,0 +1,1 @@
+fails:Complex#coerce returns an array containing other and self when other is a Complex

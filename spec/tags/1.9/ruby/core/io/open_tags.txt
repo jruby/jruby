@@ -1,0 +1,6 @@
+fails:IO.open accepts a mode argument set to nil with a valid :mode option
+fails:IO.open accepts a mode argument with a :mode option set to nil
+fails:IO.open raises an error when trying to set both binmode and textmode
+fails:IO.open raises an error if passed modes two ways
+fails:IO.open accepts an :autoclose option
+fails:IO.open accepts any truthy option :autoclose

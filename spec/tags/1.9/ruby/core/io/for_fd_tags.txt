@@ -1,0 +1,6 @@
+fails:IO.for_fd accepts a mode argument set to nil with a valid :mode option
+fails:IO.for_fd accepts a mode argument with a :mode option set to nil
+fails:IO.for_fd raises an error when trying to set both binmode and textmode
+fails:IO.for_fd raises an error if passed modes two ways
+fails:IO.for_fd accepts an :autoclose option
+fails:IO.for_fd accepts any truthy option :autoclose
