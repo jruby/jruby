@@ -34,6 +34,7 @@ import java.io.PrintWriter;
 import java.io.Writer;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig.CompileMode;
+import org.jruby.RubySystemExit;
 import org.jruby.ast.Node;
 import org.jruby.ast.executable.Script;
 import org.jruby.embed.AttributeName;
@@ -123,6 +124,10 @@ public class EmbedEvalUnitImpl implements EmbedEvalUnit {
             }
             return ret;
         } catch (RaiseException e) {
+            // handle exits as simple script termination
+            if (e.getException() instanceof RubySystemExit) {
+                return ((RubySystemExit)e.getException()).status();
+            }
             runtime.printError(e.getException());
             throw new EvalFailedException(e.getMessage(), e);
         } catch (StackOverflowError soe) {
