@@ -112,9 +112,19 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
 
         String invokeName;
         if (iterator) {
-            invokeName = callType == CallType.NORMAL ? "callIter" : "fcallIter";
+            switch (callType) {
+                case NORMAL:        invokeName = "callIter"; break;
+                case FUNCTIONAL:    invokeName = "fcallIter"; break;
+                case VARIABLE:      invokeName = "vcallIter"; break;
+                default:            throw new NotCompilableException("unknown call type " + callType);
+            }
         } else {
-            invokeName = callType == CallType.NORMAL ? "call" : "fcall";
+            switch (callType) {
+                case NORMAL:        invokeName = "call"; break;
+                case FUNCTIONAL:    invokeName = "fcall"; break;
+                case VARIABLE:      invokeName = "vcall"; break;
+                default:            throw new NotCompilableException("unknown call type " + callType);
+            }
         }
         invokeName += ":" + JavaNameMangler.mangleMethodName(name);
         String signature;

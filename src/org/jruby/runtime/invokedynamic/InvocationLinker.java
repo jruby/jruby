@@ -95,10 +95,14 @@ public class InvocationLinker {
             site = new JRubyCallSite(lookup, type, CallType.NORMAL, method, false, false, true);
         } else if (operation.equals("fcall")) {
             site = new JRubyCallSite(lookup, type, CallType.FUNCTIONAL, method, false, false, true);
+        } else if (operation.equals("vcall")) {
+            site = new JRubyCallSite(lookup, type, CallType.VARIABLE, method, false, false, true);
         } else if (operation.equals("callIter")) {
             site = new JRubyCallSite(lookup, type, CallType.NORMAL, method, false, true, true);
         } else if (operation.equals("fcallIter")) {
             site = new JRubyCallSite(lookup, type, CallType.FUNCTIONAL, method, false, true, true);
+        } else if (operation.equals("vcallIter")) {
+            site = new JRubyCallSite(lookup, type, CallType.VARIABLE, method, false, true, true);
         } else if (operation.equals("attrAssign")) {
             site = new JRubyCallSite(lookup, type, CallType.NORMAL, method, true, false, false);
         } else if (operation.equals("attrAssignSelf")) {
