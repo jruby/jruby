@@ -118,21 +118,7 @@ class  RiDriver
   ######################################################################
 
   def process_args
-    if @options.java_classes
-      if ARGV.size.zero?
-        @display.display_usage
-      else
-        begin
-          require 'rdoc/ri/ri_java'
-          ARGV.each do |arg|
-            get_java_info_for(arg)
-          end
-        rescue RiError => e
-          STDERR.puts(e.message)
-          exit(1)
-        end
-      end
-    elsif @options.list_classes
+    if @options.list_classes
       classes = @ri_reader.full_class_names
       @display.list_known_classes(classes)
     elsif @options.list_names

@@ -50,6 +50,14 @@ module SecureRandom
   def self.random_bytes(n=nil)
     n ||= 16
     if defined? OpenSSL::Random
+      @pid = 0 if !defined?(@pid)
+      pid = $$
+      if @pid != pid
+        now = Time.now
+        ary = [now.to_i, now.usec, @pid, pid]
+        OpenSSL::Random.seed(ary.join('.'))
+        @pid = pid
+      end
       return OpenSSL::Random.random_bytes(n)
     end
     if !defined?(@has_urandom) || @has_urandom
