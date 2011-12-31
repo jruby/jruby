@@ -1113,8 +1113,10 @@
     </sequential>
   </macrodef>
 
-  <target name="test-security-manager" depends="jar-jruby">
-    <java classname="org.jruby.Main" fork="true" failonerror="false">
+  <target name="test-security-manager" depends="jar-jruby, -test-security-18, -test-security-19"/>
+
+  <target name="-test-security-18">
+    <java classname="org.jruby.Main" fork="true" failonerror="true">
       <classpath refid="test.class.path"/>
 
       <sysproperty key="java.security.manager" value=""/>
@@ -1122,6 +1124,22 @@
       <sysproperty key="java.security.policy" value="=file:test/restricted.policy"/>
       <sysproperty key="java.awt.headless" value="true"/>
       <jvmarg line="${java.opts}"/>
+      <arg line="--1.8"/>
+      <arg line="-ve"/>
+      <arg value="puts 'Restricted policy looks ok'"/>
+    </java>
+  </target>
+
+  <target name="-test-security-19">
+    <java classname="org.jruby.Main" fork="true" failonerror="true">
+      <classpath refid="test.class.path"/>
+
+      <sysproperty key="java.security.manager" value=""/>
+      <!-- Note the extra '=' in the value, it *is* intentional -->
+      <sysproperty key="java.security.policy" value="=file:test/restricted.policy"/>
+      <sysproperty key="java.awt.headless" value="true"/>
+      <jvmarg line="${java.opts}"/>
+      <arg line="--1.9"/>
       <arg line="-ve"/>
       <arg value="puts 'Restricted policy looks ok'"/>
     </java>
