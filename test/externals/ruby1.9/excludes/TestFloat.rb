@@ -5,3 +5,4 @@ exclude :test_invalid_str
 exclude :test_pow
 exclude :test_strtod
 exclude :test_to_s
+exclude :test_round_with_precision
