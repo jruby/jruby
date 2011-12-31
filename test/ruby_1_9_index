@@ -18,6 +18,7 @@ externals/ruby1.9/psych/test_json_tree
 externals/ruby1.9/psych/test_merge_keys
 externals/ruby1.9/psych/test_nil
 externals/ruby1.9/psych/test_null
+externals/ruby1.9/psych/test_numeric
 externals/ruby1.9/psych/test_object
 externals/ruby1.9/psych/test_omap
 externals/ruby1.9/psych/test_parser
