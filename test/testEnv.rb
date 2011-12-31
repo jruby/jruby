@@ -78,8 +78,19 @@ ENV['__JRUBY_T1'] = "abc"
 v = `echo #{name}`.chomp
 test_equal "abc",v
 
-# Disabled for shell-character fixes; see JRUBY-3097
-#test_equal "abc", `jruby -e "puts ENV[%{__JRUBY_T1}]"`.chomp
+# See JRUBY-3097
+# try setting up PATH in such a way that doesn't find 'jruby'
+# but 'java' is available
+jruby_exe = File.join(File.dirname(__FILE__), '..', 'bin', 'jruby')
+old_path = ENV['PATH']
+our_path = []
+old_path.split(File::PATH_SEPARATOR).each do |dir|
+    our_path << dir unless File.exist? File.join(dir, 'jruby')
+end
+unless our_path.select {|dir| File.exist? File.join(dir, 'java')}.empty?
+    test_equal "abc", `PATH=#{our_path.join(File::PATH_SEPARATOR)} #{jruby_exe} -e "puts ENV[%{__JRUBY_T1}]"`.chomp
+end
+ENV['PATH'] = old_path
 
 # JRUBY-2393
 test_ok(ENV.object_id != ENV.to_hash.object_id)
