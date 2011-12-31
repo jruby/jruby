@@ -2720,4 +2720,11 @@ public class ScriptingContainerTest {
         Object result = instance.callMethod(someInstance, "instance_eval", "self", "<eval>", 1);
         assertNotNull(result);
     }
+
+    @Test
+    public void testExitTerminatesScript() {
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
+        Object result = instance.runScriptlet("exit 1234");
+        assertEquals(1234L, result);
+    }
 }
