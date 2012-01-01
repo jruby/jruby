@@ -1100,32 +1100,32 @@
     </sequential>
   </macrodef>
 
-	<macrodef name="test-security-manager-in">
-		<attribute name="compat.mode" default="--1.8"/>
-		<sequential>
-			<java classname="org.jruby.Main" fork="true" failonerror="true">
-				<classpath refid="test.class.path"/>
+  <macrodef name="test-security-manager-in">
+    <attribute name="compat.mode" default="--1.8"/>
+    <sequential>
+      <java classname="org.jruby.Main" fork="true" failonerror="true">
+        <classpath refid="test.class.path"/>
 
-				<sysproperty key="java.security.manager" value=""/>
-				<!-- Note the extra '=' in the value, it *is* intentional -->
-				<sysproperty key="java.security.policy" value="=file:test/restricted.policy"/>
-				<sysproperty key="java.awt.headless" value="true"/>
-				<jvmarg line="${java.opts}"/>
-				<arg line="@{compat.mode}"/>
-				<arg line="-ve"/>
-				<arg value="puts 'Restricted policy looks ok'"/>
-			</java>
-		</sequential>
-	</macrodef>
+        <sysproperty key="java.security.manager" value=""/>
+        <!-- Note the extra '=' in the value, it *is* intentional -->
+        <sysproperty key="java.security.policy" value="=file:test/restricted.policy"/>
+        <sysproperty key="java.awt.headless" value="true"/>
+        <jvmarg line="${java.opts}"/>
+        <arg line="@{compat.mode}"/>
+        <arg line="-ve"/>
+        <arg value="puts 'Restricted policy looks ok'"/>
+      </java>
+    </sequential>
+  </macrodef>
 
   <target name="test-security-manager" depends="jar-jruby, -test-security-18, -test-security-19"/>
 
   <target name="-test-security-18">
-		<test-security-manager-in compat.mode="--1.8"/>
+    <test-security-manager-in compat.mode="--1.8"/>
   </target>
 
   <target name="-test-security-19">
-		<test-security-manager-in compat.mode="--1.9"/>
+    <test-security-manager-in compat.mode="--1.9"/>
   </target>
 
   <target name="test-rake-targets" depends="init">
