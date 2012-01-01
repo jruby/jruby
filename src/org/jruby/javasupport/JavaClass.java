@@ -2049,6 +2049,11 @@ public class JavaClass extends JavaObject {
             // Skip private methods, since they may mess with dispatch
             if (Modifier.isPrivate(m.getModifiers())) continue;
 
+            // ignore bridge methods because we'd rather directly call methods that this method
+            // is bridging (and such methods are by definition always available.)
+            if ((m.getModifiers()&ACC_BRIDGE)!=0)
+                continue;
+
             if (!includeStatic && Modifier.isStatic(m.getModifiers())) {
                 // Skip static methods if we're not suppose to include them.
                 // Generally for superclasses; we only bind statics from the actual
@@ -2132,4 +2137,6 @@ public class JavaClass extends JavaObject {
         
         return finalList.toArray(new Method[finalList.size()]);
     }
+
+    private static final int ACC_BRIDGE    = 0x00000040;
 }
