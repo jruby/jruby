@@ -3478,10 +3478,6 @@ public class RubyModule extends RubyObject {
         }
         return null;
     }
-    
-    public static RubyString inspect(ThreadContext context, IRubyObject arg) {
-        return context.getRuntime().newString("Hello!");
-    }
 
     private static void define(RubyModule module, JavaMethodDescriptor desc, DynamicMethod dynamicMethod) {
         JRubyMethod jrubyMethod = desc.anno;
