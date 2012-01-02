@@ -21,7 +21,7 @@ public class InterpretedIRBlockBody19 extends InterpretedIRBlockBody {
 
         int blockArity = arity().getValue();
         switch (blockArity) {
-            case 0  : return IRubyObject.NULL_ARRAY;
+            case 0  : return (value == null) ? IRubyObject.NULL_ARRAY : new IRubyObject[] { value };
             case -1 : return isArray ? ((RubyArray)value).toJavaArray() : new IRubyObject[] { value };
             case 1  : {
                if (isArray) {
@@ -49,13 +49,8 @@ public class InterpretedIRBlockBody19 extends InterpretedIRBlockBody {
     }
 
     private IRubyObject[] getYieldArgs(ThreadContext context, IRubyObject value, boolean isYieldSpecific, boolean isArray, Type type) {
-        IRubyObject[] args;
-        if (value == null) {
-            if (type == Block.Type.LAMBDA) arity().checkArity(context.getRuntime(), new IRubyObject[] {});
-            args = IRubyObject.NULL_ARRAY;
-        } else {
-            args = convertValueIntoArgArray(context, value, isYieldSpecific, isArray);
-        }
+        IRubyObject[] args = (value == null) ? IRubyObject.NULL_ARRAY : convertValueIntoArgArray(context, value, isYieldSpecific, isArray);
+        if (type == Block.Type.LAMBDA) arity().checkArity(context.getRuntime(), args);
         return args;
     }
 
@@ -63,7 +58,7 @@ public class InterpretedIRBlockBody19 extends InterpretedIRBlockBody {
     // This is a little baffling to me.  I think the runtime library code needs to turn off 
     // the isArray flag if it wants an array and not create this artificial distinction
     // between the two.  In any case, it looks like in certain contexts, isArray flag is being
-    // pass in as true even when the argument is not an array.
+    // passed in as true even when the argument is not an array.
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, Binding binding, Block.Type type) {
         return yieldSpecificInternal(context, null, null, null, true, binding, type);
