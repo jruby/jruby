@@ -47,9 +47,6 @@ public abstract class ClosureCallAdapter extends CallAdapter {
             throw new RuntimeException("Unhandled case in CallInstr:prepareBlock.  Got block arg: " + value);
         }
 
-        // Blocks passed in through calls are always normal blocks, no matter where they came from
-        block.type = Block.Type.NORMAL;
-        
         return block;
     }    
 }

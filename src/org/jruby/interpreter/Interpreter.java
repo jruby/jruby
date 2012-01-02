@@ -5,6 +5,7 @@ import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
+import org.jruby.RubyProc;
 import org.jruby.ast.Node;
 import org.jruby.ast.RootNode;
 import org.jruby.compiler.ir.IRBuilder;
@@ -66,9 +67,9 @@ public class Interpreter {
         return RubyInstanceConfig.IR_DEBUG;
     }
 
-	 private static IRScope getEvalContainerScope(Ruby runtime, StaticScope evalScope) {
+    private static IRScope getEvalContainerScope(Ruby runtime, StaticScope evalScope) {
         // SSS FIXME: Weirdness here.  We cannot get the containing IR scope from evalScope because of static-scope wrapping
-		  // that is going on
+        // that is going on
         // 1. In all cases, DynamicScope.getEvalScope wraps the executing static scope in a new local scope.
         // 2. For instance-eval (module-eval, class-eval) scenarios, there is an extra scope that is added to 
         //    the stack in ThreadContext.java:preExecuteUnder
@@ -77,10 +78,10 @@ public class Interpreter {
         // work, I unwarp once more and I am guaranteed to get the IR scope I want.
         IRScope containingIRScope = ((IRStaticScope)evalScope.getEnclosingScope()).getIRScope();
         if (containingIRScope == null) containingIRScope = ((IRStaticScope)evalScope.getEnclosingScope().getEnclosingScope()).getIRScope();
-		  return containingIRScope;
-	 }
+        return containingIRScope;
+    }
 
-	 private static IRScope getEvalContainerScope19(Ruby runtime, StaticScope evalScope) {
+    private static IRScope getEvalContainerScope19(Ruby runtime, StaticScope evalScope) {
         // SSS FIXME: Weirdness here.  Different from 1.8.  There is no localvar scope wrapping.
         // 1. For instance-eval (module-eval, class-eval) scenarios, there is an extra scope that is added to 
         //    the stack in ThreadContext.java:preExecuteUnder
@@ -90,16 +91,16 @@ public class Interpreter {
         IRScope containingIRScope = ((IRStaticScope)evalScope).getIRScope();
         if (containingIRScope == null) containingIRScope = ((IRStaticScope)evalScope.getEnclosingScope()).getIRScope();
         if (containingIRScope == null) containingIRScope = ((IRStaticScope)evalScope.getEnclosingScope().getEnclosingScope()).getIRScope();
-		  return containingIRScope;
-	 }
+        return containingIRScope;
+    }
 
     public static IRubyObject interpretCommonEval(Ruby runtime, String file, int lineNumber, RootNode rootNode, IRubyObject self, Block block) {
-		  boolean is_1_9 = runtime.is1_9();
+        boolean is_1_9 = runtime.is1_9();
         // SSS FIXME: Is this required here since the IR version cannot change from eval-to-eval? This is much more of a global setting.
         if (is_1_9) IRBuilder.setRubyVersion("1.9");
 
         StaticScope ss = rootNode.getStaticScope();
-		  IRScope containingIRScope = is_1_9 ? getEvalContainerScope19(runtime, ss) : getEvalContainerScope(runtime, ss);
+        IRScope containingIRScope = is_1_9 ? getEvalContainerScope19(runtime, ss) : getEvalContainerScope(runtime, ss);
         IREvalScript evalScript = IRBuilder.createIRBuilder(runtime.getIRManager()).buildEvalRoot(ss, containingIRScope, file, lineNumber, rootNode);
         evalScript.prepareForInterpretation();
 //        evalScript.runCompilerPass(new CallSplitter());
@@ -272,7 +273,7 @@ public class Interpreter {
                         break;
                     }
                     case RECV_CLOSURE: {
-                        result = block == Block.NULL_BLOCK ? context.nil : runtime.newProc(Type.PROC, block);
+                        result = block == Block.NULL_BLOCK ? context.nil : runtime.newProc(block.type, block);
                         resultVar = ((ResultInstr)lastInstr).getResult();
                         ipc++;
                         break;
@@ -352,7 +353,7 @@ public class Interpreter {
                     return handleReturnJumpInClosure(scope, rj, blockType);
                 } catch (IRBreakJump bj) {
                     if ((lastInstr instanceof BreakInstr) || bj.breakInEval) {
-                        handleBreakJumpInEval(context, scope, bj, blockType, inClosure);
+                        handleBreakJump(context, scope, bj, self, blockType, inClosure);
                     } else if (inLambda(blockType)) {
                         // We just unwound all the way up because of a non-local break
                         throw IRException.BREAK_LocalJumpError.getException(runtime);
@@ -448,16 +449,22 @@ public class Interpreter {
         throw rj;
     }
 
-    private static void handleBreakJumpInEval(ThreadContext context, IRScope scope, IRBreakJump bj, Type blockType, boolean inClosure) throws RaiseException, IRBreakJump {
+    private static void handleBreakJump(ThreadContext context, IRScope scope, IRBreakJump bj, IRubyObject self, Type blockType, boolean inClosure) throws RaiseException, IRBreakJump {
         bj.breakInEval = false;  // Clear eval flag
 
         // Error
         if (!inClosure || inProc(blockType)) throw IRException.BREAK_LocalJumpError.getException(context.getRuntime());
 
         // Lambda special case.  We are in a lambda and breaking out of it requires popping out exactly one level up.
-        if (inLambda(blockType)) bj.caughtByLambda = true;
+        if (inLambda(blockType)) {
+            if (bj.scopeToReturnTo == null || context.scopeExistsOnCallStack(bj.scopeToReturnTo.getStaticScope())) bj.caughtByLambda = true;
+            // Cannot return to the call that we have long since exited.
+            else throw IRException.BREAK_LocalJumpError.getException(context.getRuntime());
+        }
         // If we are in an eval, record it so we can account for it
-        else if (scope instanceof IREvalScript) bj.breakInEval = true;
+        else if (scope instanceof IREvalScript) {
+            bj.breakInEval = true;
+        }
 
         // Pass it upward
         throw bj;

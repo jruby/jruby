@@ -48,6 +48,17 @@ public class InterpretedIRBlockBody19 extends InterpretedIRBlockBody {
         }
     }
 
+    private IRubyObject[] getYieldArgs(ThreadContext context, IRubyObject value, boolean isYieldSpecific, boolean isArray, Type type) {
+        IRubyObject[] args;
+        if (value == null) {
+            if (type == Block.Type.LAMBDA) arity().checkArity(context.getRuntime(), new IRubyObject[] {});
+            args = IRubyObject.NULL_ARRAY;
+        } else {
+            args = convertValueIntoArgArray(context, value, isYieldSpecific, isArray);
+        }
+        return args;
+    }
+
     // SSS: Looks like yieldSpecific and yieldArray need to treat array unwrapping differently.
     // This is a little baffling to me.  I think the runtime library code needs to turn off 
     // the isArray flag if it wants an array and not create this artificial distinction
@@ -71,13 +82,13 @@ public class InterpretedIRBlockBody19 extends InterpretedIRBlockBody {
     }
 
     private IRubyObject yieldSpecificInternal(ThreadContext context, IRubyObject value, IRubyObject self, RubyModule klass, boolean isArray, Binding binding, Type type) {
-        IRubyObject[] args = (value == null) ? IRubyObject.NULL_ARRAY : convertValueIntoArgArray(context, value, true, isArray);
+        IRubyObject[] args = getYieldArgs(context, value, true, isArray, type);
         return commonYieldPath(context, args, self, klass, binding, type, Block.NULL_BLOCK);
     }
 
     @Override
     public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, RubyModule klass, boolean isArray, Binding binding, Type type) {
-        IRubyObject[] args = (value == null) ? IRubyObject.NULL_ARRAY : convertValueIntoArgArray(context, value, false, isArray);
+        IRubyObject[] args = getYieldArgs(context, value, false, isArray, type);
         return commonYieldPath(context, args, self, klass, binding, type, Block.NULL_BLOCK);
     }
 
