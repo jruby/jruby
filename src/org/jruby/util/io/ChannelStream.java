@@ -1425,7 +1425,11 @@ public class ChannelStream implements Stream, Finalizable {
 
             descriptor = descriptor.reopen(file, modes);
 
-            if (modes.isAppendable()) lseek(0, SEEK_END);
+            try {
+                if (modes.isAppendable()) lseek(0, SEEK_END);
+            } catch (PipeException pe) {
+                // ignore, it's a pipe or fifo
+            }
         }
     }
 
@@ -1460,7 +1464,11 @@ public class ChannelStream implements Stream, Finalizable {
         ChannelDescriptor descriptor = ChannelDescriptor.open(runtime.getCurrentDirectory(), path, modes, runtime.getClassLoader());
         Stream stream = fdopen(runtime, descriptor, modes);
 
-        if (modes.isAppendable()) stream.lseek(0, Stream.SEEK_END);
+        try {
+            if (modes.isAppendable()) stream.lseek(0, Stream.SEEK_END);
+        } catch (PipeException pe) {
+            // ignore; it's a pipe or fifo
+        }
 
         return stream;
     }
