@@ -485,6 +485,12 @@ public class ChannelDescriptor {
                 return pos;
             } catch (IllegalArgumentException e) {
                 throw new InvalidValueException();
+            } catch (IOException ioe) {
+                // "invalid seek" means it's an ESPIPE, so we rethrow as a PipeException()
+                if (ioe.getMessage().equals("Illegal seek")) {
+                    throw new PipeException();
+                }
+                throw ioe;
             }
         } else {
             throw new PipeException();
@@ -813,7 +819,15 @@ public class ChannelDescriptor {
                 }
             }
 
-            if (flags.isTruncate()) file.setLength(0L);
+            try {
+                if (flags.isTruncate()) file.setLength(0L);
+            } catch (IOException ioe) {
+                if (ioe.getMessage().equals("Illegal seek")) {
+                    // ignore; it's a pipe or fifo that can't be truncated
+                } else {
+                    throw ioe;
+                }
+            }
 
             // TODO: append should set the FD to end, no? But there is no seek(int) in libc!
             //if (modes.isAppendable()) seek(0, Stream.SEEK_END);
