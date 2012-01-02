@@ -35,6 +35,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyObject;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -93,6 +94,8 @@ public class Mutex extends RubyObject {
                 context.pollThreadEvents();
                 throw context.getRuntime().newConcurrencyError(ex.getLocalizedMessage());
             }
+        } catch (RaiseException re) {
+            throw re;
         } finally {
             context.getThread().exitSleep();
         }
@@ -160,8 +163,10 @@ public class Mutex extends RubyObject {
         try {
             lock(context);
             return block.yield(context, null);
-        } finally {
-            unlock(context);
+        } catch (RaiseException re) {
+            throw re;
+        } catch (Exception e) {
+            return unlock(context);
         }
     }
 
