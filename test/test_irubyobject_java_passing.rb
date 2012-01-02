@@ -2,8 +2,8 @@ require 'test/unit'
 require 'java'
 require 'pp'
 
-include_class 'org.jruby.test.JRUBY_2480_A'
-include_class 'org.jruby.test.JRUBY_2480_B'
+java_import 'org.jruby.test.JRUBY_2480_A'
+java_import 'org.jruby.test.JRUBY_2480_B'
 
 # JRUBY-2480, uncoercible Ruby objects getting wrapped when passing through Java code
 class TestIrubyobjectJavaPassing < Test::Unit::TestCase

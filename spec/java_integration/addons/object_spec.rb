@@ -14,14 +14,14 @@ describe "Object extensions" do
 
     it "should allow inclusion of Java class constants in class context" do
       class Foo
-        include_class java.util.Properties
+        java_import java.util.Properties
       end
       Foo.constants.should include 'Properties'
     end
 
     it "should allow inclusion of Java class constants in module context" do 
       module Foo
-        include_class java.util.Properties
+        java_import java.util.Properties
       end
       Foo.constants.should include 'Properties'
     end
@@ -29,7 +29,7 @@ describe "Object extensions" do
     it "should allow inclusion of Java class constants in instance context" do
       class Foo
         def initialize
-          include_class java.util.Properties
+          java_import java.util.Properties
           Properties.should == java.util.Properties
         end
       end

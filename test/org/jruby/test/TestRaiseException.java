@@ -76,7 +76,7 @@ public class TestRaiseException extends TestRubyBase {
     public void testRubyExceptionTraceIncludesJavas() throws Exception {
         String script =
         "require 'java'\n" +
-        "include_class('org.jruby.test.TestRaiseException$ThrowFromJava') {|p,c| 'ThrowFromJava' }\n" +
+        "java_import('org.jruby.test.TestRaiseException$ThrowFromJava') {|p,c| 'ThrowFromJava' }\n" +
         "def throw_it\n" +
         "tfj = ThrowFromJava.new\n" +
         "tfj.throwIt\n" +

@@ -47,7 +47,7 @@ public class TestAdoptedThreading extends TestCase {
 
     // Uncomment the "puts" lines if you want to see more detail
     private static final String SCRIPT = "require 'java'\n"
-            + "include_class 'org.jruby.test.ITest'\n"
+            + "java_import 'org.jruby.test.ITest'\n"
             + "if ITest.instance_of?(Module)\n"
             + "  class TestImpl; include ITest; end\n"
             + "else\n"

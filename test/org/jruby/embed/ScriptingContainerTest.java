@@ -1483,7 +1483,7 @@ public class ScriptingContainerTest {
             "getClass", "getClass__method", "get__method", "get_class", "get_class__method",
             "grep", "group_by", "handle_different_imports", "hash", "hashCode",
             "hashCode__method", "hash_code", "hash_code__method", "id", "include?",
-            "include_class", "initialize", "inject", "inspect", "instance_eval",
+            "java_import", "initialize", "inject", "inspect", "instance_eval",
             "instance_exec", "instance_of?", "instance_variable_defined?",
             "instance_variable_get", "instance_variable_set", "instance_variables",
             "isEmpty", "isEmpty__method", "is_a?", "is_empty", "is_empty?",

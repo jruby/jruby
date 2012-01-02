@@ -3,7 +3,7 @@ require 'rbconfig'
 require 'test/unit'
 
 TopLevelConstantExistsProc = Proc.new do
-  include_class 'java.lang.String'
+  java_import 'java.lang.String'
 end
 
 class TestHigherJavasupport < Test::Unit::TestCase
@@ -168,11 +168,11 @@ class TestHigherJavasupport < Test::Unit::TestCase
   end
 
   module Foo
-    include_class("java.util.ArrayList")
+    java_import("java.util.ArrayList")
   end
 
-  include_class("java.lang.String") {|package,name| "J#{name}" }
-  include_class ["java.util.Hashtable", "java.util.Vector"]
+  java_import("java.lang.String") {|package,name| "J#{name}" }
+  java_import ["java.util.Hashtable", "java.util.Vector"]
 
   def test_class_constants_defined_under_correct_modules
     assert_equal(0, Foo::ArrayList.new.size)
@@ -188,14 +188,14 @@ class TestHigherJavasupport < Test::Unit::TestCase
 
   # We had a problem with accessing singleton class versus class earlier. Sanity check
   # to make sure we are not writing class methods to the same place.
-  include_class 'org.jruby.test.AlphaSingleton'
-  include_class 'org.jruby.test.BetaSingleton'
+  java_import 'org.jruby.test.AlphaSingleton'
+  java_import 'org.jruby.test.BetaSingleton'
 
   def test_make_sure_we_are_not_writing_class_methods_to_the_same_place
     assert_nothing_raised { AlphaSingleton.getInstance.alpha }
   end
 
-  include_class 'org.jruby.javasupport.test.Color'
+  java_import 'org.jruby.javasupport.test.Color'
   def test_lazy_proxy_method_tests_for_alias_and_respond_to
     color = Color.new('green')
     assert_equal(true, color.respond_to?(:setColor))
@@ -223,7 +223,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
 
   # No explicit test, but implicitly EMPTY_LIST.each should not blow up interpreter
   # Old error was EMPTY_LIST is a private class implementing a public interface with public methods
-  include_class 'java.util.Collections'
+  java_import 'java.util.Collections'
   def test_empty_list_each_should_not_blow_up_interpreter
     assert_nothing_raised { Collections::EMPTY_LIST.each {|element| } }
   end
@@ -239,14 +239,14 @@ class TestHigherJavasupport < Test::Unit::TestCase
     
   def test_same_proxy_does_not_raise
     # JString already included and it is the same proxy, so do not throw an error
-    # (e.g. intent of include_class already satisfied)
+    # (e.g. intent of java_import already satisfied)
     assert_nothing_raised do
       begin
         old_stream = $stderr.dup
         $stderr.reopen(Config::CONFIG['target_os'] =~ /Windows|mswin/ ? 'NUL:' : '/dev/null')
         $stderr.sync = true
         class << self
-          include_class("java.lang.String") {|package,name| "J#{name}" }
+          java_import("java.lang.String") {|package,name| "J#{name}" }
         end
       ensure
         $stderr.reopen(old_stream)
@@ -254,7 +254,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
     end
   end
 
-  include_class 'java.util.Calendar'
+  java_import 'java.util.Calendar'
   def test_date_time_conversion
     # Test java.util.Date <=> Time implicit conversion
     calendar = Calendar.getInstance
@@ -280,7 +280,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
     jstring_methods.each { |method| assert(JString.public_instance_methods.include?(method), "#{method} is missing from JString") }
   end
 
-  include_class 'java.math.BigDecimal'
+  java_import 'java.math.BigDecimal'
   def test_big_decimal_interaction
     assert_equal(BigDecimal, BigDecimal.new("1.23").add(BigDecimal.new("2.34")).class)
   end
@@ -331,8 +331,8 @@ class TestHigherJavasupport < Test::Unit::TestCase
 
   @@include_proc = Proc.new do
     Thread.stop
-    include_class "java.lang.System"
-    include_class "java.lang.Runtime"
+    java_import "java.lang.System"
+    java_import "java.lang.Runtime"
     Thread.current[:time] = System.currentTimeMillis
     Thread.current[:mem] = Runtime.getRuntime.freeMemory
   end
@@ -518,7 +518,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
 
   # test for JRUBY-698
   def test_java_method_returns_null
-    include_class 'org.jruby.test.ReturnsNull'
+    java_import 'org.jruby.test.ReturnsNull'
     rn = ReturnsNull.new
 
     assert_equal("", rn.returnNull.to_s)

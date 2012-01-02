@@ -1,6 +1,6 @@
 require 'java'
 
-include_class 'org.jruby.javasupport.test.SimpleInterface'
+java_import 'org.jruby.javasupport.test.SimpleInterface'
 
 if SimpleInterface.instance_of?(Module)
   class SimpleInterfaceImpl

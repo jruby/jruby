@@ -4,7 +4,7 @@ require File.join(File.dirname(__FILE__), 'jruby-4198.jar')
 
 class TestJruby4198 < Test::Unit::TestCase
   def test_jruby_4198_a
-    include_class 'A'
+    java_import 'A'
     a = A.new
     
     assert_equal 'private', a.private
@@ -13,7 +13,7 @@ class TestJruby4198 < Test::Unit::TestCase
   end
   
   def test_jruby_4198_b
-    include_class 'B'
+    java_import 'B'
     
     assert_equal 'static private', B.private
     assert_equal 'static protected', B.protected

@@ -23,6 +23,7 @@ class Object
   # passing all specified classes in turn and providing the block package name
   # and base class name.
   def include_class(include_class, &block)
+    warn "#{__method__} is deprecated. Use java_import."
     java_import(include_class, &block)
   end
   
@@ -91,7 +92,7 @@ class Object
     end
 
     # JRUBY-3453: Make import not complain if Java already has already imported the specific Java class
-    # If no constant is defined, or the constant is not already set to the include_class, assign it
+    # If no constant is defined, or the constant is not already set to the java_import, assign it
     eval_str = "if !defined?(#{constant}) || #{constant} != import_class; #{constant} = import_class; end"
     if (Module === self)
       return class_eval(eval_str, __FILE__, __LINE__)
