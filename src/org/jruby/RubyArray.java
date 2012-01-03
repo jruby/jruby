@@ -2325,9 +2325,14 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         return new RubyArray(runtime, arr);
     }
 
-    @JRubyMethod(name = {"collect", "map"}, compat = RUBY1_9)
+    @JRubyMethod(name = {"collect"}, compat = RUBY1_9)
     public IRubyObject collect19(ThreadContext context, Block block) {
         return block.isGiven() ? collect(context, block) : enumeratorize(context.getRuntime(), this, "collect");
+    }
+
+    @JRubyMethod(name = {"map"}, compat = RUBY1_9)
+    public IRubyObject map19(ThreadContext context, Block block) {
+        return block.isGiven() ? collect(context, block) : enumeratorize(context.getRuntime(), this, "map");
     }
 
     /** rb_ary_collect_bang
