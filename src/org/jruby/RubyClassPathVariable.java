@@ -50,15 +50,30 @@ public class RubyClassPathVariable extends RubyObject {
     private RubyClassPathVariable(Ruby runtime) {
         super(runtime, runtime.getObject());
     }
+    
+    @Deprecated
+    public IRubyObject append(IRubyObject obj) {
+        return append(obj.getRuntime().getCurrentContext(), obj);
+    }
 
     @JRubyMethod(name = {"append", "<<"}, required = 1)
-    public IRubyObject append(IRubyObject obj) {
-        String ss = obj.convertToString().toString();
-        try {
-            URL url = getURL(ss);
-            getRuntime().getJRubyClassLoader().addURL(url);
-        } catch (MalformedURLException mue) {
-            throw getRuntime().newArgumentError(mue.getLocalizedMessage());
+    public IRubyObject append(ThreadContext context, IRubyObject obj) {
+        IRubyObject[] paths;
+        if (obj.respondsTo("to_a")) {
+            paths = ((RubyArray) obj.callMethod(context, "to_a")).toJavaArray();
+        } else {
+            paths = context.getRuntime().newArray(obj).toJavaArray();
+        }
+        
+        for (IRubyObject path: paths) {
+            String ss = path.convertToString().toString();
+            try {
+                URL url = getURL(ss);
+                getRuntime().getJRubyClassLoader().addURL(url);
+            } catch (MalformedURLException mue) {
+                throw getRuntime().newArgumentError(mue.getLocalizedMessage());
+            }
+            
         }
         return this;
     }
