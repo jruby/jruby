@@ -768,7 +768,7 @@
       <srcfiles dir="${basedir}" includes="${dev.gems}"/>
       <chainedmapper>
         <flattenmapper/>
-        <globmapper from="*.gem" to="${jruby.gem.home.1.8}/specifications/*.gemspec"/>
+        <globmapper from="*.gem" to="${jruby.gem.home}/specifications/*.gemspec"/>
       </chainedmapper>
     </uptodate>
   </condition>
@@ -779,7 +779,7 @@
       <classpath path="${jruby.classes.dir}"/>
       <sysproperty key="jruby.home" value="${basedir}"/>
       <env key="GEM_PATH" value=""/> <!-- to ignore any gems installed in ~/.gem -->
-      <env key="GEM_HOME" value="${jruby.gem.home.1.8}"/> <!-- to make sure we are working with JRuby and not RVM's gems -->
+      <env key="GEM_HOME" value="${basedir}/${jruby.gem.home}"/> <!-- to make sure we are working with JRuby and not RVM's gems -->
       <arg line="-e 'require %q/rubygems/; require %q/yaml/; puts %Q/Gem.ruby #{Gem.ruby}/; puts %Q/Gem.bindir #{Gem.bindir}/'"/>
     </java>
     <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="false">
@@ -787,7 +787,7 @@
       <classpath path="${jruby.classes.dir}"/>
       <sysproperty key="jruby.home" value="${basedir}"/>
       <env key="GEM_PATH" value=""/> <!-- to ignore any gems installed in ~/.gem -->
-      <env key="GEM_HOME" value="${jruby.gem.home.1.8}"/> <!-- to make sure we are working with JRuby and not RVM's gems -->
+      <env key="GEM_HOME" value="${basedir}/${jruby.gem.home}"/> <!-- to make sure we are working with JRuby and not RVM's gems -->
       <arg line="-S gem uninstall --all ${dev.gem.names}"/>
     </java>
     <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
@@ -795,7 +795,7 @@
       <classpath path="${jruby.classes.dir}"/>
       <sysproperty key="jruby.home" value="${basedir}"/>
       <env key="GEM_PATH" value=""/> <!-- to ignore any gems installed in ~/.gem -->
-      <env key="GEM_HOME" value="${jruby.gem.home.1.8}"/> <!-- to make sure we are working with JRuby and not RVM's gems -->
+      <env key="GEM_HOME" value="${basedir}/${jruby.gem.home}"/> <!-- to make sure we are working with JRuby and not RVM's gems -->
       <arg line="-S gem install -n ${basedir}/bin ${dev.gems}"/>
     </java>
   </target>
@@ -807,7 +807,7 @@
         <srcfiles dir="${basedir}" includes="${jruby.launcher.gem}"/>
         <chainedmapper>
           <flattenmapper/>
-          <globmapper from="*.gem" to="${jruby.gem.home.1.8}/specifications/*.gemspec"/>
+          <globmapper from="*.gem" to="${jruby.gem.home}/specifications/*.gemspec"/>
         </chainedmapper>
       </uptodate>
     </or>
