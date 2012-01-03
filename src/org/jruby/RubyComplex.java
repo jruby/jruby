@@ -695,6 +695,9 @@ public class RubyComplex extends RubyNumeric {
         if (other instanceof RubyNumeric && f_real_p(context, other).isTrue()) {
             return context.getRuntime().newArray(newComplexBang(context, getMetaClass(), other), this);
         }
+        if (other instanceof RubyComplex) {
+            return context.getRuntime().newArray(other, this);
+        }
         throw context.getRuntime().newTypeError(other.getMetaClass().getName() + " can't be coerced into " + getMetaClass().getName());
     }
 
