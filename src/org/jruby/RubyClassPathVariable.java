@@ -109,11 +109,13 @@ public class RubyClassPathVariable extends RubyObject {
         return getRuntime().getNil();
     }
 
+    @Override
     @JRubyMethod
     public IRubyObject to_s() {
         return callMethod(getRuntime().getCurrentContext(), "to_a").callMethod(getRuntime().getCurrentContext(), "to_s");
     }
 
+    @Override
     @JRubyMethod(name = "inspect")
     public IRubyObject inspect() {
         return callMethod(getRuntime().getCurrentContext(), "to_a").callMethod(getRuntime().getCurrentContext(), "inspect");
