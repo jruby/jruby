@@ -243,18 +243,16 @@ public class LoadService {
                 char sep = '/';
                 String rubyDir = jrubyHome + sep + "lib" + sep + "ruby" + sep;
 
-                // If we're running in 1.9 compat mode, add Ruby 1.9 libs to path before 1.8 libs
                 if (runtime.is1_9()) {
                     addPath(rubyDir + "site_ruby" + sep + Constants.RUBY1_9_MAJOR_VERSION);
-                    addPath(rubyDir + "site_ruby" + sep + "shared");
-                    addPath(rubyDir + "site_ruby" + sep + Constants.RUBY_MAJOR_VERSION);
                     addPath(rubyDir + Constants.RUBY1_9_MAJOR_VERSION);
                 } else {
-                    // Add 1.8 libs
                     addPath(rubyDir + "site_ruby" + sep + Constants.RUBY_MAJOR_VERSION);
-                    addPath(rubyDir + "site_ruby" + sep + "shared");
                     addPath(rubyDir + Constants.RUBY_MAJOR_VERSION);
                 }
+
+                // add shared lib
+                addPath(rubyDir + "shared");
             }
 
         } catch(SecurityException ignore) {}
