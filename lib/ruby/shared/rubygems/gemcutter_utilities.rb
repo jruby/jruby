@@ -1,7 +1,6 @@
 require 'rubygems/remote_fetcher'
 
 module Gem::GemcutterUtilities
-  # TODO: move to Gem::Command
   OptionParser.accept Symbol do |value|
     value.to_sym
   end
@@ -20,8 +19,6 @@ module Gem::GemcutterUtilities
   def api_key
     if options[:key] then
       verify_api_key options[:key]
-    elsif Gem.configuration.api_keys.key?(host)
-      Gem.configuration.api_keys[host]
     else
       Gem.configuration.rubygems_api_key
     end
@@ -47,24 +44,12 @@ module Gem::GemcutterUtilities
     end
   end
 
-  attr_writer :host
-  def host
-    configured_host = Gem.host unless
-      Gem.configuration.disable_default_gem_server
-
-    @host ||= ENV['RUBYGEMS_HOST'] || configured_host
-  end
-
-  def rubygems_api_request(method, path, host = nil, &block)
+  def rubygems_api_request(method, path, host = Gem.host, &block)
     require 'net/http'
+    host = ENV['RUBYGEMS_HOST'] if ENV['RUBYGEMS_HOST']
+    uri = URI.parse "#{host}/#{path}"
 
-    self.host = host if host
-    unless self.host
-      alert_error "You must specify a gem server"
-      terminate_interaction 1 # TODO: question this
-    end
-
-    uri = URI.parse "#{self.host}/#{path}"
+    say "Pushing gem to #{host}..."
 
     request_method = Net::HTTP.const_get method.to_s.capitalize
 
@@ -81,7 +66,7 @@ module Gem::GemcutterUtilities
       end
     else
       say resp.body
-      terminate_interaction 1 # TODO: question this
+      terminate_interaction 1
     end
   end
 
@@ -90,7 +75,7 @@ module Gem::GemcutterUtilities
       Gem.configuration.api_keys[key]
     else
       alert_error "No such API key. You can add it with gem keys --add #{key}"
-      terminate_interaction 1 # TODO: question this
+      terminate_interaction 1
     end
   end
 

@@ -129,11 +129,6 @@ class Gem::ConfigFile
   attr_reader :api_keys
 
   ##
-  # True if we want to force specification of gem server when pushing a gem
-
-  attr_accessor :disable_default_gem_server
-
-  ##
   # Create the config file object.  +args+ is the list of arguments
   # from the command line.
   #
@@ -151,27 +146,26 @@ class Gem::ConfigFile
   # <tt>--debug</tt>::
   #   Enable Ruby level debug messages.  Handled early for the same reason as
   #   --backtrace.
-  #--
-  # TODO: parse options upstream, pass in options directly
 
-  def initialize(args)
+  def initialize(arg_list)
     @config_file_name = nil
     need_config_file_name = false
 
-    arg_list = []
-
-    args.each do |arg|
+    arg_list = arg_list.map do |arg|
       if need_config_file_name then
         @config_file_name = arg
         need_config_file_name = false
+        nil
       elsif arg =~ /^--config-file=(.*)/ then
         @config_file_name = $1
+        nil
       elsif arg =~ /^--config-file$/ then
         need_config_file_name = true
+        nil
       else
-        arg_list << arg
+        arg
       end
-    end
+    end.compact
 
     @backtrace = DEFAULT_BACKTRACE
     @benchmark = DEFAULT_BENCHMARK
@@ -189,14 +183,13 @@ class Gem::ConfigFile
     @hash = @hash.merge user_config
 
     # HACK these override command-line args, which is bad
-    @backtrace                  = @hash[:backtrace]      if @hash.key? :backtrace
-    @benchmark                  = @hash[:benchmark]      if @hash.key? :benchmark
-    @bulk_threshold             = @hash[:bulk_threshold] if @hash.key? :bulk_threshold
-    @home                       = @hash[:gemhome]        if @hash.key? :gemhome
-    @path                       = @hash[:gempath]        if @hash.key? :gempath
-    @update_sources             = @hash[:update_sources] if @hash.key? :update_sources
-    @verbose                    = @hash[:verbose]        if @hash.key? :verbose
-    @disable_default_gem_server = @hash[:verbose]        if @hash.key? :disable_default_gem_server
+    @backtrace        = @hash[:backtrace]        if @hash.key? :backtrace
+    @benchmark        = @hash[:benchmark]        if @hash.key? :benchmark
+    @bulk_threshold   = @hash[:bulk_threshold]   if @hash.key? :bulk_threshold
+    @home             = @hash[:gemhome]          if @hash.key? :gemhome
+    @path             = @hash[:gempath]          if @hash.key? :gempath
+    @update_sources   = @hash[:update_sources]   if @hash.key? :update_sources
+    @verbose          = @hash[:verbose]          if @hash.key? :verbose
 
     load_api_keys
 
@@ -217,7 +210,6 @@ class Gem::ConfigFile
                 else
                   @hash
                 end
-
     if @api_keys.key? :rubygems_api_key then
       @rubygems_api_key = @api_keys[:rubygems_api_key]
       @api_keys[:rubygems] = @api_keys.delete :rubygems_api_key unless @api_keys.key? :rubygems
@@ -243,16 +235,13 @@ class Gem::ConfigFile
     Gem.load_yaml
 
     return {} unless filename and File.exist? filename
-
     begin
-      return YAML.load(File.read(filename))
+      YAML.load(File.read(filename))
     rescue ArgumentError
       warn "Failed to load #{config_file_name}"
     rescue Errno::EACCES
       warn "Failed to load #{config_file_name} due to permissions problem."
-    end
-
-    {}
+    end or {}
   end
 
   # True if the backtrace option has been specified, or debug is on.
@@ -306,47 +295,25 @@ class Gem::ConfigFile
   # Really verbose mode gives you extra output.
   def really_verbose
     case verbose
-    when true, false, nil then
-      false
-    else
-      true
+    when true, false, nil then false
+    else true
     end
   end
 
   # to_yaml only overwrites things you can't override on the command line.
   def to_yaml # :nodoc:
     yaml_hash = {}
-    yaml_hash[:backtrace] = if @hash.key?(:backtrace)
-                              @hash[:backtrace]
-                            else
-                              DEFAULT_BACKTRACE
-                            end
-
-    yaml_hash[:benchmark] = if @hash.key?(:benchmark)
-                              @hash[:benchmark]
-                            else
-                              DEFAULT_BENCHMARK
-                            end
-
-    yaml_hash[:bulk_threshold] = if @hash.key?(:bulk_threshold)
-                                   @hash[:bulk_threshold]
-                                 else
-                                   DEFAULT_BULK_THRESHOLD
-                                 end
-
+    yaml_hash[:backtrace] = @hash.key?(:backtrace) ? @hash[:backtrace] :
+      DEFAULT_BACKTRACE
+    yaml_hash[:benchmark] = @hash.key?(:benchmark) ? @hash[:benchmark] :
+      DEFAULT_BENCHMARK
+    yaml_hash[:bulk_threshold] = @hash.key?(:bulk_threshold) ?
+      @hash[:bulk_threshold] : DEFAULT_BULK_THRESHOLD
     yaml_hash[:sources] = Gem.sources
-
-    yaml_hash[:update_sources] = if @hash.key?(:update_sources)
-                                   @hash[:update_sources]
-                                 else
-                                   DEFAULT_UPDATE_SOURCES
-                                 end
-
-    yaml_hash[:verbose] = if @hash.key?(:verbose)
-                            @hash[:verbose]
-                          else
-                            DEFAULT_VERBOSITY
-                          end
+    yaml_hash[:update_sources] = @hash.key?(:update_sources) ?
+      @hash[:update_sources] : DEFAULT_UPDATE_SOURCES
+    yaml_hash[:verbose] = @hash.key?(:verbose) ? @hash[:verbose] :
+      DEFAULT_VERBOSITY
 
     keys = yaml_hash.keys.map { |key| key.to_s }
     keys << 'debug'
@@ -380,14 +347,15 @@ class Gem::ConfigFile
 
   def ==(other) # :nodoc:
     self.class === other and
-      @backtrace == other.backtrace and
-      @benchmark == other.benchmark and
-      @bulk_threshold == other.bulk_threshold and
-      @verbose == other.verbose and
-      @update_sources == other.update_sources and
-      @hash == other.hash
+    @backtrace == other.backtrace and
+    @benchmark == other.benchmark and
+    @bulk_threshold == other.bulk_threshold and
+    @verbose == other.verbose and
+    @update_sources == other.update_sources and
+    @hash == other.hash
   end
 
+  protected
+
   attr_reader :hash
-  protected :hash
 end

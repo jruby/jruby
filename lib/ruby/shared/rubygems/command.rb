@@ -9,7 +9,7 @@ require 'rubygems/user_interaction'
 
 ##
 # Base class for all Gem commands.  When creating a new gem command, define
-# #initialize, #execute, #arguments, #defaults_str, #description and #usage
+# #new, #execute, #arguments, #defaults_str, #description and #usage
 # (as appropriate).  See the above mentioned methods for details.
 #
 # A very good example to look at is Gem::Commands::ContentsCommand
@@ -344,7 +344,7 @@ class Gem::Command
 
   def handle_options(args)
     args = add_extra_args(args)
-    @options = Marshal.load Marshal.dump @defaults # deep copy
+    @options = @defaults.clone
     parser.parse!(args)
     @options[:args] = args
   end
@@ -529,7 +529,7 @@ basic help message containing pointers to more information.
 end
 
 ##
-# \Commands will be placed in this namespace
+# This is where Commands will be placed in the namespace
 
 module Gem::Commands
 end

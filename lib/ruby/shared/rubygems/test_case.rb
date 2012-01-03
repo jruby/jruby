@@ -1,4 +1,4 @@
-# TODO: $SAFE = 1
+at_exit { $SAFE = 1 }
 
 if defined? Gem::QuickLoader
   Gem::QuickLoader.load_full_rubygems_library
@@ -9,13 +9,6 @@ end
 begin
   gem 'minitest'
 rescue Gem::LoadError
-end
-
-# We have to load these up front because otherwise we'll try to load
-# them while we're testing rubygems, and thus we can't actually load them.
-unless Gem::Dependency.new('rdoc', '>= 3.10').matching_specs.empty?
-  gem 'rdoc'
-  gem 'json'
 end
 
 require "rubygems/deprecate"
@@ -104,7 +97,7 @@ class Gem::TestCase < MiniTest::Unit::TestCase
   undef_method :default_test if instance_methods.include? 'default_test' or
                                 instance_methods.include? :default_test
 
-  @@project_dir = Dir.pwd.untaint unless defined?(@@project_dir)
+  @@project_dir = Dir.pwd unless defined?(@@project_dir)
 
   ##
   # #setup prepares a sandboxed location to install gems.  All installs are
@@ -126,8 +119,8 @@ class Gem::TestCase < MiniTest::Unit::TestCase
     @current_dir = Dir.pwd
     @ui = Gem::MockGemUi.new
 
-    # Need to do this in the project because $SAFE fucks up _everything_
-    tmpdir = File.expand_path("tmp/test")
+    tmpdir = nil
+    Dir.chdir Dir.tmpdir do tmpdir = Dir.pwd end # HACK OSX /private/tmp
 
     if ENV['KEEP_FILES'] then
       @tempdir = File.join(tmpdir, "test_rubygems_#{$$}.#{Time.now.to_i}")
@@ -146,7 +139,7 @@ class Gem::TestCase < MiniTest::Unit::TestCase
     Gem.ensure_gem_subdirectories @gemhome
 
     @orig_LOAD_PATH = $LOAD_PATH.dup
-    $LOAD_PATH.map! { |s| File.expand_path(s).untaint }
+    $LOAD_PATH.map! { |s| File.expand_path s }
 
     Dir.chdir @tempdir
 
@@ -157,11 +150,10 @@ class Gem::TestCase < MiniTest::Unit::TestCase
     FileUtils.mkdir_p @gemhome
     FileUtils.mkdir_p @userhome
 
-    Gem::Specification.unresolved_deps.clear # done to avoid cross-test warnings
     Gem.use_paths(@gemhome)
 
     Gem.loaded_specs.clear
-    Gem::Specification.unresolved_deps.clear
+    Gem.unresolved_deps.clear
 
     Gem.configuration.verbose = true
     Gem.configuration.update_sources = true
@@ -189,11 +181,8 @@ class Gem::TestCase < MiniTest::Unit::TestCase
     # TODO: move to installer test cases
     Gem.post_build_hooks.clear
     Gem.post_install_hooks.clear
-    Gem.done_installing_hooks.clear
-    Gem.post_reset_hooks.clear
     Gem.post_uninstall_hooks.clear
     Gem.pre_install_hooks.clear
-    Gem.pre_reset_hooks.clear
     Gem.pre_uninstall_hooks.clear
 
     # TODO: move to installer test cases
@@ -225,7 +214,7 @@ class Gem::TestCase < MiniTest::Unit::TestCase
   # tempdir unless the +KEEP_FILES+ environment variable was set.
 
   def teardown
-    $LOAD_PATH.replace @orig_LOAD_PATH if @orig_LOAD_PATH
+    $LOAD_PATH.replace @orig_LOAD_PATH
 
     Gem::ConfigMap[:BASERUBY] = @orig_BASERUBY
     Gem::ConfigMap[:arch] = @orig_arch
@@ -263,7 +252,7 @@ class Gem::TestCase < MiniTest::Unit::TestCase
       end
     end
 
-    gem = File.join @tempdir, File.basename(spec.cache_file)
+    gem = File.join(@tempdir, File.basename(spec.cache_file)).untaint
 
     Gem::Installer.new(gem, :wrappers => true).install
   end
@@ -298,7 +287,6 @@ class Gem::TestCase < MiniTest::Unit::TestCase
 
   ##
   # creates a temporary directory with hax
-  # TODO: deprecate and remove
 
   def create_tmpdir
     tmpdir = nil
@@ -616,12 +604,6 @@ Also, a list:
     @a_evil9 = quick_gem('a_evil', '9', &init)
     @b2      = quick_gem('b', '2',      &init)
     @c1_2    = quick_gem('c', '1.2',    &init)
-    @x       = quick_gem('x', '1', &init)
-    @dep_x   = quick_gem('dep_x', '1') do |s|
-      s.files = %w[lib/code.rb]
-      s.require_paths = %w[lib]
-      s.add_dependency 'x', '>= 1'
-    end
 
     @pl1     = quick_gem 'pl', '1' do |s| # l for legacy
       s.files = %w[lib/code.rb]
@@ -642,10 +624,8 @@ Also, a list:
     write_file File.join(*%W[gems #{@b2.original_name}   lib code.rb])
     write_file File.join(*%W[gems #{@c1_2.original_name} lib code.rb])
     write_file File.join(*%W[gems #{@pl1.original_name}  lib code.rb])
-    write_file File.join(*%W[gems #{@x.original_name}  lib code.rb])
-    write_file File.join(*%W[gems #{@dep_x.original_name}  lib code.rb])
 
-    [@a1, @a2, @a3a, @a_evil9, @b2, @c1_2, @pl1, @x, @dep_x].each do |spec|
+    [@a1, @a2, @a3a, @a_evil9, @b2, @c1_2, @pl1].each do |spec|
       util_build_gem spec
     end
 
@@ -815,13 +795,12 @@ Also, a list:
   ##
   # Allows the proper version of +rake+ to be used for the test.
 
-  def build_rake_in(good=true)
+  def build_rake_in
     gem_ruby = Gem.ruby
     Gem.ruby = @@ruby
     env_rake = ENV["rake"]
-    rake = (good ? @@good_rake : @@bad_rake)
-    ENV["rake"] = rake
-    yield rake
+    ENV["rake"] = @@rake
+    yield @@rake
   ensure
     Gem.ruby = gem_ruby
     if env_rake
@@ -861,8 +840,15 @@ Also, a list:
   end
 
   @@ruby = rubybin
-  @@good_rake = "#{rubybin} #{File.expand_path('../../../test/rubygems/good_rake.rb', __FILE__)}"
-  @@bad_rake = "#{rubybin} #{File.expand_path('../../../test/rubygems/bad_rake.rb', __FILE__)}"
+  env_rake = ENV['rake']
+  ruby19_rake = File.expand_path("bin/rake", @@project_dir)
+  @@rake = if env_rake then
+             ENV["rake"]
+           elsif File.exist? ruby19_rake then
+             @@ruby + " " + ruby19_rake
+           else
+             'rake'
+           end
 
   ##
   # Construct a new Gem::Dependency.

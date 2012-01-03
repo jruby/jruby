@@ -526,12 +526,12 @@
       </classpath>
       <sysproperty key="jruby.home" value="${jar-stdlib-home}"/>
       <env key="RUBYOPT" value=""/>
-      <env key="GEM_HOME" value="${jar-stdlib-home}/lib/ruby/gems/1.8"/>
+      <env key="GEM_HOME" value="${basedir}${jar-stdlib-home}/lib/ruby/gems/shared"/>
       <jvmarg line="${java.opts}"/>
       <arg line="-S gem install ${complete.jar.gems}"/>
       <arg line="--no-ri --no-rdoc --ignore-dependencies --env-shebang"/>
     </java>
-    <delete dir="${jar-stdlib-home}/lib/ruby/gems/1.8/cache"/>
+    <delete dir="${jar-stdlib-home}/lib/ruby/gems/shared/cache"/>
 
     <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${build.lib.dir}/jarjar-1.0.jar"/>
     <jarjar destfile="${dest.lib.dir}/${filename}">
@@ -580,12 +580,12 @@
       </classpath>
       <sysproperty key="jruby.home" value="${jar-complete-home}"/>
       <env key="RUBYOPT" value=""/>
-      <env key="GEM_HOME" value="${jar-complete-home}/lib/ruby/gems/1.8"/>
+      <env key="GEM_HOME" value="${basedir}/${jar-complete-home}/lib/ruby/gems/shared"/>
       <jvmarg line="${java.opts}"/>
       <arg line="-S gem install ${complete.jar.gems}"/>
       <arg line="--no-ri --no-rdoc --ignore-dependencies --env-shebang"/>
     </java>
-    <delete dir="${jar-complete-home}/lib/ruby/gems/1.8/cache"/>
+    <delete dir="${jar-complete-home}/lib/ruby/gems/shared/cache"/>
 
     <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpath="${build.lib.dir}/jarjar-1.0.jar"/>
     <jarjar destfile="${dest.lib.dir}/${filename}">
@@ -825,7 +825,7 @@
       <classpath refid="build.classpath"/>
       <classpath path="${jruby.classes.dir}"/>
       <sysproperty key="jruby.home" value="${basedir}"/>
-      <env key="PATH" value="${basedir}/lib/ruby/gems/1.8/bin:${env.PATH}"/>
+      <env key="PATH" value="${basedir}/lib/ruby/gems/shared/bin:${env.PATH}"/>
       <env key="GEM_PATH" value=""/> <!-- to ignore any gems installed in ~/.gem -->
       <arg line="-S gem install ${jruby.launcher.gem}"/>
     </java>
@@ -1361,9 +1361,7 @@
   <patternset id="dist.lib.files">
     <include name="lib/ruby/1.8/**"/>
     <include name="lib/ruby/1.9/**"/>
-    <include name="lib/ruby/site_ruby/**"/>
-    <include name="lib/ruby/gems/1.8/specifications/sources-0.0.1.gemspec"/>
-    <include name="lib/ruby/gems/1.8/gems/sources-0.0.1/**"/>
+    <include name="lib/ruby/shared/**"/>
   </patternset>
 
   <patternset id="dist.files">

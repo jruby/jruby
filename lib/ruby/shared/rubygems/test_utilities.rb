@@ -57,15 +57,6 @@ class Gem::FakeFetcher
     end
   end
 
-  def cache_update_path uri, path = nil
-    if data = fetch_path(uri)
-      open(path, 'wb') { |io| io.write data } if path
-      data
-    else
-      Gem.read_binary(path) if path
-    end
-  end
-
   # Thanks, FakeWeb!
   def open_uri_or_path(path)
     data = find_data(path)
@@ -107,13 +98,7 @@ class Gem::FakeFetcher
 
   def download spec, source_uri, install_dir = Gem.dir
     name = File.basename spec.cache_file
-    path = if Dir.pwd == install_dir then # see fetch_command
-             install_dir
-           else
-             File.join install_dir, "cache"
-           end
-
-    path = File.join path, name
+    path = File.join install_dir, "cache", name
 
     Gem.ensure_gem_subdirectories install_dir
 

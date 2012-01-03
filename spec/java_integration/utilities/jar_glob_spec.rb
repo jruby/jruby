@@ -127,8 +127,8 @@ CODE
 
   it "expands the path relative to the jar" do
     jar_path = File.expand_path("file:/Users/foo/dev/ruby/jruby/lib/jruby-complete.jar")
-    current = "#{jar_path}!/META-INF/jruby.home/lib/ruby/site_ruby/1.8"
-    expected = "#{jar_path}!/META-INF/jruby.home/lib/ruby/site_ruby"
+    current = "#{jar_path}!/META-INF/jruby.home/lib/ruby/1.8"
+    expected = "#{jar_path}!/META-INF/jruby.home/lib/ruby"
     File.expand_path(File.join(current, "..")).should == expected
     File.expand_path("..", current).should == expected
   end

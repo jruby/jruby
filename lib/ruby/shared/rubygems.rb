@@ -5,6 +5,30 @@
 # See LICENSE.txt for permissions.
 #++
 
+module Gem
+  QUICKLOADER_SUCKAGE = RUBY_VERSION =~ /^1\.9\.1/
+  GEM_PRELUDE_SUCKAGE = false
+end
+
+if Gem::GEM_PRELUDE_SUCKAGE and defined?(Gem::QuickLoader) then
+  Gem::QuickLoader.remove
+
+  $LOADED_FEATURES.delete Gem::QuickLoader.path_to_full_rubygems_library
+
+  if $LOADED_FEATURES.any? do |path| path.end_with? '/rubygems.rb' end then
+    # TODO path does not exist here
+    raise LoadError, "another rubygems is already loaded from #{path}"
+  end
+
+  class << Gem
+    remove_method :try_activate if Gem.respond_to?(:try_activate, true)
+  end
+end
+
+require 'rubygems/defaults'
+require 'rbconfig'
+require "rubygems/deprecate"
+
 ##
 # RubyGems is the Ruby standard for publishing and managing third party
 # libraries.
@@ -46,8 +70,8 @@
 # For RubyGems packagers, provide lib/rubygems/operating_system.rb and
 # override any defaults from lib/rubygems/defaults.rb.
 #
-# For Ruby implementers, provide lib/rubygems/defaults/#{RUBY_ENGINE}.rb and
-# override any defaults from lib/rubygems/defaults.rb.
+# For Ruby implementers, provide lib/rubygems/#{RUBY_ENGINE}.rb and override
+# any defaults from lib/rubygems/defaults.rb.
 #
 # If you need RubyGems to perform extra work on install or uninstall, your
 # defaults override file can set pre and post install and uninstall hooks.
@@ -57,8 +81,8 @@
 # == Bugs
 #
 # You can submit bugs to the
-# {RubyGems bug tracker}[https://github.com/rubygems/rubygems/issues]
-# on GitHub
+# {RubyGems bug tracker}[http://rubyforge.org/tracker/?atid=575&group_id=126]
+# on RubyForge
 #
 # == Credits
 #
@@ -86,8 +110,6 @@
 # * Daniel Berger      -- djberg96(at)gmail.com
 # * Phil Hagelberg     -- technomancy(at)gmail.com
 # * Ryan Davis         -- ryand-ruby(at)zenspider.com
-# * Evan Phoenix       -- evan(at)fallingsnow.net
-# * Steve Klabnik      -- steve(at)steveklabnik.com
 #
 # (If your name is missing, PLEASE let us know!)
 #
@@ -95,41 +117,8 @@
 #
 # -The RubyGems Team
 
-# Ruby 1.9.x has introduced some things that are awkward, and we need to
-# support them, so we define some constants to use later.
 module Gem
-  QUICKLOADER_SUCKAGE = RUBY_VERSION =~ /^1\.9\.1/
-  GEM_PRELUDE_SUCKAGE = RUBY_VERSION =~ /^1\.9\.2/
-end
-
-# Gem::QuickLoader exists in the gem prelude code in ruby 1.9.2 itself.
-# We gotta get rid of it if it's there, before we do anything else.
-# 
-# REFACTOR: Pulling this kind of thing out into some sort of file with
-# all of the hacks would be a Good Idea.
-if Gem::GEM_PRELUDE_SUCKAGE and defined?(Gem::QuickLoader) then
-  Gem::QuickLoader.remove
-
-  $LOADED_FEATURES.delete Gem::QuickLoader.path_to_full_rubygems_library
-
-  if $LOADED_FEATURES.any? do |path| path.end_with? '/rubygems.rb' end then
-    # TODO path does not exist here
-    raise LoadError, "another rubygems is already loaded from #{path}"
-  end
-
-  class << Gem
-    remove_method :try_activate if Gem.respond_to?(:try_activate, true)
-  end
-end
-
-require 'rubygems/defaults'
-require 'rbconfig'
-require "rubygems/deprecate"
-
-
-module Gem
-  VERSION = '1.8.10'
-  DEFAULT_HOST = "https://rubygems.org"
+  VERSION = '1.8.13'
 
   ##
   # Raised when RubyGems is unable to load or activate a gem.  Contains the
@@ -143,12 +132,7 @@ module Gem
     # Version requirement of gem
     attr_accessor :requirement
   end
-  
-  # REFACTOR: Things like stopdoc tend to indicate that something might not
-  # be particularly well factored, and in this case, this is true. We're
-  # sort of patching over weirdness with RbConfig. This should be pulled
-  # out into some sort of file with all the compatibility hacks in it.
-  
+
   # :stopdoc:
 
   RubyGemsVersion = VERSION
@@ -259,10 +243,8 @@ module Gem
     spec.activate
   end
 
-  # DOC: This needs to be documented or nodoc'd.
-
   def self.unresolved_deps
-    Gem::Specification.unresolved_deps
+    @unresolved_deps ||= Hash.new { |h, n| h[n] = Gem::Dependency.new n }
   end
 
   ##
@@ -406,12 +388,10 @@ module Gem
     Zlib::Deflate.deflate data
   end
 
-  # DOC: needs doc'd or :nodoc'd
   def self.paths
     @paths ||= Gem::PathSupport.new
   end
 
-  # DOC: needs doc'd or :nodoc'd
   def self.paths=(env)
     clear_paths
     @paths = Gem::PathSupport.new env
@@ -465,7 +445,7 @@ module Gem
     require 'fileutils'
 
     old_umask = File.umask
-    File.umask old_umask | 002
+    File.umask old_umask | 022
 
     %w[cache doc gems specifications].each do |name|
       subdir = File.join dir, name
@@ -589,7 +569,7 @@ module Gem
 
   def self.host
     # TODO: move to utils
-    @host ||= Gem::DEFAULT_HOST
+    @host ||= "https://rubygems.org"
   end
 
   ## Set the default RubyGems API host.
@@ -648,7 +628,8 @@ module Gem
 
     if QUICKLOADER_SUCKAGE then
       $LOAD_PATH.each_with_index do |path, i|
-        if path.instance_variable_defined?(:@gem_prelude_index) then
+        if path.instance_variables.include?(:@gem_prelude_index) or
+            path.instance_variables.include?('@gem_prelude_index') then
           index = i
           break
         end
@@ -757,15 +738,6 @@ module Gem
 
   def self.post_install(&hook)
     @post_install_hooks << hook
-  end
-
-  ##
-  # Adds a post-installs hook that will be passed a Gem::DependencyInstaller
-  # and a list of installed specifications when
-  # Gem::DependencyInstaller#install is complete
-
-  def self.done_installing(&hook)
-    @done_installing_hooks << hook
   end
 
   ##
@@ -927,7 +899,6 @@ module Gem
     @ruby
   end
 
-  # DOC: needs doc'd or :nodoc'd
   def self.latest_spec_for name
     dependency  = Gem::Dependency.new name
     fetcher     = Gem::SpecFetcher.fetcher
@@ -942,16 +913,13 @@ module Gem
     match and fetcher.fetch_spec(*match)
   end
 
-  # DOC: needs doc'd or :nodoc'd
   def self.latest_version_for name
     spec = latest_spec_for name
     spec and spec.version
   end
 
-  # DOC: needs doc'd or :nodoc'd
   def self.latest_rubygems_version
-    latest_version_for("rubygems-update") or
-      raise "Can't find 'rubygems-update' in any repo. Check `gem source list`."
+    latest_version_for "rubygems-update"
   end
 
   ##
@@ -968,14 +936,6 @@ module Gem
     end
 
     @ruby_version = Gem::Version.new version
-  end
-
-  ##
-  # A Gem::Version for the currently running RubyGems
-
-  def self.rubygems_version
-    return @rubygems_version if defined? @rubygems_version
-    @rubygems_version = Gem::Version.new Gem::VERSION
   end
 
   ##
@@ -1006,9 +966,6 @@ module Gem
   ##
   # Need to be able to set the sources without calling
   # Gem.sources.replace since that would cause an infinite loop.
-  #
-  # DOC: This comment is not documentation about the method itself, it's
-  # more of a code comment about the implementation.
 
   def self.sources= new_sources
     @sources = new_sources
@@ -1019,6 +976,12 @@ module Gem
 
   def self.suffix_pattern
     @suffix_pattern ||= "{#{suffixes.join(',')}}"
+  end
+
+  def self.loaded_path? path
+    # TODO: ruby needs a feature to let us query what's loaded in 1.8 and 1.9
+    re = /(^|\/)#{Regexp.escape path}#{Regexp.union(*Gem.suffixes)}$/
+    $LOADED_FEATURES.any? { |s| s =~ re }
   end
 
   ##
@@ -1075,7 +1038,7 @@ module Gem
   # The home directory for the user.
 
   def self.user_home
-    @user_home ||= find_home.untaint
+    @user_home ||= find_home
   end
 
   ##
@@ -1134,9 +1097,6 @@ module Gem
     load_plugin_files files
   end
 
-  # FIX: Almost everywhere else we use the `def self.` way of defining class
-  # methods, and then we switch over to `class << self` here. Pick one or the
-  # other.
   class << self
 
     ##
@@ -1145,22 +1105,15 @@ module Gem
     attr_reader :loaded_specs
 
     ##
-    # The list of hooks to be run after Gem::Installer#install extracts files
-    # and builds extensions
+    # The list of hooks to be run before Gem::Install#install finishes
+    # installation
 
     attr_reader :post_build_hooks
 
     ##
-    # The list of hooks to be run after Gem::Installer#install completes
-    # installation
+    # The list of hooks to be run before Gem::Install#install does any work
 
     attr_reader :post_install_hooks
-
-    ##
-    # The list of hooks to be run after Gem::DependencyInstaller installs a
-    # set of gems
-
-    attr_reader :done_installing_hooks
 
     ##
     # The list of hooks to be run after Gem::Specification.reset is run.
@@ -1168,13 +1121,13 @@ module Gem
     attr_reader :post_reset_hooks
 
     ##
-    # The list of hooks to be run after Gem::Uninstaller#uninstall completes
-    # installation
+    # The list of hooks to be run before Gem::Uninstall#uninstall does any
+    # work
 
     attr_reader :post_uninstall_hooks
 
     ##
-    # The list of hooks to be run before Gem::Installer#install does any work
+    # The list of hooks to be run after Gem::Install#install is finished
 
     attr_reader :pre_install_hooks
 
@@ -1184,8 +1137,7 @@ module Gem
     attr_reader :pre_reset_hooks
 
     ##
-    # The list of hooks to be run before Gem::Uninstaller#uninstall does any
-    # work
+    # The list of hooks to be run after Gem::Uninstall#uninstall is finished
 
     attr_reader :pre_uninstall_hooks
   end
@@ -1212,14 +1164,10 @@ module Gem
   autoload :Platform,        'rubygems/platform'
   autoload :Builder,         'rubygems/builder'
   autoload :ConfigFile,      'rubygems/config_file'
-
-  require "rubygems/specification"
 end
 
-# REFACTOR: All these patches should be pulled out into their own file.
 module Kernel
 
-  # REFACTOR: This should be pulled out into some kind of hacks file.
   remove_method :gem if 'method' == defined? gem # from gem_prelude.rb on 1.9
 
   ##
@@ -1251,18 +1199,6 @@ module Kernel
   def gem(gem_name, *requirements) # :doc:
     skip_list = (ENV['GEM_SKIP'] || "").split(/:/)
     raise Gem::LoadError, "skipping #{gem_name}" if skip_list.include? gem_name
-
-    if gem_name.kind_of? Gem::Dependency
-      unless Gem::Deprecate.skip
-        warn "#{Gem.location_of_caller.join ':'}:Warning: Kernel.gem no longer "\
-          "accepts a Gem::Dependency object, please pass the name "\
-          "and requirements directly"
-      end
-
-      requirements = gem_name.requirement
-      gem_name = gem_name.name
-    end
-
     spec = Gem::Dependency.new(gem_name, *requirements).to_spec
     spec.activate if spec
   end
@@ -1276,11 +1212,6 @@ end
 # the package is loaded as a gem, return the gem specific data directory.
 # Otherwise return a path to the share area as define by
 # "#{ConfigMap[:datadir]}/#{package_name}".
-# 
-# REFACTOR: This should be pulled out into some kind of compatiblity file
-# with all the hacks to other stuff.
-#
-# FIX: This has both a comment and nodoc. Which is right?
 
 def RbConfig.datadir(package_name) # :nodoc:
   warn "#{Gem.location_of_caller.join ':'}:Warning: " \
@@ -1295,7 +1226,6 @@ end
 
 require 'rubygems/exceptions'
 
-# REFACTOR: This should be pulled out into some kind of hacks file.
 gem_preluded = Gem::GEM_PRELUDE_SUCKAGE and defined? Gem
 unless gem_preluded then # TODO: remove guard after 1.9.2 dropped
   begin
@@ -1322,7 +1252,6 @@ end
 
 require 'rubygems/custom_require'
 
-# REFACTOR: This should be pulled out into some kind of file.
 module Gem
   class << self
     extend Gem::Deprecate
@@ -1343,6 +1272,5 @@ module Gem
     deprecate :required_location,     :none,                    2011, 11
     deprecate :searcher,              "Specification",          2011, 11
     deprecate :source_index,          "Specification",          2011, 11
-    deprecate :unresolved_deps, "Specification.unresolved_deps", 2011, 12
   end
 end

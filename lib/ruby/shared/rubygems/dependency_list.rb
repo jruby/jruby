@@ -10,10 +10,6 @@ require 'rubygems/deprecate'
 ##
 # Gem::DependencyList is used for installing and uninstalling gems in the
 # correct order to avoid conflicts.
-#--
-# TODO: It appears that all but topo-sort functionality is being duplicated
-# (or is planned to be duplicated) elsewhere in rubygems.  Is the majority of
-# this class necessary anymore?  Especially #ok?, #why_not_ok?
 
 class Gem::DependencyList
   attr_reader :specs
@@ -37,8 +33,6 @@ class Gem::DependencyList
 
   ##
   # Creates a DependencyList from a Gem::SourceIndex +source_index+
-  #--
-  # TODO: delete per deprecation at bottom of file
 
   def self.from_source_index(ignored=nil)
     warn "NOTE: DependencyList.from_source_index ignores it's arg" if ignored
@@ -219,7 +213,7 @@ class Gem::DependencyList
     @specs.each(&block)
   end
 
-  def tsort_each_child(node)
+  def tsort_each_child(node, &block)
     specs = @specs.sort.reverse
 
     dependencies = node.runtime_dependencies
@@ -248,11 +242,11 @@ class Gem::DependencyList
   def active_count(specs, ignored)
     specs.count { |spec| ignored[spec.full_name].nil? }
   end
+end
 
+class Gem::DependencyList
   class << self
     extend Gem::Deprecate
     deprecate :from_source_index, "from_specs", 2011, 11
   end
-
 end
-

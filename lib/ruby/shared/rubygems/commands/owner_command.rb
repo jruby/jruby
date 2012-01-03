@@ -63,16 +63,12 @@ class Gem::Commands::OwnerCommand < Gem::Command
 
   def manage_owners method, name, owners
     owners.each do |owner|
-      begin
-        response = rubygems_api_request method, "api/v1/gems/#{name}/owners" do |request|
-          request.set_form_data 'email' => owner
-          request.add_field "Authorization", api_key
-        end
-
-        with_response response
-      rescue
-        # ignore
+      response = rubygems_api_request method, "api/v1/gems/#{name}/owners" do |request|
+        request.set_form_data 'email' => owner
+        request.add_field "Authorization", api_key
       end
+
+      with_response response
     end
   end
 

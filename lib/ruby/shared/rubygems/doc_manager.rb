@@ -4,19 +4,12 @@
 # See LICENSE.txt for permissions.
 #++
 
-# TODO delete, superseded by lib/rubygems/rdoc.rb
-
 require 'rubygems'
 
 ##
-# The documentation manager formerly generated RDoc and RI for RubyGems.
-#
-# This file is no longer used, see rubygems/rdoc.rb for details of modern
-# usage.
-#
-# Require 'rubygems/rdoc' and use Gem::RDoc now.
+# The documentation manager generates RDoc and RI for RubyGems.
 
-class Gem::DocManager # :nodoc: all
+class Gem::DocManager
 
   include Gem::UserInteraction
 
@@ -84,28 +77,6 @@ class Gem::DocManager # :nodoc: all
     }
 
     RDoc::RI::Driver.new(options).class_cache
-  end
-
-  def self.generation_hook installer, specs
-    types     = installer.document
-
-    # NOTE: *All* of the RI documents must be generated first.  For some
-    # reason of legacy rdoc, RI docs cannot be generated after any RDoc
-    # documents are generated.
-
-    if types.include? 'ri' then
-      specs.each do |spec|
-        Gem::DocManager.new(spec, nil).generate_ri
-      end
-
-      Gem::DocManager.update_ri_cache
-    end
-
-    if types.include? 'rdoc' then
-      specs.each do |spec|
-        Gem::DocManager.new(spec, nil).generate_rdoc
-      end
-    end
   end
 
   ##
@@ -210,28 +181,24 @@ class Gem::DocManager # :nodoc: all
     r = RDoc::RDoc.new
 
     old_pwd = Dir.pwd
+    Dir.chdir @spec.full_gem_path
 
-    # Can't use Dir.chdir with a block because r.document might
-    # and you get a warning then.
+    say "rdoc #{args.join ' '}" if Gem.configuration.really_verbose
+
     begin
-      Dir.chdir @spec.full_gem_path
-      say "rdoc #{args.join ' '}" if Gem.configuration.really_verbose
-
-      begin
-        r.document args
-      rescue Errno::EACCES => e
-        dirname = File.dirname e.message.split("-")[1].strip
-        raise Gem::FilePermissionError.new(dirname)
-      rescue Interrupt => e
-        raise e
-      rescue Exception => ex
-        alert_error "While generating documentation for #{@spec.full_name}"
-        ui.errs.puts "... MESSAGE:   #{ex}"
-        ui.errs.puts "... RDOC args: #{debug_args.join(' ')}"
-        ui.errs.puts "\t#{ex.backtrace.join "\n\t"}" if
-          Gem.configuration.backtrace
-        terminate_interaction 1
-      end
+      r.document args
+    rescue Errno::EACCES => e
+      dirname = File.dirname e.message.split("-")[1].strip
+      raise Gem::FilePermissionError.new(dirname)
+    rescue Interrupt => e
+      raise e
+    rescue Exception => ex
+      alert_error "While generating documentation for #{@spec.full_name}"
+      ui.errs.puts "... MESSAGE:   #{ex}"
+      ui.errs.puts "... RDOC args: #{debug_args.join(' ')}"
+      ui.errs.puts "\t#{ex.backtrace.join "\n\t"}" if
+        Gem.configuration.backtrace
+      terminate_interaction 1
     ensure
       Dir.chdir old_pwd
     end

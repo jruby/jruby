@@ -6,17 +6,7 @@ class Gem::Installer
   ##
   # Available through requiring rubygems/installer_test_case
 
-  attr_writer :bin_dir
-
-  ##
-  # Available through requiring rubygems/installer_test_case
-
   attr_writer :gem_dir
-
-  ##
-  # Available through requiring rubygems/installer_test_case
-
-  attr_writer :force
 
   ##
   # Available through requiring rubygems/installer_test_case
@@ -61,30 +51,34 @@ end
 
 ##
 # A test case for Gem::Installer.
-#--
-# TODO document these utility methods
 
 class Gem::InstallerTestCase < Gem::TestCase
 
   def setup
     super
 
-    @spec = quick_gem 'a' do |spec|
-      util_make_exec spec
-    end
+    @installer_tmp = File.join @tempdir, 'installer'
+    FileUtils.mkdir_p @installer_tmp
 
-    @user_spec = quick_gem 'b' do |spec|
-      util_make_exec spec
-    end
+    Gem.use_paths @installer_tmp
+    Gem.ensure_gem_subdirectories @installer_tmp
 
+    @spec = quick_gem 'a'
+    util_make_exec @spec
     util_build_gem @spec
-    util_build_gem @user_spec
-
     @gem = @spec.cache_file
+
+    @user_spec = quick_gem 'b'
+    util_make_exec @user_spec
+    util_build_gem @user_spec
     @user_gem = @user_spec.cache_file
+
+    Gem.use_paths @gemhome
 
     @installer      = util_installer @spec, @gemhome
     @user_installer = util_installer @user_spec, Gem.user_dir, :user
+
+    Gem.use_paths @gemhome
   end
 
   def util_gem_bindir spec = @spec
@@ -133,7 +127,7 @@ class Gem::InstallerTestCase < Gem::TestCase
       end
 
       use_ui ui do
-        FileUtils.rm_f @gem
+        FileUtils.rm @gem
 
         @gem = Gem::Builder.new(@spec).build
       end
@@ -143,8 +137,6 @@ class Gem::InstallerTestCase < Gem::TestCase
   end
 
   def util_installer(spec, gem_home, user=false)
-    Gem::Installer.new(spec.cache_file,
-                       :install_dir => gem_home,
-                       :user_install => user)
+    Gem::Installer.new spec.cache_file, :user_install => user
   end
 end

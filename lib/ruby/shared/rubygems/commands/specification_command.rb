@@ -17,7 +17,6 @@ class Gem::Commands::SpecificationCommand < Gem::Command
 
     add_version_option('examine')
     add_platform_option
-    add_prerelease_option
 
     add_option('--all', 'Output specifications for all versions of',
                'the gem') do |value, options|
@@ -81,21 +80,13 @@ FIELD         name of gemspec field to show
     end
 
     if remote? then
-      if !options[:version] or options[:version].none?
-        found = Gem::SpecFetcher.fetcher.fetch dep, false, false,
-                                               options[:prerelease]
-      else
-        # .fetch is super weird. The last true is there so that
-        # prerelease gems are included, otherwise the user can never
-        # request them.
-        found = Gem::SpecFetcher.fetcher.fetch dep, false, false, true
-      end
+      found = Gem::SpecFetcher.fetcher.fetch dep
 
       specs.push(*found.map { |spec,| spec })
     end
 
     if specs.empty? then
-      alert_error "No gem matching '#{dep}' found"
+      alert_error "Unknown gem '#{gem}'"
       terminate_interaction 1
     end
 

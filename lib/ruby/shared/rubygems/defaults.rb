@@ -3,7 +3,6 @@ module Gem
   # TODO: move this whole file back into rubygems.rb
 
   @post_install_hooks   ||= []
-  @done_installing_hooks  ||= []
   @post_uninstall_hooks ||= []
   @pre_uninstall_hooks  ||= []
   @pre_install_hooks    ||= []
@@ -43,10 +42,10 @@ module Gem
 
     @default_dir ||= File.join(*path)
   end
-  
+
   ##
   # Paths where RubyGems' .rb files and bin files are installed
-  
+
   def self.default_rubygems_dirs
     nil # default to standard layout
   end

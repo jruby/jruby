@@ -115,20 +115,24 @@ class Gem::SpecFetcher
 
     if File.exist? local_spec then
       spec = Gem.read_binary local_spec
-      spec = Marshal.load(spec) rescue nil
-      return spec if spec
-    end
+    else
+      spec = if maven_spec?(spec[0], source_uri)
+        # from rubygems/maven_gemify.rb
+        maven_generate_spec(spec)
+      end
+      unless spec
+        uri.path << '.rz'
 
-    uri.path << '.rz'
+        spec = @fetcher.fetch_path uri
+        spec = Gem.inflate spec
+      end
 
-    spec = @fetcher.fetch_path uri
-    spec = Gem.inflate spec
+      if @update_cache then
+        FileUtils.mkdir_p cache_dir
 
-    if @update_cache then
-      FileUtils.mkdir_p cache_dir
-
-      open local_spec, 'wb' do |io|
-        io.write spec
+        open local_spec, 'wb' do |io|
+          io.write spec
+        end
       end
     end
 
@@ -254,24 +258,46 @@ class Gem::SpecFetcher
     spec_path  = source_uri + "#{file_name}.gz"
     cache_dir  = cache_dir spec_path
     local_file = File.join(cache_dir, file_name)
-    retried    = false
+    loaded     = false
 
-    FileUtils.mkdir_p cache_dir if @update_cache
+    if File.exist? local_file then
+      spec_dump =
+        @fetcher.fetch_path(spec_path, File.mtime(local_file)) rescue nil
 
-    spec_dump = @fetcher.cache_update_path(spec_path, local_file)
+      loaded = true if spec_dump
 
-    begin
-      Marshal.load spec_dump
-    rescue ArgumentError
-      if @update_cache && !retried
-        FileUtils.rm local_file
-        retried = true
-        retry
-      else
-        raise Gem::Exception.new("Invalid spec cache file in #{local_file}")
+      spec_dump ||= Gem.read_binary local_file
+    else
+      spec_dump = @fetcher.fetch_path spec_path
+      loaded = true
+    end
+
+    specs = begin
+              Marshal.load spec_dump
+            rescue ArgumentError
+              spec_dump = @fetcher.fetch_path spec_path
+              loaded = true
+
+              Marshal.load spec_dump
+            end
+
+    if loaded and @update_cache then
+      begin
+        FileUtils.mkdir_p cache_dir
+
+        open local_file, 'wb' do |io|
+          io << spec_dump
+        end
+      rescue
       end
     end
+
+    specs
   end
 
 end
 
+# Load rubygems/maven_gemify.rb here because;
+# * want to require only spec_fetcher is required to avoid circular require.
+# * need to require after spec_fetcher and remote_fetcher to override those definitions.
+require 'rubygems/maven_gemify'

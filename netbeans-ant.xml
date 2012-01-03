@@ -28,7 +28,7 @@
       <jvmarg value="${profiler.info.jvmargs.agent}"/>
       <arg value="bin/gem"/>
       <arg value="install"/>
-      <arg value="lib/ruby/gems/1.8/cache/rake-0.7.1.gem"/>
+      <arg value="lib/ruby/gems/shared/cache/rake-0.7.1.gem"/>
     </java>
   </target>
   

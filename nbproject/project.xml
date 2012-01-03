@@ -61,9 +61,9 @@
                     <encoding>UTF-8</encoding>
                 </source-folder>
                 <source-folder>
-                    <label>lib/ruby/site_ruby</label>
+                    <label>lib/ruby/shared</label>
                     <type>java</type>
-                    <location>lib/ruby/site_ruby</location>
+                    <location>lib/ruby/shared</location>
                     <encoding>UTF-8</encoding>
                 </source-folder>
                 <source-folder>
@@ -218,8 +218,8 @@
                         <location>lib/ruby/1.9</location>
                     </source-folder>
                     <source-folder style="packages">
-                        <label>lib/ruby/site_ruby</label>
-                        <location>lib/ruby/site_ruby</location>
+                        <label>lib/ruby/shared</label>
+                        <location>lib/ruby/shared</location>
                     </source-folder>
                     <source-folder style="packages">
                         <label>cext/src</label>
@@ -286,7 +286,7 @@
                 <source-level>1.5</source-level>
             </compilation-unit>
             <compilation-unit>
-                <package-root>lib/ruby/site_ruby</package-root>
+                <package-root>lib/ruby/shared</package-root>
                 <source-level>1.5</source-level>
             </compilation-unit>
             <compilation-unit>

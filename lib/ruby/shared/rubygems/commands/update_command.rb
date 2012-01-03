@@ -1,12 +1,10 @@
 require 'rubygems/command'
 require 'rubygems/command_manager'
-require 'rubygems/dependency_installer'
 require 'rubygems/install_update_options'
 require 'rubygems/local_remote_options'
 require 'rubygems/spec_fetcher'
 require 'rubygems/version_option'
-require 'rubygems/install_message' # must come before rdoc for messaging
-require 'rubygems/rdoc'
+require 'rubygems/commands/install_command'
 
 class Gem::Commands::UpdateCommand < Gem::Command
 
@@ -15,9 +13,11 @@ class Gem::Commands::UpdateCommand < Gem::Command
   include Gem::VersionOption
 
   def initialize
-    super 'update', 'Update installed gems to the latest version',
-      :document => %w[rdoc ri],
-      :force    => false
+    super 'update',
+          'Update the named gems (or all installed gems) in the local repository',
+      :generate_rdoc => true,
+      :generate_ri   => true,
+      :force         => false
 
     add_install_update_options
 
@@ -37,9 +37,6 @@ class Gem::Commands::UpdateCommand < Gem::Command
     add_local_remote_options
     add_platform_option
     add_prerelease_option "as update targets"
-
-    @updated   = []
-    @installer = Gem::DependencyInstaller.new options
   end
 
   def arguments # :nodoc:
@@ -55,6 +52,9 @@ class Gem::Commands::UpdateCommand < Gem::Command
   end
 
   def execute
+    @installer = Gem::DependencyInstaller.new options
+    @updated   = []
+
     hig = {}
 
     if options[:system] then
@@ -79,7 +79,21 @@ class Gem::Commands::UpdateCommand < Gem::Command
     if updated.empty? then
       say "Nothing to update"
     else
-      say "Gems updated: #{updated.map { |spec| spec.name }.join ' '}"
+      say "Gems updated: #{updated.map { |spec| spec.name }.join ', '}"
+
+      if options[:generate_ri] then
+        updated.each do |gem|
+          Gem::DocManager.new(gem, options[:rdoc_args]).generate_ri
+        end
+
+        Gem::DocManager.update_ri_cache
+      end
+
+      if options[:generate_rdoc] then
+        updated.each do |gem|
+          Gem::DocManager.new(gem, options[:rdoc_args]).generate_rdoc
+        end
+      end
     end
   end
 
@@ -98,6 +112,7 @@ class Gem::Commands::UpdateCommand < Gem::Command
 
     @installer.installed_gems.each do |spec|
       @updated << spec
+      say "Successfully installed #{spec.full_name}" if success
     end
   end
 
@@ -163,9 +178,8 @@ class Gem::Commands::UpdateCommand < Gem::Command
 
     args = []
     args << '--prefix' << Gem.prefix if Gem.prefix
-    # TODO use --document for >= 1.9 , --no-rdoc --no-ri < 1.9
-    args << '--no-rdoc' unless options[:document].include? 'rdoc'
-    args << '--no-ri'   unless options[:document].include? 'ri'
+    args << '--no-rdoc' unless options[:generate_rdoc]
+    args << '--no-ri' unless options[:generate_ri]
     args << '--no-format-executable' if options[:no_format_executable]
 
     update_dir = File.join Gem.dir, 'gems', "rubygems-update-#{version}"
@@ -191,12 +205,9 @@ class Gem::Commands::UpdateCommand < Gem::Command
               gem_names.all? { |name| /#{name}/ !~ l_spec.name }
 
       dependency = Gem::Dependency.new l_spec.name, "> #{l_spec.version}"
-      dependency.prerelease = options[:prerelease]
 
       fetcher = Gem::SpecFetcher.fetcher
-
-      spec_tuples = fetcher.find_matching dependency, false, true,
-                                          options[:prerelease]
+      spec_tuples = fetcher.find_matching dependency
 
       matching_gems = spec_tuples.select do |(name, _, platform),|
         name == l_name and Gem::Platform.match platform

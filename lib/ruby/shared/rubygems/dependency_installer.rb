@@ -14,14 +14,8 @@ class Gem::DependencyInstaller
   attr_reader :gems_to_install
   attr_reader :installed_gems
 
-  ##
-  # Documentation types.  For use by the Gem.done_installing hook
-
-  attr_reader :document
-
   DEFAULT_OPTIONS = {
     :env_shebang         => false,
-    :document            => %w[rdoc ri],
     :domain              => :both, # HACK dup
     :force               => false,
     :format_executable   => false, # HACK dup
@@ -29,7 +23,7 @@ class Gem::DependencyInstaller
     :prerelease          => false,
     :security_policy     => nil, # HACK NoSecurity requires OpenSSL. AlmostNo? Low?
     :wrappers            => true,
-  }.freeze
+  }
 
   ##
   # Creates a new installer instance.
@@ -53,7 +47,6 @@ class Gem::DependencyInstaller
     if options[:install_dir] then
       @gem_home = options[:install_dir]
 
-      # HACK shouldn't change the global settings
       Gem::Specification.dirs = @gem_home
       Gem.ensure_gem_subdirectories @gem_home
       options[:install_dir] = @gem_home # FIX: because we suck and reuse below
@@ -62,9 +55,7 @@ class Gem::DependencyInstaller
     options = DEFAULT_OPTIONS.merge options
 
     @bin_dir             = options[:bin_dir]
-    @dev_shallow         = options[:dev_shallow]
     @development         = options[:development]
-    @document            = options[:document]
     @domain              = options[:domain]
     @env_shebang         = options[:env_shebang]
     @force               = options[:force]
@@ -75,12 +66,7 @@ class Gem::DependencyInstaller
     @user_install        = options[:user_install]
     @wrappers            = options[:wrappers]
 
-    # Indicates that we should not try to update any deps unless
-    # we absolutely must.
-    @minimal_deps        = options[:minimal_deps]
-
     @installed_gems = []
-    @toplevel_specs = nil
 
     @install_dir = options[:install_dir] || Gem.dir
     @cache_dir = options[:cache_dir] || @install_dir
@@ -97,15 +83,11 @@ class Gem::DependencyInstaller
   # local gems preferred over remote gems.
 
   def find_gems_with_sources(dep)
-    # HACK Reset the errors.
-    # REFACTOR this method is called in a loop, we shouldn't wipe out previous
-    # errors.
+    # Reset the errors
     @errors = nil
     gems_and_sources = []
 
     if @domain == :both or @domain == :local then
-      # REFACTOR rather than hardcoding using Dir.pwd, delegate to some config
-      # that allows knows the directory to look for local gems.
       Dir[File.join(Dir.pwd, "#{dep.name}-[0-9]*.gem")].each do |gem_file|
         spec = Gem::Format.from_file_by_path(gem_file).spec
         gems_and_sources << [spec, gem_file] if spec.name == dep.name
@@ -119,7 +101,6 @@ class Gem::DependencyInstaller
           req
         end
 
-        # REFACTOR the API for fetch_with_errors sucks thats why +all+ exists.
         all = !dep.prerelease? &&
               # we only need latest if there's one requirement and it is
               # guaranteed to match the newest specs
@@ -131,9 +112,6 @@ class Gem::DependencyInstaller
         gems_and_sources.push(*found)
 
       rescue Gem::RemoteFetcher::FetchError => e
-        # FIX if there is a problem talking to the network, we either need to always tell
-        # the user (no really_verbose) or fail hard, not silently tell them that we just
-        # couldn't find their requested gem.
         if Gem.configuration.really_verbose then
           say "Error fetching remote data:\t\t#{e.message}"
           say "Falling back to local-only install"
@@ -142,9 +120,6 @@ class Gem::DependencyInstaller
       end
     end
 
-    # REFACTOR 2 of 3 users of this method call reverse on the results, perhaps
-    # we're sorting them wrong. The other calls last, so perhaps it shuold use
-    # a different API.
     gems_and_sources.sort_by do |gem, source|
       [gem, source =~ /^http:\/\// ? 0 : 1] # local gems win
     end
@@ -160,17 +135,12 @@ class Gem::DependencyInstaller
     # these gems were listed by the user, always install them
     keep_names = specs.map { |spec| spec.full_name }
 
-    if @dev_shallow
-      @toplevel_specs = keep_names
-    end
-
     dependency_list = Gem::DependencyList.new @development
     dependency_list.add(*specs)
     to_do = specs.dup
+
     add_found_dependencies to_do, dependency_list unless @ignore_dependencies
 
-    # REFACTOR maybe abstract away using Gem::Specification.include? so
-    # that this isn't dependent only on the currently installed gems
     dependency_list.specs.reject! { |spec|
       not keep_names.include?(spec.full_name) and
       Gem::Specification.include?(spec)
@@ -192,32 +162,14 @@ class Gem::DependencyInstaller
 
     until to_do.empty? do
       spec = to_do.shift
-
-      # HACK why is spec nil?
       next if spec.nil? or seen[spec.name]
       seen[spec.name] = true
 
       deps = spec.runtime_dependencies
-
-      if @development
-        if @dev_shallow
-          if @toplevel_specs.include? spec.full_name
-            deps |= spec.development_dependencies
-          end
-        else
-          deps |= spec.development_dependencies
-        end
-      end
+      deps |= spec.development_dependencies if @development
 
       deps.each do |dep|
         dependencies[dep.name] = dependencies[dep.name].merge dep
-
-        if @minimal_deps
-          next if Gem::Specification.any? do |installed_spec|
-                    dep.name == installed_spec.name and
-                      dep.requirement.satisfied_by? installed_spec.version
-                  end
-        end
 
         results = find_gems_with_sources(dep).reverse
 
@@ -250,35 +202,29 @@ class Gem::DependencyInstaller
   def find_spec_by_name_and_version(gem_name,
                                     version = Gem::Requirement.default,
                                     prerelease = false)
-
     spec_and_source = nil
 
-    if @domain != :remote
-      glob = if File::ALT_SEPARATOR then
-               gem_name.gsub File::ALT_SEPARATOR, File::SEPARATOR
-             else
-               gem_name
-             end
+    glob = if File::ALT_SEPARATOR then
+             gem_name.gsub File::ALT_SEPARATOR, File::SEPARATOR
+           else
+             gem_name
+           end
 
-      # REFACTOR Don't assume local gems are in the current directory
-      local_gems = Dir["#{glob}*"].sort.reverse
+    local_gems = Dir["#{glob}*"].sort.reverse
 
-      local_gems.each do |gem_file|
-        next unless gem_file =~ /gem$/
-        begin
-          spec = Gem::Format.from_file_by_path(gem_file).spec
-          spec_and_source = [spec, gem_file]
-          break
-        rescue SystemCallError, Gem::Package::FormatError
-        end
+    local_gems.each do |gem_file|
+      next unless gem_file =~ /gem$/
+      begin
+        spec = Gem::Format.from_file_by_path(gem_file).spec
+        spec_and_source = [spec, gem_file]
+        break
+      rescue SystemCallError, Gem::Package::FormatError
       end
     end
 
     unless spec_and_source then
       dep = Gem::Dependency.new gem_name, version
-      # HACK Dependency objects should be immutable
       dep.prerelease = true if prerelease
-
       spec_and_sources = find_gems_with_sources(dep).reverse
       spec_and_source = spec_and_sources.find { |spec, source|
         Gem::Platform.match spec.platform
@@ -291,7 +237,6 @@ class Gem::DependencyInstaller
         gem_name, version, @errors)
     end
 
-    # REFACTOR just return spec_and_source
     @specs_and_sources = [spec_and_source]
   end
 
@@ -311,7 +256,6 @@ class Gem::DependencyInstaller
 
   def install dep_or_name, version = Gem::Requirement.default
     if String === dep_or_name then
-      # REFACTOR use return value to set @specs_and_source
       find_spec_by_name_and_version dep_or_name, version, @prerelease
     else
       dep_or_name.prerelease = @prerelease
@@ -322,12 +266,8 @@ class Gem::DependencyInstaller
 
     gather_dependencies
 
-    # REFACTOR is the last gem always the one that the user requested?
-    # This code assumes that but is that actually validated by the code?
-
     last = @gems_to_install.size - 1
     @gems_to_install.each_with_index do |spec, index|
-      # REFACTOR more current spec set hardcoding, should be abstracted?
       next if Gem::Specification.include?(spec) and index != last
 
       # TODO: make this sorta_verbose so other users can benefit from it
@@ -335,27 +275,16 @@ class Gem::DependencyInstaller
 
       _, source_uri = @specs_and_sources.assoc spec
       begin
-        # REFACTOR make the fetcher to use configurable
-        local_gem_path = Gem::RemoteFetcher.fetcher.download(spec, source_uri,
-                                                             @cache_dir)
+        local_gem_path = Gem::RemoteFetcher.fetcher.download spec, source_uri,
+                                                             @cache_dir
       rescue Gem::RemoteFetcher::FetchError
-        # TODO I doubt all fetch errors are recoverable, we should at least
-        # report the errors probably.
         next if @force
         raise
       end
 
-      if @development
-        if @dev_shallow
-          is_dev = @toplevel_specs.include? spec.full_name
-        else
-          is_dev = true
-        end
-      end
-
       inst = Gem::Installer.new local_gem_path,
                                 :bin_dir             => @bin_dir,
-                                :development         => is_dev,
+                                :development         => @development,
                                 :env_shebang         => @env_shebang,
                                 :force               => @force,
                                 :format_executable   => @format_executable,
@@ -368,10 +297,6 @@ class Gem::DependencyInstaller
       spec = inst.install
 
       @installed_gems << spec
-    end
-
-    Gem.done_installing_hooks.each do |hook|
-      hook.call self, @installed_gems
     end
 
     @installed_gems

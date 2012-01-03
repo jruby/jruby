@@ -32,13 +32,6 @@ class Gem::RemoteFetcher
 
   end
 
-  ##
-  # A FetchError that indicates that the reason for not being
-  # able to fetch data was that the host could not be contacted
-
-  class UnknownHostError < FetchError
-  end
-
   @fetcher = nil
 
   ##
@@ -105,14 +98,11 @@ class Gem::RemoteFetcher
   def download(spec, source_uri, install_dir = Gem.dir)
     Gem.ensure_gem_subdirectories(install_dir) rescue nil
 
-    cache_dir =
-      if Dir.pwd == install_dir then # see fetch_command
-        install_dir
-      elsif File.writable? install_dir then
-        File.join install_dir, "cache"
-      else
-        File.join Gem.user_dir, "cache"
-      end
+    if File.writable?(install_dir)
+      cache_dir = File.join install_dir, "cache"
+    else
+      cache_dir = File.join Gem.user_dir, "cache"
+    end
 
     gem_file_name = File.basename spec.cache_file
     local_gem_path = File.join cache_dir, gem_file_name
@@ -126,13 +116,16 @@ class Gem::RemoteFetcher
                              URI.escape(source_uri.to_s))
     end
 
+    # if it's a maven artifact, use maven to fetch it
+    if maven_spec? spec.name, source_uri
+      return download_maven(spec, local_gem_path)
+    end
+
     scheme = source_uri.scheme
 
     # URI.parse gets confused by MS Windows paths with forward slashes.
     scheme = nil if scheme =~ /^[a-z]$/i
 
-    # REFACTOR: split this up and dispatch on scheme (eg download_http)
-    # REFACTOR: be sure to clean up fake fetcher when you do this... cleaner
     case scheme
     when 'http', 'https' then
       unless File.exist? local_gem_path then
@@ -142,7 +135,7 @@ class Gem::RemoteFetcher
 
           remote_gem_path = source_uri + "gems/#{gem_file_name}"
 
-          self.cache_update_path remote_gem_path, local_gem_path
+          gem = self.fetch_path remote_gem_path
         rescue Gem::RemoteFetcher::FetchError
           raise if spec.original_platform == spec.platform
 
@@ -153,7 +146,11 @@ class Gem::RemoteFetcher
 
           remote_gem_path = source_uri + "gems/#{alternate_name}"
 
-          self.cache_update_path remote_gem_path, local_gem_path
+          gem = self.fetch_path remote_gem_path
+        end
+
+        File.open local_gem_path, 'wb' do |fp|
+          fp.write gem
         end
       end
     when 'file' then
@@ -190,7 +187,7 @@ class Gem::RemoteFetcher
       say "Using local gem #{local_gem_path}" if
         Gem.configuration.really_verbose
     else
-      raise ArgumentError, "unsupported URI scheme #{source_uri.scheme}"
+      raise Gem::InstallError, "unsupported URI scheme #{source_uri.scheme}"
     end
 
     local_gem_path
@@ -233,54 +230,18 @@ class Gem::RemoteFetcher
     uri = URI.parse uri unless URI::Generic === uri
 
     raise ArgumentError, "bad uri: #{uri}" unless uri
-
-    unless uri.scheme
-      raise ArgumentError, "uri scheme is invalid: #{uri.scheme.inspect}"
-    end
+    raise ArgumentError, "uri scheme is invalid: #{uri.scheme.inspect}" unless
+      uri.scheme
 
     data = send "fetch_#{uri.scheme}", uri, mtime, head
-
-    if data and !head and uri.to_s =~ /gz$/
-      begin
-        data = Gem.gunzip data
-      rescue Zlib::GzipFile::Error
-        raise FetchError.new("server did not return a valid file", uri.to_s)
-      end
-    end
-
+    data = Gem.gunzip data if data and not head and uri.to_s =~ /gz$/
     data
   rescue FetchError
     raise
   rescue Timeout::Error
-    raise UnknownHostError.new('timed out', uri.to_s)
+    raise FetchError.new('timed out', uri.to_s)
   rescue IOError, SocketError, SystemCallError => e
-    if e.message =~ /getaddrinfo/
-      raise UnknownHostError.new('no such name', uri.to_s)
-    else
-      raise FetchError.new("#{e.class}: #{e}", uri.to_s)
-    end
-  end
-
-  ##
-  # Downloads +uri+ to +path+ if necessary. If no path is given, it just
-  # passes the data.
-
-  def cache_update_path(uri, path = nil)
-    mtime = path && File.stat(path).mtime rescue nil
-
-    if mtime && Net::HTTPNotModified === fetch_path(uri, mtime, true)
-      Gem.read_binary(path)
-    else
-      data = fetch_path(uri)
-
-      if path
-        open(path, 'wb') do |io|
-          io.write data
-        end
-      end
-
-      data
-    end
+    raise FetchError.new("#{e.class}: #{e}", uri.to_s)
   end
 
   ##

@@ -145,8 +145,6 @@ class Gem::Version
 
   include Comparable
 
-  # FIX: These are only used once, in .correct?. Do they deserve to be
-  # constants?
   VERSION_PATTERN = '[0-9]+(\.[0-9a-zA-Z]+)*' # :nodoc:
   ANCHORED_VERSION_PATTERN = /\A\s*(#{VERSION_PATTERN})*\s*\z/ # :nodoc:
 
@@ -171,8 +169,6 @@ class Gem::Version
   #   ver2 = Version.create(ver1)       # -> (ver1)
   #   ver3 = Version.create(nil)        # -> nil
 
-  # REFACTOR: There's no real reason this should be separate from #initialize.
-
   def self.create input
     if input.respond_to? :version then
       input
@@ -191,7 +187,8 @@ class Gem::Version
     raise ArgumentError, "Malformed version number string #{version}" unless
       self.class.correct?(version)
 
-    @version = version.to_s.strip
+    @version = version.to_s
+    @version.strip!
   end
 
   ##

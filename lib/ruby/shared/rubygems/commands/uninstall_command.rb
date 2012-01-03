@@ -54,11 +54,6 @@ class Gem::Commands::UninstallCommand < Gem::Command
       options[:format_executable] = value
     end
 
-    add_option('--[no-]force',
-               'Uninstall all gems according to name, regardless of dependencies upon it.') do |value, options|
-      options[:force] = value
-    end
-
     add_version_option
     add_platform_option
   end
@@ -78,23 +73,19 @@ class Gem::Commands::UninstallCommand < Gem::Command
   end
 
   def execute
-    # REFACTOR: stolen from cleanup_command
-    deplist = Gem::DependencyList.new
-    get_all_gem_names.uniq.each do |name|
-      Gem::Specification.find_all_by_name(name).each do |spec|
-        deplist.add spec
-      end
-    end
+    original_path = Gem.path
 
-    deps = deplist.strongly_connected_components.flatten.reverse
-
-    deps.map(&:name).uniq.each do |gem_name|
+    get_all_gem_names.each do |gem_name|
       begin
         Gem::Uninstaller.new(gem_name, options).uninstall
+      rescue Gem::InstallError => e
+        alert e.message
       rescue Gem::GemNotInHomeException => e
         spec = e.spec
         alert("In order to remove #{spec.name}, please execute:\n" \
               "\tgem uninstall #{spec.name} --install-dir=#{spec.installation_path}")
+      ensure
+        Gem.use_paths(*original_path)
       end
     end
   end
