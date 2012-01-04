@@ -267,9 +267,9 @@ import org.jruby.util.log.LoggerFactory;
 
 public class IRBuilder {
     protected static final Operand[] NO_ARGS = new Operand[]{};
+    protected static final UnexecutableNil U_NIL = UnexecutableNil.U_NIL;
 
     private static final Logger LOG = LoggerFactory.getLogger("IRBuilder");
-    private static final   UnexecutableNil U_NIL = UnexecutableNil.U_NIL;
     private static String  rubyVersion = "1.8"; // default is 1.8
     private static boolean inIRGenOnlyMode = false;
 
@@ -437,7 +437,7 @@ public class IRBuilder {
     // Stack encoding nested rescue blocks -- this just tracks the start label of the blocks
     private Stack<Tuple<Label, Variable>> _rescueBlockStack = new Stack<Tuple<Label, Variable>>();
     
-    private IRManager manager;
+    protected IRManager manager;
     
     public IRBuilder(IRManager manager) {
         this.manager = manager;

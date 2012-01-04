@@ -11,6 +11,7 @@ import org.jruby.ast.GlobalAsgnNode;
 import org.jruby.ast.LocalAsgnNode;
 import org.jruby.ast.EncodingNode;
 import org.jruby.ast.IterNode;
+import org.jruby.ast.LambdaNode;
 import org.jruby.ast.ListNode;
 import org.jruby.ast.MultipleAsgn19Node;
 import org.jruby.ast.Node;
@@ -36,6 +37,7 @@ import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.instructions.BNEInstr;
 import org.jruby.compiler.ir.instructions.BEQInstr;
 import org.jruby.compiler.ir.instructions.CallInstr;
+import org.jruby.compiler.ir.instructions.ClosureReturnInstr;
 import org.jruby.compiler.ir.instructions.CopyInstr;
 import org.jruby.compiler.ir.instructions.GetArrayInstr;
 import org.jruby.compiler.ir.instructions.JRubyImplCallInstr;
@@ -47,10 +49,12 @@ import org.jruby.compiler.ir.instructions.ReceiveSelfInstruction;
 import org.jruby.compiler.ir.instructions.YieldInstr;
 import org.jruby.compiler.ir.instructions.jruby.CheckArityInstr;
 import org.jruby.compiler.ir.instructions.jruby.ToAryInstr;
+import org.jruby.compiler.ir.instructions.ruby19.BuildLambdaInstr;
 import org.jruby.compiler.ir.instructions.ruby19.GetEncodingInstr;
 import org.jruby.compiler.ir.instructions.ruby19.ReceiveOptArgInstr;
 import org.jruby.compiler.ir.instructions.ruby19.ReceiveRestArgInstr;
 import org.jruby.compiler.ir.instructions.ruby19.ReceiveRequiredArgInstr;
+import org.jruby.runtime.Arity;
 
 public class IRBuilder19 extends IRBuilder {
     public IRBuilder19(IRManager manager) {
@@ -61,7 +65,7 @@ public class IRBuilder19 extends IRBuilder {
         switch (node.getNodeType()) {
             case ENCODINGNODE: return buildEncoding((EncodingNode)node, s);
             case MULTIPLEASGN19NODE: return buildMultipleAsgn19((MultipleAsgn19Node) node, s);
-            case LAMBDANODE: throw new NotCompilableException("Unknown node encountered in builder: " + node.getClass());
+            case LAMBDANODE: return buildLambda((LambdaNode)node, s);
             default: throw new NotCompilableException("Unknown node encountered in builder: " + node.getClass());
         }
     }
@@ -364,13 +368,29 @@ public class IRBuilder19 extends IRBuilder {
         return ret;
     }
 
-    // Non-arg masgn
-    public Operand buildMultipleAsgn19(MultipleAsgn19Node multipleAsgnNode, IRScope s) {
-        Operand  values = build(multipleAsgnNode.getValueNode(), s);
-        Variable ret = getValueInTemporaryVariable(s, values);
-        s.addInstr(new ToAryInstr(ret, ret, BooleanLiteral.FALSE));
-        buildMultipleAsgn19Assignment(multipleAsgnNode, s, null, ret);
-        return ret;
+    public Operand buildLambda(LambdaNode node, IRScope s) {
+        IRClosure closure = new IRClosure(s, false, node.getScope(), Arity.procArityOf(node.getArgs()), node.getArgumentType(), true);
+        s.addClosure(closure);
+
+        // Create a new nested builder to ensure this gets its own IR builder state 
+        // like the ensure block stack
+        IRBuilder closureBuilder = createIRBuilder(manager);
+
+        // Receive self
+        closure.addInstr(new ReceiveSelfInstruction(getSelf(closure)));
+
+        // args
+        closureBuilder.receiveBlockArgs(node, closure);
+        closureBuilder.receiveBlockClosureArg(node.getBlockVarNode(), closure);
+
+        Operand closureRetVal = closureBuilder.build(node.getBody(), closure);
+
+        // can be U_NIL if the node is an if node with returns in both branches.
+        if (closureRetVal != U_NIL) closure.addInstr(new ClosureReturnInstr(closureRetVal));
+
+        Variable lambda = s.getNewTemporaryVariable();
+        s.addInstr(new BuildLambdaInstr(lambda, closure, node.getPosition()));
+        return lambda;
     }
 
     public Operand buildYield(YieldNode node, IRScope s) {
@@ -384,6 +404,15 @@ public class IRBuilder19 extends IRBuilder {
 
         Variable ret = s.getNewTemporaryVariable();
         s.addInstr(new YieldInstr(ret, s.getImplicitBlockArg(), build(argNode, s), unwrap));
+        return ret;
+    }
+
+    // Non-arg masgn
+    public Operand buildMultipleAsgn19(MultipleAsgn19Node multipleAsgnNode, IRScope s) {
+        Operand  values = build(multipleAsgnNode.getValueNode(), s);
+        Variable ret = getValueInTemporaryVariable(s, values);
+        s.addInstr(new ToAryInstr(ret, ret, BooleanLiteral.FALSE));
+        buildMultipleAsgn19Assignment(multipleAsgnNode, s, null, ret);
         return ret;
     }
 
