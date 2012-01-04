@@ -29,6 +29,8 @@
  */
 package org.jruby.embed.variable;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import org.jruby.embed.internal.BiVariableMap;
 import java.util.Set;
 import org.jruby.Ruby;
@@ -127,19 +129,46 @@ public class GlobalVariable extends AbstractVariable {
         IRubyObject value = gvars.get(key);
         updateGlobalVar(vars, (RubyObject)runtime.getTopSelf(), key, value);
     }
+    
+    private static String[] patterns = {
+            "\\$([\\u0021-\\u0040]|\\u005c|[\\u005e-\\u0060]|\\u007e)",
+            "\\$-(\\d|[A-z])"
+        };
+    
+    private static String [] predefined_names = {
+            "$DEBUG", "$F", "$FILENAME", "$KCODE", "$LOAD_PATH", "$SAFE", "$VERBOSE", "$CLASSPATH", "$LOADED_FEATURES",
+            "$PROGRAM_NAME", "$FIELD_SEPARATOR", "$ERROR_POSITION", "$DEFAULT_OUTPUT", "$PREMATCH", "$RS", "$MATCH",
+            "$LAST_READ_LINE", "$FS", "$INPUT_RECORD_SEPARATOR", "$PID", "$NR", "$ERROR_INFO", "$PROCESS_ID",
+            "$OUTPUT_RECORD_SEPARATOR", "$INPUT_LINE_NUMBER", "$LAST_PAREN_MATCH", "$LAST_MATCH_INFO", "$CHILD_STATUS",
+            "$IGNORECASE", "$DEFAULT_INPUT", "$OFS", "$OUTPUT_FIELD_SEPARATOR", "$POSTMATCH", "$ORS",
+            "$configure_args", "$deferr", "$defout", "$expect_verbose", "$stderr", "$stdin", "$stdout"
+        };
+    private static Set<String> predefined = new HashSet<String>();
+    
+    static {
+        predefined.addAll(Arrays.asList(predefined_names));
+    }
 
     protected static boolean isPredefined(String name) {
+        /*
         String[] patterns = {
             "\\$([\\u0021-\\u0040]|\\u005c|[\\u005e-\\u0060]|\\u007e)",
             "\\$-(\\d|[A-z])",
             "\\$(DEBUG|F|FILENAME|KCODE|LOAD_PATH|SAFE|VERBOSE|CLASSPATH|LOADED_FEATURES|PROGRAM_NAME)",
+            "\\$(FIELD_SEPARATOR|ERROR_POSITION|DEFAULT_OUTPUT|PREMATCH|RS|MATCH|LAST_READ_LINE|FS|INPUT_RECORD_SEPARATOR)",
+            "\\$(PID|NR|ERROR_INFO|PROCESS_ID|OUTPUT_RECORD_SEPARATOR|INPUT_LINE_NUMBER|LAST_PAREN_MATCH|LAST_MATCH_INFO|CHILD_STATUS)",
+            "\\$(IGNORECASE|DEFAULT_INPUT|OFS|OUTPUT_FIELD_SEPARATOR|POSTMATCH|ORS)",
             "\\$(configure_args|deferr|defout|expect_verbose|stderr|stdin|stdout)"
         };
-        for (String p : patterns) {
+         */
+        
+        for (String p : GlobalVariable.patterns) {
             if (name.matches(p)) {
                 return true;
             }
         }
+        
+        if (GlobalVariable.predefined.contains(name)) return true;
         return false;
     }
 
