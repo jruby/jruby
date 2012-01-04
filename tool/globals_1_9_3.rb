@@ -60,7 +60,6 @@ STDLIB_FILES = %w[
   rss
   rss.rb
   scanf.rb
-  securerandom.rb
   set.rb
   shell
   shell.rb

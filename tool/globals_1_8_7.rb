@@ -70,7 +70,6 @@ STDLIB_FILES = %w[
   rubyunit.rb
   runit
   scanf.rb
-  securerandom.rb
   set.rb
   shell
   shell.rb
