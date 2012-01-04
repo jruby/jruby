@@ -1274,7 +1274,7 @@
       <fail unless="mspec-available"
         message="No rubyspecs found. Download them via 'ant spec'."/>
 
-      <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="false" dir="${spec.dir}">
+      <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="false">
         <classpath refid="jruby.execute.classpath"/>
         <sysproperty key="jruby.home" value="${basedir}"/>
         <sysproperty key="jruby.launch.inproc" value="false"/>
