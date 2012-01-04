@@ -172,6 +172,7 @@ import org.jruby.compiler.ir.instructions.ThreadPollInstr;
 import org.jruby.compiler.ir.instructions.ThrowExceptionInstr;
 import org.jruby.compiler.ir.instructions.UndefMethodInstr;
 import org.jruby.compiler.ir.instructions.YieldInstr;
+import org.jruby.compiler.ir.instructions.ZSuperInstr;
 import org.jruby.compiler.ir.instructions.defined.SetWithinDefinedInstr;
 import org.jruby.compiler.ir.instructions.jruby.CheckArityInstr;
 import org.jruby.compiler.ir.instructions.jruby.RestoreErrorInfoInstr;
@@ -754,7 +755,11 @@ public class IRBuilder {
                 Variable oldArgs = null;
                 MultipleAsgnNode childNode = (MultipleAsgnNode) node;
                 if (!isMasgnRoot) {
-                    Variable v = s.getNewTemporaryVariable();
+                    // Vars used to receive args should always be local-variables because
+                    // these arg values may need to be accessed by some zsuper instruction.
+                    // During interpretation, only local-vars are accessible (at least right now)
+                    // outside the scope they are defined in.
+                    Variable v = s.getLocalVariable("%_masgn_arg_" + argIndex, 0);
                     receiveBlockArg(s, v, argsArray, argIndex, isClosureArg, isSplat);
                     boolean runToAry = childNode.getHeadNode() != null && (((ListNode)childNode.getHeadNode()).childNodes().size() > 0);
                     if (runToAry) {
@@ -3050,7 +3055,7 @@ public class IRBuilder {
     
     private Operand buildSuperInScriptBody(IRScope s) {
         Variable ret = s.getNewTemporaryVariable();
-        s.addInstr(new SuperInstr(ret, getSelf(s), MethAddr.NO_METHOD, NO_ARGS, null));
+        s.addInstr(new SuperInstr(ret, getSelf(s), MethAddr.UNKNOWN_SUPER_TARGET, NO_ARGS, null));
         return ret;
     }
 
@@ -3171,6 +3176,7 @@ public class IRBuilder {
        return copyAndReturnValue(s, new Array());
     }
 
+/**
     private Operand[] getZSuperArgs(IRScope s) {
         if (s instanceof IRMethod) return ((IRMethod)s).getCallArgs();
 
@@ -3185,13 +3191,26 @@ public class IRBuilder {
         
         return sArgs;
     }
+**/
 
     public Operand buildZSuper(ZSuperNode zsuperNode, IRScope s) {
         if (s.isModuleBody()) return buildSuperInScriptBody(s);
-        
-        Operand[] args = getZSuperArgs(s);
+
         Operand block = setupCallClosure(zsuperNode.getIterNode(), s);
         if (block == null) block = s.getImplicitBlockArg();
-        return buildSuperInstr(s, block, args);
+
+        if (s instanceof IRMethod) {
+            Operand[] args = ((IRMethod)s).getCallArgs();
+            return buildSuperInstr(s, block, args);
+        } else {
+            // If we are in a block, we cannot make any assumptions about what args
+            // the super instr is going to get -- if there were no 'define_method'
+            // for defining methods, we could guarantee that the super is going to
+            // receive args from the nearest method the block is embedded in.  But,
+            // in the presence of 'define_method', all bets are off.
+            Variable ret = s.getNewTemporaryVariable();
+            s.addInstr(new ZSuperInstr(ret, block));
+            return ret;
+        }
     }
 }

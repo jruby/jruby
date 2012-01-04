@@ -16,7 +16,6 @@ import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.operands.Splat;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 
-
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
 
@@ -34,6 +33,10 @@ public class SuperInstr extends CallInstr {
         super(Operation.SUPER, CallType.SUPER, result, superMeth, receiver, args, closure);
     }
 
+    public SuperInstr(Operation op, Variable result, Operand closure) {
+        super(op, CallType.SUPER, result, MethAddr.UNKNOWN_SUPER_TARGET, null, EMPTY_OPERANDS, closure);
+    }
+
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         return new SuperInstr(ii.getRenamedVariable(getResult()), getReceiver().cloneForInlining(ii), getMethodAddr(),
@@ -49,10 +52,13 @@ public class SuperInstr extends CallInstr {
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block aBlock) {
         IRubyObject[] args = prepareArguments(context, self, getCallArgs(), currDynScope, temp);
         Block block = prepareBlock(context, self, currDynScope, temp);
+        return interpretSuper(context, self, args, block);
+    }
+
+    protected Object interpretSuper(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
         RubyModule klazz = context.getFrameKlazz();
         // SSS FIXME: Even though we may know the method name in some instances,
-        // we are not making use of it here.  It is cleaner in the sense of not
-        // relying on implicit information whose data flow doesn't show up in the IR.
+        // we are not making use of it here.
         String methodName = context.getCurrentFrame().getName(); // methAddr.getName();
 
         checkSuperDisabledOrOutOfMethod(context, klazz, methodName);
