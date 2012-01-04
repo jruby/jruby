@@ -229,7 +229,7 @@ public class RubyGlobal {
             argvArray.append(RubyString.newStringShared(runtime, argv[i].getBytes()));
         }
         runtime.defineGlobalConstant("ARGV", argvArray);
-        globals.defineReadonly("$*", new ValueAccessor(argvArray));
+        globals.define("$*", new ValueAccessor(argvArray));
 
         IAccessor d = new ValueAccessor(runtime.newString(
                 runtime.getInstanceConfig().displayedFileName()));
