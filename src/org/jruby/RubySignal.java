@@ -86,29 +86,4 @@ public class RubySignal {
     public static IRubyObject __jtrap_kernel(final IRubyObject recv, IRubyObject block, IRubyObject sig) {
         return SIGNALS.trap(recv, block, sig);
     }
-
-    private static void registerThreadDumpSignalHandler(final Ruby runtime) {
-        final String threadDumpSignal = runtime.getInstanceConfig().getThreadDumpSignal();
-        if (threadDumpSignal != null && threadDumpSignal.length() > 0) {
-            SIGNALS.trap(runtime, new BlockCallback() {
-                public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
-                    System.err.println("Ruby Thread Dump");
-                    final ThreadService threadService = runtime.getThreadService();
-                    RubyThread[] thrs = threadService.getActiveRubyThreads();
-                    for (RubyThread th : thrs) {
-                        System.err.println("\n" + th);
-                        RubyException exc = new RubyException(runtime, runtime.getRuntimeError(), "");
-                        ThreadContext tc = threadService.getThreadContextForThread(th);
-                        if (tc != null) {
-                            exc.setBacktraceData(new BacktraceData(th.javaBacktrace(), tc.createBacktrace2(0, false), false, false));
-                            exc.printBacktrace(System.err);
-                        } else {
-                            System.err.println("    [no longer alive]");
-                        }
-                    }
-                    return runtime.getNil();
-                }
-            }, threadDumpSignal);
-        }
-    }
 }// RubySignal
