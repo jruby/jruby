@@ -868,13 +868,21 @@ public class RubyIO extends RubyObject {
         return klass.newInstance(context, args, block);
     }
 
-    private IRubyObject initializeCommon19(int fileno, ModeFlags modes) {
+    private IRubyObject initializeCommon19(ThreadContext context, int fileno, IRubyObject options, ModeFlags modes) {
         try {
             ChannelDescriptor descriptor = ChannelDescriptor.getDescriptorByFileno(getRuntime().getFilenoExtMap(fileno));
 
             if (descriptor == null) throw getRuntime().newErrnoEBADFError();
 
             descriptor.checkOpen();
+
+            if (options != null && !(options instanceof RubyHash)) {
+                throw context.runtime.newTypeError(options, context.runtime.getHash());
+            }
+
+            setEncodingsFromOptions(context, (RubyHash)options);
+
+            modes = updateModesFromOptions(context, (RubyHash)options, modes);
 
             if (modes == null) modes = descriptor.getOriginalModes();
 
@@ -897,20 +905,21 @@ public class RubyIO extends RubyObject {
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE, compat = RUBY1_9)
     public IRubyObject initialize19(ThreadContext context, IRubyObject fileNumber, Block unusedBlock) {
-        return initializeCommon19(RubyNumeric.fix2int(fileNumber), null);
+        return initializeCommon19(context, RubyNumeric.fix2int(fileNumber), null, null);
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE, compat = RUBY1_9)
     public IRubyObject initialize19(ThreadContext context, IRubyObject fileNumber, IRubyObject second, Block unusedBlock) {
         int fileno = RubyNumeric.fix2int(fileNumber);
-        ModeFlags modes;
+        ModeFlags modes = null;
+        RubyHash options = null;
         if (second instanceof RubyHash) {
-            modes = parseOptions(context, second, null);
+            options = (RubyHash)second;
         } else {
             modes = parseModes19(context, second);
         }
 
-        return initializeCommon19(fileno, modes);
+        return initializeCommon19(context, fileno, options, modes);
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE, compat = RUBY1_9)
@@ -918,8 +927,7 @@ public class RubyIO extends RubyObject {
         int fileno = RubyNumeric.fix2int(fileNumber);
         ModeFlags modes = parseModes19(context, modeValue);
 
-        modes = parseOptions(context, options, modes);
-        return initializeCommon19(fileno, modes);
+        return initializeCommon19(context, fileno, options, modes);
     }
 
     protected ModeFlags parseModes(IRubyObject arg) {
@@ -4055,81 +4063,48 @@ public class RubyIO extends RubyObject {
     }
 
     /**
-     *
-     *  ==== Options
-     *  <code>opt</code> can have the following keys
-     *  :mode ::
-     *    same as <code>mode</code> parameter
-     *  :external_encoding ::
-     *    external encoding for the IO. "-" is a
-     *    synonym for the default external encoding.
-     *  :internal_encoding ::
-     *    internal encoding for the IO.
-     *    "-" is a synonym for the default internal encoding.
-     *    If the value is nil no conversion occurs.
-     *  :encoding ::
-     *    specifies external and internal encodings as "extern:intern".
-     *  :textmode ::
-     *    If the value is truth value, same as "b" in argument <code>mode</code>.
-     *  :binmode ::
-     *    If the value is truth value, same as "t" in argument <code>mode</code>.
-     *
-     *  Also <code>opt</code> can have same keys in <code>String#encode</code> for
-     *  controlling conversion between the external encoding and the internal encoding.
-     *
+     * See http://ruby-doc.org/core-1.9.3/IO.html#method-c-new for the format of modes in options
      */
-    protected ModeFlags parseOptions(ThreadContext context, IRubyObject options, ModeFlags modes) {
+    protected ModeFlags updateModesFromOptions(ThreadContext context, RubyHash options, ModeFlags modes) {
+        if (options == null || options.isNil()) return modes;
+
         Ruby runtime = context.getRuntime();
 
-        RubyHash rubyOptions = (RubyHash) options;
-
-        IRubyObject internalEncodingOption = rubyOptions.fastARef(runtime.newSymbol("internal_encoding"));
-        IRubyObject externalEncodingOption = rubyOptions.fastARef(runtime.newSymbol("external_encoding"));
-        RubyString dash = runtime.newString("-");
-        if (externalEncodingOption != null && !externalEncodingOption.isNil()) {
-            if (dash.eql(externalEncodingOption)) {
-                externalEncodingOption = runtime.getEncodingService().getDefaultExternal();
-            }
-            setExternalEncoding(context, externalEncodingOption);
+        if (options.containsKey(runtime.newSymbol("mode"))) {
+            modes = parseModes19(context, options.fastARef(runtime.newSymbol("mode")).asString());
         }
 
-        if (internalEncodingOption != null && !internalEncodingOption.isNil()) {
-            if (dash.eql(internalEncodingOption)) {
-                internalEncodingOption = runtime.getEncodingService().getDefaultInternal();
-            }
-            setInternalEncoding(context, internalEncodingOption);
-        }
+        // This duplicates the non-error behavior of MRI 1.9: the
+        // :binmode option is ORed in with other options. It does
+        // not obliterate what came before.
 
-        IRubyObject encoding = rubyOptions.fastARef(runtime.newSymbol("encoding"));
-        if (encoding != null && !encoding.isNil()) {
-            if (externalEncodingOption != null && !externalEncodingOption.isNil()) {
-                runtime.getWarnings().warn("Ignoring encoding parameter '"+ encoding +"': external_encoding is used");
-            } else if (internalEncodingOption != null && !internalEncodingOption.isNil()) {
-                runtime.getWarnings().warn("Ignoring encoding parameter '"+ encoding +"': internal_encoding is used");
-            } else {
-                parseEncodingFromString(context, encoding, 0);
+        if (options.containsKey(runtime.newSymbol("binmode")) &&
+                options.fastARef(runtime.newSymbol("binmode")).isTrue()) {
+            try {
+                modes = new ModeFlags(modes.getFlags() | ModeFlags.BINARY);
+            } catch (InvalidValueException e) {
+                /* n.b., this should be unreachable
+                    because we are changing neither read-only nor append
+                */
+                throw getRuntime().newErrnoEINVALError();
             }
         }
 
-        if (rubyOptions.containsKey(runtime.newSymbol("mode"))) {
-            modes = parseModes19(context, rubyOptions.fastARef(runtime.newSymbol("mode")).asString());
-        }
+        // This duplicates the non-error behavior of MRI 1.9: the
+        // :binmode option is ORed in with other options. It does
+        // not obliterate what came before.
 
-    // This duplicates the non-error behavior of MRI 1.9: the
-    // :binmode option is ORed in with other options. It does
-    // not obliterate what came before.
-
-    if (rubyOptions.containsKey(runtime.newSymbol("binmode")) &&
-        rubyOptions.fastARef(runtime.newSymbol("binmode")).isTrue()) {
-        try {
-            modes = new ModeFlags(modes.getFlags() | ModeFlags.BINARY);
-        } catch (InvalidValueException e) {
-            /* n.b., this should be unreachable
-                because we are changing neither read-only nor append
-            */
-            throw getRuntime().newErrnoEINVALError();
+        if (options.containsKey(runtime.newSymbol("binmode")) &&
+                options.fastARef(runtime.newSymbol("binmode")).isTrue()) {
+            try {
+                modes = new ModeFlags(modes.getFlags() | ModeFlags.BINARY);
+            } catch (InvalidValueException e) {
+                /* n.b., this should be unreachable
+                    because we are changing neither read-only nor append
+                */
+                throw getRuntime().newErrnoEINVALError();
+            }
         }
-    }
 
 //      FIXME: check how ruby 1.9 handles this
 
@@ -4152,6 +4127,21 @@ public class RubyIO extends RubyObject {
 //        }
 
         return modes;
+    }
+
+    /**
+     * See http://ruby-doc.org/core-1.9.3/IO.html#method-c-new for the format of encodings in options
+     */
+    protected void setEncodingsFromOptions(ThreadContext context, RubyHash options) {
+        if (options == null || options.isNil()) return;
+
+        EncodingOption encodingOption = extractEncodingOptions(options);
+
+        if (encodingOption == null) return;
+
+        externalEncoding = encodingOption.externalEncoding;
+        if (encodingOption.internalEncoding == externalEncoding) return;
+        internalEncoding = encodingOption.internalEncoding;
     }
 
     public static class EncodingOption {
@@ -4180,10 +4170,10 @@ public class RubyIO extends RubyObject {
 
     // c: rb_io_extract_encoding_option
     public static EncodingOption extractEncodingOptions(IRubyObject options) {
+        if (options == null || options.isNil() || !(options instanceof RubyHash)) return null;
+
         RubyHash opts = (RubyHash) options;
-        if (opts.isNil()) {
-            return null;
-        }
+
         Ruby runtime = options.getRuntime();
         IRubyObject encOption = opts.fastARef(runtime.newSymbol("encoding"));
         IRubyObject extOption = opts.fastARef(runtime.newSymbol("external_encoding"));
@@ -4211,6 +4201,7 @@ public class RubyIO extends RubyObject {
         boolean set = false;
         Encoding extEncoding = null;
         Encoding intEncoding = null;
+
         if (extOption != null) {
             set = true;
             if (!extOption.isNil()) {
@@ -4229,6 +4220,7 @@ public class RubyIO extends RubyObject {
         }
         if (!set)
             return null;
+
         return createEncodingOption(runtime, extEncoding, intEncoding, false);
     }
 
@@ -4255,23 +4247,15 @@ public class RubyIO extends RubyObject {
 
     private static EncodingOption createEncodingOption(Ruby runtime, Encoding extEncoding,
             Encoding intEncoding, boolean isBom) {
-        boolean defaultExt = false;
         if (extEncoding == null) {
             extEncoding = runtime.getDefaultExternalEncoding();
-            defaultExt = true;
         }
-        if (intEncoding == null
-                && extEncoding != runtime.getEncodingService().getAscii8bitEncoding()) {
+        if (intEncoding == null) {
             intEncoding = runtime.getDefaultInternalEncoding();
         }
-        if (intEncoding == null || intEncoding == extEncoding) {
-            if (defaultExt && intEncoding != extEncoding) {
-                intEncoding = null;
-            } else {
-                intEncoding = extEncoding;
-            }
-            extEncoding = null;
-        }
+        // NOTE: This logic used to do checks for int == ext, etc, like in rb_io_ext_int_to_encs,
+        // but that logic seems specific to how MRI's IO sets up "enc" and "enc2". We explicitly separate
+        // external and internal, so consumers should decide how to deal with int == ext.
         return new EncodingOption(extEncoding, intEncoding, isBom);
     }
     
