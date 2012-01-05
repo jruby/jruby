@@ -474,12 +474,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         String modeString = "r";
         ModeFlags modes = new ModeFlags();
+        RubyHash options = null;
         int perm = 0;
 
         try {
             if (args.length > 1) {
                 if (args[1] instanceof RubyHash) {
-                    modes = parseOptions(context, args[1], modes);
+                    options = (RubyHash)args[1];
                 } else {
                     modes = parseModes19(context, args[1]);
                     
@@ -492,17 +493,19 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             } else {
                 modes = parseModes19(context, RubyString.newString(runtime, modeString));
             }
+
             if (args.length > 2 && !args[2].isNil()) {
                 if (args[2] instanceof RubyHash) {
-                    modes = parseOptions(context, args[2], modes);
+                    options = (RubyHash)args[2];
                 } else {
                     perm = getFilePermissions(args);
                 }
             }
+
             if (perm > 0) {
-                sysopenInternal(path, modes, perm);
+                sysopenInternal19(context, path, options, modes, perm);
             } else {
-                openInternal(path, modeString, modes);
+                openInternal19(context, path, options, modeString, modes);
             }
         } catch (InvalidValueException ex) {
             throw runtime.newErrnoEINVALError();
@@ -547,18 +550,32 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return (args.length > 2 && !args[2].isNil()) ? RubyNumeric.num2int(args[2]) : 438;
     }
 
+    protected void sysopenInternal19(ThreadContext context, String path, RubyHash options, ModeFlags modes, int perm) throws InvalidValueException {
+        setEncodingsFromOptions(context, options);
+        modes = updateModesFromOptions(context, options, modes);
+
+        sysopenInternal(path, modes, perm);
+    }
+
     protected void sysopenInternal(String path, ModeFlags modes, int perm) throws InvalidValueException {
         openFile = new OpenFile();
-        
+
         openFile.setPath(path);
         openFile.setMode(modes.getOpenFileFlags());
         if (modes.isBinary()) externalEncoding = ASCIIEncoding.INSTANCE;
 
         int umask = getUmaskSafe( getRuntime() );
         perm = perm - (perm & umask);
-        
+
         ChannelDescriptor descriptor = sysopen(path, modes, perm);
         openFile.setMainStream(fdopen(descriptor, modes));
+    }
+
+    protected void openInternal19(ThreadContext context, String path, RubyHash options, String modeString, ModeFlags modes) throws InvalidValueException {
+        setEncodingsFromOptions(context, options);
+        modes = updateModesFromOptions(context, options, modes);
+
+        openInternal(path, modeString, modes);
     }
 
     protected void openInternal(String path, String modeString, ModeFlags modes) throws InvalidValueException {
@@ -1280,7 +1297,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
      * the path to the absolute path of the user's home directory. If the 
      * string does not begin with ~, then the string is simply returned.
      * unaltered.
-     * @param recv
+     * @param context
      * @param path Path to check
      * @return Expanded path
      */
