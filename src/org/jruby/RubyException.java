@@ -161,6 +161,20 @@ public class RubyException extends RubyObject {
         }
     }
 
+    /**
+     * Prepare an "integrated" backtrace that includes the normal Ruby trace plus non-filtered Java frames. Used by
+     * Java integration to show the Java frames for a JI-called method.
+     *
+     * @param context
+     * @param javaTrace
+     */
+    public void prepareIntegratedBacktrace(ThreadContext context, StackTraceElement[] javaTrace) {
+        // if it's null, build a backtrace
+        if (backtraceData == null) {
+            backtraceData = context.runtime.getInstanceConfig().getTraceType().getIntegratedBacktrace(context, javaTrace);
+        }
+    }
+
     public void forceBacktrace(IRubyObject backtrace) {
         backtraceData = BacktraceData.EMPTY;
         set_backtrace(backtrace);

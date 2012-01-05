@@ -145,7 +145,7 @@ public class RaiseException extends JumpException {
         super(buildMessage(cause), cause);
         providedMessage = buildMessage(cause);
         setException(nativeException, true);
-        preRaise(nativeException.getRuntime().getCurrentContext());
+        preRaise(nativeException.getRuntime().getCurrentContext(), nativeException.getCause().getStackTrace());
     }
 
     /**
@@ -157,9 +157,9 @@ public class RaiseException extends JumpException {
 
     public static RaiseException createNativeRaiseException(Ruby runtime, Throwable cause, Member target) {
         NativeException nativeException = new NativeException(runtime, runtime.getClass(NativeException.CLASS_NAME), cause);
-        if (!runtime.getDebug().isTrue() && target != null) {
-            nativeException.trimStackTrace(target);
-        }
+
+        // FIXME: someday, add back filtering of reflection/handle methods between JRuby and target
+
         return new RaiseException(cause, nativeException);
     }
 
@@ -192,7 +192,17 @@ public class RaiseException extends JumpException {
     }
 
     private void preRaise(ThreadContext context) {
-        preRaise(context, null);
+        preRaise(context, (IRubyObject)null);
+    }
+
+    private void preRaise(ThreadContext context, StackTraceElement[] javaTrace) {
+        context.runtime.incrementExceptionCount();
+        doSetLastError(context);
+        doCallEventHook(context);
+
+        exception.prepareIntegratedBacktrace(context, javaTrace);
+
+        if (RubyInstanceConfig.LOG_EXCEPTIONS) TraceType.dumpException(exception);
     }
 
     private void preRaise(ThreadContext context, IRubyObject backtrace) {

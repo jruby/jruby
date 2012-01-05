@@ -4,6 +4,8 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
+
 import org.jruby.Ruby;
 import org.jruby.compiler.JITCompiler;
 import org.jruby.util.JavaNameMangler;
@@ -14,17 +16,22 @@ public class BacktraceData implements Serializable {
     private final BacktraceElement[] rubyTrace;
     private final boolean fullTrace;
     private final boolean maskNative;
+    private final boolean includeNonFiltered;
 
-    public BacktraceData(StackTraceElement[] javaTrace, BacktraceElement[] rubyTrace, boolean fullTrace, boolean maskNative) {
+    private final Pattern FILTER_CLASSES = Pattern.compile("^(org\\.jruby)|(sun\\.reflect)");
+
+    public BacktraceData(StackTraceElement[] javaTrace, BacktraceElement[] rubyTrace, boolean fullTrace, boolean maskNative, boolean includeNonFiltered) {
         this.javaTrace = javaTrace;
         this.rubyTrace = rubyTrace;
         this.fullTrace = fullTrace;
+        this.includeNonFiltered = includeNonFiltered;
         this.maskNative = maskNative;
     }
 
     public static final BacktraceData EMPTY = new BacktraceData(
             new StackTraceElement[0],
             new BacktraceElement[0],
+            false,
             false,
             false);
 
@@ -44,7 +51,9 @@ public class BacktraceData implements Serializable {
         // interpreter frame we encounter in the Java backtrace.
         int rubyFrameIndex = rubyTrace == null ? -1 : rubyTrace.length - 1;
         for (int i = 0; i < javaTrace.length; i++) {
+
             StackTraceElement element = javaTrace[i];
+
             if (
                     element.getFileName() != null &&
                     (element.getFileName().endsWith(".rb")
@@ -55,6 +64,7 @@ public class BacktraceData implements Serializable {
                 if (element.getLineNumber() == -1) {
                     continue;
                 }
+
                 String methodName = element.getMethodName();
                 String className = element.getClassName();
                 // FIXME: Formalize jitted method structure so this isn't quite as hacky
@@ -80,6 +90,7 @@ public class BacktraceData implements Serializable {
                     }
                     continue;
                 }
+
                 int RUBYindex = methodName.indexOf("$RUBY$");
                 if (RUBYindex >= 0) {
                     // if it's a synthetic call, use it but gobble up parent calls
@@ -127,20 +138,16 @@ public class BacktraceData implements Serializable {
                     continue;
                 }
             }
+
             String dotClassMethod = element.getClassName() + "." + element.getMethodName();
             String rubyName = null;
-            if (fullTrace || (rubyName = boundMethods.get(dotClassMethod)) != null) {
-                String filename = element.getFileName();
+            if (
+                    fullTrace || // full traces show all elements
+                    (rubyName = boundMethods.get(dotClassMethod)) != null // if a bound Java impl, always show
+                    ) {
 
-                // stick package on the beginning
-                if (filename == null) {
-                    filename = element.getClassName().replaceAll("\\.", "/");
-                } else {
-                    int lastDot = element.getClassName().lastIndexOf('.');
-                    if (lastDot != -1) {
-                        filename = element.getClassName().substring(0, lastDot + 1).replaceAll("\\.", "/") + filename;
-                    }
-                }
+                String filename = packagedFilenameFromElement(element);
+
                 if (maskNative) {
                     // for Kernel#caller, don't show .java frames in the trace
                     dupFrame = true;
@@ -155,6 +162,7 @@ public class BacktraceData implements Serializable {
                     continue;
                 }
             }
+
             String classMethod = element.getClassName() + "." + element.getMethodName();
             FrameType frameType = FrameType.INTERPRETED_FRAMES.get(classMethod);
             if (frameType != null && rubyFrameIndex >= 0) {
@@ -170,8 +178,41 @@ public class BacktraceData implements Serializable {
                 rubyFrameIndex--;
                 continue;
             }
+
+            // if all else fails and this is a non-JRuby element we want to include, add it
+            if (includeNonFiltered && !isFilteredClass(element.getClassName())) {
+                trace.add(new RubyStackTraceElement(
+                        element.getClassName(),
+                        element.getMethodName(),
+                        packagedFilenameFromElement(element),
+                        element.getLineNumber(),
+                        false
+                ));
+                continue;
+            }
         }
+
         RubyStackTraceElement[] rubyStackTrace = new RubyStackTraceElement[trace.size()];
         return (RubyStackTraceElement[]) trace.toArray(rubyStackTrace);
+    }
+
+    private static String packagedFilenameFromElement(StackTraceElement element) {
+        String filename = element.getFileName();
+
+        // stick package on the beginning
+        if (filename == null) {
+            filename = element.getClassName().replaceAll("\\.", "/");
+        } else {
+            int lastDot = element.getClassName().lastIndexOf('.');
+            if (lastDot != -1) {
+                filename = element.getClassName().substring(0, lastDot + 1).replaceAll("\\.", "/") + filename;
+            }
+        }
+
+        return filename;
+    }
+
+    private boolean isFilteredClass(String className) {
+        return FILTER_CLASSES.matcher(className).find();
     }
 }

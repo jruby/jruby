@@ -3,7 +3,7 @@ package org.jruby.runtime.backtrace;
 import java.io.ByteArrayOutputStream;
 import java.io.FileDescriptor;
 import java.io.PrintStream;
-import java.util.ArrayList;
+
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
@@ -27,8 +27,26 @@ public class TraceType {
         this.format = format;
     }
 
+    /**
+     * Get a normal Ruby backtrace, using the current Gather type.
+     *
+     * @param context
+     * @param nativeException
+     * @return
+     */
     public BacktraceData getBacktrace(ThreadContext context, boolean nativeException) {
         return gather.getBacktraceData(context, nativeException);
+    }
+
+    /**
+     * Get an integrated Ruby/Java backtrace if the current Gather type is NORMAL
+     *
+     * @param context
+     * @param javaTrace
+     * @return
+     */
+    public BacktraceData getIntegratedBacktrace(ThreadContext context, StackTraceElement[] javaTrace) {
+        return gather.getIntegratedBacktraceData(context, javaTrace);
     }
 
     public String printBacktrace(RubyException exception, boolean console) {
@@ -71,11 +89,12 @@ public class TraceType {
          * Full raw backtraces with all Java frames included.
          */
         RAW {
-            public BacktraceData getBacktraceData(ThreadContext context, Thread thread, boolean nativeException) {
+            public BacktraceData getBacktraceData(ThreadContext context, StackTraceElement[] javaTrace, boolean nativeException) {
                 return new BacktraceData(
-                        thread.getStackTrace(),
+                        javaTrace,
                         new BacktraceElement[0],
                         true,
+                        false,
                         false);
             }
         },
@@ -84,12 +103,27 @@ public class TraceType {
          * A backtrace with interpreted frames intact, but don't remove Java frames.
          */
         FULL {
-            public BacktraceData getBacktraceData(ThreadContext context, Thread thread, boolean nativeException) {
+            public BacktraceData getBacktraceData(ThreadContext context, StackTraceElement[] javaTrace, boolean nativeException) {
         return new BacktraceData(
-                        thread.getStackTrace(),
+                        javaTrace,
                         context.createBacktrace2(0, nativeException),
                         true,
+                        false,
                         false);
+            }
+        },
+
+        /**
+         * A normal Ruby-style backtrace, but which includes any non-org.jruby frames
+         */
+        INTEGRATED {
+            public BacktraceData getBacktraceData(ThreadContext context, StackTraceElement[] javaTrace, boolean nativeException) {
+                return new BacktraceData(
+                        javaTrace,
+                        context.createBacktrace2(0, nativeException),
+                        false,
+                        false,
+                        true);
             }
         },
 
@@ -97,10 +131,11 @@ public class TraceType {
          * Normal Ruby-style backtrace, showing only Ruby and core class methods.
          */
         NORMAL {
-            public BacktraceData getBacktraceData(ThreadContext context, Thread thread, boolean nativeException) {
+            public BacktraceData getBacktraceData(ThreadContext context, StackTraceElement[] javaTrace, boolean nativeException) {
                 return new BacktraceData(
-                        thread.getStackTrace(),
+                        javaTrace,
                         context.createBacktrace2(0, nativeException),
+                        false,
                         false,
                         false);
             }
@@ -110,24 +145,56 @@ public class TraceType {
          * Normal Ruby-style backtrace, showing only Ruby and core class methods.
          */
         CALLER {
-            public BacktraceData getBacktraceData(ThreadContext context, Thread thread, boolean nativeException) {
+            public BacktraceData getBacktraceData(ThreadContext context, StackTraceElement[] javaTrace, boolean nativeException) {
                 return new BacktraceData(
-                        thread.getStackTrace(),
+                        javaTrace,
                         context.createBacktrace2(0, nativeException),
                         false,
-                        true);
+                        true,
+                        false);
             }
         };
 
+        /**
+         * Gather backtrace data for a normal Ruby trace.
+         *
+         * @param context
+         * @param nativeException
+         * @return
+         */
         public BacktraceData getBacktraceData(ThreadContext context, boolean nativeException) {
-            BacktraceData data = getBacktraceData(context, Thread.currentThread(), nativeException);
+            BacktraceData data = getBacktraceData(context, Thread.currentThread().getStackTrace(), nativeException);
 
             context.runtime.incrementBacktraceCount();
             if (RubyInstanceConfig.LOG_BACKTRACES) logBacktrace(data.getBacktrace(context.runtime));
 
             return data;
         }
-        public abstract BacktraceData getBacktraceData(ThreadContext context, Thread thread, boolean nativeException);
+
+        /**
+         * Gather backtrace data for an integrated trace if the current gather type is "NORMAL", otherwise use the
+         * current gather type.
+         * 
+         * @param context
+         * @param javaTrace
+         * @return
+         */
+        public BacktraceData getIntegratedBacktraceData(ThreadContext context, StackTraceElement[] javaTrace) {
+            Gather useGather = this;
+
+            if (useGather == NORMAL) {
+                useGather = INTEGRATED;
+            }
+            
+            BacktraceData data = useGather.getBacktraceData(context, javaTrace, false);
+
+            context.runtime.incrementBacktraceCount();
+            if (RubyInstanceConfig.LOG_BACKTRACES) logBacktrace(data.getBacktrace(context.runtime));
+
+            return data;
+        }
+
+        public abstract BacktraceData getBacktraceData(ThreadContext context, StackTraceElement[] javaTrace, boolean nativeException);
     }
     
     public enum Format {
@@ -306,14 +373,6 @@ public class TraceType {
         }
 
         return traceArray;
-    }
-
-    protected static BacktraceData getBacktrace(ThreadContext context, Gather gather, boolean nativeException, boolean full, boolean maskNative) {
-        return new BacktraceData(
-                Thread.currentThread().getStackTrace(),
-                context.createBacktrace2(0, nativeException),
-                full,
-                maskNative);
     }
 
     private static void printErrorPos(ThreadContext context, PrintStream errorStream) {
