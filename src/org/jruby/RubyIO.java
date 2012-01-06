@@ -168,8 +168,16 @@ public class RubyIO extends RubyObject {
     }
 
     public RubyIO(Ruby runtime, ShellLauncher.POpenProcess process, ModeFlags modes) {
-    	super(runtime, runtime.getIO());
-        
+        this(runtime, runtime.getIO(), process, null, modes);
+    }
+
+    public RubyIO(Ruby runtime, RubyClass cls, ShellLauncher.POpenProcess process, RubyHash options, ModeFlags modes) {
+        super(runtime, cls);
+
+        setEncodingsFromOptions(runtime.getCurrentContext(), (RubyHash)options);
+
+        modes = updateModesFromOptions(runtime.getCurrentContext(), (RubyHash)options, modes);
+
         openFile = new OpenFile();
         
         openFile.setMode(modes.getOpenFileFlags() | OpenFile.SYNC);
@@ -3703,7 +3711,7 @@ public class RubyIO extends RubyObject {
                 }
             }
 
-            RubyIO io = new RubyIO(runtime, process, modes);
+            RubyIO io = new RubyIO(runtime, (RubyClass)recv, process, options, modes);
 
             if (block.isGiven()) {
                 try {
