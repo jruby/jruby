@@ -52,6 +52,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jnr.posix.util.ProcessMaker;
 import org.jruby.Main;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -67,7 +68,6 @@ import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.io.Java5ProcessMaker;
 import org.jruby.util.io.ModeFlags;
 
 /**
@@ -390,11 +390,11 @@ public class ShellLauncher {
                     // execute command with sh -c
                     // this does shell expansion of wildcards
                     cfg.verifyExecutableForShell();
-                    aProcess = buildProcess(cfg.getExecArgs(), getCurrentEnv(runtime, mergeEnv), pwd);
+                    aProcess = buildProcess(runtime, cfg.getExecArgs(), getCurrentEnv(runtime, mergeEnv), pwd);
                 } else {
                     log(runtime, "Launching directly (no shell)");
                     cfg.verifyExecutableForDirect();
-                    aProcess = buildProcess(cfg.getExecArgs(), getCurrentEnv(runtime, mergeEnv), pwd);
+                    aProcess = buildProcess(runtime, cfg.getExecArgs(), getCurrentEnv(runtime, mergeEnv), pwd);
                 }
             } catch (SecurityException se) {
                 throw runtime.newSecurityError(se.getLocalizedMessage());
@@ -434,11 +434,11 @@ public class ShellLauncher {
                     // execute command with sh -c
                     // this does shell expansion of wildcards
                     cfg.verifyExecutableForShell();
-                    aProcess = buildProcess(cfg.getExecArgs(), getCurrentEnv(runtime, (Map)env), pwd);
+                    aProcess = buildProcess(runtime, cfg.getExecArgs(), getCurrentEnv(runtime, (Map)env), pwd);
                 } else {
                     log(runtime, "Launching directly (no shell)");
                     cfg.verifyExecutableForDirect();
-                    aProcess = buildProcess(cfg.getExecArgs(), getCurrentEnv(runtime, (Map)env), pwd);
+                    aProcess = buildProcess(runtime, cfg.getExecArgs(), getCurrentEnv(runtime, (Map)env), pwd);
                 }
             } catch (SecurityException se) {
                 throw runtime.newSecurityError(se.getLocalizedMessage());
@@ -460,8 +460,8 @@ public class ShellLauncher {
         }
     }
 
-    public static Process buildProcess(String[] args, String[] env, File pwd) throws IOException {
-        return new Java5ProcessMaker(args)
+    public static Process buildProcess(Ruby runtime, String[] args, String[] env, File pwd) throws IOException {
+        return runtime.getPosix().newProcessMaker(args)
                 .environment(env)
                 .directory(pwd)
                 .start();
@@ -703,9 +703,9 @@ public class ShellLauncher {
                     argArray[0] = shell;
                     argArray[1] = shell.endsWith("sh") ? "-c" : "/c";
                     argArray[2] = strings[0].asJavaString();
-                    childProcess = buildProcess(argArray, getCurrentEnv(runtime, env), pwd);
+                    childProcess = buildProcess(runtime, argArray, getCurrentEnv(runtime, env), pwd);
                 } else {
-                    childProcess = buildProcess(args, getCurrentEnv(runtime, env), pwd);
+                    childProcess = buildProcess(runtime, args, getCurrentEnv(runtime, env), pwd);
                 }
             } else {
                 if (useShell) {
@@ -713,10 +713,10 @@ public class ShellLauncher {
                     argArray[0] = shell;
                     argArray[1] = shell.endsWith("sh") ? "-c" : "/c";
                     System.arraycopy(args, 0, argArray, 2, args.length);
-                    childProcess = buildProcess(argArray, getCurrentEnv(runtime, env), pwd);
+                    childProcess = buildProcess(runtime, argArray, getCurrentEnv(runtime, env), pwd);
                 } else {
                     // direct invocation of the command
-                    childProcess = buildProcess(args, getCurrentEnv(runtime, env), pwd);
+                    childProcess = buildProcess(runtime, args, getCurrentEnv(runtime, env), pwd);
                 }
             }
         } catch (SecurityException se) {
@@ -1275,11 +1275,11 @@ public class ShellLauncher {
                 // execute command with sh -c
                 // this does shell expansion of wildcards
                 cfg.verifyExecutableForShell();
-                aProcess = buildProcess(cfg.getExecArgs(), getCurrentEnv(runtime), pwd);
+                aProcess = buildProcess(runtime, cfg.getExecArgs(), getCurrentEnv(runtime), pwd);
             } else {
                 log(runtime, "Launching directly (no shell)");
                 cfg.verifyExecutableForDirect();
-                aProcess = buildProcess(cfg.getExecArgs(), getCurrentEnv(runtime), pwd);
+                aProcess = buildProcess(runtime, cfg.getExecArgs(), getCurrentEnv(runtime), pwd);
             }
         } catch (SecurityException se) {
             throw runtime.newSecurityError(se.getLocalizedMessage());
