@@ -168,8 +168,16 @@ public class RubyIO extends RubyObject {
     }
 
     public RubyIO(Ruby runtime, ShellLauncher.POpenProcess process, ModeFlags modes) {
-    	super(runtime, runtime.getIO());
-        
+        this(runtime, runtime.getIO(), process, null, modes);
+    }
+
+    public RubyIO(Ruby runtime, RubyClass cls, ShellLauncher.POpenProcess process, RubyHash options, ModeFlags modes) {
+        super(runtime, cls);
+
+        setEncodingsFromOptions(runtime.getCurrentContext(), (RubyHash)options);
+
+        modes = updateModesFromOptions(runtime.getCurrentContext(), (RubyHash)options, modes);
+
         openFile = new OpenFile();
         
         openFile.setMode(modes.getOpenFileFlags() | OpenFile.SYNC);
@@ -3769,7 +3777,9 @@ public class RubyIO extends RubyObject {
                 }
             }
 
-            RubyIO io = new RubyIO(runtime, process, modes);
+            checkPopenOptions(options);
+
+            RubyIO io = new RubyIO(runtime, (RubyClass)recv, process, options, modes);
 
             if (block.isGiven()) {
                 try {
@@ -4271,17 +4281,8 @@ public class RubyIO extends RubyObject {
             "close_others"
     };
 
-    private static final String[] UNSUPPORTED_EXEC_OPTIONS = new String[] {
-            "unsetenv_others",
-            "prgroup",
-            "rlimit_resourcename",
-            "chdir",
-            "umask",
-            "in",
-            "out",
-            "err",
-            "close_others"
-    };
+    private static final String[] UNSUPPORTED_EXEC_OPTIONS = UNSUPPORTED_SPAWN_OPTIONS;
+    private static final String[] UNSUPPORTED_POPEN_OPTIONS = UNSUPPORTED_SPAWN_OPTIONS;
 
     /**
      * Warn when using exec with unsupported options.
@@ -4299,6 +4300,15 @@ public class RubyIO extends RubyObject {
      */
     public static void checkSpawnOptions(IRubyObject options) {
         checkOptions(options, UNSUPPORTED_SPAWN_OPTIONS, "unsupported spawn option");
+    }
+
+    /**
+     * Warn when using spawn with unsupported options.
+     *
+     * @param options
+     */
+    public static void checkPopenOptions(IRubyObject options) {
+        checkOptions(options, UNSUPPORTED_POPEN_OPTIONS, "unsupported popen option");
     }
 
     /**
