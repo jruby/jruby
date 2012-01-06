@@ -4258,6 +4258,66 @@ public class RubyIO extends RubyObject {
         // external and internal, so consumers should decide how to deal with int == ext.
         return new EncodingOption(extEncoding, intEncoding, isBom);
     }
+
+    private static final String[] UNSUPPORTED_SPAWN_OPTIONS = new String[] {
+            "unsetenv_others",
+            "prgroup",
+            "rlimit_resourcename",
+            "chdir",
+            "umask",
+            "in",
+            "out",
+            "err",
+            "close_others"
+    };
+
+    private static final String[] UNSUPPORTED_EXEC_OPTIONS = new String[] {
+            "unsetenv_others",
+            "prgroup",
+            "rlimit_resourcename",
+            "chdir",
+            "umask",
+            "in",
+            "out",
+            "err",
+            "close_others"
+    };
+
+    /**
+     * Warn when using exec with unsupported options.
+     *
+     * @param options
+     */
+    public static void checkExecOptions(IRubyObject options) {
+        checkOptions(options, UNSUPPORTED_SPAWN_OPTIONS, "unsupported exec option");
+    }
+
+    /**
+     * Warn when using spawn with unsupported options.
+     *
+     * @param options
+     */
+    public static void checkSpawnOptions(IRubyObject options) {
+        checkOptions(options, UNSUPPORTED_SPAWN_OPTIONS, "unsupported spawn option");
+    }
+
+    /**
+     * Warn when using spawn with unsupported options.
+     *
+     * @param options
+     */
+    private static void checkOptions(IRubyObject options, String[] unsupported, String error) {
+        if (options == null || options.isNil() || !(options instanceof RubyHash)) return;
+
+        RubyHash optsHash = (RubyHash)options;
+        Ruby runtime = optsHash.getRuntime();
+
+        for (String key : unsupported) {
+            if (optsHash.containsKey(runtime.newSymbol(key))) {
+                runtime.getWarnings().warn(error + ": " + key);
+            }
+        }
+    }
     
     /**
      * Try for around 1s to destroy the child process. This is to work around

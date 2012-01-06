@@ -1591,6 +1591,8 @@ public class RubyKernel {
         IRubyObject options = args[2];
         RubyArray cmdArgs = (RubyArray)args[3];
 
+        RubyIO.checkSpawnOptions(options);
+
         return execCommon(runtime, env, prog, options, cmdArgs.toJavaArray());
     }
     

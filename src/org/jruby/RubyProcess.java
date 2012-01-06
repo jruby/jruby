@@ -966,7 +966,15 @@ public class RubyProcess {
     @JRubyMethod(required = 4, module = true, compat = CompatVersion.RUBY1_9, visibility = PRIVATE)
     public static RubyFixnum _spawn_internal(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.getRuntime();
-        long pid = ShellLauncher.runExternalWithoutWait(runtime, args[0], args[1], args[2], args[3]);
+
+        IRubyObject env = args[0];
+        IRubyObject prog = args[1];
+        IRubyObject options = args[2];
+        IRubyObject arguments = args[3];
+
+        RubyIO.checkSpawnOptions(options);
+        
+        long pid = ShellLauncher.runExternalWithoutWait(runtime, env, prog, options, arguments);
         return RubyFixnum.newFixnum(runtime, pid);
     }
     
