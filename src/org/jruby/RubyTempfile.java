@@ -254,7 +254,7 @@ public class RubyTempfile extends RubyFile {
         return RubyFixnum.zero(context.getRuntime());
     }
 
-    @JRubyMethod(required = 1, optional = 1, meta = true)
+    @JRubyMethod(required = 1, optional = 1, meta = true, compat = CompatVersion.RUBY1_8)
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = context.getRuntime();
         RubyClass klass = (RubyClass) recv;
@@ -270,6 +270,23 @@ public class RubyTempfile extends RubyFile {
         }
 
         return tempfile;
+    }
+
+    @JRubyMethod(required = 1, optional = 1, meta = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject open19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        Ruby runtime = context.getRuntime();
+        RubyClass klass = (RubyClass) recv;
+        Tempfile tempfile = (Tempfile) klass.newInstance(context, args, block);
+
+        if (block.isGiven()) {
+            try {
+                return block.yield(context, tempfile);
+            } finally {
+                if (!tempfile.isClosed()) tempfile.close();
+            }
+        } else {
+            return tempfile;
+        }
     }
 
     private static final class Reaper extends PhantomReferenceReaper<RubyTempfile> implements Runnable {
