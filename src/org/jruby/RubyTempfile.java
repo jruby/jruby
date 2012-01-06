@@ -276,7 +276,7 @@ public class RubyTempfile extends RubyFile {
     public static IRubyObject open19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = context.getRuntime();
         RubyClass klass = (RubyClass) recv;
-        Tempfile tempfile = (Tempfile) klass.newInstance(context, args, block);
+        RubyTempfile tempfile = (RubyTempfile) klass.newInstance(context, args, block);
 
         if (block.isGiven()) {
             try {
