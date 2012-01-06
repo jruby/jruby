@@ -36,7 +36,7 @@ public class AllocateBindingInstr extends Instr {
     }
 
     // Can this instruction raise exceptions?
-	 // If this instruction raises an exception, you are in deep doo-doo.
+    // If this instruction raises an exception, you are in deep doo-doo.
     @Override
     public boolean canRaiseException() {
         return false;

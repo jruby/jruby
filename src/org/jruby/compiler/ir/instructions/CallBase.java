@@ -16,9 +16,6 @@ import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.CallType;
 
-/**
- *
- */
 public abstract class CallBase extends Instr {
     protected Operand   receiver;
     protected Operand[] arguments;
@@ -49,9 +46,9 @@ public abstract class CallBase extends Instr {
         return buildAllArgs(getMethodAddr(), receiver, arguments, closure);
     }
 
-	 public CallAdapter getCallAdapter() {
-		 return callAdapter;
-	 }
+    public CallAdapter getCallAdapter() {
+       return callAdapter;
+    }
 
     public MethAddr getMethodAddr() {
         return methAddr;

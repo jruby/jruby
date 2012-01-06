@@ -21,6 +21,6 @@ public class IRLoop {
         loopEndLabel   = s.getNewLabel("_LOOP_END");
         iterStartLabel = s.getNewLabel("_ITER_BEGIN");
         iterEndLabel   = s.getNewLabel("_ITER_END");
-		  loopResult = s.getNewTemporaryVariable();
+        loopResult = s.getNewTemporaryVariable();
     }
 }

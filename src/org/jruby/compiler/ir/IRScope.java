@@ -76,37 +76,37 @@ import org.jruby.util.log.LoggerFactory;
 public abstract class IRScope {
     private static final Logger LOG = LoggerFactory.getLogger("IRScope");
 
-	 /** Name */
+    /** Name */
     private String name;
 
-	 /** Lexical parent scope */
+    /** Lexical parent scope */
     private IRScope lexicalParent;
 
-	 /** Parser static-scope that this IR scope corresponds to */
+    /** Parser static-scope that this IR scope corresponds to */
     private StaticScope staticScope;
     
-	 /** Live version of module within whose context this method executes */
+    /** Live version of module within whose context this method executes */
     private RubyModule containerModule; 
     
-	 /** List of IR instructions for this method */
+    /** List of IR instructions for this method */
     private List<Instr> instructions; 
 
-	 /** Control flow graph representation of this method's instructions */
+    /** Control flow graph representation of this method's instructions */
     private CFG cfg = null;
 
-	 /** List of (nested) closures in this scope */
+    /** List of (nested) closures in this scope */
     private List<IRClosure> closures;
 
-	 /** Local variables defined in this scope */
+    /** Local variables defined in this scope */
     private Set<Variable> definedLocalVars;
 
-	 /** Local variables used in this scope */
+    /** Local variables used in this scope */
     private Set<Variable> usedLocalVars;
 
-	 /** Is %block implicit block arg unused? */
+    /** Is %block implicit block arg unused? */
     private boolean hasUnusedImplicitBlockArg = false;
 
-	 /** Map of name -> dataflow problem */
+    /** Map of name -> dataflow problem */
     private Map<String, DataFlowProblem> dfProbs = new HashMap<String, DataFlowProblem>();
 
     private Instr[] instrs = null;

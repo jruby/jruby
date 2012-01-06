@@ -58,6 +58,6 @@ public class SetReturnAddressInstr extends Instr implements ResultInstr {
 
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
-		  return returnAddr;
+        return returnAddr;
     }
 }

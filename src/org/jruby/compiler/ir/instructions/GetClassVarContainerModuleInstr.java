@@ -73,6 +73,6 @@ public class GetClassVarContainerModuleInstr extends Instr implements ResultInst
 
         if (containerModule == null) throw context.getRuntime().newTypeError("no class/module to define class variable");
 
-		  return containerModule;
+        return containerModule;
     }
 }

@@ -13,8 +13,8 @@ import org.jruby.runtime.builtin.IRubyObject;
  * the current module we contained in.
  */
 public class WrappedIRScope extends Constant {
-	 // SSS FIXME: Should we create a static dummy IRScope that can be used in place of 'null'?
-	 public static WrappedIRScope CURRENT_SCOPE = new WrappedIRScope(null);
+    // SSS FIXME: Should we create a static dummy IRScope that can be used in place of 'null'?
+    public static WrappedIRScope CURRENT_SCOPE = new WrappedIRScope(null);
 
     private final IRScope scope;
 
@@ -35,6 +35,6 @@ public class WrappedIRScope extends Constant {
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         StaticScope staticScope = this == CURRENT_SCOPE ? currDynScope.getStaticScope() : scope.getStaticScope();
 
-        return staticScope != null ? staticScope.getModule() : context.runtime.getClass(scope.getName());
+        return staticScope != null ? staticScope.getModule() : context.getRuntime().getClass(scope.getName());
     }
 }

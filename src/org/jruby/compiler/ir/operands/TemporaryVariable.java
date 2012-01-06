@@ -10,11 +10,11 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public class TemporaryVariable extends Variable {
     public final int offset;
-	 String name;
+    String name;
 
     public TemporaryVariable(int offset) {
         this.offset = offset;
-		  this.name = getPrefix() + offset;
+        this.name = getPrefix() + offset;
     }
 
     @Override

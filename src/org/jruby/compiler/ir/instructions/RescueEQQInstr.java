@@ -67,7 +67,7 @@ public class RescueEQQInstr extends Instr implements ResultInstr {
         IRubyObject value = (IRubyObject) arg2.retrieve(context, self, currDynScope, temp);
 
         if (value == UndefinedValue.UNDEFINED) {
-				return receiver;
+            return receiver;
         } else if (receiver instanceof RubyArray) {
             RubyArray testVals = (RubyArray)receiver;
             for (int i = 0, n = testVals.getLength(); i < n; i++) {

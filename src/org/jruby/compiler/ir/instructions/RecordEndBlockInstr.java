@@ -11,8 +11,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class RecordEndBlockInstr extends Instr {
-	 private IRScope declaringScope;
-	 private IRClosure endBlockClosure;
+    private IRScope declaringScope;
+    private IRClosure endBlockClosure;
 
     public RecordEndBlockInstr(IRScope declaringScope, IRClosure endBlockClosure) {
         super(Operation.RECORD_END_BLOCK);

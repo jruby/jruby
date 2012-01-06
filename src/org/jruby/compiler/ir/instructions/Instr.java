@@ -58,13 +58,13 @@ public abstract class Instr {
 
     // Can this instruction raise exceptions -- this superclass method has to be conservative and cannot affect program correctness.
     public boolean canRaiseException() { 
-		  return operation.canRaiseException();
-	 }
+        return operation.canRaiseException();
+    }
 
     // Can this instruction raise exceptions -- this superclass method has to be conservative and cannot affect program correctness.
     public boolean transfersControl() { 
-		  return operation.transfersControl();
-	 }
+        return operation.transfersControl();
+    }
 
     public boolean canBeDeleted() {
          return !hasSideEffects() && !canRaiseException() && !getOperation().isDebugOp() && !transfersControl();

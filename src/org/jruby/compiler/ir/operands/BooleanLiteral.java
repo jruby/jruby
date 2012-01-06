@@ -30,9 +30,9 @@ public class BooleanLiteral extends Constant {
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
 /*
-		  if (cachedValue == null)
+        if (cachedValue == null)
             cachedValue = interp.getRuntime().newBoolean(isTrue());
-		  return cachedValue;
+        return cachedValue;
 */
         return context.getRuntime().newBoolean(isTrue());
     }

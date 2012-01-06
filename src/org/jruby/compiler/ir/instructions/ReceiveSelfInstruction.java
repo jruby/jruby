@@ -12,8 +12,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 // SSS FIXME: ReceiveSelf should inherit from ReceiveArg?
 public class ReceiveSelfInstruction extends Instr implements ResultInstr {
     private Variable result;
-    
-	 // SSS FIXME: destination always has to be a local variable '%self'.  So, is this a redundant arg?
+
+    // SSS FIXME: destination always has to be a local variable '%self'.  So, is this a redundant arg?
     public ReceiveSelfInstruction(Variable result) {
         super(Operation.RECV_SELF);
         
