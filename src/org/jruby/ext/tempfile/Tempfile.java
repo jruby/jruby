@@ -32,6 +32,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
@@ -260,7 +261,7 @@ public class Tempfile extends RubyTempfile {
         return RubyFixnum.zero(context.getRuntime());
     }
 
-    @JRubyMethod(required = 1, optional = 1, meta = true)
+    @JRubyMethod(required = 1, optional = 1, meta = true, compat = CompatVersion.RUBY1_8)
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = context.getRuntime();
         RubyClass klass = (RubyClass) recv;
@@ -276,6 +277,23 @@ public class Tempfile extends RubyTempfile {
         }
 
         return tempfile;
+    }
+
+    @JRubyMethod(required = 1, optional = 1, meta = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject open19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        Ruby runtime = context.getRuntime();
+        RubyClass klass = (RubyClass) recv;
+        Tempfile tempfile = (Tempfile) klass.newInstance(context, args, block);
+
+        if (block.isGiven()) {
+            try {
+                return block.yield(context, tempfile);
+            } finally {
+                if (!tempfile.isClosed()) tempfile.close();
+            }
+        } else {
+            return tempfile;
+        }
     }
 
     private static final class Reaper extends PhantomReferenceReaper<Tempfile> implements Runnable {
