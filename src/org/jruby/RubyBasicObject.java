@@ -1768,7 +1768,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
                 return setupBlock(block).yieldNonArray(context, valueInYield, this, context.getRubyClass());
             } else {
                 IRubyObject valueInYield = RubyArray.newArrayNoCopy(context.getRuntime(), args);
-                return block.yieldArray(context, valueInYield, this, context.getRubyClass());
+                return setupBlock(block).yieldArray(context, valueInYield, this, context.getRubyClass());
             }
             //TODO: Should next and return also catch here?
         } catch (JumpException.BreakJump bj) {
