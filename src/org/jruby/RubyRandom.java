@@ -56,6 +56,10 @@ public class RubyRandom extends RubyObject {
         runtime.setRandomClass(randomClass);
 
         randomClass.defineAnnotatedMethods(RubyRandom.class);
+        
+        // initialize the global seed by triggering an iteration
+        srandCommon(runtime.getCurrentContext(), randomClass, runtime.getNil(), false);
+        
         return randomClass;
     }
 

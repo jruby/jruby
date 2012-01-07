@@ -1179,10 +1179,6 @@ public final class Ruby {
 
         encodingService = new EncodingService(this);
 
-        if (is1_9()) {
-            RubyRandom.createRandomClass(this);
-        }
-
         RubySymbol.createSymbolClass(this);
 
         if (profile.allowClass("ThreadGroup")) {
@@ -1299,6 +1295,10 @@ public final class Ruby {
         }
         if (profile.allowClass("Continuation")) {
             RubyContinuation.createContinuation(this);
+        }
+
+        if (is1_9()) {
+            RubyRandom.createRandomClass(this);
         }
     }
 
