@@ -1140,7 +1140,7 @@ public final class Ruby {
         }
 
         if (config.getLoadGemfile()) {
-            loadService.load("jruby/bundler/startup.rb", false);
+            loadService.loadFromClassLoader(getClassLoader(), "jruby/bundler/startup.rb", false);
         }
 
         // Require in all libraries specified on command line
@@ -1566,14 +1566,14 @@ public final class Ruby {
     
     private void initRubyKernel() {
         // load Ruby parts of core
-        loadService.load("jruby/kernel.rb", false);
+        loadService.loadFromClassLoader(getClassLoader(), "jruby/kernel.rb", false);
         
         switch (config.getCompatVersion()) {
             case RUBY1_8:
-                loadService.load("jruby/kernel18.rb", false);
+                loadService.loadFromClassLoader(getClassLoader(), "jruby/kernel18.rb", false);
                 break;
             case RUBY1_9:
-                loadService.load("jruby/kernel19.rb", false);
+                loadService.loadFromClassLoader(getClassLoader(), "jruby/kernel19.rb", false);
                 break;
         }
     }

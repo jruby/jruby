@@ -308,6 +308,27 @@ public class LoadService {
         }
     }
 
+    public void loadFromClassLoader(ClassLoader classLoader, String file, boolean wrap) {
+        SearchState state = new SearchState(file);
+        state.prepareLoadSearch(file);
+
+        Library library = null;
+        LoadServiceResource resource = getClassPathResource(classLoader, file);
+        if (resource != null) {
+            state.loadName = resolveLoadName(resource, file);
+            library = createLibrary(state, resource);
+        }
+        if (library == null) {
+            throw runtime.newLoadError("no such file to load -- " + file);
+        }
+        try {
+            library.load(runtime, wrap);
+        } catch (IOException e) {
+            if (runtime.getDebug().isTrue()) e.printStackTrace(runtime.getErr());
+            throw newLoadErrorFromThrowable(runtime, file, e);
+        }
+    }
+
     public SearchState findFileForLoad(String file) {
         if (Platform.IS_WINDOWS) {
             file = file.replace('\\', '/');
