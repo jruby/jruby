@@ -13,7 +13,7 @@ public class RenamedVariable extends TemporaryVariable {
     }
 
     @Override
-    public String getPrefix() {
+    protected String getPrefix() {
         return this.prefix + "_";
     }
 }

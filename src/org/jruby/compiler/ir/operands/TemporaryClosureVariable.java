@@ -13,8 +13,14 @@ public class TemporaryClosureVariable extends TemporaryVariable {
         this.name = getPrefix() + offset;
     }
 
+    public TemporaryClosureVariable(String name, int offset) {
+        super(name, offset);
+        this.closureId = -1;
+        this.prefix = "";
+    }
+
     @Override
-    public String getPrefix() {
+    protected String getPrefix() {
         return this.prefix;
     }
 }

@@ -101,6 +101,11 @@ public class IRClosure extends IRScope {
         return new TemporaryClosureVariable(closureId, temporaryVariableIndex);
     }
 
+    public Variable getNewTemporaryVariable(String name) {
+        temporaryVariableIndex++;
+        return new TemporaryClosureVariable(name, temporaryVariableIndex);
+    }    
+
     @Override
     public Label getNewLabel() {
         return getNewLabel("CL" + closureId + "_LBL");

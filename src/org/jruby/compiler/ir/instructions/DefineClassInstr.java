@@ -55,7 +55,7 @@ public class DefineClassInstr extends Instr implements ResultInstr {
 
     @Override
     public String toString() {
-        return super.toString() + "(" + container + ", " + superClass + ")";
+        return super.toString() + "(" + newIRClassBody.getName() + ", " + container + ", " + superClass + ")";
     }
 
     @Override
@@ -85,7 +85,7 @@ public class DefineClassInstr extends Instr implements ResultInstr {
         Object rubyContainer = container.retrieve(context, self, currDynScope, temp);
         
         if (!(rubyContainer instanceof RubyModule)) throw context.getRuntime().newTypeError("no outer class/module");
-        
+
         RubyModule newRubyClass = newClass(context, self, (RubyModule) rubyContainer, currDynScope, temp);
 
         // Interpret the body

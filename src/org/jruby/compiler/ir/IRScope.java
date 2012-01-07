@@ -425,14 +425,14 @@ public abstract class IRScope {
         runCompilerPass(new LinearizeCFG());
         printPass("After CFG Linearize");
     }
-    
+
     private void printPass(String message) {
         if (RubyInstanceConfig.IR_COMPILER_DEBUG) {
             LOG.info("################## " + message + "##################");
             runCompilerPass(new IRPrinter());        
-        }
+		  }
     }
-    
+
     public void computeExecutionScopeFlags() {
         // init
         canModifyCode = true;
@@ -617,6 +617,14 @@ public abstract class IRScope {
         return Self.SELF;
     }
 
+    public Variable getCurrentModuleVariable() {
+        return getNewTemporaryVariable(Variable.CURRENT_MODULE);
+    }
+
+    public Variable getCurrentScopeVariable() {
+        return getNewTemporaryVariable(Variable.CURRENT_SCOPE);
+    }
+
     public abstract LocalVariable getImplicitBlockArg();
 
     public void markUnusedImplicitBlockArg() {
@@ -655,6 +663,11 @@ public abstract class IRScope {
         return new TemporaryVariable(temporaryVariableIndex);
     }    
 
+    public Variable getNewTemporaryVariable(String name) {
+        temporaryVariableIndex++;
+        return new TemporaryVariable(name, temporaryVariableIndex);
+    }    
+
     public void resetTemporaryVariables() {
         temporaryVariableIndex = -1;
     }
@@ -675,8 +688,8 @@ public abstract class IRScope {
 
     public int getUsedVariablesCount() {
         // System.out.println("For " + this + ", # lvs: " + nextLocalVariableSlot);
-        // %block, # local vars, # flip vars
-        return (hasUnusedImplicitBlockArg ? 0 : 1) + localVars.nextSlot + getPrefixCountSize("%flip");
+        // # local vars, # flip vars
+        return localVars.nextSlot + getPrefixCountSize("%flip");
     }
     
     public void setUpUseDefLocalVarMaps() {

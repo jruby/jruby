@@ -1,5 +1,7 @@
 package org.jruby.compiler.ir.instructions;
 
+import java.util.Map;
+
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.UndefinedValue;
@@ -22,7 +24,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 // this call to the parent scope.
 
 public class SearchConstInstr extends Instr implements ResultInstr {
-    IRScope definingModule;
+    Operand definingScope;
     String constName;
     private Variable result;
 
@@ -30,18 +32,24 @@ public class SearchConstInstr extends Instr implements ResultInstr {
     private volatile transient Object cachedConstant = null;
     private Object generation = -1;
 
-    public SearchConstInstr(Variable result, IRScope definingModule, String constName) {
+    public SearchConstInstr(Variable result, Operand definingScope, String constName) {
         super(Operation.SEARCH_CONST);
         
         assert result != null: "SearchConstInstr result is null";
         
-        this.definingModule = definingModule;
+        this.definingScope = definingScope;
         this.constName = constName;
         this.result = result;
     }
 
+    @Override
     public Operand[] getOperands() { 
-        return EMPTY_OPERANDS;
+        return new Operand[] { definingScope };
+    }
+
+    @Override
+    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
+        definingScope = definingScope.getSimplifiedOperand(valueMap, force);
     }
     
     public Variable getResult() {
@@ -53,16 +61,16 @@ public class SearchConstInstr extends Instr implements ResultInstr {
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new SearchConstInstr(ii.getRenamedVariable(result), definingModule, constName);
+        return new SearchConstInstr(ii.getRenamedVariable(result), definingScope, constName);
     }
 
     @Override
     public String toString() { 
-        return super.toString() + "(" + (definingModule == null ? "-dynamic-" : definingModule.getName()) + "," + constName  + ")";
+        return super.toString() + "(" + definingScope + "," + constName  + ")";
     }
 
-    private Object cache(DynamicScope currDynScope, Ruby runtime, Object constant) {
-        StaticScope staticScope = definingModule == null ? currDynScope.getStaticScope() : definingModule.getStaticScope();
+    private Object cache(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Ruby runtime, Object constant) {
+        StaticScope staticScope = (StaticScope) definingScope.retrieve(context, self, currDynScope, temp);
         RubyModule object = runtime.getObject();
         if (staticScope == null) { // FIXME: Object scope has no staticscope yet
             constant = object.getConstant(constName);
@@ -87,7 +95,7 @@ public class SearchConstInstr extends Instr implements ResultInstr {
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         Ruby runtime = context.getRuntime();
         Object constant = cachedConstant; // Store to temp so it does null out on us mid-stream
-        if (!isCached(runtime, constant)) constant = cache(currDynScope, runtime, constant);
+        if (!isCached(runtime, constant)) constant = cache(context, currDynScope, self, temp, runtime, constant);
 
         return constant;
     }

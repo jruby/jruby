@@ -1,5 +1,7 @@
 package org.jruby.compiler.ir.instructions;
 
+import java.util.Map;
+
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
@@ -14,22 +16,28 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ConstMissingInstr extends Instr implements ResultInstr {
-    private IRScope definingModule;
+    private Operand definingScope;
     private String  missingConst;
     private Variable result;
 
-    public ConstMissingInstr(Variable result, IRScope definingModule, String missingConst) {
+    public ConstMissingInstr(Variable result, Operand definingScope, String missingConst) {
         super(Operation.CONST_MISSING);
         
         assert result != null: "ConstMissingInstr result is null";
         
-        this.definingModule = definingModule;
+        this.definingScope = definingScope;
         this.missingConst = missingConst;
         this.result = result;
     }
 
+    @Override
     public Operand[] getOperands() { 
-        return EMPTY_OPERANDS;
+        return new Operand[] { definingScope };
+    }
+
+    @Override
+    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
+        definingScope = definingScope.getSimplifiedOperand(valueMap, force);
     }
     
     public Variable getResult() {
@@ -41,17 +49,17 @@ public class ConstMissingInstr extends Instr implements ResultInstr {
     }
     
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new ConstMissingInstr(ii.getRenamedVariable(result), definingModule, missingConst);
+        return new ConstMissingInstr(ii.getRenamedVariable(result), definingScope, missingConst);
     }
 
     @Override
     public String toString() { 
-        return super.toString() + "(" + (definingModule == null ? "-dynamic-" : definingModule.getName()) + "," + missingConst  + ")";
+        return super.toString() + "(" + definingScope + "," + missingConst  + ")";
     }
 
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
-        StaticScope staticScope = definingModule == null ? currDynScope.getStaticScope() : definingModule.getStaticScope();
+        StaticScope staticScope = (StaticScope) definingScope.retrieve(context, self, currDynScope, temp);
         return staticScope.getModule().callMethod(context, "const_missing", context.getRuntime().fastNewSymbol(missingConst));
     }
 }

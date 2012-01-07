@@ -17,6 +17,12 @@ public class TemporaryVariable extends Variable {
         this.name = getPrefix() + offset;
     }
 
+	 // Used for temporary variables like %current_module, %_arg_array
+    public TemporaryVariable(String name, int offset) {
+        this.offset = offset;
+        this.name = name;
+    }
+
     @Override
     public String getName() {
         return name;
@@ -31,26 +37,16 @@ public class TemporaryVariable extends Variable {
     public boolean equals(Object obj) {
         if (obj == null || !(obj instanceof TemporaryVariable)) return false;
 
-        return getName().equals(((TemporaryVariable) obj).getName());
+        return name.equals(((TemporaryVariable) obj).name);
     }
 
     public int compareTo(Object other) {
         if (!(other instanceof TemporaryVariable)) return 0;
         
-        TemporaryVariable temporary = (TemporaryVariable) other;
-        int prefixCompare = getPrefix().compareTo(temporary.getPrefix());
-        if (prefixCompare != 0) return prefixCompare;
-
-        if (offset < temporary.offset) {
-            return -1;
-        } else if (offset > temporary.offset) {
-            return 1;
-        }
-
-        return 0;
+        return name.compareTo(((TemporaryVariable) other).name);
     }
 
-    public String getPrefix() {
+    protected String getPrefix() {
         return "%v_";
     }
 

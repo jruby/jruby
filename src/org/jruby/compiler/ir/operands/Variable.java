@@ -6,7 +6,9 @@ import java.util.List;
 import java.util.Map;
 
 public abstract class Variable extends Operand implements Comparable {
-    public final static String BLOCK = "%block";
+    public final static String BLOCK          = "%block";
+    public final static String CURRENT_SCOPE  = "%current_scope";
+    public final static String CURRENT_MODULE = "%current_module";
 
     public abstract String getName();
 
