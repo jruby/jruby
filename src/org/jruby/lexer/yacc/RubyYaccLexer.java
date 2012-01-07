@@ -1630,7 +1630,7 @@ public class RubyYaccLexer {
                     int c2 = src.read();
 
                     if (c2 != '~' && c2 != '>' &&
-                            (c2 != '=' || (c2 == '\n' && src.peek('>')))) {
+                            (c2 != '=' || src.peek('>'))) {
                         result = Tokens.tIDENTIFIER;
                         tokenBuffer.append((char) c);
                         src.unread(c2);
