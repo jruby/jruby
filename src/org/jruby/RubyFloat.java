@@ -328,7 +328,11 @@ public class RubyFloat extends RubyNumeric {
         case ClassIndex.FIXNUM:
         case ClassIndex.BIGNUM:
         case ClassIndex.FLOAT:
-            return RubyFloat.newFloat(getRuntime(), value / ((RubyNumeric) other).getDoubleValue());
+            double result = value / ((RubyNumeric) other).getDoubleValue();
+            if (Double.isNaN(result)) {
+                return getRuntime().getFloat().getConstant("NAN");
+            }
+            return RubyFloat.newFloat(getRuntime(), result);
         default:
             return coerceBin(context, "/", other);
         }
