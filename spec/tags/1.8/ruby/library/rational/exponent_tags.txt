@@ -1,0 +1,2 @@
+fails:Rational#** when passed Rational converts self to a Float and returns it raised to the passed argument
+fails:Rational#** when passed Rational returns NaN when self is negative and the passed argument is not 0
