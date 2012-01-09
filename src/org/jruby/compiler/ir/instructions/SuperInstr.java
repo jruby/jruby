@@ -56,7 +56,16 @@ public class SuperInstr extends CallInstr {
     }
 
     protected Object interpretSuper(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
+        // SSS FIXME: We should check in the current module (for instance methods) or the current module's meta class (for class methods)
+        //
+        // RubyModule currM = context.getCurrentScope().getStaticScope().getModule();
+        // RubyModule klazz = (isInstanceMethodSuper) ? currM : currM.getMetaClass();
+        //
+        // The question is how do we know what this 'super' ought to do?
+        // For 'super' that occurs in a method scope, this is easy to figure out.
+        // But, what about 'super' that occurs in block scope?  How do we figure that out? 
         RubyModule klazz = context.getFrameKlazz();
+
         // SSS FIXME: Even though we may know the method name in some instances,
         // we are not making use of it here.
         String methodName = context.getCurrentFrame().getName(); // methAddr.getName();

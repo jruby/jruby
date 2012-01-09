@@ -84,18 +84,24 @@ public class InterpretedIRMethod extends DynamicMethod {
         context.pushScope(DynamicScope.newDynamicScope(method.getStaticScope()));
         // SSS FIXME: Is this correct?
         if (isTopLevel) context.getRuntime().getObject().setConstantQuiet("TOPLEVEL_BINDING", context.getRuntime().newBinding(context.currentBinding()));
-        RubyModule currentModule = getImplementationClass();
-        context.preMethodFrameOnly(currentModule, name, self, block);
-        context.getCurrentScope().getStaticScope().setModule(clazz);
-        context.setCurrentVisibility(getVisibility());
+
+        // Make sure module is set up for the current static-scope.
+        StaticScope scope = context.getCurrentScope().getStaticScope();
+        if (scope.getModule() == null) scope.setModule(method.getLexicalParent().getStaticScope().getModule());
+
         try {
-            return Interpreter.INTERPRET_METHOD(context, method, self, name, currentModule, args, block, null, false);
+            // update call stacks (push: frame, class, scope, etc.)
+            RubyModule implClass = getImplementationClass();
+            context.preMethodFrameOnly(implClass, name, self, block);
+            context.setCurrentVisibility(getVisibility());
+            return Interpreter.INTERPRET_METHOD(context, method, self, name, implClass, args, block, null, false);
         } finally {
+            // update call stacks (pop: ..)
             context.popFrame();
             context.postMethodScopeOnly();
         }
     }
-    
+
     @Override
     public DynamicMethod dup() {
         return new InterpretedIRMethod(method, visibility, implementationClass);
