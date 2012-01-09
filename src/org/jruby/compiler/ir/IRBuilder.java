@@ -635,7 +635,7 @@ public class IRBuilder {
             case ARGSPUSHNODE: {
                 ArgsPushNode n = (ArgsPushNode)args;
                 argsList.add(new Splat(build(n.getFirstNode(), s)));
-                buildCallArgNode(argsList, n.getSecondNode(), s);
+                argsList.add(build(n.getSecondNode(), s));
                 break;
             }
             case SPLATNODE: {
@@ -647,7 +647,7 @@ public class IRBuilder {
                 if (arrayNode.isLightweight()) {
                     // explode array, it's an internal "args" array
                     for (Node n : arrayNode.childNodes()) {
-                        buildCallArgNode(argsList, n, s);
+                        argsList.add(build(n, s));
                     }
                 } else {
                     // use array as-is, it's a literal array
