@@ -65,7 +65,7 @@ public class DefineClassMethodInstr extends Instr {
             throw runtime.newSecurityError("redefining method prohibited.");
         }
 
-        obj.getMetaClass().addMethod(name, new InterpretedIRMethod(method, Visibility.PUBLIC, obj.getMetaClass()));
+        rubyClass.addMethod(name, new InterpretedIRMethod(method, Visibility.PUBLIC, rubyClass));
         obj.callMethod(context, "singleton_method_added", runtime.fastNewSymbol(name));
         return null;
     }

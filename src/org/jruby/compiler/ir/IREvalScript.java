@@ -10,6 +10,7 @@ import org.jruby.compiler.ir.operands.ClosureLocalVariable;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.interpreter.Interpreter;
 import org.jruby.parser.StaticScope;
+import org.jruby.parser.IRStaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -75,6 +76,16 @@ public class IREvalScript extends IRClosure {
         }
         try {
             context.pushScope(evalScope);
+
+            // Since IR introduces additional local vars, we may need to grow the dynamic scope.
+            // To do that, IREvalScript has to tell the dyn-scope how many local vars there are.
+            // Since the same static scope (the scope within which the eval string showed up)
+            // might be shared by multiple eval-scripts, we cannot 'setIRScope(this)' once and
+            // forget about it.  We need to set this right before we are ready to grow the
+            // dynamic scope local var space.
+            ((IRStaticScope)getStaticScope()).setIRScope(this);
+            evalScope.growIfNeeded();
+
             // FIXME: Do not push new empty arg array in every time
             return Interpreter.interpret(context, self, this, new IRubyObject[] {}, block, null);
         }
