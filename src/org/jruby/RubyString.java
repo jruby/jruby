@@ -1144,8 +1144,28 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return strHashCode(getRuntime());
     }
 
-    private int strHashCode(Ruby runtime) {
+    /**
+     * Generate a murmurhash for the String, using its associated Ruby instance's hash seed.
+     *
+     * @param runtime
+     * @return
+     */
+    public int strHashCode(Ruby runtime) {
         int hash = MurmurHash.hash32(value.getUnsafeBytes(), value.getBegin(), value.getRealSize(), runtime.getHashSeed());
+        if (runtime.is1_9()) {
+            hash ^= (value.getEncoding().isAsciiCompatible() && scanForCodeRange() == CR_7BIT ? 0 : value.getEncoding().getIndex());
+        }
+        return hash;
+    }
+
+    /**
+     * Generate a murmurhash for the String, without a seed.
+     *
+     * @param runtime
+     * @return
+     */
+    public int unseededStrHashCode(Ruby runtime) {
+        int hash = MurmurHash.hash32(value.getUnsafeBytes(), value.getBegin(), value.getRealSize(), 0);
         if (runtime.is1_9()) {
             hash ^= (value.getEncoding().isAsciiCompatible() && scanForCodeRange() == CR_7BIT ? 0 : value.getEncoding().getIndex());
         }

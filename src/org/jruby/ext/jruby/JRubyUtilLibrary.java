@@ -39,6 +39,7 @@ import org.jruby.RubyBoolean;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.Library;
 
@@ -55,6 +56,9 @@ public class JRubyUtilLibrary implements Library {
     public void load(Ruby runtime, boolean wrap) throws IOException {
         RubyModule mJRubyUtil = runtime.getOrCreateModule("JRuby").defineModuleUnder("Util");
         mJRubyUtil.defineAnnotatedMethods(JRubyUtilLibrary.class);
+
+        // core class utils
+        runtime.getString().defineAnnotatedMethods(StringUtils.class);
     }
 
     @JRubyMethod(module = true)
@@ -92,5 +96,17 @@ public class JRubyUtilLibrary implements Library {
         } catch (IOException ignore) {
         }
         return runtime.newEmptyArray();
+    }
+
+    public static class StringUtils {
+        @JRubyMethod
+        public static IRubyObject unseeded_hash(ThreadContext context, IRubyObject recv) {
+            Ruby runtime = context.runtime;
+            if (!(recv instanceof RubyString)) {
+                throw runtime.newTypeError(recv, runtime.getString());
+            }
+
+            return runtime.newFixnum(((RubyString)recv).unseededStrHashCode(runtime));
+        }
     }
 }
