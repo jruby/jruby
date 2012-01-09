@@ -27,8 +27,10 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.psych;
 
+import java.io.ByteArrayInputStream;
 import java.io.InputStreamReader;
 import java.io.StringReader;
+import java.nio.charset.Charset;
 import java.util.Map;
 import org.jcodings.specific.UTF16BEEncoding;
 import org.jcodings.specific.UTF16LEEncoding;
@@ -48,6 +50,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 import org.jruby.util.IOInputStream;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -112,7 +115,13 @@ public class PsychParser extends RubyObject {
                 tainted = true;
             }
         } else {
-            reader = new StreamReader(new StringReader(target.convertToString().asJavaString()));
+            ByteList byteList = target.convertToString().getByteList();
+            Charset charset = byteList.getEncoding().getCharset();
+            if (charset == null) charset = Charset.forName("UTF-8");
+            reader = new StreamReader(
+                    new InputStreamReader(
+                            new ByteArrayInputStream(byteList.unsafeBytes(), byteList.begin(), byteList.getRealSize()),
+                            charset));
         }
         parser = new ParserImpl(reader);
         IRubyObject handler = getInstanceVariable("@handler");
