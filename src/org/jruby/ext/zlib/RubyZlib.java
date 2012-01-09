@@ -1401,8 +1401,26 @@ public class RubyZlib {
             return internalSepGets(sep, -1);
         }
 
+        private ByteList newExternalByteList() {
+            ByteList byteList = new ByteList();
+            if (externalEncoding != null) byteList.setEncoding(externalEncoding);
+            return byteList;
+        }
+
+        private ByteList newExternalByteList(int size) {
+            ByteList byteList = new ByteList(size);
+            if (externalEncoding != null) byteList.setEncoding(externalEncoding);
+            return byteList;
+        }
+
+        private ByteList newExternalByteList(byte[] buffer, int start, int length, boolean copy) {
+            ByteList byteList = new ByteList(buffer, start, length, copy);
+            if (externalEncoding != null) byteList.setEncoding(externalEncoding);
+            return byteList;
+        }
+
         private IRubyObject internalSepGets(ByteList sep, int limit) throws IOException {
-            ByteList result = new ByteList();
+            ByteList result = newExternalByteList();
             if (sep.getRealSize() == 0) sep = Stream.PARAGRAPH_SEPARATOR;
             int ce = -1;
             // TODO: CRuby does encoding aware 'gets'. Not yet implemented.
@@ -1503,7 +1521,7 @@ public class RubyZlib {
         }
 
         private IRubyObject readPartial(int len, RubyString outbuf) throws IOException {
-            ByteList val = new ByteList(10);
+            ByteList val = newExternalByteList(10);
             byte[] buffer = new byte[len];
             int read = bufferedStream.read(buffer, 0, len);
             if (read == -1) {
@@ -1522,7 +1540,7 @@ public class RubyZlib {
         }
 
         private IRubyObject readAll(int limit) throws IOException {
-            ByteList val = new ByteList(10);
+            ByteList val = newExternalByteList(10);
             int rest = limit == -1 ? BUFF_SIZE : limit;
             byte[] buffer = new byte[rest];
             while (rest > 0) {
@@ -1553,7 +1571,7 @@ public class RubyZlib {
                 offset += read;
             } // hmm...
             this.position += buffer.length;
-            return newStr(getRuntime(), new ByteList(buffer, 0, len - toRead, false));
+            return newStr(getRuntime(), newExternalByteList(buffer, 0, len - toRead, false));
         }
 
         @JRubyMethod(name = "lineno=", required = 1)
