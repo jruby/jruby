@@ -146,6 +146,12 @@ describe "Java instance method names" do
     obj.__id__.should_not == "foo"
     lambda {obj.__send__}.should raise_error(ArgumentError)
   end
+  
+  it "has methods named $bslash" do
+    members.should have_strings("\\")
+    obj = MethodNames.new
+    obj.send(:"\\").should == "$bslash"
+  end
 end
 
 describe "Needed implementation methods for concrete classes" do
