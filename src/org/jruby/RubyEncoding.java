@@ -215,6 +215,7 @@ public class RubyEncoding extends RubyObject {
 
         public UTF8Coder() {
             decoder.onMalformedInput(CodingErrorAction.REPLACE);
+            decoder.onUnmappableCharacter(CodingErrorAction.REPLACE);
         }
 
         public byte[] encode(CharSequence cs) {
