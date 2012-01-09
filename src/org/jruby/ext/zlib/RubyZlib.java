@@ -1321,8 +1321,10 @@ public class RubyZlib {
                 IRubyObject opt = TypeConverter.checkHashType(getRuntime(), args[args.length - 1]);
                 if (!opt.isNil()) {
                     RubyIO.EncodingOption enc = RubyIO.extractEncodingOptions(opt);
-                    externalEncoding = enc.getExternalEncoding();
-                    internalEncoding = enc.getInternalEncoding();
+                    if (enc != null) {
+                        externalEncoding = enc.getExternalEncoding();
+                        internalEncoding = enc.getInternalEncoding();
+                    }
                 }
             }
             if (realIo.respondsTo("path")) {
@@ -1851,8 +1853,10 @@ public class RubyZlib {
                 IRubyObject opt = TypeConverter.checkHashType(getRuntime(), args[args.length - 1]);
                 if (!opt.isNil()) {
                     RubyIO.EncodingOption enc = RubyIO.extractEncodingOptions(opt);
-                    externalEncoding = enc.getExternalEncoding();
-                    internalEncoding = enc.getInternalEncoding();
+                    if (enc != null) {
+                        externalEncoding = enc.getExternalEncoding();
+                        internalEncoding = enc.getInternalEncoding();
+                    }
                     IRubyObject[] newArgs = new IRubyObject[args.length - 1];
                     System.arraycopy(args, 0, newArgs, 0, args.length - 1);
                     args = newArgs;
