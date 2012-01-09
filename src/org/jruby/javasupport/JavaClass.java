@@ -937,7 +937,7 @@ public class JavaClass extends JavaObject {
         tmp.put("\\$eq", "=");
         tmp.put("\\$less", "<");
         tmp.put("\\$greater", ">");
-        tmp.put("\\$bslash", "\\");
+        tmp.put("\\$bslash", "\\\\");
         tmp.put("\\$hash", "#");
         tmp.put("\\$times", "*");
         tmp.put("\\$bang", "!");

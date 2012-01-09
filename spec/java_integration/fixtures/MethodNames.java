@@ -62,4 +62,7 @@ public class MethodNames {
     public String __type__() {return "foo";}
     public String id() {return "foo";}
     public String __id__() {return "foo";}
+	
+	// names that should be fixed by fixScalaNames
+	public String $bslash() {return "$bslash";}
 }
