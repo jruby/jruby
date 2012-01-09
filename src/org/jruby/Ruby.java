@@ -194,7 +194,7 @@ public final class Ruby {
         }
         
         this.staticScopeFactory = config.getCompileMode() == CompileMode.OFFIR ?
-                new IRStaticScopeFactory() : new StaticScopeFactory();
+                new IRStaticScopeFactory(this) : new StaticScopeFactory(this);
 
         this.in                 = config.getInput();
         this.out                = config.getOutput();

@@ -1,10 +1,19 @@
 package org.jruby.parser;
 
 
+import org.jruby.Ruby;
+
 /**
  * Gives instances of static scopes based on compile mode.
  */
 public class StaticScopeFactory {
+    private final StaticScope dummyScope;
+
+    public StaticScopeFactory(Ruby runtime) {
+        dummyScope = new LocalStaticScope(null);
+        dummyScope.setModule(runtime.getObject());
+    }
+
     public StaticScope newBlockScope(StaticScope parent) {
         return new BlockStaticScope(parent);
     }
@@ -27,5 +36,9 @@ public class StaticScopeFactory {
     
     public StaticScope newLocalScope(StaticScope parent, String[] names) {
         return new LocalStaticScope(parent, names);        
+    }
+
+    public StaticScope getDummyScope() {
+        return dummyScope;
     }
 }

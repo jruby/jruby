@@ -1,10 +1,16 @@
 package org.jruby.parser;
 
+import org.jruby.Ruby;
+
 /**
  * Allocate IR-friendly static scopes (it is also a marker
  * for constructing IR-friendly dynamic scopes.
  */
 public class IRStaticScopeFactory extends StaticScopeFactory {
+    public IRStaticScopeFactory(Ruby runtime) {
+        super(runtime);
+    }
+
     @Override
     public StaticScope newBlockScope(StaticScope parent) {
         return new IRStaticScope(parent, true, false);
