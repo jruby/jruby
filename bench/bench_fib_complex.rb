@@ -1,7 +1,7 @@
 require 'rubygems'
 begin
   require 'benchmark/ips'
-rescue loadError
+rescue LoadError
   fail "install the benchmark-suite gem"
 end
 
