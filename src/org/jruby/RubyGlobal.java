@@ -283,8 +283,10 @@ public class RubyGlobal {
 
         // Define System.getProperties() in ENV_JAVA
         Map systemProps = environment.getSystemPropertiesMap(runtime);
-        runtime.defineGlobalConstant("ENV_JAVA", new StringOnlyRubyHash(
-                runtime, systemProps, runtime.getNil()));
+        RubyHash systemPropsHash = new ReadOnlySystemPropertiesHash(
+                runtime, systemProps, runtime.getNil());
+        systemPropsHash.setFrozen(true);
+        runtime.defineGlobalConstant("ENV_JAVA", systemPropsHash);
     }
 
     /**
@@ -429,6 +431,22 @@ public class RubyGlobal {
                 return newStr;
             } else {
                 return str;
+            }
+        }
+    }
+
+    private static class ReadOnlySystemPropertiesHash extends StringOnlyRubyHash {
+        public ReadOnlySystemPropertiesHash(Ruby runtime, Map valueMap, IRubyObject defaultValue, boolean updateRealENV) {
+            super(runtime, valueMap, defaultValue, updateRealENV);
+        }
+
+        public ReadOnlySystemPropertiesHash(Ruby runtime, Map valueMap, IRubyObject defaultValue) {
+            this(runtime, valueMap, defaultValue, false);
+        }
+
+        public void modify() {
+            if (isFrozen()) {
+                throw getRuntime().newTypeError("ENV_JAVA is not writable until you require 'java'");
             }
         }
     }

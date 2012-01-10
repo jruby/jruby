@@ -17,6 +17,10 @@ public class ConcreteJavaProxy extends JavaProxy {
         super(runtime, klazz);
     }
     
+    public ConcreteJavaProxy(Ruby runtime, RubyClass klazz, Object object) {
+        super(runtime, klazz, object);
+    }
+    
     public static RubyClass createConcreteJavaProxy(ThreadContext context) {
         Ruby runtime = context.getRuntime();
         

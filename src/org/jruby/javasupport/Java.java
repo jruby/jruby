@@ -33,6 +33,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.javasupport;
 
+import org.jruby.java.util.SystemPropertiesMap;
 import org.jruby.java.proxies.JavaInterfaceTemplate;
 import org.jruby.java.addons.KernelJavaAddons;
 import java.io.IOException;
@@ -67,6 +68,7 @@ import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.RubyUnboundMethod;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.java.util.SystemPropertiesMap;
 import org.jruby.javasupport.proxy.JavaProxyClass;
 import org.jruby.javasupport.proxy.JavaProxyConstructor;
 import org.jruby.javasupport.util.RuntimeHelpers;
@@ -114,6 +116,15 @@ public class Java implements Library {
         ajp.includeModule(runtime.getEnumerable());
         
         RubyClassPathVariable.createClassPathVariable(runtime);
+
+        // modify ENV_JAVA to be a read/write version
+        Map systemProps = new SystemPropertiesMap();
+        runtime.getObject().setConstantQuiet(
+                "ENV_JAVA",
+                new MapJavaProxy(
+                        runtime,
+                        (RubyClass)Java.getProxyClass(runtime, JavaClass.get(runtime, SystemPropertiesMap.class)),
+                        systemProps));
     }
 
     public static RubyModule createJavaModule(Ruby runtime) {

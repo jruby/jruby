@@ -50,6 +50,11 @@ public class JavaProxy extends RubyObject {
         super(runtime, klazz);
     }
 
+    public JavaProxy(Ruby runtime, RubyClass klazz, Object object) {
+        super(runtime, klazz);
+        this.object = object;
+    }
+
     @Override
     public Object dataGetStruct() {
         // for investigating and eliminating code that causes JavaObject to live

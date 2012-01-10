@@ -68,6 +68,10 @@ public class MapJavaProxy extends ConcreteJavaProxy {
         super(runtime, klazz);
     }
 
+    public MapJavaProxy(Ruby runtime, RubyClass klazz, Map map) {
+        super(runtime, klazz, map);
+    }
+
     public static RubyClass createMapJavaProxy(ThreadContext context) {
         Ruby runtime = context.getRuntime();
 
