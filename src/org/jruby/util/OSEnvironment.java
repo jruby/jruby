@@ -82,8 +82,8 @@ public class OSEnvironment {
 
         // On Windows, entrySet doesn't have corresponding keys for these
         if (Platform.IS_WINDOWS) {
-            addRubyKeyValuePair(runtime, envs, "HOME", System.getProperty("user.home"), encoding);
-            addRubyKeyValuePair(runtime, envs, "USER", System.getProperty("user.name"), encoding);
+            addRubyKeyValuePair(runtime, envs, "HOME", SafePropertyAccessor.getProperty("user.home"), encoding);
+            addRubyKeyValuePair(runtime, envs, "USER", SafePropertyAccessor.getProperty("user.name"), encoding);
         }
 
         for (Map.Entry<Object, Object> entry : entrySet) {
