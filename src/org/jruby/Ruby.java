@@ -292,7 +292,7 @@ public final class Ruby {
         this.jitCompiler        = new JITCompiler(this);
         this.parserStats        = new ParserStats(this);
 
-	this.hashSeed = this.random.nextInt();
+        this.hashSeed = this.random.nextInt();
         
         this.beanManager.register(new Config(this));
         this.beanManager.register(parserStats);
@@ -1300,6 +1300,13 @@ public final class Ruby {
         if (is1_9()) {
             RubyRandom.createRandomClass(this);
         }
+        // initialize Random and RandomSeed as a part of Core since 1.8 mode
+        // does not have Random class. Ugly, but these definitions has been
+        // already rewritten at master for 1.7 release. It's 1.6 only logic.
+        long seedArg = newRandomSeed();
+        RubyBignum newSeed = RubyBignum.newBignum(this, seedArg);
+        this.setRandomSeed((RubyInteger) newSeed);
+        this.getRandom().setSeed(seedArg);
     }
 
     public static final int NIL_PREFILLED_ARRAY_SIZE = RubyArray.ARRAY_DEFAULT_SIZE * 8;
@@ -3382,16 +3389,22 @@ public final class Ruby {
         return symbolTable;
     }
 
-    public void setRandomSeed(long randomSeed) {
+    public void setRandomSeed(RubyInteger randomSeed) {
         this.randomSeed = randomSeed;
     }
 
-    public long getRandomSeed() {
+    public RubyInteger getRandomSeed() {
         return randomSeed;
     }
 
     public Random getRandom() {
         return random;
+    }
+
+    // Returns unsigned long (0..0x7fffffffffffffff) to follow CRuby's behavior
+    // (default seed is positive always)
+    public long newRandomSeed() {
+        return randomSeedRandom.nextLong() & 0x7fffffffffffffffL;
     }
 
     public ObjectSpace getObjectSpace() {
@@ -3455,6 +3468,7 @@ public final class Ruby {
         return ChannelDescriptor.getDescriptorByFileno(aFileno);
     }
 
+    @Deprecated
     public long incrementRandomSeedSequence() {
         return randomSeedSequence++;
     }
@@ -3953,9 +3967,14 @@ public final class Ruby {
 
     private final RubySymbol.SymbolTable symbolTable = new RubySymbol.SymbolTable(this);
 
-    private long randomSeed = 0;
+    @Deprecated
     private long randomSeedSequence = 0;
+    /** The runtime-local PRNG for generating seed by srand */
+    private Random randomSeedRandom = new Random();
+    /** The runtime-local PRNG for Kernel.rand */
     private Random random = new Random();
+    /** The seed object for the seed value of the runtime-local PRNG */
+    private RubyInteger randomSeed;
     /** The runtime-local seed for hash randomization */
     private int hashSeed = 0;
 

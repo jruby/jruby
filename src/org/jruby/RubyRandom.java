@@ -45,9 +45,6 @@ import static org.jruby.runtime.MethodIndex.OP_EQUAL;
 @JRubyClass(name = "Random")
 public class RubyRandom extends RubyObject {
 
-    public static Random globalRandom = new Random();
-    private static IRubyObject globalSeed;
-
     private Random random = new Random();
     private IRubyObject seed;
 
@@ -56,9 +53,6 @@ public class RubyRandom extends RubyObject {
         runtime.setRandomClass(randomClass);
 
         randomClass.defineAnnotatedMethods(RubyRandom.class);
-        
-        // initialize the global seed by triggering an iteration
-        srandCommon(runtime.getCurrentContext(), randomClass, runtime.getNil(), false);
         
         return randomClass;
     }
@@ -107,12 +101,12 @@ public class RubyRandom extends RubyObject {
 
     @JRubyMethod(name = "rand", meta = true, compat = RUBY1_9)
     public static IRubyObject rand(ThreadContext context, IRubyObject recv) {
-        return randCommon(context, context.nil, globalRandom, false);
+        return randCommon(context, context.nil, context.runtime.getRandom(), false);
     }
 
     @JRubyMethod(name = "rand", meta = true, compat = RUBY1_9)
     public static IRubyObject rand(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
-        return randCommon(context, arg0, globalRandom, false);
+        return randCommon(context, arg0, context.runtime.getRandom(), false);
     }
 
     @JRubyMethod(name = "rand", compat = RUBY1_9)
@@ -205,7 +199,7 @@ public class RubyRandom extends RubyObject {
     public static IRubyObject srandCommon(ThreadContext context, IRubyObject recv, IRubyObject arg, boolean acceptZero) {
         Ruby runtime = context.getRuntime();
         IRubyObject newSeed = arg;
-        IRubyObject previousSeed = globalSeed;
+        IRubyObject oldRandomSeed = runtime.getRandomSeed();
 
         long seedArg = 0;
         if (arg instanceof RubyBignum) {
@@ -215,16 +209,13 @@ public class RubyRandom extends RubyObject {
         }
 
         if (arg.isNil() || (!acceptZero && seedArg == 0)) {
-            newSeed = RubyNumeric.int2fix(runtime, System.currentTimeMillis() ^
-                recv.hashCode() ^ runtime.incrementRandomSeedSequence() ^
-                runtime.getRandom().nextInt(Math.max(1, Math.abs((int)runtime.getRandomSeed()))));
-            seedArg = RubyNumeric.fix2long(newSeed);
+            seedArg = runtime.newRandomSeed();
+            newSeed = RubyBignum.newBignum(runtime, seedArg);
         }
 
-        globalSeed = newSeed;
-        globalRandom.setSeed(seedArg);
-
-        return previousSeed;
+        runtime.setRandomSeed((RubyInteger) newSeed);
+        runtime.getRandom().setSeed(seedArg);
+        return oldRandomSeed;
     }
 
     @Override
@@ -274,7 +265,7 @@ public class RubyRandom extends RubyObject {
     public static double randomReal(ThreadContext context, IRubyObject obj) {
         Random random = null;
         if (obj.equals(context.runtime.getRandomClass())) {
-            random = globalRandom;
+            random = context.runtime.getRandom();
         }
         if (obj instanceof RubyRandom) {
             random = ((RubyRandom) obj).random;
@@ -292,9 +283,10 @@ public class RubyRandom extends RubyObject {
     @JRubyMethod(name = "new_seed", meta = true, compat = RUBY1_9)
     public static IRubyObject newSeed(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.getRuntime();
-        globalRandom = new Random();
-        long rand = globalRandom.nextLong();
-        globalRandom.setSeed(rand);
-        return RubyBignum.newBignum(runtime, rand);
+        long rand = runtime.getRandom().nextLong();
+        RubyBignum newSeed = RubyBignum.newBignum(runtime, rand);
+        runtime.setRandomSeed(newSeed);
+        runtime.getRandom().setSeed(rand);
+        return newSeed;
     }
 }

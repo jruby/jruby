@@ -1580,15 +1580,11 @@ public class RubyKernel {
     public static RubyInteger srand(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.getRuntime();
 
-        // Not sure how well this works, but it works much better than
-        // just currentTimeMillis by itself.
-        long oldRandomSeed = runtime.getRandomSeed();
-        runtime.setRandomSeed(System.currentTimeMillis() ^
-               recv.hashCode() ^ runtime.incrementRandomSeedSequence() ^
-               runtime.getRandom().nextInt(Math.max(1, Math.abs((int)runtime.getRandomSeed()))));
-
-        runtime.getRandom().setSeed(runtime.getRandomSeed());
-        return runtime.newFixnum(oldRandomSeed);
+        RubyInteger oldRandomSeed = runtime.getRandomSeed();
+        long seedArg = runtime.newRandomSeed();
+        runtime.setRandomSeed(RubyBignum.newBignum(runtime, seedArg));
+        runtime.getRandom().setSeed(seedArg);
+        return oldRandomSeed;
     }
     
     @JRubyMethod(name = "srand", module = true, visibility = PRIVATE, compat = RUBY1_8)
@@ -1596,6 +1592,7 @@ public class RubyKernel {
         IRubyObject newRandomSeed = arg.convertToInteger("to_int");
         Ruby runtime = context.getRuntime();
 
+        RubyInteger oldRandomSeed = runtime.getRandomSeed();
         long seedArg = 0;
         if (newRandomSeed instanceof RubyBignum) {
             seedArg = ((RubyBignum)newRandomSeed).getValue().longValue();
@@ -1603,11 +1600,9 @@ public class RubyKernel {
             seedArg = RubyNumeric.num2long(newRandomSeed);
         }
 
-        long oldRandomSeed = runtime.getRandomSeed();
-        runtime.setRandomSeed(seedArg);
-
-        runtime.getRandom().setSeed(runtime.getRandomSeed());
-        return runtime.newFixnum(oldRandomSeed);
+        runtime.setRandomSeed((RubyInteger)newRandomSeed);
+        runtime.getRandom().setSeed(seedArg);
+        return oldRandomSeed;
     }
 
 
@@ -1638,15 +1633,13 @@ public class RubyKernel {
     @JRubyMethod(name = "rand", module = true, visibility = PRIVATE, compat = RUBY1_9)
     public static RubyNumeric rand19(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.getRuntime();
-        return RubyFloat.newFloat(runtime, RubyRandom.globalRandom.nextDouble());
+        return RubyFloat.newFloat(runtime, runtime.getRandom().nextDouble());
     }
 
     @JRubyMethod(name = "rand", module = true, visibility = PRIVATE, compat = RUBY1_9)
     public static RubyNumeric rand19(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         Ruby runtime = context.getRuntime();
-        Random random = RubyRandom.globalRandom;
-
-        return randCommon(context, runtime, random, recv, arg);
+        return randCommon(context, runtime, runtime.getRandom(), recv, arg);
     }
 
     private static RubyNumeric randCommon(ThreadContext context, Ruby runtime, Random random, IRubyObject recv, IRubyObject arg) {
