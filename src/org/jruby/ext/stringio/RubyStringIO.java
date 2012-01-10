@@ -65,7 +65,7 @@ import org.jruby.util.io.Stream;
 import static org.jruby.RubyEnumerator.enumeratorize;
 
 @JRubyClass(name="StringIO")
-public class RubyStringIO extends RubyObject {
+public class RubyStringIO extends org.jruby.RubyStringIO {
     static class StringIOData {
         long pos = 0L;
         int lineno = 0;
