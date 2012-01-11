@@ -1,1 +1,0 @@
-fails:Float#angle returns self if NaN
