@@ -94,7 +94,7 @@ public class Interpreter {
         return containingIRScope;
     }
 
-    public static IRubyObject interpretCommonEval(Ruby runtime, String file, int lineNumber, RootNode rootNode, IRubyObject self, Block block) {
+    public static IRubyObject interpretCommonEval(Ruby runtime, String file, int lineNumber, String backtraceName, RootNode rootNode, IRubyObject self, Block block) {
         boolean is_1_9 = runtime.is1_9();
         // SSS FIXME: Is this required here since the IR version cannot change from eval-to-eval? This is much more of a global setting.
         if (is_1_9) IRBuilder.setRubyVersion("1.9");
@@ -106,17 +106,17 @@ public class Interpreter {
 //        evalScript.runCompilerPass(new CallSplitter());
         ThreadContext context = runtime.getCurrentContext(); 
         runBeginEndBlocks(evalScript.getBeginBlocks(), context, self, null); // FIXME: No temp vars yet right?
-        IRubyObject rv = evalScript.call(context, self, evalScript.getStaticScope().getModule(), rootNode.getScope(), block);
+        IRubyObject rv = evalScript.call(context, self, evalScript.getStaticScope().getModule(), rootNode.getScope(), block, backtraceName);
         runBeginEndBlocks(evalScript.getEndBlocks(), context, self, null); // FIXME: No temp vars right?
         return rv;
     }
 
-    public static IRubyObject interpretSimpleEval(Ruby runtime, String file, int lineNumber, Node node, IRubyObject self) {
-        return interpretCommonEval(runtime, file, lineNumber, (RootNode)node, self, Block.NULL_BLOCK);
+    public static IRubyObject interpretSimpleEval(Ruby runtime, String file, int lineNumber, String backtraceName, Node node, IRubyObject self) {
+        return interpretCommonEval(runtime, file, lineNumber, backtraceName, (RootNode)node, self, Block.NULL_BLOCK);
     }
 
-    public static IRubyObject interpretBindingEval(Ruby runtime, String file, int lineNumber, Node node, IRubyObject self, Block block) {
-        return interpretCommonEval(runtime, file, lineNumber, (RootNode)node, self, block);
+    public static IRubyObject interpretBindingEval(Ruby runtime, String file, int lineNumber, String backtraceName, Node node, IRubyObject self, Block block) {
+        return interpretCommonEval(runtime, file, lineNumber, backtraceName, (RootNode)node, self, block);
     }
 
     public static void runBeginEndBlocks(List<IRClosure> beBlocks, ThreadContext context, IRubyObject self, Object[] temp) {
@@ -150,7 +150,7 @@ public class Interpreter {
         try {
             runBeginEndBlocks(root.getBeginBlocks(), context, self, null); // FIXME: No temp vars yet...not needed?
             InterpretedIRMethod method = new InterpretedIRMethod(root, currModule, true);
-            IRubyObject rv =  method.call(context, self, currModule, "", IRubyObject.NULL_ARRAY);
+            IRubyObject rv =  method.call(context, self, currModule, "(root)", IRubyObject.NULL_ARRAY);
             runBeginEndBlocks(root.getEndBlocks(), context, self, null); // FIXME: No temp vars yet...not needed?
             if (isDebug()) LOG.info("-- Interpreted instructions: {}", interpInstrsCount);
             return rv;
@@ -159,7 +159,7 @@ public class Interpreter {
         }
     }
 
-    public static IRubyObject interpret(ThreadContext context, IRubyObject self, 
+    private static IRubyObject interpret(ThreadContext context, IRubyObject self, 
             IRScope scope, IRubyObject[] args, Block block, Block.Type blockType) {
         boolean debug = isDebug();
         boolean inClosure = (scope instanceof IRClosure);
@@ -469,6 +469,26 @@ public class Interpreter {
         // Pass it upward
         throw bj;
     }
+
+    public static IRubyObject INTERPRET_EVAL(ThreadContext context, IRubyObject self, 
+            IRScope scope, IRubyObject[] args, String name, Block block, Block.Type blockType) {
+        try {
+            ThreadContext.pushBacktrace(context, name, context.getFile(), context.getLine());
+            return interpret(context, self, scope, args, block, blockType);
+        } finally {
+            ThreadContext.popBacktrace(context);
+        }
+	 }
+
+    public static IRubyObject INTERPRET_BLOCK(ThreadContext context, IRubyObject self, 
+            IRScope scope, IRubyObject[] args, String name, Block block, Block.Type blockType) {
+        try {
+            ThreadContext.pushBacktrace(context, name, context.getFile(), context.getLine());
+            return interpret(context, self, scope, args, block, blockType);
+        } finally {
+            ThreadContext.popBacktrace(context);
+        }
+	 }
 
     public static IRubyObject INTERPRET_METHOD(ThreadContext context, IRScope scope, 
         IRubyObject self, String name, RubyModule implClass, IRubyObject[] args, Block block, Block.Type blockType, boolean isTraceable) {

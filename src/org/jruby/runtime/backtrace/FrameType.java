@@ -15,5 +15,7 @@ public enum FrameType {
         INTERPRETED_FRAMES.put(ASTInterpreter.class.getName() + ".INTERPRET_BLOCK", FrameType.BLOCK);
         INTERPRETED_FRAMES.put(ASTInterpreter.class.getName() + ".INTERPRET_ROOT", FrameType.ROOT);
         INTERPRETED_FRAMES.put(Interpreter.class.getName() + ".INTERPRET_METHOD", FrameType.ROOT);
+        INTERPRETED_FRAMES.put(Interpreter.class.getName() + ".INTERPRET_BLOCK", FrameType.BLOCK);
+        INTERPRETED_FRAMES.put(Interpreter.class.getName() + ".INTERPRET_EVAL", FrameType.EVAL);
     }
 }
