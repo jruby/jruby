@@ -3001,7 +3001,11 @@ public class IRBuilder {
             // return and the static methodToReturnFrom value is ignored 
             s.addInstr(new ReturnInstr(retVal, s.getNearestMethod()));
         } else if (s.isModuleBody()) {
-            s.addInstr(new ThrowExceptionInstr(IRException.RETURN_LocalJumpError));
+            IRMethod sm = s.getNearestMethod();
+
+            // Cannot return from top-level module bodies!
+            if (sm == null) s.addInstr(new ThrowExceptionInstr(IRException.RETURN_LocalJumpError));
+            else s.addInstr(new ReturnInstr(retVal, sm));
         } else {
             s.addInstr(new ReturnInstr(retVal));
         }

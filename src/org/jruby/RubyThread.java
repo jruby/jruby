@@ -1148,8 +1148,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * @param lock the lock to acquire, released on thread termination
      */
     public void lock(Lock lock) {
+        assert Thread.currentThread() == getNativeThread();
         lock.lock();
-        synchronized (this) {heldLocks.add(lock);}
+        heldLocks.add(lock);
     }
     
     /**
@@ -1160,8 +1161,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * @throws InterruptedException if the lock acquisition is interrupted
      */
     public void lockInterruptibly(Lock lock) throws InterruptedException {
+        assert Thread.currentThread() == getNativeThread();
         lock.lockInterruptibly();
-        synchronized (this) {heldLocks.add(lock);}
+        heldLocks.add(lock);
     }
     
     /**
@@ -1172,9 +1174,10 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * @param lock the lock to acquire, released on thread termination
      */
     public boolean tryLock(Lock lock) {
+        assert Thread.currentThread() == getNativeThread();
         boolean locked = lock.tryLock();
         if (locked) {
-            synchronized (this) {heldLocks.add(lock);}
+            heldLocks.add(lock);
         }
         return locked;
     }
@@ -1186,18 +1189,18 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * @param lock the lock to release and dereferences
      */
     public void unlock(Lock lock) {
+        assert Thread.currentThread() == getNativeThread();
         lock.unlock();
-        synchronized (this) {heldLocks.remove(lock);}
+        heldLocks.remove(lock);
     }
     
     /**
      * Release all locks held.
      */
     public void unlockAll() {
-        synchronized (this) {
-            for (Lock lock : heldLocks) {
-                lock.unlock();
-            }
+        assert Thread.currentThread() == getNativeThread();
+        for (Lock lock : heldLocks) {
+            lock.unlock();
         }
     }
 

@@ -88,6 +88,7 @@ public class RubyFloat extends RubyNumeric {
     public static final double EPSILON = 2.2204460492503131e-16;
     public static final double INFINITY = Double.POSITIVE_INFINITY;
     public static final double NAN = Double.NaN;
+    private static RubyFloat rubyNaN;
 
     public static RubyClass createFloatClass(Ruby runtime) {
         RubyClass floatc = runtime.defineClass("Float", runtime.getNumeric(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
@@ -126,7 +127,7 @@ public class RubyFloat extends RubyNumeric {
 
         if (runtime.is1_9()) {
             floatc.defineConstant("INFINITY", RubyFloat.newFloat(runtime, INFINITY));
-            floatc.defineConstant("NAN", RubyFloat.newFloat(runtime, NAN));
+            floatc.defineConstant("NAN", RubyFloat.nanConstant(runtime, NAN));
         }
 
         floatc.defineAnnotatedMethods(RubyFloat.class);
@@ -188,7 +189,26 @@ public class RubyFloat extends RubyNumeric {
     }
 
     public static RubyFloat newFloat(Ruby runtime, double value) {
+        if (Double.isNaN(value)) {
+            if (rubyNaN != null) {
+                return rubyNaN;
+            } else {
+                return rubyNaN = new RubyFloat(runtime, value);
+            }
+        }
         return new RubyFloat(runtime, value);
+    }
+
+    /**
+     * At the time when JRuby creates the Float class, we need to define constant
+     * Float::NAN in the 1.9 mode. This is different from the singleton that
+     * represents every other NaN.
+     * @param runtime
+     * @param Double.NaN
+     * @return RubyFloat that represents Float::NAN
+     */
+    private static IRubyObject nanConstant(Ruby runtime, double nan) {
+        return new RubyFloat(runtime, Double.NaN);
     }
 
     /*  ================

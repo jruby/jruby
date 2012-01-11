@@ -164,7 +164,7 @@ public class ASTInterpreter {
             if (runtime.getInstanceConfig().getCompileMode() == CompileMode.OFFIR) {
                 // SSS FIXME: AST interpreter passed both a runtime (which comes from the source string)
                 // and the thread-context rather than fetch one from the other.  Why is that?
-                return Interpreter.interpretBindingEval(runtime, binding.getFile(), binding.getLine(), node, self, block);
+                return Interpreter.interpretBindingEval(runtime, binding.getFile(), binding.getLine(), binding.getMethod(), node, self, block);
             } else {
                 return INTERPRET_EVAL(runtime, context, binding.getFile(), binding.getLine(), node, binding.getMethod(), self, block);
             }
@@ -209,7 +209,7 @@ public class ASTInterpreter {
             if (runtime.getInstanceConfig().getCompileMode() == CompileMode.OFFIR) {
                 // SSS FIXME: AST interpreter passed both a runtime (which comes from the source string)
                 // and the thread-context rather than fetch one from the other.  Why is that?
-                return Interpreter.interpretSimpleEval(runtime, file, lineNumber, node, self);
+                return Interpreter.interpretSimpleEval(runtime, file, lineNumber, "(eval)", node, self);
             } else {
                 return INTERPRET_EVAL(runtime, context, file, lineNumber, node, "(eval)", self, Block.NULL_BLOCK);
             }

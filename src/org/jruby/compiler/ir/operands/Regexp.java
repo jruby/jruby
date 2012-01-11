@@ -62,8 +62,10 @@ public class Regexp extends Operand {
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         // If we have a constant regexp string or if the regexp patterns asks for caching, cache the regexp
         if ((!regexp.isConstant() && !options.isOnce()) || (rubyRegexp == null) || context.getRuntime().getKCode() != rubyRegexp.getKCode()) {
-            RubyRegexp reg = RubyRegexp.newRegexp(context.getRuntime(),
-                    ((RubyString) regexp.retrieve(context, self, currDynScope, temp)).getByteList(), options);
+            RubyString pattern = (RubyString) regexp.retrieve(context, self, currDynScope, temp);
+            RubyRegexp reg;
+            if (regexp instanceof CompoundString) reg = RubyRegexp.newDRegexp(context.getRuntime(), pattern, options);
+            else reg = RubyRegexp.newRegexp(context.getRuntime(), pattern.getByteList(), options);
             reg.setLiteral();
             rubyRegexp = reg;
         }
