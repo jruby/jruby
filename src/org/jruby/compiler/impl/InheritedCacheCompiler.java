@@ -50,6 +50,7 @@ public class InheritedCacheCompiler implements CacheCompiler {
     int callSiteCount = 0;
     List<String> callSiteList = new ArrayList<String>();
     List<CallType> callTypeList = new ArrayList<CallType>();
+    Map<String, String> stringEncToString = new HashMap<String, String>();
     Map<String, Integer> stringIndices = new HashMap<String, Integer>();
     Map<String, Integer> encodingIndices = new HashMap<String, Integer>();
     Map<String, Integer> stringEncodings = new HashMap<String, Integer>();
@@ -298,12 +299,14 @@ public class InheritedCacheCompiler implements CacheCompiler {
 
     public void cacheString(BaseBodyCompiler method, ByteList contents, int codeRange) {
         String asString = RuntimeHelpers.rawBytesToString(contents.bytes());
+        String key = asString + contents.getEncoding();
         
-        Integer index = stringIndices.get(asString);
+        Integer index = stringIndices.get(key);
         if (index == null) {
             index = Integer.valueOf(inheritedStringCount++);
-            stringIndices.put(asString, index);
-            stringEncodings.put(asString, cacheEncodingInternal(contents.getEncoding()));
+            stringEncToString.put(key, asString);
+            stringIndices.put(key, index);
+            stringEncodings.put(key, cacheEncodingInternal(contents.getEncoding()));
         }
 
         method.loadThis();
@@ -320,12 +323,14 @@ public class InheritedCacheCompiler implements CacheCompiler {
 
     public void cacheByteList(BaseBodyCompiler method, ByteList contents) {
         String asString = RuntimeHelpers.rawBytesToString(contents.bytes());
+        String key = asString + contents.getEncoding();
 
-        Integer index = stringIndices.get(asString);
+        Integer index = stringIndices.get(key);
         if (index == null) {
             index = Integer.valueOf(inheritedStringCount++);
-            stringIndices.put(asString, index);
-            stringEncodings.put(asString, cacheEncodingInternal(contents.getEncoding()));
+            stringEncToString.put(key, asString);
+            stringIndices.put(key, index);
+            stringEncodings.put(key, cacheEncodingInternal(contents.getEncoding()));
         }
 
         method.loadThis();
@@ -606,7 +611,8 @@ public class InheritedCacheCompiler implements CacheCompiler {
                 for (Map.Entry<String, Integer> entry : stringIndices.entrySet()) {
                     initMethod.aload(0);
                     initMethod.ldc(entry.getValue());
-                    initMethod.ldc(entry.getKey());
+                    String key = entry.getKey();
+                    initMethod.ldc(stringEncToString.get(key));
                     loadEncoding(initMethod, stringEncodings.get(entry.getKey()));
                     initMethod.invokevirtual(p(AbstractScript.class), "setByteList", sig(void.class, int.class, String.class, Encoding.class));
                 }
