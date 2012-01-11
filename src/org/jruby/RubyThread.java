@@ -1148,6 +1148,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * @param lock the lock to acquire, released on thread termination
      */
     public void lock(Lock lock) {
+        assert Thread.currentThread() == getNativeThread();
         lock.lock();
         heldLocks.add(lock);
     }
@@ -1160,6 +1161,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * @throws InterruptedException if the lock acquisition is interrupted
      */
     public void lockInterruptibly(Lock lock) throws InterruptedException {
+        assert Thread.currentThread() == getNativeThread();
         lock.lockInterruptibly();
         heldLocks.add(lock);
     }
@@ -1172,6 +1174,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * @param lock the lock to acquire, released on thread termination
      */
     public boolean tryLock(Lock lock) {
+        assert Thread.currentThread() == getNativeThread();
         boolean locked = lock.tryLock();
         if (locked) {
             heldLocks.add(lock);
@@ -1186,6 +1189,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * @param lock the lock to release and dereferences
      */
     public void unlock(Lock lock) {
+        assert Thread.currentThread() == getNativeThread();
         lock.unlock();
         heldLocks.remove(lock);
     }
@@ -1194,6 +1198,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * Release all locks held.
      */
     public void unlockAll() {
+        assert Thread.currentThread() == getNativeThread();
         for (Lock lock : heldLocks) {
             lock.unlock();
         }
