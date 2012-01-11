@@ -99,7 +99,7 @@ public class Mutex extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = "unlock", compat = CompatVersion.RUBY1_8)
+    @JRubyMethod
     public synchronized IRubyObject unlock(ThreadContext context) {
         Ruby runtime = context.getRuntime();
         if (!lock.isLocked()) {
@@ -108,23 +108,10 @@ public class Mutex extends RubyObject {
         if (!lock.isHeldByCurrentThread()) {
             throw runtime.newThreadError("Mutex is not owned by calling thread");
         }
-        // FIXME: 1.8 throws nil when the unlock is not waking.  I don't
-        // think we can know this?
+        
+        boolean hasQueued = lock.hasQueuedThreads();
         context.getThread().unlock(lock);
-        return this;
-    }
-
-    @JRubyMethod(name = "unlock", compat = CompatVersion.RUBY1_9)
-    public synchronized IRubyObject unlock19(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
-        if (!lock.isLocked()) {
-            throw runtime.newThreadError("Mutex is not locked");
-        }
-        if (!lock.isHeldByCurrentThread()) {
-            throw runtime.newThreadError("Mutex is not owned by calling thread");
-        }
-        lock.unlock();
-        return this;
+        return hasQueued ? context.nil : this;
     }
 
     @JRubyMethod(compat = CompatVersion.RUBY1_9)
