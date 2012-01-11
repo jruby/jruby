@@ -1149,7 +1149,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      */
     public void lock(Lock lock) {
         lock.lock();
-        synchronized (this) {heldLocks.add(lock);}
+        heldLocks.add(lock);
     }
     
     /**
@@ -1161,7 +1161,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      */
     public void lockInterruptibly(Lock lock) throws InterruptedException {
         lock.lockInterruptibly();
-        synchronized (this) {heldLocks.add(lock);}
+        heldLocks.add(lock);
     }
     
     /**
@@ -1174,7 +1174,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     public boolean tryLock(Lock lock) {
         boolean locked = lock.tryLock();
         if (locked) {
-            synchronized (this) {heldLocks.add(lock);}
+            heldLocks.add(lock);
         }
         return locked;
     }
@@ -1187,17 +1187,15 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      */
     public void unlock(Lock lock) {
         lock.unlock();
-        synchronized (this) {heldLocks.remove(lock);}
+        heldLocks.remove(lock);
     }
     
     /**
      * Release all locks held.
      */
     public void unlockAll() {
-        synchronized (this) {
-            for (Lock lock : heldLocks) {
-                lock.unlock();
-            }
+        for (Lock lock : heldLocks) {
+            lock.unlock();
         }
     }
 
