@@ -933,7 +933,7 @@ public class RubyNumeric extends RubyObject {
     public IRubyObject arg(ThreadContext context) {
         double value = this.getDoubleValue();
         if (Double.isNaN(value)) {
-            return RubyFloat.newFloat(context.getRuntime(), Double.NaN);
+            return this;
         }
         if (f_negative_p(context, this) || (value == 0.0 && 1/value == Double.NEGATIVE_INFINITY)) {
             // negative or -0.0
