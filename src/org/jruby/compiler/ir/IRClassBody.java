@@ -9,6 +9,10 @@ public class IRClassBody extends IRModuleBody {
         super(lexicalParent, name, scope);
     }
 
+    public IRClassBody(IRScope lexicalParent, String name, String fileName, StaticScope scope) {
+        super(lexicalParent, name, fileName, scope);
+    }
+
     @Override
     public String getScopeName() {
         return "ClassBody";

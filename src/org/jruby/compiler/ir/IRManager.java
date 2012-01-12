@@ -4,8 +4,8 @@ package org.jruby.compiler.ir;
  */
 public class IRManager {
     private int dummyMetaClassCount = 0;
-    private IRModuleBody classMetaClass = new IRMetaClassBody(null, getMetaClassName(), null);
-    private IRModuleBody object = new IRClassBody(null, "Object", null);
+    private IRModuleBody classMetaClass = new IRMetaClassBody(null, getMetaClassName(), "", null);
+    private IRModuleBody object = new IRClassBody(null, "Object", "", null);
     
     public IRManager() {
     }

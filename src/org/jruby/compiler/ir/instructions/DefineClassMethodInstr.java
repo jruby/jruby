@@ -31,7 +31,7 @@ public class DefineClassMethodInstr extends Instr {
 
     @Override
     public String toString() {
-        return super.toString() + "(" + container + ", " + method.getName() + ")";
+        return getOperation() + "(" + container + ", " + method.getName() + ", " + method.getFileName() + ")";
     }
     
     public IRMethod getMethod() {

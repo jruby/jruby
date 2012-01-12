@@ -25,8 +25,8 @@ public class IREvalScript extends IRClosure {
     private List<IRClosure> beginBlocks;
     private List<IRClosure> endBlocks;
 
-    public IREvalScript(IRScope lexicalParent, StaticScope staticScope) {
-        super(lexicalParent, staticScope, "EVAL_");
+    public IREvalScript(IRScope lexicalParent, String fileName, StaticScope staticScope) {
+        super(lexicalParent, fileName, staticScope, "EVAL_");
         IRScope s = lexicalParent;
         while (s instanceof IREvalScript) s = s.getLexicalParent();
         this.nearestNonEvalScope = s;

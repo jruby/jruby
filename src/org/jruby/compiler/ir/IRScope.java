@@ -79,6 +79,9 @@ public abstract class IRScope {
     /** Name */
     private String name;
 
+	 /** File within which this scope has been defined */
+    private final String fileName;
+
     /** Lexical parent scope */
     private IRScope lexicalParent;
 
@@ -202,11 +205,12 @@ public abstract class IRScope {
     // This lets us implement next/redo/break/retry easily for the non-closure cases
     private Stack<IRLoop> loopStack;
     
-    public IRScope(IRScope lexicalParent, String name, StaticScope staticScope) {
+    public IRScope(IRScope lexicalParent, String name, String fileName, StaticScope staticScope) {
         super();
             
         this.lexicalParent = lexicalParent;        
         this.name = name;
+		  this.fileName = fileName;
         this.staticScope = staticScope;
         instructions = new ArrayList<Instr>();
         closures = new ArrayList<IRClosure>();
@@ -320,7 +324,6 @@ public abstract class IRScope {
         return current;
     }
     
-
     public String getName() {
         return name;
     }
@@ -328,7 +331,11 @@ public abstract class IRScope {
     public void setName(String name) { // This is for IRClosure ;(
         this.name = name;
     }
-    
+
+    public String getFileName() {
+        return fileName;
+    }
+
     /**
      * Returns the top level scope
      */

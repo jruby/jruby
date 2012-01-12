@@ -132,7 +132,6 @@ import org.jruby.compiler.ir.instructions.EQQInstr;
 import org.jruby.compiler.ir.instructions.EnsureRubyArrayInstr;
 import org.jruby.compiler.ir.instructions.ExceptionRegionStartMarkerInstr;
 import org.jruby.compiler.ir.instructions.ExceptionRegionEndMarkerInstr;
-import org.jruby.compiler.ir.instructions.FilenameInstr;
 import org.jruby.compiler.ir.instructions.GVarAliasInstr;
 import org.jruby.compiler.ir.instructions.GetArrayInstr;
 import org.jruby.compiler.ir.instructions.InstanceOfInstr;
@@ -3018,10 +3017,9 @@ public class IRBuilder {
 
     public IREvalScript buildEvalRoot(StaticScope staticScope, IRScope containingScope, String file, int lineNumber, RootNode rootNode) {
         // Top-level script!
-        IREvalScript script = new IREvalScript(containingScope, staticScope);
+        IREvalScript script = new IREvalScript(containingScope, file, staticScope);
 
-        // Debug info: record file name and line number
-        script.addInstr(new FilenameInstr(file));
+        // Debug info: record line number
         script.addInstr(new LineNumberInstr(script, lineNumber));
 
         // Set %current_scope = <current-scope>
@@ -3046,9 +3044,6 @@ public class IRBuilder {
         // Set %current_module = <current-module>
         script.addInstr(new CopyInstr(script.getCurrentScopeVariable(), new CurrentScope()));
         script.addInstr(new CopyInstr(script.getCurrentModuleVariable(), new CurrentModule()));
-        
-        // Debug info: record file name
-        script.addInstr(new FilenameInstr(file));
 
         // Build IR for the tree and return the result of the expression tree
         script.addInstr(new ReturnInstr(build(rootNode.getBodyNode(), script)));

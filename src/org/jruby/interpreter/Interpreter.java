@@ -473,7 +473,7 @@ public class Interpreter {
     public static IRubyObject INTERPRET_EVAL(ThreadContext context, IRubyObject self, 
             IRScope scope, IRubyObject[] args, String name, Block block, Block.Type blockType) {
         try {
-            ThreadContext.pushBacktrace(context, name, context.getFile(), context.getLine());
+            ThreadContext.pushBacktrace(context, name, scope.getFileName(), context.getLine());
             return interpret(context, self, scope, args, block, blockType);
         } finally {
             ThreadContext.popBacktrace(context);
@@ -483,7 +483,7 @@ public class Interpreter {
     public static IRubyObject INTERPRET_BLOCK(ThreadContext context, IRubyObject self, 
             IRScope scope, IRubyObject[] args, String name, Block block, Block.Type blockType) {
         try {
-            ThreadContext.pushBacktrace(context, name, context.getFile(), context.getLine());
+            ThreadContext.pushBacktrace(context, name, scope.getFileName(), context.getLine());
             return interpret(context, self, scope, args, block, blockType);
         } finally {
             ThreadContext.popBacktrace(context);
@@ -496,7 +496,7 @@ public class Interpreter {
         boolean syntheticMethod = name == null || name.equals("");
 
         try {
-            if (!syntheticMethod) ThreadContext.pushBacktrace(context, name, context.getFile(), context.getLine());
+            if (!syntheticMethod) ThreadContext.pushBacktrace(context, name, scope.getFileName(), context.getLine());
             if (isTraceable) methodPreTrace(runtime, context, name, implClass);
             return interpret(context, self, scope, args, block, blockType);
         } finally {

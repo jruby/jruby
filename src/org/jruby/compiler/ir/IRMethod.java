@@ -34,7 +34,7 @@ public class IRMethod extends IRScope {
     private Map<String, Integer> bindingSlotMap;
     
     public IRMethod(IRScope lexicalParent, String name, boolean isInstanceMethod, StaticScope staticScope) {
-        super(lexicalParent, name, staticScope);
+        super(lexicalParent, name, lexicalParent.getFileName(), staticScope);
         
         this.isInstanceMethod = isInstanceMethod;
         callArgs = new ArrayList<Operand>();

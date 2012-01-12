@@ -219,7 +219,7 @@ public class JVM implements CompilerTarget {
     public void emit(IRScriptBody script) {
         pushscript();
         cls().visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, scriptToClass(script.getName()), null, p(Object.class), null);
-        cls().visitSource(script.getFileName().toString(), null);
+        cls().visitSource(script.getFileName(), null);
 
         pushmethod("__script__", 0);
 

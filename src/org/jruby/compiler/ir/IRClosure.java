@@ -47,7 +47,7 @@ public class IRClosure extends IRScope {
     private List<Operand> blockArgs;
 
     public IRClosure(IRScope lexicalParent, boolean isForLoopBody, StaticScope staticScope, Arity arity, int argumentType, boolean is1_9) {
-        this(lexicalParent, staticScope, isForLoopBody ? "_FOR_LOOP_" : "_CLOSURE_");
+        this(lexicalParent, lexicalParent.getFileName(), staticScope, isForLoopBody ? "_FOR_LOOP_" : "_CLOSURE_");
         this.isForLoopBody = isForLoopBody;
         this.hasBeenInlined = false;
         this.blockArgs = new ArrayList<Operand>();
@@ -61,8 +61,8 @@ public class IRClosure extends IRScope {
     }
 
     // Used by IREvalScript
-    protected IRClosure(IRScope lexicalParent, StaticScope staticScope, String prefix) {
-        super(lexicalParent, null, staticScope);
+    protected IRClosure(IRScope lexicalParent, String fileName, StaticScope staticScope, String prefix) {
+        super(lexicalParent, null, fileName, staticScope);
         this.isForLoopBody = false;
         this.startLabel = getNewLabel(prefix + "START");
         this.endLabel = getNewLabel(prefix + "END");

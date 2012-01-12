@@ -49,7 +49,7 @@ public class DefineModuleInstr extends Instr implements ResultInstr {
 
     @Override
     public String toString() {
-        return super.toString() + "(" + newIRModuleBody.getName() + ", " + container + ")";
+        return super.toString() + "(" + newIRModuleBody.getName() + ", " + container + ", " + newIRModuleBody.getFileName() + ")";
     }
 
     @Override
