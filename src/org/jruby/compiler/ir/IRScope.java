@@ -79,7 +79,7 @@ public abstract class IRScope {
     /** Name */
     private String name;
 
-	 /** File within which this scope has been defined */
+    /** File within which this scope has been defined */
     private final String fileName;
 
     /** Lexical parent scope */
@@ -210,7 +210,7 @@ public abstract class IRScope {
             
         this.lexicalParent = lexicalParent;        
         this.name = name;
-		  this.fileName = fileName;
+        this.fileName = fileName;
         this.staticScope = staticScope;
         instructions = new ArrayList<Instr>();
         closures = new ArrayList<IRClosure>();
@@ -346,11 +346,6 @@ public abstract class IRScope {
         
         return current;
     }
-    
-    // SSS FIXME: Deprecated!  Going forward, all instructions should come from the CFG
-    public List<Instr> getInstrs() {
-        return instructions;
-    }
 
     public boolean isNestedInClosure(IRClosure closure) {
         for (IRScope s = this; s != null && !s.isTopLocalVariableScope(); s = s.getLexicalParent()) {
@@ -400,8 +395,57 @@ public abstract class IRScope {
         if (!isPreOrder) p.run(this);
     }
     
-    /* Run any necessary passes to get the IR ready for interpretation */
-    public void prepareForInterpretation() {
+    private Instr[] prepareInstructionsForInterpretation() {
+        if (instrs != null) return instrs; // Already prepared
+
+        try {
+            buildLinearization(); // FIXME: compiler passes should have done this
+            depends(linearization());
+        } catch (RuntimeException e) {
+            LOG.error("Error linearizing cfg: ", e);
+            CFG c = cfg();
+            LOG.error("\nGraph:\n" + c.toStringGraph());
+            LOG.error("\nInstructions:\n" + c.toStringInstrs());
+            throw e;
+        }
+
+        // Set up IPCs
+        HashMap<Label, Integer> labelIPCMap = new HashMap<Label, Integer>();
+        List<Label> labelsToFixup = new ArrayList<Label>();
+        List<Instr> newInstrs = new ArrayList<Instr>();
+        int ipc = 0;
+        for (BasicBlock b : linearizedBBList) {
+            labelIPCMap.put(b.getLabel(), ipc);
+            labelsToFixup.add(b.getLabel());
+            for (Instr i : b.getInstrs()) {
+                if (!(i instanceof ReceiveSelfInstruction)) {
+                    newInstrs.add(i);
+                    ipc++;
+                }
+            }
+        }
+
+        // Fix up labels
+        for (Label l : labelsToFixup) {
+            l.setTargetPC(labelIPCMap.get(l));
+        }
+
+        // Exit BB ipc
+        cfg().getExitBB().getLabel().setTargetPC(ipc + 1);
+        this.scopeExitPC = ipc+1;
+
+        instrs = newInstrs.toArray(new Instr[newInstrs.size()]);
+        return instrs;
+    }
+
+    private void printPass(String message) {
+        if (RubyInstanceConfig.IR_COMPILER_DEBUG) {
+            LOG.info("################## " + message + "##################");
+            runCompilerPass(new IRPrinter());        
+        }
+    }
+
+    private void runCompilerPasses() {
         // forcibly clear out the shared eval-scope variable allocator each time this method executes
         initEvalScopeVariableAllocator(true); 
 
@@ -433,11 +477,16 @@ public abstract class IRScope {
         printPass("After CFG Linearize");
     }
 
-    private void printPass(String message) {
-        if (RubyInstanceConfig.IR_COMPILER_DEBUG) {
-            LOG.info("################## " + message + "##################");
-            runCompilerPass(new IRPrinter());        
-		  }
+    /** Run any necessary passes to get the IR ready for interpretation */
+    public synchronized Instr[] prepareForInterpretation() {
+        // If the instruction array exists, someone has taken care of setting up the CFG and preparing the instructions
+        if (instrs != null) return instrs;
+
+        // Build CFG and run compiler passes, if necessary
+        if (getCFG() == null) runCompilerPasses();
+
+        // Linearize CFG, etc.
+        return prepareInstructionsForInterpretation();
     }
 
     public void computeExecutionScopeFlags() {
@@ -749,48 +798,14 @@ public abstract class IRScope {
 
     public DataFlowProblem getDataFlowSolution(String name) {
         return dfProbs.get(name);
-    }    
+    }
     
-    public Instr[] prepareInstructionsForInterpretation() {
-        if (instrs != null) return instrs; // Already prepared
+    // SSS FIXME: Deprecated!  Going forward, all instructions should come from the CFG
+    public List<Instr> getInstrs() {
+        return instructions;
+    }
 
-        try {
-            buildLinearization(); // FIXME: compiler passes should have done this
-            depends(linearization());
-        } catch (RuntimeException e) {
-            LOG.error("Error linearizing cfg: ", e);
-            CFG c = cfg();
-            LOG.error("\nGraph:\n" + c.toStringGraph());
-            LOG.error("\nInstructions:\n" + c.toStringInstrs());
-            throw e;
-        }
-
-        // Set up IPCs
-        HashMap<Label, Integer> labelIPCMap = new HashMap<Label, Integer>();
-        List<Label> labelsToFixup = new ArrayList<Label>();
-        List<Instr> newInstrs = new ArrayList<Instr>();
-        int ipc = 0;
-        for (BasicBlock b : linearizedBBList) {
-            labelIPCMap.put(b.getLabel(), ipc);
-            labelsToFixup.add(b.getLabel());
-            for (Instr i : b.getInstrs()) {
-                if (!(i instanceof ReceiveSelfInstruction)) {
-                    newInstrs.add(i);
-                    ipc++;
-                }
-            }
-        }
-
-        // Fix up labels
-        for (Label l : labelsToFixup) {
-            l.setTargetPC(labelIPCMap.get(l));
-        }
-
-        // Exit BB ipc
-        cfg().getExitBB().getLabel().setTargetPC(ipc + 1);
-        this.scopeExitPC = ipc+1;
-
-        instrs = newInstrs.toArray(new Instr[newInstrs.size()]);
+    public Instr[] getInstrsForInterpretation() {
         return instrs;
     }
     

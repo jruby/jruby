@@ -69,14 +69,11 @@ public class InterpretedIRMethod extends DynamicMethod {
             LOG.info("Executing '" + realName + "'");
         }
 
-        CFG cfg = method.getCFG();
-        if (cfg == null) {
-            // The base IR may not have been processed yet because the method is added dynamically.
-            method.prepareForInterpretation();
-            cfg = method.getCFG();
-        }
+        // The base IR may not have been processed yet
+        if (method.getInstrsForInterpretation() == null) method.prepareForInterpretation();
 
         if (Interpreter.isDebug() && displayedCFG == false) {
+            CFG cfg = method.getCFG();
             LOG.info("Graph:\n" + cfg.toStringGraph());
             LOG.info("CFG:\n" + cfg.toStringInstrs());
             displayedCFG = true;

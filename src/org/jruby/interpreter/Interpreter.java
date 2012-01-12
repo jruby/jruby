@@ -163,7 +163,11 @@ public class Interpreter {
             IRScope scope, IRubyObject[] args, Block block, Block.Type blockType) {
         boolean debug = isDebug();
         boolean inClosure = (scope instanceof IRClosure);
-        Instr[] instrs = scope.prepareInstructionsForInterpretation();
+        Instr[] instrs = scope.getInstrsForInterpretation();
+
+        // The base IR may not have been processed yet
+        if (instrs == null) instrs = scope.prepareForInterpretation();
+
         int temporaryVariablesSize = scope.getTemporaryVariableSize();
         Object[] temp = temporaryVariablesSize > 0 ? new Object[temporaryVariablesSize] : null;
         int n   = instrs.length;
