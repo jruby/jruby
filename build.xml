@@ -838,6 +838,14 @@
     test-rake-targets"
     description="Runs unit tests.">
   </target>
+  
+  <target name="test-debug" depends="
+    copy-test-files,
+    install-gems,
+    run-junit-interpreted-short-debug,
+    test-rake-targets"
+    description="Runs unit tests, connecting to port 5001 via dt_socket">
+  </target>
 
   <target name="test-extended" depends="
     copy-test-files,
@@ -899,6 +907,9 @@
   </target>
   <target name="run-junit-interpreted-short">
     <run-junit-1.8-short/>
+  </target>
+  <target name="run-junit-interpreted-short-debug">
+    <run-junit-1.8-short jvm.flags="-Xdebug -Xrunjdwp:transport=dt_socket,suspend=n,address=5001"/>
   </target>
   <target name="run-junit-compiled-1.9">
     <run-junit-1.9 compile.mode="JIT" jit.threshold="0"/>
