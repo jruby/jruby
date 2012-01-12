@@ -33,6 +33,9 @@ public class IRClosure extends IRScope {
 
     private BlockBody body;
 
+    // Starting line number where this closure is defined in the file
+    private int lineNumber;
+
     // Oy, I have a headache!
     // for-loop body closures are special in that they dont really define a new variable scope.
     // They just silently reuse the parent scope.  This changes how variables are allocated (see IRMethod.java).
@@ -46,8 +49,8 @@ public class IRClosure extends IRScope {
     // Block parameters
     private List<Operand> blockArgs;
 
-    public IRClosure(IRScope lexicalParent, boolean isForLoopBody, StaticScope staticScope, Arity arity, int argumentType, boolean is1_9) {
-        this(lexicalParent, lexicalParent.getFileName(), staticScope, isForLoopBody ? "_FOR_LOOP_" : "_CLOSURE_");
+    public IRClosure(IRScope lexicalParent, boolean isForLoopBody, int lineNumber, StaticScope staticScope, Arity arity, int argumentType, boolean is1_9) {
+        this(lexicalParent, lexicalParent.getFileName(), lineNumber, staticScope, isForLoopBody ? "_FOR_LOOP_" : "_CLOSURE_");
         this.isForLoopBody = isForLoopBody;
         this.hasBeenInlined = false;
         this.blockArgs = new ArrayList<Operand>();
@@ -61,8 +64,9 @@ public class IRClosure extends IRScope {
     }
 
     // Used by IREvalScript
-    protected IRClosure(IRScope lexicalParent, String fileName, StaticScope staticScope, String prefix) {
+    protected IRClosure(IRScope lexicalParent, String fileName, int lineNumber, StaticScope staticScope, String prefix) {
         super(lexicalParent, null, fileName, staticScope);
+        this.lineNumber = lineNumber;
         this.isForLoopBody = false;
         this.startLabel = getNewLabel(prefix + "START");
         this.endLabel = getNewLabel(prefix + "END");
@@ -78,6 +82,10 @@ public class IRClosure extends IRScope {
             if (!(s.isForLoopBody())) n++;
         }
         this.nestingDepth = n;
+    }
+
+    public int getLine() {
+        return lineNumber;
     }
 
     @Override

@@ -2207,7 +2207,7 @@ public class IRBuilder {
 
     public Operand buildForIter(final ForNode forNode, IRScope s) {
             // Create a new closure context
-        IRClosure closure = new IRClosure(s, true, forNode.getScope(), Arity.procArityOf(forNode.getVarNode()), forNode.getArgumentType(), is1_9());
+        IRClosure closure = new IRClosure(s, true, forNode.getPosition().getStartLine(), forNode.getScope(), Arity.procArityOf(forNode.getVarNode()), forNode.getArgumentType(), is1_9());
         s.addClosure(closure);
 
             // Receive self
@@ -2349,7 +2349,7 @@ public class IRBuilder {
     }
 
     public Operand buildIter(final IterNode iterNode, IRScope s) {
-        IRClosure closure = new IRClosure(s, false, iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()), iterNode.getArgumentType(), is1_9());
+        IRClosure closure = new IRClosure(s, false, iterNode.getPosition().getStartLine(), iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()), iterNode.getArgumentType(), is1_9());
         s.addClosure(closure);
 
         // Create a new nested builder to ensure this gets its own IR builder state 
@@ -2804,7 +2804,7 @@ public class IRBuilder {
     }
 
     public Operand buildPostExe(PostExeNode postExeNode, IRScope s) {
-        IRClosure endClosure = new IRClosure(s, false, postExeNode.getScope(), Arity.procArityOf(postExeNode.getVarNode()), postExeNode.getArgumentType(), is1_9());
+        IRClosure endClosure = new IRClosure(s, false, postExeNode.getPosition().getStartLine(), postExeNode.getScope(), Arity.procArityOf(postExeNode.getVarNode()), postExeNode.getArgumentType(), is1_9());
 		  // Set up %current_scope and %current_module
         endClosure.addInstr(new CopyInstr(endClosure.getCurrentScopeVariable(), new CurrentScope()));
         endClosure.addInstr(new CopyInstr(endClosure.getCurrentModuleVariable(), new CurrentModule()));
@@ -2816,7 +2816,7 @@ public class IRBuilder {
     }
 
     public Operand buildPreExe(PreExeNode preExeNode, IRScope s) {
-        IRClosure beginClosure = new IRClosure(s, false, preExeNode.getScope(), Arity.procArityOf(preExeNode.getVarNode()), preExeNode.getArgumentType(), is1_9());
+        IRClosure beginClosure = new IRClosure(s, false, preExeNode.getPosition().getStartLine(), preExeNode.getScope(), Arity.procArityOf(preExeNode.getVarNode()), preExeNode.getArgumentType(), is1_9());
 		  // Set up %current_scope and %current_module
         beginClosure.addInstr(new CopyInstr(beginClosure.getCurrentScopeVariable(), new CurrentScope()));
         beginClosure.addInstr(new CopyInstr(beginClosure.getCurrentModuleVariable(), new CurrentModule()));
@@ -3043,7 +3043,7 @@ public class IRBuilder {
 
     public IREvalScript buildEvalRoot(StaticScope staticScope, IRScope containingScope, String file, int lineNumber, RootNode rootNode) {
         // Top-level script!
-        IREvalScript script = new IREvalScript(containingScope, file, staticScope);
+        IREvalScript script = new IREvalScript(containingScope, file, lineNumber, staticScope);
 
         // Debug info: record line number
         script.addInstr(new LineNumberInstr(script, lineNumber));
