@@ -33,6 +33,7 @@ import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.spi.SelectorProvider;
+import java.nio.channels.SocketChannel;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -243,6 +244,11 @@ public class SelectBlob {
                     if (timeout == 0) {
                         selector.selectNow();
                     } else {
+                        for(SelectionKey sk:selector.keys()) {
+                            if(0 != (sk.interestOps() & SelectionKey.OP_WRITE) && !sk.isWritable() && sk.channel() instanceof SocketChannel) {
+                                ((SocketChannel)sk.channel()).finishConnect();
+                            }
+                        }
                         selector.select(timeout);
                     }
                 } else {
