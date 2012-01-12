@@ -449,9 +449,13 @@ public abstract class IRScope {
             runCompilerPass(new LocalOptimizationPass());
             printPass("After inline");
         }        
-        if (RubyInstanceConfig.IR_LIVE_VARIABLE) runCompilerPass(new LiveVariableAnalysis());
-        if (RubyInstanceConfig.IR_DEAD_CODE) runCompilerPass(new DeadCodeElimination());
-        if (RubyInstanceConfig.IR_DEAD_CODE) printPass("After DCE ");
+        // Do not run dead-code-elimination on eval-scripts because they might
+        // update their enclosing environments.
+        if (!(this instanceof IREvalScript)) {
+            if (RubyInstanceConfig.IR_LIVE_VARIABLE) runCompilerPass(new LiveVariableAnalysis());
+            if (RubyInstanceConfig.IR_DEAD_CODE) runCompilerPass(new DeadCodeElimination());
+            if (RubyInstanceConfig.IR_DEAD_CODE) printPass("After DCE ");
+        }
         runCompilerPass(new LinearizeCFG());
         printPass("After CFG Linearize");
     }
