@@ -14,9 +14,9 @@ public class IRLoop {
     public final Label    iterEndLabel;
     public final Variable loopResult;
 
-    public IRLoop(IRScope s) {
+    public IRLoop(IRScope s, IRLoop outerLoop) {
         container = s;
-        parentLoop = s.getCurrentLoop();
+        parentLoop = outerLoop;
         loopStartLabel = s.getNewLabel("_LOOP_BEGIN");
         loopEndLabel   = s.getNewLabel("_LOOP_END");
         iterStartLabel = s.getNewLabel("_ITER_BEGIN");

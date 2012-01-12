@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Stack;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -197,13 +196,6 @@ public abstract class IRScope {
      * - has a call whose closure requires a binding
      * **************************************************************************** */
     private boolean requiresBinding;
-
-    // NOTE: Since we are processing ASTs, loop bodies are processed in depth-first manner
-    // with outer loops encountered before inner loops, and inner loops finished before outer ones.
-    //
-    // So, we can keep track of loops in a loop stack which  keeps track of loops as they are encountered.
-    // This lets us implement next/redo/break/retry easily for the non-closure cases
-    private Stack<IRLoop> loopStack;
     
     public IRScope(IRScope lexicalParent, String name, String fileName, StaticScope staticScope) {
         super();
@@ -214,7 +206,6 @@ public abstract class IRScope {
         this.staticScope = staticScope;
         instructions = new ArrayList<Instr>();
         closures = new ArrayList<IRClosure>();
-        loopStack = new Stack<IRLoop>();
 
         // All flags are true by default!
         canModifyCode = true;
@@ -245,14 +236,6 @@ public abstract class IRScope {
         instructions.add(0, new CopyInstr(v, initState));
     }
 
-    public void startLoop(IRLoop l) {
-        loopStack.push(l);
-    }
-
-    public void endLoop(IRLoop l) {
-        loopStack.pop(); /* SSS FIXME: Do we need to check if l is same as whatever popped? */
-    }
-
     public boolean isForLoopBody() {
         return false;
     }
@@ -264,10 +247,6 @@ public abstract class IRScope {
     public Label getNewLabel() {
         return getNewLabel("LBL");
     }    
-
-    public IRLoop getCurrentLoop() {
-        return loopStack.isEmpty() ? null : loopStack.peek();
-    }
 
     public List<IRClosure> getClosures() {
         return closures;

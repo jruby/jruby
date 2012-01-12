@@ -400,17 +400,21 @@ public class IRBuilder {
         Label    dummyRescueBlockLabel;
         Variable returnAddr;
         Variable savedGlobalException;
+        IRLoop   innermostLoop;
 
-        public EnsureBlockInfo(IRScope s) {
+        public EnsureBlockInfo(IRScope s, IRLoop l) {
             regionStart = s.getNewLabel();
             start       = s.getNewLabel();
             end         = s.getNewLabel();
             returnAddr  = s.getNewTemporaryVariable();
             dummyRescueBlockLabel = s.getNewLabel();
             savedGlobalException = null;
+            innermostLoop = l;
         }
 
-        public static void emitJumpChain(IRScope s, Stack<EnsureBlockInfo> ebStack) {
+        // Emit jump chain by walking up the ensure block stack
+        // If we have been passed a loop value, then emit values that are nested within that loop
+        public static void emitJumpChain(IRScope s, Stack<EnsureBlockInfo> ebStack, IRLoop loop) {
             // SSS: There are 2 ways of encoding this:
             // 1. Jump to ensure block 1, return back here, jump ensure block 2, return back here, ...
             //    Generates 3*n instrs. where n is the # of ensure blocks to execute
@@ -421,8 +425,12 @@ public class IRBuilder {
             int n = ebStack.size();
             EnsureBlockInfo[] ebArray = ebStack.toArray(new EnsureBlockInfo[n]);
             for (int i = n-1; i >= 0; i--) {
-                Label retLabel = s.getNewLabel();
                 EnsureBlockInfo ebi = ebArray[i];
+
+                // 
+                if (ebi.innermostLoop != loop) break;
+
+                Label retLabel = s.getNewLabel();
                 if (ebi.savedGlobalException != null) {
                     s.addInstr(new PutGlobalVarInstr("$!", ebi.savedGlobalException));
                 }
@@ -434,10 +442,23 @@ public class IRBuilder {
     }
 
     private int _lastProcessedLineNum = -1;
+
+    // Since we are processing ASTs, loop bodies are processed in depth-first manner
+    // with outer loops encountered before inner loops, and inner loops finished before outer ones.
+    //
+    // So, we can keep track of loops in a loop stack which  keeps track of loops as they are encountered.
+    // This lets us implement next/redo/break/retry easily for the non-closure cases
+    private Stack<IRLoop> loopStack = new Stack<IRLoop>();
+
+    // Stack encoding nested ensure blocks
     private Stack<EnsureBlockInfo> _ensureBlockStack = new Stack<EnsureBlockInfo>();
 
     // Stack encoding nested rescue blocks -- this just tracks the start label of the blocks
     private Stack<Tuple<Label, Variable>> _rescueBlockStack = new Stack<Tuple<Label, Variable>>();
+
+    public IRLoop getCurrentLoop() {
+        return loopStack.isEmpty() ? null : loopStack.peek();
+    }
     
     protected IRManager manager;
     
@@ -934,11 +955,12 @@ public class IRBuilder {
     }
 
     public Operand buildBreak(BreakNode breakNode, IRScope s) {
+        IRLoop currLoop = getCurrentLoop();
+
         Operand rv = build(breakNode.getValueNode(), s);
         // If we have ensure blocks, have to run those first!
-        if (!_ensureBlockStack.empty()) EnsureBlockInfo.emitJumpChain(s, _ensureBlockStack);
+        if (!_ensureBlockStack.empty()) EnsureBlockInfo.emitJumpChain(s, _ensureBlockStack, currLoop);
 
-        IRLoop currLoop = s.getCurrentLoop();
         if (currLoop != null) {
             s.addInstr(new CopyInstr(currLoop.loopResult, rv));
             s.addInstr(new JumpInstr(currLoop.loopEndLabel));
@@ -1280,7 +1302,7 @@ public class IRBuilder {
         Variable ret = s.getNewTemporaryVariable();
 
         // Push a new ensure block info node onto the stack of ensure block
-        EnsureBlockInfo ebi = new EnsureBlockInfo(s);
+        EnsureBlockInfo ebi = new EnsureBlockInfo(s, getCurrentLoop());
         _ensureBlockStack.push(ebi);
         Label rBeginLabel = ebi.regionStart;
         Label rEndLabel   = ebi.end;
@@ -1984,7 +2006,7 @@ public class IRBuilder {
         Node bodyNode = ensureNode.getBodyNode();
 
         // Push a new ensure block info node onto the stack of ensure block
-        EnsureBlockInfo ebi = new EnsureBlockInfo(s);
+        EnsureBlockInfo ebi = new EnsureBlockInfo(s, getCurrentLoop());
         _ensureBlockStack.push(ebi);
 
         Label rBeginLabel = ebi.regionStart;
@@ -2510,13 +2532,16 @@ public class IRBuilder {
     }
 
     public Operand buildNext(final NextNode nextNode, IRScope s) {
+        IRLoop currLoop = getCurrentLoop();
+
         Operand rv = (nextNode.getValueNode() == null) ? Nil.NIL : build(nextNode.getValueNode(), s);
 
         // If we have ensure blocks, have to run those first!
-        if (!_ensureBlockStack.empty()) EnsureBlockInfo.emitJumpChain(s, _ensureBlockStack);
-        if (s.getCurrentLoop() != null) {
+        if (!_ensureBlockStack.empty()) EnsureBlockInfo.emitJumpChain(s, _ensureBlockStack, currLoop);
+
+        if (currLoop != null) {
             // If a regular loop, the next is simply a jump to the end of the iteration
-            s.addInstr(new JumpInstr(s.getCurrentLoop().iterEndLabel));
+            s.addInstr(new JumpInstr(currLoop.iterEndLabel));
         } else {
             addThreadPollInstrIfNeeded(s);
             // If a closure, the next is simply a return from the closure!
@@ -2806,8 +2831,9 @@ public class IRBuilder {
         // For closures, a redo is a jump to the beginning of the closure
         // For non-closures, a redo is a jump to the beginning of the loop
         if (s instanceof IRClosure) {
-            if (s.getCurrentLoop() != null) {
-                s.addInstr(new JumpInstr(s.getCurrentLoop().iterStartLabel));
+            IRLoop currLoop = getCurrentLoop();
+            if (currLoop != null) {
+                s.addInstr(new JumpInstr(currLoop.iterStartLabel));
             } else {
                 addThreadPollInstrIfNeeded(s);
                 s.addInstr(new JumpInstr(((IRClosure)s).startLabel));
@@ -2990,7 +3016,7 @@ public class IRBuilder {
         // - have to go execute all the ensure blocks if there are any.
         //   this code also takes care of resetting "$!"
         // - if we dont have any ensure blocks, we have to clear "$!"
-        if (!_ensureBlockStack.empty()) EnsureBlockInfo.emitJumpChain(s, _ensureBlockStack);
+        if (!_ensureBlockStack.empty()) EnsureBlockInfo.emitJumpChain(s, _ensureBlockStack, null);
         else s.addInstr(new PutGlobalVarInstr("$!", Nil.NIL));
 
         if (s instanceof IRClosure) {
@@ -3135,11 +3161,12 @@ public class IRBuilder {
             build(conditionNode, s);
             return Nil.NIL;
         } else {
-            IRLoop loop = new IRLoop(s);
+            IRLoop loop = new IRLoop(s, getCurrentLoop());
             Variable loopResult = loop.loopResult;
             Label setupResultLabel = s.getNewLabel();
 
-            s.startLoop(loop);
+            // Push new loop
+            loopStack.push(loop);
 
             // End of iteration jumps here
             s.addInstr(new LabelInstr(loop.loopStartLabel));
@@ -3172,7 +3199,9 @@ public class IRBuilder {
 
             // Loop end -- breaks jump here bypassing the result set up above
             s.addInstr(new LabelInstr(loop.loopEndLabel));
-            s.endLoop(loop);
+
+            // Done with loop
+            loopStack.pop();
 
             return loopResult;
         }
