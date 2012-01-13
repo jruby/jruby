@@ -102,6 +102,7 @@ public class RubySocket extends RubyBasicSocket {
     public static final int MSG_OOB = 0x1;
     public static final int MSG_PEEK = 0x2;
     public static final int MSG_DONTROUTE = 0x4;
+    public static final int MSG_WAITALL = 0x100;
 
     @JRubyModule(name="Socket::Constants")
     public static class Constants {}
@@ -127,6 +128,7 @@ public class RubySocket extends RubyBasicSocket {
         rb_mConstants.setConstant("MSG_OOB", runtime.newFixnum(MSG_OOB));
         rb_mConstants.setConstant("MSG_PEEK", runtime.newFixnum(MSG_PEEK));
         rb_mConstants.setConstant("MSG_DONTROUTE", runtime.newFixnum(MSG_DONTROUTE));
+        rb_mConstants.setConstant("MSG_WAITALL", runtime.newFixnum(MSG_WAITALL));
 
         // constants webrick crashes without
         rb_mConstants.setConstant("AI_PASSIVE", runtime.newFixnum(1));
