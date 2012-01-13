@@ -190,7 +190,7 @@ public class IRClosure extends IRScope {
             localVars.putVariable(name, lvar);
             return lvar;
         } else {
-            return getNewLocalVariable(name, depth-1);
+            return getLexicalParent().getNewLocalVariable(name, depth-1);
         }
     }
 
