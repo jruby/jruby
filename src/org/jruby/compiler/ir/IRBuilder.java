@@ -400,9 +400,15 @@ public class IRBuilder {
         Label    dummyRescueBlockLabel;
         Variable returnAddr;
         Variable savedGlobalException;
+
+        // Innermost loop within which this ensure block is nested, if any
         IRLoop   innermostLoop;
 
-        public EnsureBlockInfo(IRScope s, IRLoop l) {
+        // AST node for any associated rescue node in the case of begin-rescue-ensure-end block
+        // Will be null in the case of begin-ensure-end block
+        RescueNode matchingRescueNode;   
+
+        public EnsureBlockInfo(IRScope s, RescueNode n, IRLoop l) {
             regionStart = s.getNewLabel();
             start       = s.getNewLabel();
             end         = s.getNewLabel();
@@ -410,6 +416,7 @@ public class IRBuilder {
             dummyRescueBlockLabel = s.getNewLabel();
             savedGlobalException = null;
             innermostLoop = l;
+            matchingRescueNode = n;
         }
 
         // Emit jump chain by walking up the ensure block stack
@@ -441,6 +448,24 @@ public class IRBuilder {
         }
     }
 
+    // Stack encoding nested ensure blocks
+    private Stack<EnsureBlockInfo> _ensureBlockStack = new Stack<EnsureBlockInfo>();
+
+    private static class RescueBlockInfo {
+        RescueNode rescueNode;             // Rescue node for which we are tracking info  
+        Label      entryLabel;             // Entry of the rescue block
+        Variable   savedExceptionVariable; // Variable that contains the saved $! variable
+
+        public RescueBlockInfo(RescueNode n, Label l, Variable v) {
+            rescueNode = n;
+            entryLabel = l;
+            savedExceptionVariable = v;
+        }
+    }
+
+    // Stack encoding nested rescue blocks -- this just tracks the start label of the blocks
+    private Stack<RescueBlockInfo> _rescueBlockStack = new Stack<RescueBlockInfo>();
+
     private int _lastProcessedLineNum = -1;
 
     // Since we are processing ASTs, loop bodies are processed in depth-first manner
@@ -449,12 +474,6 @@ public class IRBuilder {
     // So, we can keep track of loops in a loop stack which  keeps track of loops as they are encountered.
     // This lets us implement next/redo/break/retry easily for the non-closure cases
     private Stack<IRLoop> loopStack = new Stack<IRLoop>();
-
-    // Stack encoding nested ensure blocks
-    private Stack<EnsureBlockInfo> _ensureBlockStack = new Stack<EnsureBlockInfo>();
-
-    // Stack encoding nested rescue blocks -- this just tracks the start label of the blocks
-    private Stack<Tuple<Label, Variable>> _rescueBlockStack = new Stack<Tuple<Label, Variable>>();
 
     public IRLoop getCurrentLoop() {
         return loopStack.isEmpty() ? null : loopStack.peek();
@@ -1302,7 +1321,7 @@ public class IRBuilder {
         Variable ret = s.getNewTemporaryVariable();
 
         // Push a new ensure block info node onto the stack of ensure block
-        EnsureBlockInfo ebi = new EnsureBlockInfo(s, getCurrentLoop());
+        EnsureBlockInfo ebi = new EnsureBlockInfo(s, null, getCurrentLoop());
         _ensureBlockStack.push(ebi);
         Label rBeginLabel = ebi.regionStart;
         Label rEndLabel   = ebi.end;
@@ -2006,7 +2025,7 @@ public class IRBuilder {
         Node bodyNode = ensureNode.getBodyNode();
 
         // Push a new ensure block info node onto the stack of ensure block
-        EnsureBlockInfo ebi = new EnsureBlockInfo(s, getCurrentLoop());
+        EnsureBlockInfo ebi = new EnsureBlockInfo(s, (bodyNode instanceof RescueNode) ? (RescueNode)bodyNode : null, getCurrentLoop());
         _ensureBlockStack.push(ebi);
 
         Label rBeginLabel = ebi.regionStart;
@@ -2805,7 +2824,7 @@ public class IRBuilder {
 
     public Operand buildPostExe(PostExeNode postExeNode, IRScope s) {
         IRClosure endClosure = new IRClosure(s, false, postExeNode.getPosition().getStartLine(), postExeNode.getScope(), Arity.procArityOf(postExeNode.getVarNode()), postExeNode.getArgumentType(), is1_9());
-		  // Set up %current_scope and %current_module
+        // Set up %current_scope and %current_module
         endClosure.addInstr(new CopyInstr(endClosure.getCurrentScopeVariable(), new CurrentScope()));
         endClosure.addInstr(new CopyInstr(endClosure.getCurrentModuleVariable(), new CurrentModule()));
         build(postExeNode.getBodyNode(), endClosure);
@@ -2817,7 +2836,7 @@ public class IRBuilder {
 
     public Operand buildPreExe(PreExeNode preExeNode, IRScope s) {
         IRClosure beginClosure = new IRClosure(s, false, preExeNode.getPosition().getStartLine(), preExeNode.getScope(), Arity.procArityOf(preExeNode.getVarNode()), preExeNode.getArgumentType(), is1_9());
-		  // Set up %current_scope and %current_module
+        // Set up %current_scope and %current_module
         beginClosure.addInstr(new CopyInstr(beginClosure.getCurrentScopeVariable(), new CurrentScope()));
         beginClosure.addInstr(new CopyInstr(beginClosure.getCurrentModuleVariable(), new CurrentModule()));
         build(preExeNode.getBodyNode(), beginClosure);
@@ -2868,7 +2887,7 @@ public class IRBuilder {
         Variable savedGlobalException = s.getNewTemporaryVariable();
         s.addInstr(new GetGlobalVariableInstr(savedGlobalException, "$!"));
         if (ensure != null) ensure.savedGlobalException = savedGlobalException;
-        _rescueBlockStack.push(new Tuple<Label, Variable>(rBeginLabel, savedGlobalException));
+        _rescueBlockStack.push(new RescueBlockInfo(rescueNode, rBeginLabel, savedGlobalException));
 
         // Body
         Operand tmp = Nil.NIL;  // default return value if for some strange reason, we neither have the body node or the else node!
@@ -2977,16 +2996,22 @@ public class IRBuilder {
         Operand x = build(realBody, s);
         if (x != U_NIL) { // can be U_NIL if the rescue block has an explicit return
             // Restore "$!"
-            Tuple<Label, Variable> t = _rescueBlockStack.peek();
-            s.addInstr(new PutGlobalVarInstr("$!", t.b));
+            RescueBlockInfo rbi = _rescueBlockStack.peek();
+            s.addInstr(new PutGlobalVarInstr("$!", rbi.savedExceptionVariable));
             s.addInstr(new CopyInstr(rv, x));
-            // Jump to end of rescue block since we've caught and processed the exception
-            if (!_ensureBlockStack.empty()) {
-                EnsureBlockInfo ebi = _ensureBlockStack.peek();
-                s.addInstr(new SetReturnAddressInstr(ebi.returnAddr, endLabel));
-                s.addInstr(new JumpInstr(ebi.start));
-            } else {
+
+            // If we dont have a matching ensure block, jump to the end of the rescue block.
+            // If we have a match, jump to that ensure block.  On return, jump to the end of the rescue block.
+            if (_ensureBlockStack.empty()) {
                 s.addInstr(new JumpInstr(endLabel));
+            } else {
+                EnsureBlockInfo ebi = _ensureBlockStack.peek();
+                if (rbi.rescueNode == ebi.matchingRescueNode) {
+                    s.addInstr(new SetReturnAddressInstr(ebi.returnAddr, endLabel));
+                    s.addInstr(new JumpInstr(ebi.start));
+                } else {
+                    s.addInstr(new JumpInstr(endLabel));
+                }
             }
         }
     }
@@ -3002,9 +3027,9 @@ public class IRBuilder {
         } else {
             addThreadPollInstrIfNeeded(s);
             // Restore $! and jump back to the entry of the rescue block
-            Tuple<Label, Variable> t = _rescueBlockStack.peek();
-            s.addInstr(new PutGlobalVarInstr("$!", t.b));
-            s.addInstr(new JumpInstr(t.a));
+            RescueBlockInfo rbi = _rescueBlockStack.peek();
+            s.addInstr(new PutGlobalVarInstr("$!", rbi.savedExceptionVariable));
+            s.addInstr(new JumpInstr(rbi.entryLabel));
         }
         return Nil.NIL;
     }
