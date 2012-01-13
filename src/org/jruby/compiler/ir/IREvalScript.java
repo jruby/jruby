@@ -104,7 +104,7 @@ public class IREvalScript extends IRClosure {
     }
 
     @Override
-    public LocalVariable getNewLocalVariable(String name) {
+    public LocalVariable getNewLocalVariable(String name, int depth) {
         LocalVariable lvar = new ClosureLocalVariable(this, name, 0, nearestNonEvalScope.evalScopeVars.nextSlot);
         nearestNonEvalScope.evalScopeVars.putVariable(name, lvar);
         return lvar;

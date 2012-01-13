@@ -2239,6 +2239,11 @@ public class IRBuilder {
             if (argsNodeId != null) receiveBlockArgs(forNode, closure);
         }
 
+        // Set %current_scope = <current-scope>
+        // Set %current_module = <current-module>
+        closure.addInstr(new CopyInstr(closure.getCurrentScopeVariable(), new CurrentScope()));
+        closure.addInstr(new CopyInstr(closure.getCurrentModuleVariable(), new CurrentModule()));
+
             // Start label -- used by redo!
         closure.addInstr(new LabelInstr(closure.startLabel));
 

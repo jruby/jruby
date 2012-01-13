@@ -182,10 +182,16 @@ public class IRClosure extends IRScope {
         else return null;
     }
 
-    public LocalVariable getNewLocalVariable(String name) {
-        LocalVariable lvar = new ClosureLocalVariable(this, name, 0, localVars.nextSlot);
-        localVars.putVariable(name, lvar);
-        return lvar;
+    public LocalVariable getNewLocalVariable(String name, int depth) {
+        if (isForLoopBody) return getLexicalParent().getNewLocalVariable(name, depth);
+
+        if (depth == 0) {
+            LocalVariable lvar = new ClosureLocalVariable(this, name, 0, localVars.nextSlot);
+            localVars.putVariable(name, lvar);
+            return lvar;
+        } else {
+            return getNewLocalVariable(name, depth-1);
+        }
     }
 
     @Override
@@ -193,12 +199,9 @@ public class IRClosure extends IRScope {
         if (isForLoopBody) return getLexicalParent().getLocalVariable(name, scopeDepth);
 
         LocalVariable lvar = findExistingLocalVariable(name, scopeDepth);
-        if (lvar == null) {
-            lvar = getNewLocalVariable(name);
-        } else if (lvar.getScopeDepth() != scopeDepth) {
-            // Create a copy of the variable usable at a different scope depth
-            lvar = lvar.cloneForDepth(scopeDepth);
-        }
+        if (lvar == null) lvar = getNewLocalVariable(name, scopeDepth);
+        // Create a copy of the variable usable at the right depth
+        if (lvar.getScopeDepth() != scopeDepth) lvar = lvar.cloneForDepth(scopeDepth);
 
         return lvar;
     }
@@ -208,6 +211,34 @@ public class IRClosure extends IRScope {
     }
 
     public LocalVariable getImplicitBlockArg() {
-        return getLocalVariable(Variable.BLOCK, getNestingDepth());
+        // SSS: FIXME: Ugly! We cannot use 'getLocalVariable(Variable.BLOCK, getNestingDepth())' because
+        // of scenario 3. below.  Can we clean up this code?
+        //
+        // 1. If the variable has previously been defined, return a copy usable at the closure's nesting depth.
+        // 2. If not, and if the closure is ultimately nested within a method, build a local variable that will 
+        //    be defined in that method.
+        // 3. If not, and if the closure is not nested within a method, the closure can never receive a block.
+        //    So, we could return 'null', but it creates problems for IR generation.  So, for this scenario,
+        //    we simply create a dummy var at depth 0 (meaning, it is local to the closure itself) and return it.
+        LocalVariable blockVar = findExistingLocalVariable(Variable.BLOCK, getNestingDepth());
+        if (blockVar != null) {
+            // Create a copy of the variable usable at the right depth
+            if (blockVar.getScopeDepth() != getNestingDepth()) blockVar = blockVar.cloneForDepth(getNestingDepth());
+        } else {
+            IRScope s = this;
+            while (s instanceof IRClosure) {
+                s = ((IRClosure)s).getLexicalParent();
+            }
+
+            if (s instanceof IRMethod) {
+                blockVar = s.getNewLocalVariable(Variable.BLOCK, 0);
+                // Create a copy of the variable usable at the right depth
+                if (getNestingDepth() != 0) blockVar = blockVar.cloneForDepth(getNestingDepth());
+            } else {
+                // Dummy var
+                blockVar = getNewLocalVariable(Variable.BLOCK, 0);
+            }
+        }
+        return blockVar;
     }
 }

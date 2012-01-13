@@ -103,7 +103,7 @@ public class IRBuilder19 extends IRBuilder {
 
     protected LocalVariable getArgVariable(IRScope s, String name, int depth) {
         // For non-loops, this name will override any name that exists in outer scopes
-        return ((s instanceof IRClosure) && ((IRClosure)s).isForLoopBody()) ? s.getLocalVariable(name, depth) : s.getNewLocalVariable(name);
+        return ((s instanceof IRClosure) && ((IRClosure)s).isForLoopBody()) ? s.getLocalVariable(name, depth) : s.getNewLocalVariable(name, 0);
     }
 
     private void addArgReceiveInstr(IRScope s, Variable v, int argIndex, boolean post, int totalRequired, int totalOptional) {
@@ -118,7 +118,7 @@ public class IRBuilder19 extends IRBuilder {
         switch (node.getNodeType()) {
             case ARGUMENTNODE: {
                 ArgumentNode a = (ArgumentNode)node;
-                addArgReceiveInstr(s, s.getNewLocalVariable(a.getName()), argIndex, post, totalRequired, totalOptional);
+                addArgReceiveInstr(s, s.getNewLocalVariable(a.getName(), 0), argIndex, post, totalRequired, totalOptional);
                 break;
             }
             case MULTIPLEASGN19NODE: {
@@ -172,7 +172,7 @@ public class IRBuilder19 extends IRBuilder {
                 // Jump to 'l' if this arg is not null.  If null, fall through and build the default value!
                 Label l = s.getNewLabel();
                 OptArgNode n = (OptArgNode)optArgs.get(j);
-                Variable av = s.getNewLocalVariable(n.getName());
+                Variable av = s.getNewLocalVariable(n.getName(), 0);
                 // You need at least required+j+1 incoming args for this opt arg to get an arg at all
                 s.addInstr(new ReceiveOptArgInstr(av, argIndex, required+j+1));
                 s.addInstr(BNEInstr.create(av, UndefinedValue.UNDEFINED, l)); // if 'av' is not undefined, go to default
@@ -192,7 +192,7 @@ public class IRBuilder19 extends IRBuilder {
             // You need at least required+opt+1 incoming args for the rest arg to get any args at all
             // If it is going to get something, then it should ignore required+opt args from the beginning
             // because they have been accounted for already.
-            s.addInstr(new ReceiveRestArgInstr(s.getNewLocalVariable(argName), argIndex, required+opt+1, required+opt));
+            s.addInstr(new ReceiveRestArgInstr(s.getNewLocalVariable(argName, 0), argIndex, required+opt+1, required+opt));
             argIndex++;
         }
 
@@ -210,7 +210,7 @@ public class IRBuilder19 extends IRBuilder {
     public void receiveClosureArg(BlockArgNode blockVarNode, IRScope s) {
         Variable blockVar = null;
         if (blockVarNode != null) {
-            blockVar = s.getNewLocalVariable(blockVarNode.getName());
+            blockVar = s.getNewLocalVariable(blockVarNode.getName(), 0);
             s.addInstr(new ReceiveClosureInstr(blockVar));
         }
 

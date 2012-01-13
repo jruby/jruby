@@ -689,7 +689,7 @@ public abstract class IRScope {
         return lvar;
     }
 
-    public LocalVariable getNewLocalVariable(String name) {
+    public LocalVariable getNewLocalVariable(String name, int depth) {
         throw new RuntimeException("getNewLocalVariable should be called for: " + this.getClass().getName());
     }
 
