@@ -369,7 +369,7 @@ public class IRBuilder19 extends IRBuilder {
     }
 
     public Operand buildLambda(LambdaNode node, IRScope s) {
-        IRClosure closure = new IRClosure(s, false, node.getScope(), Arity.procArityOf(node.getArgs()), node.getArgumentType(), true);
+        IRClosure closure = new IRClosure(s, false, node.getPosition().getStartLine(), node.getScope(), Arity.procArityOf(node.getArgs()), node.getArgumentType(), true);
         s.addClosure(closure);
 
         // Create a new nested builder to ensure this gets its own IR builder state 
