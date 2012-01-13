@@ -1,1 +1,0 @@
-fails(JRUBY-5667,only in full run):Module#remove_class_variable removes a class variable defined in a metaclass

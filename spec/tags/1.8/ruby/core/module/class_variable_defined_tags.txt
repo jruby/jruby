@@ -1,1 +1,0 @@
-fails(JRUBY-5667,only in full run):Module#class_variable_defined? returns false if the class variable is not defined in a metaclass
