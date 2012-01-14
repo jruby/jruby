@@ -2852,18 +2852,19 @@ public class IRBuilder {
     }
 
     public Operand buildRedo(Node node, IRScope s) {
-        // For closures, a redo is a jump to the beginning of the closure
-        // For non-closures, a redo is a jump to the beginning of the loop
-        if (s instanceof IRClosure) {
-            IRLoop currLoop = getCurrentLoop();
-            if (currLoop != null) {
-                s.addInstr(new JumpInstr(currLoop.iterStartLabel));
-            } else {
+        // If in a loop, a redo is a jump to the beginning of the loop.
+        // If not, for closures, a redo is a jump to the beginning of the closure.
+        // If not in a loop or a closure, it is a local jump error
+        IRLoop currLoop = getCurrentLoop();
+        if (currLoop != null) {
+             s.addInstr(new JumpInstr(currLoop.iterStartLabel));
+        } else {
+            if (s instanceof IRClosure) {
                 addThreadPollInstrIfNeeded(s);
                 s.addInstr(new JumpInstr(((IRClosure)s).startLabel));
+            } else {
+                s.addInstr(new ThrowExceptionInstr(IRException.REDO_LocalJumpError));
             }
-        } else {
-            s.addInstr(new ThrowExceptionInstr(IRException.REDO_LocalJumpError));
         }
         return Nil.NIL;
     }
