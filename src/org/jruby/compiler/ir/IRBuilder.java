@@ -3048,7 +3048,7 @@ public class IRBuilder {
         //   this code also takes care of resetting "$!"
         // - if we dont have any ensure blocks, we have to clear "$!"
         if (!_ensureBlockStack.empty()) EnsureBlockInfo.emitJumpChain(s, _ensureBlockStack, null);
-        else s.addInstr(new PutGlobalVarInstr("$!", Nil.NIL));
+        else if (!_rescueBlockStack.empty()) s.addInstr(new PutGlobalVarInstr("$!", Nil.NIL));
 
         if (s instanceof IRClosure) {
             // If 'm' is a block scope, a return returns from the closest enclosing method.
