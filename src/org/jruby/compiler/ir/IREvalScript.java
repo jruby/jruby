@@ -111,6 +111,11 @@ public class IREvalScript extends IRClosure {
     }
 
     @Override
+    public LocalVariable getNewFlipStateVariable() {
+        return getLocalVariable("%flip_" + allocateNextPrefixedName("%flip"), 0);
+    }
+
+    @Override
     public int getUsedVariablesCount() {
         return 1 + nearestNonEvalScope.evalScopeVars.nextSlot + getPrefixCountSize("%flip");
     }
@@ -124,4 +129,9 @@ public class IREvalScript extends IRClosure {
     public boolean isTopLocalVariableScope() {
         return false;
     }    
+
+    @Override
+    public boolean isFlipScope() {
+        return true;
+    }
 }

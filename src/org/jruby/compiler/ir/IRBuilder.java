@@ -2158,11 +2158,18 @@ public class IRBuilder {
         Fixnum s2 = new Fixnum((long)2);
 
         // Create a variable to hold the flip state 
-        IRScope nearestNonClosure = s.getNearestTopLocalVariableScope();
+        IRScope nearestNonClosure = s.getNearestFlipVariableScope();
         Variable flipState = nearestNonClosure.getNewFlipStateVariable();
         nearestNonClosure.initFlipStateVariable(flipState, s1);
         if (s instanceof IRClosure) {
-            flipState = ((LocalVariable)flipState).cloneForDepth(((IRClosure)s).getNestingDepth());
+            // Clone the flip variable to be usable at the proper-depth.
+            int n = 0;
+            IRScope x = s;
+            while (!x.isFlipScope()) {
+                x = x.getLexicalParent();
+                if (!x.isForLoopBody()) n++;
+            }
+            if (n > 0) flipState = ((LocalVariable)flipState).cloneForDepth(n);
         }
 
         // Variables and labels needed for the code

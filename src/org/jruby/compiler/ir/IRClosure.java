@@ -78,8 +78,8 @@ public class IRClosure extends IRScope {
         int n = 0;
         IRScope s = this;
         while (s instanceof IRClosure) {
-            s = ((IRClosure)s).getLexicalParent();
-            if (!(s.isForLoopBody())) n++;
+            s = s.getLexicalParent();
+            if (!s.isForLoopBody()) n++;
         }
         this.nestingDepth = n;
     }
@@ -95,12 +95,7 @@ public class IRClosure extends IRScope {
 
     @Override
     public LocalVariable getNewFlipStateVariable() {
-        throw new RuntimeException("Cannot get flip variables from closures or evals.");
-    }
-
-    @Override
-    public void initFlipStateVariable(Variable v, Operand initState) {
-        throw new RuntimeException("Cannot init flip variables from closures or evals.");
+        throw new RuntimeException("Cannot get flip variables from closures.");
     }
 
     @Override
@@ -130,6 +125,11 @@ public class IRClosure extends IRScope {
 
     @Override
     public boolean isTopLocalVariableScope() {
+        return false;
+    }
+
+    @Override
+    public boolean isFlipScope() {
         return false;
     }
 
@@ -226,9 +226,7 @@ public class IRClosure extends IRScope {
             if (blockVar.getScopeDepth() != getNestingDepth()) blockVar = blockVar.cloneForDepth(getNestingDepth());
         } else {
             IRScope s = this;
-            while (s instanceof IRClosure) {
-                s = ((IRClosure)s).getLexicalParent();
-            }
+            while (s instanceof IRClosure) s = s.getLexicalParent();
 
             if (s instanceof IRMethod) {
                 blockVar = s.getNewLocalVariable(Variable.BLOCK, 0);

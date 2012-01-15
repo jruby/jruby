@@ -273,6 +273,16 @@ public abstract class IRScope {
         return (IRMethod) current;
     }
 
+    public IRScope getNearestFlipVariableScope() {
+        IRScope current = this;
+
+        while (current != null && !current.isFlipScope()) {
+            current = current.getLexicalParent();
+        }
+        
+        return current;
+    }
+
     public IRScope getNearestTopLocalVariableScope() {
         IRScope current = this;
 
@@ -957,6 +967,10 @@ public abstract class IRScope {
      */
     public boolean isModuleBody() {
         return false;
+    }
+
+    public boolean isFlipScope() {
+        return true;
     }
     
     public boolean isTopLocalVariableScope() {
