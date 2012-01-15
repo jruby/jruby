@@ -277,7 +277,7 @@ public class Interpreter {
                         break;
                     }
                     case RECV_CLOSURE: {
-                        result = block == Block.NULL_BLOCK ? context.nil : runtime.newProc(block.type, block);
+                        result = block == Block.NULL_BLOCK ? context.nil : runtime.newProc(Block.Type.PROC, block);
                         resultVar = ((ResultInstr)lastInstr).getResult();
                         ipc++;
                         break;

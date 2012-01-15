@@ -52,6 +52,8 @@ public class YieldInstr extends Instr implements ResultInstr {
         if (blk instanceof RubyProc) blk = ((RubyProc)blk).getBlock();
         if (blk instanceof RubyNil) blk = Block.NULL_BLOCK;
         Block b = (Block)blk;
+        // Yields are always to normal blocks
+        b.type = Block.Type.NORMAL;
         if (yieldArg == null) {
             return b.yieldSpecific(context);
         } else {
