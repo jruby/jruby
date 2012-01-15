@@ -457,16 +457,15 @@ public class Interpreter {
         bj.breakInEval = false;  // Clear eval flag
 
         // Error
-        if (!inClosure || inProc(blockType)) throw IRException.BREAK_LocalJumpError.getException(context.getRuntime());
+        if (!inClosure) throw IRException.BREAK_LocalJumpError.getException(context.getRuntime());
 
-        // Lambda special case.  We are in a lambda and breaking out of it requires popping out exactly one level up.
-        if (inLambda(blockType)) {
-            if (bj.scopeToReturnTo == null || context.scopeExistsOnCallStack(bj.scopeToReturnTo.getStaticScope())) bj.caughtByLambda = true;
-            // Cannot return to the call that we have long since exited.
-            else throw IRException.BREAK_LocalJumpError.getException(context.getRuntime());
-        }
-        // If we are in an eval, record it so we can account for it
-        else if (scope instanceof IREvalScript) {
+        if (inProc(blockType)) {
+            // SSS FIXME: Here we need to check if the current executing block has escaped
+            // which means the block has to be passed in from Block.call -> BlockBody.call -> Interpreter.interpret
+        } else if (inLambda(blockType)) {
+            bj.caughtByLambda = true;
+        } else if (scope instanceof IREvalScript) {
+            // If we are in an eval, record it so we can account for it
             bj.breakInEval = true;
         }
 
@@ -482,7 +481,7 @@ public class Interpreter {
         } finally {
             ThreadContext.popBacktrace(context);
         }
-	 }
+    }
 
     public static IRubyObject INTERPRET_BLOCK(ThreadContext context, IRubyObject self, 
             IRScope scope, IRubyObject[] args, String name, Block block, Block.Type blockType) {
@@ -492,7 +491,7 @@ public class Interpreter {
         } finally {
             ThreadContext.popBacktrace(context);
         }
-	 }
+    }
 
     public static IRubyObject INTERPRET_METHOD(ThreadContext context, IRScope scope, 
         IRubyObject self, String name, RubyModule implClass, IRubyObject[] args, Block block, Block.Type blockType, boolean isTraceable) {
