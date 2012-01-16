@@ -2900,12 +2900,29 @@ public class IRBuilder {
         Variable savedGlobalException = s.getNewTemporaryVariable();
         s.addInstr(new GetGlobalVariableInstr(savedGlobalException, "$!"));
         if (ensure != null) ensure.savedGlobalException = savedGlobalException;
-        _rescueBlockStack.push(new RescueBlockInfo(rescueNode, rBeginLabel, savedGlobalException));
 
         // Body
         Operand tmp = Nil.NIL;  // default return value if for some strange reason, we neither have the body node or the else node!
         Variable rv = s.getNewTemporaryVariable();
         if (rescueNode.getBodyNode() != null) tmp = build(rescueNode.getBodyNode(), s);
+
+        // Push rescue block *after* body has been built.  
+        // If not, this messes up generation of retry in these scenarios like this:
+        //
+        //     begin    -- 1
+        //       ...
+        //     rescue
+        //       begin  -- 2
+        //         ...
+        //         retry
+        //       rescue   
+        //         ...
+        //       end
+        //     end
+        //
+        // The retry should jump to 1, not 2.
+        // If we push the rescue block before building the body, we will jump to 2.
+        _rescueBlockStack.push(new RescueBlockInfo(rescueNode, rBeginLabel, savedGlobalException));
 
         // Since rescued regions are well nested within Ruby, this bare marker is sufficient to
         // let us discover the edge of the region during linear traversal of instructions during cfg construction.
