@@ -1380,6 +1380,12 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         synchronized(this) {
             Object value = getMetaClass().getRealClass().getVariableAccessorForRead(name).get(this);
             getMetaClass().getRealClass().getVariableAccessorForWrite(name).set(this, null);
+            
+            // if there's no values set anymore, null out the table
+            for (Object var : varTable) {
+                if (var != null) return value;
+            }
+            varTable = null;
             return value;
         }
     }
