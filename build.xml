@@ -1780,8 +1780,11 @@
   <target name="clean-tzdata" description="Remove files used for updating time zone information">
     <delete dir="${tzdata.builddir}" failonerror="no" />
     <echo message="Reset joda-time jar" />
-    <exec executable="git" failonerror="false" failifexecutionfails="false">
-      <arg line="checkout -- ${build.lib.dir}/joda-time-${joda.time.version}.jar"/>
+    <exec osfamily="unix" executable="/bin/sh" failonerror="false" failifexecutionfails="false">
+	  <arg line="-c 'git checkout -- ${build.lib.dir}/joda-time-${joda.time.version}.jar'"/>
+    </exec>
+    <exec osfamily="windows" executable="cmd" failonerror="false" failifexecutionfails="false">
+      <arg line="/c git checkout -- ${build.lib.dir}/joda-time-${joda.time.version}.jar"/>
     </exec>
   </target>
 
