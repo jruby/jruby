@@ -31,6 +31,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.JumpException;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -181,6 +182,10 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
             parameters = IRubyObject.NULL_ARRAY;
         } else if (value instanceof RubyArray && (alreadyArray || (isRest && requiredCount > 0))) {
             parameters = ((RubyArray) value).toJavaArray();
+        } else if (isRest || requiredCount > 0) {
+            value = RuntimeHelpers.aryToAry(value);
+
+            parameters = (value instanceof RubyArray) ? ((RubyArray)value).toJavaArray() : new IRubyObject[] { value };
         } else {
             parameters = new IRubyObject[] { value };
         }
@@ -198,10 +203,22 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
             parameters = IRubyObject.NULL_ARRAY;
         } else if (value instanceof RubyArray && ((isRest && requiredCount > 0) || (!isRest && requiredCount > 1))) {
             parameters = ((RubyArray) value).toJavaArray();
+        } else if (manyParms(isRest, requiredCount)) {
+            if (value instanceof RubyArray) {
+                parameters = ((RubyArray) value).toJavaArray();
+            } else {
+                value = RuntimeHelpers.aryToAry(value);
+
+                parameters = (value instanceof RubyArray) ? ((RubyArray)value).toJavaArray() : new IRubyObject[] { value };
+            }
         } else {
             parameters = new IRubyObject[] { value };
         }
         return parameters;
+    }
+
+    private boolean manyParms(boolean isRest, int requiredCount) {
+        return (isRest && requiredCount > 0) || (!isRest && requiredCount > 1);
     }
 
     public String getFile() {
