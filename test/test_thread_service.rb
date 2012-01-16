@@ -27,12 +27,23 @@ class TestThreadService < Test::Unit::TestCase
     # confirm the size goes back to the same
     assert_equal start_rt, @service.ruby_thread_map.size
   end
+
+  def join_java_threads
+    # spin up Java threads and join them
+    #
+    # In the IR interpreter, placing this loop in a separate method ensures
+    # that there is no live ref to the thread-array in the interpreter
+    # tmp var array.  This can actually happen in some scenarios.  This is
+    # not quite a correctness issue, but more a problem with the expectation
+    # about when GC will run and what it can collect.
+    (1..10).to_a.map {t = java.lang.Thread.new {}; t.start; t}.map(&:join)
+  end
   
   def test_java_thread_leaks
     start_rt = @service.ruby_thread_map.size
 
     # spin up 100 Java threads and join them
-    (1..10).to_a.map {t = java.lang.Thread.new {}; t.start; t}.map(&:join)
+    join_java_threads
     
     # access map and GC repeatedly for a while to flush things out
     wait_for_list_size(start_rt)
