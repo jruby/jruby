@@ -2542,7 +2542,8 @@ public class RubyModule extends RubyObject {
         IRubyObject symbol = args[0];
         boolean inherit = args.length == 1 || (!args[1].isNil() && args[1].isTrue());
 
-        return getConstant(validateConstant(symbol.asJavaString()), inherit);
+        // 1.9 only includes Object when inherit = true or unspecified (JRUBY-6224)
+        return getConstant(validateConstant(symbol.asJavaString()), inherit, inherit);
     }
 
     /** rb_mod_const_set
@@ -2864,7 +2865,11 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject getConstant(String name, boolean inherit) {
-        IRubyObject value = getConstantNoConstMissing(name, inherit);
+        return getConstant(name, inherit, true);
+    }
+
+    public IRubyObject getConstant(String name, boolean inherit, boolean includeObject) {
+        IRubyObject value = getConstantNoConstMissing(name, inherit, includeObject);
         Ruby runtime = getRuntime();
 
         return value == null ? callMethod(runtime.getCurrentContext(), "const_missing",
@@ -2886,11 +2891,15 @@ public class RubyModule extends RubyObject {
     }
 
     public IRubyObject getConstantNoConstMissing(String name, boolean inherit) {
+        return getConstantNoConstMissing(name, inherit, true);
+    }
+
+    public IRubyObject getConstantNoConstMissing(String name, boolean inherit, boolean includeObject) {
         assert IdUtil.isConstant(name);
 
         IRubyObject constant = iterateConstantNoConstMissing(name, this, inherit);
 
-        if (constant == null && !isClass()) {
+        if (constant == null && !isClass() && includeObject) {
             constant = iterateConstantNoConstMissing(name, getRuntime().getObject(), inherit);
         }
 
