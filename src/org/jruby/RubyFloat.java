@@ -224,7 +224,14 @@ public class RubyFloat extends RubyNumeric {
         if (Double.isNaN(value)) return RubyString.newString(runtime, "NaN");
 
         ByteList buf = new ByteList();
-        Sprintf.sprintf(buf, Locale.US, "%#.15g", this);
+        // Under 1.9, use full-precision float formatting (JRUBY-4846).
+        // Double-precision can represent around 16 decimal digits;
+        // we use 20 to ensure full representation.
+        if (runtime.is1_9()) {
+            Sprintf.sprintf(buf, Locale.US, "%#.20g", this);
+        } else {
+            Sprintf.sprintf(buf, Locale.US, "%#.15g", this);
+        }
         int e = buf.indexOf('e');
         if (e == -1) e = buf.getRealSize();
         ASCIIEncoding ascii = ASCIIEncoding.INSTANCE; 
