@@ -286,7 +286,6 @@ public class PsychParser extends RubyObject {
                     new IRubyObject[] {runtime.getModule("Psych").getConstant("SyntaxError"), runtime.newString(re.getLocalizedMessage())},
                     Block.NULL_BLOCK);
         } catch (Throwable t) {
-            LOG.error(t);
             UnsafeFactory.getUnsafe().throwException(t);
             return this;
         }
