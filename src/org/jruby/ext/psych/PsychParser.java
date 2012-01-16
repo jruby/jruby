@@ -110,8 +110,8 @@ public class PsychParser extends RubyObject {
         IRubyObject handler = getInstanceVariable("@handler");
         Event event;
 
-        while (true) {
-            try {
+        try {
+            while (true) {
                 event = parser.getEvent();
 
                 // FIXME: Event should expose a getID, so it can be switched
@@ -260,21 +260,21 @@ public class PsychParser extends RubyObject {
                             "end_stream");
                     break;
                 }
-            } catch (ParserException pe) {
-                parser = null;
-                RubyKernel.raise(context, runtime.getKernel(),
-                    new IRubyObject[] {runtime.getModule("Psych").getConstant("SyntaxError"), runtime.newString(pe.getLocalizedMessage())},
-                    Block.NULL_BLOCK);
-            } catch (ScannerException se) {
-                parser = null;
-                StringBuilder message = new StringBuilder("syntax error");
-                if (se.getProblemMark() != null) {
-                    message.append(se.getProblemMark().toString());
-                }
-                throw runtime.newArgumentError(message.toString());
             }
+        } catch (ParserException pe) {
+            parser = null;
+            RubyKernel.raise(context, runtime.getKernel(),
+            new IRubyObject[] {runtime.getModule("Psych").getConstant("SyntaxError"), runtime.newString(pe.getLocalizedMessage())},
+            Block.NULL_BLOCK);
+        } catch (ScannerException se) {
+            parser = null;
+            StringBuilder message = new StringBuilder("syntax error");
+            if (se.getProblemMark() != null) {
+              message.append(se.getProblemMark().toString());
+            }
+            throw runtime.newArgumentError(message.toString());
         }
-
+  
         return this;
     }
 }
