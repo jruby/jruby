@@ -2166,8 +2166,8 @@ public class IRBuilder {
             int n = 0;
             IRScope x = s;
             while (!x.isFlipScope()) {
-                x = x.getLexicalParent();
                 if (!x.isForLoopBody()) n++;
+                x = x.getLexicalParent();
             }
             if (n > 0) flipState = ((LocalVariable)flipState).cloneForDepth(n);
         }
