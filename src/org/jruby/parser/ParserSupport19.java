@@ -30,7 +30,9 @@ package org.jruby.parser;
 
 import org.jcodings.Encoding;
 import org.jruby.RubyRegexp;
+import org.jruby.ast.ArrayNode;
 import org.jruby.ast.AssignableNode;
+import org.jruby.ast.BlockPassNode;
 import org.jruby.ast.ClassVarAsgnNode;
 import org.jruby.ast.ConstDeclNode;
 import org.jruby.ast.DRegexpNode;
@@ -46,6 +48,11 @@ import org.jruby.ast.SValue19Node;
 import org.jruby.ast.SValueNode;
 import org.jruby.ast.Splat19Node;
 import org.jruby.ast.SplatNode;
+import org.jruby.ast.Yield19Node;
+import org.jruby.ast.YieldOneNode;
+import org.jruby.ast.YieldTwoNode;
+import org.jruby.ast.YieldThreeNode;
+import org.jruby.ast.ZYieldNode;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.lexer.yacc.RubyYaccLexer;
 import org.jruby.lexer.yacc.SyntaxException;
@@ -215,4 +222,28 @@ public class ParserSupport19 extends ParserSupport {
         return getOperatorCallNode(firstNode, "=~", secondNode);
     }
 
+    @Override
+    public Node new_yield(ISourcePosition position, Node node) {
+        if (node != null && node instanceof BlockPassNode) {
+            throw new SyntaxException(PID.BLOCK_ARG_UNEXPECTED, node.getPosition(),
+                    lexer.getCurrentLine(), "Block argument should not be given.");
+        }
+
+        if (node instanceof ArrayNode) {
+            ArrayNode args = (ArrayNode) node;
+
+            switch (args.size()) {
+                case 0:
+                    return new ZYieldNode(position);
+                case 1:
+                    return new YieldOneNode(position, args);
+                case 2:
+                    return new YieldTwoNode(position, args);
+                case 3:
+                    return new YieldThreeNode(position, args);
+            }
+        }
+
+        return new Yield19Node(position, node);
+    }
 }
