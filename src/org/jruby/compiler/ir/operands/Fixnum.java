@@ -56,6 +56,21 @@ public class Fixnum extends Constant {
 
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
+        // Cache value so that when the same Fixnum Operand is copy-propagated across multiple instructions,
+        // the same RubyFixnum object is created.  In addition, the same constant across loops should be
+        // the same object.
+        //
+        // So, in this example, the output should be false, true, true
+        //
+        //    n = 0
+        //    olda = nil
+        //    while (n < 3)
+        //      a = 34853
+        //      p a.equal?(olda)
+        //      olda = a
+        //      n += 1
+        //    end
+        //
         if (rubyFixnum == null) rubyFixnum = context.getRuntime().newFixnum(value);
         return rubyFixnum;
     }
