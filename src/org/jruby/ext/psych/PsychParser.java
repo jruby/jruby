@@ -105,20 +105,20 @@ public class PsychParser extends RubyObject {
         boolean tainted = target.isTaint();
         
         // FIXME? only supports Unicode, since we have to produces strings...
-        StreamReader reader;
-        if (target.respondsTo("read")) {
-            reader = new StreamReader(new InputStreamReader(new IOInputStream(target), RubyEncoding.UTF8));
-            if (target instanceof RubyIO) {
-                tainted = true;
+        try {
+            StreamReader reader;
+            if (target.respondsTo("read")) {
+                reader = new StreamReader(new InputStreamReader(new IOInputStream(target), RubyEncoding.UTF8));
+                if (target instanceof RubyIO) {
+                    tainted = true;
+                }
+            } else {
+                reader = new StreamReader(new StringReader(target.convertToString().asJavaString()));
             }
-        } else {
-            reader = new StreamReader(new StringReader(target.convertToString().asJavaString()));
-        }
-        parser = new ParserImpl(reader);
-        IRubyObject handler = getInstanceVariable("@handler");
+            parser = new ParserImpl(reader);
+            IRubyObject handler = getInstanceVariable("@handler");
 
-        while (true) {
-            try {
+            while (true) {
                 event = parser.getEvent();
 
                 // FIXME: Event should expose a getID, so it can be switched
@@ -267,28 +267,28 @@ public class PsychParser extends RubyObject {
                             "end_stream");
                     break;
                 }
-            } catch (ParserException pe) {
-                parser = null;
-                RubyKernel.raise(context, runtime.getKernel(),
+            }
+        } catch (ParserException pe) {
+            parser = null;
+            RubyKernel.raise(context, runtime.getKernel(),
                     new IRubyObject[] {runtime.getModule("Psych").getConstant("SyntaxError"), runtime.newString(pe.getLocalizedMessage())},
                     Block.NULL_BLOCK);
-            } catch (ScannerException se) {
-                parser = null;
-                StringBuilder message = new StringBuilder("syntax error");
-                if (se.getProblemMark() != null) {
-                    message.append(se.getProblemMark().toString());
-                }
-                throw runtime.newArgumentError(message.toString());
-            } catch (ReaderException re) {
-                parser = null;
-                RubyKernel.raise(context, runtime.getKernel(),
+        } catch (ScannerException se) {
+            parser = null;
+            StringBuilder message = new StringBuilder("syntax error");
+            if (se.getProblemMark() != null) {
+                message.append(se.getProblemMark().toString());
+            }
+            throw runtime.newArgumentError(message.toString());
+        } catch (ReaderException re) {
+            parser = null;
+            RubyKernel.raise(context, runtime.getKernel(),
                     new IRubyObject[] {runtime.getModule("Psych").getConstant("SyntaxError"), runtime.newString(re.getLocalizedMessage())},
                     Block.NULL_BLOCK);
-            } catch (Throwable t) {
-                LOG.error(t);
-                UnsafeFactory.getUnsafe().throwException(t);
-                return this;
-            }
+        } catch (Throwable t) {
+            LOG.error(t);
+            UnsafeFactory.getUnsafe().throwException(t);
+            return this;
         }
 
         return this;
