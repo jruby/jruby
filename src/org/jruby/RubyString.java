@@ -502,6 +502,37 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return new RubyString(runtime, runtime.getString(), byteList);
     }
 
+    /**
+     * Return a new Ruby String encoded as the default internal encoding given a Java String that
+     * has come from an external source. If there is no default internal encoding set, the Ruby
+     * String will be encoded using Java's default external encoding. If an internal encoding is
+     * set, that encoding will be used for the Ruby String.
+     *
+     * @param runtime
+     * @param str
+     * @return
+     */
+    public static RubyString newInternalFromJavaExternal(Ruby runtime, String str) {
+        // Ruby internal
+        Encoding internal = runtime.getDefaultInternalEncoding();
+        Charset rubyInt = null;
+        if (internal != null && internal.getCharset() != null) rubyInt = internal.getCharset();
+
+        // Java external, used if no internal
+        Charset javaExt = Charset.defaultCharset();
+        Encoding javaExtEncoding = runtime.getEncodingService().getJavaDefault();
+
+        if (rubyInt == null) {
+            return RubyString.newString(
+                    runtime,
+                    new ByteList(str.getBytes(), javaExtEncoding));
+        } else {
+            return RubyString.newString(
+                    runtime,
+                    new ByteList(str.getBytes(rubyInt), internal));
+        }
+    }
+
     // String construction routines by NOT byte[] buffer and making the target String shared 
     public static RubyString newStringShared(Ruby runtime, RubyString orig) {
         orig.shareLevel = SHARE_LEVEL_BYTELIST;

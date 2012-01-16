@@ -36,16 +36,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import org.jruby.internal.runtime.GlobalVariables;
-import org.jruby.util.io.STDIO;
-import java.util.HashMap;
-import java.util.Map;
+import jnr.posix.POSIX;
 import org.jcodings.Encoding;
-
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
-import jnr.posix.POSIX;
-import org.jruby.util.OSEnvironment;
+import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.ValueAccessor;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.util.RuntimeHelpers;
@@ -58,9 +53,14 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
+import org.jruby.util.OSEnvironment;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.cli.OutputStrings;
 import org.jruby.util.io.BadDescriptorException;
+import org.jruby.util.io.STDIO;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /** This class initializes global variables and constants.
  * 
@@ -79,9 +79,11 @@ public class RubyGlobal {
         // define ARGV and $* for this runtime
         RubyArray argvArray = runtime.newArray();
         String[] argv = runtime.getInstanceConfig().getArgv();
-        for (int i = 0; i < argv.length; i++) {
-            argvArray.append(RubyString.newStringShared(runtime, argv[i].getBytes()));
+
+        for (String arg : argv) {
+            argvArray.append(RubyString.newInternalFromJavaExternal(runtime, arg));
         }
+
         runtime.defineGlobalConstant("ARGV", argvArray);
         globals.define("$*", new ValueAccessor(argvArray));
 
