@@ -24,15 +24,25 @@ public final class EncodingService {
     // for fast lookup: org.joni.encoding.Encoding => org.jruby.RubyEncoding
     private RubyEncoding[] encodingIndex = new RubyEncoding[4];
     // the runtime
-    private Ruby runtime;
+    private final Ruby runtime;
     
-    private Encoding ascii8bit;
+    private final Encoding ascii8bit;
+    private final Encoding javaDefault;
+
+    private static final ByteList LOCALE_BL = ByteList.create("locale");
+    private static final ByteList EXTERNAL_BL = ByteList.create("external");
+    private static final ByteList INTERNAL_BL = ByteList.create("internal");
+    private static final ByteList FILESYSTEM_BL = ByteList.create("filesystem");
 
     public EncodingService (Ruby runtime) {
         this.runtime = runtime;
         encodings = EncodingDB.getEncodings();
         aliases = EncodingDB.getAliases();
         ascii8bit = encodings.get("ASCII-8BIT".getBytes()).getEncoding();
+
+        Charset javaDefaultCharset = Charset.defaultCharset();
+        ByteList javaDefaultBL = new ByteList(javaDefaultCharset.name().getBytes());
+        javaDefault = findEncodingOrAliasEntry(javaDefaultBL).getEncoding();
 
         encodingList = new IRubyObject[encodings.size()];
 
@@ -227,6 +237,10 @@ public final class EncodingService {
         return defaultEncoding != null ? getEncoding(defaultEncoding) : runtime.getNil();
     }
 
+    public Encoding getJavaDefault() {
+        return javaDefault;
+    }
+
     public Encoding getEncodingFromObject(IRubyObject arg) {
         if (arg == null) return null;
 
@@ -297,11 +311,6 @@ public final class EncodingService {
             throw runtime.newArgumentError("invalid name encoding (non ASCII)");
         }
     }
-
-    private static final ByteList LOCALE_BL = ByteList.create("locale");
-    private static final ByteList EXTERNAL_BL = ByteList.create("external");
-    private static final ByteList INTERNAL_BL = ByteList.create("internal");
-    private static final ByteList FILESYSTEM_BL = ByteList.create("filesystem");
 
     /**
      * Represents one of the four "special" internal encoding names: internal,

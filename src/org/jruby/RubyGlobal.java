@@ -225,9 +225,11 @@ public class RubyGlobal {
         // define ARGV and $* for this runtime
         RubyArray argvArray = runtime.newArray();
         String[] argv = runtime.getInstanceConfig().getArgv();
-        for (int i = 0; i < argv.length; i++) {
-            argvArray.append(RubyString.newStringShared(runtime, argv[i].getBytes()));
+
+        for (String arg : argv) {
+            argvArray.append(RubyString.newInternalFromJavaExternal(runtime, arg));
         }
+
         runtime.defineGlobalConstant("ARGV", argvArray);
         globals.define("$*", new ValueAccessor(argvArray));
 
