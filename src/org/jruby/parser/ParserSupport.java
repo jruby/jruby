@@ -1620,23 +1620,37 @@ public class ParserSupport {
             return new RegexpNode(contents.getPosition(), meat, options.withoutOnce());
         } else if (contents instanceof DStrNode) {
             DStrNode dStrNode = (DStrNode) contents;
-
+            
             for (Node fragment: dStrNode.childNodes()) {
                 if (fragment instanceof StrNode) {
                     ByteList frag = ((StrNode) fragment).getValue();
                     regexpFragmentCheck(end, frag);
-                    if (!lexer.isOneEight()) encoding = frag.getEncoding();
+//                    if (!lexer.isOneEight()) encoding = frag.getEncoding();
                 }
             }
+            
+            dStrNode.prepend(new StrNode(contents.getPosition(), createMaster(options)));
 
-            return new DRegexpNode(position, options, encoding).addAll((DStrNode) contents);
+            return new DRegexpNode(position, options, encoding).addAll(dStrNode);
         }
 
         // EvStrNode: #{val}: no fragment check, but at least set encoding
-        ByteList empty = ByteList.create("");
-        regexpFragmentCheck(end, empty);
-        if (!lexer.isOneEight()) encoding = empty.getEncoding();
-        return new DRegexpNode(position, options, encoding).add(contents);
+        ByteList master = createMaster(options);
+        regexpFragmentCheck(end, master);
+        if (!lexer.isOneEight()) encoding = master.getEncoding();
+        DRegexpNode node = new DRegexpNode(position, options, encoding);
+        node.add(new StrNode(contents.getPosition(), master));
+        node.add(contents);
+        return node;
+    }
+    
+    // Create the magical empty 'master' string which will be encoded with
+    // regexp options encoding so dregexps can end up starting with the
+    // right encoding.
+    private ByteList createMaster(RegexpOptions options) {
+        return lexer.isOneEight() ?
+                ByteList.create("") : new ByteList(new byte[] {}, options.getKCode().getEncoding());
+        
     }
     
     // FIXME:  This logic is used by many methods in MRI, but we are only using it in lexer
