@@ -3905,7 +3905,26 @@ public class RubyIO extends RubyObject {
             try {
                 long size = f1.size();
 
-                f1.transferTo(f2.position(), size, f2);
+                // handle large files on 32-bit JVMs (JRUBY-4913)
+                try {
+                    f1.transferTo(f2.position(), size, f2);
+                } catch (IOException ioe) {
+                    // if the failure is "Cannot allocate memory", do the transfer in 100MB max chunks
+                    if (ioe.getMessage().equals("Cannot allocate memory")) {
+                        long _100M = 100 * 1024 * 1024;
+                        while (size > 0) {
+                            if (size > _100M) {
+                                f1.transferTo(f2.position(), _100M, f2);
+                                size -= _100M;
+                            } else {
+                                f1.transferTo(f2.position(), size, f2);
+                                break;
+                            }
+                        }
+                    } else {
+                        throw ioe;
+                    }
+                }
 
                 return context.getRuntime().newFixnum(size);
             } catch (IOException ioe) {
