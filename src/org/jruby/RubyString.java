@@ -7314,7 +7314,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             options = runtime.getNil();
         }
 
-        return runtime.newString(transcode(context, value, null, forceEncoding, runtime.getNil()));
+        return runtime.newString(transcode(context, value, null, forceEncoding, options));
     }
 
     @JRubyMethod(name = "encode", compat = RUBY1_9)
@@ -7417,15 +7417,34 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 encoder.onUnmappableCharacter(action);
             }
 
-//            FIXME: Parse the option :xml
-//            The value must be +:text+ or +:attr+. If the
-//            value is +:text+ +#encode+ replaces undefined
-//            characters with their (upper-case hexadecimal)
-//            numeric character references. '&', '<', and
-//            '>' are converted to "&amp;", "&lt;", and
-//            "&gt;", respectively. If the value is +:attr+,
-//            +#encode+ also quotes the replacement result
-//            (using '"'), and replaces '"' with "&quot;".
+            /*
+            Missing options from MRI 1.9.3 source:
+
+ *  :replace ::
+ *    Sets the replacement string to the given value. The default replacement
+ *    string is "\uFFFD" for Unicode encoding forms, and "?" otherwise.
+ *  :fallback ::
+ *    Sets the replacement string by the given object for undefined
+ *    character.  The object should be a Hash, a Proc, a Method, or an
+ *    object which has [] method.
+ *    Its key is an undefined character encoded in the source encoding
+ *    of current transcoder. Its value can be any encoding until it
+ *    can be converted into the destination encoding of the transcoder.
+ *  :xml ::
+ *    The value must be +:text+ or +:attr+.
+ *    If the value is +:text+ #encode replaces undefined characters with their
+ *    (upper-case hexadecimal) numeric character references. '&', '<', and '>'
+ *    are converted to "&amp;", "&lt;", and "&gt;", respectively.
+ *    If the value is +:attr+, #encode also quotes the replacement result
+ *    (using '"'), and replaces '"' with "&quot;".
+ *  :cr_newline ::
+ *    Replaces LF ("\n") with CR ("\r") if value is true.
+ *  :crlf_newline ::
+ *    Replaces LF ("\n") with CRLF ("\r\n") if value is true.
+ *  :universal_newline ::
+ *    Replaces CRLF ("\r\n") and CR ("\r") with LF ("\n") if value is true.
+ *    
+             */
         }
 
         return encoder;
