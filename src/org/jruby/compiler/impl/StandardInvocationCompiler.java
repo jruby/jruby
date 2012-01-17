@@ -1027,6 +1027,25 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         }
     }
 
+    public void yield19(CompilerCallback argsCallback, boolean unsplat) {
+        methodCompiler.loadBlock();
+        methodCompiler.loadThreadContext();
+
+        if (argsCallback != null) {
+            argsCallback.call(methodCompiler);
+        } else {
+            method.aconst_null();
+        }
+
+        if (unsplat) {
+            methodCompiler.invokeUtilityMethod("unsplatValue19", sig(IRubyObject.class, IRubyObject.class));
+        }
+
+        method.aconst_null();
+        method.aconst_null();
+        method.invokevirtual(p(Block.class), "yieldArray", sig(IRubyObject.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, RubyModule.class));
+    }
+
     public void yieldSpecific(ArgumentsCallback argsCallback) {
         methodCompiler.loadBlock();
         methodCompiler.loadThreadContext();

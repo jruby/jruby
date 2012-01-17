@@ -52,6 +52,7 @@ import org.jruby.ast.OptArgNode;
 import org.jruby.ast.SValue19Node;
 import org.jruby.ast.SplatNode;
 import org.jruby.ast.StarNode;
+import org.jruby.ast.Yield19Node;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.BlockBody;
@@ -524,5 +525,35 @@ public class ASTCompiler19 extends ASTCompiler {
                 compile(nextNode, context, false);
             }
         }
+    }
+
+    @Override
+    public void compileYield(Node node, BodyCompiler context, boolean expr) {
+        if (!(node instanceof Yield19Node)) {
+            super.compileYield(node, context, expr);
+            return;
+        }
+        final Yield19Node yieldNode = (Yield19Node) node;
+
+        CompilerCallback argsCallback = new CompilerCallback() {
+            public void call(BodyCompiler context) {
+                compile(yieldNode.getArgsNode(), context,true);
+            }
+        };
+
+        boolean unsplat = false;
+
+        switch (yieldNode.getArgsNode().getNodeType()) {
+            case ARGSPUSHNODE:
+            case ARGSCATNODE:
+            case SPLATNODE:
+                unsplat = true;
+                break;
+        }
+
+        context.getInvocationCompiler().yield19(argsCallback, unsplat);
+
+        // TODO: don't require pop
+        if (!expr) context.consumeCurrentValue();
     }
 }
