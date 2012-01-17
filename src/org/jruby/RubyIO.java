@@ -53,7 +53,10 @@ import java.nio.channels.Pipe;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.jcodings.Encoding;
 import org.jruby.anno.FrameField;
@@ -4288,7 +4291,7 @@ public class RubyIO extends RubyObject {
         return new EncodingOption(extEncoding, intEncoding, isBom);
     }
 
-    private static final String[] UNSUPPORTED_SPAWN_OPTIONS = new String[] {
+    private static final Set<String> UNSUPPORTED_SPAWN_OPTIONS = new HashSet<String>(Arrays.asList(new String[] {
             "unsetenv_others",
             "prgroup",
             "rlimit_resourcename",
@@ -4298,10 +4301,19 @@ public class RubyIO extends RubyObject {
             "out",
             "err",
             "close_others"
-    };
+    }));
 
-    private static final String[] UNSUPPORTED_EXEC_OPTIONS = UNSUPPORTED_SPAWN_OPTIONS;
-    private static final String[] UNSUPPORTED_POPEN_OPTIONS = UNSUPPORTED_SPAWN_OPTIONS;
+    private static final Set<String> ALL_SPAWN_OPTIONS = new HashSet<String>(Arrays.asList(new String[] {
+            "unsetenv_others",
+            "prgroup",
+            "rlimit_resourcename",
+            "chdir",
+            "umask",
+            "in",
+            "out",
+            "err",
+            "close_others"
+    }));
 
     /**
      * Warn when using exec with unsupported options.
@@ -4309,7 +4321,8 @@ public class RubyIO extends RubyObject {
      * @param options
      */
     public static void checkExecOptions(IRubyObject options) {
-        checkOptions(options, UNSUPPORTED_SPAWN_OPTIONS, "unsupported exec option");
+        checkUnsupportedOptions(options, UNSUPPORTED_SPAWN_OPTIONS, "unsupported exec option");
+        checkValidOptions(options, ALL_SPAWN_OPTIONS);
     }
 
     /**
@@ -4318,7 +4331,8 @@ public class RubyIO extends RubyObject {
      * @param options
      */
     public static void checkSpawnOptions(IRubyObject options) {
-        checkOptions(options, UNSUPPORTED_SPAWN_OPTIONS, "unsupported spawn option");
+        checkUnsupportedOptions(options, UNSUPPORTED_SPAWN_OPTIONS, "unsupported spawn option");
+        checkValidOptions(options, ALL_SPAWN_OPTIONS);
     }
 
     /**
@@ -4327,15 +4341,15 @@ public class RubyIO extends RubyObject {
      * @param options
      */
     public static void checkPopenOptions(IRubyObject options) {
-        checkOptions(options, UNSUPPORTED_POPEN_OPTIONS, "unsupported popen option");
+        checkUnsupportedOptions(options, UNSUPPORTED_SPAWN_OPTIONS, "unsupported popen option");
     }
 
     /**
-     * Warn when using spawn with unsupported options.
+     * Warn when using unsupported options.
      *
      * @param options
      */
-    private static void checkOptions(IRubyObject options, String[] unsupported, String error) {
+    private static void checkUnsupportedOptions(IRubyObject options, Set<String> unsupported, String error) {
         if (options == null || options.isNil() || !(options instanceof RubyHash)) return;
 
         RubyHash optsHash = (RubyHash)options;
@@ -4344,6 +4358,24 @@ public class RubyIO extends RubyObject {
         for (String key : unsupported) {
             if (optsHash.containsKey(runtime.newSymbol(key))) {
                 runtime.getWarnings().warn(error + ": " + key);
+            }
+        }
+    }
+
+    /**
+     * Error when using unknown option.
+     *
+     * @param options
+     */
+    private static void checkValidOptions(IRubyObject options, Set<String> valid) {
+        if (options == null || options.isNil() || !(options instanceof RubyHash)) return;
+
+        RubyHash optsHash = (RubyHash)options;
+        Ruby runtime = optsHash.getRuntime();
+
+        for (IRubyObject opt : (Set<IRubyObject>)optsHash.keySet()) {
+            if (!(opt instanceof RubySymbol) || !valid.contains(opt.toString())) {
+                throw runtime.newTypeError("wrong exec option: " + opt);
             }
         }
     }
