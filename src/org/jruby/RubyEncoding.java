@@ -340,6 +340,9 @@ public class RubyEncoding extends RubyObject {
     public static IRubyObject find(ThreadContext context, IRubyObject recv, IRubyObject str) {
         Ruby runtime = context.getRuntime();
 
+        // Wacky but true...return arg if it is an encoding looking for itself
+        if (str instanceof RubyEncoding) return str;
+
         return runtime.getEncodingService().rubyEncodingFromObject(str);
     }
 
