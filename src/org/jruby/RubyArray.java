@@ -1769,6 +1769,8 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
 
     // 1.9 MRI: join0
     private RubyString joinStrings(RubyString sep, int max, RubyString result) {
+        if (max > 0) result.setEncoding(values[0].convertToString().getEncoding());
+
         try {
             for(int i = begin; i < max; i++) {
                 if (i > begin && sep != null) result.append19(sep);
@@ -1784,7 +1786,6 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     // 1.9 MRI: join1
     private RubyString joinAny(ThreadContext context, IRubyObject obj, RubyString sep, 
             int i, RubyString result) {
-        RubyClass stringClass = context.getRuntime().getString();
         RubyClass arrayClass = context.getRuntime().getArray();
 
         for (; i < begin + realLength; i++) {
@@ -1799,18 +1800,17 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
                 recursiveJoin(context, obj, sep, result, val);
             } else {
                 IRubyObject tmp = val.checkStringType19();
-                if (tmp.isNil()) tmp = TypeConverter.convertToTypeWithCheck(val, stringClass, "to_s");
-
                 if (!tmp.isNil()) {
                     result.append19(tmp);
+                    continue;
+                }
+                
+                tmp = TypeConverter.convertToTypeWithCheck(val, arrayClass, "to_ary");
+                if (!tmp.isNil()) {
+                    obj = val;
+                    recursiveJoin(context, obj, sep, result, tmp);
                 } else {
-                    tmp = TypeConverter.convertToTypeWithCheck(val, arrayClass, "to_a");
-                    if(!tmp.isNil()) {
-                        obj = val;
-                        recursiveJoin(context, obj, sep, result, tmp);
-                    } else {
-                        result.append19(RubyString.objAsString(context, val));
-                    }
+                    result.append19(RubyString.objAsString(context, val));
                 }
             }
         }
@@ -1840,21 +1840,22 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     @JRubyMethod(name = "join", compat = RUBY1_9)
     public IRubyObject join19(ThreadContext context, IRubyObject sep) {
         final Ruby runtime = context.getRuntime();
-        if (realLength == 0) return RubyString.newEmptyString(runtime);
 
+        if (realLength == 0) return RubyString.newEmptyString(runtime, USASCIIEncoding.INSTANCE);
+        
         int len = 1;
         RubyString sepString = null;
         if (!sep.isNil()) {
             sepString = sep.convertToString();
             len += sepString.size() * (realLength - 1);
         }
-
+        
         for (int i = begin; i < begin + realLength; i++) {
             IRubyObject val = safeArrayRef(values, i);
             IRubyObject tmp = val.checkStringType19();
             if (tmp.isNil() || tmp != val) {
                 len += ((begin + realLength) - i) * 10;
-                RubyString result = (RubyString) RubyString.newStringLight(runtime, len).infectBy(this);
+                RubyString result = (RubyString) RubyString.newStringLight(runtime, len, USASCIIEncoding.INSTANCE).infectBy(this);
 
                 return joinAny(context, this, sepString, i, joinStrings(sepString, i, result));
             }
