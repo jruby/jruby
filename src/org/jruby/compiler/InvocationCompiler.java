@@ -88,6 +88,13 @@ public interface InvocationCompiler {
     /**
      * Invoke the block passed into this method, or throw an error if no block is present.
      * If arguments have been prepared for the block, specify true. Otherwise the default
+     * empty args will be used.
+     */
+    public void yield19(CompilerCallback argsCallback, boolean unsplat);
+
+    /**
+     * Invoke the block passed into this method, or throw an error if no block is present.
+     * If arguments have been prepared for the block, specify true. Otherwise the default
      * empty args will be used. Use specific-arity call paths if possible.
      */
     public void yieldSpecific(ArgumentsCallback argsCallback);
