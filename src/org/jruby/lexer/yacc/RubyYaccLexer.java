@@ -792,6 +792,7 @@ public class RubyYaccLexer {
         // 1.9 - first line comment handling
         ByteList commentLine;
         boolean handledMagicComment = false;
+        int commentStartColumn = src.getOffset();
         if (!isOneEight() && src.getLine() == 0) { //
             // Skip first line if it is a shebang line?
             // (not the same as MRI:parser_prepare/comment_at_top)
@@ -806,7 +807,11 @@ public class RubyYaccLexer {
             commentLine = src.readUntil('\n');
             if (commentLine != null) {
                 handledMagicComment = parseMagicComment(commentLine);
-                if (!handledMagicComment) {
+                /* We process the magic comment only if '#' started the line.
+                 * By the time we get to this method, the first column has 
+                 * already been eaten up by '#', so the offset should be 1.
+                 */
+                if (!handledMagicComment && commentStartColumn == 1) {
                     handleFileEncodingComment(commentLine);
                 }
             }
