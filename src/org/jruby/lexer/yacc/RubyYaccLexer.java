@@ -792,7 +792,7 @@ public class RubyYaccLexer {
         // 1.9 - first line comment handling
         ByteList commentLine;
         boolean handledMagicComment = false;
-        if (!isOneEight() && src.getLine() == 0) { //
+        if (!isOneEight() && src.getLine() == 0 && token == 0) {
             // Skip first line if it is a shebang line?
             // (not the same as MRI:parser_prepare/comment_at_top)
             if (src.peek('!')) {
