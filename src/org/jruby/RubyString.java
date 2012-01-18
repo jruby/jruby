@@ -61,7 +61,6 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CodingErrorAction;
-import java.nio.charset.UnsupportedCharsetException;
 import java.util.Arrays;
 import java.util.Locale;
 
@@ -2301,6 +2300,10 @@ public class RubyString extends RubyObject implements EncodingCapable {
         cat('\\');
         cat(c);
     }
+    
+    private void escapedChar(Ruby runtime, int c) {
+        Sprintf.sprintf(runtime, value, "\\u%04X", c);
+    }
 
     private void escapeCodePointCat(Ruby runtime, byte[]bytes, int p, int n) {
         for (int q = p - n; q < p; q++) {
@@ -2315,16 +2318,19 @@ public class RubyString extends RubyObject implements EncodingCapable {
         int p = value.getBegin();
         int end = p + value.getRealSize();
         RubyString result = new RubyString(runtime, runtime.getString(), new ByteList(end - p));
-
-        Encoding enc;
+        Encoding enc = getEncoding();
+        Encoding resultEnc;
         if (is1_9) {
-            enc = value.getEncoding();
+            resultEnc = runtime.getDefaultInternalEncoding();
+            if (resultEnc == null) resultEnc = runtime.getDefaultExternalEncoding();
+            if (!resultEnc.isAsciiCompatible()) resultEnc = USASCIIEncoding.INSTANCE;
             
-            result.associateEncoding(enc);
+            result.associateEncoding(resultEnc);
         } else {
             enc = runtime.getKCode().getEncoding();
+            resultEnc = enc;
         }
-
+        
         result.cat('"');
         while (p < end) {
             int c, n;
@@ -2396,13 +2402,15 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 result.prefixEscapeCat('a');
             } else if (c == '\033') {
                 result.prefixEscapeCat('e');
-            } else if (is1_9 && enc.isPrint(c)) {
+            } else if (is1_9 && 
+                    ((enc == resultEnc && enc.isPrint(c)) ||
+                    (enc.isAsciiCompatible() && enc.isAscii(c) && enc.isPrint(c)))) {
                 result.cat(bytes, p - n, n, enc);
             } else {
                 if (!is1_9) {
                     Sprintf.sprintf(runtime, result.value, "\\%03o", c & 0377);
                 } else {
-                    result.escapeCodePointCat(runtime, bytes, p, n);
+                    result.escapedChar(runtime, c);
                 }
             }
         }
