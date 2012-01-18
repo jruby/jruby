@@ -354,7 +354,22 @@ public class Interpreter {
                         }
                     }
                 } catch (IRReturnJump rj) {
-                    return handleReturnJumpInClosure(scope, rj, blockType);
+                    ipc = scope.getEnsurerPC(lastInstr);
+                    // Because of yields, control can exit this scope via returns in the block being yielded to.
+                    // Before we exit this scope, we have to run ensure blocks in this scope.
+                    //
+                    // In the current IR design, the IR builder cannot generate explicit IR instructions that
+                    // trap the return and run the ensure code.  Hence, we have to implicitly handle this in the
+                    // interpreter.
+                    if (ipc == -1) {
+                        // No ensure block here, propagate the return
+                        return handleReturnJumpInClosure(scope, rj, blockType);
+                    } else {
+                        // Set the return jump as the exception to the ensure block and continue
+                        // The ensure block will rethrow this exception at which time control
+                        // will go the if-block above and the return jump will get handled properly
+                        exception = rj;
+                    }
                 } catch (IRBreakJump bj) {
                     if ((lastInstr instanceof BreakInstr) || bj.breakInEval) {
                         handleBreakJump(context, scope, bj, self, blockType, inClosure);
