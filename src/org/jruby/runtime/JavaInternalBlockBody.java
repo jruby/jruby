@@ -6,7 +6,6 @@ package org.jruby.runtime;
 
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
-import org.jruby.ast.util.ArgsUtil;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block.Type;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -43,6 +42,29 @@ public abstract class JavaInternalBlockBody extends BlockBody {
     private void threadCheck(ThreadContext yieldingContext) {
         if (originalContext != null && yieldingContext != originalContext) 
             throw yieldingContext.getRuntime().newThreadError("" + methodName + " cannot be parallelized");        
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
+        IRubyObject value;
+        if (args.length == 1) {
+            value = args[0];
+        } else {
+            value = RubyArray.newArrayNoCopy(context.getRuntime(), args);
+        }
+        return yield(context, value, null, null, true, binding, type);
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding,
+                            Block.Type type, Block block) {
+        IRubyObject value;
+        if (args.length == 1) {
+            value = args[0];
+        } else {
+            value = RubyArray.newArrayNoCopy(context.getRuntime(), args);
+        }
+        return yield(context, value, null, null, true, binding, type, block);
     }
 
     @Override
