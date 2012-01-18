@@ -45,6 +45,8 @@ import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import org.jruby.exceptions.MainExitException;
@@ -99,49 +101,54 @@ public class Main {
         config.setHardExit(hardExit);
     }
     
-    public static void processDotfile() {
-        // try current dir, then home dir
+    private static List<String> getDotfileDirectories() {
+        ArrayList<String> searchList = new ArrayList<String>();
         for (String homeProp : new String[] {"user.dir", "user.home"}) {
             String home = SafePropertyAccessor.getProperty(homeProp);
-            if (home == null) continue;
-            
-            FileInputStream fis = null;
-
-            try {
-                File dotfile = new File(home + "/.jrubyrc");
-                
-                if (!dotfile.exists()) {
-                    continue;
-                }
-                
-                fis = loadJRubyProperties(dotfile, fis);
-                
-                // all good
-                return;
-            } catch (IOException ioe) {
-                // do anything else?
-                LOG.debug("exception loading .jrubyrc", ioe);
-            } catch (SecurityException se) {
-                LOG.debug("exception loading .jrubyrc", se);
-            } finally {
-                if (fis != null) try {fis.close();} catch (Exception e) {}
+            if (home != null) searchList.add(home);
+        }
+        
+        // JVM sometimes picks odd location for user.home based on a registry entry
+        // (see http://bugs.sun.com/view_bug.do?bug_id=4787931).  Add extra check in 
+        // case that entry is wrong. Add before user.home in search list.
+        if (Platform.IS_WINDOWS) {
+            String homeDrive = System.getenv("HOMEDRIVE");
+            String homePath = System.getenv("HOMEPATH");
+            if (homeDrive != null && homePath != null) {
+                searchList.add(1, (homeDrive + homePath).replace('\\', '/'));
             }
+        }
+        
+        return searchList;
+    }
+    
+    public static void processDotfile() {
+        for (String home : getDotfileDirectories()) {
+            File dotfile = new File(home + "/.jrubyrc");
+            if (dotfile.exists()) loadJRubyProperties(dotfile);
         }
     }
 
-    private static FileInputStream loadJRubyProperties(File dotfile, FileInputStream fis) throws FileNotFoundException, IOException {
-        // update system properties with long form jruby properties from .jrubyrc
-        Properties sysProps = System.getProperties();
-        Properties newProps = new Properties();
-        // load properties and re-set as jruby.*
-        fis = new FileInputStream(dotfile);
-        newProps.load(fis);
-        for (Map.Entry entry : newProps.entrySet()) {
-            sysProps.put("jruby." + entry.getKey(), entry.getValue());
+    private static void loadJRubyProperties(File dotfile) {
+        FileInputStream fis = null;
+        
+        try {
+            // update system properties with long form jruby properties from .jrubyrc
+            Properties sysProps = System.getProperties();
+            Properties newProps = new Properties();
+            // load properties and re-set as jruby.*
+            fis = new FileInputStream(dotfile);
+            newProps.load(fis);
+            for (Map.Entry entry : newProps.entrySet()) {
+                sysProps.put("jruby." + entry.getKey(), entry.getValue());
+            }
+        } catch (IOException ioe) {
+            LOG.debug("exception loading " + dotfile, ioe);
+        } catch (SecurityException se) {
+            LOG.debug("exception loading " + dotfile, se);
+        } finally {
+            if (fis != null) try {fis.close();} catch (Exception e) {}        
         }
-        // replace system properties
-        System.setProperties(sysProps);
-        return fis;
     }
 
     public static class Status {
