@@ -2405,7 +2405,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             } else if (is1_9 && 
                     ((enc == resultEnc && enc.isPrint(c)) ||
                     (enc.isAsciiCompatible() && enc.isAscii(c) && enc.isPrint(c)))) {
-                result.cat(bytes, p - n, n, enc);
+                result.cat(bytes, p - n, n);
             } else {
                 if (!is1_9) {
                     Sprintf.sprintf(runtime, result.value, "\\%03o", c & 0377);
