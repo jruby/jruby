@@ -34,4 +34,14 @@ describe "A native exception wrapped by another" do
       e.message.should =~ /lets cause an init exception$/
     end
   end
+
+  pending "can be re-raised" do
+    lambda {
+      begin
+        ThrowExceptionInInitializer.new.test
+      rescue NativeException => e
+        raise e.exception("re-raised")
+      end
+    }.should raise_error(NativeException)
+  end
 end
