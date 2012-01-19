@@ -35,7 +35,7 @@ describe "A native exception wrapped by another" do
     end
   end
 
-  pending "can be re-raised" do
+  it "can be re-raised" do
     lambda {
       begin
         ThrowExceptionInInitializer.new.test
