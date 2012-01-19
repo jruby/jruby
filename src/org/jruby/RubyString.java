@@ -7361,7 +7361,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             IRubyObject replace = hash.fastARef(runtime.newSymbol("replace"));
             if (replace != null && !replace.isNil()) {
                 String replaceWith = replace.toString();
-                if (replaceWith.length() > 0) {
+                if (replaceWith.length() == 1) { // we can only replaceWith a single char
                     encoder.replaceWith(replaceWith.getBytes());
                 } else {
                     action = CodingErrorAction.IGNORE;
