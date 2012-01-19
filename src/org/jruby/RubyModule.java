@@ -3613,6 +3613,8 @@ public class RubyModule extends RubyObject {
     private class Autoload {
         // A ThreadContext which is executing autoload.
         private volatile ThreadContext ctx;
+        // The lock for test-and-set the ctx.
+        private final Object ctxLock = new Object();
         // An object defined for the constant while autoloading.
         private volatile IRubyObject value;
         // A method which actually requires a defined feature.
@@ -3627,24 +3629,30 @@ public class RubyModule extends RubyObject {
         // Returns an object for the constant if the caller is the autoloading thread.
         // Otherwise, try to start autoloading and returns the defined object by autoload.
         IRubyObject getConstant(ThreadContext ctx) {
-            if (this.ctx == null) {
-                this.ctx = ctx;
-            } else if (isSelf(ctx)) {
-                return getValue();
+            synchronized (ctxLock) {
+                if (this.ctx == null) {
+                    this.ctx = ctx;
+                } else if (isSelf(ctx)) {
+                    return getValue();
+                }
+                // This method needs to be synchronized for removing Autoload
+                // from autoloadMap when it's loaded. 
+                getLoadMethod().load(ctx.runtime);
             }
-            getLoadMethod().load(ctx.runtime);
             return getValue();
         }
         
         // Update an object for the constant if the caller is the autoloading thread.
         boolean setConstant(ThreadContext ctx, IRubyObject value) {
-            if (this.ctx == null) {
+            synchronized(ctxLock) {
+                if (this.ctx == null) {
+                    return false;
+                } else if (isSelf(ctx)) {
+                    this.value = value;
+                    return true;
+                }
                 return false;
-            } else if (isSelf(ctx)) {
-                this.value = value;
-                return true;
             }
-            return false;
         }
         
         // Returns an object for the constant defined by autoload.
