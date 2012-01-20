@@ -163,6 +163,10 @@ import org.jruby.util.StringSupport;
 public class ASTCompiler {
     private boolean isAtRoot = true;
 
+    protected boolean is1_9() {
+        return false;
+    }
+
     public void compileBody(Node node, BodyCompiler context, boolean expr) {
         Node oldBodyNode = currentBodyNode;
         currentBodyNode = node;
@@ -2937,7 +2941,7 @@ public class ASTCompiler {
 
         compile(matchNode.getRegexpNode(), context,true);
 
-        context.match();
+        context.match(is1_9());
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
     }
@@ -2952,7 +2956,7 @@ public class ASTCompiler {
             }
         };
 
-        context.match2(value);
+        context.match2(value, is1_9());
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
     }
@@ -2963,7 +2967,7 @@ public class ASTCompiler {
         compile(matchNode.getReceiverNode(), context,true);
         compile(matchNode.getValueNode(), context,true);
 
-        context.match3();
+        context.match3(is1_9());
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
     }

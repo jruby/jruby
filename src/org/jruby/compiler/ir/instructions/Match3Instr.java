@@ -66,7 +66,9 @@ public class Match3Instr extends Instr implements ResultInstr {
         IRubyObject argValue = (IRubyObject) arg.retrieve(context, self, currDynScope, temp);
         
         if (argValue instanceof RubyString) {
-            return regexp.op_match(context, argValue);
+            return context.runtime.is1_9() ?
+                    regexp.op_match19(context, argValue) :
+                    regexp.op_match(context, argValue);
         } else {
             return argValue.callMethod(context, "=~", regexp);
         }

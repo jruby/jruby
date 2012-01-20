@@ -1594,6 +1594,14 @@ public class RuntimeHelpers {
             return value.callMethod(context, "=~", regexp);
         }
     }
+
+    public static IRubyObject match3_19(RubyRegexp regexp, IRubyObject value, ThreadContext context) {
+        if (value instanceof RubyString) {
+            return regexp.op_match19(context, value);
+        } else {
+            return value.callMethod(context, "=~", regexp);
+        }
+    }
     
     public static IRubyObject getErrorInfo(Ruby runtime) {
         return runtime.getGlobalVariables().get("$!");
@@ -2444,6 +2452,13 @@ public class RuntimeHelpers {
     public static IRubyObject match2AndUpdateScope(IRubyObject receiver, ThreadContext context, IRubyObject value, String scopeOffsets) {
         DynamicScope scope = context.getCurrentScope();
         IRubyObject match = ((RubyRegexp)receiver).op_match(context, value);
+        updateScopeWithCaptures(context, scope, decodeCaptureOffsets(scopeOffsets), value);
+        return match;
+    }
+
+    public static IRubyObject match2AndUpdateScope19(IRubyObject receiver, ThreadContext context, IRubyObject value, String scopeOffsets) {
+        DynamicScope scope = context.getCurrentScope();
+        IRubyObject match = ((RubyRegexp)receiver).op_match19(context, value);
         updateScopeWithCaptures(context, scope, decodeCaptureOffsets(scopeOffsets), value);
         return match;
     }
