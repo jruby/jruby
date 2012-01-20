@@ -455,11 +455,17 @@ public class IRBuilder {
         RescueNode rescueNode;             // Rescue node for which we are tracking info  
         Label      entryLabel;             // Entry of the rescue block
         Variable   savedExceptionVariable; // Variable that contains the saved $! variable
+        IRLoop     innermostLoop;          // Innermost loop within which this ensure block is nested, if any
 
-        public RescueBlockInfo(RescueNode n, Label l, Variable v) {
+        public RescueBlockInfo(RescueNode n, Label l, Variable v, IRLoop loop) {
             rescueNode = n;
             entryLabel = l;
             savedExceptionVariable = v;
+            innermostLoop = loop;
+        }
+
+        public void restoreException(IRScope s, IRLoop currLoop) {
+            if (currLoop == innermostLoop) s.addInstr(new PutGlobalVarInstr("$!", savedExceptionVariable));
         }
     }
 
@@ -979,6 +985,7 @@ public class IRBuilder {
         Operand rv = build(breakNode.getValueNode(), s);
         // If we have ensure blocks, have to run those first!
         if (!_ensureBlockStack.empty()) EnsureBlockInfo.emitJumpChain(s, _ensureBlockStack, currLoop);
+        else if (!_rescueBlockStack.empty()) _rescueBlockStack.peek().restoreException(s, currLoop);
 
         if (currLoop != null) {
             s.addInstr(new CopyInstr(currLoop.loopResult, rv));
@@ -994,7 +1001,9 @@ public class IRBuilder {
                 s.addInstr(new BreakInstr(rv, null));
             }
         }
-        return rv;
+
+        // Once the break instruction executes, control exits this scope
+        return UnexecutableNil.U_NIL;
     }
 
     public Operand buildCall(CallNode callNode, IRScope s) {
@@ -2576,6 +2585,7 @@ public class IRBuilder {
 
         // If we have ensure blocks, have to run those first!
         if (!_ensureBlockStack.empty()) EnsureBlockInfo.emitJumpChain(s, _ensureBlockStack, currLoop);
+        else if (!_rescueBlockStack.empty()) _rescueBlockStack.peek().restoreException(s, currLoop);
 
         if (currLoop != null) {
             // If a regular loop, the next is simply a jump to the end of the iteration
@@ -2586,7 +2596,9 @@ public class IRBuilder {
             if (s instanceof IRClosure) s.addInstr(new ClosureReturnInstr(rv));
             else s.addInstr(new ThrowExceptionInstr(IRException.NEXT_LocalJumpError));
         }
-        return rv;
+
+        // Once the "next instruction" (closure-return) executes, control exits this scope
+        return UnexecutableNil.U_NIL;
     }
 
     public Operand buildNthRef(NthRefNode nthRefNode, IRScope s) {
@@ -2902,8 +2914,8 @@ public class IRBuilder {
         // Placeholder rescue instruction that tells rest of the compiler passes the boundaries of the rescue block.
         s.addInstr(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, ensure == null ? null : ensure.dummyRescueBlockLabel, rescueLabel));
 
-        // Save $! in a temp var so it can be restored when the exception gets handled -- Ruby ugliness.
-        // Not sure why an exception needs to be saved!
+        // Save $! in a temp var so it can be restored when the exception gets handled.
+        // SSS FIXME: Dont yet understand why an exception needs to be saved/restored.
         Variable savedGlobalException = s.getNewTemporaryVariable();
         s.addInstr(new GetGlobalVariableInstr(savedGlobalException, "$!"));
         if (ensure != null) ensure.savedGlobalException = savedGlobalException;
@@ -2929,7 +2941,7 @@ public class IRBuilder {
         //
         // The retry should jump to 1, not 2.
         // If we push the rescue block before building the body, we will jump to 2.
-        _rescueBlockStack.push(new RescueBlockInfo(rescueNode, rBeginLabel, savedGlobalException));
+        _rescueBlockStack.push(new RescueBlockInfo(rescueNode, rBeginLabel, savedGlobalException, getCurrentLoop()));
 
         // Since rescued regions are well nested within Ruby, this bare marker is sufficient to
         // let us discover the edge of the region during linear traversal of instructions during cfg construction.
@@ -3035,6 +3047,8 @@ public class IRBuilder {
             // Restore "$!"
             RescueBlockInfo rbi = _rescueBlockStack.peek();
             s.addInstr(new PutGlobalVarInstr("$!", rbi.savedExceptionVariable));
+
+            // Set up node return value 'rv'
             s.addInstr(new CopyInstr(rv, x));
 
             // If we dont have a matching ensure block, jump to the end of the rescue block.
