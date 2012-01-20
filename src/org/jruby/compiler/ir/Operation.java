@@ -103,7 +103,10 @@ public enum Operation {
 
     /** value stores **/
     PUT_CONST(OpFlags.f_is_store | OpFlags.f_has_side_effect),
-    PUT_GLOBAL_VAR(OpFlags.f_is_store | OpFlags.f_has_side_effect),
+    // SSS FIXME: Not all global variable sets can throw exceptions.  Should we split this
+    // operation into two different operations?  Those that can throw exceptions and those
+    // that cannot.  But, for now, this should be good enough
+    PUT_GLOBAL_VAR(OpFlags.f_is_store | OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
     PUT_FIELD(OpFlags.f_is_store | OpFlags.f_has_side_effect),
     PUT_ARRAY(OpFlags.f_is_store | OpFlags.f_has_side_effect),
     PUT_CVAR(OpFlags.f_is_store | OpFlags.f_has_side_effect),
