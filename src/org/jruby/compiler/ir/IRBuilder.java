@@ -1849,10 +1849,12 @@ public class IRBuilder {
     protected int receiveOptArgs(final ArgsNode argsNode, IRScope s, int opt, int argIndex) {
         ListNode optArgs = argsNode.getOptArgs();
         for (int j = 0; j < opt; j++, argIndex++) {
-                // Jump to 'l' if this arg is not null.  If null, fall through and build the default value!
+            // Jump to 'l' if this arg is not null.  If null, fall through and build the default value!
             Label l = s.getNewLabel();
             LocalAsgnNode n = (LocalAsgnNode)optArgs.get(j);
-            Variable av = s.getLocalVariable(n.getName(), 0);
+            String argName = n.getName();
+            Variable av = s.getLocalVariable(argName, 0);
+            if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("opt", argName);
             s.addInstr(new ReceiveOptArgInstr(av, argIndex));
             s.addInstr(BNEInstr.create(av, UndefinedValue.UNDEFINED, l)); // if 'av' is not undefined, go to default
             build(n, s);
@@ -1884,7 +1886,9 @@ public class IRBuilder {
         ListNode preArgs  = argsNode.getPre();
         for (int i = 0; i < required; i++, argIndex++) {
             ArgumentNode a = (ArgumentNode)preArgs.get(i);
-            s.addInstr(new ReceiveArgumentInstruction(s.getLocalVariable(a.getName(), 0), argIndex));
+            String argName = a.getName();
+            s.addInstr(new ReceiveArgumentInstruction(s.getLocalVariable(argName, 0), argIndex));
+            if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("req", argName);
         }
       
         if (opt > 0) {
@@ -1896,6 +1900,7 @@ public class IRBuilder {
             // For this code, there is no argument name available from the ruby code.
             // So, we generate an implicit arg name
             String argName = argsNode.getRestArgNode().getName();
+            if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("rest", argName);
             argName = (argName.equals("")) ? "%_arg_array" : argName;
             s.addInstr(new ReceiveRestArgInstr(s.getLocalVariable(argName, 0), argIndex));
         }
@@ -1904,7 +1909,9 @@ public class IRBuilder {
     public void receiveMethodClosureArg(ArgsNode argsNode, IRScope s) {
         Variable blockVar = null;
         if (argsNode.getBlock() != null) {
-            blockVar = s.getLocalVariable(argsNode.getBlock().getName(), 0);
+            String blockArgName = argsNode.getBlock().getName();
+            blockVar = s.getLocalVariable(blockArgName, 0);
+            if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("block", blockArgName);
             s.addInstr(new ReceiveClosureInstr(blockVar));
         }
 

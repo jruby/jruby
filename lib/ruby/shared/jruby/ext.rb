@@ -4,6 +4,7 @@ require 'jruby'
 module JRuby
   MethodArgs = org.jruby.internal.runtime.methods.MethodArgs
   MethodArgs2 = org.jruby.internal.runtime.methods.MethodArgs2
+  IRMethodArgs = org.jruby.internal.runtime.methods.IRMethodArgs
   RuntimeHelpers = org.jruby.javasupport.util.RuntimeHelpers
   MultipleAsgn19Node = org.jruby.ast.MultipleAsgn19Node
   UnnamedRestArgNode = org.jruby.ast.UnnamedRestArgNode
@@ -57,6 +58,11 @@ module JRuby
       case method
       when MethodArgs2
         return RuntimeHelpers.parameter_list_to_parameters(JRuby.runtime, method.parameter_list, true)
+      when IRMethodArgs
+        arg_desc = method.parameter_list
+        for a in arg_desc
+          args_ary << (a[1] == "" ? [a[0].to_sym] : [a[0].to_sym, a[1].to_sym])
+        end
       when MethodArgs
         args_node = method.args_node
         

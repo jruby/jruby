@@ -27,6 +27,9 @@ public class IRMethod extends IRScope {
     // Call parameters
     private List<Operand> callArgs;
 
+    // Argument description of the form [:req, "a"], [:opt, "b"] ..
+    private List<String[]> argDesc;
+
     // Local variables (their names) are mapped to a slot in a binding shared across all call sites encountered in this method's lexical scope
     // (including all nested closures) -- only variables that need a slot get a slot.  This info is determined by the Binding*PlacementAnalysis
     // dataflow passes in dataflow/analyses/
@@ -37,7 +40,8 @@ public class IRMethod extends IRScope {
         super(lexicalParent, name, lexicalParent.getFileName(), staticScope);
         
         this.isInstanceMethod = isInstanceMethod;
-        callArgs = new ArrayList<Operand>();
+        this.callArgs = new ArrayList<Operand>();
+        this.argDesc = new ArrayList<String[]>();
         if (!IRBuilder.inIRGenOnlyMode()) {
             if (staticScope != null) ((IRStaticScope)staticScope).setIRScope(this);
             updateVersion();
@@ -69,6 +73,14 @@ public class IRMethod extends IRScope {
         else if (i instanceof ReceiveArgBase) callArgs.add(((ReceiveArgBase) i).getResult());
 
         super.addInstr(i);
+    }
+
+    public void addArgDesc(String type, String argName) {
+        argDesc.add(new String[]{type, argName});
+    }
+
+    public List<String[]> getArgDesc() {
+        return argDesc;
     }
 
     public Operand[] getCallArgs() {

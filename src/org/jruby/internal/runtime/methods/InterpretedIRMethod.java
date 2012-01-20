@@ -1,8 +1,15 @@
 package org.jruby.internal.runtime.methods;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.jruby.RubyModule;
+import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.representations.CFG;
+import org.jruby.compiler.ir.operands.Operand;
+import org.jruby.compiler.ir.operands.Splat;
+import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.interpreter.Interpreter;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -14,7 +21,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
-public class InterpretedIRMethod extends DynamicMethod {
+public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs {
     private static final Logger LOG = LoggerFactory.getLogger("InterpretedIRMethod");
 
     private final boolean  isTopLevel;
@@ -47,6 +54,10 @@ public class InterpretedIRMethod extends DynamicMethod {
     
     public IRScope getIRMethod() {
         return method;
+    }
+
+    public List<String[]> getParameterList() {
+        return (method instanceof IRMethod) ? ((IRMethod)method).getArgDesc() : new ArrayList<String[]>();
     }
 
     private Arity calculateArity() {

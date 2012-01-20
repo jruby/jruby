@@ -118,13 +118,16 @@ public class IRBuilder19 extends IRBuilder {
         switch (node.getNodeType()) {
             case ARGUMENTNODE: {
                 ArgumentNode a = (ArgumentNode)node;
-                addArgReceiveInstr(s, s.getNewLocalVariable(a.getName(), 0), argIndex, post, totalRequired, totalOptional);
+                String argName = a.getName();
+                if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("req", argName);
+                addArgReceiveInstr(s, s.getNewLocalVariable(argName, 0), argIndex, post, totalRequired, totalOptional);
                 break;
             }
             case MULTIPLEASGN19NODE: {
                 MultipleAsgn19Node childNode = (MultipleAsgn19Node) node;
                 Variable v = s.getNewTemporaryVariable();
                 addArgReceiveInstr(s, v, argIndex, post, totalRequired, totalOptional);
+                if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("rest", "");
                 s.addInstr(new ToAryInstr(v, v, BooleanLiteral.FALSE));
                 buildMultipleAsgn19Assignment(childNode, s, v, null);
                 break;
@@ -172,7 +175,9 @@ public class IRBuilder19 extends IRBuilder {
                 // Jump to 'l' if this arg is not null.  If null, fall through and build the default value!
                 Label l = s.getNewLabel();
                 OptArgNode n = (OptArgNode)optArgs.get(j);
-                Variable av = s.getNewLocalVariable(n.getName(), 0);
+                String argName = n.getName();
+                Variable av = s.getNewLocalVariable(argName, 0);
+                if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("opt", argName);
                 // You need at least required+j+1 incoming args for this opt arg to get an arg at all
                 s.addInstr(new ReceiveOptArgInstr(av, argIndex, required+j+1));
                 s.addInstr(BNEInstr.create(av, UndefinedValue.UNDEFINED, l)); // if 'av' is not undefined, go to default
@@ -187,6 +192,7 @@ public class IRBuilder19 extends IRBuilder {
             // For this code, there is no argument name available from the ruby code.
             // So, we generate an implicit arg name
             String argName = argsNode.getRestArgNode().getName();
+            if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("rest", argName == null ? "" : argName);
             argName = (argName == null || argName.equals("")) ? "%_arg_array" : argName;
 
             // You need at least required+opt+1 incoming args for the rest arg to get any args at all
@@ -201,16 +207,14 @@ public class IRBuilder19 extends IRBuilder {
         for (int i = 0; i < requiredPost; i++, argIndex++) {
             receiveRequiredArg(postArgs.get(i), s, argIndex, true, required, opt+rest);
         }
-
-        // Optional block arg
-        BlockArgNode blockArg = argsNode.getBlock();
-        if (blockArg != null) receiveClosureArg(blockArg, s);
     }
 
     public void receiveClosureArg(BlockArgNode blockVarNode, IRScope s) {
         Variable blockVar = null;
         if (blockVarNode != null) {
-            blockVar = s.getNewLocalVariable(blockVarNode.getName(), 0);
+            String blockArgName = blockVarNode.getName();
+            blockVar = s.getNewLocalVariable(blockArgName, 0);
+            if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("block", blockArgName);
             s.addInstr(new ReceiveClosureInstr(blockVar));
         }
 
