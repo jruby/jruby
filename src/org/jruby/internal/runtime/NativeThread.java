@@ -105,4 +105,8 @@ public class NativeThread implements ThreadLike {
     public String toString() {
         return "" + getThread();
     }
+
+    public Thread nativeThread() {
+        return nativeThread.get();
+    }
 }

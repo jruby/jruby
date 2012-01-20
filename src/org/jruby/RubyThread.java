@@ -186,7 +186,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
 
     public Thread getNativeThread() {
-        return threadImpl instanceof NativeThread ? ((NativeThread) threadImpl).getThread() : null;
+        return threadImpl.nativeThread();
     }
     /**
      * Dispose of the current thread by removing it from its parent ThreadGroup.

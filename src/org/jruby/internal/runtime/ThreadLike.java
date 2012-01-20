@@ -47,4 +47,6 @@ public interface ThreadLike {
     public boolean isCurrent();
     
     public boolean isInterrupted();
+
+    public Thread nativeThread();
 }

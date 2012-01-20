@@ -40,6 +40,7 @@ import org.jruby.RubyThread;
  */
 public class FutureThread implements ThreadLike {
     private volatile Future future;
+    private volatile Thread nativeThread;
     private RubyRunnable runnable;
     public RubyThread rubyThread;
     
@@ -59,10 +60,12 @@ public class FutureThread implements ThreadLike {
     public void start() {
         future = rubyThread.getRuntime().getExecutor().submit(new Runnable() {
             public void run() {
+                nativeThread = Thread.currentThread();
                 try {
                     runnable.run();
                 } finally {
                     rubyThread.getRuntime().getThreadService().dissociateThread(future);
+                    nativeThread = null;
                 }
             }
         });
@@ -166,5 +169,9 @@ public class FutureThread implements ThreadLike {
     
     public boolean isInterrupted() {
         return future.isCancelled();
+    }
+    
+    public Thread nativeThread() {
+        return nativeThread;
     }
 }
