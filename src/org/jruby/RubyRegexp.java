@@ -374,7 +374,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     private Encoding checkEncoding(RubyString str, boolean warn) {
         if (str.scanForCodeRange() == StringSupport.CR_BROKEN) {
-            // FIXME: This should be here, but various specs fail...we must have a coderange scan bug somewhere
             throw getRuntime().newArgumentError("invalid byte sequence in " + str.getEncoding());
         }
         check();
