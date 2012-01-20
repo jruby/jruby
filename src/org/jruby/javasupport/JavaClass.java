@@ -688,9 +688,10 @@ public class JavaClass extends JavaObject {
     };
     
     public void setupProxy(final RubyClass proxy) {
+        assert proxyLock.isHeldByCurrentThread();
+        
         initializer.initialize();
 
-        assert proxyLock.isHeldByCurrentThread();
         proxy.defineFastMethod("__jsend!", __jsend_method);
         final Class<?> javaClass = javaClass();
         if (javaClass.isInterface()) {
@@ -846,6 +847,7 @@ public class JavaClass extends JavaObject {
     }
 
     private synchronized void installClassFields(final RubyClass proxy) {
+        assert constantFields != null;
         for (ConstantField field : constantFields) {
             field.install(proxy);
         }
@@ -853,11 +855,13 @@ public class JavaClass extends JavaObject {
     }
 
     private synchronized void installClassMethods(final RubyClass proxy) {
+        assert staticInstallers != null;
         for (NamedInstaller installer : staticInstallers.values()) {
             installer.install(proxy);
         }
         staticInstallers = null;
-        
+
+        assert instanceInstallers != null;
         for (NamedInstaller installer : instanceInstallers.values()) {
             installer.install(proxy);
         }
@@ -1060,22 +1064,23 @@ public class JavaClass extends JavaObject {
     
     // old (quasi-deprecated) interface class
     private void setupInterfaceProxy(final RubyClass proxy) {
-        initializer.initialize();
-        
         assert javaClass().isInterface();
         assert proxyLock.isHeldByCurrentThread();
         assert this.proxyClass == null;
+        
+        initializer.initialize();
         this.proxyClass = proxy;
         // nothing else to here - the module version will be
         // included in the class.
     }
     
     public void setupInterfaceModule(final RubyModule module) {
-        initializer.initialize();
-        
         assert javaClass().isInterface();
         assert proxyLock.isHeldByCurrentThread();
         assert this.proxyModule == null;
+        
+        initializer.initialize();
+        
         this.unfinishedProxyModule = module;
         Class<?> javaClass = javaClass();
         for (ConstantField field: constantFields) {
