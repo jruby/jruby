@@ -19,6 +19,11 @@ public class Backref extends Reference {
         type = t;
     }
 
+    @Override
+    public boolean isNonAtomicValue() {
+        return true;
+    }
+
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         IRubyObject backref = currDynScope.getBackRef(context.getRuntime());
         
