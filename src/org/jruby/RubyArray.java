@@ -1774,7 +1774,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
 
     // 1.9 MRI: join0
     private RubyString joinStrings(RubyString sep, int max, RubyString result) {
-        if (max > 0) result.setEncoding(values[0].convertToString().getEncoding());
+        if (max > 0) result.setEncoding(values[begin].convertToString().getEncoding());
 
         try {
             for(int i = begin; i < max; i++) {
