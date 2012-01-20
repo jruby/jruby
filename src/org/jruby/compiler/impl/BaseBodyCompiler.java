@@ -1364,27 +1364,27 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         method.invokestatic(p(RubyRegexp.class), "nth_match", sig(IRubyObject.class, params(Integer.TYPE, IRubyObject.class)));
     }
 
-    public void match() {
+    public void match(boolean is19) {
         loadThreadContext();
-        method.invokevirtual(p(RubyRegexp.class), "op_match2", sig(IRubyObject.class, params(ThreadContext.class)));
+        method.invokevirtual(p(RubyRegexp.class), is19 ? "op_match2_19" : "op_match2", sig(IRubyObject.class, params(ThreadContext.class)));
     }
 
-    public void match2(CompilerCallback value) {
+    public void match2(CompilerCallback value, boolean is19) {
         loadThreadContext();
         value.call(this);
-        method.invokevirtual(p(RubyRegexp.class), "op_match", sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class)));
+        method.invokevirtual(p(RubyRegexp.class), is19 ? "op_match19" : "op_match", sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class)));
     }
 
-    public void match2Capture(CompilerCallback value, int[] scopeOffsets) {
+    public void match2Capture(CompilerCallback value, int[] scopeOffsets, boolean is19) {
         loadThreadContext();
         value.call(this);
         method.ldc(RuntimeHelpers.encodeCaptureOffsets(scopeOffsets));
-        invokeUtilityMethod("match2AndUpdateScope", sig(IRubyObject.class, params(IRubyObject.class, ThreadContext.class, IRubyObject.class, String.class)));
+        invokeUtilityMethod(is19 ? "match2AndUpdateScope19" : "match2AndUpdateScope", sig(IRubyObject.class, params(IRubyObject.class, ThreadContext.class, IRubyObject.class, String.class)));
     }
 
-    public void match3() {
+    public void match3(boolean is19) {
         loadThreadContext();
-        invokeUtilityMethod("match3", sig(IRubyObject.class, RubyRegexp.class, IRubyObject.class, ThreadContext.class));
+        invokeUtilityMethod(is19 ? "match3_19" : "match3", sig(IRubyObject.class, RubyRegexp.class, IRubyObject.class, ThreadContext.class));
     }
 
     public void createNewRegexp(final ByteList value, final int options) {

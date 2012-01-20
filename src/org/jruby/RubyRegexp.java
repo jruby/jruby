@@ -1398,12 +1398,26 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                 getOptions().equals(otherRegex.options));
     }
 
-    @JRubyMethod(name = "~", reads = {LASTLINE, BACKREF}, writes = BACKREF)
+    // FIXME: is this actually used in 1.8? It was 1.9-only before, but called the wrong search
+    @JRubyMethod(name = "~", reads = {LASTLINE, BACKREF}, writes = BACKREF, compat = CompatVersion.RUBY1_8)
     public IRubyObject op_match2(ThreadContext context) {
         Ruby runtime = context.getRuntime();
         IRubyObject line = context.getCurrentScope().getLastLine(runtime);
         if (line instanceof RubyString) {
             int start = search(context, (RubyString)line, 0, false);
+            if (start < 0) return runtime.getNil();
+            return runtime.newFixnum(start);
+        }
+        context.getCurrentScope().setBackRef(runtime.getNil());
+        return runtime.getNil();
+    }
+
+    @JRubyMethod(name = "~", reads = {LASTLINE, BACKREF}, writes = BACKREF, compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_match2_19(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+        IRubyObject line = context.getCurrentScope().getLastLine(runtime);
+        if (line instanceof RubyString) {
+            int start = search19(context, (RubyString)line, 0, false);
             if (start < 0) return runtime.getNil();
             return runtime.newFixnum(start);
         }
@@ -1651,6 +1665,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     @JRubyMethod(name = "inspect", compat = CompatVersion.RUBY1_8)
     @Override
     public IRubyObject inspect() {
+        if (getRuntime().is1_9()) return inspect19();
         check();
         ByteList result = regexpDescription(getRuntime(), str, options.getKCode().getEncoding(), options);
         if (!isKCodeDefault()) result.append((byte)options.getKCodeName().charAt(0));

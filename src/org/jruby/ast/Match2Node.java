@@ -93,7 +93,9 @@ public class Match2Node extends Node {
         IRubyObject recv = receiverNode.interpret(runtime, context, self, aBlock);
         IRubyObject value = valueNode.interpret(runtime, context, self, aBlock);
    
-        return ((RubyRegexp) recv).op_match(context, value);
+        return runtime.is1_9() ?
+                ((RubyRegexp) recv).op_match19(context, value) :
+                ((RubyRegexp) recv).op_match(context, value);
     }
     
     @Override

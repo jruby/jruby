@@ -98,7 +98,9 @@ public class Match3Node extends Node {
         IRubyObject value = valueNode.interpret(runtime,context, self, aBlock);
    
         if (value instanceof RubyString) {
-            return ((RubyRegexp) recv).op_match(context, value);
+            return runtime.is1_9() ?
+                    ((RubyRegexp) recv).op_match19(context, value) :
+                    ((RubyRegexp) recv).op_match(context, value);
         } else {
             return callAdapter.call(context, self, value, recv);
         }

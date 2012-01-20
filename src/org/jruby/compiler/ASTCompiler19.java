@@ -63,6 +63,11 @@ import org.jruby.runtime.BlockBody;
  */
 public class ASTCompiler19 extends ASTCompiler {
     @Override
+    protected boolean is1_9() {
+        return true;
+    }
+    
+    @Override
     public void compile(Node node, BodyCompiler context, boolean expr) {
         if (node == null) {
             if (expr) context.loadNil();
@@ -462,7 +467,7 @@ public class ASTCompiler19 extends ASTCompiler {
             }
         };
 
-        context.match2Capture(value, matchNode.getScopeOffsets());
+        context.match2Capture(value, matchNode.getScopeOffsets(), true);
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
     }

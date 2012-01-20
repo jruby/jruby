@@ -500,13 +500,13 @@ public interface BodyCompiler {
 
     public void nthRef(int match);
 
-    public void match();
+    public void match(boolean is19);
 
-    public void match2(CompilerCallback value);
+    public void match2(CompilerCallback value, boolean is19);
 
-    public void match2Capture(CompilerCallback value, int[] scopeOffsets);
+    public void match2Capture(CompilerCallback value, int[] scopeOffsets, boolean is19);
 
-    public void match3();
+    public void match3(boolean is19);
 
     public void createNewRegexp(ByteList value, int options);
     public void createNewRegexp(CompilerCallback createStringCallback, int options);
