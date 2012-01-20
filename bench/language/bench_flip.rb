@@ -29,7 +29,9 @@ def bench_flip(bm)
   end
   bm.report("1m x10 while (a)..(!a) (heap)") do
     1_000_000.times do
-      if false; eval ''; end
+      # NOTE: compiler doesn't see through this, but it might some day
+      x = false 
+      if x; eval ''; end
       a = true
       while (a)..(!a); a = false; end
       a = true
