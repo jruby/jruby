@@ -528,7 +528,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         } else {
             return RubyString.newString(
                     runtime,
-                    new ByteList(str.getBytes(rubyInt), internal));
+                    new ByteList(RubyEncoding.encode(str, rubyInt), internal));
         }
     }
 
