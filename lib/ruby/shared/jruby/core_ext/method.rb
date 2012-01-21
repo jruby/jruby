@@ -13,16 +13,11 @@ class Method
       args_node = method.args_node
 
       # "pre" required args
-      required_pre = args_node.pre
-      if required_pre
-        for req_pre_arg in required_pre.child_nodes
-          if req_pre_arg.kind_of? MultipleAsgn19Node
-            args_ary << [:req]
-          else
-            args_ary << [:req, req_pre_arg ? req_pre_arg.name.intern : nil]
-          end
-        end
-      end
+      args_node.pre.child_nodes.each do |node|
+        node_itern = node.name.intern unless node.kind_of? MultipleAsgn19Node
+        args_array << [:req]
+        args_array.last << node_itern if node_itern
+      end if args_node.pre
 
       # optional args in middle
       optional = args_node.opt_args
