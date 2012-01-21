@@ -19,8 +19,6 @@ public class ClosureLocalVariable extends LocalVariable {
         return "<" + name + "(" + scopeDepth + ":" + offset + ")>";
     }
 
-    // SSS FIXME: a = "<v>"; b = ClosureLocalVariable("v"); a.hashCode() == b.hashCode() but a.equals(b) == false
-    // Strictly speaking, this is inconsistent.  But, as long as we are not comparing strings and local variables, we are okay.
     @Override
     public int hashCode() {
         return name.hashCode();
@@ -40,8 +38,8 @@ public class ClosureLocalVariable extends LocalVariable {
         return name.compareTo(((LocalVariable) arg0).name);
     }
 
-    @Override
-    public LocalVariable clone() {
-        return new ClosureLocalVariable(definingScope, name, scopeDepth, offset);
+    // SSS FIXME: Better name than this?
+    public LocalVariable cloneForDepth(int n) {
+        return new ClosureLocalVariable(definingScope, name, n, offset);
     }
 }
