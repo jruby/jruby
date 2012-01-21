@@ -35,11 +35,9 @@ public class LiveVariableNode extends FlowGraphNode {
     private void addDFVar(Variable v) {
         LiveVariablesProblem lvp = (LiveVariablesProblem) problem;
         if (!lvp.dfVarExists(v)) lvp.addDFVar(v);
-        // System.out.println("Adding df var for " + v + ":" + lvp.getDFVar(v).id);
     }
 
     public void buildDataFlowVars(Instr i) {
-        // System.out.println("BV: Processing: " + i);        
         if (i instanceof ResultInstr) addDFVar(((ResultInstr) i).getResult());
 
         for (Variable x: i.getUsedVariables()) {
@@ -60,6 +58,7 @@ public class LiveVariableNode extends FlowGraphNode {
                 }
             }
         }
+        // System.out.println("Init state for BB " + basicBlock.getID() + " is " + toString());
     }
 
     public void compute_MEET(BasicBlock source, FlowGraphNode pred) {
@@ -72,11 +71,10 @@ public class LiveVariableNode extends FlowGraphNode {
     }
 
     public boolean applyTransferFunction() {
+        // System.out.println("After MEET, df state for " + basicBlock.getID() + " is:\n" + toString());
         LiveVariablesProblem lvp = (LiveVariablesProblem) problem;
 
         tmp = (BitSet) in.clone();
-         // System.out.println("Apply TF for BB " + basicBlock.getID());
-         // System.out.println("After MEET, df state is:\n" + toString());
 
         // Traverse the instructions in this basic block in reverse order!
         List<Instr> instrs = basicBlock.getInstrs();

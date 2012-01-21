@@ -42,6 +42,7 @@ public class LiveVariablesProblem extends DataFlowProblem {
         dfVarMap.put(v, dfv);
         varDfVarMap.put(dfv.id, v);
         if ((v instanceof LocalVariable) && !((LocalVariable) v).isSelf()) {
+            // System.out.println("Adding df var for " + v + ":" + dfv.id);
             localVars.add((LocalVariable) v);
         }
     }
@@ -82,6 +83,9 @@ public class LiveVariablesProblem extends DataFlowProblem {
      * In the code snippet above, 'sum' is live on entry to and exit from the closure.
      **/
     public void setup(IRScope scope, Collection<LocalVariable> allVars) {
+        // System.out.println("\nCFG:\n" + scope.cfg().toStringGraph());
+        // System.out.println("\nInstrs:\n" + scope.cfg().toStringInstrs());
+
         setup(scope);
 
         if ((allVars != null) && !allVars.isEmpty()) {
