@@ -195,7 +195,10 @@ public abstract class IRScope {
      * - calls a method which we cannot resolve now!
      * - has a call whose closure requires a binding
      * **************************************************************************** */
-    private boolean requiresBinding;
+    private boolean bindingHasEscaped;
+
+    /** Does this scope call any eval */
+    private boolean usesEval;
     
     public IRScope(IRScope lexicalParent, String name, String fileName, StaticScope staticScope) {
         super();
@@ -210,7 +213,8 @@ public abstract class IRScope {
         // All flags are true by default!
         canModifyCode = true;
         canCaptureCallersBinding = true;
-        requiresBinding = true;
+        bindingHasEscaped = true;
+        usesEval = true;
 
         localVars = new LocalVariableAllocator();
     }
@@ -352,8 +356,12 @@ public abstract class IRScope {
         return canModifyCode;
     }
 
-    public boolean requiresBinding() {
-        return requiresBinding;
+    public boolean bindingHasEscaped() {
+        return bindingHasEscaped;
+    }
+
+    public boolean usesEval() {
+        return usesEval;
     }
 
     public boolean canCaptureCallersBinding() {
@@ -486,7 +494,7 @@ public abstract class IRScope {
         // init
         canModifyCode = true;
         canCaptureCallersBinding = false;
-        requiresBinding = false;
+        bindingHasEscaped = false;
 
         // recompute flags -- we could be calling this method different times
         // definitely once after ir generation and local optimizations propagates constants locally
@@ -502,7 +510,7 @@ public abstract class IRScope {
             if (i instanceof CallBase) {
                 CallBase call = (CallBase) i;
                 if (call.targetRequiresCallersBinding())
-                    requiresBinding = true;
+                    bindingHasEscaped = true;
 
                 // If this method receives a closure arg, and this call is an eval that has more than 1 argument,
                 // it could be using the closure as a binding -- which means it could be using pretty much any

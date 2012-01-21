@@ -1,6 +1,7 @@
 package org.jruby.compiler.ir.dataflow.analyses;
 
 import org.jruby.compiler.ir.IRClosure;
+import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.dataflow.DataFlowConstants;
 import org.jruby.compiler.ir.dataflow.DataFlowProblem;
 import org.jruby.compiler.ir.dataflow.DataFlowVar;
@@ -190,7 +191,6 @@ public class LiveVariableNode extends FlowGraphNode {
                         if (!x.isImplicitBlockArg()) tmp.set(lvp.getDFVar(x).getId());
                     }
                 } else if (c.canRaiseException()) {
-                    // System.out.println(".. can raise exception ..");
                     // Collect variables live out of the exception target node.  Since this call can directly jump to
                     // the rescue block (or scope exit) without executing the rest of the instructions in this bb, we
                     // have a control-flow edge from this call to that block.  Since we dont want to add a
@@ -201,6 +201,16 @@ public class LiveVariableNode extends FlowGraphNode {
                         if (etOut.get(k) == true) tmp.set(k); 
                     }
                 }
+            } else if (i.canRaiseException()) {
+                 // Collect variables live out of the exception target node.  Since this instr. can directly jump to
+                 // the rescue block (or scope exit) without executing the rest of the instructions in this bb, we
+                 // have a control-flow edge from this instr. to that block.  Since we dont want to add a
+                 // control-flow edge from pretty much very instr. to the rescuer/exit BB, we are handling it
+                 // implicitly here.
+                 BitSet etOut = ((LiveVariableNode)getExceptionTargetNode()).out;
+                 for (int k = 0; k < etOut.size(); k++) {
+                     if (etOut.get(k) == true) tmp.set(k); 
+                 }
             }
 
             // Now, for all variables used by 'i', mark them live before 'i'
@@ -258,6 +268,7 @@ public class LiveVariableNode extends FlowGraphNode {
     void markDeadInstructions() {
         // System.out.println("-- Identifying dead instructions for " + basicBlock.getID() + " -- ");
         LiveVariablesProblem lvp = (LiveVariablesProblem) problem;
+		  IRScope scope = lvp.getScope();
 
         if (in == null) {
            // 'in' cannot be null for reachable bbs
@@ -284,7 +295,7 @@ public class LiveVariableNode extends FlowGraphNode {
                 DataFlowVar dv = lvp.getDFVar(v);
                     // If 'v' is not live at the instruction site, and it has no side effects, mark it dead!
                 // System.out.println("df var for " + v + " is " + dv.getId());
-                if ((tmp.get(dv.getId()) == false) && i.canBeDeleted()) {
+                if ((tmp.get(dv.getId()) == false) && i.canBeDeleted(scope)) {
                     // System.out.println("YES!");
                     i.markDead();
                     it.remove();
@@ -295,7 +306,7 @@ public class LiveVariableNode extends FlowGraphNode {
                     // System.out.println("NO! LIVE result:" + v);
                     tmp.clear(dv.getId());
                 }
-            } else if (i.canBeDeleted()) {
+            } else if (i.canBeDeleted(scope)) {
                  i.markDead();
                  it.remove();
             } else {
@@ -330,6 +341,16 @@ public class LiveVariableNode extends FlowGraphNode {
                         if (etOut.get(k) == true) tmp.set(k);
                     }
                 }
+            } else if (i.canRaiseException()) {
+                 // Collect variables live out of the exception target node.  Since this instr. can directly jump to
+                 // the rescue block (or scope exit) without executing the rest of the instructions in this bb, we
+                 // have a control-flow edge from this instr. to that block.  Since we dont want to add a
+                 // control-flow edge from pretty much very instr. to the rescuer/exit BB, we are handling it
+                 // implicitly here.
+                 BitSet etOut = ((LiveVariableNode)getExceptionTargetNode()).out;
+                 for (int k = 0; k < etOut.size(); k++) {
+                     if (etOut.get(k) == true) tmp.set(k); 
+                 }
             }
 
             // Do not mark this instruction's operands live if the instruction itself is dead!

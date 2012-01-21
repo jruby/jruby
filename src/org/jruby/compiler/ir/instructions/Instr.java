@@ -5,10 +5,14 @@ import org.jruby.compiler.ir.Interp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.Operation;
+import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
+
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -66,8 +70,27 @@ public abstract class Instr {
         return operation.transfersControl();
     }
 
-    public boolean canBeDeleted() {
-         return !hasSideEffects() && !canRaiseException() && !getOperation().isDebugOp() && !transfersControl();
+    public boolean canBeDeleted(IRScope s) {
+         if (hasSideEffects() || canRaiseException() || getOperation().isDebugOp() || transfersControl()) {
+             return false;
+         } else if (this instanceof ResultInstr) {
+             Variable r = ((ResultInstr)this).getResult();
+             if (s.bindingHasEscaped()) {
+                 // If the binding of this scope has escaped, then we have to preserve writes to
+                 // all local variables because anyone who uses the binding might query any of the
+                 // local variables from the binding.  This is safe, but extremely conservative.
+                 return !(r instanceof LocalVariable);
+             } else if (s.usesEval() && r.getName().equals(Variable.BLOCK)) {
+                 // If this scope has any evals, then the eval might have a yield which would use
+                 // %block.  In that scenario, we cannot delete the '%block = recv_closure' instruction.
+                 // This is safe, but conservative.
+                 return false;
+             } else {
+                 return true;
+             }
+         } else {
+             return true;
+         }
     }
 
     public void markDead() {
