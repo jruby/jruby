@@ -11,8 +11,8 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 
-// Right now, this is primarily used for JRuby implementation.  Ruby exceptions go through
-// RubyKernel.raise (or RubyThread.raise).
+// Right now, this is primarily used by the JRuby implementation.
+// Ruby exceptions go through RubyKernel.raise (or RubyThread.raise).
 public class ThrowExceptionInstr extends Instr {
     private Operand exceptionArg;
 

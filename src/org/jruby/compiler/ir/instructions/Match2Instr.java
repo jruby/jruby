@@ -16,10 +16,6 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- *
- * @author enebo
- */
 public class Match2Instr extends Instr implements ResultInstr {
     private Variable result;
     private Operand receiver;
@@ -38,6 +34,11 @@ public class Match2Instr extends Instr implements ResultInstr {
     @Override
     public Operand[] getOperands() {
         return new Operand[] { receiver, arg };
+    }
+
+    @Override
+    public String toString() {
+        return super.toString() + "(" + receiver + ", " + arg + ")";
     }
 
     @Override

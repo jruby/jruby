@@ -27,6 +27,11 @@ public class RecordEndBlockInstr extends Instr {
     }
 
     @Override
+    public String toString() {
+        return getOperation().toString() + "(" + endBlockClosure.getName() + ")";
+    }
+
+    @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         return new RecordEndBlockInstr(declaringScope, endBlockClosure);
     }

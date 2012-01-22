@@ -10,9 +10,6 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- *
- */
 public class SetWithinDefinedInstr extends Instr {
     private final BooleanLiteral define;
     
@@ -25,6 +22,11 @@ public class SetWithinDefinedInstr extends Instr {
     @Override
     public Operand[] getOperands() {
         return new Operand[] { define };
+    }
+
+    @Override
+    public String toString() {
+        return getOperation().toString() + "(" + define + ")";
     }
 
     @Override

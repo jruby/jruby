@@ -9,9 +9,6 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- *
- */
 public class NoResultCallInstr extends CallBase {
     public NoResultCallInstr(Operation op, CallType callType, MethAddr methAddr, Operand receiver, Operand[] args, Operand closure) {
         super(op, callType, methAddr, receiver, args, closure);

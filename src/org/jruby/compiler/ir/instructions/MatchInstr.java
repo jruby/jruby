@@ -30,6 +30,11 @@ public class MatchInstr extends Instr implements ResultInstr {
     }
 
     @Override
+    public String toString() {
+        return super.toString() + "(" + receiver + ")";
+    }
+
+    @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
         receiver = receiver.getSimplifiedOperand(valueMap, force);
     }

@@ -20,10 +20,4 @@ public class ThreadPollInstr extends Instr {
     public Instr cloneForInlining(InlinerInfo ii) {
         return this;
     }
-
-    // Can this instruction raise exceptions?
-    @Override
-    public boolean canRaiseException() {
-        return false;
-    }
 }

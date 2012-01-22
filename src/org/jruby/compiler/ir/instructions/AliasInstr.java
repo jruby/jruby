@@ -40,6 +40,11 @@ public class AliasInstr extends Instr {
     }
 
     @Override
+    public String toString() {
+        return getOperation().toString() + "(" + receiver + ", " + newName + ", " + oldName + ")";
+    }
+
+    @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
         oldName = oldName.getSimplifiedOperand(valueMap, force);
         newName = newName.getSimplifiedOperand(valueMap, force);

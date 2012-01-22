@@ -12,8 +12,6 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- */
 public class UndefMethodInstr extends Instr implements ResultInstr {
     private Variable result;
     private Operand methodName;
@@ -28,6 +26,11 @@ public class UndefMethodInstr extends Instr implements ResultInstr {
     @Override
     public Operand[] getOperands() {
         return new Operand[] { methodName };
+    }
+
+    @Override
+    public String toString() {
+        return super.toString() + "(" + methodName + ")";
     }
 
     @Override

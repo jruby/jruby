@@ -34,6 +34,11 @@ public class RestoreErrorInfoInstr extends Instr {
     }
 
     @Override
+    public String toString() {
+        return super.toString() + "(" + arg + ")";
+    }
+
+    @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
         arg = arg.getSimplifiedOperand(valueMap, force);
     }
