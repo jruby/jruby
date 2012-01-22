@@ -35,12 +35,10 @@ public class GetEncodingInstr extends Instr implements ResultInstr {
         return super.toString() + "(" + encoding + ")";
     }
     
-    @Override
     public Variable getResult() {
         return result;
     }
 
-    @Override
     public void updateResult(Variable v) {
         this.result = v;
     }
