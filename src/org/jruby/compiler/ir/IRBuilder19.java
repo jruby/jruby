@@ -398,7 +398,7 @@ public class IRBuilder19 extends IRBuilder {
     }
 
     public Operand buildYield(YieldNode node, IRScope s) {
-        boolean unwrap = node.getExpandArguments();
+        boolean unwrap = true;
         Node argNode = node.getArgsNode();
         // Get rid of one level of array wrapping
         if (argNode != null && (argNode instanceof ArrayNode) && ((ArrayNode)argNode).size() == 1) {
