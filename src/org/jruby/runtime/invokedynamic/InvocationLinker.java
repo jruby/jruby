@@ -37,6 +37,8 @@ import java.lang.invoke.MutableCallSite;
 import java.lang.invoke.SwitchPoint;
 import java.math.BigInteger;
 import java.util.Arrays;
+
+import com.headius.invoke.binder.Binder;
 import org.jruby.Ruby;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyBoolean;
@@ -45,6 +47,7 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
+import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
@@ -1345,11 +1348,6 @@ public class InvocationLinker {
         DynamicMethod.NativeCall nativeCall = method.getNativeCall();
         
         try {
-            nativeTarget = site.lookup().findStatic(
-                    nativeCall.getNativeTarget(),
-                    nativeCall.getNativeName(),
-                    methodType(nativeCall.getNativeReturn(),
-                    nativeCall.getNativeSignature()));
             Object scriptObject;
             if (method instanceof CompiledMethod) {
                 scriptObject = ((CompiledMethod)method).getScriptObject();
@@ -1358,28 +1356,14 @@ public class InvocationLinker {
             } else {
                 throw new RuntimeException("invalid method for ruby handle: " + method);
             }
-            
-            nativeTarget = insertArguments(nativeTarget, 0, scriptObject);
-            
-            // juggle args into correct places
+
             int argCount = getRubyArgCount(nativeCall.getNativeSignature());
-            switch (argCount) {
-                case 0:
-                    nativeTarget = permuteArguments(nativeTarget, STANDARD_NATIVE_TYPE_BLOCK, new int[] {0, 2, 3});
-                    break;
-                case -1:
-                case 1:
-                    nativeTarget = permuteArguments(nativeTarget, STANDARD_NATIVE_TYPE_1ARG_BLOCK, new int[] {0, 2, 3, 4});
-                    break;
-                case 2:
-                    nativeTarget = permuteArguments(nativeTarget, STANDARD_NATIVE_TYPE_2ARG_BLOCK, new int[] {0, 2, 3, 4, 5});
-                    break;
-                case 3:
-                    nativeTarget = permuteArguments(nativeTarget, STANDARD_NATIVE_TYPE_3ARG_BLOCK, new int[] {0, 2, 3, 4, 5, 6});
-                    break;
-                default:
-                    throw new RuntimeException("unknown arg count: " + argCount);
-            }
+
+            nativeTarget = Binder
+                    .from(STANDARD_NATIVE_TYPES_BLOCK[Math.abs(argCount)])
+                    .permute(TC_SELF_ARGS_BLOCK_PERMUTES[Math.abs(argCount)])
+                    .insert(0, scriptObject)
+                    .invokeStaticQuiet(site.lookup(), nativeCall.getNativeTarget(), nativeCall.getNativeName());
             
             method.setHandle(nativeTarget);
             return nativeTarget;
@@ -1480,32 +1464,29 @@ public class InvocationLinker {
         return entry.method;
     }
 
-    private static final MethodHandle PGC = dropArguments(
-            dropArguments(
-                findStatic(InvokeDynamicSupport.class, "pollAndGetClass",
-                    methodType(RubyClass.class, ThreadContext.class, IRubyObject.class)),
-                1,
-                IRubyObject.class),
-            0,
-            CacheEntry.class);
+    private static final MethodHandle PGC = Binder
+                    .from(RubyClass.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class)
+                    .permute(1, 3)
+                    .invokeStaticQuiet(lookup(), InvokeDynamicSupport.class, "pollAndGetClass");
 
-    private static final MethodHandle PGC2 = dropArguments(
-            findStatic(InvokeDynamicSupport.class, "pollAndGetClass",
-                methodType(RubyClass.class, ThreadContext.class, IRubyObject.class)),
-            1,
-            IRubyObject.class);
+    private static final MethodHandle PGC2 = Binder
+            .from(RubyClass.class, ThreadContext.class, IRubyObject.class, IRubyObject.class)
+            .drop(1)
+            .invokeStaticQuiet(lookup(), InvokeDynamicSupport.class, "pollAndGetClass");
 
-    private static final MethodHandle TEST_GENERATION = dropArguments(
-            findStatic(InvocationLinker.class, "testGeneration",
-                methodType(boolean.class, int.class, IRubyObject.class)),
-            1,
-            ThreadContext.class, IRubyObject.class);
+    private static final Binder test_binder = Binder
+            .from(boolean.class, int.class, ThreadContext.class, IRubyObject.class, IRubyObject.class)
+            .drop(1, 2);
 
-    private static final MethodHandle TEST_METACLASS = dropArguments(
-            findStatic(InvocationLinker.class, "testMetaclass",
-                methodType(boolean.class, RubyModule.class, IRubyObject.class)),
-            1,
-            ThreadContext.class, IRubyObject.class);
+    private static final MethodHandle TEST_GENERATION = Binder
+            .from(boolean.class, int.class, ThreadContext.class, IRubyObject.class, IRubyObject.class)
+            .drop(1, 2)
+            .invokeStaticQuiet(lookup(), InvocationLinker.class, "testGeneration");
+
+    private static final MethodHandle TEST_METACLASS = Binder
+            .from(boolean.class, RubyModule.class, ThreadContext.class, IRubyObject.class, IRubyObject.class)
+            .drop(1, 2)
+            .invokeStaticQuiet(lookup(), InvocationLinker.class, "testMetaclass");
     
     private static final MethodHandle TEST =
             RubyInstanceConfig.INVOKEDYNAMIC_INVOCATION_SWITCHPOINT ?
@@ -1590,295 +1571,146 @@ public class InvocationLinker {
     // Support handles for DynamicMethod.call paths
     ////////////////////////////////////////////////////////////////////////////
 
-    private static final MethodHandle PGC_0 = dropNameAndArgs(PGC, 4, 0, false);
-    private static final MethodHandle PGC2_0 = dropNameAndArgs(PGC2, 3, 0, false);
-    private static final MethodHandle GETMETHOD_0 = dropNameAndArgs(GETMETHOD, 5, 0, false);
     private static final MethodHandle TEST_0 = dropArgs(TEST, 4, 0, false);
-    private static final MethodHandle TARGET_0;
-    static {
-        MethodHandle target = findVirtual(DynamicMethod.class, "call",
-                methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class));
-        target = explicitCastArguments(target, methodType(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class));
-        target = permuteArguments(
-                target,
-                methodType(IRubyObject.class, DynamicMethod.class, RubyClass.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class),
-                new int[] {0,3,5,1,6});
-        // IRubyObject, DynamicMethod, RubyClass, CacheEntry, ThreadContext, IRubyObject, IRubyObject, String
-        target = foldArguments(target, GETMETHOD_0);
-        // IRubyObject, RubyClass, CacheEntry, ThreadContext, IRubyObject, IRubyObject, String
-        target = foldArguments(target, PGC_0);
-        // IRubyObject, CacheEntry, ThreadContext, IRubyObject, IRubyObject, String
-        TARGET_0 = target;
-    }
+    private static final MethodHandle TARGET_0 = Binder
+            .from(IRubyObject.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class)
+            .fold(dropNameAndArgs(PGC, 4, 0, false))
+            .fold(dropNameAndArgs(GETMETHOD, 5, 0, false))
+            .permute(0, 3, 5, 1, 6)
+            .cast(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class)
+            .invokeVirtualQuiet(lookup(), "call");
+
     private static final MethodHandle FALLBACK_0 = findStatic(InvocationLinker.class, "invocationFallback",
             methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class));
     private static final MethodHandle FAIL_0 = findStatic(InvocationLinker.class, "fail",
             methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class));
 
-    private static final MethodHandle PGC_1 = dropNameAndArgs(PGC, 4, 1, false);
-    private static final MethodHandle PGC2_1 = dropNameAndArgs(PGC2, 3, 1, false);
-    private static final MethodHandle GETMETHOD_1 = dropNameAndArgs(GETMETHOD, 5, 1, false);
     private static final MethodHandle TEST_1 = dropArgs(TEST, 4, 1, false);
-    private static final MethodHandle TARGET_1;
-    static {
-        MethodHandle target = findVirtual(DynamicMethod.class, "call",
-                methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class));
-        // IRubyObject, DynamicMethod, ThreadContext, IRubyObject, RubyModule, String, IRubyObject
-        target = explicitCastArguments(target, methodType(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject.class));
-        // IRubyObject, DynamicMethod, ThreadContext, IRubyObject, RubyClass, String, IRubyObject
-        target = permuteArguments(
-                target,
-                methodType(IRubyObject.class, DynamicMethod.class, RubyClass.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class),
-                new int[] {0,3,5,1,6,7});
-        // IRubyObject, DynamicMethod, RubyClass, CacheEntry, ThreadContext, IRubyObject, IRubyObject, String, IRubyObject
-        target = foldArguments(target, GETMETHOD_1);
-        // IRubyObject, RubyClass, CacheEntry, ThreadContext, IRubyObject, IRubyObject, String, IRubyObject
-        target = foldArguments(target, PGC_1);
-        // IRubyObject, CacheEntry, ThreadContext, IRubyObject, IRubyObject, String, IRubyObject
-        TARGET_1 = target;
-    }
+    private static final MethodHandle TARGET_1 = Binder
+            .from(IRubyObject.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class)
+            .fold(dropNameAndArgs(PGC, 4, 1, false))
+            .fold(dropNameAndArgs(GETMETHOD, 5, 1, false))
+            .permute(0, 3, 5, 1, 6, 7)
+            .cast(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class)
+            .invokeVirtualQuiet(lookup(), "call");
+
     private static final MethodHandle FALLBACK_1 = findStatic(InvocationLinker.class, "invocationFallback",
             methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
     private static final MethodHandle FAIL_1 = findStatic(InvocationLinker.class, "fail",
             methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
 
-    private static final MethodHandle PGC_2 = dropNameAndArgs(PGC, 4, 2, false);
-    private static final MethodHandle GETMETHOD_2 = dropNameAndArgs(GETMETHOD, 5, 2, false);
     private static final MethodHandle TEST_2 = dropArgs(TEST, 4, 2, false);
-    private static final MethodHandle TARGET_2;
-    static {
-        MethodHandle target = findVirtual(DynamicMethod.class, "call",
-                methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class));
-        target = explicitCastArguments(target, methodType(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject.class, IRubyObject.class));
-        target = permuteArguments(
-                target,
-                methodType(IRubyObject.class, DynamicMethod.class, RubyClass.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class),
-                new int[] {0,3,5,1,6,7,8});
-        // IRubyObject, DynamicMethod, RubyClass, CacheEntry, ThreadContext, IRubyObject, IRubyObject, String, args
-        target = foldArguments(target, GETMETHOD_2);
-        // IRubyObject, RubyClass, CacheEntry, ThreadContext, IRubyObject, IRubyObject, String, args
-        target = foldArguments(target, PGC_2);
-        // IRubyObject, CacheEntry, ThreadContext, IRubyObject, IRubyObject, String, args
-        TARGET_2 = target;
-    }
+    private static final MethodHandle TARGET_2 = Binder
+            .from(IRubyObject.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class)
+            .fold(dropNameAndArgs(PGC, 4, 2, false))
+            .fold(dropNameAndArgs(GETMETHOD, 5, 2, false))
+            .permute(0, 3, 5, 1, 6, 7, 8)
+            .cast(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class)
+            .invokeVirtualQuiet(lookup(), "call");
+
     private static final MethodHandle FALLBACK_2 = findStatic(InvocationLinker.class, "invocationFallback",
             methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
     private static final MethodHandle FAIL_2 = findStatic(InvocationLinker.class, "fail",
             methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
 
-    private static final MethodHandle PGC_3 = dropNameAndArgs(PGC, 4, 3, false);
-    private static final MethodHandle GETMETHOD_3 = dropNameAndArgs(GETMETHOD, 5, 3, false);
     private static final MethodHandle TEST_3 = dropArgs(TEST, 4, 3, false);
-    private static final MethodHandle TARGET_3;
-    static {
-        MethodHandle target = findVirtual(DynamicMethod.class, "call",
-                methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
-        target = explicitCastArguments(target, methodType(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
-        target = permuteArguments(
-                target,
-                methodType(IRubyObject.class, DynamicMethod.class, RubyClass.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class),
-                new int[] {0,3,5,1,6,7,8,9});
-        // IRubyObject, DynamicMethod, RubyClass, CacheEntry, ThreadContext, IRubyObject, IRubyObject, String, args
-        target = foldArguments(target, GETMETHOD_3);
-        // IRubyObject, RubyClass, CacheEntry, ThreadContext, IRubyObject, IRubyObject, String, args
-        target = foldArguments(target, PGC_3);
-        // IRubyObject, CacheEntry, ThreadContext, IRubyObject, IRubyObject, String, args
-        TARGET_3 = target;
-    }
+    private static final MethodHandle TARGET_3 = Binder
+            .from(IRubyObject.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class)
+            .fold(dropNameAndArgs(PGC, 4, 3, false))
+            .fold(dropNameAndArgs(GETMETHOD, 5, 3, false))
+            .permute(0, 3, 5, 1, 6, 7, 8, 9)
+            .cast(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class)
+            .invokeVirtualQuiet(lookup(), "call");
+
     private static final MethodHandle FALLBACK_3 = findStatic(InvocationLinker.class, "invocationFallback",
             methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
     private static final MethodHandle FAIL_3 = findStatic(InvocationLinker.class, "fail",
             methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
 
-    private static final MethodHandle PGC_N = dropNameAndArgs(PGC, 4, -1, false);
-    private static final MethodHandle GETMETHOD_N = dropNameAndArgs(GETMETHOD, 5, -1, false);
     private static final MethodHandle TEST_N = dropArgs(TEST, 4, -1, false);
-    private static final MethodHandle TARGET_N;
-    static {
-        MethodHandle target = findVirtual(DynamicMethod.class, "call",
-                methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject[].class));
-        target = explicitCastArguments(target, methodType(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject[].class));
-        target = permuteArguments(
-                target,
-                methodType(IRubyObject.class, DynamicMethod.class, RubyClass.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class),
-                new int[] {0,3,5,1,6,7});
-        // IRubyObject, DynamicMethod, RubyClass, CacheEntry, ThreadContext, IRubyObject, IRubyObject, String, args
-        target = foldArguments(target, GETMETHOD_N);
-        // IRubyObject, RubyClass, CacheEntry, ThreadContext, IRubyObject, IRubyObject, String, args
-        target = foldArguments(target, PGC_N);
-        // IRubyObject, CacheEntry, ThreadContext, IRubyObject, IRubyObject, String, args
-        TARGET_N = target;
-    }
+    private static final MethodHandle TARGET_N = Binder
+            .from(IRubyObject.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class)
+            .fold(dropNameAndArgs(PGC, 4, -1, false))
+            .fold(dropNameAndArgs(GETMETHOD, 5, -1, false))
+            .permute(0, 3, 5, 1, 6, 7)
+            .cast(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject[].class)
+            .invokeVirtualQuiet(lookup(), "call");
+
     private static final MethodHandle FALLBACK_N = findStatic(InvocationLinker.class, "invocationFallback",
             methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject[].class));
     private static final MethodHandle FAIL_N = findStatic(InvocationLinker.class, "fail",
             methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject[].class));
 
-    private static final MethodHandle BREAKJUMP;
-    static {
-        MethodHandle breakJump = findStatic(
-                InvokeDynamicSupport.class,
-                "handleBreakJump",
-                methodType(IRubyObject.class, JumpException.BreakJump.class, ThreadContext.class));
-        // BreakJump, ThreadContext
-        breakJump = permuteArguments(
-                breakJump,
-                methodType(IRubyObject.class, JumpException.BreakJump.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class),
-                new int[] {0,2});
-        // BreakJump, CacheEntry, ThreadContext, IRubyObject, IRubyObject
-        BREAKJUMP = breakJump;
-    }
-
-    private static final MethodHandle RETRYJUMP;
-    static {
-        MethodHandle retryJump = findStatic(
-                InvokeDynamicSupport.class,
-                "retryJumpError",
-                methodType(IRubyObject.class, ThreadContext.class));
-        // ThreadContext
-        retryJump = permuteArguments(
-                retryJump,
-                methodType(IRubyObject.class, JumpException.RetryJump.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class),
-                new int[] {2});
-        // RetryJump, CacheEntry, ThreadContext, IRubyObject, IRubyObject
-        RETRYJUMP = retryJump;
-    }
-
-    private static final MethodHandle PGC_0_B = dropNameAndArgs(PGC, 4, 0, true);
-    private static final MethodHandle GETMETHOD_0_B = dropNameAndArgs(GETMETHOD, 5, 0, true);
     private static final MethodHandle TEST_0_B = dropArgs(TEST, 4, 0, true);
-    private static final MethodHandle TARGET_0_B;
-    static {
-        MethodHandle target = findVirtual(DynamicMethod.class, "call",
-                methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, Block.class));
-        target = explicitCastArguments(target, methodType(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, Block.class));
-        target = permuteArguments(
-                target,
-                methodType(IRubyObject.class, DynamicMethod.class, RubyClass.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, Block.class),
-                new int[] {0,3,5,1,6,7});
-        // IRubyObject, DynamicMethod, RubyClass, CacheEntry, ThreadContext, IRubyObject, IRubyObject, String, args
-        target = foldArguments(target, GETMETHOD_0_B);
-        // IRubyObject, RubyClass, CacheEntry, ThreadContext, IRubyObject, IRubyObject, String, args
-        target = foldArguments(target, PGC_0_B);
-        // IRubyObject, CacheEntry, ThreadContext, IRubyObject, IRubyObject, String, args
+    private static final MethodHandle TARGET_0_B = Binder
+            .from(IRubyObject.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, Block.class)
+            .fold(dropNameAndArgs(PGC, 4, 0, true))
+            .fold(dropNameAndArgs(GETMETHOD, 5, 0, true))
+            .permute(0, 3, 5, 1, 6, 7)
+            .cast(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, Block.class)
+            .invokeVirtualQuiet(lookup(), "call");
 
-        TARGET_0_B = target;
-    }
     private static final MethodHandle FALLBACK_0_B = findStatic(InvocationLinker.class, "invocationFallback",
             methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, Block.class));
     private static final MethodHandle FAIL_0_B = findStatic(InvocationLinker.class, "fail",
             methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, Block.class));
-    private static final MethodHandle FAIL_ITER_0_B = findStatic(InvocationLinker.class, "failIter",
-            methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, Block.class));
 
-    private static final MethodHandle PGC_1_B = dropNameAndArgs(PGC, 4, 1, true);
-    private static final MethodHandle GETMETHOD_1_B = dropNameAndArgs(GETMETHOD, 5, 1, true);
     private static final MethodHandle TEST_1_B = dropArgs(TEST, 4, 1, true);
-    private static final MethodHandle TARGET_1_B;
-    static {
-        MethodHandle target = findVirtual(DynamicMethod.class, "call",
-                methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, Block.class));
-        target = explicitCastArguments(target, methodType(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject.class, Block.class));
-        target = permuteArguments(
-                target,
-                methodType(IRubyObject.class, DynamicMethod.class, RubyClass.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, Block.class),
-                new int[] {0,3,5,1,6,7,8});
-        // IRubyObject, DynamicMethod, RubyClass, CacheEntry, ThreadContext, IRubyObject, IRubyObject, String, args
-        target = foldArguments(target, GETMETHOD_1_B);
-        // IRubyObject, RubyClass, CacheEntry, ThreadContext, IRubyObject, IRubyObject, String, args
-        target = foldArguments(target, PGC_1_B);
-        // IRubyObject, CacheEntry, ThreadContext, IRubyObject, IRubyObject, String, args
+    private static final MethodHandle TARGET_1_B = Binder
+            .from(IRubyObject.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, Block.class)
+            .fold(dropNameAndArgs(PGC, 4, 1, true))
+            .fold(dropNameAndArgs(GETMETHOD, 5, 1, true))
+            .permute(0, 3, 5, 1, 6, 7, 8)
+            .cast(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, Block.class)
+            .invokeVirtualQuiet(lookup(), "call");
 
-        TARGET_1_B = target;
-    }
     private static final MethodHandle FALLBACK_1_B = findStatic(InvocationLinker.class, "invocationFallback",
             methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
     private static final MethodHandle FAIL_1_B = findStatic(InvocationLinker.class, "fail",
             methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
-    private static final MethodHandle FAIL_ITER_1_B = findStatic(InvocationLinker.class, "failIter",
-            methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
 
-    private static final MethodHandle PGC_2_B = dropNameAndArgs(PGC, 4, 2, true);
-    private static final MethodHandle GETMETHOD_2_B = dropNameAndArgs(GETMETHOD, 5, 2, true);
     private static final MethodHandle TEST_2_B = dropArgs(TEST, 4, 2, true);
-    private static final MethodHandle TARGET_2_B;
-    static {
-        MethodHandle target = findVirtual(DynamicMethod.class, "call",
-                methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class, Block.class));
-        target = explicitCastArguments(target, methodType(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject.class, IRubyObject.class, Block.class));
-        target = permuteArguments(
-                target,
-                methodType(IRubyObject.class, DynamicMethod.class, RubyClass.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, Block.class),
-                new int[] {0,3,5,1,6,7,8,9});
-        // IRubyObject, DynamicMethod, RubyClass, CacheEntry, ThreadContext, IRubyObject, IRubyObject, String, args
-        target = foldArguments(target, GETMETHOD_2_B);
-        // IRubyObject, RubyClass, CacheEntry, ThreadContext, IRubyObject, IRubyObject, String, args
-        target = foldArguments(target, PGC_2_B);
-        // IRubyObject, CacheEntry, ThreadContext, IRubyObject, IRubyObject, String, args
+    private static final MethodHandle TARGET_2_B = Binder
+            .from(IRubyObject.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, Block.class)
+            .fold(dropNameAndArgs(PGC, 4, 2, true))
+            .fold(dropNameAndArgs(GETMETHOD, 5, 2, true))
+            .permute(0, 3, 5, 1, 6, 7, 8, 9)
+            .cast(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class, Block.class)
+            .invokeVirtualQuiet(lookup(), "call");
 
-        TARGET_2_B = target;
-    }
     private static final MethodHandle FALLBACK_2_B = findStatic(InvocationLinker.class, "invocationFallback",
             methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
     private static final MethodHandle FAIL_2_B = findStatic(InvocationLinker.class, "fail",
             methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
-    private static final MethodHandle FAIL_ITER_2_B = findStatic(InvocationLinker.class, "failIter",
-            methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
 
-    private static final MethodHandle PGC_3_B = dropNameAndArgs(PGC, 4, 3, true);
-    private static final MethodHandle GETMETHOD_3_B = dropNameAndArgs(GETMETHOD, 5, 3, true);
     private static final MethodHandle TEST_3_B = dropArgs(TEST, 4, 3, true);
-    private static final MethodHandle TARGET_3_B;
-    static {
-        MethodHandle target = findVirtual(DynamicMethod.class, "call",
-                methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
-        target = explicitCastArguments(target, methodType(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
-        target = permuteArguments(
-                target,
-                methodType(IRubyObject.class, DynamicMethod.class, RubyClass.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class),
-                new int[] {0,3,5,1,6,7,8,9,10});
-        // IRubyObject, DynamicMethod, RubyClass, CacheEntry, ThreadContext, IRubyObject, IRubyObject, String, args
-        target = foldArguments(target, GETMETHOD_3_B);
-        // IRubyObject, RubyClass, CacheEntry, ThreadContext, IRubyObject, IRubyObject, String, args
-        target = foldArguments(target, PGC_3_B);
-        // IRubyObject, CacheEntry, ThreadContext, IRubyObject, IRubyObject, String, args
-        
-        TARGET_3_B = target;
-    }
+    private static final MethodHandle TARGET_3_B = Binder
+            .from(IRubyObject.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class)
+            .fold(dropNameAndArgs(PGC, 4, 3, true))
+            .fold(dropNameAndArgs(GETMETHOD, 5, 3, true))
+            .permute(0, 3, 5, 1, 6, 7, 8, 9, 10)
+            .cast(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class)
+            .invokeVirtualQuiet(lookup(), "call");
+
     private static final MethodHandle FALLBACK_3_B = findStatic(InvocationLinker.class, "invocationFallback",
             methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
     private static final MethodHandle FAIL_3_B = findStatic(InvocationLinker.class, "fail",
             methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
-    private static final MethodHandle FAIL_ITER_3_B = findStatic(InvocationLinker.class, "failIter",
-            methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
 
-    private static final MethodHandle PGC_N_B = dropNameAndArgs(PGC, 4, -1, true);
-    private static final MethodHandle GETMETHOD_N_B = dropNameAndArgs(GETMETHOD, 5, -1, true);
     private static final MethodHandle TEST_N_B = dropArgs(TEST, 4, -1, true);
-    private static final MethodHandle TARGET_N_B;
-    static {
-        MethodHandle target = findVirtual(DynamicMethod.class, "call",
-                methodType(IRubyObject.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject[].class, Block.class));
-        target = explicitCastArguments(target, methodType(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyClass.class, String.class, IRubyObject[].class, Block.class));
-        target = permuteArguments(
-                target,
-                methodType(IRubyObject.class, DynamicMethod.class, RubyClass.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class, Block.class),
-                new int[] {0,3,5,1,6,7,8});
-        // IRubyObject, DynamicMethod, RubyClass, CacheEntry, ThreadContext, IRubyObject, IRubyObject, String, args
-        target = foldArguments(target, GETMETHOD_N_B);
-        // IRubyObject, RubyClass, CacheEntry, ThreadContext, IRubyObject, IRubyObject, String, args
-        target = foldArguments(target, PGC_N_B);
-        // IRubyObject, CacheEntry, ThreadContext, IRubyObject, IRubyObject, String, args
-        
-        TARGET_N_B = target;
-    }
+    private static final MethodHandle TARGET_N_B = Binder
+            .from(IRubyObject.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class, Block.class)
+            .fold(dropNameAndArgs(PGC, 4, -1, true))
+            .fold(dropNameAndArgs(GETMETHOD, 5, -1, true))
+            .permute(0, 3, 5, 1, 6, 7, 8)
+            .cast(IRubyObject.class, DynamicMethod.class, ThreadContext.class, IRubyObject.class, RubyModule.class, String.class, IRubyObject[].class, Block.class)
+            .invokeVirtualQuiet(lookup(), "call");
+
     private static final MethodHandle FALLBACK_N_B = findStatic(InvocationLinker.class, "invocationFallback",
                     methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject[].class, Block.class));
     private static final MethodHandle FAIL_N_B = findStatic(InvocationLinker.class, "fail",
                     methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject[].class, Block.class));
-    private static final MethodHandle FAIL_ITER_N_B = findStatic(InvocationLinker.class, "failIter",
-                    methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject[].class, Block.class));
-    
+
     private static final MethodHandle[] TESTS = new MethodHandle[] {
         TEST_0,
         TEST_1,
