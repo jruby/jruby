@@ -41,7 +41,7 @@ public enum Operation {
     B_FALSE(OpFlags.f_is_jump_or_branch),
 
     /** argument receive in methods and blocks **/
-    RECV_SELF(OpFlags.f_is_arg_receive),
+    RECV_SELF(0),
     RECV_ARG(OpFlags.f_is_arg_receive),
     RECV_REQD_ARG(OpFlags.f_is_arg_receive),
     RECV_REST_ARG(OpFlags.f_is_arg_receive),

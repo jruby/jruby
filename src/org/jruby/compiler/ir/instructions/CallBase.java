@@ -135,6 +135,7 @@ public abstract class CallBase extends Instr {
         return false; // All checks passed
     }
 
+    // SSS FIXME: No one uses this for now
     private boolean computeRequiresCallersBindingFlag() {
         if (canBeEval() /*|| canCaptureCallersBinding()*/) return true;
 
@@ -161,7 +162,7 @@ public abstract class CallBase extends Instr {
             if (c != null && c instanceof IRClassBody && c.getName().equals("Proc")) return true;
         }
 
-        // SSS FIXME: Are all bases covered?
+        // SSS FIXME: Are all bases covered?  What about aliases?
         return false;  // All checks done -- dont need one
     }
 

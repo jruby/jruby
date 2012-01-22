@@ -81,9 +81,14 @@ public abstract class Instr {
                  // local variables from the binding.  This is safe, but extremely conservative.
                  return !(r instanceof LocalVariable);
              } else if (s.usesEval() && r.getName().equals(Variable.BLOCK)) {
-                 // If this scope has any evals, then the eval might have a yield which would use
-                 // %block.  In that scenario, we cannot delete the '%block = recv_closure' instruction.
+                 // If this scope (or any nested scope) has any evals, then the eval might have a yield which
+                 // would use %block.  In that scenario, we cannot delete the '%block = recv_closure' instruction.
                  // This is safe, but conservative.
+                 return false;
+             } else if (s.usesZSuper() && getOperation().isArgReceive()) {
+                 // If this scope (or any nested scope) has a ZSuperInstr, then the arguments of this
+                 // scope could be used by any of those ZSuper instructions.  If so, we cannot delete
+                 // the argument receive.
                  return false;
              } else {
                  return true;

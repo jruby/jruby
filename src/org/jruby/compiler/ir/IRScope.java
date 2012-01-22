@@ -26,7 +26,7 @@ import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
 import org.jruby.compiler.ir.instructions.ReceiveSelfInstruction;
 import org.jruby.compiler.ir.instructions.ResultInstr;
-import org.jruby.compiler.ir.instructions.SuperInstr;
+import org.jruby.compiler.ir.instructions.ZSuperInstr;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.Operand;
@@ -34,6 +34,7 @@ import org.jruby.compiler.ir.operands.RenamedVariable;
 import org.jruby.compiler.ir.operands.Self;
 import org.jruby.compiler.ir.operands.TemporaryVariable;
 import org.jruby.compiler.ir.operands.Variable;
+import org.jruby.compiler.ir.operands.WrappedIRClosure;
 import org.jruby.compiler.ir.representations.BasicBlock;
 import org.jruby.compiler.ir.representations.CFG;
 import org.jruby.compiler.ir.representations.CFGInliner;
@@ -152,7 +153,7 @@ public abstract class IRScope {
      * all of the caller's local variables need to be materialized into a heap binding?
      * Ex: 
      *    def foo(&b)
-     *     eval 'puts a', b
+     *      eval 'puts a', b
      *    end
      *  
      *    def bar
@@ -166,7 +167,7 @@ public abstract class IRScope {
      * 1. This method receives an explicit block argument (in this case, the block can be stored, passed around,
      *    eval'ed against, called, etc.).  
      *    CAVEAT: This is conservative ... it may not actually be stored & passed around, evaled, called, ...
-     * 2. This method has a 'super' call (ZSuper AST node -- RUBY_INTERNALS_CALL_Instr(MethAddr.ZSUPER, ..) IR instr)
+     * 2. This method has a 'super' call (ZSuper AST node -- ZSuperInstr IR instruction)
      *    In this case, the parent (in the inheritance hierarchy) can access the block and store it, etc.  So, in reality,
      *    rather than assume that the parent will always do this, we can query the parent, if we can precisely identify
      *    the parent method (which in the face of Ruby's dynamic hierarchy, we cannot).  So, be pessimistic.
@@ -185,7 +186,7 @@ public abstract class IRScope {
     private boolean canModifyCode;
 
     /* ****************************************************************************
-     * Does this scope (if a closure, applies to the nearest method ancestor) require a binding to be materialized?
+     * Does this scope require a binding to be materialized?
      * Yes if any of the following holds true:
      * - calls 'Proc.new'
      * - calls 'eval'
@@ -199,6 +200,9 @@ public abstract class IRScope {
 
     /** Does this scope call any eval */
     private boolean usesEval;
+
+    /** Does this scope call any zsuper */
+    private boolean usesZSuper;
     
     public IRScope(IRScope lexicalParent, String name, String fileName, StaticScope staticScope) {
         super();
@@ -215,6 +219,7 @@ public abstract class IRScope {
         canCaptureCallersBinding = true;
         bindingHasEscaped = true;
         usesEval = true;
+        usesZSuper = true;
 
         localVars = new LocalVariableAllocator();
     }
@@ -364,6 +369,10 @@ public abstract class IRScope {
         return usesEval;
     }
 
+    public boolean usesZSuper() {
+        return usesZSuper;
+    }
+
     public boolean canCaptureCallersBinding() {
         return canCaptureCallersBinding;
     }
@@ -490,11 +499,13 @@ public abstract class IRScope {
         return prepareInstructionsForInterpretation();
     }
 
-    public void computeExecutionScopeFlags() {
+    // SSS FIXME: This method does nothing useful right now.
+    // hasEscapedBinding is the crucial flag and it continues to be unconditionally true.
+    public void computeScopeFlags() {
         // init
         canModifyCode = true;
         canCaptureCallersBinding = false;
-        bindingHasEscaped = false;
+        usesZSuper = false;
 
         // recompute flags -- we could be calling this method different times
         // definitely once after ir generation and local optimizations propagates constants locally
@@ -504,13 +515,24 @@ public abstract class IRScope {
             if (i instanceof ReceiveClosureInstr)
                 receivesClosureArg = true;
 
-            if (i instanceof SuperInstr)
+            if (i instanceof ZSuperInstr) {
                 canCaptureCallersBinding = true;
+                usesZSuper = true;
+            }
 
             if (i instanceof CallBase) {
                 CallBase call = (CallBase) i;
-                if (call.targetRequiresCallersBinding())
-                    bindingHasEscaped = true;
+
+                Operand o = ((CallBase)i).getClosureArg();
+                if (o != null) {
+                    if (o instanceof WrappedIRClosure) {
+                        IRClosure cl = ((WrappedIRClosure)o).getClosure();
+                        cl.computeScopeFlags();
+                        if (cl.usesZSuper()) usesZSuper = true;
+                    } else {
+                        usesZSuper = true;
+                    }
+                }
 
                 // If this method receives a closure arg, and this call is an eval that has more than 1 argument,
                 // it could be using the closure as a binding -- which means it could be using pretty much any

@@ -37,7 +37,7 @@ public class LocalOptimizationPass implements CompilerPass {
         runLocalOpts(s);
 
         // Only after running local opts, compute various execution scope flags
-        s.computeExecutionScopeFlags();
+        s.computeScopeFlags();
     }
 
     private static void allocVar(Operand oldVar, IRScope s, List<TemporaryVariable> freeVarsList, Map<Operand, Operand> newVarMap) {
