@@ -1,6 +1,7 @@
-package org.jruby.compiler.ir.instructions;
+package org.jruby.compiler.ir.instructions.jruby;
 
 import java.util.Map;
+import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.IRException;
 import org.jruby.compiler.ir.operands.Operand;

@@ -23,7 +23,7 @@ import org.jruby.compiler.ir.instructions.JumpIndirectInstr;
 import org.jruby.compiler.ir.instructions.JumpInstr;
 import org.jruby.compiler.ir.instructions.LabelInstr;
 import org.jruby.compiler.ir.instructions.SetReturnAddressInstr;
-import org.jruby.compiler.ir.instructions.ThrowExceptionInstr;
+import org.jruby.compiler.ir.instructions.jruby.ThrowExceptionInstr;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.WrappedIRClosure;
 import org.jruby.compiler.ir.operands.Operand;
