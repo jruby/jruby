@@ -69,10 +69,13 @@ public class GetArrayInstr extends Instr implements ResultInstr {
 
     @Override
     public Operand simplifyAndGetResult(Map<Operand, Operand> valueMap) {
+        return super.simplifyAndGetResult(valueMap);
+        // SSS FIXME!  This is buggy code for 1.9 mode
+/*
         simplifyOperands(valueMap, false);
         Operand val = array.getValue(valueMap);
-        // SSS FIXME!
         return val.fetchCompileTimeArrayElement(index, getArraySlice);
+*/
     }
 
     @Override

@@ -44,24 +44,6 @@ public class YieldInstr extends Instr implements ResultInstr {
         return yieldArg;
     }
 
-    @Interp
-    @Override
-    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
-        Object resultValue;
-        Object blk = (Object) blockArg.retrieve(context, self, currDynScope, temp);
-        if (blk instanceof RubyProc) blk = ((RubyProc)blk).getBlock();
-        if (blk instanceof RubyNil) blk = Block.NULL_BLOCK;
-        Block b = (Block)blk;
-        // Yields are always to normal blocks
-        b.type = Block.Type.NORMAL;
-        if (yieldArg == null) {
-            return b.yieldSpecific(context);
-        } else {
-            IRubyObject yieldVal = (IRubyObject)yieldArg.retrieve(context, self, currDynScope, temp);
-            return (unwrapArray && (yieldVal instanceof RubyArray)) ? b.yieldArray(context, yieldVal, null, null) : b.yield(context, yieldVal);
-        }
-    }
-
     @Override
     public String toString() { 
         return unwrapArray ? (super.toString() + "(" + blockArg + ", UNWRAP(" + yieldArg + "))") : (super.toString() + "(" + blockArg + ", " + yieldArg + ")");
@@ -88,5 +70,23 @@ public class YieldInstr extends Instr implements ResultInstr {
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
         blockArg = blockArg.getSimplifiedOperand(valueMap, force);
         if (yieldArg != null) yieldArg = yieldArg.getSimplifiedOperand(valueMap, force);
+    }
+
+    @Interp
+    @Override
+    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
+        Object resultValue;
+        Object blk = (Object) blockArg.retrieve(context, self, currDynScope, temp);
+        if (blk instanceof RubyProc) blk = ((RubyProc)blk).getBlock();
+        if (blk instanceof RubyNil) blk = Block.NULL_BLOCK;
+        Block b = (Block)blk;
+        // Ruby 1.8 mode: yields are always to normal blocks
+        if (!context.getRuntime().is1_9()) b.type = Block.Type.NORMAL;
+        if (yieldArg == null) {
+            return b.yieldSpecific(context);
+        } else {
+            IRubyObject yieldVal = (IRubyObject)yieldArg.retrieve(context, self, currDynScope, temp);
+            return (unwrapArray && (yieldVal instanceof RubyArray)) ? b.yieldArray(context, yieldVal, null, null) : b.yield(context, yieldVal);
+        }
     }
 }

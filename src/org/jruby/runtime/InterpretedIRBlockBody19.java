@@ -48,10 +48,19 @@ public class InterpretedIRBlockBody19 extends InterpretedIRBlockBody {
         }
     }
 
-    private IRubyObject[] getYieldArgs(ThreadContext context, IRubyObject value, boolean isYieldSpecific, boolean isArray, Type type) {
-        IRubyObject[] args = (value == null) ? IRubyObject.NULL_ARRAY : convertValueIntoArgArray(context, value, isYieldSpecific, isArray);
-        if (type == Block.Type.LAMBDA) arity().checkArity(context.getRuntime(), args);
+    private IRubyObject[] getLambdaArgs(ThreadContext context, IRubyObject value, boolean isYieldSpecific, boolean isArray) {
+        IRubyObject[] args = (value == null) ? IRubyObject.NULL_ARRAY : (isArray ? ((RubyArray)value).toJavaArray() : new IRubyObject[] { value });
+        arity().checkArity(context.getRuntime(), args);
         return args;
+    }
+
+    private IRubyObject[] getYieldArgs(ThreadContext context, IRubyObject value, boolean isYieldSpecific, boolean isArray, Type type) {
+        if (type == Block.Type.LAMBDA) {
+            return getLambdaArgs(context, value, isYieldSpecific, isArray);
+        }
+        else {
+            return (value == null) ? IRubyObject.NULL_ARRAY : convertValueIntoArgArray(context, value, isYieldSpecific, isArray);
+        }
     }
 
     // SSS: Looks like yieldSpecific and yieldArray need to treat array unwrapping differently.
