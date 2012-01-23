@@ -545,7 +545,7 @@ public class InvocationLinker {
             if (nativeCall.isJava()) {
                 // Ruby to Java
                 if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tbound to Java method #" + method.getSerialNumber() + ": " + nativeCall);
-                nativeTarget = createJavaHandle(method);
+                nativeTarget = createJavaHandle(site, method);
             } else if (method instanceof CompiledMethod || method instanceof JittedMethod) {
                 // Ruby to Ruby
                 if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tbound to Ruby method #" + method.getSerialNumber() + ": " + nativeCall);
@@ -999,7 +999,7 @@ public class InvocationLinker {
     // Dispatch from Ruby to Java via Java integration
     ////////////////////////////////////////////////////////////////////////////
     
-    private static MethodHandle createJavaHandle(DynamicMethod method) {
+    private static MethodHandle createJavaHandle(CallSite site, DynamicMethod method) {
         MethodHandle nativeTarget = (MethodHandle)method.getHandle();
         if (nativeTarget != null) return nativeTarget;
         
@@ -1029,17 +1029,16 @@ public class InvocationLinker {
             MethodHandle converter;
             if (!isStatic && i == 0) {
                 // handle non-static receiver specially
-                converter = findStatic(JavaUtil.class, "objectFromJavaProxy", methodType(Object.class, IRubyObject.class));
-                converter = explicitCastArguments(
-                        converter,
-                        methodType(nativeParams[0], IRubyObject.class));
+                converter = Binder
+                        .from(nativeParams[0], IRubyObject.class)
+                        .cast(Object.class, IRubyObject.class)
+                        .invokeStaticQuiet(lookup(), JavaUtil.class, "objectFromJavaProxy");
             } else {
                 // all other arguments use toJava
-                converter = findVirtual(IRubyObject.class, "toJava", methodType(Object.class, Class.class));
-                converter = insertArguments(converter, 1, nativeParams[i]);
-                converter = explicitCastArguments(
-                        converter,
-                        methodType(nativeParams[i], IRubyObject.class));
+                converter = Binder
+                        .from(nativeParams[i], IRubyObject.class)
+                        .insert(1, nativeParams[i])
+                        .invokeVirtualQuiet(lookup(), "toJava");
             }
             argConverters[i] = converter;
         }
@@ -1124,28 +1123,26 @@ public class InvocationLinker {
         if (returnFilter != null) {
             Class[] newNativeParams = nativeTarget.type().parameterArray();
             Class newNativeReturn = nativeTarget.type().returnType();
-            
-            // handle exceptions
-            MethodHandle exHandler = insertArguments(HANDLE_JAVA_EXCEPTION, 0, runtime);
-            exHandler = dropArguments(exHandler, 1, newNativeParams);
+
+            Binder exBinder = Binder
+                    .from(newNativeReturn, Throwable.class, newNativeParams)
+                    .drop(1, newNativeParams.length)
+                    .insert(0, runtime);
             if (nativeReturn != void.class) {
-                // provide a dummy return value from exception handler (it never returns)
-                exHandler = filterReturnValue(exHandler, constant(newNativeReturn, nullValue(newNativeReturn)));
+                exBinder = exBinder
+                        .filterReturn(Binder
+                                .from(newNativeReturn)
+                                .constant(nullValue(newNativeReturn)));
             }
-            nativeTarget = catchException(nativeTarget, Throwable.class, exHandler);
 
-            // filter return type into a Ruby object
-            nativeTarget = filterReturnValue(nativeTarget, returnFilter);
-            nativeTarget = explicitCastArguments(nativeTarget, methodType(IRubyObject.class, convertedParams));
+            MethodHandle handler = exBinder.invoke(HANDLE_JAVA_EXCEPTION);
 
-            // adapt to incoming call signature
-            if (isStatic) {
-                nativeTarget = dropArguments(nativeTarget, 0, ThreadContext.class, IRubyObject.class, IRubyObject.class);
-            } else {
-                // adapt to incoming call signature
-                nativeTarget = dropArguments(nativeTarget, 0, ThreadContext.class, IRubyObject.class);
-
-            }
+            nativeTarget = Binder
+                    .from(site.type())
+                    .drop(0, isStatic ? 3 : 2)
+                    .filterReturn(returnFilter)
+                    .catchException(Throwable.class, handler)
+                    .invoke(nativeTarget);
 
             method.setHandle(nativeTarget);
             return nativeTarget;
@@ -1301,17 +1298,23 @@ public class InvocationLinker {
         String varName = attrReader.getVariableName();
         
         RubyClass.VariableAccessor accessor = cls.getRealClass().getVariableAccessorForRead(varName);
-        
-        MethodHandle target = findVirtual(IRubyObject.class, "getVariable", methodType(Object.class, int.class));
-        target = insertArguments(target, 1, accessor.getIndex());
-        target = explicitCastArguments(target, methodType(IRubyObject.class, IRubyObject.class));
-        MethodHandle filter = findStatic(InvocationLinker.class, "valueOrNil", methodType(IRubyObject.class, IRubyObject.class, IRubyObject.class));
-        filter = insertArguments(filter, 1, cls.getRuntime().getNil());
-        target = filterReturnValue(target, filter);
-        target = permuteArguments(target, site.type(), new int[] {2});
+
+        MethodHandle filter = Binder
+                .from(IRubyObject.class, IRubyObject.class)
+                .insert(1, cls.getRuntime().getNil())
+                .cast(IRubyObject.class, IRubyObject.class, IRubyObject.class)
+                .invokeStaticQuiet(lookup(), InvocationLinker.class, "valueOrNil");
+
+        nativeTarget = Binder
+                .from(site.type())
+                .permute(2)
+                .filterReturn(filter)
+                .insert(1, accessor.getIndex())
+                .cast(Object.class, IRubyObject.class, int.class)
+                .invokeVirtualQuiet(lookup(), "getVariable");
         
         method.setHandle(nativeTarget);
-        return target;
+        return nativeTarget;
     }
     
     public static IRubyObject valueOrNil(IRubyObject value, IRubyObject nil) {
@@ -1326,15 +1329,22 @@ public class InvocationLinker {
         String varName = attrWriter.getVariableName();
         
         RubyClass.VariableAccessor accessor = cls.getRealClass().getVariableAccessorForWrite(varName);
-        
-        MethodHandle target = findVirtual(IRubyObject.class, "setVariable", methodType(void.class, int.class, Object.class));
-        target = insertArguments(target, 1, accessor.getIndex());
-        target = explicitCastArguments(target, methodType(void.class, IRubyObject.class, IRubyObject.class));
-        target = filterReturnValue(target, constant(IRubyObject.class, cls.getRuntime().getNil()));
-        target = permuteArguments(target, site.type(), new int[] {2, 3});
+
+        MethodHandle filter = Binder
+                .from(IRubyObject.class, Object.class)
+                .drop(0)
+                .constant(cls.getRuntime().getNil());
+
+        nativeTarget = Binder
+                .from(site.type())
+                .permute(2, 3)
+                .filterReturn(filter)
+                .insert(1, accessor.getIndex())
+                .cast(void.class, IRubyObject.class, int.class, Object.class)
+                .invokeVirtualQuiet(lookup(), "setVariable");
         
         method.setHandle(nativeTarget);
-        return target;
+        return nativeTarget;
     }
     
     ////////////////////////////////////////////////////////////////////////////
