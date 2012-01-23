@@ -183,9 +183,14 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
         } else if (value instanceof RubyArray && (alreadyArray || (isRest && requiredCount > 0))) {
             parameters = ((RubyArray) value).toJavaArray();
         } else if (isRest || requiredCount > 0) {
-            value = RuntimeHelpers.aryToAry(value);
+            // 1.7.0 rewrite cannot come fast enough...
+            if (value instanceof RubyArray) {
+                parameters = new IRubyObject[] { value };
+            } else {
+                value = RuntimeHelpers.aryToAry(value);
 
-            parameters = (value instanceof RubyArray) ? ((RubyArray)value).toJavaArray() : new IRubyObject[] { value };
+                parameters = (value instanceof RubyArray) ? ((RubyArray)value).toJavaArray() : new IRubyObject[] { value };
+            }
         } else {
             parameters = new IRubyObject[] { value };
         }
