@@ -22,15 +22,13 @@ public class CompoundArray extends Operand {
     private boolean isArgsPush;
 
     public CompoundArray(Operand a1, Operand a2) { 
-        this.a1 = a1;
-        this.a2 = a2; 
-        this.isArgsPush = false;
+        this(a1, a2, false);
     }
 
     public CompoundArray(Operand a1, Operand a2, boolean isArgsPush) { 
         this.a1 = a1;
         this.a2 = a2;
-        this.isArgsPush = true;
+        this.isArgsPush = isArgsPush;
     }
 
     public boolean isConstant() { return false; /*return a1.isConstant() && a2.isConstant();*/ }
@@ -69,7 +67,7 @@ public class CompoundArray extends Operand {
             return this;
         }
 */
-        return (a1 == newA1 && a2 == newA2) ? this : new CompoundArray(newA1, newA2);
+        return (a1 == newA1 && a2 == newA2) ? this : new CompoundArray(newA1, newA2, isArgsPush);
     }
 
     @Override
@@ -84,7 +82,7 @@ public class CompoundArray extends Operand {
 
     @Override
     public Operand cloneForInlining(InlinerInfo ii) { 
-        return isConstant() ? this : new CompoundArray(a1.cloneForInlining(ii), a2.cloneForInlining(ii));
+        return isConstant() ? this : new CompoundArray(a1.cloneForInlining(ii), a2.cloneForInlining(ii), isArgsPush);
     }
 
     @Override
