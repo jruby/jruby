@@ -219,8 +219,8 @@ public class ThreadLibrary implements Library {
 
         @JRubyMethod
         public IRubyObject synchronize(ThreadContext context, Block block) {
+            lock(context);
             try {
-                lock(context);
                 return block.yield(context, null);
             } finally {
                 unlock(context);
