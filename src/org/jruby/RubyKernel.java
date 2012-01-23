@@ -1235,9 +1235,8 @@ public class RubyKernel {
 
     @JRubyMethod(required = 1, optional = 1, module = true, visibility = PRIVATE)
     public static IRubyObject trace_var(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        if (args.length == 0) throw context.getRuntime().newArgumentError(0, 1);
         RubyProc proc = null;
-        String var = args.length > 1 ? args[0].toString() : null;
+        String var = args[0].toString();
         // ignore if it's not a global var
         if (var.charAt(0) != '$') return context.getRuntime().getNil();
         if (args.length == 1) proc = RubyProc.newProc(context.getRuntime(), block, Block.Type.PROC);
@@ -1253,7 +1252,7 @@ public class RubyKernel {
     @JRubyMethod(required = 1, optional = 1, module = true, visibility = PRIVATE)
     public static IRubyObject untrace_var(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         if (args.length == 0) throw context.getRuntime().newArgumentError(0, 1);
-        String var = args.length >= 1 ? args[0].toString() : null;
+        String var = args[0].toString();
 
         // ignore if it's not a global var
         if (var.charAt(0) != '$') return context.getRuntime().getNil();
