@@ -19,36 +19,30 @@ import org.jruby.runtime.builtin.IRubyObject;
 //
 // FIXME: Rename GetArrayInstr to ArrayArefInstr which would be used
 // in later passes as well when compiler passes replace ruby-array []
-// cgetArraySlices with inlined lookups
+// getArraySlices with inlined lookups
 public class GetArrayInstr extends Instr implements ResultInstr {
     private Operand array;
-    private final int indexFromStart;
-    private final int indexFromEnd;
+    private final int preArgsCount;       // # of reqd args before rest-arg (-1 if we are fetching a pre-arg)
+    private final int postArgsCount;      // # of reqd args after rest-arg  (-1 if we are fetching a pre-arg)
+    private final int index;              // index within pre/post arg slice
     private final boolean getArraySlice;  // If true, returns an array slice between indexFromStart and indexFromEnd (rest of the array if indexFromEnd is -1)
     private Variable result;
 
-    public GetArrayInstr(Variable result, Operand array, int indexFromStart, boolean getRestOfArray) {
+    public GetArrayInstr(Variable result, Operand array, int preArgsCount, int postArgsCount, int index, boolean getRestOfArray) {
         super(Operation.GET_ARRAY);
         
         assert result != null : "GetArrayInstr result is null";
         
         this.result = result;
         this.array = array;
-        getArraySlice = getRestOfArray;
-        this.indexFromStart = indexFromStart;
-        this.indexFromEnd = 0;
+        this.preArgsCount = preArgsCount;
+        this.postArgsCount = postArgsCount;
+        this.index = index;
+        this.getArraySlice = getRestOfArray;
     }
 
-    public GetArrayInstr(Variable result, Operand array, int indexFromStart, int indexFromEnd) {
-        super(Operation.GET_ARRAY);
-        
-        assert result != null : "GetArrayInstr result is null";
-        
-        this.result = result;
-        this.array = array;
-        getArraySlice = true;
-        this.indexFromStart = indexFromStart;
-        this.indexFromEnd = indexFromEnd;
+    public GetArrayInstr(Variable result, Operand array, int index, boolean getRestOfArray) {
+        this(result, array, -1, -1, index, getRestOfArray);
     }
 
     public Operand[] getOperands() {
@@ -70,19 +64,20 @@ public class GetArrayInstr extends Instr implements ResultInstr {
 
     @Override
     public String toString() {
-        return "" + result + " = " + array + "[" + indexFromStart + (getArraySlice ? ":END" : "") + "] (GET_ARRAY)";
+        return result + " = " + array + "[" + preArgsCount + "," + postArgsCount + ", " + index + ", " + getArraySlice + "] (GET_ARRAY)";
     }
 
     @Override
     public Operand simplifyAndGetResult(Map<Operand, Operand> valueMap) {
         simplifyOperands(valueMap, false);
         Operand val = array.getValue(valueMap);
-        return val.fetchCompileTimeArrayElement(indexFromStart, getArraySlice);
+        // SSS FIXME!
+        return val.fetchCompileTimeArrayElement(index, getArraySlice);
     }
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new GetArrayInstr(ii.getRenamedVariable(result), array.cloneForInlining(ii), indexFromStart, getArraySlice);
+        return new GetArrayInstr(ii.getRenamedVariable(result), array.cloneForInlining(ii), preArgsCount, postArgsCount, index, getArraySlice);
     }
 
     @Override
@@ -91,16 +86,24 @@ public class GetArrayInstr extends Instr implements ResultInstr {
         RubyArray rubyArray = (RubyArray) array.retrieve(context, self, currDynScope, temp);
         Object val;
         
+        int n = rubyArray.getLength();
         if (!getArraySlice) {
-            return rubyArray.entry(indexFromStart);
+            if (preArgsCount == -1) {
+                return rubyArray.entry(index);
+            } else {
+                int remaining = n - preArgsCount;
+                if (remaining <= index) {
+                    return context.nil;
+                } else {
+                    return (remaining > postArgsCount) ? rubyArray.entry(n - postArgsCount + index) : rubyArray.entry(preArgsCount + index);
+                }
+            }
         } else {
-            int n = rubyArray.getLength();
-            int size = n - indexFromStart;
-            if (size <= 0) {
+            if ((preArgsCount >= n) || (preArgsCount + postArgsCount >= n)) {
                 return RubyArray.newEmptyArray(context.getRuntime());
             } else {
                 // FIXME: Perf win to use COW between source Array and this new one (remove toJavaArray)
-                return RubyArray.newArrayNoCopy(context.getRuntime(), rubyArray.toJavaArray(), indexFromStart, (size - indexFromEnd));
+                return RubyArray.newArrayNoCopy(context.getRuntime(), rubyArray.toJavaArray(), preArgsCount, (n - preArgsCount - postArgsCount));
             }
         }
     }

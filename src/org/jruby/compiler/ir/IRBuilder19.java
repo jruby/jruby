@@ -106,27 +106,24 @@ public class IRBuilder19 extends IRBuilder {
         return ((s instanceof IRClosure) && ((IRClosure)s).isForLoopBody()) ? s.getLocalVariable(name, depth) : s.getNewLocalVariable(name, 0);
     }
 
-    private void addArgReceiveInstr(IRScope s, Variable v, int argIndex, boolean post, int totalRequired, int totalOptional) {
-        if (post) {
-            s.addInstr(new ReceiveRequiredArgInstr(v, argIndex, totalRequired, totalOptional));
-        } else {
-            s.addInstr(new ReceiveArgumentInstruction(v, argIndex));
-        }
+    private void addArgReceiveInstr(IRScope s, Variable v, int argIndex, boolean post, int numPreReqd, int numPostRead) {
+        if (post) s.addInstr(new ReceiveRequiredArgInstr(v, argIndex, numPreReqd, numPostRead));
+        else s.addInstr(new ReceiveArgumentInstruction(v, argIndex));
     }
 
-    public void receiveRequiredArg(Node node, IRScope s, int argIndex, boolean post, int totalRequired, int totalOptional) {
+    public void receiveRequiredArg(Node node, IRScope s, int argIndex, boolean post, int numPreReqd, int numPostRead) {
         switch (node.getNodeType()) {
             case ARGUMENTNODE: {
                 ArgumentNode a = (ArgumentNode)node;
                 String argName = a.getName();
                 if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("req", argName);
-                addArgReceiveInstr(s, s.getNewLocalVariable(argName, 0), argIndex, post, totalRequired, totalOptional);
+                addArgReceiveInstr(s, s.getNewLocalVariable(argName, 0), argIndex, post, numPreReqd, numPostRead);
                 break;
             }
             case MULTIPLEASGN19NODE: {
                 MultipleAsgn19Node childNode = (MultipleAsgn19Node) node;
                 Variable v = s.getNewTemporaryVariable();
-                addArgReceiveInstr(s, v, argIndex, post, totalRequired, totalOptional);
+                addArgReceiveInstr(s, v, argIndex, post, numPreReqd, numPostRead);
                 if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("rest", "");
                 s.addInstr(new ToAryInstr(v, v, BooleanLiteral.FALSE));
                 buildMultipleAsgn19Assignment(childNode, s, v, null);
@@ -137,9 +134,9 @@ public class IRBuilder19 extends IRBuilder {
     }
 
     public void receiveArgs(final ArgsNode argsNode, IRScope s) {
-        final int requiredPre = argsNode.getPreCount();
-        final int requiredPost = argsNode.getPostCount();
-        final int required = argsNode.getRequiredArgsCount(); // requiredPre + requiredPost
+        final int numPreReqd = argsNode.getPreCount();
+        final int numPostReqd = argsNode.getPostCount();
+        final int required = argsNode.getRequiredArgsCount(); // numPreReqd + numPostReqd
         int opt = argsNode.getOptionalArgsCount();
         int rest = argsNode.getRestArg();
 
@@ -160,8 +157,8 @@ public class IRBuilder19 extends IRBuilder {
 
         // Pre(-opt and rest) required args
         ListNode preArgs = argsNode.getPre();
-        for (int i = 0; i < requiredPre; i++, argIndex++) {
-            receiveRequiredArg(preArgs.get(i), s, argIndex, false, 0, 0);
+        for (int i = 0; i < numPreReqd; i++, argIndex++) {
+            receiveRequiredArg(preArgs.get(i), s, argIndex, false, -1, -1);
         }
 
         // Fixup opt/rest
@@ -204,8 +201,8 @@ public class IRBuilder19 extends IRBuilder {
 
         // Post(-opt and rest) required args
         ListNode postArgs = argsNode.getPost();
-        for (int i = 0; i < requiredPost; i++, argIndex++) {
-            receiveRequiredArg(postArgs.get(i), s, argIndex, true, required, opt+rest);
+        for (int i = 0; i < numPostReqd; i++) {
+            receiveRequiredArg(postArgs.get(i), s, i, true, numPreReqd, numPostReqd);
         }
     }
 
@@ -258,20 +255,19 @@ public class IRBuilder19 extends IRBuilder {
     }
 
     // This method is called to build arguments
-    public void buildArgsMasgn(Node node, IRScope s, Operand argsArray, int argIndex, boolean isMasgnRoot, boolean isSplat) {
+    public void buildArgsMasgn(Node node, IRScope s, Operand argsArray, boolean isMasgnRoot, int preArgsCount, int postArgsCount, int index, boolean isSplat) {
         Variable v;
         switch (node.getNodeType()) {
             case DASGNNODE: {
                 DAsgnNode dynamicAsgn = (DAsgnNode) node;
                 v = getArgVariable((IRClosure)s, dynamicAsgn.getName(), dynamicAsgn.getDepth());
-                s.addInstr(new GetArrayInstr(v, argsArray, argIndex, isSplat));
+                s.addInstr(new GetArrayInstr(v, argsArray, preArgsCount, postArgsCount, index, isSplat));
                 break;
             }
             case LOCALASGNNODE: {
                 LocalAsgnNode localVariable = (LocalAsgnNode) node;
-                int depth = localVariable.getDepth();
-                v = getArgVariable((IRClosure)s, localVariable.getName(), depth);
-                s.addInstr(new GetArrayInstr(v, argsArray, argIndex, isSplat));
+                v = getArgVariable((IRClosure)s, localVariable.getName(), localVariable.getDepth());
+                s.addInstr(new GetArrayInstr(v, argsArray, preArgsCount, postArgsCount, index, isSplat));
                 break;
             }
             case MULTIPLEASGN19NODE: {
@@ -279,7 +275,7 @@ public class IRBuilder19 extends IRBuilder {
                 MultipleAsgn19Node childNode = (MultipleAsgn19Node) node;
                 if (!isMasgnRoot) {
                     v = s.getNewTemporaryVariable();
-                    s.addInstr(new GetArrayInstr(v, argsArray, argIndex, isSplat));
+                    s.addInstr(new GetArrayInstr(v, argsArray, preArgsCount, postArgsCount, index, isSplat));
                     s.addInstr(new ToAryInstr(v, v, BooleanLiteral.FALSE));
                     argsArray = v;
                 }
@@ -304,7 +300,7 @@ public class IRBuilder19 extends IRBuilder {
         if (masgnPre != null) {
             for (Node an: masgnPre.childNodes()) {
                 if (values == null) {
-                    buildArgsMasgn(an, s, argsArray, i, false, false);
+                    buildArgsMasgn(an, s, argsArray, false, -1, -1, i, false);
                 } else {
                     Variable rhsVal = s.getNewTemporaryVariable();
                     s.addInstr(new GetArrayInstr(rhsVal, values, i, false));
@@ -316,32 +312,32 @@ public class IRBuilder19 extends IRBuilder {
 
         // Build an assignment for a splat, if any, with the rest of the operands!
         Node restNode = multipleAsgnNode.getRest();
+        int postArgsCount = multipleAsgnNode.getPostCount();
         if (restNode != null) {
             if (restNode instanceof StarNode) {
                 // do nothing
-            } else if (values != null) {
-                Variable rhsVal = s.getNewTemporaryVariable();
-                s.addInstr(new GetArrayInstr(rhsVal, values, i, multipleAsgnNode.getPostCount()));
-                buildAssignment(restNode, s, rhsVal); // rest of the argument array!
+            } else if (values == null) {
+                buildArgsMasgn(restNode, s, argsArray, false, i, postArgsCount, 0, true); // rest of the argument array!
             } else {
-                buildArgsMasgn(restNode, s, argsArray, i, false, true); // rest of the argument array!
+                Variable rhsVal = s.getNewTemporaryVariable();
+                s.addInstr(new GetArrayInstr(rhsVal, values, i, postArgsCount, 0, true));
+                buildAssignment(restNode, s, rhsVal); // rest of the argument array!
             }
-            i++;
         }
-
 
         // Build assignments for rest of the operands
         final ListNode masgnPost = multipleAsgnNode.getPost();
         if (masgnPost != null) {
+            int j = 0;
             for (Node an: masgnPost.childNodes()) {
                 if (values == null) {
-                    buildArgsMasgn(an, s, argsArray, i, false, false);
+                    buildArgsMasgn(an, s, argsArray, false, i, postArgsCount, j, false);
                 } else {
                     Variable rhsVal = s.getNewTemporaryVariable();
-                    s.addInstr(new GetArrayInstr(rhsVal, values, i, false));
+                    s.addInstr(new GetArrayInstr(rhsVal, values, i, postArgsCount, j, false));  // Fetch from the end
                     buildAssignment(an, s, rhsVal);
                 }
-                i++;
+                j++;
             }
         }
     }
