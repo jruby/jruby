@@ -103,7 +103,7 @@ public class IRBuilder19 extends IRBuilder {
 
     protected LocalVariable getArgVariable(IRScope s, String name, int depth) {
         // For non-loops, this name will override any name that exists in outer scopes
-        return ((s instanceof IRClosure) && ((IRClosure)s).isForLoopBody()) ? s.getLocalVariable(name, depth) : s.getNewLocalVariable(name, 0);
+        return s.isForLoopBody() ? s.getLocalVariable(name, depth) : s.getNewLocalVariable(name, 0);
     }
 
     private void addArgReceiveInstr(IRScope s, Variable v, int argIndex, boolean post, int numPreReqd, int numPostRead) {
@@ -260,13 +260,13 @@ public class IRBuilder19 extends IRBuilder {
         switch (node.getNodeType()) {
             case DASGNNODE: {
                 DAsgnNode dynamicAsgn = (DAsgnNode) node;
-                v = getArgVariable((IRClosure)s, dynamicAsgn.getName(), dynamicAsgn.getDepth());
+                v = getArgVariable(s, dynamicAsgn.getName(), dynamicAsgn.getDepth());
                 s.addInstr(new GetArrayInstr(v, argsArray, preArgsCount, postArgsCount, index, isSplat));
                 break;
             }
             case LOCALASGNNODE: {
                 LocalAsgnNode localVariable = (LocalAsgnNode) node;
-                v = getArgVariable((IRClosure)s, localVariable.getName(), localVariable.getDepth());
+                v = getArgVariable(s, localVariable.getName(), localVariable.getDepth());
                 s.addInstr(new GetArrayInstr(v, argsArray, preArgsCount, postArgsCount, index, isSplat));
                 break;
             }
