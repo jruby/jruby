@@ -215,17 +215,17 @@ public class RubyMethod extends RubyObject implements DataType {
      *
      */
     public static IRubyObject bmcall(IRubyObject blockArg, IRubyObject arg1,
-            IRubyObject self, Block unusedBlock) {
+            IRubyObject self, Block block) {
         ThreadContext context = arg1.getRuntime().getCurrentContext();
 
         if (blockArg == null) {
-            return ((RubyMethod) arg1).call(context, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+            return ((RubyMethod) arg1).call(context, IRubyObject.NULL_ARRAY, block);
         } else if (blockArg instanceof RubyArray) {
             // ENEBO: Very wrong
-            return ((RubyMethod) arg1).call(context, ((RubyArray) blockArg).toJavaArray(), Block.NULL_BLOCK);
+            return ((RubyMethod) arg1).call(context, ((RubyArray) blockArg).toJavaArray(), block);
         }
         // ENEBO: Very wrong
-        return ((RubyMethod) arg1).call(context, new IRubyObject[] { blockArg }, Block.NULL_BLOCK);
+        return ((RubyMethod) arg1).call(context, new IRubyObject[] { blockArg }, block);
     }
 
     @JRubyMethod

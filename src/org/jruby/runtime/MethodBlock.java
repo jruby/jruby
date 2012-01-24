@@ -79,7 +79,12 @@ public abstract class MethodBlock extends ContextAwareBlockBody {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
-        return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true, binding, type);
+        return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true, binding, type, Block.NULL_BLOCK);
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type, Block block) {
+        return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true, binding, type, block);
     }
     
     @Override
@@ -112,8 +117,20 @@ public abstract class MethodBlock extends ContextAwareBlockBody {
         return yield(context, context.getRuntime().newArrayNoCopyLight(arg0, arg1, arg2), null, null, true, binding, type);
     }
     
+    @Override
     public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
         return yield(context, value, null, null, false, binding, type);
+    }
+
+    @Override
+    public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type, Block block) {
+        return yield(context, value, null, null, false, binding, type, block);
+    }
+
+    @Override
+    public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self,
+                             RubyModule klass, boolean aValue, Binding binding, Block.Type type) {
+        return yield(context, value, self, klass, aValue, binding, type, Block.NULL_BLOCK);
     }
 
     /**
@@ -126,8 +143,9 @@ public abstract class MethodBlock extends ContextAwareBlockBody {
      * @param aValue Should value be arrayified or not?
      * @return
      */
+    @Override
     public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, 
-            RubyModule klass, boolean aValue, Binding binding, Block.Type type) {
+            RubyModule klass, boolean aValue, Binding binding, Block.Type type, Block block) {
         if (klass == null) {
             self = binding.getSelf();
             binding.getFrame().setSelf(self);
@@ -139,7 +157,7 @@ public abstract class MethodBlock extends ContextAwareBlockBody {
             // This while loop is for restarting the block call in case a 'redo' fires.
             while (true) {
                 try {
-                    return callback(value, method, self, Block.NULL_BLOCK);
+                    return callback(value, method, self, block);
                 } catch (JumpException.RedoJump rj) {
                     context.pollThreadEvents();
                     // do nothing, allow loop to redo
