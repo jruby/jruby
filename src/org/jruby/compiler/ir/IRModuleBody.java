@@ -7,12 +7,12 @@ import org.jruby.parser.IRStaticScope;
 public class IRModuleBody extends IRScope {
     private CodeVersion version;    // Current code version for this module
 
-    public IRModuleBody(IRScope lexicalParent, String name, StaticScope scope) {
-        this(lexicalParent, name, lexicalParent.getFileName(), scope);
+    public IRModuleBody(IRScope lexicalParent, String name, int lineNumber, StaticScope scope) {
+        this(lexicalParent, name, lexicalParent.getFileName(), lineNumber, scope);
     }
     
-    public IRModuleBody(IRScope lexicalParent, String name, String fileName, StaticScope scope) {
-        super(lexicalParent, name, fileName, scope);
+    public IRModuleBody(IRScope lexicalParent, String name, String fileName, int lineNumber, StaticScope scope) {
+        super(lexicalParent, name, fileName, lineNumber, scope);
 
         if (!IRBuilder.inIRGenOnlyMode()) {
             if (scope != null) ((IRStaticScope)scope).setIRScope(this);

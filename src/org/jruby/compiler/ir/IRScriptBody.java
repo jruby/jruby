@@ -16,7 +16,7 @@ public class IRScriptBody extends IRScope {
     private List<IRClosure> endBlocks;
 
     public IRScriptBody(String className, String sourceName, StaticScope staticScope) {
-        super(null, sourceName, sourceName, staticScope);
+        super(null, sourceName, sourceName, 0, staticScope);
         if (!IRBuilder.inIRGenOnlyMode()) {
             if (staticScope != null) ((IRStaticScope)staticScope).setIRScope(this);
         }

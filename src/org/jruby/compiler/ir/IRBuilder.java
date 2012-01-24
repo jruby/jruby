@@ -1133,7 +1133,7 @@ public class IRBuilder {
         String className = cpath.getName();
         Operand container = getContainerFromCPath(cpath, s);
 
-        IRClassBody c = new IRClassBody(s, className, classNode.getScope());
+        IRClassBody c = new IRClassBody(s, className, classNode.getPosition().getLine(), classNode.getScope());
         Variable ret = s.getNewTemporaryVariable();
         s.addInstr(new DefineClassInstr(ret, c, container, superClass));
 
@@ -1163,7 +1163,7 @@ public class IRBuilder {
         Operand receiver = build(sclassNode.getReceiverNode(), s);
 
         // Create a dummy meta class and record it as being lexically defined in scope s
-        IRModuleBody mc = new IRMetaClassBody(s, manager.getMetaClassName(), sclassNode.getScope());
+        IRModuleBody mc = new IRMetaClassBody(s, manager.getMetaClassName(), sclassNode.getPosition().getLine(), sclassNode.getScope());
         Variable ret = s.getNewTemporaryVariable();
         s.addInstr(new DefineMetaClassInstr(ret, receiver, mc));
 
@@ -1811,7 +1811,7 @@ public class IRBuilder {
     }
 
     private IRMethod defineNewMethod(MethodDefNode defNode, IRScope s, boolean isInstanceMethod) {
-        IRMethod method = new IRMethod(s, defNode.getName(), isInstanceMethod, defNode.getScope());
+        IRMethod method = new IRMethod(s, defNode.getName(), isInstanceMethod, defNode.getPosition().getLine(), defNode.getScope());
 
         // Build IR for arguments
         receiveMethodArgs(defNode.getArgsNode(), method);
@@ -2512,7 +2512,7 @@ public class IRBuilder {
         Operand container = getContainerFromCPath(cpath, s);
 
         // Build the new module
-        IRModuleBody m = new IRModuleBody(s, moduleName, moduleNode.getScope());
+        IRModuleBody m = new IRModuleBody(s, moduleName, moduleNode.getPosition().getLine(), moduleNode.getScope());
         Variable ret = s.getNewTemporaryVariable();
         s.addInstr(new DefineModuleInstr(m, ret, container));
 

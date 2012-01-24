@@ -11,17 +11,18 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Splat;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.interpreter.Interpreter;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
-import org.jruby.parser.StaticScope;
+import org.jruby.runtime.PositionAware;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
-public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs {
+public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, PositionAware {
     private static final Logger LOG = LoggerFactory.getLogger("InterpretedIRMethod");
 
     private final boolean  isTopLevel;
@@ -110,4 +111,12 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs {
     public DynamicMethod dup() {
         return new InterpretedIRMethod(method, visibility, implementationClass);
     }
+
+    public String getFile() {
+        return method.getFileName();
+    }
+
+    public int getLine() {
+        return method.getLineNumber();
+	}
 }

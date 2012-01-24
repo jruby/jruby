@@ -199,6 +199,6 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
 
     @Override
     public int getLine() {
-        return closure.getLine();
+        return closure.getLineNumber();
     }
 }

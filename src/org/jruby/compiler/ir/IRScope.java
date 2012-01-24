@@ -82,6 +82,9 @@ public abstract class IRScope {
     /** File within which this scope has been defined */
     private final String fileName;
 
+    /** Starting line for this scope's definition */
+    private final int lineNumber;
+
     /** Lexical parent scope */
     private IRScope lexicalParent;
 
@@ -204,12 +207,13 @@ public abstract class IRScope {
     /** Does this scope call any zsuper */
     private boolean usesZSuper;
     
-    public IRScope(IRScope lexicalParent, String name, String fileName, StaticScope staticScope) {
+    public IRScope(IRScope lexicalParent, String name, String fileName, int lineNumber, StaticScope staticScope) {
         super();
             
         this.lexicalParent = lexicalParent;        
         this.name = name;
         this.fileName = fileName;
+		  this.lineNumber = lineNumber;
         this.staticScope = staticScope;
         instructions = new ArrayList<Instr>();
         closures = new ArrayList<IRClosure>();
@@ -332,6 +336,10 @@ public abstract class IRScope {
 
     public String getFileName() {
         return fileName;
+    }
+
+    public int getLineNumber() {
+        return lineNumber;
     }
 
     /**

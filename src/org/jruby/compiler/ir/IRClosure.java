@@ -33,8 +33,6 @@ public class IRClosure extends IRScope {
 
     private BlockBody body;
 
-    // Starting line number where this closure is defined in the file
-    private int lineNumber;
 
     // Oy, I have a headache!
     // for-loop body closures are special in that they dont really define a new variable scope.
@@ -65,8 +63,7 @@ public class IRClosure extends IRScope {
 
     // Used by IREvalScript
     protected IRClosure(IRScope lexicalParent, String fileName, int lineNumber, StaticScope staticScope, String prefix) {
-        super(lexicalParent, null, fileName, staticScope);
-        this.lineNumber = lineNumber;
+        super(lexicalParent, null, fileName, lineNumber, staticScope);
         this.isForLoopBody = false;
         this.startLabel = getNewLabel(prefix + "START");
         this.endLabel = getNewLabel(prefix + "END");
@@ -82,10 +79,6 @@ public class IRClosure extends IRScope {
             if (!s.isForLoopBody()) n++;
         }
         this.nestingDepth = n;
-    }
-
-    public int getLine() {
-        return lineNumber;
     }
 
     @Override
