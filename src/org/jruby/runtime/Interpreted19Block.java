@@ -241,7 +241,9 @@ public class Interpreted19Block  extends ContextAwareBlockBody {
      * We need to splat incoming array to a block when |a, *b| (any required + 
      * rest) or |a, b| (>1 required).
      */
-    private boolean needsSplat(boolean isRest, int requiredCount) {
+    private boolean needsSplat() {
+        int requiredCount = args.getRequiredArgsCount();
+        boolean isRest = args.getRestArg() != -1;        
         return (isRest && requiredCount > 0) || (!isRest && requiredCount > 1);
     }
 
@@ -255,9 +257,7 @@ public class Interpreted19Block  extends ContextAwareBlockBody {
     // Note: In 1.9 alreadyArray is only relevent from our internal Java code in core libs.  We never use it
     // from interpreter or JIT.  FIXME: Change core lib consumers to stop using alreadyArray param.
     private void setupBlockArgs(ThreadContext context, IRubyObject value, IRubyObject self, Block block, Block.Type type, boolean alreadyArray) {
-        int requiredCount = args.getRequiredArgsCount();
-        boolean isRest = args.getRestArg() != -1;
-        boolean needsSplat = needsSplat(isRest, requiredCount);
+        boolean needsSplat = needsSplat();
         if (value != null && !(value instanceof RubyArray) && needsSplat) value = RuntimeHelpers.aryToAry(value); 
 
         IRubyObject[] parameters;
@@ -269,13 +269,9 @@ public class Interpreted19Block  extends ContextAwareBlockBody {
             parameters = new IRubyObject[] { value };
         }
 
-        if (!(args instanceof ArgsNoArgNode)) {
-            Ruby runtime = context.getRuntime();
-
-            // FIXME: This needs to happen for lambdas
-//            args.checkArgCount(runtime, parameters.length);
-            args.prepare(context, runtime, self, parameters, block);
-        }
+        Ruby runtime = context.getRuntime();        
+        if (type == Block.Type.LAMBDA) args.checkArgCount(runtime, parameters.length);        
+        if (!(args instanceof ArgsNoArgNode)) args.prepare(context, runtime, self, parameters, block);
     }
 
     public ArgsNode getArgs() {
