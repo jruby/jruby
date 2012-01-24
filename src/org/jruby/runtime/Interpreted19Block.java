@@ -237,63 +237,34 @@ public class Interpreted19Block  extends ContextAwareBlockBody {
         return value;
     }
     
-    private boolean manyParms(boolean isRest, int requiredCount) {
+    /**
+     * We need to splat incoming array to a block when |a, *b| (any required + 
+     * rest) or |a, b| (>1 required).
+     */
+    private boolean needsSplat(boolean isRest, int requiredCount) {
         return (isRest && requiredCount > 0) || (!isRest && requiredCount > 1);
     }
 
     private void setupBlockArg(ThreadContext context, IRubyObject value, IRubyObject self, Block block, Block.Type type) {
-//        System.out.println("AA: (" + value + ")");
-        
-        int requiredCount = args.getRequiredArgsCount();
-        boolean isRest = args.getRestArg() != -1;
-
-        IRubyObject[] parameters;
-        if (value == null) {
-            parameters = IRubyObject.NULL_ARRAY;
-        } else if (manyParms(isRest, requiredCount)) {
-            if (value instanceof RubyArray) {
-                parameters = ((RubyArray) value).toJavaArray();
-            } else {
-                value = RuntimeHelpers.aryToAry(value);
-                
-                parameters = (value instanceof RubyArray) ? ((RubyArray)value).toJavaArray() : new IRubyObject[] { value };                
-            }
-        } else {
-            parameters = new IRubyObject[] { value };
-        }
-
-        if (!(args instanceof ArgsNoArgNode)) {
-            Ruby runtime = context.getRuntime();
-
-            // FIXME: This needs to happen for lambdas
-//            args.checkArgCount(runtime, parameters.length);
-            args.prepare(context, runtime, self, parameters, block);
-        }
+        setupBlockArgs(context, value, self, block, type, false);
     }
+    
     // . Array given to rest should pass itself
     // . Array with rest + other args should extract array
     // . Array with multiple values and NO rest should extract args if there are more than one argument
-
+    // Note: In 1.9 alreadyArray is only relevent from our internal Java code in core libs.  We never use it
+    // from interpreter or JIT.  FIXME: Change core lib consumers to stop using alreadyArray param.
     private void setupBlockArgs(ThreadContext context, IRubyObject value, IRubyObject self, Block block, Block.Type type, boolean alreadyArray) {
-//        System.out.println("AS: " + alreadyArray + "(" + value + ")");
-
         int requiredCount = args.getRequiredArgsCount();
         boolean isRest = args.getRestArg() != -1;
+        boolean needsSplat = needsSplat(isRest, requiredCount);
+        if (value != null && !(value instanceof RubyArray) && needsSplat) value = RuntimeHelpers.aryToAry(value); 
 
         IRubyObject[] parameters;
         if (value == null) {
             parameters = IRubyObject.NULL_ARRAY;
-        } else if (value instanceof RubyArray && (alreadyArray || (isRest && requiredCount > 0))) {
+        } else if (value instanceof RubyArray && (alreadyArray || needsSplat)) {
             parameters = ((RubyArray) value).toJavaArray();
-        } else if (isRest || requiredCount > 0) {
-            // 1.7.0 rewrite cannot come fast enough...
-            if (value instanceof RubyArray) {
-                parameters = new IRubyObject[] { value };
-            } else {
-                value = RuntimeHelpers.aryToAry(value);
-                
-                parameters = (value instanceof RubyArray) ? ((RubyArray)value).toJavaArray() : new IRubyObject[] { value };
-            }
         } else {
             parameters = new IRubyObject[] { value };
         }
