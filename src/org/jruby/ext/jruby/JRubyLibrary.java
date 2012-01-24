@@ -58,6 +58,7 @@ import org.jruby.RubySymbol;
 import org.jruby.ast.MultipleAsgn19Node;
 import org.jruby.ast.UnnamedRestArgNode;
 import org.jruby.internal.runtime.methods.MethodArgs2;
+import org.jruby.internal.runtime.methods.IRMethodArgs;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.load.Library;
@@ -189,6 +190,12 @@ public class JRubyLibrary implements Library {
 
                 if (args.getBlock() != null) {
                     argsArray.append(RubyArray.newArray(runtime, block, getNameFrom(runtime, args.getBlock())));
+                }
+            } else if (method instanceof IRMethodArgs) {
+                for (String[] argParam: ((IRMethodArgs)method).getParameterList()) {
+                    RubySymbol argType = runtime.newSymbol(argParam[0]);
+                    if (argParam[1] == "") argsArray.append(RubyArray.newArray(runtime, argType));
+                    else argsArray.append(RubyArray.newArray(runtime, argType, runtime.newSymbol(argParam[1])));
                 }
             } else {
                 if (method.getArity() == Arity.OPTIONAL) {
