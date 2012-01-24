@@ -133,6 +133,22 @@ public class IRBuilder19 extends IRBuilder {
         }
     }
 
+    private void receiveClosureArg(BlockArgNode blockVarNode, IRScope s) {
+        Variable blockVar = null;
+        if (blockVarNode != null) {
+            String blockArgName = blockVarNode.getName();
+            blockVar = s.getNewLocalVariable(blockArgName, 0);
+            if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("block", blockArgName);
+            s.addInstr(new ReceiveClosureInstr(blockVar));
+        }
+
+        // SSS FIXME: This instruction is only needed if there is an yield instr somewhere!
+        // In addition, store the block argument in an implicit block variable
+        Variable implicitBlockArg = s.getImplicitBlockArg();
+        if (blockVar == null) s.addInstr(new ReceiveClosureInstr(implicitBlockArg));
+        else s.addInstr(new CopyInstr(implicitBlockArg, blockVar));
+    }
+
     public void receiveArgs(final ArgsNode argsNode, IRScope s) {
         final int numPreReqd = argsNode.getPreCount();
         final int numPostReqd = argsNode.getPostCount();
@@ -204,22 +220,12 @@ public class IRBuilder19 extends IRBuilder {
         for (int i = 0; i < numPostReqd; i++) {
             receiveRequiredArg(postArgs.get(i), s, i, true, numPreReqd, numPostReqd);
         }
-    }
 
-    public void receiveClosureArg(BlockArgNode blockVarNode, IRScope s) {
-        Variable blockVar = null;
-        if (blockVarNode != null) {
-            String blockArgName = blockVarNode.getName();
-            blockVar = s.getNewLocalVariable(blockArgName, 0);
-            if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("block", blockArgName);
-            s.addInstr(new ReceiveClosureInstr(blockVar));
-        }
-
-        // SSS FIXME: This instruction is only needed if there is an yield instr somewhere!
-        // In addition, store the block argument in an implicit block variable
-        Variable implicitBlockArg = s.getImplicitBlockArg();
-        if (blockVar == null) s.addInstr(new ReceiveClosureInstr(implicitBlockArg));
-        else s.addInstr(new CopyInstr(implicitBlockArg, blockVar));
+        // Now, receive the block arg 
+        // -- for methods, we always receive it (implicitly, if the block arg is not explicit)
+        // -- for closures, only if it is explicitly present
+        BlockArgNode blockArg = argsNode.getBlock();
+        if ((s instanceof IRMethod) || (blockArg != null)) receiveClosureArg(blockArg, s);
     }
 
     public void receiveBlockArgs(final IterNode node, IRScope s) {
@@ -233,20 +239,11 @@ public class IRBuilder19 extends IRBuilder {
     }
 
     public void receiveBlockClosureArg(Node node, IRScope s) {
-        // SSS FIXME: Baffled.  How can both forms occur?  Why isn't one or the other
-        // form consistently showing up in the AST?
-        //
-        // 1. iterNode -> receiveBlockArgs -> receiveArgs -> argsNode.getBlock -> receiveClosureArg
-        // 2. iterNode -> receiveBlockClosureArg -> receiveClosureArg
-        if (node != null) receiveClosureArg((BlockArgNode)node, s);
+        // Nothing to do here.  iterNode.blockVarNode is not valid in 1.9 mode
     }
 
     public void receiveMethodArgs(final ArgsNode argsNode, IRScope s) {
         receiveArgs(argsNode, s);
-    }
-
-    public void receiveMethodClosureArg(ArgsNode argsNode, IRScope s) {
-        receiveClosureArg(argsNode.getBlock(), s);
     }
 
     protected void receiveArg(IRScope s, Variable v, Operand argsArray, int argIndex, boolean isSplat) {

@@ -1813,11 +1813,8 @@ public class IRBuilder {
     private IRMethod defineNewMethod(MethodDefNode defNode, IRScope s, boolean isInstanceMethod) {
         IRMethod method = new IRMethod(s, defNode.getName(), isInstanceMethod, defNode.getPosition().getLine(), defNode.getScope());
 
-        // Build IR for arguments
+        // Build IR for arguments (including the block arg)
         receiveMethodArgs(defNode.getArgsNode(), method);
-
-        // Receive block
-        receiveMethodClosureArg(defNode.getArgsNode(), method);
 
         // Thread poll on entry to method
         addThreadPollInstrIfNeeded(s);
@@ -1913,9 +1910,12 @@ public class IRBuilder {
             argName = (argName.equals("")) ? "%_arg_array" : argName;
             s.addInstr(new ReceiveRestArgInstr(s.getLocalVariable(argName, 0), argIndex));
         }
+
+        // Receive block
+        receiveMethodClosureArg(argsNode, s);
     }
 
-    public void receiveMethodClosureArg(ArgsNode argsNode, IRScope s) {
+    private void receiveMethodClosureArg(ArgsNode argsNode, IRScope s) {
         Variable blockVar = null;
         if (argsNode.getBlock() != null) {
             String blockArgName = argsNode.getBlock().getName();
