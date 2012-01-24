@@ -53,6 +53,7 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.jruby.util.unsafe.UnsafeFactory;
 import org.yaml.snakeyaml.error.Mark;
+import org.yaml.snakeyaml.error.MarkedYAMLException;
 import org.yaml.snakeyaml.events.AliasEvent;
 import org.yaml.snakeyaml.events.DocumentEndEvent;
 import org.yaml.snakeyaml.events.DocumentStartEvent;
@@ -100,20 +101,20 @@ public class PsychParser extends RubyObject {
     }
 
     @JRubyMethod
-    public IRubyObject parse(ThreadContext context, IRubyObject target) {
+    public IRubyObject parse(ThreadContext context, IRubyObject yaml) {
         Ruby runtime = context.runtime;
-        boolean tainted = target.isTaint();
+        boolean tainted = yaml.isTaint();
         
         // FIXME? only supports Unicode, since we have to produces strings...
         try {
             StreamReader reader;
-            if (target.respondsTo("read")) {
-                reader = new StreamReader(new InputStreamReader(new IOInputStream(target), RubyEncoding.UTF8));
-                if (target instanceof RubyIO) {
+            if (yaml.respondsTo("read")) {
+                reader = new StreamReader(new InputStreamReader(new IOInputStream(yaml), RubyEncoding.UTF8));
+                if (yaml instanceof RubyIO) {
                     tainted = true;
                 }
             } else {
-                reader = new StreamReader(new StringReader(target.convertToString().asJavaString()));
+                reader = new StreamReader(new StringReader(yaml.convertToString().asJavaString()));
             }
             parser = new ParserImpl(reader);
             IRubyObject handler = getInstanceVariable("@handler");
@@ -271,7 +272,7 @@ public class PsychParser extends RubyObject {
         } catch (ParserException pe) {
             parser = null;
             RubyKernel.raise(context, runtime.getKernel(),
-                    new IRubyObject[] {runtime.getModule("Psych").getConstant("SyntaxError"), runtime.newString(pe.getLocalizedMessage())},
+                    new IRubyObject[] {runtime.getModule("Psych").getConstant("SyntaxError"), runtime.newString(syntaxError(context, yaml, pe))},
                     Block.NULL_BLOCK);
         } catch (ScannerException se) {
             parser = null;
@@ -291,6 +292,16 @@ public class PsychParser extends RubyObject {
         }
 
         return this;
+    }
+
+    private static String syntaxError(ThreadContext context, IRubyObject yaml, MarkedYAMLException mye) {
+        String path;
+        if (yaml.respondsTo("path")) {
+            path = yaml.callMethod(context, "path").toString();
+        } else {
+            path = "<unknown>";
+        }
+        return path + ": couldn't parse YAML at line " + mye.getProblemMark().getLine() + " column " + mye.getProblemMark().getColumn();
     }
 
     private static int translateStyle(Character style) {
