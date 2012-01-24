@@ -60,12 +60,16 @@ public class Regexp extends Operand {
 
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
+        // FIXME (from RegexpNode.java): 1.9 should care about internal or external encoding and not kcode.
         // If we have a constant regexp string or if the regexp patterns asks for caching, cache the regexp
         if ((!regexp.isConstant() && !options.isOnce()) || (rubyRegexp == null) || context.getRuntime().getKCode() != rubyRegexp.getKCode()) {
             RubyString pattern = (RubyString) regexp.retrieve(context, self, currDynScope, temp);
             RubyRegexp reg;
-            if (regexp instanceof CompoundString) reg = RubyRegexp.newDRegexp(context.getRuntime(), pattern, options);
-            else reg = RubyRegexp.newRegexp(context.getRuntime(), pattern.getByteList(), options);
+            if (regexp instanceof CompoundString) {
+                reg = RubyRegexp.newDRegexp(context.getRuntime(), pattern, options);
+            } else {
+                reg = RubyRegexp.newRegexp(context.getRuntime(), pattern.getByteList(), options);
+            }
             reg.setLiteral();
             rubyRegexp = reg;
         }

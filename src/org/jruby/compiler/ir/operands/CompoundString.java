@@ -3,6 +3,8 @@ package org.jruby.compiler.ir.operands;
 import java.util.List;
 import java.util.Map;
 
+import org.jcodings.Encoding;
+
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -20,9 +22,15 @@ import org.jruby.runtime.DynamicScope;
 // that appends the components of the compound string into a single string object
 public class CompoundString extends Operand {
     final private List<Operand> pieces;
+    final private Encoding encoding;
+
+    public CompoundString(List<Operand> pieces, Encoding encoding) {
+        this.pieces = pieces;
+        this.encoding = encoding;
+    }
 
     public CompoundString(List<Operand> pieces) {
-        this.pieces = pieces;
+        this(pieces, null);
     }
 
     @Override
@@ -53,7 +61,7 @@ public class CompoundString extends Operand {
             newPieces.add(p.getSimplifiedOperand(valueMap, force));
         }
 
-        return new CompoundString(newPieces);
+        return new CompoundString(newPieces, encoding);
     }
 
     /** Append the list of variables used in this operand to the input list */
@@ -73,7 +81,7 @@ public class CompoundString extends Operand {
             newPieces.add(p.cloneForInlining(ii));
         }
 
-        return new CompoundString(newPieces);
+        return new CompoundString(newPieces, encoding);
     }
 
     // SSS FIXME: Buggy?
@@ -87,6 +95,10 @@ public class CompoundString extends Operand {
         return buf.toString();
     }
 
+    public boolean isSameEncoding(StringLiteral str) {
+        return str._bl_value.getEncoding() == encoding;
+    }
+
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         // SSS FIXME: Doesn't work in all cases.  See example below
@@ -96,14 +108,17 @@ public class CompoundString extends Operand {
         //
         // return context.getRuntime().newString(retrieveJavaString(interp, context, self));
 
+        boolean is1_9 = context.runtime.is1_9();
         ByteList bytes = new ByteList();
-        //if (is19()) bytes.setEncoding(encoding);
+        if (is1_9) bytes.setEncoding(encoding);
         RubyString str = RubyString.newStringShared(context.getRuntime(), bytes, StringSupport.CR_7BIT);
         for (Operand p : pieces) {
-            if (p instanceof StringLiteral) {
+            if ((p instanceof StringLiteral) && (!is1_9 || isSameEncoding((StringLiteral)p))) {
                 str.getByteList().append(((StringLiteral)p)._bl_value);
             } else {
-                str.append((IRubyObject)p.retrieve(context, self, currDynScope, temp));
+               IRubyObject pval = (IRubyObject)p.retrieve(context, self, currDynScope, temp);
+               if (is1_9) str.append19(pval);
+               else str.append(pval);
             }
         }
 

@@ -1975,7 +1975,7 @@ public class IRBuilder {
             strPieces.add(dynamicPiece(n, s));
         }
         
-        return copyAndReturnValue(s, new CompoundString(strPieces));
+        return copyAndReturnValue(s, new CompoundString(strPieces, dstrNode.getEncoding()));
     }
 
     public Operand buildDSymbol(Node node, IRScope s) {
