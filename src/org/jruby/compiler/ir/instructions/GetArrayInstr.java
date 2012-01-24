@@ -20,6 +20,17 @@ import org.jruby.runtime.builtin.IRubyObject;
 // FIXME: Rename GetArrayInstr to ArrayArefInstr which would be used
 // in later passes as well when compiler passes replace ruby-array []
 // getArraySlices with inlined lookups
+//
+// SSS FIXME: This is now asking to be split into multiple instructions.
+// This instr. is being used to split an arg received by a parenthesized unit in
+// method/block args.  So, this effectively behaves like a receive* instruction.
+// Except, there is no receiveOptArg.
+// 
+// So, in 1.9 mode, this instruction has combined logic of ReceiveRestArg, ReceiveReqdArg,
+// ReceiveArgument instructions.
+//
+// Is it time to refactor and clean this up?
+
 public class GetArrayInstr extends Instr implements ResultInstr {
     private Operand array;
     private final int preArgsCount;       // # of reqd args before rest-arg (-1 if we are fetching a pre-arg)

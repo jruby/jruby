@@ -21,14 +21,14 @@ public class InterpretedIRBlockBody19 extends InterpretedIRBlockBody {
 
         int blockArity = arity().getValue();
         switch (blockArity) {
-            case 0  : return (value == null) ? IRubyObject.NULL_ARRAY : new IRubyObject[] { value };
+            case 0  : return new IRubyObject[] { value };
             case -1 : return isArray ? ((RubyArray)value).toJavaArray() : new IRubyObject[] { value };
             case 1  : {
                if (isArray) {
-                   RubyArray a = ((RubyArray)value);
-                   int n = a.size();
-                   if (a.size() == 0) value = isYieldSpecific ? RubyArray.newEmptyArray(context.getRuntime()) : context.nil;
-                   else if (!isYieldSpecific) value = a.eltInternal(0);
+                   RubyArray valArray = ((RubyArray)value);
+                   int n = valArray.size();
+                   if (valArray.size() == 0) value = isYieldSpecific ? RubyArray.newEmptyArray(context.getRuntime()) : context.nil;
+                   else if (!isYieldSpecific) value = valArray.eltInternal(0);
                }
                return new IRubyObject[] { value };
             }
@@ -57,8 +57,7 @@ public class InterpretedIRBlockBody19 extends InterpretedIRBlockBody {
     private IRubyObject[] getYieldArgs(ThreadContext context, IRubyObject value, boolean isYieldSpecific, boolean isArray, Type type) {
         if (type == Block.Type.LAMBDA) {
             return getLambdaArgs(context, value, isYieldSpecific, isArray);
-        }
-        else {
+        } else {
             return (value == null) ? IRubyObject.NULL_ARRAY : convertValueIntoArgArray(context, value, isYieldSpecific, isArray);
         }
     }
