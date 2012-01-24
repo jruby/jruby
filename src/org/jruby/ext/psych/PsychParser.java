@@ -49,6 +49,9 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.IOInputStream;
+import org.jruby.util.unsafe.UnsafeFactory;
+import org.yaml.snakeyaml.error.Mark;
+import org.yaml.snakeyaml.error.MarkedYAMLException;
 import org.yaml.snakeyaml.events.AliasEvent;
 import org.yaml.snakeyaml.events.DocumentEndEvent;
 import org.yaml.snakeyaml.events.DocumentStartEvent;
@@ -60,11 +63,13 @@ import org.yaml.snakeyaml.events.SequenceStartEvent;
 import org.yaml.snakeyaml.parser.Parser;
 import org.yaml.snakeyaml.parser.ParserException;
 import org.yaml.snakeyaml.parser.ParserImpl;
+import org.yaml.snakeyaml.reader.ReaderException;
 import org.yaml.snakeyaml.reader.StreamReader;
 import org.yaml.snakeyaml.scanner.ScannerException;
 import static org.jruby.javasupport.util.RuntimeHelpers.invoke;
 
 public class PsychParser extends RubyObject {
+
     public static final int YAML_ANY_ENCODING = 0;
     public static final int YAML_UTF8_ENCODING = UTF8Encoding.INSTANCE.getIndex();
     public static final int YAML_UTF16LE_ENCODING = UTF16LEEncoding.INSTANCE.getIndex();
@@ -92,25 +97,24 @@ public class PsychParser extends RubyObject {
     }
 
     @JRubyMethod
-    public IRubyObject parse(ThreadContext context, IRubyObject target) {
+    public IRubyObject parse(ThreadContext context, IRubyObject yaml) {
         Ruby runtime = context.runtime;
-        boolean tainted = target.isTaint();
+        boolean tainted = yaml.isTaint();
         
         // FIXME? only supports Unicode, since we have to produces strings...
-        StreamReader reader;
-        if (target.respondsTo("read")) {
-            reader = new StreamReader(new InputStreamReader(new IOInputStream(target), RubyEncoding.UTF8));
-            if (target instanceof RubyIO) {
-                tainted = true;
-            }
-        } else {
-            reader = new StreamReader(new StringReader(target.convertToString().asJavaString()));
-        }
-        Parser parser = new ParserImpl(reader);
-        IRubyObject handler = getInstanceVariable("@handler");
-        Event event;
-
         try {
+            StreamReader reader;
+            if (yaml.respondsTo("read")) {
+                reader = new StreamReader(new InputStreamReader(new IOInputStream(yaml), RubyEncoding.UTF8));
+                if (yaml instanceof RubyIO) {
+                    tainted = true;
+                }
+            } else {
+                reader = new StreamReader(new StringReader(yaml.convertToString().asJavaString()));
+            }
+            parser = new ParserImpl(reader);
+            IRubyObject handler = getInstanceVariable("@handler");
+
             while (true) {
                 event = parser.getEvent();
 
@@ -151,14 +155,14 @@ public class PsychParser extends RubyObject {
                             "start_document",
                             version,
                             tags,
-                            runtime.newBoolean(dse.getExplicit()));
+                            runtime.newBoolean(!dse.getExplicit()));
                 } else if (event.is(ID.DocumentEnd)) {
                     DocumentEndEvent dee = (DocumentEndEvent)event;
                     invoke(
                             context,
                             handler,
                             "end_document",
-                            runtime.newBoolean(dee.getExplicit()));
+                            runtime.newBoolean(!dee.getExplicit()));
                 } else if (event.is(ID.Alias)) {
                     AliasEvent ae = (AliasEvent)event;
                     IRubyObject alias = runtime.getNil();
@@ -182,7 +186,7 @@ public class PsychParser extends RubyObject {
                         RubyString.newString(runtime, se.getTag());
                     IRubyObject plain_implicit = runtime.newBoolean(se.getImplicit().canOmitTagInPlainScalar());
                     IRubyObject quoted_implicit = runtime.newBoolean(se.getImplicit().canOmitTagInNonPlainScalar());
-                    IRubyObject style = runtime.newFixnum(se.getStyle());
+                    IRubyObject style = runtime.newFixnum(translateStyle(se.getStyle()));
                     IRubyObject val = RubyString.newString(runtime, se.getValue());
 
                     val.setTaint(tainted);
@@ -208,7 +212,7 @@ public class PsychParser extends RubyObject {
                         runtime.getNil() :
                         RubyString.newString(runtime, sse.getTag());
                     IRubyObject implicit = runtime.newBoolean(sse.getImplicit());
-                    IRubyObject style = runtime.newFixnum(sse.getFlowStyle() ? 1 : 0);
+                    IRubyObject style = runtime.newFixnum(translateFlowStyle(sse.getFlowStyle()));
 
                     anchor.setTaint(tainted);
                     tag.setTaint(tainted);
@@ -235,7 +239,7 @@ public class PsychParser extends RubyObject {
                         runtime.getNil() :
                         RubyString.newString(runtime, mse.getTag());
                     IRubyObject implicit = runtime.newBoolean(mse.getImplicit());
-                    IRubyObject style = runtime.newFixnum(mse.getFlowStyle() ? 1 : 0);
+                    IRubyObject style = runtime.newFixnum(translateFlowStyle(mse.getFlowStyle()));
 
                     anchor.setTaint(tainted);
                     tag.setTaint(tainted);
@@ -264,17 +268,64 @@ public class PsychParser extends RubyObject {
         } catch (ParserException pe) {
             parser = null;
             RubyKernel.raise(context, runtime.getKernel(),
-            new IRubyObject[] {runtime.getModule("Psych").getConstant("SyntaxError"), runtime.newString(pe.getLocalizedMessage())},
-            Block.NULL_BLOCK);
+                    new IRubyObject[] {runtime.getModule("Psych").getConstant("SyntaxError"), runtime.newString(syntaxError(context, yaml, pe))},
+                    Block.NULL_BLOCK);
         } catch (ScannerException se) {
             parser = null;
             StringBuilder message = new StringBuilder("syntax error");
             if (se.getProblemMark() != null) {
-              message.append(se.getProblemMark().toString());
+                message.append(se.getProblemMark().toString());
             }
             throw runtime.newArgumentError(message.toString());
+        } catch (ReaderException re) {
+            parser = null;
+            RubyKernel.raise(context, runtime.getKernel(),
+                    new IRubyObject[] {runtime.getModule("Psych").getConstant("SyntaxError"), runtime.newString(re.getLocalizedMessage())},
+                    Block.NULL_BLOCK);
+        } catch (Throwable t) {
+            UnsafeFactory.getUnsafe().throwException(t);
+            return this;
         }
-  
+
         return this;
     }
+
+    private static String syntaxError(ThreadContext context, IRubyObject yaml, MarkedYAMLException mye) {
+        String path;
+        if (yaml.respondsTo("path")) {
+            path = yaml.callMethod(context, "path").toString();
+        } else {
+            path = "<unknown>";
+        }
+        return path + ": couldn't parse YAML at line " + mye.getProblemMark().getLine() + " column " + mye.getProblemMark().getColumn();
+    }
+
+    private static int translateStyle(Character style) {
+        if (style == null) return 0; // any
+
+        switch (style) {
+            case 0: return 1; // plain
+            case '\'': return 2; // single-quoted
+            case '"': return 3; // double-quoted
+            case '|': return 4; // literal
+            case '>': return 5; // folded
+            default: return 0; // any
+        }
+    }
+    
+    private static int translateFlowStyle(Boolean flowStyle) {
+        if (flowStyle == null) return 0; // any
+
+        if (flowStyle) return 2;
+        return 1;
+    }
+    
+    @JRubyMethod(name = "external_encoding=")
+    public IRubyObject external_encoding_set(ThreadContext context, IRubyObject encoding) {
+        // stubbed
+        return encoding;
+    }
+
+    private Parser parser;
+    private Event event;
 }
