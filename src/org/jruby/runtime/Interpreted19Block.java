@@ -62,6 +62,13 @@ public class Interpreted19Block  extends ContextAwareBlockBody {
     /** The argument list, pulled out of iterNode */
     private final ArgsNode args;
 
+    /**
+     * Whether the arguments "need splat".
+     *
+     * @see RuntimeHelpers#needsSplat19(int, boolean)
+     */
+    private final boolean needsSplat;
+
     /** The parameter names, for Proc#parameters */
     private final String[] parameterList;
 
@@ -88,6 +95,7 @@ public class Interpreted19Block  extends ContextAwareBlockBody {
         super(iterNode.getScope(), ((ArgsNode)iterNode.getVarNode()).getArity(), -1); // We override that the logic which uses this
 
         this.args = (ArgsNode)iterNode.getVarNode();
+        this.needsSplat = RuntimeHelpers.needsSplat19(args.getRequiredArgsCount(), args.getRestArg() != -1);
         this.parameterList = RuntimeHelpers.encodeParameterList(args).split(";");
         this.body = iterNode.getBodyNode() == null ? NilImplicitNode.NIL : iterNode.getBodyNode();
         this.position = iterNode.getPosition();
@@ -101,6 +109,7 @@ public class Interpreted19Block  extends ContextAwareBlockBody {
         super(lambdaNode.getScope(), lambdaNode.getArgs().getArity(), -1); // We override that the logic which uses this
 
         this.args = lambdaNode.getArgs();
+        this.needsSplat = RuntimeHelpers.needsSplat19(args.getRequiredArgsCount(), args.getRestArg() != -1);
         this.parameterList = RuntimeHelpers.encodeParameterList(args).split(";");
         this.body = lambdaNode.getBody() == null ? NilImplicitNode.NIL : lambdaNode.getBody();
         this.position = lambdaNode.getPosition();
@@ -236,38 +245,16 @@ public class Interpreted19Block  extends ContextAwareBlockBody {
 
         return value;
     }
-    
-    /**
-     * We need to splat incoming array to a block when |a, *b| (any required + 
-     * rest) or |a, b| (>1 required).
-     */
-    private boolean needsSplat() {
-        int requiredCount = args.getRequiredArgsCount();
-        boolean isRest = args.getRestArg() != -1;        
-        return (isRest && requiredCount > 0) || (!isRest && requiredCount > 1);
-    }
 
     private void setupBlockArg(ThreadContext context, IRubyObject value, IRubyObject self, Block block, Block.Type type) {
         setupBlockArgs(context, value, self, block, type, false);
     }
-    
-    // . Array given to rest should pass itself
-    // . Array with rest + other args should extract array
-    // . Array with multiple values and NO rest should extract args if there are more than one argument
-    // Note: In 1.9 alreadyArray is only relevent from our internal Java code in core libs.  We never use it
-    // from interpreter or JIT.  FIXME: Change core lib consumers to stop using alreadyArray param.
-    private void setupBlockArgs(ThreadContext context, IRubyObject value, IRubyObject self, Block block, Block.Type type, boolean alreadyArray) {
-        boolean needsSplat = needsSplat();
-        if (value != null && !(value instanceof RubyArray) && needsSplat) value = RuntimeHelpers.aryToAry(value); 
 
-        IRubyObject[] parameters;
-        if (value == null) {
-            parameters = IRubyObject.NULL_ARRAY;
-        } else if (value instanceof RubyArray && (alreadyArray || needsSplat)) {
-            parameters = ((RubyArray) value).toJavaArray();
-        } else {
-            parameters = new IRubyObject[] { value };
-        }
+    /**
+     * @see RuntimeHelpers#restructureBlockArgs19(IRubyObject, boolean, boolean)
+     */
+    private void setupBlockArgs(ThreadContext context, IRubyObject value, IRubyObject self, Block block, Block.Type type, boolean alreadyArray) {
+        IRubyObject[] parameters = RuntimeHelpers.restructureBlockArgs19(value, needsSplat, alreadyArray);
 
         Ruby runtime = context.getRuntime();        
         if (type == Block.Type.LAMBDA) args.checkArgCount(runtime, parameters.length);        

@@ -2660,4 +2660,32 @@ public class RuntimeHelpers {
     public static RubyString appendAsString19(RubyString target, IRubyObject other) {
         return target.append19(other.asString());
     }
+
+    /**
+     * We need to splat incoming array to a block when |a, *b| (any required +
+     * rest) or |a, b| (>1 required).
+     */
+    public static boolean needsSplat19(int requiredCount, boolean isRest) {
+        return (isRest && requiredCount > 0) || (!isRest && requiredCount > 1);
+    }
+
+    // . Array given to rest should pass itself
+    // . Array with rest + other args should extract array
+    // . Array with multiple values and NO rest should extract args if there are more than one argument
+    // Note: In 1.9 alreadyArray is only relevent from our internal Java code in core libs.  We never use it
+    // from interpreter or JIT.  FIXME: Change core lib consumers to stop using alreadyArray param.
+    public static final IRubyObject[] restructureBlockArgs19(IRubyObject value, boolean needsSplat, boolean alreadyArray) {
+        if (value != null && !(value instanceof RubyArray) && needsSplat) value = RuntimeHelpers.aryToAry(value);
+
+        IRubyObject[] parameters;
+        if (value == null) {
+            parameters = IRubyObject.NULL_ARRAY;
+        } else if (value instanceof RubyArray && (alreadyArray || needsSplat)) {
+            parameters = ((RubyArray) value).toJavaArray();
+        } else {
+            parameters = new IRubyObject[] { value };
+        }
+
+        return parameters;
+    }
 }
