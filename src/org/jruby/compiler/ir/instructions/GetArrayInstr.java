@@ -90,19 +90,25 @@ public class GetArrayInstr extends Instr implements ResultInstr {
         Object val;
         
         int n = rubyArray.getLength();
-        if (!getArraySlice) {
-            if (preArgsCount == -1) {
+        if (preArgsCount == -1) {
+            // Masgn for 1.8 and 1.9 pre-reqd. args always comes down this path!
+            if (!getArraySlice) {
                 return rubyArray.entry(index);
+            } else if (index >= n) {
+                return RubyArray.newEmptyArray(context.getRuntime());
             } else {
+                return RubyArray.newArrayNoCopy(context.getRuntime(), rubyArray.toJavaArray(), index, (n - index));
+            }
+        } else {
+            // Masgn for 1.9 post-reqd args always come down this path
+            if (!getArraySlice) {
                 int remaining = n - preArgsCount;
                 if (remaining <= index) {
                     return context.nil;
                 } else {
                     return (remaining > postArgsCount) ? rubyArray.entry(n - postArgsCount + index) : rubyArray.entry(preArgsCount + index);
                 }
-            }
-        } else {
-            if ((preArgsCount >= n) || (preArgsCount + postArgsCount >= n)) {
+            } else if ((preArgsCount >= n) || (preArgsCount + postArgsCount >= n)) {
                 return RubyArray.newEmptyArray(context.getRuntime());
             } else {
                 // FIXME: Perf win to use COW between source Array and this new one (remove toJavaArray)
