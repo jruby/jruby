@@ -4,7 +4,7 @@ module java::util::Collection
   def each(&block)
     iter = iterator
     while iter.hasNext
-      block.call(iter.next)
+      yield(iter.next)
     end
   end
   def <<(a); add(a); self; end
