@@ -2396,7 +2396,9 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     public IRubyObject select_bang(ThreadContext context, Block block) {
         Ruby runtime = context.getRuntime();
         if (!block.isGiven()) return enumeratorize(runtime, this, "select!");
-
+        
+        modify();
+        
         int newLength = 0;
         IRubyObject[] aux = new IRubyObject[values.length];
 
