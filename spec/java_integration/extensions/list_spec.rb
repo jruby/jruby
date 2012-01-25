@@ -54,4 +54,22 @@ describe "List Ruby extensions" do
    it "should support slicing with exclusive ranges" do
     @list[0...2].to_a.should == @data[0...2]
   end
+
+  it "should respect to_ary objects defined on iteration" do
+    class Pair
+      def initialize(a, b)
+        @a = a
+        @b = b
+      end
+
+      def to_ary
+        [@a, @b]
+      end
+    end
+
+    ArrayList.new([Pair.new(:x, :y)]).each do |car, cdr|
+      car.should == :x
+      cdr.should == :y
+    end
+  end
 end
