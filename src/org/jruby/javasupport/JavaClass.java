@@ -913,11 +913,12 @@ public class JavaClass extends JavaObject {
     }
 
     private static String fixScalaNames(String name) {
+        String s = name;
         for (Map.Entry<String, String> entry : SCALA_OPERATORS.entrySet()) {
-            name.replaceAll(entry.getKey(), entry.getValue());
+            s = s.replaceAll(entry.getKey(), entry.getValue());
         }
 
-        return name;
+        return s;
     }
 
     private static final Map<String, String> SCALA_OPERATORS;
