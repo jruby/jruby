@@ -161,8 +161,6 @@ public class LoadService {
 
     protected final Map<String, JarFile> jarFiles = new HashMap<String, JarFile>();
 
-    protected final Map<String, IAutoloadMethod> autoloadMap = new HashMap<String, IAutoloadMethod>();
-
     protected final Ruby runtime;
 
     protected boolean caseInsensitiveFS = false;
@@ -428,26 +426,6 @@ public class LoadService {
 
     public IRubyObject getLoadedFeatures() {
         return loadedFeatures;
-    }
-
-    public IAutoloadMethod autoloadFor(String name) {
-        return autoloadMap.get(name);
-    }
-
-    public void removeAutoLoadFor(String name) {
-        autoloadMap.remove(name);
-    }
-
-    public IRubyObject autoload(String name) {
-        IAutoloadMethod loadMethod = autoloadMap.remove(name);
-        if (loadMethod != null) {
-            return loadMethod.load(runtime, name);
-        }
-        return null;
-    }
-
-    public void addAutoload(String name, IAutoloadMethod loadMethod) {
-        autoloadMap.put(name, loadMethod);
     }
 
     public void addBuiltinLibrary(String name, Library library) {

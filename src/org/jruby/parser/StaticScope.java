@@ -188,8 +188,7 @@ public abstract class StaticScope implements Serializable {
         IRubyObject result = cref.fastFetchConstant(internedName);
 
         if (result != null) {
-            if (result == RubyObject.UNDEF) return getUndefConstant(runtime, internedName, object);
-            return result;
+            return result == RubyObject.UNDEF ? cref.resolveUndefConstant(runtime, internedName) : result;
         }
 
         return previousCRefScope == null ? null : previousCRefScope.getConstantInnerNoObject(runtime, internedName, object);
@@ -197,13 +196,6 @@ public abstract class StaticScope implements Serializable {
     
     private IRubyObject getConstantInnerNoObject(Ruby runtime, String internedName, RubyModule object) {
         if (previousCRefScope == null) return null;
-
-        return getConstantInner(runtime, internedName, object);
-    }
-
-    /* Try and unload the autoload specified from internedName */
-    private IRubyObject getUndefConstant(Ruby runtime, String internedName, RubyModule object) {
-        if (cref.resolveUndefConstant(runtime, internedName) == null) return null;
 
         return getConstantInner(runtime, internedName, object);
     }

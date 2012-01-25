@@ -71,7 +71,6 @@ import static org.jruby.runtime.Visibility.*;
 import static org.jruby.CompatVersion.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.IAutoloadMethod;
-import org.jruby.runtime.load.LoadService;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.IdUtil;
 import org.jruby.util.ShellLauncher;
@@ -163,18 +162,15 @@ public class RubyKernel {
     public static IRubyObject autoload_p(ThreadContext context, final IRubyObject recv, IRubyObject symbol) {
         Ruby runtime = context.getRuntime();
         final RubyModule module = getModuleForAutoload(runtime, recv);
-        String name = module.getName() + "::" + symbol.asJavaString();
+        String name = symbol.asJavaString();
         
-        IAutoloadMethod autoloadMethod = runtime.getLoadService().autoloadFor(name);
-        if (autoloadMethod == null) return runtime.getNil();
-
-        return runtime.newString(autoloadMethod.file());
+        String file = module.getAutoloadFile(name);
+        return (file == null) ? runtime.getNil() : runtime.newString(file);
     }
 
     @JRubyMethod(required = 2, module = true, visibility = PRIVATE)
     public static IRubyObject autoload(final IRubyObject recv, IRubyObject symbol, final IRubyObject file) {
         Ruby runtime = recv.getRuntime(); 
-        final LoadService loadService = runtime.getLoadService();
         String nonInternedName = symbol.asJavaString();
         
         if (!IdUtil.isValidConstantName(nonInternedName)) {
@@ -189,27 +185,20 @@ public class RubyKernel {
         
         final String baseName = symbol.asJavaString().intern(); // interned, OK for "fast" methods
         final RubyModule module = getModuleForAutoload(runtime, recv);
-        String nm = module.getName() + "::" + baseName;
         
         IRubyObject existingValue = module.fastFetchConstant(baseName); 
         if (existingValue != null && existingValue != RubyObject.UNDEF) return runtime.getNil();
 
-        module.fastStoreConstant(baseName, RubyObject.UNDEF);
-
-        loadService.addAutoload(nm, new IAutoloadMethod() {
+        module.defineAutoload(baseName, new IAutoloadMethod() {
             public String file() {
                 return file.toString();
             }
-            /**
-             * @see org.jruby.runtime.load.IAutoloadMethod#load(Ruby, String)
-             */
-            public IRubyObject load(Ruby runtime, String name) {
-                boolean required = loadService.require(file());
-                
-                // File to be loaded by autoload has already been or is being loaded.
-                if (!required) return null;
-                
-                return module.fastGetConstant(baseName);
+
+            public void load(Ruby runtime) {
+                if (runtime.getLoadService().lockAndRequire(file())) {
+                    // Do not finish autoloading by cyclic autoload 
+                    module.finishAutoload(baseName);
+                }
             }
         });
         return runtime.getNil();
