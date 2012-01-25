@@ -4,6 +4,7 @@ import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.InlinerInfo;
+import org.jruby.compiler.ir.targets.JVM;
 
 public class LabelInstr extends Instr {
     public final Label label;
@@ -25,5 +26,9 @@ public class LabelInstr extends Instr {
 
     public Instr cloneForInlining(InlinerInfo ii) {
         return new LabelInstr(ii.getRenamedLabel(label));
+    }
+
+    public void compile(JVM jvm) {
+        jvm.method().mark(jvm.getLabel(label));
     }
 }

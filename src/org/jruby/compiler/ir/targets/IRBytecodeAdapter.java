@@ -19,7 +19,7 @@ import static org.jruby.util.CodegenUtils.*;
  *
  * @author headius
  */
-class IRBytecodeAdapter {
+public class IRBytecodeAdapter {
     public IRBytecodeAdapter(SkinnyMethodAdapter adapter, int arity, String... params) {
         this.adapter = adapter;
         this.arity = arity;

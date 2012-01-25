@@ -5,6 +5,7 @@ import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.InlinerInfo;
+import org.jruby.compiler.ir.targets.JVM;
 
 public class ReturnInstr extends Instr {
     public final IRMethod methodToReturnFrom;
@@ -44,5 +45,10 @@ public class ReturnInstr extends Instr {
     public Instr cloneForInlining(InlinerInfo ii) {
         // SSS FIXME: This should also look at the 'methodToReturnFrom' arg
         return new CopyInstr(ii.getCallResultVariable(), returnValue.cloneForInlining(ii));
+    }
+
+    public void compile(JVM jvm) {
+        jvm.emit(getOperands()[0]);
+        jvm.method().returnValue();
     }
 }

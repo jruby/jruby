@@ -367,6 +367,11 @@ public class LoadService {
     };
 
     private RequireState requireCommon(String requireName, boolean circularRequireWarning) {
+        // check for requiredName without extension.
+        if (featureAlreadyLoaded(requireName)) {
+            return RequireState.ALREADY_LOADED;
+        }
+
         if (!requireLocks.lock(requireName)) {
             if (circularRequireWarning && runtime.isVerbose() && runtime.is1_9()) {
                 warnCircularRequire(requireName);
@@ -378,7 +383,7 @@ public class LoadService {
                 throw runtime.newLoadError("no such file to load -- " + requireName);
             }
 
-            // check for requiredName without extension.
+            // check for requiredName again now that we're locked
             if (featureAlreadyLoaded(requireName)) {
                 return RequireState.ALREADY_LOADED;
             }

@@ -5,6 +5,7 @@ import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
+import org.jruby.compiler.ir.targets.JVM;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
@@ -60,8 +61,30 @@ public class CallInstr extends CallBase implements ResultInstr {
     public String toString() {
         return "" + result + (hasUnusedResult() ? "[DEAD-RESULT]" : "") + " = " + super.toString();
     }
-    
-    
+
+    public void compile(JVM jvm) {
+        jvm.method().loadLocal(0);
+        jvm.emit(getReceiver());
+        for (Operand operand : getCallArgs()) {
+            jvm.emit(operand);
+        }
+
+        switch (getCallType()) {
+            case FUNCTIONAL:
+            case VARIABLE:
+                jvm.method().invokeSelf(getMethodAddr().getName(), getCallArgs().length);
+                break;
+            case NORMAL:
+                jvm.method().invokeOther(getMethodAddr().getName(), getCallArgs().length);
+                break;
+            case SUPER:
+                jvm.method().invokeSuper(getMethodAddr().getName(), getCallArgs().length);
+                break;
+        }
+
+        int index = jvm.methodData().local(getResult());
+        jvm.method().storeLocal(index);
+    }
     
 /* FIXME: Dead code which I think should be a special instr (enebo)
         Object ma = methAddr.retrieve(interp, context, self);

@@ -20,6 +20,8 @@ import org.jruby.compiler.ir.compiler_pass.InlineTest;
 import org.jruby.compiler.ir.compiler_pass.opts.DeadCodeElimination;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.operands.Constant;
+import org.jruby.compiler.ir.operands.CurrentModule;
+import org.jruby.compiler.ir.operands.CurrentScope;
 import org.jruby.compiler.ir.operands.Fixnum;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
@@ -27,6 +29,7 @@ import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.CodegenUtils;
+import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -130,6 +133,20 @@ public class JVM implements CompilerTarget {
             if (commandLineScript != null) break;
         }
     }
+
+    public static Class compile(Ruby ruby, Node ast, JRubyClassLoader jrubyClassLoader) {
+        IRScope scope = new IRBuilder(ruby.getIRManager()).buildRoot((RootNode) ast);
+
+        // additional passes not enabled in builder yet
+        //scope.runCompilerPass(new DeadCodeElimination());
+
+        // run compiler
+        CompilerTarget target = new JDK7();
+
+        target.codegen(scope);
+
+        return jrubyClassLoader.defineClass(scriptToClass(scope.getName()), target.code());
+    }
     
     public static final int CMP_EQ = 0;
 
@@ -151,32 +168,14 @@ public class JVM implements CompilerTarget {
 
     public void pushclass() {
         PrintWriter pw = new PrintWriter(System.out);
-        clsStack.push(
-                new ClassData(
-                        new TraceClassVisitor(
-//                                new CheckClassAdapter(
-                                        new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS),
-//                                ),
-                                pw
-                        )
-                )
-        );
+        clsStack.push(new ClassData(new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS)));
         pw.flush();
     }
 
     public void pushscript() {
         PrintWriter pw = new PrintWriter(System.out);
         writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
-        clsStack.push(
-                new ClassData(
-                        new TraceClassVisitor(
-//                                new CheckClassAdapter(
-                                        writer,
-//                                ),
-                                pw
-                        )
-                )
-        );
+        clsStack.push(new ClassData(writer));
         pw.flush();
     }
 
@@ -237,6 +236,8 @@ public class JVM implements CompilerTarget {
         pushmethod(method.getName(), method.getCallArgs().length);
 
         for (Instr instr: method.getInstrs()) {
+            System.out.println(instr);
+            System.out.println(instr.getClass());
             emit(instr);
         }
         
@@ -244,17 +245,14 @@ public class JVM implements CompilerTarget {
     }
 
     public void emit(Instr instr) {
-        JVMEmitter emitter = JVMEmitter.MAP.get(instr.getOperation());
-        if (emitter == null) {
-            System.err.println("unsupported instruction: " + instr.getOperation());
-            return;
-        }
-        emitter.emit(this, instr);
+        instr.compile(this);
     }
 
     public void emitConstant(Constant constant) {
         if (constant instanceof Fixnum) {
             method().push(((Fixnum)constant).value);
+        } else {
+            throw new RuntimeException("unsupported constant in compiler: " + constant.getClass());
         }
     }
 
@@ -263,6 +261,12 @@ public class JVM implements CompilerTarget {
             emitConstant((Constant)operand);
         } else if (operand instanceof Variable) {
             emitVariable((Variable)operand);
+        } else if (operand instanceof CurrentScope) {
+            method().adapter.aconst_null();
+        } else if (operand instanceof CurrentModule) {
+            method().adapter.aconst_null();
+        } else {
+            throw new RuntimeException("unsupported operand in compiler: " + operand.getClass());
         }
     }
 

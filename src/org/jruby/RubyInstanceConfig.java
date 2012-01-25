@@ -1252,11 +1252,11 @@ public class RubyInstanceConfig {
 	}
 
     public enum CompileMode {
-        JIT, FORCE, OFF, OFFIR;
+        JIT, FORCE, FORCEIR, OFF, OFFIR;
 
         public boolean shouldPrecompileCLI() {
             switch (this) {
-            case JIT: case FORCE:
+            case JIT: case FORCE: case FORCEIR:
                 if (DYNOPT_COMPILE_ENABLED) {
                     // don't precompile the CLI script in dynopt mode
                     return false;
@@ -1268,7 +1268,7 @@ public class RubyInstanceConfig {
 
         public boolean shouldJIT() {
             switch (this) {
-            case JIT: case FORCE:
+            case JIT: case FORCE: case FORCEIR:
                 return true;
             }
             return false;

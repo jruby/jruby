@@ -4,6 +4,7 @@ import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.InlinerInfo;
+import org.jruby.compiler.ir.targets.JVM;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -31,5 +32,9 @@ public class JumpInstr extends Instr {
 
     public Instr cloneForInlining(InlinerInfo ii) {
         return new JumpInstr(ii.getRenamedLabel(target));
+    }
+
+    public void compile(JVM jvm) {
+        jvm.method().goTo(jvm.getLabel(target));
     }
 }

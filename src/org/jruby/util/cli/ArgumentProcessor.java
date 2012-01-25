@@ -343,6 +343,8 @@ public class ArgumentProcessor {
                         config.setCompileMode(RubyInstanceConfig.CompileMode.OFFIR);
                     } else if (extendedOption.equals("+C")) {
                         config.setCompileMode(RubyInstanceConfig.CompileMode.FORCE);
+                    } else if (extendedOption.equals("+CIR")) {
+                        config.setCompileMode(RubyInstanceConfig.CompileMode.FORCEIR);
                     } else {
                         MainExitException mee = new MainExitException(1, "jruby: invalid extended option " + extendedOption + " (-X will list valid options)\n");
                         mee.setUsageError(true);

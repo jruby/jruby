@@ -6,6 +6,7 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.Ruby;
+import org.jruby.compiler.ir.targets.JVM;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Block.Type;
 import org.jruby.runtime.ThreadContext;
@@ -39,5 +40,9 @@ public class ReceiveClosureInstr extends Instr implements ResultInstr {
         // SSS FIXME: This is not strictly correct -- we have to wrap the block into an
         // operand type that converts the static code block to a proc which is a closure.
         return new CopyInstr(ii.getRenamedVariable(result), ii.getCallClosure());
+    }
+
+    public void compile(JVM jvm) {
+        int closureIndex = jvm.method().newLocal("$block", org.objectweb.asm.Type.getType(Block.class));
     }
 }

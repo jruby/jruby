@@ -9,6 +9,7 @@ import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
+import org.jruby.compiler.ir.targets.JVM;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -63,6 +64,12 @@ public class CopyInstr extends Instr implements ResultInstr {
     @Override
     public String toString() { 
         return (arg instanceof Variable) ? (super.toString() + "(" + arg + ")") : (result + " = " + arg);
+    }
+
+    public void compile(JVM jvm) {
+        int index = jvm.methodData().local(getResult());
+        jvm.emit(getSource());
+        jvm.method().storeLocal(index);
     }
 
 }

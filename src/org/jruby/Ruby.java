@@ -39,6 +39,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jruby.ast.executable.AbstractScript;
+import org.jruby.compiler.ir.targets.JVM;
 import org.jruby.util.func.Function1;
 import java.io.ByteArrayInputStream;
 import java.io.FileDescriptor;
@@ -193,8 +195,12 @@ public final class Ruby {
             org.jruby.util.SimpleSampler.registerThreadContext(threadService.getCurrentContext());
         }
         
-        this.staticScopeFactory = config.getCompileMode() == CompileMode.OFFIR ?
-                new IRStaticScopeFactory(this) : new StaticScopeFactory(this);
+        if (config.getCompileMode() == CompileMode.OFFIR ||
+                config.getCompileMode() == CompileMode.FORCEIR) {
+            this.staticScopeFactory = new IRStaticScopeFactory(this);
+        } else {
+            this.staticScopeFactory = new StaticScopeFactory(this);
+        }
 
         this.in                 = config.getInput();
         this.out                = config.getOutput();
@@ -628,7 +634,7 @@ public final class Ruby {
             if (config.isShowBytecode()) {
                 return getNil();
             }
-            
+
             return runScript(script);
         } else {
             failForcedCompile(scriptNode);
@@ -678,6 +684,22 @@ public final class Ruby {
     }
 
     private Script tryCompile(Node node, String cachedClassName, JRubyClassLoader classLoader, boolean dump) {
+        if (config.getCompileMode() == CompileMode.FORCEIR) {
+            final Class compiled = JVM.compile(this, node, classLoader);
+            return new AbstractScript() {
+                public IRubyObject __file__(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
+                    try {
+                        return (IRubyObject)compiled.getMethod("__script__", ThreadContext.class, IRubyObject.class).invoke(null, getCurrentContext(), getTopSelf());
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+
+                public IRubyObject load(ThreadContext context, IRubyObject self, boolean wrap) {
+                    return __file__(context, self, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+                }
+            };
+        }
         ASTInspector inspector = new ASTInspector();
         inspector.inspect(node);
 

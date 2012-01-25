@@ -14,6 +14,7 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.StringLiteral;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
+import org.jruby.compiler.ir.targets.JVM;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -225,5 +226,29 @@ public class JRubyImplCallInstr extends CallInstr {
         }
 
         return hasUnusedResult() ? null : rVal;
+    }
+
+    public void compile(JVM jvm) {
+        jvm.method().loadLocal(0);
+        jvm.emit(getReceiver());
+        for (Operand operand : getCallArgs()) {
+            jvm.emit(operand);
+        }
+
+        switch (getCallType()) {
+            case FUNCTIONAL:
+            case VARIABLE:
+                jvm.method().invokeSelf(getMethodAddr().getName(), getCallArgs().length);
+                break;
+            case NORMAL:
+                jvm.method().invokeOther(getMethodAddr().getName(), getCallArgs().length);
+                break;
+            case SUPER:
+                jvm.method().invokeSuper(getMethodAddr().getName(), getCallArgs().length);
+                break;
+        }
+
+        int index = jvm.methodData().local(getResult());
+        jvm.method().storeLocal(index);
     }
 }

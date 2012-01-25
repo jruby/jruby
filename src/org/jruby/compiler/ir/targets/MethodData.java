@@ -14,7 +14,7 @@ import org.jruby.compiler.ir.operands.Variable;
  *
  * @author headius
  */
-class MethodData {
+public class MethodData {
 
     public MethodData(SkinnyMethodAdapter method, int arity) {
         this.method = new IRBytecodeAdapter(method, arity);

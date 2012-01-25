@@ -4,6 +4,7 @@ import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.InlinerInfo;
+import org.jruby.compiler.ir.targets.JVM;
 
 public class LineNumberInstr extends Instr {
     public final int lineNumber;
@@ -26,5 +27,9 @@ public class LineNumberInstr extends Instr {
 
     public Instr cloneForInlining(InlinerInfo ii) {
         return this;
+    }
+
+    public void compile(JVM jvm) {
+        jvm.method().adapter.line(lineNumber);
     }
 }

@@ -7,6 +7,7 @@ import org.jruby.compiler.ir.operands.Nil;
 import org.jruby.compiler.ir.operands.UndefinedValue;
 import org.jruby.compiler.ir.operands.BooleanLiteral;
 import org.jruby.compiler.ir.representations.InlinerInfo;
+import org.jruby.compiler.ir.targets.JVM;
 
 public class BEQInstr extends BranchInstr {
     public static BranchInstr create(Operand v1, Operand v2, Label jmpTarget) {
@@ -23,5 +24,13 @@ public class BEQInstr extends BranchInstr {
 
     public Instr cloneForInlining(InlinerInfo ii) {
         return new BEQInstr(getArg1().cloneForInlining(ii), getArg2().cloneForInlining(ii), ii.getRenamedLabel(getJumpTarget()));
+    }
+
+    public void compile(JVM jvm) {
+        Operand[] args = getOperands();
+        jvm.method().loadLocal(0);
+        jvm.emit(args[0]);
+        jvm.emit(args[1]);
+        jvm.method().invokeOtherBoolean("==", 1);
     }
 }

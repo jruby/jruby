@@ -13,6 +13,7 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 
+import org.jruby.compiler.ir.targets.JVM;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -179,5 +180,9 @@ public abstract class Instr {
     @Interp
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         throw new RuntimeException(this.getClass().getSimpleName() + " should not be directly interpreted");
+    }
+
+    public void compile(JVM jvm) {
+        throw new RuntimeException(this.getClass().getSimpleName() + " has no compile logic");
     }
 }

@@ -4,6 +4,7 @@ import org.jruby.RubyClass;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.InlinerInfo;
+import org.jruby.compiler.ir.targets.JVM;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -29,5 +30,13 @@ public class PutFieldInstr extends PutInstr {
         clazz.getVariableAccessorForWrite(getRef()).set(object, 
                 getValue().retrieve(context, self, currDynScope, temp));
         return null;
+    }
+
+    public void compile(JVM jvm) {
+        String field = getRef();
+        jvm.declareField(field);
+        jvm.emit(getValue());
+        jvm.emit(getTarget());
+        jvm.method().putField(JVM.OBJECT_TYPE, field, JVM.OBJECT_TYPE);
     }
 }

@@ -4,6 +4,7 @@ import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
+import org.jruby.compiler.ir.targets.JVM;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -37,5 +38,11 @@ public class ReceiveSelfInstruction extends Instr implements ResultInstr {
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         return new CopyInstr(ii.getRenamedVariable(result), ii.getCallReceiver());
+    }
+
+    public void compile(JVM jvm) {
+        int $selfIndex = jvm.methodData().local(getResult());
+        jvm.method().loadLocal(1);
+        jvm.method().storeLocal($selfIndex);
     }
 }
