@@ -1,2 +1,2 @@
-exclude :test_format_float
-exclude :test_format_integer
+exclude :test_format_float, "needs investigation"
+exclude :test_format_integer, "needs investigation"

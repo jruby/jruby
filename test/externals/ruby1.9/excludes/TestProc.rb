@@ -1,14 +1,14 @@
-exclude :test_attr_source_location
-exclude :test_block_propagation
-exclude :test_curry
-exclude :test_curry_from_knownbug
-exclude :test_curry_ski_fib
-exclude :test_curry_with_trace
-exclude :test_dup_clone
-exclude :test_parameters
-exclude :test_proc_args_opt_and_post
-exclude :test_proc_args_opt_and_post_and_block
-exclude :test_proc_lambda
-exclude :test_proc_location
-exclude :test_safe
-exclude :test_to_s
+exclude :test_attr_source_location, "needs investigation"
+exclude :test_block_propagation, "needs investigation"
+exclude :test_curry, "needs investigation"
+exclude :test_curry_from_knownbug, "needs investigation"
+exclude :test_curry_ski_fib, "needs investigation"
+exclude :test_curry_with_trace, "needs investigation"
+exclude :test_dup_clone, "needs investigation"
+exclude :test_parameters, "needs investigation"
+exclude :test_proc_args_opt_and_post, "needs investigation"
+exclude :test_proc_args_opt_and_post_and_block, "needs investigation"
+exclude :test_proc_lambda, "needs investigation"
+exclude :test_proc_location, "needs investigation"
+exclude :test_safe, "needs investigation"
+exclude :test_to_s, "needs investigation"

@@ -1,3 +1,3 @@
-exclude :test_fixnum_minus
-exclude :test_fixnum_plus
-exclude :test_tailcall
+exclude :test_fixnum_minus, "needs investigation"
+exclude :test_fixnum_plus, "needs investigation"
+exclude :test_tailcall, "needs investigation"

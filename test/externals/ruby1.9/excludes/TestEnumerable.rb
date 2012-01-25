@@ -1,2 +1,2 @@
-exclude :test_zip
-exclude :test_slice_before
+exclude :test_zip, "needs investigation"
+exclude :test_slice_before, "needs investigation"

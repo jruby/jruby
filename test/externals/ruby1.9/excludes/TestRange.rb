@@ -1,8 +1,8 @@
-exclude :test_beg_len
-exclude :test_comparison_when_recursive
-exclude :test_cyclic_range_inspect
-exclude :test_duckrange
-exclude :test_max
-exclude :test_range_numeric_string
-exclude :test_step
-exclude :test_step_ruby_core_35753
+exclude :test_beg_len, "needs investigation"
+exclude :test_comparison_when_recursive, "needs investigation"
+exclude :test_cyclic_range_inspect, "needs investigation"
+exclude :test_duckrange, "needs investigation"
+exclude :test_max, "needs investigation"
+exclude :test_range_numeric_string, "needs investigation"
+exclude :test_step, "needs investigation"
+exclude :test_step_ruby_core_35753, "needs investigation"

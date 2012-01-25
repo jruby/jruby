@@ -1,2 +1,2 @@
-exclude :test_yield
-exclude :test_yield_lambda
+exclude :test_yield, "needs investigation"
+exclude :test_yield_lambda, "needs investigation"

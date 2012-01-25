@@ -1,1 +1,1 @@
-exclude :test_ascii_incomat_inspect
+exclude :test_ascii_incomat_inspect, "needs investigation"

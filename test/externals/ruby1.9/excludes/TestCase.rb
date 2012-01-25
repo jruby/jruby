@@ -1,1 +1,1 @@
-exclude :test_deoptimization
+exclude :test_deoptimization, "needs investigation"

@@ -1,3 +1,3 @@
-exclude :test_dregexp
-exclude :test_integer
-exclude :test_string
+exclude :test_dregexp, "needs investigation"
+exclude :test_integer, "needs investigation"
+exclude :test_string, "needs investigation"

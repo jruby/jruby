@@ -1,1 +1,1 @@
-exclude :test_special_const_undef
+exclude :test_special_const_undef, "needs investigation"

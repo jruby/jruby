@@ -1,3 +1,3 @@
-exclude :test_find
-exclude :test_replicate
-exclude :test_unsafe
+exclude :test_find, "needs investigation"
+exclude :test_replicate, "needs investigation"
+exclude :test_unsafe, "needs investigation"

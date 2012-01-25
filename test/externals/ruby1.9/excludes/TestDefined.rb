@@ -1,3 +1,3 @@
-exclude :test_autoloaded_noload
-exclude :test_autoloaded_subclass
-exclude :test_defined
+exclude :test_autoloaded_noload, "needs investigation"
+exclude :test_autoloaded_subclass, "needs investigation"
+exclude :test_defined, "needs investigation"

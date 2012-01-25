@@ -1,1 +1,1 @@
-exclude :test_define_method
+exclude :test_define_method, "needs investigation"

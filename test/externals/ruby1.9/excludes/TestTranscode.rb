@@ -1,63 +1,63 @@
-exclude :test_Big5
-exclude :test_Big5_Hkscs
-exclude :test_Big5_UAO
-exclude :test_CP850
-exclude :test_CP852
-exclude :test_CP855
-exclude :test_IBM437
-exclude :test_IBM775
-exclude :test_IBM852
-exclude :test_IBM855
-exclude :test_IBM857
-exclude :test_IBM860
-exclude :test_IBM861
-exclude :test_IBM862
-exclude :test_IBM863
-exclude :test_IBM865
-exclude :test_IBM866
-exclude :test_IBM869
-exclude :test_TIS_620
-exclude :test_all_bytes
-exclude :test_ascii_range
-exclude :test_encodings
-exclude :test_errors
-exclude :test_euc_jp
-exclude :test_eucjp_ms
-exclude :test_eucjp_sjis_unassigned
-exclude :test_eucjp_sjis_undef
-exclude :test_fallback
-exclude :test_fallback_hash_default
-exclude :test_fallback_method
-exclude :test_fallback_proc
-exclude :test_from_cp50221
-exclude :test_gb2312
-exclude :test_gbk
-exclude :test_invalid_ignore
-exclude :test_invalid_replace
-exclude :test_invalid_replace_string
-exclude :test_iso_2022_jp
-exclude :test_macCroatian
-exclude :test_macCyrillic
-exclude :test_macGreek
-exclude :test_macIceland
-exclude :test_macRoman
-exclude :test_macRomania
-exclude :test_macTurkish
-exclude :test_macUkraine
-exclude :test_noargument
-exclude :test_shift_jis
-exclude :test_tilde_overline
-exclude :test_to_cp50221
-exclude :test_undef_replace_string
-exclude :test_utf8_mac
-exclude :test_utf_16_bom
-exclude :test_utf_32_bom
-exclude :test_windows_1250
-exclude :test_windows_1251
-exclude :test_windows_1252
-exclude :test_windows_1253
-exclude :test_windows_1254
-exclude :test_windows_1255
-exclude :test_windows_1257
-exclude :test_windows_874
-exclude :test_yen_sign
+exclude :test_Big5, "needs investigation"
+exclude :test_Big5_Hkscs, "needs investigation"
+exclude :test_Big5_UAO, "needs investigation"
+exclude :test_CP850, "needs investigation"
+exclude :test_CP852, "needs investigation"
+exclude :test_CP855, "needs investigation"
+exclude :test_IBM437, "needs investigation"
+exclude :test_IBM775, "needs investigation"
+exclude :test_IBM852, "needs investigation"
+exclude :test_IBM855, "needs investigation"
+exclude :test_IBM857, "needs investigation"
+exclude :test_IBM860, "needs investigation"
+exclude :test_IBM861, "needs investigation"
+exclude :test_IBM862, "needs investigation"
+exclude :test_IBM863, "needs investigation"
+exclude :test_IBM865, "needs investigation"
+exclude :test_IBM866, "needs investigation"
+exclude :test_IBM869, "needs investigation"
+exclude :test_TIS_620, "needs investigation"
+exclude :test_all_bytes, "needs investigation"
+exclude :test_ascii_range, "needs investigation"
+exclude :test_encodings, "needs investigation"
+exclude :test_errors, "needs investigation"
+exclude :test_euc_jp, "needs investigation"
+exclude :test_eucjp_ms, "needs investigation"
+exclude :test_eucjp_sjis_unassigned, "needs investigation"
+exclude :test_eucjp_sjis_undef, "needs investigation"
+exclude :test_fallback, "needs investigation"
+exclude :test_fallback_hash_default, "needs investigation"
+exclude :test_fallback_method, "needs investigation"
+exclude :test_fallback_proc, "needs investigation"
+exclude :test_from_cp50221, "needs investigation"
+exclude :test_gb2312, "needs investigation"
+exclude :test_gbk, "needs investigation"
+exclude :test_invalid_ignore, "needs investigation"
+exclude :test_invalid_replace, "needs investigation"
+exclude :test_invalid_replace_string, "needs investigation"
+exclude :test_iso_2022_jp, "needs investigation"
+exclude :test_macCroatian, "needs investigation"
+exclude :test_macCyrillic, "needs investigation"
+exclude :test_macGreek, "needs investigation"
+exclude :test_macIceland, "needs investigation"
+exclude :test_macRoman, "needs investigation"
+exclude :test_macRomania, "needs investigation"
+exclude :test_macTurkish, "needs investigation"
+exclude :test_macUkraine, "needs investigation"
+exclude :test_noargument, "needs investigation"
+exclude :test_shift_jis, "needs investigation"
+exclude :test_tilde_overline, "needs investigation"
+exclude :test_to_cp50221, "needs investigation"
+exclude :test_undef_replace_string, "needs investigation"
+exclude :test_utf8_mac, "needs investigation"
+exclude :test_utf_16_bom, "needs investigation"
+exclude :test_utf_32_bom, "needs investigation"
+exclude :test_windows_1250, "needs investigation"
+exclude :test_windows_1251, "needs investigation"
+exclude :test_windows_1252, "needs investigation"
+exclude :test_windows_1253, "needs investigation"
+exclude :test_windows_1254, "needs investigation"
+exclude :test_windows_1255, "needs investigation"
+exclude :test_windows_1257, "needs investigation"
+exclude :test_windows_874, "needs investigation"
+exclude :test_yen_sign, "needs investigation"

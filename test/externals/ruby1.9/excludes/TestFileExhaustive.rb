@@ -1,15 +1,15 @@
-exclude :test_basename
-exclude :test_dirname
-exclude :test_expand_path
-exclude :test_extname
-exclude :test_find_file
-exclude :test_stat
-exclude :test_stat_init
-exclude :test_umask
-exclude :test_unlink
-exclude :test_utime
-exclude :test_world_readable_p
-exclude :test_world_writable_p
-exclude :test_writable_p
-exclude :test_writable_real_p
-exclude :test_zero_p
+exclude :test_basename, "needs investigation"
+exclude :test_dirname, "needs investigation"
+exclude :test_expand_path, "needs investigation"
+exclude :test_extname, "needs investigation"
+exclude :test_find_file, "needs investigation"
+exclude :test_stat, "needs investigation"
+exclude :test_stat_init, "needs investigation"
+exclude :test_umask, "needs investigation"
+exclude :test_unlink, "needs investigation"
+exclude :test_utime, "needs investigation"
+exclude :test_world_readable_p, "needs investigation"
+exclude :test_world_writable_p, "needs investigation"
+exclude :test_writable_p, "needs investigation"
+exclude :test_writable_real_p, "needs investigation"
+exclude :test_zero_p, "needs investigation"

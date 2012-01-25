@@ -1,1 +1,1 @@
-exclude :test_metaclass
+exclude :test_metaclass, "needs investigation"

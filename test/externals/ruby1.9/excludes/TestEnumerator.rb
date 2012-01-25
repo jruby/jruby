@@ -1,18 +1,18 @@
-exclude :test_feed
-exclude :test_feed_before_first_next
-exclude :test_feed_mixed
-exclude :test_feed_twice
-exclude :test_feed_yielder
-exclude :test_generator
-exclude :test_initialize
-exclude :test_initialize_copy
-exclude :test_nested_itaration
-exclude :test_next_rewind
-exclude :test_next_values
-exclude :test_peek_modify
-exclude :test_peek_values
-exclude :test_peek_values_modify
-exclude :test_rewind_clear_feed
-exclude :test_stop_result
-exclude :test_with_index
-exclude :test_with_object
+exclude :test_feed, "needs investigation"
+exclude :test_feed_before_first_next, "needs investigation"
+exclude :test_feed_mixed, "needs investigation"
+exclude :test_feed_twice, "needs investigation"
+exclude :test_feed_yielder, "needs investigation"
+exclude :test_generator, "needs investigation"
+exclude :test_initialize, "needs investigation"
+exclude :test_initialize_copy, "needs investigation"
+exclude :test_nested_itaration, "needs investigation"
+exclude :test_next_rewind, "needs investigation"
+exclude :test_next_values, "needs investigation"
+exclude :test_peek_modify, "needs investigation"
+exclude :test_peek_values, "needs investigation"
+exclude :test_peek_values_modify, "needs investigation"
+exclude :test_rewind_clear_feed, "needs investigation"
+exclude :test_stop_result, "needs investigation"
+exclude :test_with_index, "needs investigation"
+exclude :test_with_object, "needs investigation"

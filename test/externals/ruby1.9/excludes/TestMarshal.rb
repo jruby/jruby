@@ -1,9 +1,9 @@
-exclude :test_change_struct
-exclude :test_inconsistent_struct
-exclude :test_modify_array_during_dump
-exclude :test_regexp
-exclude :test_struct_invalid_members
-exclude :test_time_subclass
-exclude :test_userdef_encoding
-exclude :test_context_switch
-exclude :test_class_nonascii
+exclude :test_change_struct, "needs investigation"
+exclude :test_inconsistent_struct, "needs investigation"
+exclude :test_modify_array_during_dump, "needs investigation"
+exclude :test_regexp, "needs investigation"
+exclude :test_struct_invalid_members, "needs investigation"
+exclude :test_time_subclass, "needs investigation"
+exclude :test_userdef_encoding, "needs investigation"
+exclude :test_context_switch, "needs investigation"
+exclude :test_class_nonascii, "needs investigation"

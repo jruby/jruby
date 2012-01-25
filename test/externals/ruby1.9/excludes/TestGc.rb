@@ -1,3 +1,3 @@
-exclude :test_count
-exclude :test_gc_parameter
-exclude :test_stat
+exclude :test_count, "needs investigation"
+exclude :test_gc_parameter, "needs investigation"
+exclude :test_stat, "needs investigation"

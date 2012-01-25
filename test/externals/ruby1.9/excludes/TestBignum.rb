@@ -1,6 +1,6 @@
-exclude :test_big_fdiv
-exclude :test_eq
-exclude :test_fix_fdiv
-exclude :test_float_fdiv
-exclude :test_interrupt
-exclude :test_pow
+exclude :test_big_fdiv, "needs investigation"
+exclude :test_eq, "needs investigation"
+exclude :test_fix_fdiv, "needs investigation"
+exclude :test_float_fdiv, "needs investigation"
+exclude :test_interrupt, "needs investigation"
+exclude :test_pow, "needs investigation"

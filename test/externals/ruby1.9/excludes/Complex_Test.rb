@@ -1,4 +1,4 @@
-exclude :test_coerce
-exclude :test_rationalize
-exclude :test_respond
-exclude :test_supp
+exclude :test_coerce, "needs investigation"
+exclude :test_rationalize, "needs investigation"
+exclude :test_respond, "needs investigation"
+exclude :test_supp, "needs investigation"

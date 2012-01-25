@@ -36,7 +36,7 @@ namespace :test do
   end
   desc "Run tracing tests (do not forget to pass --debug)"
 
-  task :mri19 do
+  task :mri19 => ['install_dev_gems'] do
     require 'rake/testtask'
     Rake::TestTask.new('test:mri19') do |t|
       files = []

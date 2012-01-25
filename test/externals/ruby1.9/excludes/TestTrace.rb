@@ -1,2 +1,2 @@
-exclude :test_trace_break
-exclude :test_trace_string
+exclude :test_trace_break, "needs investigation"
+exclude :test_trace_string, "needs investigation"

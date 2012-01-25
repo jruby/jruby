@@ -1,14 +1,14 @@
-exclude :test_each_byte_extended_file
-exclude :test_each_char_extended_file
-exclude :test_eof_0
-exclude :test_eof_0_seek
-exclude :test_eof_1
-exclude :test_getbyte_extended_file 
-exclude :test_getc_extended_file 
-exclude :test_gets_extended_file 
-exclude :test_gets_para_extended_file 
-exclude :test_read_all_extended_file 
-exclude :test_realdirpath 
-exclude :test_realpath 
-exclude :test_s_chown 
-exclude :test_uninitialized 
+exclude :test_each_byte_extended_file, "needs investigation"
+exclude :test_each_char_extended_file, "needs investigation"
+exclude :test_eof_0, "needs investigation"
+exclude :test_eof_0_seek, "needs investigation"
+exclude :test_eof_1, "needs investigation"
+exclude :test_getbyte_extended_file , "needs investigation"
+exclude :test_getc_extended_file , "needs investigation"
+exclude :test_gets_extended_file , "needs investigation"
+exclude :test_gets_para_extended_file , "needs investigation"
+exclude :test_read_all_extended_file , "needs investigation"
+exclude :test_realdirpath , "needs investigation"
+exclude :test_realpath , "needs investigation"
+exclude :test_s_chown , "needs investigation"
+exclude :test_uninitialized , "needs investigation"

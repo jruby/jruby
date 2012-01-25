@@ -1,7 +1,7 @@
-exclude :test_to_a
-exclude :test_security_check
-exclude :test_replace2
-exclude :test_inverse_hash
-exclude :test_fetch_error
-exclude :test_eql
-exclude :test_callcc
+exclude :test_to_a, "needs investigation"
+exclude :test_security_check, "needs investigation"
+exclude :test_replace2, "needs investigation"
+exclude :test_inverse_hash, "needs investigation"
+exclude :test_fetch_error, "needs investigation"
+exclude :test_eql, "needs investigation"
+exclude :test_callcc, "needs investigation"

@@ -1,8 +1,8 @@
-exclude :test_arg_concat
-exclude :test_assign_in_conditional
-exclude :test_invalid_char
-exclude :test_question
-exclude :test_symbol
-exclude :test_utf8_bom
-exclude :test_void_expr_stmts_value
-exclude :test_xstring
+exclude :test_arg_concat, "needs investigation"
+exclude :test_assign_in_conditional, "needs investigation"
+exclude :test_invalid_char, "needs investigation"
+exclude :test_question, "needs investigation"
+exclude :test_symbol, "needs investigation"
+exclude :test_utf8_bom, "needs investigation"
+exclude :test_void_expr_stmts_value, "needs investigation"
+exclude :test_xstring, "needs investigation"

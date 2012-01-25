@@ -1,6 +1,6 @@
-exclude :test_cmp
-exclude :test_coerce
-exclude :test_coerce2
-exclude :test_conv
-exclude :test_ratsub
-exclude :test_marshal
+exclude :test_cmp, "needs investigation"
+exclude :test_coerce, "needs investigation"
+exclude :test_coerce2, "needs investigation"
+exclude :test_conv, "needs investigation"
+exclude :test_ratsub, "needs investigation"
+exclude :test_marshal, "needs investigation"

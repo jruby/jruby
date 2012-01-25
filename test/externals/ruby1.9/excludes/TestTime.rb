@@ -1,17 +1,17 @@
-exclude :test_at
-exclude :test_at2
-exclude :test_at_rational
-exclude :test_delegate
-exclude :test_eq_nsec
-exclude :test_localtime_gmtime
-exclude :test_marshal_nsec_191
-exclude :test_marshal_timezone
-exclude :test_new
-exclude :test_plus_type
-exclude :test_round
-exclude :test_security_error
-exclude :test_strftime
-exclude :test_time_add
-exclude :test_time_interval
-exclude :test_to_r
-exclude :test_utc_or_local
+exclude :test_at, "needs investigation"
+exclude :test_at2, "needs investigation"
+exclude :test_at_rational, "needs investigation"
+exclude :test_delegate, "needs investigation"
+exclude :test_eq_nsec, "needs investigation"
+exclude :test_localtime_gmtime, "needs investigation"
+exclude :test_marshal_nsec_191, "needs investigation"
+exclude :test_marshal_timezone, "needs investigation"
+exclude :test_new, "needs investigation"
+exclude :test_plus_type, "needs investigation"
+exclude :test_round, "needs investigation"
+exclude :test_security_error, "needs investigation"
+exclude :test_strftime, "needs investigation"
+exclude :test_time_add, "needs investigation"
+exclude :test_time_interval, "needs investigation"
+exclude :test_to_r, "needs investigation"
+exclude :test_utc_or_local, "needs investigation"

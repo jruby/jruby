@@ -1,7 +1,7 @@
-exclude :test_aref
-exclude :test_lshift
-exclude :test_pack
-exclude :test_pow
-exclude :test_printf_diu
-exclude :test_printf_o
-exclude :test_rshift
+exclude :test_aref, "needs investigation"
+exclude :test_lshift, "needs investigation"
+exclude :test_pack, "needs investigation"
+exclude :test_pow, "needs investigation"
+exclude :test_printf_diu, "needs investigation"
+exclude :test_printf_o, "needs investigation"
+exclude :test_rshift, "needs investigation"

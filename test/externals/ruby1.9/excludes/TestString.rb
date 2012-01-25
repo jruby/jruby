@@ -1,16 +1,16 @@
-exclude :test_LSHIFT
-exclude :test_ascii_incomat_inspect
-exclude :test_byteslice
-exclude :test_chop!
-exclude :test_count
-exclude :test_delete
-exclude :test_dummy_inspect
-exclude :test_gsub_encoding
-exclude :test_gsub_enumerator
-exclude :test_hash_random
-exclude :test_prepend
-exclude :test_rstrip
-exclude :test_strip
-exclude :test_tr
-exclude :test_tr!
-exclude :test_upto_nonalnum
+exclude :test_LSHIFT, "needs investigation"
+exclude :test_ascii_incomat_inspect, "needs investigation"
+exclude :test_byteslice, "needs investigation"
+exclude :test_chop!, "needs investigation"
+exclude :test_count, "needs investigation"
+exclude :test_delete, "needs investigation"
+exclude :test_dummy_inspect, "needs investigation"
+exclude :test_gsub_encoding, "needs investigation"
+exclude :test_gsub_enumerator, "needs investigation"
+exclude :test_hash_random, "needs investigation"
+exclude :test_prepend, "needs investigation"
+exclude :test_rstrip, "needs investigation"
+exclude :test_strip, "needs investigation"
+exclude :test_tr, "needs investigation"
+exclude :test_tr!, "needs investigation"
+exclude :test_upto_nonalnum, "needs investigation"

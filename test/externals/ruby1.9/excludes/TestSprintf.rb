@@ -1,7 +1,7 @@
-exclude :test_binary
-exclude :test_float
-exclude :test_float_hex
-exclude :test_inf
-exclude :test_invalid
-exclude :test_named
-exclude :test_nan
+exclude :test_binary, "needs investigation"
+exclude :test_float, "needs investigation"
+exclude :test_float_hex, "needs investigation"
+exclude :test_inf, "needs investigation"
+exclude :test_invalid, "needs investigation"
+exclude :test_named, "needs investigation"
+exclude :test_nan, "needs investigation"
