@@ -3,6 +3,7 @@ package org.jruby.compiler.ir.instructions;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.InlinerInfo;
+import org.jruby.compiler.ir.targets.JVM;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -19,5 +20,9 @@ public class ThreadPollInstr extends Instr {
 
     public Instr cloneForInlining(InlinerInfo ii) {
         return this;
+    }
+
+    public void compile(JVM jvm) {
+        jvm.method().poll();
     }
 }

@@ -1,15 +1,22 @@
 package org.jruby.compiler.ir.targets;
 
+import org.jcodings.Encoding;
+import org.jcodings.EncodingDB;
+import org.jcodings.specific.USASCIIEncoding;
+import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyString;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.util.JavaNameMangler;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.invoke.CallSite;
+import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
@@ -32,6 +39,21 @@ public class Bootstrap {
                         site,
                         value);
         site.setTarget(handle);
+        return site;
+    }
+
+    public static CallSite string(Lookup lookup, String name, MethodType type, String value, int encoding) {
+        MethodHandle handle =
+                insertArguments(
+                        findStatic(
+                                lookup,
+                                Bootstrap.class,
+                                name,
+                                type.insertParameterTypes(0, String.class, int.class)),
+                        0,
+                        value,
+                        encoding);
+        CallSite site = new ConstantCallSite(handle);
         return site;
     }
 
@@ -75,6 +97,9 @@ public class Bootstrap {
     public static Handle fixnum() {
         return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "fixnum", sig(CallSite.class, Lookup.class, String.class, MethodType.class, long.class));
     }
+    public static Handle string() {
+        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "string", sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, int.class));
+    }
     public static Handle invoke() {
         return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "invoke", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
     }
@@ -92,6 +117,11 @@ public class Bootstrap {
                 )
         );
         return fixnum;
+    }
+
+    public static IRubyObject string(String value, int encoding, ThreadContext context) {
+        // obviously wrong: not caching bytelist, not using encoding
+        return RubyString.newStringNoCopy(context.runtime, value.getBytes(RubyEncoding.ISO));
     }
 
     public static IRubyObject invoke(InvokeSite site, ThreadContext context, IRubyObject self, IRubyObject arg0) {

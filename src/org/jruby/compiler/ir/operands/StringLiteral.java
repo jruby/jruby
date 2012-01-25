@@ -1,5 +1,6 @@
 package org.jruby.compiler.ir.operands;
 
+import org.jruby.compiler.ir.targets.JVM;
 import org.jruby.util.ByteList;
 import org.jruby.RubyString;
 import org.jruby.runtime.DynamicScope;
@@ -45,5 +46,9 @@ public class StringLiteral extends Constant {
         // return interp.getRuntime().newString(_bl_value); 
         // SSS FIXME: AST interpreter passes in a coderange argument.
         return RubyString.newStringShared(context.getRuntime(), _bl_value);
+    }
+
+    public void compile(JVM jvm) {
+        jvm.method().push(_bl_value);
     }
 }

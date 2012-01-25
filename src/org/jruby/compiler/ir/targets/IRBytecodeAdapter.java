@@ -4,10 +4,16 @@
  */
 package org.jruby.compiler.ir.targets;
 
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.jruby.RubyEncoding;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
 import org.jruby.util.JavaNameMangler;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
@@ -60,6 +66,11 @@ public class IRBytecodeAdapter {
         adapter.invokedynamic("fixnum", sig(JVM.OBJECT, ThreadContext.class), Bootstrap.fixnum(), l);
     }
 
+    public void push(ByteList bl) {
+        adapter.aload(0);
+        adapter.invokedynamic("string", sig(JVM.OBJECT, ThreadContext.class), Bootstrap.string(), new String(bl.bytes(), RubyEncoding.ISO), bl.getEncoding().getIndex());
+    }
+
     public void loadLocal(int i) {
         adapter.aload(i);
     }
@@ -94,6 +105,32 @@ public class IRBytecodeAdapter {
 
     public void goTo(org.objectweb.asm.Label label) {
         adapter.go_to(label);
+    }
+
+    public void isTrue() {
+        adapter.invokeinterface(p(IRubyObject.class), "isTrue", sig(boolean.class));
+    }
+
+    public void isNil() {
+        adapter.invokeinterface(p(IRubyObject.class), "isNil", sig(boolean.class));
+    }
+
+    public void bfalse(org.objectweb.asm.Label label) {
+        adapter.iffalse(label);
+    }
+
+    public void btrue(org.objectweb.asm.Label label) {
+        adapter.iffalse(label);
+    }
+
+    public void poll() {
+        adapter.aload(0);
+        adapter.invokevirtual(p(ThreadContext.class), "pollThreadEvents", sig(void.class));
+    }
+
+    public void pushNil() {
+        adapter.aload(0);
+        adapter.getfield(p(ThreadContext.class), "nil", ci(IRubyObject.class));
     }
 
     public void mark(org.objectweb.asm.Label label) {

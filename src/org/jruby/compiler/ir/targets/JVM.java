@@ -24,6 +24,7 @@ import org.jruby.compiler.ir.operands.CurrentModule;
 import org.jruby.compiler.ir.operands.CurrentScope;
 import org.jruby.compiler.ir.operands.Fixnum;
 import org.jruby.compiler.ir.operands.Label;
+import org.jruby.compiler.ir.operands.Nil;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.runtime.ThreadContext;
@@ -249,11 +250,7 @@ public class JVM implements CompilerTarget {
     }
 
     public void emitConstant(Constant constant) {
-        if (constant instanceof Fixnum) {
-            method().push(((Fixnum)constant).value);
-        } else {
-            throw new RuntimeException("unsupported constant in compiler: " + constant.getClass());
-        }
+        constant.compile(this);
     }
 
     public void emit(Operand operand) {

@@ -53,6 +53,7 @@ import static org.jruby.CompatVersion.*;
 @JRubyClass(name="Encoding")
 public class RubyEncoding extends RubyObject {
     public static final Charset UTF8 = Charset.forName("UTF-8");
+    public static final Charset ISO = Charset.forName("ISO-8859-1");
     public static final ByteList LOCALE = ByteList.create("locale");
     public static final ByteList EXTERNAL = ByteList.create("external");
 
