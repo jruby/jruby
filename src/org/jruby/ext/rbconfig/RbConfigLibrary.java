@@ -83,6 +83,7 @@ public class RbConfigLibrary implements Library {
         RUBY_OS_NAMES.put("Windows 7", RUBY_WIN32);
         RUBY_OS_NAMES.put("Windows Server 2008", RUBY_WIN32);
         RUBY_OS_NAMES.put("Solaris", RUBY_SOLARIS);
+        RUBY_OS_NAMES.put("SunOS", RUBY_SOLARIS);
         RUBY_OS_NAMES.put("FreeBSD", RUBY_FREEBSD);
         RUBY_OS_NAMES.put("AIX", RUBY_AIX);
     }

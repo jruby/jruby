@@ -44,7 +44,9 @@
 
 #if defined (__SVR4) && defined (__sun)
 #   define HAVE_VA_COPY
-#   include "asprintf.h"
+#   ifndef asprintf
+#     include "asprintf.h"
+#   endif
 #endif
 
 #ifdef RUBY_EXTCONF_H
