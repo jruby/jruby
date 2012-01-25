@@ -31,8 +31,8 @@ module YAML
       # JRuby only supports psych, so we warn and ignore
       if engine != 'psych'
         warn "JRuby 1.9 mode only supports the `psych` YAML engine; ignoring `#{engine}`"
+        return
       end
-      return
 
       require engine unless (engine == 'syck' ? Syck : Psych).const_defined?(:VERSION)
 
