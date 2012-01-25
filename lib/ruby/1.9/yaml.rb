@@ -16,8 +16,8 @@ module YAML
       # JRuby only supports psych, so we warn and ignore
       if engine != 'psych'
         warn "JRuby 1.9 mode only supports the `psych` YAML engine; ignoring `#{engine}`"
+        return
       end
-      return
 
       Object.class_eval <<-eorb, __FILE__, __LINE__ + 1
         remove_const 'YAML'
