@@ -11,6 +11,12 @@ module YAML
     end
 
     def yamler= engine
+      # JRuby only supports psych, so we warn and ignore
+      if engine != 'psych'
+        warn "JRuby 1.9 mode only supports the `psych` YAML engine; ignoring `#{engine}`"
+      end
+      return
+
       raise(ArgumentError, "bad engine") unless %w{syck psych}.include?(engine)
 
       require engine
