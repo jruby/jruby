@@ -65,12 +65,15 @@ public class Platform {
     private static final String GCJ = "GNU libgcj";
     private static final String IBM = "IBM J9 VM";
 
-    public static final Map<String, String> OS_NAMES = new HashMap<String, String>() {{
-        put("Mac OS X", DARWIN);
-    }};
-    public static final Map<String, String> ARCH_NAMES = new HashMap<String, String>() {{
-        put("x86", "i386");
-    }};
+    public static final Map<String, String> OS_NAMES = new HashMap<String, String>();
+    static {
+        OS_NAMES.put("Mac OS X", DARWIN);
+        OS_NAMES.put("SunOS", SOLARIS);
+    }
+    public static final Map<String, String> ARCH_NAMES = new HashMap<String, String>();
+    static {
+        ARCH_NAMES.put("x86", "i386");
+    }
     private static String initOperatingSystem() {
         String osname = getProperty("os.name", "unknown").toLowerCase();
         for (String s : OS_NAMES.keySet()) {
