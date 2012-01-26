@@ -145,9 +145,9 @@ public class JVM implements CompilerTarget {
         // run compiler
         CompilerTarget target = new JDK7();
 
-        target.codegen(scope);
+        scope.prepareForInterpretation();
 
-        if (Options.IR_PASS_DEADCODE.load()) scope.runCompilerPass(new DeadCodeElimination());
+        target.codegen(scope);
 
         return jrubyClassLoader.defineClass(scriptToClass(scope.getName()), target.code());
     }
