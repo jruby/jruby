@@ -1,4 +1,4 @@
-JRuby -  A Java implementation of the Ruby language
+# JRuby -  A Java implementation of the Ruby language
 
 Authors: Stefan Matthias Aust, Anders Bengtsson, Geert Bevin,
  Piergiuliano Bossi, Johannes Brodwall, Rocky Burt, Paul Butcher,
@@ -15,7 +15,7 @@ Project Contact: Thomas E Enebo <enebo@acm.org>
 JRuby also uses code generously shared by the creator of the Ruby language, 
 Yukihiro Matsumoto <matz@netlab.co.jp>.
 
-== About
+## About
 
 JRuby is the effort to recreate the Ruby (http://www.ruby-lang.org) interpreter
 in Java.
@@ -24,7 +24,7 @@ The Java version is tightly integrated with Java to allow both to script
 any Java class and to embed the interpreter into any Java application. 
 See the 'docs' directory for more information.
 
-== Run
+## Run
 
     bin/jruby rubyfile.rb
 
@@ -33,7 +33,7 @@ interprets the file 'rubyfile.rb'.
 If you checked out from the repository or downloaded the source distribution,
 see the next section to build JRuby first.
 
-== Compiling from source
+## Compiling from source
 
 You will need:
 
@@ -46,17 +46,17 @@ To compile, just type:
 
 This will create a jruby.jar file in the projects 'lib' directory.
 
-== Testing
+## Testing
 
 In order to run the unit tests, copy the build_lib/junit.jar file to either
 $ANT_HOME/lib/junit.jar or ~/.ant/lib/junit.jar.
 
 See 'docs/README.test' for more information.
 
-== More Information
+## More Information
 
 Visit http://jruby.org for more information.
 
-== License
+## License
 
 Read the COPYING file.
