@@ -19,7 +19,8 @@
  * version 3 along with this work.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
+#include <stdio.h>
+#include <stdlib.h>
 #include "jruby.h"
 #include "ruby.h"
 #include "JLocalEnv.h"
@@ -270,16 +271,14 @@ extern "C" VALUE
 rb_any_to_s(VALUE obj)
 {
     char* buf;
+    int len = 128, buflen;
 
-    if (asprintf(&buf, "#<%s:%p>", rb_obj_classname(obj), (void *) obj) == -1) {
-        // Could not allocate
-        return rb_str_new("", 0);
-    }
+    do {
+	buf = (char *) alloca(buflen = len);
+        len = snprintf(buf, buflen, "#<%s:%p>", rb_obj_classname(obj), (void *) obj);
+    } while (len >= buflen);
 
-    VALUE result = rb_str_new_cstr(buf);
-    free(buf);
-
-    return result;
+    return rb_str_new_cstr(buf);
 }
 
 extern "C" void
