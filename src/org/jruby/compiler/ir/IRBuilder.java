@@ -2272,7 +2272,7 @@ public class IRBuilder {
 
             // Build closure body and return the result of the closure
         Operand closureRetVal = forNode.getBodyNode() == null ? Nil.NIL : build(forNode.getBodyNode(), closure);
-        if (closureRetVal != null)  // can be null if the node is an if node with returns in both branches.
+        if (closureRetVal != U_NIL)  // can be null if the node is an if node with returns in both branches.
             closure.addInstr(new ClosureReturnInstr(closureRetVal));
 
         return new WrappedIRClosure(closure);
@@ -3129,7 +3129,7 @@ public class IRBuilder {
         script.addInstr(new CopyInstr(script.getCurrentScopeVariable(), new CurrentScope()));
         script.addInstr(new CopyInstr(script.getCurrentModuleVariable(), new CurrentModule()));
         // Build IR for the tree and return the result of the expression tree
-        Operand rval = build(rootNode.getBodyNode(), script);
+        Operand rval = rootNode.getBodyNode() == null ? Nil.NIL : build(rootNode.getBodyNode(), script);
         script.addInstr(new ClosureReturnInstr(rval));
 
         return script;

@@ -380,7 +380,7 @@ public class IRBuilder19 extends IRBuilder {
         closureBuilder.receiveBlockArgs(node, closure);
         closureBuilder.receiveBlockClosureArg(node.getBlockVarNode(), closure);
 
-        Operand closureRetVal = closureBuilder.build(node.getBody(), closure);
+        Operand closureRetVal = node.getBody() == null ? Nil.NIL : closureBuilder.build(node.getBody(), closure);
 
         // can be U_NIL if the node is an if node with returns in both branches.
         if (closureRetVal != U_NIL) closure.addInstr(new ClosureReturnInstr(closureRetVal));

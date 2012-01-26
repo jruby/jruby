@@ -34,6 +34,11 @@ public class BuildLambdaInstr extends CallInstr {
     }
 
     @Override
+    public Instr discardResult() {
+        return this;
+    }
+
+    @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         return new BuildLambdaInstr(ii.getRenamedVariable(getResult()), getLambdaBody(), position);
     }
