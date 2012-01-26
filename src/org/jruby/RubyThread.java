@@ -90,37 +90,58 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     private static final Logger LOG = LoggerFactory.getLogger("RubyThread");
 
+    /** The thread-like think that is actually executing */
     private ThreadLike threadImpl;
+
+    /** Normal thread-local variables */
     private transient Map<IRubyObject, IRubyObject> threadLocalVariables;
+
+    /** Context-local variables, internal-ish thread locals */
     private final Map<Object, IRubyObject> contextVariables = new WeakHashMap<Object, IRubyObject>();
+
+    /** Whether this thread should try to abort the program on exception */
     private boolean abortOnException;
+
+    /** The final value resulting from the thread's execution */
     private IRubyObject finalResult;
+
+    /**
+     * The exception currently being raised out of the thread. We reference
+     * it here to continue propagating it while handling thread shutdown
+     * logic and abort_on_exception.
+     */
     private RaiseException exitingException;
+
+    /** The ThreadGroup to which this thread belongs */
     private RubyThreadGroup threadGroup;
 
-    private final ThreadService threadService;
-
-    // Error info is per-thread
+    /** Per-thread "current exception" */
     private IRubyObject errorInfo;
 
-    // weak reference to associated ThreadContext
+    /** Weak reference to the ThreadContext for this thread. */
     private volatile WeakReference<ThreadContext> contextRef;
-    
+
     private static final boolean DEBUG = false;
 
+    /** Thread statuses */
     public static enum Status { RUN, SLEEP, ABORTING, DEAD }
+
+    /** Current status in an atomic reference */
     private final AtomicReference<Status> status = new AtomicReference<Status>(Status.RUN);
 
+    /** Mail slot for cross-thread events */
     private volatile ThreadService.Event mail;
+
+    /** The current task blocking a thread, to allow interrupting it in an appropriate way */
     private volatile BlockingTask currentBlockingTask;
-    
+
+    /** The list of locks this thread currently holds, so they can be released on exit */
     private final List<Lock> heldLocks = new ArrayList<Lock>();
 
     protected RubyThread(Ruby runtime, RubyClass type) {
         super(runtime, type);
-        this.threadService = runtime.getThreadService();
+
         finalResult = runtime.getNil();
-        // init errorInfo to nil
         errorInfo = runtime.getNil();
     }
 
@@ -471,7 +492,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(name = "join", optional = 1, backtrace = true)
     public IRubyObject join(IRubyObject[] args) {
+        Ruby runtime = getRuntime();
         long timeoutMillis = Long.MAX_VALUE;
+
         if (args.length > 0) {
             if (args.length > 1) {
                 throw getRuntime().newArgumentError(args.length,1);
@@ -489,11 +512,13 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 		}
             }
         }
+
         if (isCurrent()) {
             throw getRuntime().newThreadError("thread " + identityString() + " tried to join itself");
         }
+
         try {
-            if (threadService.getCritical()) {
+            if (runtime.getThreadService().getCritical()) {
                 // If the target thread is sleeping or stopped, wake it
                 synchronized (this) {
                     notify();
@@ -692,10 +717,10 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             return RubyKernel.raise(context, runtime.getKernel(), args, block);
         }
         
-        if (DEBUG) LOG.debug("thread {} before raising", Thread.currentThread());
+        debug(this, "before raising");
         RubyThread currentThread = getRuntime().getCurrentContext().getThread();
 
-        if (DEBUG) LOG.debug("thread {} raising", Thread.currentThread());
+        debug(this, "raising");
         IRubyObject exception = prepareRaiseException(runtime, args, block);
 
         runtime.getThreadService().deliverEvent(new ThreadService.Event(currentThread, this, ThreadService.Event.Type.RAISE, exception));
@@ -860,16 +885,20 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         
         // If the killee thread is the same as the killer thread, just die
         if (currentThread == this) throwThreadKill();
-        
-        if (DEBUG) LOG.debug("thread {} trying to kill", Thread.currentThread());
+
+        debug(this, "trying to kill");
 
         currentThread.pollThreadEvents();
 
         getRuntime().getThreadService().deliverEvent(new ThreadService.Event(currentThread, this, ThreadService.Event.Type.KILL));
-        
-        if (DEBUG) LOG.debug("thread {} succeeded with kill", Thread.currentThread());
+
+        debug(this, "succeeded with kill");
         
         return this;
+    }
+
+    private static void debug(RubyThread thread, String message) {
+        if (DEBUG) LOG.debug(Thread.currentThread() + "(" + thread.status + "): " + message);
     }
     
     @JRubyMethod(name = {"kill!", "exit!", "terminate!"}, compat = RUBY1_8)
@@ -906,13 +935,13 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         RubyException rubyException = exception.getException();
         Ruby runtime = rubyException.getRuntime();
         if (runtime.getSystemExit().isInstance(rubyException)) {
-            threadService.getMainThread().raise(new IRubyObject[] {rubyException}, Block.NULL_BLOCK);
+            runtime.getThreadService().getMainThread().raise(new IRubyObject[] {rubyException}, Block.NULL_BLOCK);
         } else if (abortOnException(runtime)) {
             runtime.printError(rubyException);
             RubyException systemExit = RubySystemExit.newInstance(runtime, 1);
             systemExit.message = rubyException.message;
             systemExit.set_backtrace(rubyException.backtrace());
-            threadService.getMainThread().raise(new IRubyObject[] {systemExit}, Block.NULL_BLOCK);
+            runtime.getThreadService().getMainThread().raise(new IRubyObject[] {systemExit}, Block.NULL_BLOCK);
             return;
         } else if (runtime.getDebug().isTrue()) {
             runtime.printError(exception.getException());
@@ -1089,9 +1118,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     private void receivedAnException(ThreadContext context, IRubyObject exception) {
         RubyModule kernelModule = getRuntime().getKernel();
-        if (DEBUG) {
-            LOG.debug("thread {} before propagating exception: {}", Thread.currentThread(), status);
-        }
+        debug(this, "before propagating exception");
         kernelModule.callMethod(context, "raise", exception);
     }
 
