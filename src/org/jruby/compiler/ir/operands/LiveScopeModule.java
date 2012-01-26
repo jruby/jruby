@@ -1,5 +1,6 @@
 package org.jruby.compiler.ir.operands;
 
+import java.util.List;
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
@@ -12,11 +13,16 @@ import org.jruby.runtime.builtin.IRubyObject;
  * those scopes live value.  For scopes like IRScriptBody, it represents
  * the current module we contained in.
  */
-public class LiveScopeModule extends Constant {
+public class LiveScopeModule extends Operand {
     private final IRScope scope;
 
     public LiveScopeModule(IRScope scope) {
         this.scope = scope;
+    }
+
+    @Override
+    public void addUsedVariables(List<Variable> l) {
+        /* Do nothing */
     }
 
     public IRScope getScope() {

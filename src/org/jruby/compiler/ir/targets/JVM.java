@@ -19,17 +19,13 @@ import org.jruby.compiler.ir.IRScriptBody;
 import org.jruby.compiler.ir.compiler_pass.InlineTest;
 import org.jruby.compiler.ir.compiler_pass.opts.DeadCodeElimination;
 import org.jruby.compiler.ir.instructions.Instr;
-import org.jruby.compiler.ir.operands.Constant;
 import org.jruby.compiler.ir.operands.CurrentModule;
 import org.jruby.compiler.ir.operands.CurrentScope;
-import org.jruby.compiler.ir.operands.Fixnum;
 import org.jruby.compiler.ir.operands.Label;
-import org.jruby.compiler.ir.operands.Nil;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.CodegenUtils;
 import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.cli.Options;
@@ -38,8 +34,6 @@ import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Type;
-import org.objectweb.asm.util.CheckClassAdapter;
-import org.objectweb.asm.util.TraceClassVisitor;
 import static org.objectweb.asm.Opcodes.*;
 import static org.jruby.util.CodegenUtils.*;
 
@@ -252,13 +246,9 @@ public class JVM implements CompilerTarget {
         instr.compile(this);
     }
 
-    public void emitConstant(Constant constant) {
-        constant.compile(this);
-    }
-
     public void emit(Operand operand) {
         if (operand.isConstant()) {
-            emitConstant((Constant)operand);
+            operand.compile(this);
         } else if (operand instanceof Variable) {
             emitVariable((Variable)operand);
         } else if (operand instanceof CurrentScope) {

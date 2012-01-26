@@ -1,10 +1,11 @@
 package org.jruby.compiler.ir.operands;
 
+import java.util.List;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class Float extends Constant {
+public class Float extends Operand {
     final public Double value;
     private Object rubyFloat;
 
@@ -13,12 +14,23 @@ public class Float extends Constant {
         rubyFloat = null;
     }
 
+    // FIXME: Enebo I don't think floats are constant since they can set precision per instance.
+    @Override
+    public boolean isConstant() {
+        return true;
+    }
+
+    @Override
+    public void addUsedVariables(List<Variable> l) {
+        /* not used */
+    }
+
     @Override
     public String toString() {
         return value + ":float";
     }
 
-    public Constant computeValue(String methodName, Constant arg) {
+    public Operand computeValue(String methodName, Operand arg) {
         Double v1 = value;
         Double v2 = (arg instanceof Fixnum) ? 1.0 * ((Fixnum)arg).value : (Double)((Float)arg).value;
 

@@ -1,18 +1,26 @@
 package org.jruby.compiler.ir.operands;
 
+import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.RubyLocalJumpError;
 
 // Encapsulates exceptions to be thrown at runtime
-public class IRException extends Constant {
+public class IRException extends Operand {
     private String exceptionType;
-    protected IRException(String exceptionType) { this.exceptionType = exceptionType; }
+    protected IRException(String exceptionType) {
+        this.exceptionType = exceptionType;
+    }
 
     public static final IRException RETRY_LocalJumpError = new IRException("LocalJumpError: retry outside of rescue not supported");
     public static final IRException NEXT_LocalJumpError = new IRException("LocalJumpError: unexpected next");
     public static final IRException BREAK_LocalJumpError = new IRException("LocalJumpError: unexpected break");
     public static final IRException RETURN_LocalJumpError = new IRException("LocalJumpError: unexpected return");
     public static final IRException REDO_LocalJumpError = new IRException("LocalJumpError: unexpected redo");
+
+    @Override
+    public void addUsedVariables(List<Variable> l) {
+        /* Do nothing */
+    }
 
     @Override
     public String toString() {

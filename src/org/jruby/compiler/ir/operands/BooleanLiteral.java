@@ -1,14 +1,25 @@
 package org.jruby.compiler.ir.operands;
 
+import java.util.List;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class BooleanLiteral extends Constant {
+public class BooleanLiteral extends Operand {
     private BooleanLiteral() { }
 
     public static final BooleanLiteral TRUE  = new BooleanLiteral();
     public static final BooleanLiteral FALSE = new BooleanLiteral();
+
+    @Override
+    public boolean isConstant() {
+        return true;
+    }
+    
+    @Override
+    public void addUsedVariables(List<Variable> l) {
+        /* do nothing */
+    }
 
     public boolean isTrue()  {
         return this == TRUE;

@@ -1,5 +1,6 @@
 package org.jruby.compiler.ir.operands;
 
+import java.util.List;
 import org.jruby.compiler.ir.targets.JVM;
 import org.jruby.util.ByteList;
 import org.jruby.RubyString;
@@ -7,7 +8,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class StringLiteral extends Constant {
+public class StringLiteral extends Operand {
 // SSS FIXME: Pick one of bytelist or string, or add internal conversion methods to convert to the default representation
 // SSS: Get rid of _bl_value since it is not needed anymore
 
@@ -16,6 +17,12 @@ public class StringLiteral extends Constant {
 
     public StringLiteral(ByteList val) { _bl_value = val; _str_value = _bl_value.toString(); }
     public StringLiteral(String s) { _bl_value = ByteList.create(s); _str_value = s; }
+    
+
+    @Override
+    public void addUsedVariables(List<Variable> l) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }    
 
     @Override
     public String toString() {

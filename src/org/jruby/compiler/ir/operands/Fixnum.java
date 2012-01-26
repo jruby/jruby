@@ -1,13 +1,14 @@
 package org.jruby.compiler.ir.operands;
 
 import java.math.BigInteger;
+import java.util.List;
 
 import org.jruby.compiler.ir.targets.JVM;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class Fixnum extends Constant {
+public class Fixnum extends Operand {
     final public Long value;
     private Object rubyFixnum;
 
@@ -22,13 +23,23 @@ public class Fixnum extends Constant {
     }
 
     @Override
+    public boolean isConstant() {
+        return true;
+    }
+    
+    @Override
+    public void addUsedVariables(List<Variable> l) {
+        /* Do nothing */
+    }
+
+    @Override
     public String toString() { 
         return value + ":fixnum";
     }
 
 // ---------- These methods below are used during compile-time optimizations ------- 
 
-    public Constant computeValue(String methodName, Constant arg) {
+    public Operand computeValue(String methodName, Operand arg) {
         if (arg instanceof Fixnum) {
             if (methodName.equals("+"))
                 return new Fixnum(value + ((Fixnum)arg).value);

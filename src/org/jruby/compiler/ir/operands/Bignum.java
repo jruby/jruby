@@ -1,17 +1,28 @@
 package org.jruby.compiler.ir.operands;
 
 import java.math.BigInteger;
+import java.util.List;
 import org.jruby.RubyBignum;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class Bignum extends Constant {
+public class Bignum extends Operand {
     final public BigInteger value;
     private Object rubyBignum;
 
     public Bignum(BigInteger value) {
         this.value = value;
+    }
+
+    @Override
+    public boolean isConstant() {
+        return true;
+    }
+    
+    @Override
+    public void addUsedVariables(List<Variable> l) {
+        /* do nothing */
     }
 
     @Override
