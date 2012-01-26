@@ -151,18 +151,22 @@ public class FutureThread implements ThreadLike {
     }
     
     /**
-     * Jobs from the thread pool do not support setting priorities.
+     * Jobs from the thread pool do not support setting priorities and always returns
+     * current priority.
      * 
-     * @return
+     * @return the current priority of the thread in which we this is running
      */
     public int getPriority() {
         return 1;
     }
-    
+
+    /**
+     * Jobs from the thread pool do not support setting priorities and always returns
+     * current priority.
+     */
     public void setPriority(int priority) {
-        //nativeThread.setPriority(priority);
     }
-    
+
     public boolean isCurrent() {
         return rubyThread == rubyThread.getRuntime().getCurrentContext().getThread();
     }

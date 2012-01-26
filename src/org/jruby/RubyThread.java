@@ -91,7 +91,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     private static final Logger LOG = LoggerFactory.getLogger("RubyThread");
 
     private ThreadLike threadImpl;
-    private RubyFixnum priority;
     private transient Map<IRubyObject, IRubyObject> threadLocalVariables;
     private final Map<Object, IRubyObject> contextVariables = new WeakHashMap<Object, IRubyObject>();
     private boolean abortOnException;
@@ -121,8 +120,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         super(runtime, type);
         this.threadService = runtime.getThreadService();
         finalResult = runtime.getNil();
-
-        this.priority = RubyFixnum.newFixnum(runtime, Thread.NORM_PRIORITY);
         // init errorInfo to nil
         errorInfo = runtime.getNil();
     }
@@ -666,7 +663,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     
     @JRubyMethod(name = "priority")
     public RubyFixnum priority() {
-        return priority;
+        return RubyFixnum.newFixnum(getRuntime(), threadImpl.getPriority());
     }
 
     @JRubyMethod(name = "priority=", required = 1)
@@ -680,12 +677,11 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             iPriority = Thread.MAX_PRIORITY;
         }
         
-        this.priority = RubyFixnum.newFixnum(getRuntime(), iPriority);
-        
         if (threadImpl.isAlive()) {
             threadImpl.setPriority(iPriority);
         }
-        return this.priority;
+
+        return RubyFixnum.newFixnum(getRuntime(), iPriority);
     }
 
     @JRubyMethod(optional = 3)
