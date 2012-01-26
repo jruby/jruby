@@ -253,7 +253,7 @@ TEXT
 
   def make_destination_dirs(install_destdir)
     lib_dir, bin_dir = Gem.default_rubygems_dirs
-p lib_dir
+
     unless lib_dir
       lib_dir, bin_dir = generate_default_dirs(install_destdir)
     end
