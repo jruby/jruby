@@ -55,6 +55,7 @@ import org.jruby.compiler.ir.instructions.ruby19.ReceiveOptArgInstr;
 import org.jruby.compiler.ir.instructions.ruby19.ReceiveRestArgInstr;
 import org.jruby.compiler.ir.instructions.ruby19.ReceiveRequiredArgInstr;
 import org.jruby.runtime.Arity;
+import org.jruby.javasupport.util.RuntimeHelpers;
 
 public class IRBuilder19 extends IRBuilder {
     public IRBuilder19(IRManager manager) {
@@ -231,6 +232,7 @@ public class IRBuilder19 extends IRBuilder {
     public void receiveBlockArgs(final IterNode node, IRScope s) {
         Node args = node.getVarNode();
         if (args instanceof ArgsNode) { // regular blocks
+            ((IRClosure)s).setParameterList(RuntimeHelpers.encodeParameterList((ArgsNode)args).split(";"));
             receiveArgs((ArgsNode)args, s);
         } else  { 
             // for loops -- reuse code in IRBuilder:buildBlockArgsAssignment

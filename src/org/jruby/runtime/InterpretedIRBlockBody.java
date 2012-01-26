@@ -11,7 +11,7 @@ import org.jruby.runtime.Block.Type;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class InterpretedIRBlockBody extends ContextAwareBlockBody {
-    private final IRClosure closure;
+    protected final IRClosure closure;
 
     public InterpretedIRBlockBody(IRClosure closure, Arity arity, int argumentType) {
         super(closure.getStaticScope(), arity, argumentType);

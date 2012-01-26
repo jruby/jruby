@@ -15,6 +15,11 @@ public class InterpretedIRBlockBody19 extends InterpretedIRBlockBody {
         super(closure, arity, -1);
     }
 
+    @Override
+    public String[] getParameterList() {
+        return this.closure.getParameterList();
+    }
+
     private IRubyObject[] convertValueIntoArgArray(ThreadContext context, IRubyObject value, boolean isYieldSpecific, boolean isArray) {
         // SSS FIXME: But this should not happen -- so, some places in the runtime library are breaking this contract.
         if (isArray && !(value instanceof RubyArray)) isArray = false;

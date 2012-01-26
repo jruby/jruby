@@ -47,6 +47,9 @@ public class IRClosure extends IRScope {
     // Block parameters
     private List<Operand> blockArgs;
 
+    /** The parameter names, for Proc#parameters */
+    private String[] parameterList;
+
     public IRClosure(IRScope lexicalParent, boolean isForLoopBody, int lineNumber, StaticScope staticScope, Arity arity, int argumentType, boolean is1_9) {
         this(lexicalParent, lexicalParent.getFileName(), lineNumber, staticScope, isForLoopBody ? "_FOR_LOOP_" : "_CLOSURE_");
         this.isForLoopBody = isForLoopBody;
@@ -70,6 +73,7 @@ public class IRClosure extends IRScope {
         this.closureId = lexicalParent.getNextClosureId();
         setName(prefix + closureId);
         this.body = null;
+        this.parameterList = new String[] {};
 
         // set nesting depth
         int n = 0;
@@ -79,6 +83,14 @@ public class IRClosure extends IRScope {
             if (!s.isForLoopBody()) n++;
         }
         this.nestingDepth = n;
+    }
+
+    public void setParameterList(String[] parameterList) {
+        this.parameterList = parameterList;
+    }
+
+    public String[] getParameterList() {
+        return this.parameterList;
     }
 
     @Override
