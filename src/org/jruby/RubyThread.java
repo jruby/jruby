@@ -60,6 +60,7 @@ import org.jruby.runtime.ExecutionContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
@@ -109,9 +110,9 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     private static final boolean DEBUG = false;
 
     public static enum Status { RUN, SLEEP, ABORTING, DEAD }
+    private final AtomicReference<Status> status = new AtomicReference<Status>(Status.RUN);
 
     private volatile ThreadService.Event mail;
-    private volatile Status status = Status.RUN;
     private volatile BlockingTask currentBlockingTask;
     
     private final List<Lock> heldLocks = new ArrayList<Lock>();
@@ -129,12 +130,12 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     public void receiveMail(ThreadService.Event event) {
         synchronized (this) {
             // if we're already aborting, we can receive no further mail
-            if (status == Status.ABORTING) return;
+            if (status.get() == Status.ABORTING) return;
 
             mail = event;
             switch (event.type) {
             case KILL:
-                status = Status.ABORTING;
+                status.set(Status.ABORTING);
             }
 
             // If this thread is sleeping or stopped, wake it
@@ -335,7 +336,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     public synchronized void beDead() {
-        status = Status.DEAD;
+        status.set(Status.DEAD);
     }
 
     public void pollThreadEvents() {
@@ -435,7 +436,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     public boolean isAlive(){
-        return threadImpl.isAlive() && status != Status.ABORTING;
+        return threadImpl.isAlive() && status.get() != Status.ABORTING;
     }
 
     @JRubyMethod(name = "[]", required = 1)
@@ -616,11 +617,11 @@ public class RubyThread extends RubyObject implements ExecutionContext {
                 // attempt to decriticalize all if we're the critical thread
                 receiver.getRuntime().getThreadService().setCritical(false);
 
-                rubyThread.status = Status.SLEEP;
+                rubyThread.status.set(Status.SLEEP);
                 rubyThread.wait();
             } catch (InterruptedException ie) {
                 rubyThread.checkMail(context);
-                rubyThread.status = Status.RUN;
+                rubyThread.status.set(Status.RUN);
             }
         }
         
@@ -638,7 +639,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         RubyThread rubyThread = receiver.getRuntime().getThreadService().getCurrentContext().getThread();
 
         synchronized (rubyThread) {
-            rubyThread.status = Status.ABORTING;
+            rubyThread.status.set(Status.ABORTING);
             rubyThread.mail = null;
             receiver.getRuntime().getThreadService().setCritical(false);
             throw new ThreadKill();
@@ -648,16 +649,16 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     @JRubyMethod(name = "stop?")
     public RubyBoolean stop_p() {
     	// not valid for "dead" state
-    	return getRuntime().newBoolean(status == Status.SLEEP || status == Status.DEAD);
+    	return getRuntime().newBoolean(status.get() == Status.SLEEP || status.get() == Status.DEAD);
     }
     
     @JRubyMethod(name = "wakeup")
     public synchronized RubyThread wakeup() {
-        if(!threadImpl.isAlive() && status == Status.DEAD) {
+        if(!threadImpl.isAlive() && status.get() == Status.DEAD) {
             throw getRuntime().newThreadError("killed thread");
         }
 
-        status = Status.RUN;
+        status.set(Status.RUN);
         notifyAll();
     	
     	return this;
@@ -778,16 +779,16 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         synchronized (this) {
             pollThreadEvents();
             try {
-                status = Status.SLEEP;
+                status.set(Status.SLEEP);
                 if (millis == -1) {
                     wait();
                 } else {
                     wait(millis);
                 }
             } finally {
-                result = (status != Status.RUN);
+                result = (status.get() != Status.RUN);
                 pollThreadEvents();
-                status = Status.RUN;
+                status.set(Status.RUN);
             }
         }
 
@@ -849,11 +850,11 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
 
     public void enterSleep() {
-        status = Status.SLEEP;
+        status.set(Status.SLEEP);
     }
 
     public void exitSleep() {
-        status = Status.RUN;
+        status.set(Status.RUN);
     }
 
     @JRubyMethod(name = {"kill", "exit", "terminate"})
