@@ -32,6 +32,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.JavaNameMangler;
+import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.ClassVisitor;
@@ -145,6 +146,8 @@ public class JVM implements CompilerTarget {
         CompilerTarget target = new JDK7();
 
         target.codegen(scope);
+
+        if (Options.IR_PASS_DEADCODE.load()) scope.runCompilerPass(new DeadCodeElimination());
 
         return jrubyClassLoader.defineClass(scriptToClass(scope.getName()), target.code());
     }
