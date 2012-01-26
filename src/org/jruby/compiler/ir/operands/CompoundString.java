@@ -96,7 +96,7 @@ public class CompoundString extends Operand {
     }
 
     public boolean isSameEncoding(StringLiteral str) {
-        return str._bl_value.getEncoding() == encoding;
+        return str.bytelist.getEncoding() == encoding;
     }
 
     @Override
@@ -114,7 +114,7 @@ public class CompoundString extends Operand {
         RubyString str = RubyString.newStringShared(context.getRuntime(), bytes, StringSupport.CR_7BIT);
         for (Operand p : pieces) {
             if ((p instanceof StringLiteral) && (!is1_9 || isSameEncoding((StringLiteral)p))) {
-                str.getByteList().append(((StringLiteral)p)._bl_value);
+                str.getByteList().append(((StringLiteral)p).bytelist);
             } else {
                IRubyObject pval = (IRubyObject)p.retrieve(context, self, currDynScope, temp);
                if (is1_9) str.append19(pval);

@@ -40,11 +40,6 @@ public class BooleanLiteral extends Operand {
 
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
-/*
-        if (cachedValue == null)
-            cachedValue = interp.getRuntime().newBoolean(isTrue());
-        return cachedValue;
-*/
         return context.getRuntime().newBoolean(isTrue());
     }
 }

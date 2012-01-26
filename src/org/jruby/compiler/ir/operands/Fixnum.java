@@ -41,24 +41,18 @@ public class Fixnum extends Operand {
 
     public Operand computeValue(String methodName, Operand arg) {
         if (arg instanceof Fixnum) {
-            if (methodName.equals("+"))
-                return new Fixnum(value + ((Fixnum)arg).value);
-            else if (methodName.equals("-"))
-                return new Fixnum(value - ((Fixnum)arg).value);
-            else if (methodName.equals("*"))
-                return new Fixnum(value * ((Fixnum)arg).value);
-            else if (methodName.equals("/")) {
+            if (methodName.equals("+")) return new Fixnum(value + ((Fixnum)arg).value);
+            if (methodName.equals("-")) return new Fixnum(value - ((Fixnum)arg).value);
+            if (methodName.equals("*")) return new Fixnum(value * ((Fixnum)arg).value);
+            if (methodName.equals("/")) {
                 Long divisor = ((Fixnum)arg).value;
                 return divisor == 0L ? null : new Fixnum(value / divisor); // If divisor is zero, don't simplify!
             }
         } else if (arg instanceof Float) {
-            if (methodName.equals("+"))
-                return new Float(value + ((Float)arg).value);
-            else if (methodName.equals("-"))
-                return new Float(value - ((Float)arg).value);
-            else if (methodName.equals("*"))
-                return new Float(value * ((Float)arg).value);
-            else if (methodName.equals("/")) {
+            if (methodName.equals("+")) return new Float(value + ((Float)arg).value);
+            if (methodName.equals("-")) return new Float(value - ((Float)arg).value);
+            if (methodName.equals("*")) return new Float(value * ((Float)arg).value);
+            if (methodName.equals("/")) {
                 Double divisor = ((Float)arg).value;
                 return divisor == 0.0 ? null : new Float(value / divisor); // If divisor is zero, don't simplify!
             }
@@ -88,6 +82,7 @@ public class Fixnum extends Operand {
         return rubyFixnum;
     }
 
+    @Override
     public void compile(JVM jvm) {
         jvm.method().push(value);
     }

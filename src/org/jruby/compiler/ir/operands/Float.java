@@ -9,8 +9,8 @@ public class Float extends Operand {
     final public Double value;
     private Object rubyFloat;
 
-    public Float(Double val) {
-        value = val;
+    public Float(Double value) {
+        this.value = value;
         rubyFloat = null;
     }
 
@@ -34,13 +34,13 @@ public class Float extends Operand {
         Double v1 = value;
         Double v2 = (arg instanceof Fixnum) ? 1.0 * ((Fixnum)arg).value : (Double)((Float)arg).value;
 
-        if (methodName.equals("+"))
+        if (methodName.equals("+")) {
             return new Float(v1 + v2);
-        else if (methodName.equals("-"))
+        } else if (methodName.equals("-")) {
             return new Float(v1 - v2);
-        else if (methodName.equals("*"))
+        } else if (methodName.equals("*")) {
             return new Float(v1 * v2);
-        else if (methodName.equals("/")) {
+        } else if (methodName.equals("/")) {
             return v2 == 0.0 ? null : new Float(v1 / v2); // If divisor is zero, don't simplify!
         }
 

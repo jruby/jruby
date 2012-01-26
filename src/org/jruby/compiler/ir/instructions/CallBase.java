@@ -127,7 +127,7 @@ public abstract class CallBase extends Instr {
                 if (!(meth instanceof StringLiteral)) return true; // We don't know
 
                 // But why?  Why are you killing yourself (and us) doing this?
-                String name = ((StringLiteral) meth)._str_value;
+                String name = ((StringLiteral) meth).string;
                 if (name.equals("call") || name.equals("eval") || name.equals("send") || name.equals("__send__")) return true;
             }
         }

@@ -1,4 +1,5 @@
 package org.jruby.compiler.ir.operands;
+
 import org.jruby.compiler.ir.representations.InlinerInfo;
 
 import java.util.List;

@@ -11,7 +11,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class Nil extends Operand {
     public static final Nil NIL = new Nil();
 
-    protected Nil() { }
+    protected Nil() {
+    }
 
     @Override
     public boolean isConstant() {

@@ -7,6 +7,7 @@ import org.jruby.RubyLocalJumpError;
 // Encapsulates exceptions to be thrown at runtime
 public class IRException extends Operand {
     private String exceptionType;
+    
     protected IRException(String exceptionType) {
         this.exceptionType = exceptionType;
     }
