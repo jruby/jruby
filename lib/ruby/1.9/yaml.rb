@@ -19,6 +19,8 @@ module YAML
         return
       end
 
+      require engine
+
       Object.class_eval <<-eorb, __FILE__, __LINE__ + 1
         remove_const 'YAML'
         YAML = #{engine.capitalize}
