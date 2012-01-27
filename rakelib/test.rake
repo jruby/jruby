@@ -32,6 +32,7 @@ namespace :test do
       t.pattern = 'test/tracing/test_*.rb'
       t.verbose = true
       t.ruby_opts << '--debug'
+      t.ruby_opts << '--1.8'
     end
   end
   desc "Run tracing tests (do not forget to pass --debug)"

@@ -96,6 +96,7 @@ def mspec(mspec_options = {}, java_options = {}, &code)
 
     env :key => "JAVA_OPTS", :value => "-Demma.verbosity.level=silent"
     env :key => "JRUBY_OPTS", :value => ""
+    arg :line => "--1.8" # we launch mspec in 1.8 mode due to oddities in loading .mspec files
     arg :line => "#{MSPEC_BIN} ci"
     arg :line => "-T -J-ea"
     arg :line => "-T -J-Djruby.launch.inproc=false"
