@@ -49,6 +49,7 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.channels.Channel;
 import java.nio.channels.DatagramChannel;
+import java.nio.channels.SelectableChannel;
 import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.List;
@@ -354,104 +355,105 @@ public class RubySocket extends RubyBasicSocket {
 
     @JRubyMethod(backtrace = true)
     public IRubyObject connect_nonblock(ThreadContext context, IRubyObject arg) {
-        Channel socketChannel = getChannel();
-        try {
-            if (socketChannel instanceof AbstractSelectableChannel) {
-                ((AbstractSelectableChannel) socketChannel).configureBlocking(false);
-                connect(context, arg);
-            } else {
-                throw getRuntime().newErrnoENOPROTOOPTError();
-            }
-        } catch(ClosedChannelException e) {
-            throw context.getRuntime().newErrnoECONNREFUSEDError();
-        } catch(IOException e) {
-            throw sockerr(context.getRuntime(), "connect(2): name or service not known");
-        } catch (Error e) {
-            // Workaround for a bug in Sun's JDK 1.5.x, see
-            // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6303753
-            Throwable cause = e.getCause();
-            if (cause instanceof SocketException) {
-                handleSocketException(context.getRuntime(), "connect", (SocketException)cause);
-            } else {
-                throw e;
-            }
-        }
+        InetSocketAddress iaddr = addressFromSockaddr_in(context, arg);
 
-        return RubyFixnum.zero(context.getRuntime());
+        doConnectNonblock(context, getChannel(), iaddr);
+
+        return RubyFixnum.zero(context.runtime);
     }
 
     @JRubyMethod(backtrace = true)
     public IRubyObject connect(ThreadContext context, IRubyObject arg) {
-        RubyArray sockaddr = (RubyArray) unpack_sockaddr_in(context, this, arg);
+        InetSocketAddress iaddr = addressFromSockaddr_in(context, arg);
 
+        doConnect(context, getChannel(), iaddr);
+
+        return RubyFixnum.zero(context.runtime);
+    }
+
+    private void doConnectNonblock(ThreadContext context, Channel channel, InetSocketAddress iaddr) {
         try {
-            IRubyObject addr = sockaddr.pop(context);
-            IRubyObject port = sockaddr.pop(context);
-            InetSocketAddress iaddr = new InetSocketAddress(
-                    addr.convertToString().toString(), RubyNumeric.fix2int(port));
+            if (channel instanceof SelectableChannel) {
+                SelectableChannel selectable = (SelectableChannel)channel;
+                selectable.configureBlocking(false);
 
-            Channel socketChannel = getChannel();
-            if (socketChannel instanceof SocketChannel) {
-                if(!((SocketChannel) socketChannel).connect(iaddr)) {
-                    throw context.getRuntime().newErrnoEINPROGRESSError();
-                }
-            } else if (socketChannel instanceof DatagramChannel) {
-                ((DatagramChannel)socketChannel).connect(iaddr);
+                doConnect(context, channel, iaddr);
             } else {
                 throw getRuntime().newErrnoENOPROTOOPTError();
+
             }
-        } catch(AlreadyConnectedException e) {
-            throw context.getRuntime().newErrnoEISCONNError();
-        } catch(ConnectionPendingException e) {
-            Channel socketChannel = getChannel();
-            if (socketChannel instanceof SocketChannel) {
-                try {
-                    if (((SocketChannel) socketChannel).finishConnect()) {
-                        throw context.getRuntime().newErrnoEISCONNError();
-                    }
-                    throw context.getRuntime().newErrnoEINPROGRESSError();
-                } catch (IOException ex) {
-                    throw sockerr(context.getRuntime(), "connect(2): name or service not known");
-                }
-            }
-            throw context.getRuntime().newErrnoEINPROGRESSError();
-        } catch(UnknownHostException e) {
-            throw sockerr(context.getRuntime(), "connect(2): unknown host");
-        } catch(SocketException e) {
-            handleSocketException(context.getRuntime(), "connect", e);
+
+        } catch(ClosedChannelException e) {
+            throw context.getRuntime().newErrnoECONNREFUSEDError();
+
         } catch(IOException e) {
             throw sockerr(context.getRuntime(), "connect(2): name or service not known");
+
+        }
+    }
+
+    private void doConnect(ThreadContext context, Channel channel, InetSocketAddress iaddr) {
+        Ruby runtime = context.runtime;
+
+        try {
+            if (channel instanceof SocketChannel) {
+                SocketChannel socket = (SocketChannel)channel;
+
+                if(!socket.connect(iaddr)) {
+                    throw context.getRuntime().newErrnoEINPROGRESSError();
+                }
+
+            } else if (channel instanceof DatagramChannel) {
+                ((DatagramChannel)channel).connect(iaddr);
+
+            } else {
+                throw getRuntime().newErrnoENOPROTOOPTError();
+
+            }
+
+        } catch(AlreadyConnectedException e) {
+            throw runtime.newErrnoEISCONNError();
+
+        } catch(ConnectionPendingException e) {
+            throw runtime.newErrnoEINPROGRESSError();
+
+        } catch(UnknownHostException e) {
+            throw sockerr(context.getRuntime(), "connect(2): unknown host");
+
+        } catch(SocketException e) {
+            handleSocketException(context.getRuntime(), "connect", e);
+
+        } catch(IOException e) {
+            throw sockerr(context.getRuntime(), "connect(2): name or service not known");
+
         } catch (IllegalArgumentException iae) {
             throw sockerr(context.getRuntime(), iae.getMessage());
-        } catch (Error e) {
-            // Workaround for a bug in Sun's JDK 1.5.x, see
-            // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6303753
-            Throwable cause = e.getCause();
-            if (cause instanceof SocketException) {
-                handleSocketException(context.getRuntime(), "connect", (SocketException)cause);
-            } else {
-                throw e;
-            }
+
         }
-        return RubyFixnum.zero(context.getRuntime());
+    }
+
+    private InetSocketAddress addressFromSockaddr_in(ThreadContext context, IRubyObject arg) {
+        RubyArray sockaddr = (RubyArray) unpack_sockaddr_in(context, this, arg);
+
+        IRubyObject addr = sockaddr.pop(context);
+        IRubyObject port = sockaddr.pop(context);
+
+        return new InetSocketAddress(
+                addr.convertToString().toString(), RubyNumeric.fix2int(port));
     }
 
     @JRubyMethod(backtrace = true)
     public IRubyObject bind(ThreadContext context, IRubyObject arg) {
-        RubyArray sockaddr = (RubyArray) unpack_sockaddr_in(context, this, arg);
+        InetSocketAddress iaddr = addressFromSockaddr_in(context, arg);
 
         try {
-            IRubyObject addr = sockaddr.pop(context);
-            IRubyObject port = sockaddr.pop(context);
-            InetSocketAddress iaddr = new InetSocketAddress(
-                    addr.convertToString().toString(), RubyNumeric.fix2int(port));
-
-            Channel socketChannel = getChannel();
-            if (socketChannel instanceof SocketChannel) {
-                Socket socket = ((SocketChannel)socketChannel).socket();
+            Channel channel = getChannel();
+            
+            if (channel instanceof SocketChannel) {
+                Socket socket = ((SocketChannel)channel).socket();
                 socket.bind(iaddr);
-            } else if (socketChannel instanceof DatagramChannel) {
-                DatagramSocket socket = ((DatagramChannel)socketChannel).socket();
+            } else if (channel instanceof DatagramChannel) {
+                DatagramSocket socket = ((DatagramChannel)channel).socket();
                 socket.bind(iaddr);
             } else {
                 throw getRuntime().newErrnoENOPROTOOPTError();
