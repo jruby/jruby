@@ -307,32 +307,29 @@ public class RubyTime extends RubyObject {
     
     @JRubyMethod(name = "localtime", optional = 1, compat = RUBY1_9)
     public RubyTime localtime19(ThreadContext context, IRubyObject[] args) {
-        String offset;
-        if (args.length == 1) {
-            offset = args[0].asJavaString();
-        } else {
-            return localtime();
-        }
+        if (args.length == 0) return localtime();
+        String offset = args[0].asJavaString();
+
         Matcher offsetMatcher = TIME_OFFSET_PATTERN.matcher(offset);
-        if (offsetMatcher.matches()) {
-            String sign = offsetMatcher.group(1);
-            String hours = offsetMatcher.group(2);
-            String minutes = offsetMatcher.group(3);
-            String zone;
-            
-            if ("00".equals(hours) && "00".equals(minutes)) {
-                zone = "Etc/GMT";
-            } else {
-                // Java needs the sign inverted
-                String sgn = "+".equals(sign) ? "-" : "+";
-                zone = "GMT" + sgn + hours + minutes;
-            }
-            
-            DateTimeZone dtz = getTimeZone(context.getRuntime(), zone);
-            return newTime(context.getRuntime(), dt.withZone(dtz), usec);
-        } else {
+        if (! offsetMatcher.matches()) {
             throw context.getRuntime().newArgumentError("\"+HH:MM\" or \"-HH:MM\" expected for utc_offset");
         }
+
+        String sign = offsetMatcher.group(1);
+        String hours = offsetMatcher.group(2);
+        String minutes = offsetMatcher.group(3);
+        String zone;
+
+        if ("00".equals(hours) && "00".equals(minutes)) {
+            zone = "Etc/GMT";
+        } else {
+            // Java needs the sign inverted
+            String sgn = "+".equals(sign) ? "-" : "+";
+            zone = "GMT" + sgn + hours + minutes;
+        }
+
+        DateTimeZone dtz = getTimeZone(context.getRuntime(), zone);
+        return newTime(context.getRuntime(), dt.withZone(dtz), usec);
     }
     
     @JRubyMethod(name = {"gmt?", "utc?", "gmtime?"})
