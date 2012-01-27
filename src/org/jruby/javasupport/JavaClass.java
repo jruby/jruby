@@ -440,14 +440,14 @@ public class JavaClass extends JavaObject {
         }
 
         void install(RubyModule proxy) {
-            if (hasLocalMethod()) {
-                RubyClass rubySingleton = proxy.getSingletonClass();
-                DynamicMethod method = new SingletonMethodInvoker(this.singleton, rubySingleton, methods);
-                rubySingleton.addMethod(name, method);
-                if (aliases != null && isPublic()) {
-                    rubySingleton.defineAliases(aliases, this.name);
-                    aliases = null;
-                }
+            // we don't check haveLocalMethod() here because it's not local and we know
+            // that we always want to go ahead and install it
+            RubyClass rubySingleton = proxy.getSingletonClass();
+            DynamicMethod method = new SingletonMethodInvoker(this.singleton, rubySingleton, methods);
+            rubySingleton.addMethod(name, method);
+            if (aliases != null && isPublic()) {
+                rubySingleton.defineAliases(aliases, this.name);
+                aliases = null;
             }
         }
     }
