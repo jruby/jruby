@@ -95,7 +95,7 @@ public abstract class IRScope {
     private RubyModule containerModule; 
     
     /** List of IR instructions for this method */
-    private List<Instr> instructions; 
+    private List<Instr> instrList; 
 
     /** Control flow graph representation of this method's instructions */
     private CFG cfg = null;
@@ -115,7 +115,7 @@ public abstract class IRScope {
     /** Map of name -> dataflow problem */
     private Map<String, DataFlowProblem> dfProbs = new HashMap<String, DataFlowProblem>();
 
-    private Instr[] instrs = null;
+    private Instr[] linearizedInstrArray = null;
     private List<BasicBlock> linearizedBBList = null;
     private int scopeExitPC = -1;
     protected int temporaryVariableIndex = -1;
@@ -213,9 +213,9 @@ public abstract class IRScope {
         this.lexicalParent = lexicalParent;        
         this.name = name;
         this.fileName = fileName;
-		  this.lineNumber = lineNumber;
+        this.lineNumber = lineNumber;
         this.staticScope = staticScope;
-        instructions = new ArrayList<Instr>();
+        instrList = new ArrayList<Instr>();
         closures = new ArrayList<IRClosure>();
 
         // All flags are true by default!
@@ -233,11 +233,11 @@ public abstract class IRScope {
     }
     
     public Instr getLastInstr() {
-        return instructions.get(instructions.size() - 1);
+        return instrList.get(instrList.size() - 1);
     }
     
     public void addInstr(Instr i) {
-        instructions.add(i);
+        instrList.add(i);
     }
 
     public LocalVariable getNewFlipStateVariable() {
@@ -246,7 +246,7 @@ public abstract class IRScope {
 
     public void initFlipStateVariable(Variable v, Operand initState) {
         // Add it to the beginning
-        instructions.add(0, new CopyInstr(v, initState));
+        instrList.add(0, new CopyInstr(v, initState));
     }
 
     public boolean isForLoopBody() {
@@ -387,7 +387,9 @@ public abstract class IRScope {
 
     public CFG buildCFG() {
         cfg = new CFG(this);
-        cfg.build(instructions);
+        cfg.build(instrList);
+		  // Clear out instruction list after CFG has been built.
+		  this.instrList = null;  
         return cfg;
     }
     
@@ -410,7 +412,7 @@ public abstract class IRScope {
     }
     
     private Instr[] prepareInstructionsForInterpretation() {
-        if (instrs != null) return instrs; // Already prepared
+        if (linearizedInstrArray != null) return linearizedInstrArray; // Already prepared
 
         try {
             buildLinearization(); // FIXME: compiler passes should have done this
@@ -448,8 +450,8 @@ public abstract class IRScope {
         cfg().getExitBB().getLabel().setTargetPC(ipc + 1);
         this.scopeExitPC = ipc+1;
 
-        instrs = newInstrs.toArray(new Instr[newInstrs.size()]);
-        return instrs;
+        linearizedInstrArray = newInstrs.toArray(new Instr[newInstrs.size()]);
+        return linearizedInstrArray;
     }
 
     private void printPass(String message) {
@@ -498,13 +500,19 @@ public abstract class IRScope {
     /** Run any necessary passes to get the IR ready for interpretation */
     public synchronized Instr[] prepareForInterpretation() {
         // If the instruction array exists, someone has taken care of setting up the CFG and preparing the instructions
-        if (instrs != null) return instrs;
+        if (linearizedInstrArray != null) return linearizedInstrArray;
 
         // Build CFG and run compiler passes, if necessary
         if (getCFG() == null) runCompilerPasses();
 
         // Linearize CFG, etc.
         return prepareInstructionsForInterpretation();
+    }
+
+    /** Run any necessary passes to get the IR ready for compilation */
+    public synchronized void prepareForCompilation() {
+        // Build CFG and run compiler passes, if necessary
+        if (getCFG() == null) runCompilerPasses();
     }
 
     // SSS FIXME: This method does nothing useful right now.
@@ -562,7 +570,7 @@ public abstract class IRScope {
         StringBuilder b = new StringBuilder();
 
         int i = 0;
-        for (Instr instr : instructions) {
+        for (Instr instr : instrList) {
             if (i > 0) b.append("\n");
             
             b.append("  ").append(i).append('\t').append(instr);
@@ -585,8 +593,8 @@ public abstract class IRScope {
         Map<Variable, Integer> starts = new HashMap<Variable, Integer>();
         SortedSet<Variable> variables = new TreeSet<Variable>();
         
-        for (int i = instructions.size() - 1; i >= 0; i--) {
-            Instr instr = instructions.get(i);
+        for (int i = instrList.size() - 1; i >= 0; i--) {
+            Instr instr = instrList.get(i);
 
             if (instr instanceof ResultInstr) {
                 Variable var = ((ResultInstr) instr).getResult();
@@ -625,8 +633,8 @@ public abstract class IRScope {
         Map<LocalVariable, Integer> starts = new HashMap<LocalVariable, Integer>();
         Set<LocalVariable> variables = new TreeSet<LocalVariable>();
 
-        for (int i = instructions.size() - 1; i >= 0; i--) {
-            Instr instr = instructions.get(i);
+        for (int i = instrList.size() - 1; i >= 0; i--) {
+            Instr instr = instrList.get(i);
 
             // TODO: Instruction encode whether arguments are optional/required/block
             // TODO: PErhaps this should be part of allocate and not have a generic
@@ -694,8 +702,8 @@ public abstract class IRScope {
      * SSS FIXME: What is this method for?
     @Interp
     public void calculateParameterCounts() {
-        for (int i = instructions.size() - 1; i >= 0; i--) {
-            Instr instr = instructions.get(i);
+        for (int i = instrList.size() - 1; i >= 0; i--) {
+            Instr instr = instrList.get(i);
         }
     }
      ------------------------------------------ **/
@@ -831,13 +839,15 @@ public abstract class IRScope {
         return dfProbs.get(name);
     }
     
-    // SSS FIXME: Deprecated!  Going forward, all instructions should come from the CFG
+    // This should only be used to do pre-cfg opts and to build the CFG.
+    // Everyone else should use the CFG.
     public List<Instr> getInstrs() {
-        return instructions;
+		  if (cfg != null) throw new RuntimeException("Please use the CFG to access this scope's instructions.");
+        return instrList;
     }
 
     public Instr[] getInstrsForInterpretation() {
-        return instrs;
+        return linearizedInstrArray;
     }
     
     public int getScopeExitPC() {
@@ -945,9 +955,9 @@ public abstract class IRScope {
     }
     
     
-    public void buildCFG(List<Instr> instructions) {
+    public void buildCFG(List<Instr> instrList) {
         CFG newBuild = new CFG(this);
-        newBuild.build(instructions);
+        newBuild.build(instrList);
         cfg = newBuild;
     }    
 

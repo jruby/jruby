@@ -24,6 +24,7 @@ import org.jruby.compiler.ir.operands.CurrentScope;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
+import org.jruby.compiler.ir.representations.BasicBlock;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JRubyClassLoader;
@@ -139,7 +140,7 @@ public class JVM implements CompilerTarget {
         // run compiler
         CompilerTarget target = new JDK7();
 
-        scope.prepareForInterpretation();
+        scope.prepareForCompilation();
 
         target.codegen(scope);
 
@@ -220,8 +221,10 @@ public class JVM implements CompilerTarget {
 
         pushmethod("__script__", 0);
 
-        for (Instr instr: script.getInstrs()) {
-            emit(instr);
+        for (BasicBlock b : script.getCFG().getBasicBlocks()) {
+            for (Instr instr: b.getInstrs()) {
+                emit(instr);
+            }
         }
         
         popmethod();
@@ -233,10 +236,12 @@ public class JVM implements CompilerTarget {
     public void emit(IRMethod method) {
         pushmethod(method.getName(), method.getCallArgs().length);
 
-        for (Instr instr: method.getInstrs()) {
-            System.out.println(instr);
-            System.out.println(instr.getClass());
-            emit(instr);
+        for (BasicBlock b : method.getCFG().getBasicBlocks()) {
+            for (Instr instr: b.getInstrs()) {
+                System.out.println(instr);
+                System.out.println(instr.getClass());
+                emit(instr);
+            }
         }
         
         popmethod();
