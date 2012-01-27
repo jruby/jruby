@@ -73,7 +73,10 @@ module JRuby
           next unless File.file?(fn)
           next if fn =~ /.bat$/
           next if File.exist?("#{fn}.bat")
-          next unless File.open(fn) {|io| (io.readline rescue "") =~ /^#!.*ruby/}
+          next unless File.open(fn, 'r', :internal_encoding => 'ASCII-8BIT') do |io|
+            line = io.readline rescue ""
+            line =~ /^#!.*ruby/
+          end
           puts "Generating #{File.basename(fn)}.bat"
           File.open("#{fn}.bat", "wb") do |f|
             f << "@ECHO OFF\r\n"
