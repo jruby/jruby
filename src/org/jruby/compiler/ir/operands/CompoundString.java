@@ -99,6 +99,15 @@ public class CompoundString extends Operand {
         return str.bytelist.getEncoding() == encoding;
     }
 
+    public RubyString[] retrievePieces(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
+        RubyString[] strings = new RubyString[pieces.size()];
+        int i = 0;
+        for (Operand p : pieces) {
+            strings[i++] = (RubyString)p.retrieve(context, self, currDynScope, temp);
+        }
+        return strings;
+    }
+
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         // SSS FIXME: Doesn't work in all cases.  See example below

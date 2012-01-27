@@ -63,15 +63,22 @@ public class Regexp extends Operand {
         // FIXME (from RegexpNode.java): 1.9 should care about internal or external encoding and not kcode.
         // If we have a constant regexp string or if the regexp patterns asks for caching, cache the regexp
         if ((!regexp.isConstant() && !options.isOnce()) || (rubyRegexp == null) || context.getRuntime().getKCode() != rubyRegexp.getKCode()) {
-            RubyString pattern = (RubyString) regexp.retrieve(context, self, currDynScope, temp);
-            RubyRegexp reg;
+            RubyRegexp re;
             if (regexp instanceof CompoundString) {
-                reg = RubyRegexp.newDRegexp(context.getRuntime(), pattern, options);
+                if (context.runtime.is1_9()) {
+                    RubyString[] pieces  = ((CompoundString)regexp).retrievePieces(context, self, currDynScope, temp);
+                    RubyString   pattern = RubyRegexp.preprocessDRegexp(context.getRuntime(), pieces, options);
+                    re = RubyRegexp.newDRegexp(context.getRuntime(), pattern, options);
+                } else {
+                    RubyString pattern = (RubyString) regexp.retrieve(context, self, currDynScope, temp);
+                    re = RubyRegexp.newDRegexp(context.getRuntime(), pattern, options);
+                }
             } else {
-                reg = RubyRegexp.newRegexp(context.getRuntime(), pattern.getByteList(), options);
+                RubyString pattern = (RubyString) regexp.retrieve(context, self, currDynScope, temp);
+                re = RubyRegexp.newRegexp(context.getRuntime(), pattern.getByteList(), options);
             }
-            reg.setLiteral();
-            rubyRegexp = reg;
+            re.setLiteral();
+            rubyRegexp = re;
         }
 
         return rubyRegexp;
