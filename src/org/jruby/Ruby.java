@@ -171,7 +171,7 @@ import org.jruby.util.log.LoggerFactory;
  * provides a number of utility methods for constructing global types and
  * accessing global runtime structures.
  */
-public final class Ruby {
+public class Ruby {
     
     /**
      * The logger used to log relevant bits.
