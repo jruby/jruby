@@ -24,8 +24,13 @@ public class StringLiteral extends Operand {
     }
 
     @Override
+    public boolean isConstant() {
+        return true;
+    }
+
+    @Override
     public void addUsedVariables(List<Variable> l) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        /* Do nothing */
     }    
 
     @Override
