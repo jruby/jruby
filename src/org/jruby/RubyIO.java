@@ -955,12 +955,20 @@ public class RubyIO extends RubyObject {
 
     private void parseEncodingFromString(ThreadContext context, IRubyObject arg, int initialPosition) {
         RubyString modes19 = arg.convertToString();
+
         if (modes19.toString().contains(":")) {
             Ruby runtime = context.getRuntime();
-
-            IRubyObject[] fullEncoding = modes19.split(context, RubyString.newString(runtime, ":")).toJavaArray();
+            RubyString splitter = RubyString.newString(runtime, ":");
+            IRubyObject[] fullEncoding = modes19.split(context, splitter).toJavaArray();
 
             IRubyObject externalEncodingOption = fullEncoding[initialPosition];
+
+            // FIXME: Add something to indicate BOM
+            if (externalEncodingOption.toString().contains("|")) {
+                splitter = RubyString.newString(runtime, "|");
+                externalEncodingOption = externalEncodingOption.convertToString().split(context, splitter).toJavaArray()[1];
+            }
+            
             RubyString dash = runtime.newString("-");
             if (dash.eql(externalEncodingOption)) {
                 externalEncodingOption = runtime.getEncodingService().getDefaultExternal();
