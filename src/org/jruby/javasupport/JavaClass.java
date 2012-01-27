@@ -745,6 +745,11 @@ public class JavaClass extends JavaObject {
                 addUnassignedAlias("[]=", assignedNames, installer);
             }
 
+            // Scala aliases for $ method names
+            if (name.startsWith("$")) {
+                addUnassignedAlias(fixScalaNames(name), assignedNames, installer);
+            }
+
             // Add property name aliases
             if (javaPropertyName != null) {
                 if (rubyCasedName.startsWith("get_")) {
@@ -954,11 +959,6 @@ public class JavaClass extends JavaObject {
             // install the ones that are named in this class
             Method method = methods[i];
             String name = method.getName();
-
-            // Fix Scala names to be their Ruby equivalents
-            if (name.startsWith("$")) {
-                name = fixScalaNames(name);
-            }
 
             if (Modifier.isStatic(method.getModifiers())) {
                 AssignedName assignedName = state.staticNames.get(name);
