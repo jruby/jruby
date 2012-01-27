@@ -557,7 +557,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         sysopenInternal(path, modes, perm);
     }
 
-    protected void sysopenInternal(String path, ModeFlags modes, int perm) throws InvalidValueException {
+    protected void sysopenInternal(String path, ModeFlags modes, int perm) {
         openFile = new OpenFile();
 
         openFile.setPath(path);
@@ -597,7 +597,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         openFile.setMainStream(fopen(path, modeString));
     }
     
-    private ChannelDescriptor sysopen(String path, ModeFlags modes, int perm) throws InvalidValueException {
+    private ChannelDescriptor sysopen(String path, ModeFlags modes, int perm) {
         try {
             ChannelDescriptor descriptor = ChannelDescriptor.open(
                     getRuntime().getCurrentDirectory(),

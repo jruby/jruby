@@ -94,8 +94,7 @@ public class RubyTCPSocket extends RubyIPSocket {
 
     @JRubyMethod(required = 2, optional = 2, visibility = Visibility.PRIVATE, backtrace = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
-        Arity.checkArgumentCount(context.getRuntime(), args, 2, 4);
-
+        Ruby runtime = context.runtime;
         String remoteHost = args[0].isNil()? "localhost" : args[0].convertToString().toString();
         int remotePort = getPortFrom(context.getRuntime(), args[1]);
         String localHost = args.length >= 3 && !args[2].isNil() ? args[2].convertToString().toString() : null;
@@ -116,28 +115,26 @@ public class RubyTCPSocket extends RubyIPSocket {
                 channel.finishConnect();
                 // only try to set blocking back if we succeeded to finish connecting
                 channel.configureBlocking(true);
-                initSocket(context.getRuntime(), new ChannelDescriptor(channel, new ModeFlags(ModeFlags.RDWR)));
+                initSocket(runtime, new ChannelDescriptor(channel, newModeFlags(runtime, ModeFlags.RDWR)));
             } catch (NoRouteToHostException nrthe) {
                 channel.close();
-                throw context.getRuntime().newErrnoEHOSTUNREACHError("SocketChannel.connect");
+                throw runtime.newErrnoEHOSTUNREACHError("SocketChannel.connect");
             } catch(ConnectException e) {
                 channel.close();
-                throw context.getRuntime().newErrnoECONNREFUSEDError();
+                throw runtime.newErrnoECONNREFUSEDError();
             } catch(UnknownHostException e) {
                 channel.close();
-                throw sockerr(context.getRuntime(), "initialize: name or service not known");
+                throw sockerr(runtime, "initialize: name or service not known");
             }
 
-        } catch (InvalidValueException ex) {
-            throw context.getRuntime().newErrnoEINVALError();
         } catch (ClosedChannelException cce) {
-            throw context.getRuntime().newErrnoECONNREFUSEDError();
+            throw runtime.newErrnoECONNREFUSEDError();
         } catch(BindException e) {
-            throw context.getRuntime().newErrnoEADDRFromBindException(e);
+            throw runtime.newErrnoEADDRFromBindException(e);
         } catch(IOException e) {
-            throw sockerr(context.getRuntime(), e.getLocalizedMessage());
+            throw sockerr(runtime, e.getLocalizedMessage());
         } catch (IllegalArgumentException iae) {
-            throw sockerr(context.getRuntime(), iae.getMessage());
+            throw sockerr(runtime, iae.getMessage());
         }
         return this;
     }

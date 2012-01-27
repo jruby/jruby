@@ -69,6 +69,7 @@ import org.jruby.util.io.OpenFile;
 
 import jnr.constants.platform.SocketLevel;
 import jnr.constants.platform.SocketOption;
+import org.jruby.util.io.Sockaddr;
 
 
 /**
@@ -104,8 +105,8 @@ public class RubyBasicSocket extends RubyIO {
         openFile = new OpenFile();
         
         try {
-            openFile.setMainStream(ChannelStream.fdopen(runtime, descriptor, new ModeFlags(ModeFlags.RDONLY)));
-            openFile.setPipeStream(ChannelStream.fdopen(runtime, descriptor, new ModeFlags(ModeFlags.WRONLY)));
+            openFile.setMainStream(ChannelStream.fdopen(runtime, descriptor, newModeFlags(runtime, ModeFlags.RDONLY)));
+            openFile.setPipeStream(ChannelStream.fdopen(runtime, descriptor, newModeFlags(runtime, ModeFlags.WRONLY)));
             openFile.getPipeStream().setSync(true);
         } catch (org.jruby.util.io.InvalidValueException ex) {
             throw runtime.newErrnoEINVALError();
@@ -644,9 +645,9 @@ public class RubyBasicSocket extends RubyIO {
         try {
             InetSocketAddress sock = getLocalSocket(caller);
             if(null == sock) {
-                return RubySocket.pack_sockaddr_in(context, null, 0, "0.0.0.0");
+                return Sockaddr.pack_sockaddr_in(context, 0, "0.0.0.0");
             } else {
-               return RubySocket.pack_sockaddr_in(context, sock);
+               return Sockaddr.pack_sockaddr_in(context, sock);
             }
         } catch (BadDescriptorException e) {
             throw context.runtime.newErrnoEBADFError();

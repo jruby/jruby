@@ -102,6 +102,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
     }
 
     @JRubyMethod(optional = 2, meta = true)
+    @SuppressWarnings("deprecated")
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         RubyStringIO strio = (RubyStringIO)((RubyClass)recv).newInstance(context, args, Block.NULL_BLOCK);
         IRubyObject val = strio;
@@ -122,17 +123,16 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
     }
 
     private void initializeModes(Object modeArgument) {
-        try {
-            if (modeArgument == null) {
-                data.modes = new ModeFlags(RubyIO.getIOModesIntFromString(getRuntime(), "r+"));
-            } else if (modeArgument instanceof Long) {
-                data.modes = new ModeFlags(((Long)modeArgument).longValue());
-            } else {
-                data.modes = new ModeFlags(RubyIO.getIOModesIntFromString(getRuntime(), (String) modeArgument));
-            }
-        } catch (InvalidValueException e) {
-            throw getRuntime().newErrnoEINVALError();
+        Ruby runtime = getRuntime();
+
+        if (modeArgument == null) {
+            data.modes = RubyIO.newModeFlags(runtime, RubyIO.getIOModesIntFromString(runtime, "r+"));
+        } else if (modeArgument instanceof Long) {
+            data.modes = RubyIO.newModeFlags(runtime, ((Long)modeArgument).longValue());
+        } else {
+            data.modes = RubyIO.newModeFlags(runtime, RubyIO.getIOModesIntFromString(runtime, (String) modeArgument));
         }
+
         setupModes();
     }
 

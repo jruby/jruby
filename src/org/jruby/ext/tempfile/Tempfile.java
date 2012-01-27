@@ -172,13 +172,11 @@ public class Tempfile extends RubyTempfile {
     }
 
     private void initializeOpen() {
-        try {
-            ModeFlags modeFlags = new ModeFlags(ModeFlags.RDWR | ModeFlags.EXCL);
-            getRuntime().getPosix().chmod(path, 0600);
-            sysopenInternal(path, modeFlags, 0600);
-        } catch (InvalidValueException e) {
-            throw getRuntime().newErrnoEINVALError();
-        }
+        Ruby runtime = getRuntime();
+
+        ModeFlags modeFlags = newModeFlags(runtime, ModeFlags.RDWR | ModeFlags.EXCL);
+        getRuntime().getPosix().chmod(path, 0600);
+        sysopenInternal(path, modeFlags, 0600);
     }
 
     /**

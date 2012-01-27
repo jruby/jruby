@@ -85,17 +85,17 @@ public class RubyUDPSocket extends RubyIPSocket {
 
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context) {
+        Ruby runtime = context.runtime;
+
         try {
             DatagramChannel channel = DatagramChannel.open();
-            initSocket(context.getRuntime(), new ChannelDescriptor(channel, new ModeFlags(ModeFlags.RDWR)));
-        } catch (org.jruby.util.io.InvalidValueException ex) {
-            throw context.getRuntime().newErrnoEINVALError();
+            initSocket(runtime, new ChannelDescriptor(channel, newModeFlags(runtime, ModeFlags.RDWR)));
         } catch (ConnectException e) {
-            throw context.getRuntime().newErrnoECONNREFUSEDError();
+            throw runtime.newErrnoECONNREFUSEDError();
         } catch (UnknownHostException e) {
-            throw sockerr(context.getRuntime(), "initialize: name or service not known");
+            throw sockerr(runtime, "initialize: name or service not known");
         } catch (IOException e) {
-            throw sockerr(context.getRuntime(), "initialize: name or service not known");
+            throw sockerr(runtime, "initialize: name or service not known");
         }
         return this;
     }

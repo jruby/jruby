@@ -365,15 +365,13 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
     protected void init_sock(Ruby runtime) {
         try {
-            ModeFlags modes = new ModeFlags(ModeFlags.RDWR);
+            ModeFlags modes = newModeFlags(runtime, ModeFlags.RDWR);
             openFile.setMainStream(ChannelStream.open(runtime, new ChannelDescriptor(new UnixDomainSocketChannel(runtime, fd), modes)));
             openFile.setPipeStream(openFile.getMainStreamSafe());
             openFile.setMode(modes.getOpenFileFlags());
             openFile.getMainStreamSafe().setSync(true);
         } catch (BadDescriptorException e) {
             throw runtime.newErrnoEBADFError();
-        } catch (InvalidValueException ive) {
-            throw runtime.newErrnoEINVALError();
         }
     }
 

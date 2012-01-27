@@ -41,6 +41,8 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.BadDescriptorException;
+import org.jruby.util.io.Sockaddr;
+
 import static org.jruby.CompatVersion.*;
 
 /**
@@ -68,14 +70,6 @@ public class RubyIPSocket extends RubyBasicSocket {
     
     protected static RuntimeException sockerr(Ruby runtime, String msg) {
         return new RaiseException(runtime, runtime.getClass("SocketError"), msg, true);
-    }
-
-    public IRubyObject packSockaddrFromAddress(InetSocketAddress sock, ThreadContext context) {
-        if (sock == null) {
-            return RubySocket.pack_sockaddr_in(context, this, 0, "");
-        } else {
-            return RubySocket.pack_sockaddr_in(context, sock);
-        }
     }
 
     private IRubyObject addrFor(ThreadContext context, InetSocketAddress addr, boolean reverse) {
@@ -161,7 +155,7 @@ public class RubyIPSocket extends RubyBasicSocket {
     protected IRubyObject getSocknameCommon(ThreadContext context, String caller) {
         try {
             InetSocketAddress sock = getLocalSocket(caller);
-            return packSockaddrFromAddress(sock, context);
+            return Sockaddr.packSockaddrFromAddress(context, sock);
         } catch (BadDescriptorException e) {
             throw context.runtime.newErrnoEBADFError();
         }
@@ -170,7 +164,7 @@ public class RubyIPSocket extends RubyBasicSocket {
     public IRubyObject getpeername(ThreadContext context) {
         try {
             InetSocketAddress sock = getRemoteSocket();
-            return packSockaddrFromAddress(sock, context);
+            return Sockaddr.packSockaddrFromAddress(context, sock);
         } catch (BadDescriptorException e) {
             throw context.runtime.newErrnoEBADFError();
         }

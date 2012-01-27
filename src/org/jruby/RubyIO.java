@@ -235,34 +235,30 @@ public class RubyIO extends RubyObject {
         ChannelDescriptor descriptor;
         Stream mainStream;
 
-        try {
-            switch (stdio) {
-            case IN:
-                // special constructor that accepts stream, not channel
-                descriptor = new ChannelDescriptor(runtime.getIn(), new ModeFlags(ModeFlags.RDONLY), FileDescriptor.in);
-                runtime.putFilenoMap(0, descriptor.getFileno());
-                mainStream = ChannelStream.open(runtime, descriptor);
-                openFile.setMainStream(mainStream);
-                break;
-            case OUT:
-                descriptor = new ChannelDescriptor(Channels.newChannel(runtime.getOut()), new ModeFlags(ModeFlags.WRONLY | ModeFlags.APPEND), FileDescriptor.out);
-                runtime.putFilenoMap(1, descriptor.getFileno());
-                mainStream = ChannelStream.open(runtime, descriptor);
-                openFile.setMainStream(mainStream);
-                openFile.getMainStream().setSync(true);
-                break;
-            case ERR:
-                descriptor = new ChannelDescriptor(Channels.newChannel(runtime.getErr()), new ModeFlags(ModeFlags.WRONLY | ModeFlags.APPEND), FileDescriptor.err);
-                runtime.putFilenoMap(2, descriptor.getFileno());
-                mainStream = ChannelStream.open(runtime, descriptor);
-                openFile.setMainStream(mainStream);
-                openFile.getMainStream().setSync(true);
-                break;
-            }
-        } catch (InvalidValueException ex) {
-            throw getRuntime().newErrnoEINVALError();
+        switch (stdio) {
+        case IN:
+            // special constructor that accepts stream, not channel
+            descriptor = new ChannelDescriptor(runtime.getIn(), newModeFlags(runtime, ModeFlags.RDONLY), FileDescriptor.in);
+            runtime.putFilenoMap(0, descriptor.getFileno());
+            mainStream = ChannelStream.open(runtime, descriptor);
+            openFile.setMainStream(mainStream);
+            break;
+        case OUT:
+            descriptor = new ChannelDescriptor(Channels.newChannel(runtime.getOut()), newModeFlags(runtime, ModeFlags.WRONLY | ModeFlags.APPEND), FileDescriptor.out);
+            runtime.putFilenoMap(1, descriptor.getFileno());
+            mainStream = ChannelStream.open(runtime, descriptor);
+            openFile.setMainStream(mainStream);
+            openFile.getMainStream().setSync(true);
+            break;
+        case ERR:
+            descriptor = new ChannelDescriptor(Channels.newChannel(runtime.getErr()), newModeFlags(runtime, ModeFlags.WRONLY | ModeFlags.APPEND), FileDescriptor.err);
+            runtime.putFilenoMap(2, descriptor.getFileno());
+            mainStream = ChannelStream.open(runtime, descriptor);
+            openFile.setMainStream(mainStream);
+            openFile.getMainStream().setSync(true);
+            break;
         }
-        
+
         openFile.setMode(openFile.getMainStream().getModes().getOpenFileFlags());
         // never autoclose stdio streams
         openFile.setAutoclose(false);
@@ -537,8 +533,8 @@ public class RubyIO extends RubyObject {
         return this;
     }
     
-    public static ModeFlags getIOModes(Ruby runtime, String modesString) throws InvalidValueException {
-        return new ModeFlags(getIOModesIntFromString(runtime, modesString));
+    public static ModeFlags getIOModes(Ruby runtime, String modesString) {
+        return newModeFlags(runtime, getIOModesIntFromString(runtime, modesString));
     }
         
     public static int getIOModesIntFromString(Ruby runtime, String modesString) {
@@ -907,8 +903,6 @@ public class RubyIO extends RubyObject {
             openFile.setMainStream(fdopen(descriptor, modes));
         } catch (BadDescriptorException ex) {
             throw getRuntime().newErrnoEBADFError();
-        } catch (InvalidValueException ive) {
-            throw getRuntime().newErrnoEINVALError();
         }
 
         return this;
@@ -942,13 +936,11 @@ public class RubyIO extends RubyObject {
     }
 
     protected ModeFlags parseModes(IRubyObject arg) {
-        try {
-            if (arg instanceof RubyFixnum) return new ModeFlags(RubyFixnum.fix2long(arg));
+        Ruby runtime = getRuntime();
 
-            return getIOModes(getRuntime(), arg.convertToString().toString());
-        } catch (InvalidValueException e) {
-            throw getRuntime().newErrnoEINVALError();
-        }
+        if (arg instanceof RubyFixnum) return newModeFlags(runtime, RubyFixnum.fix2long(arg));
+
+        return getIOModes(runtime, arg.convertToString().toString());
     }
 
     protected ModeFlags parseModes19(ThreadContext context, IRubyObject arg) {
@@ -988,25 +980,26 @@ public class RubyIO extends RubyObject {
 
     @JRubyMethod(required = 1, optional = 1, visibility = PRIVATE, compat = RUBY1_8)
     public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
+        Ruby runtime = getRuntime();
         int argCount = args.length;
         ModeFlags modes;
         
         int fileno = RubyNumeric.fix2int(args[0]);
         
         try {
-            ChannelDescriptor descriptor = ChannelDescriptor.getDescriptorByFileno(getRuntime().getFilenoExtMap(fileno));
+            ChannelDescriptor descriptor = ChannelDescriptor.getDescriptorByFileno(runtime.getFilenoExtMap(fileno));
             
             if (descriptor == null) {
-                throw getRuntime().newErrnoEBADFError();
+                throw runtime.newErrnoEBADFError();
             }
             
             descriptor.checkOpen();
             
             if (argCount == 2) {
                 if (args[1] instanceof RubyFixnum) {
-                    modes = new ModeFlags(RubyFixnum.fix2long(args[1]));
+                    modes = newModeFlags(runtime, RubyFixnum.fix2long(args[1]));
                 } else {
-                    modes = getIOModes(getRuntime(), args[1].convertToString().toString());
+                    modes = getIOModes(runtime, args[1].convertToString().toString());
                 }
             } else {
                 // use original modes
@@ -1016,22 +1009,22 @@ public class RubyIO extends RubyObject {
             if (openFile.isOpen()) {
                 // JRUBY-4650: Make sure we clean up the old data,
                 // if it's present.
-                openFile.cleanup(getRuntime(), false);
+                openFile.cleanup(runtime, false);
             }
 
             openFile.setMode(modes.getOpenFileFlags());
         
             openFile.setMainStream(fdopen(descriptor, modes));
         } catch (BadDescriptorException ex) {
-            throw getRuntime().newErrnoEBADFError();
-        } catch (InvalidValueException ive) {
-            throw getRuntime().newErrnoEINVALError();
+            throw runtime.newErrnoEBADFError();
         }
         
         return this;
     }
     
-    protected Stream fdopen(ChannelDescriptor existingDescriptor, ModeFlags modes) throws InvalidValueException {
+    protected Stream fdopen(ChannelDescriptor existingDescriptor, ModeFlags modes) {
+        Ruby runtime = getRuntime();
+
         // See if we already have this descriptor open.
         // If so then we can mostly share the handler (keep open
         // file, but possibly change the mode).
@@ -1043,7 +1036,7 @@ public class RubyIO extends RubyObject {
             // ...so do we even need to bother trying to create one?
             
             // IN FACT, we should probably raise an error, yes?
-            throw getRuntime().newErrnoEBADFError();
+            throw runtime.newErrnoEBADFError();
             
 //            if (mode == null) {
 //                mode = "r";
@@ -1062,7 +1055,11 @@ public class RubyIO extends RubyObject {
         } else {
             // We are creating a new IO object that shares the same
             // IOHandler (and fileno).
-            return ChannelStream.fdopen(getRuntime(), existingDescriptor, modes);
+            try {
+                return ChannelStream.fdopen(runtime, existingDescriptor, modes);
+            } catch (InvalidValueException ive) {
+                throw runtime.newErrnoEINVALError();
+            }
         }
     }
 
@@ -1176,20 +1173,17 @@ public class RubyIO extends RubyObject {
 
         ModeFlags modes = null;
         int perms = -1; // -1 == don't set permissions
-        try {
-            if (args.length > 1) {
-                IRubyObject modeString = args[1].convertToString();
-                modes = getIOModes(runtime, modeString.toString());
-            } else {
-                modes = getIOModes(runtime, "r");
-            }
-            if (args.length > 2) {
-                RubyInteger permsInt =
-                    args.length >= 3 ? args[2].convertToInteger() : null;
-                perms = RubyNumeric.fix2int(permsInt);
-            }
-        } catch (InvalidValueException e) {
-            throw runtime.newErrnoEINVALError();
+
+        if (args.length > 1) {
+            IRubyObject modeString = args[1].convertToString();
+            modes = getIOModes(runtime, modeString.toString());
+        } else {
+            modes = getIOModes(runtime, "r");
+        }
+        if (args.length > 2) {
+            RubyInteger permsInt =
+                args.length >= 3 ? args[2].convertToInteger() : null;
+            perms = RubyNumeric.fix2int(permsInt);
         }
 
         int fileno = -1;
@@ -1914,16 +1908,16 @@ public class RubyIO extends RubyObject {
             if (newFile.isReadable()) {
                 if (newFile.isWritable()) {
                     if (newFile.getPipeStream() != null) {
-                        modes = new ModeFlags(ModeFlags.RDONLY);
+                        modes = newModeFlags(runtime, ModeFlags.RDONLY);
                     } else {
-                        modes = new ModeFlags(ModeFlags.RDWR);
+                        modes = newModeFlags(runtime, ModeFlags.RDWR);
                     }
                 } else {
-                    modes = new ModeFlags(ModeFlags.RDONLY);
+                    modes = newModeFlags(runtime, ModeFlags.RDONLY);
                 }
             } else {
                 if (newFile.isWritable()) {
-                    modes = new ModeFlags(ModeFlags.WRONLY);
+                    modes = newModeFlags(runtime, ModeFlags.WRONLY);
                 } else {
                     modes = originalFile.getMainStreamSafe().getModes();
                 }
@@ -3624,7 +3618,7 @@ public class RubyIO extends RubyObject {
                 mode = getIOModesIntFromString(runtime, args[1].convertToString().toString());
             }
 
-            ModeFlags modes = new ModeFlags(mode);
+            ModeFlags modes = newModeFlags(runtime, mode);
 
             ShellLauncher.POpenProcess process = ShellLauncher.popen(runtime, cmdObj, modes);
 
@@ -3655,8 +3649,6 @@ public class RubyIO extends RubyObject {
                 }
             }
             return io;
-        } catch (InvalidValueException ex) {
-            throw runtime.newErrnoEINVALError();
         } catch (IOException e) {
             throw runtime.newIOErrorFromException(e);
         }
@@ -3759,7 +3751,7 @@ public class RubyIO extends RubyObject {
                 mode = getIOModesIntFromString(runtime, args[1].convertToString().toString());
             }
 
-            ModeFlags modes = new ModeFlags(mode);
+            ModeFlags modes = newModeFlags(runtime, mode);
 
             ShellLauncher.POpenProcess process;
             if (r19Popen.cmdPlusArgs == null) {
@@ -3795,8 +3787,6 @@ public class RubyIO extends RubyObject {
                 }
             }
             return io;
-        } catch (InvalidValueException ex) {
-            throw runtime.newErrnoEINVALError();
         } catch (IOException e) {
             throw runtime.newIOErrorFromException(e);
         } catch (InterruptedException e) {
@@ -4112,14 +4102,8 @@ public class RubyIO extends RubyObject {
 
         if (options.containsKey(runtime.newSymbol("binmode")) &&
                 options.fastARef(runtime.newSymbol("binmode")).isTrue()) {
-            try {
-                modes = new ModeFlags(modes.getFlags() | ModeFlags.BINARY);
-            } catch (InvalidValueException e) {
-                /* n.b., this should be unreachable
-                    because we are changing neither read-only nor append
-                */
-                throw getRuntime().newErrnoEINVALError();
-            }
+
+            modes = newModeFlags(runtime, modes.getFlags() | ModeFlags.BINARY);
         }
 
         // This duplicates the non-error behavior of MRI 1.9: the
@@ -4128,14 +4112,8 @@ public class RubyIO extends RubyObject {
 
         if (options.containsKey(runtime.newSymbol("binmode")) &&
                 options.fastARef(runtime.newSymbol("binmode")).isTrue()) {
-            try {
-                modes = new ModeFlags(modes.getFlags() | ModeFlags.BINARY);
-            } catch (InvalidValueException e) {
-                /* n.b., this should be unreachable
-                    because we are changing neither read-only nor append
-                */
-                throw getRuntime().newErrnoEINVALError();
-            }
+
+            modes = newModeFlags(runtime, modes.getFlags() | ModeFlags.BINARY);
         }
 
 //      FIXME: check how ruby 1.9 handles this
@@ -4419,6 +4397,14 @@ public class RubyIO extends RubyObject {
             }
             // success!
             break;
+        }
+    }
+
+    public static ModeFlags newModeFlags(Ruby runtime, long mode) {
+        try {
+            return new ModeFlags(mode);
+        } catch (InvalidValueException ive) {
+            throw runtime.newErrnoEINVALError();
         }
     }
 
