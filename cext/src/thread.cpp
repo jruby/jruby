@@ -89,7 +89,7 @@ rb_thread_select(int max, fd_set * read, fd_set * write, fd_set * except, struct
         return 0;
     } else {
         void** data = (void**)xmalloc(sizeof(void*) * 5);
-        data[0] = (void*)max;
+        data[0] = reinterpret_cast<void*>(max);
         data[1] = (void*)read;
         data[2] = (void*)write;
         data[3] = (void*)except;
