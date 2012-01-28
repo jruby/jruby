@@ -42,13 +42,7 @@ public class GetConstInstr extends GetInstr {
         Object source = getSource().retrieve(context, self, currDynScope, temp);
         RubyModule module;
 
-        // Retrieving a WrappedIRClosure which is a closure returns a closure and not
-        // the module which contains it.  We could possible add to operand to have a generic
-        // scope() method or resort to if statements :)  So let's figure more out before
-        // fixing this.
-        if (source instanceof Block) {
-            module = ((Block) source).getBinding().getKlass();
-        } else if (source instanceof RubyModule) {
+        if (source instanceof RubyModule) {
             module = (RubyModule) source;
         } else {
             throw runtime.newTypeError(source + " is not a type/class");
@@ -57,16 +51,12 @@ public class GetConstInstr extends GetInstr {
         Object constant = cachedConstant; // Store to temp so it does null out on us mid-stream
         if (!isCached(runtime, module, constant)) {
             constant = module.getConstant(getRef());
-            if (constant == null) constant = module.getConstantFromConstMissing(getRef());
-
             // Recache
             if (constant != null) {
                 generation = runtime.getConstantInvalidator().getData();
                 hash = module.hashCode();
                 cachedConstant = constant;
             }
-
-            //if (container == null) throw runtime.newNameError("unitialized constant " + scope.getName(), scope.getName());
         }
         return constant;
     }

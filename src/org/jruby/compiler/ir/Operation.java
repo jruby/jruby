@@ -99,7 +99,12 @@ public enum Operation {
     GET_CVAR(OpFlags.f_is_load | OpFlags.f_can_raise_exception),
     GET_ARRAY(OpFlags.f_is_load),
     BINDING_LOAD(OpFlags.f_is_load),
-    SEARCH_CONST(OpFlags.f_is_load | OpFlags.f_can_raise_exception),
+
+	 /** constant operations */
+    LEXICAL_SEARCH_CONST(OpFlags.f_can_raise_exception),
+    INHERITANCE_SEARCH_CONST(OpFlags.f_can_raise_exception),
+    CONST_MISSING(OpFlags.f_can_raise_exception),
+    SEARCH_CONST(OpFlags.f_can_raise_exception),
 
     /** value stores **/
     PUT_CONST(OpFlags.f_is_store | OpFlags.f_has_side_effect),
@@ -138,7 +143,6 @@ public enum Operation {
     RESCUE_EQQ(OpFlags.f_can_raise_exception), // a === call used in rescue
     ALLOC_BINDING(OpFlags.f_has_side_effect),
     THREAD_POLL(OpFlags.f_has_side_effect),
-    CONST_MISSING(OpFlags.f_can_raise_exception),
     ENSURE_RUBY_ARRAY(0),
     GET_ENCODING(0),
 

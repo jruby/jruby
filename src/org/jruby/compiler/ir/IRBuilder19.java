@@ -159,14 +159,13 @@ public class IRBuilder19 extends IRBuilder {
 
         s.getStaticScope().setArities(required, opt, rest);
 
-        // For closures, we don't need the check arity call + self would have been received already
+        // For closures, we don't need the check arity call
         if (s instanceof IRMethod) {
             // FIXME: Expensive to this explicitly?  But, 2 advantages:
             // (a) on inlining, we'll be able to get rid of these checks in almost every case.
             // (b) compiler to bytecode will anyway generate this and this is explicit.
             // For now, we are going explicit instruction route.  But later, perhaps can make this implicit in the method setup preamble?  
             s.addInstr(new CheckArityInstr(required, opt, rest));
-            s.addInstr(new ReceiveSelfInstruction(getSelf(s)));
         }
 
         // Other args begin at index 0

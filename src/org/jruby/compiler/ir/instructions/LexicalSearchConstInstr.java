@@ -23,7 +23,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 // on the meta-object.  In the case of method & closures, the runtime method will delegate
 // this call to the parent scope.
 
-public class SearchConstInstr extends Instr implements ResultInstr {
+public class LexicalSearchConstInstr extends Instr implements ResultInstr {
     Operand definingScope;
     String constName;
     private Variable result;
@@ -32,10 +32,10 @@ public class SearchConstInstr extends Instr implements ResultInstr {
     private volatile transient Object cachedConstant = null;
     private Object generation = -1;
 
-    public SearchConstInstr(Variable result, Operand definingScope, String constName) {
-        super(Operation.SEARCH_CONST);
+    public LexicalSearchConstInstr(Variable result, Operand definingScope, String constName) {
+        super(Operation.LEXICAL_SEARCH_CONST);
         
-        assert result != null: "SearchConstInstr result is null";
+        assert result != null: "LexicalSearchConstInstr result is null";
         
         this.definingScope = definingScope;
         this.constName = constName;
@@ -61,22 +61,20 @@ public class SearchConstInstr extends Instr implements ResultInstr {
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new SearchConstInstr(ii.getRenamedVariable(result), definingScope, constName);
+        return new LexicalSearchConstInstr(ii.getRenamedVariable(result), definingScope, constName);
     }
 
     @Override
     public String toString() { 
-        return super.toString() + "(" + definingScope + "," + constName  + ")";
+        return super.toString() + "(" + definingScope + ", " + constName  + ")";
     }
 
     private Object cache(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Ruby runtime, Object constant) {
         StaticScope staticScope = (StaticScope) definingScope.retrieve(context, self, currDynScope, temp);
         RubyModule object = runtime.getObject();
-        if (staticScope == null) { // FIXME: Object scope has no staticscope yet
-            constant = object.getConstant(constName);
-        } else {
-            constant = staticScope.getConstant(runtime, constName, object);
-        }
+		  // SSS FIXME: IRManager objects dont have a static-scope yet, so this hack of looking up the module right away
+		  // This IR needs fixing!
+        constant = (staticScope == null) ? object.getConstant(constName) : staticScope.getConstantInner(runtime, constName, object);
         if (constant == null) {
             constant = UndefinedValue.UNDEFINED;
         } else {

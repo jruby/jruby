@@ -140,12 +140,14 @@ import org.jruby.compiler.ir.instructions.GetClassVarContainerModuleInstr;
 import org.jruby.compiler.ir.instructions.GetConstInstr;
 import org.jruby.compiler.ir.instructions.GetFieldInstr;
 import org.jruby.compiler.ir.instructions.GetGlobalVariableInstr;
+import org.jruby.compiler.ir.instructions.InheritanceSearchConstInstr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.JRubyImplCallInstr;
 import org.jruby.compiler.ir.instructions.JRubyImplCallInstr.JRubyImplementationMethod;
 import org.jruby.compiler.ir.instructions.JumpInstr;
 import org.jruby.compiler.ir.instructions.JumpIndirectInstr;
 import org.jruby.compiler.ir.instructions.LabelInstr;
+import org.jruby.compiler.ir.instructions.LexicalSearchConstInstr;
 import org.jruby.compiler.ir.instructions.LineNumberInstr;
 import org.jruby.compiler.ir.instructions.Match2Instr;
 import org.jruby.compiler.ir.instructions.Match3Instr;
@@ -165,7 +167,6 @@ import org.jruby.compiler.ir.instructions.RecordEndBlockInstr;
 import org.jruby.compiler.ir.instructions.RescueEQQInstr;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
 import org.jruby.compiler.ir.instructions.SetReturnAddressInstr;
-import org.jruby.compiler.ir.instructions.SearchConstInstr;
 import org.jruby.compiler.ir.instructions.SuperInstr;
 import org.jruby.compiler.ir.instructions.ThreadPollInstr;
 import org.jruby.compiler.ir.instructions.UndefMethodInstr;
@@ -1277,12 +1278,17 @@ public class IRBuilder {
     }
 
     private Operand searchConst(IRScope s, IRScope startingScope, String name) {
-        Operand startingModule = startingSearchScope(startingScope);
         Variable v = s.getNewTemporaryVariable();
-        s.addInstr(new SearchConstInstr(v, startingModule, name));
         Label foundLabel = s.getNewLabel();
+        Operand startingSearchScope = startingSearchScope(startingScope);
+        s.addInstr(new LexicalSearchConstInstr(v, startingSearchScope, name));
         s.addInstr(BNEInstr.create(v, UndefinedValue.UNDEFINED, foundLabel));
-        s.addInstr(new ConstMissingInstr(v, startingModule, name));
+        // SSS FIXME: should this be the current-module-var or can we resolve
+        // this to some statically-known value instead?
+        Operand currentModule = s.getCurrentModuleVariable(); 
+        s.addInstr(new InheritanceSearchConstInstr(v, currentModule, name));
+        s.addInstr(BNEInstr.create(v, UndefinedValue.UNDEFINED, foundLabel));
+        s.addInstr(new ConstMissingInstr(v, currentModule, name));
         s.addInstr(new LabelInstr(foundLabel));
         return v;
     }
@@ -1547,11 +1553,20 @@ public class IRBuilder {
             case SELFNODE:
                 return new StringLiteral("self");
             case CONSTNODE: {
-                Label undefLabel = s.getNewLabel();
+                Label defLabel = s.getNewLabel();
+                Label doneLabel = s.getNewLabel();
                 Variable tmpVar  = s.getNewTemporaryVariable();
-                s.addInstr(new SearchConstInstr(tmpVar, startingSearchScope(s), ((ConstNode) node).getName()));
-                s.addInstr(BEQInstr.create(tmpVar, UndefinedValue.UNDEFINED, undefLabel));
-                return buildDefnCheckIfThenPaths(s, undefLabel, new StringLiteral("constant"));
+                String constName = ((ConstNode) node).getName();
+                s.addInstr(new LexicalSearchConstInstr(tmpVar, startingSearchScope(s), constName));
+                s.addInstr(BNEInstr.create(tmpVar, UndefinedValue.UNDEFINED, defLabel));
+                s.addInstr(new InheritanceSearchConstInstr(tmpVar, s.getCurrentModuleVariable(), constName)); // SSS FIXME: should this be the current-module var or something else?
+                s.addInstr(BNEInstr.create(tmpVar, UndefinedValue.UNDEFINED, defLabel));
+                s.addInstr(new CopyInstr(tmpVar, Nil.NIL));
+                s.addInstr(new JumpInstr(doneLabel));
+                s.addInstr(new LabelInstr(defLabel));
+                s.addInstr(new CopyInstr(tmpVar, new StringLiteral("constant")));
+                s.addInstr(new LabelInstr(doneLabel));
+                return tmpVar;
             }
             case GLOBALVARNODE:
                 return buildDefinitionCheck(s, JRubyImplementationMethod.RT_IS_GLOBAL_DEFINED, null, ((GlobalVarNode) node).getName(), "global-variable");
@@ -1813,6 +1828,16 @@ public class IRBuilder {
     private IRMethod defineNewMethod(MethodDefNode defNode, IRScope s, boolean isInstanceMethod) {
         IRMethod method = new IRMethod(s, defNode.getName(), isInstanceMethod, defNode.getPosition().getLine(), defNode.getScope());
 
+        s.addInstr(new ReceiveSelfInstruction(getSelf(s)));
+
+        // Set %current_scope = <current-scope>
+        // Set %current_module = isInstanceMethod ? %self.metaclass : %self
+        IRScope nearestScope = s.getNearestModuleReferencingScope();
+        method.addInstr(new CopyInstr(method.getCurrentScopeVariable(), nearestScope == null ? new CurrentScope() : new WrappedIRScope(nearestScope)));
+        // SSS FIXME: The last operand of the ternary ? operator should actually be meta-class-of(getSelf(method))
+        // method.addInstr(new CopyInstr(method.getCurrentModuleVariable(), isInstanceMethod ? new CurrentModule() : getSelf(method)));
+        method.addInstr(new CopyInstr(method.getCurrentModuleVariable(), new CurrentModule()));
+
         // Build IR for arguments (including the block arg)
         receiveMethodArgs(defNode.getArgsNode(), method);
 
@@ -1820,14 +1845,8 @@ public class IRBuilder {
         addThreadPollInstrIfNeeded(s);
 
         // Build IR for body
-        if (defNode.getBodyNode() != null) {
-            Node bodyNode = defNode.getBodyNode();
-
-            // Set %current_scope = <current-scope>
-            // Set %current_module = isInstanceMethod ? %self.metaclass : %self
-            IRScope nearestScope = s.getNearestModuleReferencingScope();
-            method.addInstr(new CopyInstr(method.getCurrentScopeVariable(), nearestScope == null ? new CurrentScope() : new WrappedIRScope(nearestScope)));
-            method.addInstr(new CopyInstr(method.getCurrentModuleVariable(), isInstanceMethod ? new CurrentModule() : getSelf(method)));
+        Node bodyNode = defNode.getBodyNode();
+        if (bodyNode != null) {
             // Create a new nested builder to ensure this gets its own IR builder state 
             Operand rv = createIRBuilder(manager).build(bodyNode, method);
             if (rv != null) method.addInstr(new ReturnInstr(rv));
@@ -1881,9 +1900,6 @@ public class IRBuilder {
         // (b) compiler to bytecode will anyway generate this and this is explicit.
         // For now, we are going explicit instruction route.  But later, perhaps can make this implicit in the method setup preamble?  
         s.addInstr(new CheckArityInstr(required, opt, rest));
-
-        // self = args[0]
-        s.addInstr(new ReceiveSelfInstruction(getSelf(s)));
 
         // Other args begin at index 0
         int argIndex = 0;
@@ -3027,7 +3043,7 @@ public class IRBuilder {
             // of StandardError.  I am ignoring this for now and treating this as undefined behavior. 
             // 
             Variable v = s.getNewTemporaryVariable();
-            s.addInstr(new SearchConstInstr(v, s.getCurrentScopeVariable(), "StandardError"));
+            s.addInstr(new InheritanceSearchConstInstr(v, s.getCurrentModuleVariable(), "StandardError"));
             outputExceptionCheck(s, v, exc, caughtLabel);
         }
 

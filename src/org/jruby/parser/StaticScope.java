@@ -184,7 +184,7 @@ public abstract class StaticScope implements Serializable {
         return result == null ? cref.getConstantNoConstMissing(internedName) : result;
     }
 
-    private IRubyObject getConstantInner(Ruby runtime, String internedName, RubyModule object) {
+    public IRubyObject getConstantInner(Ruby runtime, String internedName, RubyModule object) {
         IRubyObject result = cref.fetchConstant(internedName);
 
         if (result != null) {
