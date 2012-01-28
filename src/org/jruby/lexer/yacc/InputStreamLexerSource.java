@@ -106,7 +106,6 @@ public class InputStreamLexerSource extends LexerSource {
     private int carriageReturn(int c) throws IOException {
         if ((c = in.read()) != '\n') {
             unread((char) c);
-            c = '\n';
         } else {
             // Position within source must reflect the actual offset and column.  Since
             // we ate an extra character here (this accounting is normally done in read
@@ -145,7 +144,6 @@ public class InputStreamLexerSource extends LexerSource {
         int c = in.read();
         
         // If \r\n then just pass along \n (windows). 
-        // If \r[^\n] then pass along \n (MAC).
         if (c == '\r') { 
             c = carriageReturn(c);
         }
