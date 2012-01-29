@@ -167,7 +167,6 @@ public class ByteArrayLexerSource extends LexerSource {
                     // we double report \n 
                     if ((c = read()) != '\n') {
                         unread(c);
-                        c = '\n';
                     } else {
                       if (captureSource){
                         uncaptureFeature(c);
