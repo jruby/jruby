@@ -30,7 +30,8 @@ public class InheritanceSearchConstInstr extends Instr implements ResultInstr {
 
     // Constant caching 
     private volatile transient Object cachedConstant = null;
-    private Object generation = -1;
+    private volatile int hash = -1;
+    private volatile Object generation = -1;
 
     public InheritanceSearchConstInstr(Variable result, Operand currentModule, String constName) {
         super(Operation.INHERITANCE_SEARCH_CONST);
@@ -69,7 +70,26 @@ public class InheritanceSearchConstInstr extends Instr implements ResultInstr {
         return super.toString() + "(" + currentModule + ", " + constName  + ")";
     }
 
-    private Object cache(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Ruby runtime, Object constant) {
+    private Object cache(Ruby runtime, RubyModule module) {
+        Object constant = module.getConstantNoConstMissing(constName);
+        if (constant == null) {
+            constant = UndefinedValue.UNDEFINED;
+        } else {
+            // recache
+            generation = runtime.getConstantInvalidator().getData();
+            hash = module.hashCode();
+            cachedConstant = constant;
+        }
+        return constant;
+    }
+
+    private boolean isCached(Ruby runtime, RubyModule target, Object value) {
+        return value != null && generation == runtime.getConstantInvalidator().getData() && hash == target.hashCode();
+    }
+    
+    @Override
+    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
+        Ruby runtime = context.getRuntime();
         Object cmVal = currentModule.retrieve(context, self, currDynScope, temp);
         RubyModule module;
         if (cmVal instanceof RubyModule) {
@@ -77,27 +97,8 @@ public class InheritanceSearchConstInstr extends Instr implements ResultInstr {
         } else {
             throw runtime.newTypeError(cmVal + " is not a type/class");
         }
-
-        constant = module.getConstantNoConstMissing(constName);
-        if (constant == null) {
-            constant = UndefinedValue.UNDEFINED;
-        } else {
-            // recache
-            generation = runtime.getConstantInvalidator().getData();
-            cachedConstant = constant;
-        }
-        return constant;
-    }
-
-    private boolean isCached(Ruby runtime, Object value) {
-        return value != null && generation == runtime.getConstantInvalidator().getData();
-    }
-    
-    @Override
-    public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
-        Ruby runtime = context.getRuntime();
         Object constant = cachedConstant; // Store to temp so it does null out on us mid-stream
-        if (!isCached(runtime, constant)) constant = cache(context, currDynScope, self, temp, runtime, constant);
+        if (!isCached(runtime, module, constant)) constant = cache(runtime, module);
 
         return constant;
     }

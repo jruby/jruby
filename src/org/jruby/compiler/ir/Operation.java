@@ -93,7 +93,6 @@ public enum Operation {
     FILE_NAME(OpFlags.f_is_debug_op),
 
     /** value loads (SSS FIXME: Do any of these have side effects?) **/
-    GET_CONST(OpFlags.f_is_load | OpFlags.f_can_raise_exception),
     GET_GLOBAL_VAR(OpFlags.f_is_load),
     GET_FIELD(OpFlags.f_is_load),
     GET_CVAR(OpFlags.f_is_load | OpFlags.f_can_raise_exception),

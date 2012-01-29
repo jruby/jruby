@@ -137,7 +137,6 @@ import org.jruby.compiler.ir.instructions.GetArrayInstr;
 import org.jruby.compiler.ir.instructions.InstanceOfInstr;
 import org.jruby.compiler.ir.instructions.GetClassVariableInstr;
 import org.jruby.compiler.ir.instructions.GetClassVarContainerModuleInstr;
-import org.jruby.compiler.ir.instructions.GetConstInstr;
 import org.jruby.compiler.ir.instructions.GetFieldInstr;
 import org.jruby.compiler.ir.instructions.GetGlobalVariableInstr;
 import org.jruby.compiler.ir.instructions.InheritanceSearchConstInstr;
@@ -1305,7 +1304,11 @@ public class IRBuilder {
             // 2. Then load the constant from the module
             Operand module = build(leftNode, s);
             Variable constVal = s.getNewTemporaryVariable();
-            s.addInstr(new GetConstInstr(constVal, module, name));
+            Label foundLabel = s.getNewLabel();
+            s.addInstr(new InheritanceSearchConstInstr(constVal, module, name));
+            s.addInstr(BNEInstr.create(constVal, UndefinedValue.UNDEFINED, foundLabel));
+            s.addInstr(new ConstMissingInstr(constVal, module, name));
+            s.addInstr(new LabelInstr(foundLabel));
             return constVal;
         } else if (iVisited instanceof Colon2MethodNode) {
             Colon2MethodNode c2mNode = (Colon2MethodNode)iVisited;
