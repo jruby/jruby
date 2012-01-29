@@ -3081,6 +3081,8 @@ public class IRBuilder {
             RescueBlockInfo rbi = _rescueBlockStack.peek();
             s.addInstr(new PutGlobalVarInstr("$!", rbi.savedExceptionVariable));
             s.addInstr(new JumpInstr(rbi.entryLabel));
+            // Retries effectively create a loop
+            s.setHasLoopsFlag(true);
         }
         return Nil.NIL;
     }

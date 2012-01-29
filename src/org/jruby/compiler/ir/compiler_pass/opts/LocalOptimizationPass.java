@@ -146,24 +146,31 @@ public class LocalOptimizationPass implements CompilerPass {
             }
         }
 
-/*
-        Set<TemporaryVariable> usedVars = tmpVarUseCounts.keySet();
-        usedVars.removeAll(constValMap.keySet());     // these var defs have been removed
-        usedVars.removeAll(removableCopies.keySet()); // these var defs have been removed
-        System.out.println("For scope: " + s + ", we had " + tmpVarDefCounts.size() + " tmp vars and are now left with " + usedVars.size());
-*/
-
         // Pass 3: Replace all single use operands with constants they were assigned to.
         // Using operand -> operand signature because simplifyOperands works on operands
         //
         // In parallel, compute last use of temporary variables -- this effectively is the
         // end of the live range that started with its first definition.  This implicitly
-        // encodes the live range of the temporary variable.  These live ranges are valid
-        // because the instructions that we are processing have come out an AST which means
-        // instruction uses are properly nested and haven't been rearranged yet.
+        // encodes the live range of the temporary variable.  
         //
-        // If anything, the live ranges are conservative -- but given that most temporaries
-        // are very short-lived (2 instructions), this quick analysis is good enough for most cases.
+        // These live ranges are valid because these instructions are generated from an AST
+        // and they haven't been rearranged yet.  In addition, since temporaries are used to
+        // communicate results from lower levels to higher levels in the tree, a temporary
+        // defined outside a loop cannot be used within the loop.  So, the first definition
+        // of a temporary and the last use of the temporary delimit its live range.  
+        //
+        // %current-scope and %current-module are the two "temporary" variables that violate
+        // this contract right now since they are used everywhere in the scope.  
+        // So, in the presence of loops, we:
+        // - either assume that the live range of these  variables extends to
+        //   the end of the outermost loop in which they are used
+        // - or we do not rename %current-scope and %current-module in such scopes.
+        //
+        // SSS FIXME: For now, we just extend the live range of these vars all the
+        // way to the end of the scope!
+        //
+        // NOTE: It is sufficient to just track last use for renaming purposes.
+        // At the first definition, we allocate a variable which then starts the live range
         Map<TemporaryVariable, Integer> lastVarUseOrDef = new HashMap<TemporaryVariable, Integer>();
         int iCount = -1;
         for (Instr i: s.getInstrs()) {
@@ -192,11 +199,19 @@ public class LocalOptimizationPass implements CompilerPass {
             }
         }
 
+        // If the scope has loops, extend live range of %current-module and %current-scope
+        // to end of scope (see note earlier).
+        if (s.hasLoops()) {
+            lastVarUseOrDef.put((TemporaryVariable)s.getCurrentScopeVariable(), iCount);
+            lastVarUseOrDef.put((TemporaryVariable)s.getCurrentModuleVariable(), iCount);
+        }
+
         // Pass 4: Reallocate temporaries based on last uses to minimize # of unique vars.
         Map<Operand, Operand>   newVarMap    = new HashMap<Operand, Operand>();
         List<TemporaryVariable> freeVarsList = new ArrayList<TemporaryVariable>();
         iCount = -1;
         s.resetTemporaryVariables();
+
         for (Instr i: s.getInstrs()) {
             iCount++;
 

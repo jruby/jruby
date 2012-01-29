@@ -6,8 +6,8 @@ import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Variable;
 
 public class IRLoop {
-    public final IRScope container;
-    public final IRLoop  parentLoop;
+    public final IRScope  container;
+    public final IRLoop   parentLoop;
     public final Label    loopStartLabel;
     public final Label    loopEndLabel;
     public final Label    iterStartLabel;
@@ -21,6 +21,7 @@ public class IRLoop {
         loopEndLabel   = s.getNewLabel("_LOOP_END");
         iterStartLabel = s.getNewLabel("_ITER_BEGIN");
         iterEndLabel   = s.getNewLabel("_ITER_END");
-        loopResult = s.getNewTemporaryVariable();
+        loopResult     = s.getNewTemporaryVariable();
+        s.setHasLoopsFlag(true);
     }
 }

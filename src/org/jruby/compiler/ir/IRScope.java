@@ -206,6 +206,9 @@ public abstract class IRScope {
 
     /** Does this scope call any zsuper */
     private boolean usesZSuper;
+
+    /** Does this scope have loops? */
+    private boolean hasLoops;
     
     public IRScope(IRScope lexicalParent, String name, String fileName, int lineNumber, StaticScope staticScope) {
         super();
@@ -218,7 +221,9 @@ public abstract class IRScope {
         instrList = new ArrayList<Instr>();
         closures = new ArrayList<IRClosure>();
 
-        // All flags are true by default!
+        hasLoops = false;
+
+        // These flags are true by default!
         canModifyCode = true;
         canCaptureCallersBinding = true;
         bindingHasEscaped = true;
@@ -359,6 +364,14 @@ public abstract class IRScope {
         }
         
         return false;
+    }
+
+    public void setHasLoopsFlag(boolean f) {
+        hasLoops = true;
+    }
+
+    public boolean hasLoops() {
+        return hasLoops;
     }
 
     public void setCodeModificationFlag(boolean f) { 
