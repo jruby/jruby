@@ -1786,6 +1786,8 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     // 1.9 MRI: join1
     private RubyString joinAny(ThreadContext context, IRubyObject obj, RubyString sep, 
             int i, RubyString result) {
+        assert i >= begin : "joining elements before beginning of array";
+        
         RubyClass arrayClass = context.getRuntime().getArray();
 
         for (; i < begin + realLength; i++) {
@@ -1828,7 +1830,8 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             public IRubyObject call(IRubyObject obj, boolean recur) {
                 if (recur) throw runtime.newArgumentError("recursive array join");
                             
-                ((RubyArray) ary).joinAny(context, outValue, sep, 0, result);
+                RubyArray recAry = ((RubyArray) ary);
+                recAry.joinAny(context, outValue, sep, recAry.begin, result);
                 
                 return runtime.getNil();
             }}, outValue);
