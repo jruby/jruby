@@ -740,7 +740,7 @@ public class RubySocket extends RubyBasicSocket {
         }
     }
 
-    private static RuntimeException sockerr(Ruby runtime, String msg) {
+    public static RuntimeException sockerr(Ruby runtime, String msg) {
         return new RaiseException(runtime, runtime.getClass("SocketError"), msg, true);
     }
 

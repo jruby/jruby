@@ -23,5 +23,7 @@ public class SocketLibrary implements Library {
         RubyTCPSocket.createTCPSocket(runtime);
         RubyTCPServer.createTCPServer(runtime);
         RubyUDPSocket.createUDPSocket(runtime);
+
+        if (runtime.is1_9()) Addrinfo.createAddrinfo(runtime);
     }
 }
