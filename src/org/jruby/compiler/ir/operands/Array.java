@@ -17,6 +17,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class Array extends Operand {
     final public Operand[] elts;
 
+    // SSS FIXME: Do we create a special-case for zero-length arrays?
     public Array() {
         elts = new Operand[0];
     }
