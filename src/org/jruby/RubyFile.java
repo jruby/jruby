@@ -478,38 +478,34 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         RubyHash options = null;
         int perm = 0;
 
-        try {
-            if (args.length > 1) {
-                if (args[1] instanceof RubyHash) {
-                    options = (RubyHash)args[1];
-                } else {
-                    modes = parseIOOptions19(args[1]);
-                    
-                    if (args[1] instanceof RubyFixnum) {
-                        perm = getFilePermissions(args);
-                    } else {
-                        modeString = args[1].convertToString().toString();
-                    }
-                }
+        if (args.length > 1) {
+            if (args[1] instanceof RubyHash) {
+                options = (RubyHash)args[1];
             } else {
-                modes = parseIOOptions19(RubyString.newString(runtime, modeString));
-            }
+                modes = parseIOOptions19(args[1]);
 
-            if (args.length > 2 && !args[2].isNil()) {
-                if (args[2] instanceof RubyHash) {
-                    options = (RubyHash)args[2];
-                } else {
+                if (args[1] instanceof RubyFixnum) {
                     perm = getFilePermissions(args);
+                } else {
+                    modeString = args[1].convertToString().toString();
                 }
             }
+        } else {
+            modes = parseIOOptions19(RubyString.newString(runtime, modeString));
+        }
 
-            if (perm > 0) {
-                sysopenInternal19(context, path, options, modes, perm);
+        if (args.length > 2 && !args[2].isNil()) {
+            if (args[2] instanceof RubyHash) {
+                options = (RubyHash)args[2];
             } else {
-                openInternal19(context, path, options, modeString, modes);
+                perm = getFilePermissions(args);
             }
-        } catch (InvalidValueException ex) {
-            throw runtime.newErrnoEINVALError();
+        }
+
+        if (perm > 0) {
+            sysopenInternal19(context, path, options, modes, perm);
+        } else {
+            openInternal19(context, path, options, modeString, modes);
         }
 
         return this;
@@ -526,23 +522,19 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         IOOptions modes;
         int perm;
         
-        try {
-            if ((args.length > 1 && args[1] instanceof RubyFixnum) || (args.length > 2 && !args[2].isNil())) {
-                modes = parseIOOptions(args[1]);
-                perm = getFilePermissions(args);
+        if ((args.length > 1 && args[1] instanceof RubyFixnum) || (args.length > 2 && !args[2].isNil())) {
+            modes = parseIOOptions(args[1]);
+            perm = getFilePermissions(args);
 
-                sysopenInternal(path, modes.getModeFlags(), perm);
-            } else {
-                modeString = "r";
-                if (args.length > 1 && !args[1].isNil()) {
-                    modeString = args[1].convertToString().toString();
-                }
-                
-                openInternal(path, modeString);
+            sysopenInternal(path, modes.getModeFlags(), perm);
+        } else {
+            modeString = "r";
+            if (args.length > 1 && !args[1].isNil()) {
+                modeString = args[1].convertToString().toString();
             }
-        } catch (InvalidValueException ex) {
-            throw getRuntime().newErrnoEINVALError();
-        } finally {}
+
+            openInternal(path, modeString);
+        }
         
         return this;
     }
@@ -551,7 +543,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return (args.length > 2 && !args[2].isNil()) ? RubyNumeric.num2int(args[2]) : 438;
     }
 
-    protected void sysopenInternal19(ThreadContext context, String path, RubyHash options, IOOptions ioOptions, int perm) throws InvalidValueException {
+    protected void sysopenInternal19(ThreadContext context, String path, RubyHash options, IOOptions ioOptions, int perm) {
         ioOptions = updateIOOptionsFromOptions(context, options, ioOptions);
 
         sysopenInternal(path, ioOptions.getModeFlags(), perm);
@@ -573,7 +565,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         openFile.setMainStream(fdopen(descriptor, modes));
     }
 
-    protected void openInternal19(ThreadContext context, String path, RubyHash options, String modeString, IOOptions ioOptions) throws InvalidValueException {
+    protected void openInternal19(ThreadContext context, String path, RubyHash options, String modeString, IOOptions ioOptions) {
         ioOptions = updateIOOptionsFromOptions(context, options, ioOptions);
 
         openInternal(path, modeString, ioOptions.getModeFlags());
@@ -581,7 +573,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         setEncodingFromOptions(ioOptions.getEncodingOption());
     }
 
-    protected void openInternal(String path, String modeString, ModeFlags modes) throws InvalidValueException {
+    protected void openInternal(String path, String modeString, ModeFlags modes) {
         openFile = new OpenFile();
 
         openFile.setMode(modes.getOpenFileFlags());
@@ -590,10 +582,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         openFile.setMainStream(fopen(path, modeString));
     }
     
-    protected void openInternal(String path, String modeString) throws InvalidValueException {
+    protected void openInternal(String path, String modeString) {
         openFile = new OpenFile();
 
-        IOOptions modes = getIOModes(getRuntime(), modeString);
+        IOOptions modes = newIOOptions(getRuntime(), modeString);
         openFile.setMode(modes.getModeFlags().getOpenFileFlags());
         if (modes.getModeFlags().isBinary()) externalEncoding = ASCIIEncoding.INSTANCE;
         openFile.setPath(path);
@@ -866,17 +858,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         } catch (BadDescriptorException e) {
             throw getRuntime().newErrnoEBADFError();
         }
-    }
-
-    // TODO: This is also defined in the MetaClass too...Consolidate somewhere.
-    private static IOOptions getModes(Ruby runtime, IRubyObject object) throws InvalidValueException {
-        if (object instanceof RubyString) {
-            return newIOOptions(runtime, ((RubyString) object).toString());
-        } else if (object instanceof RubyFixnum) {
-            return newIOOptions(runtime, (int)((RubyFixnum) object).getLongValue());
-        }
-
-        throw runtime.newTypeError("Invalid type for modes");
     }
 
     @JRubyMethod

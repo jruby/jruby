@@ -373,11 +373,11 @@ public class RubyIO extends RubyObject {
             IOOptions modes;
             if (args.length > 1) {
                 IRubyObject modeString = args[1].convertToString();
-                modes = getIOModes(runtime, modeString.toString());
+                modes = newIOOptions(runtime, modeString.toString());
 
                 openFile.setMode(modes.getModeFlags().getOpenFileFlags());
             } else {
-                modes = getIOModes(runtime, "r");
+                modes = newIOOptions(runtime, "r");
             }
 
             String path = pathString.toString();
@@ -400,7 +400,7 @@ public class RubyIO extends RubyObject {
                 }
             } else {
                 // TODO: This is an freopen in MRI, this is close, but not quite the same
-                openFile.getMainStreamSafe().freopen(runtime, path, getIOModes(runtime, openFile.getModeAsString(runtime)).getModeFlags());
+                openFile.getMainStreamSafe().freopen(runtime, path, newIOOptions(runtime, openFile.getModeAsString(runtime)).getModeFlags());
                 
                 if (openFile.getPipeStream() != null) {
                     // TODO: pipe handler to be reopened with path and "w" mode
@@ -503,7 +503,7 @@ public class RubyIO extends RubyObject {
                 } else if (fd != originalFile.getPipeStream().getDescriptor().getFileno()) {
                     selfFile.getPipeStream().fclose();
                     ChannelDescriptor newFD2 = originalFile.getPipeStream().getDescriptor().dup2(fd);
-                    selfFile.setPipeStream(ChannelStream.fdopen(runtime, newFD2, getIOModes(runtime, "w").getModeFlags()));
+                    selfFile.setPipeStream(ChannelStream.fdopen(runtime, newFD2, newIOOptions(runtime, "w").getModeFlags()));
                 }
             }
 
@@ -540,52 +540,17 @@ public class RubyIO extends RubyObject {
     }
 
     @Deprecated
-    public static IOOptions getIOModes(Ruby runtime, String modesString) {
-        return newIOOptions(runtime, getIOModesIntFromString(runtime, modesString));
+    public static ModeFlags getIOModes(Ruby runtime, String modesString) {
+        return newModeFlags(runtime, modesString);
     }
 
     @Deprecated
     public static int getIOModesIntFromString(Ruby runtime, String modesString) {
-        int modes = 0;
-        int length = modesString.length();
-
-        if (length == 0) {
+        try {
+            return ModeFlags.getOFlagsFromString(modesString);
+        } catch (InvalidValueException ive) {
             throw runtime.newArgumentError("illegal access mode");
         }
-
-        switch (modesString.charAt(0)) {
-        case 'r' :
-            modes |= ModeFlags.RDONLY;
-            break;
-        case 'a' :
-            modes |= ModeFlags.APPEND | ModeFlags.WRONLY | ModeFlags.CREAT;
-            break;
-        case 'w' :
-            modes |= ModeFlags.WRONLY | ModeFlags.TRUNC | ModeFlags.CREAT;
-            break;
-        default :
-            throw runtime.newArgumentError("illegal access mode " + modesString);
-        }
-
-        ModifierLoop: for (int n = 1; n < length; n++) {
-            switch (modesString.charAt(n)) {
-            case 'b':
-                modes |= ModeFlags.BINARY;
-                break;
-            case '+':
-                modes = (modes & ~ModeFlags.ACCMODE) | ModeFlags.RDWR;
-                break;
-            case 't' :
-                // FIXME: add text mode to mode flags
-                break;
-            case ':':
-                break ModifierLoop;
-            default:
-                throw runtime.newArgumentError("illegal access mode " + modesString);
-            }
-        }
-
-        return modes;
     }
 
     /*
@@ -991,7 +956,7 @@ public class RubyIO extends RubyObject {
                 if (args[1] instanceof RubyFixnum) {
                     ioOptions = newIOOptions(runtime, RubyFixnum.fix2long(args[1]));
                 } else {
-                    ioOptions = getIOModes(runtime, args[1].convertToString().toString());
+                    ioOptions = newIOOptions(runtime, args[1].convertToString().toString());
                 }
             } else {
                 // use original modes
@@ -1105,7 +1070,7 @@ public class RubyIO extends RubyObject {
         }
     }
 
-    private Encoding getEncodingCommon(ThreadContext context, IRubyObject encoding) {
+    private static Encoding getEncodingCommon(ThreadContext context, IRubyObject encoding) {
         if (encoding instanceof RubyEncoding) return ((RubyEncoding) encoding).getEncoding();
         
         return context.getRuntime().getEncodingService().getEncodingFromObject(encoding);
@@ -1168,9 +1133,9 @@ public class RubyIO extends RubyObject {
 
         if (args.length > 1) {
             IRubyObject modeString = args[1].convertToString();
-            modes = getIOModes(runtime, modeString.toString());
+            modes = newIOOptions(runtime, modeString.toString());
         } else {
-            modes = getIOModes(runtime, "r");
+            modes = newIOOptions(runtime, "r");
         }
         if (args.length > 2) {
             RubyInteger permsInt =
@@ -3616,17 +3581,16 @@ public class RubyIO extends RubyObject {
         }
 
         try {
+            IOOptions ioOptions;
             if (args.length == 1) {
-                mode = ModeFlags.RDONLY;
+                ioOptions = newIOOptions(runtime, ModeFlags.RDONLY);
             } else if (args[1] instanceof RubyFixnum) {
-                mode = RubyFixnum.num2int(args[1]);
+                ioOptions = newIOOptions(runtime, RubyFixnum.num2int(args[1]));
             } else {
-                mode = getIOModesIntFromString(runtime, args[1].convertToString().toString());
+                ioOptions = newIOOptions(runtime, args[1].convertToString().toString());
             }
 
-            IOOptions modes = newIOOptions(runtime, mode);
-
-            ShellLauncher.POpenProcess process = ShellLauncher.popen(runtime, cmdObj, modes);
+            ShellLauncher.POpenProcess process = ShellLauncher.popen(runtime, cmdObj, ioOptions);
 
             // Yes, this is gross. java.lang.Process does not appear to be guaranteed
             // "ready" when we get it back from Runtime#exec, so we try to give it a
@@ -3640,7 +3604,7 @@ public class RubyIO extends RubyObject {
                 }
             }
 
-            RubyIO io = new RubyIO(runtime, process, modes);
+            RubyIO io = new RubyIO(runtime, process, ioOptions);
             if (recv instanceof RubyClass) {
                 io.setMetaClass((RubyClass) recv);
             }
@@ -3749,21 +3713,20 @@ public class RubyIO extends RubyObject {
         }
 
         try {
+            IOOptions ioOptions;
             if (args.length == 1) {
-                mode = ModeFlags.RDONLY;
+                ioOptions = newIOOptions(runtime, ModeFlags.RDONLY);
             } else if (args[1] instanceof RubyFixnum) {
-                mode = RubyFixnum.num2int(args[1]);
+                ioOptions = newIOOptions(runtime, RubyFixnum.num2int(args[1]));
             } else {
-                mode = getIOModesIntFromString(runtime, args[1].convertToString().toString());
+                ioOptions = newIOOptions(runtime, args[1].convertToString().toString());
             }
-
-            IOOptions modes = newIOOptions(runtime, mode);
 
             ShellLauncher.POpenProcess process;
             if (r19Popen.cmdPlusArgs == null) {
-                process = ShellLauncher.popen(runtime, r19Popen.cmd, modes);
+                process = ShellLauncher.popen(runtime, r19Popen.cmd, ioOptions);
             } else {
-                process = ShellLauncher.popen(runtime, r19Popen.cmdPlusArgs, r19Popen.env, modes);
+                process = ShellLauncher.popen(runtime, r19Popen.cmdPlusArgs, r19Popen.env, ioOptions);
             }
 
             // Yes, this is gross. java.lang.Process does not appear to be guaranteed
@@ -3780,7 +3743,7 @@ public class RubyIO extends RubyObject {
 
             checkPopenOptions(options);
 
-            RubyIO io = new RubyIO(runtime, (RubyClass)recv, process, options, modes);
+            RubyIO io = new RubyIO(runtime, (RubyClass)recv, process, options, ioOptions);
 
             if (block.isGiven()) {
                 try {

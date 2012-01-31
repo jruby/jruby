@@ -211,11 +211,8 @@ public class Tempfile extends RubyTempfile {
     @JRubyMethod(visibility = PUBLIC)
     public IRubyObject open() {
         if (!isClosed()) close();
-        try {
-            openInternal(path, "r+");
-        } catch (InvalidValueException ex) {
-            throw getRuntime().newErrnoEINVALError();
-        }
+
+        openInternal(path, "r+");
 
         return this;
     }

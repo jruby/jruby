@@ -126,14 +126,13 @@ public class ModeFlags implements Cloneable {
             switch (modesString.charAt(n)) {
                 case 'b':
                     modes |= BINARY;
-                    modes &= ~TEXT;
                     break;
                 case '+':
                     modes = (modes & ~ACCMODE) | RDWR;
                     break;
                 case 't' :
-                    modes |= TEXT;
-                    modes &= ~BINARY;
+                    // TODO: impl text mode
+                    break;
                 case ':':
                     break ModifierLoop;
                 default:
