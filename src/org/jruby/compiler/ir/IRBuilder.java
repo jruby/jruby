@@ -2679,7 +2679,10 @@ public class IRBuilder {
             // compute value and set it
             Operand  v2 = build(opAsgnNode.getValueNode(), s);
             s.addInstr(CallInstr.create(writerValue, new MethAddr(opAsgnNode.getVariableNameAsgn()), v1, new Operand[] {v2}, null));
-            s.addInstr(new CopyInstr(readerValue, writerValue));
+            // It is readerValue = v2.
+            // readerValue = writerValue is incorrect because the assignment method
+            // might return something else other than the value being set!
+            s.addInstr(new CopyInstr(readerValue, v2));
             s.addInstr(new LabelInstr(l));
 
             return readerValue;
@@ -2693,7 +2696,9 @@ public class IRBuilder {
            
             // set attr
             s.addInstr(CallInstr.create(writerValue, new MethAddr(opAsgnNode.getVariableNameAsgn()), v1, new Operand[] {setValue}, null));
-            return writerValue;
+            // Returning writerValue is incorrect becuase the assignment method
+            // might return something else other than the value being set!
+            return setValue;
         }
     }
 
