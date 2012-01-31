@@ -27,10 +27,11 @@ public class ManyArgBlockSplatCallAdapter extends ManyArgBlockOperandCallAdapter
     @Override
     protected IRubyObject[] prepareArguments(ThreadContext context, IRubyObject self, Operand[] args, DynamicScope currDynScope, Object[] temp) {
         List<IRubyObject> argList = new ArrayList<IRubyObject>();
-        for (int i = 0; i < args.length; i++) {
+        int numArgs = args.length;
+        for (int i = 0; i < numArgs; i++) {
             IRubyObject rArg = (IRubyObject) args[i].retrieve(context, self, currDynScope, temp);
-            if (args[i] instanceof Splat) {
-                argList.addAll(Arrays.asList(((RubyArray) rArg).toJavaArray()));
+            if (numArgs == 1 && args[i] instanceof Splat) {
+                argList.addAll(Arrays.asList(((RubyArray)rArg).toJavaArray()));
             } else {
                 argList.add(rArg);
             }

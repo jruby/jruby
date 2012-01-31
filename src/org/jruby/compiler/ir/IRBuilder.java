@@ -669,19 +669,22 @@ public class IRBuilder {
         return copyAndReturnValue(s, val);
     }
 
-    protected void buildCallArgNode(List<Operand> argsList, Node args, IRScope s) {
+    // Return the last argument in the list -- AttrAssign needs it
+    protected Operand buildCallArgs(List<Operand> argsList, Node args, IRScope s) {
+        // unwrap newline nodes to get their actual type
+        args = skipOverNewlines(s, args);
         switch (args.getNodeType()) {
             case ARGSCATNODE: {
-                ArgsCatNode n = (ArgsCatNode)args;
-                argsList.add(new Splat(build(n.getFirstNode(), s)));
-                argsList.add(new Splat(build(n.getSecondNode(), s)));
-                break;
+                CompoundArray a = (CompoundArray)build(args, s);
+                argsList.add(new Splat(a));
+                return a.getAppendedArg();
             }
-            case ARGSPUSHNODE: {
-                ArgsPushNode n = (ArgsPushNode)args;
-                argsList.add(new Splat(build(n.getFirstNode(), s)));
-                argsList.add(build(n.getSecondNode(), s));
-                break;
+            case ARGSPUSHNODE:  {
+                ArgsPushNode ap = (ArgsPushNode)args;
+                Operand v1 = build(ap.getFirstNode(), s);
+                Operand v2 = build(ap.getSecondNode(), s);
+                argsList.add(new Splat(new CompoundArray(v1, v2, true)));
+                return v2;
             }
             case ARRAYNODE: {
                 ArrayNode arrayNode = (ArrayNode)args;
@@ -690,33 +693,30 @@ public class IRBuilder {
                     if (children.size() == 1) {
                         // skipOverNewlines is required because the parser inserts a NewLineNode in between!
                         Node child = skipOverNewlines(s, children.get(0));
-                        Operand childOperand = build(child, s);
                         if (child instanceof SplatNode) {
                             // SSS: If the only child is a splat, the splat is supposed to get through
                             // as an array without being expanded into the call arg list.
                             //
-                            // In 1.9 mode, foo=*1 is supposed to store [1], but foo(*1) is supposed to store 1.
-                            // The AST for the former is: ArrayNode(Splat19Node(..))
-                            // The AST for the latter is: Splat19Node(..)
+                            // The AST for the foo([*1]) is: ArrayNode(Splat19Node(..))
+                            // The AST for the foo(*1) is: Splat19Node(..)
                             //
-                            // In 1.8 mode, foo=[*1] is supposed to store [1]
-                            // The AST for this is: ArrayNode(SplatNode(..))
-                            //
-                            // Why the special case?
-                            //
-                            // Since splats in call args are always expanded, we convert the splat
+                            // Since a lone splat in call args is always expanded, we convert the splat
                             // into a compound array: *n --> args-cat([], *n)
-                            Splat splat = (Splat)childOperand;
-                            childOperand = new CompoundArray(new Array(), splat.getArray());
+                            SplatNode splat = (SplatNode)child;
+                            Variable splatArray = getValueInTemporaryVariable(s, build(splat.getValue(), s));
+                            argsList.add(new CompoundArray(new Array(), splatArray));
+                            return new Splat(splatArray);
+                        } else {
+                            Operand childOperand = build(child, s);
+                            argsList.add(childOperand);
+                            return childOperand;
                         }
-                        argsList.add(childOperand);
                     } else {
                         // explode array, it's an internal "args" array
                         for (Node n: children) {
                             argsList.add(build(n, s));
                         }
                     }
-                    break;
                 } else {
                     // use array as-is, it's a literal array
                     argsList.add(build(arrayNode, s));
@@ -728,16 +728,13 @@ public class IRBuilder {
                 break;
             }
         }
+
+        return argsList.isEmpty() ? Nil.NIL : argsList.get(argsList.size() - 1);
     }
 
     public List<Operand> setupCallArgs(Node args, IRScope s) {
         List<Operand> argsList = new ArrayList<Operand>();
-        if (args != null) {
-            // unwrap newline nodes to get their actual type
-            args = skipOverNewlines(s, args);
-            buildCallArgNode(argsList, args, s);
-        }
-
+        if (args != null) buildCallArgs(argsList, args, s);
         return argsList;
     }
 
@@ -962,10 +959,11 @@ public class IRBuilder {
 
     private Operand buildAttrAssign(final AttrAssignNode attrAssignNode, IRScope s) {
         Operand obj = build(attrAssignNode.getReceiverNode(), s);
-        List<Operand> args = setupCallArgs(attrAssignNode.getArgsNode(), s);
+        List<Operand> args = new ArrayList<Operand>();
+        Node argsNode = attrAssignNode.getArgsNode();
+        Operand lastArg = (argsNode == null) ? Nil.NIL : buildCallArgs(args, argsNode, s);
         s.addInstr(new AttrAssignInstr(obj, new MethAddr(attrAssignNode.getName()), args.toArray(new Operand[args.size()])));
-        Operand lastArg = args.get(args.size()-1);
-        return (lastArg instanceof Splat) ? ((Splat)lastArg).getArray() : lastArg;
+        return lastArg;
     }
 
     public Operand buildAttrAssignAssignment(Node node, IRScope s, Operand value) {
