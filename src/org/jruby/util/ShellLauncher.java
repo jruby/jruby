@@ -302,19 +302,10 @@ public class ShellLauncher {
                 }
             }
         } else {
-            File pathFile = tryFile(runtime, fdir, fname);
-            if (pathFile != null) {
-                if (isExec) {
-                    if (!pathFile.isDirectory()) {
-                        String pathFileStr = pathFile.getAbsolutePath();
-                        POSIX posix = runtime.getPosix();
-                        if (posix.stat(pathFileStr).isExecutable()) {
-                            validFile = pathFile;
-                        }
-                    }
-                } else {
-                    validFile = pathFile;
-                }
+            validFile = tryFile(runtime, fdir, fname);
+            if (validFile != null && isExec &&
+                (validFile.isDirectory() || !runtime.getPosix().stat(validFile.getAbsolutePath()).isExecutable())) {
+                throw runtime.newErrnoEACCESError(validFile.getAbsolutePath());
             }
         }
         return validFile;

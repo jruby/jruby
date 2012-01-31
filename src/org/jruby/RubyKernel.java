@@ -1635,9 +1635,11 @@ public class RubyKernel {
         } catch (Exception e) {
             throw runtime.newErrnoENOENTError("cannot execute");
         }
-        
-        if (nativeFailed) throw runtime.newErrnoENOENTError("cannot execute");
-        
+
+        if (nativeFailed) {
+            throw runtime.newErrnoFromLastPOSIXErrno();
+        }
+
         exit(runtime, new IRubyObject[] {runtime.newFixnum(resultCode)}, true);
 
         // not reached
