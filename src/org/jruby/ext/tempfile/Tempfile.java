@@ -51,6 +51,7 @@ import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.PhantomReferenceReaper;
+import org.jruby.util.io.IOOptions;
 import org.jruby.util.io.InvalidValueException;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.OpenFile;
@@ -174,9 +175,9 @@ public class Tempfile extends RubyTempfile {
     private void initializeOpen() {
         Ruby runtime = getRuntime();
 
-        ModeFlags modeFlags = newModeFlags(runtime, ModeFlags.RDWR | ModeFlags.EXCL);
+        IOOptions ioOptions = newIOOptions(runtime, ModeFlags.RDWR | ModeFlags.EXCL);
         getRuntime().getPosix().chmod(path, 0600);
-        sysopenInternal(path, modeFlags, 0600);
+        sysopenInternal(path, ioOptions.getModeFlags(), 0600);
     }
 
     /**

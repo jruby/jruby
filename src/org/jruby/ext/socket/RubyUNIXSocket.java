@@ -42,9 +42,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
-import jnr.ffi.Struct.Signed16;
-import jnr.ffi.Struct.Signed8;
-import jnr.ffi.Struct.UTF8String;
 
 import static jnr.constants.platform.AddressFamily.*;
 import static jnr.constants.platform.ProtocolFamily.*;
@@ -72,7 +69,6 @@ import org.jruby.util.io.ChannelStream;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.ByteList;
 import org.jruby.util.io.BadDescriptorException;
-import org.jruby.util.io.InvalidValueException;
 
 /**
  * @author <a href="mailto:ola.bini@gmail.com">Ola Bini</a>

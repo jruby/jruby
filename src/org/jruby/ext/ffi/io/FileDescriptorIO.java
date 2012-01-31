@@ -41,7 +41,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.BadDescriptorException;
 import org.jruby.util.io.ChannelDescriptor;
 import org.jruby.util.io.ChannelStream;
-import org.jruby.util.io.InvalidValueException;
 import org.jruby.util.io.ModeFlags;
 
 /**

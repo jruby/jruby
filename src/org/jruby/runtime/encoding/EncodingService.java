@@ -255,10 +255,23 @@ public final class EncodingService {
         return encoding;
     }
 
+    public Encoding getEncodingFromString(String string) {
+        if (string == null) return null;
+
+        ByteList name = new ByteList(ByteList.plain(string));
+        checkAsciiEncodingName(name);
+
+        SpecialEncoding special = SpecialEncoding.valueOf(name);
+        if (special != null) {
+            return special.toEncoding(runtime);
+        }
+
+        return findEncodingWithError(name);
+    }
+
     /**
      * Find an encoding given a Ruby object, coercing it to a String in the process.
      *
-     * @param runtime current Ruby instance
      * @param str the object to coerce and use to look up encoding. The coerced String
      * must be ASCII-compatible.
      * @return the Encoding object found, nil (for internal), or raises ArgumentError
@@ -278,7 +291,6 @@ public final class EncodingService {
     /**
      * Find an encoding given a Ruby object, coercing it to a String in the process.
      *
-     * @param runtime current Ruby instance
      * @param str the object to coerce and use to look up encoding. The coerced String
      * must be ASCII-compatible.
      * @return the Encoding object found, nil (for internal), or raises ArgumentError
@@ -298,8 +310,7 @@ public final class EncodingService {
     /**
      * Look up the pre-existing RubyEncoding object for an EncodingDB.Entry.
      *
-     * @param runtime
-     * @param entry
+     * @param str
      * @return
      */
     public IRubyObject rubyEncodingFromObject(IRubyObject str) {
@@ -372,11 +383,10 @@ public final class EncodingService {
     /**
      * Find a non-special encoding, raising argument error if it does not exist.
      *
-     * @param runtime current Ruby instance
      * @param name the name of the encoding to look up
      * @return the Encoding object found, or raises ArgumentError
      */
-    private Encoding findEncodingWithError(ByteList name) {
+    public Encoding findEncodingWithError(ByteList name) {
         return findEntryWithError(name).getEncoding();
     }
 

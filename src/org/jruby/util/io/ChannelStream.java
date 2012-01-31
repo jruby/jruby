@@ -682,17 +682,11 @@ public class ChannelStream implements Stream, Finalizable {
         return true;
     }
 
-    /**
-     * @see org.jruby.util.IOHandler#getInputStream()
-     */
     public InputStream newInputStream() {
         InputStream in = descriptor.getBaseInputStream();
         return in == null ? new InputStreamAdapter(this) : in;
     }
 
-    /**
-     * @see org.jruby.util.IOHandler#getOutputStream()
-     */
     public OutputStream newOutputStream() {
         return new OutputStreamAdapter(this);
     }
@@ -704,7 +698,6 @@ public class ChannelStream implements Stream, Finalizable {
     /**
      * @throws IOException
      * @throws BadDescriptorException
-     * @see org.jruby.util.IOHandler#isEOF()
      */
     public boolean feof() throws IOException, BadDescriptorException {
         checkReadable();
@@ -718,7 +711,6 @@ public class ChannelStream implements Stream, Finalizable {
 
     /**
      * @throws IOException
-     * @see org.jruby.util.IOHandler#pos()
      */
     public synchronized long fgetpos() throws IOException, PipeException, InvalidValueException, BadDescriptorException {
         // Correct position for read / write buffering (we could invalidate, but expensive)
@@ -746,7 +738,6 @@ public class ChannelStream implements Stream, Finalizable {
      *
      * @throws IOException
      * @throws InvalidValueException
-     * @see org.jruby.util.IOHandler#seek(long, int)
      */
     public synchronized void lseek(long offset, int type) throws IOException, InvalidValueException, PipeException, BadDescriptorException {
         if (descriptor.isSeekable()) {
@@ -787,9 +778,6 @@ public class ChannelStream implements Stream, Finalizable {
         }
     }
 
-    /**
-     * @see org.jruby.util.IOHandler#sync()
-     */
     public synchronized void sync() throws IOException, BadDescriptorException {
         flushWrite();
     }
@@ -1038,7 +1026,6 @@ public class ChannelStream implements Stream, Finalizable {
     /**
      * @throws IOException
      * @throws BadDescriptorException
-     * @see org.jruby.util.IOHandler#syswrite(String buf)
      */
     private int bufferedWrite(ByteList buf) throws IOException, BadDescriptorException {
         checkWritable();
@@ -1069,7 +1056,6 @@ public class ChannelStream implements Stream, Finalizable {
     /**
      * @throws IOException
      * @throws BadDescriptorException
-     * @see org.jruby.util.IOHandler#syswrite(String buf)
      */
     private int bufferedWrite(ByteBuffer buf) throws IOException, BadDescriptorException {
         checkWritable();
@@ -1098,7 +1084,6 @@ public class ChannelStream implements Stream, Finalizable {
     /**
      * @throws IOException
      * @throws BadDescriptorException
-     * @see org.jruby.util.IOHandler#syswrite(String buf)
      */
     private int bufferedWrite(int c) throws IOException, BadDescriptorException {
         checkWritable();

@@ -107,7 +107,7 @@ public class ChannelDescriptor {
 
     /**
      * Used to work-around blocking problems with STDIN. In most cases <code>null</code>.
-     * See {@link #ChannelDescriptor(InputStream, int, ModeFlags, FileDescriptor)}
+     * See {@link ChannelDescriptor#ChannelDescriptor(java.io.InputStream, ModeFlags, java.io.FileDescriptor)}
      * for more details. You probably should not use it.
      */
     private InputStream baseInputStream;
@@ -185,7 +185,6 @@ public class ChannelDescriptor {
      * references to it have been closed.
      * 
      * @param channel The channel for the new descriptor
-     * @param fileno The file number for the new descriptor
      * @param originalModes The mode flags for the new descriptor
      * @param fileDescriptor The java.io.FileDescriptor object for the new descriptor
      */
@@ -199,7 +198,6 @@ public class ChannelDescriptor {
      * references to it have been closed.
      * 
      * @param channel The channel for the new descriptor
-     * @param fileno The file number for the new descriptor
      * @param originalModes The mode flags for the new descriptor
      * @param fileDescriptor The java.io.FileDescriptor object for the new descriptor
      */
@@ -214,7 +212,6 @@ public class ChannelDescriptor {
      *
      * @param channel The channel for the new descriptor
      * @param originalModes The mode flags for the new descriptor
-     * @param fileDescriptor The java.io.FileDescriptor object for the new descriptor
      */
     public ChannelDescriptor(Channel channel, ModeFlags originalModes) {
         this(channel, getNewFileno(), originalModes, new FileDescriptor(), new AtomicInteger(1), true, false);
@@ -228,7 +225,6 @@ public class ChannelDescriptor {
      * use this constructor, it's reserved mostly for STDIN.
      *
      * @param baseInputStream The stream to create the channel for the new descriptor
-     * @param fileno The file number for the new descriptor
      * @param originalModes The mode flags for the new descriptor
      * @param fileDescriptor The java.io.FileDescriptor object for the new descriptor
      */
@@ -251,7 +247,6 @@ public class ChannelDescriptor {
      *
      * @param baseInputStream The stream to create the channel for the new descriptor
      * @param originalModes The mode flags for the new descriptor
-     * @param fileDescriptor The java.io.FileDescriptor object for the new descriptor
      */
     public ChannelDescriptor(InputStream baseInputStream, ModeFlags originalModes) {
         // The reason why we need the stream is to be able to invoke available() on it.
@@ -270,7 +265,6 @@ public class ChannelDescriptor {
      * to determine the "original" set of mode flags.
      * 
      * @param channel The channel for the new descriptor
-     * @param fileno The file number for the new descriptor
      * @param fileDescriptor The java.io.FileDescriptor object for the new descriptor
      */
     public ChannelDescriptor(Channel channel, FileDescriptor fileDescriptor) throws InvalidValueException {
@@ -290,7 +284,6 @@ public class ChannelDescriptor {
      * new fileno.
      *
      * @param channel The channel for the new descriptor
-     * @param fileDescriptor The java.io.FileDescriptor object for the new descriptor
      */
     public ChannelDescriptor(Channel channel) throws InvalidValueException {
         this(channel, getModesFromChannel(channel), new FileDescriptor());
@@ -332,7 +325,7 @@ public class ChannelDescriptor {
     /**
      * This is intentionally non-public, since it should not be really
      * used outside of very limited use case (handling of STDIN).
-     * See {@link #ChannelDescriptor(InputStream, int, ModeFlags, FileDescriptor)}
+     * See {@link ChannelDescriptor#ChannelDescriptor(java.io.InputStream, ModeFlags, java.io.FileDescriptor)}
      * for more info.
      */
     /*package-protected*/ InputStream getBaseInputStream() {
@@ -353,7 +346,7 @@ public class ChannelDescriptor {
      * Set the channel to be explicitly seekable or not, for streams that appear
      * to be seekable with the instanceof FileChannel check.
      * 
-     * @param seekable Whether the channel is seekable or not.
+     * @param canBeSeekable Whether the channel is seekable or not.
      */
     public void setCanBeSeekable(boolean canBeSeekable) {
         this.canBeSeekable = canBeSeekable;
@@ -471,9 +464,8 @@ public class ChannelDescriptor {
      * version by making the target descriptor into a new reference to the current
      * descriptor's channel, closing what it originally pointed to and preserving
      * its original fileno.
-     * 
-     * @param fileno The fileno to use for the new descriptor
-     * @return A duplicate ChannelDescriptor based on this one
+     *
+     * @param other the descriptor to dup this one into
      */
     public void dup2Into(ChannelDescriptor other) throws BadDescriptorException, IOException {
         synchronized (refCounter) {
@@ -566,7 +558,7 @@ public class ChannelDescriptor {
      * @throws java.io.IOException if there is an exception during IO
      * @throws org.jruby.util.io.BadDescriptorException if the associated
      * channel is already closed.
-     * @see java.util.ByteList
+     * @see org.jruby.util.ByteList
      */
     public int read(int number, ByteList byteList) throws IOException, BadDescriptorException {
         checkOpen();
@@ -610,7 +602,7 @@ public class ChannelDescriptor {
     /**
      * Write the bytes in the specified byte list to the associated channel.
      * 
-     * @param buf the byte list containing the bytes to be written
+     * @param buffer the byte list containing the bytes to be written
      * @return the number of bytes actually written
      * @throws java.io.IOException if there is an exception during IO
      * @throws org.jruby.util.io.BadDescriptorException if the associated
@@ -641,7 +633,7 @@ public class ChannelDescriptor {
     /**
      * Write the bytes in the specified byte list to the associated channel.
      * 
-     * @param buf the byte list containing the bytes to be written
+     * @param buffer the byte list containing the bytes to be written
      * @return the number of bytes actually written
      * @throws java.io.IOException if there is an exception during IO
      * @throws org.jruby.util.io.BadDescriptorException if the associated

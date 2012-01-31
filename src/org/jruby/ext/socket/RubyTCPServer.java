@@ -37,7 +37,6 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.util.regex.Pattern;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
@@ -53,7 +52,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.io.ChannelDescriptor;
-import org.jruby.util.io.InvalidValueException;
 import org.jruby.util.io.ModeFlags;
 
 import org.jruby.util.io.SelectorFactory;

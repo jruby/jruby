@@ -41,9 +41,9 @@ import jnr.constants.platform.OpenFlags;
  * methods for querying specific flag settings and converting to two other
  * formats: a Java mode string and an OpenFile mode int.
  * 
- * @see org.jruby.io.util.ChannelDescriptor
- * @see org.jruby.io.util.Stream
- * @see org.jruby.io.util.OpenFile
+ * @see org.jruby.util.io.ChannelDescriptor
+ * @see org.jruby.util.io.Stream
+ * @see org.jruby.util.io.OpenFile
  */
 public class ModeFlags implements Cloneable {
     /** read-only flag (default value if no other flags set) */
@@ -64,6 +64,8 @@ public class ModeFlags implements Cloneable {
     public static final int NONBLOCK = OpenFlags.O_NONBLOCK.intValue();
     /** binary flag, to ensure no encoding changes are made while writing */
     public static final int BINARY = OpenFlags.O_BINARY.intValue();
+    /** textmode flag, for normalizing newline characters to \n */
+    public static final int TEXT = 0x00001000; // from ruby.h
     /** accmode flag, used to mask the read/write mode */
     public static final int ACCMODE = RDWR | WRONLY | RDONLY;
     
@@ -92,6 +94,54 @@ public class ModeFlags implements Cloneable {
             // MRI 1.8 behavior: this combination of flags is not allowed
             throw new InvalidValueException();
         }
+    }
+
+    public ModeFlags(String flagString) throws InvalidValueException {
+        this.flags = getOFlagsFromString(flagString);
+    }
+
+    public static int getOFlagsFromString(String modesString) throws InvalidValueException {
+        int modes = 0;
+        int length = modesString.length();
+
+        if (length == 0) {
+            throw new InvalidValueException();
+        }
+
+        switch (modesString.charAt(0)) {
+            case 'r' :
+                modes |= RDONLY;
+                break;
+            case 'a' :
+                modes |= APPEND | WRONLY | CREAT;
+                break;
+            case 'w' :
+                modes |= WRONLY | TRUNC | CREAT;
+                break;
+            default :
+                throw new InvalidValueException();
+        }
+
+        ModifierLoop: for (int n = 1; n < length; n++) {
+            switch (modesString.charAt(n)) {
+                case 'b':
+                    modes |= BINARY;
+                    modes &= ~TEXT;
+                    break;
+                case '+':
+                    modes = (modes & ~ACCMODE) | RDWR;
+                    break;
+                case 't' :
+                    modes |= TEXT;
+                    modes &= ~BINARY;
+                case ':':
+                    break ModifierLoop;
+                default:
+                    throw new InvalidValueException();
+            }
+        }
+
+        return modes;
     }
     
     /**
@@ -134,6 +184,15 @@ public class ModeFlags implements Cloneable {
      */
     public boolean isBinary() {
         return (flags & BINARY) != 0;
+    }
+
+    /**
+     * Whether the flags specify "text" mode for reads and writes.
+     *
+     * @return true if text mode, false otherwise
+     */
+    public boolean isText() {
+        return (flags & TEXT) != 0;
     }
     
     /**

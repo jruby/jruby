@@ -80,6 +80,7 @@ import org.jruby.util.CRC32Ext;
 import org.jruby.util.IOInputStream;
 import org.jruby.util.IOOutputStream;
 import org.jruby.util.TypeConverter;
+import org.jruby.util.io.EncodingOption;
 import org.jruby.util.io.Stream;
 
 import com.jcraft.jzlib.JZlib;
@@ -1320,7 +1321,7 @@ public class RubyZlib {
             if (args.length > 1) {
                 IRubyObject opt = TypeConverter.checkHashType(getRuntime(), args[args.length - 1]);
                 if (!opt.isNil()) {
-                    RubyIO.EncodingOption enc = RubyIO.extractEncodingOptions(opt);
+                    EncodingOption enc = EncodingOption.getEncodingOptionFromObject(opt);
                     if (enc != null) {
                         readEncoding = enc.getExternalEncoding();
                         writeEncoding = enc.getInternalEncoding();
@@ -1865,7 +1866,7 @@ public class RubyZlib {
             if (args.length > 2) {
                 IRubyObject opt = TypeConverter.checkHashType(getRuntime(), args[args.length - 1]);
                 if (!opt.isNil()) {
-                    RubyIO.EncodingOption enc = RubyIO.extractEncodingOptions(opt);
+                    EncodingOption enc = EncodingOption.getEncodingOptionFromObject(opt);
                     if (enc != null) {
                         readEncoding = enc.getExternalEncoding();
                         writeEncoding = enc.getInternalEncoding();

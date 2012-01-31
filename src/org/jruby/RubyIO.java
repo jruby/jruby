@@ -35,7 +35,14 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import org.jcodings.specific.UTF16BEEncoding;
+import org.jcodings.specific.UTF16LEEncoding;
+import org.jcodings.specific.UTF32BEEncoding;
+import org.jcodings.specific.UTF32LEEncoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.util.StringSupport;
+import org.jruby.util.io.EncodingOption;
+import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.SelectBlob;
 import org.jcodings.exception.EncodingException;
 import jnr.constants.platform.Fcntl;
@@ -74,7 +81,7 @@ import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.io.Stream;
-import org.jruby.util.io.ModeFlags;
+import org.jruby.util.io.IOOptions;
 import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.ShellLauncher;
 import org.jruby.util.TypeConverter;
@@ -170,20 +177,19 @@ public class RubyIO extends RubyObject {
         openFile.setMode(openFile.getMainStream().getModes().getOpenFileFlags());
     }
 
-    public RubyIO(Ruby runtime, ShellLauncher.POpenProcess process, ModeFlags modes) {
-        this(runtime, runtime.getIO(), process, null, modes);
+    public RubyIO(Ruby runtime, ShellLauncher.POpenProcess process, IOOptions ioOptions) {
+        this(runtime, runtime.getIO(), process, null, ioOptions);
     }
 
-    public RubyIO(Ruby runtime, RubyClass cls, ShellLauncher.POpenProcess process, RubyHash options, ModeFlags modes) {
+    public RubyIO(Ruby runtime, RubyClass cls, ShellLauncher.POpenProcess process, RubyHash options, IOOptions ioOptions) {
         super(runtime, cls);
 
-        setEncodingsFromOptions(runtime.getCurrentContext(), (RubyHash)options);
-
-        modes = updateModesFromOptions(runtime.getCurrentContext(), (RubyHash)options, modes);
+        ioOptions = updateIOOptionsFromOptions(runtime.getCurrentContext(), (RubyHash) options, ioOptions);
+        setEncodingFromOptions(ioOptions.getEncodingOption());
 
         openFile = new OpenFile();
         
-        openFile.setMode(modes.getOpenFileFlags() | OpenFile.SYNC);
+        openFile.setMode(ioOptions.getModeFlags().getOpenFileFlags() | OpenFile.SYNC);
         openFile.setProcess(process);
 
         try {
@@ -364,12 +370,12 @@ public class RubyIO extends RubyObject {
         // TODO: check safe, taint on incoming string
 
         try {
-            ModeFlags modes;
+            IOOptions modes;
             if (args.length > 1) {
                 IRubyObject modeString = args[1].convertToString();
                 modes = getIOModes(runtime, modeString.toString());
 
-                openFile.setMode(modes.getOpenFileFlags());
+                openFile.setMode(modes.getModeFlags().getOpenFileFlags());
             } else {
                 modes = getIOModes(runtime, "r");
             }
@@ -383,7 +389,7 @@ public class RubyIO extends RubyObject {
 
             if (openFile.getMainStream() == null) {
                 try {
-                    openFile.setMainStream(ChannelStream.fopen(runtime, path, modes));
+                    openFile.setMainStream(ChannelStream.fopen(runtime, path, modes.getModeFlags()));
                 } catch (FileExistsException fee) {
                     throw runtime.newErrnoEEXISTError(path);
                 }
@@ -394,7 +400,7 @@ public class RubyIO extends RubyObject {
                 }
             } else {
                 // TODO: This is an freopen in MRI, this is close, but not quite the same
-                openFile.getMainStreamSafe().freopen(runtime, path, getIOModes(runtime, openFile.getModeAsString(runtime)));
+                openFile.getMainStreamSafe().freopen(runtime, path, getIOModes(runtime, openFile.getModeAsString(runtime)).getModeFlags());
                 
                 if (openFile.getPipeStream() != null) {
                     // TODO: pipe handler to be reopened with path and "w" mode
@@ -462,7 +468,7 @@ public class RubyIO extends RubyObject {
                     //fptr->mode &= (m & FMODE_READABLE) ? ~FMODE_READABLE : ~FMODE_WRITABLE;
 
                     if (pipeFile != null) {
-                        selfFile.setMainStream(ChannelStream.fdopen(runtime, originalDescriptor, new ModeFlags()));
+                        selfFile.setMainStream(ChannelStream.fdopen(runtime, originalDescriptor, originalDescriptor.getOriginalModes()));
                         selfFile.setPipeStream(pipeFile);
                     } else {
                         // only use internal fileno here, stdio is handled above
@@ -497,7 +503,7 @@ public class RubyIO extends RubyObject {
                 } else if (fd != originalFile.getPipeStream().getDescriptor().getFileno()) {
                     selfFile.getPipeStream().fclose();
                     ChannelDescriptor newFD2 = originalFile.getPipeStream().getDescriptor().dup2(fd);
-                    selfFile.setPipeStream(ChannelStream.fdopen(runtime, newFD2, getIOModes(runtime, "w")));
+                    selfFile.setPipeStream(ChannelStream.fdopen(runtime, newFD2, getIOModes(runtime, "w").getModeFlags()));
                 }
             }
 
@@ -532,11 +538,13 @@ public class RubyIO extends RubyObject {
         
         return this;
     }
-    
-    public static ModeFlags getIOModes(Ruby runtime, String modesString) {
-        return newModeFlags(runtime, getIOModesIntFromString(runtime, modesString));
+
+    @Deprecated
+    public static IOOptions getIOModes(Ruby runtime, String modesString) {
+        return newIOOptions(runtime, getIOModesIntFromString(runtime, modesString));
     }
-        
+
+    @Deprecated
     public static int getIOModesIntFromString(Ruby runtime, String modesString) {
         int modes = 0;
         int length = modesString.length();
@@ -875,32 +883,36 @@ public class RubyIO extends RubyObject {
         return klass.newInstance(context, args, block);
     }
 
-    private IRubyObject initializeCommon19(ThreadContext context, int fileno, IRubyObject options, ModeFlags modes) {
+    private IRubyObject initializeCommon19(ThreadContext context, int fileno, IRubyObject options, IOOptions ioOptions) {
+        Ruby runtime = context.runtime;
         try {
-            ChannelDescriptor descriptor = ChannelDescriptor.getDescriptorByFileno(getRuntime().getFilenoExtMap(fileno));
+            ChannelDescriptor descriptor = ChannelDescriptor.getDescriptorByFileno(runtime.getFilenoExtMap(fileno));
 
-            if (descriptor == null) throw getRuntime().newErrnoEBADFError();
+            if (descriptor == null) throw runtime.newErrnoEBADFError();
 
             descriptor.checkOpen();
 
             if (options != null && !(options instanceof RubyHash)) {
-                throw context.runtime.newTypeError(options, context.runtime.getHash());
+                throw context.runtime.newTypeError(options, runtime.getHash());
             }
 
-            setEncodingsFromOptions(context, (RubyHash)options);
+            if (ioOptions == null) {
+                ioOptions = newIOOptions(runtime, descriptor.getOriginalModes());
+            }
 
-            modes = updateModesFromOptions(context, (RubyHash)options, modes);
+            ioOptions = updateIOOptionsFromOptions(context, (RubyHash) options, ioOptions);
+            setEncodingFromOptions(ioOptions.getEncodingOption());
 
-            if (modes == null) modes = descriptor.getOriginalModes();
+            if (ioOptions == null) ioOptions = newIOOptions(runtime, descriptor.getOriginalModes());
 
             if (openFile.isOpen()) {
                 // JRUBY-4650: Make sure we clean up the old data,
                 // if it's present.
-                openFile.cleanup(getRuntime(), false);
+                openFile.cleanup(runtime, false);
             }
 
-            openFile.setMode(modes.getOpenFileFlags());
-            openFile.setMainStream(fdopen(descriptor, modes));
+            openFile.setMode(ioOptions.getModeFlags().getOpenFileFlags());
+            openFile.setMainStream(fdopen(descriptor, ioOptions.getModeFlags()));
         } catch (BadDescriptorException ex) {
             throw getRuntime().newErrnoEBADFError();
         }
@@ -909,80 +921,52 @@ public class RubyIO extends RubyObject {
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE, compat = RUBY1_9)
-    public IRubyObject initialize19(ThreadContext context, IRubyObject fileNumber, Block unusedBlock) {
+    public IRubyObject initialize19(ThreadContext context, IRubyObject fileNumber, Block unused) {
         return initializeCommon19(context, RubyNumeric.fix2int(fileNumber), null, null);
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE, compat = RUBY1_9)
-    public IRubyObject initialize19(ThreadContext context, IRubyObject fileNumber, IRubyObject second, Block unusedBlock) {
+    public IRubyObject initialize19(ThreadContext context, IRubyObject fileNumber, IRubyObject second, Block unused) {
         int fileno = RubyNumeric.fix2int(fileNumber);
-        ModeFlags modes = null;
+        IOOptions ioOptions = null;
         RubyHash options = null;
         if (second instanceof RubyHash) {
             options = (RubyHash)second;
         } else {
-            modes = parseModes19(context, second);
+            ioOptions = parseIOOptions19(second);
         }
 
-        return initializeCommon19(context, fileno, options, modes);
+        return initializeCommon19(context, fileno, options, ioOptions);
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE, compat = RUBY1_9)
-    public IRubyObject initialize19(ThreadContext context, IRubyObject fileNumber, IRubyObject modeValue, IRubyObject options, Block unusedBlock) {
+    public IRubyObject initialize19(ThreadContext context, IRubyObject fileNumber, IRubyObject modeValue, IRubyObject options, Block unused) {
         int fileno = RubyNumeric.fix2int(fileNumber);
-        ModeFlags modes = parseModes19(context, modeValue);
+        IOOptions ioOptions = parseIOOptions19(modeValue);
 
-        return initializeCommon19(context, fileno, options, modes);
+        return initializeCommon19(context, fileno, options, ioOptions);
     }
 
-    protected ModeFlags parseModes(IRubyObject arg) {
+    // No encoding processing
+    protected IOOptions parseIOOptions(IRubyObject arg) {
         Ruby runtime = getRuntime();
 
-        if (arg instanceof RubyFixnum) return newModeFlags(runtime, RubyFixnum.fix2long(arg));
+        if (arg instanceof RubyFixnum) return newIOOptions(runtime, (int) RubyFixnum.fix2long(arg));
 
-        return getIOModes(runtime, arg.convertToString().toString());
+        return newIOOptions(runtime, newModeFlags(runtime, arg.convertToString().toString()));
     }
 
-    protected ModeFlags parseModes19(ThreadContext context, IRubyObject arg) {
-        ModeFlags modes = parseModes(arg);
+    // Encoding processing
+    protected IOOptions parseIOOptions19(IRubyObject arg) {
+        Ruby runtime = getRuntime();
 
-        if (arg instanceof RubyString) {
-            parseEncodingFromString(context, arg, 1);
-        }
+        if (arg instanceof RubyFixnum) return newIOOptions(runtime, (int) RubyFixnum.fix2long(arg));
 
-        return modes;
-    }
-
-    private void parseEncodingFromString(ThreadContext context, IRubyObject arg, int initialPosition) {
-        RubyString modes19 = arg.convertToString();
-
-        if (modes19.toString().contains(":")) {
-            Ruby runtime = context.getRuntime();
-            RubyString splitter = RubyString.newString(runtime, ":");
-            IRubyObject[] fullEncoding = modes19.split(context, splitter).toJavaArray();
-
-            IRubyObject externalEncodingOption = fullEncoding[initialPosition];
-
-            // FIXME: Add something to indicate BOM
-            if (externalEncodingOption.toString().contains("|")) {
-                splitter = RubyString.newString(runtime, "|");
-                externalEncodingOption = externalEncodingOption.convertToString().split(context, splitter).toJavaArray()[1];
-            }
-            
-            RubyString dash = runtime.newString("-");
-            if (dash.eql(externalEncodingOption)) {
-                externalEncodingOption = runtime.getEncodingService().getDefaultExternal();
-            }
-
-            if (fullEncoding.length > (initialPosition + 1)) {
-                IRubyObject internalEncodingOption = fullEncoding[initialPosition + 1];
-                if (dash.eql(internalEncodingOption)) {
-                    internalEncodingOption = runtime.getEncodingService().getDefaultInternal();
-                }
-                set_encoding(context, externalEncodingOption, internalEncodingOption);
-            } else {
-                set_encoding(context, externalEncodingOption);
-            }
+        String modeString = arg.convertToString().toString();
+        try {
+            return new IOOptions(runtime, modeString);
+        } catch (InvalidValueException ive) {
+            throw runtime.newArgumentError("invalid access mode " + modeString);
         }
     }
 
@@ -990,7 +974,7 @@ public class RubyIO extends RubyObject {
     public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
         Ruby runtime = getRuntime();
         int argCount = args.length;
-        ModeFlags modes;
+        IOOptions ioOptions;
         
         int fileno = RubyNumeric.fix2int(args[0]);
         
@@ -1005,13 +989,13 @@ public class RubyIO extends RubyObject {
             
             if (argCount == 2) {
                 if (args[1] instanceof RubyFixnum) {
-                    modes = newModeFlags(runtime, RubyFixnum.fix2long(args[1]));
+                    ioOptions = newIOOptions(runtime, RubyFixnum.fix2long(args[1]));
                 } else {
-                    modes = getIOModes(runtime, args[1].convertToString().toString());
+                    ioOptions = getIOModes(runtime, args[1].convertToString().toString());
                 }
             } else {
                 // use original modes
-                modes = descriptor.getOriginalModes();
+                ioOptions = newIOOptions(runtime, descriptor.getOriginalModes());
             }
 
             if (openFile.isOpen()) {
@@ -1020,9 +1004,9 @@ public class RubyIO extends RubyObject {
                 openFile.cleanup(runtime, false);
             }
 
-            openFile.setMode(modes.getOpenFileFlags());
+            openFile.setMode(ioOptions.getModeFlags().getOpenFileFlags());
         
-            openFile.setMainStream(fdopen(descriptor, modes));
+            openFile.setMainStream(fdopen(descriptor, ioOptions.getModeFlags()));
         } catch (BadDescriptorException ex) {
             throw runtime.newErrnoEBADFError();
         }
@@ -1087,7 +1071,8 @@ public class RubyIO extends RubyObject {
 
     @JRubyMethod(compat=RUBY1_9)
     public IRubyObject set_encoding(ThreadContext context, IRubyObject encodingString) {
-        setExternalEncoding(context, encodingString);
+        EncodingOption encodingOption = EncodingOption.getEncodingOptionFromString(context.runtime, encodingString.convertToString().toString());
+        setEncodingFromOptions(encodingOption);
         return context.getRuntime().getNil();
     }
 
@@ -1108,7 +1093,6 @@ public class RubyIO extends RubyObject {
     private void setExternalEncoding(ThreadContext context, IRubyObject encoding) {
         externalEncoding = getEncodingCommon(context, encoding);
     }
-
 
     private void setInternalEncoding(ThreadContext context, IRubyObject encoding) {
         Encoding internalEncodingOption = getEncodingCommon(context, encoding);
@@ -1179,7 +1163,7 @@ public class RubyIO extends RubyObject {
         runtime.checkSafeString(pathString);
         String path = pathString.toString();
 
-        ModeFlags modes = null;
+        IOOptions modes = null;
         int perms = -1; // -1 == don't set permissions
 
         if (args.length > 1) {
@@ -1198,7 +1182,7 @@ public class RubyIO extends RubyObject {
         try {
             ChannelDescriptor descriptor =
                 ChannelDescriptor.open(runtime.getCurrentDirectory(),
-                                       path, modes, perms, runtime.getPosix(),
+                                       path, modes.getModeFlags(), perms, runtime.getPosix(),
                                        runtime.getJRubyClassLoader());
             // always a new fileno, so ok to use internal only
             fileno = descriptor.getFileno();
@@ -1912,28 +1896,28 @@ public class RubyIO extends RubyObject {
             newFile.setPath(originalFile.getPath());
             newFile.setFinalizer(originalFile.getFinalizer());
             
-            ModeFlags modes;
+            IOOptions modes;
             if (newFile.isReadable()) {
                 if (newFile.isWritable()) {
                     if (newFile.getPipeStream() != null) {
-                        modes = newModeFlags(runtime, ModeFlags.RDONLY);
+                        modes = newIOOptions(runtime, ModeFlags.RDONLY);
                     } else {
-                        modes = newModeFlags(runtime, ModeFlags.RDWR);
+                        modes = newIOOptions(runtime, ModeFlags.RDWR);
                     }
                 } else {
-                    modes = newModeFlags(runtime, ModeFlags.RDONLY);
+                    modes = newIOOptions(runtime, ModeFlags.RDONLY);
                 }
             } else {
                 if (newFile.isWritable()) {
-                    modes = newModeFlags(runtime, ModeFlags.WRONLY);
+                    modes = newIOOptions(runtime, ModeFlags.WRONLY);
                 } else {
-                    modes = originalFile.getMainStreamSafe().getModes();
+                    modes = newIOOptions(runtime, originalFile.getMainStreamSafe().getModes());
                 }
             }
             
             ChannelDescriptor descriptor = originalFile.getMainStreamSafe().getDescriptor().dup();
 
-            newFile.setMainStream(ChannelStream.fdopen(runtime, descriptor, modes));
+            newFile.setMainStream(ChannelStream.fdopen(runtime, descriptor, modes.getModeFlags()));
 
             newFile.getMainStream().setSync(originalFile.getMainStreamSafe().isSync());
             if (originalFile.getMainStreamSafe().isBinmode()) newFile.getMainStream().setBinmode();
@@ -2508,7 +2492,9 @@ public class RubyIO extends RubyObject {
             throw getRuntime().newIOError("unread stream");
         }
 
-        return ungetcCommon(number, myOpenFile);
+        ungetcCommon((int)number.convertToInteger().getLongValue());
+
+        return getRuntime().getNil();
     }
 
     @JRubyMethod(name = "ungetc", required = 1, compat = CompatVersion.RUBY1_9)
@@ -2520,21 +2506,27 @@ public class RubyIO extends RubyObject {
             return runtime.getNil();
         }
 
-        if (number instanceof RubyString) {
+        if (number instanceof RubyFixnum) {
+            int c = (int)number.convertToInteger().getLongValue();
+
+            ungetcCommon(c);
+        } else if (number instanceof RubyString) {
             RubyString str = (RubyString) number;
             if (str.isEmpty()) return runtime.getNil();
 
             int c =  str.getEncoding().mbcToCode(str.getBytes(), 0, 1);
-            number = runtime.newFixnum(c);
+
+            ungetcCommon(c);
+        } else {
+            throw runtime.newTypeError(number, runtime.getFixnum());
         }
 
-        return ungetcCommon(number, myOpenFile);
+        return runtime.getNil();
     }
 
-    private IRubyObject ungetcCommon(IRubyObject number, OpenFile myOpenFile) {
-        int ch = RubyNumeric.fix2int(number);
-
+    public void ungetcCommon(int ch) {
         try {
+            OpenFile myOpenFile = getOpenFileChecked();
             myOpenFile.checkReadable(getRuntime());
             myOpenFile.setReadBuffered();
 
@@ -2550,8 +2542,6 @@ public class RubyIO extends RubyObject {
         } catch (IOException e) {
             throw getRuntime().newIOErrorFromException(e);
         }
-
-        return getRuntime().getNil();
     }
 
     @JRubyMethod(name = "read_nonblock", required = 1, optional = 1, backtrace = true)
@@ -3363,6 +3353,10 @@ public class RubyIO extends RubyObject {
        return (RubyIO) RubyKernel.open(context, recv, args, Block.NULL_BLOCK);
     }
 
+    private static RubyIO newFile19(ThreadContext context, IRubyObject recv, IRubyObject... args) {
+        return (RubyIO) RubyKernel.open19(context, recv, args, Block.NULL_BLOCK);
+    }
+
     public static void failIfDirectory(Ruby runtime, RubyString pathStr) {
         if (RubyFileTest.directory_p(runtime, pathStr).isTrue()) {
             if (Platform.IS_WINDOWS) {
@@ -3444,7 +3438,7 @@ public class RubyIO extends RubyObject {
         RubyString pathStr = RubyFile.get_path(context, path);
         Ruby runtime = context.getRuntime();
         failIfDirectory(runtime, pathStr);
-        RubyIO file = newFile(context, recv, pathStr);
+        RubyIO file = newFile19(context, recv, pathStr, options);
 
         try {
             if (!offset.isNil()) file.seek(context, offset);
@@ -3512,13 +3506,14 @@ public class RubyIO extends RubyObject {
     // Enebo: annotation processing forced me to do pangea method here...
     @JRubyMethod(name = "read", meta = true, required = 1, optional = 3, compat = RUBY1_9)
     public static IRubyObject read19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
-        IRubyObject nil = context.getRuntime().getNil();
+        Ruby runtime = context.runtime;
+        IRubyObject nil = runtime.getNil();
         IRubyObject path = args[0];
         IRubyObject length = nil;
         IRubyObject offset = nil;
         RubyHash options = null;
         if (args.length > 3) {
-            if (!(args[3] instanceof RubyHash)) throw context.getRuntime().newTypeError("Must be a hash");
+            if (!(args[3] instanceof RubyHash)) throw runtime.newTypeError("Must be a hash");
             options = (RubyHash) args[3];
             offset = args[2];
             length = args[1];
@@ -3536,8 +3531,11 @@ public class RubyIO extends RubyObject {
                 length = args[1];
             }
         }
+        if (options == null) {
+            options = RubyHash.newHash(runtime);
+        }
 
-        return read19(context, recv, path, length, offset, (RubyHash) options);
+        return read19(context, recv, path, length, offset, options);
     }
 
     @JRubyMethod(meta = true, required = 2, optional = 1, compat = RUBY1_9)
@@ -3626,7 +3624,7 @@ public class RubyIO extends RubyObject {
                 mode = getIOModesIntFromString(runtime, args[1].convertToString().toString());
             }
 
-            ModeFlags modes = newModeFlags(runtime, mode);
+            IOOptions modes = newIOOptions(runtime, mode);
 
             ShellLauncher.POpenProcess process = ShellLauncher.popen(runtime, cmdObj, modes);
 
@@ -3759,7 +3757,7 @@ public class RubyIO extends RubyObject {
                 mode = getIOModesIntFromString(runtime, args[1].convertToString().toString());
             }
 
-            ModeFlags modes = newModeFlags(runtime, mode);
+            IOOptions modes = newIOOptions(runtime, mode);
 
             ShellLauncher.POpenProcess process;
             if (r19Popen.cmdPlusArgs == null) {
@@ -3919,8 +3917,7 @@ public class RubyIO extends RubyObject {
         }
     }
 
-    // NIO based pipe
-    @JRubyMethod(name = "pipe", meta = true)
+    @JRubyMethod(name = "pipe", meta = true, compat = RUBY1_8)
     public static IRubyObject pipe(ThreadContext context, IRubyObject recv) {
         // TODO: This isn't an exact port of MRI's pipe behavior, so revisit
         Ruby runtime = context.getRuntime();
@@ -3937,6 +3934,36 @@ public class RubyIO extends RubyObject {
         } catch (IOException ioe) {
             throw runtime.newIOErrorFromException(ioe);
         }
+    }
+
+    @JRubyMethod(name = "pipe", meta = true, compat = RUBY1_9)
+    public static IRubyObject pipe19(ThreadContext context, IRubyObject recv) {
+        return pipe(context, recv);
+    }
+
+    @JRubyMethod(name = "pipe", meta = true, compat = RUBY1_9)
+    public static IRubyObject pipe19(ThreadContext context, IRubyObject recv, IRubyObject modes) {
+        Ruby runtime = context.getRuntime();
+        try {
+            Pipe pipe = Pipe.open();
+
+            RubyIO source = new RubyIO(runtime, pipe.source());
+            source.setEncodingFromOptions(EncodingOption.getEncodingOptionFromString(runtime, modes.toString()));
+            RubyIO sink = new RubyIO(runtime, pipe.sink());
+
+            sink.openFile.getMainStreamSafe().setSync(true);
+            return runtime.newArrayNoCopy(new IRubyObject[]{source, sink});
+        } catch (BadDescriptorException e) {
+            throw runtime.newErrnoEBADFError();
+        } catch (IOException ioe) {
+            throw runtime.newIOErrorFromException(ioe);
+        }
+    }
+
+    @JRubyMethod(name = "pipe", meta = true, compat = RUBY1_9)
+    public static IRubyObject pipe19(ThreadContext context, IRubyObject recv, IRubyObject modes, IRubyObject options) {
+        // TODO handle options
+        return pipe19(context, recv, modes);
     }
     
     @JRubyMethod(name = "copy_stream", meta = true, compat = RUBY1_9)
@@ -4095,13 +4122,13 @@ public class RubyIO extends RubyObject {
     /**
      * See http://ruby-doc.org/core-1.9.3/IO.html#method-c-new for the format of modes in options
      */
-    protected ModeFlags updateModesFromOptions(ThreadContext context, RubyHash options, ModeFlags modes) {
-        if (options == null || options.isNil()) return modes;
+    protected IOOptions updateIOOptionsFromOptions(ThreadContext context, RubyHash options, IOOptions ioOptions) {
+        if (options == null || options.isNil()) return ioOptions;
 
         Ruby runtime = context.getRuntime();
 
         if (options.containsKey(runtime.newSymbol("mode"))) {
-            modes = parseModes19(context, options.fastARef(runtime.newSymbol("mode")).asString());
+            ioOptions = parseIOOptions19(options.fastARef(runtime.newSymbol("mode")).asString());
         }
 
         // This duplicates the non-error behavior of MRI 1.9: the
@@ -4111,7 +4138,7 @@ public class RubyIO extends RubyObject {
         if (options.containsKey(runtime.newSymbol("binmode")) &&
                 options.fastARef(runtime.newSymbol("binmode")).isTrue()) {
 
-            modes = newModeFlags(runtime, modes.getFlags() | ModeFlags.BINARY);
+            ioOptions = newIOOptions(runtime, ioOptions, ModeFlags.BINARY);
         }
 
         // This duplicates the non-error behavior of MRI 1.9: the
@@ -4121,160 +4148,104 @@ public class RubyIO extends RubyObject {
         if (options.containsKey(runtime.newSymbol("binmode")) &&
                 options.fastARef(runtime.newSymbol("binmode")).isTrue()) {
 
-            modes = newModeFlags(runtime, modes.getFlags() | ModeFlags.BINARY);
+            ioOptions = newIOOptions(runtime, ioOptions, ModeFlags.BINARY);
         }
 
-//      FIXME: check how ruby 1.9 handles this
+        if (options.containsKey(runtime.newSymbol("textmode")) &&
+                options.fastARef(runtime.newSymbol("textmode")).isTrue()) {
 
-//        if (rubyOptions.containsKey(runtime.newSymbol("textmode")) &&
-//                rubyOptions.fastARef(runtime.newSymbol("textmode")).isTrue()) {
-//            try {
-//                modes = getIOModes(runtime, "t");
-//            } catch (InvalidValueException e) {
-//                throw getRuntime().newErrnoEINVALError();
-//            }
-//        }
-//
-//        if (rubyOptions.containsKey(runtime.newSymbol("binmode")) &&
-//                rubyOptions.fastARef(runtime.newSymbol("binmode")).isTrue()) {
-//            try {
-//                modes = getIOModes(runtime, "b");
-//            } catch (InvalidValueException e) {
-//                throw getRuntime().newErrnoEINVALError();
-//            }
-//        }
+            ioOptions = newIOOptions(runtime, ioOptions, ModeFlags.TEXT);
+        }
 
-        return modes;
+        EncodingOption encodingOption = EncodingOption.getEncodingOptionFromObject(options);
+        if (encodingOption != null) {
+            ioOptions.setEncodingOption(encodingOption);
+        }
+
+        return ioOptions;
     }
 
-    /**
-     * See http://ruby-doc.org/core-1.9.3/IO.html#method-c-new for the format of encodings in options
-     */
-    protected void setEncodingsFromOptions(ThreadContext context, RubyHash options) {
-        if (options == null || options.isNil()) return;
+    public void setEncodingFromOptions(EncodingOption encodingOption) {
+        Encoding external = null, internal = null;
 
-        EncodingOption encodingOption = extractEncodingOptions(options);
+        if (encodingOption.hasBom()) {
+            external = encodingFromBOM();
+        }
 
-        if (encodingOption == null) return;
+        if (external == null) {
+            if (encodingOption.getExternalEncoding() != null) {
+                external = encodingOption.getExternalEncoding();
+            }
+        }
 
-        externalEncoding = encodingOption.externalEncoding;
-        if (encodingOption.internalEncoding == externalEncoding) return;
-        internalEncoding = encodingOption.internalEncoding;
+        if (encodingOption.getInternalEncoding() != null) {
+            internal = encodingOption.getInternalEncoding();
+        }
+
+        externalEncoding = external;
+        if (internal == externalEncoding) return;
+        internalEncoding = internal;
     }
 
-    public static class EncodingOption {
-        private Encoding externalEncoding;
-        private Encoding internalEncoding;
-        private boolean bom;
+    // io_strip_bom
+    public Encoding encodingFromBOM() {
+        int b1, b2, b3, b4;
 
-        public EncodingOption(Encoding externalEncoding, Encoding internalEncoding, boolean bom) {
-            this.externalEncoding = externalEncoding;
-            this.internalEncoding = internalEncoding;
-            this.bom = bom;
-        }
-
-        public Encoding getExternalEncoding() {
-            return externalEncoding;
-        }
-
-        public Encoding getInternalEncoding() {
-            return internalEncoding;
-        }
-
-        public boolean hasBom() {
-            return bom;
-        }
-    }
-
-    // c: rb_io_extract_encoding_option
-    public static EncodingOption extractEncodingOptions(IRubyObject options) {
-        if (options == null || options.isNil() || !(options instanceof RubyHash)) return null;
-
-        RubyHash opts = (RubyHash) options;
-
-        Ruby runtime = options.getRuntime();
-        IRubyObject encOption = opts.fastARef(runtime.newSymbol("encoding"));
-        IRubyObject extOption = opts.fastARef(runtime.newSymbol("external_encoding"));
-        IRubyObject intOption = opts.fastARef(runtime.newSymbol("internal_encoding"));
-        if (encOption != null && !encOption.isNil()) {
-            if (extOption != null) {
-                runtime.getWarnings().warn(
-                        "Ignoring encoding parameter '" + encOption
-                                + "': external_encoding is used");
-                encOption = runtime.getNil();
-            } else if (intOption != null) {
-                runtime.getWarnings().warn(
-                        "Ignoring encoding parameter '" + encOption
-                                + "': internal_encoding is used");
-                encOption = runtime.getNil();
-            } else {
-                IRubyObject tmp = encOption.checkStringType19();
-                if (!tmp.isNil()) {
-                    return parseModeEncodingOption(runtime, tmp.convertToString().toString());
+        switch (b1 = getcCommon()) {
+            case 0xEF:
+                b2 = getcCommon();
+                if (b2 == 0xBB) {
+                    b3 = getcCommon();
+                    if (b3 == 0xBF) {
+                        return UTF8Encoding.INSTANCE;
+                    }
+                    ungetcCommon(b3);
                 }
-                return createEncodingOption(runtime, runtime.getEncodingService()
-                        .getEncodingFromObject(encOption), null, false);
-            }
+                ungetcCommon(b2);
+                break;
+            case 0xFE:
+                b2 = getcCommon();
+                if (b2 == 0xFF) {
+                    return UTF16BEEncoding.INSTANCE;
+                }
+                ungetcCommon(b2);
+                break;
+            case 0xFF:
+                b2 = getcCommon();
+                if (b2 == 0xFE) {
+                    b3 = getcCommon();
+                    if (b3 == 0) {
+                        b4 = getcCommon();
+                        if (b4 == 0) {
+                            return UTF32LEEncoding.INSTANCE;
+                        }
+                        ungetcCommon(b4);
+                    } else {
+                        ungetcCommon(b3);
+                        return UTF16LEEncoding.INSTANCE;
+                    }
+                    ungetcCommon(b3);
+                }
+                ungetcCommon(b2);
+                break;
+            case 0:
+                b2 = getcCommon();
+                if (b2 == 0) {
+                    b3 = getcCommon();
+                    if (b3 == 0xFE) {
+                        b4 = getcCommon();
+                        if (b4 == 0xFF) {
+                            return UTF32BEEncoding.INSTANCE;
+                        }
+                        ungetcCommon(b4);
+                    }
+                    ungetcCommon(b3);
+                }
+                ungetcCommon(b2);
+                break;
         }
-        boolean set = false;
-        Encoding extEncoding = null;
-        Encoding intEncoding = null;
-
-        if (extOption != null) {
-            set = true;
-            if (!extOption.isNil()) {
-                extEncoding = runtime.getEncodingService().getEncodingFromObject(extOption);
-            }
-        }
-        if (intOption != null) {
-            set = true;
-            if (intOption.isNil()) {
-                // null;
-            } else if (intOption.convertToString().toString().equals("-")) {
-                // null;
-            } else {
-                intEncoding = runtime.getEncodingService().getEncodingFromObject(intOption);
-            }
-        }
-        if (!set)
-            return null;
-
-        return createEncodingOption(runtime, extEncoding, intEncoding, false);
-    }
-
-    // c: parse_mode_enc
-    private static EncodingOption parseModeEncodingOption(Ruby runtime, String option) {
-        Encoding extEncoding = null;
-        Encoding intEncoding = null;
-        boolean isBom = false;
-        String[] encs = option.split(":", 2);
-        if (encs[0].toLowerCase().startsWith("bom|utf-")) {
-            isBom = true;
-            encs[0] = encs[0].substring(4);
-        }
-        extEncoding = runtime.getEncodingService().getEncodingFromObject(runtime.newString(encs[0]));
-        if (encs.length > 1) {
-            if (encs[1].equals("-")) {
-                // null;
-            } else {
-                intEncoding = runtime.getEncodingService().getEncodingFromObject(runtime.newString(encs[1]));
-            }
-        }
-        return createEncodingOption(runtime, extEncoding, intEncoding, isBom);
-    }
-
-    private static EncodingOption createEncodingOption(Ruby runtime, Encoding extEncoding,
-            Encoding intEncoding, boolean isBom) {
-        if (extEncoding == null) {
-            extEncoding = runtime.getDefaultExternalEncoding();
-        }
-        if (intEncoding == null) {
-            intEncoding = runtime.getDefaultInternalEncoding();
-        }
-        // NOTE: This logic used to do checks for int == ext, etc, like in rb_io_ext_int_to_encs,
-        // but that logic seems specific to how MRI's IO sets up "enc" and "enc2". We explicitly separate
-        // external and internal, so consumers should decide how to deal with int == ext.
-        return new EncodingOption(extEncoding, intEncoding, isBom);
+        ungetcCommon(b1);
+        return null;
     }
 
     private static final Set<String> UNSUPPORTED_SPAWN_OPTIONS = new HashSet<String>(Arrays.asList(new String[] {
@@ -4359,10 +4330,12 @@ public class RubyIO extends RubyObject {
         RubyHash optsHash = (RubyHash)options;
         Ruby runtime = optsHash.getRuntime();
 
-        for (IRubyObject opt : (Set<IRubyObject>)optsHash.keySet()) {
-            if (!(opt instanceof RubySymbol) || !valid.contains(opt.toString())) {
-                throw runtime.newTypeError("wrong exec option: " + opt);
+        for (Object opt : optsHash.keySet()) {
+            if (opt instanceof RubySymbol || opt instanceof RubyFixnum || valid.contains(opt.toString())) {
+                continue;
             }
+
+            throw runtime.newTypeError("wrong exec option: " + opt);
         }
     }
     
@@ -4409,8 +4382,53 @@ public class RubyIO extends RubyObject {
     }
 
     public static ModeFlags newModeFlags(Ruby runtime, long mode) {
+        return newModeFlags(runtime, (int) mode);
+    }
+
+    public static ModeFlags newModeFlags(Ruby runtime, int mode) {
         try {
             return new ModeFlags(mode);
+        } catch (InvalidValueException ive) {
+            throw runtime.newErrnoEINVALError();
+        }
+    }
+
+    public static ModeFlags newModeFlags(Ruby runtime, String mode) {
+        try {
+            return new ModeFlags(mode);
+        } catch (InvalidValueException ive) {
+            throw runtime.newErrnoEINVALError();
+        }
+    }
+
+    public static IOOptions newIOOptions(Ruby runtime, ModeFlags modeFlags) {
+        return new IOOptions(modeFlags, EncodingOption.getEncodingNoOption(runtime, modeFlags));
+    }
+
+    public static IOOptions newIOOptions(Ruby runtime, long mode) {
+        return newIOOptions(runtime, (int) mode);
+    }
+
+    public static IOOptions newIOOptions(Ruby runtime, int mode) {
+        try {
+            ModeFlags modeFlags = new ModeFlags(mode);
+            return new IOOptions(modeFlags, EncodingOption.getEncodingNoOption(runtime, modeFlags));
+        } catch (InvalidValueException ive) {
+            throw runtime.newErrnoEINVALError();
+        }
+    }
+
+    public static IOOptions newIOOptions(Ruby runtime, String mode) {
+        try {
+            return new IOOptions(runtime, mode);
+        } catch (InvalidValueException ive) {
+            throw runtime.newErrnoEINVALError();
+        }
+    }
+
+    public static IOOptions newIOOptions(Ruby runtime, IOOptions oldFlags, int orOflags) {
+        try {
+            return new IOOptions(new ModeFlags(oldFlags.getModeFlags().getFlags() | orOflags), oldFlags.getEncodingOption());
         } catch (InvalidValueException ive) {
             throw runtime.newErrnoEINVALError();
         }

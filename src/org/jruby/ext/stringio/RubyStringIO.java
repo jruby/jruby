@@ -43,7 +43,6 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyIO;
 import org.jruby.RubyKernel;
 import org.jruby.RubyNumeric;
-import org.jruby.RubyObject;
 import org.jruby.RubyString;
 
 import org.jruby.anno.FrameField;
@@ -58,7 +57,6 @@ import static org.jruby.CompatVersion.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.TypeConverter;
-import org.jruby.util.io.InvalidValueException;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.Stream;
 
@@ -126,11 +124,11 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
         Ruby runtime = getRuntime();
 
         if (modeArgument == null) {
-            data.modes = RubyIO.newModeFlags(runtime, RubyIO.getIOModesIntFromString(runtime, "r+"));
+            data.modes = RubyIO.newModeFlags(runtime, "r+");
         } else if (modeArgument instanceof Long) {
-            data.modes = RubyIO.newModeFlags(runtime, ((Long)modeArgument).longValue());
+            data.modes = RubyIO.newModeFlags(runtime, ((Long) modeArgument).longValue());
         } else {
-            data.modes = RubyIO.newModeFlags(runtime, RubyIO.getIOModesIntFromString(runtime, (String) modeArgument));
+            data.modes = RubyIO.newModeFlags(runtime, (String) modeArgument);
         }
 
         setupModes();
