@@ -43,7 +43,7 @@ import org.jruby.compiler.ir.operands.TemporaryVariable;
 import org.jruby.compiler.ir.operands.UndefinedValue;
 import org.jruby.compiler.ir.operands.WrappedIRClosure;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.exceptions.ThreadKill;
+import org.jruby.exceptions.Unrescuable;
 import org.jruby.parser.IRStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
@@ -57,6 +57,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
+import org.jruby.util.unsafe.UnsafeFactory;
 
 public class Interpreter {
     private static final Logger LOG = LoggerFactory.getLogger("Interpreter");
@@ -413,14 +414,19 @@ public class Interpreter {
                 // falsely set $! to nil and this sets it back to something valid.  This should 
                 // get fixed at the same time we address bug #1296484.
                 runtime.getGlobalVariables().set("$!", (IRubyObject)exception);
-            } catch (ThreadKill e) {
-                ipc = scope.getEnsurerPC(lastInstr);
-                if (ipc == -1) throw e; // No ensure block here, pass it on! 
-                exception = e;
-            } catch (Error e) {
-                ipc = scope.getEnsurerPC(lastInstr);
-                if (ipc == -1) throw e; // No ensure block here, pass it on! 
-                exception = e;
+            } catch (Throwable t) {
+                if (t instanceof Unrescuable) {
+                    // ThreadKill, RubyContinuation, MainExitException, etc.
+                    // these cannot be rescued -- only run ensure blocks
+                    ipc = scope.getEnsurerPC(lastInstr);
+                } else {
+                    // Error and other java exceptions which could be rescued
+                    if (debug) LOG.info("in scope: " + scope + ", caught Java throwable: " + t + "; excepting instr: " + lastInstr);
+                    ipc = scope.getRescuerPC(lastInstr);
+                    if (debug) LOG.info("ipc for rescuer: " + ipc);
+                }
+                if (ipc == -1) UnsafeFactory.getUnsafe().throwException(t); // No ensure block here, pass it on! 
+                exception = t;
             }
         }
 

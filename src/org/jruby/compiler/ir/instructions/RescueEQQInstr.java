@@ -1,17 +1,22 @@
 package org.jruby.compiler.ir.instructions;
 
 import java.util.Map;
+
+import org.jruby.Ruby;
+import org.jruby.RubyArray;
+import org.jruby.RubyClass;
+import org.jruby.RubyModule;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.UndefinedValue;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
-import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.RubyArray;
-import org.jruby.RubyModule;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.javasupport.JavaClass;
+import org.jruby.javasupport.JavaUtil;
 
 // This instruction is similar to EQQInstr, except it also verifies that
 // the type to EQQ with is actually a class or a module since rescue clauses
@@ -61,29 +66,45 @@ public class RescueEQQInstr extends Instr implements ResultInstr {
                 arg1.cloneForInlining(ii), arg2.cloneForInlining(ii));
     }
 
+    private boolean exceptionHandled(ThreadContext context, IRubyObject excType, Object excObj) {
+        Ruby runtime = context.getRuntime();
+        if (excObj instanceof IRubyObject) {
+            // regular ruby exception
+            if (!(excType instanceof RubyModule)) throw runtime.newTypeError("class or module required for rescue clause. Found: " + excType);
+            return excType.callMethod(context, "===", (IRubyObject)excObj).isTrue();
+        } else if (runtime.getException().op_ge(excType).isTrue() || runtime.getObject() == excType) {
+            // convert java obj to a ruby object and try again
+            return excType.callMethod(context, "===", JavaUtil.convertJavaToUsableRubyObject(runtime, excObj)).isTrue();
+        } else if (excType instanceof RubyClass && excType.getInstanceVariables().hasInstanceVariable("@java_class")) {
+            // java exception where the rescue clause has an embedded java class that could catch it 
+            RubyClass rubyClass = (RubyClass)excType;
+            JavaClass javaClass = (JavaClass)rubyClass.getInstanceVariable("@java_class");
+            if (javaClass != null) {
+                Class cls = javaClass.javaClass();
+                if (cls.isInstance(excObj)) return true;
+            }
+        }
+
+        return false;
+    }
+
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
-        IRubyObject receiver = (IRubyObject) arg1.retrieve(context, self, currDynScope, temp);
-        IRubyObject value = (IRubyObject) arg2.retrieve(context, self, currDynScope, temp);
+        Ruby runtime = context.getRuntime();
+        IRubyObject excType = (IRubyObject) arg1.retrieve(context, self, currDynScope, temp);
+        Object excObj = arg2.retrieve(context, self, currDynScope, temp);
 
-        if (value == UndefinedValue.UNDEFINED) {
-            return receiver;
-        } else if (receiver instanceof RubyArray) {
-            RubyArray testVals = (RubyArray)receiver;
-            for (int i = 0, n = testVals.getLength(); i < n; i++) {
-                IRubyObject excType = (IRubyObject)testVals.eltInternal(i);
-                if (!(excType instanceof RubyModule)) {
-                   throw context.getRuntime().newTypeError("class or module required for rescue clause. Found: " + excType);
-                }
-                IRubyObject eqqVal = excType.callMethod(context, "===", value);
-                if (eqqVal.isTrue()) return eqqVal;
+        boolean isUndefExc = excObj == UndefinedValue.UNDEFINED;
+        if (excType instanceof RubyArray) {
+            RubyArray testTypes = (RubyArray)excType;
+            for (int i = 0, n = testTypes.getLength(); i < n; i++) {
+                IRubyObject testType = (IRubyObject)testTypes.eltInternal(i);
+                boolean handled = isUndefExc ? testType.isTrue() : exceptionHandled(context, testType, excObj);
+                if (handled) return runtime.newBoolean(true);
             }
-            return context.getRuntime().newBoolean(false);
+            return runtime.newBoolean(false);
         } else {
-            if (!(receiver instanceof RubyModule)) {
-               throw context.getRuntime().newTypeError("class or module required for rescue clause. Found: " + receiver);
-            }
-            return receiver.callMethod(context, "===", value);
+            return isUndefExc ? excType : runtime.newBoolean(exceptionHandled(context, excType, excObj));
         }
     }
 }

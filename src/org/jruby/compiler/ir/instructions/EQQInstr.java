@@ -71,7 +71,7 @@ public class EQQInstr extends Instr implements ResultInstr {
             }
             return context.getRuntime().newBoolean(false);
         } else {
-            return isUndefValue ? receiver: receiver.callMethod(context, "===", value);
+            return isUndefValue ? receiver : receiver.callMethod(context, "===", value);
         }
     }
 }
