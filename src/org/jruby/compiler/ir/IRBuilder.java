@@ -1595,7 +1595,6 @@ public class IRBuilder {
             case GLOBALVARNODE:
                 return buildDefinitionCheck(s, JRubyImplementationMethod.RT_IS_GLOBAL_DEFINED, null, ((GlobalVarNode) node).getName(), "global-variable");
             case INSTVARNODE:
-                // SSS FIXME: Can we get away without passing in self?
                 return buildDefinitionCheck(s, JRubyImplementationMethod.SELF_HAS_INSTANCE_VARIABLE, getSelf(s), ((InstVarNode) node).getName(), "instance-variable");
             case YIELDNODE:
                 return buildDefinitionCheck(s, JRubyImplementationMethod.BLOCK_GIVEN, null, null, "yield");
@@ -1692,7 +1691,6 @@ public class IRBuilder {
                 return buildDefnCheckIfThenPaths(s, undefLabel, argsCheckDefn);
             }
             case VCALLNODE:
-                // SSS FIXME: Can we get away without passing in self?
                 return buildDefinitionCheck(s, JRubyImplementationMethod.SELF_IS_METHOD_BOUND, getSelf(s), ((VCallNode) node).getName(), "method");
             case CALLNODE: {
             // SSS FIXME: Is there a reason to do this all with low-level IR?
@@ -1919,7 +1917,7 @@ public class IRBuilder {
 
         s.getStaticScope().setArities(required, opt, rest);
 
-        // FIXME: Expensive to this explicitly?  But, 2 advantages:
+        // FIXME: Expensive to do this explicitly?  But, two advantages:
         // (a) on inlining, we'll be able to get rid of these checks in almost every case.
         // (b) compiler to bytecode will anyway generate this and this is explicit.
         // For now, we are going explicit instruction route.  But later, perhaps can make this implicit in the method setup preamble?  
@@ -2170,12 +2168,6 @@ public class IRBuilder {
             case ITERNODE:
                 return build((IterNode)node, s);
             case BLOCKPASSNODE:
-                // SSS FIXME: We need to create a closure out of the named proc.
-                //     Ex: a.map(&:id)
-                // 1. if the value is a nil, pass a null block.
-                // 2. if not a proc, call a toProc on it and pass it in
-                //    (and, in cases where the object is a literal proc, the proc & toproc will cancel each other out!)
-                // 3. if the value is a proc, pass it in.
                 return build(((BlockPassNode)node).getBodyNode(), s);
             default:
                 throw new NotCompilableException("ERROR: Encountered a method with a non-block, non-blockpass iter node at: " + node);

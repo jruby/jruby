@@ -31,7 +31,6 @@ public class InterpretedIRBlockBody19 extends InterpretedIRBlockBody {
             case 1  : {
                if (isArray) {
                    RubyArray valArray = ((RubyArray)value);
-                   int n = valArray.size();
                    if (valArray.size() == 0) value = isYieldSpecific ? RubyArray.newEmptyArray(context.getRuntime()) : context.nil;
                    else if (!isYieldSpecific) value = valArray.eltInternal(0);
                }

@@ -313,20 +313,6 @@ public class LocalOptimizationPass implements CompilerPass {
                 // If we didn't get a simplified value, remove any existing simplifications for the result
                 // to get rid of RAW hazards!
                 valueMap.remove(res);
-            } else if (iop.isCall()) { // Optimize some core class method calls for constant values
-                val = null;
-                CallBase call = (CallBase) i;
-                Operand   r    = call.getReceiver(); 
-                // SSS FIXME: r can be null for ruby/jruby internal call instructions!
-                // Cannot optimize them as of now.
-                if (r != null) {
-                    // If 'r' is not a constant, it could actually be a compound value!
-                    // Look in our value map to see if we have a simplified value for the receiver.
-                    if (!r.isConstant()) {
-                        Operand v = valueMap.get(r);
-                        if (v != null) r = v;
-                    }
-                }
             }
 
             // Purge all entries in valueMap that have 'res' as their simplified value to take care of RAW scenarios (because we aren't in SSA form yet!)

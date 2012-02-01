@@ -66,6 +66,7 @@ public class RescueEQQInstr extends Instr implements ResultInstr {
                 arg1.cloneForInlining(ii), arg2.cloneForInlining(ii));
     }
 
+    // SSS FIXME: Is this code effectively equivalent to RuntimeHelpers.isJavaExceptionHandled?
     private boolean exceptionHandled(ThreadContext context, IRubyObject excType, Object excObj) {
         Ruby runtime = context.getRuntime();
         if (excObj instanceof IRubyObject) {

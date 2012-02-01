@@ -1,7 +1,5 @@
 package org.jruby.compiler.ir;
 
-// SSS FIXME: I could make IR_Loop a scope too ... semantically, it is a scope, but, functionally, not sure if this is required yet ...
-
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Variable;
 
