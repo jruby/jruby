@@ -491,7 +491,7 @@ public class ArgumentProcessor {
             // keep going, try PATH
         }
         try {
-            String path = System.getenv("PATH");
+            String path = config.getEnvironment().get("PATH");
             if (path != null) {
                 String[] paths = path.split(System.getProperty("path.separator"));
                 for (int i = 0; i < paths.length; i++) {
