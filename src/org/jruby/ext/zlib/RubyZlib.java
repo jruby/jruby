@@ -83,7 +83,6 @@ import org.jruby.util.TypeConverter;
 import org.jruby.util.io.Stream;
 
 import com.jcraft.jzlib.JZlib;
-import org.jcodings.specific.ASCIIEncoding;
 
 import static org.jruby.CompatVersion.*;
 
@@ -1328,15 +1327,6 @@ public class RubyZlib {
                     }
                 }
             }
-            
-            // Internal encoding must always exist (FIXME: This logic is getting much too common)
-            if (internalEncoding == null) {
-                internalEncoding = getRuntime().getDefaultInternalEncoding();
-                if (internalEncoding == null) {
-                    internalEncoding = ASCIIEncoding.INSTANCE;
-                }
-            }
-            
             if (realIo.respondsTo("path")) {
                 obj.getSingletonClass().defineMethod("path", new Callback() {
 
