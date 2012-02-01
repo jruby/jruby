@@ -5761,15 +5761,12 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "strip!", compat = RUBY1_9)
     public IRubyObject strip_bang19(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
         modifyCheck();
-
-        Encoding enc = value.getEncoding();
-
-        IRubyObject result = singleByteOptimizable(enc) ?
-                singleByteStrip19(runtime) : multiByteStrip19(runtime);
-        keepCodeRange();
-        return result;
+        
+        IRubyObject left = lstrip_bang19(context);
+        IRubyObject right = rstrip_bang19(context);
+        
+        return left.isNil() && right.isNil() ? context.getRuntime().getNil() : this;
     }
 
     private IRubyObject singleByteStrip(Ruby runtime, Encoding enc, byte[]bytes, int s, int end) {
@@ -5786,46 +5783,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return runtime.getNil();
     }
     
-    private IRubyObject singleByteStrip19(Ruby runtime) {
-        Encoding enc = value.getEncoding();
-        int s = value.getBegin();
-        int end = s + value.getRealSize();
-        byte[]bytes = value.getUnsafeBytes(); 
-        int p = s;
-        while (p < end && enc.isSpace(bytes[p] & 0xff)) p++;
-        int endp = end - 1;
-        while (endp >= p && (bytes[endp] == 0 || enc.isSpace(bytes[endp] & 0xff))) endp--;
-
-        if (p > s || endp < end - 1) {
-            view(p - s, endp - p + 1);
-            return this;
-        }
-        return runtime.getNil();
-    }    
-
-    private IRubyObject multiByteStrip19(Ruby runtime) {
-        Encoding enc = value.getEncoding();
-        int s = value.getBegin();
-        int end = s + value.getRealSize();
-        byte[]bytes = value.getUnsafeBytes();        
-        int p = s;
-        int c;
-        while (p < end && enc.isSpace(c = codePoint(runtime, enc, bytes, p, end))) p += codeLength(runtime, enc, c);
-        
-        int endp = end;
-        int prev;
-        while ((prev = enc.prevCharHead(bytes, s, endp, end)) != -1) {
-            int code = codePoint(runtime, enc, bytes, prev, end);
-            if (code != 0 && !enc.isSpace(code)) break;
-            endp = prev;
-        }
-        if (p > s || prev < end) {
-            view(p - s, endp - p);
-            return this;
-        }
-        return runtime.getNil();
-    }
-
     /** rb_str_count
      *
      */
