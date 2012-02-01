@@ -1772,7 +1772,7 @@ public class IRBuilder {
                         s.addInstr(BEQInstr.create(tmpVar, BooleanLiteral.FALSE, undefLabel));
                         s.addInstr(new JRubyImplCallInstr(tmpVar, JRubyImplementationMethod.SELF_IS_METHOD_BOUND, getSelf(s), new Operand[]{attrMethodName}));
                         s.addInstr(BEQInstr.create(tmpVar, BooleanLiteral.FALSE, undefLabel));
-                        Operand argsCheckDefn = buildGetArgumentDefinition(((FCallNode) node).getArgsNode(), s, "assignment");
+                        Operand argsCheckDefn = buildGetArgumentDefinition(((AttrAssignNode) node).getArgsNode(), s, "assignment");
                         return buildDefnCheckIfThenPaths(s, undefLabel, argsCheckDefn);
                     }
                 };
