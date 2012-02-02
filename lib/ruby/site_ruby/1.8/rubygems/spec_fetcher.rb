@@ -297,3 +297,7 @@ class Gem::SpecFetcher
 
 end
 
+# Load rubygems/maven_gemify.rb here because;
+# * want to require only spec_fetcher is required to avoid circular require.
+# * need to require after spec_fetcher and remote_fetcher to override those definitions.
+require 'rubygems/maven_gemify'
