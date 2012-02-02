@@ -25,32 +25,20 @@ import org.jruby.util.log.LoggerFactory;
 public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, PositionAware {
     private static final Logger LOG = LoggerFactory.getLogger("InterpretedIRMethod");
 
-    private final boolean  isTopLevel;
     private final IRScope method;
     private Arity arity;
     boolean displayedCFG = false; // FIXME: Remove when we find nicer way of logging CFG
     
-    private InterpretedIRMethod(IRScope method, Visibility visibility, RubyModule implementationClass, boolean isTopLevel) {
+    public InterpretedIRMethod(IRScope method, Visibility visibility, RubyModule implementationClass) {
         super(implementationClass, visibility, CallConfiguration.FrameNoneScopeNone);
         this.method = method;
         this.method.getStaticScope().determineModule();
-        this.isTopLevel = isTopLevel;
         this.arity = calculateArity();
     }
 
     // We can probably use IRMethod callArgs for something (at least arity)
     public InterpretedIRMethod(IRScope method, RubyModule implementationClass) {
-        this(method, Visibility.PRIVATE, implementationClass, false);
-    }
-
-    // We can probably use IRMethod callArgs for something (at least arity)
-    public InterpretedIRMethod(IRScope method, RubyModule implementationClass, boolean isTopLevel) {
-        this(method, Visibility.PRIVATE, implementationClass, isTopLevel);
-    }
-
-    // We can probably use IRMethod callArgs for something (at least arity)
-    public InterpretedIRMethod(IRScope method, Visibility visibility, RubyModule implementationClass) {
-        this(method, visibility, implementationClass, false);
+        this(method, Visibility.PRIVATE, implementationClass);
     }
     
     public IRScope getIRMethod() {
@@ -90,9 +78,6 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
             LOG.info("CFG:\n" + cfg.toStringInstrs());
             displayedCFG = true;
         }
-
-        // SSS FIXME: Is this correct?
-        if (isTopLevel) context.getRuntime().getObject().setConstantQuiet("TOPLEVEL_BINDING", context.getRuntime().newBinding(context.currentBinding()));
 
         try {
             // update call stacks (push: frame, class, scope, etc.)
