@@ -2730,6 +2730,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     private IRubyObject subBangCommon19(ThreadContext context, Regex pattern, Matcher matcher, RubyString repl, int tuFlags) {
         final int beg = matcher.getBegin();       
         final int end = matcher.getEnd();
+        int cr = getCodeRange();
 
         Encoding enc = isCompatibleWith(repl); 
         if (enc == null) enc = subBangVerifyEncoding(context, repl, beg, end);
@@ -2744,7 +2745,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
         associateEncoding(enc);
 
-        int cr = getCodeRange();
         if (cr > CR_UNKNOWN && cr < CR_BROKEN) {
             int cr2 = repl.getCodeRange();
             if (cr2 == CR_BROKEN || (cr == CR_VALID && cr2 == CR_7BIT)) {
