@@ -150,7 +150,7 @@ public class Interpreter {
 
         try {
             runBeginEndBlocks(root.getBeginBlocks(), context, self, null); // FIXME: No temp vars yet...not needed?
-            InterpretedIRMethod method = new InterpretedIRMethod(root, currModule, true);
+            InterpretedIRMethod method = new InterpretedIRMethod(root, currModule);
             IRubyObject rv =  method.call(context, self, currModule, "(root)", IRubyObject.NULL_ARRAY);
             runBeginEndBlocks(root.getEndBlocks(), context, self, null); // FIXME: No temp vars yet...not needed?
             if (isDebug()) LOG.info("-- Interpreted instructions: {}", interpInstrsCount);
