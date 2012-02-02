@@ -1,5 +1,6 @@
 require 'rubygems/config_file'
 require 'rbconfig'
+require 'jruby/util'
 
 module Gem
 
@@ -69,7 +70,6 @@ class Gem::Specification
     end
 
     def spec_directories_from_classpath
-      require 'jruby/util'
       stuff = JRuby::Util.classloader_resources("specifications")
     end
   end
