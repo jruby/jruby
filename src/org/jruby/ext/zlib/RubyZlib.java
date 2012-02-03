@@ -1413,12 +1413,6 @@ public class RubyZlib {
             return byteList;
         }
 
-        private ByteList newReadByteList(byte[] buffer, int start, int length, boolean copy) {
-            ByteList byteList = new ByteList(buffer, start, length, copy);
-            if (readEncoding != null) byteList.setEncoding(readEncoding);
-            return byteList;
-        }
-
         private IRubyObject internalSepGets(ByteList sep, int limit) throws IOException {
             ByteList result = newReadByteList();
             if (sep.getRealSize() == 0) sep = Stream.PARAGRAPH_SEPARATOR;
@@ -1571,7 +1565,8 @@ public class RubyZlib {
                 offset += read;
             } // hmm...
             this.position += buffer.length;
-            return newStr(getRuntime(), newReadByteList(buffer, 0, len - toRead, false));
+            // CRuby GzReader#read sets Encoding but GzReader#read(size) does not.
+            return RubyString.newString(getRuntime(), new ByteList(buffer, 0, len - toRead, false));
         }
 
         @JRubyMethod(name = "lineno=", required = 1)
