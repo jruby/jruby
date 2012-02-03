@@ -101,32 +101,18 @@ public class InterpretedIRBlockBody19 extends InterpretedIRBlockBody {
 
     @Override
     public IRubyObject[] prepareArgumentsForCall(ThreadContext context, IRubyObject[] args, Block.Type type) {
-        int blockArity = arity().getValue();
-
-        switch (type) {
-        // SSS FIXME: How is it even possible to "call" a block?  
-        // I thought only procs & lambdas can be called, and blocks are yielded to.
-        case NORMAL: 
-        case PROC: {
+        if (type == Block.Type.LAMBDA) { 
+            arity().checkArity(context.getRuntime(), args);
+        } else {
+            // SSS FIXME: How is it even possible to "call" a NORMAL block?  
+            // I thought only procs & lambdas can be called, and blocks are yielded to.
             if (args.length == 1) {
                 // Convert value to arg-array, unwrapping where necessary
                 args = convertValueIntoArgArray(context, args[0], false, (type == Block.Type.NORMAL) && (args[0] instanceof RubyArray));
-            } else if (blockArity == 1) {
-                // discard excess arguments
+            } else if (arity().getValue() == 1) {
+               // discard excess arguments
                 args = (args.length == 0) ? context.getRuntime().getSingleNilArray() : new IRubyObject[] { args[0] };
             }
-            break;
-        }
-        case LAMBDA:
-            if (blockArity == 1 && args.length != 1) {
-                if (blockArity != args.length) {
-                    context.getRuntime().getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (" + args.length + " for " + blockArity + ")");
-                }
-                args = convertToRubyArray(context, args);
-            } else {
-                arity().checkArity(context.getRuntime(), args);
-            }
-            break;
         }
 
         return args;
