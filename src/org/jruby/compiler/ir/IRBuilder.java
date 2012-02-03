@@ -1864,7 +1864,7 @@ public class IRBuilder {
         receiveMethodArgs(defNode.getArgsNode(), method);
 
         // Thread poll on entry to method
-        addThreadPollInstrIfNeeded(s);
+        s.addInstr(new ThreadPollInstr());
 
         // Build IR for body
         Node bodyNode = defNode.getBodyNode();
@@ -2623,7 +2623,7 @@ public class IRBuilder {
             // If a regular loop, the next is simply a jump to the end of the iteration
             s.addInstr(new JumpInstr(currLoop.iterEndLabel));
         } else {
-            addThreadPollInstrIfNeeded(s);
+            s.addInstr(new ThreadPollInstr());
             // If a closure, the next is simply a return from the closure!
             if (s instanceof IRClosure) s.addInstr(new ClosureReturnInstr(rv));
             else s.addInstr(new ThrowExceptionInstr(IRException.NEXT_LocalJumpError));
@@ -2635,11 +2635,6 @@ public class IRBuilder {
 
     public Operand buildNthRef(NthRefNode nthRefNode, IRScope s) {
         return copyAndReturnValue(s, new NthRef(nthRefNode.getMatchNumber()));
-    }
-    
-    public void addThreadPollInstrIfNeeded(IRScope s) {
-        if (s.getLastInstr() instanceof ThreadPollInstr) return;
-        s.addInstr(new ThreadPollInstr());
     }
 
     public Operand buildNil(Node node, IRScope s) {
@@ -2710,7 +2705,6 @@ public class IRBuilder {
         Operand v2 = build(andNode.getSecondNode(), s);  // This does the assignment!
         s.addInstr(new CopyInstr(result, v2));
         s.addInstr(new LabelInstr(l));
-        s.addInstr(new ThreadPollInstr());
         return result;
     }
 
@@ -2748,7 +2742,6 @@ public class IRBuilder {
         Operand v2 = build(orNode.getSecondNode(), s); // This is an AST node that sets x = y, so nothing special to do here.
         s.addInstr(new CopyInstr(result, v2));
         s.addInstr(new LabelInstr(l1));
-        s.addInstr(new ThreadPollInstr());
 
         // Return value of x ||= y is always 'x'
         return result;
@@ -2923,7 +2916,7 @@ public class IRBuilder {
              s.addInstr(new JumpInstr(currLoop.iterStartLabel));
         } else {
             if (s instanceof IRClosure) {
-                addThreadPollInstrIfNeeded(s);
+                s.addInstr(new ThreadPollInstr());
                 s.addInstr(new JumpInstr(((IRClosure)s).startLabel));
             } else {
                 s.addInstr(new ThrowExceptionInstr(IRException.REDO_LocalJumpError));
@@ -3113,7 +3106,7 @@ public class IRBuilder {
         if (_rescueBlockStack.empty()) {
             s.addInstr(new ThrowExceptionInstr(IRException.RETRY_LocalJumpError));
         } else {
-            addThreadPollInstrIfNeeded(s);
+            s.addInstr(new ThreadPollInstr());
             // Restore $! and jump back to the entry of the rescue block
             RescueBlockInfo rbi = _rescueBlockStack.peek();
             s.addInstr(new PutGlobalVarInstr("$!", rbi.savedExceptionVariable));
@@ -3294,7 +3287,7 @@ public class IRBuilder {
             s.addInstr(new LabelInstr(loop.iterStartLabel));
 
             // Thread poll at start of iteration -- ensures that redos and nexts run one thread-poll per iteration
-            addThreadPollInstrIfNeeded(s);
+            s.addInstr(new ThreadPollInstr());
 
             // Build body
             if (bodyNode != null) build(bodyNode, s);
