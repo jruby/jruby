@@ -1035,9 +1035,13 @@ public class RubyIO extends RubyObject {
     }
 
     @JRubyMethod(compat=RUBY1_9)
-    public IRubyObject set_encoding(ThreadContext context, IRubyObject encodingString) {
-        EncodingOption encodingOption = EncodingOption.getEncodingOptionFromString(context.runtime, encodingString.convertToString().toString());
-        setEncodingFromOptions(encodingOption);
+    public IRubyObject set_encoding(ThreadContext context, IRubyObject encodingObj) {
+        if (encodingObj instanceof RubyString) {
+            EncodingOption encodingOption = EncodingOption.getEncodingOptionFromString(context.runtime, encodingObj.convertToString().toString());
+            setEncodingFromOptions(encodingOption);
+        } else {
+            setExternalEncoding(context, encodingObj);
+        }
         return context.getRuntime().getNil();
     }
 
