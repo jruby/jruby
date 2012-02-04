@@ -77,7 +77,7 @@ JFLAGS = -fno-omit-frame-pointer -fno-strict-aliasing
 DBG_FLAGS = -DNDEBUG
 OFLAGS = $(DBG_FLAGS) $(JFLAGS)
 
-WFLAGS = -W -Wall -Wno-unused -Wno-parentheses -Werror
+WFLAGS = -W -Wall -Wno-unused -Wno-parentheses
 # MacOS headers have some undefined macros, so don't warn on these on darwin
 ifneq ($(OS),darwin)
   WFLAGS += -Wundef
