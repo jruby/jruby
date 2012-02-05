@@ -346,5 +346,21 @@ describe "A Ruby class generating a Java stub" do
         end
       end
     end
+
+    describe "with throws clause" do
+      it "generates a throws clause" do
+        cls = generate("class Foo; java_signature 'public void bar() throws FooBarException'; def bar; end; end").classes[0]
+
+        method = cls.methods[0]
+        method.java_signature.to_s.should == 'public void bar() throws FooBarException'
+      end
+
+      it 'generates a throws clause for more than one exception' do
+        cls = generate("class Foo; java_signature 'public void bar() throws FooBarException,QuxBazException'; def bar; end; end").classes[0]
+
+        method = cls.methods[0]
+        method.java_signature.to_s.should == 'public void bar() throws FooBarException, QuxBazException'   
+      end        
+    end
   end
 end

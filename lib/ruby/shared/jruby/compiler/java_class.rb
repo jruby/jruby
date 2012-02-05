@@ -520,7 +520,7 @@ JAVA
     def declarator_string(&body)
       <<JAVA
     #{annotations_string}
-    #{modifier_string} #{return_type} #{java_name}(#{declared_args}) {
+    #{modifier_string} #{return_type} #{java_name}(#{declared_args}) #{throws_exceptions}{
 #{body.call}
     }
 JAVA
@@ -580,6 +580,14 @@ JAVA
         end
 
         {:name => var_name, :type => type}
+      end
+    end
+
+    def throws_exceptions
+      if java_signature.throws && !java_signature.throws.empty?
+        'throws ' + java_signature.throws.join(', ') + ' '
+      else
+        ''
       end
     end
 

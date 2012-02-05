@@ -78,5 +78,22 @@ describe "A Ruby class generating a Java stub" do
         java.should match STRING_INITIALIZE_PATTERN
       end
     end
+
+    describe "with throws clause" do
+      it "generates a throws clause" do
+        cls = generate("class Foo; java_signature 'Foo() throws FooBarException'; def initialize(); end; end").classes[0]
+
+        method = cls.methods[0]
+        method.java_signature.to_s.should == 'Foo() throws FooBarException'
+      end
+
+      it 'generates a throws clause for more than one exception' do
+        cls = generate("class Foo; java_signature 'Foo() throws FooBarException,QuxBazException'; def initialize(); end; end").classes[0]
+
+        method = cls.methods[0]
+        method.java_signature.to_s.should == 'Foo() throws FooBarException, QuxBazException'   
+      end        
+    end
+
   end
 end
