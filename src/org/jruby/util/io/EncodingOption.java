@@ -74,7 +74,7 @@ public class EncodingOption {
             set = true;
             if (intOption.isNil()) {
                 // null;
-            } else if (intOption.convertToString().toString().equals("-")) {
+            } else if (intOption.asString().toString().equals("-")) {
                 // null;
             } else {
                 intEncoding = runtime.getEncodingService().getEncodingFromObject(intOption);
