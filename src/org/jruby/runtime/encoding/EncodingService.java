@@ -42,7 +42,8 @@ public final class EncodingService {
 
         Charset javaDefaultCharset = Charset.defaultCharset();
         ByteList javaDefaultBL = new ByteList(javaDefaultCharset.name().getBytes());
-        javaDefault = findEncodingOrAliasEntry(javaDefaultBL).getEncoding();
+        Entry javaDefaultEntry = findEncodingOrAliasEntry(javaDefaultBL);
+        javaDefault = javaDefaultEntry == null ? ascii8bit : javaDefaultEntry.getEncoding();
 
         encodingList = new IRubyObject[encodings.size()];
 
