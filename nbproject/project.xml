@@ -315,11 +315,15 @@
                                 <property name="text-limit-width" value="80"/>
                                 <property name="indent-shift-width" value="4"/>
                                 <property name="tab-size" value="4"/>
+                                <property name="allowConvertToStarImport" value="false"/>
+                                <property name="importGroupsOrder" value="*"/>
                             </node>
                         </node>
                     </node>
                 </node>
             </module>
+            <module name="org-netbeans-modules-html-editor-lib"/>
+            <module name="org-netbeans-modules-projectimport-eclipse-core"/>
         </preferences>
     </configuration>
 </project>
