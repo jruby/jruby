@@ -112,7 +112,7 @@ public class LocalOptimizationPass implements CompilerPass {
                     else if ((useCount == 1) && (defCount == 1) && (i instanceof CopyInstr)) {
                         CopyInstr ci = (CopyInstr)i;
                         Operand src = ci.getSource();
-                        if (src.isConstant()) {
+                        if (src.hasKnownValue()) {
                             i.markDead();
                             instrs.remove();
                             constValMap.put(v, src);

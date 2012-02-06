@@ -33,13 +33,13 @@ public class Range extends Operand {
 
 // ---------- These methods below are used during compile-time optimizations ------- 
     @Override
-    public boolean isConstant() {
-        return begin.isConstant() && end.isConstant();
+    public boolean hasKnownValue() {
+        return begin.hasKnownValue() && end.hasKnownValue();
     }
 
     @Override
     public Operand fetchCompileTimeArrayElement(int argIndex, boolean getSubArray) {
-        if (!isConstant()) return null;
+        if (!hasKnownValue()) return null;
 
         // SSS FIXME: Cannot optimize this without assuming that Range.to_ary method has not redefined.
         // So for now, return null!
@@ -67,7 +67,7 @@ public class Range extends Operand {
 
     @Override
     public Operand cloneForInlining(InlinerInfo ii) {
-        return isConstant() ? this : new Range(begin.cloneForInlining(ii), end.cloneForInlining(ii), exclusive);
+        return hasKnownValue() ? this : new Range(begin.cloneForInlining(ii), end.cloneForInlining(ii), exclusive);
     }
 
     @Override

@@ -34,10 +34,10 @@ public class CompoundString extends Operand {
     }
 
     @Override
-    public boolean isConstant() {
+    public boolean hasKnownValue() {
         if (pieces != null) {
             for (Operand o : pieces) {
-                if (!o.isConstant()) return false;
+                if (!o.hasKnownValue()) return false;
             }
         }
 
@@ -74,7 +74,7 @@ public class CompoundString extends Operand {
 
     @Override
     public Operand cloneForInlining(InlinerInfo ii) {
-        if (isConstant()) return this;
+        if (hasKnownValue()) return this;
 
         List<Operand> newPieces = new java.util.ArrayList<Operand>();
         for (Operand p : pieces) {

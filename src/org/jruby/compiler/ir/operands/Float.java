@@ -16,7 +16,7 @@ public class Float extends Operand {
 
     // FIXME: Enebo I don't think floats are constant since they can set precision per instance.
     @Override
-    public boolean isConstant() {
+    public boolean hasKnownValue() {
         return true;
     }
 

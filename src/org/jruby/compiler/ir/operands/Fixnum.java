@@ -23,7 +23,7 @@ public class Fixnum extends Operand {
     }
 
     @Override
-    public boolean isConstant() {
+    public boolean hasKnownValue() {
         return true;
     }
     

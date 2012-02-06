@@ -41,9 +41,9 @@ public class Array extends Operand {
 
 // ---------- These methods below are used during compile-time optimizations ------- 
     @Override
-    public boolean isConstant() {
+    public boolean hasKnownValue() {
         for (Operand o : elts) {
-            if (!o.isConstant()) return false;
+            if (!o.hasKnownValue()) return false;
         }
 
         return true;
@@ -92,7 +92,7 @@ public class Array extends Operand {
 
     @Override
     public Operand cloneForInlining(InlinerInfo ii) { 
-        if (isConstant()) return this;
+        if (hasKnownValue()) return this;
 
         Operand[] newElts = new Operand[elts.length];
         for (int i = 0; i < elts.length; i++) {

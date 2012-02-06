@@ -15,7 +15,7 @@ public class Nil extends Operand {
     }
 
     @Override
-    public boolean isConstant() {
+    public boolean hasKnownValue() {
         return true;
     }
 

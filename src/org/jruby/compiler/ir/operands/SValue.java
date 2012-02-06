@@ -27,8 +27,8 @@ public class SValue extends Operand {
     }
 
     @Override
-    public boolean isConstant() {
-        return array.isConstant();
+    public boolean hasKnownValue() {
+        return array.hasKnownValue();
     }
 
     @Override
@@ -60,7 +60,7 @@ public class SValue extends Operand {
  
     @Override
     public Operand cloneForInlining(InlinerInfo ii) { 
-        return isConstant() ? this : new SValue(array.cloneForInlining(ii));
+        return hasKnownValue() ? this : new SValue(array.cloneForInlining(ii));
     }
 
     @Override

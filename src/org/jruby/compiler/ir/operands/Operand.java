@@ -13,7 +13,15 @@ public abstract class Operand {
     public static final Operand[] EMPTY_ARRAY = new Operand[0];
 
 // ---------- These methods below are used during compile-time optimizations ------- 
-    public boolean isConstant() {
+    /**
+     * Do we know the value of this operand at compile-time?
+     * 
+     * If we do then it may be possible to constant propagate (one case:
+     * We also know it is also an ImmutableLiteral).  
+     * 
+     * @return true if a known compile-time value.
+     */
+    public boolean hasKnownValue() {
         return false;
     }
 

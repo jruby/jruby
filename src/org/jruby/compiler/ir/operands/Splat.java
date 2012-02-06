@@ -22,7 +22,7 @@ public class Splat extends Operand {
     }
 
     @Override
-    public boolean isConstant() {
+    public boolean hasKnownValue() {
         return false; /*_array.isConstant();*/ 
     }
 
@@ -66,7 +66,7 @@ public class Splat extends Operand {
 
     @Override
     public Operand cloneForInlining(InlinerInfo ii) {
-        return isConstant() ? this : new Splat(array.cloneForInlining(ii));
+        return hasKnownValue() ? this : new Splat(array.cloneForInlining(ii));
     }
 
     @Override

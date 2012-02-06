@@ -31,7 +31,7 @@ public class CompoundArray extends Operand {
         this.isArgsPush = isArgsPush;
     }
 
-    public boolean isConstant() { return false; /*return a1.isConstant() && a2.isConstant();*/ }
+    public boolean hasKnownValue() { return false; /*return a1.isConstant() && a2.isConstant();*/ }
 
     public String toString() { return (isArgsPush ? "ArgsPush[" : "ArgsCat[") + a1 + ", " + a2 + "]"; }
 
@@ -82,7 +82,7 @@ public class CompoundArray extends Operand {
 
     @Override
     public Operand cloneForInlining(InlinerInfo ii) { 
-        return isConstant() ? this : new CompoundArray(a1.cloneForInlining(ii), a2.cloneForInlining(ii), isArgsPush);
+        return hasKnownValue() ? this : new CompoundArray(a1.cloneForInlining(ii), a2.cloneForInlining(ii), isArgsPush);
     }
 
     @Override

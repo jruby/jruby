@@ -252,7 +252,7 @@ public class JVM implements CompilerTarget {
     }
 
     public void emit(Operand operand) {
-        if (operand.isConstant()) {
+        if (operand.hasKnownValue()) {
             operand.compile(this);
         } else if (operand instanceof Variable) {
             emitVariable((Variable)operand);

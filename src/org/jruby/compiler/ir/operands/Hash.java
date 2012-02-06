@@ -27,9 +27,9 @@ public class Hash extends Operand {
     }
 
     @Override
-    public boolean isConstant() {
+    public boolean hasKnownValue() {
         for (KeyValuePair pair : pairs) {
-            if (!pair.getKey().isConstant() || !pair.getValue().isConstant()) return false;
+            if (!pair.getKey().hasKnownValue() || !pair.getValue().hasKnownValue()) return false;
         }
 
         return true;
@@ -61,7 +61,7 @@ public class Hash extends Operand {
 
     @Override
     public Operand cloneForInlining(InlinerInfo ii) {
-        if (isConstant()) return this;
+        if (hasKnownValue()) return this;
 
         List<KeyValuePair> newPairs = new java.util.ArrayList<KeyValuePair>();
         for (KeyValuePair pair : pairs) {

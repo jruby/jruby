@@ -1525,7 +1525,7 @@ public class IRBuilder {
                 if (def == Nil.NIL) { // Optimization!
                     rv = Nil.NIL;
                     break;
-                } else if (!def.isConstant()) { // Optimization!
+                } else if (!def.hasKnownValue()) { // Optimization!
                     failPathReqd = true;
                     s.addInstr(BEQInstr.create(def, Nil.NIL, failLabel));
                 }
@@ -1534,7 +1534,7 @@ public class IRBuilder {
             Operand def = buildGetDefinition(node, s);
             if (def == Nil.NIL) { // Optimization!
                 rv = Nil.NIL;
-            } else if (!def.isConstant()) { // Optimization!
+            } else if (!def.hasKnownValue()) { // Optimization!
                 failPathReqd = true;
                 s.addInstr(BEQInstr.create(def, Nil.NIL, failLabel));
             }

@@ -90,7 +90,7 @@ public abstract class CallAdapter {
     
     private static boolean isConstant(Operand args[]) {
         for (int i = 0; i < args.length; i++) {
-            if (!args[i].isConstant() || args[i].isNonAtomicValue()) return false;
+            if (!args[i].hasKnownValue() || args[i].isNonAtomicValue()) return false;
         }
         
         return true;

@@ -27,8 +27,8 @@ public class Regexp extends Operand {
     }
 
     @Override
-    public boolean isConstant() {
-        return regexp.isConstant();
+    public boolean hasKnownValue() {
+        return regexp.hasKnownValue();
     }
 
     @Override
@@ -55,14 +55,14 @@ public class Regexp extends Operand {
 
     @Override
     public Operand cloneForInlining(InlinerInfo ii) {
-        return isConstant() ? this : new Regexp(regexp.cloneForInlining(ii), options);
+        return hasKnownValue() ? this : new Regexp(regexp.cloneForInlining(ii), options);
     }
 
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         // FIXME (from RegexpNode.java): 1.9 should care about internal or external encoding and not kcode.
         // If we have a constant regexp string or if the regexp patterns asks for caching, cache the regexp
-        if ((!regexp.isConstant() && !options.isOnce()) || (rubyRegexp == null) || context.getRuntime().getKCode() != rubyRegexp.getKCode()) {
+        if ((!regexp.hasKnownValue() && !options.isOnce()) || (rubyRegexp == null) || context.getRuntime().getKCode() != rubyRegexp.getKCode()) {
             RubyRegexp re;
             if (regexp instanceof CompoundString) {
                 if (context.runtime.is1_9()) {

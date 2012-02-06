@@ -12,7 +12,7 @@ public class BooleanLiteral extends Operand {
     public static final BooleanLiteral FALSE = new BooleanLiteral();
 
     @Override
-    public boolean isConstant() {
+    public boolean hasKnownValue() {
         return true;
     }
     
