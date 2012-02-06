@@ -155,6 +155,7 @@ public class ParserSupport19 extends ParserSupport {
         return StringSupport.codeRangeScan(value.getEncoding(), value) == StringSupport.CR_7BIT;
     }
 
+    // MRI: reg_fragment_setenc_gen
     public void setRegexpEncoding(RegexpNode end, ByteList value) {
         RegexpOptions options = end.getOptions();
         Encoding optionsEncoding = options.setup19(configuration.getRuntime()) ;
@@ -197,6 +198,7 @@ public class ParserSupport19 extends ParserSupport {
                 "' differs from source encoding '" + encoding + "'");
     }
 
+    // MRI: reg_fragment_check
     @Override
     public void regexpFragmentCheck(RegexpNode end, ByteList value) {
         setRegexpEncoding(end, value);
