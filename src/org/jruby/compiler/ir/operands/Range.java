@@ -47,11 +47,6 @@ public class Range extends Operand {
     }
 
     @Override
-    public boolean isNonAtomicValue() {
-        return true;
-    }
-
-    @Override
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
         Operand newBegin = begin.getSimplifiedOperand(valueMap, force);
         Operand newEnd = end.getSimplifiedOperand(valueMap, force);

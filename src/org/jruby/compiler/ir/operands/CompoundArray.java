@@ -70,9 +70,6 @@ public class CompoundArray extends Operand {
         return (a1 == newA1 && a2 == newA2) ? this : new CompoundArray(newA1, newA2, isArgsPush);
     }
 
-    @Override
-    public boolean isNonAtomicValue() { return true; }
-
     /** Append the list of variables used in this operand to the input list */
     @Override
     public void addUsedVariables(List<Variable> l) {

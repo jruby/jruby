@@ -1,11 +1,8 @@
 package org.jruby.compiler.ir.operands;
 
-import java.util.List;
-import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
-public class BooleanLiteral extends Operand {
+public class BooleanLiteral extends ImmutableLiteral {
     private BooleanLiteral() { }
 
     public static final BooleanLiteral TRUE  = new BooleanLiteral();
@@ -15,12 +12,12 @@ public class BooleanLiteral extends Operand {
     public boolean hasKnownValue() {
         return true;
     }
-    
-    @Override
-    public void addUsedVariables(List<Variable> l) {
-        /* do nothing */
-    }
 
+    @Override
+    public Object createCacheObject(ThreadContext context) {
+        return context.getRuntime().newBoolean(isTrue());
+    }
+    
     public boolean isTrue()  {
         return this == TRUE;
     }
@@ -36,10 +33,5 @@ public class BooleanLiteral extends Operand {
     @Override
     public String toString() {
         return isTrue() ? "true" : "false";
-    }
-
-    @Override
-    public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
-        return context.getRuntime().newBoolean(isTrue());
     }
 }

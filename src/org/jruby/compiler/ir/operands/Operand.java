@@ -12,7 +12,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 public abstract class Operand {
     public static final Operand[] EMPTY_ARRAY = new Operand[0];
 
-// ---------- These methods below are used during compile-time optimizations ------- 
     /**
      * Do we know the value of this operand at compile-time?
      * 
@@ -22,12 +21,6 @@ public abstract class Operand {
      * @return true if a known compile-time value.
      */
     public boolean hasKnownValue() {
-        return false;
-    }
-
-    // Arrays, Ranges, StringLiteral, etc. are compound values
-    // Variables, fixnums, floats, etc. are "atomic" values
-    public boolean isNonAtomicValue() {
         return false;
     }
 

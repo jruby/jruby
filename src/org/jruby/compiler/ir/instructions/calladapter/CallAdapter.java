@@ -1,6 +1,7 @@
 package org.jruby.compiler.ir.instructions.calladapter;
 
 import org.jruby.compiler.ir.operands.Fixnum;
+import org.jruby.compiler.ir.operands.ImmutableLiteral;
 import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Splat;
@@ -90,7 +91,7 @@ public abstract class CallAdapter {
     
     private static boolean isConstant(Operand args[]) {
         for (int i = 0; i < args.length; i++) {
-            if (!args[i].hasKnownValue() || args[i].isNonAtomicValue()) return false;
+            if (args[i] instanceof ImmutableLiteral && !args[i].hasKnownValue()) return false;
         }
         
         return true;

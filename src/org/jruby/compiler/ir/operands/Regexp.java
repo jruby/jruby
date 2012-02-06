@@ -37,11 +37,6 @@ public class Regexp extends Operand {
     }
 
     @Override
-    public boolean isNonAtomicValue() {
-        return true;
-    }
-
-    @Override
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
         Operand newRegexp = regexp.getSimplifiedOperand(valueMap, force); 
         return newRegexp == regexp ? this : new Regexp(newRegexp, options);

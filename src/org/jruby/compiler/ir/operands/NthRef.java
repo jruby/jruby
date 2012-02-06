@@ -20,11 +20,6 @@ public class NthRef extends Reference {
     }
 
     @Override
-    public boolean isNonAtomicValue() { 
-        return true;
-    }
-
-    @Override
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         return RubyRegexp.nth_match(matchNumber, currDynScope.getBackRef(context.getRuntime()));
     }

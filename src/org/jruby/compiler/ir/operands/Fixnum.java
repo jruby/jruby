@@ -1,25 +1,39 @@
 package org.jruby.compiler.ir.operands;
 
 import java.math.BigInteger;
-import java.util.List;
-
 import org.jruby.compiler.ir.targets.JVM;
-import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
-public class Fixnum extends Operand {
+/*
+ * Represents a literal fixnum.
+ * 
+ * Cache value so that when the same Fixnum Operand is copy-propagated across
+ * multiple instructions, the same RubyFixnum object is created.  In addition,
+ * the same constant across loops should be the same object.
+ * 
+ * So, in this example, the output should be false, true, true
+ *
+ * <pre>
+ *   n = 0
+ *   olda = nil
+ *   while (n < 3)
+ *     a = 34853
+ *     p a.equal?(olda)
+ *     olda = a
+ *     n += 1
+ *   end
+ * </pre>
+ */      
+public class Fixnum extends ImmutableLiteral {
     final public Long value;
     private Object rubyFixnum;
 
     public Fixnum(Long val) {
         value = val;
-        rubyFixnum = null;
     }
 
     public Fixnum(BigInteger val) { 
-        value = val.longValue();
-        rubyFixnum = null;
+        this(val.longValue());
     }
 
     @Override
@@ -28,9 +42,9 @@ public class Fixnum extends Operand {
     }
     
     @Override
-    public void addUsedVariables(List<Variable> l) {
-        /* Do nothing */
-    }
+    public Object createCacheObject(ThreadContext context) {
+        return context.getRuntime().newFixnum(value);
+    }    
 
     @Override
     public String toString() { 
@@ -59,27 +73,6 @@ public class Fixnum extends Operand {
         }
 
         return null;
-    }
-
-    @Override
-    public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
-        // Cache value so that when the same Fixnum Operand is copy-propagated across multiple instructions,
-        // the same RubyFixnum object is created.  In addition, the same constant across loops should be
-        // the same object.
-        //
-        // So, in this example, the output should be false, true, true
-        //
-        //    n = 0
-        //    olda = nil
-        //    while (n < 3)
-        //      a = 34853
-        //      p a.equal?(olda)
-        //      olda = a
-        //      n += 1
-        //    end
-        //
-        if (rubyFixnum == null) rubyFixnum = context.getRuntime().newFixnum(value);
-        return rubyFixnum;
     }
 
     @Override

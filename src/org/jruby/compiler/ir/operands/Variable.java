@@ -16,7 +16,7 @@ public abstract class Variable extends Operand implements Comparable {
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
         Operand v = valueMap.get(this);
         // You can only value-replace atomic values
-        return (v != null) && (force || !v.isNonAtomicValue()) ? v : this;
+        return (v != null) && (force || v instanceof ImmutableLiteral || v instanceof Variable) ? v : this;
     }
 
     public boolean isImplicitBlockArg() {

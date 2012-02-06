@@ -31,11 +31,6 @@ public class Splat extends Operand {
         return "*" + array;
     }
 
-    @Override
-    public boolean isNonAtomicValue() {
-        return true;
-    }
-
     public Operand getArray() {
         return array;
     }

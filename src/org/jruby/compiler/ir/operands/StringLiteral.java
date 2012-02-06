@@ -8,6 +8,26 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+/**
+ * Represents a literal string value.
+ * 
+ * Note on why this is not an ImmutableLiteral...
+ * This is non-atomic because you cannot create multiple copies of the 
+ * string-literal by propagating it.  Because of being able to define singleton
+ * methods on strings, "abc" != "abc" for 2 separate instances of the string
+ * literal.  This is similar to the java equality / intern issues with
+ * non-atomic objects.
+ *
+ * Here is an example in Ruby:
+ * <pre> 
+ *   a1 = "abc"
+ *   a2 = "abc"
+ *   class < a1; def bar; puts 'a1'; end; end
+ *   class < a2; def bar; puts 'a2'; end; end
+ *   a2.bar != a1.bar
+ * </pre>
+ * Hence, I cannot value-propagate "abc" during optimizations
+ */
 public class StringLiteral extends Operand {
     // SSS FIXME: Pick one of bytelist or string, or add internal conversion methods to convert to the default representation
 
@@ -36,24 +56,6 @@ public class StringLiteral extends Operand {
     @Override
     public String toString() {
         return "\"" + string + "\"";
-    }
-
-    // SSS: Yes, this is non-atomic because you cannot create multiple copies of the string-literal by propagating it.
-    // Because of being able to define singleton methods on strings, "abc" != "abc" for 2 separate instances of the
-    // string literal.  This is similar to the java equality / intern issues with non-atomic objects
-    //
-    // Here is an example in Ruby:
-    // 
-    //    a1 = "abc"
-    //    a2 = "abc"
-    //    class < a1; def bar; puts 'a1'; end; end
-    //    class < a2; def bar; puts 'a2'; end; end
-    //    a2.bar != a1.bar
-    //
-    // Hence, I cannot value-propagate "abc" during optimizations
-    @Override
-    public boolean isNonAtomicValue() { 
-        return true;
     }
 
     @Override

@@ -36,11 +36,6 @@ public class Hash extends Operand {
     }
 
     @Override
-    public boolean isNonAtomicValue() {
-        return true;
-    }
-
-    @Override
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
         List<KeyValuePair> newPairs = new java.util.ArrayList<KeyValuePair>();
         for (KeyValuePair pair : pairs) {

@@ -50,11 +50,6 @@ public class CompoundString extends Operand {
     }
 
     @Override
-    public boolean isNonAtomicValue() {
-        return true;
-    }
-
-    @Override
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
         List<Operand> newPieces = new java.util.ArrayList<Operand>();
         for (Operand p : pieces) {

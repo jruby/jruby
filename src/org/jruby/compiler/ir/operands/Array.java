@@ -50,11 +50,6 @@ public class Array extends Operand {
     }
 
     @Override
-    public boolean isNonAtomicValue() { 
-        return true;
-    }
-
-    @Override
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
         Operand[] newElts = new Operand[elts.length];
         for (int i = 0; i < elts.length; i++) {

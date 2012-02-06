@@ -15,8 +15,6 @@ public class DynamicSymbol extends Operand {
 
     public DynamicSymbol(CompoundString n) { symbolName = n; }
 
-    public boolean isNonAtomicValue() { return true; }
-
     public String toString() {
         return ":" + symbolName.toString();
     }
