@@ -82,6 +82,7 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import org.jruby.util.ByteList;
+import org.jruby.util.CodegenUtils;
 import org.jruby.util.TypeConverter;
 
 public class JavaUtil {
@@ -188,25 +189,7 @@ public class JavaUtil {
 
     public static Class<?> primitiveToWrapper(Class<?> type) {
         if (type.isPrimitive()) {
-            if (type == boolean.class) {
-                return Boolean.class;
-            } else if (type == byte.class) {
-                return Byte.class;
-            } else if (type == short.class) {
-                return Short.class;
-            } else if (type == char.class) {
-                return Character.class;
-            } else if (type == int.class) {
-                return Integer.class;
-            } else if (type == long.class) {
-                return Long.class;
-            } else if (type == float.class) {
-                return Float.class;
-            } else if (type == double.class) {
-                return Double.class;
-            } else if (type == void.class) {
-                return Void.class;
-            }
+            return CodegenUtils.getBoxType(type);
         }
         return type;
     }
@@ -408,8 +391,7 @@ public class JavaUtil {
      * all its overloads, add to the given nameSet all possible Ruby names that would
      * be valid.
      *
-     * @param simpleName
-     * @param nameSet
+     * @param javaName
      * @param methods
      */
     public static Set<String> getRubyNamesForJavaName(String javaName, List<Method> methods) {
@@ -513,7 +495,7 @@ public class JavaUtil {
             return JavaObject.wrap(runtime, object);
         }
         public IRubyObject get(Ruby runtime, Object array, int i) {
-            return convert(runtime, ((Object[])array)[i]);
+            return convert(runtime, ((Object[]) array)[i]);
         }
         public void set(Ruby runtime, Object array, int i, IRubyObject value) {
             ((Object[])array)[i] = value.toJava(Object.class);
@@ -526,7 +508,7 @@ public class JavaUtil {
             return RubyBoolean.newBoolean(runtime, ((Boolean)object).booleanValue());
         }
         public IRubyObject get(Ruby runtime, Object array, int i) {
-            return convert(runtime, ((Boolean[])array)[i]);
+            return convert(runtime, ((Boolean[]) array)[i]);
         }
         public void set(Ruby runtime, Object array, int i, IRubyObject value) {
             ((Boolean[])array)[i] = (Boolean)value.toJava(Boolean.class);
@@ -539,7 +521,7 @@ public class JavaUtil {
             return RubyFloat.newFloat(runtime, ((Float)object).doubleValue());
         }
         public IRubyObject get(Ruby runtime, Object array, int i) {
-            return convert(runtime, ((Float[])array)[i]);
+            return convert(runtime, ((Float[]) array)[i]);
         }
         public void set(Ruby runtime, Object array, int i, IRubyObject value) {
             ((Float[])array)[i] = (Float)value.toJava(Float.class);
@@ -552,7 +534,7 @@ public class JavaUtil {
             return RubyFloat.newFloat(runtime, ((Double)object).doubleValue());
         }
         public IRubyObject get(Ruby runtime, Object array, int i) {
-            return convert(runtime, ((Double[])array)[i]);
+            return convert(runtime, ((Double[]) array)[i]);
         }
         public void set(Ruby runtime, Object array, int i, IRubyObject value) {
             ((Double[])array)[i] = (Double)value.toJava(Double.class);
@@ -565,7 +547,7 @@ public class JavaUtil {
             return RubyFixnum.newFixnum(runtime, ((Character)object).charValue());
         }
         public IRubyObject get(Ruby runtime, Object array, int i) {
-            return convert(runtime, ((Character[])array)[i]);
+            return convert(runtime, ((Character[]) array)[i]);
         }
         public void set(Ruby runtime, Object array, int i, IRubyObject value) {
             ((Character[])array)[i] = (Character)value.toJava(Character.class);
@@ -578,7 +560,7 @@ public class JavaUtil {
             return RubyFixnum.newFixnum(runtime, ((Byte)object).byteValue());
         }
         public IRubyObject get(Ruby runtime, Object array, int i) {
-            return convert(runtime, ((Byte[])array)[i]);
+            return convert(runtime, ((Byte[]) array)[i]);
         }
         public void set(Ruby runtime, Object array, int i, IRubyObject value) {
             ((Byte[])array)[i] = (Byte)value.toJava(Byte.class);
@@ -591,7 +573,7 @@ public class JavaUtil {
             return RubyFixnum.newFixnum(runtime, ((Short)object).shortValue());
         }
         public IRubyObject get(Ruby runtime, Object array, int i) {
-            return convert(runtime, ((Short[])array)[i]);
+            return convert(runtime, ((Short[]) array)[i]);
         }
         public void set(Ruby runtime, Object array, int i, IRubyObject value) {
             ((Short[])array)[i] = (Short)value.toJava(Short.class);
@@ -604,7 +586,7 @@ public class JavaUtil {
             return RubyFixnum.newFixnum(runtime, ((Integer)object).intValue());
         }
         public IRubyObject get(Ruby runtime, Object array, int i) {
-            return convert(runtime, ((Integer[])array)[i]);
+            return convert(runtime, ((Integer[]) array)[i]);
         }
         public void set(Ruby runtime, Object array, int i, IRubyObject value) {
             ((Integer[])array)[i] = (Integer)value.toJava(Integer.class);
@@ -617,7 +599,7 @@ public class JavaUtil {
             return RubyFixnum.newFixnum(runtime, ((Long)object).longValue());
         }
         public IRubyObject get(Ruby runtime, Object array, int i) {
-            return convert(runtime, ((Long[])array)[i]);
+            return convert(runtime, ((Long[]) array)[i]);
         }
         public void set(Ruby runtime, Object array, int i, IRubyObject value) {
             ((Long[])array)[i] = (Long)value.toJava(Long.class);
@@ -734,7 +716,7 @@ public class JavaUtil {
             return RubyString.newUnicodeString(runtime, (String)object);
         }
         public IRubyObject get(Ruby runtime, Object array, int i) {
-            return convert(runtime, ((String[])array)[i]);
+            return convert(runtime, ((String[]) array)[i]);
         }
         public void set(Ruby runtime, Object array, int i, IRubyObject value) {
             ((String[])array)[i] = (String)value.toJava(String.class);
@@ -747,7 +729,7 @@ public class JavaUtil {
             return RubyString.newUnicodeString(runtime, (CharSequence)object);
         }
         public IRubyObject get(Ruby runtime, Object array, int i) {
-            return convert(runtime, ((CharSequence[])array)[i]);
+            return convert(runtime, ((CharSequence[]) array)[i]);
         }
         public void set(Ruby runtime, Object array, int i, IRubyObject value) {
             ((CharSequence[])array)[i] = (CharSequence)value.toJava(CharSequence.class);
@@ -760,7 +742,7 @@ public class JavaUtil {
             return RubyString.newString(runtime, (ByteList)object);
         }
         public IRubyObject get(Ruby runtime, Object array, int i) {
-            return convert(runtime, ((ByteList[])array)[i]);
+            return convert(runtime, ((ByteList[]) array)[i]);
         }
         public void set(Ruby runtime, Object array, int i, IRubyObject value) {
             ((ByteList[])array)[i] = (ByteList)value.toJava(ByteList.class);
@@ -773,7 +755,7 @@ public class JavaUtil {
             return RubyBignum.newBignum(runtime, (BigInteger)object);
         }
         public IRubyObject get(Ruby runtime, Object array, int i) {
-            return convert(runtime, ((BigInteger[])array)[i]);
+            return convert(runtime, ((BigInteger[]) array)[i]);
         }
         public void set(Ruby runtime, Object array, int i, IRubyObject value) {
             ((BigInteger[])array)[i] = (BigInteger)value.toJava(BigInteger.class);
@@ -1413,25 +1395,29 @@ public class JavaUtil {
             }
         }
         Class<?> type = primitiveToWrapper(parameterType);
+
+        if (argument.getClass() == type) return argument;
+
         if (type == Void.class) {
             return null;
         }
+
         if (argument instanceof Number) {
             final Number number = (Number) argument;
             if (type == Long.class) {
-                return Long.valueOf(number.longValue());
+                return number.longValue();
             } else if (type == Integer.class) {
-                return Integer.valueOf(number.intValue());
+                return number.intValue();
             } else if (type == Byte.class) {
-                return Byte.valueOf(number.byteValue());
+                return number.byteValue();
             } else if (type == Character.class) {
-                return Character.valueOf((char) number.intValue());
+                return (char)number.intValue();
             } else if (type == Double.class) {
-                return new Double(number.doubleValue());
+                return number.doubleValue();
             } else if (type == Float.class) {
-                return new Float(number.floatValue());
+                return number.floatValue();
             } else if (type == Short.class) {
-                return Short.valueOf(number.shortValue());
+                return number.shortValue();
             }
         }
         if (isDuckTypeConvertable(argument.getClass(), parameterType)) {

@@ -255,6 +255,8 @@ public class CodegenUtils {
             return Double.class;
         } else if (type == boolean.class) {
             return Boolean.class;
+        } else if (type == void.class) {
+            return Void.class;
         } else {
             throw new RuntimeException("Not a native type: " + type);
         }
