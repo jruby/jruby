@@ -2,12 +2,12 @@
 
 /* static	char	sccsid[] = "@(#) st.c 5.1 89/12/14 Crucible"; */
 
-#include "ruby.h"
-#include "st.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "ruby.h"
+#include "st.h"
 
 typedef struct st_table_entry st_table_entry;
 

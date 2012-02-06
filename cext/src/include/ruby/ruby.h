@@ -15,7 +15,6 @@
 #define JRUBY_RUBY_H
 #define JRUBY
 
-#include <sys/types.h>
 #include <stdint.h>
 #include <limits.h>
 #include <assert.h>
