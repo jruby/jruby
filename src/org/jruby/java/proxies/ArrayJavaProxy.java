@@ -83,8 +83,7 @@ public class ArrayJavaProxy extends JavaProxy {
     
     @JRubyMethod(name = "[]=")
     public IRubyObject op_aset(ThreadContext context, IRubyObject index, IRubyObject value) {
-        Object converted = value.toJava(getJavaArray().getComponentType());
-        getJavaArray().setWithExceptionHandling((int)index.convertToInteger().getLongValue(), converted);
+        getJavaArray().asetDirect(context.runtime, (int)((RubyInteger)index).getLongValue(), value);
         return value;
     }
     

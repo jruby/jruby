@@ -471,6 +471,7 @@ public class JavaUtil {
         public JavaConverter(Class type) {this.type = type;}
         public abstract IRubyObject convert(Ruby runtime, Object object);
         public abstract IRubyObject get(Ruby runtime, Object array, int i);
+        public abstract void set(Ruby runtime, Object array, int i, IRubyObject value);
         public String toString() {return type.getName() + " converter";}
     }
 
@@ -514,6 +515,9 @@ public class JavaUtil {
         public IRubyObject get(Ruby runtime, Object array, int i) {
             return convert(runtime, ((Object[])array)[i]);
         }
+        public void set(Ruby runtime, Object array, int i, IRubyObject value) {
+            ((Object[])array)[i] = value.toJava(Object.class);
+        }
     };
     
     private static final JavaConverter JAVA_BOOLEAN_CONVERTER = new JavaConverter(Boolean.class) {
@@ -523,6 +527,9 @@ public class JavaUtil {
         }
         public IRubyObject get(Ruby runtime, Object array, int i) {
             return convert(runtime, ((Boolean[])array)[i]);
+        }
+        public void set(Ruby runtime, Object array, int i, IRubyObject value) {
+            ((Boolean[])array)[i] = (Boolean)value.toJava(Boolean.class);
         }
     };
     
@@ -534,6 +541,9 @@ public class JavaUtil {
         public IRubyObject get(Ruby runtime, Object array, int i) {
             return convert(runtime, ((Float[])array)[i]);
         }
+        public void set(Ruby runtime, Object array, int i, IRubyObject value) {
+            ((Float[])array)[i] = (Float)value.toJava(Float.class);
+        }
     };
     
     private static final JavaConverter JAVA_DOUBLE_CONVERTER = new JavaConverter(Double.class) {
@@ -543,6 +553,9 @@ public class JavaUtil {
         }
         public IRubyObject get(Ruby runtime, Object array, int i) {
             return convert(runtime, ((Double[])array)[i]);
+        }
+        public void set(Ruby runtime, Object array, int i, IRubyObject value) {
+            ((Double[])array)[i] = (Double)value.toJava(Double.class);
         }
     };
     
@@ -554,6 +567,9 @@ public class JavaUtil {
         public IRubyObject get(Ruby runtime, Object array, int i) {
             return convert(runtime, ((Character[])array)[i]);
         }
+        public void set(Ruby runtime, Object array, int i, IRubyObject value) {
+            ((Character[])array)[i] = (Character)value.toJava(Character.class);
+        }
     };
     
     private static final JavaConverter JAVA_BYTE_CONVERTER = new JavaConverter(Byte.class) {
@@ -563,6 +579,9 @@ public class JavaUtil {
         }
         public IRubyObject get(Ruby runtime, Object array, int i) {
             return convert(runtime, ((Byte[])array)[i]);
+        }
+        public void set(Ruby runtime, Object array, int i, IRubyObject value) {
+            ((Byte[])array)[i] = (Byte)value.toJava(Byte.class);
         }
     };
     
@@ -574,6 +593,9 @@ public class JavaUtil {
         public IRubyObject get(Ruby runtime, Object array, int i) {
             return convert(runtime, ((Short[])array)[i]);
         }
+        public void set(Ruby runtime, Object array, int i, IRubyObject value) {
+            ((Short[])array)[i] = (Short)value.toJava(Short.class);
+        }
     };
     
     private static final JavaConverter JAVA_INT_CONVERTER = new JavaConverter(Integer.class) {
@@ -583,6 +605,9 @@ public class JavaUtil {
         }
         public IRubyObject get(Ruby runtime, Object array, int i) {
             return convert(runtime, ((Integer[])array)[i]);
+        }
+        public void set(Ruby runtime, Object array, int i, IRubyObject value) {
+            ((Integer[])array)[i] = (Integer)value.toJava(Integer.class);
         }
     };
     
@@ -594,6 +619,9 @@ public class JavaUtil {
         public IRubyObject get(Ruby runtime, Object array, int i) {
             return convert(runtime, ((Long[])array)[i]);
         }
+        public void set(Ruby runtime, Object array, int i, IRubyObject value) {
+            ((Long[])array)[i] = (Long)value.toJava(Long.class);
+        }
     };
 
     private static final JavaConverter JAVA_BOOLEANPRIM_CONVERTER = new JavaConverter(boolean.class) {
@@ -603,6 +631,9 @@ public class JavaUtil {
         }
         public IRubyObject get(Ruby runtime, Object array, int i) {
             return RubyBoolean.newBoolean(runtime, ((boolean[])array)[i]);
+        }
+        public void set(Ruby runtime, Object array, int i, IRubyObject value) {
+            ((boolean[])array)[i] = (Boolean)value.toJava(boolean.class);
         }
     };
 
@@ -614,6 +645,9 @@ public class JavaUtil {
         public IRubyObject get(Ruby runtime, Object array, int i) {
             return RubyFloat.newFloat(runtime, ((float[])array)[i]);
         }
+        public void set(Ruby runtime, Object array, int i, IRubyObject value) {
+            ((float[])array)[i] = (Float)value.toJava(float.class);
+        }
     };
 
     private static final JavaConverter JAVA_DOUBLEPRIM_CONVERTER = new JavaConverter(double.class) {
@@ -623,6 +657,9 @@ public class JavaUtil {
         }
         public IRubyObject get(Ruby runtime, Object array, int i) {
             return RubyFloat.newFloat(runtime, ((double[])array)[i]);
+        }
+        public void set(Ruby runtime, Object array, int i, IRubyObject value) {
+            ((double[])array)[i] = (Double)value.toJava(double.class);
         }
     };
 
@@ -634,6 +671,9 @@ public class JavaUtil {
         public IRubyObject get(Ruby runtime, Object array, int i) {
             return RubyFixnum.newFixnum(runtime, ((char[])array)[i]);
         }
+        public void set(Ruby runtime, Object array, int i, IRubyObject value) {
+            ((char[])array)[i] = (Character)value.toJava(char.class);
+        }
     };
 
     private static final JavaConverter JAVA_BYTEPRIM_CONVERTER = new JavaConverter(byte.class) {
@@ -643,6 +683,9 @@ public class JavaUtil {
         }
         public IRubyObject get(Ruby runtime, Object array, int i) {
             return RubyFixnum.newFixnum(runtime, ((byte[])array)[i]);
+        }
+        public void set(Ruby runtime, Object array, int i, IRubyObject value) {
+            ((byte[])array)[i] = (Byte)value.toJava(byte.class);
         }
     };
 
@@ -654,6 +697,9 @@ public class JavaUtil {
         public IRubyObject get(Ruby runtime, Object array, int i) {
             return RubyFixnum.newFixnum(runtime, ((short[])array)[i]);
         }
+        public void set(Ruby runtime, Object array, int i, IRubyObject value) {
+            ((short[])array)[i] = (Short)value.toJava(short.class);
+        }
     };
 
     private static final JavaConverter JAVA_INTPRIM_CONVERTER = new JavaConverter(int.class) {
@@ -663,6 +709,9 @@ public class JavaUtil {
         }
         public IRubyObject get(Ruby runtime, Object array, int i) {
             return RubyFixnum.newFixnum(runtime, ((int[])array)[i]);
+        }
+        public void set(Ruby runtime, Object array, int i, IRubyObject value) {
+            ((int[])array)[i] = (Integer)value.toJava(int.class);
         }
     };
 
@@ -674,6 +723,9 @@ public class JavaUtil {
         public IRubyObject get(Ruby runtime, Object array, int i) {
             return RubyFixnum.newFixnum(runtime, ((long[])array)[i]);
         }
+        public void set(Ruby runtime, Object array, int i, IRubyObject value) {
+            ((long[])array)[i] = (Long)value.toJava(long.class);
+        }
     };
     
     private static final JavaConverter JAVA_STRING_CONVERTER = new JavaConverter(String.class) {
@@ -683,6 +735,9 @@ public class JavaUtil {
         }
         public IRubyObject get(Ruby runtime, Object array, int i) {
             return convert(runtime, ((String[])array)[i]);
+        }
+        public void set(Ruby runtime, Object array, int i, IRubyObject value) {
+            ((String[])array)[i] = (String)value.toJava(String.class);
         }
     };
     
@@ -694,6 +749,9 @@ public class JavaUtil {
         public IRubyObject get(Ruby runtime, Object array, int i) {
             return convert(runtime, ((CharSequence[])array)[i]);
         }
+        public void set(Ruby runtime, Object array, int i, IRubyObject value) {
+            ((CharSequence[])array)[i] = (CharSequence)value.toJava(CharSequence.class);
+        }
     };
     
     private static final JavaConverter BYTELIST_CONVERTER = new JavaConverter(ByteList.class) {
@@ -704,6 +762,9 @@ public class JavaUtil {
         public IRubyObject get(Ruby runtime, Object array, int i) {
             return convert(runtime, ((ByteList[])array)[i]);
         }
+        public void set(Ruby runtime, Object array, int i, IRubyObject value) {
+            ((ByteList[])array)[i] = (ByteList)value.toJava(ByteList.class);
+        }
     };
     
     private static final JavaConverter JAVA_BIGINTEGER_CONVERTER = new JavaConverter(BigInteger.class) {
@@ -713,6 +774,9 @@ public class JavaUtil {
         }
         public IRubyObject get(Ruby runtime, Object array, int i) {
             return convert(runtime, ((BigInteger[])array)[i]);
+        }
+        public void set(Ruby runtime, Object array, int i, IRubyObject value) {
+            ((BigInteger[])array)[i] = (BigInteger)value.toJava(BigInteger.class);
         }
     };
     

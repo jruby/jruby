@@ -127,6 +127,32 @@ public class JavaArray extends JavaObject {
         setWithExceptionHandling(intIndex, javaObject);
         return value;
     }
+
+    public IRubyObject asetDirect(Ruby runtime, int intIndex, IRubyObject value) {
+        Object array = getValue();
+        int length = Array.getLength(array);
+        if (intIndex < 0 || intIndex >= length) {
+            throw runtime.newArgumentError(
+                    "index out of bounds for java array (" + intIndex +
+                            " for length " + length + ")");
+        }
+        try {
+            javaConverter.set(runtime, array, intIndex, value);
+        } catch (IndexOutOfBoundsException e) {
+            throw getRuntime().newArgumentError(
+                    "index out of bounds for java array (" + intIndex +
+                            " for length " + getLength() + ")");
+        } catch (ArrayStoreException e) {
+            throw getRuntime().newTypeError(
+                    "wrong element type " + value.getClass() + "(array contains " +
+                            getValue().getClass().getComponentType().getName() + ")");
+        } catch (IllegalArgumentException iae) {
+            throw getRuntime().newArgumentError(
+                    "wrong element type " + value.getClass() + "(array contains " +
+                            getValue().getClass().getComponentType().getName() + ")");
+        }
+        return value;
+    }
     
     public void setWithExceptionHandling(int intIndex, Object javaObject) {
         try {
