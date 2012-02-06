@@ -490,7 +490,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         return isAlive() ? getRuntime().getTrue() : getRuntime().getFalse();
     }
 
-    @JRubyMethod(name = "join", optional = 1, backtrace = true)
+    @JRubyMethod(name = "join", optional = 1)
     public IRubyObject join(IRubyObject[] args) {
         Ruby runtime = getRuntime();
         long timeoutMillis = Long.MAX_VALUE;

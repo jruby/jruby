@@ -2502,7 +2502,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return append(other);
     }
 
-    @JRubyMethod(name = {"concat", "<<"}, backtrace = true, compat = RUBY1_9)
+    @JRubyMethod(name = {"concat", "<<"}, compat = RUBY1_9)
     public RubyString concat19(ThreadContext context, IRubyObject other) {
         Ruby runtime = context.getRuntime();
         if (other instanceof RubyFixnum) {

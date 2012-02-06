@@ -46,7 +46,7 @@ public class KernelJavaAddons {
         }
     }
 
-    @JRubyMethod(backtrace = true)
+    @JRubyMethod
     public static IRubyObject to_java(ThreadContext context, IRubyObject fromObject) {
         if (fromObject instanceof RubyArray) {
             return context.getRuntime().getJavaSupport().getObjectJavaClass().javaArrayFromRubyArray(context, fromObject);
@@ -55,7 +55,7 @@ public class KernelJavaAddons {
         }
     }
     
-    @JRubyMethod(backtrace = true)
+    @JRubyMethod
     public static IRubyObject to_java(ThreadContext context, IRubyObject fromObject, IRubyObject type) {
         if (type.isNil()) {
             return to_java(context, fromObject);

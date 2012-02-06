@@ -84,7 +84,7 @@ public class RubyTCPServer extends RubyTCPSocket {
     private ServerSocketChannel ssc;
     private InetSocketAddress socket_address;
 
-    @JRubyMethod(name = "initialize", required = 1, optional = 1, visibility = Visibility.PRIVATE, backtrace = true)
+    @JRubyMethod(name = "initialize", required = 1, optional = 1, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
         IRubyObject hostname = args[0];

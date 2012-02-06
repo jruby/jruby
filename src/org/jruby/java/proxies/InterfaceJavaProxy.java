@@ -43,7 +43,7 @@ public class InterfaceJavaProxy extends JavaProxy {
     }
 
     public static class JavaInterfaceExtender {
-        @JRubyMethod(backtrace = true)
+        @JRubyMethod
         public static IRubyObject initialize(ThreadContext context, IRubyObject self, IRubyObject javaClassName, Block block) {
             Ruby runtime = context.getRuntime();
             
@@ -53,7 +53,7 @@ public class InterfaceJavaProxy extends JavaProxy {
             return runtime.getNil();
         }
 
-        @JRubyMethod(backtrace = true)
+        @JRubyMethod
         public static IRubyObject extend_proxy(ThreadContext context, IRubyObject self, IRubyObject proxyClass) {
             return proxyClass.callMethod(context, "class_eval", IRubyObject.NULL_ARRAY,
                     ((RubyProc)self.getInstanceVariables().getInstanceVariable("@block")).getBlock());

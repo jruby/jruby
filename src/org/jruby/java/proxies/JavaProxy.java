@@ -276,7 +276,7 @@ public class JavaProxy extends RubyObject {
         return runtime.getFalse();
     }
 
-    @JRubyMethod(backtrace = true)
+    @JRubyMethod
     public IRubyObject java_send(ThreadContext context, IRubyObject rubyName) {
         String name = rubyName.asJavaString();
         Ruby runtime = context.getRuntime();
@@ -285,7 +285,7 @@ public class JavaProxy extends RubyObject {
         return method.invokeDirect(getObject());
     }
 
-    @JRubyMethod(backtrace = true)
+    @JRubyMethod
     public IRubyObject java_send(ThreadContext context, IRubyObject rubyName, IRubyObject argTypes) {
         String name = rubyName.asJavaString();
         RubyArray argTypesAry = argTypes.convertToArray();
@@ -300,7 +300,7 @@ public class JavaProxy extends RubyObject {
         return method.invokeDirect(getObject());
     }
 
-    @JRubyMethod(backtrace = true)
+    @JRubyMethod
     public IRubyObject java_send(ThreadContext context, IRubyObject rubyName, IRubyObject argTypes, IRubyObject arg0) {
         String name = rubyName.asJavaString();
         RubyArray argTypesAry = argTypes.convertToArray();
@@ -317,7 +317,7 @@ public class JavaProxy extends RubyObject {
         return method.invokeDirect(getObject(), arg0.toJava(argTypeClass));
     }
 
-    @JRubyMethod(required = 4, rest = true, backtrace = true)
+    @JRubyMethod(required = 4, rest = true)
     public IRubyObject java_send(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.getRuntime();
         
@@ -341,14 +341,14 @@ public class JavaProxy extends RubyObject {
         return method.invokeDirect(getObject(), argsAry);
     }
 
-    @JRubyMethod(backtrace = true)
+    @JRubyMethod
     public IRubyObject java_method(ThreadContext context, IRubyObject rubyName) {
         String name = rubyName.asJavaString();
 
         return getRubyMethod(name);
     }
 
-    @JRubyMethod(backtrace = true)
+    @JRubyMethod
     public IRubyObject java_method(ThreadContext context, IRubyObject rubyName, IRubyObject argTypes) {
         String name = rubyName.asJavaString();
         RubyArray argTypesAry = argTypes.convertToArray();

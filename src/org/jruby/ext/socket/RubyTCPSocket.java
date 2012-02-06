@@ -90,7 +90,7 @@ public class RubyTCPSocket extends RubyIPSocket {
         return RubyNumeric.fix2int(arg);
     }
 
-    @JRubyMethod(required = 2, optional = 2, visibility = Visibility.PRIVATE, backtrace = true)
+    @JRubyMethod(required = 2, optional = 2, visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
         String remoteHost = args[0].isNil()? "localhost" : args[0].convertToString().toString();

@@ -548,14 +548,14 @@ public class Java implements Library {
     }
 
     public static class JavaProxyClassMethods {
-        @JRubyMethod(backtrace = true, meta = true)
+        @JRubyMethod(meta = true)
         public static IRubyObject java_method(ThreadContext context, IRubyObject proxyClass, IRubyObject rubyName) {
             String name = rubyName.asJavaString();
 
             return getRubyMethod(context, proxyClass, name);
         }
 
-        @JRubyMethod(backtrace = true, meta = true)
+        @JRubyMethod(meta = true)
         public static IRubyObject java_method(ThreadContext context, IRubyObject proxyClass, IRubyObject rubyName, IRubyObject argTypes) {
             String name = rubyName.asJavaString();
             RubyArray argTypesAry = argTypes.convertToArray();
@@ -564,7 +564,7 @@ public class Java implements Library {
             return getRubyMethod(context, proxyClass, name, argTypesClasses);
         }
 
-        @JRubyMethod(backtrace = true, meta = true)
+        @JRubyMethod(meta = true)
         public static IRubyObject java_send(ThreadContext context, IRubyObject recv, IRubyObject rubyName) {
             String name = rubyName.asJavaString();
             Ruby runtime = context.getRuntime();
@@ -573,7 +573,7 @@ public class Java implements Library {
             return method.invokeStaticDirect();
         }
 
-        @JRubyMethod(backtrace = true, meta = true)
+        @JRubyMethod(meta = true)
         public static IRubyObject java_send(ThreadContext context, IRubyObject recv, IRubyObject rubyName, IRubyObject argTypes) {
             String name = rubyName.asJavaString();
             RubyArray argTypesAry = argTypes.convertToArray();
@@ -588,7 +588,7 @@ public class Java implements Library {
             return method.invokeStaticDirect();
         }
 
-        @JRubyMethod(backtrace = true, meta = true)
+        @JRubyMethod(meta = true)
         public static IRubyObject java_send(ThreadContext context, IRubyObject recv, IRubyObject rubyName, IRubyObject argTypes, IRubyObject arg0) {
             String name = rubyName.asJavaString();
             RubyArray argTypesAry = argTypes.convertToArray();
@@ -604,7 +604,7 @@ public class Java implements Library {
             return method.invokeStaticDirect(arg0.toJava(argTypeClass));
         }
 
-        @JRubyMethod(required = 4, rest = true, backtrace = true, meta = true)
+        @JRubyMethod(required = 4, rest = true, meta = true)
         public static IRubyObject java_send(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
             Ruby runtime = context.getRuntime();
 
@@ -627,12 +627,12 @@ public class Java implements Library {
             return method.invokeStaticDirect(argsAry);
         }
 
-        @JRubyMethod(backtrace = true, meta = true, visibility = PRIVATE)
+        @JRubyMethod(meta = true, visibility = PRIVATE)
         public static IRubyObject java_alias(ThreadContext context, IRubyObject proxyClass, IRubyObject newName, IRubyObject rubyName) {
             return java_alias(context, proxyClass, newName, rubyName, context.getRuntime().newEmptyArray());
         }
 
-        @JRubyMethod(backtrace = true, meta = true, visibility = PRIVATE)
+        @JRubyMethod(meta = true, visibility = PRIVATE)
         public static IRubyObject java_alias(ThreadContext context, IRubyObject proxyClass, IRubyObject newName, IRubyObject rubyName, IRubyObject argTypes) {
             String name = rubyName.asJavaString();
             String newNameStr = newName.asJavaString();
@@ -941,7 +941,7 @@ public class Java implements Library {
                     // we'll try as a package
                     return getJavaPackageModule(runtime, fullName);
                 } else {
-                    throw runtime.newNameError("capitalized package or class not found (`" + fullName + "')", fullName);
+                    throw runtime.newNameError("uppercase package names not accessible this way (`" + fullName + "')", fullName);
                 }
             }
 

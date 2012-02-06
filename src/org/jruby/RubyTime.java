@@ -599,7 +599,7 @@ public class RubyTime extends RubyObject {
         return getRuntime().newFixnum(0);
     }
 
-    @JRubyMethod(name = "to_r", backtrace = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "to_r", compat = CompatVersion.RUBY1_9)
     public IRubyObject to_r(ThreadContext context) {
         IRubyObject rational = to_f().to_r(context);
         if (rational instanceof RubyRational) {
@@ -805,7 +805,7 @@ public class RubyTime extends RubyObject {
         return RubyProcess.times(context, recv, Block.NULL_BLOCK);
     }
 
-    @JRubyMethod(name = "now", backtrace = true, meta = true)
+    @JRubyMethod(name = "now", meta = true)
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv) {
         IRubyObject obj = ((RubyClass) recv).allocate();
         obj.getMetaClass().getBaseCallSites()[RubyClass.CS_IDX_INITIALIZE].call(context, recv, obj);

@@ -70,6 +70,7 @@ public @interface JRubyMethod {
     /**
      * Whether to use a frame slot for backtrace information
      */
+    @Deprecated
     boolean backtrace() default false;
     /**
      * What, if anything, method reads from caller's frame

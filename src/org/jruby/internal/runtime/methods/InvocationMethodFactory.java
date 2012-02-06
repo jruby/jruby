@@ -590,7 +590,6 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         private int max;
         private boolean frame;
         private boolean scope;
-        private boolean backtrace;
         private boolean rest;
         private boolean block;
         
@@ -599,7 +598,6 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             max = 0;
             frame = false;
             scope = false;
-            backtrace = false;
             rest = false;
             block = false;
             boolean first = true;
@@ -656,13 +654,13 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
                 frame |= desc.anno.frame();
                 scope |= desc.anno.scope();
-                backtrace |= desc.anno.backtrace();
                 block |= desc.hasBlock;
             }
         }
-        
+
+        @Deprecated
         public boolean isBacktrace() {
-            return backtrace;
+            return false;
         }
 
         public boolean isFrame() {
@@ -716,7 +714,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                         Arity.optional().getValue(),
                         javaMethodName,
                         desc1.isStatic,
-                        CallConfiguration.getCallConfig(info.isFrame(), info.isScope(), info.isBacktrace()),
+                        CallConfiguration.getCallConfig(info.isFrame(), info.isScope()),
                         desc1.anno.notImplemented(),
                         desc1.getDeclaringClass(),
                         desc1.name,

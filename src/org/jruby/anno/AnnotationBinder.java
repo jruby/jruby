@@ -561,10 +561,10 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
         }
     
         public static String getCallConfigNameByAnno(JRubyMethod anno) {
-            return getCallConfigName(anno.frame(), anno.scope(), anno.backtrace());
+            return getCallConfigName(anno.frame(), anno.scope());
         }
 
-        public static String getCallConfigName(boolean frame, boolean scope, boolean backtrace) {
+        public static String getCallConfigName(boolean frame, boolean scope) {
             if (frame) {
                 if (scope) {
                     return "FrameFullScopeFull";
@@ -572,13 +572,7 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                     return "FrameFullScopeNone";
                 }
             } else if (scope) {
-                if (backtrace) {
-                    return "FrameBacktraceScopeFull";
-                } else {
-                    return "FrameNoneScopeFull";
-                }
-            } else if (backtrace) {
-                return "FrameBacktraceScopeNone";
+                return "FrameNoneScopeFull";
             } else {
                 return "FrameNoneScopeNone";
             }

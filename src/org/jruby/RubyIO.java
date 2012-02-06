@@ -1596,7 +1596,7 @@ public class RubyIO extends RubyObject {
         return context.getRuntime().getNil();
     }
 
-    @JRubyMethod(name = "putc", required = 1, backtrace = true)
+    @JRubyMethod(name = "putc", required = 1)
     public IRubyObject putc(ThreadContext context, IRubyObject object) {
         return putc(context, this, object);
     }
@@ -2513,7 +2513,7 @@ public class RubyIO extends RubyObject {
         }
     }
 
-    @JRubyMethod(name = "read_nonblock", required = 1, optional = 1, backtrace = true)
+    @JRubyMethod(name = "read_nonblock", required = 1, optional = 1)
     public IRubyObject read_nonblock(ThreadContext context, IRubyObject[] args) {
         IRubyObject value = getPartial(context, args, true);
 
@@ -4013,7 +4013,7 @@ public class RubyIO extends RubyObject {
         }
     }
 
-    @JRubyMethod(name = "try_convert", meta = true, backtrace = true, compat = RUBY1_9)
+    @JRubyMethod(name = "try_convert", meta = true, compat = RUBY1_9)
     public static IRubyObject tryConvert(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         return arg.respondsTo("to_io") ? convertToIO(context, arg) : context.getRuntime().getNil();
     }

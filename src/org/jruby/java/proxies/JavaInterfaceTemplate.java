@@ -43,7 +43,7 @@ public class JavaInterfaceTemplate {
     // OLD TODO from Ruby code:
     // This should be implemented in JavaClass.java, where we can
     // check for reserved Ruby names, conflicting methods, etc.
-    @JRubyMethod(backtrace = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(visibility = Visibility.PRIVATE)
     public static IRubyObject implement(ThreadContext context, IRubyObject self, IRubyObject clazz) {
         Ruby runtime = context.getRuntime();
 
@@ -331,12 +331,12 @@ public class JavaInterfaceTemplate {
         return singleton;
     }
 
-    @JRubyMethod(name = "[]", rest = true, backtrace = true)
+    @JRubyMethod(name = "[]", rest = true)
     public static IRubyObject op_aref(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         return JavaProxy.op_aref(context, self, args);
     }
 
-    @JRubyMethod(rest = true, backtrace = true)
+    @JRubyMethod(rest = true)
     public static IRubyObject impl(ThreadContext context, IRubyObject self, IRubyObject[] args, final Block implBlock) {
         Ruby runtime = context.getRuntime();
 
@@ -366,7 +366,7 @@ public class JavaInterfaceTemplate {
         return implObject;
     }
 
-    @JRubyMethod(name = "new", rest = true, backtrace = true)
+    @JRubyMethod(name = "new", rest = true)
     public static IRubyObject rbNew(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
         Ruby runtime = context.getRuntime();
 

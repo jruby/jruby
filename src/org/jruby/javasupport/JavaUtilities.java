@@ -49,7 +49,7 @@ public class JavaUtilities {
         return Java.get_top_level_proxy_or_package(context, recv, arg0);
     }
 
-    @JRubyMethod(module = true, backtrace = true, visibility = Visibility.PRIVATE)
+    @JRubyMethod(module = true, visibility = Visibility.PRIVATE)
     public static IRubyObject get_proxy_or_package_under_package(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
         return Java.get_proxy_or_package_under_package(context, recv, arg0, arg1);
     }

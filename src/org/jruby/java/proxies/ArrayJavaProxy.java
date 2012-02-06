@@ -51,17 +51,17 @@ public class ArrayJavaProxy extends JavaProxy {
         return (JavaArray)dataGetStruct();
     }
     
-    @JRubyMethod(name = {"length","size"}, backtrace = true)
+    @JRubyMethod(name = {"length","size"})
     public IRubyObject length() {
         return getJavaArray().length();
     }
 
-    @JRubyMethod(name = "empty?", backtrace = true)
+    @JRubyMethod(name = "empty?")
     public IRubyObject empty(ThreadContext context) {
         return RubyFixnum.zero(context.getRuntime()).eql_p(getJavaArray().length());
     }
     
-    @JRubyMethod(name = "[]", backtrace = true)
+    @JRubyMethod(name = "[]")
     public IRubyObject op_aref(ThreadContext context, IRubyObject arg) {
         if (arg instanceof RubyInteger) {
             int index = (int)((RubyInteger)arg).getLongValue();
@@ -71,7 +71,7 @@ public class ArrayJavaProxy extends JavaProxy {
         }
     }
 
-    @JRubyMethod(name = "[]", required = 1, rest = true, backtrace = true)
+    @JRubyMethod(name = "[]", required = 1, rest = true)
     public IRubyObject op_aref(ThreadContext context, IRubyObject[] args) {
         if (args.length == 1 && args[0] instanceof RubyInteger) {
             int index = (int)((RubyInteger)args[0]).getLongValue();
@@ -81,14 +81,14 @@ public class ArrayJavaProxy extends JavaProxy {
         }
     }
     
-    @JRubyMethod(name = "[]=", backtrace = true)
+    @JRubyMethod(name = "[]=")
     public IRubyObject op_aset(ThreadContext context, IRubyObject index, IRubyObject value) {
         Object converted = value.toJava(getJavaArray().getComponentType());
         getJavaArray().setWithExceptionHandling((int)index.convertToInteger().getLongValue(), converted);
         return value;
     }
     
-    @JRubyMethod(backtrace = true)
+    @JRubyMethod
     public IRubyObject at(ThreadContext context, IRubyObject indexObj) {
         RubyFixnum lengthF = getJavaArray().length();
         RubyInteger indexI = indexObj.convertToInteger();
@@ -105,7 +105,7 @@ public class ArrayJavaProxy extends JavaProxy {
         }
     }
     
-    @JRubyMethod(name = "+", backtrace = true)
+    @JRubyMethod(name = "+")
     public IRubyObject op_plus(ThreadContext context, IRubyObject other) {
         JavaClass arrayClass = JavaClass.get(context.getRuntime(), getJavaArray().getComponentType());
         if (other instanceof ArrayJavaProxy) {
@@ -118,7 +118,7 @@ public class ArrayJavaProxy extends JavaProxy {
         return arrayClass.concatArrays(context, getJavaArray(), other);
     }
     
-    @JRubyMethod(backtrace = true)
+    @JRubyMethod
     public IRubyObject each(ThreadContext context, Block block) {
         int length = (int)getJavaArray().length().getLongValue();
         for (int i = 0; i < length; i++) {
@@ -129,7 +129,7 @@ public class ArrayJavaProxy extends JavaProxy {
         return this;
     }
     
-    @JRubyMethod(name = {"to_a","to_ary"}, backtrace = true)
+    @JRubyMethod(name = {"to_a","to_ary"})
     public IRubyObject to_a(ThreadContext context) {
         return JavaUtil.convertJavaArrayToRubyWithNesting(context, this.getObject());
     }

@@ -635,7 +635,7 @@ public class RubyRandom extends RubyObject {
     }
 
     // c: random_dump
-    @JRubyMethod(name = "marshal_dump", backtrace = true, compat = RUBY1_9)
+    @JRubyMethod(name = "marshal_dump", compat = RUBY1_9)
     public IRubyObject marshal_dump(ThreadContext context) {
         RubyBignum state = random.getState();
         RubyInteger left = (RubyInteger) RubyNumeric.int2fix(context.runtime, random.getLeft());

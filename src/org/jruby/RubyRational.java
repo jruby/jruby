@@ -580,7 +580,7 @@ public class RubyRational extends RubyNumeric {
     /** nurat_div
      * 
      */
-    @JRubyMethod(name = {"/", "quo"}, backtrace = true)
+    @JRubyMethod(name = {"/", "quo"})
     public IRubyObject op_div(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyFixnum || other instanceof RubyBignum) {
             if (f_zero_p(context, other)) throw context.getRuntime().newZeroDivisionError();
@@ -598,7 +598,7 @@ public class RubyRational extends RubyNumeric {
     /** nurat_fdiv
      * 
      */
-    @JRubyMethod(name = "fdiv", backtrace = true)
+    @JRubyMethod(name = "fdiv")
     public IRubyObject op_fdiv(ThreadContext context, IRubyObject other) {
         return f_div(context, f_to_f(context, this), other);
     }
@@ -691,7 +691,7 @@ public class RubyRational extends RubyNumeric {
     /** nurat_coerce
      * 
      */
-    @JRubyMethod(name = "coerce", backtrace = true)
+    @JRubyMethod(name = "coerce")
     public IRubyObject op_coerce(ThreadContext context, IRubyObject other) {
         Ruby runtime = context.getRuntime();
         if (other instanceof RubyFixnum || other instanceof RubyBignum) {
@@ -707,12 +707,12 @@ public class RubyRational extends RubyNumeric {
     /** nurat_idiv
      * 
      */
-    @JRubyMethod(name = "div", backtrace = true, compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(name = "div", compat = CompatVersion.RUBY1_8)
     public IRubyObject op_idiv(ThreadContext context, IRubyObject other) {
         return f_floor(context, f_div(context, this, other));
     }
 
-    @JRubyMethod(name = "div", backtrace = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "div", compat = CompatVersion.RUBY1_9)
     public IRubyObject op_idiv19(ThreadContext context, IRubyObject other) {
         if (num2dbl(other) == 0.0) {
             throw context.getRuntime().newZeroDivisionError();
@@ -723,13 +723,13 @@ public class RubyRational extends RubyNumeric {
     /** nurat_mod
      * 
      */
-    @JRubyMethod(name = {"modulo", "%"}, backtrace = true, compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(name = {"modulo", "%"}, compat = CompatVersion.RUBY1_8)
     public IRubyObject op_mod(ThreadContext context, IRubyObject other) {
         IRubyObject val = f_floor(context, f_div(context, this, other));
         return f_sub(context, this, f_mul(context, other, val));
     }
 
-    @JRubyMethod(name = {"modulo", "%"}, backtrace = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = {"modulo", "%"}, compat = CompatVersion.RUBY1_9)
     public IRubyObject op_mod19(ThreadContext context, IRubyObject other) {
         if (num2dbl(other) == 0.0) {
             throw context.getRuntime().newZeroDivisionError();
@@ -740,13 +740,13 @@ public class RubyRational extends RubyNumeric {
     /** nurat_divmod
      * 
      */
-    @JRubyMethod(name = "divmod", backtrace = true, compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(name = "divmod", compat = CompatVersion.RUBY1_8)
     public IRubyObject op_divmod(ThreadContext context, IRubyObject other) {
         IRubyObject val = f_floor(context, f_div(context, this, other)); 
         return context.getRuntime().newArray(val, f_sub(context, this, f_mul(context, other, val)));
     }
 
-    @JRubyMethod(name = "divmod", backtrace = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "divmod", compat = CompatVersion.RUBY1_9)
     public IRubyObject op_divmod19(ThreadContext context, IRubyObject other) {
         if (num2dbl(other) == 0.0) {
             throw context.getRuntime().newZeroDivisionError();
@@ -1004,7 +1004,7 @@ public class RubyRational extends RubyNumeric {
     /** nurat_marshal_load
      * 
      */
-    @JRubyMethod(name = "marshal_load", backtrace = true)
+    @JRubyMethod(name = "marshal_load")
     public IRubyObject marshal_load(ThreadContext context, IRubyObject arg) {
         RubyArray load = arg.convertToArray();
         num = load.size() > 0 ? load.eltInternal(0) : context.getRuntime().getNil();

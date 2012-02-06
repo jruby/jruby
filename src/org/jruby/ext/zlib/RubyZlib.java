@@ -382,7 +382,7 @@ public class RubyZlib {
             return getRuntime().newFixnum(internalAdler());
         }
 
-        @JRubyMethod(name = "finish", backtrace = true)
+        @JRubyMethod(name = "finish")
         public IRubyObject finish(ThreadContext context) {
             checkClosed();
             IRubyObject result = internalFinish();
@@ -491,7 +491,7 @@ public class RubyZlib {
             super(runtime, type);
         }
 
-        @JRubyMethod(name = "inflate", required = 1, meta = true, backtrace = true)
+        @JRubyMethod(name = "inflate", required = 1, meta = true)
         public static IRubyObject s_inflate(ThreadContext context, IRubyObject recv, IRubyObject string) {
             RubyClass klass = (RubyClass) recv;
             JZlibInflate inflate = (JZlibInflate) klass.allocate();
@@ -581,7 +581,7 @@ public class RubyZlib {
             }
         }
 
-        @JRubyMethod(name = "set_dictionary", required = 1, backtrace = true)
+        @JRubyMethod(name = "set_dictionary", required = 1)
         public IRubyObject set_dictionary(ThreadContext context, IRubyObject arg) {
             try {
                 return set_dictionary(arg);
@@ -604,7 +604,7 @@ public class RubyZlib {
             return str;
         }
 
-        @JRubyMethod(name = "inflate", required = 1, backtrace = true)
+        @JRubyMethod(name = "inflate", required = 1)
         public IRubyObject inflate(ThreadContext context, IRubyObject string) {
             ByteList data = null;
             if (!string.isNil()) {
@@ -791,7 +791,7 @@ public class RubyZlib {
         private com.jcraft.jzlib.Deflater flater = null;
         private int flush = JZlib.Z_NO_FLUSH;
 
-        @JRubyMethod(name = "deflate", required = 1, optional = 1, meta = true, backtrace = true)
+        @JRubyMethod(name = "deflate", required = 1, optional = 1, meta = true)
         public static IRubyObject s_deflate(IRubyObject recv, IRubyObject[] args) {
             Ruby runtime = recv.getRuntime();
             args = Arity.scanArgs(runtime, args, 1, 1);
@@ -818,7 +818,7 @@ public class RubyZlib {
             super(runtime, type);
         }
 
-        @JRubyMethod(name = "initialize", optional = 4, visibility = PRIVATE, backtrace = true)
+        @JRubyMethod(name = "initialize", optional = 4, visibility = PRIVATE)
         public IRubyObject _initialize(IRubyObject[] args) {
             args = Arity.scanArgs(getRuntime(), args, 0, 4);
             level = -1;
@@ -922,7 +922,7 @@ public class RubyZlib {
             return getRuntime().getNil();
         }
 
-        @JRubyMethod(name = "set_dictionary", required = 1, backtrace = true)
+        @JRubyMethod(name = "set_dictionary", required = 1)
         public IRubyObject set_dictionary(ThreadContext context, IRubyObject arg) {
             try {
                 byte [] tmp = arg.convertToString().getBytes();

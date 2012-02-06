@@ -1577,7 +1577,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return runtime.newFixnum(count);
     }
 
-    @JRubyMethod(required = 2, meta = true, backtrace = true)
+    @JRubyMethod(required = 2, meta = true)
     public static IRubyObject link(ThreadContext context, IRubyObject recv, IRubyObject from, IRubyObject to) {
         Ruby runtime = context.getRuntime();
         RubyString fromStr = RubyString.stringValue(from);
@@ -1807,7 +1807,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return runtime.newFixnum(args.length);
     }
 
-    @JRubyMethod(name = "size", backtrace = true, compat = RUBY1_9)
+    @JRubyMethod(name = "size", compat = RUBY1_9)
     public IRubyObject size(ThreadContext context) {
         Ruby runtime = context.getRuntime();
         if ((openFile.getMode() & OpenFile.WRITABLE) != 0) {

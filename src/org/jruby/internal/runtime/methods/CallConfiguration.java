@@ -112,10 +112,15 @@ public enum CallConfiguration {
     public static final CallConfiguration NO_FRAME_NO_SCOPE = FrameNoneScopeNone;
     
     public static CallConfiguration getCallConfigByAnno(JRubyMethod anno) {
-        return getCallConfig(anno.frame(), anno.scope(), anno.backtrace());
+        return getCallConfig(anno.frame(), anno.scope());
+    }
+
+    @Deprecated
+    public static CallConfiguration getCallConfig(boolean frame, boolean scope, boolean backtrace) {
+        return getCallConfig(frame, scope);
     }
     
-    public static CallConfiguration getCallConfig(boolean frame, boolean scope, boolean backtrace) {
+    public static CallConfiguration getCallConfig(boolean frame, boolean scope) {
         if (frame) {
             if (scope) {
                 return FrameFullScopeFull;
