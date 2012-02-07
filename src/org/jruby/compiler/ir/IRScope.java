@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.compiler.ir.compiler_pass.CFGBuilder;
@@ -39,7 +38,6 @@ import org.jruby.compiler.ir.representations.BasicBlock;
 import org.jruby.compiler.ir.representations.CFG;
 import org.jruby.compiler.ir.representations.CFGInliner;
 import org.jruby.compiler.ir.representations.CFGLinearizer;
-import org.jruby.parser.IRStaticScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -119,7 +117,7 @@ public abstract class IRScope {
 
     /** Map of name -> dataflow problem */
     private Map<String, DataFlowProblem> dfProbs = new HashMap<String, DataFlowProblem>();
-
+    
     private Instr[] linearizedInstrArray = null;
     private List<BasicBlock> linearizedBBList = null;
     private int scopeExitPC = -1;
@@ -215,8 +213,12 @@ public abstract class IRScope {
     /** Does this scope have loops? */
     private boolean hasLoops;
     
-    public IRScope(IRScope lexicalParent, String name, String fileName, int lineNumber, StaticScope staticScope) {
+    private IRManager manager;
+    
+    public IRScope(IRManager manager, IRScope lexicalParent, String name, 
+            String fileName, int lineNumber, StaticScope staticScope) {
         synchronized(globalScopeCount) { this.scopeId = globalScopeCount++; }
+        this.manager = manager;
         this.lexicalParent = lexicalParent;        
         this.name = name;
         this.fileName = fileName;
@@ -276,6 +278,10 @@ public abstract class IRScope {
 
     public List<IRClosure> getClosures() {
         return closures;
+    }
+    
+    public IRManager getManager() {
+        return manager;
     }
     
     /**

@@ -4,17 +4,18 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Stack;
 import java.util.Map;
-import java.util.Date;
-
+import java.util.Stack;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.ast.AliasNode;
 import org.jruby.ast.AndNode;
+import org.jruby.ast.ArgsCatNode;
 import org.jruby.ast.ArgsNode;
+import org.jruby.ast.ArgsPushNode;
 import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.ArrayNode;
 import org.jruby.ast.AttrAssignNode;
@@ -22,18 +23,27 @@ import org.jruby.ast.BackRefNode;
 import org.jruby.ast.BeginNode;
 import org.jruby.ast.BignumNode;
 import org.jruby.ast.BlockNode;
+import org.jruby.ast.BlockPassNode;
 import org.jruby.ast.BreakNode;
 import org.jruby.ast.CallNode;
+import org.jruby.ast.CaseNode;
+import org.jruby.ast.ClassNode;
 import org.jruby.ast.ClassVarAsgnNode;
+import org.jruby.ast.ClassVarDeclNode;
 import org.jruby.ast.ClassVarNode;
+import org.jruby.ast.Colon2ConstNode;
+import org.jruby.ast.Colon2MethodNode;
 import org.jruby.ast.Colon2Node;
 import org.jruby.ast.Colon3Node;
 import org.jruby.ast.ConstDeclNode;
 import org.jruby.ast.ConstNode;
 import org.jruby.ast.DAsgnNode;
+import org.jruby.ast.DRegexpNode;
 import org.jruby.ast.DStrNode;
 import org.jruby.ast.DVarNode;
+import org.jruby.ast.DXStrNode;
 import org.jruby.ast.DefinedNode;
+import org.jruby.ast.DefsNode;
 import org.jruby.ast.DotNode;
 import org.jruby.ast.EnsureNode;
 import org.jruby.ast.EvStrNode;
@@ -41,6 +51,7 @@ import org.jruby.ast.FCallNode;
 import org.jruby.ast.FixnumNode;
 import org.jruby.ast.FlipNode;
 import org.jruby.ast.FloatNode;
+import org.jruby.ast.ForNode;
 import org.jruby.ast.GlobalAsgnNode;
 import org.jruby.ast.GlobalVarNode;
 import org.jruby.ast.HashNode;
@@ -49,12 +60,15 @@ import org.jruby.ast.InstAsgnNode;
 import org.jruby.ast.InstVarNode;
 import org.jruby.ast.IterNode;
 import org.jruby.ast.ListNode;
+import org.jruby.ast.LiteralNode;
 import org.jruby.ast.LocalAsgnNode;
 import org.jruby.ast.LocalVarNode;
 import org.jruby.ast.Match2Node;
 import org.jruby.ast.Match3Node;
 import org.jruby.ast.MatchNode;
 import org.jruby.ast.MethodDefNode;
+import org.jruby.ast.ModuleNode;
+import org.jruby.ast.MultipleAsgnNode;
 import org.jruby.ast.NewlineNode;
 import org.jruby.ast.NextNode;
 import org.jruby.ast.Node;
@@ -62,49 +76,34 @@ import org.jruby.ast.NodeType;
 import org.jruby.ast.NotNode;
 import org.jruby.ast.NthRefNode;
 import org.jruby.ast.OpAsgnAndNode;
+import org.jruby.ast.OpAsgnNode;
 import org.jruby.ast.OpAsgnOrNode;
+import org.jruby.ast.OpElementAsgnNode;
 import org.jruby.ast.OrNode;
+import org.jruby.ast.PostExeNode;
+import org.jruby.ast.PreExeNode;
 import org.jruby.ast.RegexpNode;
+import org.jruby.ast.RescueBodyNode;
+import org.jruby.ast.RescueNode;
 import org.jruby.ast.ReturnNode;
 import org.jruby.ast.RootNode;
 import org.jruby.ast.SClassNode;
 import org.jruby.ast.SValueNode;
+import org.jruby.ast.SelfNode;
 import org.jruby.ast.SplatNode;
+import org.jruby.ast.StarNode;
 import org.jruby.ast.StrNode;
 import org.jruby.ast.SuperNode;
 import org.jruby.ast.SymbolNode;
+import org.jruby.ast.ToAryNode;
 import org.jruby.ast.UndefNode;
+import org.jruby.ast.UntilNode;
 import org.jruby.ast.VAliasNode;
 import org.jruby.ast.VCallNode;
-import org.jruby.ast.WhileNode;
-import org.jruby.ast.YieldNode;
-import org.jruby.ast.ArgsCatNode;
-import org.jruby.ast.ArgsPushNode;
-import org.jruby.ast.BlockPassNode;
-import org.jruby.ast.CaseNode;
-import org.jruby.ast.ClassNode;
-import org.jruby.ast.ClassVarDeclNode;
-import org.jruby.ast.Colon2ConstNode;
-import org.jruby.ast.Colon2MethodNode;
-import org.jruby.ast.DRegexpNode;
-import org.jruby.ast.RescueNode;
-import org.jruby.ast.RescueBodyNode;
-import org.jruby.ast.DXStrNode;
-import org.jruby.ast.DefsNode;
-import org.jruby.ast.ForNode;
-import org.jruby.ast.LiteralNode;
-import org.jruby.ast.ModuleNode;
-import org.jruby.ast.MultipleAsgnNode;
-import org.jruby.ast.OpAsgnNode;
-import org.jruby.ast.OpElementAsgnNode;
-import org.jruby.ast.PreExeNode;
-import org.jruby.ast.PostExeNode;
-import org.jruby.ast.SelfNode;
-import org.jruby.ast.StarNode;
-import org.jruby.ast.ToAryNode;
-import org.jruby.ast.UntilNode;
 import org.jruby.ast.WhenNode;
+import org.jruby.ast.WhileNode;
 import org.jruby.ast.XStrNode;
+import org.jruby.ast.YieldNode;
 import org.jruby.ast.ZSuperNode;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.compiler.ir.compiler_pass.CFGBuilder;
@@ -120,31 +119,31 @@ import org.jruby.compiler.ir.instructions.BEQInstr;
 import org.jruby.compiler.ir.instructions.BNEInstr;
 import org.jruby.compiler.ir.instructions.BreakInstr;
 import org.jruby.compiler.ir.instructions.CallInstr;
-import org.jruby.compiler.ir.instructions.ConstMissingInstr;
 import org.jruby.compiler.ir.instructions.ClosureReturnInstr;
+import org.jruby.compiler.ir.instructions.ConstMissingInstr;
 import org.jruby.compiler.ir.instructions.CopyInstr;
 import org.jruby.compiler.ir.instructions.DefineClassInstr;
 import org.jruby.compiler.ir.instructions.DefineClassMethodInstr;
-import org.jruby.compiler.ir.instructions.DefineMetaClassInstr;
 import org.jruby.compiler.ir.instructions.DefineInstanceMethodInstr;
+import org.jruby.compiler.ir.instructions.DefineMetaClassInstr;
 import org.jruby.compiler.ir.instructions.DefineModuleInstr;
 import org.jruby.compiler.ir.instructions.EQQInstr;
 import org.jruby.compiler.ir.instructions.EnsureRubyArrayInstr;
-import org.jruby.compiler.ir.instructions.ExceptionRegionStartMarkerInstr;
 import org.jruby.compiler.ir.instructions.ExceptionRegionEndMarkerInstr;
+import org.jruby.compiler.ir.instructions.ExceptionRegionStartMarkerInstr;
 import org.jruby.compiler.ir.instructions.GVarAliasInstr;
 import org.jruby.compiler.ir.instructions.GetArrayInstr;
-import org.jruby.compiler.ir.instructions.InstanceOfInstr;
-import org.jruby.compiler.ir.instructions.GetClassVariableInstr;
 import org.jruby.compiler.ir.instructions.GetClassVarContainerModuleInstr;
+import org.jruby.compiler.ir.instructions.GetClassVariableInstr;
 import org.jruby.compiler.ir.instructions.GetFieldInstr;
 import org.jruby.compiler.ir.instructions.GetGlobalVariableInstr;
 import org.jruby.compiler.ir.instructions.InheritanceSearchConstInstr;
+import org.jruby.compiler.ir.instructions.InstanceOfInstr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.JRubyImplCallInstr;
 import org.jruby.compiler.ir.instructions.JRubyImplCallInstr.JRubyImplementationMethod;
-import org.jruby.compiler.ir.instructions.JumpInstr;
 import org.jruby.compiler.ir.instructions.JumpIndirectInstr;
+import org.jruby.compiler.ir.instructions.JumpInstr;
 import org.jruby.compiler.ir.instructions.LabelInstr;
 import org.jruby.compiler.ir.instructions.LexicalSearchConstInstr;
 import org.jruby.compiler.ir.instructions.LineNumberInstr;
@@ -152,16 +151,14 @@ import org.jruby.compiler.ir.instructions.Match2Instr;
 import org.jruby.compiler.ir.instructions.Match3Instr;
 import org.jruby.compiler.ir.instructions.MatchInstr;
 import org.jruby.compiler.ir.instructions.NotInstr;
-import org.jruby.compiler.ir.instructions.PutConstInstr;
 import org.jruby.compiler.ir.instructions.PutClassVariableInstr;
+import org.jruby.compiler.ir.instructions.PutConstInstr;
 import org.jruby.compiler.ir.instructions.PutFieldInstr;
 import org.jruby.compiler.ir.instructions.PutGlobalVarInstr;
-import org.jruby.compiler.ir.instructions.ReceiveSelfInstruction;
 import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
 import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
 import org.jruby.compiler.ir.instructions.ReceiveExceptionInstr;
-import org.jruby.compiler.ir.instructions.ruby18.ReceiveRestArgInstr;
-import org.jruby.compiler.ir.instructions.ruby18.ReceiveOptArgInstr;
+import org.jruby.compiler.ir.instructions.ReceiveSelfInstruction;
 import org.jruby.compiler.ir.instructions.RecordEndBlockInstr;
 import org.jruby.compiler.ir.instructions.RescueEQQInstr;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
@@ -176,6 +173,8 @@ import org.jruby.compiler.ir.instructions.jruby.CheckArityInstr;
 import org.jruby.compiler.ir.instructions.jruby.RestoreErrorInfoInstr;
 import org.jruby.compiler.ir.instructions.jruby.ThrowExceptionInstr;
 import org.jruby.compiler.ir.instructions.jruby.ToAryInstr;
+import org.jruby.compiler.ir.instructions.ruby18.ReceiveOptArgInstr;
+import org.jruby.compiler.ir.instructions.ruby18.ReceiveRestArgInstr;
 import org.jruby.compiler.ir.operands.Array;
 import org.jruby.compiler.ir.operands.AsString;
 import org.jruby.compiler.ir.operands.Backref;
@@ -184,8 +183,8 @@ import org.jruby.compiler.ir.operands.Bignum;
 import org.jruby.compiler.ir.operands.BooleanLiteral;
 import org.jruby.compiler.ir.operands.CompoundArray;
 import org.jruby.compiler.ir.operands.CompoundString;
-import org.jruby.compiler.ir.operands.CurrentScope;
 import org.jruby.compiler.ir.operands.CurrentModule;
+import org.jruby.compiler.ir.operands.CurrentScope;
 import org.jruby.compiler.ir.operands.DynamicSymbol;
 import org.jruby.compiler.ir.operands.Fixnum;
 import org.jruby.compiler.ir.operands.Float;
@@ -197,7 +196,6 @@ import org.jruby.compiler.ir.operands.LiveScopeModule;
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.operands.Nil;
-import org.jruby.compiler.ir.operands.UnexecutableNil;
 import org.jruby.compiler.ir.operands.NthRef;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Range;
@@ -208,6 +206,7 @@ import org.jruby.compiler.ir.operands.StringLiteral;
 import org.jruby.compiler.ir.operands.Symbol;
 import org.jruby.compiler.ir.operands.TemporaryVariable;
 import org.jruby.compiler.ir.operands.UndefinedValue;
+import org.jruby.compiler.ir.operands.UnexecutableNil;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.operands.WrappedIRClosure;
 import org.jruby.compiler.ir.operands.WrappedIRScope;
@@ -1154,7 +1153,7 @@ public class IRBuilder {
         String className = cpath.getName();
         Operand container = getContainerFromCPath(cpath, s);
 
-        IRClassBody c = new IRClassBody(s, className, classNode.getPosition().getLine(), classNode.getScope());
+        IRClassBody c = new IRClassBody(manager, s, className, classNode.getPosition().getLine(), classNode.getScope());
         Variable ret = s.getNewTemporaryVariable();
         s.addInstr(new DefineClassInstr(ret, c, container, superClass));
 
@@ -1184,7 +1183,7 @@ public class IRBuilder {
         Operand receiver = build(sclassNode.getReceiverNode(), s);
 
         // Create a dummy meta class and record it as being lexically defined in scope s
-        IRModuleBody mc = new IRMetaClassBody(s, manager.getMetaClassName(), sclassNode.getPosition().getLine(), sclassNode.getScope());
+        IRModuleBody mc = new IRMetaClassBody(manager, s, manager.getMetaClassName(), sclassNode.getPosition().getLine(), sclassNode.getScope());
         Variable ret = s.getNewTemporaryVariable();
         s.addInstr(new DefineMetaClassInstr(ret, receiver, mc));
 
@@ -1848,7 +1847,7 @@ public class IRBuilder {
     }
 
     private IRMethod defineNewMethod(MethodDefNode defNode, IRScope s, boolean isInstanceMethod) {
-        IRMethod method = new IRMethod(s, defNode.getName(), isInstanceMethod, defNode.getPosition().getLine(), defNode.getScope());
+        IRMethod method = new IRMethod(manager, s, defNode.getName(), isInstanceMethod, defNode.getPosition().getLine(), defNode.getScope());
 
         s.addInstr(new ReceiveSelfInstruction(getSelf(s)));
 
@@ -2281,18 +2280,15 @@ public class IRBuilder {
 
     public Operand buildForIter(final ForNode forNode, IRScope s) {
             // Create a new closure context
-        IRClosure closure = new IRClosure(s, true, forNode.getPosition().getStartLine(), forNode.getScope(), Arity.procArityOf(forNode.getVarNode()), forNode.getArgumentType(), is1_9());
+        IRClosure closure = new IRClosure(manager, s, true, forNode.getPosition().getStartLine(), forNode.getScope(), Arity.procArityOf(forNode.getVarNode()), forNode.getArgumentType(), is1_9());
         s.addClosure(closure);
 
             // Receive self
         closure.addInstr(new ReceiveSelfInstruction(getSelf(closure)));
 
             // Build args
-        NodeType argsNodeId = null;
-        if (forNode.getVarNode() != null) {
-            argsNodeId = forNode.getVarNode().getNodeType();
-            if (argsNodeId != null) receiveBlockArgs(forNode, closure);
-        }
+        Node varNode = forNode.getVarNode();
+        if (varNode != null && varNode.getNodeType() != null) receiveBlockArgs(forNode, closure);
 
         // Set %current_scope = <current-scope>
         // Set %current_module = <current-module>
@@ -2360,10 +2356,10 @@ public class IRBuilder {
     public Operand buildIf(final IfNode ifNode, IRScope s) {
         Node actualCondition = skipOverNewlines(s, ifNode.getCondition());
 
-        Variable result     = null;
+        Variable result;
         Label    falseLabel = s.getNewLabel();
         Label    doneLabel  = s.getNewLabel();
-        Operand  thenResult = null;
+        Operand  thenResult;
         s.addInstr(BEQInstr.create(build(actualCondition, s), BooleanLiteral.FALSE, falseLabel));
 
         boolean thenNull = false;
@@ -2431,7 +2427,7 @@ public class IRBuilder {
     }
 
     public Operand buildIter(final IterNode iterNode, IRScope s) {
-        IRClosure closure = new IRClosure(s, false, iterNode.getPosition().getStartLine(), iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()), iterNode.getArgumentType(), is1_9());
+        IRClosure closure = new IRClosure(manager, s, false, iterNode.getPosition().getStartLine(), iterNode.getScope(), Arity.procArityOf(iterNode.getVarNode()), iterNode.getArgumentType(), is1_9());
         s.addClosure(closure);
 
         // Create a new nested builder to ensure this gets its own IR builder state 
@@ -2527,7 +2523,7 @@ public class IRBuilder {
     }
 
     private Operand getContainerFromCPath(Colon3Node cpath, IRScope s) {
-        Operand container = null;
+        Operand container;
 
         if (cpath instanceof Colon2Node) {
             Node leftNode = ((Colon2Node) cpath).getLeftNode();
@@ -2550,7 +2546,7 @@ public class IRBuilder {
         Operand container = getContainerFromCPath(cpath, s);
 
         // Build the new module
-        IRModuleBody m = new IRModuleBody(s, moduleName, moduleNode.getPosition().getLine(), moduleNode.getScope());
+        IRModuleBody m = new IRModuleBody(manager, s, moduleName, moduleNode.getPosition().getLine(), moduleNode.getScope());
         Variable ret = s.getNewTemporaryVariable();
         s.addInstr(new DefineModuleInstr(m, ret, container));
 
@@ -2654,7 +2650,7 @@ public class IRBuilder {
     }
 
     public Operand buildOpAsgn(OpAsgnNode opAsgnNode, IRScope s) {
-        Label l = null;
+        Label l;
         Variable readerValue = s.getNewTemporaryVariable();
         Variable writerValue = s.getNewTemporaryVariable();
 
@@ -2890,7 +2886,7 @@ public class IRBuilder {
     }
 
     public Operand buildPostExe(PostExeNode postExeNode, IRScope s) {
-        IRClosure endClosure = new IRClosure(s, false, postExeNode.getPosition().getStartLine(), postExeNode.getScope(), Arity.procArityOf(postExeNode.getVarNode()), postExeNode.getArgumentType(), is1_9());
+        IRClosure endClosure = new IRClosure(manager, s, false, postExeNode.getPosition().getStartLine(), postExeNode.getScope(), Arity.procArityOf(postExeNode.getVarNode()), postExeNode.getArgumentType(), is1_9());
         // Set up %current_scope and %current_module
         endClosure.addInstr(new CopyInstr(endClosure.getCurrentScopeVariable(), new CurrentScope()));
         endClosure.addInstr(new CopyInstr(endClosure.getCurrentModuleVariable(), new CurrentModule()));
@@ -2902,7 +2898,7 @@ public class IRBuilder {
     }
 
     public Operand buildPreExe(PreExeNode preExeNode, IRScope s) {
-        IRClosure beginClosure = new IRClosure(s, false, preExeNode.getPosition().getStartLine(), preExeNode.getScope(), Arity.procArityOf(preExeNode.getVarNode()), preExeNode.getArgumentType(), is1_9());
+        IRClosure beginClosure = new IRClosure(manager, s, false, preExeNode.getPosition().getStartLine(), preExeNode.getScope(), Arity.procArityOf(preExeNode.getVarNode()), preExeNode.getArgumentType(), is1_9());
         // Set up %current_scope and %current_module
         beginClosure.addInstr(new CopyInstr(beginClosure.getCurrentScopeVariable(), new CurrentScope()));
         beginClosure.addInstr(new CopyInstr(beginClosure.getCurrentModuleVariable(), new CurrentModule()));
@@ -3157,7 +3153,7 @@ public class IRBuilder {
 
     public IREvalScript buildEvalRoot(StaticScope staticScope, IRScope containingScope, String file, int lineNumber, RootNode rootNode) {
         // Top-level script!
-        IREvalScript script = new IREvalScript(containingScope, file, lineNumber, staticScope);
+        IREvalScript script = new IREvalScript(manager, containingScope, file, lineNumber, staticScope);
 
         // Debug info: record line number
         script.addInstr(new LineNumberInstr(script, lineNumber));
@@ -3178,7 +3174,7 @@ public class IRBuilder {
         StaticScope staticScope = rootNode.getStaticScope();
 
         // Top-level script!
-        IRScriptBody script = new IRScriptBody("__file__", file, staticScope);
+        IRScriptBody script = new IRScriptBody(manager, "__file__", file, staticScope);
         script.addInstr(new ReceiveSelfInstruction(script.getSelf()));
         // Set %current_scope = <current-scope>
         // Set %current_module = <current-module>

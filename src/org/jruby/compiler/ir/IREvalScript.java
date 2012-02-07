@@ -1,16 +1,15 @@
 package org.jruby.compiler.ir;
 
-import java.util.List;
 import java.util.ArrayList;
-
+import java.util.List;
 import org.jruby.RubyModule;
+import org.jruby.compiler.ir.operands.ClosureLocalVariable;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.LocalVariable;
-import org.jruby.compiler.ir.operands.ClosureLocalVariable;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.interpreter.Interpreter;
-import org.jruby.parser.StaticScope;
 import org.jruby.parser.IRStaticScope;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -25,10 +24,15 @@ public class IREvalScript extends IRClosure {
     private List<IRClosure> beginBlocks;
     private List<IRClosure> endBlocks;
 
-    public IREvalScript(IRScope lexicalParent, String fileName, int lineNumber, StaticScope staticScope) {
-        super(lexicalParent, fileName, lineNumber, staticScope, "EVAL_");
+    public IREvalScript(IRManager manager, IRScope lexicalParent, String fileName,
+            int lineNumber, StaticScope staticScope) {
+        super(manager, lexicalParent, fileName, lineNumber, staticScope, "EVAL_");
+        
         IRScope s = lexicalParent;
-        while (s instanceof IREvalScript) s = s.getLexicalParent();
+        while (s instanceof IREvalScript) {
+            s = s.getLexicalParent();
+        }
+        
         this.nearestNonEvalScope = s;
         this.nearestNonEvalScope.initEvalScopeVariableAllocator(false);
     }

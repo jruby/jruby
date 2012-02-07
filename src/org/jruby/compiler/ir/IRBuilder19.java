@@ -1,41 +1,26 @@
 package org.jruby.compiler.ir; 
 
-import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArgsPushNode;
+import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.ArrayNode;
-import org.jruby.ast.AssignableNode;
 import org.jruby.ast.BlockArgNode;
 import org.jruby.ast.DAsgnNode;
-import org.jruby.ast.GlobalAsgnNode;
-import org.jruby.ast.LocalAsgnNode;
 import org.jruby.ast.EncodingNode;
 import org.jruby.ast.IterNode;
 import org.jruby.ast.LambdaNode;
 import org.jruby.ast.ListNode;
+import org.jruby.ast.LocalAsgnNode;
 import org.jruby.ast.MultipleAsgn19Node;
 import org.jruby.ast.Node;
 import org.jruby.ast.NotNode;
 import org.jruby.ast.NthRefNode;
 import org.jruby.ast.OptArgNode;
 import org.jruby.ast.StarNode;
-import org.jruby.ast.VCallNode;
 import org.jruby.ast.YieldNode;
 import org.jruby.compiler.NotCompilableException;
-import org.jruby.compiler.ir.operands.Array;
-import org.jruby.compiler.ir.operands.BooleanLiteral;
-import org.jruby.compiler.ir.operands.CompoundArray;
-import org.jruby.compiler.ir.operands.Label;
-import org.jruby.compiler.ir.operands.LocalVariable;
-import org.jruby.compiler.ir.operands.MethAddr;
-import org.jruby.compiler.ir.operands.Nil;
-import org.jruby.compiler.ir.operands.NthRef;
-import org.jruby.compiler.ir.operands.Operand;
-import org.jruby.compiler.ir.operands.StringLiteral;
-import org.jruby.compiler.ir.operands.UndefinedValue;
-import org.jruby.compiler.ir.operands.Variable;
-import org.jruby.compiler.ir.instructions.BNEInstr;
 import org.jruby.compiler.ir.instructions.BEQInstr;
+import org.jruby.compiler.ir.instructions.BNEInstr;
 import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.ClosureReturnInstr;
 import org.jruby.compiler.ir.instructions.CopyInstr;
@@ -52,16 +37,28 @@ import org.jruby.compiler.ir.instructions.jruby.ToAryInstr;
 import org.jruby.compiler.ir.instructions.ruby19.BuildLambdaInstr;
 import org.jruby.compiler.ir.instructions.ruby19.GetEncodingInstr;
 import org.jruby.compiler.ir.instructions.ruby19.ReceiveOptArgInstr;
-import org.jruby.compiler.ir.instructions.ruby19.ReceiveRestArgInstr;
 import org.jruby.compiler.ir.instructions.ruby19.ReceiveRequiredArgInstr;
-import org.jruby.runtime.Arity;
+import org.jruby.compiler.ir.instructions.ruby19.ReceiveRestArgInstr;
+import org.jruby.compiler.ir.operands.BooleanLiteral;
+import org.jruby.compiler.ir.operands.CompoundArray;
+import org.jruby.compiler.ir.operands.Label;
+import org.jruby.compiler.ir.operands.LocalVariable;
+import org.jruby.compiler.ir.operands.MethAddr;
+import org.jruby.compiler.ir.operands.Nil;
+import org.jruby.compiler.ir.operands.NthRef;
+import org.jruby.compiler.ir.operands.Operand;
+import org.jruby.compiler.ir.operands.StringLiteral;
+import org.jruby.compiler.ir.operands.UndefinedValue;
+import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.Arity;
 
 public class IRBuilder19 extends IRBuilder {
     public IRBuilder19(IRManager manager) {
         super(manager);
     }
 
+    @Override
     protected Operand buildVersionSpecificNodes(Node node, IRScope s) {
         switch (node.getNodeType()) {
             case ENCODINGNODE: return buildEncoding((EncodingNode)node, s);
@@ -71,6 +68,7 @@ public class IRBuilder19 extends IRBuilder {
         }
     }
 
+    @Override
     protected LocalVariable getBlockArgVariable(IRScope s, String name, int depth) {
         IRClosure cl = (IRClosure)s;
         if (cl.isForLoopBody()) {
@@ -80,6 +78,7 @@ public class IRBuilder19 extends IRBuilder {
         }
     }
 
+    @Override
     public void buildVersionSpecificBlockArgsAssignment(Node node, IRScope s, Operand argsArray, int argIndex, boolean isMasgnRoot, boolean isClosureArg, boolean isSplat) {
         IRClosure cl = (IRClosure)s;
         if (!cl.isForLoopBody())
@@ -228,6 +227,7 @@ public class IRBuilder19 extends IRBuilder {
         if ((s instanceof IRMethod) || (blockArg != null)) receiveClosureArg(blockArg, s);
     }
 
+    @Override
     public void receiveBlockArgs(final IterNode node, IRScope s) {
         Node args = node.getVarNode();
         if (args instanceof ArgsNode) { // regular blocks
@@ -239,10 +239,12 @@ public class IRBuilder19 extends IRBuilder {
         }
     }
 
+    @Override
     public void receiveBlockClosureArg(Node node, IRScope s) {
         // Nothing to do here.  iterNode.blockVarNode is not valid in 1.9 mode
     }
 
+    @Override
     public void receiveMethodArgs(final ArgsNode argsNode, IRScope s) {
         receiveArgs(argsNode, s);
     }
@@ -354,6 +356,7 @@ public class IRBuilder19 extends IRBuilder {
         }
     }
 
+    @Override
     public Operand buildArgsPush(final ArgsPushNode node, IRScope s) {
         Operand v1 = build(node.getFirstNode(), s);
         Operand v2 = build(node.getSecondNode(), s);
@@ -367,7 +370,7 @@ public class IRBuilder19 extends IRBuilder {
     }
 
     public Operand buildLambda(LambdaNode node, IRScope s) {
-        IRClosure closure = new IRClosure(s, false, node.getPosition().getStartLine(), node.getScope(), Arity.procArityOf(node.getArgs()), node.getArgumentType(), true);
+        IRClosure closure = new IRClosure(manager, s, false, node.getPosition().getStartLine(), node.getScope(), Arity.procArityOf(node.getArgs()), node.getArgumentType(), true);
         s.addClosure(closure);
 
         // Create a new nested builder to ensure this gets its own IR builder state 
@@ -391,6 +394,7 @@ public class IRBuilder19 extends IRBuilder {
         return lambda;
     }
 
+    @Override
     public Operand buildYield(YieldNode node, IRScope s) {
         boolean unwrap = true;
         Node argNode = node.getArgsNode();

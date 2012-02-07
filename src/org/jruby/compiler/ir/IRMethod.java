@@ -1,18 +1,17 @@
 package org.jruby.compiler.ir;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.ArrayList;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.ReceiveArgBase;
 import org.jruby.compiler.ir.instructions.ReceiveRestArgBase;
-import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Splat;
 import org.jruby.compiler.ir.operands.Variable;
-import org.jruby.parser.StaticScope;
 import org.jruby.parser.IRStaticScope;
+import org.jruby.parser.StaticScope;
 
 public class IRMethod extends IRScope {
     public final boolean isInstanceMethod;
@@ -36,8 +35,9 @@ public class IRMethod extends IRScope {
     private int nextAvailableBindingSlot;
     private Map<String, Integer> bindingSlotMap;
     
-    public IRMethod(IRScope lexicalParent, String name, boolean isInstanceMethod, int lineNumber, StaticScope staticScope) {
-        super(lexicalParent, name, lexicalParent.getFileName(), lineNumber, staticScope);
+    public IRMethod(IRManager manager, IRScope lexicalParent, String name,
+            boolean isInstanceMethod, int lineNumber, StaticScope staticScope) {
+        super(manager, lexicalParent, name, lexicalParent.getFileName(), lineNumber, staticScope);
         
         this.isInstanceMethod = isInstanceMethod;
         this.callArgs = new ArrayList<Operand>();
@@ -87,10 +87,12 @@ public class IRMethod extends IRScope {
         return callArgs.toArray(new Operand[callArgs.size()]);
     }
 
+    @Override
     public LocalVariable findExistingLocalVariable(String name, int scopeDepth) {
         return localVars.getVariable(name);
     }
 
+    @Override
     public LocalVariable getNewLocalVariable(String name, int depth) {
         assert depth != 0: "Local variable depth in IRMethod should always be zero";
         LocalVariable lvar = new LocalVariable(name, 0, localVars.nextSlot);
@@ -98,6 +100,7 @@ public class IRMethod extends IRScope {
         return lvar;
     }
 
+    @Override
     public LocalVariable getLocalVariable(String name, int scopeDepth) {
         LocalVariable lvar = findExistingLocalVariable(name, scopeDepth);
         if (lvar == null) lvar = getNewLocalVariable(name, scopeDepth);

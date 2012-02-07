@@ -50,11 +50,13 @@ public class IRClosure extends IRScope {
     /** The parameter names, for Proc#parameters */
     private String[] parameterList;
 
-    public IRClosure(IRScope lexicalParent, boolean isForLoopBody, int lineNumber, StaticScope staticScope, Arity arity, int argumentType, boolean is1_9) {
-        this(lexicalParent, lexicalParent.getFileName(), lineNumber, staticScope, isForLoopBody ? "_FOR_LOOP_" : "_CLOSURE_");
+    public IRClosure(IRManager manager, IRScope lexicalParent, boolean isForLoopBody,
+            int lineNumber, StaticScope staticScope, Arity arity, int argumentType, boolean is1_9) {
+        this(manager, lexicalParent, lexicalParent.getFileName(), lineNumber, staticScope, isForLoopBody ? "_FOR_LOOP_" : "_CLOSURE_");
         this.isForLoopBody = isForLoopBody;
         this.hasBeenInlined = false;
         this.blockArgs = new ArrayList<Operand>();
+        
         if (!IRBuilder.inIRGenOnlyMode()) {
             this.body = is1_9 ? new InterpretedIRBlockBody19(this, arity, argumentType)
                               : new InterpretedIRBlockBody(this, arity, argumentType);
@@ -65,8 +67,9 @@ public class IRClosure extends IRScope {
     }
 
     // Used by IREvalScript
-    protected IRClosure(IRScope lexicalParent, String fileName, int lineNumber, StaticScope staticScope, String prefix) {
-        super(lexicalParent, null, fileName, lineNumber, staticScope);
+    protected IRClosure(IRManager manager, IRScope lexicalParent, String fileName, int lineNumber, StaticScope staticScope, String prefix) {
+        super(manager, lexicalParent, null, fileName, lineNumber, staticScope);
+        
         this.isForLoopBody = false;
         this.startLabel = getNewLabel(prefix + "START");
         this.endLabel = getNewLabel(prefix + "END");

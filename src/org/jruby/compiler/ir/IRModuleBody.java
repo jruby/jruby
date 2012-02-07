@@ -1,18 +1,19 @@
 package org.jruby.compiler.ir;
 
 import org.jruby.compiler.ir.operands.LocalVariable;
-import org.jruby.parser.StaticScope;
 import org.jruby.parser.IRStaticScope;
+import org.jruby.parser.StaticScope;
 
 public class IRModuleBody extends IRScope {
     private CodeVersion version;    // Current code version for this module
 
-    public IRModuleBody(IRScope lexicalParent, String name, int lineNumber, StaticScope scope) {
-        this(lexicalParent, name, lexicalParent.getFileName(), lineNumber, scope);
+    public IRModuleBody(IRManager manager, IRScope lexicalParent, String name, int lineNumber, StaticScope scope) {
+        this(manager, lexicalParent, name, lexicalParent.getFileName(), lineNumber, scope);
     }
     
-    public IRModuleBody(IRScope lexicalParent, String name, String fileName, int lineNumber, StaticScope scope) {
-        super(lexicalParent, name, fileName, lineNumber, scope);
+    public IRModuleBody(IRManager manager, IRScope lexicalParent, String name,
+            String fileName, int lineNumber, StaticScope scope) {
+        super(manager, lexicalParent, name, fileName, lineNumber, scope);
 
         if (!IRBuilder.inIRGenOnlyMode()) {
             if (scope != null) ((IRStaticScope)scope).setIRScope(this);
