@@ -91,7 +91,7 @@ public abstract class CallAdapter {
     
     private static boolean isConstant(Operand args[]) {
         for (int i = 0; i < args.length; i++) {
-            if (args[i] instanceof ImmutableLiteral && !args[i].hasKnownValue()) return false;
+            if (!(args[i] instanceof ImmutableLiteral)) return false;
         }
         
         return true;

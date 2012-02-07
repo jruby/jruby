@@ -26,7 +26,6 @@ import org.jruby.runtime.ThreadContext;
  */      
 public class Fixnum extends ImmutableLiteral {
     final public Long value;
-    private Object rubyFixnum;
 
     public Fixnum(Long val) {
         value = val;
