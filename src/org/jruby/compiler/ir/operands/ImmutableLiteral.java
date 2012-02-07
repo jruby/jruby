@@ -23,6 +23,11 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 public abstract class ImmutableLiteral extends Operand {
     private Object cachedObject = null;
+
+    @Override
+    public boolean hasKnownValue() {
+        return true;
+    }
     
     @Override
     public void addUsedVariables(List<Variable> l) {

@@ -9,11 +9,6 @@ public class BooleanLiteral extends ImmutableLiteral {
     public static final BooleanLiteral FALSE = new BooleanLiteral();
 
     @Override
-    public boolean hasKnownValue() {
-        return true;
-    }
-
-    @Override
     public Object createCacheObject(ThreadContext context) {
         return context.getRuntime().newBoolean(isTrue());
     }

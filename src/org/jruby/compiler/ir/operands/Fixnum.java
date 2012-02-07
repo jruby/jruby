@@ -35,11 +35,6 @@ public class Fixnum extends ImmutableLiteral {
     public Fixnum(BigInteger val) { 
         this(val.longValue());
     }
-
-    @Override
-    public boolean hasKnownValue() {
-        return true;
-    }
     
     @Override
     public Object createCacheObject(ThreadContext context) {

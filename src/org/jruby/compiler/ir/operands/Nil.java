@@ -12,11 +12,6 @@ public class Nil extends ImmutableLiteral {
     }
 
     @Override
-    public boolean hasKnownValue() {
-        return true;
-    }
-
-    @Override
     public Object createCacheObject(ThreadContext context) {
         return context.nil;
     }

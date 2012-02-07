@@ -30,11 +30,6 @@ public class Bignum extends ImmutableLiteral {
     public Bignum(BigInteger value) {
         this.value = value;
     }
-
-    @Override
-    public boolean hasKnownValue() {
-        return true;
-    }
     
     @Override
     public Object createCacheObject(ThreadContext context) {
