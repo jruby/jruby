@@ -171,7 +171,7 @@ public abstract class Instr {
      * @param valueMap Mapping from operands to their simplified values
      * @returns simplified result / output of this instruction
      */
-    public Operand simplifyAndGetResult(Map<Operand, Operand> valueMap) {
+    public Operand simplifyAndGetResult(IRScope scope, Map<Operand, Operand> valueMap) {
         simplifyOperands(valueMap, false);
 
         return null; // By default, no simplifications!

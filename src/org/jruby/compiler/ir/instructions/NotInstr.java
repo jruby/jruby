@@ -1,6 +1,7 @@
 package org.jruby.compiler.ir.instructions;
 
 import java.util.Map;
+import org.jruby.compiler.ir.IRScope;
 
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.BooleanLiteral;
@@ -51,11 +52,15 @@ public class NotInstr extends Instr implements ResultInstr {
     public Instr cloneForInlining(InlinerInfo ii) {
         return new NotInstr(ii.getRenamedVariable(result), arg.cloneForInlining(ii));
     }
+    
+    private Operand flipLogical(IRScope scope, BooleanLiteral value) {
+        return value.isTrue() ? scope.getManager().getFalse() : scope.getManager().getTrue();
+    }
 
     @Override
-    public Operand simplifyAndGetResult(Map<Operand, Operand> valueMap) {
+    public Operand simplifyAndGetResult(IRScope scope, Map<Operand, Operand> valueMap) {
         simplifyOperands(valueMap, false);
-        return (arg instanceof BooleanLiteral) ? ((BooleanLiteral) arg).logicalNot() : null;
+        return arg instanceof BooleanLiteral ? flipLogical(scope, (BooleanLiteral) arg) : null;
     }
 
     @Override

@@ -3,10 +3,11 @@ package org.jruby.compiler.ir.operands;
 import org.jruby.runtime.ThreadContext;
 
 public class BooleanLiteral extends ImmutableLiteral {
-    private BooleanLiteral() { }
-
-    public static final BooleanLiteral TRUE  = new BooleanLiteral();
-    public static final BooleanLiteral FALSE = new BooleanLiteral();
+    private final boolean truthy;
+    
+    public BooleanLiteral(boolean truthy) {
+        this.truthy = truthy;
+    }
 
     @Override
     public Object createCacheObject(ThreadContext context) {
@@ -14,15 +15,11 @@ public class BooleanLiteral extends ImmutableLiteral {
     }
     
     public boolean isTrue()  {
-        return this == TRUE;
+        return truthy;
     }
 
     public boolean isFalse() {
-        return this == FALSE;
-    }
-
-    public BooleanLiteral logicalNot() {
-        return isTrue() ? FALSE : TRUE;
+        return !truthy;
     }
     
     @Override

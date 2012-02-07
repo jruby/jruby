@@ -39,7 +39,6 @@ import org.jruby.compiler.ir.instructions.ruby19.GetEncodingInstr;
 import org.jruby.compiler.ir.instructions.ruby19.ReceiveOptArgInstr;
 import org.jruby.compiler.ir.instructions.ruby19.ReceiveRequiredArgInstr;
 import org.jruby.compiler.ir.instructions.ruby19.ReceiveRestArgInstr;
-import org.jruby.compiler.ir.operands.BooleanLiteral;
 import org.jruby.compiler.ir.operands.CompoundArray;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.LocalVariable;
@@ -124,7 +123,7 @@ public class IRBuilder19 extends IRBuilder {
                 Variable v = s.getNewTemporaryVariable();
                 addArgReceiveInstr(s, v, argIndex, post, numPreReqd, numPostRead);
                 if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("rest", "");
-                s.addInstr(new ToAryInstr(v, v, BooleanLiteral.FALSE));
+                s.addInstr(new ToAryInstr(v, v, manager.getFalse()));
                 buildMultipleAsgn19Assignment(childNode, s, v, null);
                 break;
             }
@@ -275,7 +274,7 @@ public class IRBuilder19 extends IRBuilder {
                 if (!isMasgnRoot) {
                     v = s.getNewTemporaryVariable();
                     s.addInstr(new GetArrayInstr(v, argsArray, preArgsCount, postArgsCount, index, isSplat));
-                    s.addInstr(new ToAryInstr(v, v, BooleanLiteral.FALSE));
+                    s.addInstr(new ToAryInstr(v, v, manager.getFalse()));
                     argsArray = v;
                 }
                 // Build
@@ -346,7 +345,7 @@ public class IRBuilder19 extends IRBuilder {
     public void buildVersionSpecificAssignment(Node node, IRScope s, Variable v) {
         switch (node.getNodeType()) {
         case MULTIPLEASGN19NODE: {
-            s.addInstr(new ToAryInstr(v, v, BooleanLiteral.FALSE));
+            s.addInstr(new ToAryInstr(v, v, manager.getFalse()));
             buildMultipleAsgn19Assignment((MultipleAsgn19Node)node, s, null, v);
             break;
         }
@@ -412,7 +411,7 @@ public class IRBuilder19 extends IRBuilder {
     public Operand buildMultipleAsgn19(MultipleAsgn19Node multipleAsgnNode, IRScope s) {
         Operand  values = build(multipleAsgnNode.getValueNode(), s);
         Variable ret = getValueInTemporaryVariable(s, values);
-        s.addInstr(new ToAryInstr(ret, ret, BooleanLiteral.FALSE));
+        s.addInstr(new ToAryInstr(ret, ret, manager.getFalse()));
         buildMultipleAsgn19Assignment(multipleAsgnNode, s, null, ret);
         return ret;
     }
@@ -473,14 +472,14 @@ public class IRBuilder19 extends IRBuilder {
                 Label undefLabel = s.getNewLabel();
                 Variable tmpVar = s.getNewTemporaryVariable();
                 s.addInstr(new JRubyImplCallInstr(tmpVar, JRubyImplementationMethod.BACKREF_IS_RUBY_MATCH_DATA, null, NO_ARGS));
-                s.addInstr(BEQInstr.create(tmpVar, BooleanLiteral.FALSE, undefLabel));
+                s.addInstr(BEQInstr.create(tmpVar, manager.getFalse(), undefLabel));
                 // SSS FIXME: 
                 // - Can/should I use BEQInstr(new NthRef(n), manager.getNil(), undefLabel)? instead of .nil? & compare with flag?
                 // - Or, even create a new IsNilInstr and NotNilInstr to represent optimized scenarios where
                 //   the nil? method is not monkey-patched?
                 // This matters because if String.nil? is monkey-patched, the two sequences can behave differently.
                 s.addInstr(CallInstr.create(tmpVar, new MethAddr("nil?"), new NthRef(n), NO_ARGS, null));
-                s.addInstr(BEQInstr.create(tmpVar, BooleanLiteral.TRUE, undefLabel));
+                s.addInstr(BEQInstr.create(tmpVar, manager.getTrue(), undefLabel));
                 return buildDefnCheckIfThenPaths(s, undefLabel, new StringLiteral("global-variable"));
             }
             default: {

@@ -4,6 +4,7 @@ package org.jruby.compiler.ir.instructions;
 //   d = s
 
 import java.util.Map;
+import org.jruby.compiler.ir.IRScope;
 
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
@@ -50,7 +51,7 @@ public class CopyInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Operand simplifyAndGetResult(Map<Operand, Operand> valueMap) {
+    public Operand simplifyAndGetResult(IRScope scope, Map<Operand, Operand> valueMap) {
         simplifyOperands(valueMap, false);
         
         return arg;

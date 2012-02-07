@@ -2,6 +2,7 @@ package org.jruby.compiler.ir.instructions;
 
 import java.util.Map;
 import org.jruby.RubyArray;
+import org.jruby.compiler.ir.IRScope;
 
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
@@ -79,8 +80,8 @@ public class GetArrayInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Operand simplifyAndGetResult(Map<Operand, Operand> valueMap) {
-        return super.simplifyAndGetResult(valueMap);
+    public Operand simplifyAndGetResult(IRScope scope, Map<Operand, Operand> valueMap) {
+        return super.simplifyAndGetResult(scope, valueMap);
         // SSS FIXME!  This is buggy code for 1.9 mode
 /*
         simplifyOperands(valueMap, false);

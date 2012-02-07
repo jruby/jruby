@@ -8,8 +8,9 @@ import org.jruby.compiler.ir.representations.InlinerInfo;
 
 public class BNEInstr extends BranchInstr {
     public static BranchInstr create(Operand v1, Operand v2, Label jmpTarget) {
-        if (v2 == BooleanLiteral.TRUE) return new BFalseInstr(v1, jmpTarget);
-        if (v2 == BooleanLiteral.FALSE) return new BTrueInstr(v1, jmpTarget);
+        if (v2 instanceof BooleanLiteral) {
+            return ((BooleanLiteral) v2).isFalse() ? new BTrueInstr(v1, jmpTarget) : new BFalseInstr(v1, jmpTarget);
+        }        
         return new BNEInstr(v1, v2, jmpTarget);
     }
 

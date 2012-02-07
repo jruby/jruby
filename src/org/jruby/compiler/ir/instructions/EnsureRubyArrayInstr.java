@@ -11,6 +11,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.RubyArray;
+import org.jruby.compiler.ir.IRScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 
@@ -28,7 +29,7 @@ public class EnsureRubyArrayInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public Operand simplifyAndGetResult(Map<Operand, Operand> valueMap) {
+    public Operand simplifyAndGetResult(IRScope scope, Map<Operand, Operand> valueMap) {
         simplifyOperands(valueMap, false);
         return (object instanceof Array) ? object : null;
     }
