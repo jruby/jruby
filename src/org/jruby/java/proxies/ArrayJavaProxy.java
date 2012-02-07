@@ -65,7 +65,7 @@ public class ArrayJavaProxy extends JavaProxy {
     public IRubyObject op_aref(ThreadContext context, IRubyObject arg) {
         if (arg instanceof RubyInteger) {
             int index = (int)((RubyInteger)arg).getLongValue();
-            return getJavaArray().arefDirect(index);
+            return getJavaArray().arefDirect(context.runtime, index);
         } else {
             return getRange(context, arg);
         }
@@ -75,7 +75,7 @@ public class ArrayJavaProxy extends JavaProxy {
     public IRubyObject op_aref(ThreadContext context, IRubyObject[] args) {
         if (args.length == 1 && args[0] instanceof RubyInteger) {
             int index = (int)((RubyInteger)args[0]).getLongValue();
-            return getJavaArray().arefDirect(index);
+            return getJavaArray().arefDirect(context.runtime, index);
         } else {
             return getRange(context, args);
         }
@@ -89,18 +89,19 @@ public class ArrayJavaProxy extends JavaProxy {
     
     @JRubyMethod
     public IRubyObject at(ThreadContext context, IRubyObject indexObj) {
+        Ruby runtime = context.runtime;
         RubyFixnum lengthF = getJavaArray().length();
         RubyInteger indexI = indexObj.convertToInteger();
         
         if (indexI.getLongValue() < 0) {
-            indexI = RubyFixnum.newFixnum(context.getRuntime(), indexI.getLongValue() + lengthF.getLongValue());
+            indexI = RubyFixnum.newFixnum(runtime, indexI.getLongValue() + lengthF.getLongValue());
         }
         long index = indexI.getLongValue();
         
         if (index >= 0 && index < lengthF.getLongValue()) {
-            return getJavaArray().arefDirect((int)indexI.getLongValue());
+            return getJavaArray().arefDirect(runtime, (int)indexI.getLongValue());
         } else {
-            return context.getRuntime().getNil();
+            return context.nil;
         }
     }
     
@@ -119,10 +120,11 @@ public class ArrayJavaProxy extends JavaProxy {
     
     @JRubyMethod
     public IRubyObject each(ThreadContext context, Block block) {
+        Ruby runtime = context.runtime;
         int length = (int)getJavaArray().length().getLongValue();
-        for (int i = 0; i < length; i++) {
 
-            IRubyObject rubyObj = getJavaArray().arefDirect(i);
+        for (int i = 0; i < length; i++) {
+            IRubyObject rubyObj = getJavaArray().arefDirect(runtime, i);
             block.yield(context, rubyObj);
         }
         return this;

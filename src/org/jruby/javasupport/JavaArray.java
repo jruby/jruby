@@ -92,18 +92,16 @@ public class JavaArray extends JavaObject {
         return JavaObject.wrap(getRuntime(), result);
     }
 
-    public IRubyObject arefDirect(int intIndex) {
-        return arefDirect(getRuntime(), javaConverter, getValue(), intIndex);
-    }
+    public IRubyObject arefDirect(Ruby runtime, int intIndex) {
+        Object array = getValue();
 
-    public static IRubyObject arefDirect(Ruby runtime, JavaUtil.JavaConverter converter, Object array, int intIndex) {
-        int length = Array.getLength(array);
-        if (intIndex < 0 || intIndex >= length) {
+        try {
+            return JavaUtil.convertJavaArrayElementToRuby(runtime, javaConverter, array, intIndex);
+        } catch (IndexOutOfBoundsException e) {
             throw runtime.newArgumentError(
-                                    "index out of bounds for java array (" + intIndex +
-                                    " for length " + length + ")");
+                    "index out of bounds for java array (" + intIndex +
+                            " for length " + getLength() + ")");
         }
-        return JavaUtil.convertJavaArrayElementToRuby(runtime, converter, array, intIndex);
     }
 
     @Deprecated
@@ -130,24 +128,19 @@ public class JavaArray extends JavaObject {
 
     public IRubyObject asetDirect(Ruby runtime, int intIndex, IRubyObject value) {
         Object array = getValue();
-        int length = Array.getLength(array);
-        if (intIndex < 0 || intIndex >= length) {
-            throw runtime.newArgumentError(
-                    "index out of bounds for java array (" + intIndex +
-                            " for length " + length + ")");
-        }
+
         try {
             javaConverter.set(runtime, array, intIndex, value);
         } catch (IndexOutOfBoundsException e) {
-            throw getRuntime().newArgumentError(
+            throw runtime.newArgumentError(
                     "index out of bounds for java array (" + intIndex +
                             " for length " + getLength() + ")");
         } catch (ArrayStoreException e) {
-            throw getRuntime().newTypeError(
+            throw runtime.newTypeError(
                     "wrong element type " + value.getClass() + "(array contains " +
                             getValue().getClass().getComponentType().getName() + ")");
         } catch (IllegalArgumentException iae) {
-            throw getRuntime().newArgumentError(
+            throw runtime.newArgumentError(
                     "wrong element type " + value.getClass() + "(array contains " +
                             getValue().getClass().getComponentType().getName() + ")");
         }
