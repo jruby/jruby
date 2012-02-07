@@ -1061,11 +1061,14 @@ public class LoadService {
                 }
             } else {
                 boolean looksLikeJarURL = loadPathLooksLikeJarURL(loadPathEntry);
+                boolean looksLikeClasspathURL = loadPathLooksLikeClasspathURL(loadPathEntry);
                 for (String suffix : suffixType.getSuffixes()) {
                     String namePlusSuffix = baseName + suffix;
 
                     if (looksLikeJarURL) {
                         foundResource = tryResourceFromJarURLWithLoadPath(namePlusSuffix, loadPathEntry);
+                    } else if (looksLikeClasspathURL) {
+                        foundResource = findFileInClasspath(loadPathEntry + "/" + namePlusSuffix);
                     } else {
                         foundResource = tryResourceFromLoadPath(namePlusSuffix, loadPathEntry);
                     }
@@ -1139,6 +1142,10 @@ public class LoadService {
         return loadPathEntry.startsWith("jar:") || loadPathEntry.endsWith(".jar") || (loadPathEntry.startsWith("file:") && loadPathEntry.indexOf("!/") != -1);
     }
 
+    protected boolean loadPathLooksLikeClasspathURL(String loadPathEntry) {
+        return loadPathEntry.startsWith("classpath:");
+    }
+    
     protected LoadServiceResource tryResourceFromLoadPath( String namePlusSuffix,String loadPathEntry) throws RaiseException {
         LoadServiceResource foundResource = null;
 
