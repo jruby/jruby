@@ -10,8 +10,8 @@ import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.Tuple;
 import org.jruby.compiler.ir.instructions.CallBase;
 import org.jruby.compiler.ir.instructions.YieldInstr;
-import org.jruby.compiler.ir.operands.WrappedIRClosure;
 import org.jruby.compiler.ir.operands.Operand;
+import org.jruby.compiler.ir.operands.WrappedIRClosure;
 import org.jruby.compiler.ir.representations.CFG.EdgeType;
 import org.jruby.compiler.ir.util.Edge;
 
@@ -130,7 +130,7 @@ public class CFGInliner {
         mergeStraightlineBBs(callBB, splitBB);
 
         // 8. Inline any closure argument passed into the call.
-        Operand closureArg = call.getClosureArg();
+        Operand closureArg = call.getClosureArg(cfg.getScope().getManager().getNil());
         List yieldSites = ii.getYieldSites();
         if (closureArg != null && !yieldSites.isEmpty()) {
             // Detect unlikely but contrived scenarios where there are far too many yield sites that could lead to code blowup
@@ -181,7 +181,7 @@ public class CFGInliner {
             if (b != cEntry && b != cExit) {
                 cfg.putBBForLabel(b.getLabel(), b);
                 b.updateCFG(cfg);
-                b.processClosureArgAndReturnInstrs(ii, yield);
+                b.processClosureArgAndReturnInstrs(cl, ii, yield);
             }
         }
         for (BasicBlock b : closureCFG.getBasicBlocks()) {

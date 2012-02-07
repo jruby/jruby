@@ -5,12 +5,13 @@ package org.jruby.compiler.ir.operands;
 import org.jruby.compiler.ir.targets.JVM;
 import org.jruby.runtime.ThreadContext;
 
+/**
+ * Represents nil.
+ * 
+ * Note: We used to protect the constructor, but since manager is the new
+ * way I got lazy and removed protected.
+ */
 public class Nil extends ImmutableLiteral {
-    public static final Nil NIL = new Nil();
-
-    protected Nil() {
-    }
-
     @Override
     public Object createCacheObject(ThreadContext context) {
         return context.nil;
@@ -21,6 +22,7 @@ public class Nil extends ImmutableLiteral {
         return "nil";
     }
 
+    @Override
     public void compile(JVM jvm) {
         jvm.method().pushNil();
     }

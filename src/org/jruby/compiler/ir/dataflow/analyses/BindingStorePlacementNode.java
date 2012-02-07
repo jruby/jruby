@@ -1,28 +1,27 @@
 package org.jruby.compiler.ir.dataflow.analyses;
 
+import java.util.HashSet;
+import java.util.ListIterator;
+import java.util.Set;
 import org.jruby.compiler.ir.IRClosure;
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.Operation;
-import org.jruby.compiler.ir.dataflow.DataFlowProblem;
 import org.jruby.compiler.ir.dataflow.DataFlowConstants;
+import org.jruby.compiler.ir.dataflow.DataFlowProblem;
 import org.jruby.compiler.ir.dataflow.FlowGraphNode;
-import org.jruby.compiler.ir.instructions.Instr;
-import org.jruby.compiler.ir.instructions.CallBase;
 import org.jruby.compiler.ir.instructions.AllocateBindingInstr;
-import org.jruby.compiler.ir.instructions.StoreToBindingInstr;
-import org.jruby.compiler.ir.instructions.ClosureReturnInstr;
 import org.jruby.compiler.ir.instructions.BreakInstr;
-import org.jruby.compiler.ir.operands.Operand;
-import org.jruby.compiler.ir.operands.WrappedIRClosure;
+import org.jruby.compiler.ir.instructions.CallBase;
+import org.jruby.compiler.ir.instructions.ClosureReturnInstr;
+import org.jruby.compiler.ir.instructions.Instr;
+import org.jruby.compiler.ir.instructions.ResultInstr;
+import org.jruby.compiler.ir.instructions.StoreToBindingInstr;
 import org.jruby.compiler.ir.operands.ClosureLocalVariable;
 import org.jruby.compiler.ir.operands.LocalVariable;
+import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
+import org.jruby.compiler.ir.operands.WrappedIRClosure;
 import org.jruby.compiler.ir.representations.BasicBlock;
-
-import java.util.Set;
-import java.util.HashSet;
-import java.util.ListIterator;
-import org.jruby.compiler.ir.instructions.ResultInstr;
 
 public class BindingStorePlacementNode extends FlowGraphNode {
     public BindingStorePlacementNode(DataFlowProblem prob, BasicBlock n) {
@@ -64,7 +63,6 @@ public class BindingStorePlacementNode extends FlowGraphNode {
     public boolean applyTransferFunction() {
         boolean bindingAllocated = inBindingAllocated;
 
-        BindingStorePlacementProblem bsp = (BindingStorePlacementProblem) problem;
         Set<LocalVariable> dirtyVars = new HashSet<LocalVariable>(inDirtyVars);
 
         for (Instr i : basicBlock.getInstrs()) {
@@ -74,7 +72,7 @@ public class BindingStorePlacementNode extends FlowGraphNode {
             if (i instanceof CallBase) {
                 CallBase call = (CallBase) i;
                 // At this call site, a binding will get allocated if it has not been already!
-                Operand o = call.getClosureArg();
+                Operand o = call.getClosureArg(problem.getScope().getManager().getNil());
                 if ((o != null) && (o instanceof WrappedIRClosure)) {
                     bindingAllocated = true;
 
@@ -173,7 +171,7 @@ public class BindingStorePlacementNode extends FlowGraphNode {
 
             if (i instanceof CallBase) {
                 CallBase call = (CallBase) i;
-                Operand o = call.getClosureArg();
+                Operand o = call.getClosureArg(problem.getScope().getManager().getNil());
                 if ((o != null) && (o instanceof WrappedIRClosure)) {
                     IRClosure scope = ((WrappedIRClosure) o).getClosure();
 

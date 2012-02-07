@@ -1,22 +1,21 @@
 package org.jruby.compiler.ir.instructions;
 
 import java.util.Map;
-import org.jruby.RubyModule;
 import org.jruby.RubyClass;
+import org.jruby.RubyModule;
 import org.jruby.compiler.ir.IRClassBody;
 import org.jruby.compiler.ir.IRMetaClassBody;
-import org.jruby.compiler.ir.operands.Nil;
+import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
-import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.representations.InlinerInfo;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public class DefineClassInstr extends Instr implements ResultInstr {
     private IRClassBody newIRClassBody;
@@ -30,7 +29,7 @@ public class DefineClassInstr extends Instr implements ResultInstr {
         assert result != null: "DefineClassInstr result is null";
         
         this.container = container;
-        this.superClass = superClass == null ? Nil.NIL : superClass;
+        this.superClass = superClass == null ? newIRClassBody.getManager().getNil() : superClass;
         this.newIRClassBody = newIRClassBody;
         this.result = result;
     }
@@ -67,7 +66,7 @@ public class DefineClassInstr extends Instr implements ResultInstr {
         if (newIRClassBody instanceof IRMetaClassBody) return classContainer.getMetaClass();
 
         RubyClass sc;
-        if (superClass == Nil.NIL) {
+        if (superClass == context.getRuntime().getIRManager().getNil()) {
             sc = null;
         } else {
             Object o = superClass.retrieve(context, self, currDynScope, temp);

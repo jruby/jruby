@@ -1,23 +1,21 @@
 package org.jruby.compiler.ir.instructions.ruby19;
 
 import org.jruby.RubyProc;
+import org.jruby.compiler.ir.IRClosure;
+import org.jruby.compiler.ir.Operation;
+import org.jruby.compiler.ir.instructions.CallInstr;
+import org.jruby.compiler.ir.instructions.Instr;
+import org.jruby.compiler.ir.operands.MethAddr;
+import org.jruby.compiler.ir.operands.Operand;
+import org.jruby.compiler.ir.operands.Variable;
+import org.jruby.compiler.ir.operands.WrappedIRClosure;
+import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.lexer.yacc.ISourcePosition;
-
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-
-import org.jruby.compiler.ir.Operation;
-import org.jruby.compiler.ir.IRClosure;
-import org.jruby.compiler.ir.operands.Operand;
-import org.jruby.compiler.ir.operands.MethAddr;
-import org.jruby.compiler.ir.operands.Variable;
-import org.jruby.compiler.ir.operands.WrappedIRClosure;
-import org.jruby.compiler.ir.representations.InlinerInfo;
-import org.jruby.compiler.ir.instructions.Instr;
-import org.jruby.compiler.ir.instructions.CallInstr;
 
 public class BuildLambdaInstr extends CallInstr {
     /** The position for the block */
@@ -30,7 +28,7 @@ public class BuildLambdaInstr extends CallInstr {
 
     @Override
     public Operand[] getOperands() {
-        return new Operand[] { getClosureArg() };
+        return new Operand[] { getClosureArg(getLambdaBody().getManager().getNil()) };
     }
 
     @Override
@@ -44,7 +42,8 @@ public class BuildLambdaInstr extends CallInstr {
     }
 
     private IRClosure getLambdaBody() {
-        return ((WrappedIRClosure)getClosureArg()).getClosure();
+        // We know this is wrapping an actual block so passing null should be ok (yuck)
+        return ((WrappedIRClosure)getClosureArg(null)).getClosure();
     }
 
     @Override
@@ -54,6 +53,6 @@ public class BuildLambdaInstr extends CallInstr {
         // JRUBY-5686: do this before executing so first time sets cref module
         getLambdaBody().getStaticScope().determineModule();
 
-        return RubyProc.newProc(context.getRuntime(), (Block)getClosureArg().retrieve(context, self, currDynScope, temp), Block.Type.LAMBDA, position);
+        return RubyProc.newProc(context.getRuntime(), (Block)getClosureArg(context.getRuntime().getIRManager().getNil()).retrieve(context, self, currDynScope, temp), Block.Type.LAMBDA, position);
     }
 }

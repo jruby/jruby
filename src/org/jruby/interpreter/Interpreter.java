@@ -38,7 +38,6 @@ import org.jruby.compiler.ir.instructions.ruby19.ReceiveRequiredArgInstr;
 import org.jruby.compiler.ir.operands.IRException;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.LocalVariable;
-import org.jruby.compiler.ir.operands.Nil;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.TemporaryVariable;
 import org.jruby.compiler.ir.operands.UndefinedValue;
@@ -322,8 +321,8 @@ public class Interpreter {
                         Operand arg2 = bne.getArg2();
                         Object value1 = arg1.retrieve(context, self, currDynScope, temp);
                         Object value2 = arg2.retrieve(context, self, currDynScope, temp);
-                        boolean eql = ((arg2 == Nil.NIL) || (arg2 == UndefinedValue.UNDEFINED)) ?
-                                       value1 == value2 : ((IRubyObject) value1).op_equal(context, (IRubyObject)value2).isTrue();
+                        boolean eql = arg2 == scope.getManager().getNil() || arg2 == UndefinedValue.UNDEFINED ?
+                                value1 == value2 : ((IRubyObject) value1).op_equal(context, (IRubyObject)value2).isTrue();
                         ipc = !eql ? bne.getJumpTarget().getTargetPC() : ipc+1;
                         break;
                     }

@@ -6,10 +6,7 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.compiler.ir.targets.JVM;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 /*
  * args field: [self, receiver, *args]
@@ -62,6 +59,7 @@ public class CallInstr extends CallBase implements ResultInstr {
         return "" + result + (hasUnusedResult() ? "[DEAD-RESULT]" : "") + " = " + super.toString();
     }
 
+    @Override
     public void compile(JVM jvm) {
         jvm.method().loadLocal(0);
         jvm.emit(getReceiver());

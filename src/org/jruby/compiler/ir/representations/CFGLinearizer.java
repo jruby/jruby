@@ -8,7 +8,6 @@ import org.jruby.compiler.ir.instructions.BranchInstr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.JumpInstr;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
-import org.jruby.compiler.ir.operands.Nil;
 import org.jruby.compiler.ir.representations.CFG.EdgeType;
 
 /**
@@ -78,7 +77,7 @@ public class CFGLinearizer {
             BasicBlock current = list.get(i);
 
             if (current == exitBB) { // exit not last
-                current.addInstr(new ReturnInstr(Nil.NIL));
+                current.addInstr(new ReturnInstr(cfg.getScope().getManager().getNil()));
                 continue;
             }
                   

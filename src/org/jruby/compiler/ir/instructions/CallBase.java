@@ -54,9 +54,8 @@ public abstract class CallBase extends Instr {
         return methAddr;
     }
 
-    public Operand getClosureArg() {
-        // ENEBO: We should not be passing nulls 
-        return closure == null ? Nil.NIL : closure;
+    public Operand getClosureArg(Operand ifUnspecified) {
+        return closure == null ? ifUnspecified : closure;
     }
 
     public Operand getReceiver() {

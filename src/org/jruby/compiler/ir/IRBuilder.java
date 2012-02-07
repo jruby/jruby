@@ -195,7 +195,6 @@ import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.LiveScopeModule;
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.MethAddr;
-import org.jruby.compiler.ir.operands.Nil;
 import org.jruby.compiler.ir.operands.NthRef;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Range;
@@ -254,10 +253,10 @@ import org.jruby.util.log.LoggerFactory;
 // Something to pay attention to and if this extra pass becomes a concern (not convinced that it is yet),
 // this smart can be built in here.  Right now, the goal is to do something simple and straightforward that is going to be correct.
 //
-// 2. Returning null vs Nil.NIL
+// 2. Returning null vs manager.getNil()
 // ----------------------------
 // - We should be returning null from the build methods where it is a normal "error" condition
-// - We should be returning Nil.NIL where the actual return value of a build is the ruby nil operand
+// - We should be returning manager.getNil() where the actual return value of a build is the ruby nil operand
 //   Look in buildIf for an example of this
 //
 // 3. Temporary variable reuse
@@ -728,7 +727,7 @@ public class IRBuilder {
             }
         }
 
-        return argsList.isEmpty() ? Nil.NIL : argsList.get(argsList.size() - 1);
+        return argsList.isEmpty() ? manager.getNil() : argsList.get(argsList.size() - 1);
     }
 
     public List<Operand> setupCallArgs(Node args, IRScope s) {
@@ -904,7 +903,8 @@ public class IRBuilder {
         Operand newName = build(alias.getNewName(), s);
         Operand oldName = build(alias.getOldName(), s);
         s.addInstr(new AliasInstr(getSelf(s), newName, oldName));
-        return Nil.NIL;
+        
+        return manager.getNil();
     }
 
     // Translate "ret = (a && b)" --> "ret = (a ? b : false)" -->
@@ -960,7 +960,7 @@ public class IRBuilder {
         Operand obj = build(attrAssignNode.getReceiverNode(), s);
         List<Operand> args = new ArrayList<Operand>();
         Node argsNode = attrAssignNode.getArgsNode();
-        Operand lastArg = (argsNode == null) ? Nil.NIL : buildCallArgs(args, argsNode, s);
+        Operand lastArg = (argsNode == null) ? manager.getNil() : buildCallArgs(args, argsNode, s);
         s.addInstr(new AttrAssignInstr(obj, new MethAddr(attrAssignNode.getName()), args.toArray(new Operand[args.size()])));
         return lastArg;
     }
@@ -1131,7 +1131,7 @@ public class IRBuilder {
 
         if (!hasElse) {
             s.addInstr(new LabelInstr(elseLabel));
-            s.addInstr(new CopyInstr(result, Nil.NIL));
+            s.addInstr(new CopyInstr(result, manager.getNil()));
             s.addInstr(new JumpInstr(endLabel));
         }
 
@@ -1375,7 +1375,7 @@ public class IRBuilder {
         // Rescue block code
         // SSS FIXME: How do we get this to catch all exceptions, not just Ruby exceptions?
         s.addInstr(new LabelInstr(ebi.dummyRescueBlockLabel));
-        s.addInstr(new CopyInstr(ret, Nil.NIL));
+        s.addInstr(new CopyInstr(ret, manager.getNil()));
 
         _ensureBlockStack.pop();
 
@@ -1419,7 +1419,7 @@ public class IRBuilder {
         m.addInstr(new InstanceOfInstr(eqqResult, exc, "org.jruby.RubyException")); 
         m.addInstr(BEQInstr.create(eqqResult, BooleanLiteral.FALSE, uncaughtLabel));
         Object v2 = rescueBlock.run(rescueBlockArgs); // YIELD: Run the protected code block
-        if (v2 != null) m.addInstr(new CopyInstr(rv, Nil.NIL));
+        if (v2 != null) m.addInstr(new CopyInstr(rv, manager.getNil()));
         m.addInstr(new JumpInstr(rEndLabel));
         m.addInstr(new LabelInstr(uncaughtLabel));
         m.addInstr(new ThrowExceptionInstr(exc));
@@ -1445,7 +1445,7 @@ public class IRBuilder {
             public Operand run(Object[] args) {
                 IRScope m = (IRScope)args[0];
                 m.addInstr(new SetWithinDefinedInstr(BooleanLiteral.FALSE));
-                return Nil.NIL;
+                return manager.getNil();
             }
         };
 
@@ -1498,7 +1498,7 @@ public class IRBuilder {
         Variable tmpVar = getValueInTemporaryVariable(s, defVal);
         s.addInstr(new JumpInstr(defLabel));
         s.addInstr(new LabelInstr(undefLabel));
-        s.addInstr(new CopyInstr(tmpVar, Nil.NIL));
+        s.addInstr(new CopyInstr(tmpVar, manager.getNil()));
         s.addInstr(new LabelInstr(defLabel));
         return tmpVar;
     }
@@ -1521,21 +1521,21 @@ public class IRBuilder {
             for (int i = 0; i < ((ArrayNode) node).size(); i++) {
                 Node iterNode = ((ArrayNode) node).get(i);
                 Operand def = buildGetDefinition(iterNode, s);
-                if (def == Nil.NIL) { // Optimization!
-                    rv = Nil.NIL;
+                if (def == manager.getNil()) { // Optimization!
+                    rv = manager.getNil();
                     break;
                 } else if (!def.hasKnownValue()) { // Optimization!
                     failPathReqd = true;
-                    s.addInstr(BEQInstr.create(def, Nil.NIL, failLabel));
+                    s.addInstr(BEQInstr.create(def, manager.getNil(), failLabel));
                 }
             }
         } else {
             Operand def = buildGetDefinition(node, s);
-            if (def == Nil.NIL) { // Optimization!
-                rv = Nil.NIL;
+            if (def == manager.getNil()) { // Optimization!
+                rv = manager.getNil();
             } else if (!def.hasKnownValue()) { // Optimization!
                 failPathReqd = true;
-                s.addInstr(BEQInstr.create(def, Nil.NIL, failLabel));
+                s.addInstr(BEQInstr.create(def, manager.getNil(), failLabel));
             }
         }
 
@@ -1584,7 +1584,7 @@ public class IRBuilder {
                 s.addInstr(BNEInstr.create(tmpVar, UndefinedValue.UNDEFINED, defLabel));
                 s.addInstr(new InheritanceSearchConstInstr(tmpVar, s.getCurrentModuleVariable(), constName)); // SSS FIXME: should this be the current-module var or something else?
                 s.addInstr(BNEInstr.create(tmpVar, UndefinedValue.UNDEFINED, defLabel));
-                s.addInstr(new CopyInstr(tmpVar, Nil.NIL));
+                s.addInstr(new CopyInstr(tmpVar, manager.getNil()));
                 s.addInstr(new JumpInstr(doneLabel));
                 s.addInstr(new LabelInstr(defLabel));
                 s.addInstr(new CopyInstr(tmpVar, new StringLiteral("constant")));
@@ -1621,7 +1621,7 @@ public class IRBuilder {
                 s.addInstr(new JRubyImplCallInstr(tmpVar, JRubyImplementationMethod.BACKREF_IS_RUBY_MATCH_DATA, null, NO_ARGS));
                 s.addInstr(BEQInstr.create(tmpVar, BooleanLiteral.FALSE, undefLabel));
                 // SSS FIXME: 
-                // - Can/should I use BEQInstr(new NthRef(n), Nil.NIL, undefLabel)? instead of .nil? & compare with flag?
+                // - Can/should I use BEQInstr(new NthRef(n), manager.getNil(), undefLabel)? instead of .nil? & compare with flag?
                 // - Or, even create a new IsNilInstr and NotNilInstr to represent optimized scenarios where
                 //   the nil? method is not monkey-patched?
                 // This matters because if String.nil? is monkey-patched, the two sequences can behave differently.
@@ -1667,7 +1667,7 @@ public class IRBuilder {
                         // Nothing to do -- ignore the exception, and restore stashed error info!
                         IRScope  m  = (IRScope)args[0];
                         m.addInstr(new RestoreErrorInfoInstr((Operand) args[1]));
-                        return Nil.NIL;
+                        return manager.getNil();
                     }
                 };
 
@@ -1699,7 +1699,7 @@ public class IRBuilder {
                 Label    undefLabel = s.getNewLabel();
                 CallNode iVisited = (CallNode) node;
                 Operand  receiverDefn = buildGetDefinition(iVisited.getReceiverNode(), s);
-                s.addInstr(BEQInstr.create(receiverDefn, Nil.NIL, undefLabel));
+                s.addInstr(BEQInstr.create(receiverDefn, manager.getNil(), undefLabel));
 
                 // protected main block
                 CodeBlock protectedCode = new CodeBlock() {
@@ -1716,7 +1716,7 @@ public class IRBuilder {
 
                 // rescue block
                 CodeBlock rescueBlock = new CodeBlock() {
-                    public Operand run(Object[] args) { return Nil.NIL; } // Nothing to do if we got an exception
+                    public Operand run(Object[] args) { return manager.getNil(); } // Nothing to do if we got an exception
                 };
 
                 // Try verifying definition, and if we get an exception, throw it out, and return nil
@@ -1740,7 +1740,7 @@ public class IRBuilder {
                 Label  undefLabel = s.getNewLabel();
                 AttrAssignNode iVisited = (AttrAssignNode) node;
                 Operand receiverDefn = buildGetDefinition(iVisited.getReceiverNode(), s);
-                s.addInstr(BEQInstr.create(receiverDefn, Nil.NIL, undefLabel));
+                s.addInstr(BEQInstr.create(receiverDefn, manager.getNil(), undefLabel));
 
                 // protected main block
                 CodeBlock protectedCode = new CodeBlock() {
@@ -1776,7 +1776,7 @@ public class IRBuilder {
 
                 // rescue block
                 CodeBlock rescueBlock = new CodeBlock() {
-                    public Operand run(Object[] args) { return Nil.NIL; } // Nothing to do if we got an exception
+                    public Operand run(Object[] args) { return manager.getNil(); } // Nothing to do if we got an exception
                 };
 
                 // Try verifying definition, and if we get an JumpException exception, process it with the rescue block above
@@ -1803,7 +1803,7 @@ public class IRBuilder {
                 };
                 // rescue block
                 CodeBlock rescueBlock = new CodeBlock() {
-                    public Operand run(Object[] args) { return Nil.NIL; } // Nothing to do if we got an exception
+                    public Operand run(Object[] args) { return manager.getNil(); } // Nothing to do if we got an exception
                 };
 
                 // Try verifying definition, and if we get an JumpException exception, process it with the rescue block above
@@ -1872,7 +1872,7 @@ public class IRBuilder {
             Operand rv = createIRBuilder(manager).build(bodyNode, method);
             if (rv != null) method.addInstr(new ReturnInstr(rv));
         } else {
-            method.addInstr(new ReturnInstr(Nil.NIL));
+            method.addInstr(new ReturnInstr(manager.getNil()));
         }
 
         return method;
@@ -1881,7 +1881,7 @@ public class IRBuilder {
     public Operand buildDefn(MethodDefNode node, IRScope s) { // Instance method
         IRMethod method = defineNewMethod(node, s, true);
         s.addInstr(new DefineInstanceMethodInstr(new StringLiteral("--unused--"), method));
-        return Nil.NIL;
+        return manager.getNil();
     }
 
     public Operand buildDefs(DefsNode node, IRScope s) { // Class method
@@ -1889,7 +1889,7 @@ public class IRBuilder {
         IRMethod method = defineNewMethod(node, s, false);
 
         s.addInstr(new DefineClassMethodInstr(container, method));
-        return Nil.NIL;
+        return manager.getNil();
     }
 
     protected int receiveOptArgs(final ArgsNode argsNode, IRScope s, int opt, int argIndex) {
@@ -1994,7 +1994,7 @@ public class IRBuilder {
     private Operand dynamicPiece(Node pieceNode, IRScope s) {
         Operand piece = build(pieceNode, s);
         
-        return piece == null ? Nil.NIL : piece;
+        return piece == null ? manager.getNil() : piece;
     }
 
     public Operand buildDRegexp(DRegexpNode dregexpNode, IRScope s) {
@@ -2125,7 +2125,7 @@ public class IRBuilder {
         // Two cases:
         // 1. Ensure block has no explicit return => the result of the entire ensure expression is the result of the protected body.
         // 2. Ensure block has an explicit return => the result of the protected body is ignored.
-        Operand ensureRetVal = (ensureNode.getEnsureNode() == null) ? Nil.NIL : build(ensureNode.getEnsureNode(), s);
+        Operand ensureRetVal = (ensureNode.getEnsureNode() == null) ? manager.getNil() : build(ensureNode.getEnsureNode(), s);
         // U_NIL => there was a return from within the ensure block!
         if (ensureRetVal == U_NIL) rv = U_NIL;
 
@@ -2302,7 +2302,7 @@ public class IRBuilder {
         closure.addInstr(new LabelInstr(closure.startLabel));
 
             // Build closure body and return the result of the closure
-        Operand closureRetVal = forNode.getBodyNode() == null ? Nil.NIL : build(forNode.getBodyNode(), closure);
+        Operand closureRetVal = forNode.getBodyNode() == null ? manager.getNil() : build(forNode.getBodyNode(), closure);
         if (closureRetVal != U_NIL)  // can be null if the node is an if node with returns in both branches.
             closure.addInstr(new ClosureReturnInstr(closureRetVal));
 
@@ -2383,7 +2383,7 @@ public class IRBuilder {
         } else {
             thenNull = true;
             result = s.getNewTemporaryVariable();
-            s.addInstr(new CopyInstr(result, Nil.NIL));
+            s.addInstr(new CopyInstr(result, manager.getNil()));
             s.addInstr(new JumpInstr(doneLabel));
         }
 
@@ -2399,12 +2399,12 @@ public class IRBuilder {
             }
         } else {
             elseNull = true;
-            s.addInstr(new CopyInstr(result, Nil.NIL));
+            s.addInstr(new CopyInstr(result, manager.getNil()));
         }
 
         if (thenNull && elseNull) {
             s.addInstr(new LabelInstr(doneLabel));
-            return Nil.NIL;
+            return manager.getNil();
         } else if (thenUnil && elseUnil) {
             return U_NIL;
         } else {
@@ -2455,7 +2455,7 @@ public class IRBuilder {
         closure.addInstr(new LabelInstr(closure.startLabel));
 
         // Build closure body and return the result of the closure
-        Operand closureRetVal = iterNode.getBodyNode() == null ? Nil.NIL : closureBuilder.build(iterNode.getBodyNode(), closure);
+        Operand closureRetVal = iterNode.getBodyNode() == null ? manager.getNil() : closureBuilder.build(iterNode.getBodyNode(), closure);
         if (closureRetVal != U_NIL)  // can be U_NIL if the node is an if node with returns in both branches.
             closure.addInstr(new ClosureReturnInstr(closureRetVal));
 
@@ -2615,7 +2615,7 @@ public class IRBuilder {
     public Operand buildNext(final NextNode nextNode, IRScope s) {
         IRLoop currLoop = getCurrentLoop();
 
-        Operand rv = (nextNode.getValueNode() == null) ? Nil.NIL : build(nextNode.getValueNode(), s);
+        Operand rv = (nextNode.getValueNode() == null) ? manager.getNil() : build(nextNode.getValueNode(), s);
 
         // If we have ensure blocks, have to run those first!
         if (!_ensureBlockStack.empty()) EnsureBlockInfo.emitJumpChain(s, _ensureBlockStack, currLoop);
@@ -2640,7 +2640,7 @@ public class IRBuilder {
     }
 
     public Operand buildNil(Node node, IRScope s) {
-        return Nil.NIL;
+        return manager.getNil();
     }
 
     public Operand buildNot(NotNode node, IRScope s) {
@@ -2732,7 +2732,7 @@ public class IRBuilder {
             l2 = s.getNewLabel();
             v1 = buildGetDefinitionBase(orNode.getFirstNode(), s);
             s.addInstr(new CopyInstr(flag, v1));
-            s.addInstr(BEQInstr.create(flag, Nil.NIL, l2)); // if v1 is undefined, go to v2's computation
+            s.addInstr(BEQInstr.create(flag, manager.getNil(), l2)); // if v1 is undefined, go to v2's computation
         }
         v1 = build(orNode.getFirstNode(), s); // build of 'x'
         s.addInstr(new CopyInstr(flag, v1));
@@ -2894,7 +2894,7 @@ public class IRBuilder {
 
         // Add an instruction to record the end block at runtime
         s.addInstr(new RecordEndBlockInstr(s, endClosure));
-        return Nil.NIL;
+        return manager.getNil();
     }
 
     public Operand buildPreExe(PreExeNode preExeNode, IRScope s) {
@@ -2906,7 +2906,7 @@ public class IRBuilder {
 
         // Record the begin block at IR build time
         s.getTopLevelScope().recordBeginBlock(beginClosure);
-        return Nil.NIL;
+        return manager.getNil();
     }
 
     public Operand buildRedo(Node node, IRScope s) {
@@ -2924,7 +2924,7 @@ public class IRBuilder {
                 s.addInstr(new ThrowExceptionInstr(IRException.REDO_LocalJumpError));
             }
         }
-        return Nil.NIL;
+        return manager.getNil();
     }
 
     public Operand buildRegexp(RegexpNode reNode, IRScope s) {
@@ -2953,7 +2953,7 @@ public class IRBuilder {
         if (ensure != null) ensure.savedGlobalException = savedGlobalException;
 
         // Body
-        Operand tmp = Nil.NIL;  // default return value if for some strange reason, we neither have the body node or the else node!
+        Operand tmp = manager.getNil();  // default return value if for some strange reason, we neither have the body node or the else node!
         Variable rv = s.getNewTemporaryVariable();
         if (rescueNode.getBodyNode() != null) tmp = build(rescueNode.getBodyNode(), s);
 
@@ -3116,18 +3116,18 @@ public class IRBuilder {
             // Retries effectively create a loop
             s.setHasLoopsFlag(true);
         }
-        return Nil.NIL;
+        return manager.getNil();
     }
 
     public Operand buildReturn(ReturnNode returnNode, IRScope s) {
-        Operand retVal = (returnNode.getValueNode() == null) ? Nil.NIL : build(returnNode.getValueNode(), s);
+        Operand retVal = (returnNode.getValueNode() == null) ? manager.getNil() : build(returnNode.getValueNode(), s);
 
         // Before we return, 
         // - have to go execute all the ensure blocks if there are any.
         //   this code also takes care of resetting "$!"
         // - if we dont have any ensure blocks, we have to clear "$!"
         if (!_ensureBlockStack.empty()) EnsureBlockInfo.emitJumpChain(s, _ensureBlockStack, null);
-        else if (!_rescueBlockStack.empty()) s.addInstr(new PutGlobalVarInstr("$!", Nil.NIL));
+        else if (!_rescueBlockStack.empty()) s.addInstr(new PutGlobalVarInstr("$!", manager.getNil()));
 
         if (s instanceof IRClosure) {
             // If 'm' is a block scope, a return returns from the closest enclosing method.
@@ -3163,7 +3163,7 @@ public class IRBuilder {
         script.addInstr(new CopyInstr(script.getCurrentScopeVariable(), new CurrentScope()));
         script.addInstr(new CopyInstr(script.getCurrentModuleVariable(), new CurrentModule()));
         // Build IR for the tree and return the result of the expression tree
-        Operand rval = rootNode.getBodyNode() == null ? Nil.NIL : build(rootNode.getBodyNode(), script);
+        Operand rval = rootNode.getBodyNode() == null ? manager.getNil() : build(rootNode.getBodyNode(), script);
         script.addInstr(new ClosureReturnInstr(rval));
 
         return script;
@@ -3269,7 +3269,7 @@ public class IRBuilder {
                 (!isWhile && conditionNode.getNodeType().alwaysTrue()))) {
             // we won't enter the loop -- just build the condition node
             build(conditionNode, s);
-            return Nil.NIL;
+            return manager.getNil();
         } else {
             IRLoop loop = new IRLoop(s, getCurrentLoop());
             Variable loopResult = loop.loopResult;
@@ -3305,7 +3305,7 @@ public class IRBuilder {
 
             // Loop result -- nil always
             s.addInstr(new LabelInstr(setupResultLabel));
-            s.addInstr(new CopyInstr(loopResult, Nil.NIL));
+            s.addInstr(new CopyInstr(loopResult, manager.getNil()));
 
             // Loop end -- breaks jump here bypassing the result set up above
             s.addInstr(new LabelInstr(loop.loopEndLabel));
@@ -3324,7 +3324,7 @@ public class IRBuilder {
     public Operand buildVAlias(Node node, IRScope s) {
         VAliasNode valiasNode = (VAliasNode) node;
         s.addInstr(new GVarAliasInstr(new StringLiteral(valiasNode.getNewName()), new StringLiteral(valiasNode.getOldName())));
-        return Nil.NIL;
+        return manager.getNil();
     }
 
     public Operand buildVCall(VCallNode node, IRScope s) {

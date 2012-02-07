@@ -9,7 +9,6 @@ import org.jruby.RubyString;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.jruby.BlockGivenInstr;
 import org.jruby.compiler.ir.operands.MethAddr;
-import org.jruby.compiler.ir.operands.Nil;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.StringLiteral;
 import org.jruby.compiler.ir.operands.Variable;
@@ -17,11 +16,11 @@ import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.compiler.ir.targets.JVM;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
 public class JRubyImplCallInstr extends CallInstr {
@@ -113,6 +112,7 @@ public class JRubyImplCallInstr extends CallInstr {
     }
 
     // We cannot convert this into a NoCallResultInstr
+    @Override
     public Instr discardResult() {
         return this;
     }
@@ -129,7 +129,7 @@ public class JRubyImplCallInstr extends CallInstr {
                 IRubyObject v = (IRubyObject)getCallArgs()[0].retrieve(context, self, currDynScope, temp);
                 name = ((StringLiteral)getCallArgs()[1]).string;
                 ByteList definedType = RuntimeHelpers.getDefinedConstantOrBoundMethod(v, name);
-                rVal = (definedType == null ? Nil.NIL : (new StringLiteral(definedType))).retrieve(context, self, currDynScope, temp);
+                rVal = (definedType == null ? runtime.getIRManager().getNil() : (new StringLiteral(definedType))).retrieve(context, self, currDynScope, temp);
                 break;
             }
             case RT_IS_GLOBAL_DEFINED: {

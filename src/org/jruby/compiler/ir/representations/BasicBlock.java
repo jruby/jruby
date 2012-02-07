@@ -1,23 +1,22 @@
 package org.jruby.compiler.ir.representations;
 
-import org.jruby.compiler.ir.operands.Array;
-import org.jruby.compiler.ir.operands.Label;
-import org.jruby.compiler.ir.operands.Nil;
-import org.jruby.compiler.ir.operands.Variable;
-import org.jruby.compiler.ir.operands.Operand;
-import org.jruby.compiler.ir.instructions.Instr;
-import org.jruby.compiler.ir.instructions.CopyInstr;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.ListIterator;
+import org.jruby.compiler.ir.IRClosure;
 import org.jruby.compiler.ir.instructions.ClosureReturnInstr;
+import org.jruby.compiler.ir.instructions.CopyInstr;
+import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.NopInstr;
 import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
-import org.jruby.compiler.ir.instructions.ReceiveRestArgBase;
 import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
+import org.jruby.compiler.ir.instructions.ReceiveRestArgBase;
 import org.jruby.compiler.ir.instructions.ReceiveSelfInstruction;
 import org.jruby.compiler.ir.instructions.YieldInstr;
-
-import java.util.List;
-import java.util.ArrayList;
-import java.util.ListIterator;
+import org.jruby.compiler.ir.operands.Array;
+import org.jruby.compiler.ir.operands.Label;
+import org.jruby.compiler.ir.operands.Operand;
+import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.util.DataInfo;
 
 public class BasicBlock implements DataInfo {
@@ -123,7 +122,7 @@ public class BasicBlock implements DataInfo {
     }
 
     // SSS FIXME: Verify correctness; also deal with YieldInstr.wrapIntoArray flag
-    public void processClosureArgAndReturnInstrs(InlinerInfo ii, YieldInstr yi) {
+    public void processClosureArgAndReturnInstrs(IRClosure closure, InlinerInfo ii, YieldInstr yi) {
         Variable  yieldResult = ii.getRenamedVariable(yi.getResult());
         Operand[] yieldArgs   = yi.getNonBlockOperands();
 
@@ -152,7 +151,7 @@ public class BasicBlock implements DataInfo {
             } else if (i instanceof ReceiveArgumentInstruction) {
                 ReceiveArgumentInstruction rai = (ReceiveArgumentInstruction)i;
                 int argIndex = rai.getArgIndex();
-                Operand closureArg = (argIndex < yieldArgs.length) ? yieldArgs[argIndex].cloneForInlining(ii) : Nil.NIL;
+                Operand closureArg = (argIndex < yieldArgs.length) ? yieldArgs[argIndex].cloneForInlining(ii) : closure.getManager().getNil();
 
                 // Replace the arg receive with a simple copy
                 it.set(new CopyInstr(rai.getResult(), closureArg));

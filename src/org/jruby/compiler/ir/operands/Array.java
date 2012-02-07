@@ -1,10 +1,8 @@
 package org.jruby.compiler.ir.operands;
 
-import org.jruby.compiler.ir.representations.InlinerInfo;
-
 import java.util.List;
 import java.util.Map;
-
+import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -61,6 +59,8 @@ public class Array extends Operand {
 
     @Override
     public Operand fetchCompileTimeArrayElement(int argIndex, boolean getSubArray) {
+        // FIXME: This appears to be unhooked and Nil.NIL is a problem for it atm
+        /*
         if (!getSubArray) return argIndex < elts.length ? elts[argIndex] : Nil.NIL;
 
         if (argIndex < elts.length) {
@@ -71,6 +71,9 @@ public class Array extends Operand {
         }
 
         return new Array();
+        * 
+        */
+        return null;
     }
 
     public Operand toArray() {

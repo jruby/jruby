@@ -4,18 +4,17 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.jruby.compiler.ir.Tuple;
 import org.jruby.compiler.ir.IRScope;
+import org.jruby.compiler.ir.Tuple;
+import org.jruby.compiler.ir.instructions.CallBase;
+import org.jruby.compiler.ir.instructions.ResultInstr;
+import org.jruby.compiler.ir.instructions.YieldInstr;
 import org.jruby.compiler.ir.operands.Array;
+import org.jruby.compiler.ir.operands.ClosureLocalVariable;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.LocalVariable;
-import org.jruby.compiler.ir.operands.ClosureLocalVariable;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
-import org.jruby.compiler.ir.instructions.CallBase;
-import org.jruby.compiler.ir.instructions.YieldInstr;
-import org.jruby.compiler.ir.instructions.ResultInstr;
 
 public class InlinerInfo {
     public final CFG callerCFG;
@@ -104,7 +103,7 @@ public class InlinerInfo {
     }
 
     public Operand getCallClosure() {
-        return call.getClosureArg();
+        return call.getClosureArg(callerCFG.getScope().getManager().getNil());
     }
 
     public Variable getCallResultVariable() {

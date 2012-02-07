@@ -25,9 +25,9 @@ import org.jruby.compiler.ir.instructions.LabelInstr;
 import org.jruby.compiler.ir.instructions.SetReturnAddressInstr;
 import org.jruby.compiler.ir.instructions.jruby.ThrowExceptionInstr;
 import org.jruby.compiler.ir.operands.Label;
-import org.jruby.compiler.ir.operands.WrappedIRClosure;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
+import org.jruby.compiler.ir.operands.WrappedIRClosure;
 import org.jruby.compiler.ir.util.DirectedGraph;
 import org.jruby.compiler.ir.util.Edge;
 import org.jruby.util.log.Logger;
@@ -250,7 +250,7 @@ public class CFG {
 
         // Build the rest!
         BasicBlock currBB = firstBB;
-        BasicBlock newBB = null;
+        BasicBlock newBB;
         boolean bbEnded = false;
         boolean nextBBIsFallThrough = true;
         for (Instr i : instrs) {
@@ -349,7 +349,7 @@ public class CFG {
                     addrs.add(tgtLbl);
                 }
             } else if (i instanceof CallBase) { // Build CFG for the closure if there exists one
-                Operand closureArg = ((CallBase) i).getClosureArg();
+                Operand closureArg = ((CallBase) i).getClosureArg(getScope().getManager().getNil());
                 if (closureArg instanceof WrappedIRClosure) {
                     ((WrappedIRClosure) closureArg).getClosure().buildCFG();
                 }

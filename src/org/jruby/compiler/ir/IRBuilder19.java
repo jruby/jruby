@@ -44,7 +44,6 @@ import org.jruby.compiler.ir.operands.CompoundArray;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.MethAddr;
-import org.jruby.compiler.ir.operands.Nil;
 import org.jruby.compiler.ir.operands.NthRef;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.StringLiteral;
@@ -384,7 +383,7 @@ public class IRBuilder19 extends IRBuilder {
         closureBuilder.receiveBlockArgs(node, closure);
         closureBuilder.receiveBlockClosureArg(node.getBlockVarNode(), closure);
 
-        Operand closureRetVal = node.getBody() == null ? Nil.NIL : closureBuilder.build(node.getBody(), closure);
+        Operand closureRetVal = node.getBody() == null ? manager.getNil() : closureBuilder.build(node.getBody(), closure);
 
         // can be U_NIL if the node is an if node with returns in both branches.
         if (closureRetVal != U_NIL) closure.addInstr(new ClosureReturnInstr(closureRetVal));
@@ -440,7 +439,7 @@ public class IRBuilder19 extends IRBuilder {
                 Operand v = super.buildVersionSpecificGetDefinitionIR(node, s);
                 Label doneLabel = s.getNewLabel();
                 Variable tmpVar = getValueInTemporaryVariable(s, v);
-                s.addInstr(BNEInstr.create(tmpVar, Nil.NIL, doneLabel));
+                s.addInstr(BNEInstr.create(tmpVar, manager.getNil(), doneLabel));
                 s.addInstr(new CopyInstr(tmpVar, new StringLiteral("expression")));
                 s.addInstr(new LabelInstr(doneLabel));
                 return tmpVar;
@@ -449,7 +448,7 @@ public class IRBuilder19 extends IRBuilder {
                 Operand v = buildGetDefinitionBase(((NotNode)node).getConditionNode(), s);
                 Label doneLabel = s.getNewLabel();
                 Variable tmpVar = getValueInTemporaryVariable(s, v);
-                s.addInstr(BEQInstr.create(tmpVar, Nil.NIL, doneLabel));
+                s.addInstr(BEQInstr.create(tmpVar, manager.getNil(), doneLabel));
                 s.addInstr(new CopyInstr(tmpVar, new StringLiteral("method")));
                 s.addInstr(new LabelInstr(doneLabel));
                 return tmpVar;
@@ -476,7 +475,7 @@ public class IRBuilder19 extends IRBuilder {
                 s.addInstr(new JRubyImplCallInstr(tmpVar, JRubyImplementationMethod.BACKREF_IS_RUBY_MATCH_DATA, null, NO_ARGS));
                 s.addInstr(BEQInstr.create(tmpVar, BooleanLiteral.FALSE, undefLabel));
                 // SSS FIXME: 
-                // - Can/should I use BEQInstr(new NthRef(n), Nil.NIL, undefLabel)? instead of .nil? & compare with flag?
+                // - Can/should I use BEQInstr(new NthRef(n), manager.getNil(), undefLabel)? instead of .nil? & compare with flag?
                 // - Or, even create a new IsNilInstr and NotNilInstr to represent optimized scenarios where
                 //   the nil? method is not monkey-patched?
                 // This matters because if String.nil? is monkey-patched, the two sequences can behave differently.

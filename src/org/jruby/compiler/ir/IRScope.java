@@ -239,6 +239,7 @@ public abstract class IRScope {
         localVars = new LocalVariableAllocator();
     }
 
+    @Override
     public int hashCode() {
         return scopeId;
     }
@@ -566,7 +567,7 @@ public abstract class IRScope {
             if (i instanceof CallBase) {
                 CallBase call = (CallBase) i;
 
-                Operand o = ((CallBase)i).getClosureArg();
+                Operand o = ((CallBase)i).getClosureArg(getManager().getNil());
                 if (o != null) {
                     if (o instanceof WrappedIRClosure) {
                         IRClosure cl = ((WrappedIRClosure)o).getClosure();

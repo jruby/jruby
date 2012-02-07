@@ -1,5 +1,11 @@
 package org.jruby.compiler.ir.dataflow.analyses;
 
+import java.util.BitSet;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Set;
 import org.jruby.compiler.ir.IRClosure;
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.dataflow.DataFlowConstants;
@@ -8,19 +14,12 @@ import org.jruby.compiler.ir.dataflow.DataFlowVar;
 import org.jruby.compiler.ir.dataflow.FlowGraphNode;
 import org.jruby.compiler.ir.instructions.CallBase;
 import org.jruby.compiler.ir.instructions.Instr;
+import org.jruby.compiler.ir.instructions.ResultInstr;
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.operands.WrappedIRClosure;
 import org.jruby.compiler.ir.representations.BasicBlock;
-
-import java.util.Collection;
-import java.util.Set;
-import java.util.BitSet;
-import java.util.HashSet;
-import java.util.List;
-import java.util.ListIterator;
-import org.jruby.compiler.ir.instructions.ResultInstr;
 
 public class LiveVariableNode extends FlowGraphNode {
     public LiveVariableNode(DataFlowProblem prob, BasicBlock n) {
@@ -94,7 +93,7 @@ public class LiveVariableNode extends FlowGraphNode {
             // If so, we need to process the closure for live variable info.
             if (i instanceof CallBase) {
                 CallBase c = (CallBase) i;
-                Operand  o = c.getClosureArg();
+                Operand  o = c.getClosureArg(problem.getScope().getManager().getNil());
                 // System.out.println("Processing closure: " + o + "-------");
                 if ((o != null) && (o instanceof WrappedIRClosure)) {
                     IRClosure cl = ((WrappedIRClosure)o).getClosure();
@@ -315,7 +314,7 @@ public class LiveVariableNode extends FlowGraphNode {
 
             if (i instanceof CallBase) {
                 CallBase c = (CallBase) i;
-                Operand  o = c.getClosureArg();
+                Operand  o = c.getClosureArg(problem.getScope().getManager().getNil());
                 if ((o != null) && (o instanceof WrappedIRClosure)) {
                     IRClosure cl = ((WrappedIRClosure)o).getClosure();
                     LiveVariablesProblem cl_lvp = (LiveVariablesProblem)cl.getDataFlowSolution(lvp.getName());

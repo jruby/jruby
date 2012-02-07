@@ -1,25 +1,24 @@
 package org.jruby.compiler.ir.dataflow.analyses;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Set;
 import org.jruby.compiler.ir.IRClosure;
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.dataflow.DataFlowProblem;
 import org.jruby.compiler.ir.dataflow.FlowGraphNode;
-import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.CallBase;
+import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.LoadFromBindingInstr;
-import org.jruby.compiler.ir.operands.Operand;
-import org.jruby.compiler.ir.operands.WrappedIRClosure;
+import org.jruby.compiler.ir.instructions.ResultInstr;
 import org.jruby.compiler.ir.operands.ClosureLocalVariable;
 import org.jruby.compiler.ir.operands.LocalVariable;
+import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
+import org.jruby.compiler.ir.operands.WrappedIRClosure;
 import org.jruby.compiler.ir.representations.BasicBlock;
-
-import java.util.HashSet;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Set;
-import org.jruby.compiler.ir.instructions.ResultInstr;
 
 public class BindingLoadPlacementNode extends FlowGraphNode {
     public BindingLoadPlacementNode(DataFlowProblem prob, BasicBlock n) {
@@ -49,7 +48,6 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
     }
 
     public boolean applyTransferFunction() {
-        BindingLoadPlacementProblem blp = (BindingLoadPlacementProblem) problem;
         Set<LocalVariable> reqdLoads = new HashSet<LocalVariable>(inRequiredLoads);
 
         List<Instr> instrs = basicBlock.getInstrs();
@@ -67,7 +65,7 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
             // Process calls specially -- these are the sites of binding loads!
             if (i instanceof CallBase) {
                 CallBase call = (CallBase) i;
-                Operand o = call.getClosureArg();
+                Operand o = call.getClosureArg(problem.getScope().getManager().getNil());
                 if ((o != null) && (o instanceof WrappedIRClosure)) {
                     IRClosure cl = ((WrappedIRClosure) o).getClosure();
                     BindingLoadPlacementProblem cl_blp = new BindingLoadPlacementProblem();
@@ -137,7 +135,7 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
 
             if (i instanceof CallBase) {
                 CallBase call = (CallBase) i;
-                Operand o = call.getClosureArg();
+                Operand o = call.getClosureArg(problem.getScope().getManager().getNil());
                 if ((o != null) && (o instanceof WrappedIRClosure)) {
                     IRClosure scope = ((WrappedIRClosure) o).getClosure();
                     BindingLoadPlacementProblem cl_blp = (BindingLoadPlacementProblem) scope.getDataFlowSolution(blp.getName());
