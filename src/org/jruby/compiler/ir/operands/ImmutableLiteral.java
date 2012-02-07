@@ -28,6 +28,11 @@ public abstract class ImmutableLiteral extends Operand {
     public boolean hasKnownValue() {
         return true;
     }
+
+    @Override
+    public boolean canCopyPropagate() {
+        return true;
+    }
     
     @Override
     public void addUsedVariables(List<Variable> l) {

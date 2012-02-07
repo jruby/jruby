@@ -35,6 +35,11 @@ public class UndefinedValue extends Operand implements IRubyObject {
     }
 
     @Override
+    public boolean canCopyPropagate() {
+        return true;
+    }
+
+    @Override
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         return this;
     }

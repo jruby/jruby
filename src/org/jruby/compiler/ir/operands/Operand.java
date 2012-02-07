@@ -24,6 +24,23 @@ public abstract class Operand {
         return false;
     }
 
+    /**
+     * Can we replace every use of a variable 'v' that contains the value of this operand
+     * with the operand itself?  This takes importance when there are at least two uses
+     * of 'v' within this scope.
+     *
+     * Ex: v = [1,2,3];  x = v; y = v
+     *
+     * In this case, we cannot replace the occurences of 'v' because we would then get
+     * x = [1,2,3]; y = [1,2,3] which would then result in two different array objects
+     * being constructed instead of a single one.
+     * 
+     * @return true if it is safe to copy-propagate the operand.
+     */
+    public boolean canCopyPropagate() {
+        return false;
+    }
+
     // SSS: HUH? Use better names than this .. The distinction is not very clear!
     //
     // getValue returns the value of this operand, fully simplified

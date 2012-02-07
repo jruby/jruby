@@ -25,6 +25,11 @@ public class LiveScopeModule extends Operand {
         /* Do nothing */
     }
 
+    @Override
+    public boolean canCopyPropagate() {
+        return true;
+    }
+
     public IRScope getScope() {
         return scope;
     }

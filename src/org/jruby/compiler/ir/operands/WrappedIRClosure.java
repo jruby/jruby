@@ -26,6 +26,11 @@ public class WrappedIRClosure extends Operand {
     }
 
     @Override
+    public boolean canCopyPropagate() {
+        return true;
+    }
+
+    @Override
     public String toString() {
         return closure.toString();
     }

@@ -10,6 +10,11 @@ public class Symbol extends Reference {
     }
 
     @Override
+    public boolean canCopyPropagate() {
+        return true;
+    }
+
+    @Override
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         return context.getRuntime().newSymbol(getName());
     }

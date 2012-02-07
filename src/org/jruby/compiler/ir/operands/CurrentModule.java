@@ -14,6 +14,11 @@ public class CurrentModule extends Operand {
     }
 
     @Override
+    public boolean canCopyPropagate() {
+        return true;
+    }
+
+    @Override
     public void addUsedVariables(List<Variable> l) { 
         /* Nothing to do */
     }

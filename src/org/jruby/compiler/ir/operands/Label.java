@@ -16,18 +16,35 @@ public class Label extends Operand {
 
     public Label(String l) { _label = l; }
 
-    public String toString() { return _label; }
+    @Override
+    public String toString() { 
+        return _label;
+    }
 
     @Override
     public void addUsedVariables(List<Variable> l) { 
         /* Nothing to do */
     }
 
-    public int hashCode() { return _label.hashCode(); }
+    @Override
+    public boolean canCopyPropagate() {
+        return true;
+    }
 
-    public boolean equals(Object o) { return (o instanceof Label) && _label.equals(((Label)o)._label); }
+    @Override
+    public int hashCode() { 
+        return _label.hashCode();
+    }
 
-    public Operand cloneForInlining(InlinerInfo ii) { return ii.getRenamedLabel(this); }
+    @Override
+    public boolean equals(Object o) { 
+        return (o instanceof Label) && _label.equals(((Label)o)._label);
+    }
+
+    @Override
+    public Operand cloneForInlining(InlinerInfo ii) { 
+        return ii.getRenamedLabel(this);
+    }
 
     public void setTargetPC(int i) { this.targetPC = i; }
 

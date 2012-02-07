@@ -23,6 +23,11 @@ public class WrappedIRScope extends Operand {
     }
 
     @Override
+    public boolean canCopyPropagate() {
+        return true;
+    }
+
+    @Override
     public String toString() {
         return scope.getName();
     }

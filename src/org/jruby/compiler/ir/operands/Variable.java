@@ -13,10 +13,15 @@ public abstract class Variable extends Operand implements Comparable {
     public abstract String getName();
 
     @Override
+    public boolean canCopyPropagate() {
+        return true;
+    }
+
+    @Override
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
         Operand v = valueMap.get(this);
         // You can only value-replace atomic values
-        return (v != null) && (force || v instanceof ImmutableLiteral || v instanceof Variable) ? v : this;
+        return (v != null) && (force || v.canCopyPropagate()) ? v : this;
     }
 
     public boolean isImplicitBlockArg() {

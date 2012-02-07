@@ -55,6 +55,11 @@ public class MethodHandle extends Operand {
     }
 
     @Override
+    public boolean canCopyPropagate() {
+        return true;
+    }
+
+    @Override
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
         Operand newMethodName = methodName.getSimplifiedOperand(valueMap, force);
         Operand newReceiver = receiver.getSimplifiedOperand(valueMap, force);
