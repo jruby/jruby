@@ -3,17 +3,18 @@ package org.jruby.compiler.ir;
 // SSS FIXME: If we can hide these flags from leaking out to the rest of the codebase,
 // that would be awesome, but I cannot nest this class in an Enum class.
 class OpFlags {
-    final static int f_has_side_effect     = 0x002;
-    final static int f_can_raise_exception = 0x004;
-    final static int f_is_marker_op        = 0x008;
-    final static int f_is_jump_or_branch   = 0x010;
-    final static int f_is_return           = 0x020;
-    final static int f_is_exception        = 0x040;
-    final static int f_is_debug_op         = 0x080;
-    final static int f_is_load             = 0x100;
-    final static int f_is_store            = 0x200;
-    final static int f_is_call             = 0x400;
-    final static int f_is_arg_receive      = 0x800;
+    final static int f_has_side_effect     = 0x0002;
+    final static int f_can_raise_exception = 0x0004;
+    final static int f_is_marker_op        = 0x0008;
+    final static int f_is_jump_or_branch   = 0x0010;
+    final static int f_is_return           = 0x0020;
+    final static int f_is_exception        = 0x0040;
+    final static int f_is_debug_op         = 0x0080;
+    final static int f_is_load             = 0x0100;
+    final static int f_is_store            = 0x0200;
+    final static int f_is_call             = 0x0400;
+    final static int f_is_arg_receive      = 0x0800;
+    final static int f_modifies_code       = 0x1000;
 }
 
 public enum Operation {
@@ -71,14 +72,14 @@ public enum Operation {
     BREAK(OpFlags.f_has_side_effect | OpFlags.f_is_return),
 
     /** defines **/
-    ALIAS(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),    
-    GVAR_ALIAS(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),    
-    DEF_MODULE(OpFlags.f_has_side_effect),
-    DEF_CLASS(OpFlags.f_has_side_effect),
-    DEF_META_CLASS(OpFlags.f_has_side_effect),
-    DEF_INST_METH(OpFlags.f_has_side_effect),
-    DEF_CLASS_METH(OpFlags.f_has_side_effect),
-    UNDEF_METHOD(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),    
+    ALIAS(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_modifies_code),
+    GVAR_ALIAS(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_modifies_code),
+    DEF_MODULE(OpFlags.f_has_side_effect | OpFlags.f_modifies_code),
+    DEF_CLASS(OpFlags.f_has_side_effect | OpFlags.f_modifies_code),
+    DEF_META_CLASS(OpFlags.f_has_side_effect | OpFlags.f_modifies_code),
+    DEF_INST_METH(OpFlags.f_has_side_effect | OpFlags.f_modifies_code),
+    DEF_CLASS_METH(OpFlags.f_has_side_effect | OpFlags.f_modifies_code),
+    UNDEF_METHOD(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_modifies_code),
 
     THROW(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_is_exception),
 
@@ -216,9 +217,13 @@ public enum Operation {
     public boolean canRaiseException() {
         return (flags & OpFlags.f_can_raise_exception) > 0;
     }
+    
+    public boolean modifiesCode() {
+        return (flags & OpFlags.f_modifies_code) > 0;
+    }
 
     @Override
-    public String toString() { 
+    public String toString() {
         return name().toLowerCase();
     }
 }

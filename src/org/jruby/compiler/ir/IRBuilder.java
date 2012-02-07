@@ -1864,7 +1864,7 @@ public class IRBuilder {
         receiveMethodArgs(defNode.getArgsNode(), method);
 
         // Thread poll on entry to method
-        s.addInstr(new ThreadPollInstr());
+        method.addInstr(new ThreadPollInstr());
 
         // Build IR for body
         Node bodyNode = defNode.getBodyNode();
@@ -2299,6 +2299,9 @@ public class IRBuilder {
         closure.addInstr(new CopyInstr(closure.getCurrentScopeVariable(), new CurrentScope()));
         closure.addInstr(new CopyInstr(closure.getCurrentModuleVariable(), new CurrentModule()));
 
+        // Thread poll on entry of closure 
+        closure.addInstr(new ThreadPollInstr());
+
             // Start label -- used by redo!
         closure.addInstr(new LabelInstr(closure.startLabel));
 
@@ -2448,6 +2451,9 @@ public class IRBuilder {
         // Set %current_module = <current-module>
         closure.addInstr(new CopyInstr(closure.getCurrentScopeVariable(), new CurrentScope()));
         closure.addInstr(new CopyInstr(closure.getCurrentModuleVariable(), new CurrentModule()));
+
+        // Thread poll on entry of closure 
+        closure.addInstr(new ThreadPollInstr());
 
         // start label -- used by redo!
         closure.addInstr(new LabelInstr(closure.startLabel));

@@ -1,5 +1,8 @@
 package org.jruby.interpreter;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 
 import org.jruby.Ruby;
@@ -8,6 +11,8 @@ import org.jruby.RubyModule;
 import org.jruby.RubyProc;
 import org.jruby.ast.Node;
 import org.jruby.ast.RootNode;
+import org.jruby.compiler.ir.Operation;
+import org.jruby.compiler.ir.Counter;
 import org.jruby.compiler.ir.IRBuilder;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.IREvalScript;
@@ -63,6 +68,13 @@ public class Interpreter {
     private static final Logger LOG = LoggerFactory.getLogger("Interpreter");
 
     private static int interpInstrsCount = 0;
+    private static int codeModificationsCount = 0;
+    private static int globalThreadPollCount = 0;
+    private static HashMap<IRScope, Counter> scopeThreadPollCounts = new HashMap<IRScope, Counter>();
+
+    public static boolean inProfileMode() {
+        return RubyInstanceConfig.IR_PROFILE;
+    }
 
     public static boolean isDebug() {
         return RubyInstanceConfig.IR_DEBUG;
@@ -160,9 +172,64 @@ public class Interpreter {
         }
     }
 
+    private static void outputProfileStats(Operation operation) {
+        interpInstrsCount++;
+        if (operation.modifiesCode()) codeModificationsCount++;
+
+        // Every 100K instructions, spit out profile stats
+        if (interpInstrsCount % 100000 == 0) {
+            ArrayList<IRScope> scopes = new ArrayList<IRScope>(scopeThreadPollCounts.keySet());
+            Collections.sort(scopes, new java.util.Comparator<IRScope> () {
+                public int compare(IRScope a, IRScope b) {
+                    int aCount = scopeThreadPollCounts.get(a).count;
+                    int bCount = scopeThreadPollCounts.get(b).count;
+                    if (aCount == bCount) return 0;
+                    return (aCount < bCount) ? 1 : -1;
+                }
+            });
+
+            LOG.info("------------------------");
+            LOG.info("Stats after " + interpInstrsCount + " instructions:");
+            LOG.info("------------------------");
+            LOG.info("# code modifications in this period : " + codeModificationsCount);
+            LOG.info("# total thread poll events till now : " + globalThreadPollCount);
+            LOG.info("------------------------");
+            int i = 0;
+            float f = 0.0f;
+            for (IRScope s: scopes) {
+                int n = scopeThreadPollCounts.get(s).count;
+                float percentage =  ((n*1000)/globalThreadPollCount)/10.0f;
+                String msg = i + ". " + s + " [file:" + s.getFileName() + ":" + s.getLineNumber() + "] = " + n + "; (" + percentage + "% of total)";
+                if (s instanceof IRClosure) {
+                    IRMethod m = s.getNearestMethod();
+                    if (m != null) LOG.info(msg + " -- nearest enclosing method: " + m);
+                    else LOG.info(msg + " -- no enclosing method --");
+                } else {
+                    LOG.info(msg);
+                }
+                i++;
+                f += percentage;
+
+                // Top 20 or those that account for 95% of thread poll events.
+                if (i == 20 || f >= 95.0) break;
+            }
+
+            // reset code modification counter
+            codeModificationsCount = 0;
+        }
+
+        // Every 10M instructions, discard stats by reallocating the thread-poll count map
+        if (interpInstrsCount % 10000000 == 0)  {
+            System.out.println("---- resetting thread-poll counters ----");
+            scopeThreadPollCounts = new HashMap<IRScope, Counter>();
+            globalThreadPollCount = 0;
+        }
+    }
+
     private static IRubyObject interpret(ThreadContext context, IRubyObject self, 
             IRScope scope, IRubyObject[] args, Block block, Block.Type blockType) {
         boolean debug = isDebug();
+        boolean profile = inProfileMode();
         boolean inClosure = (scope instanceof IRClosure);
         Instr[] instrs = scope.getInstrsForInterpretation();
 
@@ -178,11 +245,27 @@ public class Interpreter {
         Object exception = null;
         Ruby runtime = context.getRuntime();
         DynamicScope currDynScope = context.getCurrentScope();
+
+        // Set up thread-poll counter for this scope
+        Counter tpCount = null;
+        if (profile) {
+            tpCount = scopeThreadPollCounts.get(scope);
+            if (tpCount == null) {
+                tpCount = new Counter();
+                scopeThreadPollCounts.put(scope, tpCount);
+            }
+        }
+
+        // Enter the looooop!
         while (ipc < n) {
             lastInstr = instrs[ipc];
+            Operation operation = lastInstr.getOperation();
+
             if (debug) {
                 LOG.info("I: {}", lastInstr);
                 interpInstrsCount++;
+            } else if (profile) {
+                outputProfileStats(operation);
             }
 
             // We need a nested try-catch:
@@ -195,7 +278,7 @@ public class Interpreter {
                 Variable resultVar = null;
                 Object result = null;
                 try {
-                    switch(lastInstr.getOperation()) {
+                    switch(operation) {
                     case JUMP: {
                         ipc = ((JumpInstr)lastInstr).getJumpTarget().getTargetPC();
                         break;
@@ -312,6 +395,7 @@ public class Interpreter {
                         break;
                     }
                     case THREAD_POLL: {
+                        if (profile) { tpCount.count++; globalThreadPollCount++; }
                         context.callThreadPoll();
                         ipc++;
                         break;

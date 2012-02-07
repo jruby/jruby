@@ -1578,6 +1578,7 @@ public class RubyInstanceConfig {
     public static final boolean ERRNO_BACKTRACE = Options.ERRNO_BACKTRACE.load();
     
     public static boolean IR_DEBUG = Options.IR_DEBUG.load();
+    public static boolean IR_PROFILE = Options.IR_PROFILE.load();
     public static boolean IR_COMPILER_DEBUG = Options.IR_COMPILER_DEBUG.load(); 
     public static final boolean IR_LIVE_VARIABLE = Options.IR_PASS_LIVEVARIABLE.load();
     public static final boolean IR_DEAD_CODE = Options.IR_PASS_DEADCODE.load();

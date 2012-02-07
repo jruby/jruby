@@ -76,6 +76,11 @@ import org.jruby.util.log.LoggerFactory;
 public abstract class IRScope {
     private static final Logger LOG = LoggerFactory.getLogger("IRScope");
 
+    private static Integer globalScopeCount = 0;
+
+    /** Unique global scope id */
+    private int scopeId;
+
     /** Name */
     private String name;
 
@@ -211,8 +216,7 @@ public abstract class IRScope {
     private boolean hasLoops;
     
     public IRScope(IRScope lexicalParent, String name, String fileName, int lineNumber, StaticScope staticScope) {
-        super();
-            
+        synchronized(globalScopeCount) { this.scopeId = globalScopeCount++; }
         this.lexicalParent = lexicalParent;        
         this.name = name;
         this.fileName = fileName;
@@ -231,6 +235,10 @@ public abstract class IRScope {
         usesZSuper = true;
 
         localVars = new LocalVariableAllocator();
+    }
+
+    public int hashCode() {
+        return scopeId;
     }
 
     public void addClosure(IRClosure c) {
