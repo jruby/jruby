@@ -37,6 +37,10 @@ package org.jruby.parser;
 
 import java.math.BigInteger;
 import org.jcodings.Encoding;
+import org.jcodings.specific.EUCJPEncoding;
+import org.jcodings.specific.SJISEncoding;
+import org.jcodings.specific.USASCIIEncoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.CompatVersion;
 import org.jruby.RubyBignum;
 import org.jruby.RubyRegexp;
@@ -1646,8 +1650,13 @@ public class ParserSupport {
     // regexp options encoding so dregexps can end up starting with the
     // right encoding.
     private ByteList createMaster(RegexpOptions options) {
-        return lexer.isOneEight() ?
-                ByteList.create("") : new ByteList(new byte[] {}, options.getKCode().getEncoding());
+        if (lexer.isOneEight()) {
+            return ByteList.create("");
+        } else {
+            Encoding encoding = options.setup19(configuration.getRuntime());
+            
+            return new ByteList(new byte[] {}, encoding);
+        }
         
     }
     
