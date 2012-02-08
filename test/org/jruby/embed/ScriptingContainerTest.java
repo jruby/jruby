@@ -488,7 +488,8 @@ public class ScriptingContainerTest {
         // Maybe bug. This returns RubyNil, but it should be ""
         //assertEquals("", ret.toJava(String.class));
 
-        script = "def say_something()" +
+        script = "# -*- coding: utf-8 -*-\n" +
+                 "def say_something()" +
                    "\"はろ〜、わぁ〜るど！\"\n" +
                  "end\n" +
                  "say_something";
@@ -570,7 +571,7 @@ public class ScriptingContainerTest {
         String filename = "";
         int[] lines = null;
 
-        String[] paths = {basedir + "/lib", basedir + "/lib/ruby/1.8"};
+        String[] paths = {basedir + "/lib", basedir + "/lib/ruby/1.9"};
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setLoadPaths(Arrays.asList(paths));
         instance.setError(pstream);
@@ -700,7 +701,8 @@ public class ScriptingContainerTest {
         // Maybe bug. This should return "", but RubyNil.
         //assertEquals(expResult, result);
 
-        script = "def say_something()" +
+        script = "# -*- coding: utf-8 -*-\n" +
+                 "def say_something()" +
                    "\"いけてるね! ＞　JRuby\"\n" +
                  "end\n" +
                  "say_something";
@@ -710,7 +712,10 @@ public class ScriptingContainerTest {
 
         // unicode escape
         String str = "\u3053\u3093\u306b\u3061\u306f\u4e16\u754c";
-        result = instance.runScriptlet("given_str = \"" + str + "\"");
+        script = "# -*- coding: utf-8 -*-\n" +
+                 "given_str = \"" + str + "\"";
+        //result = instance.runScriptlet("given_str = \"" + str + "\"");
+        result = instance.runScriptlet(script);
         expResult = "こんにちは世界";
         assertEquals(expResult, result);
 
@@ -789,7 +794,7 @@ public class ScriptingContainerTest {
         logger1.info("runScriptlet(type, filename)");
         PathType type = null;
         String filename = "";
-        String[] paths = {basedir + "/lib/ruby/1.8"};
+        String[] paths = {basedir + "/lib/ruby/1.9"};
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setLoadPaths(Arrays.asList(paths));
         instance.setError(pstream);
@@ -899,7 +904,7 @@ public class ScriptingContainerTest {
         Object receiver = null;
         String methodName = "";
         Class<Object> returnType = null;
-        String[] paths = {basedir + "/lib/ruby/1.8"};
+        String[] paths = {basedir + "/lib/ruby/1.9"};
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setLoadPaths(Arrays.asList(paths));
         instance.setError(pstream);
@@ -1809,7 +1814,7 @@ public class ScriptingContainerTest {
         instance.setOutput(pstream);
         instance.setWriter(writer);
         instance.setErrorWriter(writer);
-        CompatVersion expResult = CompatVersion.RUBY1_8;
+        CompatVersion expResult = CompatVersion.RUBY1_9;
         CompatVersion result = instance.getCompatVersion();
         assertEquals(expResult, result);
 
@@ -2374,6 +2379,7 @@ public class ScriptingContainerTest {
         logger1.info("setKCode");
         KCode kcode = null;
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
+        instance.setCompatVersion(CompatVersion.RUBY1_8);
         instance.setError(pstream);
         instance.setOutput(pstream);
         instance.setWriter(writer);
@@ -2383,6 +2389,7 @@ public class ScriptingContainerTest {
         instance = null;
 
         instance = new ScriptingContainer(LocalContextScope.SINGLETHREAD);
+        instance.setCompatVersion(CompatVersion.RUBY1_8);
         //instance.setError(pstream);
         //instance.setOutput(pstream);
         //instance.setWriter(writer);

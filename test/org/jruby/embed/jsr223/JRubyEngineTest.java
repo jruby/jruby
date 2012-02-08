@@ -318,7 +318,7 @@ public class JRubyEngineTest {
         logger1.info("eval Reader");
         ScriptEngine instance;
         synchronized (this) {
-            System.setProperty("org.jruby.embed.class.path", basedir + "/lib/ruby/1.8");
+            System.setProperty("org.jruby.embed.class.path", basedir + "/lib/ruby/1.9");
             System.setProperty("org.jruby.embed.localcontext.scope", "singlethread");
             System.setProperty("org.jruby.embed.localvariable.behavior", "global");
             ScriptEngineManager manager = new ScriptEngineManager();
@@ -377,7 +377,7 @@ public class JRubyEngineTest {
         logger1.info("eval Reader with Bindings");
         ScriptEngine instance;
         synchronized(this) {
-            System.setProperty("org.jruby.embed.class.path", basedir + "/lib/ruby/1.8");
+            System.setProperty("org.jruby.embed.class.path", basedir + "/lib/ruby/1.9");
             System.setProperty("org.jruby.embed.localcontext.scope", "singlethread");
             System.setProperty("org.jruby.embed.localvariable.behavior", "transient");
             ScriptEngineManager manager = new ScriptEngineManager();
