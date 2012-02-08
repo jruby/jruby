@@ -376,11 +376,12 @@ public class RubyStringIO extends RubyObject {
 
         if (data.pos < data.internal.getByteList().getRealSize() && !data.eof) {
             boolean isParagraph = false;
+            boolean is19 = runtime.is1_9();
             ByteList sep = ((RubyString)runtime.getGlobalVariables().get("$/")).getByteList();
             IRubyObject sepArg = null;
             int limit = -1;
 
-            if (context.getRuntime().is1_9()) {
+            if (is19) {
                 IRubyObject limitArg = (args.length > 1 ? args[1] :
                                         (args.length > 0 && args[0] instanceof RubyFixnum ? args[0] :
                                          null));
@@ -388,13 +389,10 @@ public class RubyStringIO extends RubyObject {
                     limit = RubyNumeric.fix2int(limitArg);
                 }
 
-                sepArg = (args.length > 0 && !(args[0] instanceof RubyFixnum) ? args[0] :
-                          null);
-            }
-            else {
+                sepArg = (args.length > 0 && !(args[0] instanceof RubyFixnum) ? args[0] : null);
+            } else {
                 sepArg = (args.length > 0 ? args[0] : null);
             }
-
 
             if (sepArg != null) {
                 if (sepArg.isNil()) {
@@ -439,6 +437,7 @@ public class RubyStringIO extends RubyObject {
             int bytesToUseWithSep = (limit < 0 || limit >= bytesWithSep ? bytesWithSep : limit);
 
             ByteList line = new ByteList(bytesToUseWithSep);
+            if (is19) line.setEncoding(data.internal.getByteList().getEncoding());
             line.append(data.internal.getByteList(), (int)data.pos, bytesToUse);
             data.pos += bytesToUse;
 
