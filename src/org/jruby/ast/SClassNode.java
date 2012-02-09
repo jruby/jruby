@@ -39,6 +39,7 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubySymbol;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.ASTInterpreter;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
@@ -116,18 +117,7 @@ public class SClassNode extends Node {
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         IRubyObject receiver = receiverNode.interpret(runtime, context, self, aBlock);
 
-        RubyClass singletonClass;
-
-        if (receiver instanceof RubyFixnum || receiver instanceof RubySymbol) {
-            throw runtime.newTypeError("no virtual class for " + receiver.getMetaClass().getBaseName());
-        } else {
-            if (runtime.getSafeLevel() >= 4 && !receiver.isTaint()) {
-                throw runtime.newSecurityError("Insecure: can't extend object.");
-            }
-
-            singletonClass = receiver.getSingletonClass();
-        }
-
+        RubyClass singletonClass = RuntimeHelpers.getSingletonClass(runtime, receiver);
         scope.setModule(singletonClass);
         
         return ASTInterpreter.evalClassDefinitionBody(runtime, context, scope, bodyNode, singletonClass, self, aBlock);

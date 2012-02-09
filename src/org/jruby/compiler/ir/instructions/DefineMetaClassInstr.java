@@ -12,6 +12,7 @@ import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -65,18 +66,10 @@ public class DefineMetaClassInstr extends Instr implements ResultInstr {
         Ruby runtime = context.getRuntime();
         IRubyObject obj = (IRubyObject)object.retrieve(context, self, currDynScope, temp);
         
-        if (obj instanceof RubyFixnum || obj instanceof RubySymbol) {
-            throw runtime.newTypeError("no virtual class for " + obj.getMetaClass().getBaseName());
-        } else {
-            if (runtime.getSafeLevel() >= 4 && !obj.isTaint()) {
-                throw runtime.newSecurityError("Insecure: can't extend object.");
-            }
-            
-            RubyClass singletonClass = obj.getSingletonClass();
-            dummyMetaClassBody.getStaticScope().setModule(singletonClass);
-            DynamicMethod method = new InterpretedIRMethod(dummyMetaClassBody, Visibility.PUBLIC, singletonClass);
-            // SSS FIXME: Rather than pass the block implicitly, should we add %block as another operand to DefineMetaClass instr?
-            return method.call(context, singletonClass, singletonClass, "", new IRubyObject[]{}, block);
-        }
+        RubyClass singletonClass = RuntimeHelpers.getSingletonClass(runtime, obj);
+        dummyMetaClassBody.getStaticScope().setModule(singletonClass);
+        DynamicMethod method = new InterpretedIRMethod(dummyMetaClassBody, Visibility.PUBLIC, singletonClass);
+        // SSS FIXME: Rather than pass the block implicitly, should we add %block as another operand to DefineMetaClass instr?
+        return method.call(context, singletonClass, singletonClass, "", new IRubyObject[]{}, block);
     }
 }
