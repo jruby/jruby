@@ -1,6 +1,8 @@
 package org.jruby.compiler.ir.instructions.ruby19;
 
+import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.Operation;
+import org.jruby.compiler.ir.instructions.CopyInstr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.ReceiveArgBase;
 import org.jruby.compiler.ir.operands.UndefinedValue;
@@ -33,7 +35,16 @@ public class ReceiveRequiredArgInstr extends ReceiveArgBase {
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        throw new RuntimeException("Not implemented yet!");
+        int n = ii.getArgsCount();
+        int remaining = n - preReqdArgsCount;
+		  Operand argVal;
+        if (remaining <= argIndex) {
+				// SSS: FIXME: Argh!
+            argVal = ii.callerCFG.getScope().getManager().getNil();
+        } else {
+            argVal = (remaining > postReqdArgsCount) ? ii.getCallArg(n - postReqdArgsCount + argIndex) : ii.getCallArg(preReqdArgsCount + argIndex);
+        }
+        return new CopyInstr(ii.getRenamedVariable(result), argVal);
     }
 
     public IRubyObject receiveRequiredArg(IRubyObject[] args) {
