@@ -265,8 +265,18 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      * subclassed, then calling start in that subclass will not invoke the
      * subclass's initialize method.
      */
-    @JRubyMethod(rest = true, meta = true)
+    @JRubyMethod(rest = true, meta = true, compat = RUBY1_8)
     public static RubyThread start(IRubyObject recv, IRubyObject[] args, Block block) {
+        return startThread(recv, args, false, block);
+    }
+    
+    @JRubyMethod(rest = true, name = "start", meta = true, compat = RUBY1_9)
+    public static RubyThread start19(IRubyObject recv, IRubyObject[] args, Block block) {
+        Ruby runtime = recv.getRuntime();
+        // The error message may appear incongruous here, due to the difference
+        // between JRuby's Thread model and MRI's.
+        // We mimic MRI's message in the name of compatibility.
+        if (! block.isGiven()) throw runtime.newArgumentError("tried to create Proc object without a block");
         return startThread(recv, args, false, block);
     }
     
