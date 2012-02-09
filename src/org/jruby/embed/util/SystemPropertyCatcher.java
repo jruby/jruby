@@ -209,7 +209,11 @@ public class SystemPropertyCatcher {
     public static String findFromJar(Object instance) {
         URL resource = instance.getClass().getResource("/META-INF/jruby.home");
         if (resource == null) {
-            return null;
+            // on IBM WebSphere getResource for a dir returns null but an actual
+            // file if it's there returns e.g. wsjar:file:/opt/IBM/WebSphere/...
+            // .../jruby-stdlib-1.6.7.dev.jar!/META-INF/jruby.home/bin/jrubyc
+            resource = instance.getClass().getResource("/META-INF/jruby.home/bin/jrubyc");
+            if (resource == null) return null;
         }
 
         String location = null;
