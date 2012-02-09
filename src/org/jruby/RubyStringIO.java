@@ -114,7 +114,6 @@ public abstract class RubyStringIO extends RubyObject {
     public abstract IRubyObject lineno();
     public abstract IRubyObject set_lineno(IRubyObject arg);
     public abstract IRubyObject path();
-    public abstract IRubyObject path19(ThreadContext context);
     public abstract IRubyObject pid();
     public abstract IRubyObject pos();
     public abstract IRubyObject set_pos(IRubyObject arg);

@@ -517,14 +517,9 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
         return getRuntime().getNil();
     }
 
-    @JRubyMethod(name = "path")
+    @JRubyMethod(name = "path", compat = CompatVersion.RUBY1_8)
     public IRubyObject path() {
         return getRuntime().getNil();
-    }
-
-    @JRubyMethod(name = "path", compat = CompatVersion.RUBY1_9)
-    public IRubyObject path19(ThreadContext context) {
-        throw context.getRuntime().newNoMethodError("", "path", null);
     }
 
     @JRubyMethod(name = "pid")
