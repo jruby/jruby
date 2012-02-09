@@ -1337,6 +1337,16 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         ivarTable[index] = value;
     }
 
+    public final Object getFFIHandle() {
+        return getMetaClass().getRealClass().getFFIHandleAccessorForRead().get(this);
+    }
+
+    public final void setFFIHandle(Object value) {
+        int index = getMetaClass().getRealClass().getFFIHandleAccessorForWrite().getIndex();
+        Object[] ivarTable = getVariableTableForWrite(index);
+        ivarTable[index] = value;
+    }
+
     //
     // COMMON VARIABLE METHODS
     //

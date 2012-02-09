@@ -41,9 +41,7 @@ final class TransientNativeMemoryIO extends BoundedNativeMemoryIO implements Dir
     /** Keeps strong references to the memory bucket until cleanup */
     private static final Map<Magazine, Boolean> referenceSet = new ConcurrentHashMap<Magazine, Boolean>();
     private static final ThreadLocal<Magazine> currentMagazine = new ThreadLocal<Magazine>();
-    private static final AtomicLong nativeMemoryUsed = AllocatedNativeMemoryIO.nativeMemoryUsed;
-    private static final long MAX_NATIVE_MEMORY = AllocatedNativeMemoryIO.NATIVE_MEMORY_HIGHWATER;
-
+    private static final int PAGES_PER_MAGAZINE = 1;
     private final Object sentinel;
 
     /**
@@ -62,18 +60,23 @@ final class TransientNativeMemoryIO extends BoundedNativeMemoryIO implements Dir
 
         Magazine magazine = currentMagazine.get();
         Object sentinel = magazine != null ? magazine.get() : null;
-        long address = 0;
+        long address;
 
         if (sentinel == null || (address = magazine.allocate(size, align)) == 0) {
             PageManager pm = PageManager.getInstance();
-            if (nativeMemoryUsed.addAndGet(pm.pageSize()) >= MAX_NATIVE_MEMORY) {
+            long memory;
+            int pageCount = PAGES_PER_MAGAZINE;
+            do {
+                memory = pm.allocatePages(pageCount, PageManager.PROT_READ | PageManager.PROT_WRITE);
+                if (memory != 0L && memory != -1L) {
+                    break;
+                }
+
+                // No available pages; trigger a full GC to reclaim some memory
                 System.gc();
-            }
+            } while (true);
 
-            long memory = pm.allocatePages(1, PageManager.PROT_READ | PageManager.PROT_WRITE);
-            long end = memory + pm.pageSize();
-
-            referenceSet.put(magazine = new Magazine(sentinel = new Object(), pm, memory, end), Boolean.TRUE);
+            referenceSet.put(magazine = new Magazine(sentinel = new Object(), pm, memory, pageCount), Boolean.TRUE);
             currentMagazine.set(magazine);
             address = magazine.allocate(size, align);
         }
@@ -98,13 +101,15 @@ final class TransientNativeMemoryIO extends BoundedNativeMemoryIO implements Dir
         private final PageManager pm;
         private final long page;
         private final long end;
+        private final int pageCount;
         private long memory;
 
-        Magazine(Object sentinel, PageManager pm, long page, long end) {
+        Magazine(Object sentinel, PageManager pm, long page, int pageCount) {
             super(sentinel);
             this.pm = pm;
             this.memory = this.page = page;
-            this.end = end;
+            this.pageCount = pageCount;
+            this.end = this.memory + (pm.pageSize() * pageCount);
         }
 
         long allocate(int size, int align) {
@@ -118,8 +123,7 @@ final class TransientNativeMemoryIO extends BoundedNativeMemoryIO implements Dir
         }
 
         public final void run() {
-            pm.freePages(page, 1);
-            nativeMemoryUsed.addAndGet(0L - pm.pageSize());
+            pm.freePages(page, pageCount);
             referenceSet.remove(this);
         }
     }

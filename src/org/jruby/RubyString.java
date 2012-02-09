@@ -821,6 +821,10 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return shared;
     }
 
+    public final void setByteListShared() {
+        if (shareLevel != SHARE_LEVEL_BYTELIST) shareLevel = SHARE_LEVEL_BYTELIST;
+    }
+
     public final void modifyCheck() {
         frozenCheck();
 
