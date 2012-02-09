@@ -35,9 +35,7 @@ public class CFGInliner {
             cfg.addEdge(splitBB, e.getDestination().getData(), e.getType());
         }
 
-        for (Edge edge: cfg.getOutgoingEdges(callBB)) {
-            cfg.removeEdge(edge);
-        }
+        cfg.removeAllOutgoingEdgesForBB(callBB);
 
         // 2. clone callee
         CFG methodCFG = scope.getCFG();
@@ -146,10 +144,6 @@ public class CFGInliner {
             Tuple t = (Tuple) yieldSites.get(0);
             inlineClosureAtYieldSite(ii, ((WrappedIRClosure) closureArg).getClosure(), (BasicBlock) t.a, (YieldInstr) t.b);
         }
-
-        // Update the bb array
-        // ENEBO: Currently unused
-        //cfg.setupFallThruMap();
     }
     
    private void inlineClosureAtYieldSite(InlinerInfo ii, IRClosure cl, BasicBlock yieldBB, YieldInstr yield) {
@@ -159,17 +153,12 @@ public class CFGInliner {
 
         // 1. split yield site bb and move outbound edges from yield site bb to split bb.
         BasicBlock splitBB = yieldBB.splitAtInstruction(yield, cfg.getScope().getNewLabel(), false);
-
         cfg.putBBForLabel(splitBB.getLabel(), splitBB);
-        List<Edge<BasicBlock>> edgesToRemove = new java.util.ArrayList<Edge<BasicBlock>>();
         for (Edge<BasicBlock> e : cfg.getOutgoingEdges(yieldBB)) {
             cfg.addEdge(splitBB, e.getDestination().getData(), e.getType());
-            edgesToRemove.add(e);
         }
-        // Ugh! I get exceptions if I try to pass the set I receive from outgoingEdgesOf!  What a waste!
-        for (Edge e : edgesToRemove) {
-            cfg.removeEdge(e);
-        }
+
+        cfg.removeAllOutgoingEdgesForBB(yieldBB);
 
         // 2. Merge closure cfg into the current cfg
         // NOTE: No need to clone basic blocks in the closure because they are part of the caller's cfg
@@ -193,12 +182,12 @@ public class CFGInliner {
             }
         }
         
-        for (Edge<BasicBlock> e : cfg.getOutgoingEdges(cEntry)) {
+        for (Edge<BasicBlock> e : closureCFG.getOutgoingEdges(cEntry)) {
             BasicBlock destination = e.getDestination().getData();
             if (destination != cExit) cfg.addEdge(yieldBB, destination, e.getType());
         }
         
-        for (Edge<BasicBlock> e : cfg.getIncomingEdges(cExit)) {
+        for (Edge<BasicBlock> e : closureCFG.getIncomingEdges(cExit)) {
             BasicBlock source = e.getSource().getData();
             if (source != cEntry) {
                 if (e.getType() == EdgeType.EXCEPTION) {
@@ -292,7 +281,7 @@ public class CFGInliner {
     // callBB will only have a single successor & splitBB will only have a single predecessor
     // after inlining the callee.  Merge them with their successor/predecessors respectively
     private void mergeStraightlineBBs(BasicBlock callBB, BasicBlock splitBB) {
-        mergeBBs(callBB, cfg.getOutgoingDestination(callBB));
-        mergeBBs(cfg.getIncomingSource(splitBB), splitBB);
+        if (cfg.outDegree(callBB) == 1) mergeBBs(callBB, cfg.getOutgoingDestination(callBB));
+        if (cfg.inDegree(splitBB) == 1) mergeBBs(cfg.getIncomingSource(splitBB), splitBB);
     }    
 }

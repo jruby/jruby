@@ -134,6 +134,18 @@ public class CFG {
         return graph.getSortedData();
     }
     
+    public void addEdge(BasicBlock source, BasicBlock destination, Object type) {
+        graph.vertexFor(source).addEdgeTo(destination, type);
+    }
+
+    public int inDegree(BasicBlock b) {
+        return graph.vertexFor(b).inDegree();
+    }
+
+    public int outDegree(BasicBlock b) {
+        return graph.vertexFor(b).outDegree();
+    }
+    
     public Iterable<BasicBlock> getIncomingSources(BasicBlock block) {
         return graph.vertexFor(block).getIncomingSourcesData();
     }
@@ -188,10 +200,6 @@ public class CFG {
     
     public BasicBlock getRescuerBBFor(BasicBlock block) {
         return rescuerMap.get(block);
-    }
-    
-    public void addEdge(BasicBlock source, BasicBlock destination, Object type) {
-        graph.vertexFor(source).addEdgeTo(destination, type);
     }
     
     /* Add 'b' as a global ensure block that protects all unprotected blocks in this scope */
@@ -450,11 +458,14 @@ public class CFG {
         return createBB(scope.getNewLabel(), nestedExceptionRegions);
     }
     
-
     public void removeEdge(Edge edge) {
         graph.removeEdge(edge);
     }    
-    
+
+    public void removeAllOutgoingEdgesForBB(BasicBlock b) {
+        graph.vertexFor(b).removeAllOutgoingEdges();
+    }    
+
     private void deleteOrphanedBlocks(DirectedGraph<BasicBlock> graph) {
         // System.out.println("\nGraph:\n" + getGraph().toString());
         // System.out.println("\nInstructions:\n" + toStringInstrs());
