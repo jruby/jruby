@@ -151,7 +151,7 @@ module FFI
         if invokers.empty?
           begin
             function = lib.find_function(cname.to_s)
-            raise FFI::NotFoundError.new(cname.to_s, ffi_libraries.map { |lib| lib.name }) unless function
+            raise FFI::NotFoundError.new(cname.to_s, *ffi_libraries.map { |lib| lib.name }) unless function
             invokers << if arg_types.length > 0 && arg_types[arg_types.length - 1] == FFI::NativeType::VARARGS
               FFI::VariadicInvoker.new(arg_types, find_type(ret_type), function, options)
             else
@@ -166,7 +166,7 @@ module FFI
       end
       invoker = invokers.compact.shift
       raise load_error if load_error && invoker.nil?
-      #raise FFI::NotFoundError.new(cname.to_s, *libraries) unless invoker
+
       invoker.attach(self, mname.to_s)
       invoker # Return a version that can be called via #call
     end
@@ -182,7 +182,7 @@ module FFI
         end
       end
 
-      raise FFI::NotFoundError.new(cname, ffi_libraries) if address.nil? || address.null?
+      raise FFI::NotFoundError.new(cname, *ffi_libraries) if address.nil? || address.null?
       
       if type.is_a?(Class) && type < FFI::Struct
         # If it is a global struct, just attach directly to the pointer
