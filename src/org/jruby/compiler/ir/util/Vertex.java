@@ -120,7 +120,7 @@ public class Vertex<T extends DataInfo> implements Comparable<Vertex<T>> {
     public T getOutgoingDestinationData() {
         Edge<T> edge = getSingleEdge(getOutgoingEdges().iterator(), "");
         
-        return edge == null ? null : edge.getSource().getData();  
+        return edge == null ? null : edge.getDestination().getData();  
     }    
     
     public T getOutgoingDestinationDataOfType(Object type) {
