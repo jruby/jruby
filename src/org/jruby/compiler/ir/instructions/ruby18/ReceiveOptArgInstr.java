@@ -1,6 +1,7 @@
 package org.jruby.compiler.ir.instructions.ruby18;
 
 import org.jruby.compiler.ir.Operation;
+import org.jruby.compiler.ir.instructions.CopyInstr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.ReceiveOptArgBase;
 import org.jruby.compiler.ir.operands.UndefinedValue;
@@ -15,7 +16,7 @@ public class ReceiveOptArgInstr extends ReceiveOptArgBase {
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        throw new RuntimeException("Not implemented yet!");
+        return new CopyInstr(ii.getRenamedVariable(result), ii.getCallArg(argIndex));
     }
 
     public Object receiveOptArg(IRubyObject[] args) {

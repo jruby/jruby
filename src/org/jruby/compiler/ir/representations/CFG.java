@@ -551,9 +551,9 @@ public class CFG {
     }
 
     void removeEdge(BasicBlock a, BasicBlock b) {
-        throw new UnsupportedOperationException("Not yet implemented");
+       graph.removeEdge(a, b);
     }
-    
+
     private LinkedList<BasicBlock> buildPostOrderList() {
         LinkedList<BasicBlock> list = new LinkedList<BasicBlock>();
         BasicBlock root = getEntryBB();

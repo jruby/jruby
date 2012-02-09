@@ -49,13 +49,7 @@ public class InlinerInfo {
         Variable newVar = this.varRenameMap.get(v);
         if (newVar == null) {
             IRScope m = this.callerCFG.getScope();
-            newVar = m.getNewInlineVariable();
-            if ((v instanceof LocalVariable) && !(v instanceof ClosureLocalVariable)) {
-                // Frame load/store placement dataflow pass (and possible other passes later on) exploit
-                // information whether a variable is a temporary or a local/self variable.
-                // So, variable renaming for inlining has to preserve this information.
-                newVar = m.getLocalVariable(newVar.getName(), ((LocalVariable)newVar).getScopeDepth());
-            }
+            newVar = m.getNewInlineVariable(v);
             this.varRenameMap.put(v, newVar);
         }
         return newVar;

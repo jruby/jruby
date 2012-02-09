@@ -47,29 +47,15 @@ public class InlineTest implements CompilerPass {
     public void run(IRScope s) {
         if (!(s instanceof IRMethod)) return;
 
-        IRMethod method = ((IRMethod) s);
-        CFG cfg = method.cfg();
-
-        IRScope m = s.getNearestModuleReferencingScope();
         IRScope mi = getIRMethod(s);
-        
+
         // Cannot inline something not IR
         // FIXME: Add logging indicating aborted inline attempt
-        if (mi == null) return;
-
-        /*
-        // aggressive testing .. super class walking
-        while ((mi == null) && (m instanceof IRClass)) {
-        Operand sc = ((IRClass)m).superClass;
-        if (!(sc instanceof WrappedIRModule)) break;
-        m = (IRModule)((WrappedIRModule)sc).scope;
-        mi = m.getInstanceMethod(methodToInline);
-        }
-         */
-
         // just a test .. dont bother if we dont have a match!
         if (mi == null) return;
 
+        IRMethod method = ((IRMethod) s);
+        CFG cfg = method.cfg();
         for (BasicBlock b : cfg.getBasicBlocks()) {
             for (Instr i : b.getInstrs()) {
                 if (i instanceof CallInstr) {

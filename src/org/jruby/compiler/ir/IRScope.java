@@ -25,11 +25,11 @@ import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
 import org.jruby.compiler.ir.instructions.ReceiveSelfInstruction;
 import org.jruby.compiler.ir.instructions.ResultInstr;
+import org.jruby.compiler.ir.instructions.ThreadPollInstr;
 import org.jruby.compiler.ir.instructions.ZSuperInstr;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.Operand;
-import org.jruby.compiler.ir.operands.RenamedVariable;
 import org.jruby.compiler.ir.operands.Self;
 import org.jruby.compiler.ir.operands.TemporaryVariable;
 import org.jruby.compiler.ir.operands.Variable;
@@ -212,6 +212,9 @@ public abstract class IRScope {
 
     /** Does this scope have loops? */
     private boolean hasLoops;
+
+    /** # of thread poll instrs added to this scope */
+    private int threadPollInstrsCount;
     
     private IRManager manager;
     
@@ -226,6 +229,7 @@ public abstract class IRScope {
         this.staticScope = staticScope;
         instrList = new ArrayList<Instr>();
         closures = new ArrayList<IRClosure>();
+        threadPollInstrsCount = 0;
 
         hasLoops = false;
 
@@ -253,6 +257,7 @@ public abstract class IRScope {
     }
     
     public void addInstr(Instr i) {
+        if (i instanceof ThreadPollInstr) threadPollInstrsCount++;
         instrList.add(i);
     }
 
@@ -416,8 +421,8 @@ public abstract class IRScope {
     public CFG buildCFG() {
         cfg = new CFG(this);
         cfg.build(instrList);
-		  // Clear out instruction list after CFG has been built.
-		  this.instrList = null;  
+        // Clear out instruction list after CFG has been built.
+        this.instrList = null;  
         return cfg;
     }
     
@@ -588,10 +593,10 @@ public abstract class IRScope {
     }
 
     public abstract String getScopeName();
-    
+
     @Override
     public String toString() {
-        return getScopeName() + " " + getName();
+        return getScopeName() + " " + getName() + "[" + getFileName() + ":" + getLineNumber() + "]";
     }    
 
     public String toStringInstrs() {
@@ -800,10 +805,18 @@ public abstract class IRScope {
     }
     
     // Generate a new variable for inlined code (for ease of debugging, use differently named variables for inlined code)
-    public Variable getNewInlineVariable() {
-        // Use the temporary variable counters for allocating temporary variables
-        return new RenamedVariable("%i", allocateNextPrefixedName("%v"));
-    }    
+    public Variable getNewInlineVariable(Variable v) {
+        if (v instanceof LocalVariable) {
+            LocalVariable lv = (LocalVariable)v;
+            return getLocalVariable("%i_" + allocateNextPrefixedName("%i") + "_" + lv.getName(), lv.getScopeDepth());
+        } else {
+            return getNewTemporaryVariable();
+        }
+    }
+
+    public int getThreadPollInstrsCount() {
+        return threadPollInstrsCount;
+    }
     
     public int getLocalVariablesCount() {
         return localVars.nextSlot;
@@ -870,7 +883,7 @@ public abstract class IRScope {
     // This should only be used to do pre-cfg opts and to build the CFG.
     // Everyone else should use the CFG.
     public List<Instr> getInstrs() {
-		  if (cfg != null) throw new RuntimeException("Please use the CFG to access this scope's instructions.");
+        if (cfg != null) throw new RuntimeException("Please use the CFG to access this scope's instructions.");
         return instrList;
     }
 
@@ -978,8 +991,12 @@ public abstract class IRScope {
     
     public void inlineMethod(IRScope method, BasicBlock basicBlock, CallBase call) {
         depends(cfg());
-        
         new CFGInliner(cfg).inlineMethod(method, basicBlock, call);
+
+        // Reset state
+        linearizedBBList = null;
+        linearizedInstrArray = null;
+        dfProbs = new HashMap<String, DataFlowProblem>();
     }
     
     
