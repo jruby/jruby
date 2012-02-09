@@ -91,10 +91,11 @@ module FFI
     end
 
 
-    def ffi_convention(convention)
-      @ffi_convention = convention
+    def ffi_convention(convention = nil)
+      @ffi_convention ||= :default
+      @ffi_convention = convention if convention
+      @ffi_convention
     end
-
 
     def ffi_libraries
       raise LoadError.new("no library specified") if !defined?(@ffi_libs) || @ffi_libs.empty?
