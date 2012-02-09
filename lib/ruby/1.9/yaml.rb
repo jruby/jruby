@@ -40,7 +40,7 @@ module YAML
         remove_const 'YAML'
         YAML = #{engine.capitalize}
         remove_method :to_yaml
-        alias :to_yaml :#{engine}_to_yaml
+        alias :to_yaml :#{engine}._to_yaml
       eorb
 
       @yamler = engine
