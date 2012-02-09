@@ -44,17 +44,23 @@ public class Vertex<T extends DataInfo> implements Comparable<Vertex<T>> {
         return false;
     }
     
-    public void removeAllEdges() {
+    public void removeAllIncomingEdges() {
         for (Edge edge: getIncomingEdges()) {
             edge.getSource().getOutgoingEdges().remove(edge);
         }
         incoming = null;
-        
-        
+    }
+    
+    public void removeAllOutgoingEdges() {
         for (Edge edge: getOutgoingEdges()) {
             edge.getDestination().getIncomingEdges().remove(edge);
         }
         outgoing = null;
+    }
+
+    public void removeAllEdges() {
+        removeAllIncomingEdges();
+        removeAllOutgoingEdges();
     }
 
     public int inDegree() {
