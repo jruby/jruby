@@ -76,7 +76,7 @@ rb_class_name(VALUE klass)
 extern "C" char*
 rb_class2name(VALUE class_handle)
 {
-    return (char *) RSTRING_PTR(rb_class_name(class_handle));
+    return rb_str_ptr_readonly(rb_class_name(class_handle));
 }
 
 extern "C" VALUE

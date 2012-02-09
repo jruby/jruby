@@ -39,8 +39,10 @@ JLocalEnv::JLocalEnv(bool popFrame, int depth)
     if (env == NULL) {
         throw std::exception();
     }
-
-    env->PushLocalFrame(depth);
+    pop = popFrame;
+    if (popFrame) {
+        env->PushLocalFrame(depth);
+    }
 }
 
 JLocalEnv::JLocalEnv(JNIEnv* env, bool popFrame, int depth)

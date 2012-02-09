@@ -1206,9 +1206,7 @@ public final class StructLayout extends Type {
         public IRubyObject get(ThreadContext context, StructLayout.Storage cache, Member m, AbstractMemory ptr) {
             IRubyObject s = cache.getCachedValue(m);
             if (s == null) {
-                s = sbv.getStructClass().newInstance(context,
-                        new IRubyObject[] { ((AbstractMemory) ptr).slice(context.getRuntime(), m.getOffset(ptr)) },
-                        Block.NULL_BLOCK);
+                s = sbv.getStructClass().newInstance(context, ptr.slice(context.getRuntime(), m.getOffset(ptr)), Block.NULL_BLOCK);
                 cache.putCachedValue(m, s);
             }
 

@@ -46,7 +46,6 @@ using namespace jruby;
 RubyString::RubyString(JNIEnv* env, jobject obj_): Handle(env, obj_, T_STRING)
 {
     memset(&rwdata, 0, sizeof(rwdata));
-    rwdata.rstring = NULL;
 }
 
 RubyString::~RubyString()
@@ -62,7 +61,7 @@ int
 RubyString::length()
 {
     // If already synced with java, just return the cached length value
-    if (rwdata.rstring != NULL) {
+    if (rwdata.rstring != NULL && rwdata.valid) {
         return rwdata.rstring->len;
     }
 
@@ -94,36 +93,41 @@ RubyString_clean(JNIEnv* env, DataSync* data)
 RString*
 RubyString::toRString(bool readonly)
 {
-    if (rwdata.rstring != NULL) {
+    if (rwdata.rstring != NULL && rwdata.valid) {
         if (readonly || !rwdata.readonly) {
             return rwdata.rstring;
         }
 
         // Switch from readonly to read-write
         rwdata.readonly = false;
-        TAILQ_INSERT_TAIL(&jruby::nsyncq, &rwdata.nsync, syncq);
+	TAILQ_INSERT_TAIL(&jruby::jsyncq, &rwdata.jsync, syncq);
         JLocalEnv env;
         nsync(env);
 
         return rwdata.rstring;
     }
 
-    JLocalEnv env;
     rwdata.jsync.data = this;
     rwdata.jsync.sync = RubyString_jsync;
     rwdata.nsync.data = this;
     rwdata.nsync.sync = RubyString_nsync;
     rwdata.clean.data = this;
     rwdata.clean.sync = RubyString_clean;
-    rwdata.rstring = (RString *) calloc(1, sizeof(RString));
-    checkExceptions(env);
+    if (rwdata.rstring == NULL) {
+	rwdata.rstring = (RString *) calloc(1, sizeof(RString));
+	if (rwdata.rstring == NULL) {
+	    rb_raise(rb_eNoMemError, "failed to allocate memory for RString");
+	}
+    }
     rwdata.readonly = readonly;
 
     TAILQ_INSERT_TAIL(&jruby::cleanq, &rwdata.clean, syncq);
-    TAILQ_INSERT_TAIL(&jruby::jsyncq, &rwdata.jsync, syncq);
+    TAILQ_INSERT_TAIL(&jruby::nsyncq, &rwdata.nsync, syncq);
     if (!readonly) {
-        TAILQ_INSERT_TAIL(&jruby::nsyncq, &rwdata.nsync, syncq);
+	TAILQ_INSERT_TAIL(&jruby::jsyncq, &rwdata.jsync, syncq);
     }
+
+    JLocalEnv env;
     nsync(env);
 
     return rwdata.rstring;
@@ -132,9 +136,8 @@ RubyString::toRString(bool readonly)
 bool
 RubyString::clean(JNIEnv* env)
 {
-    // Clear the cached data
-    rwdata.readonly = false;
-    rwdata.rstring = NULL;
+    // Invalidate the cached data
+    rwdata.valid = false;
 
     return false;
 }
@@ -142,15 +145,13 @@ RubyString::clean(JNIEnv* env)
 bool
 RubyString::jsync(JNIEnv* env)
 {
-    if (rwdata.readonly && rwdata.rstring != NULL) {
-        // Don't sync anything, just clear the cached data
-        rwdata.rstring = NULL;
-        rwdata.readonly = false;
+    if (unlikely(rwdata.readonly)) {
+        // Nothing to do for read-only
 
         return false;
     }
 
-    if (rwdata.rstring != NULL && rwdata.rstring->ptr != NULL) {
+    if (rwdata.valid && rwdata.rstring != NULL && rwdata.rstring->ptr != NULL) {
         jobject byteList = env->GetObjectField(obj, RubyString_value_field);
         jobject bytes = env->GetObjectField(byteList, ByteList_bytes_field);
         jint begin = env->GetIntField(byteList, ByteList_begin_field);
@@ -190,6 +191,9 @@ RubyString::nsync(JNIEnv* env)
     if ((capacity > rstring->capa) || (rstring->capa == 0)) {
         rstring->capa = capacity;
         rstring->ptr = (char *) realloc(rstring->ptr, rstring->capa + 1);
+	if (rstring->ptr == NULL) {
+	    rb_raise(rb_eNoMemError, "failed to allocate memory for RString");
+	}
     }
 
     env->GetByteArrayRegion((jbyteArray) bytes, begin, length,
@@ -198,6 +202,7 @@ RubyString::nsync(JNIEnv* env)
     env->DeleteLocalRef(bytes);
 
     rstring->ptr[rstring->len = length] = 0;
+    rwdata.valid = true;
 
     return true;
 }

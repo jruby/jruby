@@ -84,36 +84,41 @@ RubyArray_clean(JNIEnv* env, DataSync* data)
 struct RArray*
 RubyArray::toRArray(bool readonly)
 {
-    if (rwdata.rarray != NULL) {
+    if (rwdata.rarray != NULL && rwdata.valid) {
         if (readonly || !rwdata.readonly) {
             return rwdata.rarray;
         }
 
         // Switch from readonly to read-write
         rwdata.readonly = false;
-        TAILQ_INSERT_TAIL(&jruby::nsyncq, &rwdata.nsync, syncq);
+	TAILQ_INSERT_TAIL(&jruby::jsyncq, &rwdata.jsync, syncq);
         JLocalEnv env;
         nsync(env);
 
         return rwdata.rarray;
     }
 
-    JLocalEnv env;
     rwdata.jsync.data = this;
     rwdata.jsync.sync = RubyArray_jsync;
     rwdata.nsync.data = this;
     rwdata.nsync.sync = RubyArray_nsync;
     rwdata.clean.data = this;
     rwdata.clean.sync = RubyArray_clean;
-    rwdata.rarray = (RArray *) calloc(1, sizeof(RArray));
-    checkExceptions(env);
-    rwdata.readonly = readonly;
 
     TAILQ_INSERT_TAIL(&jruby::cleanq, &rwdata.clean, syncq);
-    TAILQ_INSERT_TAIL(&jruby::jsyncq, &rwdata.jsync, syncq);
+    TAILQ_INSERT_TAIL(&jruby::nsyncq, &rwdata.nsync, syncq);
     if (!readonly) {
-        TAILQ_INSERT_TAIL(&jruby::nsyncq, &rwdata.nsync, syncq);
+	TAILQ_INSERT_TAIL(&jruby::jsyncq, &rwdata.jsync, syncq);
     }
+    if (rwdata.rarray == NULL) {
+	rwdata.rarray = (RArray *) calloc(1, sizeof(RArray));
+	if (rwdata.rarray == NULL) {
+	    rb_raise(rb_eNoMemError, "failed to allocate memory for RArray");
+	}
+    }
+    rwdata.readonly = readonly;
+
+    JLocalEnv env;
     nsync(env);
 
     return rwdata.rarray;
@@ -122,24 +127,20 @@ RubyArray::toRArray(bool readonly)
 bool
 RubyArray::clean(JNIEnv* env)
 {
-    // Clear the cached data
-    rwdata.readonly = false;
-    rwdata.rarray = NULL;
-
+    // Invalidate the cached data
+    rwdata.valid = false;
     return false;
 }
 
 bool
 RubyArray::jsync(JNIEnv* env)
 {
-    if (rwdata.readonly && rwdata.rarray != NULL) {
-        // Readonly, just clear the cached data
-        rwdata.rarray = NULL;
-        rwdata.readonly = false;
+    if (rwdata.readonly) {
+        // Readonly, do nothing
         return false;
     }
 
-    if (rwdata.rarray != NULL && rwdata.rarray->ptr != NULL) {
+    if (rwdata.valid && rwdata.rarray != NULL && rwdata.rarray->ptr != NULL) {
         jobjectArray values = (jobjectArray)(env->GetObjectField(obj, RubyArray_values_field));
         checkExceptions(env);
         jint begin = env->GetIntField(obj, RubyArray_begin_field);
@@ -204,6 +205,9 @@ RubyArray::nsync(JNIEnv* env)
     if ((capa > rarray->aux.capa) || (rarray->aux.capa == 0)) {
         rarray->aux.capa = capa;
         rarray->ptr = (VALUE*)realloc(rarray->ptr, sizeof(VALUE) * capa * 2);
+	if (rarray->ptr == NULL) {
+	    rb_raise(rb_eNoMemError, "failed to allocate proxy for RArray");
+	}
     }
 
     // If there is content, copy over
@@ -218,6 +222,7 @@ RubyArray::nsync(JNIEnv* env)
     }
 
     env->DeleteLocalRef(values);
+    rwdata.valid = true;
     rarray->len = len;
     return true;
 }

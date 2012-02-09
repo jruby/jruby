@@ -153,6 +153,7 @@ namespace jruby {
     private:
         struct RWData {
             bool readonly;
+	    bool valid;
             RString* rstring;
             DataSync jsync;
             DataSync nsync;
@@ -170,13 +171,13 @@ namespace jruby {
         bool nsync(JNIEnv* env);
         bool clean(JNIEnv* env);
         int length();
-
     };
 
     class RubyArray : public Handle {
     private:
         struct RWData {
             bool readonly;
+	    bool valid;
             RArray* rarray;
             DataSync jsync;
             DataSync nsync;

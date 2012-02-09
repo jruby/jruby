@@ -170,14 +170,6 @@ public class JRuby {
         return proc;
     }
 
-    public static long getRString(RubyString str) {
-        return RString.valueOf(str).address();
-    }
-
-    public static long getRArray(RubyArray ary) {
-        return RArray.valueOf(ary).address();
-    }
-
     /** rb_yield */
     public static IRubyObject yield(Ruby runtime, RubyArray args) {
         return runtime.getCurrentContext().getFrameBlock().call(runtime.getCurrentContext(), args.toJavaArray());

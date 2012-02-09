@@ -73,8 +73,6 @@ namespace jruby {
     jmethodID JRuby_ull2inum;
     jmethodID JRuby_int2big;
     jmethodID JRuby_uint2big;
-    jmethodID JRuby_getRString;
-    jmethodID JRuby_getRArray;
     jmethodID JRuby_newFloat;
     jmethodID JRuby_yield;
     jmethodID JRuby_blockGiven;
@@ -340,8 +338,6 @@ loadIds(JNIEnv* env)
             "(Lorg/jruby/Ruby;J)J");
     JRuby_uint2big = getStaticMethodID(env, JRuby_class, "uint2big",
             "(Lorg/jruby/Ruby;J)J");
-    JRuby_getRString = getStaticMethodID(env, JRuby_class, "getRString", "(Lorg/jruby/RubyString;)J");
-    JRuby_getRArray = getStaticMethodID(env, JRuby_class, "getRArray", "(Lorg/jruby/RubyArray;)J");
     JRuby_newFloat = getStaticMethodID(env, JRuby_class, "newFloat", "(Lorg/jruby/Ruby;JD)Lorg/jruby/RubyFloat;");
     JRuby_yield = getStaticMethodID(env, JRuby_class, "yield",
             "(Lorg/jruby/Ruby;Lorg/jruby/RubyArray;)Lorg/jruby/runtime/builtin/IRubyObject;");

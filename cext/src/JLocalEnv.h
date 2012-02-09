@@ -39,8 +39,8 @@ public:
 	operator JNIEnv*() { return env; }
 	JNIEnv* operator->() { return env; }
 private:
-    bool detach;
-    bool pop;
+	bool detach;
+	bool pop;
 	JNIEnv* env;
 };
 
