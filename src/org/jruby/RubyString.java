@@ -3020,6 +3020,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
         RubyString dest = new RubyString(runtime, getMetaClass(), new ByteList(slen + 30));
         int offset = 0, cp = begin;
         Encoding enc = value.getEncoding();
+        dest.setEncoding(enc);
+        dest.setCodeRange(enc.isAsciiCompatible() ? CR_7BIT : CR_VALID);
 
         RubyMatchData match = null;
         do {
