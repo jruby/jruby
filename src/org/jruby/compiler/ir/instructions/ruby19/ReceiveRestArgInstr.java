@@ -35,6 +35,7 @@ public class ReceiveRestArgInstr extends ReceiveRestArgBase {
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
+        // FIXME: Check this
         return new CopyInstr(ii.getRenamedVariable(result), ii.getCallArg(argIndex, true));
     }
 

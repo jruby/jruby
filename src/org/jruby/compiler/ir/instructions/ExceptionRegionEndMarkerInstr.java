@@ -14,6 +14,6 @@ public class ExceptionRegionEndMarkerInstr extends Instr {
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return this;
+        throw new RuntimeException("Should not get here!");
     }
 }

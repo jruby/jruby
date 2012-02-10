@@ -19,7 +19,7 @@ public class ClosureReturnInstr extends Instr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        throw new RuntimeException("Not implemented yet!");
+        throw new RuntimeException("Should not get here!");
     }
 
     public Operand getReturnValue() {

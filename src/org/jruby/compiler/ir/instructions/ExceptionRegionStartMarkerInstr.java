@@ -41,7 +41,6 @@ public class ExceptionRegionStartMarkerInstr extends Instr {
     }
 
     public Instr cloneForInlining(InlinerInfo ii) { 
-        return new ExceptionRegionStartMarkerInstr(ii.getRenamedLabel(begin), ii.getRenamedLabel(end),
-                ensureBlockLabel == null ? null : ii.getRenamedLabel(ensureBlockLabel), ii.getRenamedLabel(firstRescueBlockLabel));
+        throw new RuntimeException("Should not get here!");
     }
 }

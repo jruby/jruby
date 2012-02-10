@@ -25,7 +25,7 @@ public class LabelInstr extends Instr {
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new LabelInstr(ii.getRenamedLabel(label));
+        throw new RuntimeException("Should not get here!");
     }
 
     public void compile(JVM jvm) {

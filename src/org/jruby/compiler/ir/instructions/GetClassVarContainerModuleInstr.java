@@ -18,6 +18,7 @@ import org.jruby.runtime.DynamicScope;
  * Finds the module that will hold class vars for the object that is being queried.
  * A candidate static IRScope is also passed in.
  */
+// SSS FIXME: Looks like object can be null -- fix IR to eliminate this
 public class GetClassVarContainerModuleInstr extends Instr implements ResultInstr {
     private IRScope candidateScope;
     private Operand object;

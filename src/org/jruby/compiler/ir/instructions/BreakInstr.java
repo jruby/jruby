@@ -45,6 +45,7 @@ public class BreakInstr extends Instr {
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
+        // SSS FIXME: Not right unless interpreter can handle a break returning to the same scope 
         return new BreakInstr(returnValue.cloneForInlining(ii), scopeToReturnTo);
     }
 

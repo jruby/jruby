@@ -4,6 +4,7 @@ import java.util.Map;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
+import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.compiler.ir.targets.JVM;
 
@@ -44,7 +45,9 @@ public class ReturnInstr extends Instr {
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         // SSS FIXME: This should also look at the 'methodToReturnFrom' arg
-        return new CopyInstr(ii.getCallResultVariable(), returnValue.cloneForInlining(ii));
+        // 'v' can be null fo NoResultCallInstr
+        Variable v = ii.getCallResultVariable();
+        return v == null ? NopInstr.NOP : new CopyInstr(v, returnValue.cloneForInlining(ii));
     }
 
     public void compile(JVM jvm) {

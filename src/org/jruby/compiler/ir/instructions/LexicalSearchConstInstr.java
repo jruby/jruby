@@ -61,7 +61,7 @@ public class LexicalSearchConstInstr extends Instr implements ResultInstr {
     }
 
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new LexicalSearchConstInstr(ii.getRenamedVariable(result), definingScope, constName);
+        return new LexicalSearchConstInstr(ii.getRenamedVariable(result), definingScope.cloneForInlining(ii), constName);
     }
 
     @Override
