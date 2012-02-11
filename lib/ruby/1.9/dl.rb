@@ -12,8 +12,6 @@ module DL
     extend FFI::DataConverter
     native_type FFI::Type::Builtin::POINTER
 
-    NULL = CPtr.new(FFI::Pointer::NULL, 0, 0)
-
     def self.to_native(value, ctx)
       if value.is_a?(CPtr)
         value.ffi_ptr
