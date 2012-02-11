@@ -405,9 +405,9 @@ module DL
   module LibC
     extend FFI::Library
     ffi_lib FFI::Library::LIBC
-    attach_function :malloc, [ :uint ], :void
-    attach_function :realloc, [ :uint, :uint ], :uint
-    attach_function :free, [ :uint ], :void
+    attach_function :malloc, [ :size_t ], :uintptr_t
+    attach_function :realloc, [ :uintptr_t, :size_t ], :uintptr_t
+    attach_function :free, [ :uintptr_t ], :void
   end
 
   def self.malloc(size)
