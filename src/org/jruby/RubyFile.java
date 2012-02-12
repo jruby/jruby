@@ -1295,7 +1295,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             if (userEnd == -1) {
                 if (pathLength == 1) {
                     // Single '~' as whole path to expand
-                    checkHome(context, path);
+                    checkHome(context);
                     path = RubyDir.getHomeDirectoryPath(context).toString();
                 } else {
                     // No directory delimeter.  Rest of string is username
@@ -1305,7 +1305,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             
             if (userEnd == 1) {
                 // '~/...' as path to expand
-                checkHome(context, path);
+                checkHome(context);
                 path = RubyDir.getHomeDirectoryPath(context).toString() +
                         path.substring(1);
             } else if (userEnd > 1){
@@ -1932,12 +1932,12 @@ public class RubyFile extends RubyIO implements EncodingCapable {
      * Check if HOME environment variable is not nil nor empty
      * @param context 
      */
-    private static void checkHome(ThreadContext context, String path) {
+    private static void checkHome(ThreadContext context) {
         Ruby runtime = context.getRuntime();
         RubyHash env = runtime.getENV();
         String home = (String) env.get(runtime.newString("HOME"));
         if (home == null || home.equals("")) {
-            throw runtime.newArgumentError("couldn't find HOME environment -- expanding `" + path + "'");
+            throw runtime.newArgumentError("couldn't find HOME environment -- expanding `~'");
         }
     }
 }
