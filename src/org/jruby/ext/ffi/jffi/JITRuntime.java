@@ -27,19 +27,7 @@ public final class JITRuntime {
     }
     
     public static long other2long(IRubyObject parameter) {
-        if (parameter instanceof RubyNumeric) {
-            return RubyNumeric.num2long(parameter);
-
-        } else if (parameter.isNil()) {
-            return 0L;
-
-        } else if (parameter instanceof RubyString) {
-            return chr2long(parameter);
-        }
-
-        throw parameter.getRuntime().newTypeError("value " 
-                + parameter.getMetaClass().getRealClass()
-                + " cannot be converted to integer");
+        return RubyNumeric.num2long(parameter);
     }
     
     public static int s8Value32(IRubyObject parameter) {
@@ -133,16 +121,6 @@ public final class JITRuntime {
         return parameter instanceof RubyFixnum
                 ? ((RubyFixnum) parameter).getLongValue()
                 : other2u64(parameter);
-    }
-
-    public static long chr2long(IRubyObject parameter) {
-        CharSequence cs = parameter.asJavaString();
-        if (cs.length() == 1) {
-            return cs.charAt(0);
-        }
-
-        throw parameter.getRuntime().newRangeError("value "
-                    + parameter + " is not an integer");
     }
 
     public static int f32Value32(IRubyObject parameter) {

@@ -99,26 +99,7 @@ public final class Util {
      * @return
      */
     public static final long longValue(IRubyObject parameter) {
-        if (parameter instanceof RubyNumeric) {
-            return ((RubyNumeric) parameter).getLongValue();
-
-        } else if (parameter.isNil()) {
-            return 0L;
-
-        } else if (parameter instanceof RubyString) {
-            return longValue((RubyString) parameter);
-        }
-
-        throw parameter.getRuntime().newRangeError("Value "
-                    + parameter + " is not an integer");
-    }
-    private static final long longValue(RubyString parameter) {
-        CharSequence cs = parameter.asJavaString();
-        if (cs.length() == 1) {
-            return cs.charAt(0);
-        }
-        throw parameter.getRuntime().newRangeError("Value "
-                    + parameter + " is not an integer");
+        return RubyNumeric.num2long(parameter);
     }
 
     public static int intValue(IRubyObject obj, RubyHash enums) {
