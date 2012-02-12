@@ -12,9 +12,9 @@ public class ReturnInstr extends Instr {
     public final IRMethod methodToReturnFrom;
     private Operand returnValue;
 
-    public ReturnInstr(Operand returnValue, IRMethod m) {
+    public ReturnInstr(Operand returnValue, IRMethod methodToReturnFrom) {
         super(Operation.RETURN);
-        this.methodToReturnFrom = m;
+        this.methodToReturnFrom = methodToReturnFrom;
         this.returnValue = returnValue;
 
         assert returnValue != null : "RETURN must have returnValue operand";
@@ -44,10 +44,20 @@ public class ReturnInstr extends Instr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        // SSS FIXME: This should also look at the 'methodToReturnFrom' arg
-        // 'v' can be null fo NoResultCallInstr
-        Variable v = ii.getCallResultVariable();
-        return v == null ? NopInstr.NOP : new CopyInstr(v, returnValue.cloneForInlining(ii));
+        return new ReturnInstr(returnValue.cloneForInlining(ii), methodToReturnFrom);
+    }
+
+    @Override
+    public Instr cloneForInlinedScope(InlinerInfo ii) {
+        if (methodToReturnFrom == null) {
+            Variable v = ii.getCallResultVariable();
+            return v == null ? null : new CopyInstr(v, returnValue.cloneForInlining(ii));
+        } else if (ii.getInlineHostScope() == methodToReturnFrom) {
+            // Convert to a regular return instruction
+            return new ReturnInstr(returnValue.cloneForInlining(ii));
+        } else {
+            return cloneForInlining(ii);
+        }
     }
 
     public void compile(JVM jvm) {

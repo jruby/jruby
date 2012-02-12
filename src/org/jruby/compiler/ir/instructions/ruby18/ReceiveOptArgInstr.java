@@ -15,8 +15,14 @@ public class ReceiveOptArgInstr extends ReceiveOptArgBase {
         super(result, index);
     }
 
-    public Instr cloneForInlining(InlinerInfo ii) {
+    @Override
+    public Instr cloneForInlinedScope(InlinerInfo ii) {
         return new CopyInstr(ii.getRenamedVariable(result), ii.getCallArg(argIndex));
+    }
+
+    @Override
+    public Instr cloneForBlockCloning(InlinerInfo ii) {
+        return new ReceiveOptArgInstr(ii.getRenamedVariable(result), argIndex);
     }
 
     public Object receiveOptArg(IRubyObject[] args) {

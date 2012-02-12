@@ -39,8 +39,4 @@ public class ExceptionRegionStartMarkerInstr extends Instr {
     public Operand[] getOperands() {
         return EMPTY_OPERANDS;
     }
-
-    public Instr cloneForInlining(InlinerInfo ii) { 
-        throw new RuntimeException("Should not get here!");
-    }
 }

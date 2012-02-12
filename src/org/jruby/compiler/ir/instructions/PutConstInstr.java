@@ -14,6 +14,7 @@ public class PutConstInstr extends PutInstr {
         super(Operation.PUT_CONST, scopeOrObj, constName, val);
     }
 
+    @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         return new PutConstInstr(operands[TARGET].cloneForInlining(ii), ref, operands[VALUE].cloneForInlining(ii));
     }

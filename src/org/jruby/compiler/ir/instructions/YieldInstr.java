@@ -30,7 +30,8 @@ public class YieldInstr extends Instr implements ResultInstr {
         this.unwrapArray = unwrapArray;
         this.result = result;
     }
-   
+
+    @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         return new YieldInstr(ii.getRenamedVariable(result), blockArg.cloneForInlining(ii), yieldArg.cloneForInlining(ii), unwrapArray);
     }

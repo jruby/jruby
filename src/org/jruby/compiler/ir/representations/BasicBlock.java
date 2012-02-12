@@ -105,17 +105,28 @@ public class BasicBlock implements DataInfo {
     }
 
     public void swallowBB(BasicBlock foodBB) {
+        // Gulp!
         this.instrs.addAll(foodBB.instrs);
     }
 
-    public BasicBlock cloneForInlining(InlinerInfo ii) {
+    public BasicBlock cloneForInlinedMethod(InlinerInfo ii) {
         BasicBlock clonedBB = ii.getOrCreateRenamedBB(this);
         for (Instr i: getInstrs()) {
-            Instr clonedInstr = i.cloneForInlining(ii);
+            Instr clonedInstr = i.cloneForInlinedScope(ii);
             if (clonedInstr != null) {
                 clonedBB.addInstr(clonedInstr);
                 if (clonedInstr instanceof YieldInstr) ii.recordYieldSite(clonedBB, (YieldInstr)clonedInstr);
             }
+        }
+
+        return clonedBB;
+    }
+
+    public BasicBlock cloneForBlockCloning(InlinerInfo ii) {
+        BasicBlock clonedBB = ii.getOrCreateRenamedBB(this);
+        for (Instr i: getInstrs()) {
+            Instr clonedInstr = i.cloneForBlockCloning(ii);
+            if (clonedInstr != null) clonedBB.addInstr(clonedInstr);
         }
 
         return clonedBB;

@@ -30,6 +30,7 @@ public class AllocateBindingInstr extends Instr {
         return EMPTY_OPERANDS;
     }
 
+    @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         // The frame will now be allocated in the caller's scope
         return new AllocateBindingInstr(ii.callerCFG.getScope());

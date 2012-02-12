@@ -27,6 +27,7 @@ public class InstanceOfInstr extends Instr implements ResultInstr {
         this.result = result;
     }
 
+    @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         return new InstanceOfInstr(ii.getRenamedVariable(result), object.cloneForInlining(ii), className);
     }

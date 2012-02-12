@@ -15,6 +15,7 @@ class OpFlags {
     final static int f_is_call             = 0x0400;
     final static int f_is_arg_receive      = 0x0800;
     final static int f_modifies_code       = 0x1000;
+    final static int f_inline_unfriendly   = 0x2000;
 }
 
 public enum Operation {
@@ -74,11 +75,11 @@ public enum Operation {
     /** defines **/
     ALIAS(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_modifies_code),
     GVAR_ALIAS(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_modifies_code),
-    DEF_MODULE(OpFlags.f_has_side_effect | OpFlags.f_modifies_code),
-    DEF_CLASS(OpFlags.f_has_side_effect | OpFlags.f_modifies_code),
-    DEF_META_CLASS(OpFlags.f_has_side_effect | OpFlags.f_modifies_code),
-    DEF_INST_METH(OpFlags.f_has_side_effect | OpFlags.f_modifies_code),
-    DEF_CLASS_METH(OpFlags.f_has_side_effect | OpFlags.f_modifies_code),
+    DEF_MODULE(OpFlags.f_has_side_effect | OpFlags.f_modifies_code | OpFlags.f_inline_unfriendly),
+    DEF_CLASS(OpFlags.f_has_side_effect | OpFlags.f_modifies_code | OpFlags.f_inline_unfriendly),
+    DEF_META_CLASS(OpFlags.f_has_side_effect | OpFlags.f_modifies_code | OpFlags.f_inline_unfriendly),
+    DEF_INST_METH(OpFlags.f_has_side_effect | OpFlags.f_modifies_code | OpFlags.f_inline_unfriendly),
+    DEF_CLASS_METH(OpFlags.f_has_side_effect | OpFlags.f_modifies_code | OpFlags.f_inline_unfriendly),
     UNDEF_METHOD(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_modifies_code),
 
     THROW(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_is_exception),
@@ -220,6 +221,10 @@ public enum Operation {
     
     public boolean modifiesCode() {
         return (flags & OpFlags.f_modifies_code) > 0;
+    }
+
+    public boolean inlineUnfriendly() {
+        return (flags & OpFlags.f_inline_unfriendly) > 0;
     }
 
     @Override

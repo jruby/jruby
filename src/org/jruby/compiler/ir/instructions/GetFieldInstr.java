@@ -18,6 +18,7 @@ public class GetFieldInstr extends GetInstr {
         super(Operation.GET_FIELD, dest, obj, fieldName);
     }
 
+    @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         return new GetFieldInstr(ii.getRenamedVariable(getResult()),
                 getSource().cloneForInlining(ii), getRef());

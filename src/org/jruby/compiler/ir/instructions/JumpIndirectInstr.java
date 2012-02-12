@@ -25,7 +25,7 @@ public class JumpIndirectInstr extends Instr {
 
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-        // SSS FIXME: Is this correct?
+        // SSS FIXME: Is this correct?  Are we guaranteed this returns a variable always?
         target = (Variable)target.getSimplifiedOperand(valueMap, force);
     }
 
@@ -34,6 +34,7 @@ public class JumpIndirectInstr extends Instr {
         return super.toString() + "(" + target + ")";
     }
 
+    @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         return new JumpIndirectInstr(ii.getRenamedVariable(target));
     }

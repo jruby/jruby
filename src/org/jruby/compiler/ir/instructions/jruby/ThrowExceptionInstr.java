@@ -37,6 +37,7 @@ public class ThrowExceptionInstr extends Instr {
         return super.toString() + "(" + exceptionArg + ")";
     }
 
+    @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         return new ThrowExceptionInstr(exceptionArg.cloneForInlining(ii));
     }

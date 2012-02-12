@@ -22,7 +22,7 @@ public class ReceiveExceptionInstr extends Instr implements ResultInstr {
     public Operand[] getOperands() {
         return EMPTY_OPERANDS;
     }
-    
+
     public Variable getResult() {
         return result;
     }
@@ -31,6 +31,7 @@ public class ReceiveExceptionInstr extends Instr implements ResultInstr {
         this.result = v;
     }
 
+    @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         return new ReceiveExceptionInstr(ii.getRenamedVariable(result));
     }

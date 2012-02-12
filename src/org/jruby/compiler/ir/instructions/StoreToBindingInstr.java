@@ -46,6 +46,7 @@ public class StoreToBindingInstr extends Instr {
         return "BINDING(" + targetMethod + ")." + slotName + " = " + value;
     }
 
+    @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         return new StoreToBindingInstr(targetMethod, slotName, value.cloneForInlining(ii));
     }

@@ -4,6 +4,7 @@ import java.util.Map;
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
+import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.interpreter.IRBreakJump;
 import org.jruby.runtime.Block;
@@ -44,9 +45,25 @@ public class BreakInstr extends Instr {
         return new Operand[] { returnValue };
     }
 
+    @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        // SSS FIXME: Not right unless interpreter can handle a break returning to the same scope 
         return new BreakInstr(returnValue.cloneForInlining(ii), scopeToReturnTo);
+    }
+
+    @Override
+    public Instr cloneForInlinedScope(InlinerInfo ii) {
+        if (ii.getInlineHostScope() == scopeToReturnTo) {
+            // If the break got inlined into the scope we had to break to, replace the break
+            // with a COPY of the break-value into the call's result var.
+            // Ex: v = foo { ..; break n; ..}.  So, "break n" is replaced with "v = n"
+            // The CFG for the closure will be such that after break, control goes to the 
+            // scope exit block.  So, we know that after the copy, we'll continue with the
+            // instruction after the call.
+            Variable v = ii.getCallResultVariable();
+            return (v == null) ? null : new CopyInstr(v, returnValue.cloneForInlining(ii));
+        } else {
+            return cloneForInlining(ii);
+        }
     }
 
     @Override

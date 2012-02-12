@@ -18,8 +18,14 @@ public class ReceiveRestArgInstr extends ReceiveRestArgBase {
         super(result, argIndex);
     }
 
-    public Instr cloneForInlining(InlinerInfo ii) {
+    @Override
+    public Instr cloneForInlinedScope(InlinerInfo ii) {
         return new CopyInstr(ii.getRenamedVariable(result), ii.getCallArg(argIndex, true));
+    }
+
+    @Override
+    public Instr cloneForBlockCloning(InlinerInfo ii) {
+        return new ReceiveRestArgInstr(ii.getRenamedVariable(result), argIndex);
     }
 
     private IRubyObject[] NO_PARAMS = new IRubyObject[0];    

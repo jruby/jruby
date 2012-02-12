@@ -15,6 +15,7 @@ public class PutFieldInstr extends PutInstr {
         super(Operation.PUT_FIELD, obj, fieldName, value);
     }
 
+    @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         return new PutFieldInstr(operands[TARGET].cloneForInlining(ii), ref, operands[VALUE].cloneForInlining(ii));
     }

@@ -24,9 +24,15 @@ public class ReceiveOptArgInstr extends ReceiveOptArgBase {
         return (isDead() ? "[DEAD]" : "") + (hasUnusedResult() ? "[DEAD-RESULT]" : "") + getResult() + " = " + getOperation() + "(" + argIndex + ", " + minArgsLength + ")";
     }
 
+    @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         int n = ii.getArgsCount();
         return new CopyInstr(ii.getRenamedVariable(result), minArgsLength <= n ? ii.getCallArg(argIndex) : UndefinedValue.UNDEFINED);
+    }
+
+    @Override
+    public Instr cloneForBlockCloning(InlinerInfo ii) {
+        return new ReceiveOptArgInstr(ii.getRenamedVariable(result), argIndex, minArgsLength);
     }
 
     public Object receiveOptArg(IRubyObject[] args) {

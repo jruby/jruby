@@ -15,6 +15,7 @@ public class GetClassVariableInstr extends GetInstr {
         super(Operation.GET_CVAR, dest, scope, varName);
     }
 
+    @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         return new GetClassVariableInstr(ii.getRenamedVariable(getResult()),
                 getSource().cloneForInlining(ii), getRef());

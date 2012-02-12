@@ -39,7 +39,7 @@ public class SuperInstr extends CallInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new SuperInstr(ii.getRenamedVariable(getResult()), getReceiver().cloneForInlining(ii), getMethodAddr(),
+        return new SuperInstr(ii.getRenamedVariable(getResult()), getReceiver().cloneForInlining(ii), (MethAddr)getMethodAddr().cloneForInlining(ii),
                 cloneCallArgs(ii), closure == null ? null : closure.cloneForInlining(ii));
     }
 

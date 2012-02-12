@@ -24,10 +24,6 @@ public class LabelInstr extends Instr {
         return label + ":";
     }
 
-    public Instr cloneForInlining(InlinerInfo ii) {
-        throw new RuntimeException("Should not get here!");
-    }
-
     public void compile(JVM jvm) {
         jvm.method().mark(jvm.getLabel(label));
     }

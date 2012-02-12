@@ -61,6 +61,7 @@ public class InheritanceSearchConstInstr extends Instr implements ResultInstr {
         this.result = v;
     }
 
+    @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         return new InheritanceSearchConstInstr(ii.getRenamedVariable(result), currentModule.cloneForInlining(ii), constName);
     }

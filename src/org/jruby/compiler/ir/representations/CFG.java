@@ -49,26 +49,34 @@ public class CFG {
     private static final Logger LOG = LoggerFactory.getLogger("CFG");
     
     private IRScope scope;
-    private Map<Label, BasicBlock> bbMap = new HashMap<Label, BasicBlock>();
+    private Map<Label, BasicBlock> bbMap;
         
     // Map of bb -> first bb of the rescue block that initiates exception handling for all exceptions thrown within this bb
-    private Map<BasicBlock, BasicBlock> rescuerMap = new HashMap<BasicBlock, BasicBlock>();
+    private Map<BasicBlock, BasicBlock> rescuerMap;
         
     // Map of bb -> first bb of the ensure block that protects this bb
-    private Map<BasicBlock, BasicBlock> ensurerMap = new HashMap<BasicBlock, BasicBlock>();
+    private Map<BasicBlock, BasicBlock> ensurerMap;
         
-    private List<ExceptionRegion> outermostERs = new ArrayList<ExceptionRegion>();
+    private List<ExceptionRegion> outermostERs;
     
-    private BasicBlock entryBB = null;
-    private BasicBlock exitBB = null;
-    private DirectedGraph<BasicBlock> graph = new DirectedGraph<BasicBlock>();
+    private BasicBlock entryBB;
+    private BasicBlock exitBB;
+    private DirectedGraph<BasicBlock> graph;
     
-    private int nextBBId = 0;       // Next available basic block id
+    private int nextBBId;       // Next available basic block id
     
-    LinkedList<BasicBlock> postOrderList = null; // Post order traversal list of the cfg    
+    LinkedList<BasicBlock> postOrderList; // Post order traversal list of the cfg    
     
     public CFG(IRScope scope) {
         this.scope = scope;
+        this.graph = new DirectedGraph<BasicBlock>();
+        this.bbMap = new HashMap<Label, BasicBlock>();
+        this.rescuerMap = new HashMap<BasicBlock, BasicBlock>();
+        this.ensurerMap = new HashMap<BasicBlock, BasicBlock>();
+        this.outermostERs = new ArrayList<ExceptionRegion>();
+        this.nextBBId = 0;
+        this.entryBB = this.exitBB = null;
+        this.postOrderList = null;
     }
     
     public int getNextBBID() {
@@ -214,11 +222,7 @@ public class CFG {
             }
         }
     }     
-    
-    public void putBBForLabel(Label label, BasicBlock block) {
-        bbMap.put(label, block);
-    }
-    
+
     public void setEnsurerBB(BasicBlock block, BasicBlock ensureBlock) {
         ensurerMap.put(block, ensureBlock);
     }
@@ -446,8 +450,7 @@ public class CFG {
     
     private BasicBlock createBB(Label label, Stack<ExceptionRegion> nestedExceptionRegions) {
         BasicBlock basicBlock = new BasicBlock(this, label);
-        bbMap.put(label, basicBlock);
-        graph.vertexFor(basicBlock);
+        addBasicBlock(basicBlock);
         
         if (!nestedExceptionRegions.empty()) nestedExceptionRegions.peek().addBB(basicBlock);
 
@@ -457,6 +460,11 @@ public class CFG {
     private BasicBlock createBB(Stack<ExceptionRegion> nestedExceptionRegions) {
         return createBB(scope.getNewLabel(), nestedExceptionRegions);
     }
+
+   public void addBasicBlock(BasicBlock bb) {
+        graph.vertexFor(bb); // adds vertex to graph
+        bbMap.put(bb.getLabel(), bb);
+   }
     
     public void removeEdge(Edge edge) {
         graph.removeEdge(edge);
@@ -611,6 +619,45 @@ public class CFG {
         
         return list;
     }    
+
+    public CFG cloneForBlockCloning(IRScope scope, InlinerInfo ii) {
+        Map<BasicBlock, BasicBlock> cloneBBMap = new HashMap<BasicBlock, BasicBlock>();
+        CFG clone = new CFG(scope);
+
+        // clone bbs
+        for (BasicBlock b : getBasicBlocks()) {
+            BasicBlock bCloned = b.cloneForBlockCloning(ii);
+            clone.addBasicBlock(bCloned);
+            cloneBBMap.put(b, bCloned);
+        }
+
+        // clone edges
+        for (BasicBlock x : getBasicBlocks()) {
+             BasicBlock rx = cloneBBMap.get(x);
+             for (Edge<BasicBlock> e : getOutgoingEdges(x)) {
+                 BasicBlock b = e.getDestination().getData();
+                 clone.addEdge(rx, cloneBBMap.get(b), e.getType());
+             }
+        }
+
+        clone.entryBB = cloneBBMap.get(entryBB);
+        clone.exitBB  = cloneBBMap.get(exitBB);
+
+        // SSS FIXME: Is this required after cfg is built?
+        clone.outermostERs = null;
+
+        // Clone rescuer map
+        for (BasicBlock b: rescuerMap.keySet()) {
+            clone.rescuerMap.put(cloneBBMap.get(b), cloneBBMap.get(rescuerMap.get(b)));
+        }
+
+        // Clone ensurer map
+        for (BasicBlock b: ensurerMap.keySet()) {
+            clone.ensurerMap.put(cloneBBMap.get(b), cloneBBMap.get(ensurerMap.get(b)));
+        }
+
+        return clone;
+    }
     
     private void printError(String message) {
         LOG.error(message + "\nGraph:\n" + this + "\nInstructions:\n" + toStringInstrs());

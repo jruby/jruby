@@ -11,8 +11,14 @@ public class BNilInstr extends BranchInstr {
         super(Operation.B_NIL, v, null, jmpTarget);
     }
 
-    public Instr cloneForInlining(InlinerInfo ii) {
+    @Override
+    public Instr cloneForInlinedScope(InlinerInfo ii) {
         return new BNilInstr(getArg1().cloneForInlining(ii), ii.getRenamedLabel(getJumpTarget()));
+    }
+
+    @Override
+    public Instr cloneForBlockCloning(InlinerInfo ii) {
+        return new BNilInstr(getArg1().cloneForInlining(ii), getJumpTarget());
     }
 
     public void compile(JVM jvm) {

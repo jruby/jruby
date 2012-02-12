@@ -36,6 +36,13 @@ public class InlinerInfo {
         this.yieldSites = new ArrayList();
     }
 
+    /**
+     * Returns the scope into which code is being inlined.
+     */
+    public IRScope getInlineHostScope() {
+        return callerCFG.getScope();
+    }
+
     public Label getRenamedLabel(Label l) {
         Label newLbl = this.lblRenameMap.get(l);
         if (newLbl == null) {
@@ -48,8 +55,7 @@ public class InlinerInfo {
     public Variable getRenamedVariable(Variable v) {
         Variable newVar = this.varRenameMap.get(v);
         if (newVar == null) {
-            IRScope m = this.callerCFG.getScope();
-            newVar = m.getNewInlineVariable(v);
+            newVar = getInlineHostScope().getNewInlineVariable(v);
             this.varRenameMap.put(v, newVar);
         }
         return newVar;

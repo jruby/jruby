@@ -54,6 +54,7 @@ public class MethodLookupInstr extends Instr implements ResultInstr {
         return super.toString() + "(" + methodHandle + ")";
     }
 
+    @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         return new MethodLookupInstr(ii.getRenamedVariable(result), (MethodHandle)methodHandle.cloneForInlining(ii));
     }

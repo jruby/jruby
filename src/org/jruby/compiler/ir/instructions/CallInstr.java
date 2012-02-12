@@ -47,6 +47,7 @@ public class CallInstr extends CallBase implements ResultInstr {
         return new NoResultCallInstr(getOperation(), getCallType(), getMethodAddr(), getReceiver(), getCallArgs(), closure);
     }
 
+    @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         return new CallInstr(getCallType(), ii.getRenamedVariable(result), 
                 (MethAddr) getMethodAddr().cloneForInlining(ii), 
