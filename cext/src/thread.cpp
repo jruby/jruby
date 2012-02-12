@@ -27,27 +27,29 @@
  ***** END LICENSE BLOCK *****/
 
 #include "ruby.h"
+#include "defines.h"
 #include "jruby.h"
 #include "JLocalEnv.h"
 #include "JUtil.h"
-#include "errno.h"
+#include <errno.h>
 
 using namespace jruby;
 
-static VALUE jruby_select(void* data) {
-    void** data_array = (void**)data;
-    int max                 = (long)(data_array[0]);
-    fd_set* read            = (fd_set*)(data_array[1]);
-    fd_set* write           = (fd_set*)(data_array[2]);
-    fd_set* except          = (fd_set*)(data_array[3]);
-    struct timeval* timeout = (struct timeval*)(data_array[4]);
+struct select_args {
+    int maxfd;
+    fd_set* rfds;
+    fd_set* wfds;
+    fd_set* efds;
+    struct timeval* tvp;
+    int retval;
+};
 
-    int ret = select(max, read, write, except, timeout);
-    xfree(data);
-    if (ret < 0) {
-        printf("jruby_select: An error occured: %d\n", errno);
-    }
-    return (VALUE)ret;
+static VALUE 
+jruby_select(void* data) 
+{
+    struct select_args* s = (struct select_args *) data;
+    s->retval = select(s->maxfd, s->rfds, s->wfds, s->efds, s->tvp);
+    return Qtrue;
 }
 
 RUBY_DLLSPEC VALUE rb_thread_critical = 0;
@@ -65,13 +67,13 @@ rb_thread_local_aset(VALUE thread, ID id, VALUE value)
 }
 
 extern "C" int
-rb_thread_alone()
+rb_thread_alone(void)
 {
     return rb_ary_size(callMethodA(rb_cThread, "list", 0, NULL)) < 2;
 }
 
 extern "C" void
-rb_thread_schedule()
+rb_thread_schedule(void)
 {
     callMethod(rb_cThread, "pass", 0);
 }
@@ -87,16 +89,17 @@ rb_thread_select(int max, fd_set * read, fd_set * write, fd_set * except, struct
         env->CallStaticVoidMethod(JRuby_class, JRuby_threadSleep, getRuntime(), (jint)interval);
         checkExceptions(env);
         return 0;
-    } else {
-        void** data = (void**)xmalloc(sizeof(void*) * 5);
-        data[0] = reinterpret_cast<void*>(max);
-        data[1] = (void*)read;
-        data[2] = (void*)write;
-        data[3] = (void*)except;
-        data[4] = (void*)timeout;
 
-        VALUE ret = rb_thread_blocking_region(jruby_select, (void*)data, NULL, NULL);
-        return (int)ret;
+    } else {
+	struct select_args s;
+	s.maxfd = max;
+	s.rfds = read;
+	s.wfds = write;
+	s.efds = except;
+	s.tvp = timeout;
+
+        rb_thread_blocking_region(jruby_select, (void *)&s, NULL, NULL);
+        return s.retval;
     }
 }
 
@@ -166,15 +169,23 @@ extern "C" int
 rb_thread_fd_writable(int f)
 {
     rb_thread_wait_fd_rw(f, 0);
-    return Qtrue;
+    return TRUE;
 }
 
 extern "C" void
-rb_thread_wait_for(struct timeval time) {
+rb_thread_wait_for(struct timeval time)
+{
     rb_thread_select(0, 0, 0, 0, &time);
 }
 
 extern "C" VALUE
-rb_thread_wakeup(VALUE thread) {
+rb_thread_wakeup(VALUE thread) 
+{
     return callMethodA(thread, "wakeup", 0, NULL);
 }
+
+// Fake out
+extern "C" void rb_thread_stop_timer_thread(void) {}
+extern "C" void rb_thread_start_timer_thread(void) {}
+extern "C" void rb_thread_stop_timer(void) {}
+extern "C" void rb_thread_start_timer(void) {}

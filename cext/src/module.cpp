@@ -204,7 +204,7 @@ rb_const_get_at(VALUE module, ID symbol)
     checkExceptions(env);
 
     // Check for null return and call const_missing, if neccessary
-    return c == NULL ? callMethod(module, "const_missing", 1, ID2SYM(symbol)) : objectToValue(env, c);
+    return env->IsSameObject(c, NULL) ? callMethod(module, "const_missing", 1, ID2SYM(symbol)) : objectToValue(env, c);
 }
 
 extern "C" VALUE
@@ -237,7 +237,8 @@ rb_define_global_function(const char* name, VALUE(*fn)(ANYARGS), int arity)
 }
 
 extern "C" void
-rb_undef_alloc_func(VALUE klass) {
+rb_undef_alloc_func(VALUE klass) 
+{
   rb_undef_method(rb_singleton_class(klass), "allocate");
 }
 

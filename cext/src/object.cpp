@@ -305,11 +305,17 @@ rb_singleton_class(VALUE obj)
 extern "C" VALUE
 rb_class_inherited_p(VALUE mod, VALUE arg)
 {
-    if(TYPE(arg) != T_MODULE && TYPE(arg) != T_CLASS) {
+    if (TYPE(arg) != T_MODULE && TYPE(arg) != T_CLASS) {
         rb_raise(rb_eTypeError, "compared with non class/module");
     }
 
     return callMethodA(mod, "<=", 1, &arg);
+}
+
+extern "C" VALUE 
+rb_class_superclass(VALUE klass)
+{
+    return callMethodA(klass, "superclass", 0, NULL);
 }
 
 extern "C" VALUE

@@ -104,6 +104,12 @@ rb_gc_unregister_address(VALUE *addr)
     globalVariables.remove(addr);
 }
 
+extern "C" void 
+rb_gc() 
+{
+    // We'll let the Java GC decide when to run
+}
+
 extern "C" void
 rb_global_variable(VALUE *var)
 {

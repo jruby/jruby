@@ -117,6 +117,19 @@ rb_cvar_set(VALUE klass, ID name, VALUE value)
     return callMethod(klass, "class_variable_set", 2, rb_str_new_cstr(target), value);
 }
 
+extern "C" void 
+rb_cv_set(VALUE klass, const char* name, VALUE value)
+{
+    rb_cvar_set(klass, rb_intern(name), value);
+}
+
+extern "C" VALUE 
+rb_cv_get(VALUE klass, const char* name)
+{
+    return rb_cvar_get(klass, rb_intern(name));
+}
+
+
 extern "C" VALUE
 rb_define_class(const char* name, VALUE parent)
 {
@@ -157,6 +170,16 @@ rb_define_alloc_func(VALUE klass, VALUE (*fn)(VALUE))
     env->CallVoidMethod(valueToObject(env, klass), RubyClass_setAllocator_method, allocator);
 }
 
+extern "C" VALUE 
+rb_path_to_class(VALUE pathname)
+{
+    JLocalEnv env;
+    jobject klass = env->CallObjectMethod(getRuntime(), Ruby_getClassFromPath_method, env->NewStringUTF(rb_str_ptr_readonly(pathname)));
+    checkExceptions(env);
+
+    return objectToValue(env, klass);
+}
+
 extern "C" VALUE
 rb_path2class(const char* path)
 {
@@ -183,6 +206,12 @@ extern "C" void
 rb_include_module(VALUE self, VALUE module)
 {
     callMethod(self, "include", 1, module);
+}
+
+extern "C" void 
+rb_define_class_variable(VALUE klass, const char* name, VALUE val)
+{
+    rb_cv_set(klass, name, val);
 }
 
 static void

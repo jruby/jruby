@@ -142,22 +142,21 @@ rb_to_id(VALUE obj)
 extern "C" int
 rb_is_const_id(ID symbol)
 {
-    char first = rb_id2name(symbol)[0];
-    return isupper(first) ? Qtrue : Qfalse;
+    return isupper(rb_id2name(symbol)[0]);
 }
 
 extern "C" int
 rb_is_instance_id(ID symbol)
 {
-    char* c_symbol = (char*)rb_id2name(symbol);
-    return (strlen(c_symbol) > 0 && c_symbol[0] == '@' && (strlen(c_symbol) < 2 || c_symbol[1] != '@')) ? Qtrue : Qfalse;
+    const char* c_symbol = rb_id2name(symbol);
+    return c_symbol[0] == '@' && c_symbol[1] != '@';
 }
 
 extern "C" int
 rb_is_class_id(ID symbol)
 {
-    char* c_symbol = (char*)rb_id2name(symbol);
-    return (strlen(c_symbol) > 1 && c_symbol[0] == '@' && c_symbol[1] == '@')  ? Qtrue : Qfalse;
+    const char* c_symbol = rb_id2name(symbol);
+    return c_symbol[0] == '@' && c_symbol[1] == '@';
 }
 
 static Symbol*

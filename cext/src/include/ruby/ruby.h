@@ -46,6 +46,9 @@
 
 #ifdef  __cplusplus
 extern "C" {
+#if 0
+} /* satisfy cc-mode */
+#endif
 #endif
 
 #ifndef  HAVE_PROTOTYPES
@@ -224,10 +227,6 @@ typedef enum JRubyType {
 #define T_MASK (0x1f)
 
 
-#define RTEST(v) (((v) & ~Qnil) != 0)
-#define NIL_P(v) ((v) == Qnil)
-#define TYPE(x) rb_type((VALUE)(x))
-
 #ifdef __GNUC__
 #define rb_special_const_p(obj) \
     __extension__ ({VALUE special_const_obj = (obj); (int)(SPECIAL_CONST_P(special_const_obj) ? Qtrue : Qfalse);})
@@ -401,7 +400,7 @@ RUBY_DLLSPEC VALUE rb_exc_raise(VALUE);
 RUBY_DLLSPEC void rb_secure(int);
 RUBY_DLLSPEC int rb_safe_level(void);
 
-#define rb_num_zerodiv(void) rb_raise(rb_eZeroDivError, "divided by 0")
+RUBY_DLLSPEC void rb_num_zerodiv(void);
 RUBY_DLLSPEC long rb_num2long(VALUE);
 RUBY_DLLSPEC unsigned long rb_num2ulong(VALUE);
 RUBY_DLLSPEC int rb_num2int(VALUE);
@@ -610,11 +609,13 @@ RUBY_DLLSPEC VALUE rb_class_name(VALUE class_handle);
 RUBY_DLLSPEC char* rb_class2name(VALUE class_handle);
 /** Convert a path string to a class */
 RUBY_DLLSPEC VALUE rb_path2class(const char* path);
+RUBY_DLLSPEC VALUE rb_path_to_class(VALUE pathname);
 /** Include Module in another Module, just as Ruby's Module#include. */
 RUBY_DLLSPEC void rb_include_module(VALUE self, VALUE module);
 /** Return the object's singleton class */
 RUBY_DLLSPEC VALUE rb_singleton_class(VALUE obj);
 RUBY_DLLSPEC VALUE rb_class_inherited_p(VALUE mod, VALUE arg);
+RUBY_DLLSPEC VALUE rb_class_superclass(VALUE klass);
 
 RUBY_DLLSPEC VALUE rb_define_class(const char*,VALUE);
 RUBY_DLLSPEC VALUE rb_define_module(const char*);
@@ -638,9 +639,9 @@ RUBY_DLLSPEC void rb_define_alloc_func(VALUE, rb_alloc_func_t);
 RUBY_DLLSPEC void rb_undef_method(VALUE, const char*);
 RUBY_DLLSPEC void rb_undef(VALUE, ID);
 
-#define rb_define_class_variable(klass, name, val) rb_cvar_set(klass, rb_intern(name), val, 0)
-#define rb_cv_get(klass, name) rb_cvar_get(klass, rb_intern(name))
-#define rb_cv_set(klass, name, value) rb_cvar_set(klass, rb_intern(name), value, 0)
+RUBY_DLLSPEC void rb_define_class_variable(VALUE, const char*, VALUE);
+RUBY_DLLSPEC void rb_cv_set(VALUE, const char*, VALUE);
+RUBY_DLLSPEC VALUE rb_cv_get(VALUE, const char*);
 /** Returns a value evaluating true if module has named class var. */
 RUBY_DLLSPEC VALUE rb_cvar_defined(VALUE module_handle, ID name);
 /** Returns class variable by (Symbol) name from module. */
@@ -857,7 +858,7 @@ RUBY_DLLSPEC VALUE rb_data_object_alloc(VALUE,void*,RUBY_DATA_FUNC,RUBY_DATA_FUN
     sval = (type*)DATA_PTR(obj);\
 } while (0)
 
-static inline void rb_gc() {}; // We'll let the Java GC decide when to run
+RUBY_DLLSPEC void rb_gc(void);
 RUBY_DLLSPEC void rb_gc_mark_locations(VALUE*, VALUE*);
 RUBY_DLLSPEC void rb_gc_mark(VALUE);
 RUBY_DLLSPEC void rb_gc_mark_maybe(VALUE v);
@@ -870,12 +871,12 @@ RUBY_DLLSPEC void rb_gc_unregister_address(VALUE* address);
 RUBY_DLLSPEC VALUE rb_gv_get(const char* name);
 /** Set named global to given value, returning the value. $ optional. */
 RUBY_DLLSPEC VALUE rb_gv_set(const char* name, VALUE value);
-#define rb_define_variable(name, value) rb_gv_set(name, *value)
+RUBY_DLLSPEC void rb_define_variable(const char *name, VALUE *var);
 RUBY_DLLSPEC void rb_define_readonly_variable(const char* name, VALUE* value);
 /** Sets the $KCODE global variable */
 RUBY_DLLSPEC void rb_set_kcode(const char *code);
 /** Return an array containing the names of all global variables */
-RUBY_DLLSPEC VALUE rb_f_global_variables();
+RUBY_DLLSPEC VALUE rb_f_global_variables(void);
 
 RUBY_DLLSPEC VALUE rb_eval_string(const char* string);
 RUBY_DLLSPEC VALUE rb_obj_instance_eval(int, VALUE*, VALUE);
@@ -944,9 +945,9 @@ RUBY_DLLSPEC VALUE rb_yield_splat(VALUE array);
 RUBY_DLLSPEC VALUE rb_yield_values(int n, ...);
 
 /** Return 1 if block given, 0 if not */
-RUBY_DLLSPEC int rb_block_given_p();
+RUBY_DLLSPEC int rb_block_given_p(void);
 /** Return the Proc for the implicit block */
-RUBY_DLLSPEC VALUE rb_block_proc();
+RUBY_DLLSPEC VALUE rb_block_proc(void);
 /** Create a proc with func as body and val as proc argument ({|*args, proc_arg| func }) */
 RUBY_DLLSPEC VALUE rb_proc_new(VALUE (*func)(ANYARGS), VALUE val);
 
@@ -1042,9 +1043,9 @@ RUBY_DLLSPEC VALUE rb_thread_wakeup(VALUE);
 /** The currently executing thread */
 RUBY_DLLSPEC VALUE rb_thread_current(void);
 /** Calls pass on the Ruby thread class */
-RUBY_DLLSPEC void rb_thread_schedule();
+RUBY_DLLSPEC void rb_thread_schedule(void);
 /** Fake placeholder. Always returns 0 */
-RUBY_DLLSPEC int rb_thread_alone();
+RUBY_DLLSPEC int rb_thread_alone(void);
 /** Get and set thread locals */
 RUBY_DLLSPEC VALUE rb_thread_local_aset(VALUE thread, ID id, VALUE value);
 RUBY_DLLSPEC VALUE rb_thread_local_aref(VALUE thread, ID id);
@@ -1052,11 +1053,10 @@ RUBY_DLLSPEC VALUE rb_thread_create(VALUE (*fn)(ANYARGS), void* arg);
 
 RUBY_DLLSPEC VALUE rb_time_new(time_t sec, long usec);
 
-// Fake out
-static inline void rb_thread_stop_timer_thread(void) {}
-static inline void rb_thread_start_timer_thread(void) {}
-static inline void rb_thread_stop_timer(void) {}
-static inline void rb_thread_start_timer(void) {}
+RUBY_DLLSPEC void rb_thread_stop_timer_thread(void);
+RUBY_DLLSPEC void rb_thread_start_timer_thread(void);
+RUBY_DLLSPEC void rb_thread_stop_timer(void);
+RUBY_DLLSPEC void rb_thread_start_timer(void);
 
 /** Global flag which marks the currently executing thread critical. */
 extern RUBY_DLLSPEC VALUE rb_thread_critical;
@@ -1132,21 +1132,24 @@ RUBY_DLLSPEC extern VALUE rb_eNameError;
 RUBY_DLLSPEC extern VALUE rb_eSyntaxError;
 RUBY_DLLSPEC extern VALUE rb_eLoadError;
 
-#define ruby_verbose (rb_gv_get("$VERBOSE"))
-#define ruby_debug (rb_gv_get("$DEBUG"))
+RUBY_DLLSPEC VALUE ruby_verbose(void);
+RUBY_DLLSPEC VALUE ruby_debug(void);
 
 // TODO: get rjb to use a different #ifdef than "RUBINIUS"
 // #define RUBINIUS 1
 #define HAVE_RB_ERRINFO 1
 #define HAVE_RB_SET_ERRINFO 1
-#define rb_errinfo (rb_gv_get("$!"))
-#define rb_set_errinfo(err) (rb_gv_set("$!", err))
+RUBY_DLLSPEC VALUE rb_errinfo(void);
+RUBY_DLLSPEC void rb_set_errinfo(VALUE err);
 
 #define RUBY_METHOD_FUNC(func) ((VALUE (*)(ANYARGS))func)
 
 #define ALLOCA_N(type,n) (type*)alloca(sizeof(type)*(n))
 
 #ifdef  __cplusplus
+#if 0
+{ /* satisfy cc-mode */
+#endif
 }
 #endif
 

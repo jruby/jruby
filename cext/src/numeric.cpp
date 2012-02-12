@@ -271,3 +271,10 @@ jruby_timet2num(time_t v)
         }
     }
 }
+
+
+extern "C" void
+rb_num_zerodiv(void)
+{
+    rb_raise(rb_eZeroDivError, "divided by 0");
+}
