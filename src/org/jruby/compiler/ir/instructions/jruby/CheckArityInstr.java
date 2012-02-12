@@ -32,12 +32,9 @@ public class CheckArityInstr extends Instr {
         return super.toString() + "(" + required + ", " + opt + ", " + rest + ")";
     }
 
-    /**
-     * This will either end up removing this instruction since we know arity
-     * at a callsite or we will add a ArgumentError since we know arity is wrong.
-     */
     @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
+    public Instr cloneForInlinedScope(InlinerInfo ii) {
+        // Since we know arity at a callsite, arity check passes or we have an ArgumentError
         int numArgs = ii.getArgsCount();
         
         if ((numArgs < required) || ((rest == -1) && (numArgs > (required + opt)))) {
@@ -45,5 +42,10 @@ public class CheckArityInstr extends Instr {
         }
 
         return null;
+    }
+
+    @Override
+    public Instr cloneForBlockCloning(InlinerInfo ii) {
+        return new CheckArityInstr(required, opt, rest);
     }
 }

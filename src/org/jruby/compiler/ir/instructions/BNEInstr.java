@@ -18,8 +18,14 @@ public class BNEInstr extends BranchInstr {
         super(Operation.BNE, v1, v2, jmpTarget);
     }
 
-    public Instr cloneForInlining(InlinerInfo ii) {
+    @Override
+    public Instr cloneForInlinedScope(InlinerInfo ii) {
         return new BNEInstr(getArg1().cloneForInlining(ii), 
                 getArg2().cloneForInlining(ii), ii.getRenamedLabel(getJumpTarget()));
+    }
+
+    @Override
+    public Instr cloneForBlockCloning(InlinerInfo ii) {
+        return new BNEInstr(getArg1().cloneForInlining(ii), getArg2().cloneForInlining(ii), getJumpTarget());
     }
 }

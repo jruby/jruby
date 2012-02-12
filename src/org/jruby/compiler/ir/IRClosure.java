@@ -17,6 +17,7 @@ import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.ReceiveArgBase;
 import org.jruby.compiler.ir.instructions.ReceiveRestArgBase;
 import org.jruby.compiler.ir.representations.CFG;
+import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.parser.IRStaticScope;
 import org.jruby.runtime.Arity;
@@ -33,8 +34,6 @@ public class IRClosure extends IRScope {
 
     private BlockBody body;
 
-
-    // Oy, I have a headache!
     // for-loop body closures are special in that they dont really define a new variable scope.
     // They just silently reuse the parent scope.  This changes how variables are allocated (see IRMethod.java).
     private boolean isForLoopBody;
@@ -49,6 +48,15 @@ public class IRClosure extends IRScope {
 
     /** The parameter names, for Proc#parameters */
     private String[] parameterList;
+
+    /** Used by cloning code */
+    private IRClosure(IRManager manager, IRScope lexicalParent, String fileName, int lineNumber, StaticScope staticScope) {
+        super(manager, lexicalParent, null, fileName, lineNumber, staticScope);
+        this.closureId = lexicalParent.getNextClosureId();
+        setName("_CLOSURE_CLONE_" + closureId);
+        this.startLabel = getNewLabel(getName() + "_START");
+        this.endLabel = getNewLabel(getName() + "_END");
+    }
 
     public IRClosure(IRManager manager, IRScope lexicalParent, boolean isForLoopBody,
             int lineNumber, StaticScope staticScope, Arity arity, int argumentType, boolean is1_9) {
@@ -246,5 +254,18 @@ public class IRClosure extends IRScope {
             }
         }
         return blockVar;
+    }
+
+    public IRClosure cloneForInlining(InlinerInfo ii) {
+        IRClosure clone = new IRClosure(getManager(), ii.getInlineHostScope(), getFileName(), getLineNumber(), getStaticScope());
+        clone.isForLoopBody = this.isForLoopBody;
+        clone.nestingDepth  = this.nestingDepth;
+        clone.parameterList = this.parameterList;
+        clone.body          = this.body; // SSS: Right now shared, but may need cloning
+
+        // clone the cfg, and all instructions
+        clone.setCFG(getCFG().cloneForBlockCloning(clone, ii));
+
+        return clone;
     }
 }

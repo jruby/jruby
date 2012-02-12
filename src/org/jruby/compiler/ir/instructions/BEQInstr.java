@@ -23,8 +23,14 @@ public class BEQInstr extends BranchInstr {
         super(Operation.BEQ, v1, v2, jmpTarget);
     }
 
-    public Instr cloneForInlining(InlinerInfo ii) {
+    @Override
+    public Instr cloneForInlinedScope(InlinerInfo ii) {
         return new BEQInstr(getArg1().cloneForInlining(ii), getArg2().cloneForInlining(ii), ii.getRenamedLabel(getJumpTarget()));
+    }
+
+    @Override
+    public Instr cloneForBlockCloning(InlinerInfo ii) {
+        return new BEQInstr(getArg1().cloneForInlining(ii), getArg2().cloneForInlining(ii), getJumpTarget());
     }
 
     @Override

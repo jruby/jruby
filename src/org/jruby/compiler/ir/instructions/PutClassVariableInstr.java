@@ -15,6 +15,7 @@ public class PutClassVariableInstr extends PutInstr {
         super(Operation.PUT_CVAR, scope, varName, value);
     }
 
+    @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         return new PutClassVariableInstr(operands[TARGET].cloneForInlining(ii), ref,
                 operands[VALUE].cloneForInlining(ii));

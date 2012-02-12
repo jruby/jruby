@@ -15,6 +15,6 @@ public class AttrAssignInstr extends NoResultCallInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new AttrAssignInstr(receiver.cloneForInlining(ii), getMethodAddr(), cloneCallArgs(ii));
+        return new AttrAssignInstr(receiver.cloneForInlining(ii), (MethAddr)getMethodAddr().cloneForInlining(ii), cloneCallArgs(ii));
     }
 }

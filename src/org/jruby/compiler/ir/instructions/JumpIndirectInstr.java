@@ -8,7 +8,7 @@ import org.jruby.compiler.ir.representations.InlinerInfo;
 
 // Used in ensure blocks to jump to the label contained in '_target'
 public class JumpIndirectInstr extends Instr {
-    private Operand target;
+    private Variable target;
 
     public JumpIndirectInstr(Variable target) {
         super(Operation.JUMP_INDIRECT);
@@ -16,7 +16,7 @@ public class JumpIndirectInstr extends Instr {
     }
 
     public Variable getJumpTarget() {
-        return (Variable) target;
+        return target;
     }
 
     public Operand[] getOperands() {
@@ -25,7 +25,8 @@ public class JumpIndirectInstr extends Instr {
 
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-        target = target.getSimplifiedOperand(valueMap, force);
+        // SSS FIXME: Is this correct?  Are we guaranteed this returns a variable always?
+        target = (Variable)target.getSimplifiedOperand(valueMap, force);
     }
 
     @Override
@@ -33,7 +34,8 @@ public class JumpIndirectInstr extends Instr {
         return super.toString() + "(" + target + ")";
     }
 
+    @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new JumpIndirectInstr(ii.getRenamedVariable(getJumpTarget()));
+        return new JumpIndirectInstr(ii.getRenamedVariable(target));
     }
 }

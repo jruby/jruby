@@ -18,8 +18,8 @@ public class ClosureReturnInstr extends Instr {
     }
 
     @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
-        throw new RuntimeException("Not implemented yet!");
+    public Instr cloneForBlockCloning(InlinerInfo ii) {
+        return new ClosureReturnInstr(returnValue.cloneForInlining(ii));
     }
 
     public Operand getReturnValue() {

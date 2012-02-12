@@ -54,7 +54,11 @@ public class DefineModuleInstr extends Instr implements ResultInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new DefineModuleInstr(this.newIRModuleBody, ii.getRenamedVariable(result), container.cloneForInlining(ii));
+        throw new RuntimeException("Not implemented yet");
+
+        // SSS: So, do we clone the module body scope or not?
+        //
+        // return new DefineModuleInstr(this.newIRModuleBody, ii.getRenamedVariable(result), container.cloneForInlining(ii));
     }
 
     @Override

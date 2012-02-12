@@ -39,9 +39,4 @@ public class ExceptionRegionStartMarkerInstr extends Instr {
     public Operand[] getOperands() {
         return EMPTY_OPERANDS;
     }
-
-    public Instr cloneForInlining(InlinerInfo ii) { 
-        return new ExceptionRegionStartMarkerInstr(ii.getRenamedLabel(begin), ii.getRenamedLabel(end),
-                ensureBlockLabel == null ? null : ii.getRenamedLabel(ensureBlockLabel), ii.getRenamedLabel(firstRescueBlockLabel));
-    }
 }

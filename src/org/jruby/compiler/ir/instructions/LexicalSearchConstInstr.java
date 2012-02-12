@@ -60,8 +60,9 @@ public class LexicalSearchConstInstr extends Instr implements ResultInstr {
         this.result = v;
     }
 
+    @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new LexicalSearchConstInstr(ii.getRenamedVariable(result), definingScope, constName);
+        return new LexicalSearchConstInstr(ii.getRenamedVariable(result), definingScope.cloneForInlining(ii), constName);
     }
 
     @Override
@@ -72,8 +73,8 @@ public class LexicalSearchConstInstr extends Instr implements ResultInstr {
     private Object cache(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Ruby runtime, Object constant) {
         StaticScope staticScope = (StaticScope) definingScope.retrieve(context, self, currDynScope, temp);
         RubyModule object = runtime.getObject();
-		  // SSS FIXME: IRManager objects dont have a static-scope yet, so this hack of looking up the module right away
-		  // This IR needs fixing!
+        // SSS FIXME: IRManager objects dont have a static-scope yet, so this hack of looking up the module right away
+        // This IR needs fixing!
         constant = (staticScope == null) ? object.getConstant(constName) : staticScope.getConstantInner(runtime, constName, object);
         if (constant == null) {
             constant = UndefinedValue.UNDEFINED;

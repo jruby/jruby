@@ -63,6 +63,7 @@ public class LoadFromBindingInstr extends Instr implements ResultInstr {
         return "" + result + " = BINDING(" + sourceMethod + ")." + getSlotName();
     }
 
+    @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         return new LoadFromBindingInstr(ii.getRenamedVariable(result), sourceMethod, getSlotName());
     }

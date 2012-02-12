@@ -8,6 +8,7 @@ import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.compiler.ir.representations.InlinerInfo;
 
 public class WrappedIRClosure extends Operand {
     private final IRClosure closure;
@@ -33,6 +34,11 @@ public class WrappedIRClosure extends Operand {
     @Override
     public String toString() {
         return closure.toString();
+    }
+
+    @Override
+    public Operand cloneForInlining(InlinerInfo ii) {
+        return new WrappedIRClosure(closure.cloneForInlining(ii));
     }
 
     @Override

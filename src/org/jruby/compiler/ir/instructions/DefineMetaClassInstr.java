@@ -20,16 +20,16 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class DefineMetaClassInstr extends Instr implements ResultInstr {
-    private IRModuleBody dummyMetaClassBody;
+    private IRModuleBody metaClassBody;
     private Operand object;
     private Variable result;
     
-    public DefineMetaClassInstr(Variable result, Operand object, IRModuleBody dummyMetaClassBody) {
+    public DefineMetaClassInstr(Variable result, Operand object, IRModuleBody metaClassBody) {
         super(Operation.DEF_META_CLASS);
         
         assert result != null: "DefineMetaClassInstr result is null";
         
-        this.dummyMetaClassBody = dummyMetaClassBody;
+        this.metaClassBody = metaClassBody;
         this.object = object;
         this.result = result;
     }
@@ -53,12 +53,16 @@ public class DefineMetaClassInstr extends Instr implements ResultInstr {
 
     @Override
     public String toString() {
-        return super.toString() + "(" + dummyMetaClassBody.getName() + ", " + object + ", " + dummyMetaClassBody.getFileName() + ")";
+        return super.toString() + "(" + metaClassBody.getName() + ", " + object + ", " + metaClassBody.getFileName() + ")";
     }
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new DefineMetaClassInstr(ii.getRenamedVariable(result), object.cloneForInlining(ii), dummyMetaClassBody);
+        throw new RuntimeException("Not implemented yet");
+
+        // SSS: So, do we clone the meta-class body scope or not?
+        //
+        // return new DefineMetaClassInstr(ii.getRenamedVariable(result), object.cloneForInlining(ii), metaClassBody);
     }
 
     @Override
@@ -67,8 +71,8 @@ public class DefineMetaClassInstr extends Instr implements ResultInstr {
         IRubyObject obj = (IRubyObject)object.retrieve(context, self, currDynScope, temp);
         
         RubyClass singletonClass = RuntimeHelpers.getSingletonClass(runtime, obj);
-        dummyMetaClassBody.getStaticScope().setModule(singletonClass);
-        DynamicMethod method = new InterpretedIRMethod(dummyMetaClassBody, Visibility.PUBLIC, singletonClass);
+        metaClassBody.getStaticScope().setModule(singletonClass);
+        DynamicMethod method = new InterpretedIRMethod(metaClassBody, Visibility.PUBLIC, singletonClass);
         // SSS FIXME: Rather than pass the block implicitly, should we add %block as another operand to DefineMetaClass instr?
         return method.call(context, singletonClass, singletonClass, "", new IRubyObject[]{}, block);
     }

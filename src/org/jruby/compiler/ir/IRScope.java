@@ -425,6 +425,10 @@ public abstract class IRScope {
         this.instrList = null;  
         return cfg;
     }
+
+    protected void setCFG(CFG cfg) {
+       this.cfg = cfg;
+    }
     
     public CFG getCFG() {
         return cfg;

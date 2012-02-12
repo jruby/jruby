@@ -44,16 +44,18 @@ public class SetReturnAddressInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-    }
-
-    @Override
     public String toString() {
         return "" + result + " = " + returnAddr;
     }
 
-    public Instr cloneForInlining(InlinerInfo ii) {
+    @Override
+    public Instr cloneForInlinedScope(InlinerInfo ii) {
         return new SetReturnAddressInstr(ii.getRenamedVariable(result), ii.getRenamedLabel(returnAddr));
+    }
+
+    @Override
+    public Instr cloneForBlockCloning(InlinerInfo ii) {
+        return new SetReturnAddressInstr(ii.getRenamedVariable(result), returnAddr);
     }
 
     @Override

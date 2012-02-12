@@ -40,7 +40,11 @@ public class DefineClassMethodInstr extends Instr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new DefineClassMethodInstr(container.cloneForInlining(ii), method);
+        throw new RuntimeException("Not implemented yet");
+
+        // SSS: So, what happens to the method?
+        //
+        // return new DefineClassMethodInstr(container.cloneForInlining(ii), method);
     }
 
     // SSS FIXME: Go through this and DefineInstanceMethodInstr.interpret, clean up, extract common code

@@ -22,7 +22,7 @@ public class GetEncodingInstr extends Instr implements ResultInstr {
         super(Operation.GET_ENCODING);
 
         this.result = result;
-		  this.encoding = encoding;
+        this.encoding = encoding;
     }
 
     @Override

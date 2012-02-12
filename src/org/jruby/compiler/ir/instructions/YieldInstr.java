@@ -20,7 +20,7 @@ public class YieldInstr extends Instr implements ResultInstr {
     private Operand yieldArg;
     private Variable result;
 
-    public YieldInstr(Variable result, Variable block, Operand arg, boolean unwrapArray) {
+    public YieldInstr(Variable result, Operand block, Operand arg, boolean unwrapArray) {
         super(Operation.YIELD);
         
         assert result != null: "YieldInstr result is null";
@@ -30,10 +30,10 @@ public class YieldInstr extends Instr implements ResultInstr {
         this.unwrapArray = unwrapArray;
         this.result = result;
     }
-   
+
+    @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        // FIXME: This needs to be cloned!
-        return this;  // This is just a placeholder during inlining.
+        return new YieldInstr(ii.getRenamedVariable(result), blockArg.cloneForInlining(ii), yieldArg.cloneForInlining(ii), unwrapArray);
     }
 
     public Operand getBlockArg() {

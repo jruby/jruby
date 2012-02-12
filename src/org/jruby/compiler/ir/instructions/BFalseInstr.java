@@ -11,8 +11,14 @@ public class BFalseInstr extends BranchInstr {
         super(Operation.B_FALSE, v, null, jmpTarget);
     }
 
-    public Instr cloneForInlining(InlinerInfo ii) {
+    @Override
+    public Instr cloneForInlinedScope(InlinerInfo ii) {
         return new BFalseInstr(getArg1().cloneForInlining(ii), ii.getRenamedLabel(getJumpTarget()));
+    }
+
+    @Override
+    public Instr cloneForBlockCloning(InlinerInfo ii) {
+        return new BFalseInstr(getArg1().cloneForInlining(ii), getJumpTarget());
     }
 
     public void compile(JVM jvm) {

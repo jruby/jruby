@@ -31,7 +31,7 @@ public class SetWithinDefinedInstr extends Instr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return this;
+        return new SetWithinDefinedInstr(define);
     }
 
     @Override

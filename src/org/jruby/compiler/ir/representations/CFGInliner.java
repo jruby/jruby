@@ -30,7 +30,7 @@ public class CFGInliner {
         // 1. split callsite bb and move outbound edges from callsite bb to split bb.
         InlinerInfo ii = new InlinerInfo(call, cfg);
         BasicBlock splitBB = callBB.splitAtInstruction(call, cfg.getScope().getNewLabel(), false);
-        cfg.putBBForLabel(splitBB.getLabel(), splitBB);
+        cfg.addBasicBlock(splitBB);
         for (Edge<BasicBlock> e : cfg.getOutgoingEdges(callBB)) {
             cfg.addEdge(splitBB, e.getDestination().getData(), e.getType());
         }
@@ -44,8 +44,8 @@ public class CFGInliner {
 
         for (BasicBlock b : methodCFG.getBasicBlocks()) {
             if (b != mEntry && b != mExit) {
-                BasicBlock bCloned = b.cloneForInlining(ii);
-                cfg.putBBForLabel(bCloned.getLabel(), bCloned);
+                BasicBlock bCloned = b.cloneForInlinedMethod(ii);
+                cfg.addBasicBlock(bCloned);
             }
         }
 
@@ -87,8 +87,9 @@ public class CFGInliner {
             }
         }
 
-        List<ExceptionRegion> exceptionRegions = cfg.getOutermostExceptionRegions();
+		  // SSS FIXME: Are these used anywhere post-CFG building?
         // 5. Clone exception regions
+        List<ExceptionRegion> exceptionRegions = cfg.getOutermostExceptionRegions();
         for (ExceptionRegion r : methodCFG.getOutermostExceptionRegions()) {
             exceptionRegions.add(r.cloneForInlining(ii));
         }
@@ -153,7 +154,7 @@ public class CFGInliner {
 
         // 1. split yield site bb and move outbound edges from yield site bb to split bb.
         BasicBlock splitBB = yieldBB.splitAtInstruction(yield, cfg.getScope().getNewLabel(), false);
-        cfg.putBBForLabel(splitBB.getLabel(), splitBB);
+        cfg.addBasicBlock(splitBB);
         for (Edge<BasicBlock> e : cfg.getOutgoingEdges(yieldBB)) {
             cfg.addEdge(splitBB, e.getDestination().getData(), e.getType());
         }
@@ -168,7 +169,7 @@ public class CFGInliner {
         BasicBlock cExit = closureCFG.getExitBB();
         for (BasicBlock b : closureCFG.getBasicBlocks()) {
             if (b != cEntry && b != cExit) {
-                cfg.putBBForLabel(b.getLabel(), b);
+                cfg.addBasicBlock(b);
                 b.updateCFG(cfg);
                 b.processClosureArgAndReturnInstrs(cl, ii, yield);
             }
@@ -207,6 +208,7 @@ public class CFGInliner {
             }
         }
 
+		  // SSS FIXME: Are these used anywhere post-CFG building?
         // 5. No need to clone rescued regions -- just assimilate them
         List<ExceptionRegion> exceptionRegions = cfg.getOutermostExceptionRegions();
         for (ExceptionRegion r : closureCFG.getOutermostExceptionRegions()) {

@@ -34,8 +34,15 @@ public class ReceiveRestArgInstr extends ReceiveRestArgBase {
         return (isDead() ? "[DEAD]" : "") + (hasUnusedResult() ? "[DEAD-RESULT]" : "") + getResult() + " = " + getOperation() + "(" + argIndex + ", " + minArgsLength + ", " + usedArgsCount + ")";
     }
 
+    @Override
     public Instr cloneForInlining(InlinerInfo ii) {
+        // FIXME: Check this
         return new CopyInstr(ii.getRenamedVariable(result), ii.getCallArg(argIndex, true));
+    }
+
+    @Override
+    public Instr cloneForBlockCloning(InlinerInfo ii) {
+        return new ReceiveRestArgInstr(ii.getRenamedVariable(result), argIndex, minArgsLength, usedArgsCount);
     }
 
     private IRubyObject[] NO_PARAMS = new IRubyObject[0];    

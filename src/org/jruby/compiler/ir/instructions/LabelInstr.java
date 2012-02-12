@@ -24,10 +24,6 @@ public class LabelInstr extends Instr {
         return label + ":";
     }
 
-    public Instr cloneForInlining(InlinerInfo ii) {
-        return new LabelInstr(ii.getRenamedLabel(label));
-    }
-
     public void compile(JVM jvm) {
         jvm.method().mark(jvm.getLabel(label));
     }

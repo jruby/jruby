@@ -14,10 +14,12 @@ public class ThreadPollInstr extends Instr {
         super(Operation.THREAD_POLL);
     }
 
+    @Override
     public Operand[] getOperands() {
         return EMPTY_OPERANDS;
     }
 
+    @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         return this;
     }

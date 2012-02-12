@@ -34,17 +34,23 @@ public class ReceiveRequiredArgInstr extends ReceiveArgBase {
         return (isDead() ? "[DEAD]" : "") + (hasUnusedResult() ? "[DEAD-RESULT]" : "") + getResult() + " = " + getOperation() + "(" + argIndex + ", " + preReqdArgsCount + ", " + postReqdArgsCount + ")";
     }
 
-    public Instr cloneForInlining(InlinerInfo ii) {
+    @Override
+    public Instr cloneForInlinedScope(InlinerInfo ii) {
         int n = ii.getArgsCount();
         int remaining = n - preReqdArgsCount;
-		  Operand argVal;
+        Operand argVal;
         if (remaining <= argIndex) {
-				// SSS: FIXME: Argh!
-            argVal = ii.callerCFG.getScope().getManager().getNil();
+            // SSS: FIXME: Argh!
+            argVal = ii.getInlineHostScope().getManager().getNil();
         } else {
             argVal = (remaining > postReqdArgsCount) ? ii.getCallArg(n - postReqdArgsCount + argIndex) : ii.getCallArg(preReqdArgsCount + argIndex);
         }
         return new CopyInstr(ii.getRenamedVariable(result), argVal);
+    }
+
+    @Override
+    public Instr cloneForBlockCloning(InlinerInfo ii) {
+        return new ReceiveRequiredArgInstr(ii.getRenamedVariable(result), argIndex, preReqdArgsCount, postReqdArgsCount);
     }
 
     public IRubyObject receiveRequiredArg(IRubyObject[] args) {

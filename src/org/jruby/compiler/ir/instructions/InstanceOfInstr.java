@@ -10,6 +10,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+// SSS FIXME: Get rid of this instruction
 public class InstanceOfInstr extends Instr implements ResultInstr {
     private Class type;
     private String className;
@@ -26,6 +27,7 @@ public class InstanceOfInstr extends Instr implements ResultInstr {
         this.result = result;
     }
 
+    @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         return new InstanceOfInstr(ii.getRenamedVariable(result), object.cloneForInlining(ii), className);
     }

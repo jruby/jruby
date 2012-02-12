@@ -46,8 +46,9 @@ public class ConstMissingInstr extends Instr implements ResultInstr {
         this.result = v;
     }
     
+    @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new ConstMissingInstr(ii.getRenamedVariable(result), currentModule, missingConst);
+        return new ConstMissingInstr(ii.getRenamedVariable(result), currentModule.cloneForInlining(ii), missingConst);
     }
 
     @Override

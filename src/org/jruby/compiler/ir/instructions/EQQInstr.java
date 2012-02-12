@@ -51,6 +51,7 @@ public class EQQInstr extends Instr implements ResultInstr {
         return super.toString() + "(" + arg1 + ", " + arg2 + ")";
     }
 
+    @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         return new EQQInstr(ii.getRenamedVariable(result), 
                 arg1.cloneForInlining(ii), arg2.cloneForInlining(ii));

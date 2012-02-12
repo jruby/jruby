@@ -25,6 +25,7 @@ public class NopInstr extends Instr {
         return "NOP";
     }
 
+    @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         return this;
     }
