@@ -32,6 +32,8 @@ import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.util.Locale;
 
+import org.jcodings.Encoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
@@ -246,6 +248,7 @@ public class Sprintf {
         int start;
         int mark;
         ByteList name = null;
+        Encoding encoding = null;
 
         if (charFormat instanceof ByteList) {
             ByteList list = (ByteList)charFormat;
@@ -255,12 +258,14 @@ public class Sprintf {
             length = begin + list.length();
             start = begin;
             mark = begin;
+            encoding = list.getEncoding();
         } else {
             format = stringToBytes(charFormat, false);
             offset = 0;
             length = charFormat.length();
             start = 0;
-            mark = 0;             
+            mark = 0;
+            encoding = UTF8Encoding.INSTANCE;
         }
 
         while (offset < length) {
@@ -314,8 +319,7 @@ public class Sprintf {
 
                     if (nameEnd == nameStart) raiseArgumentError(args, ERR_MALFORMED_NAME);
 
-                    // TODO: encoding for name?
-                    name = new ByteList(format, nameStart, nameEnd - nameStart);
+                    name = new ByteList(format, nameStart, nameEnd - nameStart, encoding, false);
 
                     break;
                 }
@@ -335,7 +339,7 @@ public class Sprintf {
 
                     if (nameEnd == nameStart) raiseArgumentError(args, ERR_MALFORMED_NAME);
 
-                    ByteList localName = new ByteList(format, nameStart, nameEnd - nameStart);
+                    ByteList localName = new ByteList(format, nameStart, nameEnd - nameStart, encoding, false);
                     buf.append(args.next(localName).asString().getByteList());
                     incomplete = false;
 

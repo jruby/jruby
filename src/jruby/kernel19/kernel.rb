@@ -26,8 +26,4 @@ module Kernel
   def spawn(*args)
     Process.spawn(*args)
   end
-
-  def sprintf(pattern, *args)
-    JRuby::Type.convert_to_str(pattern) % args
-  end
 end
