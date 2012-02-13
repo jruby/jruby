@@ -258,22 +258,22 @@ public class RubyEnumerator extends RubyObject {
 
     public static final class RubyEnumeratorKernel {
         @JRubyMethod(name = {"to_enum", "enum_for"})
-        public static IRubyObject obj_to_enum(ThreadContext context, IRubyObject self, Block block) {
+        public static IRubyObject obj_to_enum(ThreadContext context, IRubyObject self) {
             return newEnumerator(context, self);
         }
 
         @JRubyMethod(name = {"to_enum", "enum_for"})
-        public static IRubyObject obj_to_enum(ThreadContext context, IRubyObject self, IRubyObject arg, Block block) {
+        public static IRubyObject obj_to_enum(ThreadContext context, IRubyObject self, IRubyObject arg) {
             return newEnumerator(context, self, arg);
         }
 
         @JRubyMethod(name = {"to_enum", "enum_for"})
-        public static IRubyObject obj_to_enum(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, Block block) {
+        public static IRubyObject obj_to_enum(ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1) {
             return newEnumerator(context, self, arg0, arg1);
         }
 
         @JRubyMethod(name = {"to_enum", "enum_for"}, optional = 1, rest = true)
-        public static IRubyObject obj_to_enum(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
+        public static IRubyObject obj_to_enum(ThreadContext context, IRubyObject self, IRubyObject[] args) {
             IRubyObject[] newArgs = new IRubyObject[args.length + 1];
             newArgs[0] = self;
             System.arraycopy(args, 0, newArgs, 1, args.length);
