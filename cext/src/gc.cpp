@@ -55,7 +55,9 @@ gc_mark_children(Handle* h)
 
         case T_DATA: {
             RData* rdata = dynamic_cast<RubyData *>(h)->toRData();
-            (*rdata->dmark)(rdata->data);
+            if (rdata->dmark != NULL) {
+	        (*rdata->dmark)(rdata->data);
+	    }
             break;
         }
     }
