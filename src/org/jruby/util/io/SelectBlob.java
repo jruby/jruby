@@ -244,11 +244,18 @@ public class SelectBlob {
                     if (timeout == 0) {
                         selector.selectNow();
                     } else {
+                        // not-great logic for JRUBY-5165; we should move finishConnect into RubySocket logic, I think
                         for(SelectionKey sk:selector.keys()) {
-                            if(0 != (sk.interestOps() & SelectionKey.OP_WRITE) && !sk.isWritable() && sk.channel() instanceof SocketChannel) {
-                                ((SocketChannel)sk.channel()).finishConnect();
+                            if((sk.interestOps() & SelectionKey.OP_WRITE) != 0) {
+                                if (!sk.isWritable() && sk.channel() instanceof SocketChannel) {
+                                    SocketChannel socketChannel = (SocketChannel)sk.channel();
+                                    if (socketChannel.isConnectionPending()) {
+                                        socketChannel.finishConnect();
+                                    }
+                                }
                             }
                         }
+
                         selector.select(timeout);
                     }
                 } else {
