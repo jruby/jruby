@@ -528,7 +528,7 @@ public class RubyKernel {
                 args = ArgsUtil.popArray(args);
             }
 
-            defout.callMethod(context, "write", RubyKernel.sprintf(recv, args));
+            defout.callMethod(context, "write", RubyKernel.sprintf(context, recv, args));
         }
 
         return context.getRuntime().getNil();
