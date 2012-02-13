@@ -1371,6 +1371,7 @@ public final class Ruby {
                 converterNotFoundError = defineClassUnder("ConverterNotFoundError", encodingError, encodingError.getAllocator(), encodingClass);
                 fiberError = defineClass("FiberError", standardError, standardError.getAllocator());
             }
+            concurrencyError = defineClassIfAllowed("ConcurrencyError", threadError);
 
             mathDomainError = defineClassUnder("DomainError", argumentError, argumentError.getAllocator(), mathModule);
             recursiveKey = newSymbol("__recursive_key__");
@@ -2967,6 +2968,10 @@ public final class Ruby {
         return symbolTable.getSymbol(name);
     }
 
+    public RubySymbol newSymbol(ByteList name) {
+        return symbolTable.getSymbol(name);
+    }
+
     /**
      * Faster than {@link #newSymbol(String)} if you already have an interned
      * name String. Don't intern your string just to call this version - the
@@ -4026,7 +4031,7 @@ public final class Ruby {
             syntaxError, standardError, loadError, notImplementedError, securityError, noMemoryError,
             regexpError, eofError, threadError, concurrencyError, systemStackError, zeroDivisionError, floatDomainError, mathDomainError,
             encodingError, encodingCompatibilityError, converterNotFoundError, undefinedConversionError,
-            invalidByteSequenceError, fiberError, randomClass;
+            invalidByteSequenceError, fiberError, randomClass, keyError;
 
     /**
      * All the core modules we keep direct references to, for quick access and
