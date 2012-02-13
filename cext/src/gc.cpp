@@ -158,6 +158,15 @@ Java_org_jruby_cext_Native_gc(JNIEnv* env, jobject self)
             }
 
         } else if ((h->flags & FL_MARK) != 0) {
+	    // If the handle was marked, but was not strongly reffed, make it a strong ref again
+            if ((h->flags & FL_WEAK) != 0) {
+		jobject tmp = env->NewLocalRef(h->obj);
+		if (!env->IsSameObject(tmp, NULL)) {
+		    h->flags &= ~FL_WEAK;
+		    env->DeleteWeakGlobalRef(h->obj);
+		    h->obj = env->NewGlobalRef(tmp);
+		}
+	    }
             h->flags &= ~FL_MARK;
         }
     }
