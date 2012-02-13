@@ -1,3 +1,5 @@
+require 'rbconfig'
+
 describe 'JRUBY-6291: Closing Stream in IO.popen4 and Open3.popen3' do
   it 'should not error when reading from other streams using IO.popen4' do
     if RbConfig::CONFIG['host_os'] =~ /mingw|mswin/
