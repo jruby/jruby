@@ -3,6 +3,7 @@ package org.jruby.compiler.ir.operands;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.compiler.ir.representations.InlinerInfo;
 
 public class Self extends LocalVariable {
     public static final Self SELF = new Self();
@@ -29,5 +30,10 @@ public class Self extends LocalVariable {
     @Override
     public LocalVariable clone() {
         return this;
+    }
+
+    @Override
+    public Operand cloneForInlining(InlinerInfo ii) { 
+        return ii.getCallReceiver();
     }
 }

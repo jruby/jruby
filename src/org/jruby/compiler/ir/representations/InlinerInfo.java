@@ -25,6 +25,7 @@ public class InlinerInfo {
     private Map<Variable, Variable> varRenameMap;
     private Map<BasicBlock, BasicBlock> bbRenameMap;
     private List yieldSites;
+    private Operand callReceiver;
 
     public InlinerInfo(CallBase call, CFG c) {
         this.call = call;
@@ -34,6 +35,7 @@ public class InlinerInfo {
         this.lblRenameMap = new HashMap<Label, Label>();
         this.bbRenameMap = new HashMap<BasicBlock, BasicBlock>();
         this.yieldSites = new ArrayList();
+        this.callReceiver = call.getReceiver();
     }
 
     /**
@@ -99,7 +101,7 @@ public class InlinerInfo {
     }
 
     public Operand getCallReceiver() {
-        return call.getReceiver();
+        return callReceiver;
     }
 
     public Operand getCallClosure() {

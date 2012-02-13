@@ -37,7 +37,9 @@ public class ReceiveSelfInstruction extends Instr implements ResultInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new CopyInstr(ii.getRenamedVariable(result), ii.getCallReceiver());
+        // receive-self will disappear after inlining
+        // all uses of %self will be replaced by the call receiver
+        return null;
     }
 
     public void compile(JVM jvm) {
