@@ -1140,8 +1140,13 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     private IRubyObject opFormatCommon(ThreadContext context, IRubyObject arg, CompatVersion compat) {
-        IRubyObject tmp = arg.checkArrayType();
-        if (tmp.isNil()) tmp = arg;
+        IRubyObject tmp;
+        if (context.runtime.is1_9() && arg instanceof RubyHash) {
+            tmp = arg;
+        } else {
+            tmp = arg.checkArrayType();
+            if (tmp.isNil()) tmp = arg;
+        }
 
         ByteList out = new ByteList(value.getRealSize());
         out.setEncoding(value.getEncoding());
