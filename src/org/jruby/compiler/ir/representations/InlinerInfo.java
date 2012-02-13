@@ -17,6 +17,8 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 
 public class InlinerInfo {
+    private static Integer globalInlineCount = 0;
+
     public final CFG callerCFG;
     public final CallBase call;
 
@@ -26,6 +28,7 @@ public class InlinerInfo {
     private Map<BasicBlock, BasicBlock> bbRenameMap;
     private List yieldSites;
     private Operand callReceiver;
+    private String inlineVarPrefix;
 
     public InlinerInfo(CallBase call, CFG c) {
         this.call = call;
@@ -36,6 +39,10 @@ public class InlinerInfo {
         this.bbRenameMap = new HashMap<BasicBlock, BasicBlock>();
         this.yieldSites = new ArrayList();
         this.callReceiver = call.getReceiver();
+        synchronized(globalInlineCount) { 
+            this.inlineVarPrefix = "%in" + globalInlineCount + "_"; 
+            globalInlineCount++;
+        }
     }
 
     /**
@@ -57,7 +64,7 @@ public class InlinerInfo {
     public Variable getRenamedVariable(Variable v) {
         Variable newVar = this.varRenameMap.get(v);
         if (newVar == null) {
-            newVar = getInlineHostScope().getNewInlineVariable(v);
+            newVar = getInlineHostScope().getNewInlineVariable(inlineVarPrefix, v);
             this.varRenameMap.put(v, newVar);
         }
         return newVar;

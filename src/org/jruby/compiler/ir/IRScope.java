@@ -101,7 +101,7 @@ public abstract class IRScope {
     private List<Instr> instrList; 
 
     /** Control flow graph representation of this method's instructions */
-    private CFG cfg = null;
+    private CFG cfg;
 
     /** List of (nested) closures in this scope */
     private List<IRClosure> closures;
@@ -113,24 +113,20 @@ public abstract class IRScope {
     private Set<Variable> usedLocalVars;
 
     /** Is %block implicit block arg unused? */
-    private boolean hasUnusedImplicitBlockArg = false;
+    private boolean hasUnusedImplicitBlockArg;
 
     /** Map of name -> dataflow problem */
-    private Map<String, DataFlowProblem> dfProbs = new HashMap<String, DataFlowProblem>();
+    private Map<String, DataFlowProblem> dfProbs;
     
-    private Instr[] linearizedInstrArray = null;
-    private List<BasicBlock> linearizedBBList = null;
-    private int scopeExitPC = -1;
-    protected int temporaryVariableIndex = -1;
+    private Instr[] linearizedInstrArray;
+    private List<BasicBlock> linearizedBBList;
+    protected int temporaryVariableIndex;
 
     /** Keeps track of types of prefix indexes for variables and labels */
-    private Map<String, Integer> nextVarIndex = new HashMap<String, Integer>();
-
-    // ENEBO: These collections are initialized on construction, but the rest
-    //   are init()'d.  This can't be right can it?
+    private Map<String, Integer> nextVarIndex;
 
     // Index values to guarantee we don't assign same internal index twice
-    private int nextClosureIndex = 0;    
+    private int nextClosureIndex;
     
     protected static class LocalVariableAllocator {
         public int nextSlot;
@@ -220,18 +216,24 @@ public abstract class IRScope {
     
     public IRScope(IRManager manager, IRScope lexicalParent, String name, 
             String fileName, int lineNumber, StaticScope staticScope) {
-        synchronized(globalScopeCount) { this.scopeId = globalScopeCount++; }
         this.manager = manager;
         this.lexicalParent = lexicalParent;        
         this.name = name;
         this.fileName = fileName;
         this.lineNumber = lineNumber;
         this.staticScope = staticScope;
+        threadPollInstrsCount = 0;
+        nextClosureIndex = 0;
+        temporaryVariableIndex = -1;
         instrList = new ArrayList<Instr>();
         closures = new ArrayList<IRClosure>();
-        threadPollInstrsCount = 0;
-
+        dfProbs = new HashMap<String, DataFlowProblem>();
+        nextVarIndex = new HashMap<String, Integer>();
+        cfg = null;
+        linearizedInstrArray = null;
+        linearizedBBList = null;
         hasLoops = false;
+        hasUnusedImplicitBlockArg = false;
 
         // These flags are true by default!
         canModifyCode = true;
@@ -241,6 +243,7 @@ public abstract class IRScope {
         usesZSuper = true;
 
         localVars = new LocalVariableAllocator();
+        synchronized(globalScopeCount) { this.scopeId = globalScopeCount++; }
     }
 
     @Override
@@ -485,7 +488,6 @@ public abstract class IRScope {
 
         // Exit BB ipc
         cfg().getExitBB().getLabel().setTargetPC(ipc + 1);
-        this.scopeExitPC = ipc+1;
 
         linearizedInstrArray = newInstrs.toArray(new Instr[newInstrs.size()]);
         return linearizedInstrArray;
@@ -809,10 +811,10 @@ public abstract class IRScope {
     }
     
     // Generate a new variable for inlined code (for ease of debugging, use differently named variables for inlined code)
-    public Variable getNewInlineVariable(Variable v) {
+    public Variable getNewInlineVariable(String inlinePrefix, Variable v) {
         if (v instanceof LocalVariable) {
             LocalVariable lv = (LocalVariable)v;
-            return getLocalVariable("%i_" + allocateNextPrefixedName("%i") + "_" + lv.getName(), lv.getScopeDepth());
+            return getLocalVariable(inlinePrefix + lv.getName(), lv.getScopeDepth());
         } else {
             return getNewTemporaryVariable();
         }
@@ -893,10 +895,6 @@ public abstract class IRScope {
 
     public Instr[] getInstrsForInterpretation() {
         return linearizedInstrArray;
-    }
-    
-    public int getScopeExitPC() {
-        return this.scopeExitPC;
     }
     
     public List<BasicBlock> buildLinearization() {
