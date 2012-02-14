@@ -28,6 +28,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.parser;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.jcodings.Encoding;
 import org.jruby.RubyRegexp;
 import org.jruby.ast.ArrayNode;
@@ -131,20 +133,22 @@ public class ParserSupport19 extends ParserSupport {
         return new SValue19Node(position, node);
     }
 
-    private int[] allocateNamedLocals(RegexpNode regexpNode) {
+    private List<Integer> allocateNamedLocals(RegexpNode regexpNode) {
         String[] names = regexpNode.loadPattern(configuration.getRuntime()).getNames();
         int length = names.length;
-        int[] locals = new int[length];
+        List<Integer> locals = new ArrayList<Integer>();
         StaticScope scope = getCurrentScope();
 
         for (int i = 0; i < length; i++) {
             // TODO: Pass by non-local-varnamed things but make sure consistent with list we get from regexp
-
-            int slot = scope.isDefined(names[i]);
-            if (slot >= 0) {
-                locals[i] = slot;
-            } else {
-                locals[i] = getCurrentScope().addVariableThisScope(names[i]);
+            
+            if (RubyYaccLexer.getKeyword(names[i]) == null) {
+                int slot = scope.isDefined(names[i]);
+                if (slot >= 0) {
+                    locals.add(slot);
+                } else {
+                    locals.add(getCurrentScope().addVariableThisScope(names[i]));
+                }
             }
         }
 
@@ -208,10 +212,14 @@ public class ParserSupport19 extends ParserSupport {
         if (firstNode instanceof DRegexpNode) {
             return new Match2Node(firstNode.getPosition(), firstNode, secondNode);
         } else if (firstNode instanceof RegexpNode) {
-            int[] locals = allocateNamedLocals((RegexpNode) firstNode);
+            List<Integer> locals = allocateNamedLocals((RegexpNode) firstNode);
 
-            if (locals.length > 0) {
-                return new Match2CaptureNode(firstNode.getPosition(), firstNode, secondNode, locals);
+            if (locals.size() > 0) {
+                int[] primitiveLocals = new int[locals.size()];
+                for (int i = 0; i < primitiveLocals.length; i++) {
+                    primitiveLocals[i] = locals.get(i);
+                }
+                return new Match2CaptureNode(firstNode.getPosition(), firstNode, secondNode, primitiveLocals);
             } else {
                 return new Match2Node(firstNode.getPosition(), firstNode, secondNode);
             }
