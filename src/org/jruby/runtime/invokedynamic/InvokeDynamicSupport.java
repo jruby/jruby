@@ -477,6 +477,7 @@ public class InvokeDynamicSupport {
 
     public static IRubyObject constantFallback(RubyConstantCallSite site, 
             ThreadContext context) {
+        SwitchPoint switchPoint = (SwitchPoint)context.runtime.getConstantInvalidator().getData();
         IRubyObject value = context.getConstant(site.name());
         
         if (value != null) {
@@ -491,7 +492,6 @@ public class InvokeDynamicSupport {
                     0,
                     site);
 
-            SwitchPoint switchPoint = (SwitchPoint)context.runtime.getConstantInvalidator().getData();
             MethodHandle gwt = switchPoint.guardWithTest(valueHandle, fallback);
             site.setTarget(gwt);
         } else {

@@ -134,6 +134,7 @@ public class InvocationLinker {
             IRubyObject self) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
         String method = site.name();
+        SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
         CacheEntry entry = selfClass.searchWithCache(method);
         
         if (methodMissing(entry, site.callType(), method, caller)) {
@@ -141,7 +142,7 @@ public class InvocationLinker {
         }
         
         MethodHandle target = getTarget(site, selfClass, method, entry, 0);
-        target = updateInvocationTarget(target, site, selfClass, method, entry, false, 0);
+        target = updateInvocationTarget(target, site, selfClass, method, entry, switchPoint, false, 0);
 
         return (IRubyObject)target.invokeWithArguments(context, caller, self);
     }
@@ -149,6 +150,7 @@ public class InvocationLinker {
     public static IRubyObject invocationFallback(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
         String method = site.name();
+        SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
         CacheEntry entry = selfClass.searchWithCache(method);
         if (methodMissing(entry, site.callType(), method, caller)) {
             IRubyObject mmResult = callMethodMissing(entry, site.callType(), context, self, method, arg0);
@@ -157,7 +159,7 @@ public class InvocationLinker {
         }
         
         MethodHandle target = getTarget(site, selfClass, method, entry, 1);
-        target = updateInvocationTarget(target, site, selfClass, method, entry, false, 1);
+        target = updateInvocationTarget(target, site, selfClass, method, entry, switchPoint, false, 1);
 
         return (IRubyObject)target.invokeWithArguments(context, caller, self, arg0);
     }
@@ -165,6 +167,7 @@ public class InvocationLinker {
     public static IRubyObject invocationFallback(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
         String method = site.name();
+        SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
         CacheEntry entry = selfClass.searchWithCache(method);
         if (methodMissing(entry, site.callType(), method, caller)) {
             IRubyObject mmResult = callMethodMissing(entry, site.callType(), context, self, method, arg0, arg1);
@@ -173,7 +176,7 @@ public class InvocationLinker {
         }
         
         MethodHandle target = getTarget(site, selfClass, method, entry, 2);
-        target = updateInvocationTarget(target, site, selfClass, method, entry, false, 2);
+        target = updateInvocationTarget(target, site, selfClass, method, entry, switchPoint, false, 2);
 
         return (IRubyObject)target.invokeWithArguments(context, caller, self, arg0, arg1);
     }
@@ -181,6 +184,7 @@ public class InvocationLinker {
     public static IRubyObject invocationFallback(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
         String method = site.name();
+        SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
         CacheEntry entry = selfClass.searchWithCache(method);
         if (methodMissing(entry, site.callType(), method, caller)) {
             IRubyObject mmResult = callMethodMissing(entry, site.callType(), context, self, method, arg0, arg1, arg2);
@@ -189,7 +193,7 @@ public class InvocationLinker {
         }
         
         MethodHandle target = getTarget(site, selfClass, method, entry, 3);
-        target = updateInvocationTarget(target, site, selfClass, method, entry, false, 3);
+        target = updateInvocationTarget(target, site, selfClass, method, entry, switchPoint, false, 3);
 
         return (IRubyObject)target.invokeWithArguments(context, caller, self, arg0, arg1, arg2);
     }
@@ -197,6 +201,7 @@ public class InvocationLinker {
     public static IRubyObject invocationFallback(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
         String method = site.name();
+        SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
         CacheEntry entry = selfClass.searchWithCache(method);
         if (methodMissing(entry, site.callType(), method, caller)) {
             IRubyObject mmResult = callMethodMissing(entry, site.callType(), context, self, method, args);
@@ -205,7 +210,7 @@ public class InvocationLinker {
         }
         
         MethodHandle target = getTarget(site, selfClass, method, entry, -1);
-        target = updateInvocationTarget(target, site, selfClass, method, entry, false, 4);
+        target = updateInvocationTarget(target, site, selfClass, method, entry, switchPoint, false, 4);
 
         return (IRubyObject)target.invokeWithArguments(context, caller, self, args);
     }
@@ -213,6 +218,7 @@ public class InvocationLinker {
     public static IRubyObject invocationFallback(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, Block block) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
         String method = site.name();
+        SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
         CacheEntry entry = selfClass.searchWithCache(method);
 
         if (methodMissing(entry, site.callType(), method, caller)) {
@@ -228,7 +234,7 @@ public class InvocationLinker {
         }
 
         MethodHandle target = getTarget(site, selfClass, method, entry, 0);
-        target = updateInvocationTarget(target, site, selfClass, method, entry, true, 0);
+        target = updateInvocationTarget(target, site, selfClass, method, entry, switchPoint, true, 0);
 
         return (IRubyObject) target.invokeWithArguments(context, caller, self, block);
     }
@@ -236,6 +242,7 @@ public class InvocationLinker {
     public static IRubyObject invocationFallback(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, Block block) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
         String method = site.name();
+        SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
         CacheEntry entry = selfClass.searchWithCache(method);
 
         if (methodMissing(entry, site.callType(), method, caller)) {
@@ -251,7 +258,7 @@ public class InvocationLinker {
         }
 
         MethodHandle target = getTarget(site, selfClass, method, entry, 1);
-        target = updateInvocationTarget(target, site, selfClass, method, entry, true, 1);
+        target = updateInvocationTarget(target, site, selfClass, method, entry, switchPoint, true, 1);
 
         return (IRubyObject) target.invokeWithArguments(context, caller, self, arg0, block);
     }
@@ -259,6 +266,7 @@ public class InvocationLinker {
     public static IRubyObject invocationFallback(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, Block block) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
         String method = site.name();
+        SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
         CacheEntry entry = selfClass.searchWithCache(method);
 
         if (methodMissing(entry, site.callType(), method, caller)) {
@@ -274,7 +282,7 @@ public class InvocationLinker {
         }
 
         MethodHandle target = getTarget(site, selfClass, method, entry, 2);
-        target = updateInvocationTarget(target, site, selfClass, method, entry, true, 2);
+        target = updateInvocationTarget(target, site, selfClass, method, entry, switchPoint, true, 2);
 
         return (IRubyObject) target.invokeWithArguments(context, caller, self, arg0, arg1, block);
     }
@@ -282,6 +290,7 @@ public class InvocationLinker {
     public static IRubyObject invocationFallback(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
         String method = site.name();
+        SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
         CacheEntry entry = selfClass.searchWithCache(method);
 
         if (methodMissing(entry, site.callType(), method, caller)) {
@@ -297,7 +306,7 @@ public class InvocationLinker {
         }
 
         MethodHandle target = getTarget(site, selfClass, method, entry, 3);
-        target = updateInvocationTarget(target, site, selfClass, method, entry, true, 3);
+        target = updateInvocationTarget(target, site, selfClass, method, entry, switchPoint, true, 3);
 
         return (IRubyObject) target.invokeWithArguments(context, caller, self, arg0, arg1, arg2, block);
     }
@@ -305,6 +314,7 @@ public class InvocationLinker {
     public static IRubyObject invocationFallback(JRubyCallSite site, ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject[] args, Block block) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
         String method = site.name();
+        SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
         CacheEntry entry = selfClass.searchWithCache(method);
 
         if (methodMissing(entry, site.callType(), method, caller)) {
@@ -320,7 +330,7 @@ public class InvocationLinker {
         }
 
         MethodHandle target = getTarget(site, selfClass, method, entry, -1);
-        target = updateInvocationTarget(target, site, selfClass, method, entry, true, 4);
+        target = updateInvocationTarget(target, site, selfClass, method, entry, switchPoint, true, 4);
 
         return (IRubyObject) target.invokeWithArguments(context, caller, self, args, block);
     }
@@ -330,7 +340,7 @@ public class InvocationLinker {
      * guard and argument-juggling logic. Return a handle suitable for invoking
      * with the site's original method type.
      */
-    private static MethodHandle updateInvocationTarget(MethodHandle target, JRubyCallSite site, RubyModule selfClass, String name, CacheEntry entry, boolean block, int arity) {
+    private static MethodHandle updateInvocationTarget(MethodHandle target, JRubyCallSite site, RubyModule selfClass, String name, CacheEntry entry, SwitchPoint switchPoint, boolean block, int arity) {
         if (target == null ||
                 site.clearCount() > RubyInstanceConfig.MAX_FAIL_COUNT ||
                 (!site.hasSeenType(selfClass.id)
@@ -361,7 +371,6 @@ public class InvocationLinker {
             
             if (RubyInstanceConfig.INVOKEDYNAMIC_INVOCATION_SWITCHPOINT) {
                 // wrap in switchpoint for mutation invalidation
-                SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
                 gwt = switchPoint.guardWithTest(gwt, curry ? insertArguments(fallback, 0, site) : fallback);
             }
             
