@@ -57,7 +57,7 @@ public class GlobalVariable {
     protected final Ruby runtime;
 
     protected final String name;
-    private volatile IRubyObject value;
+    protected volatile IRubyObject value;
 
     public static String variableName(String name) {
         return "$" + name;

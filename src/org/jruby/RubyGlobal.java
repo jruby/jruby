@@ -137,8 +137,14 @@ public class RubyGlobal {
             RubyInstanceConfig.Verbosity verbosity = runtime.getInstanceConfig().getVerbosity();
             runtime.defineVariable(new WarningGlobalVariable(runtime, "$-W", verbosity));
         }
-		
-        GlobalVariable kcodeGV = new KCodeGlobalVariable(runtime, "$KCODE", runtime.newString("NONE"));
+
+        final GlobalVariable kcodeGV; 
+        if (runtime.is1_9()) {
+            kcodeGV = new NonEffectiveGlobalVariable(runtime, "$KCODE", runtime.getNil());
+        } else {
+            kcodeGV = new KCodeGlobalVariable(runtime, "$KCODE", runtime.newString("NONE"));
+        }
+
         runtime.defineVariable(kcodeGV);
         runtime.defineVariable(new GlobalVariable.Copy(runtime, "$-K", kcodeGV));
         IRubyObject defaultRS = runtime.newString(runtime.getInstanceConfig().getRecordSeparator()).freeze(context);
@@ -467,7 +473,7 @@ public class RubyGlobal {
         @Override
         public IRubyObject get() {
             runtime.getWarnings().warn(ID.INEFFECTIVE_GLOBAL, "warning: variable " + name + " is no longer effective");
-            return runtime.getFalse();
+            return value;
         }
     }
 
