@@ -202,6 +202,20 @@ namespace jruby {
         ? jruby::callMethodA(recv, CONST_METHOD_NAME_CACHE(method), argc, argv) \
         : jruby::callMethodANonConst(recv, method, argc, argv))
 
+#define getCachedMethodID(env, klass, methodName, signature) __extension__({ \
+    static jmethodID mid_; \
+    static jclass klass_; \
+    jmethodID mid; \
+    if (__builtin_constant_p(methodName) && __builtin_constant_p(signature) && (klass_ == NULL || env->IsSameObject(klass_, klass))) { \
+        if (unlikely(mid_ == NULL)) { \
+            mid_ = getMethodID(env, klass, methodName, signature); \
+            if (klass_ == NULL) klass_ = (jclass) env->NewWeakGlobalRef(klass); \
+        } \
+        mid = mid_; \
+    } else mid = getMethodID(env, klass, methodName, signature); \
+    mid; \
+})
+
     VALUE getClass(const char* className);
     VALUE getModule(const char* className);
     VALUE getSymbol(const char* name);

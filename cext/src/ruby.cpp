@@ -132,7 +132,7 @@ rb_define_global_const(const char* name, VALUE obj)
 {
     JLocalEnv env;
 
-    jmethodID mid = getMethodID(env, Ruby_class, "defineGlobalConstant",
+    jmethodID mid = getCachedMethodID(env, Ruby_class, "defineGlobalConstant",
             "(Ljava/lang/String;Lorg/jruby/runtime/builtin/IRubyObject;)V");
     env->CallObjectMethod(getRuntime(), mid, env->NewStringUTF(name), valueToObject(env, obj));
 }
@@ -203,7 +203,7 @@ rb_eval_string(const char* string)
 {
     JLocalEnv env;
 
-    jmethodID mid = getMethodID(env, Ruby_class, "evalScriptlet",
+    jmethodID mid = getCachedMethodID(env, Ruby_class, "evalScriptlet",
             "(Ljava/lang/String;)Lorg/jruby/runtime/builtin/IRubyObject;");
     jobject result = env->CallObjectMethod(getRuntime(), mid, env->NewStringUTF(string));
     checkExceptions(env);

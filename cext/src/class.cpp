@@ -163,7 +163,7 @@ rb_define_alloc_func(VALUE klass, VALUE (*fn)(VALUE))
     JLocalEnv env;
 
     jobject allocator = env->NewObject(NativeObjectAllocator_class,
-            getMethodID(env, NativeObjectAllocator_class, "<init>", "(J)V"),
+            getCachedMethodID(env, NativeObjectAllocator_class, "<init>", "(J)V"),
             p2j((void *) fn));
     checkExceptions(env);
 

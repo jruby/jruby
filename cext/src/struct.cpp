@@ -49,7 +49,7 @@ rb_struct_define(const char* name_cstr, ...)
         checkExceptions(env);
     }
 
-    jmethodID mid = getMethodID(env, Ruby_class, "getStructClass", "()Lorg/jruby/RubyClass;");
+    jmethodID mid = getCachedMethodID(env, Ruby_class, "getStructClass", "()Lorg/jruby/RubyClass;");
     jobject structClass = env->CallObjectMethod(getRuntime(), mid);
 
     jobject newStructSubclass = env->CallStaticObjectMethod(RubyStruct_class, RubyStruct_newInstance,
@@ -75,7 +75,7 @@ extern "C" VALUE
 rb_struct_new(VALUE klass, ...)
 {
     JLocalEnv env;
-    jmethodID mid = getMethodID(env, RubyBasicObject_class, "getInternalVariable", 
+    jmethodID mid = getCachedMethodID(env, RubyBasicObject_class, "getInternalVariable", 
         "(Ljava/lang/String;)Ljava/lang/Object;");
 
     int size = NUM2INT(objectToValue(env, env->CallObjectMethod(valueToObject(env, klass), mid, env->NewStringUTF("__size__"))));

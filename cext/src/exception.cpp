@@ -61,7 +61,7 @@ rb_exc_raise(VALUE exc)
     using namespace jruby;
     JLocalEnv env;
 
-    jmethodID ctor = getMethodID(env, RaiseException_class, "<init>", "(Lorg/jruby/RubyException;)V");
+    jmethodID ctor = getCachedMethodID(env, RaiseException_class, "<init>", "(Lorg/jruby/RubyException;)V");
     jthrowable jException = (jthrowable) env->NewObject(RaiseException_class, ctor, valueToObject(env, exc));
     checkExceptions(env);
 

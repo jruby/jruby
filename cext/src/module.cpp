@@ -52,7 +52,7 @@ extern "C" void
 rb_define_const(VALUE module, const char* name, VALUE obj)
 {
     JLocalEnv env;
-    jmethodID mid = getMethodID(env, RubyModule_class, "defineConstant",
+    jmethodID mid = getCachedMethodID(env, RubyModule_class, "defineConstant",
             "(Ljava/lang/String;Lorg/jruby/runtime/builtin/IRubyObject;)V");
     env->CallVoidMethod(valueToObject(env, module), mid, env->NewStringUTF(name), valueToObject(env, obj));
     checkExceptions(env);
@@ -73,7 +73,7 @@ rb_define_module_under(VALUE module, const char* name)
 {
     JLocalEnv env;
 
-    jmethodID Ruby_defineModuleUnder_method = getMethodID(env, Ruby_class, "defineModuleUnder",
+    jmethodID Ruby_defineModuleUnder_method = getCachedMethodID(env, Ruby_class, "defineModuleUnder",
             "(Ljava/lang/String;Lorg/jruby/RubyModule;)Lorg/jruby/RubyModule;");
     jobject mod = env->CallObjectMethod(getRuntime(), Ruby_defineModuleUnder_method,
             env->NewStringUTF(name), valueToObject(env, module));
@@ -89,7 +89,7 @@ rb_define_method(VALUE klass, const char* meth, VALUE(*fn)(ANYARGS), int arity)
     JLocalEnv env;
 
     jmethodID JRuby_newMethod = getStaticMethodID(env, JRuby_class, "newMethod", "(Lorg/jruby/RubyModule;JI)Lorg/jruby/internal/runtime/methods/DynamicMethod;");
-    jmethodID RubyModule_addMethod_method = getMethodID(env, RubyModule_class, "addMethod",
+    jmethodID RubyModule_addMethod_method = getCachedMethodID(env, RubyModule_class, "addMethod",
             "(Ljava/lang/String;Lorg/jruby/internal/runtime/methods/DynamicMethod;)V");
 
     jobject module = valueToObject(env, klass);
@@ -119,7 +119,7 @@ rb_define_module_function(VALUE klass,const char* meth, VALUE(*fn)(ANYARGS),int 
 
     jmethodID JRuby_newMethod = getStaticMethodID(env, JRuby_class, "newMethod", "(Lorg/jruby/RubyModule;JI)Lorg/jruby/internal/runtime/methods/DynamicMethod;");
 
-    jmethodID RubyModule_addModuleFunction_method = getMethodID(env, RubyModule_class, "addModuleFunction",
+    jmethodID RubyModule_addModuleFunction_method = getCachedMethodID(env, RubyModule_class, "addModuleFunction",
             "(Ljava/lang/String;Lorg/jruby/internal/runtime/methods/DynamicMethod;)V");
 
     jobject module = valueToObject(env, klass);
@@ -138,13 +138,13 @@ rb_define_singleton_method(VALUE object, const char* meth, VALUE(*fn)(ANYARGS), 
 {
     JLocalEnv env;
 
-    jmethodID IRubyObject_getSingletonClass_method = getMethodID(env, IRubyObject_class, "getSingletonClass",
+    jmethodID IRubyObject_getSingletonClass_method = getCachedMethodID(env, IRubyObject_class, "getSingletonClass",
             "()Lorg/jruby/RubyClass;");
     jobject singleton = env->CallObjectMethod(valueToObject(env, object), IRubyObject_getSingletonClass_method);
 
     jmethodID JRuby_newMethod = getStaticMethodID(env, JRuby_class, "newMethod",
             "(Lorg/jruby/RubyModule;JI)Lorg/jruby/internal/runtime/methods/DynamicMethod;");
-    jmethodID RubyModule_addMethod_method = getMethodID(env, RubyModule_class, "addMethod",
+    jmethodID RubyModule_addMethod_method = getCachedMethodID(env, RubyModule_class, "addMethod",
             "(Ljava/lang/String;Lorg/jruby/internal/runtime/methods/DynamicMethod;)V");
 
     env->CallVoidMethod(singleton, RubyModule_addMethod_method, env->NewStringUTF(meth),
@@ -186,7 +186,7 @@ extern "C" VALUE
 rb_const_get(VALUE module, ID symbol)
 {
     JLocalEnv env;
-    jmethodID mid = getMethodID(env, RubyModule_class, "getConstant",
+    jmethodID mid = getCachedMethodID(env, RubyModule_class, "getConstant",
             "(Ljava/lang/String;)Lorg/jruby/runtime/builtin/IRubyObject;");
     jobject c = env->CallObjectMethod(valueToObject(env, module), mid, idToString(env, symbol));
     checkExceptions(env);
@@ -198,7 +198,7 @@ extern "C" VALUE
 rb_const_get_at(VALUE module, ID symbol)
 {
     JLocalEnv env;
-    jmethodID mid = getMethodID(env, RubyModule_class, "getConstantAt",
+    jmethodID mid = getCachedMethodID(env, RubyModule_class, "getConstantAt",
             "(Ljava/lang/String;)Lorg/jruby/runtime/builtin/IRubyObject;");
     jobject c = env->CallObjectMethod(valueToObject(env, module), mid, idToString(env, symbol));
     checkExceptions(env);
@@ -211,7 +211,7 @@ extern "C" VALUE
 rb_const_get_from(VALUE module, ID symbol)
 {
     JLocalEnv env;
-    jmethodID mid = getMethodID(env, RubyModule_class, "getConstantFrom",
+    jmethodID mid = getCachedMethodID(env, RubyModule_class, "getConstantFrom",
             "(Ljava/lang/String;)Lorg/jruby/runtime/builtin/IRubyObject;");
     jobject c = env->CallObjectMethod(valueToObject(env, module), mid, idToString(env, symbol));
     checkExceptions(env);
@@ -223,7 +223,7 @@ extern "C" void
 rb_const_set(VALUE parent, ID name, VALUE object)
 {
     JLocalEnv env;
-    jmethodID mid = getMethodID(env, RubyModule_class, "setConstant",
+    jmethodID mid = getCachedMethodID(env, RubyModule_class, "setConstant",
             "(Ljava/lang/String;Lorg/jruby/runtime/builtin/IRubyObject;)Lorg/jruby/runtime/builtin/IRubyObject;");
     env->CallObjectMethod(valueToObject(env, parent), mid, idToString(env, name),
             valueToObject(env, object));
