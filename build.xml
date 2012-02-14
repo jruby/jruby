@@ -969,6 +969,9 @@
       <taskdef name="junit" classname="org.apache.tools.ant.taskdefs.optional.junit.JUnitTask" classpath="${build.lib.dir}/junit.jar"/>
 
       <junit jvm="${jruby.test.jvm}" fork="yes" forkMode="once" haltonfailure="true" dir="${basedir}" maxmemory="${jruby.test.memory}" showoutput="true" timeout="1800000">
+        <env key="RUBYOPT" value=""/>
+        <env key="JRUBY_OPTS" value=""/>
+
 	<classpath refid="test.class.path"/>
 
 	<sysproperty key="java.awt.headless" value="true"/>
