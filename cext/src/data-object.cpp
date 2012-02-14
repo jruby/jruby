@@ -60,7 +60,7 @@ rb_data_object_alloc(VALUE klass, void* data, RUBY_DATA_FUNC dmark, RUBY_DATA_FU
     h->obj = env->NewGlobalRef(obj);
     checkExceptions(env);
 
-    return (VALUE) (uintptr_t) h;
+    return h->asValue();
 }
 
 RubyData::RubyData(void* data, RUBY_DATA_FUNC dmark, RUBY_DATA_FUNC dfree)

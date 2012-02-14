@@ -189,7 +189,7 @@ rb_ll2inum(long long v)
         return ((VALUE)(((SIGNED_VALUE)(v))<<1 | FIXNUM_FLAG));
     }
 
-    return (VALUE) newNumber(JRuby_ll2inum, v);
+    return newNumber(JRuby_ll2inum, v)->asValue();
 }
 
 extern "C" VALUE
@@ -199,33 +199,33 @@ rb_ull2inum(unsigned long long v)
         return ((VALUE)(((SIGNED_VALUE)(v))<<1 | FIXNUM_FLAG));
     }
 
-    return (VALUE) newNumber(JRuby_ull2inum, (long long) v);
+    return newNumber(JRuby_ull2inum, (long long) v)->asValue();
 }
 
 extern "C" VALUE
 rb_int2big(long long v)
 {
-    return (VALUE) newNumber(JRuby_int2big, v);
+    return newNumber(JRuby_int2big, v)->asValue();
 }
 
 extern "C" VALUE
 rb_uint2big(unsigned long long v)
 {
-    return (VALUE) newNumber(JRuby_uint2big, (long long) v);
+    return newNumber(JRuby_uint2big, (long long) v)->asValue();
 }
 
 extern "C" int
 rb_cmpint(VALUE val, VALUE a, VALUE b)
 {
-    if(NIL_P(val)) rb_cmperr(a, b);
-    if(FIXNUM_P(val)) return FIX2INT(val);
-    if(TYPE(val) == T_BIGNUM) {
-        if(RBIGNUM_SIGN(val)) return 1;
+    if (NIL_P(val)) rb_cmperr(a, b);
+    if (FIXNUM_P(val)) return FIX2INT(val);
+    if (TYPE(val) == T_BIGNUM) {
+        if (RBIGNUM_SIGN(val)) return 1;
         return -1;
     }
 
-    if(RTEST(rb_funcall(val, rb_intern(">"), 1, INT2FIX(0)))) return 1;
-    if(RTEST(rb_funcall(val, rb_intern("<"), 1, INT2FIX(0)))) return -1;
+    if (RTEST(rb_funcall(val, rb_intern(">"), 1, INT2FIX(0)))) return 1;
+    if (RTEST(rb_funcall(val, rb_intern("<"), 1, INT2FIX(0)))) return -1;
     return 0;
 }
 
@@ -234,7 +234,7 @@ rb_cmperr(VALUE x, VALUE y)
 {
     const char *classname;
 
-    if(SPECIAL_CONST_P(y)) {
+    if (SPECIAL_CONST_P(y)) {
         y = rb_inspect(y);
         classname = StringValuePtr(y);
     } else {

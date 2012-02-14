@@ -66,6 +66,10 @@ namespace jruby {
             return likely(!SPECIAL_CONST_P(v)) ? (Handle *) v : specialHandle(v);
         }
 
+	inline VALUE asValue() {
+	    return (VALUE) this;
+	}
+
         inline void makeStrong(JNIEnv* env) {
             if (unlikely((flags & FL_WEAK) != 0)) {
                 makeStrong_(env);

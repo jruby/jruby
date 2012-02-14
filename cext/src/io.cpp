@@ -88,7 +88,7 @@ RubyIO::RubyIO(FILE* native_file, int native_fd, int mode_)
     rio.fd = native_fd;
     rio.f = native_file;
     rio.mode = mode_;
-    rio.obj = (VALUE)this;
+    rio.obj = this->asValue();
 
     obj = valueToObject(env, callMethod(rb_cIO, "new", 2, INT2FIX(native_fd), INT2FIX(mode_)));
 }
@@ -99,7 +99,7 @@ RubyIO::RubyIO(JNIEnv* env, jobject obj_, jint fileno, jint mode_): Handle(env, 
     rio.fd = (int)fileno;
     rio.f = NULL;
     rio.mode = (int)mode_;
-    rio.obj = (VALUE)this;
+    rio.obj = this->asValue();
 }
 
 RubyIO::~RubyIO() {

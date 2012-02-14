@@ -87,7 +87,7 @@ rb_gc_mark_maybe(VALUE v)
 
     Handle* h;
     TAILQ_FOREACH(h, &liveHandles, all) {
-        if ((VALUE) h == v) {
+        if (h->asValue() == v) {
             rb_gc_mark(v);
             break;
         }

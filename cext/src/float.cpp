@@ -132,7 +132,7 @@ rb_float_new(double value)
     jobject rubyFloat = env->CallStaticObjectMethodA(JRuby_class, JRuby_newFloat, params);
     f->obj = env->NewGlobalRef(rubyFloat);
 
-    return (VALUE) f;
+    return f->asValue();
 }
 
 extern "C" double
