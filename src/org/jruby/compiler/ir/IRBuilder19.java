@@ -24,7 +24,7 @@ import org.jruby.compiler.ir.instructions.BNEInstr;
 import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.ClosureReturnInstr;
 import org.jruby.compiler.ir.instructions.CopyInstr;
-import org.jruby.compiler.ir.instructions.GetArrayInstr;
+import org.jruby.compiler.ir.instructions.MultipleAsgnInstr;
 import org.jruby.compiler.ir.instructions.JRubyImplCallInstr;
 import org.jruby.compiler.ir.instructions.JRubyImplCallInstr.JRubyImplementationMethod;
 import org.jruby.compiler.ir.instructions.LabelInstr;
@@ -259,13 +259,13 @@ public class IRBuilder19 extends IRBuilder {
             case DASGNNODE: {
                 DAsgnNode dynamicAsgn = (DAsgnNode) node;
                 v = getArgVariable(s, dynamicAsgn.getName(), dynamicAsgn.getDepth());
-                s.addInstr(new GetArrayInstr(v, argsArray, preArgsCount, postArgsCount, index, isSplat));
+                s.addInstr(new MultipleAsgnInstr(v, argsArray, preArgsCount, postArgsCount, index, isSplat));
                 break;
             }
             case LOCALASGNNODE: {
                 LocalAsgnNode localVariable = (LocalAsgnNode) node;
                 v = getArgVariable(s, localVariable.getName(), localVariable.getDepth());
-                s.addInstr(new GetArrayInstr(v, argsArray, preArgsCount, postArgsCount, index, isSplat));
+                s.addInstr(new MultipleAsgnInstr(v, argsArray, preArgsCount, postArgsCount, index, isSplat));
                 break;
             }
             case MULTIPLEASGN19NODE: {
@@ -273,7 +273,7 @@ public class IRBuilder19 extends IRBuilder {
                 MultipleAsgn19Node childNode = (MultipleAsgn19Node) node;
                 if (!isMasgnRoot) {
                     v = s.getNewTemporaryVariable();
-                    s.addInstr(new GetArrayInstr(v, argsArray, preArgsCount, postArgsCount, index, isSplat));
+                    s.addInstr(new MultipleAsgnInstr(v, argsArray, preArgsCount, postArgsCount, index, isSplat));
                     s.addInstr(new ToAryInstr(v, v, manager.getFalse()));
                     argsArray = v;
                 }
@@ -301,7 +301,7 @@ public class IRBuilder19 extends IRBuilder {
                     buildArgsMasgn(an, s, argsArray, false, -1, -1, i, false);
                 } else {
                     Variable rhsVal = s.getNewTemporaryVariable();
-                    s.addInstr(new GetArrayInstr(rhsVal, values, i, false));
+                    s.addInstr(new MultipleAsgnInstr(rhsVal, values, i, false));
                     buildAssignment(an, s, rhsVal);
                 }
                 i++;
@@ -318,7 +318,7 @@ public class IRBuilder19 extends IRBuilder {
                 buildArgsMasgn(restNode, s, argsArray, false, i, postArgsCount, 0, true); // rest of the argument array!
             } else {
                 Variable rhsVal = s.getNewTemporaryVariable();
-                s.addInstr(new GetArrayInstr(rhsVal, values, i, postArgsCount, 0, true));
+                s.addInstr(new MultipleAsgnInstr(rhsVal, values, i, postArgsCount, 0, true));
                 buildAssignment(restNode, s, rhsVal); // rest of the argument array!
             }
         }
@@ -332,7 +332,7 @@ public class IRBuilder19 extends IRBuilder {
                     buildArgsMasgn(an, s, argsArray, false, i, postArgsCount, j, false);
                 } else {
                     Variable rhsVal = s.getNewTemporaryVariable();
-                    s.addInstr(new GetArrayInstr(rhsVal, values, i, postArgsCount, j, false));  // Fetch from the end
+                    s.addInstr(new MultipleAsgnInstr(rhsVal, values, i, postArgsCount, j, false));  // Fetch from the end
                     buildAssignment(an, s, rhsVal);
                 }
                 j++;

@@ -132,7 +132,7 @@ import org.jruby.compiler.ir.instructions.EnsureRubyArrayInstr;
 import org.jruby.compiler.ir.instructions.ExceptionRegionEndMarkerInstr;
 import org.jruby.compiler.ir.instructions.ExceptionRegionStartMarkerInstr;
 import org.jruby.compiler.ir.instructions.GVarAliasInstr;
-import org.jruby.compiler.ir.instructions.GetArrayInstr;
+import org.jruby.compiler.ir.instructions.MultipleAsgnInstr;
 import org.jruby.compiler.ir.instructions.GetClassVarContainerModuleInstr;
 import org.jruby.compiler.ir.instructions.GetClassVariableInstr;
 import org.jruby.compiler.ir.instructions.GetFieldInstr;
@@ -806,7 +806,7 @@ public class IRBuilder {
         if (argsArray != null) {
             // We are in a nested receive situation -- when we are not at the root of a masgn tree
             // Ex: We are trying to receive (b,c) in this example: "|a, (b,c), d| = ..."
-            s.addInstr(new GetArrayInstr(v, argsArray, argIndex, isSplat));
+            s.addInstr(new MultipleAsgnInstr(v, argsArray, argIndex, isSplat));
         } else {
             // argsArray can be null when the first node in the args-node-ast is a multiple-assignment
             // For example, for-nodes
@@ -2583,7 +2583,7 @@ public class IRBuilder {
                     buildBlockArgsAssignment(an, s, argsArray, i, false, false, false);
                 } else {
                     Variable rhsVal = s.getNewTemporaryVariable();
-                    s.addInstr(new GetArrayInstr(rhsVal, values, i, false));
+                    s.addInstr(new MultipleAsgnInstr(rhsVal, values, i, false));
                     buildAssignment(an, s, rhsVal);
                 }
                 i++;
@@ -2599,7 +2599,7 @@ public class IRBuilder {
             // do nothing
         } else if (values != null) {
             Variable rhsVal = s.getNewTemporaryVariable();
-            s.addInstr(new GetArrayInstr(rhsVal, values, i, true));
+            s.addInstr(new MultipleAsgnInstr(rhsVal, values, i, true));
             buildAssignment(argsNode, s, rhsVal); // rest of the argument array!
         } else {
             buildBlockArgsAssignment(argsNode, s, argsArray, i, false, false, true); // rest of the argument array!

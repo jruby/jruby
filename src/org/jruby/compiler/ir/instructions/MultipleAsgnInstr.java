@@ -18,10 +18,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 // i.e. if I override the elt accessor method [], will multiple-assignment
 // semantics change as well?
 //
-// FIXME: Rename GetArrayInstr to ArrayArefInstr which would be used
-// in later passes as well when compiler passes replace ruby-array []
-// getArraySlices with inlined lookups
-//
 // SSS FIXME: This is now asking to be split into multiple instructions.
 // This instr. is being used to split an arg received by a parenthesized unit in
 // method/block args.  So, this effectively behaves like a receive* instruction.
@@ -32,7 +28,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 //
 // Is it time to refactor and clean this up?
 
-public class GetArrayInstr extends Instr implements ResultInstr {
+public class MultipleAsgnInstr extends Instr implements ResultInstr {
     private Operand array;
     private final int preArgsCount;       // # of reqd args before rest-arg (-1 if we are fetching a pre-arg)
     private final int postArgsCount;      // # of reqd args after rest-arg  (-1 if we are fetching a pre-arg)
@@ -40,10 +36,10 @@ public class GetArrayInstr extends Instr implements ResultInstr {
     private final boolean getArraySlice;  // If true, returns an array slice between indexFromStart and indexFromEnd (rest of the array if indexFromEnd is -1)
     private Variable result;
 
-    public GetArrayInstr(Variable result, Operand array, int preArgsCount, int postArgsCount, int index, boolean getRestOfArray) {
-        super(Operation.GET_ARRAY);
+    public MultipleAsgnInstr(Variable result, Operand array, int preArgsCount, int postArgsCount, int index, boolean getRestOfArray) {
+        super(Operation.MASGN);
         
-        assert result != null : "GetArrayInstr result is null";
+        assert result != null : "MultipleAsgnInstr result is null";
         
         this.result = result;
         this.array = array;
@@ -53,7 +49,7 @@ public class GetArrayInstr extends Instr implements ResultInstr {
         this.getArraySlice = getRestOfArray;
     }
 
-    public GetArrayInstr(Variable result, Operand array, int index, boolean getRestOfArray) {
+    public MultipleAsgnInstr(Variable result, Operand array, int index, boolean getRestOfArray) {
         this(result, array, -1, -1, index, getRestOfArray);
     }
 
@@ -92,7 +88,7 @@ public class GetArrayInstr extends Instr implements ResultInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new GetArrayInstr(ii.getRenamedVariable(result), array.cloneForInlining(ii), preArgsCount, postArgsCount, index, getArraySlice);
+        return new MultipleAsgnInstr(ii.getRenamedVariable(result), array.cloneForInlining(ii), preArgsCount, postArgsCount, index, getArraySlice);
     }
 
     @Override
