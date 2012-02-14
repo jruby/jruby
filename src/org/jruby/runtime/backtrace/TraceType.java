@@ -136,7 +136,7 @@ public class TraceType {
                         javaTrace,
                         context.createBacktrace2(0, nativeException),
                         false,
-                        false,
+                        context.runtime.getInstanceConfig().getBacktraceMask(),
                         false);
             }
         },

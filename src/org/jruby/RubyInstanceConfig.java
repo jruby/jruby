@@ -1008,6 +1008,24 @@ public class RubyInstanceConfig {
     public void setTraceType(TraceType traceType) {
         this.traceType = traceType;
     }
+
+    /**
+     * Whether to mask .java lines in the Ruby backtrace, as MRI does for C calls.
+     *
+     * @return true if masking; false otherwise
+     */
+    public boolean getBacktraceMask() {
+        return backtraceMask;
+    }
+
+    /**
+     * Set whether to mask .java lines in the Ruby backtrace.
+     *
+     * @param backtraceMask true to mask; false otherwise
+     */
+    public void setBacktraceMask(boolean backtraceMask) {
+        this.backtraceMask = backtraceMask;
+    }
     
     /**
      * Set whether native code is enabled for this config. Disabling it also
@@ -1217,6 +1235,8 @@ public class RubyInstanceConfig {
 
     private TraceType traceType =
             TraceType.traceTypeFor(Options.BACKTRACE_STYLE.load());
+
+    private boolean backtraceMask = Options.BACKTRACE_MASK.load();
     
     private boolean backtraceColor = Options.BACKTRACE_COLOR.load();
 
