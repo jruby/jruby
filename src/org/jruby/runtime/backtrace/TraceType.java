@@ -88,7 +88,7 @@ public class TraceType {
                         thread.getStackTrace(),
                         context.createBacktrace2(0, nativeException),
                         false,
-                        false,
+                        context.runtime.getInstanceConfig().getBacktraceMask(),
                         this);
             }
         },
