@@ -1956,6 +1956,8 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     public static IRubyObject nth_match(int nth, IRubyObject match) {
         if (match.isNil()) return match;
         RubyMatchData m = (RubyMatchData)match;
+        m.check();
+
         Ruby runtime = m.getRuntime();
 
         final int start, end;
@@ -1989,6 +1991,8 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     public static IRubyObject match_pre(IRubyObject match) {
         if (match.isNil()) return match;
         RubyMatchData m = (RubyMatchData)match;
+        m.check();
+
         Ruby runtime = m.getRuntime();
         if (m.begin == -1) runtime.getNil(); 
         return m.str.makeShared(runtime, m.str.getType(), 0,  m.begin).infectBy(m);
@@ -2000,6 +2004,8 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     public static IRubyObject match_post(IRubyObject match) {
         if (match.isNil()) return match;
         RubyMatchData m = (RubyMatchData)match;
+        m.check();
+
         Ruby runtime = m.getRuntime();
         if (m.begin == -1) return runtime.getNil();
         return m.str.makeShared(runtime, m.str.getType(), m.end, m.str.getByteList().getRealSize() - m.end).infectBy(m);
@@ -2011,6 +2017,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     public static IRubyObject match_last(IRubyObject match) {
         if (match.isNil()) return match;
         RubyMatchData m = (RubyMatchData)match;
+        m.check();
 
         if (m.regs == null || m.regs.beg[0] == -1) return match.getRuntime().getNil();
 

@@ -219,7 +219,7 @@ public class RubyMatchData extends RubyObject {
         return (flags & MATCH_BUSY) != 0;
     }
 
-    private void check() {
+    void check() {
         if (str == null) throw getRuntime().newTypeError("uninitialized Match");
     }
 
