@@ -155,7 +155,7 @@ public abstract class Instr {
     }
 
     /**
-     * Clone the instruction so it can be inlined into another scope. 
+     * Clone the instruction (present in a method/closure) so it can be inlined into another scope.
      * This requires renaming variables and labels to eliminate naming conflicts.
      *
      * @param inlinerInfo This object manages renaming of variables and labels, handles
@@ -164,6 +164,18 @@ public abstract class Instr {
      */
     public Instr cloneForInlinedScope(InlinerInfo ii) {
         return cloneForInlining(ii);
+    }
+
+    /**
+     * Clone the instruction (present in a closure) so it can be inlined into another scope. 
+     * This requires renaming variables and labels to eliminate naming conflicts.
+     *
+     * @param inlinerInfo This object manages renaming of variables and labels, handles
+     *                    args and return values.
+     * @return a new instruction that can be used in the target scope.
+     */
+    public Instr cloneForInlinedClosure(InlinerInfo ii) {
+        return cloneForInlinedScope(ii);
     }
 
     /**

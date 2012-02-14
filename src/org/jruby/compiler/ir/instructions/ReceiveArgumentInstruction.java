@@ -13,8 +13,15 @@ public class ReceiveArgumentInstruction extends ReceiveArgBase {
         super(Operation.RECV_ARG, result, argIndex);
     }
 
+	 @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         return new CopyInstr(ii.getRenamedVariable(result), ii.getCallArg(argIndex, false));
+    }
+
+	 @Override
+    public Instr cloneForInlinedClosure(InlinerInfo ii) {
+		  // SSS FIXME: Temporary, This should become a GetArrayInstr
+        return new CopyInstr(ii.getRenamedVariable(result), ii.getBlockArg(argIndex));
     }
 
     public void compile(JVM jvm) {

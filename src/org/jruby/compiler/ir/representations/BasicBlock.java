@@ -1,8 +1,11 @@
 package org.jruby.compiler.ir.representations;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
+import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.IRClosure;
 import org.jruby.compiler.ir.instructions.ClosureReturnInstr;
 import org.jruby.compiler.ir.instructions.CopyInstr;
@@ -12,9 +15,11 @@ import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
 import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
 import org.jruby.compiler.ir.instructions.ReceiveRestArgBase;
 import org.jruby.compiler.ir.instructions.ReceiveSelfInstruction;
+import org.jruby.compiler.ir.instructions.ResultInstr;
 import org.jruby.compiler.ir.instructions.YieldInstr;
 import org.jruby.compiler.ir.operands.Array;
 import org.jruby.compiler.ir.operands.Label;
+import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.util.DataInfo;
@@ -35,9 +40,10 @@ public class BasicBlock implements DataInfo {
         id = c.getNextBBID();
     }
 
-    public void updateCFG(CFG c) {
-        cfg = c;
-        id = c.getNextBBID();
+    private void migrateToCFG(CFG newCFG) {
+        newCFG.addBasicBlock(this);
+        this.cfg = newCFG;
+        this.id = newCFG.getNextBBID();
     }
 
     public int getID() {
@@ -132,60 +138,50 @@ public class BasicBlock implements DataInfo {
         return clonedBB;
     }
 
-    // SSS FIXME: Verify correctness; also deal with YieldInstr.wrapIntoArray flag
-    public void processClosureArgAndReturnInstrs(IRClosure closure, InlinerInfo ii, YieldInstr yi) {
-        Variable  yieldResult = ii.getRenamedVariable(yi.getResult());
-        Operand[] yieldArgs   = yi.getNonBlockOperands();
+    private Variable getRenamedVariable(Operand o, IRScope hostScope) {
+        if (o instanceof LocalVariable) {
+            LocalVariable lv = (LocalVariable)o;
+            int depth = lv.getScopeDepth();
+            return hostScope.getLocalVariable(lv.getName(), depth > 1 ? depth - 1 : 0);
+        } else {
+            return hostScope.getNewTemporaryVariable();
+        }
+    }
 
+    public void migrateToHostScope(InlinerInfo ii) {
+        // Update cfg for this bb
+        IRScope hostScope = ii.getInlineHostScope();
+        migrateToCFG(hostScope.getCFG());
+
+        // Clone
+        List clonedInstrs = new ArrayList<Instr>();
+
+        // Process instructions
+        Map<Variable, Variable> varRenameMap = ii.getVarRenameMap();
         for (ListIterator<Instr> it = ((ArrayList<Instr>)instrs).listIterator(); it.hasNext(); ) {
             Instr i = it.next();
-            if (i instanceof ClosureReturnInstr) {
-                // Replace the closure return receive with a simple copy
-                it.set(new CopyInstr(yieldResult, ((ClosureReturnInstr)i).getReturnValue()));
-            } else if (i instanceof ReceiveSelfInstruction) {
-                ReceiveSelfInstruction rsi = (ReceiveSelfInstruction)i;
-                // SSS FIXME: It is not always the case that the call receiver is also the %self within
-                // a block  Ex: ... r.foo(args) { ... blah .. }.  i.e. there are scenarios where %self
-                // within the block is not identical to 'r'.  Handle this!
-                if (!rsi.getResult().equals(ii.getCallReceiver())) {
-                    it.set(new CopyInstr(rsi.getResult(), ii.getCallReceiver()));
-                } else {
-                    it.set(NopInstr.NOP);
+
+            // Rename local vars (necessary because of scopeDepth changes)
+            // and temp vars (necessary to eliminate name clashes)
+            for (Operand o: i.getOperands()) {
+                if ((o instanceof Variable) && (varRenameMap.get((Variable)o) == null)) {
+                    varRenameMap.put((Variable)o, getRenamedVariable(o, hostScope));
                 }
-            } else if (i instanceof ReceiveClosureInstr) {
-                ReceiveClosureInstr rci = (ReceiveClosureInstr)i;
-                if (!rci.getResult().equals(ii.getCallClosure())) {
-                    it.set(new CopyInstr(rci.getResult(), ii.getCallClosure()));
-                } else {
-                    it.set(NopInstr.NOP);
-                }
-            } else if (i instanceof ReceiveArgumentInstruction) {
-                ReceiveArgumentInstruction rai = (ReceiveArgumentInstruction)i;
-                int argIndex = rai.getArgIndex();
-                Operand closureArg = (argIndex < yieldArgs.length) ? yieldArgs[argIndex].cloneForInlining(ii) : closure.getManager().getNil();
-
-                // Replace the arg receive with a simple copy
-                it.set(new CopyInstr(rai.getResult(), closureArg));
-            } else if (i instanceof ReceiveRestArgBase) {
-                Operand closureArg;
-                ReceiveRestArgBase rai = (ReceiveRestArgBase)i;
-                int argIndex = rai.getArgIndex();
-
-                if (argIndex < yieldArgs.length) {
-                    Operand[] tmp = new Operand[yieldArgs.length - argIndex];
-                    for (int j = argIndex; j < yieldArgs.length; j++) {
-                        tmp[j-argIndex] = yieldArgs[j].cloneForInlining(ii);
-                    }
-
-                    closureArg = new Array(tmp);
-                } else {
-                    closureArg = new Array();
-                }
-
-                // Replace the arg receive with a simple copy
-                it.set(new CopyInstr(rai.getResult(), closureArg));
             }
+
+            if (i instanceof ResultInstr) {
+                Variable r = ((ResultInstr)i).getResult();
+                if (varRenameMap.get(r) == null) {
+                    varRenameMap.put(r, getRenamedVariable(r, hostScope));
+                }
+            }
+
+            // clone
+            Instr newI = i.cloneForInlinedClosure(ii);
+            if (newI != null) clonedInstrs.add(newI);
         }
+
+        this.instrs = clonedInstrs;
     }
 
     @Override

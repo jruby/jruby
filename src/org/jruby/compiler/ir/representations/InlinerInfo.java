@@ -30,6 +30,10 @@ public class InlinerInfo {
     private Operand callReceiver;
     private String inlineVarPrefix;
 
+    // For inlining closures
+    private Operand yieldArg;
+    private Variable yieldResult;
+
     public InlinerInfo(CallBase call, CFG c) {
         this.call = call;
         this.callArgs = call.getCallArgs();
@@ -59,6 +63,20 @@ public class InlinerInfo {
            this.lblRenameMap.put(l, newLbl);
         }
         return newLbl;
+    }
+
+    public void resetRenameMaps() {
+        this.varRenameMap = new HashMap<Variable, Variable>();
+        this.lblRenameMap = new HashMap<Label, Label>();
+    }
+
+    public Map<Variable, Variable> getVarRenameMap() {
+        return varRenameMap;
+    }
+
+    public void setupYieldArgsAndYieldResult(YieldInstr yi) {
+        this.yieldResult = yi.getResult();
+        this.yieldArg = yi.getYieldArg();
     }
 
     public Variable getRenamedVariable(Variable v) {
@@ -125,5 +143,14 @@ public class InlinerInfo {
 
     public List getYieldSites() {
         return yieldSites;
+    }
+
+    public Variable getYieldResult() {
+        return yieldResult;
+    }
+
+    // SSS FIXME: Temporary
+    public Operand getBlockArg(int index) {
+        return yieldArg;
     }
 }

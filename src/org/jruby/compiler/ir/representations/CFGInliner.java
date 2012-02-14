@@ -44,8 +44,7 @@ public class CFGInliner {
 
         for (BasicBlock b : methodCFG.getBasicBlocks()) {
             if (b != mEntry && b != mExit) {
-                BasicBlock bCloned = b.cloneForInlinedMethod(ii);
-                cfg.addBasicBlock(bCloned);
+                cfg.addBasicBlock(b.cloneForInlinedMethod(ii));
             }
         }
 
@@ -87,7 +86,7 @@ public class CFGInliner {
             }
         }
 
-		  // SSS FIXME: Are these used anywhere post-CFG building?
+        // SSS FIXME: Are these used anywhere post-CFG building?
         // 5. Clone exception regions
         List<ExceptionRegion> exceptionRegions = cfg.getOutermostExceptionRegions();
         for (ExceptionRegion r : methodCFG.getOutermostExceptionRegions()) {
@@ -162,17 +161,20 @@ public class CFGInliner {
         cfg.removeAllOutgoingEdgesForBB(yieldBB);
 
         // 2. Merge closure cfg into the current cfg
+		  // SSS FIXME: Is it simpler to just clone everything?
+		  //
         // NOTE: No need to clone basic blocks in the closure because they are part of the caller's cfg
         // and is being merged in at the yield site -- there is no need for the closure after the merge.
+		  // But, we will clone individual instructions.
         CFG closureCFG = cl.getCFG();
         BasicBlock cEntry = closureCFG.getEntryBB();
         BasicBlock cExit = closureCFG.getExitBB();
+
+		  // Reset var rename map
+		  ii.resetRenameMaps();
+		  ii.setupYieldArgsAndYieldResult(yield);
         for (BasicBlock b : closureCFG.getBasicBlocks()) {
-            if (b != cEntry && b != cExit) {
-                cfg.addBasicBlock(b);
-                b.updateCFG(cfg);
-                b.processClosureArgAndReturnInstrs(cl, ii, yield);
-            }
+            if (b != cEntry && b != cExit) b.migrateToHostScope(ii);
         }
         for (BasicBlock b : closureCFG.getBasicBlocks()) {
             if (b != cEntry && b != cExit) {
@@ -208,7 +210,7 @@ public class CFGInliner {
             }
         }
 
-		  // SSS FIXME: Are these used anywhere post-CFG building?
+        // SSS FIXME: Are these used anywhere post-CFG building?
         // 5. No need to clone rescued regions -- just assimilate them
         List<ExceptionRegion> exceptionRegions = cfg.getOutermostExceptionRegions();
         for (ExceptionRegion r : closureCFG.getOutermostExceptionRegions()) {

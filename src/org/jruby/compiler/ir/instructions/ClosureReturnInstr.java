@@ -22,6 +22,11 @@ public class ClosureReturnInstr extends Instr {
         return new ClosureReturnInstr(returnValue.cloneForInlining(ii));
     }
 
+    @Override
+    public Instr cloneForInlinedClosure(InlinerInfo ii) {
+        return new CopyInstr(ii.getYieldResult(), returnValue.cloneForInlining(ii));
+    }
+
     public Operand getReturnValue() {
         return returnValue;
     }
