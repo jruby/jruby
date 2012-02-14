@@ -403,7 +403,7 @@ public class RubyModule extends RubyObject {
     /**
      * Recalculate the fully-qualified name of this class/module.
      */
-    private synchronized String calculateName() {
+    private String calculateName() {
         if (getBaseName() == null) {
             // we are anonymous, use anonymous name
             return calculateAnonymousName();
