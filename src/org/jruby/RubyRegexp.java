@@ -85,6 +85,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     private RegexpOptions options;
 
     public static final int ARG_ENCODING_FIXED     =   16;
+    public static final int ARG_ENCODING_NONE      =   32;
 
     public void setLiteral() {
         options.setLiteral(true);
@@ -216,7 +217,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         regexpClass.defineConstant("EXTENDED", runtime.newFixnum(RE_OPTION_EXTENDED));
         regexpClass.defineConstant("MULTILINE", runtime.newFixnum(RE_OPTION_MULTILINE));
 
-        if (runtime.is1_9()) regexpClass.defineConstant("FIXEDENCODING", runtime.newFixnum(ARG_ENCODING_FIXED));
+        if (runtime.is1_9()) {
+            regexpClass.defineConstant("FIXEDENCODING", runtime.newFixnum(ARG_ENCODING_FIXED));
+            regexpClass.defineConstant("NOENCODING", runtime.newFixnum(ARG_ENCODING_NONE));
+        }
 
         regexpClass.defineAnnotatedMethods(RubyRegexp.class);
 
