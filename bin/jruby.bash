@@ -173,7 +173,7 @@ else
         fi
     done
 
-    if $cygwin; then
+    if [ "$CP" != "" ] && $cygwin; then
         CP=`cygpath -p -w "$CP"`
     fi
 fi
