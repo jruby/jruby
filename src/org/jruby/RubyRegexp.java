@@ -1365,7 +1365,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return this;
     }
 
-    @JRubyMethod(name = "kcode")
+    @JRubyMethod(name = "kcode", compat = CompatVersion.RUBY1_8)
     public IRubyObject kcode(ThreadContext context) {
         Ruby runtime = context.getRuntime();        
         String kcodeName = options.getKCodeName();
