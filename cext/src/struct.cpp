@@ -28,11 +28,11 @@ rb_struct_define(const char* name_cstr, ...)
 {
     JLocalEnv env;
     va_list varargs;
-    std::vector<char*> args;
+    std::vector<char *> args;
 
     va_start(varargs, name_cstr);
     char* cp;
-    while ((cp = va_arg(varargs, char* )) != NULL) {
+    while ((cp = va_arg(varargs, char *)) != NULL) {
         args.push_back(cp);
     }
     va_end(varargs);
@@ -40,11 +40,8 @@ rb_struct_define(const char* name_cstr, ...)
     jobjectArray argArray = env->NewObjectArray(args.size() + 1, IRubyObject_class, NULL);
     checkExceptions(env);
 
-    if (!name_cstr) {
-        env->SetObjectArrayElement(argArray, 0, getNil());
-    } else {
-        env->SetObjectArrayElement(argArray, 0, valueToObject(env, rb_str_new_cstr(name_cstr)));
-    }
+    env->SetObjectArrayElement(argArray, 0, 
+        name_cstr == NULL ? getNil() : valueToObject(env, rb_str_new_cstr(name_cstr)));
     checkExceptions(env);
 
     for (unsigned int i = 0; i < args.size(); i++) {
@@ -63,32 +60,35 @@ rb_struct_define(const char* name_cstr, ...)
 }
 
 extern "C" VALUE
-rb_struct_aref(VALUE struct_handle, VALUE key) {
+rb_struct_aref(VALUE struct_handle, VALUE key) 
+{
     return callMethodA(struct_handle, "[]", 1, &key);
 }
 
 extern "C" VALUE
-rb_struct_aset(VALUE struct_handle, VALUE key, VALUE val) {
+rb_struct_aset(VALUE struct_handle, VALUE key, VALUE val)
+{
     return callMethod(struct_handle, "[]=", 2, key, val);
 }
 
 extern "C" VALUE
 rb_struct_new(VALUE klass, ...)
 {
+    JLocalEnv env;
+    jmethodID mid = getMethodID(env, RubyBasicObject_class, "getInternalVariable", 
+        "(Ljava/lang/String;)Ljava/lang/Object;");
+
+    int size = NUM2INT(objectToValue(env, env->CallObjectMethod(valueToObject(env, klass), mid, env->NewStringUTF("__size__"))));
+
+    VALUE* values = (VALUE *) alloca(sizeof(VALUE) * size);
+
     va_list args;
     va_start(args, klass);
-    int sz = 4;
-    int length = 0;
-
-    VALUE* mem = (VALUE*)xcalloc(sizeof(VALUE), sz);
-    while(va_arg(args, VALUE)) {
-        mem[length] = va_arg(args, VALUE);
-        if (sz = ++length) {
-            xrealloc(mem, sizeof(VALUE) * (sz *= 2));
-        }
+    for (int i = 0; i < size; ++i) {
+        values[i] = va_arg(args, VALUE);
     }
 
     va_end(args);
 
-    return callMethodA(klass, "new", length, mem);
+    return callMethodA(klass, "new", size, values);
 }
