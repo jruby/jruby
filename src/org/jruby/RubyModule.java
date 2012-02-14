@@ -398,6 +398,7 @@ public class RubyModule extends RubyObject {
      * @return The generated class name
      */
     public String getName() {
+        if (cachedName != null) return cachedName;
         return calculateName();
     }
     
@@ -416,6 +417,8 @@ public class RubyModule extends RubyObject {
      * Recalculate the fully-qualified name of this class/module.
      */
     private String calculateName() {
+        boolean cache = true;
+
         if (getBaseName() == null) {
             // we are anonymous, use anonymous name
             return calculateAnonymousName();
@@ -445,7 +448,8 @@ public class RubyModule extends RubyObject {
             // is to insert the generate the name of form #<Class:01xasdfasd> if 
             // it's a singleton module/class, which this code accomplishes.
             if(pName == null) {
-                pName = p.getName();;
+                cache = false;
+                pName = p.getName();
              }
             
             parentNames[i] = pName;
@@ -459,7 +463,11 @@ public class RubyModule extends RubyObject {
         }
         builder.append(name);
         
-        return builder.toString();
+        String fullName = builder.toString();
+
+        if (cache) cachedName = fullName;
+
+        return fullName;
     }
 
     private String calculateAnonymousName() {
@@ -3588,6 +3596,11 @@ public class RubyModule extends RubyObject {
      * cost to calculate.
      */
     private String anonymousName;
+
+    /**
+     * The cached name, only cached once this class and all containing classes are non-anonymous
+     */
+    private String cachedName;
 
     private volatile Map<String, ConstantEntry> constants = Collections.EMPTY_MAP;
 
