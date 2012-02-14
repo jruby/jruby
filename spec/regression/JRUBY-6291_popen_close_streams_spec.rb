@@ -22,6 +22,7 @@ describe 'JRUBY-6291: Closing Stream in IO.popen4 and Open3.popen3' do
       command = '/bin/echo success'
     end
     require 'open3'
+    output = ""
     Open3.popen3(command) do |stdin, stdout, stderr|
       stdin.close
       stdout.each_line { |l| output << l }
