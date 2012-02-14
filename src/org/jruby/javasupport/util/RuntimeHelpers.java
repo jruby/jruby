@@ -680,7 +680,11 @@ public class RuntimeHelpers {
 
     public static RubyArray ensureMultipleAssignableRubyArray(IRubyObject value, Ruby runtime, boolean masgnHasHead) {
         if (!(value instanceof RubyArray)) {
-            value = ArgsUtil.convertToRubyArray(runtime, value, masgnHasHead);
+            if (runtime.is1_9()) {
+                value = ArgsUtil.convertToRubyArray19(runtime, value, masgnHasHead);
+            } else {
+                value = ArgsUtil.convertToRubyArray(runtime, value, masgnHasHead);                
+            }
         }
         return (RubyArray) value;
     }

@@ -102,9 +102,9 @@ public class MultipleAsgn19Node extends AssignableNode {
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         IRubyObject value = getValueNode().interpret(runtime, context, self, aBlock);
-
+        
         if (!(value instanceof RubyArray)) {
-            value = ArgsUtil.convertToRubyArray(runtime, value, pre != null);
+            value = ArgsUtil.convertToRubyArray19(runtime, value, pre != null);
         }
 
         return AssignmentVisitor.multiAssign(runtime, context, self, this, (RubyArray) value);
@@ -113,7 +113,7 @@ public class MultipleAsgn19Node extends AssignableNode {
     @Override
     public IRubyObject assign(Ruby runtime, ThreadContext context, IRubyObject self, IRubyObject value, Block block, boolean checkArity) {
         if (!(value instanceof RubyArray)) {
-            value = ArgsUtil.convertToRubyArray(runtime, value, pre != null);
+            value = ArgsUtil.convertToRubyArray19(runtime, value, pre != null);
         }
 
         return AssignmentVisitor.multiAssign(runtime, context, self, this, (RubyArray) value, checkArity);
