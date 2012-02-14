@@ -1908,6 +1908,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
      */
     @JRubyMethod(name = "names", compat = CompatVersion.RUBY1_9)
     public IRubyObject names(ThreadContext context) {
+        check();
         if (pattern.numberOfNames() == 0) return getRuntime().newEmptyArray();
 
         RubyArray ary = context.getRuntime().newArray(pattern.numberOfNames());
@@ -1923,6 +1924,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
      */
     @JRubyMethod(name = "named_captures", compat = CompatVersion.RUBY1_9)
     public IRubyObject named_captures(ThreadContext context) {
+        check();
         RubyHash hash = RubyHash.newHash(getRuntime());
         if (pattern.numberOfNames() == 0) return hash;
 

@@ -355,7 +355,7 @@ public class RubyMatchData extends RubyObject {
         return match_array(getRuntime(), 0);
     }
 
-    @JRubyMethod(name = "values_at", required = 1, rest = true)
+    @JRubyMethod(name = "values_at", rest = true)
     public IRubyObject values_at(IRubyObject[] args) {
         return to_a().values_at(args);
     }
@@ -430,6 +430,7 @@ public class RubyMatchData extends RubyObject {
     */
     @JRubyMethod(name = "[]")
     public IRubyObject op_aref(IRubyObject idx) {
+        check();
         if (!(idx instanceof RubyFixnum) || ((RubyFixnum)idx).getLongValue() < 0) {
             return ((RubyArray)to_a()).aref(idx);
         }
@@ -452,6 +453,7 @@ public class RubyMatchData extends RubyObject {
      */
     @JRubyMethod(name = "[]", compat = CompatVersion.RUBY1_9)
     public IRubyObject op_aref19(IRubyObject idx) {
+        check();
         IRubyObject result = op_arefCommon(idx);
         return result == null ? ((RubyArray)to_a()).aref19(idx) : result;
     }
