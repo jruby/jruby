@@ -101,6 +101,18 @@ public class RubyMatchData extends RubyObject {
     }
 
     @Override
+    public void copySpecialInstanceVariables(IRubyObject clone) {
+        RubyMatchData match = (RubyMatchData)clone;
+        match.regs = regs;
+        match.begin = begin;
+        match.end = end;
+        match.pattern = pattern;
+        match.regexp = regexp;
+        match.charOffsetUpdated = charOffsetUpdated;
+        match.charOffsets = charOffsets;
+    }
+
+    @Override
     public int getNativeTypeIndex() {
         return ClassIndex.MATCHDATA;
     }
