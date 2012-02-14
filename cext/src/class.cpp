@@ -64,7 +64,7 @@ extern "C" VALUE
 rb_class_of(VALUE obj)
 {
     JLocalEnv env;
-    return (VALUE) env->CallStaticObjectMethod(JRuby_class, JRuby_getMetaClass, valueToObject(env, obj));
+    return (VALUE) env->CallStaticLongMethod(JRuby_class, JRuby_getMetaClass, valueToObject(env, obj));
 }
 
 extern "C" VALUE
