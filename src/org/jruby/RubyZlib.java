@@ -1094,24 +1094,24 @@ public class RubyZlib {
         protected RubyString nullFreeComment;
         protected IRubyObject realIo;
         protected RubyTime mtime;
-        protected Encoding externalEncoding;
-        protected Encoding internalEncoding;
+        protected Encoding readEncoding;    // enc
+        protected Encoding writeEncoding;   // enc2
 
         public RubyGzipFile(Ruby runtime, RubyClass type) {
             super(runtime, type);
             mtime = RubyTime.newTime(runtime, new DateTime());
-            externalEncoding = null;
-            internalEncoding = null;
+            readEncoding = runtime.getDefaultExternalEncoding();
+            writeEncoding = null;
         }
 
         // c: gzfile_newstr
         protected RubyString newStr(Ruby runtime, ByteList value) {
             if (runtime.is1_9()) {
-                if (externalEncoding == null) {
-                    return RubyString.newString(runtime, value, internalEncoding);
+                if (writeEncoding == null) {
+                    return RubyString.newString(runtime, value, readEncoding);
                 }
                 return RubyString.newStringNoCopy(runtime, RubyString.transcode(
-                        runtime.getCurrentContext(), value, externalEncoding, internalEncoding,
+                        runtime.getCurrentContext(), value, readEncoding, writeEncoding,
                         runtime.getNil()));
             } else {
                 return RubyString.newString(runtime, value);
@@ -1446,8 +1446,8 @@ public class RubyZlib {
                 IRubyObject opt = TypeConverter.checkHashType(getRuntime(), args[args.length - 1]);
                 if (!opt.isNil()) {
                     RubyIO.EncodingOption enc = RubyIO.extractEncodingOptions(opt);
-                    externalEncoding = enc.getExternalEncoding();
-                    internalEncoding = enc.getInternalEncoding();
+                    readEncoding = enc.getExternalEncoding();
+                    writeEncoding = enc.getInternalEncoding();
                 }
             }
             if (realIo.respondsTo("path")) {
@@ -1522,10 +1522,28 @@ public class RubyZlib {
 
         private IRubyObject internalSepGets(ByteList sep) throws IOException {
             return internalSepGets(sep, -1);
+        }  
+        
+        private ByteList newReadByteList() {
+            ByteList byteList = new ByteList();
+            if (readEncoding != null) byteList.setEncoding(readEncoding);
+            return byteList;
+        }
+
+        private ByteList newReadByteList(int size) {
+            ByteList byteList = new ByteList(size);
+            if (readEncoding != null) byteList.setEncoding(readEncoding);
+            return byteList;
+        }
+
+        private ByteList newReadByteList(byte[] buffer, int start, int length, boolean copy) {
+            ByteList byteList = new ByteList(buffer, start, length, copy);
+            if (readEncoding != null) byteList.setEncoding(readEncoding);
+            return byteList;
         }
         
         private IRubyObject internalSepGets(ByteList sep, int limit) throws IOException {
-            ByteList result = new ByteList();
+            ByteList result = newReadByteList();
             if (sep.getRealSize() == 0) sep = Stream.PARAGRAPH_SEPARATOR;
             int ce = -1;
             // TODO: CRuby does encoding aware 'gets'. Not yet implemented.
@@ -1613,7 +1631,7 @@ public class RubyZlib {
         }
 
         private IRubyObject readPartial(int len, RubyString outbuf) throws IOException {
-            ByteList val = new ByteList(10);
+            ByteList val = newReadByteList(10);
             byte[] buffer = new byte[len];
             int read = bufferedStream.read(buffer, 0, len);
             if (read == -1) {
@@ -1632,7 +1650,7 @@ public class RubyZlib {
         }
 
         private IRubyObject readAll(int limit) throws IOException {
-            ByteList val = new ByteList(10);
+            ByteList val = newReadByteList(10);
             int rest = limit == -1 ? BUFF_SIZE : limit;
             byte[] buffer = new byte[rest];
             while (rest > 0) {
@@ -1663,7 +1681,7 @@ public class RubyZlib {
                 offset += read;
             } // hmm...
             this.position += buffer.length;
-            return newStr(getRuntime(), new ByteList(buffer, 0, len - toRead, false));
+            return newStr(getRuntime(), newReadByteList(buffer, 0, len - toRead, false));
         }
 
         @JRubyMethod(name = "lineno=", required = 1)
@@ -1992,8 +2010,8 @@ public class RubyZlib {
                 IRubyObject opt = TypeConverter.checkHashType(getRuntime(), args[args.length - 1]);
                 if (!opt.isNil()) {
                     RubyIO.EncodingOption enc = RubyIO.extractEncodingOptions(opt);
-                    externalEncoding = enc.getExternalEncoding();
-                    internalEncoding = enc.getInternalEncoding();
+                    readEncoding = enc.getExternalEncoding();
+                    writeEncoding = enc.getInternalEncoding();
                     IRubyObject[] newArgs = new IRubyObject[args.length - 1];
                     System.arraycopy(args, 0, newArgs, 0, args.length - 1);
                     args = newArgs;
@@ -2170,10 +2188,10 @@ public class RubyZlib {
             ByteList bytes = p1.asString().getByteList();
             Ruby runtime = getRuntime();
             if (runtime.is1_9()) {
-                if (externalEncoding != null
-                        && externalEncoding != runtime.getEncodingService().getAscii8bitEncoding()) {
+                if (readEncoding != null
+                        && readEncoding != runtime.getEncodingService().getAscii8bitEncoding()) {
                     bytes = RubyString.transcode(runtime.getCurrentContext(), bytes, null,
-                            externalEncoding, runtime.getNil());
+                            readEncoding, runtime.getNil());
                 }
             }
             try {
