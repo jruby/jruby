@@ -135,10 +135,7 @@ public class Sprintf {
         }
 
         void raiseKeyError(String message) {
-            RubyKernel.raise(runtime.getCurrentContext(),
-                    runtime.getKernel(),
-                    new IRubyObject[] {runtime.getClass("KeyError"), runtime.newString(message)},
-                    Block.NULL_BLOCK);
+            throw runtime.newKeyError(message);
         }
         
         void warn(ID id, String message) {
@@ -151,12 +148,16 @@ public class Sprintf {
         
         IRubyObject next(ByteList name) {
             // for 1.9 hash args
-            if (rubyHash != null && name == null ||
-                    rubyHash == null && name != null) raiseArgumentError("positional args mixed with named args");
-            if (name != null) {
-                IRubyObject object = rubyHash.fastARef(runtime.newSymbol(name));
-                if (object == null) raiseKeyError("key<" + name + "> not found");
-                return object;
+            if (runtime.is1_9()) {
+                if (name != null) {
+                    if (rubyHash == null) raiseArgumentError("positional args mixed with named args");
+
+                    IRubyObject object = rubyHash.fastARef(runtime.newSymbol(name));
+                    if (object == null) raiseKeyError("key<" + name + "> not found");
+                    return object;
+                } else if (rubyHash != null) {
+                    raiseArgumentError("positional args mixed with named args");
+                }
             }
 
             // this is the order in which MRI does these two tests
@@ -319,7 +320,10 @@ public class Sprintf {
 
                     if (nameEnd == nameStart) raiseArgumentError(args, ERR_MALFORMED_NAME);
 
+                    ByteList oldName = name;
                     name = new ByteList(format, nameStart, nameEnd - nameStart, encoding, false);
+
+                    if (oldName != null) raiseArgumentError(args, "name<" + name + "> after <" + oldName + ">");
 
                     break;
                 }

@@ -1372,6 +1372,7 @@ public final class Ruby {
                 fiberError = defineClass("FiberError", standardError, standardError.getAllocator());
             }
             concurrencyError = defineClassIfAllowed("ConcurrencyError", threadError);
+            keyError = defineClassIfAllowed("KeyError", indexError);
 
             mathDomainError = defineClassUnder("DomainError", argumentError, argumentError.getAllocator(), mathModule);
             recursiveKey = newSymbol("__recursive_key__");
@@ -2094,6 +2095,10 @@ public final class Ruby {
 
     public RubyClass getSystemCallError() {
         return systemCallError;
+    }
+
+    public RubyClass getKeyError() {
+        return keyError;
     }
 
     public RubyClass getFatal() {
@@ -3155,6 +3160,10 @@ public final class Ruby {
 
     public RaiseException newSystemCallError(String message) {
         return newRaiseException(getSystemCallError(), message);
+    }
+
+    public RaiseException newKeyError(String message) {
+        return newRaiseException(getKeyError(), message);
     }
 
     public RaiseException newErrnoFromLastPOSIXErrno() {

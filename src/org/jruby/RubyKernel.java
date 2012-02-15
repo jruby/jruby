@@ -943,10 +943,16 @@ public class RubyKernel {
 
         RubyString str = RubyString.stringValue(args[0]);
 
-        RubyArray newArgs = context.getRuntime().newArrayNoCopy(args);
-        newArgs.shift(context);
+        IRubyObject arg;
+        if (context.runtime.is1_9() && args.length == 2 && args[1] instanceof RubyHash) {
+            arg = args[1];
+        } else {
+            RubyArray newArgs = context.getRuntime().newArrayNoCopy(args);
+            newArgs.shift(context);
+            arg = newArgs;
+        }
 
-        return str.op_format(context, newArgs);
+        return str.op_format(context, arg);
     }
 
     @JRubyMethod(name = {"raise", "fail"}, optional = 3, module = true, visibility = PRIVATE, omit = true)
