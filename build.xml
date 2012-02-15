@@ -1214,6 +1214,9 @@
   <target name="spec:ci_interpreted_18" depends="install-gems">
     <rake task="spec:ci_interpreted_18"/>
   </target>
+  <target name="spec:ci_interpreted_19" depends="install-gems">
+    <rake task="spec:ci_interpreted_19"/>
+  </target>
   <target name="spec:ci_compiled_18" depends="install-gems">
     <rake task="spec:ci_compiled_18"/>
   </target>
@@ -1223,14 +1226,20 @@
   <target name="spec:ci_precompiled_18" depends="install-gems">
     <rake task="spec:ci_precompiled_18"/>
   </target>
-  <target name="spec:ci_interpreted_19" depends="install-gems">
-    <rake task="spec:ci_interpreted_19"/>
+  <target name="spec:ci_precompiled_19" depends="install-gems">
+    <rake task="spec:ci_precompiled_19"/>
   </target>
   <target name="spec:ci_all_precompiled_18" depends="install-gems">
     <rake task="spec:ci_all_precompiled_18"/>
   </target>
+  <target name="spec:ci_all_precompiled_19" depends="install-gems">
+    <rake task="spec:ci_all_precompiled_19"/>
+  </target>
   <target name="spec:ci_all_interpreted_18" depends="install-gems">
     <rake task="spec:ci_all_interpreted_18"/>
+  </target>
+  <target name="spec:ci_all_interpreted_19" depends="install-gems">
+    <rake task="spec:ci_all_interpreted_19"/>
   </target>
   <target name="spec:ci_all" depends="install-gems">
     <rake task="spec:ci_all"/>
@@ -1256,10 +1265,12 @@
 
   <!-- For CI, because target names become filesystem paths with matrix builds -->
   <target name="spec-ci_interpreted_18" depends="spec:ci_interpreted_18"></target>
+  <target name="spec-ci_interpreted_19" depends="spec:ci_interpreted_19"></target>
   <target name="spec-ci_compiled_18" depends="spec:ci_compiled_18"></target>
   <target name="spec-ci_compiled_19" depends="spec:ci_compiled_19"></target>
   <target name="spec-ci_precompiled_18" depends="spec:ci_precompiled_18"></target>
-  <target name="spec-ci_interpreted_19" depends="spec:ci_interpreted_19"></target>
+  <target name="spec-ci_precompiled_19" depends="spec:ci_precompiled_19"></target>
+
 
   <!-- latest, unstable specs -->
   <target name="spec-latest-all" depends="spec:ci_all"/>
