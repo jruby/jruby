@@ -16,15 +16,15 @@ import org.jruby.runtime.builtin.IRubyObject;
  * based on how many arguments have already been accounted for by parameters
  * present earlier in the list. 
  */
-public class ReceiveRequiredArgInstr extends ReceiveArgBase {
+public class ReceivePostReqdArgInstr extends ReceiveArgBase {
     /** The method/block parameter list has these many required parameters before opt+rest args*/
     public final int preReqdArgsCount;
 
     /** The method/block parameter list has these many required parameters after opt+rest args*/
     public final int postReqdArgsCount;
 
-    public ReceiveRequiredArgInstr(Variable result, int index, int preReqdArgsCount, int postReqdArgsCount) {
-        super(Operation.RECV_REQD_ARG, result, index);
+    public ReceivePostReqdArgInstr(Variable result, int index, int preReqdArgsCount, int postReqdArgsCount) {
+        super(Operation.RECV_POST_REQD_ARG, result, index);
         this.preReqdArgsCount = preReqdArgsCount;
         this.postReqdArgsCount = postReqdArgsCount;
     }
@@ -50,10 +50,10 @@ public class ReceiveRequiredArgInstr extends ReceiveArgBase {
 
     @Override
     public Instr cloneForBlockCloning(InlinerInfo ii) {
-        return new ReceiveRequiredArgInstr(ii.getRenamedVariable(result), argIndex, preReqdArgsCount, postReqdArgsCount);
+        return new ReceivePostReqdArgInstr(ii.getRenamedVariable(result), argIndex, preReqdArgsCount, postReqdArgsCount);
     }
 
-    public IRubyObject receiveRequiredArg(IRubyObject[] args) {
+    public IRubyObject receivePostReqdArg(IRubyObject[] args) {
         int n = args.length;
         int remaining = n - preReqdArgsCount;
         if (remaining <= argIndex) {

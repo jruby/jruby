@@ -155,10 +155,10 @@ import org.jruby.compiler.ir.instructions.PutClassVariableInstr;
 import org.jruby.compiler.ir.instructions.PutConstInstr;
 import org.jruby.compiler.ir.instructions.PutFieldInstr;
 import org.jruby.compiler.ir.instructions.PutGlobalVarInstr;
-import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
+import org.jruby.compiler.ir.instructions.ReceivePreReqdArgInstr;
 import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
 import org.jruby.compiler.ir.instructions.ReceiveExceptionInstr;
-import org.jruby.compiler.ir.instructions.ReceiveSelfInstruction;
+import org.jruby.compiler.ir.instructions.ReceiveSelfInstr;
 import org.jruby.compiler.ir.instructions.RecordEndBlockInstr;
 import org.jruby.compiler.ir.instructions.RescueEQQInstr;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
@@ -810,7 +810,7 @@ public class IRBuilder {
         } else {
             // argsArray can be null when the first node in the args-node-ast is a multiple-assignment
             // For example, for-nodes
-            s.addInstr(isClosureArg ? new ReceiveClosureInstr(v) : (isSplat ? new ReceiveRestArgInstr(v, argIndex) : new ReceiveArgumentInstruction(v, argIndex)));
+            s.addInstr(isClosureArg ? new ReceiveClosureInstr(v) : (isSplat ? new ReceiveRestArgInstr(v, argIndex) : new ReceivePreReqdArgInstr(v, argIndex)));
         }
     }
 
@@ -1156,7 +1156,7 @@ public class IRBuilder {
         Variable ret = s.getNewTemporaryVariable();
         s.addInstr(new DefineClassInstr(ret, c, container, superClass));
 
-        c.addInstr(new ReceiveSelfInstruction(c.getSelf()));
+        c.addInstr(new ReceiveSelfInstr(c.getSelf()));
         // Set %current_scope = <c>
         // Set %current_module = module<c>
         c.addInstr(new CopyInstr(c.getCurrentScopeVariable(), new WrappedIRScope(c)));
@@ -1186,7 +1186,7 @@ public class IRBuilder {
         Variable ret = s.getNewTemporaryVariable();
         s.addInstr(new DefineMetaClassInstr(ret, receiver, mc));
 
-        mc.addInstr(new ReceiveSelfInstruction(mc.getSelf()));
+        mc.addInstr(new ReceiveSelfInstr(mc.getSelf()));
         // Set %current_scope = <current-scope>
         // Set %current_module = <current-module>
         mc.addInstr(new CopyInstr(mc.getCurrentScopeVariable(), new CurrentScope()));
@@ -1848,7 +1848,7 @@ public class IRBuilder {
     private IRMethod defineNewMethod(MethodDefNode defNode, IRScope s, boolean isInstanceMethod) {
         IRMethod method = new IRMethod(manager, s, defNode.getName(), isInstanceMethod, defNode.getPosition().getLine(), defNode.getScope());
 
-        s.addInstr(new ReceiveSelfInstruction(getSelf(s)));
+        s.addInstr(new ReceiveSelfInstr(getSelf(s)));
 
         // Set %current_scope = <current-scope>
         // Set %current_module = isInstanceMethod ? %self.metaclass : %self
@@ -1929,7 +1929,7 @@ public class IRBuilder {
         for (int i = 0; i < required; i++, argIndex++) {
             ArgumentNode a = (ArgumentNode)preArgs.get(i);
             String argName = a.getName();
-            s.addInstr(new ReceiveArgumentInstruction(s.getLocalVariable(argName, 0), argIndex));
+            s.addInstr(new ReceivePreReqdArgInstr(s.getLocalVariable(argName, 0), argIndex));
             if (s instanceof IRMethod) ((IRMethod)s).addArgDesc("req", argName);
         }
       
@@ -2283,7 +2283,7 @@ public class IRBuilder {
         s.addClosure(closure);
 
             // Receive self
-        closure.addInstr(new ReceiveSelfInstruction(getSelf(closure)));
+        closure.addInstr(new ReceiveSelfInstr(getSelf(closure)));
 
             // Build args
         Node varNode = forNode.getVarNode();
@@ -2434,7 +2434,7 @@ public class IRBuilder {
         IRBuilder closureBuilder = createIRBuilder(manager);
 
         // Receive self
-        closure.addInstr(new ReceiveSelfInstruction(getSelf(closure)));
+        closure.addInstr(new ReceiveSelfInstr(getSelf(closure)));
 
         // Build args
         NodeType argsNodeId = BlockBody.getArgumentTypeWackyHack(iterNode);
@@ -2549,7 +2549,7 @@ public class IRBuilder {
         Variable ret = s.getNewTemporaryVariable();
         s.addInstr(new DefineModuleInstr(m, ret, container));
 
-        m.addInstr(new ReceiveSelfInstruction(m.getSelf()));
+        m.addInstr(new ReceiveSelfInstr(m.getSelf()));
         // Set %current_scope = <c>
         // Set %current_module = module<c>
         m.addInstr(new CopyInstr(m.getCurrentScopeVariable(), new WrappedIRScope(m)));
@@ -3174,7 +3174,7 @@ public class IRBuilder {
 
         // Top-level script!
         IRScriptBody script = new IRScriptBody(manager, "__file__", file, staticScope);
-        script.addInstr(new ReceiveSelfInstruction(script.getSelf()));
+        script.addInstr(new ReceiveSelfInstr(script.getSelf()));
         // Set %current_scope = <current-scope>
         // Set %current_module = <current-module>
         script.addInstr(new CopyInstr(script.getCurrentScopeVariable(), new CurrentScope()));

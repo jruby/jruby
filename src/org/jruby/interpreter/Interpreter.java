@@ -28,13 +28,13 @@ import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.JumpIndirectInstr;
 import org.jruby.compiler.ir.instructions.JumpInstr;
 import org.jruby.compiler.ir.instructions.LineNumberInstr;
-import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
+import org.jruby.compiler.ir.instructions.ReceivePreReqdArgInstr;
 import org.jruby.compiler.ir.instructions.ReceiveOptArgBase;
 import org.jruby.compiler.ir.instructions.ReceiveRestArgBase;
 import org.jruby.compiler.ir.instructions.ResultInstr;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
 import org.jruby.compiler.ir.instructions.jruby.CheckArityInstr;
-import org.jruby.compiler.ir.instructions.ruby19.ReceiveRequiredArgInstr;
+import org.jruby.compiler.ir.instructions.ruby19.ReceivePostReqdArgInstr;
 import org.jruby.compiler.ir.operands.IRException;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.LocalVariable;
@@ -326,17 +326,17 @@ public class Interpreter {
                         ipc = !eql ? bne.getJumpTarget().getTargetPC() : ipc+1;
                         break;
                     }
-                    case RECV_ARG: {
-                        ReceiveArgumentInstruction ra = (ReceiveArgumentInstruction)lastInstr;
+                    case RECV_PRE_REQD_ARG: {
+                        ReceivePreReqdArgInstr ra = (ReceivePreReqdArgInstr)lastInstr;
                         int argIndex = ra.getArgIndex();
                         result = (argIndex < args.length) ? args[argIndex] : context.nil; // SSS FIXME: This check is only required for closures, not methods
                         resultVar = ra.getResult();
                         ipc++;
                         break;
                     }
-                    case RECV_REQD_ARG: {
-                        ReceiveRequiredArgInstr ra = (ReceiveRequiredArgInstr)lastInstr;
-                        result = ra.receiveRequiredArg(args);
+                    case RECV_POST_REQD_ARG: {
+                        ReceivePostReqdArgInstr ra = (ReceivePostReqdArgInstr)lastInstr;
+                        result = ra.receivePostReqdArg(args);
                         if (result == null) result = context.nil; // For blocks
                         resultVar = ra.getResult();
                         ipc++;

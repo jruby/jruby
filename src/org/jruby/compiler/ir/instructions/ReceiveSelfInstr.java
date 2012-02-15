@@ -10,12 +10,11 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-// SSS FIXME: ReceiveSelf should inherit from ReceiveArg?
-public class ReceiveSelfInstruction extends Instr implements ResultInstr {
+public class ReceiveSelfInstr extends Instr implements ResultInstr {
     private Variable result;
 
     // SSS FIXME: destination always has to be a local variable '%self'.  So, is this a redundant arg?
-    public ReceiveSelfInstruction(Variable result) {
+    public ReceiveSelfInstr(Variable result) {
         super(Operation.RECV_SELF);
         
         assert result != null: "ReceiveSelfInstr result is null";

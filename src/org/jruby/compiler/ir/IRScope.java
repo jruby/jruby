@@ -23,7 +23,7 @@ import org.jruby.compiler.ir.instructions.CallBase;
 import org.jruby.compiler.ir.instructions.CopyInstr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
-import org.jruby.compiler.ir.instructions.ReceiveSelfInstruction;
+import org.jruby.compiler.ir.instructions.ReceiveSelfInstr;
 import org.jruby.compiler.ir.instructions.ResultInstr;
 import org.jruby.compiler.ir.instructions.ThreadPollInstr;
 import org.jruby.compiler.ir.instructions.ZSuperInstr;
@@ -474,7 +474,7 @@ public abstract class IRScope {
             labelIPCMap.put(b.getLabel(), ipc);
             labelsToFixup.add(b.getLabel());
             for (Instr i : b.getInstrs()) {
-                if (!(i instanceof ReceiveSelfInstruction)) {
+                if (!(i instanceof ReceiveSelfInstr)) {
                     newInstrs.add(i);
                     ipc++;
                 }

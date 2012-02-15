@@ -28,16 +28,16 @@ import org.jruby.compiler.ir.instructions.MultipleAsgnInstr;
 import org.jruby.compiler.ir.instructions.JRubyImplCallInstr;
 import org.jruby.compiler.ir.instructions.JRubyImplCallInstr.JRubyImplementationMethod;
 import org.jruby.compiler.ir.instructions.LabelInstr;
-import org.jruby.compiler.ir.instructions.ReceiveArgumentInstruction;
+import org.jruby.compiler.ir.instructions.ReceivePreReqdArgInstr;
 import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
-import org.jruby.compiler.ir.instructions.ReceiveSelfInstruction;
+import org.jruby.compiler.ir.instructions.ReceiveSelfInstr;
 import org.jruby.compiler.ir.instructions.YieldInstr;
 import org.jruby.compiler.ir.instructions.jruby.CheckArityInstr;
 import org.jruby.compiler.ir.instructions.jruby.ToAryInstr;
 import org.jruby.compiler.ir.instructions.ruby19.BuildLambdaInstr;
 import org.jruby.compiler.ir.instructions.ruby19.GetEncodingInstr;
 import org.jruby.compiler.ir.instructions.ruby19.ReceiveOptArgInstr;
-import org.jruby.compiler.ir.instructions.ruby19.ReceiveRequiredArgInstr;
+import org.jruby.compiler.ir.instructions.ruby19.ReceivePostReqdArgInstr;
 import org.jruby.compiler.ir.instructions.ruby19.ReceiveRestArgInstr;
 import org.jruby.compiler.ir.operands.CompoundArray;
 import org.jruby.compiler.ir.operands.Label;
@@ -105,8 +105,8 @@ public class IRBuilder19 extends IRBuilder {
     }
 
     private void addArgReceiveInstr(IRScope s, Variable v, int argIndex, boolean post, int numPreReqd, int numPostRead) {
-        if (post) s.addInstr(new ReceiveRequiredArgInstr(v, argIndex, numPreReqd, numPostRead));
-        else s.addInstr(new ReceiveArgumentInstruction(v, argIndex));
+        if (post) s.addInstr(new ReceivePostReqdArgInstr(v, argIndex, numPreReqd, numPostRead));
+        else s.addInstr(new ReceivePreReqdArgInstr(v, argIndex));
     }
 
     public void receiveRequiredArg(Node node, IRScope s, int argIndex, boolean post, int numPreReqd, int numPostRead) {
@@ -376,7 +376,7 @@ public class IRBuilder19 extends IRBuilder {
         IRBuilder closureBuilder = createIRBuilder(manager);
 
         // Receive self
-        closure.addInstr(new ReceiveSelfInstruction(getSelf(closure)));
+        closure.addInstr(new ReceiveSelfInstr(getSelf(closure)));
 
         // args
         closureBuilder.receiveBlockArgs(node, closure);

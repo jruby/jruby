@@ -8,9 +8,9 @@ import org.jruby.compiler.ir.targets.JVM;
 /*
  * Assign Argument passed into scope/method to a result variable
  */
-public class ReceiveArgumentInstruction extends ReceiveArgBase {
-    public ReceiveArgumentInstruction(Variable result, int argIndex) {
-        super(Operation.RECV_ARG, result, argIndex);
+public class ReceivePreReqdArgInstr extends ReceiveArgBase {
+    public ReceivePreReqdArgInstr(Variable result, int argIndex) {
+        super(Operation.RECV_PRE_REQD_ARG, result, argIndex);
     }
 
 	 @Override
