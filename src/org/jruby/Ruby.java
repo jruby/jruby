@@ -3534,17 +3534,6 @@ public final class Ruby {
         if (val != null ) val.remove(obj);
     }
 
-    public <T extends IRubyObject> T recursiveListOperation(Callable<T> body) {
-        try {
-            return body.call();
-        } catch (Exception e) {
-            UnsafeFactory.getUnsafe().throwException(e);
-            return null; // not reached
-        } finally {
-            recursiveListClear();
-        }
-    }
-
     public static interface RecursiveFunction {
         IRubyObject call(IRubyObject obj, boolean recur);
     }
@@ -3561,7 +3550,6 @@ public final class Ruby {
         }
     }
 
-    private ThreadLocal<Map<String, RubyHash>> recursive = new ThreadLocal<Map<String, RubyHash>>();
     private IRubyObject recursiveListAccess() {
         Map<String, RubyHash> hash = recursive.get();
         String sym = getCurrentContext().getFrameName();
@@ -3586,8 +3574,6 @@ public final class Ruby {
             hash.clear();
         }
     }
-
-    private RubySymbol recursiveKey;
 
     private static class ExecRecursiveParams {
         public ExecRecursiveParams() {}
@@ -3722,17 +3708,15 @@ public final class Ruby {
      * @return
      */
     public IRubyObject execRecursive(RecursiveFunction func, IRubyObject obj) {
+        if (!inRecursiveListOperation) {
+            throw newThreadError("BUG: execRecursive called outside recursiveListOperation");
+        }
         return execRecursiveInternal(func, obj, null, false);
     }
 
     /**
      * Perform a recursive walk on the given object using the given function.
-     * Treat this as the outermost call.
-     *
-     * Do not call this method directly unless you know you're within a call
-     * to {@link Ruby#recursiveListOperation(java.util.concurrent.Callable) recursiveListOperation},
-     * which will ensure the thread-local recursion tracking data structs are
-     * cleared.
+     * Treat this as the outermost call, cleaning up recursive structures.
      *
      * MRI: rb_exec_recursive_outer
      *
@@ -3745,7 +3729,33 @@ public final class Ruby {
      * @return
      */
     public IRubyObject execRecursiveOuter(RecursiveFunction func, IRubyObject obj) {
-        return execRecursiveInternal(func, obj, null, true);
+        try {
+            return execRecursiveInternal(func, obj, null, true);
+        } finally {
+            recursiveListClear();
+        }
+    }
+
+    /**
+     * Begin a recursive walk that may make one or more calls to
+     * {@link Ruby#execRecursive(org.jruby.Ruby.RecursiveFunction, org.jruby.runtime.builtin.IRubyObject) execRecursive}.
+     * Clean up recursive structures once complete.
+     *
+     * @param body
+     * @param <T>
+     * @return
+     */
+    public <T extends IRubyObject> T recursiveListOperation(Callable<T> body) {
+        try {
+            inRecursiveListOperation = true;
+            return body.call();
+        } catch (Exception e) {
+            UnsafeFactory.getUnsafe().throwException(e);
+            return null; // not reached
+        } finally {
+            recursiveListClear();
+            inRecursiveListOperation = false;
+        }
     }
 
     public boolean isObjectSpaceEnabled() {
@@ -4263,4 +4273,9 @@ public final class Ruby {
     
     /** The "thread local" runtime. Set to the global runtime if unset. */
     private static ThreadLocal<Ruby> threadLocalRuntime = new ThreadLocal<Ruby>();
+
+    // structures and such for recursive operations
+    private ThreadLocal<Map<String, RubyHash>> recursive = new ThreadLocal<Map<String, RubyHash>>();
+    private RubySymbol recursiveKey;
+    private boolean inRecursiveListOperation;
 }
