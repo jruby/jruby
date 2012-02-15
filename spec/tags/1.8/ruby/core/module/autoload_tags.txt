@@ -2,3 +2,6 @@ fails(JRUBY-3144):Module#autoload shares the autoload request across dup'ed copi
 fails(JRUBY-3399):Module#autoload does not load the file when refering to the constant in defined?
 fails:Module#autoload loads the registered constant into a dynamically created class
 fails:Module#autoload loads the registered constant into a dynamically created module
+fails:Module#autoload removes the constant from the constant table if load fails
+fails:Module#autoload removes the constant from the constant table if the loaded files does not define it
+fails:Module#autoload raises a NameError when the autoload file did not define the constant and a module is opened with the same name
