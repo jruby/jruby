@@ -1310,7 +1310,12 @@ public class RubyIO extends RubyObject {
             if (myOpenFile.isWriteBuffered()) {
                 context.getRuntime().getWarnings().warn(ID.SYSWRITE_BUFFERED_IO, "write_nonblock for buffered IO");
             }
-            int written = myOpenFile.getWriteStream().getDescriptor().write(str.getByteList());
+
+            ChannelStream stream = (ChannelStream)myOpenFile.getWriteStream();
+
+            int written = stream.writenonblock(str.getByteList());
+            if (written == 0) throw context.runtime.newErrnoEWOULDBLOCKError();
+
             return context.getRuntime().newFixnum(written);
         } catch (IOException ex) {
             throw context.getRuntime().newIOErrorFromException(ex);

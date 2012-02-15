@@ -3152,6 +3152,10 @@ public final class Ruby {
         return newRaiseException(getErrno().fastGetClass("ESRCH"), null);
     }
 
+    public RaiseException newErrnoEWOULDBLOCKError() {
+        return newRaiseException(getErrno().getClass("EWOULDBLOCK"), null);
+    }
+
     public RaiseException newIndexError(String message) {
         return newRaiseException(getIndexError(), message);
     }

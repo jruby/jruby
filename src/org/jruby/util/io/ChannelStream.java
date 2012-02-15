@@ -1266,6 +1266,7 @@ public class ChannelStream implements Stream, Finalizable {
                 }
             }
         } else {
+            // can't set nonblocking, so go ahead with it...not much else we can do
             return descriptor.write(ByteBuffer.wrap(buf.getUnsafeBytes(), buf.begin(), buf.length()));
         }
     }
