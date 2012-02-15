@@ -69,8 +69,7 @@ public class ASTInterpreter {
             Block block,
             boolean isTraceable) {
         try {
-            String className = implClass.getName();
-            ThreadContext.pushBacktrace(context, className, name, file, line);
+            ThreadContext.pushBacktrace(context, nameFromModule(implClass), name, file, line);
             if (isTraceable) methodPreTrace(runtime, context, name, implClass);
             return node.interpret(runtime, context, self, block);
         } finally {
@@ -84,7 +83,7 @@ public class ASTInterpreter {
     }
     public static IRubyObject INTERPRET_EVAL(Ruby runtime, ThreadContext context, Node node, String name, IRubyObject self, Block block) {
         try {
-            ThreadContext.pushBacktrace(context, self.getMetaClass().getName(), name, node.getPosition());
+            ThreadContext.pushBacktrace(context, nameFromModule(self.getMetaClass()), name, node.getPosition());
             return node.interpret(runtime, context, self, block);
         } finally {
             ThreadContext.popBacktrace(context);
@@ -92,7 +91,7 @@ public class ASTInterpreter {
     }
     public static IRubyObject INTERPRET_EVAL(Ruby runtime, ThreadContext context, String file, int line, Node node, String name, IRubyObject self, Block block) {
         try {
-            ThreadContext.pushBacktrace(context, self.getMetaClass().getName(), name, file, line);
+            ThreadContext.pushBacktrace(context, nameFromModule(self.getMetaClass()), name, file, line);
             return node.interpret(runtime, context, self, block);
         } finally {
             ThreadContext.popBacktrace(context);
@@ -100,7 +99,7 @@ public class ASTInterpreter {
     }
     public static IRubyObject INTERPRET_CLASS(Ruby runtime, ThreadContext context, Node node, String name, IRubyObject self, Block block) {
         try {
-            ThreadContext.pushBacktrace(context, self.getMetaClass().getName(), name, node.getPosition());
+            ThreadContext.pushBacktrace(context, nameFromModule(self.getMetaClass()), name, node.getPosition());
             return node.interpret(runtime, context, self, block);
         } finally {
             ThreadContext.popBacktrace(context);
@@ -108,7 +107,7 @@ public class ASTInterpreter {
     }
     public static IRubyObject INTERPRET_BLOCK(Ruby runtime, ThreadContext context, String file, int line, Node node, String name, IRubyObject self, Block block) {
         try {
-            ThreadContext.pushBacktrace(context, self.getMetaClass().getName(), name, file, line);
+            ThreadContext.pushBacktrace(context, nameFromModule(self.getMetaClass()), name, file, line);
             return node.interpret(runtime, context, self, block);
         } finally {
             ThreadContext.popBacktrace(context);
@@ -116,11 +115,17 @@ public class ASTInterpreter {
     }
     public static IRubyObject INTERPRET_ROOT(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block block) {
         try {
-            ThreadContext.pushBacktrace(context, self.getMetaClass().getName(), "(root)", node.getPosition());
+            ThreadContext.pushBacktrace(context, nameFromModule(self.getMetaClass()), "(root)", node.getPosition());
             return node.interpret(runtime, context, self, block);
         } finally {
             ThreadContext.popBacktrace(context);
         }
+    }
+    
+    private static String nameFromModule(RubyModule implClass) {
+        String className = implClass.getBaseName();
+        if (className == null) className = "(Anonymous)";
+        return className;
     }
 
     private static void methodPreTrace(Ruby runtime, ThreadContext context, String name, RubyModule implClass) {
