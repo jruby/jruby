@@ -57,6 +57,7 @@ import java.util.Set;
 import java.util.Stack;
 import java.util.Vector;
 import java.util.WeakHashMap;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -145,6 +146,7 @@ import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.load.BasicLibraryService;
 import org.jruby.threading.DaemonThreadFactory;
 import org.jruby.util.io.SelectorPool;
+import org.jruby.util.unsafe.UnsafeFactory;
 
 /**
  * The Ruby object represents the top-level of a JRuby "instance" in a given VM.
@@ -3532,6 +3534,17 @@ public final class Ruby {
         if (val != null ) val.remove(obj);
     }
 
+    public <T extends IRubyObject> T recursiveListOperation(Callable<T> body) {
+        try {
+            return body.call();
+        } catch (Exception e) {
+            UnsafeFactory.getUnsafe().throwException(e);
+            return null; // not reached
+        } finally {
+            recursiveListClear();
+        }
+    }
+
     public static interface RecursiveFunction {
         IRubyObject call(IRubyObject obj, boolean recur);
     }
@@ -3565,6 +3578,13 @@ public final class Ruby {
             hash.put(sym, (RubyHash)list);
         }
         return list;
+    }
+
+    private void recursiveListClear() {
+        Map<String, RubyHash> hash = recursive.get();
+        if(hash != null) {
+            hash.clear();
+        }
     }
 
     private RubySymbol recursiveKey;
@@ -3684,12 +3704,46 @@ public final class Ruby {
         }
     }
 
-    // rb_exec_recursive
+    /**
+     * Perform a recursive walk on the given object using the given function.
+     *
+     * Do not call this method directly unless you know you're within a call
+     * to {@link Ruby#recursiveListOperation(java.util.concurrent.Callable) recursiveListOperation},
+     * which will ensure the thread-local recursion tracking data structs are
+     * cleared.
+     *
+     * MRI: rb_exec_recursive
+     *
+     * Calls func(obj, arg, recursive), where recursive is non-zero if the
+     * current method is called recursively on obj
+     *
+     * @param func
+     * @param obj
+     * @return
+     */
     public IRubyObject execRecursive(RecursiveFunction func, IRubyObject obj) {
         return execRecursiveInternal(func, obj, null, false);
     }
 
-    // rb_exec_recursive_outer
+    /**
+     * Perform a recursive walk on the given object using the given function.
+     * Treat this as the outermost call.
+     *
+     * Do not call this method directly unless you know you're within a call
+     * to {@link Ruby#recursiveListOperation(java.util.concurrent.Callable) recursiveListOperation},
+     * which will ensure the thread-local recursion tracking data structs are
+     * cleared.
+     *
+     * MRI: rb_exec_recursive_outer
+     *
+     * If recursion is detected on the current method and obj, the outermost
+     * func will be called with (obj, arg, Qtrue). All inner func will be
+     * short-circuited using throw.
+     *
+     * @param func
+     * @param obj
+     * @return
+     */
     public IRubyObject execRecursiveOuter(RecursiveFunction func, IRubyObject obj) {
         return execRecursiveInternal(func, obj, null, true);
     }

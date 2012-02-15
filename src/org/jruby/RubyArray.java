@@ -50,6 +50,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.RandomAccess;
+import java.util.concurrent.Callable;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.USASCIIEncoding;
@@ -705,22 +706,26 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
      */
     @JRubyMethod(name = "hash", compat = RUBY1_9)
     public RubyFixnum hash19(final ThreadContext context) {
-        return (RubyFixnum)getRuntime().execRecursiveOuter(new Ruby.RecursiveFunction() {
-                public IRubyObject call(IRubyObject obj, boolean recur) {
-                    int begin = RubyArray.this.begin;
-                    long h = realLength;
-                    if(recur) {
-                        h ^= RubyNumeric.num2long(invokedynamic(context, context.runtime.getArray(), HASH));
-                    } else {
-                        for(int i = begin; i < begin + realLength; i++) {
-                            h = (h << 1) | (h < 0 ? 1 : 0);
-                            final IRubyObject value = safeArrayRef(values, i);
-                            h ^= RubyNumeric.num2long(invokedynamic(context, value, HASH));
+        return context.runtime.recursiveListOperation(new Callable<RubyFixnum>() {
+            public RubyFixnum call() {
+                return (RubyFixnum) getRuntime().execRecursiveOuter(new Ruby.RecursiveFunction() {
+                    public IRubyObject call(IRubyObject obj, boolean recur) {
+                        int begin = RubyArray.this.begin;
+                        long h = realLength;
+                        if (recur) {
+                            h ^= RubyNumeric.num2long(invokedynamic(context, context.runtime.getArray(), HASH));
+                        } else {
+                            for (int i = begin; i < begin + realLength; i++) {
+                                h = (h << 1) | (h < 0 ? 1 : 0);
+                                final IRubyObject value = safeArrayRef(values, i);
+                                h ^= RubyNumeric.num2long(invokedynamic(context, value, HASH));
+                            }
                         }
+                        return getRuntime().newFixnum(h);
                     }
-                    return getRuntime().newFixnum(h);
-                }
-            }, this);
+                }, RubyArray.this);
+            }
+        });
     }
 
     /** rb_ary_store
@@ -1772,7 +1777,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         return join(context, context.getRuntime().getGlobalVariables().get("$,"));
     }
 
-    // 1.9 MRI: join0
+    // 1.9 MRI: ary_join_0
     private RubyString joinStrings(RubyString sep, int max, RubyString result) {
         if (max > 0) result.setEncoding(values[begin].convertToString().getEncoding());
 
@@ -1788,7 +1793,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         return result;
     }
 
-    // 1.9 MRI: join1
+    // 1.9 MRI: ary_join_1
     private RubyString joinAny(ThreadContext context, IRubyObject obj, RubyString sep, 
             int i, RubyString result) {
         assert i >= begin : "joining elements before beginning of array";
@@ -1846,7 +1851,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
      *
      */
     @JRubyMethod(name = "join", compat = RUBY1_9)
-    public IRubyObject join19(ThreadContext context, IRubyObject sep) {
+    public IRubyObject join19(final ThreadContext context, final IRubyObject sep) {
         final Ruby runtime = context.getRuntime();
 
         if (realLength == 0) return RubyString.newEmptyString(runtime, USASCIIEncoding.INSTANCE);
@@ -1863,9 +1868,15 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             IRubyObject tmp = val.checkStringType19();
             if (tmp.isNil() || tmp != val) {
                 len += ((begin + realLength) - i) * 10;
-                RubyString result = (RubyString) RubyString.newStringLight(runtime, len, USASCIIEncoding.INSTANCE).infectBy(this);
+                final RubyString result = (RubyString) RubyString.newStringLight(runtime, len, USASCIIEncoding.INSTANCE).infectBy(this);
+                final RubyString sepStringFinal = sepString;
+                final int iFinal = i;
 
-                return joinAny(context, this, sepString, i, joinStrings(sepString, i, result));
+                return runtime.recursiveListOperation(new Callable<IRubyObject>() {
+                    public IRubyObject call() {
+                        return joinAny(context, RubyArray.this, sepStringFinal, iFinal, joinStrings(sepStringFinal, iFinal, result));
+                    }
+                });
             }
 
             len += ((RubyString) tmp).getByteList().length();
