@@ -122,12 +122,12 @@ public class RubyBinding extends RubyObject {
     @JRubyMethod(name = "eval", required=1, optional=2)
     public IRubyObject eval(ThreadContext context, IRubyObject[] args) {
         IRubyObject[] newArgs = new IRubyObject[args.length+1];
-        newArgs[0] = args[0];
-        newArgs[1] = this;
+        newArgs[0] = args[0]; // eval string
+        newArgs[1] = this; // binding
         if(args.length>1) {
-            newArgs[2] = args[1];
+            newArgs[2] = args[1]; // file
             if(args.length>2) {
-                newArgs[3] = args[2];
+                newArgs[3] = args[2]; // line
             }
         }
 
