@@ -1217,6 +1217,9 @@
   <target name="spec:ci_compiled_18" depends="install-gems">
     <rake task="spec:ci_compiled_18"/>
   </target>
+  <target name="spec:ci_compiled_19" depends="install-gems">
+    <rake task="spec:ci_compiled_19"/>
+  </target>
   <target name="spec:ci_precompiled_18" depends="install-gems">
     <rake task="spec:ci_precompiled_18"/>
   </target>
