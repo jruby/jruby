@@ -6498,7 +6498,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             }            
         }
 
-        boolean singlebyte = true;
+        boolean singlebyte = singleByteOptimizable();
         int c;
         final int[]trans = new int[TRANS_SIZE];
         IntHash<Integer> hash = null;
