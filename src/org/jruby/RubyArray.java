@@ -690,26 +690,22 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
      */
     @JRubyMethod(name = "hash", compat = RUBY1_9)
     public RubyFixnum hash19(final ThreadContext context) {
-        return context.runtime.recursiveListOperation(new Callable<RubyFixnum>() {
-            public RubyFixnum call() {
-                return (RubyFixnum) getRuntime().execRecursiveOuter(new Ruby.RecursiveFunction() {
-                    public IRubyObject call(IRubyObject obj, boolean recur) {
-                        int begin = RubyArray.this.begin;
-                        long h = realLength;
-                        if (recur) {
-                            h ^= RubyNumeric.num2long(invokedynamic(context, context.runtime.getArray(), HASH));
-                        } else {
-                            for (int i = begin; i < begin + realLength; i++) {
-                                h = (h << 1) | (h < 0 ? 1 : 0);
-                                final IRubyObject value = safeArrayRef(values, i);
-                                h ^= RubyNumeric.num2long(invokedynamic(context, value, HASH));
-                            }
-                        }
-                        return getRuntime().newFixnum(h);
+        return (RubyFixnum) getRuntime().execRecursiveOuter(new Ruby.RecursiveFunction() {
+            public IRubyObject call(IRubyObject obj, boolean recur) {
+                int begin = RubyArray.this.begin;
+                long h = realLength;
+                if (recur) {
+                    h ^= RubyNumeric.num2long(invokedynamic(context, context.runtime.getArray(), HASH));
+                } else {
+                    for (int i = begin; i < begin + realLength; i++) {
+                        h = (h << 1) | (h < 0 ? 1 : 0);
+                        final IRubyObject value = safeArrayRef(values, i);
+                        h ^= RubyNumeric.num2long(invokedynamic(context, value, HASH));
                     }
-                }, RubyArray.this);
+                }
+                return getRuntime().newFixnum(h);
             }
-        });
+        }, RubyArray.this);
     }
 
     /** rb_ary_store
