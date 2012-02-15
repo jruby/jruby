@@ -1,0 +1,1 @@
+fails:Random.new_seed is not affected by Kernel#srand
