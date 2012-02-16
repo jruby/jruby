@@ -25,11 +25,10 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby.libraries;
+package org.jruby.ext.zlib;
 
 import java.io.IOException;
 
-import org.jruby.RubyZlib;
 import org.jruby.Ruby;
 import org.jruby.runtime.load.Library;
 

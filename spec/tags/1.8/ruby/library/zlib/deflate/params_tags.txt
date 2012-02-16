@@ -1,1 +1,0 @@
-fails(JRUBY-3775):Zlib::Deflate#params changes the deflate parameters

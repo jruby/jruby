@@ -369,6 +369,7 @@
         <zipfileset src="${build.lib.dir}/yecht.jar"/>
         <zipfileset src="${build.lib.dir}/yydebug.jar"/>
         <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
+        <zipfileset src="${build.lib.dir}/jzlib-1.1.0.jar"/>
         <metainf dir="spi">
           <include name="services/**"/>
         </metainf>
@@ -469,6 +470,7 @@
         <zipfileset src="${build.lib.dir}/yecht.jar"/>
         <zipfileset src="${build.lib.dir}/yydebug.jar"/>
         <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
+        <zipfileset src="${build.lib.dir}/jzlib-1.1.0.jar"/>
         <metainf dir="spi">
           <include name="services/**"/>
         </metainf>
@@ -627,6 +629,7 @@
       <zipfileset src="${build.lib.dir}/yecht.jar"/>
       <zipfileset src="${build.lib.dir}/yydebug.jar"/>
       <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
+      <zipfileset src="${build.lib.dir}/jzlib-1.1.0.jar"/>
       <metainf dir="spi">
         <include name="services/**"/>
       </metainf>

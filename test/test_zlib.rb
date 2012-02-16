@@ -238,9 +238,6 @@ class TestZlib < Test::Unit::TestCase
     assert_equal("", z.flush_next_in)
   end
 
-  # TODO: JRuby doesn't fully support this
-  # very low-level Inflate#sync method, so
-  # we just always return false.
   def test_inflate_sync
     z = Zlib::Inflate.new
     z << Zlib::Deflate.deflate('foo')
@@ -251,22 +248,70 @@ class TestZlib < Test::Unit::TestCase
     assert (!z.sync_point?)
   end
 
+  def test_sync
+    z = Zlib::Deflate.new
+    s = z.deflate("foo" * 1000, Zlib::FULL_FLUSH)
+    z.avail_out = 0
+    z.params(Zlib::NO_COMPRESSION, Zlib::FILTERED)
+    s << z.deflate("bar" * 1000, Zlib::FULL_FLUSH)
+    z.avail_out = 0
+    z.params(Zlib::BEST_COMPRESSION, Zlib::HUFFMAN_ONLY)
+    s << z.deflate("baz" * 1000, Zlib::FINISH)
+
+    z = Zlib::Inflate.new
+    assert_raise(Zlib::DataError) { z << "\0" * 100 }
+    assert_equal(false, z.sync(""))
+    assert_equal(false, z.sync_point?)
+
+    z = Zlib::Inflate.new
+    assert_raise(Zlib::DataError) { z << "\0" * 100 + s }
+    assert_equal(true, z.sync(""))
+    #assert_equal(true, z.sync_point?)
+    assert(z.avail_in>0)
+
+    z = Zlib::Inflate.new
+    assert_equal(false, z.sync("\0" * 100))
+    assert_equal(false, z.sync_point?)
+
+    z = Zlib::Inflate.new
+    assert_equal(true, z.sync("\0" * 100 + s))
+    #assert_equal(true, z.sync_point?)
+  end
+
+  def test_inflate_broken_data_with_sync
+    d = Zlib::Deflate.new
+    i = Zlib::Inflate.new
+
+    foo = d.deflate("foo", Zlib::SYNC_FLUSH)
+    noise = "noise"+d.deflate("*", Zlib::SYNC_FLUSH)
+    bar = d.deflate("bar", Zlib::SYNC_FLUSH)
+
+    begin
+      i << (foo+noise+bar)
+    rescue Zlib::DataError
+    end
+
+    i.sync(d.finish)
+
+    begin
+     i.finish
+    rescue Zlib::DataError  # failed in checking checksum because of broken data
+    end
+
+    assert_equal("foobar", i.flush_next_out)
+  end
+
   # JRUBY-4502: 1.4 raises native exception at gz.read
   def test_corrupted_data
-    data = '12345abcde'
     zip = "\037\213\b\000,\334\321G\000\005\000\235\005\000$\n\000\000"
     io = StringIO.new(zip)
     # JRuby cannot check corrupted data format at GzipReader.new for now
     # because of different input buffer handling.
-    if defined?(JRUBY_VERSION)
-      assert_raise(IOError) do
-        gz = Zlib::GzipReader.new(io)     # CRuby raises here
-        gz.read                           # JRuby raises here
-      end
-    else
-      assert_raise(Zlib::DataError) do
-        gz = Zlib::GzipReader.new(io)     # CRuby raises here
-      end
+    assert_raise(Zlib::DataError) do
+      gz = Zlib::GzipReader.new(io)     # CRuby raises here
+                                        # if size of input is less that 2048
+
+      gz.read                           # JRuby raises here
     end
   end
 
@@ -341,12 +386,173 @@ class TestZlib < Test::Unit::TestCase
     assert(called)
   end
 
+  def test_gzip_reader_check_corrupted_trailer
+
+    data = TestZlib.create_gzip_stream("hello")
+
+    assert_raise(Zlib::GzipFile::CRCError) do
+      _data = data.dup
+      _data[_data.size-5] = 'X'  # checksum
+      gz = Zlib::GzipReader.new(StringIO.new(_data))
+      gz.read
+      gz.finish
+    end
+
+    assert_raise(Zlib::GzipFile::LengthError) do
+      _data = data.dup
+      _data[_data.size-4] = 'X'  # length
+      gz = Zlib::GzipReader.new(StringIO.new(_data))
+      gz.read
+      gz.finish
+    end
+
+    assert_raise(Zlib::GzipFile::NoFooter) do
+      _data = data.dup
+      _data = _data.slice!(0, _data.size-1)
+      gz = Zlib::GzipReader.new(StringIO.new(_data))
+      gz.read
+      gz.finish
+    end
+
+    assert_raise(Zlib::GzipFile::NoFooter) do
+      _data = data.dup
+      _data[_data.size-5] = 'X'  # checksum
+      _data = _data.slice!(0, _data.size-1)
+      gz = Zlib::GzipReader.new(StringIO.new(_data))
+      gz.read
+      gz.finish
+    end
+  end
+
   def self.create_gzip_stream(string)
     s = StringIO.new
     Zlib::GzipWriter.wrap(s) { |io|
       io.write("hello")
     }
     s.string
+  end
+
+  def test_dup
+    d1 = Zlib::Deflate.new
+
+    data = "foo" * 10 
+    d1 << data
+    d2 = d1.dup
+
+    d1 << "bar"
+    d2 << "goo"
+
+    data1 = d1.finish
+    data2 = d2.finish
+
+    i = Zlib::Inflate.new
+
+    assert_equal(data+"bar",
+                 i.inflate(data1) + i.finish);
+
+    i.reset
+    assert_equal(data+"goo",
+                 i.inflate(data2) + i.finish);
+  end
+
+  def test_adler32_combine
+    one = Zlib.adler32("fo")
+    two = Zlib.adler32("o")
+    begin
+      assert_equal(0x02820145, Zlib.adler32_combine(one, two, 1))
+    rescue NotImplementedError
+      skip "adler32_combine is not implemented"
+    end
+  end
+
+  def test_crc32_combine
+    one = Zlib.crc32("fo")
+    two = Zlib.crc32("o")
+    begin
+      assert_equal(0x8c736521, Zlib.crc32_combine(one, two, 1))
+    rescue NotImplementedError
+      skip "crc32_combine is not implemented"
+    end
+  end
+
+  def test_writer_sync
+    marker = "\x00\x00\xff\xff"
+
+    sio = StringIO.new("")
+
+    if RUBY_VERSION >= '1.9.0'
+      sio.set_encoding "ASCII-8BIT"
+    end
+
+    Zlib::GzipWriter.wrap(sio) { |z|
+      z.write 'a'
+      z.sync = true
+      z.write 'b'           # marker
+      z.write 'c'           # marker
+      z.sync = false
+      z.write 'd'
+      z.write 'e'
+      assert_equal(false, z.sync);
+    }
+
+    data = sio.string
+
+    i = Zlib::Inflate.new(Zlib::MAX_WBITS + 16)
+
+    assert_equal("ab", i.inflate(data.slice!(0, data.index(marker)+4)))
+    assert_equal("c", i.inflate(data.slice!(0, data.index(marker)+4)))
+    assert_equal("de", i.inflate(data))
+  end
+
+  def test_writer_flush
+    marker = "\x00\x00\xff\xff"
+
+    sio = StringIO.new("")
+    Zlib::GzipWriter.wrap(sio) { |z|
+      z.write 'a'
+      z.write 'b'           # marker
+      z.flush
+      z.write 'c'           # marker
+      z.flush
+      z.write 'd'
+      z.write 'e'
+      assert_equal(false, z.sync);
+    }
+
+    data = sio.string
+
+    if RUBY_VERSION >= '1.9.0'
+      #data.index(marker) will return nil
+    else
+      i = Zlib::Inflate.new(Zlib::MAX_WBITS + 16)
+      assert_equal("ab", i.inflate(data.slice!(0, data.index(marker)+4)))
+      assert_equal("c", i.inflate(data.slice!(0, data.index(marker)+4)))
+      assert_equal("de", i.inflate(data))
+    end
+  end
+
+  if RUBY_VERSION >= '1.9.0'
+  def test_error_input
+    t = Tempfile.new("test_zlib_gzip_reader_open")
+    t.close
+    e = assert_raise(Zlib::GzipFile::Error) {
+      Zlib::GzipReader.open(t.path)
+    }
+    assert_equal("not in gzip format", e.message)
+    assert_nil(e.input)
+    open(t.path, "wb") {|f| f.write("foo")}
+    e = assert_raise(Zlib::GzipFile::Error) {
+      Zlib::GzipReader.open(t.path)
+    }
+    assert_equal("not in gzip format", e.message)
+    assert_equal("foo", e.input)
+    open(t.path, "wb") {|f| f.write("foobarzothoge")}
+    e = assert_raise(Zlib::GzipFile::Error) {
+      Zlib::GzipReader.open(t.path)
+    }
+    assert_equal("not in gzip format", e.message)
+    assert_equal("foobarzothoge", e.input)
+  end
   end
 end
 
@@ -513,6 +719,17 @@ class TestZlibDeflateGzip < Test::Unit::TestCase
       d.deflate(COMPRESS_MSG, Zlib::SYNC_FLUSH)
     end
     assert(!d.finish.empty?)
+    d.close
+  end
+
+  def test_deflate_sync_flush_inflate
+    d = Zlib::Deflate.new(8, 15+16)
+    i = Zlib::Inflate.new(15+16)
+    "a".upto("z") do |c|
+        assert_equal(c, i.inflate(d.deflate(c, Zlib::SYNC_FLUSH)))
+    end 
+    i.inflate(d.finish)
+    i.close
     d.close
   end
 
@@ -696,6 +913,29 @@ class TestZlibInflateAuto < Test::Unit::TestCase
     end
   end
 
+  def test_dictionary
+    dict = "hello"
+    str = "hello, hello!"
+
+    d = Zlib::Deflate.new
+    d.set_dictionary(dict)
+    comp_str = d.deflate(str)
+    comp_str << d.finish
+    comp_str.size
+
+    i = Zlib::Inflate.new(Zlib::MAX_WBITS + 32)
+
+    begin
+      i.inflate(comp_str)
+      rescue Zlib::NeedDict
+    end
+    #i.reset
+
+    i.set_dictionary(dict)
+    i << ""
+    assert_equal(str, i.finish)
+  end
+
   def test_wrong_length_split_trailer
     gzip = "\x1f\x8b\x08\x00\x1a\x96\xe0\x4c\x00\x03\xcb\x48\xcd\xc9\xc9\x07\x00\x86\xa6\x10\x36\x04\x00\x00"
     z = Zlib::Inflate.new(Zlib::MAX_WBITS + 32)
@@ -703,6 +943,13 @@ class TestZlibInflateAuto < Test::Unit::TestCase
     assert_raise(Zlib::DataError) do
       z.inflate("\x00")
     end
+  end
+
+  def test_deflate_full_flush
+    z = Zlib::Deflate.new(8, 15)
+    s = z.deflate("f", Zlib::FULL_FLUSH)
+    s << z.deflate("b", Zlib::FINISH)
+    assert_equal("x\332J\003\000\000\000\377\377K\002\000\0010\000\311", s)
   end
 
   if RUBY_VERSION > "1.9"
