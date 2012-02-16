@@ -86,7 +86,7 @@ Handle::specialHandle(VALUE v)
 void
 Handle::makeStrong_(JNIEnv* env)
 {
-    if ((flags & FL_WEAK) != 0) {
+    if (isWeak()) {
         jobject tmp = env->NewLocalRef(obj);
         if (unlikely(env->IsSameObject(tmp, NULL))) {
             rb_raise(rb_eRuntimeError, "weak handle is null");
@@ -97,6 +97,19 @@ Handle::makeStrong_(JNIEnv* env)
         flags &= ~FL_WEAK;
     }
 }
+
+void
+Handle::makeWeak_(JNIEnv* env)
+{
+    if (!isWeak()) {
+        jobject tmp = env->NewLocalRef(obj);
+        env->DeleteGlobalRef(obj);
+        obj = env->NewWeakGlobalRef(tmp);
+        env->DeleteLocalRef(tmp);
+        flags |= FL_WEAK;
+    }
+}
+
 
 RubyFixnum::RubyFixnum(JNIEnv* env, jobject obj_, jlong value_): Handle(env, obj_, T_FIXNUM)
 {
@@ -188,7 +201,7 @@ JNICALL Java_org_jruby_cext_Native_freeHandle(JNIEnv* env, jclass self, jlong ad
 
     TAILQ_REMOVE(&liveHandles, h, all);
 
-    if ((h->flags & FL_WEAK) != 0) {
+    if (h->isWeak()) {
         env->DeleteWeakGlobalRef(h->obj);
     } else {
         env->DeleteGlobalRef(h->obj);

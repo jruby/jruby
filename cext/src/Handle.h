@@ -55,6 +55,7 @@ namespace jruby {
     private:
         void Init();
         void makeStrong_(JNIEnv* env);
+        void makeWeak_(JNIEnv* env);
 
 
     public:
@@ -70,9 +71,19 @@ namespace jruby {
 	    return (VALUE) this;
 	}
 
+        inline bool isWeak() {
+            return (flags & FL_WEAK) != 0;
+        }
+
         inline void makeStrong(JNIEnv* env) {
-            if (unlikely((flags & FL_WEAK) != 0)) {
+            if (unlikely(isWeak())) {
                 makeStrong_(env);
+            }
+        }
+
+        inline void makeWeak(JNIEnv* env) {
+            if (unlikely(!isWeak())) {
+                makeWeak_(env);
             }
         }
 
