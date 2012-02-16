@@ -2296,7 +2296,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = {"module_exec", "class_exec"}, frame = true)
     public IRubyObject module_exec(ThreadContext context, Block block) {
         if (block.isGiven()) {
-            return yieldUnder(context, this, block);
+            return yieldUnder(context, this, IRubyObject.NULL_ARRAY, block);
         } else {
             throw context.getRuntime().newLocalJumpErrorNoBlock();
         }
