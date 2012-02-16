@@ -75,7 +75,7 @@
     <dependency>
       <groupId>org.jruby.extras</groupId>
       <artifactId>bytelist</artifactId>
-      <version>1.0.8</version>
+      <version>1.0.10</version>
       <scope>${jar.scope}</scope>
     </dependency>
     <dependency>
