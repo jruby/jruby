@@ -2461,25 +2461,40 @@ public class RubyModule extends RubyObject {
     /** rb_mod_cvar_get
      *
      */
-    @JRubyMethod(name = "class_variable_get", required = 1, visibility = PRIVATE)
+    @JRubyMethod(name = "class_variable_get", visibility = PRIVATE, compat = RUBY1_8)
     public IRubyObject class_variable_get(IRubyObject var) {
         return getClassVar(validateClassVariable(var.asJavaString()).intern());
+    }
+
+    @JRubyMethod(name = "class_variable_get", compat = RUBY1_9)
+    public IRubyObject class_variable_get19(IRubyObject var) {
+        return class_variable_get(var);
     }
 
     /** rb_mod_cvar_set
      *
      */
-    @JRubyMethod(name = "class_variable_set", required = 2, visibility = PRIVATE)
+    @JRubyMethod(name = "class_variable_set", visibility = PRIVATE, compat = RUBY1_8)
     public IRubyObject class_variable_set(IRubyObject var, IRubyObject value) {
         return setClassVar(validateClassVariable(var.asJavaString()).intern(), value);
+    }
+
+    @JRubyMethod(name = "class_variable_get", compat = RUBY1_9)
+    public IRubyObject class_variable_set19(IRubyObject var, IRubyObject value) {
+        return class_variable_set(var, value);
     }
 
     /** rb_mod_remove_cvar
      *
      */
-    @JRubyMethod(name = "remove_class_variable", required = 1, visibility = PRIVATE)
+    @JRubyMethod(name = "remove_class_variable", visibility = PRIVATE, compat = RUBY1_8)
     public IRubyObject remove_class_variable(ThreadContext context, IRubyObject name) {
         return removeClassVariable(name.asJavaString());
+    }
+
+    @JRubyMethod(name = "remove_class_variable", compat = RUBY1_9)
+    public IRubyObject remove_class_variable19(ThreadContext context, IRubyObject name) {
+        return remove_class_variable(context, name);
     }
 
     /** rb_mod_class_variables
