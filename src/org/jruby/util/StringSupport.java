@@ -324,7 +324,7 @@ public final class StringSupport {
 
         if (enc.isAsciiCompatible()) {
             int c = bytes[p] & 0xff;
-            if (!Encoding.isAscii(c)) pack(-1, len);
+            if (!Encoding.isAscii(c)) return pack(-1, len);
             return pack(c, len == 0 ? 0 : 1);
         } else {
             int cl = preciseLength(enc, bytes, p, end);
@@ -495,4 +495,10 @@ public final class StringSupport {
             }
         }
     }
+
+    public static boolean isUnicode(Encoding enc) {
+        byte[] name = enc.getName();
+        return name.length > 4 && name[0] == 'U' && name[1] == 'T' && name[2] == 'F' && name[4] != '7'; 
+    }
+
 }
