@@ -2487,7 +2487,7 @@ public class RubyModule extends RubyObject {
         return fastSetClassVar(validateClassVariable(var.asJavaString()).intern(), value);
     }
 
-    @JRubyMethod(name = "class_variable_get", compat = RUBY1_9)
+    @JRubyMethod(name = "class_variable_set", compat = RUBY1_9)
     public IRubyObject class_variable_set19(IRubyObject var, IRubyObject value) {
         return class_variable_set(var, value);
     }
