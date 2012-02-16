@@ -44,24 +44,7 @@ public class RubyData extends RubyObject {
 
         RubyData d = new RubyData(runtime, klass);
         GC.register(d, Handle.newHandle(runtime, d, handle));
-        Cleaner.register(new DataCleaner(d, handle));
 
         return d;
-    }
-
-    final static class DataCleaner extends Cleaner {
-        private final long address;
-
-        public DataCleaner(RubyData obj, long address) {
-            super(obj);
-            this.address = address;
-        }
-
-
-        @Override
-        void dispose() {
-            Native.freeHandle(address);
-        }
-
     }
 }
