@@ -1763,7 +1763,12 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                 if (!newOptions.isExtended()) result.append((byte)'x');
             }
             result.append((byte)':');
-            appendRegexpString(getRuntime(), result, bytes, p, len, getEncoding(runtime, str));
+            if (runtime.is1_9()) {
+                appendRegexpString19(runtime, result, bytes, p, len, getEncoding(runtime, str));
+            } else {
+                appendRegexpString(runtime, result, bytes, p, len, getEncoding(runtime, str));
+            }
+            
             result.append((byte)')');
             return RubyString.newString(getRuntime(), result, getEncoding()).infectBy(this);
         } while (true);

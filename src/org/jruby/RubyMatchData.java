@@ -632,9 +632,11 @@ public class RubyMatchData extends RubyObject {
     @Override
     public IRubyObject initialize_copy(IRubyObject original) {
         if (this == original) return this;
-        
-        if (!(getMetaClass() == original.getMetaClass())){ // MRI also does a pointer comparison here
-            throw getRuntime().newTypeError("wrong argument class");
+
+        Ruby runtime = getRuntime();
+        ThreadContext context = runtime.getCurrentContext();
+        if ((original instanceof RubyBasicObject) && !((RubyBasicObject)original).instance_of_p(context, getMetaClass()).isTrue()) {
+            throw runtime.newTypeError("wrong argument class");
         }
 
         RubyMatchData origMatchData = (RubyMatchData)original;
@@ -645,6 +647,7 @@ public class RubyMatchData extends RubyObject {
     }
 
     public boolean equals(Object other) {
+        if (this == other) return true;
         if (!(other instanceof RubyMatchData)) return false;
 
         RubyMatchData match = (RubyMatchData)other;
@@ -662,4 +665,12 @@ public class RubyMatchData extends RubyObject {
     public IRubyObject eql_p(IRubyObject obj) {
         return getRuntime().newBoolean(equals(obj));
     }
+
+    @JRubyMethod(name = "hash")
+    @Override
+    public RubyFixnum hash() {
+        check();
+        return getRuntime().newFixnum(regexp.hashCode() ^ str.hashCode());
+    }
+
 }
