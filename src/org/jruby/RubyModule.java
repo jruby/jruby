@@ -1877,7 +1877,7 @@ public class RubyModule extends RubyObject {
         if (block.isGiven()) {
             // class and module bodies default to public, so make the block's visibility public. JRUBY-1185.
             block.getBinding().setVisibility(PUBLIC);
-            module_exec(context, block);
+            module_exec(context, new IRubyObject[] {this}, block);
         }
 
         return getRuntime().getNil();
@@ -2301,6 +2301,7 @@ public class RubyModule extends RubyObject {
             throw context.getRuntime().newLocalJumpErrorNoBlock();
         }
     }
+
     @JRubyMethod(name = {"module_exec", "class_exec"}, rest = true, frame = true)
     public IRubyObject module_exec(ThreadContext context, IRubyObject[] args, Block block) {
         if (block.isGiven()) {
