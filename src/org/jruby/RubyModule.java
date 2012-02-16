@@ -1869,7 +1869,7 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "initialize", frame = true, visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, Block block) {
         if (block.isGiven()) {
-            module_exec(context, block);
+            module_exec(context, new IRubyObject[] {this}, block);
         }
 
         return getRuntime().getNil();
@@ -2293,6 +2293,7 @@ public class RubyModule extends RubyObject {
             throw context.getRuntime().newLocalJumpErrorNoBlock();
         }
     }
+
     @JRubyMethod(name = {"module_exec", "class_exec"}, rest = true, frame = true)
     public IRubyObject module_exec(ThreadContext context, IRubyObject[] args, Block block) {
         if (block.isGiven()) {
