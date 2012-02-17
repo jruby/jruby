@@ -29,7 +29,7 @@ public class OptArgMultipleAsgnInstr extends MultipleAsgnBase {
 
     @Override
     public String toString() {
-        return result + " = " + array + "[" + index + "," + minArgsLength + "]";
+        return super.toString() + "(" + array + "," + index + "," + minArgsLength + ")";
     }
 
     @Override

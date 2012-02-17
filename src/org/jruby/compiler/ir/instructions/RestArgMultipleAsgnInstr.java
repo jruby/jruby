@@ -29,7 +29,7 @@ public class RestArgMultipleAsgnInstr extends MultipleAsgnBase {
 
     @Override
     public String toString() {
-        return result + " = " + array + "[" + preArgsCount + "," + postArgsCount + ", " + index + "]";
+        return super.toString() + "(" + array + ", " + index + ", " + preArgsCount + ", " + postArgsCount + ")";
     }
 
     @Override
