@@ -45,6 +45,8 @@ import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -278,50 +280,73 @@ public class Main {
         return new Status(1);
     }
 
+    /**
+     * Print a nicer stack size error since Rubyists aren't used to seeing this.
+     */
     private Status handleStackOverflow(StackOverflowError soe) {
-        // produce a nicer error since Rubyists aren't used to seeing this
-        System.gc();
-        String stackMax = SafePropertyAccessor.getProperty("jruby.stack.max");
-        String message = "";
-        if (stackMax != null) {
-            message = " of " + stackMax;
+        String memoryMax = getRuntimeFlagValue("-Xss");
+
+        if (memoryMax != null) {
+            config.getError().println("Error: Your application used more stack memory than the safety cap of " + memoryMax + ".");
+        } else {
+            config.getError().println("Error: Your application used more stack memory than the default safety cap.");
         }
-        config.getError().println("Error: Your application used more stack memory than the safety cap" + message + ".");
         config.getError().println("Specify -J-Xss####k to increase it (#### = cap size in KB).");
+
         if (config.isVerbose()) {
             config.getError().println("Exception trace follows:");
-            soe.printStackTrace();
+            soe.printStackTrace(config.getError());
         } else {
             config.getError().println("Specify -w for full StackOverflowError stack trace");
         }
+
         return new Status(1);
     }
 
+    /**
+     * Print a nicer memory error since Rubyists aren't used to seeing this.
+     */
     private Status handleOutOfMemory(OutOfMemoryError oome) {
-        // produce a nicer error since Rubyists aren't used to seeing this
-        System.gc();
-        String memoryMax = SafePropertyAccessor.getProperty("jruby.memory.max");
-        String message = "";
-        if (memoryMax != null) {
-            message = " of " + memoryMax;
-        }
-        
+        System.gc(); // try to clean up a bit of space, hopefully, so we can report this error
+
         String oomeMessage = oome.getMessage();
-        if (oomeMessage.contains("heap space")) {
-            config.getError().println("Error: Your application used more memory than the safety cap" + message + ".");
-            config.getError().println("Specify -J-Xmx####m to increase it (#### = cap size in MB).");
-        } else if (oomeMessage.contains("PermGen")) {
+
+        if (oomeMessage.contains("PermGen")) { // report permgen memory error
             config.getError().println("Error: Your application exhausted PermGen area of the heap.");
-            config.getError().println("Specify -J-XX:MaxPermSize=###m to increase it (### = PermGen size in MB).");
+            config.getError().println("Specify -J-XX:MaxPermSize=###M to increase it (### = PermGen size in MB).");
+
+        } else { // report heap memory error
+
+            String memoryMax = getRuntimeFlagValue("-Xmx");
+
+            if (memoryMax != null) {
+                config.getError().println("Error: Your application used more memory than the safety cap of " + memoryMax + ".");
+            } else {
+                config.getError().println("Error: Your application used more memory than the default safety cap.");
+            }
+            config.getError().println("Specify -J-Xmx####m to increase it (#### = cap size in MB).");
         }
         
         if (config.isVerbose()) {
             config.getError().println("Exception trace follows:");
-            oome.printStackTrace();
+            oome.printStackTrace(config.getError());
         } else {
             config.getError().println("Specify -w for full OutOfMemoryError stack trace");
         }
+
         return new Status(1);
+    }
+
+    private String getRuntimeFlagValue(String prefix) {
+        RuntimeMXBean runtime = ManagementFactory.getRuntimeMXBean();
+
+        for (String param : runtime.getInputArguments()) {
+            if (param.startsWith(prefix)) {
+                return param.substring(prefix.length()).toUpperCase();
+            }
+        }
+
+        return null;
     }
 
     private Status handleMainExit(MainExitException mee) {

@@ -299,9 +299,6 @@ if [[ $darwin && -z "$JAVA_ENCODING" ]]; then
   java_args=("${java_args[@]}" "-Dfile.encoding=UTF-8")
 fi
 
-# Add a property to report memory max
-JAVA_OPTS="$JAVA_OPTS $JAVA_VM -Djruby.memory.max=${JAVA_MEM:4} -Djruby.stack.max=${JAVA_STACK:4}"
-
 # Append the rest of the arguments
 ruby_args=("${ruby_args[@]}" "$@")
 
