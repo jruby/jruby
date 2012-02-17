@@ -666,7 +666,7 @@ public class RubyMatchData extends RubyObject {
         return getRuntime().newBoolean(equals(obj));
     }
 
-    @JRubyMethod(name = "hash")
+    @JRubyMethod(name = "hash", compat = RUBY1_9)
     @Override
     public RubyFixnum hash() {
         check();
