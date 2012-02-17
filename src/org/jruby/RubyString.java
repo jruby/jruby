@@ -5695,7 +5695,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         }
 
         if (endp < end) {
-            view(0, endp - start + 1);
+            view(0, endp - start);
             return this;
         }
         return runtime.getNil();
