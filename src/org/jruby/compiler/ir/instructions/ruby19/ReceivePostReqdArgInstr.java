@@ -4,6 +4,7 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.CopyInstr;
 import org.jruby.compiler.ir.instructions.Instr;
+import org.jruby.compiler.ir.instructions.ReqdArgMultipleAsgnInstr;
 import org.jruby.compiler.ir.instructions.ReceiveArgBase;
 import org.jruby.compiler.ir.operands.UndefinedValue;
 import org.jruby.compiler.ir.operands.Variable;
@@ -51,6 +52,11 @@ public class ReceivePostReqdArgInstr extends ReceiveArgBase {
     @Override
     public Instr cloneForBlockCloning(InlinerInfo ii) {
         return new ReceivePostReqdArgInstr(ii.getRenamedVariable(result), argIndex, preReqdArgsCount, postReqdArgsCount);
+    }
+
+    @Override
+    public Instr cloneForInlinedClosure(InlinerInfo ii) {
+        return new ReqdArgMultipleAsgnInstr(ii.getRenamedVariable(result), ii.getYieldArg(), preReqdArgsCount, postReqdArgsCount, argIndex);
     }
 
     public IRubyObject receivePostReqdArg(IRubyObject[] args) {

@@ -19,7 +19,7 @@ public class IRModuleBody extends IRScope {
             if (scope != null) ((IRStaticScope)scope).setIRScope(this);
             updateVersion();
         }
-	 }
+    }
 
     @Override
     public IRScope getNearestModuleReferencingScope() {

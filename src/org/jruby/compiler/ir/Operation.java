@@ -99,7 +99,9 @@ public enum Operation {
     GET_FIELD(OpFlags.f_is_load),
     GET_CVAR(OpFlags.f_is_load | OpFlags.f_can_raise_exception),
     BINDING_LOAD(OpFlags.f_is_load),
-    MASGN(OpFlags.f_is_load),
+    MASGN_OPT(OpFlags.f_is_load),
+    MASGN_REQD(OpFlags.f_is_load),
+    MASGN_REST(OpFlags.f_is_load),
 
 	 /** constant operations */
     LEXICAL_SEARCH_CONST(OpFlags.f_can_raise_exception),

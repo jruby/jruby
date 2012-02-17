@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.Tuple;
+import org.jruby.compiler.ir.instructions.jruby.ToAryInstr;
 import org.jruby.compiler.ir.instructions.CallBase;
 import org.jruby.compiler.ir.instructions.ResultInstr;
 import org.jruby.compiler.ir.instructions.YieldInstr;
@@ -59,7 +60,7 @@ public class InlinerInfo {
     public Label getRenamedLabel(Label l) {
         Label newLbl = this.lblRenameMap.get(l);
         if (newLbl == null) {
-           newLbl = this.callerCFG.getScope().getNewLabel();
+           newLbl = getInlineHostScope().getNewLabel();
            this.lblRenameMap.put(l, newLbl);
         }
         return newLbl;
@@ -75,8 +76,12 @@ public class InlinerInfo {
     }
 
     public void setupYieldArgsAndYieldResult(YieldInstr yi) {
+		  IRScope callerScope = getInlineHostScope();
+		  Variable yieldArgArray = callerScope.getNewTemporaryVariable();
+		  callerScope.addInstr(new ToAryInstr(yieldArgArray, yi.getYieldArg(), callerScope.getManager().getTrue()));
+
         this.yieldResult = yi.getResult();
-        this.yieldArg = yi.getYieldArg();
+        this.yieldArg = yieldArgArray;
     }
 
     public Variable getRenamedVariable(Variable v) {
@@ -149,8 +154,7 @@ public class InlinerInfo {
         return yieldResult;
     }
 
-    // SSS FIXME: Temporary
-    public Operand getBlockArg(int index) {
+    public Operand getYieldArg() {
         return yieldArg;
     }
 }

@@ -2,6 +2,7 @@ package org.jruby.compiler.ir.instructions;
 
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Variable;
+import org.jruby.compiler.ir.instructions.ReqdArgMultipleAsgnInstr;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.compiler.ir.targets.JVM;
 
@@ -13,15 +14,19 @@ public class ReceivePreReqdArgInstr extends ReceiveArgBase {
         super(Operation.RECV_PRE_REQD_ARG, result, argIndex);
     }
 
-	 @Override
+    @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         return new CopyInstr(ii.getRenamedVariable(result), ii.getCallArg(argIndex, false));
     }
 
-	 @Override
+    @Override
+    public Instr cloneForBlockCloning(InlinerInfo ii) {
+        return new ReceivePreReqdArgInstr(ii.getRenamedVariable(result), argIndex);
+    }
+
+    @Override
     public Instr cloneForInlinedClosure(InlinerInfo ii) {
-		  // SSS FIXME: Temporary, This should become a GetArrayInstr
-        return new CopyInstr(ii.getRenamedVariable(result), ii.getBlockArg(argIndex));
+        return new ReqdArgMultipleAsgnInstr(ii.getRenamedVariable(result), ii.getYieldArg(), -1, -1, argIndex);
     }
 
     public void compile(JVM jvm) {

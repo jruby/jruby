@@ -3,6 +3,7 @@ package org.jruby.compiler.ir.instructions.ruby19;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.CopyInstr;
 import org.jruby.compiler.ir.instructions.Instr;
+import org.jruby.compiler.ir.instructions.OptArgMultipleAsgnInstr;
 import org.jruby.compiler.ir.instructions.ReceiveOptArgBase;
 import org.jruby.compiler.ir.operands.UndefinedValue;
 import org.jruby.compiler.ir.operands.Variable;
@@ -33,6 +34,11 @@ public class ReceiveOptArgInstr extends ReceiveOptArgBase {
     @Override
     public Instr cloneForBlockCloning(InlinerInfo ii) {
         return new ReceiveOptArgInstr(ii.getRenamedVariable(result), argIndex, minArgsLength);
+    }
+
+    @Override
+    public Instr cloneForInlinedClosure(InlinerInfo ii) {
+        return new OptArgMultipleAsgnInstr(ii.getRenamedVariable(result), ii.getYieldArg(), argIndex, minArgsLength);
     }
 
     public Object receiveOptArg(IRubyObject[] args) {

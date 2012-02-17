@@ -132,7 +132,6 @@ import org.jruby.compiler.ir.instructions.EnsureRubyArrayInstr;
 import org.jruby.compiler.ir.instructions.ExceptionRegionEndMarkerInstr;
 import org.jruby.compiler.ir.instructions.ExceptionRegionStartMarkerInstr;
 import org.jruby.compiler.ir.instructions.GVarAliasInstr;
-import org.jruby.compiler.ir.instructions.MultipleAsgnInstr;
 import org.jruby.compiler.ir.instructions.GetClassVarContainerModuleInstr;
 import org.jruby.compiler.ir.instructions.GetClassVariableInstr;
 import org.jruby.compiler.ir.instructions.GetFieldInstr;
@@ -160,7 +159,9 @@ import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
 import org.jruby.compiler.ir.instructions.ReceiveExceptionInstr;
 import org.jruby.compiler.ir.instructions.ReceiveSelfInstr;
 import org.jruby.compiler.ir.instructions.RecordEndBlockInstr;
+import org.jruby.compiler.ir.instructions.ReqdArgMultipleAsgnInstr;
 import org.jruby.compiler.ir.instructions.RescueEQQInstr;
+import org.jruby.compiler.ir.instructions.RestArgMultipleAsgnInstr;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
 import org.jruby.compiler.ir.instructions.SetReturnAddressInstr;
 import org.jruby.compiler.ir.instructions.SuperInstr;
@@ -806,7 +807,8 @@ public class IRBuilder {
         if (argsArray != null) {
             // We are in a nested receive situation -- when we are not at the root of a masgn tree
             // Ex: We are trying to receive (b,c) in this example: "|a, (b,c), d| = ..."
-            s.addInstr(new MultipleAsgnInstr(v, argsArray, argIndex, isSplat));
+            if (isSplat) s.addInstr(new RestArgMultipleAsgnInstr(v, argsArray, argIndex));
+            else s.addInstr(new ReqdArgMultipleAsgnInstr(v, argsArray, argIndex));
         } else {
             // argsArray can be null when the first node in the args-node-ast is a multiple-assignment
             // For example, for-nodes
@@ -2583,7 +2585,7 @@ public class IRBuilder {
                     buildBlockArgsAssignment(an, s, argsArray, i, false, false, false);
                 } else {
                     Variable rhsVal = s.getNewTemporaryVariable();
-                    s.addInstr(new MultipleAsgnInstr(rhsVal, values, i, false));
+                    s.addInstr(new ReqdArgMultipleAsgnInstr(rhsVal, values, i));
                     buildAssignment(an, s, rhsVal);
                 }
                 i++;
@@ -2599,7 +2601,7 @@ public class IRBuilder {
             // do nothing
         } else if (values != null) {
             Variable rhsVal = s.getNewTemporaryVariable();
-            s.addInstr(new MultipleAsgnInstr(rhsVal, values, i, true));
+            s.addInstr(new RestArgMultipleAsgnInstr(rhsVal, values, i));
             buildAssignment(argsNode, s, rhsVal); // rest of the argument array!
         } else {
             buildBlockArgsAssignment(argsNode, s, argsArray, i, false, false, true); // rest of the argument array!

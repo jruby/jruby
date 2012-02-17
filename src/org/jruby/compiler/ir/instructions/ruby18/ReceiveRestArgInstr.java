@@ -4,6 +4,7 @@ import org.jruby.compiler.ir.Interp;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.CopyInstr;
 import org.jruby.compiler.ir.instructions.Instr;
+import org.jruby.compiler.ir.instructions.RestArgMultipleAsgnInstr;
 import org.jruby.compiler.ir.instructions.ReceiveRestArgBase;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
@@ -26,6 +27,11 @@ public class ReceiveRestArgInstr extends ReceiveRestArgBase {
     @Override
     public Instr cloneForBlockCloning(InlinerInfo ii) {
         return new ReceiveRestArgInstr(ii.getRenamedVariable(result), argIndex);
+    }
+
+    @Override
+    public Instr cloneForInlinedClosure(InlinerInfo ii) {
+        return new RestArgMultipleAsgnInstr(ii.getRenamedVariable(result), ii.getYieldArg(), -1, -1, argIndex);
     }
 
     private IRubyObject[] NO_PARAMS = new IRubyObject[0];    
