@@ -35,69 +35,63 @@ class Object
     return other.java_class.assignable_from?(self.java_class)
   end
 
-  def java_import(import_class)
-    case import_class
-    when Array
-      import_class.each do |arg|
-        java_import(arg)
-      end
-      return
-    when String
-      # pull in the class
-      import_class = JavaUtilities.get_proxy_class(import_class);
-    when Module
-      if import_class.respond_to? "java_class"
-        # ok, it's a proxy
+  def java_import(*import_classes)
+    import_classes.flatten!
+
+    import_classes.map do |import_class|
+      case import_class
+      when String
+        # pull in the class
+        import_class = JavaUtilities.get_proxy_class(import_class)
+      when Module
+        if import_class.respond_to? "java_class"
+          # ok, it's a proxy
+        else
+          raise ArgumentError.new "not a Java class or interface: #{import_class}"
+        end
       else
-        raise ArgumentError.new "Not a Java class or interface: #{import_class}"
+        raise ArgumentError.new "invalid Java class or interface: #{import_class}"
       end
-    else
-      raise ArgumentError.new "Invalid java class/interface: #{import_class}"
-    end
 
-    full_name = import_class.java_class.name
-    package = import_class.java_class.package
-    # package can be nil if it's default or no package was defined by the classloader
-    if package
-      package_name = package.name
-    else
-      dot_index = full_name.rindex('.')
-      if dot_index
-        package_name = full_name[0...full_name.rindex('.')]
+      java_class = import_class.java_class
+      class_name = java_class.simple_name
+
+      if block_given?
+        package = java_class.package
+
+        # package can be nil if it's default or no package was defined by the classloader
+        if package
+          package_name = package.name
+        elsif java_class.full_name =~ /(.*)\.[^.]$/
+          package_name = $1
+        else
+          package_name = ""
+        end
+
+        constant = yield(package_name, class_name)
       else
-        # class in default package
-        package_name = ""
-      end
-    end
-    
-    if package_name.length > 0
-      class_name = full_name[(package_name.length + 1)..-1]
-    else
-      class_name = full_name
-    end
+        constant = class_name
 
-    if block_given?
-      constant = yield(package_name, class_name)
-    else
-      constant = class_name
-
-      # Inner classes are separated with $
-      if constant =~ /\$/
-        constant = constant.split(/\$/).last
+        # Inner classes are separated with $, get last element
+        if constant =~ /\$([^$])$/
+          constant = $1
+        end
       end
 
-      if constant[0,1].upcase != constant[0,1]
-        raise ArgumentError.new "cannot import class `" + class_name + "' as `" + constant + "'"
+      unless constant =~ /^[A-Z].*/
+        raise ArgumentError.new "cannot import class `" + java_class.name + "' as `" + constant + "'"
       end
-    end
 
-    # JRUBY-3453: Make import not complain if Java already has already imported the specific Java class
-    # If no constant is defined, or the constant is not already set to the java_import, assign it
-    eval_str = "if !defined?(#{constant}) || #{constant} != import_class; #{constant} = import_class; end"
-    if (Module === self)
-      return class_eval(eval_str, __FILE__, __LINE__)
-    else
-      return eval(eval_str, binding, __FILE__, __LINE__)
+      # JRUBY-3453: Make import not complain if Java already has already imported the specific Java class
+      # If no constant is defined, or the constant is not already set to the java_import, assign it
+      eval_str = "if !defined?(#{constant}) || #{constant} != import_class; #{constant} = import_class; end"
+      if Module === self
+        class_eval(eval_str, __FILE__, __LINE__)
+      else
+        eval(eval_str, binding, __FILE__, __LINE__)
+      end
+
+      import_class
     end
   end
   
