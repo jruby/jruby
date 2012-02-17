@@ -1181,6 +1181,10 @@ EOY
 
     end
 
+  def test_tab_in_scalar
+    assert_equal "36L\tDIESEL", YAML.load("--- 36L\tDIESEL\n")
+  end
+
     #
     # Test Time.now cycle
     #
