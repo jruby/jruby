@@ -172,7 +172,7 @@ public class CFGInliner {
 
 		  // Reset var rename map
 		  ii.resetRenameMaps();
-		  ii.setupYieldArgsAndYieldResult(yield);
+		  ii.setupYieldArgsAndYieldResult(yield, yieldBB, cl.getBlockBody().arity());
         for (BasicBlock b : closureCFG.getBasicBlocks()) {
             if (b != cEntry && b != cExit) b.migrateToHostScope(ii);
         }

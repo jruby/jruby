@@ -13,8 +13,8 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-// These instructions shows up in three contexts:
-// - To assign args in paranthesized units: |.., (a,b,c), .. |
+// These instructions show up in three contexts:
+// - To assign args in parenthesized units: |.., (a,b,c), .. |
 // - Regular multiple/parallel assignments: x,y,*z = ...
 // - When blocks are inlined, all receive* instructions get
 //   converted into multiple-assign instructions

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.jruby.runtime.Arity;
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.Tuple;
 import org.jruby.compiler.ir.instructions.jruby.ToAryInstr;
@@ -75,13 +76,29 @@ public class InlinerInfo {
         return varRenameMap;
     }
 
-    public void setupYieldArgsAndYieldResult(YieldInstr yi) {
-		  IRScope callerScope = getInlineHostScope();
-		  Variable yieldArgArray = callerScope.getNewTemporaryVariable();
-		  callerScope.addInstr(new ToAryInstr(yieldArgArray, yi.getYieldArg(), callerScope.getManager().getTrue()));
+    public void setupYieldArgsAndYieldResult(YieldInstr yi, BasicBlock yieldBB, Arity blockArity) {
+        int     blockArityValue = blockArity.getValue();
+        IRScope callerScope   = getInlineHostScope();
+        Operand yieldInstrArg = yi.getYieldArg();
+
+        if ((yieldInstrArg == null) || (blockArityValue == 0)) {
+            this.yieldArg = new Array(); // Zero-elt array
+        } else {
+            // SSS FIXME: The code below is not entirely correct.  We have to process 'yi.getYieldArg()' similar
+            // to how InterpretedIRBlockBody (1.8 and 1.9 modes) processes it.  We may need a special instruction
+            // that takes care of aligning the stars and bringing good fortune to arg yielder and arg receiver.
+
+            boolean needSpecialProcessing = (blockArityValue != -1) && (blockArityValue != 1);
+            if (yieldInstrArg instanceof Array) {
+                this.yieldArg = yieldInstrArg;
+            } else {
+                Variable yieldArgArray = callerScope.getNewTemporaryVariable(); 
+                yieldBB.addInstr(new ToAryInstr(yieldArgArray, yieldInstrArg, callerScope.getManager().getTrue()));
+                this.yieldArg = yieldArgArray;
+            }
+        }
 
         this.yieldResult = yi.getResult();
-        this.yieldArg = yieldArgArray;
     }
 
     public Variable getRenamedVariable(Variable v) {
