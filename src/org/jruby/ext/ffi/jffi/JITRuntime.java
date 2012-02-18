@@ -321,6 +321,7 @@ public final class JITRuntime {
     private static final PointerParameterStrategy NIL_POINTER_STRATEGY = new NilPointerParameterStrategy();
     private static final PointerParameterStrategy HEAP_POINTER_STRATEGY = new HeapPointerParameterStrategy();
     private static final PointerParameterStrategy STRING_POINTER_STRATEGY = new StringPointerParameterStrategy();
+    private static final PointerParameterStrategy CONST_STRING_POINTER_STRATEGY = new ConstStringPointerParameterStrategy();
 
     public static PointerParameterStrategy pointerParameterStrategy(IRubyObject parameter) {
         if (parameter instanceof Pointer) {
@@ -351,7 +352,7 @@ public final class JITRuntime {
     public static PointerParameterStrategy stringParameterStrategy(IRubyObject parameter) {
         if (parameter instanceof RubyString) {
             StringSupport.checkStringSafety(parameter.getRuntime(), parameter);
-            return STRING_POINTER_STRATEGY;
+            return CONST_STRING_POINTER_STRATEGY;
 
         } else if (parameter.isNil()) {
             return NIL_POINTER_STRATEGY;
