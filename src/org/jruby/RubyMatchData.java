@@ -117,34 +117,13 @@ public class RubyMatchData extends RubyObject {
         return ClassIndex.MATCHDATA;
     }
 
-    private static final class Pair implements Comparable {
+    private static final class Pair implements Comparable<Pair> {
         int bytePos, charPos;
-        public int compareTo(Object o) {
-            return bytePos - ((Pair)o).bytePos;
+        public int compareTo(Pair pair) {
+            return bytePos - pair.bytePos;
         }
     }
-    
-    private void updateCharOffsetOnlyOneReg(ByteList value, Encoding encoding) {
-        if (charOffsets == null || charOffsets.numRegs < 1) charOffsets = new Region(1);
-        
-        if (encoding.maxLength() == 1) {
-            charOffsets.beg[0] = begin;
-            charOffsets.end[0] = end;
-            charOffsetUpdated = true;
-            return;
-        }
-        
-        Pair[] pairs = new Pair[2];
-        pairs[0] = new Pair();
-        pairs[0].bytePos = begin;
-        pairs[1] = new Pair();
-        pairs[1].bytePos = end;
 
-        updatePairs(value, encoding, pairs);
-        
-        charOffsetUpdated = true;        
-    }
-    
     private void updatePairs(ByteList value, Encoding encoding, Pair[] pairs) {
         Arrays.sort(pairs);
 
@@ -160,6 +139,25 @@ public class RubyMatchData extends RubyObject {
             pairs[i].charPos = c;
             p = q;
         }
+    }
+
+    private void updateCharOffsetOnlyOneReg(ByteList value, Encoding encoding) {
+        if (charOffsets == null || charOffsets.numRegs < 1) charOffsets = new Region(1);
+        
+        if (encoding.maxLength() == 1) {
+            charOffsets.beg[0] = begin;
+            charOffsets.end[0] = end;
+            charOffsetUpdated = true;
+            return;
+        }
+
+        Pair[] pairs = new Pair[2];
+        pairs[0] = new Pair();
+        pairs[0].bytePos = begin;
+        pairs[1] = new Pair();
+        pairs[1].bytePos = end;
+
+        updatePairs(value, encoding, pairs);
 
         Pair key = new Pair();
         key.bytePos = begin;
@@ -168,31 +166,19 @@ public class RubyMatchData extends RubyObject {
         charOffsets.end[0] = pairs[Arrays.binarySearch(pairs, key)].charPos;        
     }
 
-    private void updateCharOffset() {
-        if (charOffsetUpdated) return;
-
-        ByteList value = str.getByteList();
-        Encoding enc = value.getEncoding();
-        
-        if (regs == null) {
-            updateCharOffsetOnlyOneReg(value, enc);
-            return;
-        }
-        
+    private void updateCharOffsetManyRegs(ByteList value, Encoding encoding) {
         int numRegs = regs.numRegs;
 
         if (charOffsets == null || charOffsets.numRegs < numRegs) charOffsets = new Region(numRegs);
         
-        if (enc.maxLength() == 1) {
+        if (encoding.maxLength() == 1) {
             for (int i = 0; i < numRegs; i++) {
                 charOffsets.beg[i] = regs.beg[i];
                 charOffsets.end[i] = regs.end[i];
             }
-            
-            charOffsetUpdated = true;
             return;
         }
-        
+
         Pair[] pairs = new Pair[numRegs * 2];
         for (int i = 0; i < pairs.length; i++) pairs[i] = new Pair();
 
@@ -202,8 +188,33 @@ public class RubyMatchData extends RubyObject {
             pairs[numPos++].bytePos = regs.beg[i];
             pairs[numPos++].bytePos = regs.end[i];
         }
-        
-        updatePairs(value, enc, pairs);
+
+        updatePairs(value, encoding, pairs);
+
+        Pair key = new Pair();
+        for (int i = 0; i < regs.numRegs; i++) {
+            if (regs.beg[i] < 0) {
+                charOffsets.beg[i] = charOffsets.end[i] = -1;
+                continue;
+            }
+            key.bytePos = regs.beg[i];
+            charOffsets.beg[i] = pairs[Arrays.binarySearch(pairs, key)].charPos;
+            key.bytePos = regs.end[i];
+            charOffsets.end[i] = pairs[Arrays.binarySearch(pairs, key)].charPos;
+        }        
+    }
+
+    private void updateCharOffset() {
+        if (charOffsetUpdated) return;
+
+        ByteList value = str.getByteList();
+        Encoding enc = value.getEncoding();
+
+        if (regs == null) {
+            updateCharOffsetOnlyOneReg(value, enc);
+        } else {
+            updateCharOffsetManyRegs(value, enc);
+        }
 
         charOffsetUpdated = true;
     }
