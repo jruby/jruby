@@ -1246,8 +1246,8 @@ public class RubyIO extends RubyObject {
     
     @JRubyMethod(name = "write_nonblock", required = 1)
     public IRubyObject write_nonblock(ThreadContext context, IRubyObject obj) {
-        // MRI behavior: always check whether the file is writable
-        // or not, even if we are to write 0 bytes.
+        Ruby runtime = context.runtime;
+
         OpenFile myOpenFile = getOpenFileChecked();
 
         try {
@@ -1264,7 +1264,13 @@ public class RubyIO extends RubyObject {
             ChannelStream stream = (ChannelStream)myOpenFile.getWriteStream();
 
             int written = stream.writenonblock(str.getByteList());
-            if (written == 0) throw context.runtime.newErrnoEWOULDBLOCKError();
+            if (written == 0) {
+                if (runtime.is1_9()) {
+                    return RubyKernel.raise(context, runtime.getKernel(), new IRubyObject[]{runtime.getClassFromPath("JRuby::EAGAINWritable")}, Block.NULL_BLOCK);
+                } else {
+                    throw runtime.newErrnoEWOULDBLOCKError();
+                }
+            }
 
             return context.getRuntime().newFixnum(written);
         } catch (IOException ex) {
@@ -2529,9 +2535,7 @@ public class RubyIO extends RubyObject {
             if (str.isEmpty()) {
                 Ruby ruby = context.getRuntime();
 
-                // FIXME: *oif* 1.9 actually does this
                 if (ruby.is1_9()) {
-                    // will throw
                     return RubyKernel.raise(context, ruby.getKernel(), new IRubyObject[]{ruby.getClassFromPath("JRuby::EAGAINReadable")}, Block.NULL_BLOCK);
                 } else {
                     throw ruby.newErrnoEAGAINError("");
