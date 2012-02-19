@@ -232,8 +232,8 @@ public class RubyClass extends RubyModule {
     }
 
     public static class VariableAccessor {
-        private String name;
-        private int index;
+        private final String name;
+        private final int index;
         private final int classId;
         public VariableAccessor(String name, int index, int classId) {
             this.index = index;
@@ -303,8 +303,16 @@ public class RubyClass extends RubyModule {
         return accessor;
     }
 
-    public synchronized VariableAccessor getObjectIdAccessorForWrite() {
-        if (objectIdAccessor == VariableAccessor.DUMMY_ACCESSOR) objectIdAccessor = allocateVariableAccessor("object_id");
+    public VariableAccessor getObjectIdAccessorForWrite() {
+        VariableAccessor accessor = objectIdAccessor;
+        return accessor != VariableAccessor.DUMMY_ACCESSOR ? accessor : allocateObjectIdAccessor();
+    }
+
+    private synchronized VariableAccessor allocateObjectIdAccessor() {
+        if (objectIdAccessor == VariableAccessor.DUMMY_ACCESSOR) {
+            objectIdAccessor = allocateVariableAccessor("object_id");
+        }
+
         return objectIdAccessor;
     }
 
@@ -312,8 +320,16 @@ public class RubyClass extends RubyModule {
         return objectIdAccessor;
     }
 
-    public synchronized VariableAccessor getNativeHandleAccessorForWrite() {
-        if (nativeHandleAccessor == VariableAccessor.DUMMY_ACCESSOR) nativeHandleAccessor = allocateVariableAccessor("native_handle");
+    public VariableAccessor getNativeHandleAccessorForWrite() {
+        VariableAccessor accessor = nativeHandleAccessor;
+        return accessor != VariableAccessor.DUMMY_ACCESSOR ? accessor : allocateNativeHandleAccessor();
+    }
+
+    private synchronized VariableAccessor allocateNativeHandleAccessor() {
+        if (nativeHandleAccessor == VariableAccessor.DUMMY_ACCESSOR) {
+            nativeHandleAccessor = allocateVariableAccessor("native_handle");
+        }
+
         return nativeHandleAccessor;
     }
 
