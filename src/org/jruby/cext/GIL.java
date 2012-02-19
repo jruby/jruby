@@ -50,8 +50,8 @@ final class GIL {
      * After finishing execution of unmanaged code, the executing thread has to re-acquire all previously
      * owned locks (for cases where the execution of the Thread went through Java->C->Java->C multiple times)
      */
-    public static void acquire(int locks) {
-        for(int i = 0; i < locks; i++) {
+    public static void acquire(int lockCount) {
+        for (int i = 0; i < lockCount; i++) {
             acquire();
         }
     }
@@ -82,10 +82,10 @@ final class GIL {
      * @return the unlock count
      */
     public static int releaseAllLocks() {
-        int i;
-        for(i = 0; i < lock.getHoldCount(); i++) {
-            releaseNoCleanup();
+        int count = lock.getHoldCount();
+        for (int i = 0; i < count; i++) {
+            lock.unlock();
         }
-        return ++i;
+        return count;
     }
 }

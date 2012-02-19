@@ -218,22 +218,14 @@ final class Native {
     final native long callFunction(long fn, long data);
     final native IRubyObject callProcMethod(long fn, long args_ary);
 
+    static native void freeHandle(long handle);
     final native long newHandle(IRubyObject obj, int type);
     final native long newFixnumHandle(IRubyObject obj, long value);
     final native long newFloatHandle(IRubyObject obj, double value);
     final native long newIOHandle(IRubyObject obj, int fileno, int i);
 
     final native void gc();
-    final native Object pollGC();
-
     final native long getNil();
     final native long getTrue();
     final native long getFalse();
-
-    static native void freeHandle(long handle);
-
-    static native long newRString();
-    static native void freeRString(long address);
-    static native long newRArray();
-    static native void freeRArray(long address);
 }
