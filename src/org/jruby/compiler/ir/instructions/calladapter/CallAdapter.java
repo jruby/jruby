@@ -12,9 +12,6 @@ import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-/**
- *
- */
 public abstract class CallAdapter {
     protected final CallSite callSite;
     
@@ -23,6 +20,10 @@ public abstract class CallAdapter {
     }
         
     public abstract Object call(ThreadContext context, IRubyObject self, IRubyObject receiver, DynamicScope currDynScope, Object[] temp);
+
+    public CallSite getCallSite() {
+        return callSite;
+    }
 
     private static CallSite getCallSiteFor(CallType callType, MethAddr methAddr) {
         assert callType != null: "Calltype should never be null";

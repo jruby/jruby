@@ -16,6 +16,7 @@ import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.builtin.InternalVariables;
 import org.jruby.runtime.builtin.InstanceVariables;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.compiler.ir.representations.InlinerInfo;
 
 /**
  * For argument processing.  If an opt arg does not exist we will return
@@ -32,6 +33,11 @@ public class UndefinedValue extends Operand implements IRubyObject {
     @Override
     public void addUsedVariables(List<org.jruby.compiler.ir.operands.Variable> l) { 
         /* Nothing to do */
+    }
+
+    @Override
+    public Operand cloneForInlining(InlinerInfo ii) {
+        return this;
     }
 
     @Override

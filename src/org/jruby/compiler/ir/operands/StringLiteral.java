@@ -7,6 +7,7 @@ import org.jruby.RubyString;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.compiler.ir.representations.InlinerInfo;
 
 /**
  * Represents a literal string value.
@@ -38,7 +39,12 @@ public class StringLiteral extends Operand {
     @Override
     public void addUsedVariables(List<Variable> l) {
         /* Do nothing */
-    }    
+    }
+
+    @Override
+    public Operand cloneForInlining(InlinerInfo ii) {
+        return this;
+    }
 
     @Override
     public String toString() {

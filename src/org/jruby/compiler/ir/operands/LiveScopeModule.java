@@ -6,6 +6,7 @@ import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.compiler.ir.representations.InlinerInfo;
 
 /**
  * Wrap current scope for the purpose of finding live module which
@@ -23,6 +24,11 @@ public class LiveScopeModule extends Operand {
     @Override
     public void addUsedVariables(List<Variable> l) {
         /* Do nothing */
+    }
+
+    @Override
+    public Operand cloneForInlining(InlinerInfo ii) {
+        return this;
     }
 
     @Override

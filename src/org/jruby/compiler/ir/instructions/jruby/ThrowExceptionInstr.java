@@ -56,6 +56,6 @@ public class ThrowExceptionInstr extends Instr {
         }
 
         // should never get here
-        throw new RuntimeException("Control shouldn't have reached here in ThrowExceptionInstr");
+        throw new RuntimeException("Control shouldn't have reached here in ThrowExceptionInstr.  excObj is: " + excObj);
     }
 }

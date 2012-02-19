@@ -3,6 +3,7 @@ package org.jruby.compiler.ir.operands;
 import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.RubyLocalJumpError;
+import org.jruby.compiler.ir.representations.InlinerInfo;
 
 // Encapsulates exceptions to be thrown at runtime
 public class IRException extends Operand {
@@ -21,6 +22,11 @@ public class IRException extends Operand {
     @Override
     public void addUsedVariables(List<Variable> l) {
         /* Do nothing */
+    }
+
+    @Override
+    public Operand cloneForInlining(InlinerInfo ii) {
+        return this;
     }
 
     @Override

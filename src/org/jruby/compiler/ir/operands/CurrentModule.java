@@ -4,6 +4,7 @@ import java.util.List;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.compiler.ir.representations.InlinerInfo;
 
 public class CurrentModule extends Operand {
     public CurrentModule() { }
@@ -21,6 +22,11 @@ public class CurrentModule extends Operand {
     @Override
     public void addUsedVariables(List<Variable> l) { 
         /* Nothing to do */
+    }
+
+    @Override
+    public Operand cloneForInlining(InlinerInfo ii) {
+        return this;
     }
 
     @Override

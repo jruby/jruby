@@ -7,6 +7,7 @@ import org.jruby.compiler.ir.dataflow.analyses.BindingLoadPlacementProblem;
 import org.jruby.compiler.ir.dataflow.analyses.BindingStorePlacementProblem;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
+import org.jruby.compiler.ir.representations.InlinerInfo;
 
 public class DataFlowConstants {
     public static final String LVP_NAME = (new LiveVariablesProblem()).getName();
@@ -26,6 +27,11 @@ public class DataFlowConstants {
         }
 
         @Override
+        public Operand cloneForInlining(InlinerInfo ii) {
+            return this;
+        }
+
+        @Override
         public String toString() {
             return "bottom";
         }
@@ -35,6 +41,11 @@ public class DataFlowConstants {
         @Override
         public void addUsedVariables(List<Variable> l) { 
             /* Nothing to do */
+        }
+
+        @Override
+        public Operand cloneForInlining(InlinerInfo ii) {
+            return this;
         }
         @Override
         public String toString() {
@@ -46,6 +57,11 @@ public class DataFlowConstants {
         @Override
         public void addUsedVariables(List<Variable> l) { 
             /* Nothing to do */
+        }
+
+        @Override
+        public Operand cloneForInlining(InlinerInfo ii) {
+            return this;
         }
         @Override
         public String toString() {

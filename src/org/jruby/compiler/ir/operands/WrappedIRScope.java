@@ -5,6 +5,7 @@ import org.jruby.compiler.ir.IRScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.compiler.ir.representations.InlinerInfo;
 
 public class WrappedIRScope extends Operand {
     private final IRScope scope;
@@ -17,6 +18,11 @@ public class WrappedIRScope extends Operand {
     public void addUsedVariables(List<Variable> l) {
         /* Nothing to do */
     }    
+
+    @Override
+    public Operand cloneForInlining(InlinerInfo ii) {
+        return this;
+    }
 
     public IRScope getScope() {
         return scope;

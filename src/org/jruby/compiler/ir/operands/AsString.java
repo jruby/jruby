@@ -5,6 +5,7 @@ import java.util.Map;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.compiler.ir.representations.InlinerInfo;
 
 public class AsString extends Operand {
     final private Operand source; 
@@ -23,6 +24,11 @@ public class AsString extends Operand {
     public Operand getSimplifiedOperand(Map<Operand, Operand> valueMap, boolean force) {
         Operand newSource = source.getSimplifiedOperand(valueMap, force);
         return (newSource == source) ? this : new AsString(newSource);
+    }
+
+    @Override
+    public Operand cloneForInlining(InlinerInfo ii) {
+        return new AsString(source.cloneForInlining(ii));
     }
 
     @Override

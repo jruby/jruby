@@ -74,9 +74,7 @@ public abstract class Operand {
      */
     public abstract void addUsedVariables(List<Variable> l);
 
-    public Operand cloneForInlining(InlinerInfo ii) {
-        return this;
-    }
+    public abstract Operand cloneForInlining(InlinerInfo ii);
 
     @Interp
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {

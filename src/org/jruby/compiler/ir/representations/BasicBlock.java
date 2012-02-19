@@ -7,6 +7,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.IRClosure;
+import org.jruby.compiler.ir.instructions.CallBase;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.ResultInstr;
 import org.jruby.compiler.ir.instructions.YieldInstr;
@@ -15,6 +16,7 @@ import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
+import org.jruby.compiler.ir.operands.WrappedIRClosure;
 import org.jruby.compiler.ir.util.DataInfo;
 
 public class BasicBlock implements DataInfo {
@@ -115,6 +117,11 @@ public class BasicBlock implements DataInfo {
             if (clonedInstr != null) {
                 clonedBB.addInstr(clonedInstr);
                 if (clonedInstr instanceof YieldInstr) ii.recordYieldSite(clonedBB, (YieldInstr)clonedInstr);
+                if (clonedInstr instanceof CallBase) {
+                    CallBase call = (CallBase)clonedInstr;
+                    Operand block = call.getClosureArg(null);
+                    if (block instanceof WrappedIRClosure) ii.getInlineHostScope().addClosure(((WrappedIRClosure)block).getClosure());
+                }
             }
         }
 
@@ -170,8 +177,15 @@ public class BasicBlock implements DataInfo {
             }
 
             // clone
-            Instr newI = i.cloneForInlinedClosure(ii);
-            if (newI != null) clonedInstrs.add(newI);
+            Instr clonedInstr = i.cloneForInlinedClosure(ii);
+            if (clonedInstr != null) {
+                clonedInstrs.add(clonedInstr);
+                if (clonedInstr instanceof CallBase) {
+                    CallBase call = (CallBase)clonedInstr;
+                    Operand block = call.getClosureArg(null);
+                    if (block instanceof WrappedIRClosure) hostScope.addClosure(((WrappedIRClosure)block).getClosure());
+                }
+            }
         }
 
         this.instrs = clonedInstrs;

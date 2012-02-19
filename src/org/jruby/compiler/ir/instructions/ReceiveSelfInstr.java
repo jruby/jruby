@@ -41,6 +41,11 @@ public class ReceiveSelfInstr extends Instr implements ResultInstr {
         return null;
     }
 
+    @Override
+    public Instr cloneForBlockCloning(InlinerInfo ii) {
+        return this;
+    }
+
     public void compile(JVM jvm) {
         int $selfIndex = jvm.methodData().local(getResult());
         jvm.method().loadLocal(1);

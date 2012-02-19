@@ -1,5 +1,6 @@
 package org.jruby.compiler.ir.operands;
 
+import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
