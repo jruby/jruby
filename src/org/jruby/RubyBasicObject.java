@@ -1004,16 +1004,20 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * in serial, and guaranteed unique for up to 2^63 objects. The special
      * objectId slot is managed separately from the "normal" vars so it
      * does not marshal, clone/dup, or refuse to be initially set when the
+     * object is frozen.
      */
-    protected synchronized long getObjectId() {
-        // object is frozen.
+    protected long getObjectId() {
+        RubyClass realClass = metaClass.getRealClass();
+        RubyClass.VariableAccessor objectIdAccessor = realClass.getObjectIdAccessorForRead();
+        Long id = (Long)objectIdAccessor.get(this);
+        if (id != null) return id;
+        
         synchronized (this) {
-            RubyClass.VariableAccessor objectIdAccessor = getMetaClass().getRealClass().getObjectIdAccessorForWrite();
-            Long id = (Long)objectIdAccessor.get(this);
-            if (id == null) {
-                return initObjectId(objectIdAccessor);
-            }
-            return id.longValue();
+            objectIdAccessor = realClass.getObjectIdAccessorForRead();
+            id = (Long)objectIdAccessor.get(this);
+            if (id != null) return id;
+
+            return initObjectId(realClass.getObjectIdAccessorForWrite());
         }
     }
 
