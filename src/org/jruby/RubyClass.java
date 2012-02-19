@@ -270,9 +270,15 @@ public class RubyClass extends RubyModule {
     
     private volatile VariableAccessor objectIdAccessor = VariableAccessor.DUMMY_ACCESSOR;
     
-    private volatile VariableAccessor nativeHandleAccessor = VariableAccessor.DUMMY_ACCESSOR;
+    private volatile VariableAccessor cextHandleAccessor = VariableAccessor.DUMMY_ACCESSOR;
 
     private volatile VariableAccessor ffiHandleAccessor = VariableAccessor.DUMMY_ACCESSOR;
+    private static final AtomicReferenceFieldUpdater<RubyClass, VariableAccessor> objectIdUpdater
+            = AtomicReferenceFieldUpdater.newUpdater(RubyClass.class, VariableAccessor.class, "objectIdAccessor");
+    private static final AtomicReferenceFieldUpdater<RubyClass, VariableAccessor> cextHandleUpdater
+            = AtomicReferenceFieldUpdater.newUpdater(RubyClass.class, VariableAccessor.class, "cextHandleAccessor");
+    private static final AtomicReferenceFieldUpdater<RubyClass, VariableAccessor> ffiHandleUpdater
+            = AtomicReferenceFieldUpdater.newUpdater(RubyClass.class, VariableAccessor.class, "ffiHandleAccessor");
 
     private synchronized final VariableAccessor allocateVariableAccessor(String name) {
         String[] myVariableNames = variableNames;
@@ -305,6 +311,17 @@ public class RubyClass extends RubyModule {
         return ivarAccessor;
     }
 
+    private synchronized VariableAccessor allocateVariableAccessor(AtomicReferenceFieldUpdater<RubyClass, VariableAccessor> updater,
+                                                                   String name) {
+        VariableAccessor accessor = updater.get(this);
+        if (accessor == VariableAccessor.DUMMY_ACCESSOR) {
+            updater.set(this, accessor = allocateVariableAccessor(name));
+        }
+
+        return accessor;
+    }
+
+
     public VariableAccessor getVariableAccessorForRead(String name) {
         VariableAccessor accessor = getVariableAccessorsForRead().get(name);
         if (accessor == null) accessor = VariableAccessor.DUMMY_ACCESSOR;
@@ -313,15 +330,7 @@ public class RubyClass extends RubyModule {
 
     public VariableAccessor getObjectIdAccessorForWrite() {
         VariableAccessor accessor = objectIdAccessor;
-        return accessor != VariableAccessor.DUMMY_ACCESSOR ? accessor : allocateObjectIdAccessor();
-    }
-
-    private synchronized VariableAccessor allocateObjectIdAccessor() {
-        if (objectIdAccessor == VariableAccessor.DUMMY_ACCESSOR) {
-            objectIdAccessor = allocateVariableAccessor("object_id");
-        }
-
-        return objectIdAccessor;
+        return accessor != VariableAccessor.DUMMY_ACCESSOR ? accessor : allocateVariableAccessor(objectIdUpdater, "object_id");
     }
 
     public VariableAccessor getObjectIdAccessorForRead() {
@@ -329,33 +338,17 @@ public class RubyClass extends RubyModule {
     }
 
     public VariableAccessor getNativeHandleAccessorForWrite() {
-        VariableAccessor accessor = nativeHandleAccessor;
-        return accessor != VariableAccessor.DUMMY_ACCESSOR ? accessor : allocateNativeHandleAccessor();
-    }
-
-    private synchronized VariableAccessor allocateNativeHandleAccessor() {
-        if (nativeHandleAccessor == VariableAccessor.DUMMY_ACCESSOR) {
-            nativeHandleAccessor = allocateVariableAccessor("native_handle");
-        }
-
-        return nativeHandleAccessor;
+        VariableAccessor accessor = cextHandleAccessor;
+        return accessor != VariableAccessor.DUMMY_ACCESSOR ? accessor : allocateVariableAccessor(cextHandleUpdater, "cext");
     }
 
     public VariableAccessor getNativeHandleAccessorForRead() {
-        return nativeHandleAccessor;
+        return cextHandleAccessor;
     }
 
     public VariableAccessor getFFIHandleAccessorForWrite() {
         VariableAccessor accessor = ffiHandleAccessor;
-        return accessor != VariableAccessor.DUMMY_ACCESSOR ? accessor : allocateFFIHandleAccessor();
-    }
-
-    private synchronized VariableAccessor allocateFFIHandleAccessor() {
-        if (ffiHandleAccessor == VariableAccessor.DUMMY_ACCESSOR) {
-            ffiHandleAccessor = allocateVariableAccessor("ffi");
-        }
-
-        return ffiHandleAccessor;
+        return accessor != VariableAccessor.DUMMY_ACCESSOR ? accessor : allocateVariableAccessor(ffiHandleUpdater, "ffi");
     }
 
     public VariableAccessor getFFIHandleAccessorForRead() {
@@ -369,7 +362,7 @@ public class RubyClass extends RubyModule {
     public int getVariableTableSizeWithExtras() {
         return variableAccessors.size()
                 + (objectIdAccessor == VariableAccessor.DUMMY_ACCESSOR ? 0 : 1)
-                + (nativeHandleAccessor == VariableAccessor.DUMMY_ACCESSOR ? 0 : 1)
+                + (cextHandleAccessor == VariableAccessor.DUMMY_ACCESSOR ? 0 : 1)
                 + (ffiHandleAccessor == VariableAccessor.DUMMY_ACCESSOR ? 0 : 1);
     }
 
