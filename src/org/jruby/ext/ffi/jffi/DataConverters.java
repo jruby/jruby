@@ -57,22 +57,27 @@ public class DataConverters {
         
         return null;
     }
-    
-     
-    static NativeDataConverter getParameterConverter(Type type, RubyHash enums) {
-        if (type instanceof Type.Builtin && isEnumConversionRequired(type, enums)) {
-            return new IntOrEnumConverter(type.getNativeType(), enums);
-        
-        } else if (type instanceof MappedType) {
+
+
+    static NativeDataConverter getParameterConverter(Type type) {
+        if (type instanceof MappedType) {
             MappedType mappedType = (MappedType) type;
             return !mappedType.isPostInvokeRequired() && !mappedType.isReferenceRequired()
                     ? new MappedDataConverter(mappedType) : null;
-        
+
         } else if (type instanceof CallbackInfo) {
             return new CallbackDataConverter((CallbackInfo) type);
         }
-        
+
         return null;
+    }
+    static NativeDataConverter getParameterConverter(Type type, RubyHash enums) {
+        if (isEnumConversionRequired(type, enums)) {
+            return new IntOrEnumConverter(type.getNativeType(), enums);
+        
+        } else {
+            return getParameterConverter(type);
+        }
     }
     
     public static final class IntOrEnumConverter extends NativeDataConverter {
