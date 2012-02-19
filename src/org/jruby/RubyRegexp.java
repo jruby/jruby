@@ -825,6 +825,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return result;
     }
 
+    private static final int QUOTED_V = 11;
     static ByteList quote19(ByteList bs, boolean asciiOnly) {
         int p = bs.getBegin();
         int end = p + bs.getRealSize();
@@ -854,7 +855,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                 case '*': case '.': case '\\':
                 case '?': case '+': case '^': case '$':
                 case ' ': case '#':
-                case '\t': case '\f': case '\n': case '\r':
+                case '\t': case '\f': case QUOTED_V: case '\n': case '\r':
                     break metaFound;
                 }
                 p += cl;
@@ -917,6 +918,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             case '\f':
                 op += enc.codeToMbc('\\', obytes, op);
                 op += enc.codeToMbc('f', obytes, op);
+                continue;
+            case QUOTED_V:
+                op += enc.codeToMbc('\\', obytes, op);
+                op += enc.codeToMbc('v', obytes, op);
                 continue;
             }
             op += enc.codeToMbc(c, obytes, op);
