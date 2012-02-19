@@ -1,6 +1,10 @@
 package org.jruby.compiler.ir.representations;
 
+import java.util.Set;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.HashSet;
+
 import org.jruby.RubyModule;
 import org.jruby.compiler.ir.IRClosure;
 import org.jruby.compiler.ir.IRScope;
@@ -39,21 +43,6 @@ public class CFGInliner {
         }
 
         cfg.removeAllOutgoingEdgesForBB(callBB);
-
-        // 1b. add if-then-else guard instruction
-        Label failurePathLabel = hostScope.getNewLabel();
-        callBB.addInstr(new ModuleVersionGuardInstr(implClass, classToken, call.getReceiver(), failurePathLabel));
-
-        // 1c. add failure path code
-        BasicBlock failurePathBB = new BasicBlock(cfg, failurePathLabel);
-        cfg.addBasicBlock(failurePathBB);
-        failurePathBB.addInstr(call);
-        failurePathBB.addInstr(new JumpInstr(splitBBLabel));
-        call.blockInlining();
-
-        // 1d. wire it in
-        cfg.addEdge(callBB, failurePathBB, CFG.EdgeType.REGULAR);
-        cfg.addEdge(failurePathBB, splitBB, CFG.EdgeType.REGULAR);
 
         // 2. clone callee
         CFG methodCFG = scope.getCFG();
@@ -140,10 +129,20 @@ public class CFGInliner {
             }
         }
 
-        // 7. callBB will only have a single successor & splitBB will only have a single predecessor
-        //    after inlining the callee.  Merge them with their successor/predecessors respectively
-        //    Merge only after fixing up the rescuer map above
-        mergeStraightlineBBs(callBB, splitBB);
+        // 7. Add inline guard that verifies that the method inlined is the same 
+        // that gets called in future invocations.  In addition to the guard, add 
+        // a falure path code.
+        Label failurePathLabel = hostScope.getNewLabel();
+        callBB.addInstr(new ModuleVersionGuardInstr(implClass, classToken, call.getReceiver(), failurePathLabel));
+
+        BasicBlock failurePathBB = new BasicBlock(cfg, failurePathLabel);
+        cfg.addBasicBlock(failurePathBB);
+        failurePathBB.addInstr(call);
+        failurePathBB.addInstr(new JumpInstr(splitBBLabel));
+        call.blockInlining();
+
+        cfg.addEdge(callBB, failurePathBB, CFG.EdgeType.REGULAR);
+        cfg.addEdge(failurePathBB, splitBB, CFG.EdgeType.REGULAR);
 
         // 8. Inline any closure argument passed into the call.
         Operand closureArg = call.getClosureArg(hostScope.getManager().getNil());
@@ -161,6 +160,22 @@ public class CFGInliner {
 
             Tuple t = (Tuple) yieldSites.get(0);
             inlineClosureAtYieldSite(ii, ((WrappedIRClosure) closureArg).getClosure(), (BasicBlock) t.a, (YieldInstr) t.b);
+        }
+
+        // 9. Optimize cfg by merging straight-line bbs
+        List<BasicBlock> cfgBBs = new ArrayList<BasicBlock>();
+        for (BasicBlock b: cfg.getBasicBlocks()) {
+            cfgBBs.add(b);
+        }
+
+        Set<BasicBlock> mergedBBs = new HashSet<BasicBlock>();
+        for (BasicBlock b: cfgBBs) {
+            if (!mergedBBs.contains(b) && (cfg.outDegree(b) == 1)) {
+                BasicBlock outB = cfg.getOutgoingDestination(b);
+                if ((cfg.inDegree(outB) == 1) && (mergeBBs(b, outB) == true)) {
+                    mergedBBs.add(outB);
+                }
+            }
         }
 
 //        System.out.println("final cfg   :" + cfg.toStringGraph());
@@ -273,7 +288,7 @@ public class CFGInliner {
     }
     
     
-    private void mergeBBs(BasicBlock a, BasicBlock b) {
+    private boolean mergeBBs(BasicBlock a, BasicBlock b) {
         BasicBlock aR = cfg.getRescuerBBFor(a);
         BasicBlock bR = cfg.getRescuerBBFor(b);
         // We can merge 'a' and 'b' if one of the following is true:
@@ -300,6 +315,10 @@ public class CFGInliner {
                 BasicBlock bE = cfg.getEnsurerBBFor(b);
                 if ((aE == null) && (bE != null)) cfg.setRescuerBB(a, bE);
             }
+
+            return true;
+        } else {
+            return false;
         }
     }    
     
