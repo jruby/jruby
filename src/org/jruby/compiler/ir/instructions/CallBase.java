@@ -28,6 +28,7 @@ public abstract class CallBase extends Instr {
     private boolean canBeEval;
     private boolean targetRequiresCallersBinding;    // Does this call make use of the caller's binding?
     public HashMap<DynamicMethod, Integer> profile;
+    private boolean dontInline;
 
     protected CallBase(Operation op, CallType callType, MethAddr methAddr, Operand receiver, Operand[] args, Operand closure) {
         super(op);
@@ -40,6 +41,8 @@ public abstract class CallBase extends Instr {
         flagsComputed = false;
         canBeEval = true;
         targetRequiresCallersBinding = true;
+        callAdapter = CallAdapter.createFor(callType, methAddr, arguments, closure);
+        dontInline = false;
     }
 
     public Operand[] getOperands() {
@@ -68,6 +71,14 @@ public abstract class CallBase extends Instr {
     
     public CallType getCallType() {
         return callType;
+    }
+
+    public void blockInlining() {
+        dontInline = true;
+    }
+
+    public boolean inliningBlocked() {
+        return dontInline;
     }
 
     @Override

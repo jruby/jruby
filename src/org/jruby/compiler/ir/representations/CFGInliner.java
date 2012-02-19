@@ -49,6 +49,7 @@ public class CFGInliner {
         cfg.addBasicBlock(failurePathBB);
         failurePathBB.addInstr(call);
         failurePathBB.addInstr(new JumpInstr(splitBBLabel));
+        call.blockInlining();
 
         // 1d. wire it in
         cfg.addEdge(callBB, failurePathBB, CFG.EdgeType.REGULAR);
