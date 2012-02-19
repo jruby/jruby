@@ -19,5 +19,13 @@ require 'benchmark'
         end
       end.map(&:join)
     end
+
+    bm.report("1M * 8 threaded calls to Object.new.object_id") do
+      (1..8).map do
+        Thread.new do
+          1_000_000.times { Object.new.object_id }
+        end
+      end.map(&:join)
+    end
   end
 end
