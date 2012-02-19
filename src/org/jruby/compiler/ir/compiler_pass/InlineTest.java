@@ -63,7 +63,7 @@ public class InlineTest implements CompilerPass {
                     MethAddr addr = call.getMethodAddr();
                     if (methodToInline.equals(((MethAddr) addr).getName())) {
                         LOG.debug("Will be inlining method {} at callsite: {}", methodToInline, call);
-                        method.inlineMethod(mi, b, call);
+                        method.inlineMethod(mi, null, 0, b, call);
                         // Just inline once per scope -- this is a test after all!
                         // Because, the surrounding iterators will break with a concurrent modification exception if we proceed!
                         return;

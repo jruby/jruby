@@ -1,24 +1,20 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.jruby.compiler.ir.representations;
 
 import java.util.List;
+import org.jruby.RubyModule;
 import org.jruby.compiler.ir.IRClosure;
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.Tuple;
 import org.jruby.compiler.ir.instructions.CallBase;
+import org.jruby.compiler.ir.instructions.JumpInstr;
+import org.jruby.compiler.ir.instructions.ModuleVersionGuardInstr;
 import org.jruby.compiler.ir.instructions.YieldInstr;
+import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.WrappedIRClosure;
 import org.jruby.compiler.ir.representations.CFG.EdgeType;
 import org.jruby.compiler.ir.util.Edge;
 
-/**
- *
- * @author enebo
- */
 public class CFGInliner {
     private CFG cfg;
     
@@ -26,16 +22,37 @@ public class CFGInliner {
         this.cfg = build;
     }
     
-    public void inlineMethod(IRScope scope, BasicBlock callBB, CallBase call) {
+    public void inlineMethod(IRScope scope, RubyModule implClass, int classToken, BasicBlock callBB, CallBase call) {
+//        System.out.println("host cfg   :" + cfg.toStringGraph());
+//        System.out.println("host instrs:" + cfg.toStringInstrs());
+//        System.out.println("source cfg   :" + scope.getCFG().toStringGraph());
+//        System.out.println("source instrs:" + scope.getCFG().toStringInstrs());
+
         // 1. split callsite bb and move outbound edges from callsite bb to split bb.
+        IRScope hostScope = cfg.getScope();
         InlinerInfo ii = new InlinerInfo(call, cfg);
-        BasicBlock splitBB = callBB.splitAtInstruction(call, cfg.getScope().getNewLabel(), false);
+        Label splitBBLabel = hostScope.getNewLabel();
+        BasicBlock splitBB = callBB.splitAtInstruction(call, splitBBLabel, false);
         cfg.addBasicBlock(splitBB);
         for (Edge<BasicBlock> e : cfg.getOutgoingEdges(callBB)) {
             cfg.addEdge(splitBB, e.getDestination().getData(), e.getType());
         }
 
         cfg.removeAllOutgoingEdgesForBB(callBB);
+
+        // 1b. add if-then-else guard instruction
+        Label failurePathLabel = hostScope.getNewLabel();
+        callBB.addInstr(new ModuleVersionGuardInstr(implClass, classToken, call.getReceiver(), failurePathLabel));
+
+        // 1c. add failure path code
+        BasicBlock failurePathBB = new BasicBlock(cfg, failurePathLabel);
+        cfg.addBasicBlock(failurePathBB);
+        failurePathBB.addInstr(call);
+        failurePathBB.addInstr(new JumpInstr(splitBBLabel));
+
+        // 1d. wire it in
+        cfg.addEdge(callBB, failurePathBB, CFG.EdgeType.REGULAR);
+        cfg.addEdge(failurePathBB, splitBB, CFG.EdgeType.REGULAR);
 
         // 2. clone callee
         CFG methodCFG = scope.getCFG();
@@ -63,7 +80,7 @@ public class CFGInliner {
         for (Edge<BasicBlock> e : methodCFG.getOutgoingEdges(mEntry)) {
             BasicBlock destination = e.getDestination().getData();
             if (destination != mExit) {
-                cfg.addEdge(callBB, ii.getRenamedBB(destination), e.getType());
+                cfg.addEdge(callBB, ii.getRenamedBB(destination), CFG.EdgeType.FALL_THROUGH);
             }
         }
 
@@ -128,7 +145,7 @@ public class CFGInliner {
         mergeStraightlineBBs(callBB, splitBB);
 
         // 8. Inline any closure argument passed into the call.
-        Operand closureArg = call.getClosureArg(cfg.getScope().getManager().getNil());
+        Operand closureArg = call.getClosureArg(hostScope.getManager().getNil());
         List yieldSites = ii.getYieldSites();
         if (closureArg != null && !yieldSites.isEmpty()) {
             // Detect unlikely but contrived scenarios where there are far too many yield sites that could lead to code blowup
@@ -144,6 +161,9 @@ public class CFGInliner {
             Tuple t = (Tuple) yieldSites.get(0);
             inlineClosureAtYieldSite(ii, ((WrappedIRClosure) closureArg).getClosure(), (BasicBlock) t.a, (YieldInstr) t.b);
         }
+
+//        System.out.println("final cfg   :" + cfg.toStringGraph());
+//        System.out.println("final instrs:" + cfg.toStringInstrs());
     }
     
    private void inlineClosureAtYieldSite(InlinerInfo ii, IRClosure cl, BasicBlock yieldBB, YieldInstr yield) {
@@ -161,18 +181,18 @@ public class CFGInliner {
         cfg.removeAllOutgoingEdgesForBB(yieldBB);
 
         // 2. Merge closure cfg into the current cfg
-		  // SSS FIXME: Is it simpler to just clone everything?
-		  //
+        // SSS FIXME: Is it simpler to just clone everything?
+        //
         // NOTE: No need to clone basic blocks in the closure because they are part of the caller's cfg
         // and is being merged in at the yield site -- there is no need for the closure after the merge.
-		  // But, we will clone individual instructions.
+        // But, we will clone individual instructions.
         CFG closureCFG = cl.getCFG();
         BasicBlock cEntry = closureCFG.getEntryBB();
         BasicBlock cExit = closureCFG.getExitBB();
 
-		  // Reset var rename map
-		  ii.resetRenameMaps();
-		  ii.setupYieldArgsAndYieldResult(yield, yieldBB, cl.getBlockBody().arity());
+        // Reset var rename map
+        ii.resetRenameMaps();
+        ii.setupYieldArgsAndYieldResult(yield, yieldBB, cl.getBlockBody().arity());
         for (BasicBlock b : closureCFG.getBasicBlocks()) {
             if (b != cEntry && b != cExit) b.migrateToHostScope(ii);
         }

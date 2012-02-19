@@ -28,6 +28,7 @@ import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.JumpIndirectInstr;
 import org.jruby.compiler.ir.instructions.JumpInstr;
 import org.jruby.compiler.ir.instructions.LineNumberInstr;
+import org.jruby.compiler.ir.instructions.ModuleVersionGuardInstr;
 import org.jruby.compiler.ir.instructions.ReceivePreReqdArgInstr;
 import org.jruby.compiler.ir.instructions.ReceiveOptArgBase;
 import org.jruby.compiler.ir.instructions.ReceiveRestArgBase;
@@ -324,6 +325,11 @@ public class Interpreter {
                         boolean eql = arg2 == scope.getManager().getNil() || arg2 == UndefinedValue.UNDEFINED ?
                                 value1 == value2 : ((IRubyObject) value1).op_equal(context, (IRubyObject)value2).isTrue();
                         ipc = !eql ? bne.getJumpTarget().getTargetPC() : ipc+1;
+                        break;
+                    }
+                    case MODULE_GUARD: {
+                        ModuleVersionGuardInstr mvg = (ModuleVersionGuardInstr)lastInstr;
+                        ipc = mvg.versionMatches(context, currDynScope, self, temp) ? ipc + 1 : mvg.getFailurePathLabel().getTargetPC();
                         break;
                     }
                     case RECV_PRE_REQD_ARG: {

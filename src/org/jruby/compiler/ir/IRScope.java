@@ -990,15 +990,16 @@ public abstract class IRScope {
 //            }
 //        }
     }    
-    
-    public void inlineMethod(IRScope method, BasicBlock basicBlock, CallBase call) {
+
+    public void inlineMethod(IRScope method, RubyModule implClass, int classToken, BasicBlock basicBlock, CallBase call) {
         depends(cfg());
-        new CFGInliner(cfg).inlineMethod(method, basicBlock, call);
+        new CFGInliner(cfg).inlineMethod(method, implClass, classToken, basicBlock, call);
 
         // Reset state
         linearizedBBList = null;
         linearizedInstrArray = null;
         dfProbs = new HashMap<String, DataFlowProblem>();
+        runCompilerPass(new DeadCodeElimination());
     }
     
     

@@ -42,6 +42,9 @@ public enum Operation {
     B_TRUE(OpFlags.f_is_jump_or_branch),
     B_FALSE(OpFlags.f_is_jump_or_branch),
 
+    /** guard instruction which also acts as a branch */
+    MODULE_GUARD(OpFlags.f_is_jump_or_branch),
+
     /** argument receive in methods and blocks **/
     RECV_SELF(0),
     RECV_PRE_REQD_ARG(OpFlags.f_is_arg_receive),
@@ -103,7 +106,7 @@ public enum Operation {
     MASGN_REQD(OpFlags.f_is_load),
     MASGN_REST(OpFlags.f_is_load),
 
-	 /** constant operations */
+    /** constant operations */
     LEXICAL_SEARCH_CONST(OpFlags.f_can_raise_exception),
     INHERITANCE_SEARCH_CONST(OpFlags.f_can_raise_exception),
     CONST_MISSING(OpFlags.f_can_raise_exception),
@@ -154,16 +157,11 @@ public enum Operation {
 
     /** primitive value boxing/unboxing -- still unused **/
     BOX_VALUE(0),
-    UNBOX_VALUE(0),
-
-    /** optimization guards -- still unused **/
-    MODULE_VERSION_GUARD(0), 
-    METHOD_VERSION_GUARD(0);
+    UNBOX_VALUE(0);
     
 /* ----------- unused ops ------------------
 // primitive alu operations -- unboxed primitive ops (not native ruby)
     ADD(0), SUB(0), MUL(0), DIV(OpFlags.f_can_raise_exception),
-    DECLARE_TYPE(OpType.declare_type_op), // Charlie added this for Duby originally?
  * -----------------------------------------*/
 
     private int flags;
