@@ -1266,7 +1266,7 @@ public class RubyIO extends RubyObject {
             int written = stream.writenonblock(str.getByteList());
             if (written == 0) {
                 if (runtime.is1_9()) {
-                    return RubyKernel.raise(context, runtime.getKernel(), new IRubyObject[]{runtime.getClassFromPath("JRuby::EAGAINWritable")}, Block.NULL_BLOCK);
+                    throw runtime.newErrnoEAGAINWritableError("");
                 } else {
                     throw runtime.newErrnoEWOULDBLOCKError();
                 }
@@ -2536,7 +2536,7 @@ public class RubyIO extends RubyObject {
                 Ruby ruby = context.getRuntime();
 
                 if (ruby.is1_9()) {
-                    return RubyKernel.raise(context, ruby.getKernel(), new IRubyObject[]{ruby.getClassFromPath("JRuby::EAGAINReadable")}, Block.NULL_BLOCK);
+                    throw ruby.newErrnoEAGAINReadableError("");
                 } else {
                     throw ruby.newErrnoEAGAINError("");
                 }

@@ -3153,7 +3153,15 @@ public final class Ruby {
     }
 
     public RaiseException newErrnoEAGAINError(String message) {
-        return newErrnoException(getErrno().getClass("EAGAIN"), message);
+        return newLightweightErrnoException(getErrno().getClass("EAGAIN"), message);
+    }
+
+    public RaiseException newErrnoEAGAINReadableError(String message) {
+        return newLightweightErrnoException(getModule("JRuby").getClass("EAGAINReadable"), message);
+    }
+
+    public RaiseException newErrnoEAGAINWritableError(String message) {
+        return newLightweightErrnoException(getModule("JRuby").getClass("EAGAINWritable"), message);
     }
 
     public RaiseException newErrnoEISDirError(String message) {
@@ -3502,7 +3510,7 @@ public final class Ruby {
      * @param message
      * @return
      */
-    private RaiseException newErrnoException(RubyClass exceptionClass, String message) {
+    private RaiseException newLightweightErrnoException(RubyClass exceptionClass, String message) {
         if (RubyInstanceConfig.ERRNO_BACKTRACE) {
             return new RaiseException(this, exceptionClass, message, true);
         } else {
