@@ -38,8 +38,14 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import static org.jruby.CompatVersion.RUBY1_8;
+import static org.jruby.CompatVersion.RUBY1_9;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.anno.FrameField.BACKREF;
+import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
+import static org.jruby.runtime.MethodIndex.OP_CMP;
+import static org.jruby.runtime.MethodIndex.OP_EQUAL;
+import static org.jruby.runtime.Visibility.PRIVATE;
 import static org.jruby.util.StringSupport.CR_7BIT;
 import static org.jruby.util.StringSupport.CR_BROKEN;
 import static org.jruby.util.StringSupport.CR_MASK;
@@ -61,15 +67,16 @@ import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CodingErrorAction;
-import java.util.Arrays;
 import java.util.Locale;
 
 import org.jcodings.Encoding;
+import org.jcodings.EncodingDB;
 import org.jcodings.ascii.AsciiTables;
 import org.jcodings.constants.CharacterType;
 import org.jcodings.specific.ASCIIEncoding;
 import org.jcodings.specific.USASCIIEncoding;
 import org.jcodings.specific.UTF8Encoding;
+import org.jcodings.util.CaseInsensitiveBytesHash;
 import org.jcodings.util.IntHash;
 import org.joni.Matcher;
 import org.joni.Option;
@@ -83,8 +90,6 @@ import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
-import static org.jruby.runtime.Visibility.*;
-import static org.jruby.CompatVersion.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.marshal.UnmarshalStream;
@@ -100,10 +105,6 @@ import org.jruby.util.TypeConverter;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.jruby.util.string.JavaCrypt;
-
-import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
-import static org.jruby.runtime.MethodIndex.OP_EQUAL;
-import static org.jruby.runtime.MethodIndex.OP_CMP;
 
 /**
  * Implementation of Ruby String class
@@ -2301,117 +2302,44 @@ public class RubyString extends RubyObject implements EncodingCapable {
         throw getRuntime().newIndexError("index " + index + " out of string");
     }
 
+    private void prefixEscapeCat(int c) {
+        cat('\\');
+        cat(c);
+    }
+
+    private boolean isEVStr(byte[]bytes, int p, int end) {
+        return p < end ? isEVStr(bytes[p] & 0xff) : false;
+    }
+
+    public boolean isEVStr(int c) {
+        return c == '$' || c == '@' || c == '{';
+    }
+
     /** rb_str_inspect
      *
      */
     @JRubyMethod(name = "inspect", compat = RUBY1_8)
     @Override
     public IRubyObject inspect() {
-        int start = value.getBegin();
-        int len = value.getRealSize();
-        byte[] bytes = value.getUnsafeBytes();
-        try {
-            return inspectCommon(false);
-        } catch (ArrayIndexOutOfBoundsException x) {
-            LOG.error("{}, {}, {}", start, len, Arrays.toString(bytes));
-            throw x;
-        }
-    }
-
-    @JRubyMethod(name = "inspect", compat = RUBY1_9)
-    public IRubyObject inspect19() {
-        return inspectCommon(true);
-    }
-
-    private void prefixEscapeCat(int c) {
-        cat('\\');
-        cat(c);
-    }
-
-    private void escapedChar(Ruby runtime, int c) {
-        Sprintf.sprintf(runtime, value, "\\u%04X", c);
-    }
-
-    private void escapeCodePointCat(Ruby runtime, byte[]bytes, int p, int n) {
-        for (int q = p - n; q < p; q++) {
-            Sprintf.sprintf(runtime, value, "\\x%02X", bytes[q] & 0377);
-        }
-    }
-
-    final IRubyObject inspectCommon(final boolean is1_9) {
         Ruby runtime = getRuntime();
-
         byte bytes[] = value.getUnsafeBytes();
         int p = value.getBegin();
         int end = p + value.getRealSize();
         RubyString result = new RubyString(runtime, runtime.getString(), new ByteList(end - p));
-        Encoding enc = getEncoding();
-        Encoding resultEnc;
-        if (is1_9) {
-            resultEnc = runtime.getDefaultInternalEncoding();
-            if (resultEnc == null) resultEnc = runtime.getDefaultExternalEncoding();
-            if (!resultEnc.isAsciiCompatible()) resultEnc = USASCIIEncoding.INSTANCE;
-
-            result.associateEncoding(resultEnc);
-        } else {
-            enc = runtime.getKCode().getEncoding();
-            resultEnc = enc;
-        }
+        Encoding enc = runtime.getKCode().getEncoding();
 
         result.cat('"');
         while (p < end) {
-            int c, n;
+            int c = bytes[p++] & 0xff;
+            int n = enc.length((byte)c);
 
-            if (is1_9) {
-                n = StringSupport.preciseLength(enc, bytes, p, end);
-                if (n <= 0) { // Illegal combination
-                    p++;
-                    n = 1;
-                    result.escapeCodePointCat(runtime, bytes, p, n);
-                    continue;
-                }
-                c = codePoint(runtime, enc, bytes, p, end);
-                n = codeLength(runtime, enc, c);
-                p += n;
-            } else {
-                c = bytes[p++] & 0xff;
-                n = enc.length((byte)c);
-            }
-
-            if (!is1_9 && n > 1 && p - 1 <= end - n) {
-                try {
-                    result.cat(bytes, p - 1, n);
-                } catch (ArrayIndexOutOfBoundsException x) {
-                    LOG.error("begin = " + (p - 1));
-                    LOG.error("len = " + n);
-                    LOG.error("bytes = " + Arrays.toString(bytes));
-                    throw x;
-                }
+            if (n > 1 && p - 1 <= end - n) {
+                result.cat(bytes, p - 1, n);
                 p += n - 1;
                 continue;
-            } else if (c == '"'|| c == '\\') {
+            } else if (c == '"'|| c == '\\' || (c == '#' && isEVStr(bytes, p, end))) {
                 result.prefixEscapeCat(c);
-                continue;
-            } else if (c == '#') {
-                if (is1_9) {
-                    int cc;
-                    if (p < end && StringSupport.preciseLength(enc, bytes, p, end) > 0 &&
-                            isEVStr(cc = codePoint(runtime, enc, bytes, p, end))) {
-                        if ("$@{".indexOf(cc) != -1) {
-                            cc = '#';
-                        }
-                        result.prefixEscapeCat(cc);
-                        continue;
-                    }
-                } else {
-                    if (isEVStr(bytes, p, end)) {
-                        result.prefixEscapeCat(c);
-                        continue;
-                    }
-                }
-            }
-
-            if (!is1_9 && ASCII.isPrint(c)) {
+            } else if (ASCII.isPrint(c)) {
                 result.cat(c);
             } else if (c == '\n') {
                 result.prefixEscapeCat('n');
@@ -2429,28 +2357,123 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 result.prefixEscapeCat('a');
             } else if (c == '\033') {
                 result.prefixEscapeCat('e');
-            } else if (is1_9 &&
-                    ((enc == resultEnc && enc.isPrint(c)) ||
-                    (enc.isAsciiCompatible() && enc.isAscii(c) && enc.isPrint(c)))) {
-                result.cat(bytes, p - n, n);
-            } else {
-                if (!is1_9) {
-                    Sprintf.sprintf(runtime, result.value, "\\%03o", c & 0377);
-                } else {
-                    result.escapedChar(runtime, c);
-                }
+            } else  {
+                Sprintf.sprintf(runtime, result.value, "\\%03o", c & 0377);
             }
         }
         result.cat('"');
+        return result.infectBy(this);        
+    }
+
+    @JRubyMethod(name = "inspect", compat = RUBY1_9)
+    public IRubyObject inspect19() {
+        Ruby runtime = getRuntime();
+        byte bytes[] = value.getUnsafeBytes();
+        int p = value.getBegin();
+        int end = p + value.getRealSize();
+        RubyString result = new RubyString(runtime, runtime.getString(), new ByteList(end - p));
+        Encoding enc = getEncoding();
+
+        Encoding resultEnc = runtime.getDefaultInternalEncoding();
+        if (resultEnc == null) resultEnc = runtime.getDefaultExternalEncoding();
+        if (!resultEnc.isAsciiCompatible()) resultEnc = USASCIIEncoding.INSTANCE;
+        result.associateEncoding(resultEnc);
+
+        boolean isUnicode = StringSupport.isUnicode(enc);
+
+        EncodingDB.Entry e = null;
+        CaseInsensitiveBytesHash<EncodingDB.Entry> encodings = runtime.getEncodingService().getEncodings();
+        if (enc == encodings.get("UTF-16".getBytes()).getEncoding() && end - p > 1) {
+            int c0 = bytes[p] & 0xff;
+            int c1 = bytes[p + 1] & 0xff;
+            
+            if (c0 == 0xFE && c1 == 0xFF) {
+                e = encodings.get("UTF-16BE".getBytes());
+            } else if (c0 == 0xFF && c1 == 0xFE) {
+                e = encodings.get("UTF-16LE".getBytes());
+            } else {
+                isUnicode = false;
+            }
+        } else if (enc == encodings.get("UTF-32".getBytes()).getEncoding() && end - p > 3) {
+            int c0 = bytes[p] & 0xff;
+            int c1 = bytes[p + 1] & 0xff;
+            int c2 = bytes[p + 2] & 0xff;
+            int c3 = bytes[p + 3] & 0xff;
+            
+            if (c0 == 0 && c1 == 0 && c2 == 0xFE && c3 == 0xFF) {
+                e = encodings.get("UTF-32BE".getBytes());
+            } else if (c3 == 0 && c2 == 0 && c1 == 0xFE && c0 == 0xFF) {
+                e = encodings.get("UTF-32LE".getBytes());
+            } else {
+                isUnicode = false;
+            }
+        }
+
+        if (e != null) enc = e.getEncoding();
+
+        result.cat('"');
+        int prev = p;
+        while (p < end) {
+            int cc;
+
+            int n = StringSupport.preciseLength(enc, bytes, p, end);
+            if (n <= 0) {
+                if (p > prev) result.cat(bytes, prev, p - prev);
+                n = enc.minLength();
+                if (end < p + n) n = end - p;
+                while (n-- > 0) {
+                    Sprintf.sprintf(runtime, result.getByteList() ,"\\x%02X", bytes[p] & 0377);
+                    prev = ++p;
+                }
+                continue;
+            }
+            int c = enc.mbcToCode(bytes, p, end);
+            p += n;
+            if ((enc.isAsciiCompatible() || isUnicode) &&
+                    (c == '"' || c == '\\' ||
+                        (c == '#' && p < end && (StringSupport.preciseLength(enc, bytes, p, end) > 0) &&
+                        (cc = codePoint(runtime, enc, bytes, p, end)) == '$' && cc == '@' && cc == '{'))) {
+                if (p - n > prev) result.cat(bytes, prev, p - n - prev);
+                result.cat('\\');
+                if (enc.isAsciiCompatible() || enc == resultEnc) {
+                    prev = p - n;
+                    continue;
+                }
+            }
+
+            switch (c) {
+            case '\n': cc = 'n'; break;
+            case '\r': cc = 'r'; break;
+            case '\t': cc = 't'; break;
+            case '\f': cc = 'f'; break;
+            case '\013': cc = 'v'; break;
+            case '\010': cc = 'b'; break;
+            case '\007': cc = 'a'; break;
+            case 033: cc = 'e'; break;
+            default: cc = 0; break;
+            }
+
+            if (cc != 0) {
+                if (p - n > prev) result.cat(bytes, prev, p - n - prev);
+                result.cat('\\');
+                result.cat(cc);
+                prev = p;
+                continue;
+            }
+
+            if ((enc == resultEnc && enc.isPrint(c)) || (enc.isAsciiCompatible() && Encoding.isAscii(c) && enc.isPrint(c))) {
+                continue;
+            } else {
+                if (p - n > prev) result.cat(bytes, prev, p - n - prev);
+                Sprintf.sprintf(runtime, result.getByteList() , StringSupport.escapedCharFormat(c, isUnicode), c);
+                prev = p;
+                continue;
+            }
+        }
+
+        if (p > prev) result.cat(bytes, prev, p - prev);
+        result.cat('"');
         return result.infectBy(this);
-    }
-
-    private boolean isEVStr(byte[]bytes, int p, int end) {
-        return p < end ? isEVStr(bytes[p] & 0xff) : false;
-    }
-
-    public boolean isEVStr(int c) {
-        return c == '$' || c == '@' || c == '{';
     }
 
     public int size() {

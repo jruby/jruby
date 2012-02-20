@@ -501,4 +501,25 @@ public final class StringSupport {
         return name.length > 4 && name[0] == 'U' && name[1] == 'T' && name[2] == 'F' && name[4] != '7'; 
     }
 
+    public static String escapedCharFormat(int c, boolean isUnicode) {
+        String format;
+        if (isUnicode) {
+
+            if (c < 0x7F && Encoding.isAscii(c) && ASCIIEncoding.INSTANCE.isPrint(c)) {
+                format = "%c"; 
+            } else if (c < 0x10000) {
+                format = "\\u%04X";
+            } else {
+                format = "\\u{%X}";
+            }
+        } else {
+            if (c < 0x100) {
+                format = "\\x%02X";
+            } else {
+                format = "\\x{%X}";
+            }
+        }
+        return format;
+    }
+
 }
