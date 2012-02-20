@@ -1030,29 +1030,25 @@ public class RubyKernel {
 
         boolean bindingGiven = args.length > 1 && !args[1].isNil();
         Binding binding = bindingGiven ? evalBinding.convertToBinding(args[1]) : context.currentBinding();
+
         if (args.length > 2) {
             // file given, use it and force it into binding
             binding.setFile(args[2].convertToString().toString());
-        } else {
-            // file not given
-            if (bindingGiven) {
-                // binding given, use binding's file
+
+            if (args.length > 3) {
+                // line given, use it and force it into binding
+                // -1 because parser uses zero offsets and other code compensates
+                binding.setLine(((int) args[3].convertToInteger().getLongValue()) - 1);
             } else {
-                // no binding given, use (eval)
-                binding.setFile("(eval)");
-            }
-        }
-        if (args.length > 3) {
-            // file given, use it and force it into binding
-            // -1 because parser uses zero offsets and other code compensates
-            binding.setLine(((int) args[3].convertToInteger().getLongValue()) - 1);
-        } else {
-            if (bindingGiven) {
-                // binding given, use binding's line
-            } else {
-                // no binding given, use 0 for both
+                // filename given, but no line, start from the beginning.
                 binding.setLine(0);
             }
+        } else if (bindingGiven) {
+            // binding given, use binding's file and line-number
+        } else {
+            // no binding given, use (eval) and start from first line.
+            binding.setFile("(eval)");
+            binding.setLine(0);
         }
 
         // set method to current frame's, which should be caller's
