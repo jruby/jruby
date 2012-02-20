@@ -1880,7 +1880,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                     to.append(bytes, p, cl);
                 } else if (!Encoding.isAscii(c)) {
                     int l = StringSupport.preciseLength(enc, bytes, p, end);
-                    if (l >= 0) {
+                    if (l <= 0) {
                         l = 1;
                         Sprintf.sprintf(runtime, to, "\\x%02X", c);
                     } else if (resEnc != null) {
