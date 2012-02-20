@@ -21,6 +21,17 @@ Benchmark.ips do |bm|
     n.times { dig.hexdigest(str) }
   end
 
+  bm.report("4x contended MD5 'foo'") do |n|
+    dig = Digest::MD5
+    (1..4).map { Thread.new { n.times { dig.hexdigest('foo') } } }.map(&:join)
+  end
+
+  bm.report("4x contended MD5 'foo' * 1000") do |n|
+    dig = Digest::MD5
+    str = 'foo' * 1000
+    (1..4).map { Thread.new { n.times { dig.hexdigest(str) } } }.map(&:join)
+  end
+
   bm.report("10x contended MD5 'foo'") do |n|
     dig = Digest::MD5
     (1..10).map { Thread.new { n.times { dig.hexdigest('foo') } } }.map(&:join)
