@@ -2074,10 +2074,10 @@ public class RubyZlib {
             ByteList bytes = p1.asString().getByteList();
             Ruby runtime = getRuntime();
             if (runtime.is1_9()) {
-                if (readEncoding != null
-                        && readEncoding != runtime.getEncodingService().getAscii8bitEncoding()) {
+                if (writeEncoding != null
+                        && writeEncoding != runtime.getEncodingService().getAscii8bitEncoding()) {
                     bytes = RubyString.transcode(runtime.getCurrentContext(), bytes, null,
-                            readEncoding, runtime.getNil());
+                            writeEncoding, runtime.getNil());
                 }
             }
             try {
