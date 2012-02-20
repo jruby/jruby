@@ -1167,7 +1167,10 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         ByteList description = new ByteList();
         description.setEncoding(enc);
         description.append((byte)'/');
-        appendRegexpString19(runtime, description, s, start, len, enc);
+        Encoding resultEnc = runtime.getDefaultInternalEncoding();
+        if (resultEnc == null) resultEnc = runtime.getDefaultExternalEncoding();
+        
+        appendRegexpString19(runtime, description, s, start, len, enc, resultEnc);
         description.append((byte)'/');
         appendOptions(description, options);
         if (options.isEncodingNone()) description.append((byte) 'n');
@@ -1769,7 +1772,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             }
             result.append((byte)':');
             if (runtime.is1_9()) {
-                appendRegexpString19(runtime, result, bytes, p, len, getEncoding(runtime, str));
+                appendRegexpString19(runtime, result, bytes, p, len, getEncoding(runtime, str), null);
             } else {
                 appendRegexpString(runtime, result, bytes, p, len, getEncoding(runtime, str));
             }
@@ -1827,7 +1830,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         }
     }
 
-    private static void appendRegexpString19(Ruby runtime, ByteList to, byte[]bytes, int start, int len, Encoding enc) {
+    private static void appendRegexpString19(Ruby runtime, ByteList to, byte[]bytes, int start, int len, Encoding enc, Encoding resEnc) {
         int p = start;
         int end = p + len;
         boolean needEscape = false;
@@ -1854,6 +1857,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         if (!needEscape) {
             to.append(bytes, start, len);
         } else {
+            boolean isUnicode = StringSupport.isUnicode(enc);
             p = start; 
             while (p < end) {
                 final int c;
@@ -1875,10 +1879,19 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                     to.append((byte) '\\');
                     to.append(bytes, p, cl);
                 } else if (!Encoding.isAscii(c)) {
-                    int l = StringSupport.length(enc, bytes, p, end);
-                    to.append(bytes, p, l);
+                    int l = StringSupport.preciseLength(enc, bytes, p, end);
+                    if (l >= 0) {
+                        l = 1;
+                        Sprintf.sprintf(runtime, to, "\\x%02X", c);
+                    } else if (resEnc != null) {
+                        int code = enc.mbcToCode(bytes, p, end);
+                        Sprintf.sprintf(runtime, to , StringSupport.escapedCharFormat(code, isUnicode), code);
+                    } else {
+                        to.append(bytes, p, l);
+                    }
                     p += l;
-                    continue;
+
+                    continue;    
                 } else if (enc.isPrint(c)) {
                     to.append(bytes, p, cl);
                 } else if (!enc.isSpace(c)) {
