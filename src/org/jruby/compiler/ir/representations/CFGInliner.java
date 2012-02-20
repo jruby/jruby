@@ -51,20 +51,56 @@ public class CFGInliner {
 
         return selfClone;
     }
+    
+    private boolean mergeBBs(BasicBlock a, BasicBlock b) {
+        BasicBlock aR = cfg.getRescuerBBFor(a);
+        BasicBlock bR = cfg.getRescuerBBFor(b);
+        // We can merge 'a' and 'b' if one of the following is true:
+        // 1. 'a' and 'b' are both not empty
+        //    They are protected by the same rescue block.
+        //    NOTE: We need not check the ensure block map because all ensure blocks are already
+        //    captured in the bb rescue block map.  So, if aR == bR, it is guaranteed that the
+        //    ensure blocks for the two are identical.
+        // 2. One of 'a' or 'b' is empty.  We dont need to check for rescue block match because
+        //    an empty basic block cannot raise an exception, can it.
+        if ((aR == bR) || a.isEmpty() || b.isEmpty()) {
+            a.swallowBB(b);
+            cfg.removeEdge(a, b);
+            for (Edge<BasicBlock> e : cfg.getOutgoingEdges(b)) {
+                cfg.addEdge(a, e.getDestination().getData(), e.getType());
+            }
+
+            cfg.removeBB(b);
+
+            // Update rescue and ensure maps
+            if ((aR == null) && (bR != null)) {
+                cfg.setRescuerBB(a, bR);
+                BasicBlock aE = cfg.getEnsurerBBFor(a);
+                BasicBlock bE = cfg.getEnsurerBBFor(b);
+                if ((aE == null) && (bE != null)) cfg.setRescuerBB(a, bE);
+            }
+
+            return true;
+        } else {
+            return false;
+        }
+    }
 
     public void inlineMethod(IRScope scope, RubyModule implClass, int classToken, BasicBlock callBB, CallBase call) {
-//        System.out.println("host cfg   :" + cfg.toStringGraph());
-//        System.out.println("host instrs:" + cfg.toStringInstrs());
-//        System.out.println("source cfg   :" + scope.getCFG().toStringGraph());
-//        System.out.println("source instrs:" + scope.getCFG().toStringInstrs());
+/*
+        System.out.println("host cfg   :" + cfg.toStringGraph());
+        System.out.println("host instrs:" + cfg.toStringInstrs());
+        System.out.println("source cfg   :" + scope.getCFG().toStringGraph());
+        System.out.println("source instrs:" + scope.getCFG().toStringInstrs());
+*/
 
-        // Host method init
+        // Host method data init
         InlinerInfo ii = new InlinerInfo(call, cfg);
         IRScope hostScope = cfg.getScope();
         Label splitBBLabel = hostScope.getNewLabel();
         BasicBlock splitBB;
 
-        // Inlinee method init
+        // Inlinee method data init
         CFG methodCFG = scope.getCFG();
         BasicBlock mEntry = methodCFG.getEntryBB();
         BasicBlock mExit = methodCFG.getExitBB();
@@ -178,7 +214,7 @@ public class CFGInliner {
 
         // 7. Add inline guard that verifies that the method inlined is the same 
         // that gets called in future invocations.  In addition to the guard, add 
-        // a falure path code.
+        // a failure path code.
         Label failurePathLabel = hostScope.getNewLabel();
         callBB.addInstr(new ModuleVersionGuardInstr(implClass, classToken, call.getReceiver(), failurePathLabel));
 
@@ -210,11 +246,14 @@ public class CFGInliner {
         }
 
         // 9. Optimize cfg by merging straight-line bbs
+        //
+        // Collect cfgs in a list first since the cfg/graph API returns an iterator
+        // over live data.  But, basic block merging modifies that live data.
+        //
+        // SSS FIXME: So, we need a cfg/graph API that returns an iterator over
+        // frozen data rather than live data.
         List<BasicBlock> cfgBBs = new ArrayList<BasicBlock>();
-        for (BasicBlock b: cfg.getBasicBlocks()) {
-            cfgBBs.add(b);
-        }
-
+        for (BasicBlock b: cfg.getBasicBlocks()) cfgBBs.add(b);
         Set<BasicBlock> mergedBBs = new HashSet<BasicBlock>();
         for (BasicBlock b: cfgBBs) {
             if (!mergedBBs.contains(b) && (cfg.outDegree(b) == 1)) {
@@ -225,11 +264,14 @@ public class CFGInliner {
             }
         }
 
-//        System.out.println("final cfg   :" + cfg.toStringGraph());
-//        System.out.println("final instrs:" + cfg.toStringInstrs());
+/*
+        System.out.println("final cfg   :" + cfg.toStringGraph());
+        System.out.println("final instrs:" + cfg.toStringInstrs());
+*/
     }
-    
-   private void inlineClosureAtYieldSite(InlinerInfo ii, IRClosure cl, BasicBlock yieldBB, YieldInstr yield) {
+
+    private void inlineClosureAtYieldSite(InlinerInfo ii, IRClosure cl, BasicBlock yieldBB, YieldInstr yield) {
+        // SSS FIXME: Is this still true?
         // Mark this closure as inlined so we dont run any destructive operations on it.
         // since the closure in its original form will get destroyed by the inlining.
         cl.markInlined();
@@ -277,8 +319,8 @@ public class CFGInliner {
             BasicBlock source = e.getSource().getData();
             if (source != cEntry) {
                 if (e.getType() == EdgeType.EXCEPTION) {
-                    // e._src has an explicit throw that returns from the closure
-                    // after inlining, if the yield instruction has a rescuer, then the
+                    // e._src has an explicit throw that returns from the closure.
+                    // After inlining, if the yield instruction has a rescuer, then the
                     // throw has to be captured by the rescuer as well.
                     BasicBlock rescuerOfSplitBB = cfg.getRescuerBBFor(splitBB);
                     if (rescuerOfSplitBB != null) {
@@ -286,7 +328,6 @@ public class CFGInliner {
                     } else {
                         cfg.addEdge(source, cfg.getExitBB(), EdgeType.EXIT);
                     }
-
                 } else {
                     cfg.addEdge(source, splitBB, e.getType());
                 }
@@ -327,52 +368,5 @@ public class CFGInliner {
                 }
             }
         }
-
-        // 7. callBB will only have a single successor & splitBB will only have a single predecessor
-        //    after inlining the callee.  Merge them with their successor/predecessors respectively
-        //    Merge only after fixing up the rescuer map above
-        mergeStraightlineBBs(yieldBB, splitBB);
     }
-    
-    
-    private boolean mergeBBs(BasicBlock a, BasicBlock b) {
-        BasicBlock aR = cfg.getRescuerBBFor(a);
-        BasicBlock bR = cfg.getRescuerBBFor(b);
-        // We can merge 'a' and 'b' if one of the following is true:
-        // 1. 'a' and 'b' are both not empty
-        //    They are protected by the same rescue block.
-        //    NOTE: We need not check the ensure block map because all ensure blocks are already
-        //    captured in the bb rescue block map.  So, if aR == bR, it is guaranteed that the
-        //    ensure blocks for the two are identical.
-        // 2. One of 'a' or 'b' is empty.  We dont need to check for rescue block match because
-        //    an empty basic block cannot raise an exception, can it.
-        if ((aR == bR) || a.isEmpty() || b.isEmpty()) {
-            a.swallowBB(b);
-            cfg.removeEdge(a, b);
-            for (Edge<BasicBlock> e : cfg.getOutgoingEdges(b)) {
-                cfg.addEdge(a, e.getDestination().getData(), e.getType());
-            }
-
-            cfg.removeBB(b);
-
-            // Update rescue and ensure maps
-            if ((aR == null) && (bR != null)) {
-                cfg.setRescuerBB(a, bR);
-                BasicBlock aE = cfg.getEnsurerBBFor(a);
-                BasicBlock bE = cfg.getEnsurerBBFor(b);
-                if ((aE == null) && (bE != null)) cfg.setRescuerBB(a, bE);
-            }
-
-            return true;
-        } else {
-            return false;
-        }
-    }    
-    
-    // callBB will only have a single successor & splitBB will only have a single predecessor
-    // after inlining the callee.  Merge them with their successor/predecessors respectively
-    private void mergeStraightlineBBs(BasicBlock callBB, BasicBlock splitBB) {
-        if (cfg.outDegree(callBB) == 1) mergeBBs(callBB, cfg.getOutgoingDestination(callBB));
-        if (cfg.inDegree(splitBB) == 1) mergeBBs(cfg.getIncomingSource(splitBB), splitBB);
-    }    
 }
