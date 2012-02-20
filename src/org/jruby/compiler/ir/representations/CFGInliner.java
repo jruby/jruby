@@ -25,48 +25,94 @@ public class CFGInliner {
     public CFGInliner(CFG build) {
         this.cfg = build;
     }
-    
+
+    private CFG cloneSelf(InlinerInfo ii) {
+        CFG selfClone = new CFG(cfg.getScope());
+
+        // clone bbs
+        BasicBlock entry = cfg.getEntryBB();
+        BasicBlock exit = cfg.getExitBB();
+        for (BasicBlock b : cfg.getBasicBlocks()) {
+            if ((b != entry) && (b != exit)) {
+                selfClone.addBasicBlock(b.cloneForInlinedMethod(ii));
+            }
+        }
+
+        // clone edges
+        for (BasicBlock b: cfg.getBasicBlocks()) {
+            if ((b != entry) && (b != exit)) {
+                BasicBlock rb = ii.getRenamedBB(b);
+                for (Edge<BasicBlock> e : cfg.getOutgoingEdges(b)) {
+                    BasicBlock destination = e.getDestination().getData();
+                    if (destination != exit) selfClone.addEdge(rb, ii.getRenamedBB(destination), e.getType());
+                }
+            }
+        }
+
+        return selfClone;
+    }
+
     public void inlineMethod(IRScope scope, RubyModule implClass, int classToken, BasicBlock callBB, CallBase call) {
 //        System.out.println("host cfg   :" + cfg.toStringGraph());
 //        System.out.println("host instrs:" + cfg.toStringInstrs());
 //        System.out.println("source cfg   :" + scope.getCFG().toStringGraph());
 //        System.out.println("source instrs:" + scope.getCFG().toStringInstrs());
 
-        // 1. split callsite bb and move outbound edges from callsite bb to split bb.
-        IRScope hostScope = cfg.getScope();
+        // Host method init
         InlinerInfo ii = new InlinerInfo(call, cfg);
+        IRScope hostScope = cfg.getScope();
         Label splitBBLabel = hostScope.getNewLabel();
-        BasicBlock splitBB = callBB.splitAtInstruction(call, splitBBLabel, false);
-        cfg.addBasicBlock(splitBB);
-        for (Edge<BasicBlock> e : cfg.getOutgoingEdges(callBB)) {
-            cfg.addEdge(splitBB, e.getDestination().getData(), e.getType());
-        }
+        BasicBlock splitBB;
 
-        cfg.removeAllOutgoingEdgesForBB(callBB);
-
-        // 2. clone callee
+        // Inlinee method init
         CFG methodCFG = scope.getCFG();
         BasicBlock mEntry = methodCFG.getEntryBB();
         BasicBlock mExit = methodCFG.getExitBB();
+        List<BasicBlock> methodBBs = new ArrayList<BasicBlock>();
+        for (BasicBlock b: methodCFG.getBasicBlocks()) methodBBs.add(b);
 
-        for (BasicBlock b : methodCFG.getBasicBlocks()) {
-            if (b != mEntry && b != mExit) {
-                cfg.addBasicBlock(b.cloneForInlinedMethod(ii));
+        // Check if we are inlining a recursive method
+        if (cfg.getScope() == scope) {
+            // 1. clone self
+            // SSS: FIXME: We need a clone-graph api method in cfg and graph
+            CFG selfClone = cloneSelf(ii);
+
+            // 2. add callee bbs and their edges
+            // SSS: FIXME: We need a swallow-graph api method in cfg and graph
+            for (BasicBlock b : selfClone.getBasicBlocks()) {
+                cfg.addBasicBlock(b);
+                for (Edge<BasicBlock> e : selfClone.getOutgoingEdges(b)) {
+                    cfg.addEdge(b, e.getDestination().getData(), e.getType());
+                }
             }
-        }
 
-        // 3. set up new edges
-        for (BasicBlock x : methodCFG.getBasicBlocks()) {
-            if (x != mEntry && x != mExit) {
-                BasicBlock rx = ii.getRenamedBB(x);
-                for (Edge<BasicBlock> e : methodCFG.getOutgoingEdges(x)) {
-                    BasicBlock b = e.getDestination().getData();
-                    if (b != mExit) cfg.addEdge(rx, ii.getRenamedBB(b), e.getType());
+        } else {
+            // 2. clone callee and add it to the host cfg
+            for (BasicBlock b : methodCFG.getBasicBlocks()) {
+                if (b != mEntry && b != mExit) {
+                    cfg.addBasicBlock(b.cloneForInlinedMethod(ii));
+                }
+            }
+            for (BasicBlock x : methodCFG.getBasicBlocks()) {
+                if (x != mEntry && x != mExit) {
+                    BasicBlock rx = ii.getRenamedBB(x);
+                    for (Edge<BasicBlock> e : methodCFG.getOutgoingEdges(x)) {
+                        BasicBlock b = e.getDestination().getData();
+                        if (b != mExit) cfg.addEdge(rx, ii.getRenamedBB(b), e.getType());
+                    }
                 }
             }
         }
 
-        // 4. Hook up entry/exit edges
+        // 3. split callsite bb, move outbound edges from callsite bb to split bb, and unhook call bb
+        splitBB = callBB.splitAtInstruction(call, splitBBLabel, false);
+        cfg.addBasicBlock(splitBB);
+        for (Edge<BasicBlock> e : cfg.getOutgoingEdges(callBB)) {
+            cfg.addEdge(splitBB, e.getDestination().getData(), e.getType());
+        }
+        cfg.removeAllOutgoingEdgesForBB(callBB);
+
+        // 4a. Hook up entry edges
         for (Edge<BasicBlock> e : methodCFG.getOutgoingEdges(mEntry)) {
             BasicBlock destination = e.getDestination().getData();
             if (destination != mExit) {
@@ -74,6 +120,7 @@ public class CFGInliner {
             }
         }
 
+        // 4b. Hook up exit edges
         for (Edge<BasicBlock> e : methodCFG.getIncomingEdges(mExit)) {
             BasicBlock source = e.getSource().getData();
             if (source != mEntry) {
@@ -110,7 +157,7 @@ public class CFGInliner {
 
         // 6b. remap existing protections for bbs in mcfg to their renamed bbs.
         // 6c. bbs in mcfg that aren't protected by an existing bb will be protected by callBBrescuer.
-        for (BasicBlock x : methodCFG.getBasicBlocks()) {
+        for (BasicBlock x : methodBBs) {
             if (x != mEntry && x != mExit) {
                 BasicBlock xRenamed = ii.getRenamedBB(x);
                 BasicBlock xProtector = methodCFG.getRescuerBBFor(x);
