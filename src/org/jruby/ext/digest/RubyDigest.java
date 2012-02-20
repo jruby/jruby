@@ -36,6 +36,9 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivilegedAction;
 import java.security.Provider;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
@@ -58,6 +61,19 @@ import org.jruby.util.ByteList;
 @JRubyModule(name="Digest")
 public class RubyDigest {
     private static Provider provider = null;
+    private static final Map<String, MessageDigest> CLONEABLE_DIGESTS = new HashMap<String, MessageDigest>();
+    static {
+        // standard digests from JCA specification; if we can retrieve and clone, save them
+        for (String name : new String[] {"MD2", "MD5", "SHA-1", "SHA-256", "SHA-384", "SHA-512"})
+        try {
+            MessageDigest digest = MessageDigest.getInstance(name);
+            digest.clone();
+            CLONEABLE_DIGESTS.put(name, digest);
+        } catch (Exception e) {
+            e.printStackTrace();
+            // ignore; go to next iteration
+        }
+    }
 
     public static void createDigest(Ruby runtime) {
         // We're not setting the provider or anything, but it seems that BouncyCastle does some internal things in its
@@ -87,6 +103,16 @@ public class RubyDigest {
     }
 
     private static MessageDigest createMessageDigest(Ruby runtime, String providerName) throws NoSuchAlgorithmException {
+        MessageDigest cloneable = CLONEABLE_DIGESTS.get(providerName);
+        if (cloneable != null) {
+            try {
+                return (MessageDigest)cloneable.clone();
+            } catch (CloneNotSupportedException cnse) {
+                // should never happen, since we tested it in static init
+            }
+        }
+
+        // fall back on JCA mechanisms for getting a digest
         if(provider != null) {
             try {
                 return MessageDigest.getInstance(providerName, provider);
@@ -94,7 +120,8 @@ public class RubyDigest {
                 // bouncy castle doesn't support algorithm
             }
         }
-        // fall back to system JCA providers
+
+        // fall back to default JCA providers
         return MessageDigest.getInstance(providerName);
     }
 
