@@ -5622,7 +5622,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     public IRubyObject lstrip_bang(ThreadContext context) {
         Ruby runtime = context.getRuntime();
         if (value.getRealSize() == 0) return runtime.getNil();
-        return singleByteLStrip(runtime, ASCII, value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize());
+        return singleByteLStrip(runtime, value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize());
     }
 
     @JRubyMethod(name = "lstrip", compat = RUBY1_9)
@@ -5648,7 +5648,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
         final IRubyObject result;
         if (singleByteOptimizable(enc)) {
-            result = singleByteLStrip(runtime, enc, bytes, s, end);
+            result = singleByteLStrip(runtime, bytes, s, end);
         } else {
             result = multiByteLStrip(runtime, enc, bytes, s, end);
         }
@@ -5656,24 +5656,30 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return result;
     }
 
-    private IRubyObject singleByteLStrip(Ruby runtime, Encoding enc, byte[]bytes, int s, int end) {
+    private IRubyObject singleByteLStrip(Ruby runtime, byte[]bytes, int s, int end) {
         int p = s;
-        while (p < end && enc.isSpace(bytes[p] & 0xff)) p++;
+        while (p < end && ASCII.isSpace(bytes[p] & 0xff)) p++;
         if (p > s) {
             view(p - s, end - p);
             return this;
         }
         return runtime.getNil();
     }
-    
+
     private IRubyObject multiByteLStrip(Ruby runtime, Encoding enc, byte[]bytes, int s, int end) {
         int p = s;
-        int c;
-        while (p < end && enc.isSpace(c = codePoint(runtime, enc, bytes, p, end))) p += codeLength(runtime, enc, c);
+
+        while (p < end) {
+            int c = codePoint(runtime, enc, bytes, p, end);
+            if (!ASCII.isSpace(c)) break;
+            p += codeLength(runtime, enc, c);
+        }
+
         if (p > s) {
             view(p - s, end - p);
             return this;
         }
+
         return runtime.getNil();
     }
 
@@ -5691,7 +5697,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     public IRubyObject rstrip_bang(ThreadContext context) {
         Ruby runtime = context.getRuntime();
         if (value.getRealSize() == 0) return runtime.getNil();
-        return singleByteRStrip(runtime, ASCII, value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize());
+        return singleByteRStrip(runtime, value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize());
     }
 
     @JRubyMethod(name = "rstrip", compat = RUBY1_9)
@@ -5718,10 +5724,10 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     // In 1.8 we will strip rightmost \0 followed by any \s
-    private IRubyObject singleByteRStrip(Ruby runtime, Encoding enc, byte[]bytes, int s, int end) {
+    private IRubyObject singleByteRStrip(Ruby runtime, byte[]bytes, int s, int end) {
         int endp = end - 1;
         while (endp >= s && bytes[endp] == 0) endp--;
-        while (endp >= s && enc.isSpace(bytes[endp] & 0xff)) endp--;
+        while (endp >= s && ASCII.isSpace(bytes[endp] & 0xff)) endp--;
 
         if (endp < end - 1) {
             view(0, endp - s + 1);
@@ -5735,10 +5741,9 @@ public class RubyString extends RubyObject implements EncodingCapable {
         byte[] bytes = value.getUnsafeBytes();
         int start = value.getBegin();
         int end = start + value.getRealSize();
-        Encoding enc = value.getEncoding();
         int endp = end - 1;
         while (endp >= start && (bytes[endp] == 0 || 
-                enc.isSpace(bytes[endp] & 0xff))) endp--;
+                ASCII.isSpace(bytes[endp] & 0xff))) endp--;
 
         if (endp < end - 1) {
             view(0, endp - start + 1);
@@ -5758,7 +5763,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         int prev;
         while ((prev = enc.prevCharHead(bytes, start, endp, end)) != -1) {
             int point = codePoint(runtime, enc, bytes, prev, end);
-            if (point != 0 && !enc.isSpace(point)) break;
+            if (point != 0 && !ASCII.isSpace(point)) break;
             endp = prev;
         }
 
@@ -5783,7 +5788,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     public IRubyObject strip_bang(ThreadContext context) {
         Ruby runtime = context.getRuntime();
         if (value.getRealSize() == 0) return runtime.getNil();
-        return singleByteStrip(runtime, ASCII, value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize());
+        return singleByteStrip(runtime, value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize());
     }
 
     @JRubyMethod(name = "strip", compat = RUBY1_9)
@@ -5803,12 +5808,12 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return left.isNil() && right.isNil() ? context.getRuntime().getNil() : this;
     }
 
-    private IRubyObject singleByteStrip(Ruby runtime, Encoding enc, byte[]bytes, int s, int end) {
+    private IRubyObject singleByteStrip(Ruby runtime, byte[]bytes, int s, int end) {
         int p = s;
-        while (p < end && enc.isSpace(bytes[p] & 0xff)) p++;
+        while (p < end && ASCII.isSpace(bytes[p] & 0xff)) p++;
         int endp = end - 1;
         while (endp >= p && bytes[endp] == 0) endp--;
-        while (endp >= p && enc.isSpace(bytes[endp] & 0xff)) endp--;
+        while (endp >= p && ASCII.isSpace(bytes[endp] & 0xff)) endp--;
 
         if (p > s || endp < end - 1) {
             view(p - s, endp - p + 1);
