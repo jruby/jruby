@@ -30,7 +30,9 @@ package org.jruby.util;
 import java.math.BigInteger;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 import org.jcodings.Encoding;
 import org.jcodings.specific.UTF8Encoding;
@@ -87,7 +89,12 @@ public class Sprintf {
     private static final String ERR_MALFORMED_STAR_NUM = "malformed format string - %*[0-9]";
     private static final String ERR_ILLEGAL_FORMAT_CHAR = "illegal format character - %";
     private static final String ERR_MALFORMED_NAME = "malformed name - unmatched parenthesis";
-    
+
+    private static final ThreadLocal<Map<Locale, NumberFormat>> LOCALE_NUMBER_FORMATS = new ThreadLocal<Map<Locale, NumberFormat>>() {
+        protected Map<Locale, NumberFormat> initialValue() {
+            return new HashMap<Locale, NumberFormat>();
+        }
+    };
     
     private static final class Args {
         private final Ruby runtime;
@@ -812,7 +819,7 @@ public class Sprintf {
                         break;
                     }
 
-                    NumberFormat nf = NumberFormat.getNumberInstance(args.locale);
+                    NumberFormat nf = getNumberFormat(args.locale);
                     nf.setMaximumFractionDigits(Integer.MAX_VALUE);
                     String str = nf.format(dval);
                     
@@ -1305,6 +1312,15 @@ public class Sprintf {
         }
 
         return tainted;
+    }
+    
+    private static NumberFormat getNumberFormat(Locale locale) {
+        NumberFormat format = LOCALE_NUMBER_FORMATS.get().get(locale);
+        if (format == null) {
+            format = NumberFormat.getNumberInstance(locale);
+            LOCALE_NUMBER_FORMATS.get().put(locale, format);
+        }
+        return format;
     }
 
     private static void writeExp(ByteList buf, int exponent, byte expChar) {
