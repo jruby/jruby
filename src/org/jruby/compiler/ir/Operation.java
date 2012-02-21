@@ -133,12 +133,12 @@ public enum Operation {
     RAISE_ARGUMENT_ERROR(OpFlags.f_can_raise_exception),
     CHECK_ARITY(OpFlags.f_can_raise_exception),
     RECORD_END_BLOCK(OpFlags.f_has_side_effect),
-    TO_ARY(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
+    TO_ARY(OpFlags.f_can_raise_exception),
 
     /** rest **/
-    MATCH(OpFlags.f_can_raise_exception),
-    MATCH2(OpFlags.f_can_raise_exception),
-    MATCH3(OpFlags.f_can_raise_exception | OpFlags.f_is_call),
+    MATCH(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_is_call),
+    MATCH2(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_is_call),
+    MATCH3(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_is_call),
     COPY(0),
     NOT(0), // ruby NOT operator
     SET_RETADDR(0),

@@ -1028,7 +1028,9 @@ public abstract class IRScope {
         linearizedBBList = null;
         linearizedInstrArray = null;
         dfProbs = new HashMap<String, DataFlowProblem>();
-        runCompilerPass(new DeadCodeElimination());
+        runCompilerPass(new LocalOptimizationPass());
+        // SSS FIXME: Some bug in the LVA/DCE/Inlining combination
+        // runCompilerPass(new DeadCodeElimination());
     }
     
     

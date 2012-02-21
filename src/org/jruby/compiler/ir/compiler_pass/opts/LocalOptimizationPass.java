@@ -12,13 +12,14 @@ import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.CallBase;
 import org.jruby.compiler.ir.instructions.CopyInstr;
 import org.jruby.compiler.ir.instructions.Instr;
+import org.jruby.compiler.ir.instructions.ResultInstr;
 import org.jruby.compiler.ir.Operation;
-import org.jruby.compiler.ir.CodeVersion;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.operands.TemporaryVariable;
 import org.jruby.compiler.ir.compiler_pass.CompilerPass;
-import org.jruby.compiler.ir.instructions.ResultInstr;
+import org.jruby.compiler.ir.representations.BasicBlock;
+import org.jruby.compiler.ir.representations.CFG;
 
 public class LocalOptimizationPass implements CompilerPass {
     // Should we run this pass on the current scope before running it on nested scopes?
@@ -34,10 +35,16 @@ public class LocalOptimizationPass implements CompilerPass {
         }
 
         // Now, run on current scope
-        runLocalOpts(s);
-
-        // Only after running local opts, compute various execution scope flags
-        s.computeScopeFlags();
+        CFG cfg = s.getCFG();
+        if (cfg == null) {
+            runLocalOpts(s);
+            // Only after running local opts, compute various execution scope flags
+            s.computeScopeFlags();
+        } else {
+            for (BasicBlock b: cfg.getBasicBlocks()) {
+                runLocalOptsOnInstrList(s, b.getInstrs().listIterator(), false);
+            }
+        }
     }
 
     private static void allocVar(Operand oldVar, IRScope s, List<TemporaryVariable> freeVarsList, Map<Operand, Operand> newVarMap) {
@@ -258,9 +265,7 @@ public class LocalOptimizationPass implements CompilerPass {
         }
     }
 
-    private static void runLocalOpts(IRScope s) {
-        optimizeTmpVars(s);
-
+    public static void runLocalOptsOnInstrList(IRScope s, ListIterator<Instr> instrs, boolean preCFG) {
         // Reset value map if this instruction is the start/end of a basic block
         //
         // Right now, calls are considered hard boundaries for optimization and
@@ -276,15 +281,12 @@ public class LocalOptimizationPass implements CompilerPass {
         // This information is probably already present in the AST Inspector
         Map<Operand,Operand> valueMap = new HashMap<Operand,Operand>();
         Map<Variable,List<Variable>> simplificationMap = new HashMap<Variable,List<Variable>>();
-        Map<String,CodeVersion> versionMap = new HashMap<String,CodeVersion>();
-        ListIterator<Instr> instrs = s.getInstrs().listIterator();
         while (instrs.hasNext()) {
             Instr i = instrs.next();
             Operation iop = i.getOperation();
-            if (iop.startsBasicBlock()) {
+            if (preCFG && iop.startsBasicBlock()) {
                 valueMap = new HashMap<Operand,Operand>();
                 simplificationMap = new HashMap<Variable,List<Variable>>();
-                versionMap = new HashMap<String, CodeVersion>();
             }
 
             // Simplify instruction and record mapping between target variable and simplified value
@@ -327,11 +329,15 @@ public class LocalOptimizationPass implements CompilerPass {
             }
 
             // If the call has been optimized away in the previous step, it is no longer a hard boundary for opts!
-            if (iop.endsBasicBlock() || (iop.isCall() && !i.isDead())) {
+            if ((preCFG && iop.endsBasicBlock()) || (iop.isCall() && !i.isDead())) {
                 valueMap = new HashMap<Operand,Operand>();
                 simplificationMap = new HashMap<Variable,List<Variable>>();
-                versionMap = new HashMap<String, CodeVersion>();
             }
         }
+    }
+
+    private static void runLocalOpts(IRScope s) {
+        optimizeTmpVars(s);
+        runLocalOptsOnInstrList(s, s.getInstrs().listIterator(), s.getCFG() == null);
     }
 }

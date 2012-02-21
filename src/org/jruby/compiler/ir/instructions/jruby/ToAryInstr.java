@@ -3,9 +3,11 @@ package org.jruby.compiler.ir.instructions.jruby;
 import java.util.Map;
 
 import org.jruby.RubyArray;
+import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.ResultInstr;
+import org.jruby.compiler.ir.operands.Array;
 import org.jruby.compiler.ir.operands.BooleanLiteral;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
@@ -39,6 +41,12 @@ public class ToAryInstr extends Instr implements ResultInstr {
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
         array = array.getSimplifiedOperand(valueMap, force);
+    }
+
+    @Override
+    public Operand simplifyAndGetResult(IRScope scope, Map<Operand, Operand> valueMap) {
+        simplifyOperands(valueMap, false);
+        return dontToAryArrays.isTrue() && (array.getValue(valueMap) instanceof Array) ? array : null;
     }
     
     public Variable getResult() {
