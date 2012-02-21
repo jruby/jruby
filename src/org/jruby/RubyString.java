@@ -4222,16 +4222,15 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return uptoCommon19(context, arg, excl, block, false);
     }
 
-    final IRubyObject uptoCommon19(ThreadContext context, IRubyObject arg, boolean excl, Block block, boolean asASymbol) {
+    final IRubyObject uptoCommon19(ThreadContext context, IRubyObject arg, boolean excl, Block block, boolean asSymbol) {
         Ruby runtime = context.getRuntime();
-        if (arg instanceof RubySymbol) {
-            throw runtime.newTypeError("can't convert Symbol into String");
-        }
+        if (arg instanceof RubySymbol) throw runtime.newTypeError("can't convert Symbol into String");
+
         RubyString end = arg.convertToString();
         Encoding enc = checkEncoding(end);
+        boolean isAscii = scanForCodeRange() == CR_7BIT && end.scanForCodeRange() == CR_7BIT;
 
-        if (value.getRealSize() == 1 && end.value.getRealSize() == 1 &&
-            scanForCodeRange() == CR_7BIT && end.scanForCodeRange() == CR_7BIT) {
+        if (value.getRealSize() == 1 && end.value.getRealSize() == 1 && isAscii) {
             byte c = value.getUnsafeBytes()[value.getBegin()];
             byte e = end.value.getUnsafeBytes()[end.value.getBegin()];
             if (c > e || (excl && c == e)) return this;
@@ -4239,33 +4238,80 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 RubyString s = new RubyString(runtime, runtime.getString(), RubyInteger.SINGLE_CHAR_BYTELISTS[c & 0xff],
                                                                             enc, CR_7BIT);
                 s.shareLevel = SHARE_LEVEL_BYTELIST;
-                IRubyObject argument = s;
-                if (asASymbol) {
-                    argument = runtime.newSymbol(s.toString());
-                }
-                block.yield(context, argument);
+                block.yield(context, asSymbol ? runtime.newSymbol(s.toString()) : s);
 
                 if (!excl && c == e) break;
                 c++;
                 if (excl && c == e) break;
             }
-        } else {
-            int n = op_cmp19(end);
-            if (n > 0 || (excl && n == 0)) return this;
+        } else if (isAscii && ASCII.isDigit(value.getUnsafeBytes()[0]) && ASCII.isDigit(end.value.getUnsafeBytes()[0])) {
+            int s = value.getBegin();
+            int send = s + value.getRealSize();
+            byte[]bytes = value.getUnsafeBytes();
 
-            IRubyObject afterEnd = end.callMethod(context, "succ");
-            RubyString current = this;
-            while (!current.op_equal19(context, afterEnd).isTrue()) {
-                if (current.value.getRealSize() > end.value.getRealSize() || current.value.getRealSize() == 0) break;
-                IRubyObject argument = current;
-                if (asASymbol) {
-                    argument = runtime.newSymbol(current.toString());
-                }
-                block.yield(context, argument);
-                if (!excl && current.op_equal19(context, end).isTrue()) break;
-                current = current.callMethod(context, "succ").convertToString();
-                if (excl && current.op_equal19(context, end).isTrue()) break;
+            while (s < send) {
+                if (ASCII.isDigit(bytes[s] & 0xff)) return uptoCommon19NoDigits(context, end, excl, block, asSymbol);
+                s++;
             }
+            s = end.value.getBegin();
+            send = s + end.value.getRealSize();
+            bytes = end.value.getUnsafeBytes();
+
+            while (s < send) {
+                if (ASCII.isDigit(bytes[s] & 0xff)) return uptoCommon19NoDigits(context, end, excl, block, asSymbol);
+                s++;
+            }
+
+            IRubyObject b = stringToInum19(10, false);
+            IRubyObject e = end.stringToInum19(10, false);
+
+            if (b instanceof RubyFixnum && e instanceof RubyFixnum) {
+                int bi = RubyNumeric.fix2int(b);
+                int ei = RubyNumeric.fix2int(e);
+
+                while (bi <= ei) {
+                    if (excl && bi == ei) break;
+                    ByteList to = new ByteList(10);
+                    Sprintf.sprintf(runtime, to, "%.*ld", bi);
+                    RubyString str = new RubyString(runtime, runtime.getString(), to);
+                    block.yield(context, asSymbol ? runtime.newSymbol(str.toString()) : str);
+                    bi++;
+                }
+            } else {
+                String op = excl ? "<" : "<=";
+                RubyString format = newString("%.*d");
+                RubyArray args = runtime.newArray(2);
+                args.append(runtime.newFixnum(value.length()));
+                
+                while (b.callMethod(context, op, e).isTrue()) {
+                    args.aset(RubyFixnum.one(runtime), b);
+                    IRubyObject result = format.op_format(context, args);
+                            
+                    block.yield(context, asSymbol ? runtime.newSymbol(result.toString()) : result);
+                    b = b.callMethod(context, "succ");
+                }
+            }
+            return this;
+        }
+
+        return uptoCommon19NoDigits(context, end, excl, block, asSymbol);
+    }
+
+    private IRubyObject uptoCommon19NoDigits(ThreadContext context, RubyString end, boolean excl, Block block, boolean asSymbol) {
+        Ruby runtime = context.runtime;
+        int n = op_cmp19(end);
+        if (n > 0 || (excl && n == 0)) return this;
+        IRubyObject afterEnd = end.callMethod(context, "succ");
+        RubyString current = strDup(context.runtime);
+
+        while (!current.op_equal19(context, afterEnd).isTrue()) {
+            IRubyObject next = null;
+            if (excl || !current.op_equal19(context, end).isTrue()) next = current.callMethod(context, "succ");
+            block.yield(context, asSymbol ? runtime.newSymbol(current.toString()) : current);
+            if (next == null) break;
+            current = next.convertToString();
+            if (excl && current.op_equal19(context, end).isTrue()) break;
+            if (current.getByteList().length() > end.getByteList().length() || current.getByteList().length() == 0) break;
         }
         return this;
     }
