@@ -3,6 +3,7 @@ package org.jruby.compiler.ir.operands;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.compiler.ir.representations.InlinerInfo;
 
 /**
  * A set of variables which are only used in a particular scope and never
@@ -53,6 +54,11 @@ public class TemporaryVariable extends Variable {
     @Override
     public String toString() {
         return getName();
+    }
+
+    @Override
+    public Variable cloneForCloningClosure(InlinerInfo ii) {
+        return new TemporaryVariable(name, offset);
     }
 
     @Override

@@ -285,6 +285,10 @@ public class CFGInliner {
 
         cfg.removeAllOutgoingEdgesForBB(yieldBB);
 
+        // Allocate new inliner object to reset variable and label rename maps
+        ii = ii.cloneForInliningClosure();
+        ii.setupYieldArgsAndYieldResult(yield, yieldBB, cl.getBlockBody().arity());
+
         // 2. Merge closure cfg into the current cfg
         // SSS FIXME: Is it simpler to just clone everything?
         //
@@ -294,10 +298,6 @@ public class CFGInliner {
         CFG closureCFG = cl.getCFG();
         BasicBlock cEntry = closureCFG.getEntryBB();
         BasicBlock cExit = closureCFG.getExitBB();
-
-        // Reset var rename map
-        ii.resetRenameMaps();
-        ii.setupYieldArgsAndYieldResult(yield, yieldBB, cl.getBlockBody().arity());
         for (BasicBlock b : closureCFG.getBasicBlocks()) {
             if (b != cEntry && b != cExit) b.migrateToHostScope(ii);
         }

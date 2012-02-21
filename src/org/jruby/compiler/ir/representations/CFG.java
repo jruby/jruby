@@ -620,13 +620,17 @@ public class CFG {
         return list;
     }    
 
-    public CFG cloneForBlockCloning(IRScope scope, InlinerInfo ii) {
+    public CFG cloneForCloningClosure(IRScope scope, InlinerInfo ii) {
         Map<BasicBlock, BasicBlock> cloneBBMap = new HashMap<BasicBlock, BasicBlock>();
         CFG clone = new CFG(scope);
 
         // clone bbs
         for (BasicBlock b : getBasicBlocks()) {
-            BasicBlock bCloned = b.cloneForBlockCloning(ii);
+            BasicBlock bCloned = new BasicBlock(clone, b.getLabel().clone());
+            for (Instr i: b.getInstrs()) {
+                Instr clonedInstr = i.cloneForBlockCloning(ii);
+                if (clonedInstr != null) bCloned.addInstr(clonedInstr);
+            }
             clone.addBasicBlock(bCloned);
             cloneBBMap.put(b, bCloned);
         }

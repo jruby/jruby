@@ -33,7 +33,7 @@ public class AllocateBindingInstr extends Instr {
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         // The frame will now be allocated in the caller's scope
-        return new AllocateBindingInstr(ii.callerCFG.getScope());
+        return new AllocateBindingInstr(ii.getInlineHostScope());
     }
 
     // Can this instruction raise exceptions?

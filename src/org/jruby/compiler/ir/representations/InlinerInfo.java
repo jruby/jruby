@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import org.jruby.runtime.Arity;
 import org.jruby.compiler.ir.IRScope;
+import org.jruby.compiler.ir.IRClosure;
 import org.jruby.compiler.ir.Tuple;
 import org.jruby.compiler.ir.instructions.jruby.ToAryInstr;
 import org.jruby.compiler.ir.instructions.CallBase;
@@ -16,13 +17,14 @@ import org.jruby.compiler.ir.operands.ClosureLocalVariable;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.Operand;
+import org.jruby.compiler.ir.operands.Self;
 import org.jruby.compiler.ir.operands.Variable;
 
 public class InlinerInfo {
     private static Integer globalInlineCount = 0;
 
-    public final CFG callerCFG;
-    public final CallBase call;
+    private CFG callerCFG;
+    private CallBase call;
 
     private Operand[] callArgs;
     private Map<Label, Label> lblRenameMap;
@@ -32,23 +34,60 @@ public class InlinerInfo {
     private Operand callReceiver;
     private String inlineVarPrefix;
 
+    // SSS FIXME: Ugly?
     // For inlining closures
     private Operand yieldArg;
     private Variable yieldResult;
+    private boolean inClosureInlineMode;
+
+    // SSS FIXME: Ugly?
+    // For cloning closure
+    private boolean inClosureCloneMode;
+    private IRClosure clonedClosure;
+
+    public InlinerInfo() { }
 
     public InlinerInfo(CallBase call, CFG c) {
-        this.call = call;
-        this.callArgs = call.getCallArgs();
-        this.callerCFG = c;
         this.varRenameMap = new HashMap<Variable, Variable>();
         this.lblRenameMap = new HashMap<Label, Label>();
         this.bbRenameMap = new HashMap<BasicBlock, BasicBlock>();
         this.yieldSites = new ArrayList();
+        this.call = call;
+        this.callArgs = call.getCallArgs();
+        this.callerCFG = c;
         this.callReceiver = call.getReceiver();
+        this.inClosureCloneMode = false;
+        this.inClosureInlineMode = false;
         synchronized(globalInlineCount) { 
             this.inlineVarPrefix = "%in" + globalInlineCount + "_"; 
             globalInlineCount++;
         }
+    }
+
+    public InlinerInfo cloneForInliningClosure() {
+        InlinerInfo clone = new InlinerInfo();
+        clone.varRenameMap = new HashMap<Variable, Variable>();
+        clone.lblRenameMap = new HashMap<Label, Label>();
+        clone.call = this.call;
+        clone.callArgs = this.callArgs;
+        clone.callerCFG = this.callerCFG;
+        clone.callReceiver = this.callReceiver;
+        clone.inClosureCloneMode = false;
+        clone.inClosureInlineMode = true;
+        return clone;
+    }
+
+    public InlinerInfo cloneForCloningClosure(IRClosure clonedClosure) {
+        InlinerInfo clone = new InlinerInfo();
+        clone.varRenameMap = new HashMap<Variable, Variable>();
+        for (Variable v: varRenameMap.keySet()) {
+            clone.varRenameMap.put(v, varRenameMap.get(v));
+        }
+        clone.lblRenameMap = new HashMap<Label, Label>();
+        clone.clonedClosure = clonedClosure;
+        clone.inClosureCloneMode = true;
+        clone.inClosureInlineMode = false;
+        return clone;
     }
 
     /**
@@ -58,22 +97,17 @@ public class InlinerInfo {
         return callerCFG.getScope();
     }
 
+    public IRScope getNewLexicalParentForClosure() {
+        return inClosureCloneMode ? clonedClosure : getInlineHostScope();
+    }
+
     public Label getRenamedLabel(Label l) {
         Label newLbl = this.lblRenameMap.get(l);
         if (newLbl == null) {
-           newLbl = getInlineHostScope().getNewLabel();
+           newLbl = inClosureCloneMode ? l.clone() : getInlineHostScope().getNewLabel();
            this.lblRenameMap.put(l, newLbl);
         }
         return newLbl;
-    }
-
-    public void resetRenameMaps() {
-        this.varRenameMap = new HashMap<Variable, Variable>();
-        this.lblRenameMap = new HashMap<Label, Label>();
-    }
-
-    public Map<Variable, Variable> getVarRenameMap() {
-        return varRenameMap;
     }
 
     public void setupYieldArgsAndYieldResult(YieldInstr yi, BasicBlock yieldBB, Arity blockArity) {
@@ -104,8 +138,29 @@ public class InlinerInfo {
     public Variable getRenamedVariable(Variable v) {
         Variable newVar = this.varRenameMap.get(v);
         if (newVar == null) {
-            newVar = getInlineHostScope().getNewInlineVariable(inlineVarPrefix, v);
+            if (inClosureCloneMode) {
+                // when cloning a closure, local vars and temps are not renamed
+                newVar = v.cloneForCloningClosure(this);
+            } else if (inClosureInlineMode) {
+                // when inlining a closure, 
+                // - local var depths are reduced by 1 (to move them to the host scope)
+                // - tmp vars are reallocated in the host scope
+                if (v instanceof LocalVariable) {
+                    LocalVariable lv = (LocalVariable)v;
+                    int depth = lv.getScopeDepth();
+                    newVar = getInlineHostScope().getLocalVariable(lv.getName(), depth > 1 ? depth - 1 : 0);
+                } else {
+                    newVar = getInlineHostScope().getNewTemporaryVariable();
+                }
+            } else {
+                // when inlining a method, local vars and temps have to be renamed
+                newVar = getInlineHostScope().getNewInlineVariable(inlineVarPrefix, v);
+            }
             this.varRenameMap.put(v, newVar);
+        } else if (inClosureCloneMode && (v instanceof LocalVariable)) {
+            LocalVariable l_v = (LocalVariable)v;
+            LocalVariable l_newVar = (LocalVariable)newVar;
+            if (l_v.getScopeDepth() != l_newVar.getScopeDepth()) newVar = l_newVar.cloneForDepth(l_v.getScopeDepth());
         }
         return newVar;
     }
@@ -147,12 +202,17 @@ public class InlinerInfo {
         }
     }
 
-    public Operand getCallReceiver() {
-        return callReceiver;
+    public Operand getSelfValue(Self self) {
+        return inClosureCloneMode ? self : callReceiver;
     }
 
     public Operand getCallClosure() {
         return call.getClosureArg(callerCFG.getScope().getManager().getNil());
+    }
+
+    // SSS FIXME: Ugly?
+    public IRClosure getClonedClosure() {
+        return clonedClosure;
     }
 
     public Variable getCallResultVariable() {

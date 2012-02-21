@@ -8,6 +8,7 @@ package org.jruby.compiler.ir.operands;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.compiler.ir.representations.InlinerInfo;
 
 /**
  * @author enebo
@@ -70,6 +71,11 @@ public class LocalVariable extends Variable {
         IRubyObject value = currDynScope.getValue(offset, scopeDepth);
         if (value == null) value = context.nil;
         return value;
+    }
+
+    @Override
+    public Variable cloneForCloningClosure(InlinerInfo ii) {
+        return new LocalVariable(name, scopeDepth, offset);
     }
 
     // SSS FIXME: Better name than this?

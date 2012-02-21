@@ -6,7 +6,7 @@ import org.jruby.compiler.ir.representations.InlinerInfo;
 // SSS FIXME: Should we try to enforce the canonical property that within a method,
 // there is exactly one label object with the same label string?
 public class Label extends Operand {
-    public final String _label;
+    public final String label;
 
     // This is the PC (program counter == array index) for the label target -- this field is used during interpretation
     // to fetch the instruction to jump to given a label
@@ -14,11 +14,11 @@ public class Label extends Operand {
 
     public static int index = 0;
 
-    public Label(String l) { _label = l; }
+    public Label(String l) { label = l; }
 
     @Override
     public String toString() { 
-        return _label;
+        return label;
     }
 
     @Override
@@ -33,12 +33,16 @@ public class Label extends Operand {
 
     @Override
     public int hashCode() { 
-        return _label.hashCode();
+        return label.hashCode();
     }
 
     @Override
     public boolean equals(Object o) { 
-        return (o instanceof Label) && _label.equals(((Label)o)._label);
+        return (o instanceof Label) && label.equals(((Label)o).label);
+    }
+
+    public Label clone() {
+        return new Label(label);
     }
 
     @Override

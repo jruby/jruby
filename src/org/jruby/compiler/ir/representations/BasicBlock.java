@@ -128,26 +128,6 @@ public class BasicBlock implements DataInfo {
         return clonedBB;
     }
 
-    public BasicBlock cloneForBlockCloning(InlinerInfo ii) {
-        BasicBlock clonedBB = ii.getOrCreateRenamedBB(this);
-        for (Instr i: getInstrs()) {
-            Instr clonedInstr = i.cloneForBlockCloning(ii);
-            if (clonedInstr != null) clonedBB.addInstr(clonedInstr);
-        }
-
-        return clonedBB;
-    }
-
-    private Variable getRenamedVariable(Operand o, IRScope hostScope) {
-        if (o instanceof LocalVariable) {
-            LocalVariable lv = (LocalVariable)o;
-            int depth = lv.getScopeDepth();
-            return hostScope.getLocalVariable(lv.getName(), depth > 1 ? depth - 1 : 0);
-        } else {
-            return hostScope.getNewTemporaryVariable();
-        }
-    }
-
     public void migrateToHostScope(InlinerInfo ii) {
         // Update cfg for this bb
         IRScope hostScope = ii.getInlineHostScope();
@@ -157,24 +137,8 @@ public class BasicBlock implements DataInfo {
         List clonedInstrs = new ArrayList<Instr>();
 
         // Process instructions
-        Map<Variable, Variable> varRenameMap = ii.getVarRenameMap();
         for (ListIterator<Instr> it = ((ArrayList<Instr>)instrs).listIterator(); it.hasNext(); ) {
             Instr i = it.next();
-
-            // Rename local vars (necessary because of scopeDepth changes)
-            // and temp vars (necessary to eliminate name clashes)
-            for (Operand o: i.getOperands()) {
-                if ((o instanceof Variable) && (varRenameMap.get((Variable)o) == null)) {
-                    varRenameMap.put((Variable)o, getRenamedVariable(o, hostScope));
-                }
-            }
-
-            if (i instanceof ResultInstr) {
-                Variable r = ((ResultInstr)i).getResult();
-                if (varRenameMap.get(r) == null) {
-                    varRenameMap.put(r, getRenamedVariable(r, hostScope));
-                }
-            }
 
             // clone
             Instr clonedInstr = i.cloneForInlinedClosure(ii);

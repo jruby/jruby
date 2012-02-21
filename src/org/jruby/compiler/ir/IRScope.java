@@ -213,6 +213,35 @@ public abstract class IRScope {
     private int threadPollInstrsCount;
     
     private IRManager manager;
+
+    // Used by cloning code
+    protected IRScope(IRScope s, IRScope lexicalParent) {
+        this.lexicalParent = lexicalParent;
+        this.manager = s.manager;
+        this.fileName = s.fileName;
+        this.lineNumber = s.lineNumber;
+        this.staticScope = s.staticScope;
+        this.threadPollInstrsCount = s.threadPollInstrsCount;
+        this.nextClosureIndex = s.nextClosureIndex;
+        this.temporaryVariableIndex = s.temporaryVariableIndex;
+        this.hasLoops = s.hasLoops;
+        this.hasUnusedImplicitBlockArg = s.hasUnusedImplicitBlockArg;
+        this.instrList = new ArrayList<Instr>();
+        this.closures = new ArrayList<IRClosure>();
+        this.dfProbs = new HashMap<String, DataFlowProblem>();
+        this.nextVarIndex = new HashMap<String, Integer>(); // SSS FIXME: clone!
+        this.cfg = null;
+        this.linearizedInstrArray = null;
+        this.linearizedBBList = null;
+        this.canModifyCode = s.canModifyCode;
+        this.canCaptureCallersBinding = s.canCaptureCallersBinding;
+        this.bindingHasEscaped = s.bindingHasEscaped;
+        this.usesEval = s.usesEval;
+        this.usesZSuper = s.usesZSuper;
+
+        this.localVars = new LocalVariableAllocator(); // SSS FIXME: clone!
+        this.localVars.nextSlot = s.localVars.nextSlot;
+    }
     
     public IRScope(IRManager manager, IRScope lexicalParent, String name, 
             String fileName, int lineNumber, StaticScope staticScope) {
@@ -222,27 +251,27 @@ public abstract class IRScope {
         this.fileName = fileName;
         this.lineNumber = lineNumber;
         this.staticScope = staticScope;
-        threadPollInstrsCount = 0;
-        nextClosureIndex = 0;
-        temporaryVariableIndex = -1;
-        instrList = new ArrayList<Instr>();
-        closures = new ArrayList<IRClosure>();
-        dfProbs = new HashMap<String, DataFlowProblem>();
-        nextVarIndex = new HashMap<String, Integer>();
-        cfg = null;
-        linearizedInstrArray = null;
-        linearizedBBList = null;
-        hasLoops = false;
-        hasUnusedImplicitBlockArg = false;
+        this.threadPollInstrsCount = 0;
+        this.nextClosureIndex = 0;
+        this.temporaryVariableIndex = -1;
+        this.instrList = new ArrayList<Instr>();
+        this.closures = new ArrayList<IRClosure>();
+        this.dfProbs = new HashMap<String, DataFlowProblem>();
+        this.nextVarIndex = new HashMap<String, Integer>();
+        this.cfg = null;
+        this.linearizedInstrArray = null;
+        this.linearizedBBList = null;
+        this.hasLoops = false;
+        this.hasUnusedImplicitBlockArg = false;
 
         // These flags are true by default!
-        canModifyCode = true;
-        canCaptureCallersBinding = true;
-        bindingHasEscaped = true;
-        usesEval = true;
-        usesZSuper = true;
+        this.canModifyCode = true;
+        this.canCaptureCallersBinding = true;
+        this.bindingHasEscaped = true;
+        this.usesEval = true;
+        this.usesZSuper = true;
 
-        localVars = new LocalVariableAllocator();
+        this.localVars = new LocalVariableAllocator();
         synchronized(globalScopeCount) { this.scopeId = globalScopeCount++; }
     }
 

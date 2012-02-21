@@ -38,7 +38,7 @@ public class WrappedIRClosure extends Operand {
 
     @Override
     public Operand cloneForInlining(InlinerInfo ii) {
-        return new WrappedIRClosure(closure.cloneForInlining(ii));
+        return new WrappedIRClosure(closure.cloneForClonedInstr(ii));
     }
 
     @Override

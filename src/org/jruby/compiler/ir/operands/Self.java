@@ -19,7 +19,6 @@ public class Self extends LocalVariable {
     @Override
     public boolean equals(Object obj) {
         return obj == this;
-
     }
 
     @Override
@@ -33,7 +32,12 @@ public class Self extends LocalVariable {
     }
 
     @Override
-    public Operand cloneForInlining(InlinerInfo ii) { 
-        return ii.getCallReceiver();
+    public Operand cloneForInlining(InlinerInfo ii) {
+        return ii.getSelfValue(this);
+    }
+
+    @Override
+    public Variable cloneForCloningClosure(InlinerInfo ii) {
+        return this;
     }
 }

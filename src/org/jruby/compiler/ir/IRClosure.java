@@ -50,12 +50,14 @@ public class IRClosure extends IRScope {
     private String[] parameterList;
 
     /** Used by cloning code */
-    private IRClosure(IRManager manager, IRScope lexicalParent, String fileName, int lineNumber, StaticScope staticScope) {
-        super(manager, lexicalParent, null, fileName, lineNumber, staticScope);
+    private IRClosure(IRClosure c, IRScope lexicalParent) {
+        super(c, lexicalParent);
         this.closureId = lexicalParent.getNextClosureId();
         setName("_CLOSURE_CLONE_" + closureId);
         this.startLabel = getNewLabel(getName() + "_START");
         this.endLabel = getNewLabel(getName() + "_END");
+        this.body = (c.body instanceof InterpretedIRBlockBody19) ? new InterpretedIRBlockBody19(this, c.body.arity(), c.body.getArgumentType())
+                                                                 : new InterpretedIRBlockBody(this, c.body.arity(), c.body.getArgumentType());
     }
 
     public IRClosure(IRManager manager, IRScope lexicalParent, boolean isForLoopBody,
@@ -256,16 +258,18 @@ public class IRClosure extends IRScope {
         return blockVar;
     }
 
-    public IRClosure cloneForInlining(InlinerInfo ii) {
-        IRClosure clone = new IRClosure(getManager(), ii.getInlineHostScope(), getFileName(), getLineNumber(), getStaticScope());
-        clone.isForLoopBody = this.isForLoopBody;
-        clone.nestingDepth  = this.nestingDepth;
-        clone.parameterList = this.parameterList;
-        clone.body          = this.body; // SSS: Right now shared, but may need cloning
+    public IRClosure cloneForClonedInstr(InlinerInfo ii) {
+        IRClosure clonedClosure = new IRClosure(this, ii.getNewLexicalParentForClosure());
+        clonedClosure.isForLoopBody = this.isForLoopBody;
+        clonedClosure.nestingDepth  = this.nestingDepth;
+        clonedClosure.parameterList = this.parameterList;
+
+        // Create a new inliner info object
+        ii = ii.cloneForCloningClosure(clonedClosure);
 
         // clone the cfg, and all instructions
-        clone.setCFG(getCFG().cloneForBlockCloning(clone, ii));
+        clonedClosure.setCFG(getCFG().cloneForCloningClosure(clonedClosure, ii));
 
-        return clone;
+        return clonedClosure;
     }
 }

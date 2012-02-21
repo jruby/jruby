@@ -1,6 +1,7 @@
 package org.jruby.compiler.ir.operands;
 
 import org.jruby.compiler.ir.IRClosure;
+import org.jruby.compiler.ir.representations.InlinerInfo;
 
 /**
  * This represents a variable used in a closure that is
@@ -36,6 +37,11 @@ public class ClosureLocalVariable extends LocalVariable {
         if (!(arg0 instanceof ClosureLocalVariable)) return 0;
 
         return name.compareTo(((LocalVariable) arg0).name);
+    }
+
+    @Override
+    public Variable cloneForCloningClosure(InlinerInfo ii) {
+        return new ClosureLocalVariable(ii.getClonedClosure(), name, scopeDepth, offset);
     }
 
     // SSS FIXME: Better name than this?
