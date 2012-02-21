@@ -3419,6 +3419,49 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return makeShared(runtime, beg, end - beg);
     }
 
+    /* str_byte_substr */
+    private IRubyObject byteSubstr(Ruby runtime, int beg, int len) {
+        int length = value.length();
+        int s = value.getBegin();
+        
+        if (len < 0 || beg > length) return runtime.getNil();
+
+        int p;
+        if (beg < 0) {
+            beg += length;
+            if (beg < 0) return runtime.getNil();
+        }
+        if (beg + len > length) len = length - beg;
+            
+        if (len <= 0) {
+            len = 0;
+            p = 0;
+        }
+        else {
+            p = s + beg;
+        }
+
+        return makeShared19(runtime, p, len);
+    }
+
+    /* str_byte_aref */
+    private IRubyObject byteARef(Ruby runtime, IRubyObject idx) {
+        final int index;
+
+        if (idx instanceof RubyRange){
+            int[] begLen = ((RubyRange) idx).begLenInt(getByteList().length(), 0);
+            return begLen == null ? runtime.getNil() : byteSubstr(runtime, begLen[0], begLen[1]);
+        } else if (idx instanceof RubyFixnum) {
+            index = RubyNumeric.fix2int((RubyFixnum)idx);
+        } else {
+            index = RubyNumeric.num2int(idx);
+        }
+
+        IRubyObject obj = byteSubstr(runtime, index, 1);
+        if (obj.isNil() || ((RubyString)obj).getByteList().length() == 0) return runtime.getNil();
+        return obj;
+    }
+            
     public final IRubyObject substr19(Ruby runtime, int beg, int len) {
         if (len < 0) return runtime.getNil();
         int length = value.getRealSize();
@@ -3589,19 +3632,14 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return op_aref19(runtime, RubyNumeric.num2int(arg));
     }
 
-    @JRubyMethod(reads = BACKREF, writes = BACKREF, compat = RUBY1_9)
+    @JRubyMethod(compat = RUBY1_9)
     public IRubyObject byteslice(ThreadContext context, IRubyObject arg1, IRubyObject arg2) {
-        return op_aref(context, arg1, arg2);
+        return byteSubstr(context.runtime, RubyNumeric.num2int(arg1), RubyNumeric.num2int(arg2));
     }
 
-    @JRubyMethod(reads = BACKREF, writes = BACKREF, compat = RUBY1_9)
+    @JRubyMethod(compat = RUBY1_9)
     public IRubyObject byteslice(ThreadContext context, IRubyObject arg) {
-        IRubyObject result = op_aref(context, arg);
-        if (result instanceof RubyFixnum) {
-            // turn back into a String
-            return ((RubyFixnum)result).chr19(context);
-        }
-        return result;
+        return byteARef(context.runtime, arg);
     }
 
     private IRubyObject op_aref19(Ruby runtime, int idx) {
