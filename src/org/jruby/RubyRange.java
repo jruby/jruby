@@ -518,7 +518,7 @@ public class RubyRange extends RubyObject {
 
     @JRubyMethod(name = "step", compat = RUBY1_9)
     public IRubyObject step19(final ThreadContext context, final Block block) {
-        return block.isGiven() ? stepCommon19(context, RubyFixnum.zero(context.getRuntime()), block) : enumeratorize(context.getRuntime(), this, "step");
+        return block.isGiven() ? stepCommon19(context, RubyFixnum.one(context.getRuntime()), block) : enumeratorize(context.getRuntime(), this, "step");
     }
 
     @JRubyMethod(name = "step", compat = RUBY1_9)
