@@ -118,3 +118,4 @@ test_jar_file
 # Not sure how to test this, since soft references take too long to collect
 #test_thread_service
 test_jruby_synchronized
+test_instantiating_interfaces

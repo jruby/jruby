@@ -1015,7 +1015,6 @@
                 jit.maxsize="@{jit.maxsize}" jvm.flags="@{jvm.flags}">
         <junit-tests>
           <test name="${test}" if="test"/>
-          <test name="org.jruby.test.ScriptTestSuite" todir="${test.results.dir}" unless="test"/>
           <test name="org.jruby.test.JRubyTestSuite" todir="${test.results.dir}" unless="test"/>
           <test name="org.jruby.test.MRITestSuite" todir="${test.results.dir}" unless="test"/>
           <test name="org.jruby.test.MainTestSuite" todir="${test.results.dir}" unless="test"/>
@@ -1041,7 +1040,6 @@
                 jvm.flags="@{jvm.flags}">
         <junit-tests>
           <test name="${test}" if="test"/>
-          <test name="org.jruby.test.ScriptTestSuite" todir="${test.results.dir}" unless="test"/>
           <test name="org.jruby.test.JRubyTestSuite" todir="${test.results.dir}" unless="test"/>
           <test name="org.jruby.test.SlowTestSuite" todir="${test.results.dir}" unless="test"/>
           <test name="org.jruby.test.MRITestSuite" todir="${test.results.dir}" unless="test"/>

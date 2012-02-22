@@ -72,15 +72,6 @@ public class TestRuby extends TestRubyBase {
         assert(!runtime.getGlobalVariables().get("$*").isNil());
     }
     
-    public void testVarAndMet() throws Exception {
-        runtime.getLoadService().init(new ArrayList());
-        eval("load 'test/testVariableAndMethod.rb'");
-        assertEquals("Hello World", eval("puts($a)"));
-        assertEquals("dlroW olleH", eval("puts $b"));
-        assertEquals("Hello World", eval("puts $d.reverse, $c, $e.reverse"));
-        assertEquals("135 20 3", eval("puts $f, \" \", $g, \" \",  $h"));
-    }
-    
     public void testNativeENVSetting() throws Exception {
         if (Platform.IS_WINDOWS) {
             return;             // posix.getenv() not currently implemented

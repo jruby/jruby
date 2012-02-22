@@ -93,10 +93,6 @@ externals/ruby1.9/strscan/test_stringscanner
 
 externals/ruby1.9/thread/test_queue
 
-externals/ruby1.9/yaml/test_yaml
-# 100% ArgumentError: invalid access mode 4610
-#externals/ruby1.9/yaml/test_yamlstore
-
 externals/ruby1.9/zlib/test_zlib
 
 externals/ruby1.9/ruby/test_alias
