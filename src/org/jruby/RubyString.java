@@ -6619,6 +6619,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         IntHash<Integer> hash = null;
         final TR trRepl = new TR(replList);
 
+        int last = 0;        
         if (cflag) {
             for (int i=0; i<TRANS_SIZE; i++) trans[i] = 1;
             
@@ -6631,7 +6632,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 }
             }
             while ((c = trNext(trRepl, runtime, enc)) >= 0) {}  /* retrieve last replacer */
-            int last = trRepl.now;
+            last = trRepl.now;
             for (int i=0; i<TRANS_SIZE; i++) {
                 if (trans[i] >= 0) trans[i] = last;
             }
@@ -6642,8 +6643,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 int r = trNext(trRepl, runtime, enc);
                 if (r == -1) r = trRepl.now;
                 if (c < TRANS_SIZE) {
-                    trans[c & 0xff] = r;
-                    if (r > TRANS_SIZE - 1) singlebyte = false;
+                    trans[c] = r;
+                    if (codeLength(runtime, enc, c) != 1) singlebyte = false;
                 } else {
                     if (hash == null) hash = new IntHash<Integer>();
                     hash.put(c, r);
@@ -6659,7 +6660,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
         int max = value.getRealSize();
         boolean modify = false;
 
-        int last = -1;
         int clen, tlen, c0;
 
         if (sflag) {
@@ -6672,8 +6672,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 clen = codeLength(runtime, e1, c);
                 tlen = enc == e1 ? clen : codeLength(runtime, enc, c);
                 s += clen;
-                c = trCode(c, trans, hash, cflag, last);
 
+                c = trCode(c, trans, hash, cflag, last, false);
                 if (c != -1) {
                     if (save == c) {
                         if (cr == CR_7BIT && !Encoding.isAscii(c)) cr = CR_VALID;
@@ -6727,7 +6727,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 clen = codeLength(runtime, e1, c);
                 tlen = enc == e1 ? clen : codeLength(runtime, enc, c);
 
-                c = trCode(c, trans, hash, cflag, last);
+                c = trCode(c, trans, hash, cflag, last, true);
 
                 if (c != -1) {
                     tlen = codeLength(runtime, enc, c);
@@ -6742,10 +6742,12 @@ public class RubyString extends RubyObject implements EncodingCapable {
                     System.arraycopy(buf, 0, tbuf, 0, buf.length);
                     buf = tbuf;
                 }
+                
+                if (s != t) {
+                    enc.codeToMbc(c, buf, t);
+                    if (mayModify && (tlen == 1 ? sbytes[s] != buf[t] : ByteList.memcmp(sbytes, s, buf, t, tlen) != 0)) modify = true;  
+                }
 
-                enc.codeToMbc(c, buf, t);
-
-                if (mayModify && (tlen == 1 ? sbytes[s] != buf[t] : ByteList.memcmp(sbytes, s, buf, t, tlen) != 0)) modify = true;
                 if (cr == CR_7BIT && !Encoding.isAscii(c)) cr = CR_VALID;
                 s += clen;
                 t += tlen;
@@ -6762,7 +6764,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return runtime.getNil();
     }
 
-    private int trCode(int c, int[]trans, IntHash<Integer> hash, boolean cflag, int last) {
+    private int trCode(int c, int[]trans, IntHash<Integer> hash, boolean cflag, int last, boolean set) {
         if (c < TRANS_SIZE) {
             return trans[c];
         } else if (hash != null) {
@@ -6773,7 +6775,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 return cflag ? -1 : tmp;
             }
         } else {
-            return -1;
+            return cflag && set ? last : -1; 
         }
     }
 
