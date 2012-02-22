@@ -4229,7 +4229,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
         RubyString end = arg.convertToString();
         Encoding enc = checkEncoding(end);
         boolean isAscii = scanForCodeRange() == CR_7BIT && end.scanForCodeRange() == CR_7BIT;
-
         if (value.getRealSize() == 1 && end.value.getRealSize() == 1 && isAscii) {
             byte c = value.getUnsafeBytes()[value.getBegin()];
             byte e = end.value.getUnsafeBytes()[end.value.getBegin()];
@@ -4244,13 +4243,14 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 c++;
                 if (excl && c == e) break;
             }
-        } else if (isAscii && ASCII.isDigit(value.getUnsafeBytes()[0]) && ASCII.isDigit(end.value.getUnsafeBytes()[0])) {
+            return this;
+        } else if (isAscii && ASCII.isDigit(value.getUnsafeBytes()[value.getBegin()]) && ASCII.isDigit(end.value.getUnsafeBytes()[end.value.getBegin()])) {
             int s = value.getBegin();
             int send = s + value.getRealSize();
             byte[]bytes = value.getUnsafeBytes();
 
             while (s < send) {
-                if (ASCII.isDigit(bytes[s] & 0xff)) return uptoCommon19NoDigits(context, end, excl, block, asSymbol);
+                if (!ASCII.isDigit(bytes[s] & 0xff)) return uptoCommon19NoDigits(context, end, excl, block, asSymbol);
                 s++;
             }
             s = end.value.getBegin();
@@ -4258,36 +4258,39 @@ public class RubyString extends RubyObject implements EncodingCapable {
             bytes = end.value.getUnsafeBytes();
 
             while (s < send) {
-                if (ASCII.isDigit(bytes[s] & 0xff)) return uptoCommon19NoDigits(context, end, excl, block, asSymbol);
+                if (!ASCII.isDigit(bytes[s] & 0xff)) return uptoCommon19NoDigits(context, end, excl, block, asSymbol);
                 s++;
             }
 
             IRubyObject b = stringToInum19(10, false);
             IRubyObject e = end.stringToInum19(10, false);
 
+            IRubyObject[]args = new IRubyObject[2];
+            args[0] = RubyFixnum.newFixnum(runtime, value.length());
+            RubyArray argsArr = runtime.newArrayNoCopy(args);
+            
             if (b instanceof RubyFixnum && e instanceof RubyFixnum) {
                 int bi = RubyNumeric.fix2int(b);
                 int ei = RubyNumeric.fix2int(e);
 
                 while (bi <= ei) {
                     if (excl && bi == ei) break;
-                    ByteList to = new ByteList(10);
-                    Sprintf.sprintf(runtime, to, "%.*ld", bi);
-                    RubyString str = new RubyString(runtime, runtime.getString(), to);
+                    args[1] = RubyFixnum.newFixnum(runtime, bi);
+                    ByteList to = new ByteList(value.length() + 5);
+                    Sprintf.sprintf(to, "%.*d", argsArr);
+                    RubyString str = RubyString.newStringNoCopy(runtime, to, USASCIIEncoding.INSTANCE, CR_7BIT);
                     block.yield(context, asSymbol ? runtime.newSymbol(str.toString()) : str);
                     bi++;
                 }
             } else {
                 String op = excl ? "<" : "<=";
-                RubyString format = newString("%.*d");
-                RubyArray args = runtime.newArray(2);
-                args.append(runtime.newFixnum(value.length()));
-                
+
                 while (b.callMethod(context, op, e).isTrue()) {
-                    args.aset(RubyFixnum.one(runtime), b);
-                    IRubyObject result = format.op_format(context, args);
-                            
-                    block.yield(context, asSymbol ? runtime.newSymbol(result.toString()) : result);
+                    args[1] = b;
+                    ByteList to = new ByteList(value.length() + 5);
+                    Sprintf.sprintf(to, "%.*d", argsArr);
+                    RubyString str = RubyString.newStringNoCopy(runtime, to, USASCIIEncoding.INSTANCE, CR_7BIT);
+                    block.yield(context, asSymbol ? runtime.newSymbol(str.toString()) : str);
                     b = b.callMethod(context, "succ");
                 }
             }
