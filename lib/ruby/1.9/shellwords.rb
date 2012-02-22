@@ -17,25 +17,23 @@
 #   - Akinori MUSHA <knu@iDaemons.org> (current maintainer)
 #
 module Shellwords
-  #
   # Splits a string into an array of tokens in the same way the UNIX
   # Bourne shell does.
   #
   #   argv = Shellwords.split('here are "two words"')
   #   argv #=> ["here", "are", "two words"]
   #
-  # +String#shellsplit+ is a shorthand for this function.
+  # String#shellsplit is a shorthand for this function.
   #
   #   argv = 'here are "two words"'.shellsplit
   #   argv #=> ["here", "are", "two words"]
-  #
   def shellsplit(line)
     words = []
     field = ''
     line.scan(/\G\s*(?>([^\s\\\'\"]+)|'([^\']*)'|"((?:[^\"\\]|\\.)*)"|(\\.?)|(\S))(\s|\z)?/m) do
       |word, sq, dq, esc, garbage, sep|
       raise ArgumentError, "Unmatched double quote: #{line.inspect}" if garbage
-      field << (word || sq || (dq || esc).gsub(/\\(?=.)/, ''))
+      field << (word || sq || (dq || esc).gsub(/\\(.)/, '\\1'))
       if sep
         words << field
         field = ''
@@ -52,7 +50,6 @@ module Shellwords
     alias split shellsplit
   end
 
-  #
   # Escapes a string so that it can be safely used in a Bourne shell
   # command line.
   #
@@ -63,21 +60,26 @@ module Shellwords
   #     # ...
   #   }
   #
-  # +String#shellescape+ is a shorthand for this function.
+  # String#shellescape is a shorthand for this function.
   #
   #   open("| grep #{pattern.shellescape} file") { |pipe|
   #     # ...
   #   }
   #
+  # It is caller's responsibility to encode the string in the right
+  # encoding for the shell environment where this string is used.
+  # Multibyte characters are treated as multibyte characters, not
+  # bytes.
   def shellescape(str)
     # An empty argument will be skipped, so return empty quotes.
     return "''" if str.empty?
 
     str = str.dup
 
-    # Process as a single byte sequence because not all shell
-    # implementations are multibyte aware.
-    str.gsub!(/([^A-Za-z0-9_\-.,:\/@\n])/n, "\\\\\\1")
+    # Treat multibyte characters as is.  It is caller's responsibility
+    # to encode the string in the right encoding for the shell
+    # environment.
+    str.gsub!(/([^A-Za-z0-9_\-.,:\/@\n])/, "\\\\\\1")
 
     # A LF cannot be escaped with a backslash because a backslash + LF
     # combo is regarded as line continuation and simply ignored.
@@ -92,7 +94,6 @@ module Shellwords
     alias escape shellescape
   end
 
-  #
   # Builds a command line string from an argument list +array+ joining
   # all elements escaped for Bourne shell and separated by a space.
   #
@@ -100,7 +101,7 @@ module Shellwords
   #     # ...
   #   }
   #
-  # +Array#shelljoin+ is a shorthand for this function.
+  # Array#shelljoin is a shorthand for this function.
   #
   #   open('|' + ['grep', pattern, *files].shelljoin) { |pipe|
   #     # ...
@@ -118,38 +119,32 @@ module Shellwords
 end
 
 class String
-  #
   # call-seq:
   #   str.shellsplit => array
   #
   # Splits +str+ into an array of tokens in the same way the UNIX
-  # Bourne shell does.  See +Shellwords::shellsplit+ for details.
-  #
+  # Bourne shell does.  See Shellwords::shellsplit for details.
   def shellsplit
     Shellwords.split(self)
   end
 
-  #
   # call-seq:
   #   str.shellescape => string
   #
   # Escapes +str+ so that it can be safely used in a Bourne shell
-  # command line.  See +Shellwords::shellescape+ for details.
-  #
+  # command line.  See Shellwords::shellescape for details.
   def shellescape
     Shellwords.escape(self)
   end
 end
 
 class Array
-  #
   # call-seq:
   #   array.shelljoin => string
   #
   # Builds a command line string from an argument list +array+ joining
   # all elements escaped for Bourne shell and separated by a space.
-  # See +Shellwords::shelljoin+ for details.
-  #
+  # See Shellwords::shelljoin for details.
   def shelljoin
     Shellwords.join(self)
   end

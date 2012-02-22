@@ -49,7 +49,6 @@ namespace :test do
         end
       end
       t.test_files = files
-      p files
       t.verbose = true
       ENV['EXCLUDE_DIR'] = 'test/externals/ruby1.9/excludes'
       t.ruby_opts << '--debug'

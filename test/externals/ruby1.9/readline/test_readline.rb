@@ -85,9 +85,7 @@ class TestReadline < Test::Unit::TestCase
 
   if !/EditLine/n.match(Readline::VERSION)
     def test_readline
-      stdin = Tempfile.new("test_readline_stdin")
-      stdout = Tempfile.new("test_readline_stdout")
-      begin
+      with_temp_stdio do |stdin, stdout|
         stdin.write("hello\n")
         stdin.close
         stdout.close
@@ -114,9 +112,6 @@ class TestReadline < Test::Unit::TestCase
             replace_stdio(stdin.path, stdout.path) { Readline.readline("> ") }
           }.join
         end
-      ensure
-        stdin.close(true)
-        stdout.close(true)
       end
     end
 
@@ -130,35 +125,50 @@ class TestReadline < Test::Unit::TestCase
         return
       end
 
-      stdin = Tempfile.new("test_readline_stdin")
-      stdout = Tempfile.new("test_readline_stdout")
-      begin
+      with_temp_stdio do |stdin, stdout|
         actual_text = nil
         actual_line_buffer = nil
         actual_point = nil
-        Readline.completion_proc = proc { |text|
+        Readline.completion_proc = ->(text) {
           actual_text = text
           actual_point = Readline.point
-          actual_buffer_line = Readline.line_buffer
+          actual_line_buffer = Readline.line_buffer
           stdin.write(" finish\n")
           stdin.close
           stdout.close
           return ["complete"]
         }
+
         stdin.write("first second\t")
         stdin.flush
+        Readline.completion_append_character = " "
         line = replace_stdio(stdin.path, stdout.path) {
           Readline.readline("> ", false)
         }
+        assert_equal("second", actual_text)
+        assert_equal("first second", actual_line_buffer)
+        assert_equal(12, actual_point)
+        assert_equal("first complete  finish", Readline.line_buffer)
+        assert_equal(Encoding.find("locale"), Readline.line_buffer.encoding)
+        assert_equal(true, Readline.line_buffer.tainted?)
+        assert_equal(22, Readline.point)
+
+        stdin.open
+        stdout.open
+
+        stdin.write("first second\t")
+        stdin.flush
+        Readline.completion_append_character = nil
+        line = replace_stdio(stdin.path, stdout.path) {
+          Readline.readline("> ", false)
+        }
+        assert_equal("second", actual_text)
         assert_equal("first second", actual_line_buffer)
         assert_equal(12, actual_point)
         assert_equal("first complete finish", Readline.line_buffer)
         assert_equal(Encoding.find("locale"), Readline.line_buffer.encoding)
         assert_equal(true, Readline.line_buffer.tainted?)
         assert_equal(21, Readline.point)
-      ensure
-        stdin.close(true)
-        stdout.close(true)
       end
     end
   end
@@ -190,6 +200,27 @@ class TestReadline < Test::Unit::TestCase
     expected.each do |e|
       Readline.completion_case_fold = e
       assert_equal(e, Readline.completion_case_fold)
+    end
+  end
+
+  def test_completion_proc_empty_result
+    with_temp_stdio do |stdin, stdout|
+      stdin.write("first\t")
+      stdin.flush
+      Readline.completion_proc = ->(text) {[]}
+      line1 = line2 = nil
+      replace_stdio(stdin.path, stdout.path) {
+        assert_nothing_raised(NoMemoryError) {line1 = Readline.readline("> ")}
+        stdin.write("\n")
+        stdin.flush
+        assert_nothing_raised(NoMemoryError) {line2 = Readline.readline("> ")}
+      }
+      assert_equal("first", line1)
+      assert_equal("", line2)
+      begin
+        assert_equal("", Readline.line_buffer)
+      rescue NotimplementedError
+      end
     end
   end
 
@@ -250,6 +281,47 @@ class TestReadline < Test::Unit::TestCase
     end
   end
 
+  def test_completion_encoding
+    bug5941 = '[Bug #5941]'
+    append_character = Readline.completion_append_character
+    Readline.completion_append_character = ""
+    completion_case_fold = Readline.completion_case_fold
+    locale = Encoding.find("locale")
+    if locale == Encoding::UTF_8
+      enc1 = Encoding::EUC_JP
+    else
+      enc1 = Encoding::UTF_8
+    end
+    results = nil
+    Readline.completion_proc = ->(text) {results}
+
+    [%W"\u{3042 3042} \u{3042 3044}", %W"\u{fe5b fe5b} \u{fe5b fe5c}"].any? do |w|
+      begin
+        results = w.map {|s| s.encode(locale)}
+      rescue Encoding::UndefinedConversionError
+      end
+    end or
+    begin
+      "\xa1\xa2".encode(Encoding::UTF_8, locale)
+    rescue
+    else
+      results = %W"\xa1\xa1 \xa1\xa2".map {|s| s.force_encoding(locale)}
+    end or
+      skip("missing test for locale #{locale.name}")
+    expected = results[0][0...1]
+    Readline.completion_case_fold = false
+    assert_equal(expected, with_pipe {|r, w| w << "\t"}, bug5941)
+    Readline.completion_case_fold = true
+    assert_equal(expected, with_pipe {|r, w| w << "\t"}, bug5941)
+    results.map! {|s| s.encode(enc1)}
+    assert_raise(Encoding::CompatibilityError, bug5941) do
+      with_pipe {|r, w| w << "\t"}
+    end
+  ensure
+    Readline.completion_case_fold = completion_case_fold
+    Readline.completion_append_character = append_character
+  end
+
   # basic_word_break_characters
   # completer_word_break_characters
   # basic_quote_characters
@@ -283,6 +355,16 @@ class TestReadline < Test::Unit::TestCase
     end
   end
 
+  def test_closed_outstream
+    bug5803 = '[ruby-dev:45043]'
+    IO.pipe do |r, w|
+      Readline.input = r
+      Readline.output = w
+      (w << "##\t").close
+      assert_raise(IOError, bug5803) {Readline.readline}
+    end
+  end
+
   private
 
   def replace_stdio(stdin_path, stdout_path)
@@ -304,6 +386,27 @@ class TestReadline < Test::Unit::TestCase
         end
       }
     }
+  end
+
+  def with_temp_stdio
+    stdin = Tempfile.new("test_readline_stdin")
+    stdout = Tempfile.new("test_readline_stdout")
+    yield stdin, stdout
+  ensure
+    stdin.close(true) if stdin
+    stdout.close(true) if stdout
+  end
+
+  def with_pipe
+    IO.pipe do |r, w|
+      yield(r, w)
+      Readline.input = r
+      Readline.output = w.reopen(IO::NULL)
+      Readline.readline
+    end
+  ensure
+    Readline.input = STDIN
+    Readline.output = STDOUT
   end
 
   def get_default_internal_encoding

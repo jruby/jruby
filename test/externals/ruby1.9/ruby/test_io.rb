@@ -6,6 +6,7 @@ require 'socket'
 require 'stringio'
 require 'timeout'
 require 'tempfile'
+require 'weakref'
 require_relative 'envutil'
 
 class TestIO < Test::Unit::TestCase
@@ -1382,12 +1383,11 @@ class TestIO < Test::Unit::TestCase
 
   def try_fdopen(fd, autoclose = true, level = 100)
     if level > 0
-      try_fdopen(fd, autoclose, level - 1)
+      f = try_fdopen(fd, autoclose, level - 1)
       GC.start
-      level
+      f
     else
-      IO.for_fd(fd, autoclose: autoclose)
-      nil
+      WeakRef.new(IO.for_fd(fd, autoclose: autoclose))
     end
   end
 
@@ -1395,31 +1395,51 @@ class TestIO < Test::Unit::TestCase
     feature2250 = '[ruby-core:26222]'
     pre = 'ft2250'
 
-    Tempfile.new(pre) do |t|
-      f = IO.for_fd(t.fileno)
-      assert_equal(true, f.autoclose?)
-      f.autoclose = false
-      assert_equal(false, f.autoclose?)
-      f.close
-      assert_nothing_raised(Errno::EBADF) {t.close}
+    t = Tempfile.new(pre)
+    f = IO.for_fd(t.fileno)
+    assert_equal(true, f.autoclose?)
+    f.autoclose = false
+    assert_equal(false, f.autoclose?)
+    f.close
+    assert_nothing_raised(Errno::EBADF, feature2250) {t.close}
 
-      t.open
-      f = IO.for_fd(t.fileno, autoclose: false)
-      assert_equal(false, f.autoclose?)
-      f.autoclose = true
-      assert_equal(true, f.autoclose?)
-      f.close
-      assert_raise(Errno::EBADF) {t.close}
+    t.open
+    f = IO.for_fd(t.fileno, autoclose: false)
+    assert_equal(false, f.autoclose?)
+    f.autoclose = true
+    assert_equal(true, f.autoclose?)
+    f.close
+    assert_raise(Errno::EBADF, feature2250) {t.close}
+  end
+
+  def test_autoclose_true_closed_by_finalizer
+    feature2250 = '[ruby-core:26222]'
+    pre = 'ft2250'
+    t = Tempfile.new(pre)
+    w = try_fdopen(t.fileno)
+    begin
+      w.close
+      begin
+        t.close
+      rescue Errno::EBADF
+      end
+      skip "expect IO object was GC'ed but not recycled yet"
+    rescue WeakRef::RefError
+      assert_raise(Errno::EBADF, feature2250) {t.close}
     end
+  end
 
-    Tempfile.new(pre) do |t|
-      try_fdopen(t.fileno)
-      assert_raise(Errno::EBADF) {t.close}
-    end
-
-    Tempfile.new(pre) do |t|
-      try_fdopen(f.fileno, false)
-      assert_nothing_raised(Errno::EBADF) {t.close}
+  def test_autoclose_false_closed_by_finalizer
+    feature2250 = '[ruby-core:26222]'
+    pre = 'ft2250'
+    t = Tempfile.new(pre)
+    w = try_fdopen(t.fileno, false)
+    begin
+      w.close
+      t.close
+      skip "expect IO object was GC'ed but not recycled yet"
+    rescue WeakRef::RefError
+      assert_nothing_raised(Errno::EBADF, feature2250) {t.close}
     end
   end
 
@@ -1535,6 +1555,16 @@ End
     IO.foreach(t.path, "b", 3) {|x| a << x }
     assert_equal(["foo", "\nb", "ar\n", "b", "az\n"], a)
 
+    bug = '[ruby-dev:31525]'
+    assert_raise(ArgumentError, bug) {IO.foreach}
+
+    a = nil
+    assert_nothing_raised(ArgumentError, bug) {a = IO.foreach(t.path).to_a}
+    assert_equal(["foo\n", "bar\n", "baz\n"], a, bug)
+
+    bug6054 = '[ruby-dev:45267]'
+    e = assert_raise(IOError, bug6054) {IO.foreach(t.path, mode:"w").next}
+    assert_match(/not opened for reading/, e.message, bug6054)
   end
 
   def test_s_readlines

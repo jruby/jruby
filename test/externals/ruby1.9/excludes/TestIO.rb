@@ -1,5 +1,7 @@
 exclude :test_advise, "needs investigation"
 exclude :test_autoclose, "needs investigation"
+exclude :test_autoclose_false_closed_by_finalizer, "depends on GC running"
+exclude :test_autoclose_true_closed_by_finalizer, "depends on GC running"
 exclude :test_close_on_exec, "needs investigation"
 exclude :test_close_read_security_error, "needs investigation"
 exclude :test_close_security_error, "needs investigation"

@@ -215,11 +215,11 @@ For detail, see the MSDN[http://msdn.microsoft.com/library/en-us/sysinfo/base/pr
         "long RegEnumKeyExA(void *, long, void *, void *, void *, void *, void *, void *)",
         "long RegQueryValueExA(void *, void *, void *, void *, void *, void *)",
         "long RegSetValueExA(void *, void *, long, long, void *, long)",
-        "long RegDeleteValueA(void *, void *)",
-        "long RegDeleteKeyA(void *, void *)",
+        "long RegDeleteValue(void *, void *)",
+        "long RegDeleteKey(void *, void *)",
         "long RegFlushKey(void *)",
         "long RegCloseKey(void *)",
-        "long RegQueryInfoKeyA(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *)",
+        "long RegQueryInfoKey(void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *, void *)",
       ].each do |fn|
         cfunc = extern fn, :stdcall
         const_set cfunc.name.intern, cfunc

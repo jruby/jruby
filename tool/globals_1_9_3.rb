@@ -13,7 +13,6 @@ STDLIB_FILES = %w[
   date.rb
   debug.rb
   delegate.rb
-  dl.rb
   drb
   drb.rb
   e2mmap.rb
@@ -85,6 +84,7 @@ STDLIB_FILES = %w[
 
 EXT_FILES = {
   'ext/bigdecimal/lib/bigdecimal' => 'bigdecimal',
+  'ext/dl/lib/dl.rb' => 'dl.rb',
   'ext/dl/lib/dl' => 'dl',
   'ext/pty/lib/expect.rb' => 'expect.rb',
   'ext/nkf/lib/kconv.rb' => 'kconv.rb',

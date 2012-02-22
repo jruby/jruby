@@ -685,4 +685,27 @@ class TestThreadGroup < Test::Unit::TestCase
     t.join
     assert_equal(nil, t.backtrace)
   end
+
+  def test_thread_timer_and_interrupt
+    bug5757 = '[ruby-dev:44985]'
+    t0 = Time.now.to_f
+    pid = nil
+    cmd = 'r,=IO.pipe; Thread.start {Thread.pass until Thread.main.stop?; puts; STDOUT.flush}; r.read'
+    s, err = EnvUtil.invoke_ruby(['-e', cmd], "", true, true) do |in_p, out_p, err_p, cpid|
+      out_p.gets
+      pid = cpid
+      Process.kill(:SIGINT, pid)
+      Process.wait(pid)
+      [$?, err_p.read]
+    end
+    t1 = Time.now.to_f
+    assert_equal(pid, s.pid)
+    unless /mswin|mingw/ =~ RUBY_PLATFORM
+      # status of signal is not supported on Windows
+      assert_equal([false, true, false, Signal.list["INT"]],
+                   [s.exited?, s.signaled?, s.stopped?, s.termsig],
+                   "[s.exited?, s.signaled?, s.stopped?, s.termsig]")
+    end
+    assert_in_delta(t1 - t0, 1, 1)
+  end
 end

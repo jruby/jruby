@@ -1,5 +1,7 @@
 exclude :test_add_method_under_safe4, "needs investigation"
+exclude :test_convert_type, "needs investigation"
 exclude :test_freeze_under_safe_4, "needs investigation"
+exclude :test_implicit_respond_to, "encoding mismatch on symbol"
 exclude :test_method_missing, "needs investigation"
 exclude :test_redefine_method_under_verbose, "needs investigation"
 exclude :test_redefine_method_which_may_case_serious_problem, "needs investigation"

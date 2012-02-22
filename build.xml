@@ -861,17 +861,12 @@
 
   <target name="test-compiled" depends="copy-test-files,run-junit-compiled,run-junit-precompiled"/>
   <target name="test-precompiled" depends="copy-test-files,run-junit-precompiled"/>
-  <target name="test-compiled-1.9" depends="copy-test-files,run-junit-compiled-1.9,run-junit-precompiled-1.9"/>
-  <target name="test-interpreted" depends="copy-test-files,run-junit-interpreted,test-interpreted-1.9"/>
-  <target name="test-interpreted-1.9" depends="copy-test-files,run-junit-interpreted-1.9"/>
+  <target name="test-interpreted" depends="copy-test-files,run-junit-interpreted"/>
   <target name="test-reflected" depends="copy-test-files,run-junit-reflected-compiled,run-junit-reflected-precompiled,run-junit-reflected-interpreted"/>
   <target name="test-threadpool" depends="copy-test-files,run-junit-compiled-threadpool,run-junit-precompiled-threadpool,run-junit-interpreted-threadpool"/>
   
   <!-- Run tests jitted and with all indy stuff enabled -->
   <target name="test-compiled-indy" depends="copy-test-files,run-junit-compiled-indy"/>
-
-  <target name="test-1.9" depends="test-interpreted-1.9, test-compiled-1.9"
-    description="Runs unit tests compatible with ruby 1.9"/>
 
   <target name="test-all" depends="
       copy-test-files,
@@ -880,7 +875,6 @@
       run-junit-interpreted,
       run-junit-compiled,
       run-junit-precompiled,
-      run-junit-interpreted-1.9,
       run-junit-reflected-precompiled,
       run-junit-interpreted-threadpool,
       compile-stdlib"
@@ -890,14 +884,8 @@
   <target name="run-junit-interpreted">
     <run-junit-1.8/>
   </target>
-  <target name="run-junit-interpreted-1.9">
-    <run-junit-1.9/>
-  </target>
   <target name="run-junit-reflected-interpreted">
     <run-junit-1.8 reflection="true"/>
-  </target>
-  <target name="run-junit-reflected-interpreted-1.9">
-    <run-junit-1.9 reflection="true"/>
   </target>
   <target name="run-junit-compiled">
     <run-junit-1.8 compile.mode="JIT" jit.threshold="0"/>
@@ -914,26 +902,14 @@
   <target name="run-junit-interpreted-short-debug">
     <run-junit-1.8-short jvm.flags="-Xdebug -Xrunjdwp:transport=dt_socket,suspend=n,address=5001"/>
   </target>
-  <target name="run-junit-compiled-1.9">
-    <run-junit-1.9 compile.mode="JIT" jit.threshold="0"/>
-  </target>
   <target name="run-junit-reflected-compiled">
     <run-junit-1.8 compile.mode="JIT" jit.threshold="0" reflection="true"/>
-  </target>
-  <target name="run-junit-reflected-compiled-1.9">
-    <run-junit-1.9 compile.mode="JIT" jit.threshold="0" reflection="true"/>
   </target>
   <target name="run-junit-precompiled">
     <run-junit-1.8 compile.mode="FORCE" jit.threshold="0"/>
   </target>
-  <target name="run-junit-precompiled-1.9">
-    <run-junit-1.9 compile.mode="FORCE" jit.threshold="0"/>
-  </target>
   <target name="run-junit-reflected-precompiled">
     <run-junit-1.8 compile.mode="FORCE" jit.threshold="0" reflection="true"/>
-  </target>
-  <target name="run-junit-reflected-precompiled-1.9">
-    <run-junit-1.9 compile.mode="FORCE" jit.threshold="0" reflection="true"/>
   </target>
   <target name="run-junit-threadpool" depends="run-junit-interpreted-threadpool,run-junit-compiled-threadpool"/>
   <target name="run-junit-interpreted-threadpool">
@@ -1072,28 +1048,6 @@
           <test name="org.jruby.test.RubiconTestSuite" todir="${test.results.dir}" unless="test"/>
           <test name="org.jruby.test.ObjectSpaceTestSuite" todir="${test.results.dir}" unless="test"/>
           <test name="org.jruby.test.MainTestSuite" todir="${test.results.dir}" unless="test"/>
-        </junit-tests>
-      </run-junit>
-    </sequential>
-  </macrodef>
-
-  <macrodef name="run-junit-1.9">
-    <attribute name="compile.mode" default="OFF"/>
-    <attribute name="jit.threshold" default="20"/>
-    <attribute name="jit.maxsize" default="1000000000"/>
-    <attribute name="reflection" default="false"/>
-    <attribute name="thread.pooling" default="false"/>
-    <attribute name="objectspace.enabled" default="true"/>
-    <attribute name="jvm.flags" default=""/>
-
-    <sequential>
-      <run-junit objectspace.enabled="false" jruby.version="ruby1_9"
-                compile.mode="@{compile.mode}" jit.threshold="@{jit.threshold}"
-                reflection="@{reflection}" thread.pooling="@{thread.pooling}"
-                jit.maxsize="@{jit.maxsize}" jvm.flags="@{jvm.flags}">
-        <junit-tests>
-          <test name="${test}" if="test"/>
-          <test name="org.jruby.test.Ruby1_9TestSuite" todir="${test.results.dir}"  unless="test"/>
         </junit-tests>
       </run-junit>
     </sequential>

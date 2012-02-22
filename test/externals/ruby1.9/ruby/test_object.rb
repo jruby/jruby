@@ -181,17 +181,29 @@ class TestObject < Test::Unit::TestCase
     o = Object.new
     def o.to_s; 1; end
     assert_raise(TypeError) { String(o) }
+    def o.to_s; "o"; end
+    assert_equal("o", String(o))
+    def o.respond_to?(*) false; end
+    assert_raise(TypeError) { String(o) }
   end
 
   def test_check_convert_type
     o = Object.new
     def o.to_a; 1; end
     assert_raise(TypeError) { Array(o) }
+    def o.to_a; [1]; end
+    assert_equal([1], Array(o))
+    def o.respond_to?(*) false; end
+    assert_equal([o], Array(o))
   end
 
   def test_to_integer
     o = Object.new
     def o.to_i; nil; end
+    assert_raise(TypeError) { Integer(o) }
+    def o.to_i; 42; end
+    assert_equal(42, Integer(o))
+    def o.respond_to?(*) false; end
     assert_raise(TypeError) { Integer(o) }
   end
 
@@ -381,6 +393,96 @@ class TestObject < Test::Unit::TestCase
     assert_raise(NameError, '[ruby-core:25748]') do
       m.instance_method(:foobar)
     end
+  end
+
+  def test_implicit_respond_to
+    bug5158 = '[ruby-core:38799]'
+
+    p = Object.new
+
+    called = []
+    p.singleton_class.class_eval do
+      define_method(:to_ary) do
+        called << [:to_ary, bug5158]
+      end
+    end
+    [[p]].flatten
+    assert_equal([[:to_ary, bug5158]], called, bug5158)
+
+    called = []
+    p.singleton_class.class_eval do
+      define_method(:respond_to?) do |*a|
+        called << [:respond_to?, *a]
+        false
+      end
+    end
+    [[p]].flatten
+    assert_equal([[:respond_to?, :to_ary, true]], called, bug5158)
+  end
+
+  def test_implicit_respond_to_arity_1
+    p = Object.new
+
+    called = []
+    p.singleton_class.class_eval do
+      define_method(:respond_to?) do |a|
+        called << [:respond_to?, a]
+        false
+      end
+    end
+    [[p]].flatten
+    assert_equal([[:respond_to?, :to_ary]], called, '[bug:6000]')
+  end
+
+  def test_method_missing_passed_block
+    bug5731 = '[ruby-dev:44961]'
+
+    c = Class.new do
+      def method_missing(meth, *args) yield(meth, *args) end
+    end
+    a = c.new
+    result = nil
+    assert_nothing_raised(LocalJumpError, bug5731) do
+      a.foo {|x| result = x}
+    end
+    assert_equal(:foo, result, bug5731)
+    result = nil
+    e = a.enum_for(:foo)
+    assert_nothing_raised(LocalJumpError, bug5731) do
+      e.each {|x| result = x}
+    end
+    assert_equal(:foo, result, bug5731)
+
+    c = Class.new do
+      def respond_to_missing?(id, priv)
+        true
+      end
+      def method_missing(id, *args, &block)
+        return block.call(:foo, *args)
+      end
+    end
+    foo = c.new
+
+    result = nil
+    assert_nothing_raised(LocalJumpError, bug5731) do
+      foo.foobar {|x| result = x}
+    end
+    assert_equal(:foo, result, bug5731)
+    result = nil
+    assert_nothing_raised(LocalJumpError, bug5731) do
+      foo.enum_for(:foobar).each {|x| result = x}
+    end
+    assert_equal(:foo, result, bug5731)
+
+    result = nil
+    foobar = foo.method(:foobar)
+    foobar.call {|x| result = x}
+    assert_equal(:foo, result, bug5731)
+
+    result = nil
+    foobar = foo.method(:foobar)
+    foobar.enum_for(:call).each {|x| result = x}
+    assert_equal(:foo, result, bug5731)
   end
 
   def test_send_with_no_arguments
