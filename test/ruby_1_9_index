@@ -1,4 +1,36 @@
 # MRI 1.9.3 tests
+
+externals/ruby1.9/bigdecimal/test_bigdecimal
+externals/ruby1.9/bigdecimal/test_bigdecimal_util
+externals/ruby1.9/bigdecimal/test_bigmath
+
+externals/ruby1.9/digest/test_digest
+externals/ruby1.9/digest/test_digest_extend
+externals/ruby1.9/digest/test_digest_hmac
+
+externals/ruby1.9/etc/test_etc
+
+externals/ruby1.9/iconv/test_basic
+# this one is disabled in MRI's tests for some reason
+# included here for when they enable it
+externals/ruby1.9/iconv/test_option
+externals/ruby1.9/iconv/test_partial
+
+externals/ruby1.9/json/test_json
+externals/ruby1.9/json/test_json_addition
+externals/ruby1.9/json/test_json_encoding
+externals/ruby1.9/json/test_json_fixtures
+externals/ruby1.9/json/test_json_generate
+# Depends on some rails lib?
+#externals/ruby1.9/json/test_json_rails
+externals/ruby1.9/json/test_json_string_matching
+externals/ruby1.9/json/test_json_unicode
+
+externals/ruby1.9/monitor/test_monitor
+
+externals/ruby1.9/nkf/test_kconv
+externals/ruby1.9/nkf/test_nkf
+
 externals/ruby1.9/psych/test_alias_and_anchor
 externals/ruby1.9/psych/test_array
 externals/ruby1.9/psych/test_boolean
@@ -33,7 +65,39 @@ externals/ruby1.9/psych/test_tainted
 externals/ruby1.9/psych/test_to_yaml_properties
 externals/ruby1.9/psych/test_tree_builder
 externals/ruby1.9/psych/test_yaml
+externals/ruby1.9/psych/json/test_stream
+externals/ruby1.9/psych/nodes/test_enumerable
+externals/ruby1.9/psych/visitors/test_depth_first
+externals/ruby1.9/psych/visitors/test_emitter
+externals/ruby1.9/psych/visitors/test_to_ruby
+externals/ruby1.9/psych/visitors/test_yaml_tree
 
+# No AddrInfo
+#externals/ruby1.9/socket/test_addrinfo
+# No Socket::AncillaryData
+#externals/ruby1.9/psych/socket/test_ancdata
+externals/ruby1.9/psych/socket/test_basicsocket
+# 100% fail or error
+#externals/ruby1.9/psych/socket/test_nonblock
+externals/ruby1.9/psych/socket/test_socket
+# No Socket::Option
+#externals/ruby1.9/psych/socket/test_sockopt
+# 100% fail
+#externals/ruby1.9/psych/socket/test_tcp
+externals/ruby1.9/psych/socket/test_udp
+externals/ruby1.9/psych/socket/test_unix
+
+externals/ruby1.9/stringio/test_stringio
+
+externals/ruby1.9/strscan/test_stringscanner
+
+externals/ruby1.9/thread/test_queue
+
+externals/ruby1.9/yaml/test_yaml
+# 100% ArgumentError: invalid access mode 4610
+#externals/ruby1.9/yaml/test_yamlstore
+
+externals/ruby1.9/zlib/test_zlib
 
 externals/ruby1.9/ruby/test_alias
 externals/ruby1.9/ruby/test_argf
