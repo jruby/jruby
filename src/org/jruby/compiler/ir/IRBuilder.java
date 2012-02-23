@@ -2626,7 +2626,7 @@ public class IRBuilder {
             // If a regular loop, the next is simply a jump to the end of the iteration
             s.addInstr(new JumpInstr(currLoop.iterEndLabel));
         } else {
-            s.addInstr(new ThreadPollInstr());
+            s.addInstr(new ThreadPollInstr(true));
             // If a closure, the next is simply a return from the closure!
             if (s instanceof IRClosure) s.addInstr(new ClosureReturnInstr(rv));
             else s.addInstr(new ThrowExceptionInstr(IRException.NEXT_LocalJumpError));
@@ -2919,7 +2919,7 @@ public class IRBuilder {
              s.addInstr(new JumpInstr(currLoop.iterStartLabel));
         } else {
             if (s instanceof IRClosure) {
-                s.addInstr(new ThreadPollInstr());
+                s.addInstr(new ThreadPollInstr(true));
                 s.addInstr(new JumpInstr(((IRClosure)s).startLabel));
             } else {
                 s.addInstr(new ThrowExceptionInstr(IRException.REDO_LocalJumpError));
@@ -3109,7 +3109,7 @@ public class IRBuilder {
         if (_rescueBlockStack.empty()) {
             s.addInstr(new ThrowExceptionInstr(IRException.RETRY_LocalJumpError));
         } else {
-            s.addInstr(new ThreadPollInstr());
+            s.addInstr(new ThreadPollInstr(true));
             // Restore $! and jump back to the entry of the rescue block
             RescueBlockInfo rbi = _rescueBlockStack.peek();
             s.addInstr(new PutGlobalVarInstr("$!", rbi.savedExceptionVariable));
@@ -3290,7 +3290,7 @@ public class IRBuilder {
             s.addInstr(new LabelInstr(loop.iterStartLabel));
 
             // Thread poll at start of iteration -- ensures that redos and nexts run one thread-poll per iteration
-            s.addInstr(new ThreadPollInstr());
+            s.addInstr(new ThreadPollInstr(true));
 
             // Build body
             if (bodyNode != null) build(bodyNode, s);
