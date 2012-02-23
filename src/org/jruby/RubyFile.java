@@ -164,7 +164,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
 
     protected String path;
-    private FileLock currentLock;
+    private volatile FileLock currentLock;
     
     public RubyFile(Ruby runtime, RubyClass type) {
         super(runtime, type);
@@ -318,113 +318,148 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     @JRubyMethod(required = 1)
     public IRubyObject flock(ThreadContext context, IRubyObject lockingConstant) {
+        Ruby runtime = context.runtime;
+        
         // TODO: port exact behavior from MRI, and move most locking logic into ChannelDescriptor
         // TODO: for all LOCK_NB cases, return false if they would block
+        ChannelDescriptor descriptor;
         try {
-            ChannelDescriptor descriptor = openFile.getMainStreamSafe().getDescriptor();
-
-            // null channel always succeeds for all locking operations
-            if (descriptor.isNull()) return RubyFixnum.zero(context.getRuntime());
-
-            if (descriptor.getChannel() instanceof FileChannel) {
-                FileChannel fileChannel = (FileChannel)descriptor.getChannel();
-                int lockMode = RubyNumeric.num2int(lockingConstant);
-
-                // This logic used to attempt a shared lock instead of an exclusive
-                // lock, because LOCK_EX on some systems (as reported in JRUBY-1214)
-                // allow exclusively locking a read-only file. However, the JDK
-                // APIs do not allow acquiring an exclusive lock on files that are
-                // not open for read, and there are other platforms (such as Solaris,
-                // see JRUBY-5627) that refuse at an *OS* level to exclusively lock
-                // files opened only for read. As a result, this behavior is platform-
-                // dependent, and so we will obey the JDK's policy of disallowing
-                // exclusive locks on files opened only for read.
-                if (!openFile.isWritable() && (lockMode & LOCK_EX) > 0) {
-                    throw context.runtime.newErrnoEBADFError("cannot acquire exclusive lock on File not opened for write");
-                }
-                
-                // Likewise, JDK does not allow acquiring a shared lock on files
-                // that have not been opened for read. We comply here.
-                if (!openFile.isReadable() && (lockMode & LOCK_SH) > 0) {
-                    throw context.runtime.newErrnoEBADFError("cannot acquire shared lock on File not opened for read");
-                }
-
-                try {
-                    switch (lockMode) {
-                        case LOCK_UN:
-                        case LOCK_UN | LOCK_NB:
-                            if (currentLock != null) {
-                                currentLock.release();
-                                currentLock = null;
-
-                                return RubyFixnum.zero(context.getRuntime());
-                            }
-                            break;
-                        case LOCK_EX:
-                            if (currentLock != null) {
-                                currentLock.release();
-                                currentLock = null;
-                            }
-                            currentLock = fileChannel.lock();
-                            if (currentLock != null) {
-                                return RubyFixnum.zero(context.getRuntime());
-                            }
-
-                            break;
-                        case LOCK_EX | LOCK_NB:
-                            if (currentLock != null) {
-                                currentLock.release();
-                                currentLock = null;
-                            }
-                            currentLock = fileChannel.tryLock();
-                            if (currentLock != null) {
-                                return RubyFixnum.zero(context.getRuntime());
-                            }
-
-                            break;
-                        case LOCK_SH:
-                            if (currentLock != null) {
-                                currentLock.release();
-                                currentLock = null;
-                            }
-
-                            currentLock = fileChannel.lock(0L, Long.MAX_VALUE, true);
-                            if (currentLock != null) {
-                                return RubyFixnum.zero(context.getRuntime());
-                            }
-
-                            break;
-                        case LOCK_SH | LOCK_NB:
-                            if (currentLock != null) {
-                                currentLock.release();
-                                currentLock = null;
-                            }
-
-                            currentLock = fileChannel.tryLock(0L, Long.MAX_VALUE, true);
-                            if (currentLock != null) {
-                                return RubyFixnum.zero(context.getRuntime());
-                            }
-
-                            break;
-                        default:
-                    }
-                } catch (IOException ioe) {
-                    if (context.getRuntime().getDebug().isTrue()) {
-                        ioe.printStackTrace(System.err);
-                    }
-                } catch (java.nio.channels.OverlappingFileLockException ioe) {
-                    if (context.getRuntime().getDebug().isTrue()) {
-                        ioe.printStackTrace(System.err);
-                    }
-                }
-                return (lockMode & LOCK_EX) == 0 ? RubyFixnum.zero(context.getRuntime()) : context.getRuntime().getFalse();
-            } else {
-                // We're not actually a real file, so we can't flock
-                return context.getRuntime().getFalse();
-            }
+            descriptor = openFile.getMainStreamSafe().getDescriptor();
         } catch (BadDescriptorException e) {
             throw context.runtime.newErrnoEBADFError();
         }
+
+        // null channel always succeeds for all locking operations
+        if (descriptor.isNull()) return RubyFixnum.zero(runtime);
+
+        if (descriptor.getChannel() instanceof FileChannel) {
+            FileChannel fileChannel = (FileChannel)descriptor.getChannel();
+            int lockMode = RubyNumeric.num2int(lockingConstant);
+
+            checkSharedExclusive(runtime, openFile, lockMode);
+    
+            if (!lockStateChanges(currentLock, lockMode)) return RubyFixnum.zero(runtime);
+
+            try {
+                synchronized (fileChannel) {
+                    // check again, to avoid unnecessary overhead
+                    if (!lockStateChanges(currentLock, lockMode)) return RubyFixnum.zero(runtime);
+                    
+                    switch (lockMode) {
+                        case LOCK_UN:
+                        case LOCK_UN | LOCK_NB:
+                            return unlock(runtime);
+                        case LOCK_EX:
+                            return lock(runtime, fileChannel, true);
+                        case LOCK_EX | LOCK_NB:
+                            return tryLock(runtime, fileChannel, true);
+                        case LOCK_SH:
+                            return lock(runtime, fileChannel, false);
+                        case LOCK_SH | LOCK_NB:
+                            return tryLock(runtime, fileChannel, false);
+                    }
+                }
+            } catch (IOException ioe) {
+                if (runtime.getDebug().isTrue()) {
+                    ioe.printStackTrace(System.err);
+                }
+            } catch (java.nio.channels.OverlappingFileLockException ioe) {
+                if (runtime.getDebug().isTrue()) {
+                    ioe.printStackTrace(System.err);
+                }
+            }
+            return lockFailedReturn(runtime, lockMode);
+        } else {
+            // We're not actually a real file, so we can't flock
+            return runtime.getFalse();
+        }
+    }
+    
+    private static void checkSharedExclusive(Ruby runtime, OpenFile openFile, int lockMode) {
+        // This logic used to attempt a shared lock instead of an exclusive
+        // lock, because LOCK_EX on some systems (as reported in JRUBY-1214)
+        // allow exclusively locking a read-only file. However, the JDK
+        // APIs do not allow acquiring an exclusive lock on files that are
+        // not open for read, and there are other platforms (such as Solaris,
+        // see JRUBY-5627) that refuse at an *OS* level to exclusively lock
+        // files opened only for read. As a result, this behavior is platform-
+        // dependent, and so we will obey the JDK's policy of disallowing
+        // exclusive locks on files opened only for read.
+        if (!openFile.isWritable() && (lockMode & LOCK_EX) > 0) {
+            throw runtime.newErrnoEBADFError("cannot acquire exclusive lock on File not opened for write");
+        }
+        
+        // Likewise, JDK does not allow acquiring a shared lock on files
+        // that have not been opened for read. We comply here.
+        if (!openFile.isReadable() && (lockMode & LOCK_SH) > 0) {
+            throw runtime.newErrnoEBADFError("cannot acquire shared lock on File not opened for read");
+        }
+    }
+    
+    private static IRubyObject lockFailedReturn(Ruby runtime, int lockMode) {
+        return (lockMode & LOCK_EX) == 0 ? RubyFixnum.zero(runtime) : runtime.getFalse();
+    }
+    
+    private static boolean lockStateChanges(FileLock lock, int lockMode) {
+        if (lock == null) {
+            // no lock, only proceed if we are acquiring
+            switch (lockMode & 0xF) {
+                case LOCK_UN:
+                case LOCK_UN | LOCK_NB:
+                    return false;
+                default:
+                    return true;
+            }
+        } else {
+            // existing lock, only proceed if we are unlocking or changing
+            switch (lockMode & 0xF) {
+                case LOCK_UN:
+                case LOCK_UN | LOCK_NB:
+                    return true;
+                case LOCK_EX:
+                case LOCK_EX | LOCK_NB:
+                    return lock.isShared();
+                case LOCK_SH:
+                case LOCK_SH | LOCK_NB:
+                    return !lock.isShared();
+                default:
+                    return false;
+            }
+        }
+    }
+    
+    private IRubyObject unlock(Ruby runtime) throws IOException {
+        if (currentLock != null) {
+            currentLock.release();
+            currentLock = null;
+
+            return RubyFixnum.zero(runtime);
+        }
+        return runtime.getFalse();
+    }
+    
+    private IRubyObject lock(Ruby runtime, FileChannel fileChannel, boolean exclusive) throws IOException {
+        if (currentLock != null) currentLock.release();
+        
+        currentLock = fileChannel.lock(0L, Long.MAX_VALUE, !exclusive);
+        
+        if (currentLock != null) {
+            return RubyFixnum.zero(runtime);
+        }
+        
+        return lockFailedReturn(runtime, exclusive ? LOCK_EX : LOCK_SH);
+    }
+    
+    private IRubyObject tryLock(Ruby runtime, FileChannel fileChannel, boolean exclusive) throws IOException {
+        if (currentLock != null) currentLock.release();
+        
+        currentLock = fileChannel.tryLock(0L, Long.MAX_VALUE, !exclusive);
+        
+        if (currentLock != null) {
+            return RubyFixnum.zero(runtime);
+        }
+        
+        return lockFailedReturn(runtime, exclusive ? LOCK_EX : LOCK_SH);
     }
 
     @JRubyMethod(required = 1, optional = 2, visibility = PRIVATE, compat = RUBY1_8)
