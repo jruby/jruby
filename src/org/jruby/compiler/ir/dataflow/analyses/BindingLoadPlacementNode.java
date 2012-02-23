@@ -146,7 +146,7 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
                     it.next();
                     for (LocalVariable v : reqdLoads) {
                         if (cl_blp.scopeDefinesVariable(v)) {
-                            it.add(new LoadFromBindingInstr(v, s, v.getName()));
+                            it.add(new LoadFromBindingInstr(s, v));
                             it.previous();
                             newReqdLoads.remove(v);
                         }
@@ -162,7 +162,7 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
                 if (call.targetRequiresCallersBinding()) {
                     it.next();
                     for (LocalVariable v : reqdLoads) {
-                        it.add(new LoadFromBindingInstr(v, s, v.getName()));
+                        it.add(new LoadFromBindingInstr(s, v));
                         it.previous();
                     }
                     it.previous();
@@ -189,10 +189,10 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
                         IRClosure definingScope = ((ClosureLocalVariable)v).definingScope;
                         
                         if ((s != definingScope) && s.isNestedInClosure(definingScope)) {
-                            it.add(new LoadFromBindingInstr(v, s, v.getName()));
+                            it.add(new LoadFromBindingInstr(s, v));
                         }
                     } else {
-                        it.add(new LoadFromBindingInstr(v, s, v.getName()));
+                        it.add(new LoadFromBindingInstr(s, v));
                     }
                 }
             }

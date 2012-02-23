@@ -193,10 +193,10 @@ public class BindingStorePlacementNode extends FlowGraphNode {
                     // Unless we have to spill everything, spill only those dirty variables that are:
                     // - used in the closure (FIXME: Strictly only those vars that are live at the call site -- but we dont have this info!)
                     Set<LocalVariable> newDirtyVars = new HashSet<LocalVariable>(dirtyVars);
-                    for (Variable v : dirtyVars) {
+                    for (LocalVariable v : dirtyVars) {
                         if (spillAllVars || cl_bsp.scopeUsesVariable(v)) {
                             // FIXME: This may not need check for local variable if it is guaranteed to only be local variables.
-                            instrs.add(new StoreToBindingInstr(s, v.getName(), v));
+                            instrs.add(new StoreToBindingInstr(s, v));
                             newDirtyVars.remove(v);
                         } else if (cl_bsp.scopeDefinesVariable(v)) {
                             // These variables will be spilt inside the closure -- so they will no longer be dirty after the call site!
@@ -217,7 +217,7 @@ public class BindingStorePlacementNode extends FlowGraphNode {
                         }
                     }
                     for (LocalVariable v : dirtyVars) {
-                        instrs.add(new StoreToBindingInstr(s, v.getName(), v));
+                        instrs.add(new StoreToBindingInstr(s, v));
                     }
                     instrs.next();
                     dirtyVars.clear();
@@ -287,15 +287,15 @@ public class BindingStorePlacementNode extends FlowGraphNode {
     }
 
     private void addClosureExitBindingStores(IRScope s, ListIterator<Instr> instrs, Set<LocalVariable> dirtyVars) {
-        for (Variable v : dirtyVars) {
+        for (LocalVariable v : dirtyVars) {
             if (v instanceof ClosureLocalVariable) {
                 IRClosure definingScope = ((ClosureLocalVariable)v).definingScope;
                 
                 if ((s != definingScope) && s.isNestedInClosure(definingScope)) {
-                    instrs.add(new StoreToBindingInstr(s, v.getName(), v));
+                    instrs.add(new StoreToBindingInstr(s, v));
                 }
             } else {
-                instrs.add(new StoreToBindingInstr(s, v.getName(), v));
+                instrs.add(new StoreToBindingInstr(s, v));
             }
         }
     }

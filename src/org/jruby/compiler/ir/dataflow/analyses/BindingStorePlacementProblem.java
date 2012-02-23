@@ -85,7 +85,7 @@ public class BindingStorePlacementProblem extends DataFlowProblem {
             Variable exc = cfgScope.getNewTemporaryVariable();
             geb.addInstr(new ReceiveExceptionInstr(exc));
             for (LocalVariable v : dirtyVars) {
-                geb.addInstr(new StoreToBindingInstr((IRClosure) cfgScope, v.getName(), v));
+                geb.addInstr(new StoreToBindingInstr((IRClosure) cfgScope, v));
             }
             geb.addInstr(new ThrowExceptionInstr(exc));
             cfg.addGlobalEnsureBlock(geb);

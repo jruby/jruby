@@ -109,6 +109,7 @@ public class IREvalScript extends IRClosure {
 
     @Override
     public LocalVariable getNewLocalVariable(String name, int depth) {
+        // SSS FIXME: What happens to depth?  Assertion?
         LocalVariable lvar = new ClosureLocalVariable(this, name, 0, nearestNonEvalScope.evalScopeVars.nextSlot);
         nearestNonEvalScope.evalScopeVars.putVariable(name, lvar);
         return lvar;
