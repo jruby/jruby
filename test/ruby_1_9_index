@@ -11,8 +11,6 @@ externals/ruby1.9/digest/test_digest_hmac
 externals/ruby1.9/etc/test_etc
 
 externals/ruby1.9/iconv/test_basic
-# this one is disabled in MRI's tests for some reason
-# included here for when they enable it
 externals/ruby1.9/iconv/test_option
 externals/ruby1.9/iconv/test_partial
 
@@ -142,8 +140,7 @@ externals/ruby1.9/ruby/test_io_m17n
 externals/ruby1.9/ruby/test_iterator
 externals/ruby1.9/ruby/test_lambda
 externals/ruby1.9/ruby/test_literal
-# does not parse yet
-#externals/ruby1.9/ruby/test_m17n
+externals/ruby1.9/ruby/test_m17n
 externals/ruby1.9/ruby/test_m17n_comb
 externals/ruby1.9/ruby/test_marshal
 externals/ruby1.9/ruby/test_math
