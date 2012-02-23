@@ -5960,7 +5960,23 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
         RubyString otherStr = arg.convertToString();
         Encoding enc = checkEncoding(otherStr);
-        final boolean[]table = new boolean[TRANS_SIZE];
+        
+        int c;
+        if (otherStr.value.length() == 1 && enc.isAsciiCompatible() &&
+                ((c = otherStr.value.unsafeBytes()[otherStr.value.getBegin()] & 0xff)) < 0x80 && scanForCodeRange() != CR_BROKEN) {
+
+            if (value.length() ==0) return RubyFixnum.zero(runtime);
+            byte[]bytes = value.unsafeBytes();
+            int p = value.getBegin();
+            int end = p + value.length();
+            int n = 0;
+            while (p < end) {
+                if ((bytes[p++] & 0xff) == c) n++;
+            }
+            return RubyFixnum.newFixnum(runtime, n);
+        }
+        
+        final boolean[]table = new boolean[TRANS_SIZE + 1];
         TrTables tables = otherStr.trSetupTable(context.getRuntime(), table, null, true, enc);
         return countCommon19(runtime, table, tables, enc);
     }
@@ -5972,7 +5988,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
         RubyString otherStr = args[0].convertToString();
         Encoding enc = checkEncoding(otherStr);
-        final boolean[]table = new boolean[TRANS_SIZE];
+        final boolean[]table = new boolean[TRANS_SIZE + 1];
         TrTables tables = otherStr.trSetupTable(runtime, table, null, true, enc);
         for (int i = 1; i<args.length; i++) {
             otherStr = args[i].convertToString();
@@ -5991,7 +6007,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
         int c;
         while (p < end) {
-            if (enc.isAsciiCompatible() && Encoding.isAscii(c = bytes[p] & 0xff)) {
+            if (enc.isAsciiCompatible() && (c = bytes[p] & 0xff) < 0x80) {
                 if (table[c]) i++;
                 p++;
             } else {
@@ -6108,7 +6124,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
         RubyString otherStr = arg.convertToString();
         Encoding enc = checkEncoding(otherStr);
-        final boolean[]squeeze = new boolean[TRANS_SIZE];
+        final boolean[]squeeze = new boolean[TRANS_SIZE + 1];
         TrTables tables = otherStr.trSetupTable(runtime, squeeze, null, true, enc);
         return delete_bangCommon19(runtime, squeeze, tables, enc);
     }
@@ -6120,7 +6136,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
         RubyString otherStr = args[0].convertToString();
         Encoding enc = checkEncoding(otherStr);
-        boolean[]squeeze = new boolean[TRANS_SIZE];
+        boolean[]squeeze = new boolean[TRANS_SIZE + 1];
         TrTables tables = otherStr.trSetupTable(runtime, squeeze, null, true, enc);
         for (int i=1; i<args.length; i++) {
             otherStr = args[i].convertToString();
@@ -6308,8 +6324,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         }
 
         RubyString otherStr = arg.convertToString();
-        final boolean squeeze[] = new boolean[TRANS_SIZE];
-
+        final boolean squeeze[] = new boolean[TRANS_SIZE + 1];
         TrTables tables = otherStr.trSetupTable(runtime, squeeze, null, true, checkEncoding(otherStr));
 
         modifyAndKeepCodeRange();
@@ -6331,7 +6346,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
         RubyString otherStr = args[0].convertToString();
         Encoding enc = checkEncoding(otherStr);
-        final boolean squeeze[] = new boolean[TRANS_SIZE];
+        final boolean squeeze[] = new boolean[TRANS_SIZE + 1];
         TrTables tables = otherStr.trSetupTable(runtime, squeeze, null, true, enc);
 
         boolean singlebyte = singleByteOptimizable() && otherStr.singleByteOptimizable();
@@ -6468,8 +6483,13 @@ public class RubyString extends RubyObject implements EncodingCapable {
             }
         }
 
-        if (init) for (int i=0; i<TRANS_SIZE; i++) table[i] = true;
-
+        if (init) {
+            for (int i=0; i<TRANS_SIZE; i++) table[i] = true;
+            table[TRANS_SIZE] = cflag;
+        } else if (table[TRANS_SIZE] && !cflag) {
+            table[TRANS_SIZE] = false;
+        }
+        
         final boolean[]buf = new boolean[TRANS_SIZE];
         for (int i=0; i<TRANS_SIZE; i++) buf[i] = cflag;
 
@@ -6499,9 +6519,16 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     private boolean trFind(int c, boolean[]table, TrTables tables) {
-        return c < TRANS_SIZE ? table[c] : tables != null && 
-                ((tables.del != null && tables.del.get(c) != null) &&
-                (tables.noDel == null || tables.noDel.get(c) == null));
+        if (c < TRANS_SIZE) {
+            return table[c];
+        } else {
+            if (tables != null) {
+                if (tables.del != null) {
+                    if (tables.noDel == null || tables.noDel.get(c) == null) return true;
+                } else if (tables.noDel != null && tables.noDel.get(c) != null) return false;
+            }
+            return table[TRANS_SIZE];
+        }
     }
 
     /** tr_trans
@@ -6614,6 +6641,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         }
 
         boolean singlebyte = singleByteOptimizable();
+
         int c;
         final int[]trans = new int[TRANS_SIZE];
         IntHash<Integer> hash = null;
@@ -6644,7 +6672,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 if (r == -1) r = trRepl.now;
                 if (c < TRANS_SIZE) {
                     trans[c] = r;
-                    if (codeLength(runtime, enc, c) != 1) singlebyte = false;
+                    if (codeLength(runtime, enc, r) != 1) singlebyte = false;                    
                 } else {
                     if (hash == null) hash = new IntHash<Integer>();
                     hash.put(c, r);
@@ -6742,11 +6770,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
                     System.arraycopy(buf, 0, tbuf, 0, buf.length);
                     buf = tbuf;
                 }
-                
-                if (s != t) {
-                    enc.codeToMbc(c, buf, t);
-                    if (mayModify && (tlen == 1 ? sbytes[s] != buf[t] : ByteList.memcmp(sbytes, s, buf, t, tlen) != 0)) modify = true;  
-                }
+                enc.codeToMbc(c, buf, t);
+                if (mayModify && (tlen == 1 ? sbytes[s] != buf[t] : ByteList.memcmp(sbytes, s, buf, t, tlen) != 0)) modify = true;  
 
                 if (cr == CR_7BIT && !Encoding.isAscii(c)) cr = CR_VALID;
                 s += clen;
