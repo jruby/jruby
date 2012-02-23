@@ -87,6 +87,10 @@ public class CFGInliner {
     }
 
     public void inlineMethod(IRScope scope, RubyModule implClass, int classToken, BasicBlock callBB, CallBase call) {
+        // Temporarily turn off inlining of recursive methods
+        if (cfg.getScope() == scope) return;
+
+
 /*
         System.out.println("host cfg   :" + cfg.toStringGraph());
         System.out.println("host instrs:" + cfg.toStringInstrs());

@@ -211,6 +211,9 @@ public abstract class IRScope {
 
     /** # of thread poll instrs added to this scope */
     private int threadPollInstrsCount;
+
+    /** Should we re-run compiler passes -- yes after we've inlined, for example */
+    private boolean relinearizeCFG;
     
     private IRManager manager;
 
@@ -226,7 +229,7 @@ public abstract class IRScope {
         this.temporaryVariableIndex = s.temporaryVariableIndex;
         this.hasLoops = s.hasLoops;
         this.hasUnusedImplicitBlockArg = s.hasUnusedImplicitBlockArg;
-        this.instrList = new ArrayList<Instr>();
+        this.instrList = null;
         this.closures = new ArrayList<IRClosure>();
         this.dfProbs = new HashMap<String, DataFlowProblem>();
         this.nextVarIndex = new HashMap<String, Integer>(); // SSS FIXME: clone!
@@ -241,6 +244,7 @@ public abstract class IRScope {
 
         this.localVars = new LocalVariableAllocator(); // SSS FIXME: clone!
         this.localVars.nextSlot = s.localVars.nextSlot;
+        this.relinearizeCFG = false;
     }
     
     public IRScope(IRManager manager, IRScope lexicalParent, String name, 
@@ -273,6 +277,7 @@ public abstract class IRScope {
 
         this.localVars = new LocalVariableAllocator();
         synchronized(globalScopeCount) { this.scopeId = globalScopeCount++; }
+        this.relinearizeCFG = false;
     }
 
     @Override
@@ -481,6 +486,11 @@ public abstract class IRScope {
     }
     
     private Instr[] prepareInstructionsForInterpretation() {
+        if (relinearizeCFG) {
+            linearizedBBList = null;
+            relinearizeCFG = false;
+        }
+
         if (linearizedInstrArray != null) return linearizedInstrArray; // Already prepared
 
         try {
@@ -568,6 +578,11 @@ public abstract class IRScope {
     /** Run any necessary passes to get the IR ready for interpretation */
     public synchronized Instr[] prepareForInterpretation() {
         // If the instruction array exists, someone has taken care of setting up the CFG and preparing the instructions
+        if (relinearizeCFG) {
+            linearizedBBList = null;
+            relinearizeCFG = false;
+        }
+
         if (linearizedInstrArray != null) return linearizedInstrArray;
 
         // Build CFG and run compiler passes, if necessary
@@ -692,80 +707,6 @@ public abstract class IRScope {
         return sb.toString();
     }
 
-    /******
-     * SSS: Not used -- this was something headius wrote way-back
-     *
-    @Interp
-    public Iterator<LocalVariable> getLiveLocalVariables() {
-        Map<LocalVariable, Integer> ends = new HashMap<LocalVariable, Integer>();
-        Map<LocalVariable, Integer> starts = new HashMap<LocalVariable, Integer>();
-        Set<LocalVariable> variables = new TreeSet<LocalVariable>();
-
-        for (int i = instrList.size() - 1; i >= 0; i--) {
-            Instr instr = instrList.get(i);
-
-            // TODO: Instruction encode whether arguments are optional/required/block
-            // TODO: PErhaps this should be part of allocate and not have a generic
-            //    getLiveLocalVariables...perhaps we just need this to setup static scope
-
-            Variable variable = instr.result;
-
-            if (variable != null && variable instanceof LocalVariable) {
-                variables.add((LocalVariable) variable);
-                starts.put((LocalVariable) variable, i);
-            } 
-
-            for (Operand operand : instr.getOperands()) {
-                if (!(operand instanceof LocalVariable)) continue;
-
-                variable = (LocalVariable) operand;
-
-                if (ends.get((LocalVariable) variable) == null) {
-                    ends.put((LocalVariable) variable, i);
-                    variables.add((LocalVariable) variable);
-                }
-            }
-        }
-
-        return variables.iterator();
-    }
-    **/
-
-    // SSS FIXME: This is unused code.
-    /**
-     * Create and (re)assign a static scope.  In general local variables should
-     * never change even if we optimize more, but I was not positive so I am
-     * pretending this can change over time.  The obvious secondary benefit
-     * to storing this on execution scope is we can grab it when we allocate
-     * static scopes for all closures.
-     *
-     * Note: We are missing a distinct life-cycle point to run methods like this
-     * since this method can be modified at any point.  Not being fully set up
-     * is less of an issue since we are calling this when we construct a live
-     * runtime version of the method/closure etc, but for profiled optimizations
-     * this is less clear if/when we can run this. <-- Assumes this ever needs
-     * changing.
-     *
-     * @param parent scope should be non-null for all closures and null for methods
-    @Interp
-    public StaticScope allocateStaticScope(StaticScope parent) {
-        Iterator<LocalVariable> variables = getLiveLocalVariables();
-        StaticScope scope = constructStaticScope(parent);
-
-        while (variables.hasNext()) {
-            LocalVariable variable = variables.next();
-            int destination = scope.addVariable(variable.getName());
-            System.out.println("Allocating " + variable + " to " + destination);
-
-                    // Ick: Same Variable objects are not used for all references to the same variable.  S
-                    // o setting destination on one will not set them on all
-            variable.setLocation(destination);
-        }
-
-        return scope;
-    }
-     */
-
     /** ---------------------------------------
      * SSS FIXME: What is this method for?
     @Interp
@@ -839,7 +780,7 @@ public abstract class IRScope {
         return temporaryVariableIndex + 1;
     }
     
-    // Generate a new variable for inlined code (for ease of debugging, use differently named variables for inlined code)
+    // Generate a new variable for inlined code
     public Variable getNewInlineVariable(String inlinePrefix, Variable v) {
         if (v instanceof LocalVariable) {
             LocalVariable lv = (LocalVariable)v;
@@ -927,6 +868,11 @@ public abstract class IRScope {
     }
     
     public List<BasicBlock> buildLinearization() {
+        if (relinearizeCFG) {
+            linearizedBBList = null;
+            relinearizeCFG = false;
+        }
+
         if (linearizedBBList != null) return linearizedBBList; // Already linearized
         
         linearizedBBList = CFGLinearizer.linearize(cfg());
@@ -1025,7 +971,7 @@ public abstract class IRScope {
         new CFGInliner(cfg).inlineMethod(method, implClass, classToken, basicBlock, call);
 
         // Reset state
-        linearizedBBList = null;
+        relinearizeCFG = true;
         linearizedInstrArray = null;
         dfProbs = new HashMap<String, DataFlowProblem>();
         runCompilerPass(new LocalOptimizationPass());

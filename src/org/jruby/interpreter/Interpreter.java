@@ -3,7 +3,10 @@ package org.jruby.interpreter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
@@ -22,6 +25,7 @@ import org.jruby.compiler.ir.instructions.BNEInstr;
 import org.jruby.compiler.ir.instructions.BranchInstr;
 import org.jruby.compiler.ir.instructions.BreakInstr;
 import org.jruby.compiler.ir.instructions.CallBase;
+import org.jruby.compiler.ir.instructions.calladapter.CallAdapter;
 import org.jruby.compiler.ir.instructions.ClosureReturnInstr;
 import org.jruby.compiler.ir.instructions.CopyInstr;
 import org.jruby.compiler.ir.instructions.Instr;
@@ -44,10 +48,11 @@ import org.jruby.compiler.ir.operands.TemporaryVariable;
 import org.jruby.compiler.ir.operands.UndefinedValue;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.operands.WrappedIRClosure;
+import org.jruby.compiler.ir.representations.BasicBlock;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
-import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.parser.IRStaticScope;
+import org.jruby.parser.StaticScope;
 import org.jruby.parser.IRStaticScopeFactory;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
@@ -60,12 +65,19 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.jruby.util.unsafe.UnsafeFactory;
+import org.jruby.runtime.CallSite;
+import org.jruby.runtime.callsite.CachingCallSite;
+import org.jruby.runtime.callsite.CacheEntry;
+import org.jruby.internal.runtime.methods.InterpretedIRMethod;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 
 public class Interpreter {
     private static final Logger LOG = LoggerFactory.getLogger("Interpreter");
 
+    private static int inlineCount = 0;
     private static int interpInstrsCount = 0;
     private static int codeModificationsCount = 0;
+    private static int numCyclesWithNoModifications = 0;
     private static int globalThreadPollCount = 0;
     private static HashMap<IRScope, Counter> scopeThreadPollCounts = new HashMap<IRScope, Counter>();
 
@@ -162,61 +174,175 @@ public class Interpreter {
             InterpretedIRMethod method = new InterpretedIRMethod(root, currModule);
             IRubyObject rv =  method.call(context, self, currModule, "(root)", IRubyObject.NULL_ARRAY);
             runBeginEndBlocks(root.getEndBlocks(), context, self, null); // FIXME: No temp vars yet...not needed?
-            if (isDebug()) LOG.info("-- Interpreted instructions: {}", interpInstrsCount);
+            if (isDebug() || inProfileMode()) LOG.info("-- Interpreted instructions: {}", interpInstrsCount);
             return rv;
         } catch (IRBreakJump bj) {
             throw IRException.BREAK_LocalJumpError.getException(context.getRuntime());
         }
     }
 
-    private static void outputProfileStats(Operation operation) {
-        interpInstrsCount++;
-        if (operation.modifiesCode()) codeModificationsCount++;
+    private static void analyzeProfile() {
+        //if (inlineCount == 2) return;
 
-        // Every 100K instructions, spit out profile stats
-        if (interpInstrsCount % 100000 == 0) {
-            ArrayList<IRScope> scopes = new ArrayList<IRScope>(scopeThreadPollCounts.keySet());
-            Collections.sort(scopes, new java.util.Comparator<IRScope> () {
-                public int compare(IRScope a, IRScope b) {
-                    int aCount = scopeThreadPollCounts.get(a).count;
-                    int bCount = scopeThreadPollCounts.get(b).count;
-                    if (aCount == bCount) return 0;
-                    return (aCount < bCount) ? 1 : -1;
-                }
-            });
+        if (codeModificationsCount == 0) numCyclesWithNoModifications++;
+        else numCyclesWithNoModifications = 0;
 
-            LOG.info("------------------------");
-            LOG.info("Stats after " + interpInstrsCount + " instructions:");
-            LOG.info("------------------------");
-            LOG.info("# code modifications in this period : " + codeModificationsCount);
-            LOG.info("# total thread poll events till now : " + globalThreadPollCount);
-            LOG.info("------------------------");
-            int i = 0;
-            float f = 0.0f;
-            for (IRScope s: scopes) {
-                int n = scopeThreadPollCounts.get(s).count;
-                float percentage =  ((n*1000)/globalThreadPollCount)/10.0f;
-                String msg = i + ". " + s + " [file:" + s.getFileName() + ":" + s.getLineNumber() + "] = " + n + "; (" + percentage + "% of total)";
-                if (s instanceof IRClosure) {
-                    IRMethod m = s.getNearestMethod();
-                    if (m != null) LOG.info(msg + " -- nearest enclosing method: " + m);
-                    else LOG.info(msg + " -- no enclosing method --");
-                } else {
-                    LOG.info(msg);
-                }
-                i++;
-                f += percentage;
+        codeModificationsCount = 0;
 
-                // Top 20 or those that account for 95% of thread poll events.
-                if (i == 20 || f >= 95.0) break;
+        if (numCyclesWithNoModifications < 3) return;
+
+        // We are now good to go -- start analyzing the profile
+        ArrayList<IRScope> scopes = new ArrayList<IRScope>(scopeThreadPollCounts.keySet());
+        Collections.sort(scopes, new java.util.Comparator<IRScope> () {
+            public int compare(IRScope a, IRScope b) {
+                float aCount = scopeThreadPollCounts.get(a).count;
+                float bCount = scopeThreadPollCounts.get(b).count;
+                if (aCount == bCount) return 0;
+                return (aCount < bCount) ? 1 : -1;
+            }
+        });
+
+        // Find top N scopes
+        Set<IRScope> hotScopes = new HashSet<IRScope>();
+        int i = 0;
+        float f = 0.0f;
+        for (IRScope s: scopes) {
+            int sCount = scopeThreadPollCounts.get(s).count;
+
+            // If the scope is accounting for very little additional execution, exit!
+            float sPerc = ((sCount*1000)/globalThreadPollCount)/10.0f;
+            if (sPerc < 1) {
+                Instr[] instrs = s.getInstrsForInterpretation();
+                if (instrs == null) continue; // can happen if a previously inlined method hasn't been rebuilt
+
+                // Allow smaller methods to inline more liberally
+                if (instrs.length > (5 + sPerc * 10)) continue;
             }
 
-            // reset code modification counter
-            codeModificationsCount = 0;
+            //System.out.println("Hot scope: " + s + "; %contribution: " + sPerc + "; cumulative: " + (f + sPerc));
+            hotScopes.add(s);
+
+            // If we have accounted for 95% of thread poll events, or got the top 20 scopes, 
+            f += sPerc;
+            i++;
+            if (i == 20 || f >= 95.0) break;
         }
 
-        // Every 10M instructions, discard stats by reallocating the thread-poll count map
-        if (interpInstrsCount % 10000000 == 0)  {
+        // Identify inlining sites
+		  // Heuristic: In hot methods, identify call sites to hot methods
+        for (IRScope hs: hotScopes) {
+            boolean skip = false;
+            boolean isHotClosure = hs instanceof IRClosure;
+            IRScope hc = isHotClosure ? hs : null;
+            hs = isHotClosure ? hs.getLexicalParent() : hs;
+            for (BasicBlock b : hs.getCFG().getBasicBlocks()) {
+                for (Instr instr : b.getInstrs()) {
+                    if ((instr instanceof CallBase) && !((CallBase)instr).inliningBlocked()) {
+                        // System.out.println("checking: " + instr);
+                        CallBase call = (CallBase)instr;
+                        CallAdapter ca = call.getCallAdapter();
+                        CallSite cs = ca == null ? null: ca.getCallSite();
+                        // System.out.println("callsite: " + cs);
+                        if (cs != null && (cs instanceof CachingCallSite)) {
+                            CachingCallSite ccs = (CachingCallSite)cs;
+									 // SSS FIXME: To use this, CachingCallSite.java needs modification
+									 // isPolymorphic or something equivalent needs to be enabled there.
+                            if (ccs.isOptimizable()) {
+                                CacheEntry ce = ccs.getCache();
+                                DynamicMethod tgt = ce.method;
+                                if (tgt instanceof InterpretedIRMethod) {
+                                    InterpretedIRMethod dynMeth = (InterpretedIRMethod)tgt;
+                                    IRScope tgtMethod = dynMeth.getIRMethod();
+                                    Instr[] instrs = tgtMethod.getInstrsForInterpretation();
+												// Dont inline large methods -- 200 is arbitrary
+                                    // Can be null if a previously inlined method hasn't been rebuilt
+                                    if ((instrs == null) || instrs.length > 200) continue; 
+
+                                    RubyModule implClass = dynMeth.getImplementationClass();
+                                    int classToken = implClass.getGeneration();
+                                    String n = tgtMethod.getName();
+                                    boolean inlineCall = false;
+                                    if (isHotClosure) {
+                                        Operand clArg = call.getClosureArg(null);
+                                        inlineCall = (clArg instanceof WrappedIRClosure) && (((WrappedIRClosure)clArg).getClosure() == hc);
+                                    } else if (hotScopes.contains(tgtMethod)) {
+                                        inlineCall = true;
+                                    }
+
+                                    if (inlineCall) {
+                                        System.out.println("Inlining " + tgtMethod + " in " + hs + " @ instr " + instr);
+                                        hs.inlineMethod(tgtMethod, implClass, classToken, b, call);
+                                        // reset tp counters
+                                        scopeThreadPollCounts.remove(isHotClosure ? hc : hs);
+                                        scopeThreadPollCounts.remove(tgtMethod);
+                                        inlineCount++;
+                                        skip = true;
+                                        break;
+                                        //return;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+					 // We skip the rest of the method because we will run into concurrent modification exceptions in the iterators
+					 // SSS FIXME: We may miss some inlining sites because of this
+                if (skip) break;
+            }
+        }
+    }
+
+    private static void outputProfileStats() {
+        ArrayList<IRScope> scopes = new ArrayList<IRScope>(scopeThreadPollCounts.keySet());
+        Collections.sort(scopes, new java.util.Comparator<IRScope> () {
+            public int compare(IRScope a, IRScope b) {
+                // In non-methods and non-closures, we may not have any thread poll instrs.
+                int aden = a.getThreadPollInstrsCount();
+                if (aden == 0) aden = 1;
+                int bden = b.getThreadPollInstrsCount();
+                if (bden == 0) bden = 1;
+
+                // Use estimated instr count to order scopes -- rather than raw thread-poll count 
+                float aCount = scopeThreadPollCounts.get(a).count * (1.0f * a.getInstrsForInterpretation().length/aden);
+                float bCount = scopeThreadPollCounts.get(b).count * (1.0f * b.getInstrsForInterpretation().length/bden);
+                if (aCount == bCount) return 0;
+                return (aCount < bCount) ? 1 : -1;
+            }
+        });
+
+
+        LOG.info("------------------------");
+        LOG.info("Stats after " + globalThreadPollCount + " thread polls:");
+        LOG.info("------------------------");
+        LOG.info("# instructions: " + interpInstrsCount);
+        LOG.info("# code modifications in this period : " + codeModificationsCount);
+        LOG.info("------------------------");
+        int i = 0;
+        float f1 = 0.0f;
+        for (IRScope s: scopes) {
+            int n = scopeThreadPollCounts.get(s).count;
+            float p1 =  ((n*1000)/globalThreadPollCount)/10.0f;
+            String msg = i + ". " + s + " [file:" + s.getFileName() + ":" + s.getLineNumber() + "] = " + n + "; (" + p1 + "%)";
+            if (s instanceof IRClosure) {
+                IRMethod m = s.getNearestMethod();
+                if (m != null) LOG.info(msg + " -- nearest enclosing method: " + m);
+                else LOG.info(msg + " -- no enclosing method --");
+            } else {
+                LOG.info(msg);
+            }
+            i++;
+            f1 += p1;
+
+            // Top 20 or those that account for 95% of thread poll events.
+            if (i == 20 || f1 >= 95.0) break;
+        }
+
+        // reset code modification counter
+        codeModificationsCount = 0;
+
+        // Every 1M thread polls, discard stats by reallocating the thread-poll count map
+        if (globalThreadPollCount % 1000000 == 0)  {
             System.out.println("---- resetting thread-poll counters ----");
             scopeThreadPollCounts = new HashMap<IRScope, Counter>();
             globalThreadPollCount = 0;
@@ -260,9 +386,10 @@ public class Interpreter {
 
             if (debug) {
                 LOG.info("I: {}", lastInstr);
-                interpInstrsCount++;
+               interpInstrsCount++;
             } else if (profile) {
-                outputProfileStats(operation);
+                if (operation.modifiesCode()) codeModificationsCount++;
+               interpInstrsCount++;
             }
 
             // We need a nested try-catch:
@@ -397,7 +524,13 @@ public class Interpreter {
                         break;
                     }
                     case THREAD_POLL: {
-                        if (profile) { tpCount.count++; globalThreadPollCount++; }
+                        if (profile) { 
+                            tpCount.count++; 
+                            globalThreadPollCount++;
+									 // SSS: Uncomment this to analyze profile
+                            // Every 10K profile counts, spit out profile stats
+                            // if (globalThreadPollCount % 10000 == 0) analyzeProfile(); //outputProfileStats();
+                        }
                         context.callThreadPoll();
                         ipc++;
                         break;
@@ -507,7 +640,10 @@ public class Interpreter {
                     ipc = scope.getEnsurerPC(lastInstr);
                 } else {
                     // Error and other java exceptions which could be rescued
-                    if (debug) LOG.info("in scope: " + scope + ", caught Java throwable: " + t + "; excepting instr: " + lastInstr);
+                    if (debug) {
+                        LOG.info("in scope: " + scope + ", caught Java throwable: " + t + "; excepting instr: " + lastInstr);
+                    }
+                    //t.printStackTrace();
                     ipc = scope.getRescuerPC(lastInstr);
                     if (debug) LOG.info("ipc for rescuer: " + ipc);
                 }
