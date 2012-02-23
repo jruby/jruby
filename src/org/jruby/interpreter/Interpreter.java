@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -207,7 +208,7 @@ public class Interpreter {
         int i = 0;
         float f = 0.0f;
         for (IRScope s: scopes) {
-            int sCount = scopeThreadPollCounts.get(s).count;
+            long sCount = scopeThreadPollCounts.get(s).count;
 
             // If the scope is accounting for very little additional execution, exit!
             float sPerc = ((sCount*1000)/globalThreadPollCount)/10.0f;
@@ -222,15 +223,20 @@ public class Interpreter {
             //System.out.println("Hot scope: " + s + "; %contribution: " + sPerc + "; cumulative: " + (f + sPerc));
             hotScopes.add(s);
 
-            // If we have accounted for 95% of thread poll events, or got the top 20 scopes, 
             f += sPerc;
             i++;
-            if (i == 20 || f >= 95.0) break;
+            if (i == 50 || f >= 99.0) break;
         }
 
         // Identify inlining sites
-		  // Heuristic: In hot methods, identify call sites to hot methods
-        for (IRScope hs: hotScopes) {
+        // Heuristic: In hot methods, identify monomorphic call sites to hot methods
+        boolean revisitScope = false;
+        Iterator<IRScope> hsIter = hotScopes.iterator();
+        IRScope hs = null;
+        while (hsIter.hasNext()) {
+            if (!revisitScope) hs = hsIter.next();
+            revisitScope = false;
+
             boolean skip = false;
             boolean isHotClosure = hs instanceof IRClosure;
             IRScope hc = isHotClosure ? hs : null;
@@ -245,8 +251,8 @@ public class Interpreter {
                         // System.out.println("callsite: " + cs);
                         if (cs != null && (cs instanceof CachingCallSite)) {
                             CachingCallSite ccs = (CachingCallSite)cs;
-									 // SSS FIXME: To use this, CachingCallSite.java needs modification
-									 // isPolymorphic or something equivalent needs to be enabled there.
+                            // SSS FIXME: To use this, CachingCallSite.java needs modification
+                            // isPolymorphic or something equivalent needs to be enabled there.
                             if (ccs.isOptimizable()) {
                                 CacheEntry ce = ccs.getCache();
                                 DynamicMethod tgt = ce.method;
@@ -254,9 +260,9 @@ public class Interpreter {
                                     InterpretedIRMethod dynMeth = (InterpretedIRMethod)tgt;
                                     IRScope tgtMethod = dynMeth.getIRMethod();
                                     Instr[] instrs = tgtMethod.getInstrsForInterpretation();
-												// Dont inline large methods -- 200 is arbitrary
+                                    // Dont inline large methods -- 200 is arbitrary
                                     // Can be null if a previously inlined method hasn't been rebuilt
-                                    if ((instrs == null) || instrs.length > 200) continue; 
+                                    if ((instrs == null) || instrs.length > 150) continue; 
 
                                     RubyModule implClass = dynMeth.getImplementationClass();
                                     int classToken = implClass.getGeneration();
@@ -277,6 +283,7 @@ public class Interpreter {
                                         scopeThreadPollCounts.remove(tgtMethod);
                                         inlineCount++;
                                         skip = true;
+                                        revisitScope = true;
                                         break;
                                         //return;
                                     }
@@ -286,8 +293,8 @@ public class Interpreter {
                     }
                 }
 
-					 // We skip the rest of the method because we will run into concurrent modification exceptions in the iterators
-					 // SSS FIXME: We may miss some inlining sites because of this
+                // We skip the rest of the method because we will run into concurrent modification exceptions in the iterators
+                // SSS FIXME: We may miss some inlining sites because of this
                 if (skip) break;
             }
         }
@@ -321,7 +328,7 @@ public class Interpreter {
         int i = 0;
         float f1 = 0.0f;
         for (IRScope s: scopes) {
-            int n = scopeThreadPollCounts.get(s).count;
+            long n = scopeThreadPollCounts.get(s).count;
             float p1 =  ((n*1000)/globalThreadPollCount)/10.0f;
             String msg = i + ". " + s + " [file:" + s.getFileName() + ":" + s.getLineNumber() + "] = " + n + "; (" + p1 + "%)";
             if (s instanceof IRClosure) {
@@ -527,7 +534,7 @@ public class Interpreter {
                         if (profile) { 
                             tpCount.count++; 
                             globalThreadPollCount++;
-									 // SSS: Uncomment this to analyze profile
+                            // SSS: Uncomment this to analyze profile
                             // Every 10K profile counts, spit out profile stats
                             // if (globalThreadPollCount % 10000 == 0) analyzeProfile(); //outputProfileStats();
                         }
