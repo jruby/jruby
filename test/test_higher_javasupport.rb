@@ -710,7 +710,9 @@ CLASSDEF
   # JRUBY-2169
   unless RUBY_VERSION =~ /1\.9/ # FIXME not sure why this doesn't pass in 1.9 mode
     def test_java_class_resource_methods
-      file = 'META-INF/MANIFEST.MF'
+      # FIXME? not sure why this works, didn't modify build.xml
+      # to copy this file, yet it finds it anyway
+      file = 'test_java_class_resource_methods.properties'
 
       # nothing special about this class, selected at random for testing
       jc = org.jruby.javasupport.test.RubyTestObject.java_class

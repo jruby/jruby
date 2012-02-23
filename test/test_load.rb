@@ -61,7 +61,7 @@ class TestLoad < Test::Unit::TestCase
   def test_require_bogus
     assert_raises(LoadError) { require 'foo/' }
     unless RUBY_VERSION =~ /1\.9/ # bug
-      endassert_raises(LoadError) { require '' }
+      assert_raises(LoadError) { require '' }
     end
 
     # Yes, the following line is supposed to appear twice
