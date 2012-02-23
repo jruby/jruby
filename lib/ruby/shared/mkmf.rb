@@ -1,6 +1,6 @@
 # ---------------------- Changed for JRuby ------------------------------------
 $stderr << "WARNING: JRuby does not support native extensions or the `mkmf' library very well.\n" +
-"Check http://kenai.com/projects/jruby/pages/Home for alternatives.\n"
+"Check https://wiki.jruby.org/C-Extension-Alternatives for alternatives.\n"
 
 require 'rbconfig'
 
