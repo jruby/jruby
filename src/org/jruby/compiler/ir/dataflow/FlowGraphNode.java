@@ -6,6 +6,7 @@ import org.jruby.compiler.ir.util.Edge;
 
 import java.util.BitSet;
 import java.util.List;
+import org.jruby.compiler.ir.util.NoSuchVertexException;
 
 /* This framework right now implicitly uses the CFG as the flow graph -- perhaps it is worth abstracting away from this assumption
  * so that we can use this framework over non-CFG flow graphs.
@@ -39,7 +40,7 @@ public abstract class FlowGraphNode {
      * (facts at start/end of node, instructions of current node processed in 
      * fwd/reverse dirn) 
      */
-    public abstract boolean applyTransferFunction();
+    public abstract boolean applyTransferFunction() throws NoSuchVertexException;
 
     /** 
      * Builds the data-flow variables (or facts) for a particular instruction.
@@ -81,7 +82,7 @@ public abstract class FlowGraphNode {
         }
     }
 
-    public void computeDataFlowInfo(List<FlowGraphNode> workList, BitSet bbSet) {
+    public void computeDataFlowInfo(List<FlowGraphNode> workList, BitSet bbSet) throws NoSuchVertexException {
         // System.out.println("----- processing bb " + basicBlock.getID() + " -----");
         bbSet.clear(basicBlock.getID());
 

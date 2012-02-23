@@ -5,13 +5,14 @@ import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.compiler_pass.CompilerPass;
 import org.jruby.compiler.ir.dataflow.DataFlowConstants;
 import org.jruby.compiler.ir.dataflow.analyses.LiveVariablesProblem;
+import org.jruby.compiler.ir.util.NoSuchVertexException;
 
 public class DeadCodeElimination implements CompilerPass {
     public boolean isPreOrder() {
         return false;
     }
 
-    public void run(IRScope scope) {
+    public void run(IRScope scope) throws NoSuchVertexException {
         if (scope instanceof IRClosure && ((IRClosure)scope).hasBeenInlined()) return;
 
         LiveVariablesProblem lvp = (LiveVariablesProblem) scope.getDataFlowSolution(DataFlowConstants.LVP_NAME);

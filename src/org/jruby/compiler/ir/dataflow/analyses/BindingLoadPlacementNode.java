@@ -19,6 +19,7 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.operands.WrappedIRClosure;
 import org.jruby.compiler.ir.representations.BasicBlock;
+import org.jruby.compiler.ir.util.NoSuchVertexException;
 
 public class BindingLoadPlacementNode extends FlowGraphNode {
     public BindingLoadPlacementNode(DataFlowProblem prob, BasicBlock n) {
@@ -47,7 +48,7 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
         inRequiredLoads.addAll(n.outRequiredLoads);
     }
 
-    public boolean applyTransferFunction() {
+    public boolean applyTransferFunction() throws NoSuchVertexException {
         Set<LocalVariable> reqdLoads = new HashSet<LocalVariable>(inRequiredLoads);
 
         List<Instr> instrs = basicBlock.getInstrs();

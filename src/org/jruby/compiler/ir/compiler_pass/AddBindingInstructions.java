@@ -4,13 +4,14 @@ import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.IRMethod;
 import org.jruby.compiler.ir.dataflow.analyses.BindingStorePlacementProblem;
 import org.jruby.compiler.ir.dataflow.analyses.BindingLoadPlacementProblem;
+import org.jruby.compiler.ir.util.NoSuchVertexException;
 
 public class AddBindingInstructions implements CompilerPass {
     public boolean isPreOrder() {
         return false;
     }
 
-    public void run(IRScope s) {
+    public void run(IRScope s) throws NoSuchVertexException {
         if (!(s instanceof IRMethod)) return;
 
         IRMethod m = (IRMethod) s;

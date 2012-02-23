@@ -20,6 +20,7 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.operands.WrappedIRClosure;
 import org.jruby.compiler.ir.representations.BasicBlock;
+import org.jruby.compiler.ir.util.NoSuchVertexException;
 
 public class LiveVariableNode extends FlowGraphNode {
     public LiveVariableNode(DataFlowProblem prob, BasicBlock n) {
@@ -70,7 +71,7 @@ public class LiveVariableNode extends FlowGraphNode {
     private void processClosureLVP(LiveVariablesProblem cl_lvp, Collection<LocalVariable> varsLiveOnScopeExit) {
     }
 
-    public boolean applyTransferFunction() {
+    public boolean applyTransferFunction() throws NoSuchVertexException {
         // System.out.println("After MEET, df state for " + basicBlock.getID() + " is:\n" + toString());
         LiveVariablesProblem lvp = (LiveVariablesProblem) problem;
 

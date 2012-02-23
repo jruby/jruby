@@ -2,6 +2,7 @@ package org.jruby.compiler.ir.compiler_pass;
 
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.representations.CFG;
+import org.jruby.compiler.ir.util.NoSuchVertexException;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -13,7 +14,7 @@ public class IRPrinter implements CompilerPass {
         return true;
     }
 
-    public void run(IRScope scope) {
+    public void run(IRScope scope) throws NoSuchVertexException {
         LOG.info("----------------------------------------");
         LOG.info(scope.toString());
 

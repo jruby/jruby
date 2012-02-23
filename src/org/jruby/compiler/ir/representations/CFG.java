@@ -30,6 +30,7 @@ import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.operands.WrappedIRClosure;
 import org.jruby.compiler.ir.util.DirectedGraph;
 import org.jruby.compiler.ir.util.Edge;
+import org.jruby.compiler.ir.util.NoSuchVertexException;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -146,23 +147,23 @@ public class CFG {
         graph.vertexFor(source).addEdgeTo(destination, type);
     }
 
-    public int inDegree(BasicBlock b) {
-        return graph.vertexFor(b).inDegree();
+    public int inDegree(BasicBlock b) throws NoSuchVertexException {
+        return graph.getVertexFor(b).inDegree();
     }
 
-    public int outDegree(BasicBlock b) {
-        return graph.vertexFor(b).outDegree();
+    public int outDegree(BasicBlock b) throws NoSuchVertexException {
+        return graph.getVertexFor(b).outDegree();
     }
     
-    public Iterable<BasicBlock> getIncomingSources(BasicBlock block) {
-        return graph.vertexFor(block).getIncomingSourcesData();
+    public Iterable<BasicBlock> getIncomingSources(BasicBlock block) throws NoSuchVertexException {
+        return graph.getVertexFor(block).getIncomingSourcesData();
     }
     
-    public Iterable<Edge<BasicBlock>> getIncomingEdges(BasicBlock block) {
-        return graph.vertexFor(block).getIncomingEdges();
+    public Iterable<Edge<BasicBlock>> getIncomingEdges(BasicBlock block) throws NoSuchVertexException {
+        return graph.getVertexFor(block).getIncomingEdges();
     }
     
-    public BasicBlock getIncomingSource(BasicBlock block) {
+    public BasicBlock getIncomingSource(BasicBlock block) throws NoSuchVertexException {
         return graph.vertexFor(block).getIncomingSourceData();
     }    
     

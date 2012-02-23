@@ -18,6 +18,7 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.WrappedIRClosure;
 import org.jruby.compiler.ir.representations.CFG.EdgeType;
 import org.jruby.compiler.ir.util.Edge;
+import org.jruby.compiler.ir.util.NoSuchVertexException;
 
 public class CFGInliner {
     private CFG cfg;
@@ -86,7 +87,7 @@ public class CFGInliner {
         }
     }
 
-    public void inlineMethod(IRScope scope, RubyModule implClass, int classToken, BasicBlock callBB, CallBase call) {
+    public void inlineMethod(IRScope scope, RubyModule implClass, int classToken, BasicBlock callBB, CallBase call) throws NoSuchVertexException {
         // Temporarily turn off inlining of recursive methods
         if (cfg.getScope() == scope) return;
 
@@ -274,7 +275,7 @@ public class CFGInliner {
 */
     }
 
-    private void inlineClosureAtYieldSite(InlinerInfo ii, IRClosure cl, BasicBlock yieldBB, YieldInstr yield) {
+    private void inlineClosureAtYieldSite(InlinerInfo ii, IRClosure cl, BasicBlock yieldBB, YieldInstr yield) throws NoSuchVertexException {
         // SSS FIXME: Is this still true?
         // Mark this closure as inlined so we dont run any destructive operations on it.
         // since the closure in its original form will get destroyed by the inlining.
