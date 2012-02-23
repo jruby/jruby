@@ -5464,8 +5464,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
         modifyCheck();
         Ruby runtime = context.getRuntime();
         if (value.getRealSize() == 0) return runtime.getNil();
-        keepCodeRange();
         view(0, choppedLength19(runtime));
+        if (getCodeRange() != CR_7BIT) clearCodeRange();
         return this;
     }
 
@@ -6666,13 +6666,13 @@ public class RubyString extends RubyObject implements EncodingCapable {
             }
         } else {
             for (int i=0; i<TRANS_SIZE; i++) trans[i] = -1;
-            
+
             while ((c = trNext(trSrc, runtime, enc)) >= 0) {
                 int r = trNext(trRepl, runtime, enc);
                 if (r == -1) r = trRepl.now;
                 if (c < TRANS_SIZE) {
                     trans[c] = r;
-                    if (codeLength(runtime, enc, r) != 1) singlebyte = false;                    
+                    if (codeLength(runtime, enc, r) != 1) singlebyte = false;
                 } else {
                     if (hash == null) hash = new IntHash<Integer>();
                     hash.put(c, r);
