@@ -63,10 +63,10 @@ class TestJavaExtension < Test::Unit::TestCase
     a << 1
     a << 2
 
-    assert([1, 2, 3], a.sort)
-		assert([1, 2], a[2...3])
-		assert([3, 1], a[0, 2])
-    assert([1], a.select {|e| e >= 1 })
+    assert_equal([1, 2, 3], a.sort.to_a)
+		assert_equal([1, 2], a[1...3].to_a)
+		assert_equal([3, 1], a[0, 2].to_a)
+    assert_equal([3, 2], a.select {|e| e > 1 })
   end
 
   import org.jruby.test.TestHelper

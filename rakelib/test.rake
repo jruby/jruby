@@ -59,6 +59,25 @@ namespace :test do
     end
   end
 
+  task :jruby19 => ['test:compile', :install_dev_gems] do
+    require 'rake/testtask'
+    Rake::TestTask.new('test:jruby19') do |t|
+      files = []
+      File.open('test/jruby.1.9.index') do |f|
+        f.lines.each do |line|
+          filename = "test/#{line.chomp}.rb"
+          next unless File.exist? filename
+          files << filename
+        end
+      end
+      t.test_files = files
+      t.verbose = true
+      t.ruby_opts << '-J-cp build/classes/test'
+      t.ruby_opts << '--debug'
+      t.ruby_opts << '--1.9'
+      t.ruby_opts << '-X-C'
+    end
+  end
 
   task :rails => [:jar, :install_build_gems, :fetch_latest_rails_repo] do
     # Need to disable assertions because of a rogue assert in OpenSSL

@@ -11,7 +11,11 @@ class TestParsing < Test::Unit::TestCase
   end
   
   def test_parse_literal_char
-    assert_equal(96, ?a-1)
+    if RUBY_VERSION =~ /1\.9/
+      assert_equal('a', ?a)
+    else
+      assert_equal(96, ?a-1)
+    end
   end
 
   def test_bogus_char

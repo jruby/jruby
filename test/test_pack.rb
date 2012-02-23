@@ -45,9 +45,11 @@ class TestPack < Test::Unit::TestCase
     assert_equal(endian("\000\000\000\000\000\000\000\200", 8), [@bignum1].pack("q"))
   end
 
-  def test_pack_q_expected_errors
-    assert_raises(TypeError){ @char_array.pack("q") }
-    assert_raises(RangeError){ [(2**128)].pack("q") }
+  unless RUBY_VERSION =~ /1\.9/
+    def test_pack_q_expected_errors
+      assert_raises(TypeError){ @char_array.pack("q") }
+      assert_raises(RangeError){ [(2**128)].pack("q") }
+    end
   end
 
   def test_pack_Q
@@ -59,9 +61,11 @@ class TestPack < Test::Unit::TestCase
     assert_equal(endian("\000\000\000\000\000\000\000\200", 8), [@bignum1].pack("Q"))
   end
 
-  def test_pack_Q_expected_errors
-    assert_raises(TypeError){ @char_array.pack("Q") }
-    assert_raises(RangeError){ [(2**128)].pack("Q") }
+  unless RUBY_VERSION =~ /1\.9/
+    def test_pack_Q_expected_errors
+      assert_raises(TypeError){ @char_array.pack("Q") }
+      assert_raises(RangeError){ [(2**128)].pack("Q") }
+    end
   end
 
   # JRUBY-2502
@@ -106,8 +110,10 @@ class TestPack < Test::Unit::TestCase
     assert_raises(ArgumentError) { [0].pack('CC') }
   end
 
-  def test_unpack_at_on_substring
-    assert_equal([?c], 'abcdef'[1..-1].unpack('@1c'))
-    assert_equal([?f], 'abcdef'[1..-1].unpack('x1@*c'))
+  unless RUBY_VERSION =~ /1\.9/
+    def test_unpack_at_on_substring
+      assert_equal([?c], 'abcdef'[1..-1].unpack('@1c'))
+      assert_equal([?f], 'abcdef'[1..-1].unpack('x1@*c'))
+    end
   end
 end

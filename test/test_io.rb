@@ -164,7 +164,11 @@ class TestIO < Test::Unit::TestCase
 
     f = File.open(@file)
     @to_close << f
-    assert_raises(ArgumentError) { io = IO.open(f.fileno, "r", :gratuitous) }
+    if RUBY_VERSION =~ /1\.9/
+      assert_raises(TypeError) { io = IO.open(f.fileno, "r", :gratuitous) }
+    else
+      assert_raises(ArgumentError) { io = IO.open(f.fileno, "r", :gratuitous) }
+    end
     io = IO.open(f.fileno, "r")
     @to_close << io
     assert_equal(f.fileno, io.fileno)
@@ -262,8 +266,14 @@ class TestIO < Test::Unit::TestCase
      File.open(@file, "wb") do |file|
        file.putc(255)
      end
-     File.open(@file, "rb") do |file|
-       assert_equal(255, file.getc)
+     if RUBY_VERSION =~ /1\.9/
+       File.open(@file, "rb") do |file|
+         assert_equal("\xFF", file.getc)
+       end
+     else
+       File.open(@file, "rb") do |file|
+         assert_equal(255, file.getc)
+       end
      end
   end
 
@@ -279,7 +289,11 @@ class TestIO < Test::Unit::TestCase
       # it checks that JRuby doesn't break.
       assert_equal(0, file.pos)
 
-      assert_equal(100, file.getc)
+      if RUBY_VERSION =~ /1\.9/
+        assert_equal("d", file.getc)
+      else
+        assert_equal(100, file.getc)
+      end
      end
   end
 
@@ -287,11 +301,19 @@ class TestIO < Test::Unit::TestCase
   def test_ungetc_nonempty_file
     File.open(@file, "w+") { |file| file.puts("HELLO") }
     File.open(@file) do |file|
-      assert_equal(72, file.getc)
+      if RUBY_VERSION =~ /1\.9/
+        assert_equal("H", file.getc)
+      else
+        assert_equal(72, file.getc)
+      end
       assert_equal(1, file.pos)
       file.ungetc(100)
       assert_equal(0, file.pos)
-      assert_equal(100, file.getc)
+      if RUBY_VERSION =~ /1\.9/
+        assert_equal("d", file.getc)
+      else
+        assert_equal(100, file.getc)
+      end
       assert_equal(1, file.pos)
      end
   end
@@ -408,7 +430,7 @@ class TestIO < Test::Unit::TestCase
   end
 
   #JRUBY-2145
-  if (!WINDOWS)
+  if (!WINDOWS && !(RUBY_VERSION =~ /1\.9/))
     def test_copy_dev_null
       require 'fileutils'
       begin
@@ -439,11 +461,13 @@ class TestIO < Test::Unit::TestCase
 
   def test_file_constants_included
     assert IO.include?(File::Constants)
-    ["APPEND", "BINARY", "CREAT", "EXCL", "FNM_CASEFOLD",
+    constants = ["APPEND", "BINARY", "CREAT", "EXCL", "FNM_CASEFOLD",
                    "FNM_DOTMATCH", "FNM_NOESCAPE", "FNM_PATHNAME", "FNM_SYSCASE",
                    "LOCK_EX", "LOCK_NB", "LOCK_SH", "LOCK_UN", "NOCTTY", "NONBLOCK",
                    "RDONLY", "RDWR", "SEEK_CUR", "SEEK_END", "SEEK_SET", "SYNC", "TRUNC",
-                   "WRONLY"].each { |c| assert(IO.constants.include?(c), "#{c} is not included") }
+                   "WRONLY"]
+    constants = constants.map(&:to_sym) if RUBY_VERSION =~ /1\.9/
+    constants.each { |c| assert(IO.constants.include?(c), "#{c} is not included") }
   end
 
   #JRUBY-3012
@@ -454,8 +478,8 @@ class TestIO < Test::Unit::TestCase
   end
 
   # JRUBY-4152
-  if $stdin.tty? # in Ant that might be false
-    def test_tty_leak
+  def test_tty_leak
+    if $stdin.tty? # in Ant that might be false
       assert $stdin.tty?
       10_000.times {
         $stdin.tty?
@@ -492,7 +516,7 @@ class TestIO < Test::Unit::TestCase
       
       # should use sh
       p, o, i, e = IO.popen4("/bin/ps -a -x -f | grep [/]bin/ps'")
-      assert_no_match Regexp.new(p.to_s), i.read.grep(/\/bin\/ps/).first
+      assert_no_match Regexp.new(p.to_s), i.read.lines.grep(/\/bin\/ps/).first
     end
   end
   

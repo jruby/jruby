@@ -23,8 +23,15 @@ class TestMethodOverrideAndCaching < Test::Unit::TestCase
   end
  
   def test_jruby_2921
-    assert_equal 1, MySub.methods.select {|m| m == 'meth1'}.size
-    assert_equal 1, MySub.methods.select {|m| m == 'meth2'}.size
+    if RUBY_VERSION =~ /1\.9/
+      meth1 = :meth1
+      meth2 = :meth2
+    else
+      meth1 = 'meth1'
+      meth2 = 'meth2'
+    end
+    assert_equal 1, MySub.methods.select {|m| m == meth1}.size
+    assert_equal 1, MySub.methods.select {|m| m == meth2}.size
  
     assert_equal('MySuper::meth1', MySub::meth1)
     assert_equal('MySuper::meth1', calling_meth1)
@@ -42,8 +49,8 @@ class TestMethodOverrideAndCaching < Test::Unit::TestCase
       end
     "
  
-    assert_equal 1, MySub.methods.select {|m| m == 'meth1'}.size
-    assert_equal 1, MySub.methods.select {|m| m == 'meth2'}.size
+    assert_equal 1, MySub.methods.select {|m| m == meth1}.size
+    assert_equal 1, MySub.methods.select {|m| m == meth2}.size
  
     assert_equal('MySub::meth1', MySub::meth1)
     assert_equal('MySub::meth1', calling_meth1)

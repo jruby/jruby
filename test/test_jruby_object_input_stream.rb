@@ -3,9 +3,9 @@ require 'java'
 require 'jruby'
 require 'jruby/serialization'
 require 'fileutils'
-import java.io.ObjectOutputStream
-import java.io.FileOutputStream
-import java.io.FileInputStream
+java_import java.io.ObjectOutputStream
+java_import java.io.FileOutputStream
+java_import java.io.FileInputStream
 
 
 class TestJrubyObjectInputStream < Test::Unit::TestCase

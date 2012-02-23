@@ -79,7 +79,7 @@ class TestComparable < Test::Unit::TestCase
     assert_raises(ArgumentError) { @d <= 3 }
     assert_raises(ArgumentError) { @d > 3 }
     assert_raises(ArgumentError) { @d >= 3 }
-    assert_equal(nil, @d == 3)
+    assert(@d != 3)
     assert_raises(ArgumentError) { @d.between?(1, 3) }
   end
 end

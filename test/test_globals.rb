@@ -115,8 +115,11 @@ class TestGlobals < Test::Unit::TestCase
   def test_last_exit_status_as_param
     assert_nothing_raised {'foo' == $?}
   end
-  def test_that_last_exit_status_is_nil
-    assert_nil $?
+
+  unless RUBY_VERSION =~ /1\.9/ # randomizes, so it might be non-nil
+    def test_that_last_exit_status_is_nil
+      assert_nil $?
+    end
   end
   
   def test_backref_set_checks_for_matchdata

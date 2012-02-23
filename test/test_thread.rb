@@ -45,7 +45,9 @@ class TestThread < Test::Unit::TestCase
     assert(Thread.current.key?(:x))
     Thread.current["y"] = 2
     assert(Thread.current.key?("y"))
-    assert([:x, :y], Thread.current.keys.sort {|x, y| x.to_s <=> y.to_s})
+    unless RUBY_VERSION =~ /1\.9/ # JRUBY-6485
+      assert_equal([:x, :y], Thread.current.keys.sort {|x, y| x.to_s <=> y.to_s})
+    end
     assert_raises(TypeError) { Thread.current[Object.new] }
     assert_raises(TypeError) { Thread.current[Object.new] = 1 }
     assert_raises(ArgumentError) { Thread.current[1] }

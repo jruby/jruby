@@ -699,10 +699,12 @@ class TestFile < Test::Unit::TestCase
       require abs_path
       assert_equal($test_require_symlink_filename, abs_path)
       abs_path_linked = File.join(Dir.pwd, "linked_file.rb")
-      require abs_path_linked
-      assert_equal($test_require_symlink_filename, abs_path_linked)
-      load abs_path_linked
-      assert_equal($test_require_symlink_filename, abs_path_linked)
+      unless RUBY_VERSION =~ /1\.9/
+        require abs_path_linked
+        assert_equal($test_require_symlink_filename, abs_path_linked)
+        load abs_path_linked
+        assert_equal($test_require_symlink_filename, abs_path_linked)
+      end
     ensure
       File.delete("real_file.rb")
       File.delete("linked_file.rb")
@@ -1036,18 +1038,20 @@ class TestFile < Test::Unit::TestCase
   end
 
   #JRUBY-4387, JRUBY-4416
-  def test_file_gets_separator
-    filename = 'gets.out'
-    begin
-      File.open(filename, "wb") do |file|
-        file.print "this is a test\xFFit is only a test\ndoes it work?"
-      end
+  unless RUBY_VERSION =~ /1\.9/
+    def test_file_gets_separator
+      filename = 'gets.out'
+      begin
+        File.open(filename, "wb") do |file|
+          file.print "this is a test\xFFit is only a test\ndoes it work?"
+        end
 
-      file = File.open("gets.out", "rb") do |file|
-        assert_equal("this is a test\377", file.gets("\xFF"))
+        file = File.open("gets.out", "rb") do |file|
+          assert_equal("this is a test\377", file.gets("\xFF"))
+        end
+      ensure
+        File.unlink(filename)
       end
-    ensure
-      File.unlink(filename)
     end
   end
 

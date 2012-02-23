@@ -21,6 +21,7 @@ class TestLoadCompiledRuby < Test::Unit::TestCase
       load FILENAME
       assert $test_load_compiled_ruby
     ensure
+      $:.shift
       FileUtils.rm_f(FILENAME)
       FileUtils.rm_f(COMPILED)
     end

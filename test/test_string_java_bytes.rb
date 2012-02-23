@@ -16,11 +16,11 @@ class TestStringJavaBytes < Test::Unit::TestCase
     assert_equal(string_from_bytes.length, java_bytes.length)
     # different sign for 0..127
     0.upto(127) do |i|
-      assert_equal(all_byte_values[i] + 256, string_from_bytes[i])
+      assert_equal(all_byte_values[i] + 256, string_from_bytes.bytes.to_a[i])
     end
     # same sign for 128..255
     128.upto(255) do |i|
-      assert_equal(all_byte_values[i], string_from_bytes[i])
+      assert_equal(all_byte_values[i], string_from_bytes.bytes.to_a[i])
     end
     
     bytes_from_string = string_from_bytes.to_java_bytes
