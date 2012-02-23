@@ -6374,7 +6374,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         int c;
 
         while (s < send) {
-            if (enc.isAsciiCompatible() && Encoding.isAscii(c = bytes[s] & 0xff)) {
+            if (enc.isAsciiCompatible() && (c = bytes[s] & 0xff) < 0x80) {
                 if (c != save || (isArg && !squeeze[c])) bytes[t++] = (byte)(save = c);
                 s++;
             } else {
