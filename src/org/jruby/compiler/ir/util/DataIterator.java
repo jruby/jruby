@@ -15,11 +15,13 @@ public class DataIterator<T> implements Iterator<T> {
     private Iterator<Edge<T>> internalIterator;
     private Object type;
     private Edge nextEdge = null;
+    private boolean source;
     private boolean negate;
     
-    public DataIterator(Set<Edge<T>> edges, Object type, boolean negate) {
+    public DataIterator(Set<Edge<T>> edges, Object type, boolean source, boolean negate) {
         this.internalIterator = edges.iterator();
         this.type = type;
+        this.source = source;
         this.negate = negate;
     }
 
@@ -48,7 +50,7 @@ public class DataIterator<T> implements Iterator<T> {
         if (hasNext()) {
             Edge<T> tmp = nextEdge;
             nextEdge = null;
-            return tmp.getDestination().getData();
+            return source ? tmp.getSource().getData() : tmp.getDestination().getData();
         }
 
         throw new NoSuchElementException();

@@ -106,15 +106,15 @@ public class Vertex<T> implements Comparable<Vertex<T>> {
     }    
     
     public Iterable<T> getIncomingSourcesData() {
-        return new DataIterable<T>(getIncomingEdges(), null, true);
+        return new DataIterable<T>(getIncomingEdges(), null, true, true);
     }
     
     public Iterable<T> getIncomingSourcesDataOfType(Object type) {
-        return new DataIterable<T>(getIncomingEdges(), type, false);
+        return new DataIterable<T>(getIncomingEdges(), type, true, false);
     }      
     
     public Iterable<T> getIncomingSourcesDataNotOfType(Object type) {
-        return new DataIterable<T>(getIncomingEdges(), type, true);
+        return new DataIterable<T>(getIncomingEdges(), type, true, true);
     }      
         
     public Iterable<Edge<T>> getOutgoingEdgesNotOfType(Object type) {
@@ -122,15 +122,15 @@ public class Vertex<T> implements Comparable<Vertex<T>> {
     }
     
     public Iterable<T> getOutgoingDestinationsData() {
-        return new DataIterable<T>(getOutgoingEdges(), null, true);
+        return new DataIterable<T>(getOutgoingEdges(), null, false, true);
     }
 
     public Iterable<T> getOutgoingDestinationsDataOfType(Object type) {
-        return new DataIterable<T>(getOutgoingEdges(), type, false);
+        return new DataIterable<T>(getOutgoingEdges(), type, false, false);
     }
     
     public Iterable<T> getOutgoingDestinationsDataNotOfType(Object type) {
-        return new DataIterable<T>(getOutgoingEdges(), type, true);
+        return new DataIterable<T>(getOutgoingEdges(), type, false, true);
     }
 
     public T getOutgoingDestinationData() {
