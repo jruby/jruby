@@ -148,19 +148,19 @@ public class CFG {
     }
 
     public int inDegree(BasicBlock b) throws NoSuchVertexException {
-        return graph.getVertexFor(b).inDegree();
+        return graph.findVertexFor(b).inDegree();
     }
 
     public int outDegree(BasicBlock b) throws NoSuchVertexException {
-        return graph.getVertexFor(b).outDegree();
+        return graph.findVertexFor(b).outDegree();
     }
     
     public Iterable<BasicBlock> getIncomingSources(BasicBlock block) throws NoSuchVertexException {
-        return graph.getVertexFor(block).getIncomingSourcesData();
+        return graph.findVertexFor(block).getIncomingSourcesData();
     }
     
     public Iterable<Edge<BasicBlock>> getIncomingEdges(BasicBlock block) throws NoSuchVertexException {
-        return graph.getVertexFor(block).getIncomingEdges();
+        return graph.findVertexFor(block).getIncomingEdges();
     }
     
     public BasicBlock getIncomingSource(BasicBlock block) throws NoSuchVertexException {

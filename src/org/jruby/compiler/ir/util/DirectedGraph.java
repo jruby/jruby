@@ -60,7 +60,7 @@ public class DirectedGraph<T extends DataInfo> {
         }
     }
     
-    public Vertex<T> getVertexFor(T data) throws NoSuchVertexException {
+    public Vertex<T> findVertexFor(T data) throws NoSuchVertexException {
         Vertex vertex = vertices.get(data);
         
         if (vertex == null) throw new NoSuchVertexException(data);
