@@ -1,11 +1,9 @@
 package org.jruby.compiler.ir.dataflow;
 
-import org.jruby.compiler.ir.representations.BasicBlock;
-import org.jruby.compiler.ir.instructions.Instr;
-import org.jruby.compiler.ir.util.Edge;
-
 import java.util.BitSet;
 import java.util.List;
+import org.jruby.compiler.ir.instructions.Instr;
+import org.jruby.compiler.ir.representations.BasicBlock;
 import org.jruby.compiler.ir.util.NoSuchVertexException;
 
 /* This framework right now implicitly uses the CFG as the flow graph -- perhaps it is worth abstracting away from this assumption
@@ -90,13 +88,11 @@ public abstract class FlowGraphNode {
         // sources & targets depends on direction of the data flow problem
         initSolnForNode();
         if (problem.getFlowDirection() == DataFlowProblem.DF_Direction.FORWARD) {
-            for (Edge<BasicBlock> e: problem.getScope().cfg().getIncomingEdges(basicBlock)) {
-                BasicBlock b = e.getSource().getData();
+            for (BasicBlock b: problem.getScope().cfg().getIncomingSources(basicBlock)) {
                 compute_MEET(b, problem.getFlowGraphNode(b));
             }
         } else if (problem.getFlowDirection() == DataFlowProblem.DF_Direction.BACKWARD) {
-            for (Edge<BasicBlock> e: problem.getScope().cfg().getOutgoingEdges(basicBlock)) {
-                BasicBlock b = e.getDestination().getData();
+            for (BasicBlock b: problem.getScope().cfg().getOutgoingDestinations(basicBlock)) {
                 compute_MEET(b, problem.getFlowGraphNode(b));
             }
         } else {
@@ -110,12 +106,12 @@ public abstract class FlowGraphNode {
         boolean changed = applyTransferFunction();
         if (changed) {
             if (problem.getFlowDirection() == DataFlowProblem.DF_Direction.FORWARD) {
-                for (Edge<BasicBlock> e: problem.getScope().cfg().getOutgoingEdges(basicBlock)) {
-                    processDestBB(workList, bbSet, e.getDestination().getData());
+                for (BasicBlock b: problem.getScope().cfg().getOutgoingDestinations(basicBlock)) {
+                    processDestBB(workList, bbSet, b);
                 }
             } else if (problem.getFlowDirection() == DataFlowProblem.DF_Direction.BACKWARD) {
-                for (Edge<BasicBlock> e: problem.getScope().cfg().getIncomingEdges(basicBlock)) {
-                    processDestBB(workList, bbSet, e.getSource().getData());
+                for (BasicBlock b: problem.getScope().cfg().getIncomingSources(basicBlock)) {
+                    processDestBB(workList, bbSet, b);
                 }
             }
         }
