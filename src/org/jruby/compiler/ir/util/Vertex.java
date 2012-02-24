@@ -12,10 +12,12 @@ public class Vertex<T extends DataInfo> implements Comparable<Vertex<T>> {
     private T data;
     private Set<Edge<T>> incoming = null;
     private Set<Edge<T>> outgoing = null;
+    int id;
     
-    public Vertex(DirectedGraph graph, T data) {
+    public Vertex(DirectedGraph graph, T data, int id) {
         this.graph = graph;
         this.data = data;
+        this.id = id;
     }
 
     public void addEdgeTo(Vertex destination, Object type) {

@@ -14,6 +14,7 @@ import java.util.Set;
 public class DirectedGraph<T extends DataInfo> {
     private Map<T, Vertex<T>> vertices = new HashMap<T, Vertex<T>>();
     private Set<Edge<T>> edges = new HashSet<Edge<T>>();
+    int vertexIDCounter = 0;
     
     public Collection<Vertex<T>> vertices() {
         return vertices.values();
@@ -73,7 +74,7 @@ public class DirectedGraph<T extends DataInfo> {
         
         if (vertex != null) return vertex;
         
-        vertex = new Vertex(this, data);
+        vertex = new Vertex(this, data, vertexIDCounter++);
         
         vertices.put(data, vertex);
         
