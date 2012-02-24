@@ -7,7 +7,7 @@ import java.util.Set;
 /**
  *
  */
-public class Vertex<T extends ExplicitVertexID> implements Comparable<Vertex<T>> {
+public class Vertex<T> implements Comparable<Vertex<T>> {
     private DirectedGraph graph;
     private T data;
     private Set<Edge<T>> incoming = null;
@@ -190,7 +190,7 @@ public class Vertex<T extends ExplicitVertexID> implements Comparable<Vertex<T>>
     }
     
     public int getID() {
-        return data.getID();
+        return data instanceof ExplicitVertexID ? ((ExplicitVertexID) data).getID() : id;
     }
     
     @Override

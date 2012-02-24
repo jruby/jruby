@@ -11,9 +11,10 @@ import java.util.Set;
 /**
  * Meant to be single-threaded.  More work on whole impl if not.
  */
-public class DirectedGraph<T extends ExplicitVertexID> {
+public class DirectedGraph<T> {
     private Map<T, Vertex<T>> vertices = new HashMap<T, Vertex<T>>();
     private Set<Edge<T>> edges = new HashSet<Edge<T>>();
+    private ArrayList inOrderVerticeData = new ArrayList();
     int vertexIDCounter = 0;
     
     public Collection<Vertex<T>> vertices() {
@@ -32,16 +33,11 @@ public class DirectedGraph<T extends ExplicitVertexID> {
         return vertices.keySet();
     }
     
-    public Collection<T> getSortedData() {
-        ArrayList<T> data = new ArrayList<T>(vertices.keySet());
-        Collections.sort(data, new java.util.Comparator<ExplicitVertexID> () {
-            public int compare(ExplicitVertexID a, ExplicitVertexID b) {
-                if (a.getID() == b.getID()) return 0;
-                if (a.getID() < b.getID()) return -1;
-                return 1;
-            }
-        });
-        return data;
+    /**
+     * @return data in the order it was added to this graph.
+     */
+    public Collection<T> getInorderData() {
+        return inOrderVerticeData;
     }
     
     public void addEdge(T source, T destination, Object type) {
@@ -75,6 +71,7 @@ public class DirectedGraph<T extends ExplicitVertexID> {
         if (vertex != null) return vertex;
         
         vertex = new Vertex(this, data, vertexIDCounter++);
+        inOrderVerticeData.add(data);
         
         vertices.put(data, vertex);
         
@@ -84,6 +81,7 @@ public class DirectedGraph<T extends ExplicitVertexID> {
     public void removeVertexFor(T data) {
         Vertex vertex = vertexFor(data);
         vertices.remove(data);
+        inOrderVerticeData.remove(data);
         vertex.removeAllEdges();
     }
     

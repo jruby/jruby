@@ -140,7 +140,7 @@ public class CFG {
     }
     
     public Collection<BasicBlock> getSortedBasicBlocks() {
-        return graph.getSortedData();
+        return graph.getInorderData();
     }
     
     public void addEdge(BasicBlock source, BasicBlock destination, Object type) {

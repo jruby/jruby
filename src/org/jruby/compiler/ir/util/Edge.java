@@ -3,7 +3,7 @@ package org.jruby.compiler.ir.util;
 /**
  *
  */
-public class Edge<T extends ExplicitVertexID> {
+public class Edge<T> {
     private Vertex<T> source;
     private Vertex<T> destination;
     private Object type;

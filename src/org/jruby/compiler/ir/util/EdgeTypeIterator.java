@@ -10,9 +10,8 @@ import java.util.Set;
 
 /**
  *
- * @author enebo
  */
-public class EdgeTypeIterator<T extends ExplicitVertexID> implements Iterator<Edge<T>> {
+public class EdgeTypeIterator<T> implements Iterator<Edge<T>> {
     private Iterator<Edge<T>> internalIterator;
     private Object type;
     private Edge nextEdge = null;

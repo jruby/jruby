@@ -5,7 +5,7 @@ import java.util.Set;
 
 /**
  */
-public class EdgeTypeIterable<T extends ExplicitVertexID> implements Iterable<Edge<T>> {
+public class EdgeTypeIterable<T> implements Iterable<Edge<T>> {
     private Set<Edge<T>> edges;
     private Object type;
     private boolean negate;
