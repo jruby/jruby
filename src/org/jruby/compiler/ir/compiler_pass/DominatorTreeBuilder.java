@@ -7,7 +7,6 @@ import java.util.Map;
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.representations.BasicBlock;
 import org.jruby.compiler.ir.representations.CFG;
-import org.jruby.compiler.ir.util.NoSuchVertexException;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -18,7 +17,7 @@ public class DominatorTreeBuilder implements CompilerPass {
         return false;
     }
 
-    public void run(IRScope scope) throws NoSuchVertexException {
+    public void run(IRScope scope) {
         try {
             scope.buildDominatorTree(this);
         } catch (Exception e) {
@@ -26,7 +25,7 @@ public class DominatorTreeBuilder implements CompilerPass {
         }
     }
     
-    public void buildDominatorTree(CFG cfg, LinkedList<BasicBlock> postOrderList, int maxNodeId) throws NoSuchVertexException {
+    public void buildDominatorTree(CFG cfg, LinkedList<BasicBlock> postOrderList, int maxNodeId) {
         Integer[] bbToPoNumbers = new Integer[maxNodeId + 1]; // Set up a map of bbid -> post order numbering
         BasicBlock[] poNumbersToBB = new BasicBlock[maxNodeId + 1];
         int n = 0;

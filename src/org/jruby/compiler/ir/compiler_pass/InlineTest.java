@@ -8,7 +8,6 @@ import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.representations.CFG;
-import org.jruby.compiler.ir.util.NoSuchVertexException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.util.log.Logger;
@@ -45,7 +44,7 @@ public class InlineTest implements CompilerPass {
         return ((InterpretedIRMethod) realMethod).getIRMethod();
     }
 
-    public void run(IRScope s) throws NoSuchVertexException {
+    public void run(IRScope s) {
         if (!(s instanceof IRMethod)) return;
 
         IRScope mi = getIRMethod(s);

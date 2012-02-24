@@ -5,21 +5,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
-
 import org.jruby.compiler.ir.IRClosure;
 import org.jruby.compiler.ir.IRScope;
+import org.jruby.compiler.ir.Operation;
+import org.jruby.compiler.ir.compiler_pass.CompilerPass;
 import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.CopyInstr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.ResultInstr;
-import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
-import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.operands.TemporaryVariable;
-import org.jruby.compiler.ir.compiler_pass.CompilerPass;
+import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.BasicBlock;
 import org.jruby.compiler.ir.representations.CFG;
-import org.jruby.compiler.ir.util.NoSuchVertexException;
 
 public class LocalOptimizationPass implements CompilerPass {
     // Should we run this pass on the current scope before running it on nested scopes?
@@ -27,7 +25,7 @@ public class LocalOptimizationPass implements CompilerPass {
         return false;
     }
 
-    public void run(IRScope s) throws NoSuchVertexException {
+    public void run(IRScope s) {
         // Run this pass on nested closures first!
         // This let us compute execute scope flags for a method based on what all nested closures do
         for (IRClosure c: s.getClosures()) {

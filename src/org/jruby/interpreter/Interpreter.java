@@ -50,7 +50,6 @@ import org.jruby.compiler.ir.operands.UndefinedValue;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.operands.WrappedIRClosure;
 import org.jruby.compiler.ir.representations.BasicBlock;
-import org.jruby.compiler.ir.util.NoSuchVertexException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.parser.IRStaticScope;
@@ -278,17 +277,15 @@ public class Interpreter {
 
                                     if (inlineCall) {
                                         System.out.println("Inlining " + tgtMethod + " in " + hs + " @ instr " + instr);
-                                        try {
-                                            hs.inlineMethod(tgtMethod, implClass, classToken, b, call);
-                                            // reset tp counters
-                                            scopeThreadPollCounts.remove(isHotClosure ? hc : hs);
-                                            scopeThreadPollCounts.remove(tgtMethod);
-                                            inlineCount++;
-                                            skip = true;
-                                            revisitScope = true;
-                                        } catch (NoSuchVertexException e) {
-                                            System.out.println("Something serious happened during inlining assuming this vertex existed: " + e.getData());
-                                        }
+
+                                        hs.inlineMethod(tgtMethod, implClass, classToken, b, call);
+                                        // reset tp counters
+                                        scopeThreadPollCounts.remove(isHotClosure ? hc : hs);
+                                        scopeThreadPollCounts.remove(tgtMethod);
+                                        inlineCount++;
+                                        skip = true;
+                                        revisitScope = true;
+
                                         break;
                                         //return;
                                     }

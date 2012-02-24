@@ -10,7 +10,6 @@ import java.util.Map;
 
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.representations.BasicBlock;
-import org.jruby.compiler.ir.util.NoSuchVertexException;
 
 public abstract class DataFlowProblem {
 /* -------------- Public fields and methods below ---------------- */
@@ -49,7 +48,7 @@ public abstract class DataFlowProblem {
 
     /* Compute Meet Over All Paths solution for this dataflow problem on the input CFG.
      * This implements a standard worklist algorithm. */
-    public void compute_MOP_Solution() throws NoSuchVertexException {
+    public void compute_MOP_Solution() {
         /** Are there are available data flow facts to run this problem? SSS FIXME: Silly optimization? */
         if (!isEmpty()) {
             for (FlowGraphNode fg: flowGraphNodes) {
@@ -92,7 +91,7 @@ public abstract class DataFlowProblem {
         return variables.size();
     }
 
-    public Iterable<BasicBlock> getIncomingSourcesOf(BasicBlock bb) throws NoSuchVertexException {
+    public Iterable<BasicBlock> getIncomingSourcesOf(BasicBlock bb) {
         return scope.cfg().getIncomingSources(bb);
     }
 

@@ -57,12 +57,8 @@ public class DirectedGraph<T> {
         }
     }
     
-    public Vertex<T> findVertexFor(T data) throws NoSuchVertexException {
-        Vertex vertex = vertices.get(data);
-        
-        if (vertex == null) throw new NoSuchVertexException(data);
-        
-        return vertex;
+    public Vertex<T> findVertexFor(T data) {
+        return vertices.get(data);
     }
     
     public Vertex<T> vertexFor(T data) {

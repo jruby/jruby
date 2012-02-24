@@ -38,7 +38,6 @@ import org.jruby.compiler.ir.representations.BasicBlock;
 import org.jruby.compiler.ir.representations.CFG;
 import org.jruby.compiler.ir.representations.CFGInliner;
 import org.jruby.compiler.ir.representations.CFGLinearizer;
-import org.jruby.compiler.ir.util.NoSuchVertexException;
 import org.jruby.parser.StaticScope;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -479,15 +478,11 @@ public abstract class IRScope {
     public void runCompilerPass(CompilerPass p) {
         boolean isPreOrder = p.isPreOrder();
 
-        try {
-            if (isPreOrder) p.run(this);
+        if (isPreOrder) p.run(this);
 
-            runCompilerPassOnNestedScopes(p);
+        runCompilerPassOnNestedScopes(p);
 
-            if (!isPreOrder) p.run(this);
-        } catch (NoSuchVertexException e) {
-            System.out.println("Error running a compiler pass...ended up looking for non-existent vertex: " + e.getData());
-        }
+        if (!isPreOrder) p.run(this);
     }
     
     private Instr[] prepareInstructionsForInterpretation() {
@@ -971,7 +966,7 @@ public abstract class IRScope {
 //        }
     }    
 
-    public void inlineMethod(IRScope method, RubyModule implClass, int classToken, BasicBlock basicBlock, CallBase call) throws NoSuchVertexException {
+    public void inlineMethod(IRScope method, RubyModule implClass, int classToken, BasicBlock basicBlock, CallBase call) {
         depends(cfg());
         new CFGInliner(cfg).inlineMethod(method, implClass, classToken, basicBlock, call);
 
@@ -991,7 +986,7 @@ public abstract class IRScope {
         cfg = newBuild;
     }    
 
-    public void buildDominatorTree(DominatorTreeBuilder builder) throws NoSuchVertexException {
+    public void buildDominatorTree(DominatorTreeBuilder builder) {
         depends(cfg());
 
         // FIXME: Add result from this build and add to CFG as a field, then add depends() for htings which use it.
