@@ -8,11 +8,14 @@ public class Edge<T> {
     private Vertex<T> destination;
     private Object type;
     
+    public Edge(Vertex<T> source, Vertex<T> destination) {
+        this(source, destination, null);
+    }
+    
     public Edge(Vertex<T> source, Vertex<T> destination, Object type) {
         this.source = source;
         this.destination = destination;
         this.type = type;
-
     }
     
     public Vertex<T> getDestination() {
@@ -30,6 +33,6 @@ public class Edge<T> {
     @Override
     public String toString() {
         return "<" + source.getID() + " --> " + 
-                destination.getID() + "> (" + type + ")";        
+                destination.getID() + (type == null ? "" : "> (" + type + ")");
     }
 }
