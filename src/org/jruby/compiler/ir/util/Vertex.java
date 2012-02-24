@@ -189,6 +189,10 @@ public class Vertex<T extends ExplicitVertexID> implements Comparable<Vertex<T>>
         return data;
     }
     
+    public int getID() {
+        return data.getID();
+    }
+    
     @Override
     public String toString() {
         boolean found = false;
@@ -205,9 +209,9 @@ public class Vertex<T extends ExplicitVertexID> implements Comparable<Vertex<T>>
             Iterator<Edge<T>> iterator = edges.iterator();
             
             for (int i = 0; i < size - 1; i++) {
-                buf.append(iterator.next().getDestination().getData().getID()).append(",");
+                buf.append(iterator.next().getDestination().getID()).append(",");
             }
-            buf.append(iterator.next().getDestination().getData().getID()).append("]");
+            buf.append(iterator.next().getDestination().getID()).append("]");
         }
 
         edges = getIncomingEdges();
@@ -219,9 +223,9 @@ public class Vertex<T extends ExplicitVertexID> implements Comparable<Vertex<T>>
             Iterator<Edge<T>> iterator = edges.iterator();
 
             for (int i = 0; i < size - 1; i++) {
-                buf.append(iterator.next().getSource().getData().getID()).append(",");
+                buf.append(iterator.next().getSource().getID()).append(",");
             }
-            buf.append(iterator.next().getSource().getData().getID()).append("]");
+            buf.append(iterator.next().getSource().getID()).append("]");
         }
         buf.append("\n");
         
@@ -229,8 +233,8 @@ public class Vertex<T extends ExplicitVertexID> implements Comparable<Vertex<T>>
     }
 
     public int compareTo(Vertex<T> that) {
-        if (this.getData().getID() == that.getData().getID()) return 0;
-        if (this.getData().getID() < that.getData().getID()) return -1;
+        if (getID() == that.getID()) return 0;
+        if (getID() < that.getID()) return -1;
         return 1;
     }
 }

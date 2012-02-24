@@ -29,7 +29,7 @@ public class Edge<T extends ExplicitVertexID> {
     
     @Override
     public String toString() {
-        return "<" + source.getData().getID() + " --> " + 
-                destination.getData().getID() + "> (" + type + ")";        
+        return "<" + source.getID() + " --> " + 
+                destination.getID() + "> (" + type + ")";        
     }
 }
