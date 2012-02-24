@@ -7,7 +7,7 @@ import java.util.Set;
 /**
  *
  */
-public class Vertex<T extends DataInfo> implements Comparable<Vertex<T>> {
+public class Vertex<T extends ExplicitVertexID> implements Comparable<Vertex<T>> {
     private DirectedGraph graph;
     private T data;
     private Set<Edge<T>> incoming = null;

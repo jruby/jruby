@@ -11,7 +11,7 @@ import java.util.Set;
 /**
  * Meant to be single-threaded.  More work on whole impl if not.
  */
-public class DirectedGraph<T extends DataInfo> {
+public class DirectedGraph<T extends ExplicitVertexID> {
     private Map<T, Vertex<T>> vertices = new HashMap<T, Vertex<T>>();
     private Set<Edge<T>> edges = new HashSet<Edge<T>>();
     int vertexIDCounter = 0;
@@ -34,8 +34,8 @@ public class DirectedGraph<T extends DataInfo> {
     
     public Collection<T> getSortedData() {
         ArrayList<T> data = new ArrayList<T>(vertices.keySet());
-        Collections.sort(data, new java.util.Comparator<DataInfo> () {
-            public int compare(DataInfo a, DataInfo b) {
+        Collections.sort(data, new java.util.Comparator<ExplicitVertexID> () {
+            public int compare(ExplicitVertexID a, ExplicitVertexID b) {
                 if (a.getID() == b.getID()) return 0;
                 if (a.getID() < b.getID()) return -1;
                 return 1;

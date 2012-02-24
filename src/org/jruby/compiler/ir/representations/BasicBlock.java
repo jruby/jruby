@@ -17,9 +17,9 @@ import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.operands.WrappedIRClosure;
-import org.jruby.compiler.ir.util.DataInfo;
+import org.jruby.compiler.ir.util.ExplicitVertexID;
 
-public class BasicBlock implements DataInfo {
+public class BasicBlock implements ExplicitVertexID {
     private int id;                        // Basic Block id
     private CFG cfg;                       // CFG that this basic block belongs to
     private Label label;                   // All basic blocks have a starting label

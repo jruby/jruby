@@ -11,7 +11,7 @@ import java.util.Set;
  *
  * @author enebo
  */
-public class DataIterable<T extends DataInfo> implements Iterable<T> {
+public class DataIterable<T extends ExplicitVertexID> implements Iterable<T> {
     private Set<Edge<T>> edges;
     private Object type;
     private boolean negate;

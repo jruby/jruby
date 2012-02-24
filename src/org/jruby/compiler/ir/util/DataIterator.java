@@ -11,7 +11,7 @@ import java.util.Set;
 /**
  *
  */
-public class DataIterator<T extends DataInfo> implements Iterator<T> {
+public class DataIterator<T extends ExplicitVertexID> implements Iterator<T> {
     private Iterator<Edge<T>> internalIterator;
     private Object type;
     private Edge nextEdge = null;
