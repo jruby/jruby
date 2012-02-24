@@ -2,7 +2,6 @@ package org.jruby.compiler.ir;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.ReceiveArgBase;
 import org.jruby.compiler.ir.instructions.ReceiveRestArgBase;
@@ -63,13 +62,13 @@ public class IRMethod extends IRScope {
 
     @Override
     public LocalVariable findExistingLocalVariable(String name, int scopeDepth) {
-        assert scopeDepth == 0: "Local variable depth in IRMethod should always be zero.  Received " + scopeDepth;
+        assert scopeDepth == 0: "Local variable depth in IRMethod should always be zero (" + name + " had depth of " + scopeDepth + ")";
         return localVars.getVariable(name);
     }
 
     @Override
     public LocalVariable getNewLocalVariable(String name, int scopeDepth) {
-        assert scopeDepth == 0: "Local variable depth in IRMethod should always be zero";
+        assert scopeDepth == 0: "Local variable depth in IRMethod should always be zero (" + name + " had depth of " + scopeDepth + ")";
         LocalVariable lvar = new LocalVariable(name, 0, localVars.nextSlot);
         localVars.putVariable(name, lvar);
         return lvar;
