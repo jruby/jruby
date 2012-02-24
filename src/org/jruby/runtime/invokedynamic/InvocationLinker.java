@@ -456,11 +456,17 @@ public class InvocationLinker {
         
         if (method instanceof AttrReaderMethod) {
             // attr reader
+            if (!RubyInstanceConfig.INVOKEDYNAMIC_ATTR) {
+                throw new IndirectBindingException("direct attribute dispatch not enabled");
+            }
             if (siteArgCount != 0) {
                 throw new IndirectBindingException("attr reader with > 0 args");
             }
         } else if (method instanceof AttrWriterMethod) {
             // attr writer
+            if (!RubyInstanceConfig.INVOKEDYNAMIC_ATTR) {
+                throw new IndirectBindingException("direct attribute dispatch not enabled");
+            }
             if (siteArgCount != 1) {
                 throw new IndirectBindingException("attr writer with > 1 args");
             }
