@@ -19,6 +19,10 @@ public class Vertex<T> implements Comparable<Vertex<T>> {
         this.data = data;
         this.id = id;
     }
+    
+    public void addEdgeTo(Vertex destination) {
+        addEdgeTo(destination, null);
+    }
 
     public void addEdgeTo(Vertex destination, Object type) {
         Edge edge = new Edge<T>(this, destination, type);
@@ -26,6 +30,10 @@ public class Vertex<T> implements Comparable<Vertex<T>> {
         destination.getIncomingEdges().add(edge);
         graph.edges().add(edge);
     }
+    
+    public void addEdgeTo(T destination) {
+        addEdgeTo(destination, null);
+    }    
     
     public void addEdgeTo(T destination, Object type) {
         Vertex destinationVertex = graph.vertexFor(destination);

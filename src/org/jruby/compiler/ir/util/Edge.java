@@ -7,11 +7,7 @@ public class Edge<T> {
     private Vertex<T> source;
     private Vertex<T> destination;
     private Object type;
-    
-    public Edge(Vertex<T> source, Vertex<T> destination) {
-        this(source, destination, null);
-    }
-    
+        
     public Edge(Vertex<T> source, Vertex<T> destination, Object type) {
         this.source = source;
         this.destination = destination;
