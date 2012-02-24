@@ -163,47 +163,47 @@ public class CFG {
     }
     
     public BasicBlock getIncomingSource(BasicBlock block) {
-        return graph.vertexFor(block).getIncomingSourceData();
+        return graph.findVertexFor(block).getIncomingSourceData();
     }    
     
     public BasicBlock getIncomingSourceOfType(BasicBlock block, Object type) {
-        return graph.vertexFor(block).getIncomingSourceDataOfType(type);
+        return graph.findVertexFor(block).getIncomingSourceDataOfType(type);
     }
     
     public Edge<BasicBlock> getIncomingEdgeOfType(BasicBlock block, Object type) {
-        return graph.vertexFor(block).getIncomingEdgeOfType(type);
+        return graph.findVertexFor(block).getIncomingEdgeOfType(type);
     }
 
     public Edge<BasicBlock> getOutgoingEdgeOfType(BasicBlock block, Object type) {
-        return graph.vertexFor(block).getOutgoingEdgeOfType(type);
+        return graph.findVertexFor(block).getOutgoingEdgeOfType(type);
     }
     
     public BasicBlock getOutgoingDestination(BasicBlock block) {
-        return graph.vertexFor(block).getOutgoingDestinationData();
+        return graph.findVertexFor(block).getOutgoingDestinationData();
     }    
     
     public BasicBlock getOutgoingDestinationOfType(BasicBlock block, Object type) {
-        return graph.vertexFor(block).getOutgoingDestinationDataOfType(type);
+        return graph.findVertexFor(block).getOutgoingDestinationDataOfType(type);
     }
     
     public Iterable<BasicBlock> getOutgoingDestinations(BasicBlock block) {
-        return graph.vertexFor(block).getOutgoingDestinationsData();
+        return graph.findVertexFor(block).getOutgoingDestinationsData();
     }
     
     public Iterable<BasicBlock> getOutgoingDestinationsOfType(BasicBlock block, Object type) {
-        return graph.vertexFor(block).getOutgoingDestinationsDataOfType(type);
+        return graph.findVertexFor(block).getOutgoingDestinationsDataOfType(type);
     }
     
     public Iterable<BasicBlock> getOutgoingDestinationsNotOfType(BasicBlock block, Object type) {
-        return graph.vertexFor(block).getOutgoingDestinationsDataNotOfType(type);
+        return graph.findVertexFor(block).getOutgoingDestinationsDataNotOfType(type);
     }
     
     public Set<Edge<BasicBlock>> getOutgoingEdges(BasicBlock block) {
-        return graph.vertexFor(block).getOutgoingEdges();
+        return graph.findVertexFor(block).getOutgoingEdges();
     }
     
     public Iterable<Edge<BasicBlock>> getOutgoingEdgesNotOfType(BasicBlock block, Object type) {
-        return graph.vertexFor(block).getOutgoingEdgesNotOfType(type);
+        return graph.findVertexFor(block).getOutgoingEdgesNotOfType(type);
     }
     
     public BasicBlock getRescuerBBFor(BasicBlock block) {
@@ -471,7 +471,7 @@ public class CFG {
     }    
 
     public void removeAllOutgoingEdgesForBB(BasicBlock b) {
-        graph.vertexFor(b).removeAllOutgoingEdges();
+        graph.findVertexFor(b).removeAllOutgoingEdges();
     }    
 
     private void deleteOrphanedBlocks(DirectedGraph<BasicBlock> graph) {
@@ -485,7 +485,7 @@ public class CFG {
                 if (b == entryBB) continue; // Skip entry bb!
 
                 // Every other bb should have at least one incoming edge
-                if (graph.vertexFor(b).getIncomingEdges().isEmpty()) {
+                if (graph.findVertexFor(b).getIncomingEdges().isEmpty()) {
                     bbToRemove = b;
                     break;
                 }
@@ -518,7 +518,7 @@ public class CFG {
             }
 
             if (noExceptions) {
-                for (Edge<BasicBlock> e : graph.vertexFor(b).getOutgoingEdgesOfType(EdgeType.EXCEPTION)) {
+                for (Edge<BasicBlock> e : graph.findVertexFor(b).getOutgoingEdgesOfType(EdgeType.EXCEPTION)) {
                     BasicBlock source = e.getSource().getData();
                     BasicBlock destination = e.getDestination().getData();
                     toRemove.add(e);
@@ -593,7 +593,7 @@ public class CFG {
                     // This ensures that no matter what order we visit children, we process exit nodes before anything.
                     // else.  Alternatively, getOutgoingDestinations(..) would have to return nodes in a specific order
                     // that is dependent on basic block numbering -- which would be fragile.
-                    if (graph.vertexFor(dst).outDegree() == 0) {
+                    if (graph.findVertexFor(dst).outDegree() == 0) {
                         list.add(dst);
                     } else {
                         stack.push(dst);
