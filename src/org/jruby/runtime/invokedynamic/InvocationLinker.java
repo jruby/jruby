@@ -1047,6 +1047,7 @@ public class InvocationLinker {
                 converter = Binder
                         .from(nativeParams[i], IRubyObject.class)
                         .insert(1, nativeParams[i])
+                        .cast(Object.class, IRubyObject.class, Class.class)
                         .invokeVirtualQuiet(lookup(), "toJava");
             }
             argConverters[i] = converter;
