@@ -70,6 +70,7 @@ import org.jruby.runtime.ThreadContext;
 import static org.jruby.runtime.Visibility.*;
 import static org.jruby.CompatVersion.*;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
@@ -1770,7 +1771,10 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
 
     // 1.9 MRI: ary_join_0
     private RubyString joinStrings(RubyString sep, int max, RubyString result) {
-        if (max > 0) result.setEncoding(values[begin].convertToString().getEncoding());
+        IRubyObject first = values[begin];
+        if (max - begin > 0 && first instanceof EncodingCapable) {
+            result.setEncoding(((EncodingCapable)first).getEncoding());
+        }
 
         try {
             for(int i = begin; i < max; i++) {
