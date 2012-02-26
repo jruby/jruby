@@ -1,6 +1,7 @@
 require 'test/unit'
 
 class TestEval < Test::Unit::TestCase
+  IS19 = RUBY_VERSION =~ /1\.9/
 
   def testBasicEval
     assert_equal(nil, eval(""))
@@ -67,15 +68,18 @@ class TestEval
 
   def testEvalWithProcBinding
     x = proc{}
+    x = x.binding if IS19
     eval "i4 = 1", x
     assert_equal(1, eval("i4", x))
 
     x = proc{proc{}}.call
+    x = x.binding if IS19
     eval "i4 = 22", x
     assert_equal(22, eval("i4", x))
 
     $x = []
     x = proc{proc{}}.call
+    x = x.binding if IS19
     eval "(0..9).each{|i5| $x[i5] = proc{i5*2}}", x
     assert_equal(8, $x[4].call)
 
@@ -105,8 +109,13 @@ class TestEval
       foo22 = 5
       proc{foo11=22}.call
       proc{foo22=55}.call
-      assert_equal(eval("foo11"), eval("foo11", p))
-      assert_equal(1, eval("foo11"))
+      if IS19
+        # 1.9 keeps evals in separate scopes
+        assert_raises(NameError) {eval("foo11")}
+      else
+        assert_equal(eval("foo11"), eval("foo11", p))
+        assert_equal(1, eval("foo11"))
+      end
       assert_equal(eval("foo22"), eval("foo22", p))
       assert_equal(55, eval("foo22"))
     }.call
@@ -115,16 +124,16 @@ class TestEval
   def testProcMoreFunWithBinding
     p1 = proc{i7 = 0; proc{i7}}.call
     assert_equal(0, p1.call)
-    eval "i7=5", p1
+    eval "i7=5", IS19 ? p1.binding : p1
     assert_equal(5, p1.call)
     assert(!defined?(i7))
     
     p1 = proc{i7 = 0; proc{i7}}.call
     i7 = nil
     assert_equal(0, p1.call)
-    eval "i7=1", p1
+    eval "i7=1", IS19 ? p1.binding : p1
     assert_equal(1, p1.call)
-    eval "i7=5", p1
+    eval "i7=5", IS19 ? p1.binding : p1
     assert_equal(5, p1.call)
     assert_equal(nil, i7)
   end

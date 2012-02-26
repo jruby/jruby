@@ -2,36 +2,37 @@ require 'test/unit'
 
 
 class TestSymbol < Test::Unit::TestCase
+  IS19 = RUBY_VERSION =~ /1\.9/
 
+  #
+  # Check that two arrays contain the same "bag" of elements.
+  # A mathematical bag differs from a "set" by counting the
+  # occurences of each element. So as a bag [1,2,1] differs from
+  # [2,1] (but is equal to [1,1,2]).
+  #
+  # The method only relies on the == operator to match objects
+  # from the two arrays. The elements of the arrays may contain
+  # objects that are not "Comparable".
+  #
+  # FIXME: This should be moved to common location.
+  def assert_bag_equal(expected, actual)
+    # For each object in "actual" we remove an equal object
+    # from "expected". If we can match objects pairwise from the
+    # two arrays we have two equal "bags". The method Array#index
+    # uses == internally. We operate on a copy of "expected" to
+    # avoid destructively changing the argument.
     #
-    # Check that two arrays contain the same "bag" of elements.
-    # A mathematical bag differs from a "set" by counting the
-    # occurences of each element. So as a bag [1,2,1] differs from
-    # [2,1] (but is equal to [1,1,2]).
-    #
-    # The method only relies on the == operator to match objects
-    # from the two arrays. The elements of the arrays may contain
-    # objects that are not "Comparable".
-    # 
-    # FIXME: This should be moved to common location.
-    def assert_bag_equal(expected, actual)
-      # For each object in "actual" we remove an equal object
-      # from "expected". If we can match objects pairwise from the
-      # two arrays we have two equal "bags". The method Array#index
-      # uses == internally. We operate on a copy of "expected" to
-      # avoid destructively changing the argument.
-      #
-      expected_left = expected.dup
-      actual.each do |x|
-        if j = expected_left.index(x)
-          expected_left.slice!(j)
-        end
+    expected_left = expected.dup
+    actual.each do |x|
+      if j = expected_left.index(x)
+        expected_left.slice!(j)
       end
-      assert( expected.length == actual.length && expected_left.length == 0,
-             "Expected: #{expected.inspect}, Actual: #{actual.inspect}")
     end
+    assert( expected.length == actual.length && expected_left.length == 0,
+           "Expected: #{expected.inspect}, Actual: #{actual.inspect}")
+  end
 
-# v---------- test --------------v
+  # v---------- test --------------v
   class Fred
     $f1 = :Fred
     def Fred
@@ -44,7 +45,7 @@ class TestSymbol < Test::Unit::TestCase
     $f2 = :Fred
   end
   
-# ^----------- test ------------^
+  # ^----------- test ------------^
 
   Fred.new.Fred
 
@@ -98,11 +99,13 @@ class TestSymbol < Test::Unit::TestCase
     assert_equal(':"with \\\\ \" chars"', 'with \ " chars'.intern.inspect)
   end
 
-  def test_to_i
-    assert_equal($f1.to_i,$f2.to_i)
-    assert_equal($f2.to_i,$f3.to_i)
-    assert(:wilma.to_i != :Fred.to_i)
-    assert(:Barney.to_i != :wilma.to_i)
+  unless IS19
+    def test_to_i
+      assert_equal($f1.to_i,$f2.to_i)
+      assert_equal($f2.to_i,$f3.to_i)
+      assert(:wilma.to_i != :Fred.to_i)
+      assert(:Barney.to_i != :wilma.to_i)
+    end
   end
 
   def test_to_s
@@ -129,7 +132,11 @@ class TestSymbol < Test::Unit::TestCase
 
   def test_freeze
     assert_same(:Fred, :Fred.freeze)
-    assert(! :Fred.frozen?)
+    if IS19
+      assert(:Fred.frozen?)
+    else
+      assert(! :Fred.frozen?)
+    end
   end
 
   def test_dup

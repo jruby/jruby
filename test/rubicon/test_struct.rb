@@ -1,6 +1,7 @@
 require 'test/unit'
 
 class TestStruct < Test::Unit::TestCase
+  IS19 = RUBY_VERSION =~ /1\.9/
 
   def setup
     if !defined? Struct::StructForTesting
@@ -93,7 +94,7 @@ class TestStruct < Test::Unit::TestCase
   end
 
   def test_members
-    assert_equal(Struct::StructForTesting.members, [ "alpha", "bravo" ])
+    assert_equal(Struct::StructForTesting.members, IS19 ? [:alpha, :bravo] : [ "alpha", "bravo" ])
   end
 
   def test_size
@@ -115,8 +116,13 @@ class TestStruct < Test::Unit::TestCase
     t = Struct.new(:foo)
     u = Struct.new(nil, :foo)
 
-    assert_equal("", t.name)
-    assert_equal("", u.name)
+    if IS19
+      assert_equal(nil, t.name)
+      assert_equal(nil, u.name)
+    else
+      assert_equal("", t.name)
+      assert_equal("", u.name)
+    end
     assert_equal('foo', t.new('foo')[:foo])
     assert_equal('foo', u.new('foo')[:foo])
     assert_equal('foo', t.new('foo').foo)

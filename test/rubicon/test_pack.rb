@@ -1,6 +1,8 @@
+# encoding: utf-8
 require 'test/unit'
 
 class TestPack < Test::Unit::TestCase
+  IS19 = RUBY_VERSION =~ /1\.9/
 
   def test_pack_A
     a = %w(cat wombat x yy)
@@ -28,23 +30,41 @@ class TestPack < Test::Unit::TestCase
   end
 
   def test_pack_b
-    assert_equal "\x86",     ["01100001"].pack("b8")
-    assert_equal "\x86",     ["01100001"].pack("b*")
-    assert_equal "\x86",     ["0110000100110111"].pack("b8")
-    assert_equal "\x86\xec", ["0110000100110111"].pack("b16")
-    assert_equal "\x86\xec", ["01100001", "00110111"].pack("b8b8")
-    assert_equal "\x06",     ["01100001"].pack("b4")
-    assert_equal "\x02",     ["01100001"].pack("b2")
+    if IS19
+      assert_equal "\x86".force_encoding('ASCII-8BIT'),     ["01100001"].pack("b8")
+      assert_equal "\x86".force_encoding('ASCII-8BIT'),     ["01100001"].pack("b*")
+      assert_equal "\x86".force_encoding('ASCII-8BIT'),     ["0110000100110111"].pack("b8")
+      assert_equal "\x86\xec".force_encoding('ASCII-8BIT'), ["0110000100110111"].pack("b16")
+      assert_equal "\x86\xec".force_encoding('ASCII-8BIT'), ["01100001", "00110111"].pack("b8b8")
+      assert_equal "\x06".force_encoding('ASCII-8BIT'),     ["01100001"].pack("b4")
+      assert_equal "\x02".force_encoding('ASCII-8BIT'),     ["01100001"].pack("b2")
+    else
+      assert_equal "\x86",     ["01100001"].pack("b8")
+      assert_equal "\x86",     ["01100001"].pack("b*")
+      assert_equal "\x86",     ["0110000100110111"].pack("b8")
+      assert_equal "\x86\xec", ["0110000100110111"].pack("b16")
+      assert_equal "\x86\xec", ["01100001", "00110111"].pack("b8b8")
+      assert_equal "\x06",     ["01100001"].pack("b4")
+      assert_equal "\x02",     ["01100001"].pack("b2")
+    end
   end
 
   def test_pack_C
     assert_equal "ABC",      [ 65, 66, 67 ].pack("C3")
-    assert_equal "\377BC",   [ -1, 66, 67 ].pack("C*")
+    if IS19
+      assert_equal "\377BC".force_encoding('ASCII-8BIT'),   [ -1, 66, 67 ].pack("C*")
+    else
+      assert_equal "\377BC",   [ -1, 66, 67 ].pack("C*")
+    end
   end
 
   def test_pack_c
     assert_equal "ABC",      [ 65, 66, 67 ].pack("c3")
-    assert_equal "\377BC",   [ -1, 66, 67 ].pack("c*")
+    if IS19
+      assert_equal "\377BC".force_encoding('ASCII-8BIT'),   [ -1, 66, 67 ].pack("c*")
+    else
+      assert_equal "\377BC",   [ -1, 66, 67 ].pack("c*")
+    end
   end
 
   def test_pack_H
@@ -66,7 +86,7 @@ class TestPack < Test::Unit::TestCase
   end
 
   def test_pack_U
-    assert_equal "\xc2\xa9B\xe2\x89\xa0", [0xa9, 0x42, 0x2260].pack("U*")
+    assert_equal IS19 ? "©B≠" : "\xc2\xa9B\xe2\x89\xa0", [0xa9, 0x42, 0x2260].pack("U*")
   end
 
   def test_pack_ugly

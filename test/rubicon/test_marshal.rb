@@ -2,34 +2,35 @@ require 'test/unit'
 
 
 class TestMarshal < Test::Unit::TestCase
+  IS19 = RUBY_VERSION =~ /1\.9/
 
+  #
+  # Check that two arrays contain the same "bag" of elements.
+  # A mathematical bag differs from a "set" by counting the
+  # occurences of each element. So as a bag [1,2,1] differs from
+  # [2,1] (but is equal to [1,1,2]).
+  #
+  # The method only relies on the == operator to match objects
+  # from the two arrays. The elements of the arrays may contain
+  # objects that are not "Comparable".
+  #
+  # FIXME: This should be moved to common location.
+  def assert_bag_equal(expected, actual)
+    # For each object in "actual" we remove an equal object
+    # from "expected". If we can match objects pairwise from the
+    # two arrays we have two equal "bags". The method Array#index
+    # uses == internally. We operate on a copy of "expected" to
+    # avoid destructively changing the argument.
     #
-    # Check that two arrays contain the same "bag" of elements.
-    # A mathematical bag differs from a "set" by counting the
-    # occurences of each element. So as a bag [1,2,1] differs from
-    # [2,1] (but is equal to [1,1,2]).
-    #
-    # The method only relies on the == operator to match objects
-    # from the two arrays. The elements of the arrays may contain
-    # objects that are not "Comparable".
-    # 
-    # FIXME: This should be moved to common location.
-    def assert_bag_equal(expected, actual)
-      # For each object in "actual" we remove an equal object
-      # from "expected". If we can match objects pairwise from the
-      # two arrays we have two equal "bags". The method Array#index
-      # uses == internally. We operate on a copy of "expected" to
-      # avoid destructively changing the argument.
-      #
-      expected_left = expected.dup
-      actual.each do |x|
-        if j = expected_left.index(x)
-          expected_left.slice!(j)
-        end
+    expected_left = expected.dup
+    actual.each do |x|
+      if j = expected_left.index(x)
+        expected_left.slice!(j)
       end
-      assert( expected.length == actual.length && expected_left.length == 0,
-             "Expected: #{expected.inspect}, Actual: #{actual.inspect}")
     end
+    assert( expected.length == actual.length && expected_left.length == 0,
+           "Expected: #{expected.inspect}, Actual: #{actual.inspect}")
+  end
 
   class A
     attr :a1
@@ -90,18 +91,20 @@ class TestMarshal < Test::Unit::TestCase
     end
   end
 
-  def test_s_dump_load3
-    b = B.new(10, "wombat")
-    s = Marshal.dump(b)
+  unless IS19
+    def test_s_dump_load3
+      b = B.new(10, "wombat")
+      s = Marshal.dump(b)
 
-    res = []
-    newb = Marshal.load(s, proc { |obj| res << obj unless obj.kind_of?(Fixnum)})
+      res = []
+      newb = Marshal.load(s, proc { |obj| res << obj unless obj.kind_of?(Fixnum)})
 
-    assert_equal(10,       newb.b1.a1)
-    assert_equal(20,       newb.b1.a2)
-    assert_equal("wombat", newb.b2)
+      assert_equal(10,       newb.b1.a1)
+      assert_equal(20,       newb.b1.a2)
+      assert_equal("wombat", newb.b2)
 
-    assert_bag_equal([newb, newb.b1, newb.b2], res)
+      assert_bag_equal([newb, newb.b1, newb.b2], res)
+    end
   end
 
   # there was a bug Marshaling Bignums, so

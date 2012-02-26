@@ -1,6 +1,7 @@
 require 'test/unit'
 
 class TestBlocksProcs < Test::Unit::TestCase
+  IS19 = RUBY_VERSION =~ /1\.9/
 
   def testBasicProc
     proc = proc {|i| i}
@@ -54,7 +55,7 @@ class TestBlocksProcs < Test::Unit::TestCase
     def o.f; yield *[[]]; end;     o.f {|a| assert_equal([], a)}
     def o.f; yield *[*[]]; end;    o.f {|a| assert_nil(a)}
     def o.f; yield *[*[1]]; end;   o.f {|a| assert_equal(1, a)}
-    def o.f; yield *[*[1,2]]; end; o.f {|a| assert_equal([1,2], a)}
+    def o.f; yield *[*[1,2]]; end; o.f {|a| assert_equal(IS19 ? 1 : [1,2], a)}
     
     def o.f; yield nil; end;       o.f {|*a| assert_equal([nil], a)}
     def o.f; yield 1; end;         o.f {|*a| assert_equal([1], a)}
@@ -66,7 +67,7 @@ class TestBlocksProcs < Test::Unit::TestCase
     def o.f; yield [*[1]]; end;    o.f {|*a| assert_equal([[1]], a)}
     def o.f; yield [*[1,2]]; end;  o.f {|*a| assert_equal([[1,2]], a)}
     
-    def o.f; yield *nil; end;      o.f {|*a| assert_equal([nil], a)}
+    def o.f; yield *nil; end;      o.f {|*a| assert_equal(IS19 ? [] : [nil], a)}
     def o.f; yield *1; end;        o.f {|*a| assert_equal([1], a)}
     def o.f; yield *[]; end;       o.f {|*a| assert_equal([], a)}
     def o.f; yield *[1]; end;      o.f {|*a| assert_equal([1], a)}
@@ -90,8 +91,10 @@ class TestBlocksProcs < Test::Unit::TestCase
     def o.f; yield *1; end;        o.f {|a,b,*c| assert([a,b,c] == [1, nil, []])}
     def o.f; yield *[]; end;       o.f {|a,b,*c| assert([a,b,c] == [nil, nil, []])}
     def o.f; yield *[1]; end;      o.f {|a,b,*c| assert([a,b,c] == [1, nil, []])}
+
     def o.f; yield *[nil]; end;    o.f {|a,b,*c| assert([a,b,c] == [nil, nil, []])}
-    def o.f; yield *[[]]; end;     o.f {|a,b,*c| assert_equal([[], nil, []], [a,b,c])}
+    # FIXME: JRUBY-6499
+    def o.f; yield *[[]]; end;     o.f {|a,b,*c| assert_equal(IS19 ? [nil, nil, []] : [[], nil, []], [a,b,c])} unless defined?(JRUBY_VERSION)
     def o.f; yield *[*[]]; end;    o.f {|a,b,*c| assert([a,b,c] == [nil, nil, []])}
     def o.f; yield *[*[1]]; end;   o.f {|a,b,*c| assert([a,b,c] == [1, nil, []])}
     def o.f; yield *[*[1,2]]; end; o.f {|a,b,*c| assert([a,b,c] == [1, 2, []])}

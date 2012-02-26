@@ -4,6 +4,9 @@ task :test => "test:short"
 desc "Alias for spec:ci"
 task :spec => "spec:ci"
 
+desc "Run the suite of tests in 1.9 mode"
+task :test19 => ['test:jruby19', 'test:mri19', 'spec:ci_interpreted_19']
+
 namespace :test do
   desc "Compile test code"
   task :compile do
@@ -41,7 +44,7 @@ namespace :test do
     require 'rake/testtask'
     Rake::TestTask.new('test:mri19') do |t|
       files = []
-      File.open('test/ruby_1_9_index') do |f|
+      File.open('test/mri.1.9.index') do |f|
         f.lines.each do |line|
           filename = "test/#{line.chomp}.rb"
           next unless File.exist? filename
@@ -76,6 +79,47 @@ namespace :test do
       t.ruby_opts << '--debug'
       t.ruby_opts << '--1.9'
       t.ruby_opts << '-X-C'
+    end
+  end
+
+  task :jruby19 => ['test:compile', :install_dev_gems] do
+    require 'rake/testtask'
+    Rake::TestTask.new('test:jruby19') do |t|
+      files = []
+      File.open('test/jruby.1.9.index') do |f|
+        f.lines.each do |line|
+          filename = "test/#{line.chomp}.rb"
+          next unless File.exist? filename
+          files << filename
+        end
+      end
+      t.test_files = files
+      t.verbose = true
+      t.ruby_opts << '-J-cp build/classes/test'
+      t.ruby_opts << '--debug'
+      t.ruby_opts << '--1.9'
+      t.ruby_opts << '-X-C'
+    end
+  end
+
+  task :rubicon19 => ['test:compile', :install_dev_gems] do
+    require 'rake/testtask'
+    Rake::TestTask.new('test:rubicon19') do |t|
+      files = []
+      File.open('test/rubicon.1.9.index') do |f|
+        f.lines.each do |line|
+          filename = "test/#{line.chomp}.rb"
+          next unless File.exist? filename
+          files << filename
+        end
+      end
+      t.test_files = files
+      t.verbose = true
+      t.ruby_opts << '-J-cp build/classes/test'
+      t.ruby_opts << '--debug'
+      t.ruby_opts << '--1.9'
+      t.ruby_opts << '-X-C'
+      t.ruby_opts << '-X+O'
     end
   end
 

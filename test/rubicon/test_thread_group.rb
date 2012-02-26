@@ -22,7 +22,6 @@ class TestThreadGroup < Test::Unit::TestCase
   def test_list
     tg = ThreadGroup.new
     10.times do
-      Thread.critical = true
       t = Thread.new { Thread.stop }
       tg.add(t)
     end

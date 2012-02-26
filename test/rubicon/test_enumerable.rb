@@ -2,6 +2,7 @@ require 'test/unit'
 
 
 class TestEnumerable < Test::Unit::TestCase
+  IS19 = RUBY_VERSION =~ /1\.9/
 
   #--------------------
   # a simple class with an 'each' method
@@ -78,7 +79,7 @@ class TestEnumerable < Test::Unit::TestCase
     # #collect and #map are aliases, so we only need one function
     # that tests both methods
 
-    assert_equal([2,4,6,8,10],          @a.send(method))
+    assert_equal([2,4,6,8,10],          @a.send(method)) unless IS19
     assert_equal([],                    E().send(method) {|a| a })
     assert_equal([1,3,5,7,9],           @a.send(method) {|a| a-1 })
     assert_equal([1,1,1,1,1],           @a.send(method) {|a| 1 })
@@ -254,7 +255,11 @@ class TestEnumerable < Test::Unit::TestCase
 
     # error cases
     assert_equal(nil, E().max)
-    assert_raise(NoMethodError) { E(Object.new, Object.new).max }
+    if IS19
+      assert_raise(ArgumentError) { E(Object.new, Object.new).max }
+    else
+      assert_raise(NoMethodError) { E(Object.new, Object.new).max }
+    end
     assert_raise(NoMethodError, ArgumentError) { E(11,"22").max }
     
     # with a block
@@ -303,7 +308,11 @@ class TestEnumerable < Test::Unit::TestCase
 
     # error cases
     assert_equal(nil, E().min)
-    assert_raise(NoMethodError) { E(Object.new, Object.new).min }
+    if IS19
+      assert_raise(ArgumentError) { E(Object.new, Object.new).min }
+    else
+      assert_raise(NoMethodError) { E(Object.new, Object.new).min }
+    end
     assert_raise(NoMethodError, ArgumentError) { E(11,"22").min }
     
     # with a block
@@ -387,9 +396,9 @@ class TestEnumerable < Test::Unit::TestCase
       zip_tests([%w(a 1), %w(b 2), ['c', nil], ['d', nil]],
                 E('a','b','c','d'), %w(1 2))
       zip_tests([[1], [2]], E(1, 2))
-      zip_tests([["a\n"], ["b\n"], ["c"]], "a\nb\nc")
+      zip_tests([["a\n"], ["b\n"], ["c"]], "a\nb\nc") unless IS19
       zip_tests([["a\n", 1], ["b\n", 2], ["c", 3]],
-                "a\nb\nc", [1, 2, 3])
+                "a\nb\nc", [1, 2, 3]) unless IS19
       zip_tests([[1, nil], [2, nil]], E(1, 2), [])
     end
 

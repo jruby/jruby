@@ -1,6 +1,7 @@
 require 'test/unit'
 
 class TestAssignment < Test::Unit::TestCase
+  IS19 = RUBY_VERSION =~ /1\.9/
 
   def testBasicAssignment
     a = nil;      assert_nil(a)
@@ -13,30 +14,30 @@ class TestAssignment < Test::Unit::TestCase
     a = [*[1]];   assert_equal([1], a)
     a = [*[1,2]]; assert_equal([1,2], a)
 
-    a = *nil;      assert_nil(a)
-    a = *1;        assert_equal(1, a)
+    a = *nil;      IS19 ? assert_equal([], a) : assert_nil(a)
+    a = *1;        assert_equal(IS19 ? [1] : 1, a)
     *a = nil;      assert_equal([nil], a)
-      a = *[];       assert_nil(a)
-      a = *[1];      assert_equal(1, a)
-      a = *[nil];    assert_nil(a)
-      a = *[[]];     assert_equal([], a)
-      a = *[*[]];    assert_nil(a)
-      a = *[*[1]];   assert_equal(1, a)
+    a = *[];       IS19 ? assert_equal([], a) : assert_nil(a)
+    a = *[1];      assert_equal(IS19 ? [1] : 1, a)
+    a = *[nil];    IS19 ? assert_equal([nil], a) : assert_nil(a)
+    a = *[[]];     assert_equal(IS19 ? [[]] : [], a)
+    a = *[*[]];    IS19 ? assert_equal([], a) : assert_nil(a)
+    a = *[*[1]];   assert_equal(IS19 ? [1] : 1, a)
     a = *[*[1,2]]; assert_equal([1,2], a)
 
     *a = 1;        assert_equal([1], a)
-    *a = [];       assert_equal([[]], a)
+    *a = [];       assert_equal(IS19 ? [] : [[]], a)
 
-      *a = [1];      assert_equal([[1]], a)
-      *a = [nil];    assert_equal([[nil]], a)
-      *a = [[]];     assert_equal([[[]]], a)
-      *a = [*[]];    assert_equal([[]], a)
-      *a = [*[1]];   assert_equal([[1]], a)
-      *a = [*[1,2]]; assert_equal([[1,2]], a)
+    *a = [1];      assert_equal(IS19 ? [1] : [[1]], a)
+    *a = [nil];    assert_equal(IS19 ? [nil] : [[nil]], a)
+    *a = [[]];     assert_equal(IS19 ? [[]] : [[[]]], a)
+    *a = [*[]];    assert_equal(IS19 ? [] : [[]], a)
+    *a = [*[1]];   assert_equal(IS19 ? [1] : [[1]], a)
+    *a = [*[1,2]]; assert_equal(IS19 ? [1,2] : [[1,2]], a)
 
-      *a = *nil;      assert_equal([nil], a)
-      *a = *[nil];    assert_equal([nil], a)
-      *a = *[[]];     assert_equal([[]], a)
+    *a = *nil;      assert_equal(IS19 ? [] : [nil], a)
+    *a = *[nil];    assert_equal([nil], a)
+    *a = *[[]];     assert_equal([[]], a)
     *a = *1;        assert_equal([1], a)
     *a = *[];       assert_equal([], a)
     *a = *[1];      assert_equal([1], a)
@@ -68,8 +69,12 @@ class TestAssignment < Test::Unit::TestCase
   end
 
   def testExpansionWithNoConversion
-	*x = (1..7).to_a
-    assert_equal([[1, 2, 3, 4, 5, 6, 7]], x)
+	  *x = (1..7).to_a
+    if IS19
+      assert_equal([1, 2, 3, 4, 5, 6, 7], x)
+    else
+      assert_equal([[1, 2, 3, 4, 5, 6, 7]], x)
+    end
   end
 
   def testMultipleAssignment

@@ -1,6 +1,7 @@
 require "test/unit"
 
 class TestHash < Test::Unit::TestCase
+  IS19 = RUBY_VERSION =~ /1\.9/
 
   def setup
     @cls = Hash
@@ -291,8 +292,8 @@ class TestHash < Test::Unit::TestCase
   end
 
   def test_fetch
-    assert_raise(IndexError) { @cls[].fetch(1) }
-    assert_raise(IndexError) { @h.fetch('gumby') }
+    assert_raise(IS19 ? KeyError : IndexError) { @cls[].fetch(1) }
+    assert_raise(IS19 ? KeyError : IndexError) { @h.fetch('gumby') }
     assert_equal('gumbygumby',     @h.fetch('gumby') {|k| k*2} )
     assert_equal('pokey',          @h.fetch('gumby', 'pokey'))
 
@@ -561,14 +562,26 @@ class TestHash < Test::Unit::TestCase
     assert_equal(@h, h)
   end
 
-  def test_to_s
-    h = @cls[ 1 => 2, "cat" => "dog", 1.5 => :fred ]
-    assert_equal(h.to_a.join, h.to_s)
-    $, = ":"
-    assert_equal(h.to_a.join, h.to_s)
-    h = @cls[]
-    assert_equal(h.to_a.join, h.to_s)
-    $, = nil
+  if IS19
+    def test_to_s
+      h = @cls[ 1 => 2, "cat" => "dog", 1.5 => :fred ]
+      assert_equal("{1=>2, \"cat\"=>\"dog\", 1.5=>:fred}", h.to_s)
+      $, = ":"
+      assert_equal("{1=>2, \"cat\"=>\"dog\", 1.5=>:fred}", h.to_s)
+      h = @cls[]
+      assert_equal("{}", h.to_s)
+      $, = nil
+    end
+  else
+    def test_to_s
+      h = @cls[ 1 => 2, "cat" => "dog", 1.5 => :fred ]
+      assert_equal(h.to_a.join, h.to_s)
+      $, = ":"
+      assert_equal(h.to_a.join, h.to_s)
+      h = @cls[]
+      assert_equal(h.to_a.join, h.to_s)
+      $, = nil
+    end
   end
 
   def test_update

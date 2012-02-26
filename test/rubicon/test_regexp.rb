@@ -1,7 +1,9 @@
+# encoding: utf-8
 require 'test/unit'
 
 
 class TestRegexp < Test::Unit::TestCase
+  IS19 = RUBY_VERSION =~ /1\.9/
 
   def test_EQUAL # '=='
     assert_equal(/.foo.*([a-z])/,/.foo.*([a-z])/)
@@ -10,7 +12,11 @@ class TestRegexp < Test::Unit::TestCase
     assert(!(a == b))
     a=Regexp.new(".foo.*([a-z])", Regexp::IGNORECASE)
     b=Regexp.new(".foo.*([a-z])", Regexp::IGNORECASE, "S")
-    assert(!(a == b))
+    if IS19
+      assert_equal(a, b)
+    else
+      assert(a != b)
+    end
   end
 
   def test_MATCH # '=~'
@@ -57,13 +63,15 @@ class TestRegexp < Test::Unit::TestCase
     end
   end
 
-  def test_kcode
-    a = Regexp.new(".foo.*([a-z])", Regexp::IGNORECASE)
-    b = Regexp.new(".foo.*([a-z])", Regexp::IGNORECASE, "S")
-    c = Regexp.new(".foo.*([a-z])", Regexp::IGNORECASE, "n")
-    assert_equal(nil, a.kcode) if $KCODE == "NONE"
-    assert_equal("sjis", b.kcode)
-    assert_equal("none",    c.kcode)
+  unless IS19
+    def test_kcode
+      a = Regexp.new(".foo.*([a-z])", Regexp::IGNORECASE)
+      b = Regexp.new(".foo.*([a-z])", Regexp::IGNORECASE, "S")
+      c = Regexp.new(".foo.*([a-z])", Regexp::IGNORECASE, "n")
+      assert_equal(nil, a.kcode) if $KCODE == "NONE"
+      assert_equal("sjis", b.kcode)
+      assert_equal("none",    c.kcode)
+    end
   end
 
   def test_s_last_match

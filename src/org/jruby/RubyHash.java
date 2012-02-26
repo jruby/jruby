@@ -1065,6 +1065,8 @@ public class RubyHash extends RubyObject implements Map {
      */
     @JRubyMethod(required = 1, optional = 1)
     public IRubyObject fetch(ThreadContext context, IRubyObject[] args, Block block) {
+        Ruby runtime = context.runtime;
+
         if (args.length == 2 && block.isGiven()) {
             getRuntime().getWarnings().warn(ID.BLOCK_BEATS_DEFAULT_VALUE, "block supersedes default value argument");
         }
@@ -1072,7 +1074,13 @@ public class RubyHash extends RubyObject implements Map {
         IRubyObject value;
         if ((value = internalGet(args[0])) == null) {
             if (block.isGiven()) return block.yield(context, args[0]);
-            if (args.length == 1) throw getRuntime().newIndexError("key not found");
+            if (args.length == 1) {
+                if (runtime.is1_9()) {
+                    throw runtime.newKeyError("key not found: " + args[0]);
+                } else {
+                    throw runtime.newIndexError("key not found");
+                }
+            }
             return args[1];
         }
         return value;

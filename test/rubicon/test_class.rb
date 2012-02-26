@@ -2,6 +2,7 @@ require 'test/unit'
 
 
 class TestClass < Test::Unit::TestCase
+  IS19 = RUBY_VERSION =~ /1\.9/
 
   # ------------------
   # Various test classes
@@ -75,7 +76,7 @@ class TestClass < Test::Unit::TestCase
   def test_superclass
     assert_equal(ClassOne, ClassTwo.superclass)
     assert_equal(Object,   ClassTwo.superclass.superclass)
-    assert_equal(nil,      ClassTwo.superclass.superclass.superclass)
+    assert_equal(IS19 ? BasicObject : nil,      ClassTwo.superclass.superclass.superclass)
   end
 
 end

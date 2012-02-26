@@ -1,6 +1,7 @@
 require 'test/unit'
 
 class TestFloats < Test::Unit::TestCase
+  IS19 = RUBY_VERSION =~ /1\.9/
 
   #
   # Check a float for approximate equality
@@ -70,15 +71,29 @@ class TestFloats < Test::Unit::TestCase
     end
   end
   # MRI compatibility
-  def test_whitespace_string_to_number
-    for string, number in [
-	[ "1_._0_",                        1.0,],
-	["  -3_._141__592__654  ", -3.141592654],
-	["  _._1 ",                          0.1],
-	["\n\r\t _2_._1_e_+_0",             2.1],
-	[" _2_._1_e_3",                  2100.0],
+  if IS19
+    def test_whitespace_string_to_number
+      for string, number in [
+          [ "1_._0_",                        1.0,],
+          ["  -3_._141__592__654  ", -3.141592654],
+          ["  _._1 ",                          0.0],
+          ["\n\r\t _2_._1_e_+_0",             0.0],
+          [" _2_._1_e_3",                  0.0],
       ]
-      assert_equal(number, string.to_f, "case \"#{string}\" to #{number}")
+        assert_equal(number, string.to_f, "case \"#{string}\" to #{number}")
+      end
+    end
+  else
+    def test_whitespace_string_to_number
+      for string, number in [
+          [ "1_._0_",                        1.0,],
+          ["  -3_._141__592__654  ", -3.141592654],
+          ["  _._1 ",                          0.1],
+          ["\n\r\t _2_._1_e_+_0",             2.1],
+          [" _2_._1_e_3",                  2100.0],
+      ]
+        assert_equal(number, string.to_f, "case \"#{string}\" to #{number}")
+      end
     end
   end
   # MRI compatibility

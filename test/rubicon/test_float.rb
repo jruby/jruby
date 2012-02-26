@@ -2,6 +2,7 @@ require 'test/unit'
 
 
 class TestFloat < Test::Unit::TestCase
+  IS19 = RUBY_VERSION =~ /1\.9/
 
   #
   # Check a float for approximate equality
@@ -303,9 +304,11 @@ class TestFloat < Test::Unit::TestCase
     assert(!0.1.zero?)
   end
 
-  def test_s_induced_from
-    assert_flequal(1.0, Float.induced_from(1))
-    assert_flequal(1.0, Float.induced_from(1.0))
+  unless IS19
+    def test_s_induced_from
+      assert_flequal(1.0, Float.induced_from(1))
+      assert_flequal(1.0, Float.induced_from(1.0))
+    end
   end
 
 end
