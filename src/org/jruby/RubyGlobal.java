@@ -197,10 +197,10 @@ public class RubyGlobal {
 
         runtime.defineVariable(new OutputGlobalVariable(runtime, "$stdout", stdout));
         globals.alias("$>", "$stdout");
-        globals.alias("$defout", "$stdout");
+        if (!runtime.is1_9()) globals.alias("$defout", "$stdout");
 
         runtime.defineVariable(new OutputGlobalVariable(runtime, "$stderr", stderr));
-        globals.alias("$deferr", "$stderr");
+        if (!runtime.is1_9()) globals.alias("$deferr", "$stderr");
 
         runtime.defineGlobalConstant("STDIN", stdin);
         runtime.defineGlobalConstant("STDOUT", stdout);
