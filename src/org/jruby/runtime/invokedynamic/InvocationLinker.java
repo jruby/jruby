@@ -1328,8 +1328,9 @@ public class InvocationLinker {
                 .insert(1, accessor.getIndex())
                 .cast(Object.class, IRubyObject.class, int.class)
                 .invokeVirtualQuiet(lookup(), "getVariable");
-        
-        method.setHandle(nativeTarget);
+
+        // NOTE: Must not cache the fully-bound handle in the method, since it's specific to this class
+
         return nativeTarget;
     }
     
@@ -1358,8 +1359,9 @@ public class InvocationLinker {
                 .insert(1, accessor.getIndex())
                 .cast(void.class, IRubyObject.class, int.class, Object.class)
                 .invokeVirtualQuiet(lookup(), "setVariable");
-        
-        method.setHandle(nativeTarget);
+
+        // NOTE: Must not cache the fully-bound handle in the method, since it's specific to this class
+
         return nativeTarget;
     }
     

@@ -282,18 +282,24 @@ public class RubyClass extends RubyModule {
 
     private synchronized final VariableAccessor allocateVariableAccessor(String name) {
         String[] myVariableNames = variableNames;
+
         int newIndex = myVariableNames.length;
         String[] newVariableNames = new String[newIndex + 1];
+
         VariableAccessor newVariableAccessor = new VariableAccessor(name, newIndex, this.id);
+
         System.arraycopy(myVariableNames, 0, newVariableNames, 0, newIndex);
+
         newVariableNames[newIndex] = name;
         variableNames = newVariableNames;
+
         return newVariableAccessor;
     }
 
     public VariableAccessor getVariableAccessorForWrite(String name) {
         VariableAccessor ivarAccessor = variableAccessors.get(name);
         if (ivarAccessor == null) {
+
             synchronized (this) {
                 Map<String, VariableAccessor> myVariableAccessors = variableAccessors;
                 ivarAccessor = myVariableAccessors.get(name);
@@ -302,8 +308,10 @@ public class RubyClass extends RubyModule {
                     // allocate a new accessor and populate a new table
                     ivarAccessor = allocateVariableAccessor(name);
                     Map<String, VariableAccessor> newVariableAccessors = new HashMap<String, VariableAccessor>(myVariableAccessors.size() + 1);
+
                     newVariableAccessors.putAll(myVariableAccessors);
                     newVariableAccessors.put(name, ivarAccessor);
+
                     variableAccessors = newVariableAccessors;
                 }
             }
@@ -360,10 +368,7 @@ public class RubyClass extends RubyModule {
     }
 
     public int getVariableTableSizeWithExtras() {
-        return variableAccessors.size()
-                + (objectIdAccessor == VariableAccessor.DUMMY_ACCESSOR ? 0 : 1)
-                + (cextHandleAccessor == VariableAccessor.DUMMY_ACCESSOR ? 0 : 1)
-                + (ffiHandleAccessor == VariableAccessor.DUMMY_ACCESSOR ? 0 : 1);
+        return variableNames.length;
     }
 
     public Map<String, VariableAccessor> getVariableTableCopy() {

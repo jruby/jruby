@@ -1296,9 +1296,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             Object[] newTable;
 
             if (myVarTable == null) {
-                newTable = new Object[getMetaClass().getRealClass().getVariableTableSizeWithExtras()];
+                newTable = new Object[metaClass.getRealClass().getVariableTableSizeWithExtras()];
             } else if (myVarTable.length <= index) {
-                newTable = new Object[getMetaClass().getRealClass().getVariableTableSizeWithExtras()];
+                newTable = new Object[metaClass.getRealClass().getVariableTableSizeWithExtras()];
                 System.arraycopy(myVarTable, 0, newTable, 0, myVarTable.length);
             } else {
                 return myVarTable;
