@@ -40,6 +40,7 @@ import org.jruby.ast.ConstNode;
 import org.jruby.ast.DAsgnNode;
 import org.jruby.ast.DRegexpNode;
 import org.jruby.ast.DStrNode;
+import org.jruby.ast.DSymbolNode;
 import org.jruby.ast.DVarNode;
 import org.jruby.ast.DXStrNode;
 import org.jruby.ast.DefinedNode;
@@ -577,7 +578,7 @@ public class IRBuilder {
             case DOTNODE: return buildDot((DotNode) node, s);
             case DREGEXPNODE: return buildDRegexp((DRegexpNode) node, s);
             case DSTRNODE: return buildDStr((DStrNode) node, s);
-            case DSYMBOLNODE: return buildDSymbol(node, s);
+            case DSYMBOLNODE: return buildDSymbol((DSymbolNode) node, s);
             case DVARNODE: return buildDVar((DVarNode) node, s);
             case DXSTRNODE: return buildDXStr((DXStrNode) node, s);
             case ENSURENODE: return buildEnsureNode((EnsureNode) node, s);
@@ -2016,13 +2017,13 @@ public class IRBuilder {
         return copyAndReturnValue(s, new CompoundString(strPieces, dstrNode.getEncoding()));
     }
 
-    public Operand buildDSymbol(Node node, IRScope s) {
+    public Operand buildDSymbol(DSymbolNode node, IRScope s) {
         List<Operand> strPieces = new ArrayList<Operand>();
         for (Node n : node.childNodes()) {
             strPieces.add(dynamicPiece(n, s));
         }
 
-        return copyAndReturnValue(s, new DynamicSymbol(new CompoundString(strPieces)));
+        return copyAndReturnValue(s, new DynamicSymbol(new CompoundString(strPieces, node.getEncoding())));
     }
 
     public Operand buildDVar(DVarNode node, IRScope s) {
