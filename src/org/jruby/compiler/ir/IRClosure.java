@@ -74,6 +74,15 @@ public class IRClosure extends IRScope {
         } else {
             this.body = null;
         }
+
+        // set nesting depth -- after isForLoopBody value is set
+        int n = 0;
+        IRScope s = this;
+        while (s instanceof IRClosure) {
+            if (!s.isForLoopBody()) n++;
+            s = s.getLexicalParent();
+        }
+        this.nestingDepth = n;
     }
 
     // Used by IREvalScript
@@ -92,8 +101,8 @@ public class IRClosure extends IRScope {
         int n = 0;
         IRScope s = this;
         while (s instanceof IRClosure) {
-            s = s.getLexicalParent();
             if (!s.isForLoopBody()) n++;
+            s = s.getLexicalParent();
         }
         this.nestingDepth = n;
     }
