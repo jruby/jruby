@@ -6,8 +6,8 @@ class TestProcess < Test::Unit::TestCase
   include TestHelper
 
   def setup
-    @shell = Config::CONFIG['SHELL']
-    @shellcmd = "#@shell " + (Config::CONFIG['host_os'] =~ /Windows|mswin/ ? "/c" : "-c")
+    @shell = RbConfig::CONFIG['SHELL']
+    @shellcmd = "#@shell " + (RbConfig::CONFIG['host_os'] =~ /Windows|mswin/ ? "/c" : "-c")
     system(%{#@shellcmd "exit 1"})
     @first_status = $?
     system(%{#@shellcmd "exit 2"})
@@ -47,7 +47,7 @@ class TestProcess < Test::Unit::TestCase
   end
   
   def test_host_process
-    unless Config::CONFIG['host_os'] =~ /Windows|mswin/ || !File.exist?("bin/jruby")
+    unless RbConfig::CONFIG['host_os'] =~ /Windows|mswin/ || !File.exist?("bin/jruby")
       assert_equal "1", %x{sh -c 'bin/jruby -e "exit 1" ; echo $?'}.strip
     end
   end

@@ -18,7 +18,7 @@ UNINSTALLER_WELCOME= 'Welcome.uninstaller.rtf'
 task :installer => [:macos_installer, :windows_installer]
 
 task :macos_installer do
-  next unless Config::CONFIG['target_os'] =~ /darwin/
+  next unless RbConfig::CONFIG['target_os'] =~ /darwin/
 
   puts "\nBuilding OS X Installer"
 

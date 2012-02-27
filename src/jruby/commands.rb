@@ -3,7 +3,7 @@ require 'rbconfig'
 module JRuby
   class Commands
     class << self
-      dollar_zero = Config::CONFIG['bindir'] + "/#{$0}"
+      dollar_zero = RbConfig::CONFIG['bindir'] + "/#{$0}"
       # Provide method aliases to scripts commonly found in ${jruby.home}/bin.
       ruby_bin = File.open(dollar_zero) {|io| (io.readline rescue "") =~ /^#!.*ruby/} rescue nil
       if ruby_bin
@@ -59,7 +59,7 @@ module JRuby
         unless ARGV.reject{|a| a =~ /^-/}.empty?
           ARGV.unshift "install"
           begin
-            load Config::CONFIG['bindir'] + "/gem"
+            load RbConfig::CONFIG['bindir'] + "/gem"
           rescue SystemExit => e
             # don't exit in case of 0 return value from 'gem'
             exit(e.status) unless e.success?
@@ -69,7 +69,7 @@ module JRuby
       end
 
       def generate_bat_stubs
-        Dir[Config::CONFIG['bindir'] + '/*'].each do |fn|
+        Dir[RbConfig::CONFIG['bindir'] + '/*'].each do |fn|
           next unless File.file?(fn)
           next if fn =~ /.bat$/
           next if File.exist?("#{fn}.bat")
@@ -82,7 +82,7 @@ module JRuby
             f << "@ECHO OFF\r\n"
             f << "@\"%~dp0jruby.exe\" -S #{File.basename(fn)} %*\r\n"
           end
-        end if File.writable?(File.join(Config::CONFIG['bindir'], 'jirb.bat'))
+        end if File.writable?(File.join(RbConfig::CONFIG['bindir'], 'jirb.bat'))
       end
 
       def method_missing(name, *)

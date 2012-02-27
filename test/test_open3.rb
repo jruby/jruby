@@ -5,7 +5,7 @@ require 'test/unit'
 require 'open3'
 
 class TestOpen3 < Test::Unit::TestCase
-  WINDOWS = Config::CONFIG['host_os'] =~ /Windows|mswin/
+  WINDOWS = RbConfig::CONFIG['host_os'] =~ /Windows|mswin/
 
   # JRUBY-3071
   def test_popen3_reads_without_seeking

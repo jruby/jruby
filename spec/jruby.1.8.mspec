@@ -6,7 +6,7 @@ require 'java'
 require 'jruby/util'
 
 IKVM = java.lang.System.get_property('java.vm.name') =~ /IKVM\.NET/
-WINDOWS = Config::CONFIG['host_os'] =~ /mswin/
+WINDOWS = RbConfig::CONFIG['host_os'] =~ /mswin/
 
 SPEC_DIR = File.join(File.dirname(__FILE__), 'ruby') unless defined?(SPEC_DIR)
 TAGS_DIR = File.join(File.dirname(__FILE__), 'tags') unless defined?(TAGS_DIR)
@@ -86,7 +86,7 @@ class MSpecScript
   set :ci_files, get(:language) + get(:core) + get(:command_line) + get(:library)
 
   # The default implementation to run the specs.
-  set :target, File.dirname(__FILE__) + '/../bin/' + Config::CONFIG['ruby_install_name'] + Config::CONFIG['EXEEXT']
+  set :target, File.dirname(__FILE__) + '/../bin/' + RbConfig::CONFIG['ruby_install_name'] + RbConfig::CONFIG['EXEEXT']
 
   set :backtrace_filter, /mspec\//
 

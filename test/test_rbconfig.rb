@@ -4,14 +4,14 @@ require 'test/unit'
 class TestRbconfig < Test::Unit::TestCase
   def test_constants
     assert Config
-    assert Config::CONFIG
+    assert RbConfig::CONFIG
     assert RbConfig
     assert_equal Config, RbConfig
   end
 
   def test_windows_os_names
-    name = Config::CONFIG['host_os']
-    name1 = Config::CONFIG['target_os']
+    name = RbConfig::CONFIG['host_os']
+    name1 = RbConfig::CONFIG['target_os']
 
     assert_not_nil(name)
     assert_not_nil(name1)

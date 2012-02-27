@@ -1,5 +1,10 @@
-class MockExpectationError < StandardError # :nodoc:
-end # omg... worst bug ever. rdoc doesn't allow 1-liners
+######################################################################
+# This file is imported from the minitest project.
+# DO NOT make modifications in this repo. They _will_ be reverted!
+# File a patch instead and assign it to Ryan Davis.
+######################################################################
+
+class MockExpectationError < StandardError; end
 
 ##
 # A simple and clean mock object framework.
@@ -87,14 +92,14 @@ module MiniTest
 
       @actual_calls[sym] << {
         :retval => retval,
-        :args => expected_args.zip(args).map { |mod, a| mod === a ? mod : a }
+        :args => expected_args.zip(args).map { |mod, a| mod if mod === a }
       }
 
       retval
     end
 
     def respond_to?(sym) # :nodoc:
-      return true if @expected_calls.has_key?(sym.to_sym)
+      return true if @expected_calls.has_key?(sym)
       return __respond_to?(sym)
     end
   end

@@ -15,7 +15,7 @@ conf_files = []
 
 if FFI::Platform.mac?
   osx_arches = [ "ppc", "i386" ]
-  osx_arches << "x86_64" if Config::CONFIG['host_cpu'] == 'x86_64'
+  osx_arches << "x86_64" if RbConfig::CONFIG['host_cpu'] == 'x86_64'
   osx_arches.each do |arch|
     arches << arch
     platform_dir = File.join(FFI::Platform::FFI_DIR, "platform", "#{arch}-darwin")

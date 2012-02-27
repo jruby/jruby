@@ -5,7 +5,7 @@ require 'rbconfig'
 # FIXME: This needs platform-specific stuff changed
 class TestIO < Test::Unit::TestCase
   IS19 = RUBY_VERSION =~ /1\.9/
-  WIN32 = Config::CONFIG['host_os'] =~ /mswin/
+  WIN32 = RbConfig::CONFIG['host_os'] =~ /mswin/
 
   SAMPLE = "08: This is a line\n"
 

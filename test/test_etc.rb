@@ -3,7 +3,7 @@ require 'rbconfig'
 require 'etc'
 
 class TestEtc < Test::Unit::TestCase
-  WINDOWS = Config::CONFIG['host_os'] =~ /Windows|mswin/
+  WINDOWS = RbConfig::CONFIG['host_os'] =~ /Windows|mswin/
   
   def assert_nil_or_not_implemented
     assert_nil(yield)

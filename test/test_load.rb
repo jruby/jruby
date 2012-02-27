@@ -100,7 +100,7 @@ class TestLoad < Test::Unit::TestCase
   def call_extern_load_foo_bar(classpath = nil)
     cmd = ""
     cmd += "env CLASSPATH=#{classpath}" # classpath=nil, becomes empty CLASSPATH
-    cmd += " #{Config::CONFIG['bindir']}/#{Config::CONFIG['RUBY_INSTALL_NAME']} -e "
+    cmd += " #{RbConfig::CONFIG['bindir']}/#{RbConfig::CONFIG['RUBY_INSTALL_NAME']} -e "
     cmd += "'"+'begin load "./test/foo.bar.rb"; rescue Exception => e; print "FAIL"; else print "OK"; end'+"'"
     `#{cmd}`
   end

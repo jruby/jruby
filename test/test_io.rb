@@ -4,7 +4,7 @@ require 'stringio'
 require 'java'
 
 class TestIO < Test::Unit::TestCase
-  WINDOWS = Config::CONFIG['host_os'] =~ /Windows|mswin/
+  WINDOWS = RbConfig::CONFIG['host_os'] =~ /Windows|mswin/
   def setup
     @to_close = []
     @file = "TestIO_tmp"

@@ -3,7 +3,7 @@ require 'test/unit'
 require 'rbconfig'
 
 class TestDir < Test::Unit::TestCase
-  WINDOWS = Config::CONFIG['host_os'] =~ /Windows|mswin/
+  WINDOWS = RbConfig::CONFIG['host_os'] =~ /Windows|mswin/
 
   def jruby
     exe = File.join RbConfig::CONFIG['bindir'], RbConfig::CONFIG['RUBY_INSTALL_NAME']

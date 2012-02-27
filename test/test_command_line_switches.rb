@@ -287,7 +287,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
   # JRUBY-4288
   if (WINDOWS)
     def test_case_insensitive_jruby
-      weird_jruby = '"' + File.join([Config::CONFIG['bindir'], 'jRuBy']) << Config::CONFIG['EXEEXT'] + '"'
+      weird_jruby = '"' + File.join([RbConfig::CONFIG['bindir'], 'jRuBy']) << RbConfig::CONFIG['EXEEXT'] + '"'
       with_jruby_shell_spawning do
         res = `cmd.exe /c #{weird_jruby} -e "puts 1"`.rstrip
         assert_equal '1', res
@@ -299,7 +299,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
   # JRUBY-4289
   if (WINDOWS)
     def test_uppercase_exe
-      weird_jruby = '"' + File.join([Config::CONFIG['bindir'], 'jRuBy']) << '.ExE' + '"'
+      weird_jruby = '"' + File.join([RbConfig::CONFIG['bindir'], 'jRuBy']) << '.ExE' + '"'
       with_jruby_shell_spawning do
         res = `#{weird_jruby} -e "puts 1"`.rstrip
         assert_equal '1', res

@@ -74,7 +74,7 @@ class TestSystemError < Test::Unit::TestCase
       assert_raise_msg(err,m) do 
         raise err
       end
-    end if Config::CONFIG['host_os'].downcase =~ /windows|mswin|darwin|linux/ 
+    end if RbConfig::CONFIG['host_os'].downcase =~ /windows|mswin|darwin|linux/
   end
 
   def assert_raise_msg(error, message)
@@ -96,7 +96,7 @@ class TestSystemError < Test::Unit::TestCase
       else
         puts "     int    #{e} = #{c};"
       end
-    end if Config::CONFIG['host_os'].downcase =~ /windows|mswin|darwin|linux/ 
+    end if RbConfig::CONFIG['host_os'].downcase =~ /windows|mswin|darwin|linux/
   end
 
   def test_no_duplicated_msg_enoent

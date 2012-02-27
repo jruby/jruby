@@ -1,5 +1,5 @@
 require 'rbconfig'
-raise  LoadError.new("Win32API only supported on win32") unless Config::CONFIG['host_os'] =~ /mswin/
+raise  LoadError.new("Win32API only supported on win32") unless RbConfig::CONFIG['host_os'] =~ /mswin/
 
 require 'ffi-internal.so'
 

@@ -2,7 +2,7 @@
 
 # detect windows platform:
 require 'rbconfig'
-WINDOWS = Config::CONFIG['host_os'] =~ /Windows|mswin/
+WINDOWS = RbConfig::CONFIG['host_os'] =~ /Windows|mswin/
 
 class MSpecScript
   # An ordered list of the directories containing specs to run

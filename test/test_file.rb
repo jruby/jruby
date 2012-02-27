@@ -6,7 +6,7 @@ require 'tempfile'
 require 'pathname'
 
 class TestFile < Test::Unit::TestCase
-  WINDOWS = Config::CONFIG['host_os'] =~ /Windows|mswin/
+  WINDOWS = RbConfig::CONFIG['host_os'] =~ /Windows|mswin/
 
   def setup
     @teardown_blocks = []

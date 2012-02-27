@@ -247,7 +247,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
     assert_nothing_raised do
       begin
         old_stream = $stderr.dup
-        $stderr.reopen(Config::CONFIG['target_os'] =~ /Windows|mswin/ ? 'NUL:' : '/dev/null')
+        $stderr.reopen(RbConfig::CONFIG['target_os'] =~ /Windows|mswin/ ? 'NUL:' : '/dev/null')
         $stderr.sync = true
         class << self
           java_import("java.lang.String") {|package,name| "J#{name}" }
@@ -353,7 +353,7 @@ class TestHigherJavasupport < Test::Unit::TestCase
 
     begin
       old_stream = $stderr.dup
-      $stderr.reopen(Config::CONFIG['target_os'] =~ /Windows|mswin/ ? 'NUL:' : '/dev/null')
+      $stderr.reopen(RbConfig::CONFIG['target_os'] =~ /Windows|mswin/ ? 'NUL:' : '/dev/null')
       $stderr.sync = true
 
       50.times do

@@ -27,6 +27,7 @@ STDLIB_FILES = %w[
   irb.rb
   logger.rb
   mathn.rb
+  matrix
   matrix.rb
   minitest
   monitor.rb
@@ -96,9 +97,6 @@ EXT_FILES = {
   'ext/psych/lib/psych' => 'psych',
   'ext/ripper/lib/ripper.rb' => 'ripper.rb',
   'ext/ripper/lib/ripper' => 'ripper',
-  'ext/syck/lib/syck.rb' => 'syck.rb',
-  'ext/syck/lib/syck' => 'syck',
-  'ext/syck/lib/yaml' => 'yaml',
   'ext/fiddle/lib/fiddle.rb' => 'fiddle.rb',
   'ext/fiddle/lib/fiddle' => 'fiddle'
 }

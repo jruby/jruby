@@ -83,7 +83,7 @@ end
 describe 'Dir globs (Dir.glob and Dir.[]) +' do
   it "doesn't break when given incorrect URIs" do
     require 'rbconfig'
-    prefix = Config::CONFIG['host_os'] =~ /^mswin/i ? 'file:/' : 'file:'
+    prefix = RbConfig::CONFIG['host_os'] =~ /^mswin/i ? 'file:/' : 'file:'
     # file:/ in front when not looking a jar produces the error
 #    java.lang.Runtime.getRuntime.add_shutdown_hook Thread.new do
 #

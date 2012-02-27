@@ -1,6 +1,6 @@
 require 'rbconfig'
 
-WINDOWS = Config::CONFIG['host_os'] =~ /Windows|mswin/
+WINDOWS = RbConfig::CONFIG['host_os'] =~ /Windows|mswin/
 
 if (WINDOWS)
   @devnull = 'NUL:'

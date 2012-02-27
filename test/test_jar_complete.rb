@@ -10,17 +10,17 @@ require 'rbconfig'
 require 'fileutils'
 require 'pathname'
 
-prefix = Config::CONFIG['prefix']
+prefix = RbConfig::CONFIG['prefix']
 abort "error: test must be launched from complete jar (found prefix = #{prefix})" unless prefix =~ %r{^file.*!/META-INF/jruby\.home}
 def file_from_url(path)
-  if Config::CONFIG['host_os'] =~ /Windows|mswin/
+  if RbConfig::CONFIG['host_os'] =~ /Windows|mswin/
     path[%r{^file:\/*?([a-zA-Z]:/[^!]+)}, 1]
   else
     path[%r{^file:\/*?(/[^!]+)}, 1]
   end
 end
 COMPLETE_JAR = file_from_url prefix
-abort "error: could not figure out complete jar from Config::CONFIG['prefix'] (#{prefix})" unless COMPLETE_JAR
+abort "error: could not figure out complete jar from RbConfig::CONFIG['prefix'] (#{prefix})" unless COMPLETE_JAR
 
 puts "Using jar: #{COMPLETE_JAR}"
 
@@ -82,7 +82,7 @@ class JarCompleteTest < Test::Unit::TestCase
     mkdir_p tmp
     complete_jar = File.expand_path(File.join(tmp, 'jruby-complete.jar'))
     cp COMPLETE_JAR, complete_jar
-    output = jruby_complete(complete_jar, "-rrbconfig -e 'puts Config::CONFIG[%{prefix}]'").chomp
+    output = jruby_complete(complete_jar, "-rrbconfig -e 'puts RbConfig::CONFIG[%{prefix}]'").chomp
     file = file_from_url(output)
     assert File.exists?(file)
     assert_equal complete_jar, file
@@ -93,7 +93,7 @@ class JarCompleteTest < Test::Unit::TestCase
     mkdir_p tmp
     complete_jar = File.expand_path(File.join(tmp, 'jruby-complete.jar'))
     cp COMPLETE_JAR, complete_jar
-    output = jruby_complete(complete_jar, "-rrbconfig -e 'puts Config::CONFIG[%{prefix}]'").chomp
+    output = jruby_complete(complete_jar, "-rrbconfig -e 'puts RbConfig::CONFIG[%{prefix}]'").chomp
     file = file_from_url(output)
     assert File.exists?(file)
     assert_equal complete_jar, file

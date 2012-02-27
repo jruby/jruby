@@ -314,7 +314,7 @@ class TestKernel < Test::Unit::TestCase
   end
 
   def test_local_variables
-    if Config::CONFIG['ruby_install_name'] == 'jruby'
+    if RbConfig::CONFIG['ruby_install_name'] == 'jruby'
       if RUBY_VERSION =~ /1\.9/
         a = lambda do
           assert_equal [:a, :b], local_variables
@@ -460,7 +460,7 @@ class TestKernel < Test::Unit::TestCase
   def test_system
     assert !system('non_existant_command')
     # TODO: test for other OSes (Windows, for example, wouldn't know what to do with /dev/null)
-    if Config::CONFIG['target_os'] == 'linux'
+    if RbConfig::CONFIG['target_os'] == 'linux'
       assert_equal true, system('echo > /dev/null')
     end
   end

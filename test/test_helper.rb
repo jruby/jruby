@@ -4,9 +4,9 @@ require 'tempfile'
 
 module TestHelper
   # TODO: Consider how this should work if we have --windows or similiar
-  WINDOWS = Config::CONFIG['host_os'] =~ /Windows|mswin/
+  WINDOWS = RbConfig::CONFIG['host_os'] =~ /Windows|mswin/
   SEPARATOR = WINDOWS ? '\\' : '/'
-  RUBY = '"' + File.join([Config::CONFIG['bindir'], Config::CONFIG['ruby_install_name']]) << Config::CONFIG['EXEEXT'] + '"'
+  RUBY = '"' + File.join([RbConfig::CONFIG['bindir'], RbConfig::CONFIG['ruby_install_name']]) << RbConfig::CONFIG['EXEEXT'] + '"'
 
   if (WINDOWS)
     RUBY.gsub!('/', '\\')
@@ -20,7 +20,7 @@ module TestHelper
     WINDOWS_JVM_64 = (WINDOWS && arch == '64')
   end
 
-  IBM_JVM = Config::CONFIG['host_vendor'] =~ /IBM Corporation/
+  IBM_JVM = RbConfig::CONFIG['host_vendor'] =~ /IBM Corporation/
 
   def q
     WINDOWS ? '"' : '\''

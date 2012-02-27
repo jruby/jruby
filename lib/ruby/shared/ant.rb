@@ -55,7 +55,7 @@ class Ant
 
   def self.ant_script
     require 'rbconfig'
-    Config::CONFIG['host_os'] =~ /Windows|mswin/ ? 'ant.bat' : 'ant'
+    RbConfig::CONFIG['host_os'] =~ /Windows|mswin/ ? 'ant.bat' : 'ant'
   end
 
   load

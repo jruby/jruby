@@ -3,7 +3,7 @@ require 'rbconfig'
 module JRuby
   module PathHelper
 
-    WINDOWS = Config::CONFIG['host_os'] =~ /mswin/
+    WINDOWS = RbConfig::CONFIG['host_os'] =~ /mswin/
     WINDOWS_EXE_SUFFIXES = [".exe", ".com", ".bat" , ".cmd"]
 
     # This function does a semi-smart split of a space-separated command line.

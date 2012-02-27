@@ -1,20 +1,21 @@
+######################################################################
+# This file is imported from the minitest project.
+# DO NOT make modifications in this repo. They _will_ be reverted!
+# File a patch instead and assign it to Ryan Davis.
+######################################################################
+
 require "minitest/unit"
 
 ##
 # Show your testing pride!
 
 class PrideIO
-
-  # Start an escape sequence
   ESC = "\e["
-
-  # End the escape sequence
   NND = "#{ESC}0m"
 
-  # The IO we're going to pipe through.
   attr_reader :io
 
-  def initialize io # :nodoc:
+  def initialize io
     @io = io
     # stolen from /System/Library/Perl/5.10.0/Term/ANSIColor.pm
     # also reference http://en.wikipedia.org/wiki/ANSI_escape_code
@@ -23,9 +24,6 @@ class PrideIO
     @index  = 0
     # io.sync = true
   end
-
-  ##
-  # Wrap print to colorize the output.
 
   def print o
     case o
@@ -38,7 +36,7 @@ class PrideIO
     end
   end
 
-  def puts(*o) # :nodoc:
+  def puts(*o)
     o.map! { |s|
       s.sub(/Finished tests/) {
         @index = 0
@@ -51,9 +49,6 @@ class PrideIO
     super
   end
 
-  ##
-  # Color a string.
-
   def pride string
     string = "*" if string == "."
     c = @colors[@index % @size]
@@ -61,20 +56,15 @@ class PrideIO
     "#{ESC}#{c}m#{string}#{NND}"
   end
 
-  def method_missing msg, *args # :nodoc:
+  def method_missing msg, *args
     io.send(msg, *args)
   end
 end
 
-##
-# If you thought the PrideIO was colorful...
-#
-# (Inspired by lolcat, but with clean math)
+class PrideLOL < PrideIO # inspired by lolcat, but massively cleaned up
+  PI_3 = Math::PI / 3
 
-class PrideLOL < PrideIO
-  PI_3 = Math::PI / 3 # :nodoc:
-
-  def initialize io # :nodoc:
+  def initialize io
     # walk red, green, and blue around a circle separated by equal thirds.
     #
     # To visualize, type this into wolfram-alpha:
@@ -98,9 +88,6 @@ class PrideLOL < PrideIO
     super
   end
 
-  ##
-  # Make the string even more colorful. Damnit.
-
   def pride string
     c = @colors[@index % @size]
     @index += 1
@@ -108,5 +95,5 @@ class PrideLOL < PrideIO
   end
 end
 
-klass = ENV['TERM'] =~ /^xterm|-256color$/ ? PrideLOL : PrideIO
+klass = ENV['TERM'] =~ /^xterm(-256color)?$/ ? PrideLOL : PrideIO
 MiniTest::Unit.output = klass.new(MiniTest::Unit.output)

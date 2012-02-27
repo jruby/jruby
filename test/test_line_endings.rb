@@ -3,7 +3,7 @@ require 'rbconfig'
 require 'tempfile'
 
 class TestLineEndings < Test::Unit::TestCase
-  WINDOWS = Config::CONFIG['host_os'] =~ /Windows|mswin/
+  WINDOWS = RbConfig::CONFIG['host_os'] =~ /Windows|mswin/
 
   def temp_file(name, flags = "w", &block)
     @tmpfile = Tempfile.new name

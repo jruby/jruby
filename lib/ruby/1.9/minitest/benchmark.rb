@@ -1,7 +1,15 @@
+######################################################################
+# This file is imported from the minitest project.
+# DO NOT make modifications in this repo. They _will_ be reverted!
+# File a patch instead and assign it to Ryan Davis.
+######################################################################
+
 require 'minitest/unit'
 require 'minitest/spec'
 
-class MiniTest::Unit # :nodoc:
+class MiniTest::Unit
+  attr_accessor :runner
+
   def run_benchmarks # :nodoc:
     _run_anything :benchmark
   end
@@ -75,8 +83,8 @@ class MiniTest::Unit # :nodoc:
     #
     #   def bench_algorithm
     #     validation = proc { |x, y| ... }
-    #     assert_performance validation do |n|
-    #       @obj.algorithm(n)
+    #     assert_performance validation do |x|
+    #       @obj.algorithm
     #     end
     #   end
 
@@ -119,8 +127,8 @@ class MiniTest::Unit # :nodoc:
     # Eg:
     #
     #   def bench_algorithm
-    #     assert_performance_constant 0.9999 do |n|
-    #       @obj.algorithm(n)
+    #     assert_performance_constant 0.9999 do |x|
+    #       @obj.algorithm
     #     end
     #   end
 
@@ -145,8 +153,8 @@ class MiniTest::Unit # :nodoc:
     # Eg:
     #
     #   def bench_algorithm
-    #     assert_performance_exponential 0.9999 do |n|
-    #       @obj.algorithm(n)
+    #     assert_performance_exponential 0.9999 do |x|
+    #       @obj.algorithm
     #     end
     #   end
 
@@ -165,8 +173,8 @@ class MiniTest::Unit # :nodoc:
     # Eg:
     #
     #   def bench_algorithm
-    #     assert_performance_linear 0.9999 do |n|
-    #       @obj.algorithm(n)
+    #     assert_performance_linear 0.9999 do |x|
+    #       @obj.algorithm
     #     end
     #   end
 
@@ -310,15 +318,6 @@ class MiniTest::Spec
     define_method "bench_#{name.gsub(/\W+/, '_')}", &block
   end
 
-  ##
-  # Specifies the ranges used for benchmarking for that class.
-  #
-  #   bench_range do
-  #     bench_exp(2, 16, 2)
-  #   end
-  #
-  # See Unit::TestCase.bench_range for more details.
-
   def self.bench_range &block
     return super unless block
 
@@ -330,8 +329,8 @@ class MiniTest::Spec
   # Create a benchmark that verifies that the performance is linear.
   #
   #   describe "my class" do
-  #     bench_performance_linear "fast_algorithm", 0.9999 do |n|
-  #       @obj.fast_algorithm(n)
+  #     bench_performance_linear "fast_algorithm", 0.9999 do
+  #       @obj.fast_algorithm
   #     end
   #   end
 
@@ -345,8 +344,8 @@ class MiniTest::Spec
   # Create a benchmark that verifies that the performance is constant.
   #
   #   describe "my class" do
-  #     bench_performance_constant "zoom_algorithm!" do |n|
-  #       @obj.zoom_algorithm!(n)
+  #     bench_performance_constant "zoom_algorithm!" do
+  #       @obj.zoom_algorithm!
   #     end
   #   end
 
@@ -360,8 +359,8 @@ class MiniTest::Spec
   # Create a benchmark that verifies that the performance is exponential.
   #
   #   describe "my class" do
-  #     bench_performance_exponential "algorithm" do |n|
-  #       @obj.algorithm(n)
+  #     bench_performance_exponential "algorithm" do
+  #       @obj.algorithm
   #     end
   #   end
 

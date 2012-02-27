@@ -6,10 +6,10 @@ require 'jruby'
 #
 # Find the name of the interpreter.
 #  FIXME: This should be moved to a common location.
-WINDOWS = Config::CONFIG['host_os'] =~ /Windows|mswin/
+WINDOWS = RbConfig::CONFIG['host_os'] =~ /Windows|mswin/
 SEPARATOR = WINDOWS ? '\\' : '/'
-bin = Config::CONFIG['bindir'].gsub('/', SEPARATOR)
-$interpreter = [bin, Config::CONFIG['ruby_install_name']].join(SEPARATOR)
+bin = RbConfig::CONFIG['bindir'].gsub('/', SEPARATOR)
+$interpreter = [bin, RbConfig::CONFIG['ruby_install_name']].join(SEPARATOR)
 
 class TestObjectSpace < Test::Unit::TestCase
 

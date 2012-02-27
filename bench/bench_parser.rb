@@ -5,7 +5,7 @@ require 'rbconfig'
 
 # benchmark 100 parses of the RDoc rb parser
 ITER_COUNT = 25
-filename = Config::CONFIG['rubylibdir'] + "/rdoc/parsers/parse_rb.rb"
+filename = RbConfig::CONFIG['rubylibdir'] + "/rdoc/parsers/parse_rb.rb"
 src = File.read(filename)
 
 puts "file: " + filename
