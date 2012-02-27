@@ -1374,8 +1374,10 @@ block_param_def : tPIPE opt_bv_decl tPIPE {
                 }
 
 // shadowed block variables....
-opt_bv_decl     : none 
-                | ';' bv_decls {
+opt_bv_decl     : opt_nl {
+                    $$ = null;
+                }
+                | opt_nl ';' bv_dels opt_nl {
                     $$ = null;
                 }
 
@@ -1404,7 +1406,7 @@ lambda          : /* none */  {
                     lexer.setLeftParenBegin($<Integer>1);
                 }
 
-f_larglist      : tLPAREN2 f_args opt_bv_decl rparen {
+f_larglist      : tLPAREN2 f_args opt_bv_decl tRPAREN {
                     $$ = $2;
                     $<ISourcePositionHolder>$.setPosition($1.getPosition());
                 }
