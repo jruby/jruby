@@ -4,7 +4,11 @@ raise  LoadError.new("Win32API only supported on win32") unless Config::CONFIG['
 require 'ffi-internal.so'
 
 class Win32API
-  SUFFIXES = $KCODE == 'UTF8' ? [ '', 'W', 'A' ] : [ '', 'A', 'W' ]
+  if RUBY_VERSION =~ /1\.9/
+    SUFFIXES = Encoding.default_internal == Encoding::UTF_8 ? [ '', 'W', 'A' ] : [ '', 'A', 'W' ]
+  else
+    SUFFIXES = $KCODE == 'UTF8' ? [ '', 'W', 'A' ] : [ '', 'A', 'W' ]
+  end
 
   class Pointer
     extend FFI::DataConverter
