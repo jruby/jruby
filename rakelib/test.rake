@@ -5,7 +5,7 @@ desc "Alias for spec:ci"
 task :spec => "spec:ci"
 
 desc "Run the suite of tests in 1.9 mode"
-task :test19 => ['test:jruby19', 'test:mri19', 'spec:ci_interpreted_19']
+task :test19 => ['test:jruby19', 'test:mri19', 'test:rubicon19']
 
 namespace :test do
   desc "Compile test code"
