@@ -27,7 +27,6 @@ import org.jruby.compiler.ir.instructions.BranchInstr;
 import org.jruby.compiler.ir.instructions.BreakInstr;
 import org.jruby.compiler.ir.instructions.CallBase;
 import org.jruby.compiler.ir.instructions.calladapter.CallAdapter;
-import org.jruby.compiler.ir.instructions.ClosureReturnInstr;
 import org.jruby.compiler.ir.instructions.CopyInstr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.JumpIndirectInstr;
@@ -38,6 +37,7 @@ import org.jruby.compiler.ir.instructions.ReceivePreReqdArgInstr;
 import org.jruby.compiler.ir.instructions.ReceiveOptArgBase;
 import org.jruby.compiler.ir.instructions.ReceiveRestArgBase;
 import org.jruby.compiler.ir.instructions.ResultInstr;
+import org.jruby.compiler.ir.instructions.ReturnBase;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
 import org.jruby.compiler.ir.instructions.jruby.CheckArityInstr;
 import org.jruby.compiler.ir.instructions.ruby19.ReceivePostReqdArgInstr;
@@ -522,13 +522,9 @@ public class Interpreter {
                         ipc++;
                         break;
                     }
+                    case CLOSURE_RETURN:
                     case RETURN: {
-                        rv = (IRubyObject)((ReturnInstr)lastInstr).getReturnValue().retrieve(context, self, currDynScope, temp);
-                        ipc = n;
-                        break;
-                    }
-                    case CLOSURE_RETURN: {
-                        rv = (IRubyObject)((ClosureReturnInstr)lastInstr).getReturnValue().retrieve(context, self, currDynScope, temp);
+                        rv = (IRubyObject)((ReturnBase)lastInstr).getReturnValue().retrieve(context, self, currDynScope, temp);
                         ipc = n;
                         break;
                     }

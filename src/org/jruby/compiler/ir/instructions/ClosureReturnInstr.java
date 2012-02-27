@@ -9,12 +9,9 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class ClosureReturnInstr extends Instr {
-    private Operand returnValue;
-
+public class ClosureReturnInstr extends ReturnBase {
     public ClosureReturnInstr(Operand rv) {
-        super(Operation.CLOSURE_RETURN);
-        this.returnValue = rv;
+        super(Operation.CLOSURE_RETURN, rv);
     }
 
     @Override
@@ -25,23 +22,5 @@ public class ClosureReturnInstr extends Instr {
     @Override
     public Instr cloneForInlinedClosure(InlinerInfo ii) {
         return new CopyInstr(ii.getYieldResult(), returnValue.cloneForInlining(ii));
-    }
-
-    public Operand getReturnValue() {
-        return returnValue;
-    }
-
-    public Operand[] getOperands() {
-        return new Operand[]{returnValue};
-    }
-
-    @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-        returnValue = returnValue.getSimplifiedOperand(valueMap, force);
-    }
-
-    @Override
-    public String toString() {
-        return super.toString() + "(" + returnValue + ")";
     }
 }
