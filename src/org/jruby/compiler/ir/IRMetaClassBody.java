@@ -1,6 +1,8 @@
 package org.jruby.compiler.ir;
 
 import org.jruby.parser.StaticScope;
+import org.jruby.compiler.ir.operands.LocalVariable;
+import org.jruby.compiler.ir.operands.Variable;
 
 public class IRMetaClassBody extends IRClassBody {
     public IRMetaClassBody(IRManager manager, IRScope lexicalParent, String name,
@@ -16,5 +18,10 @@ public class IRMetaClassBody extends IRClassBody {
     @Override
     public String getScopeName() {
         return "MetaClassBody";
+    }
+
+    @Override
+    public LocalVariable getImplicitBlockArg() {
+        return getLocalVariable(Variable.BLOCK, 0);
     }
 }

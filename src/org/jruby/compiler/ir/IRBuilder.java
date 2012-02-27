@@ -1192,6 +1192,7 @@ public class IRBuilder {
         mc.addInstr(new ReceiveSelfInstr(mc.getSelf()));
         // Set %current_scope = <current-scope>
         // Set %current_module = <current-module>
+        mc.addInstr(new ReceiveClosureInstr(mc.getImplicitBlockArg()));
         mc.addInstr(new CopyInstr(mc.getCurrentScopeVariable(), new CurrentScope()));
         mc.addInstr(new CopyInstr(mc.getCurrentModuleVariable(), new CurrentModule()));
         // Create a new nested builder to ensure this gets its own IR builder state 

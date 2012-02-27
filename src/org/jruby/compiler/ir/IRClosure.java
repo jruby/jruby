@@ -247,9 +247,6 @@ public class IRClosure extends IRScope {
         // 3. If not, and if the closure is not nested within a method, the closure can never receive a block.
         //    So, we could return 'null', but it creates problems for IR generation.  So, for this scenario,
         //    we simply create a dummy var at depth 0 (meaning, it is local to the closure itself) and return it.
-        // ENEBO: Next line is workaround for 'for'-loop scopeless entities: (now this is even uglier this works 
-        // around triggering asserts)
-        if (isForLoopBody) return getNewLocalVariable(Variable.BLOCK, 0);
         LocalVariable blockVar = findExistingLocalVariable(Variable.BLOCK, getNestingDepth());
         if (blockVar != null) {
             // Create a copy of the variable usable at the right depth
