@@ -24,6 +24,6 @@ public class BNilInstr extends BranchInstr {
     public void compile(JVM jvm) {
         jvm.emit(getArg1());
         jvm.method().isNil();
-        jvm.method().btrue(jvm.getLabel(getJumpTarget()));
+        jvm.method().btrue(jvm.methodData().getLabel(getJumpTarget().getTargetPC()));
     }
 }

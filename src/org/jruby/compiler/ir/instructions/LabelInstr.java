@@ -25,6 +25,6 @@ public class LabelInstr extends Instr {
     }
 
     public void compile(JVM jvm) {
-        jvm.method().mark(jvm.getLabel(label));
+        jvm.method().mark(jvm.methodData().getLabel(label.getTargetPC()));
     }
 }

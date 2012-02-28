@@ -232,37 +232,36 @@ public class JVM implements CompilerTarget {
         String clsName = scriptToClass(script.getName());
         pushscript(clsName);
 
-        pushmethod("__script__", 0);
-
-        Instr[] instrs = script.prepareForInterpretation();
-
-        for (Instr instr: instrs) {
-//            System.out.println(instr);
-            emit(instr);
-        }
-        
-        popmethod();
+        emitScope(script, "__script__", 0);
 
         cls().visitEnd();
         popclass();
     }
 
     public void emit(IRMethod method) {
-        pushmethod(method.getName(), method.getCallArgs().length);
+        emitScope(method, method.getName(), method.getCallArgs().length);
 
-        Instr[] instrs = method.prepareForInterpretation();
+        // push a method handle for binding purposes
+        method().pushHandle(clsData().clsName, method.getName(), method.getStaticScope().getRequiredArgs());
+    }
+    
+    public void emitScope(IRScope scope, String name, int arity) {
+        pushmethod(scope.getName(), arity);
+
+        Instr[] instrs = scope.prepareForInterpretation();
 
 //        System.out.println(method);
-        for (Instr instr: instrs) {
+        for (int i = 0; i < instrs.length; i++) {
+            Instr instr = instrs[i];
 //            System.out.println(instr.getClass());
 //            System.out.println(instr);
+            if (methodData().getLabel(i) != null) {
+                method().adapter.label(methodData().getLabel(i));
+            }
             emit(instr);
         }
 
         popmethod();
-
-        // push a method handle for binding purposes
-        method().pushHandle(clsData().clsName, method.getName(), method.getStaticScope().getRequiredArgs());
     }
 
     public void emit(Instr instr) {
@@ -288,15 +287,6 @@ public class JVM implements CompilerTarget {
         int index = methodData().local(variable);
 //        System.out.println("index: " + index);
         method().loadLocal(index);
-    }
-
-    public org.objectweb.asm.Label getLabel(Label label) {
-        org.objectweb.asm.Label asmLabel = methodData().labelMap.get(label);
-        if (asmLabel == null) {
-            asmLabel = method().newLabel();
-            methodData().labelMap.put(label, asmLabel);
-        }
-        return asmLabel;
     }
 
     public void declareField(String field) {

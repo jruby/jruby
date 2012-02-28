@@ -38,9 +38,18 @@ public class MethodData {
 
         return index;
     }
+
+    public org.objectweb.asm.Label getLabel(int pc) {
+        org.objectweb.asm.Label asmLabel = labelMap.get(pc);
+        if (asmLabel == null) {
+            asmLabel = method.newLabel();
+            labelMap.put(pc, asmLabel);
+        }
+        return asmLabel;
+    }
     
     public IRBytecodeAdapter method;
     public Map<String, Integer> varMap = new HashMap<String, Integer>();
-    public Map<Label, org.objectweb.asm.Label> labelMap = new HashMap<Label, org.objectweb.asm.Label>();
+    public Map<Integer, org.objectweb.asm.Label> labelMap = new HashMap<Integer, org.objectweb.asm.Label>();
     
 }
