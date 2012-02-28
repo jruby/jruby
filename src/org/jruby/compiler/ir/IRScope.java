@@ -594,7 +594,7 @@ public abstract class IRScope {
 
     /* SSS FIXME: Do we need to synchronize on this?  Cache this info in a scope field? */
     /** Run any necessary passes to get the IR ready for compilation */
-    public Tuple<Instr[], Map<Integer,Label>> prepareForCompilation() {
+    public Tuple<Instr[], Map<Integer,Label[]>> prepareForCompilation() {
         // Build CFG and run compiler passes, if necessary
         if (getCFG() == null) runCompilerPasses();
 
@@ -610,12 +610,13 @@ public abstract class IRScope {
         }
 
         // Set up IPCs
-        HashMap<Integer, Label> ipcLabelMap = new HashMap<Integer, Label>();
+        // FIXME: Would be nice to collapse duplicate labels; for now, using Label[]
+        HashMap<Integer, Label[]> ipcLabelMap = new HashMap<Integer, Label[]>();
         List<Label> labelsToFixup = new ArrayList<Label>();
         List<Instr> newInstrs = new ArrayList<Instr>();
         int ipc = 0;
         for (BasicBlock b : linearizedBBList) {
-            ipcLabelMap.put(ipc, b.getLabel());
+            ipcLabelMap.put(ipc, catLabels(ipcLabelMap.get(ipc), b.getLabel()));
             labelsToFixup.add(b.getLabel());
             for (Instr i : b.getInstrs()) {
                 if (!(i instanceof ReceiveSelfInstr)) {
@@ -625,7 +626,15 @@ public abstract class IRScope {
             }
         }
 
-        return new Tuple<Instr[], Map<Integer,Label>>(newInstrs.toArray(new Instr[newInstrs.size()]), ipcLabelMap);
+        return new Tuple<Instr[], Map<Integer,Label[]>>(newInstrs.toArray(new Instr[newInstrs.size()]), ipcLabelMap);
+    }
+    
+    private static Label[] catLabels(Label[] labels, Label cat) {
+        if (labels == null) return new Label[] {cat};
+        Label[] newLabels = new Label[labels.length + 1];
+        System.arraycopy(labels, 0, newLabels, 0, labels.length);
+        newLabels[labels.length] = cat;
+        return newLabels;
     }
 
     private boolean computeScopeFlags(boolean receivesClosureArg, List<Instr> instrs) {

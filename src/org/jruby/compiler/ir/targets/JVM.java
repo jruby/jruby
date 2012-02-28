@@ -1,45 +1,41 @@
 package org.jruby.compiler.ir.targets;
 
-import org.jruby.compiler.ir.IRScope;
-import java.io.ByteArrayInputStream;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Stack;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ast.Node;
 import org.jruby.ast.RootNode;
-import org.jruby.compiler.ir.Tuple;
 import org.jruby.compiler.ir.CompilerTarget;
 import org.jruby.compiler.ir.IRBuilder;
 import org.jruby.compiler.ir.IRMethod;
+import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.IRScriptBody;
-import org.jruby.compiler.ir.compiler_pass.InlineTest;
-import org.jruby.compiler.ir.compiler_pass.opts.DeadCodeElimination;
+import org.jruby.compiler.ir.Tuple;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.operands.CurrentModule;
 import org.jruby.compiler.ir.operands.CurrentScope;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
-import org.jruby.compiler.ir.representations.BasicBlock;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JRubyClassLoader;
 import org.jruby.util.JavaNameMangler;
-import org.jruby.util.cli.Options;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Type;
+
+import java.io.FileOutputStream;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Stack;
+
+import static org.jruby.util.CodegenUtils.ci;
+import static org.jruby.util.CodegenUtils.p;
 import static org.objectweb.asm.Opcodes.*;
-import static org.jruby.util.CodegenUtils.*;
 
 // This class represents JVM as the target of compilation
 // and outputs bytecode
@@ -52,86 +48,6 @@ public class JVM implements CompilerTarget {
     ClassWriter writer;
 
     public JVM() {
-    }
-
-    public static void main(String[] args) {
-        int i = 0;
-        boolean isDebug = false;
-        boolean deadCode = false;
-        String commandLineScript = null;
-        String inlineName = null;
-        
-        for (int argIndex = 0; argIndex < args.length; argIndex++) {
-            if (args[argIndex].equals("-debug")) {
-                isDebug = true;
-                i++;
-                continue;
-            }
-            
-            if (args[argIndex].equals("-inline")) {
-                argIndex++;
-                inlineName = args[argIndex];
-                i += 2;
-                continue;
-            }
-            
-            if (args[argIndex].equals("-dead")) {
-                deadCode = true;
-                i++;
-                continue;
-            }
-            
-            if (args[argIndex].equals("-e")) {
-                argIndex++;
-                commandLineScript = args[argIndex];
-                break;
-            }
-        }
-
-        LOG.setDebugEnable(isDebug);
-
-        Ruby ruby = Ruby.newInstance(new RubyInstanceConfig() {
-            {
-                this.setCompileMode(CompileMode.OFFIR);
-            }
-        });
-
-        while (i < args.length) {
-            Node ast;
-            if (commandLineScript != null) {
-                ast = ruby.parseInline(new ByteArrayInputStream(commandLineScript.getBytes()), "-e", null);
-            } else {
-                try {
-                    ast = ruby.parseFile(new FileInputStream(args[i]), args[i], null);
-                } catch (IOException ioe) {
-                    throw new RuntimeException(ioe);
-                }
-            }
-            
-            IRScope scope = new IRBuilder(ruby.getIRManager()).buildRoot((RootNode) ast);
-            
-            // additional passes not enabled in builder yet
-            if (deadCode) scope.runCompilerPass(new DeadCodeElimination());
-            if (inlineName != null) {
-                scope.runCompilerPass(new InlineTest(inlineName));
-            }
-            
-            // run compiler
-            CompilerTarget target = new JDK7();
-
-            target.codegen(scope);
-            
-            Class compiled = ruby.getJRubyClassLoader().defineClass(scriptToClass(scope.getName()), target.code());
-            try {
-                compiled.getMethod("__script__", ThreadContext.class, IRubyObject.class).invoke(null, ruby.getCurrentContext(), ruby.getTopSelf());
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-
-            i++;
-            
-            if (commandLineScript != null) break;
-        }
     }
 
     public static Class compile(Ruby ruby, Node ast, JRubyClassLoader jrubyClassLoader) {
@@ -248,12 +164,12 @@ public class JVM implements CompilerTarget {
     }
     
     public void emitScope(IRScope scope, String name, int arity) {
-        pushmethod(scope.getName(), arity);
+        pushmethod(name, arity);
 
-        Tuple<Instr[], Map<Integer,Label>> t = scope.prepareForCompilation();
+        Tuple<Instr[], Map<Integer,Label[]>> t = scope.prepareForCompilation();
         Instr[] instrs = t.a;
-        Map<Integer, Label> jumpTable = t.b;
-        System.out.println("table: " + jumpTable);
+        Map<Integer, Label[]> jumpTable = t.b;
+//        System.out.println("table: " + jumpTable);
 
 //        System.out.println(method);
         for (int i = 0; i < instrs.length; i++) {
@@ -262,7 +178,7 @@ public class JVM implements CompilerTarget {
 //            System.out.println(instr);
             if (jumpTable.get(i) != null) {
 //                System.out.println("pc: " + i + " label: " + jumpTable.get(i));
-                method().mark(methodData().getLabel(jumpTable.get(i)));
+                for (Label label : jumpTable.get(i)) method().mark(methodData().getLabel(label));
             }
             emit(instr);
         }
