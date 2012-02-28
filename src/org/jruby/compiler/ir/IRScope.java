@@ -592,10 +592,40 @@ public abstract class IRScope {
         return prepareInstructionsForInterpretation();
     }
 
+    /* SSS FIXME: Do we need to synchronize on this?  Cache this info in a scope field? */
     /** Run any necessary passes to get the IR ready for compilation */
-    public synchronized void prepareForCompilation() {
+    public Tuple<Instr[], Map<Integer,Label>> prepareForCompilation() {
         // Build CFG and run compiler passes, if necessary
         if (getCFG() == null) runCompilerPasses();
+
+        try {
+            buildLinearization(); // FIXME: compiler passes should have done this
+            depends(linearization());
+        } catch (RuntimeException e) {
+            LOG.error("Error linearizing cfg: ", e);
+            CFG c = cfg();
+            LOG.error("\nGraph:\n" + c.toStringGraph());
+            LOG.error("\nInstructions:\n" + c.toStringInstrs());
+            throw e;
+        }
+
+        // Set up IPCs
+        HashMap<Integer, Label> ipcLabelMap = new HashMap<Integer, Label>();
+        List<Label> labelsToFixup = new ArrayList<Label>();
+        List<Instr> newInstrs = new ArrayList<Instr>();
+        int ipc = 0;
+        for (BasicBlock b : linearizedBBList) {
+            ipcLabelMap.put(ipc, b.getLabel());
+            labelsToFixup.add(b.getLabel());
+            for (Instr i : b.getInstrs()) {
+                if (!(i instanceof ReceiveSelfInstr)) {
+                    newInstrs.add(i);
+                    ipc++;
+                }
+            }
+        }
+
+        return new Tuple<Instr[], Map<Integer,Label>>(newInstrs.toArray(new Instr[newInstrs.size()]), ipcLabelMap);
     }
 
     private boolean computeScopeFlags(boolean receivesClosureArg, List<Instr> instrs) {
@@ -652,10 +682,10 @@ public abstract class IRScope {
         // recompute flags -- we could be calling this method different times
         // definitely once after ir generation and local optimizations propagates constants locally
         // but potentially at a later time after doing ssa generation and constant propagation
-        boolean receivesClosureArg = false;
         if (cfg == null) {
             computeScopeFlags(false, getInstrs());
         } else {
+            boolean receivesClosureArg = false;
             for (BasicBlock b: cfg.getBasicBlocks()) {
                 receivesClosureArg = computeScopeFlags(receivesClosureArg, b.getInstrs());
             }

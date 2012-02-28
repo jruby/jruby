@@ -8,11 +8,13 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Stack;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.ast.Node;
 import org.jruby.ast.RootNode;
+import org.jruby.compiler.ir.Tuple;
 import org.jruby.compiler.ir.CompilerTarget;
 import org.jruby.compiler.ir.IRBuilder;
 import org.jruby.compiler.ir.IRMethod;
@@ -248,7 +250,9 @@ public class JVM implements CompilerTarget {
     public void emitScope(IRScope scope, String name, int arity) {
         pushmethod(scope.getName(), arity);
 
-        Instr[] instrs = scope.prepareForInterpretation();
+        Tuple<Instr[], Map<Integer,Label>> t = scope.prepareForCompilation();
+        Instr[] instrs = t.a;
+        Map<Integer, Label> jumpTable = t.b;
 
 //        System.out.println(method);
         for (int i = 0; i < instrs.length; i++) {
