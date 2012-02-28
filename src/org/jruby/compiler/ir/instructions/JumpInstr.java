@@ -41,6 +41,6 @@ public class JumpInstr extends Instr {
     }
 
     public void compile(JVM jvm) {
-        jvm.method().goTo(jvm.methodData().getLabel(target.getTargetPC()));
+        jvm.method().goTo(jvm.methodData().getLabel(target));
     }
 }

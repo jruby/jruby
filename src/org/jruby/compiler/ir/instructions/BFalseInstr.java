@@ -24,6 +24,7 @@ public class BFalseInstr extends BranchInstr {
     public void compile(JVM jvm) {
         jvm.emit(getArg1());
         jvm.method().isTrue();
-        jvm.method().bfalse(jvm.methodData().getLabel(getJumpTarget().getTargetPC()));
+        System.out.println("bfalse jump: " + getJumpTarget());
+        jvm.method().bfalse(jvm.methodData().getLabel(getJumpTarget()));
     }
 }

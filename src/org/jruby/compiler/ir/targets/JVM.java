@@ -253,14 +253,16 @@ public class JVM implements CompilerTarget {
         Tuple<Instr[], Map<Integer,Label>> t = scope.prepareForCompilation();
         Instr[] instrs = t.a;
         Map<Integer, Label> jumpTable = t.b;
+        System.out.println("table: " + jumpTable);
 
 //        System.out.println(method);
         for (int i = 0; i < instrs.length; i++) {
             Instr instr = instrs[i];
 //            System.out.println(instr.getClass());
 //            System.out.println(instr);
-            if (methodData().getLabel(i) != null) {
-                method().adapter.label(methodData().getLabel(i));
+            if (jumpTable.get(i) != null) {
+//                System.out.println("pc: " + i + " label: " + jumpTable.get(i));
+                method().mark(methodData().getLabel(jumpTable.get(i)));
             }
             emit(instr);
         }
