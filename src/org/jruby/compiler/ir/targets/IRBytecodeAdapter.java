@@ -132,6 +132,10 @@ public class IRBytecodeAdapter {
         adapter.aload(0);
         adapter.getfield(p(ThreadContext.class), "nil", ci(IRubyObject.class));
     }
+    
+    public void pushHandle(String className, String methodName, int arity) {
+        adapter.getMethodVisitor().visitLdcInsn(new Handle(Opcodes.H_INVOKESTATIC, className, methodName, sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, arity))));
+    }
 
     public void mark(org.objectweb.asm.Label label) {
         adapter.label(label);

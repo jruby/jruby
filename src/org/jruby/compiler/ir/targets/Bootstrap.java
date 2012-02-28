@@ -131,8 +131,16 @@ public class Bootstrap {
         return self.getMetaClass().invoke(context, self, site.name, arg0, CallType.NORMAL);
     }
 
+    public static IRubyObject invokeSelf(InvokeSite site, ThreadContext context, IRubyObject self) {
+        return self.getMetaClass().invoke(context, self, site.name, CallType.FUNCTIONAL);
+    }
+
     public static IRubyObject invokeSelf(InvokeSite site, ThreadContext context, IRubyObject self, IRubyObject arg0) {
         return self.getMetaClass().invoke(context, self, site.name, arg0, CallType.FUNCTIONAL);
+    }
+
+    public static IRubyObject invokeSelf(InvokeSite site, ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1) {
+        return self.getMetaClass().invoke(context, self, site.name, arg0, arg1, CallType.FUNCTIONAL);
     }
 
     private static MethodHandle findStatic(Class target, String name, MethodType type) {

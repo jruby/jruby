@@ -4,6 +4,9 @@ import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.InlinerInfo;
+import org.jruby.compiler.ir.targets.JVM;
+import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -47,5 +50,10 @@ public class CheckArityInstr extends Instr {
     @Override
     public Instr cloneForBlockCloning(InlinerInfo ii) {
         return new CheckArityInstr(required, opt, rest);
+    }
+
+    @Override
+    public void compile(JVM jvm) {
+        // no-op right now
     }
 }

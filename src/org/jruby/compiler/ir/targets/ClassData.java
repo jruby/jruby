@@ -19,7 +19,8 @@ import org.objectweb.asm.commons.Method;
  */
 class ClassData {
 
-    public ClassData(ClassVisitor cls) {
+    public ClassData(String clsName, ClassVisitor cls) {
+        this.clsName = clsName;
         this.cls = cls;
     }
 
@@ -58,6 +59,7 @@ class ClassData {
         methodStack.pop();
     }
     public ClassVisitor cls;
+    public String clsName;
     Stack<MethodData> methodStack = new Stack();
     public Set<String> fieldSet = new HashSet<String>();
     

@@ -13,14 +13,19 @@ import org.jruby.compiler.ir.representations.InlinerInfo;
 
 import org.jruby.common.IRubyWarnings.ID;
 
+import org.jruby.compiler.ir.targets.JVM;
+import org.jruby.internal.runtime.methods.CompiledIRMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.WrapperMethod;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
+import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
+import org.jruby.util.CodegenUtils;
 
 public class DefineInstanceMethodInstr extends Instr {
     private Operand container;
@@ -103,5 +108,47 @@ public class DefineInstanceMethodInstr extends Instr {
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
         container = container.getSimplifiedOperand(valueMap, force);
+    }
+
+    @Override
+    public void compile(JVM jvm) {
+        StaticScope scope = method.getStaticScope();
+        if (scope.getRequiredArgs() != 0 || scope.getRestArg() >= 0 || scope.getOptionalArgs() != 0) {
+            throw new RuntimeException("can't compile arity != 0 method: " + this);
+        }
+
+        String scopeString = RuntimeHelpers.encodeScope(scope);
+
+        // preamble for addMethod below
+        jvm.method().adapter.aload(0);
+        jvm.method().adapter.invokevirtual(CodegenUtils.p(ThreadContext.class), "getRubyClass", "()Lorg/jruby/RubyModule;");
+        jvm.method().adapter.ldc(method.getName());
+
+        // new CompiledIRMethod
+        jvm.method().adapter.newobj(CodegenUtils.p(CompiledIRMethod.class));
+        jvm.method().adapter.dup();
+
+        // emit method body and get handle
+        jvm.emit(method); // handle
+
+        // add'l args for CompiledIRMethod constructor
+        jvm.method().adapter.ldc(method.getName());
+        jvm.method().adapter.ldc(method.getFileName());
+        jvm.method().adapter.ldc(method.getLineNumber());
+
+        jvm.method().adapter.aload(0);
+        jvm.method().adapter.ldc(scopeString);
+        jvm.method().adapter.invokestatic(CodegenUtils.p(RuntimeHelpers.class), "decodeLocalScope", "(Lorg/jruby/runtime/ThreadContext;Ljava/lang/String;)Lorg/jruby/parser/StaticScope;");
+
+        jvm.method().adapter.aload(0);
+        jvm.method().adapter.invokevirtual(CodegenUtils.p(ThreadContext.class), "getCurrentVisibility", "()Lorg/jruby/runtime/Visibility;");
+        jvm.method().adapter.aload(0);
+        jvm.method().adapter.invokevirtual(CodegenUtils.p(ThreadContext.class), "getRubyClass", "()Lorg/jruby/RubyModule;");
+
+        // invoke constructor
+        jvm.method().adapter.invokespecial(CodegenUtils.p(CompiledIRMethod.class), "<init>", "(Ljava/lang/invoke/MethodHandle;Ljava/lang/String;Ljava/lang/String;ILorg/jruby/parser/StaticScope;Lorg/jruby/runtime/Visibility;Lorg/jruby/RubyModule;)V");
+
+        // add method
+        jvm.method().adapter.invokevirtual(CodegenUtils.p(RubyModule.class), "addMethod", "(Ljava/lang/String;Lorg/jruby/internal/runtime/methods/DynamicMethod;)V");
     }
 }

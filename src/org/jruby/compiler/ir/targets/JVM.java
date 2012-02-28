@@ -3,6 +3,7 @@ package org.jruby.compiler.ir.targets;
 import org.jruby.compiler.ir.IRScope;
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -140,9 +141,15 @@ public class JVM implements CompilerTarget {
         // run compiler
         CompilerTarget target = new JDK7();
 
-        scope.prepareForCompilation();
-
         target.codegen(scope);
+
+//        try {
+//            FileOutputStream fos = new FileOutputStream("tmp.class");
+//            fos.write(target.code());
+//            fos.close();
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
 
         return jrubyClassLoader.defineClass(scriptToClass(scope.getName()), target.code());
     }
@@ -165,16 +172,19 @@ public class JVM implements CompilerTarget {
         return clsData().methodData();
     }
 
-    public void pushclass() {
+    public void pushclass(String clsName) {
         PrintWriter pw = new PrintWriter(System.out);
-        clsStack.push(new ClassData(new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS)));
+        clsStack.push(new ClassData(clsName, new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS)));
         pw.flush();
     }
 
-    public void pushscript() {
+    public void pushscript(String clsName) {
         PrintWriter pw = new PrintWriter(System.out);
         writer = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
-        clsStack.push(new ClassData(writer));
+        clsStack.push(new ClassData(clsName, writer));
+
+        cls().visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, clsName, null, p(Object.class), null);
+        cls().visitSource(script.getFileName(), null);
         pw.flush();
     }
 
@@ -215,15 +225,21 @@ public class JVM implements CompilerTarget {
     }
     
     public void emit(IRScriptBody script) {
-        pushscript();
-        cls().visit(RubyInstanceConfig.JAVA_VERSION, ACC_PUBLIC + ACC_SUPER, scriptToClass(script.getName()), null, p(Object.class), null);
-        cls().visitSource(script.getFileName(), null);
+        String clsName = scriptToClass(script.getName());
+        pushscript(clsName);
+
+        script.prepareForCompilation();
 
         pushmethod("__script__", 0);
 
-        for (BasicBlock b : script.getCFG().getBasicBlocks()) {
-            for (Instr instr: b.getInstrs()) {
-                emit(instr);
+        if (script.getCFG() == null) {
+            method().pushNil();
+            method().returnValue();
+        } else {
+            for (BasicBlock b : script.getCFG().getBasicBlocks()) {
+                for (Instr instr: b.getInstrs()) {
+                    emit(instr);
+                }
             }
         }
         
@@ -236,15 +252,23 @@ public class JVM implements CompilerTarget {
     public void emit(IRMethod method) {
         pushmethod(method.getName(), method.getCallArgs().length);
 
-        for (BasicBlock b : method.getCFG().getBasicBlocks()) {
-            for (Instr instr: b.getInstrs()) {
-                System.out.println(instr);
-                System.out.println(instr.getClass());
-                emit(instr);
+        method.prepareForCompilation();
+
+        if (method.getCFG() == null) {
+            method().pushNil();
+            method().returnValue();
+        } else {
+            for (BasicBlock b : method.getCFG().getBasicBlocks()) {
+                for (Instr instr: b.getInstrs()) {
+                    emit(instr);
+                }
             }
         }
         
         popmethod();
+
+        // push a method handle for binding purposes
+        method().pushHandle(clsData().clsName, method.getName(), method.getStaticScope().getRequiredArgs());
     }
 
     public void emit(Instr instr) {
