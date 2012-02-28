@@ -301,7 +301,6 @@ public class RbConfigLibrary implements Library {
         } else if (Platform.IS_MAC) {
             ldsharedflags = " -dynamic -bundle -undefined dynamic_lookup ";
             cflags = " -fPIC -DTARGET_RT_MAC_CFM=0 " + cflags;
-            ldflags += " -bundle -framework JavaVM -Wl,-syslibroot,$(SDKROOT) -mmacosx-version-min=10.5 ";
             archflags = " -arch " + Platform.ARCH;
             cppflags = " -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE " + cppflags;
             setConfig(mkmfHash, "DLEXT", "bundle");
