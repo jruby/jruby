@@ -38,11 +38,6 @@ public class IRClosure extends IRScope {
     // They just silently reuse the parent scope.  This changes how variables are allocated (see IRMethod.java).
     private boolean isForLoopBody;
 
-    // Has this closure been inlined into a method? If yes, its independent existence has come to an end
-    // because it has very likely been integrated into another scope and we should no longer do anything
-    // with the instructions as an independent closure scope.
-    private boolean hasBeenInlined;     
-
     // Block parameters
     private List<Operand> blockArgs;
 
@@ -64,7 +59,6 @@ public class IRClosure extends IRScope {
             int lineNumber, StaticScope staticScope, Arity arity, int argumentType, boolean is1_9) {
         this(manager, lexicalParent, lexicalParent.getFileName(), lineNumber, staticScope, isForLoopBody ? "_FOR_LOOP_" : "_CLOSURE_");
         this.isForLoopBody = isForLoopBody;
-        this.hasBeenInlined = false;
         this.blockArgs = new ArrayList<Operand>();
         
         if (!IRBuilder.inIRGenOnlyMode()) {
@@ -189,14 +183,6 @@ public class IRClosure extends IRScope {
 
     public BlockBody getBlockBody() {
         return body;
-    }
-
-    public void markInlined() {
-        this.hasBeenInlined = true;
-    }
-
-    public boolean hasBeenInlined() {
-        return this.hasBeenInlined;
     }
 
     @Override

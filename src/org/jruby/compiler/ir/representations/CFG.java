@@ -125,6 +125,11 @@ public class CFG {
     public ListIterator<BasicBlock> getReversePostOrderTraverser() {
         return postOrderList().listIterator(size());
     }    
+
+    public void resetState() {
+        // SSS FIXME: anything else?
+        postOrderList = null;
+    }
     
     public IRScope getScope() {
         return scope;

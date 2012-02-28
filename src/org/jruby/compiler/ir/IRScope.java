@@ -104,7 +104,7 @@ public abstract class IRScope {
     private CFG cfg;
 
     /** List of (nested) closures in this scope */
-    private List<IRClosure> closures;
+    private List<IRClosure> nestedClosures;
 
     /** Local variables defined in this scope */
     private Set<Variable> definedLocalVars;
@@ -230,7 +230,7 @@ public abstract class IRScope {
         this.hasLoops = s.hasLoops;
         this.hasUnusedImplicitBlockArg = s.hasUnusedImplicitBlockArg;
         this.instrList = null;
-        this.closures = new ArrayList<IRClosure>();
+        this.nestedClosures = new ArrayList<IRClosure>();
         this.dfProbs = new HashMap<String, DataFlowProblem>();
         this.nextVarIndex = new HashMap<String, Integer>(); // SSS FIXME: clone!
         this.cfg = null;
@@ -259,7 +259,7 @@ public abstract class IRScope {
         this.nextClosureIndex = 0;
         this.temporaryVariableIndex = -1;
         this.instrList = new ArrayList<Instr>();
-        this.closures = new ArrayList<IRClosure>();
+        this.nestedClosures = new ArrayList<IRClosure>();
         this.dfProbs = new HashMap<String, DataFlowProblem>();
         this.nextVarIndex = new HashMap<String, Integer>();
         this.cfg = null;
@@ -286,7 +286,7 @@ public abstract class IRScope {
     }
 
     public void addClosure(IRClosure c) {
-        closures.add(c);
+        nestedClosures.add(c);
     }
     
     public Instr getLastInstr() {
@@ -320,7 +320,7 @@ public abstract class IRScope {
     }    
 
     public List<IRClosure> getClosures() {
-        return closures;
+        return nestedClosures;
     }
     
     public IRManager getManager() {
@@ -661,9 +661,9 @@ public abstract class IRScope {
             i++;
         }
 
-        if (!closures.isEmpty()) {
+        if (!nestedClosures.isEmpty()) {
             b.append("\n\n------ Closures encountered in this scope ------\n");
-            for (IRClosure c: closures)
+            for (IRClosure c: nestedClosures)
                 b.append(c.toStringBody());
             b.append("------------------------------------------------\n");
         }
@@ -958,25 +958,39 @@ public abstract class IRScope {
 //            }
 //        }
 //
-//        List<IRClosure> closures = _scope.getClosures();
-//        if (!closures.isEmpty()) {
-//            for (IRClosure c : closures) {
+//        List<IRClosure> nestedClosures = _scope.getClosures();
+//        if (!nestedClosures.isEmpty()) {
+//            for (IRClosure c : nestedClosures) {
 //                c.getCFG().splitCalls();
 //            }
 //        }
-    }    
+    }
+
+    public void resetDFProblemsState() {
+        dfProbs = new HashMap<String, DataFlowProblem>();
+    }
+
+    public void resetState() {
+        relinearizeCFG = true;
+        linearizedInstrArray = null;
+        cfg.resetState();
+
+        // Reset dataflow problems state
+        resetDFProblemsState();
+        for (IRClosure c: nestedClosures) c.resetDFProblemsState();
+    }
 
     public void inlineMethod(IRScope method, RubyModule implClass, int classToken, BasicBlock basicBlock, CallBase call) {
+        // Inline
         depends(cfg());
         new CFGInliner(cfg).inlineMethod(method, implClass, classToken, basicBlock, call);
 
         // Reset state
-        relinearizeCFG = true;
-        linearizedInstrArray = null;
-        dfProbs = new HashMap<String, DataFlowProblem>();
+        resetState();
+
+        // Re-run opts
         runCompilerPass(new LocalOptimizationPass());
-        // SSS FIXME: Some bug in the LVA/DCE/Inlining combination
-        // runCompilerPass(new DeadCodeElimination());
+        if (RubyInstanceConfig.IR_DEAD_CODE) runCompilerPass(new DeadCodeElimination());
     }
     
     

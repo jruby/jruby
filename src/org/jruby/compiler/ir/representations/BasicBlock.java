@@ -35,12 +35,6 @@ public class BasicBlock implements ExplicitVertexID {
         id = c.getNextBBID();
     }
 
-    private void migrateToCFG(CFG newCFG) {
-        newCFG.addBasicBlock(this);
-        this.cfg = newCFG;
-        this.id = newCFG.getNextBBID();
-    }
-
     public int getID() {
         return id;
     }
@@ -111,6 +105,7 @@ public class BasicBlock implements ExplicitVertexID {
     }
 
     public BasicBlock cloneForInlinedMethod(InlinerInfo ii) {
+        IRScope hostScope = ii.getInlineHostScope();
         BasicBlock clonedBB = ii.getOrCreateRenamedBB(this);
         for (Instr i: getInstrs()) {
             Instr clonedInstr = i.cloneForInlinedScope(ii);
@@ -120,7 +115,7 @@ public class BasicBlock implements ExplicitVertexID {
                 if (clonedInstr instanceof CallBase) {
                     CallBase call = (CallBase)clonedInstr;
                     Operand block = call.getClosureArg(null);
-                    if (block instanceof WrappedIRClosure) ii.getInlineHostScope().addClosure(((WrappedIRClosure)block).getClosure());
+                    if (block instanceof WrappedIRClosure) hostScope.addClosure(((WrappedIRClosure)block).getClosure());
                 }
             }
         }
@@ -128,22 +123,16 @@ public class BasicBlock implements ExplicitVertexID {
         return clonedBB;
     }
 
-    public void migrateToHostScope(InlinerInfo ii) {
+    public BasicBlock cloneForInlinedClosure(InlinerInfo ii) {
         // Update cfg for this bb
         IRScope hostScope = ii.getInlineHostScope();
-        migrateToCFG(hostScope.getCFG());
-
-        // Clone
-        List clonedInstrs = new ArrayList<Instr>();
+        BasicBlock clonedBB = ii.getOrCreateRenamedBB(this);
 
         // Process instructions
-        for (ListIterator<Instr> it = ((ArrayList<Instr>)instrs).listIterator(); it.hasNext(); ) {
-            Instr i = it.next();
-
-            // clone
+        for (Instr i: getInstrs()) {
             Instr clonedInstr = i.cloneForInlinedClosure(ii);
             if (clonedInstr != null) {
-                clonedInstrs.add(clonedInstr);
+                clonedBB.addInstr(clonedInstr);
                 if (clonedInstr instanceof CallBase) {
                     CallBase call = (CallBase)clonedInstr;
                     Operand block = call.getClosureArg(null);
@@ -152,7 +141,7 @@ public class BasicBlock implements ExplicitVertexID {
             }
         }
 
-        this.instrs = clonedInstrs;
+        return clonedBB;
     }
 
     @Override

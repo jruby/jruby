@@ -131,7 +131,10 @@ public enum Operation {
     BLOCK_GIVEN(0),
     RESTORE_ERROR_INFO(0),
     RAISE_ARGUMENT_ERROR(OpFlags.f_can_raise_exception),
-    CHECK_ARITY(OpFlags.f_can_raise_exception),
+    // SSS FIXME: Come up with a different strategy/flag to handle this situation
+    // check_arity instructions cannot be dead-code-eliminated.
+    // So, using has_side_effect flag to prevent its deletion. 
+    CHECK_ARITY(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
     RECORD_END_BLOCK(OpFlags.f_has_side_effect),
     TO_ARY(OpFlags.f_can_raise_exception),
 

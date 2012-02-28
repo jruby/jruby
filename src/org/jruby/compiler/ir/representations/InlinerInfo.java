@@ -68,6 +68,7 @@ public class InlinerInfo {
         InlinerInfo clone = new InlinerInfo();
         clone.varRenameMap = new HashMap<Variable, Variable>();
         clone.lblRenameMap = new HashMap<Label, Label>();
+        clone.bbRenameMap = new HashMap<BasicBlock, BasicBlock>();
         clone.call = this.call;
         clone.callArgs = this.callArgs;
         clone.callerCFG = this.callerCFG;

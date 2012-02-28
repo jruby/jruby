@@ -90,7 +90,6 @@ public class CFGInliner {
         // Temporarily turn off inlining of recursive methods
         if (cfg.getScope() == scope) return;
 
-
 /*
         System.out.println("host cfg   :" + cfg.toStringGraph());
         System.out.println("host instrs:" + cfg.toStringInstrs());
@@ -164,18 +163,19 @@ public class CFGInliner {
         for (Edge<BasicBlock> e : methodCFG.getIncomingEdges(mExit)) {
             BasicBlock source = e.getSource().getData();
             if (source != mEntry) {
+                BasicBlock clonedSource = ii.getRenamedBB(source);
                 if (e.getType() == EdgeType.EXCEPTION) {
                     // e._src has an explicit throw that returns from the callee
                     // after inlining, if the caller instruction has a rescuer, then the
                     // throw has to be captured by the rescuer as well.
                     BasicBlock rescuerOfSplitBB = cfg.getRescuerBBFor(splitBB);
                     if (rescuerOfSplitBB != null) {
-                        cfg.addEdge(ii.getRenamedBB(source), rescuerOfSplitBB, EdgeType.EXCEPTION);
+                        cfg.addEdge(clonedSource, rescuerOfSplitBB, EdgeType.EXCEPTION);
                     } else {
-                        cfg.addEdge(ii.getRenamedBB(source), cfg.getExitBB(), EdgeType.EXIT);                        
+                        cfg.addEdge(clonedSource, cfg.getExitBB(), EdgeType.EXIT);                        
                     }
                 } else {
-                    cfg.addEdge(ii.getRenamedBB(source), splitBB, e.getType());
+                    cfg.addEdge(clonedSource, splitBB, e.getType());
                 }
             }
         }
@@ -275,11 +275,6 @@ public class CFGInliner {
     }
 
     private void inlineClosureAtYieldSite(InlinerInfo ii, IRClosure cl, BasicBlock yieldBB, YieldInstr yield) {
-        // SSS FIXME: Is this still true?
-        // Mark this closure as inlined so we dont run any destructive operations on it.
-        // since the closure in its original form will get destroyed by the inlining.
-        cl.markInlined();
-
         // 1. split yield site bb and move outbound edges from yield site bb to split bb.
         BasicBlock splitBB = yieldBB.splitAtInstruction(yield, cfg.getScope().getNewLabel(), false);
         cfg.addBasicBlock(splitBB);
@@ -294,46 +289,50 @@ public class CFGInliner {
         ii.setupYieldArgsAndYieldResult(yield, yieldBB, cl.getBlockBody().arity());
 
         // 2. Merge closure cfg into the current cfg
-        // SSS FIXME: Is it simpler to just clone everything?
-        //
-        // NOTE: No need to clone basic blocks in the closure because they are part of the caller's cfg
-        // and is being merged in at the yield site -- there is no need for the closure after the merge.
-        // But, we will clone individual instructions.
         CFG closureCFG = cl.getCFG();
         BasicBlock cEntry = closureCFG.getEntryBB();
         BasicBlock cExit = closureCFG.getExitBB();
         for (BasicBlock b : closureCFG.getBasicBlocks()) {
-            if (b != cEntry && b != cExit) b.migrateToHostScope(ii);
+            if (b != cEntry && b != cExit) {
+                cfg.addBasicBlock(b.cloneForInlinedClosure(ii));
+            }
         }
+
         for (BasicBlock b : closureCFG.getBasicBlocks()) {
             if (b != cEntry && b != cExit) {
+                BasicBlock bClone = ii.getRenamedBB(b);
                 for (Edge<BasicBlock> e : closureCFG.getOutgoingEdges(b)) {
-                    BasicBlock c = e.getDestination().getData();
-                    if (c != cExit) cfg.addEdge(b, c, e.getType());
+                    BasicBlock edst = e.getDestination().getData();
+                    if (edst != cExit) cfg.addEdge(bClone, ii.getRenamedBB(edst), e.getType());
                 }
             }
         }
         
+        // Hook up entry edges
         for (Edge<BasicBlock> e : closureCFG.getOutgoingEdges(cEntry)) {
             BasicBlock destination = e.getDestination().getData();
-            if (destination != cExit) cfg.addEdge(yieldBB, destination, e.getType());
+            if (destination != cExit) {
+                cfg.addEdge(yieldBB, ii.getRenamedBB(destination), CFG.EdgeType.FALL_THROUGH);
+            }
         }
         
+        // Hook up exit edges 
         for (Edge<BasicBlock> e : closureCFG.getIncomingEdges(cExit)) {
             BasicBlock source = e.getSource().getData();
             if (source != cEntry) {
+                BasicBlock clonedSource = ii.getRenamedBB(source);
                 if (e.getType() == EdgeType.EXCEPTION) {
                     // e._src has an explicit throw that returns from the closure.
                     // After inlining, if the yield instruction has a rescuer, then the
                     // throw has to be captured by the rescuer as well.
                     BasicBlock rescuerOfSplitBB = cfg.getRescuerBBFor(splitBB);
                     if (rescuerOfSplitBB != null) {
-                        cfg.addEdge(source, rescuerOfSplitBB, EdgeType.EXCEPTION);
+                        cfg.addEdge(clonedSource, rescuerOfSplitBB, EdgeType.EXCEPTION);
                     } else {
-                        cfg.addEdge(source, cfg.getExitBB(), EdgeType.EXIT);
+                        cfg.addEdge(clonedSource, cfg.getExitBB(), EdgeType.EXIT);
                     }
                 } else {
-                    cfg.addEdge(source, splitBB, e.getType());
+                    cfg.addEdge(clonedSource, splitBB, e.getType());
                 }
             }
         }
@@ -342,7 +341,7 @@ public class CFGInliner {
         // 5. No need to clone rescued regions -- just assimilate them
         List<ExceptionRegion> exceptionRegions = cfg.getOutermostExceptionRegions();
         for (ExceptionRegion r : closureCFG.getOutermostExceptionRegions()) {
-            exceptionRegions.add(r);
+            exceptionRegions.add(r.cloneForInlining(ii));
         }
 
         // 6. Update bb rescuer map
@@ -357,14 +356,14 @@ public class CFGInliner {
         // 6c. bbs in mcfg that aren't protected by an existing bb will be protected by yieldBBrescuer/yieldBBensurer
         for (BasicBlock cb : closureCFG.getBasicBlocks()) {
             if (cb != cEntry && cb != cExit) {
-                BasicBlock cbProtector = closureCFG.getRescuerBBFor(cb);
+                BasicBlock cbProtector = ii.getRenamedBB(closureCFG.getRescuerBBFor(cb));
                 if (cbProtector != null) {
                     cfg.setRescuerBB(cb, cbProtector);
                 } else if (yieldBBrescuer != null) {
                     cfg.setRescuerBB(cb, yieldBBrescuer);
                 }
 
-                BasicBlock cbEnsurer = closureCFG.getEnsurerBBFor(cb);
+                BasicBlock cbEnsurer = ii.getRenamedBB(closureCFG.getEnsurerBBFor(cb));
                 if (cbEnsurer != null) {
                     cfg.setEnsurerBB(cb, cbEnsurer);
                 } else if (yieldBBensurer != null) {
