@@ -124,11 +124,20 @@ public class Bootstrap {
         return RubyString.newStringNoCopy(context.runtime, value.getBytes(RubyEncoding.ISO));
     }
 
+    public static IRubyObject invoke(InvokeSite site, ThreadContext context, IRubyObject self) {
+        return self.getMetaClass().invoke(context, self, site.name, CallType.NORMAL);
+    }
+
     public static IRubyObject invoke(InvokeSite site, ThreadContext context, IRubyObject self, IRubyObject arg0) {
         return self.getMetaClass().invoke(context, self, site.name, arg0, CallType.NORMAL);
     }
+
     public static IRubyObject invoke(InvokeSite site, ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1) {
-        return self.getMetaClass().invoke(context, self, site.name, arg0, CallType.NORMAL);
+        return self.getMetaClass().invoke(context, self, site.name, arg0, arg1, CallType.NORMAL);
+    }
+
+    public static IRubyObject invoke(InvokeSite site, ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        return self.getMetaClass().invoke(context, self, site.name, arg0, arg1, arg2, CallType.NORMAL);
     }
 
     public static IRubyObject invokeSelf(InvokeSite site, ThreadContext context, IRubyObject self) {
@@ -141,6 +150,10 @@ public class Bootstrap {
 
     public static IRubyObject invokeSelf(InvokeSite site, ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1) {
         return self.getMetaClass().invoke(context, self, site.name, arg0, arg1, CallType.FUNCTIONAL);
+    }
+
+    public static IRubyObject invokeSelf(InvokeSite site, ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        return self.getMetaClass().invoke(context, self, site.name, arg0, arg1, arg2, CallType.FUNCTIONAL);
     }
 
     private static MethodHandle findStatic(Class target, String name, MethodType type) {

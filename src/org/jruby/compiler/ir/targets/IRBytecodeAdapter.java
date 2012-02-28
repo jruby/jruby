@@ -4,13 +4,11 @@
  */
 package org.jruby.compiler.ir.targets;
 
-import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.jruby.RubyEncoding;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
-import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -34,31 +32,18 @@ public class IRBytecodeAdapter {
 
     public void startMethod() {
         adapter.start();
-
-        newLocal("context", JVM.THREADCONTEXT_TYPE);
     }
 
     public void endMethod() {
-        adapter.end();
-//        adapter.end(new Runnable() {
-//            public void run() {
-//                for (Map.Entry<Integer, Type> entry : fields.entrySet()) {
-//                    int i = entry.getKey();
-//                    String name;
-//                    switch (i) {
-//                        case 0:
-//                            name = "context";
-//                            break;
-//                        case 1:
-//                            name = "self";
-//                            break;
-//                        default:
-//                            name = variables.get(i);
-//                    }
-//                    adapter.local(i, name, entry.getValue());
-//                }
-//            }
-//        });
+        adapter.end(new Runnable() {
+            public void run() {
+                for (Map.Entry<Integer, Type> entry : variableTypes.entrySet()) {
+                    int i = entry.getKey();
+                    String name = variableNames.get(i);
+                    adapter.local(i, name, entry.getValue());
+                }
+            }
+        });
     }
 
     public void push(Long l) {
@@ -154,9 +139,9 @@ public class IRBytecodeAdapter {
     }
 
     public int newLocal(String name, Type type) {
-        int index = fieldCount++;
-        fields.put(index, type);
-        variables.put(index, name);
+        int index = variableCount++;
+        variableTypes.put(index, type);
+        variableNames.put(index, name);
         return index;
     }
 
@@ -164,9 +149,9 @@ public class IRBytecodeAdapter {
         return new org.objectweb.asm.Label();
     }
     public SkinnyMethodAdapter adapter;
-    private int fieldCount = 0;
-    private Map<Integer, Type> fields = new HashMap<Integer, Type>();
-    private Map<Integer, String> variables = new HashMap<Integer, String>();
+    private int variableCount = 0;
+    private Map<Integer, Type> variableTypes = new HashMap<Integer, Type>();
+    private Map<Integer, String> variableNames = new HashMap<Integer, String>();
     private int arity;
     private String[] params;
 }

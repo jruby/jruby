@@ -9,6 +9,7 @@ import java.util.Map;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Variable;
+import org.objectweb.asm.Type;
 
 /**
  *
@@ -21,16 +22,25 @@ public class MethodData {
     }
     
     public int local(Variable variable) {
-        if (varMap.containsKey(variable)) return varMap.get(variable);
-
         String newName = variable.getName().replace('%', '$');
-        int index = method.newLocal(newName, JVM.OBJECT_TYPE);
-        varMap.put(variable, index);
+        return local(newName, JVM.OBJECT_TYPE);
+    }
+
+    public int local(String newName) {
+        return local(newName, JVM.OBJECT_TYPE);
+    }
+
+    public int local(String newName, Type type) {
+        if (varMap.containsKey(newName)) return varMap.get(newName);
+
+        int index = method.newLocal(newName, type);
+        varMap.put(newName, index);
 
         return index;
     }
+    
     public IRBytecodeAdapter method;
-    public Map<Variable, Integer> varMap = new HashMap<Variable, Integer>();
+    public Map<String, Integer> varMap = new HashMap<String, Integer>();
     public Map<Label, org.objectweb.asm.Label> labelMap = new HashMap<Label, org.objectweb.asm.Label>();
     
 }

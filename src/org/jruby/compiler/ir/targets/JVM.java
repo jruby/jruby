@@ -143,13 +143,13 @@ public class JVM implements CompilerTarget {
 
         target.codegen(scope);
 
-//        try {
-//            FileOutputStream fos = new FileOutputStream("tmp.class");
-//            fos.write(target.code());
-//            fos.close();
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
+        try {
+            FileOutputStream fos = new FileOutputStream("tmp.class");
+            fos.write(target.code());
+            fos.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         return jrubyClassLoader.defineClass(scriptToClass(scope.getName()), target.code());
     }
@@ -199,6 +199,10 @@ public class JVM implements CompilerTarget {
     public void pushmethod(String name, int arity) {
         clsData().pushmethod(name, arity);
         method().startMethod();
+
+        // locals for ThreadContext and self
+        methodData().local("$context", JVM.THREADCONTEXT_TYPE);
+        methodData().local("$self");//, JVM.OBJECT_TYPE);
     }
 
     public void popmethod() {
@@ -228,19 +232,13 @@ public class JVM implements CompilerTarget {
         String clsName = scriptToClass(script.getName());
         pushscript(clsName);
 
-        script.prepareForCompilation();
-
         pushmethod("__script__", 0);
 
-        if (script.getCFG() == null) {
-            method().pushNil();
-            method().returnValue();
-        } else {
-            for (BasicBlock b : script.getCFG().getBasicBlocks()) {
-                for (Instr instr: b.getInstrs()) {
-                    emit(instr);
-                }
-            }
+        Instr[] instrs = script.prepareForInterpretation();
+
+        for (Instr instr: instrs) {
+//            System.out.println(instr);
+            emit(instr);
         }
         
         popmethod();
@@ -252,19 +250,15 @@ public class JVM implements CompilerTarget {
     public void emit(IRMethod method) {
         pushmethod(method.getName(), method.getCallArgs().length);
 
-        method.prepareForCompilation();
+        Instr[] instrs = method.prepareForInterpretation();
 
-        if (method.getCFG() == null) {
-            method().pushNil();
-            method().returnValue();
-        } else {
-            for (BasicBlock b : method.getCFG().getBasicBlocks()) {
-                for (Instr instr: b.getInstrs()) {
-                    emit(instr);
-                }
-            }
+//        System.out.println(method);
+        for (Instr instr: instrs) {
+//            System.out.println(instr.getClass());
+//            System.out.println(instr);
+            emit(instr);
         }
-        
+
         popmethod();
 
         // push a method handle for binding purposes
@@ -290,7 +284,9 @@ public class JVM implements CompilerTarget {
     }
 
     public void emitVariable(Variable variable) {
+//        System.out.println("variable: " + variable);
         int index = methodData().local(variable);
+//        System.out.println("index: " + index);
         method().loadLocal(index);
     }
 

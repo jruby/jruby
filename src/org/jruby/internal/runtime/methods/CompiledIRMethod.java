@@ -67,7 +67,107 @@ public class CompiledIRMethod extends DynamicMethod implements PositionAware {
             RubyModule implementationClass = getImplementationClass();
             context.preMethodFrameAndScope(implementationClass, name, self, block, scope);
             context.setCurrentVisibility(getVisibility());
+            return (IRubyObject)this.method.invokeWithArguments(context, self, args);
+        } catch (Throwable t) {
+            UnsafeFactory.getUnsafe().throwException(t);
+            // not reached
+            return null;
+        } finally {
+            // update call stacks (pop: ..)
+            context.popFrame();
+            context.postMethodScopeOnly();
+        }
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
+        if (Interpreter.isDebug()) {
+            // FIXME: name should probably not be "" ever.
+            String realName = name == null || "".equals(name) ? this.name : name;
+            LOG.info("Executing '" + realName + "'");
+        }
+
+        try {
+            // update call stacks (push: frame, class, scope, etc.)
+            RubyModule implementationClass = getImplementationClass();
+            context.preMethodFrameAndScope(implementationClass, name, self, block, scope);
+            context.setCurrentVisibility(getVisibility());
             return (IRubyObject)this.method.invokeWithArguments(context, self);
+        } catch (Throwable t) {
+            UnsafeFactory.getUnsafe().throwException(t);
+            // not reached
+            return null;
+        } finally {
+            // update call stacks (pop: ..)
+            context.popFrame();
+            context.postMethodScopeOnly();
+        }
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
+        if (Interpreter.isDebug()) {
+            // FIXME: name should probably not be "" ever.
+            String realName = name == null || "".equals(name) ? this.name : name;
+            LOG.info("Executing '" + realName + "'");
+        }
+
+        try {
+            // update call stacks (push: frame, class, scope, etc.)
+            RubyModule implementationClass = getImplementationClass();
+            context.preMethodFrameAndScope(implementationClass, name, self, block, scope);
+            context.setCurrentVisibility(getVisibility());
+            return (IRubyObject)this.method.invokeWithArguments(context, self, arg0);
+        } catch (Throwable t) {
+            UnsafeFactory.getUnsafe().throwException(t);
+            // not reached
+            return null;
+        } finally {
+            // update call stacks (pop: ..)
+            context.popFrame();
+            context.postMethodScopeOnly();
+        }
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
+        if (Interpreter.isDebug()) {
+            // FIXME: name should probably not be "" ever.
+            String realName = name == null || "".equals(name) ? this.name : name;
+            LOG.info("Executing '" + realName + "'");
+        }
+
+        try {
+            // update call stacks (push: frame, class, scope, etc.)
+            RubyModule implementationClass = getImplementationClass();
+            context.preMethodFrameAndScope(implementationClass, name, self, block, scope);
+            context.setCurrentVisibility(getVisibility());
+            return (IRubyObject)this.method.invokeWithArguments(context, self, arg0, arg1);
+        } catch (Throwable t) {
+            UnsafeFactory.getUnsafe().throwException(t);
+            // not reached
+            return null;
+        } finally {
+            // update call stacks (pop: ..)
+            context.popFrame();
+            context.postMethodScopeOnly();
+        }
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        if (Interpreter.isDebug()) {
+            // FIXME: name should probably not be "" ever.
+            String realName = name == null || "".equals(name) ? this.name : name;
+            LOG.info("Executing '" + realName + "'");
+        }
+
+        try {
+            // update call stacks (push: frame, class, scope, etc.)
+            RubyModule implementationClass = getImplementationClass();
+            context.preMethodFrameAndScope(implementationClass, name, self, block, scope);
+            context.setCurrentVisibility(getVisibility());
+            return (IRubyObject)this.method.invokeWithArguments(context, self, arg0, arg1, arg2);
         } catch (Throwable t) {
             UnsafeFactory.getUnsafe().throwException(t);
             // not reached

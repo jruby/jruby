@@ -113,7 +113,7 @@ public class DefineInstanceMethodInstr extends Instr {
     @Override
     public void compile(JVM jvm) {
         StaticScope scope = method.getStaticScope();
-        if (scope.getRequiredArgs() != 0 || scope.getRestArg() >= 0 || scope.getOptionalArgs() != 0) {
+        if (scope.getRequiredArgs() > 3 || scope.getRestArg() >= 0 || scope.getOptionalArgs() != 0) {
             throw new RuntimeException("can't compile arity != 0 method: " + this);
         }
 
