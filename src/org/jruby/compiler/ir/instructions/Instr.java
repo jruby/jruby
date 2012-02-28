@@ -76,7 +76,7 @@ public abstract class Instr {
              return false;
          } else if (this instanceof ResultInstr) {
              Variable r = ((ResultInstr)this).getResult();
-             if (s.bindingHasEscaped()) {
+             if (s.bindingHasEscaped() && !r.getName().equals(Variable.BLOCK)) {
                  // If the binding of this scope has escaped, then we have to preserve writes to
                  // all local variables because anyone who uses the binding might query any of the
                  // local variables from the binding.  This is safe, but extremely conservative.

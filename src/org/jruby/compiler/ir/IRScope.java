@@ -598,19 +598,8 @@ public abstract class IRScope {
         if (getCFG() == null) runCompilerPasses();
     }
 
-    // SSS FIXME: This method does nothing useful right now.
-    // hasEscapedBinding is the crucial flag and it continues to be unconditionally true.
-    public void computeScopeFlags() {
-        // init
-        canModifyCode = true;
-        canCaptureCallersBinding = false;
-        usesZSuper = false;
-
-        // recompute flags -- we could be calling this method different times
-        // definitely once after ir generation and local optimizations propagates constants locally
-        // but potentially at a later time after doing ssa generation and constant propagation
-        boolean receivesClosureArg = false;
-        for (Instr i: getInstrs()) {
+    private boolean computeScopeFlags(boolean receivesClosureArg, List<Instr> instrs) {
+        for (Instr i: instrs) {
             if (i instanceof ReceiveClosureInstr)
                 receivesClosureArg = true;
 
@@ -633,11 +622,42 @@ public abstract class IRScope {
                     }
                 }
 
-                // If this method receives a closure arg, and this call is an eval that has more than 1 argument,
-                // it could be using the closure as a binding -- which means it could be using pretty much any
-                // variable from the caller's binding!
-                if (receivesClosureArg && call.canBeEval() && (call.getCallArgs().length > 1))
-                    canCaptureCallersBinding = true;
+                if (call.canBeEval()) {
+                    usesEval = true;
+
+                    // If this method receives a closure arg, and this call is an eval that has more than 1 argument,
+                    // it could be using the closure as a binding -- which means it could be using pretty much any
+                    // variable from the caller's binding!
+                    if (receivesClosureArg && (call.getCallArgs().length > 1))
+                        canCaptureCallersBinding = true;
+                }
+            }
+        }
+
+        return receivesClosureArg;
+    }
+
+    // SSS FIXME: This method does nothing a whole lot useful right now.
+    // hasEscapedBinding is the crucial flag and it continues to be unconditionally true.
+    //
+    // This can help use eliminate writes to %block that are not used since this is
+    // a special local-variable, not programmer-defined local-variable
+    public void computeScopeFlags() {
+        // init
+        canModifyCode = true;
+        canCaptureCallersBinding = false;
+        usesZSuper = false;
+        usesEval = false;
+
+        // recompute flags -- we could be calling this method different times
+        // definitely once after ir generation and local optimizations propagates constants locally
+        // but potentially at a later time after doing ssa generation and constant propagation
+        boolean receivesClosureArg = false;
+        if (cfg == null) {
+            computeScopeFlags(false, getInstrs());
+        } else {
+            for (BasicBlock b: cfg.getBasicBlocks()) {
+                receivesClosureArg = computeScopeFlags(receivesClosureArg, b.getInstrs());
             }
         }
     }
@@ -974,6 +994,13 @@ public abstract class IRScope {
         relinearizeCFG = true;
         linearizedInstrArray = null;
         cfg.resetState();
+
+        // reset flags
+        canModifyCode = true;
+        canCaptureCallersBinding = true;
+        bindingHasEscaped = true;
+        usesEval = true;
+        usesZSuper = true;
 
         // Reset dataflow problems state
         resetDFProblemsState();

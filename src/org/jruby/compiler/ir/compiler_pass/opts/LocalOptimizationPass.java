@@ -36,13 +36,13 @@ public class LocalOptimizationPass implements CompilerPass {
         CFG cfg = s.getCFG();
         if (cfg == null) {
             runLocalOpts(s);
-            // Only after running local opts, compute various execution scope flags
-            s.computeScopeFlags();
         } else {
             for (BasicBlock b: cfg.getBasicBlocks()) {
                 runLocalOptsOnInstrList(s, b.getInstrs().listIterator(), false);
             }
         }
+        // Only after running local opts, compute various execution scope flags
+        s.computeScopeFlags();
     }
 
     private static void allocVar(Operand oldVar, IRScope s, List<TemporaryVariable> freeVarsList, Map<Operand, Operand> newVarMap) {
