@@ -154,19 +154,44 @@ endif
 
 ifeq ($(OS), darwin)
   PLATFORM = Darwin
-  MACSDK = $(firstword $(filter-out %/MacOSX10.4u.sdk, $(wildcard /Developer/SDKs/MacOSX*.sdk)))
-  JDK_INCLUDES = -I$(MACSDK)/System/Library/Frameworks/JavaVM.framework/Headers
-  ARCHES = ppc
-  ifneq ($(findstring $(CPU), i386 x86_64),)
-    ARCHES= i386 x86_64
+  ifneq ($(realpath $(wildcard /Xcode3/usr/bin/gcc)),)
+    XCODE=/Xcode3
+  else
+    XCODE=/Developer
+  endif
+  ifneq ($(realpath $(wildcard $(XCODE)/usr/bin/gcc)),)
+    CC = $(XCODE)/usr/bin/gcc
+    CXX = $(XCODE)/usr/bin/g++
+  else
+    CC = gcc
+    CXX = g++
   endif
 
-  CFLAGS += -isysroot $(MACSDK) -DTARGET_RT_MAC_CFM=0 -I/usr/include
+  ARCHES =
+  ifneq ($(findstring $(CPU), ppc powerpc),)
+    ARCHES += ppc
+  endif
+  ifneq ($(findstring $(CPU), i386 x86_64),)
+    ARCHES += i386 x86_64
+  endif
+
+  UNIVERSAL_SDK = $(firstword $(strip $(realpath $(XCODE)/SDKs/MacOSX10.5.sdk)))
+  ifneq ($(UNIVERSAL_SDK),)
+    MACSDK = $(UNIVERSAL_SDK)
+    ifeq ($(findstring ppc, $(ARCHES)),)
+      ARCHES += ppc
+    endif
+  else
+    MACSDK = $(firstword $(strip $(wildcard $(XCODE)/SDKs/MacOSX10.*.sdk)))
+  endif
+
+  JDK_INCLUDES = -I$(MACSDK)/System/Library/Frameworks/JavaVM.framework/Headers
+  IFLAGS += -isysroot $(MACSDK) -I$(MACSDK)/usr/include
+  CFLAGS += -DTARGET_RT_MAC_CFM=0 
   ARCHFLAGS = $(foreach arch, $(ARCHES),-arch $(arch))
   LDFLAGS = $(foreach arch, $(ARCHES),-arch $(arch)) -dynamiclib -framework JavaVM \
 	-Wl,-syslibroot,$(MACSDK) -mmacosx-version-min=10.5
   JNIEXT = jnilib
-  #CFLAGS += -I$(MACSDK)/System/Library/Frameworks/Kernel.framework/Versions/A/Headers
   PICFLAGS =
   SOFLAGS =
 endif
