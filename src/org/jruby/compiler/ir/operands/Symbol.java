@@ -1,6 +1,7 @@
 package org.jruby.compiler.ir.operands;
 
 import org.jruby.compiler.ir.representations.InlinerInfo;
+import org.jruby.compiler.ir.targets.JVM;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -23,5 +24,10 @@ public class Symbol extends Reference {
     @Override
     public String toString() {
         return ":" + getName();
+    }
+
+    @Override
+    public void compile(JVM jvm) {
+        jvm.method().push(getName());
     }
 }

@@ -7,7 +7,9 @@ package org.jruby.compiler.ir.targets;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
+import org.jruby.RubySymbol;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -54,6 +56,15 @@ public class IRBytecodeAdapter {
     public void push(ByteList bl) {
         adapter.aload(0);
         adapter.invokedynamic("string", sig(JVM.OBJECT, ThreadContext.class), Bootstrap.string(), new String(bl.bytes(), RubyEncoding.ISO), bl.getEncoding().getIndex());
+    }
+
+    /**
+     * Push a symbol on the stack
+     * @param sym the symbol's string identifier
+     */
+    public void push(String sym) {
+        adapter.aload(0);
+        adapter.invokedynamic("symbol", sig(JVM.OBJECT, ThreadContext.class), Bootstrap.symbol(), sym);
     }
 
     public void loadLocal(int i) {
@@ -126,12 +137,12 @@ public class IRBytecodeAdapter {
         adapter.label(label);
     }
 
-    public void putField(Type type, String name, Type fieldType) {
-        adapter.putfield(type.getInternalName(), name, fieldType.getDescriptor());
+    public void putField(String name) {
+        adapter.invokedynamic("ivarSet:" + JavaNameMangler.mangleMethodName(name), sig(void.class, IRubyObject.class, IRubyObject.class), Bootstrap.ivar());
     }
 
-    public void getField(Type type, String name, Type fieldType) {
-        adapter.getfield(type.getInternalName(), name, fieldType.getDescriptor());
+    public void getField(String name) {
+        adapter.invokedynamic("ivarGet:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, IRubyObject.class), Bootstrap.ivar());
     }
 
     public void returnValue() {

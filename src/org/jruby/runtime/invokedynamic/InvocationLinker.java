@@ -516,32 +516,32 @@ public class InvocationLinker {
         }
         
         return handleForMethod(site, name, cls, method);
-    }
-    
-    private static MethodHandle getTarget(JRubyCallSite site, RubyClass cls, String name, CacheEntry entry, int arity) {
-        IndirectBindingException ibe;
-        try {
-            return tryDispatchDirect(site, name, cls, entry.method);
-        } catch (IndirectBindingException _ibe) {
-            ibe = _ibe;
-            // proceed with indirect, if enabled
         }
-        
-        // if indirect indy-bound methods (via DynamicMethod.call) are disabled, bail out
-        if (!RubyInstanceConfig.INVOKEDYNAMIC_INDIRECT) {
-            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tfailed to bind to #" + entry.method.getSerialNumber() + ": " + ibe.getMessage());
-            return null;
+
+        private static MethodHandle getTarget(JRubyCallSite site, RubyClass cls, String name, CacheEntry entry, int arity) {
+            IndirectBindingException ibe;
+            try {
+                return tryDispatchDirect(site, name, cls, entry.method);
+            } catch (IndirectBindingException _ibe) {
+                ibe = _ibe;
+                // proceed with indirect, if enabled
+            }
+
+            // if indirect indy-bound methods (via DynamicMethod.call) are disabled, bail out
+            if (!RubyInstanceConfig.INVOKEDYNAMIC_INDIRECT) {
+                if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tfailed to bind to #" + entry.method.getSerialNumber() + ": " + ibe.getMessage());
+                return null;
+            }
+
+            // no direct native path, use DynamicMethod.call
+            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tbound indirectly to #" + entry.method.getSerialNumber() + ": " + ibe.getMessage());
+
+            MethodHandle dynMethodTarget = getDynamicMethodTarget(site.type(), arity, entry.method);
+            dynMethodTarget = insertArguments(dynMethodTarget, 4, name);
+            dynMethodTarget = insertArguments(dynMethodTarget, 0, entry);
+
+            return dynMethodTarget;
         }
-        
-        // no direct native path, use DynamicMethod.call
-        if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tbound indirectly to #" + entry.method.getSerialNumber() + ": " + ibe.getMessage());
-        
-        MethodHandle dynMethodTarget = getDynamicMethodTarget(site.type(), arity, entry.method);
-        dynMethodTarget = insertArguments(dynMethodTarget, 4, name);
-        dynMethodTarget = insertArguments(dynMethodTarget, 0, entry);
-        
-        return dynMethodTarget;
-    }
     
     private static MethodHandle handleForMethod(JRubyCallSite site, String name, RubyClass cls, DynamicMethod method) {
         MethodHandle nativeTarget = null;

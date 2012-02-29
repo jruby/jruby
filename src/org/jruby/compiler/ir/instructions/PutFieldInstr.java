@@ -35,9 +35,8 @@ public class PutFieldInstr extends PutInstr {
 
     public void compile(JVM jvm) {
         String field = getRef();
-        jvm.declareField(field);
-        jvm.emit(getValue());
         jvm.emit(getTarget());
-        jvm.method().putField(JVM.OBJECT_TYPE, field, JVM.OBJECT_TYPE);
+        jvm.emit(getValue());
+        jvm.method().putField(field);
     }
 }

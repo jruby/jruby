@@ -48,8 +48,8 @@ public class GetFieldInstr extends GetInstr {
     @Override
     public void compile(JVM jvm) {
         String field = getRef();
-        jvm.declareField(field);
         jvm.emit(getSource());
-        jvm.method().getField(JVM.OBJECT_TYPE, field, JVM.OBJECT_TYPE);
+        jvm.method().getField(field);
+        jvm.method().storeLocal(jvm.methodData().local(getResult()));
     }
 }

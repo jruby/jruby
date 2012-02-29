@@ -15,6 +15,7 @@ import org.jruby.compiler.ir.operands.CurrentModule;
 import org.jruby.compiler.ir.operands.CurrentScope;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
+import org.jruby.compiler.ir.operands.Symbol;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -174,8 +175,8 @@ public class JVM implements CompilerTarget {
 //        System.out.println(method);
         for (int i = 0; i < instrs.length; i++) {
             Instr instr = instrs[i];
-//            System.out.println(instr.getClass());
-//            System.out.println(instr);
+            System.out.println(instr.getClass());
+            System.out.println(instr);
             if (jumpTable.get(i) != null) {
 //                System.out.println("pc: " + i + " label: " + jumpTable.get(i));
                 for (Label label : jumpTable.get(i)) method().mark(methodData().getLabel(label));
@@ -199,6 +200,8 @@ public class JVM implements CompilerTarget {
             method().adapter.aconst_null();
         } else if (operand instanceof CurrentModule) {
             method().adapter.aconst_null();
+        } else if (operand instanceof Symbol) {
+            operand.compile(this);
         } else {
             throw new RuntimeException("unsupported operand in compiler: " + operand.getClass());
         }

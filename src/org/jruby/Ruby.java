@@ -47,6 +47,7 @@ import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -692,6 +693,12 @@ public final class Ruby {
                 public IRubyObject __file__(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
                     try {
                         return (IRubyObject)compiled.getMethod("__script__", ThreadContext.class, IRubyObject.class).invoke(null, getCurrentContext(), getTopSelf());
+                    } catch (InvocationTargetException ite) {
+                        if (ite.getCause() instanceof JumpException) {
+                            throw (JumpException)ite.getCause();
+                        } else {
+                            throw new RuntimeException(ite);
+                        }
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }

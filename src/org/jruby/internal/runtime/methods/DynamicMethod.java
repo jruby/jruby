@@ -497,6 +497,14 @@ public abstract class DynamicMethod {
             return java;
         }
 
+        public boolean hasContext() {
+            return nativeSignature.length > 0 && nativeSignature[0] == ThreadContext.class;
+        }
+
+        public boolean hasBlock() {
+            return nativeSignature.length > 0 && nativeSignature[nativeSignature.length - 1] == Block.class;
+        }
+
         @Override
         public String toString() {
             return "" + (statik?"static ":"") + nativeReturn.getSimpleName() + " " + nativeTarget.getSimpleName() + "." + nativeName + CodegenUtils.prettyShortParams(nativeSignature);
