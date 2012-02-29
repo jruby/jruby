@@ -40,7 +40,6 @@ public class JRubyImplCallInstr extends CallInstr {
        SELF_HAS_INSTANCE_VARIABLE("self_hasInstanceVariable"), // SSS FIXME: Should this be a Ruby internals call rather than a JRUBY internals call?
        SELF_IS_METHOD_BOUND("self_isMethodBound"), // SSS FIXME: Should this be a Ruby internals call rather than a JRUBY internals call?
        BACKREF_IS_RUBY_MATCH_DATA("backref_isRubyMatchData"),
-       METHOD_DEFINED("getDefinedCall"),
        METHOD_PUBLIC_ACCESSIBLE("methodIsPublicAccessible"),
        CLASS_VAR_DEFINED("isClassVarDefined"),
        FRAME_SUPER_METHOD_BOUND("frame_superMethodBound");
@@ -147,13 +146,6 @@ public class JRubyImplCallInstr extends CallInstr {
                 // SSS: FIXME: Or use this directly? "context.getCurrentScope().getBackRef(rt)" What is the diff??
                 IRubyObject bRef = RuntimeHelpers.getBackref(runtime, context);
                 rVal = runtime.newBoolean(RubyMatchData.class.isInstance(bRef));
-                break;
-            }
-            case METHOD_DEFINED: {
-                receiver = getReceiver().retrieve(context, self, currDynScope, temp);
-                String methodName = ((StringLiteral)getCallArgs()[0]).string;
-                ByteList boundVal = RuntimeHelpers.getDefinedCall(context, self, (IRubyObject)receiver, methodName);
-                rVal = boundVal == null ? context.nil : RubyString.newStringShared(runtime, boundVal);
                 break;
             }
             case METHOD_PUBLIC_ACCESSIBLE: {

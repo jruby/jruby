@@ -176,6 +176,7 @@ import org.jruby.compiler.ir.instructions.jruby.CheckArityInstr;
 import org.jruby.compiler.ir.instructions.jruby.GetErrorInfoInstr;
 import org.jruby.compiler.ir.instructions.jruby.GetObjectInstr;
 import org.jruby.compiler.ir.instructions.jruby.GlobalIsDefinedInstr;
+import org.jruby.compiler.ir.instructions.jruby.MethodDefinedInstr;
 import org.jruby.compiler.ir.instructions.jruby.RestoreErrorInfoInstr;
 import org.jruby.compiler.ir.instructions.jruby.ThrowExceptionInstr;
 import org.jruby.compiler.ir.instructions.jruby.ToAryInstr;
@@ -1722,7 +1723,7 @@ public class IRBuilder {
                         String   methodName = iVisited.getName();
                         Variable tmpVar     = s.getNewTemporaryVariable();
                         Operand  receiver   = build(iVisited.getReceiverNode(), s);
-                        s.addInstr(new JRubyImplCallInstr(tmpVar, JRubyImplementationMethod.METHOD_DEFINED, receiver, new Operand[]{new StringLiteral(methodName)}));
+                        s.addInstr(new MethodDefinedInstr(tmpVar, receiver, new StringLiteral(methodName)));
                         return buildDefnCheckIfThenPaths(s, (Label)args[2], tmpVar);
                     }
                 };
