@@ -40,7 +40,6 @@ public class JRubyImplCallInstr extends CallInstr {
        BLOCK_GIVEN("block_isGiven"), // SSS FIXME: Should this be a Ruby internals call rather than a JRUBY internals call?
        SELF_HAS_INSTANCE_VARIABLE("self_hasInstanceVariable"), // SSS FIXME: Should this be a Ruby internals call rather than a JRUBY internals call?
        SELF_IS_METHOD_BOUND("self_isMethodBound"), // SSS FIXME: Should this be a Ruby internals call rather than a JRUBY internals call?
-       TC_SAVE_ERR_INFO("threadContext_saveErrInfo"),
        BACKREF_IS_RUBY_MATCH_DATA("backref_isRubyMatchData"),
        METHOD_DEFINED("getDefinedCall"),
        METHOD_PUBLIC_ACCESSIBLE("methodIsPublicAccessible"),
@@ -147,10 +146,6 @@ public class JRubyImplCallInstr extends CallInstr {
                 receiver = getReceiver().retrieve(context, self, currDynScope, temp);
                 boolean bound = ((IRubyObject)receiver).getMetaClass().isMethodBound(((StringLiteral)getCallArgs()[0]).string, false); 
                 rVal = runtime.newBoolean(bound);
-                break;
-            }
-            case TC_SAVE_ERR_INFO: {
-                rVal = context.getErrorInfo();
                 break;
             }
             case BACKREF_IS_RUBY_MATCH_DATA: {

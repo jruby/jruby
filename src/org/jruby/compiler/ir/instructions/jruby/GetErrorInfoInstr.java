@@ -11,7 +11,6 @@ import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.compiler.ir.targets.JVM;
-import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -21,11 +20,11 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  * @author enebo
  */
-public class GetBackrefInstr extends Instr implements ResultInstr {
-    private Operand[] operands;
+public class GetErrorInfoInstr extends Instr implements ResultInstr {
+        private Operand[] operands;
     
-    public GetBackrefInstr(Variable result) {
-        super(Operation.GET_BACKREF);
+    public GetErrorInfoInstr(Variable result) {
+        super(Operation.GET_ERROR_INFO);
         
         this.operands = new Operand[] { result };
     }
@@ -45,7 +44,7 @@ public class GetBackrefInstr extends Instr implements ResultInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo inlinerInfo) {
-        return new GetBackrefInstr((Variable) getResult().cloneForInlining(inlinerInfo));
+        return new GetErrorInfoInstr((Variable) getResult().cloneForInlining(inlinerInfo));
     }
 
     @Override
@@ -55,12 +54,11 @@ public class GetBackrefInstr extends Instr implements ResultInstr {
 
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
-        // SSS: FIXME: Or use this directly? "context.getCurrentScope().getBackRef(rt)" What is the diff??
-        return RuntimeHelpers.getBackref(context.runtime, context);
+        return context.getErrorInfo();
     }
 
     @Override
     public void compile(JVM jvm) {
         // no-op right now
-    }    
+    } 
 }

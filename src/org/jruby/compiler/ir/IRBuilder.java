@@ -155,9 +155,9 @@ import org.jruby.compiler.ir.instructions.PutClassVariableInstr;
 import org.jruby.compiler.ir.instructions.PutConstInstr;
 import org.jruby.compiler.ir.instructions.PutFieldInstr;
 import org.jruby.compiler.ir.instructions.PutGlobalVarInstr;
-import org.jruby.compiler.ir.instructions.ReceivePreReqdArgInstr;
 import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
 import org.jruby.compiler.ir.instructions.ReceiveExceptionInstr;
+import org.jruby.compiler.ir.instructions.ReceivePreReqdArgInstr;
 import org.jruby.compiler.ir.instructions.ReceiveSelfInstr;
 import org.jruby.compiler.ir.instructions.RecordEndBlockInstr;
 import org.jruby.compiler.ir.instructions.ReqdArgMultipleAsgnInstr;
@@ -172,6 +172,7 @@ import org.jruby.compiler.ir.instructions.YieldInstr;
 import org.jruby.compiler.ir.instructions.ZSuperInstr;
 import org.jruby.compiler.ir.instructions.defined.SetWithinDefinedInstr;
 import org.jruby.compiler.ir.instructions.jruby.CheckArityInstr;
+import org.jruby.compiler.ir.instructions.jruby.GetErrorInfoInstr;
 import org.jruby.compiler.ir.instructions.jruby.GetObjectInstr;
 import org.jruby.compiler.ir.instructions.jruby.RestoreErrorInfoInstr;
 import org.jruby.compiler.ir.instructions.jruby.ThrowExceptionInstr;
@@ -1645,7 +1646,7 @@ public class IRBuilder {
 
                 // store previous exception for restoration if we rescue something
                 Variable errInfo = s.getNewTemporaryVariable();
-                s.addInstr(new JRubyImplCallInstr(errInfo, JRubyImplementationMethod.TC_SAVE_ERR_INFO, null, NO_ARGS));
+                s.addInstr(new GetErrorInfoInstr(errInfo));
 
                 CodeBlock protectedCode = new CodeBlock() {
                     public Operand run(Object[] args) {

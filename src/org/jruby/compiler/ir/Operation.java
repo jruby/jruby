@@ -129,6 +129,7 @@ public enum Operation {
     
     /** JRuby-impl instructions **/
     BLOCK_GIVEN(0),
+    GET_ERROR_INFO(0),
     GET_OBJECT(0),
     GET_BACKREF(0),
     RESTORE_ERROR_INFO(0),
