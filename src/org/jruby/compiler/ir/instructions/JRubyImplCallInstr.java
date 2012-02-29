@@ -36,7 +36,6 @@ public class JRubyImplCallInstr extends CallInstr {
     //    can be cleaned up in a later pass.
     public enum JRubyImplementationMethod {
        RT_IS_GLOBAL_DEFINED("runtime_isGlobalDefined"),
-       RT_GET_OBJECT("runtime_getObject"),
        RT_GET_BACKREF("runtime_getBackref"),
        RTH_GET_DEFINED_CONSTANT_OR_BOUND_METHOD("getDefinedConstantOrBoundMethod"),
        BLOCK_GIVEN("block_isGiven"), // SSS FIXME: Should this be a Ruby internals call rather than a JRUBY internals call?
@@ -136,10 +135,6 @@ public class JRubyImplCallInstr extends CallInstr {
                 //name = getCallArgs()[0].retrieve(interp).toString();
                 name = ((StringLiteral)getCallArgs()[0]).string;
                 rVal = runtime.newBoolean(runtime.getGlobalVariables().isDefined(name));
-                break;
-            }
-            case RT_GET_OBJECT: {
-                rVal = runtime.getObject();
                 break;
             }
             case RT_GET_BACKREF: {
