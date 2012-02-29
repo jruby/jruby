@@ -17,25 +17,25 @@ import org.jruby.runtime.builtin.IRubyObject;
  * than const searching.
  */
 public class GetObjectInstr extends Instr implements ResultInstr {
-    private Operand[] operands;
+    private Variable result;
     
     public GetObjectInstr(Variable result) {
         super(Operation.GET_OBJECT);
         
-        this.operands = new Operand[] { result };
+        this.result = result;
     }
 
     @Override
     public Operand[] getOperands() {
-        return operands;
+        return EMPTY_OPERANDS;
     }
     
     public Variable getResult() {
-        return (Variable) operands[0];
+        return result;
     }
 
     public void updateResult(Variable v) {
-        operands[0] = v;
+        result = v;
     }
 
     @Override

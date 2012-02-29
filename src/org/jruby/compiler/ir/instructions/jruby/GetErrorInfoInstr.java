@@ -21,25 +21,25 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author enebo
  */
 public class GetErrorInfoInstr extends Instr implements ResultInstr {
-        private Operand[] operands;
+    private Variable result;
     
     public GetErrorInfoInstr(Variable result) {
         super(Operation.GET_ERROR_INFO);
         
-        this.operands = new Operand[] { result };
+        this.result = result;
     }
 
     @Override
     public Operand[] getOperands() {
-        return operands;
+        return EMPTY_OPERANDS;
     }
     
     public Variable getResult() {
-        return (Variable) operands[0];
+        return result;
     }
 
     public void updateResult(Variable v) {
-        operands[0] = v;
+        result = v;
     }
 
     @Override
