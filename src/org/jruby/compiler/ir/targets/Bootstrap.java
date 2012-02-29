@@ -39,33 +39,12 @@ import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
 
 public class Bootstrap {
-    public static CallSite fixnum(Lookup lookup, String name, MethodType type, long value) {
-        MutableCallSite site = new MutableCallSite(type);
-        MethodHandle handle = Binder
-                .from(IRubyObject.class, ThreadContext.class)
-                .insert(0, site, value)
-                .cast(IRubyObject.class, MutableCallSite.class, long.class, ThreadContext.class)
-                .invokeStaticQuiet(MethodHandles.lookup(), Bootstrap.class, "fixnum");
-        site.setTarget(handle);
-        return site;
-    }
-
     public static CallSite string(Lookup lookup, String name, MethodType type, String value, int encoding) {
         MethodHandle handle = Binder
                 .from(IRubyObject.class, ThreadContext.class)
                 .insert(0, value, encoding)
                 .invokeStaticQuiet(MethodHandles.lookup(), Bootstrap.class, "string");
         CallSite site = new ConstantCallSite(handle);
-        return site;
-    }
-
-    public static CallSite symbol(Lookup lookup, String name, MethodType type, String sym) {
-        MutableCallSite site = new MutableCallSite(type);
-        MethodHandle handle = Binder
-                .from(IRubyObject.class, ThreadContext.class)
-                .insert(0, site, sym)
-                .invokeStaticQuiet(MethodHandles.lookup(), Bootstrap.class, "symbol");
-        site.setTarget(handle);
         return site;
     }
 
@@ -120,48 +99,25 @@ public class Bootstrap {
         return new ConstantCallSite(handle);
     }
 
-    public static Handle fixnum() {
-        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "fixnum", sig(CallSite.class, Lookup.class, String.class, MethodType.class, long.class));
-    }
     public static Handle string() {
         return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "string", sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, int.class));
     }
-    public static Handle symbol() {
-        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "symbol", sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class));
-    }
+
     public static Handle invoke() {
         return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "invoke", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
     }
+
     public static Handle invokeSelf() {
         return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "invokeSelf", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
     }
+
     public static Handle ivar() {
         return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "ivar", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
-    }
-
-    public static IRubyObject fixnum(MutableCallSite site, long value, ThreadContext context) {
-        RubyFixnum fixnum = RubyFixnum.newFixnum(context.runtime, value);
-        site.setTarget(Binder
-                .from(IRubyObject.class, ThreadContext.class)
-                .drop(0)
-                .constant(fixnum)
-        );
-        return fixnum;
     }
 
     public static IRubyObject string(String value, int encoding, ThreadContext context) {
         // obviously wrong: not caching bytelist, not using encoding
         return RubyString.newStringNoCopy(context.runtime, value.getBytes(RubyEncoding.ISO));
-    }
-
-    public static IRubyObject symbol(MutableCallSite site, String name, ThreadContext context) {
-        RubySymbol symbol = RubySymbol.newSymbol(context.runtime, name);
-        site.setTarget(Binder
-                .from(IRubyObject.class, ThreadContext.class)
-                .drop(0)
-                .constant(symbol)
-        );
-        return symbol;
     }
 
     public static IRubyObject invoke(InvokeSite site, ThreadContext context, IRubyObject self) {
@@ -319,5 +275,63 @@ public class Bootstrap {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // COMPLETED WORK BELOW
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Symbol binding
+
+    public static Handle symbol() {
+        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "symbol", sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class));
+    }
+
+    public static CallSite symbol(Lookup lookup, String name, MethodType type, String sym) {
+        MutableCallSite site = new MutableCallSite(type);
+        MethodHandle handle = Binder
+                .from(IRubyObject.class, ThreadContext.class)
+                .insert(0, site, sym)
+                .invokeStaticQuiet(MethodHandles.lookup(), Bootstrap.class, "symbol");
+        site.setTarget(handle);
+        return site;
+    }
+
+    public static IRubyObject symbol(MutableCallSite site, String name, ThreadContext context) {
+        RubySymbol symbol = RubySymbol.newSymbol(context.runtime, name);
+        site.setTarget(Binder
+                .from(IRubyObject.class, ThreadContext.class)
+                .drop(0)
+                .constant(symbol)
+        );
+        return symbol;
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Fixnum binding
+
+    public static Handle fixnum() {
+        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "fixnum", sig(CallSite.class, Lookup.class, String.class, MethodType.class, long.class));
+    }
+
+    public static CallSite fixnum(Lookup lookup, String name, MethodType type, long value) {
+        MutableCallSite site = new MutableCallSite(type);
+        MethodHandle handle = Binder
+                .from(IRubyObject.class, ThreadContext.class)
+                .insert(0, site, value)
+                .cast(IRubyObject.class, MutableCallSite.class, long.class, ThreadContext.class)
+                .invokeStaticQuiet(MethodHandles.lookup(), Bootstrap.class, "fixnum");
+        site.setTarget(handle);
+        return site;
+    }
+
+    public static IRubyObject fixnum(MutableCallSite site, long value, ThreadContext context) {
+        RubyFixnum fixnum = RubyFixnum.newFixnum(context.runtime, value);
+        site.setTarget(Binder
+                .from(IRubyObject.class, ThreadContext.class)
+                .drop(0)
+                .constant(fixnum)
+        );
+        return fixnum;
     }
 }
