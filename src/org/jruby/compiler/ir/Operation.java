@@ -130,6 +130,7 @@ public enum Operation {
     /** JRuby-impl instructions **/
     BLOCK_GIVEN(0),
     GET_OBJECT(0),
+    GET_BACKREF(0),
     RESTORE_ERROR_INFO(0),
     RAISE_ARGUMENT_ERROR(OpFlags.f_can_raise_exception),
     // SSS FIXME: Come up with a different strategy/flag to handle this situation
