@@ -248,7 +248,7 @@
         <java-data xmlns="http://www.netbeans.org/ns/freeform-project-java/2">
             <compilation-unit>
                 <package-root>${src.dir}</package-root>
-                <classpath mode="compile">build_lib/junit.jar:build_lib/jline-1.0.jar:build_lib/jna.jar:build_lib/nailgun-0.7.1.jar:build_lib/joni.jar:build_lib/dynalang-0.3.jar:build_lib/invokedynamic.jar:build_lib/jcodings.jar:build_lib/bytelist.jar:build_lib/jffi.jar:build_lib/yydebug.jar:build_lib/bsf.jar:build_lib/jnr-ffi.jar:build_lib/jsr292-mock.jar:build_lib/jgrapht-jdk1.5.jar:build_lib/jnr-netdb.jar:build_lib/jnr-posix.jar:build_lib/livetribe-jsr223-2.0.6.jar:build_lib/ant.jar:build_lib/org.osgi.core-4.2.0.jar:build_lib/jnr-constants.jar:build_lib/slf4j-api-1.6.1.jar:build_lib/asm-4.0.jar:build_lib/asm-analysis-4.0.jar:build_lib/asm-commons-4.0.jar:build_lib/asm-tree-4.0.jar:build_lib/asm-util-4.0.jar:build_lib/jzlib-gzip.jar:build_lib/coro-mock-1.0-SNAPSHOT.jar:build_lib/jzlib-1.1.0.jar:build_lib/joda-time-2.0.jar:build_lib/snakeyaml-1.10.jar:build_lib/invokebinder.jar</classpath>
+                <classpath mode="compile">build_lib/junit.jar:build_lib/jline-1.0.jar:build_lib/jna.jar:build_lib/nailgun-0.7.1.jar:build_lib/joni.jar:build_lib/dynalang-0.3.jar:build_lib/invokedynamic.jar:build_lib/jcodings.jar:build_lib/bytelist.jar:build_lib/jffi.jar:build_lib/yydebug.jar:build_lib/bsf.jar:build_lib/jnr-ffi.jar:build_lib/jsr292-mock.jar:build_lib/jgrapht-jdk1.5.jar:build_lib/jnr-netdb.jar:build_lib/jnr-posix.jar:build_lib/livetribe-jsr223-2.0.6.jar:build_lib/ant.jar:build_lib/org.osgi.core-4.2.0.jar:build_lib/jnr-constants.jar:build_lib/slf4j-api-1.6.1.jar:build_lib/asm-4.0.jar:build_lib/asm-analysis-4.0.jar:build_lib/asm-commons-4.0.jar:build_lib/asm-tree-4.0.jar:build_lib/asm-util-4.0.jar:build_lib/jzlib-gzip.jar:build_lib/coro-mock-1.0-SNAPSHOT.jar:build_lib/jzlib-1.1.0.jar:build_lib/joda-time-2.1.jar:build_lib/snakeyaml-1.10.jar:build_lib/invokebinder.jar</classpath>
                 <built-to>${jruby.classes.dir}</built-to>
                 <built-to>${lib.dir}/jruby.jar</built-to>
                 <javadoc-built-to>docs/api</javadoc-built-to>
@@ -257,7 +257,7 @@
             <compilation-unit>
                 <package-root>${test.dir}</package-root>
                 <unit-tests/>
-                <classpath mode="compile">build_lib/bsf.jar:build/classes/jruby:build_lib/junit.jar:build_lib/joda-time-1.6.2.jar:build_lib/jna.jar:build_lib/bytelist.jar:build_lib/jnr-posix.jar:build_lib/livetribe-jsr223-2.0.6.jar:build_lib/jcodings.jar:build_lib/asm-4.0.jar</classpath>
+                <classpath mode="compile">build_lib/bsf.jar:build/classes/jruby:build_lib/junit.jar:build_lib/joda-time-2.1.jar:build_lib/jna.jar:build_lib/bytelist.jar:build_lib/jnr-posix.jar:build_lib/livetribe-jsr223-2.0.6.jar:build_lib/jcodings.jar:build_lib/asm-4.0.jar</classpath>
                 <built-to>${test.classes.dir}</built-to>
                 <source-level>1.5</source-level>
             </compilation-unit>
