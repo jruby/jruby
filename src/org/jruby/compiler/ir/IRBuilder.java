@@ -163,6 +163,7 @@ import org.jruby.compiler.ir.instructions.RecordEndBlockInstr;
 import org.jruby.compiler.ir.instructions.ReqdArgMultipleAsgnInstr;
 import org.jruby.compiler.ir.instructions.RescueEQQInstr;
 import org.jruby.compiler.ir.instructions.RestArgMultipleAsgnInstr;
+import org.jruby.compiler.ir.instructions.ResultInstr;
 import org.jruby.compiler.ir.instructions.ReturnInstr;
 import org.jruby.compiler.ir.instructions.SetReturnAddressInstr;
 import org.jruby.compiler.ir.instructions.SuperInstr;
@@ -174,6 +175,7 @@ import org.jruby.compiler.ir.instructions.defined.SetWithinDefinedInstr;
 import org.jruby.compiler.ir.instructions.jruby.CheckArityInstr;
 import org.jruby.compiler.ir.instructions.jruby.GetErrorInfoInstr;
 import org.jruby.compiler.ir.instructions.jruby.GetObjectInstr;
+import org.jruby.compiler.ir.instructions.jruby.GlobalIsDefinedInstr;
 import org.jruby.compiler.ir.instructions.jruby.RestoreErrorInfoInstr;
 import org.jruby.compiler.ir.instructions.jruby.ThrowExceptionInstr;
 import org.jruby.compiler.ir.instructions.jruby.ToAryInstr;
@@ -1507,6 +1509,12 @@ public class IRBuilder {
         s.addInstr(new LabelInstr(defLabel));
         return tmpVar;
     }
+    
+    protected Variable buildDefinitionCheck(IRScope s, ResultInstr defineInstr, String definedReturnValue) {
+        Label undefLabel = s.getNewLabel();
+        s.addInstr(BEQInstr.create(defineInstr.getResult(), manager.getFalse(), undefLabel));
+        return buildDefnCheckIfThenPaths(s, undefLabel, new StringLiteral(definedReturnValue));        
+    }
 
     protected Variable buildDefinitionCheck(IRScope s, JRubyImplementationMethod defnChecker, Operand receiver, String nameToCheck, String definedReturnValue) {
         Label undefLabel = s.getNewLabel();
@@ -1597,7 +1605,7 @@ public class IRBuilder {
                 return tmpVar;
             }
             case GLOBALVARNODE:
-                return buildDefinitionCheck(s, JRubyImplementationMethod.RT_IS_GLOBAL_DEFINED, null, ((GlobalVarNode) node).getName(), "global-variable");
+                return buildDefinitionCheck(s, new GlobalIsDefinedInstr(s.getNewTemporaryVariable(), new StringLiteral(((GlobalVarNode) node).getName())), "global-variable");
             case INSTVARNODE:
                 return buildDefinitionCheck(s, JRubyImplementationMethod.SELF_HAS_INSTANCE_VARIABLE, getSelf(s), ((InstVarNode) node).getName(), "instance-variable");
             case YIELDNODE:

@@ -35,7 +35,6 @@ public class JRubyImplCallInstr extends CallInstr {
     //    first pass of trying to mimic behavior of the previous AST compiler.  This code
     //    can be cleaned up in a later pass.
     public enum JRubyImplementationMethod {
-       RT_IS_GLOBAL_DEFINED("runtime_isGlobalDefined"),
        RTH_GET_DEFINED_CONSTANT_OR_BOUND_METHOD("getDefinedConstantOrBoundMethod"),
        BLOCK_GIVEN("block_isGiven"), // SSS FIXME: Should this be a Ruby internals call rather than a JRUBY internals call?
        SELF_HAS_INSTANCE_VARIABLE("self_hasInstanceVariable"), // SSS FIXME: Should this be a Ruby internals call rather than a JRUBY internals call?
@@ -127,12 +126,6 @@ public class JRubyImplCallInstr extends CallInstr {
                 name = ((StringLiteral)getCallArgs()[1]).string;
                 ByteList definedType = RuntimeHelpers.getDefinedConstantOrBoundMethod(v, name);
                 rVal = (definedType == null ? runtime.getIRManager().getNil() : (new StringLiteral(definedType))).retrieve(context, self, currDynScope, temp);
-                break;
-            }
-            case RT_IS_GLOBAL_DEFINED: {
-                //name = getCallArgs()[0].retrieve(interp).toString();
-                name = ((StringLiteral)getCallArgs()[0]).string;
-                rVal = runtime.newBoolean(runtime.getGlobalVariables().isDefined(name));
                 break;
             }
             case SELF_HAS_INSTANCE_VARIABLE: {
