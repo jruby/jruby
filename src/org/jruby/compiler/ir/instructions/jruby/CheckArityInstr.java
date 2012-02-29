@@ -5,12 +5,6 @@ import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.compiler.ir.targets.JVM;
-import org.jruby.javasupport.util.RuntimeHelpers;
-import org.jruby.parser.StaticScope;
-import org.jruby.runtime.Arity;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 public class CheckArityInstr extends Instr {
     public final int required;
