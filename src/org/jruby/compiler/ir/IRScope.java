@@ -612,12 +612,10 @@ public abstract class IRScope {
         // Set up IPCs
         // FIXME: Would be nice to collapse duplicate labels; for now, using Label[]
         HashMap<Integer, Label[]> ipcLabelMap = new HashMap<Integer, Label[]>();
-        List<Label> labelsToFixup = new ArrayList<Label>();
         List<Instr> newInstrs = new ArrayList<Instr>();
         int ipc = 0;
         for (BasicBlock b : linearizedBBList) {
             ipcLabelMap.put(ipc, catLabels(ipcLabelMap.get(ipc), b.getLabel()));
-            labelsToFixup.add(b.getLabel());
             for (Instr i : b.getInstrs()) {
                 if (!(i instanceof ReceiveSelfInstr)) {
                     newInstrs.add(i);
@@ -1027,6 +1025,7 @@ public abstract class IRScope {
 
     public void resetDFProblemsState() {
         dfProbs = new HashMap<String, DataFlowProblem>();
+        for (IRClosure c: nestedClosures) c.resetDFProblemsState();
     }
 
     public void resetState() {
@@ -1043,7 +1042,6 @@ public abstract class IRScope {
 
         // Reset dataflow problems state
         resetDFProblemsState();
-        for (IRClosure c: nestedClosures) c.resetDFProblemsState();
     }
 
     public void inlineMethod(IRScope method, RubyModule implClass, int classToken, BasicBlock basicBlock, CallBase call) {
