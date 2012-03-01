@@ -183,6 +183,7 @@ import org.jruby.compiler.ir.instructions.jruby.HasInstanceVarInstr;
 import org.jruby.compiler.ir.instructions.jruby.MethodDefinedInstr;
 import org.jruby.compiler.ir.instructions.jruby.MethodIsPublicInstr;
 import org.jruby.compiler.ir.instructions.jruby.RestoreErrorInfoInstr;
+import org.jruby.compiler.ir.instructions.jruby.SuperMethodBoundInstr;
 import org.jruby.compiler.ir.instructions.jruby.ThrowExceptionInstr;
 import org.jruby.compiler.ir.instructions.jruby.ToAryInstr;
 import org.jruby.compiler.ir.instructions.ruby18.ReceiveOptArgInstr;
@@ -1803,11 +1804,11 @@ public class IRBuilder {
                 return protectCodeWithRescue(s, protectedCode, new Object[]{s, iVisited, undefLabel}, rescueBlock, null);
             }
             case ZSUPERNODE:
-                return buildDefinitionCheck(s, JRubyImplementationMethod.FRAME_SUPER_METHOD_BOUND, getSelf(s), null, "super");
+                return buildDefinitionCheck(s, new SuperMethodBoundInstr(s.getNewTemporaryVariable(), getSelf(s)), "super");
             case SUPERNODE: {
                 Label undefLabel = s.getNewLabel();
                 Variable tmpVar  = s.getNewTemporaryVariable();
-                s.addInstr(new JRubyImplCallInstr(tmpVar, JRubyImplementationMethod.FRAME_SUPER_METHOD_BOUND, getSelf(s), NO_ARGS));
+                s.addInstr(new SuperMethodBoundInstr(tmpVar, getSelf(s)));
                 s.addInstr(BEQInstr.create(tmpVar, manager.getFalse(), undefLabel));
                 Operand superDefnVal = buildGetArgumentDefinition(((SuperNode) node).getArgsNode(), s, "super");
                 return buildDefnCheckIfThenPaths(s, undefLabel, superDefnVal);

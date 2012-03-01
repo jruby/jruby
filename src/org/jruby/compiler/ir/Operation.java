@@ -132,6 +132,7 @@ public enum Operation {
     METHOD_DEFINED(0),
     HAS_INSTANCE_VAR(0),
     METHOD_IS_PUBLIC(0),
+    SUPER_METHOD_BOUND(0),
     
     /** JRuby-impl instructions **/
     BLOCK_GIVEN(0),

@@ -2,7 +2,6 @@ package org.jruby.compiler.ir.instructions;
 
 import org.jruby.Ruby;
 import org.jruby.RubyMatchData;
-import org.jruby.RubyModule;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.operands.Operand;
@@ -30,8 +29,7 @@ public class JRubyImplCallInstr extends CallInstr {
     //    can be cleaned up in a later pass.
     public enum JRubyImplementationMethod {
        SELF_IS_METHOD_BOUND("self_isMethodBound"), // SSS FIXME: Should this be a Ruby internals call rather than a JRUBY internals call?
-       BACKREF_IS_RUBY_MATCH_DATA("backref_isRubyMatchData"),
-       FRAME_SUPER_METHOD_BOUND("frame_superMethodBound");
+       BACKREF_IS_RUBY_MATCH_DATA("backref_isRubyMatchData");
 
        public MethAddr methAddr;
        JRubyImplementationMethod(String methodName) {
@@ -99,12 +97,11 @@ public class JRubyImplCallInstr extends CallInstr {
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         Ruby runtime = context.getRuntime();        
-        Object receiver;
         Object rVal = null;
 
         switch (this.implMethod) {
             case SELF_IS_METHOD_BOUND: {
-                receiver = getReceiver().retrieve(context, self, currDynScope, temp);
+                Object receiver = getReceiver().retrieve(context, self, currDynScope, temp);
                 boolean bound = ((IRubyObject)receiver).getMetaClass().isMethodBound(((StringLiteral)getCallArgs()[0]).string, false); 
                 rVal = runtime.newBoolean(bound);
                 break;
@@ -115,19 +112,6 @@ public class JRubyImplCallInstr extends CallInstr {
                 // SSS: FIXME: Or use this directly? "context.getCurrentScope().getBackRef(rt)" What is the diff??
                 IRubyObject bRef = RuntimeHelpers.getBackref(runtime, context);
                 rVal = runtime.newBoolean(RubyMatchData.class.isInstance(bRef));
-                break;
-            }
-            case FRAME_SUPER_METHOD_BOUND: {
-                receiver = getReceiver().retrieve(context, self, currDynScope, temp);
-                boolean flag = false;
-                String        fn = context.getFrameName();
-                if (fn != null) {
-                    RubyModule fc = context.getFrameKlazz();
-                    if (fc != null) {
-                        flag = RuntimeHelpers.findImplementerIfNecessary(((IRubyObject)receiver).getMetaClass(), fc).getSuperClass().isMethodBound(fn, false);
-                    }
-                }
-                rVal = runtime.newBoolean(flag);
                 break;
             }
             default: {
