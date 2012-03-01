@@ -125,6 +125,7 @@ public enum Operation {
     ATTR_ASSIGN(OpFlags.f_is_store | OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
     
     /* defined */
+    CLASS_VAR_IS_DEFINED(0),
     SET_WITHIN_DEFINED(0),
     GLOBAL_IS_DEFINED(0),
     METHOD_DEFINED(0),

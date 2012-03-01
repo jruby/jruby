@@ -173,6 +173,7 @@ import org.jruby.compiler.ir.instructions.YieldInstr;
 import org.jruby.compiler.ir.instructions.ZSuperInstr;
 import org.jruby.compiler.ir.instructions.defined.SetWithinDefinedInstr;
 import org.jruby.compiler.ir.instructions.jruby.CheckArityInstr;
+import org.jruby.compiler.ir.instructions.jruby.ClassVarIsDefinedInstr;
 import org.jruby.compiler.ir.instructions.jruby.GetErrorInfoInstr;
 import org.jruby.compiler.ir.instructions.jruby.GetObjectInstr;
 import org.jruby.compiler.ir.instructions.jruby.GlobalIsDefinedInstr;
@@ -1748,7 +1749,7 @@ public class IRBuilder {
                  * ------------------------------------------------------------------------------ */
                 ClassVarNode iVisited = (ClassVarNode) node;
                 Variable cm = classVarDefinitionContainer(s, true);
-                return buildDefinitionCheck(s, JRubyImplementationMethod.CLASS_VAR_DEFINED, cm, iVisited.getName(), "class variable");
+                return buildDefinitionCheck(s, new ClassVarIsDefinedInstr(s.getNewTemporaryVariable(), cm, new StringLiteral(iVisited.getName())), "class variable");
             }
             case ATTRASSIGNNODE: {
                 Label  undefLabel = s.getNewLabel();

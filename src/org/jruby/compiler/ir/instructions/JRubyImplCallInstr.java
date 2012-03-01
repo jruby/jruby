@@ -1,11 +1,9 @@
 package org.jruby.compiler.ir.instructions;
 
-import org.jruby.MetaClass;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyMatchData;
 import org.jruby.RubyModule;
-import org.jruby.RubyString;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.jruby.BlockGivenInstr;
 import org.jruby.compiler.ir.operands.MethAddr;
@@ -41,7 +39,6 @@ public class JRubyImplCallInstr extends CallInstr {
        SELF_IS_METHOD_BOUND("self_isMethodBound"), // SSS FIXME: Should this be a Ruby internals call rather than a JRUBY internals call?
        BACKREF_IS_RUBY_MATCH_DATA("backref_isRubyMatchData"),
        METHOD_PUBLIC_ACCESSIBLE("methodIsPublicAccessible"),
-       CLASS_VAR_DEFINED("isClassVarDefined"),
        FRAME_SUPER_METHOD_BOUND("frame_superMethodBound");
 
        public MethAddr methAddr;
@@ -159,21 +156,6 @@ public class JRubyImplCallInstr extends CallInstr {
                 String      arg = ((StringLiteral)getCallArgs()[0]).string;
                 Visibility  v   = mc.searchMethod(arg).getVisibility();
                 rVal = runtime.newBoolean((v != null) && !v.isPrivate() && !(v.isProtected() && mc.getRealClass().isInstance(r)));
-                break;
-            }
-            case CLASS_VAR_DEFINED: {
-                // cm.classVarDefined(name) || (cm.isSingleton && !(cm.attached instanceof RubyModule) && cm.attached.classVarDefined(name))
-                boolean flag;
-                RubyModule cm = (RubyModule)getReceiver().retrieve(context, self, currDynScope, temp);
-                name = ((StringLiteral)getCallArgs()[0]).string;
-                flag = cm.isClassVarDefined(name);
-                if (!flag) {
-                    if (cm.isSingleton()) {
-                        IRubyObject ao = ((MetaClass)cm).getAttached();
-                        if (ao instanceof RubyModule) flag = ((RubyModule)ao).isClassVarDefined(name);
-                    }
-                }
-                rVal = runtime.newBoolean(flag);
                 break;
             }
             case FRAME_SUPER_METHOD_BOUND: {
