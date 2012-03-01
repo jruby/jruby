@@ -25,6 +25,7 @@ import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
 import org.jruby.compiler.ir.instructions.ReceiveSelfInstr;
 import org.jruby.compiler.ir.instructions.ResultInstr;
+import org.jruby.compiler.ir.instructions.Specializeable;
 import org.jruby.compiler.ir.instructions.ThreadPollInstr;
 import org.jruby.compiler.ir.instructions.ZSuperInstr;
 import org.jruby.compiler.ir.operands.Label;
@@ -127,7 +128,7 @@ public abstract class IRScope {
 
     // Index values to guarantee we don't assign same internal index twice
     private int nextClosureIndex;
-    
+
     protected static class LocalVariableAllocator {
         public int nextSlot;
         public Map<String, LocalVariable> varMap;
@@ -527,11 +528,25 @@ public abstract class IRScope {
 
         // Exit BB ipc
         cfg().getExitBB().getLabel().setTargetPC(ipc + 1);
+        
+        specializeInstructions(newInstrs);
 
         linearizedInstrArray = newInstrs.toArray(new Instr[newInstrs.size()]);
         return linearizedInstrArray;
     }
-
+    
+    private void specializeInstructions(List<Instr> instrs) {
+        for (int i = 0; i < instrs.size(); i++) {
+            Instr instr = instrs.get(i);
+            
+            if (instr instanceof Specializeable) {
+                Instr newInstr = ((Specializeable) instr).specializeForInterpretation();
+                
+                if (newInstr != instr) instrs.set(i, newInstr);
+            }
+        }
+    }
+    
     private void printPass(String message) {
         if (RubyInstanceConfig.IR_COMPILER_DEBUG) {
             LOG.info("################## " + message + "##################");

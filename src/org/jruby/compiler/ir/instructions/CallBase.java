@@ -8,7 +8,6 @@ import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.calladapter.CallAdapter;
 import org.jruby.compiler.ir.operands.MethAddr;
-import org.jruby.compiler.ir.operands.Nil;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.StringLiteral;
 import org.jruby.compiler.ir.operands.WrappedIRScope;
@@ -16,7 +15,7 @@ import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.CallType;
 
-public abstract class CallBase extends Instr {
+public abstract class CallBase extends Instr implements Specializeable {
     protected Operand   receiver;
     protected Operand[] arguments;
     protected Operand   closure;
@@ -79,6 +78,16 @@ public abstract class CallBase extends Instr {
 
     public boolean inliningBlocked() {
         return dontInline;
+    }
+    
+    /**
+     * Interpreter can ask the instruction if it knows how to make a more
+     * efficient instruction for direct interpretation.
+     * 
+     * @return itself or more efficient but semantically equivalent instr
+     */
+    public CallBase specializeForInterpretation() {
+        return this;
     }
 
     @Override
