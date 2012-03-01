@@ -90,7 +90,9 @@ public class CFGInliner {
 
     public void inlineMethod(IRScope scope, RubyModule implClass, int classToken, BasicBlock callBB, CallBase call) {
         // Temporarily turn off inlining of recursive methods
-        if (cfg.getScope() == scope) return;
+        // Conservative turning off for inlining of a method in a closure nested within the same method
+        IRScope hostScope = cfg.getScope();
+        if (hostScope.getNearestMethod() == scope) return;
 
 /*
         System.out.println("host cfg   :" + cfg.toStringGraph());
@@ -101,7 +103,6 @@ public class CFGInliner {
 
         // Host method data init
         InlinerInfo ii = new InlinerInfo(call, cfg);
-        IRScope hostScope = cfg.getScope();
         Label splitBBLabel = hostScope.getNewLabel();
         BasicBlock splitBB;
 
@@ -113,7 +114,7 @@ public class CFGInliner {
         for (BasicBlock b: methodCFG.getBasicBlocks()) methodBBs.add(b);
 
         // Check if we are inlining a recursive method
-        if (cfg.getScope() == scope) {
+        if (hostScope.getNearestMethod() == scope) {
             // 1. clone self
             // SSS: FIXME: We need a clone-graph api method in cfg and graph
             CFG selfClone = cloneSelf(ii);
