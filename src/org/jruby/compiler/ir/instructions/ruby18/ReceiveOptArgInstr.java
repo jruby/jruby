@@ -18,7 +18,11 @@ public class ReceiveOptArgInstr extends ReceiveOptArgBase {
 
     @Override
     public Instr cloneForInlinedScope(InlinerInfo ii) {
-        return new CopyInstr(ii.getRenamedVariable(result), ii.getCallArg(argIndex));
+        if (ii.canMapArgsStatically()) {
+            return new CopyInstr(ii.getRenamedVariable(result), ii.getCallArg(argIndex));
+        } else {
+            return new OptArgMultipleAsgnInstr(ii.getRenamedVariable(result), ii.getArgsArray(), argIndex, argIndex);
+        }
     }
 
     @Override

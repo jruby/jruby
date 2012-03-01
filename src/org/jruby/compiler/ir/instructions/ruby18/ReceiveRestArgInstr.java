@@ -21,7 +21,11 @@ public class ReceiveRestArgInstr extends ReceiveRestArgBase {
 
     @Override
     public Instr cloneForInlinedScope(InlinerInfo ii) {
-        return new CopyInstr(ii.getRenamedVariable(result), ii.getCallArg(argIndex, true));
+        if (ii.canMapArgsStatically()) {
+            return new CopyInstr(ii.getRenamedVariable(result), ii.getCallArg(argIndex, true));
+        } else {
+            return new RestArgMultipleAsgnInstr(ii.getRenamedVariable(result), ii.getArgsArray(), -1, -1, argIndex);
+        }
     }
 
     @Override

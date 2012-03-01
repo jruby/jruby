@@ -27,8 +27,12 @@ public class ReceiveOptArgInstr extends ReceiveOptArgBase {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        int n = ii.getArgsCount();
-        return new CopyInstr(ii.getRenamedVariable(result), minArgsLength <= n ? ii.getCallArg(argIndex) : UndefinedValue.UNDEFINED);
+        if (ii.canMapArgsStatically()) {
+            int n = ii.getArgsCount();
+            return new CopyInstr(ii.getRenamedVariable(result), minArgsLength <= n ? ii.getCallArg(argIndex) : UndefinedValue.UNDEFINED);
+        } else {
+            return new OptArgMultipleAsgnInstr(ii.getRenamedVariable(result), ii.getArgsArray(), argIndex, minArgsLength);
+        }
     }
 
     @Override

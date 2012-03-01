@@ -16,7 +16,11 @@ public class ReceivePreReqdArgInstr extends ReceiveArgBase {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new CopyInstr(ii.getRenamedVariable(result), ii.getCallArg(argIndex, false));
+        if (ii.canMapArgsStatically()) {
+            return new CopyInstr(ii.getRenamedVariable(result), ii.getCallArg(argIndex, false));
+        } else {
+            return new ReqdArgMultipleAsgnInstr(ii.getRenamedVariable(result), ii.getArgsArray(), -1, -1, argIndex);
+        }
     }
 
     @Override

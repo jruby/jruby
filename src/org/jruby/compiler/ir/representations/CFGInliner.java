@@ -9,10 +9,12 @@ import org.jruby.RubyModule;
 import org.jruby.compiler.ir.IRClosure;
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.Tuple;
+import org.jruby.compiler.ir.instructions.jruby.ToAryInstr;
 import org.jruby.compiler.ir.instructions.CallBase;
 import org.jruby.compiler.ir.instructions.JumpInstr;
 import org.jruby.compiler.ir.instructions.ModuleVersionGuardInstr;
 import org.jruby.compiler.ir.instructions.YieldInstr;
+import org.jruby.compiler.ir.operands.Array;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.WrappedIRClosure;
@@ -124,7 +126,6 @@ public class CFGInliner {
                     cfg.addEdge(b, e.getDestination().getData(), e.getType());
                 }
             }
-
         } else {
             // 2. clone callee and add it to the host cfg
             for (BasicBlock b : methodCFG.getBasicBlocks()) {
@@ -152,10 +153,15 @@ public class CFGInliner {
         cfg.removeAllOutgoingEdgesForBB(callBB);
 
         // 4a. Hook up entry edges
+        assert methodCFG.outDegree(mEntry) == 2: "Entry BB of inlinee method does not have outdegree 2: " + methodCFG.toStringGraph();
         for (Edge<BasicBlock> e : methodCFG.getOutgoingEdges(mEntry)) {
             BasicBlock destination = e.getDestination().getData();
             if (destination != mExit) {
-                cfg.addEdge(callBB, ii.getRenamedBB(destination), CFG.EdgeType.FALL_THROUGH);
+                BasicBlock dstBB = ii.getRenamedBB(destination);
+                if (!ii.canMapArgsStatically()) {
+                    dstBB.addInstr(new ToAryInstr(ii.getArgsArray(), new Array(call.getCallArgs()), cfg.getScope().getManager().getTrue()));
+                }
+                cfg.addEdge(callBB, dstBB, CFG.EdgeType.FALL_THROUGH);
             }
         }
 

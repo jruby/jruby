@@ -37,16 +37,20 @@ public class ReceivePostReqdArgInstr extends ReceiveArgBase {
 
     @Override
     public Instr cloneForInlinedScope(InlinerInfo ii) {
-        int n = ii.getArgsCount();
-        int remaining = n - preReqdArgsCount;
-        Operand argVal;
-        if (remaining <= argIndex) {
-            // SSS: FIXME: Argh!
-            argVal = ii.getInlineHostScope().getManager().getNil();
+        if (ii.canMapArgsStatically()) {
+           int n = ii.getArgsCount();
+           int remaining = n - preReqdArgsCount;
+           Operand argVal;
+           if (remaining <= argIndex) {
+               // SSS: FIXME: Argh!
+               argVal = ii.getInlineHostScope().getManager().getNil();
+           } else {
+               argVal = (remaining > postReqdArgsCount) ? ii.getCallArg(n - postReqdArgsCount + argIndex) : ii.getCallArg(preReqdArgsCount + argIndex);
+           }
+           return new CopyInstr(ii.getRenamedVariable(result), argVal);
         } else {
-            argVal = (remaining > postReqdArgsCount) ? ii.getCallArg(n - postReqdArgsCount + argIndex) : ii.getCallArg(preReqdArgsCount + argIndex);
+            return new ReqdArgMultipleAsgnInstr(ii.getRenamedVariable(result), ii.getArgsArray(), preReqdArgsCount, postReqdArgsCount, argIndex);
         }
-        return new CopyInstr(ii.getRenamedVariable(result), argVal);
     }
 
     @Override

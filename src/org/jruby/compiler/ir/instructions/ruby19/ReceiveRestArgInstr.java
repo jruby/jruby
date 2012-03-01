@@ -41,8 +41,12 @@ public class ReceiveRestArgInstr extends ReceiveRestArgBase {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        // FIXME: Check this
-        return new CopyInstr(ii.getRenamedVariable(result), ii.getCallArg(argIndex, true));
+        if (ii.canMapArgsStatically()) {
+            // FIXME: Check this
+            return new CopyInstr(ii.getRenamedVariable(result), ii.getCallArg(argIndex, true));
+        } else {
+            return new RestArgMultipleAsgnInstr(ii.getRenamedVariable(result), ii.getArgsArray(), argIndex, (totalRequiredArgs + totalOptArgs - argIndex), argIndex);
+        }
     }
 
     @Override

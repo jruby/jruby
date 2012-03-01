@@ -18,6 +18,7 @@ import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Self;
+import org.jruby.compiler.ir.operands.Splat;
 import org.jruby.compiler.ir.operands.Variable;
 
 public class InlinerInfo {
@@ -27,6 +28,8 @@ public class InlinerInfo {
     private CallBase call;
 
     private Operand[] callArgs;
+    private boolean canMapArgsStatically;
+    private Variable argsArray;
     private Map<Label, Label> lblRenameMap;
     private Map<Variable, Variable> varRenameMap;
     private Map<BasicBlock, BasicBlock> bbRenameMap;
@@ -45,6 +48,16 @@ public class InlinerInfo {
     private boolean inClosureCloneMode;
     private IRClosure clonedClosure;
 
+    // SSS FIXME: This is a copy of a method in instructions/calladapter/CallAdapter.java
+    // Maybe move this is to a util/Helpers class?
+    private static boolean containsSplat(Operand args[]) {
+        for (int i = 0; i < args.length; i++) {
+            if (args[i] instanceof Splat) return true;
+        }
+
+        return false;
+    }
+
     public InlinerInfo() { }
 
     public InlinerInfo(CallBase call, CFG c) {
@@ -58,6 +71,8 @@ public class InlinerInfo {
         this.callReceiver = call.getReceiver();
         this.inClosureCloneMode = false;
         this.inClosureInlineMode = false;
+        this.canMapArgsStatically = !containsSplat(callArgs);
+        this.argsArray = this.canMapArgsStatically ?  null : getInlineHostScope().getNewTemporaryVariable();
         synchronized(globalInlineCount) { 
             this.inlineVarPrefix = "%in" + globalInlineCount + "_"; 
             globalInlineCount++;
@@ -75,6 +90,7 @@ public class InlinerInfo {
         clone.callReceiver = this.callReceiver;
         clone.inClosureCloneMode = false;
         clone.inClosureInlineMode = true;
+        clone.canMapArgsStatically = this.canMapArgsStatically;
         return clone;
     }
 
@@ -88,6 +104,7 @@ public class InlinerInfo {
         clone.clonedClosure = clonedClosure;
         clone.inClosureCloneMode = true;
         clone.inClosureInlineMode = false;
+        clone.canMapArgsStatically = this.canMapArgsStatically;
         return clone;
     }
 
@@ -181,6 +198,14 @@ public class InlinerInfo {
 
     public int getArgsCount() {
         return callArgs.length;
+    }
+
+    public boolean canMapArgsStatically() {
+        return this.canMapArgsStatically;
+    }
+
+    public Variable getArgsArray() {
+        return this.argsArray;
     }
 
     public Operand getCallArg(int index) {
