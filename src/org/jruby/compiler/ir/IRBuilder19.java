@@ -27,12 +27,13 @@ import org.jruby.compiler.ir.instructions.CopyInstr;
 import org.jruby.compiler.ir.instructions.JRubyImplCallInstr;
 import org.jruby.compiler.ir.instructions.JRubyImplCallInstr.JRubyImplementationMethod;
 import org.jruby.compiler.ir.instructions.LabelInstr;
-import org.jruby.compiler.ir.instructions.ReceivePreReqdArgInstr;
 import org.jruby.compiler.ir.instructions.ReceiveClosureInstr;
+import org.jruby.compiler.ir.instructions.ReceivePreReqdArgInstr;
 import org.jruby.compiler.ir.instructions.ReceiveSelfInstr;
 import org.jruby.compiler.ir.instructions.ReqdArgMultipleAsgnInstr;
 import org.jruby.compiler.ir.instructions.RestArgMultipleAsgnInstr;
 import org.jruby.compiler.ir.instructions.YieldInstr;
+import org.jruby.compiler.ir.instructions.jruby.BackrefIsMatchDataInstr;
 import org.jruby.compiler.ir.instructions.jruby.CheckArityInstr;
 import org.jruby.compiler.ir.instructions.jruby.ToAryInstr;
 import org.jruby.compiler.ir.instructions.ruby19.BuildLambdaInstr;
@@ -435,7 +436,7 @@ public class IRBuilder19 extends IRBuilder {
                 return new StringLiteral("local-variable");
             }
             case BACKREFNODE: {
-                return buildDefinitionCheck(s, JRubyImplementationMethod.BACKREF_IS_RUBY_MATCH_DATA, null, null, "global-variable");
+                return buildDefinitionCheck(s, new BackrefIsMatchDataInstr(s.getNewTemporaryVariable()), "global-variable");
             }
             case DREGEXPNODE:
             case DSTRNODE: {
@@ -475,7 +476,7 @@ public class IRBuilder19 extends IRBuilder {
                 int n = ((NthRefNode) node).getMatchNumber();
                 Label undefLabel = s.getNewLabel();
                 Variable tmpVar = s.getNewTemporaryVariable();
-                s.addInstr(new JRubyImplCallInstr(tmpVar, JRubyImplementationMethod.BACKREF_IS_RUBY_MATCH_DATA, null, NO_ARGS));
+                s.addInstr(new BackrefIsMatchDataInstr(tmpVar));
                 s.addInstr(BEQInstr.create(tmpVar, manager.getFalse(), undefLabel));
                 // SSS FIXME: 
                 // - Can/should I use BEQInstr(new NthRef(n), manager.getNil(), undefLabel)? instead of .nil? & compare with flag?

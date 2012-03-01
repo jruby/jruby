@@ -1,7 +1,6 @@
 package org.jruby.compiler.ir.instructions;
 
 import org.jruby.Ruby;
-import org.jruby.RubyMatchData;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.operands.Operand;
@@ -9,7 +8,6 @@ import org.jruby.compiler.ir.operands.StringLiteral;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.compiler.ir.targets.JVM;
-import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
@@ -28,8 +26,7 @@ public class JRubyImplCallInstr extends CallInstr {
     //    first pass of trying to mimic behavior of the previous AST compiler.  This code
     //    can be cleaned up in a later pass.
     public enum JRubyImplementationMethod {
-       SELF_IS_METHOD_BOUND("self_isMethodBound"), // SSS FIXME: Should this be a Ruby internals call rather than a JRUBY internals call?
-       BACKREF_IS_RUBY_MATCH_DATA("backref_isRubyMatchData");
+       SELF_IS_METHOD_BOUND("self_isMethodBound"); // SSS FIXME: Should this be a Ruby internals call rather than a JRUBY internals call?
 
        public MethAddr methAddr;
        JRubyImplementationMethod(String methodName) {
@@ -104,14 +101,6 @@ public class JRubyImplCallInstr extends CallInstr {
                 Object receiver = getReceiver().retrieve(context, self, currDynScope, temp);
                 boolean bound = ((IRubyObject)receiver).getMetaClass().isMethodBound(((StringLiteral)getCallArgs()[0]).string, false); 
                 rVal = runtime.newBoolean(bound);
-                break;
-            }
-            case BACKREF_IS_RUBY_MATCH_DATA: {
-                // bRef = getBackref()
-                // flag = bRef instanceof RubyMatchData
-                // SSS: FIXME: Or use this directly? "context.getCurrentScope().getBackRef(rt)" What is the diff??
-                IRubyObject bRef = RuntimeHelpers.getBackref(runtime, context);
-                rVal = runtime.newBoolean(RubyMatchData.class.isInstance(bRef));
                 break;
             }
             default: {

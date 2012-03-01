@@ -172,6 +172,7 @@ import org.jruby.compiler.ir.instructions.UndefMethodInstr;
 import org.jruby.compiler.ir.instructions.YieldInstr;
 import org.jruby.compiler.ir.instructions.ZSuperInstr;
 import org.jruby.compiler.ir.instructions.defined.SetWithinDefinedInstr;
+import org.jruby.compiler.ir.instructions.jruby.BackrefIsMatchDataInstr;
 import org.jruby.compiler.ir.instructions.jruby.BlockGivenInstr;
 import org.jruby.compiler.ir.instructions.jruby.CheckArityInstr;
 import org.jruby.compiler.ir.instructions.jruby.ClassVarIsDefinedInstr;
@@ -1619,7 +1620,7 @@ public class IRBuilder {
             case YIELDNODE:
                 return buildDefinitionCheck(s, new BlockGivenInstr(s.getNewTemporaryVariable()), "yield");
             case BACKREFNODE:
-                return buildDefinitionCheck(s, JRubyImplementationMethod.BACKREF_IS_RUBY_MATCH_DATA, null, null, "$" + ((BackRefNode) node).getType());
+                return buildDefinitionCheck(s, new BackrefIsMatchDataInstr(s.getNewTemporaryVariable()), "$" + ((BackRefNode) node).getType());
             case NTHREFNODE: {
             // SSS FIXME: Is there a reason to do this all with low-level IR?
             // Can't this all be folded into a Java method that would be part
@@ -1639,7 +1640,7 @@ public class IRBuilder {
                 int n = ((NthRefNode) node).getMatchNumber();
                 Label undefLabel = s.getNewLabel();
                 Variable tmpVar = s.getNewTemporaryVariable();
-                s.addInstr(new JRubyImplCallInstr(tmpVar, JRubyImplementationMethod.BACKREF_IS_RUBY_MATCH_DATA, null, NO_ARGS));
+                s.addInstr(new BackrefIsMatchDataInstr(tmpVar));
                 s.addInstr(BEQInstr.create(tmpVar, manager.getFalse(), undefLabel));
                 // SSS FIXME: 
                 // - Can/should I use BEQInstr(new NthRef(n), manager.getNil(), undefLabel)? instead of .nil? & compare with flag?

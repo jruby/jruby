@@ -125,13 +125,14 @@ public enum Operation {
     ATTR_ASSIGN(OpFlags.f_is_store | OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
     
     /* defined */
+    BACKREF_IS_MATCH_DATA(0),
     CLASS_VAR_IS_DEFINED(0),
     DEFINED_CONSTANT_OR_METHOD(0),
-    SET_WITHIN_DEFINED(0),
     GLOBAL_IS_DEFINED(0),
+    HAS_INSTANCE_VAR(0),        
     METHOD_DEFINED(0),
-    HAS_INSTANCE_VAR(0),
     METHOD_IS_PUBLIC(0),
+    SET_WITHIN_DEFINED(0),
     SUPER_METHOD_BOUND(0),
     
     /** JRuby-impl instructions **/
