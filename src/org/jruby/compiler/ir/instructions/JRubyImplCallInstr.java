@@ -1,7 +1,6 @@
 package org.jruby.compiler.ir.instructions;
 
 import org.jruby.Ruby;
-import org.jruby.RubyClass;
 import org.jruby.RubyMatchData;
 import org.jruby.RubyModule;
 import org.jruby.compiler.ir.Operation;
@@ -17,7 +16,6 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
@@ -37,7 +35,6 @@ public class JRubyImplCallInstr extends CallInstr {
        BLOCK_GIVEN("block_isGiven"), // SSS FIXME: Should this be a Ruby internals call rather than a JRUBY internals call?
        SELF_IS_METHOD_BOUND("self_isMethodBound"), // SSS FIXME: Should this be a Ruby internals call rather than a JRUBY internals call?
        BACKREF_IS_RUBY_MATCH_DATA("backref_isRubyMatchData"),
-       METHOD_PUBLIC_ACCESSIBLE("methodIsPublicAccessible"),
        FRAME_SUPER_METHOD_BOUND("frame_superMethodBound");
 
        public MethAddr methAddr;
@@ -135,19 +132,6 @@ public class JRubyImplCallInstr extends CallInstr {
                 // SSS: FIXME: Or use this directly? "context.getCurrentScope().getBackRef(rt)" What is the diff??
                 IRubyObject bRef = RuntimeHelpers.getBackref(runtime, context);
                 rVal = runtime.newBoolean(RubyMatchData.class.isInstance(bRef));
-                break;
-            }
-            case METHOD_PUBLIC_ACCESSIBLE: {
-                /* ------------------------------------------------------------
-                 * mc = r.metaClass
-                 * v  = mc.getVisibility(methodName)
-                 * v.isPrivate? || (v.isProtected? && receiver/self? instanceof mc.getRealClass)
-                 * ------------------------------------------------------------ */
-                IRubyObject r   = (IRubyObject)getReceiver().retrieve(context, self, currDynScope, temp);
-                RubyClass   mc  = r.getMetaClass();
-                String      arg = ((StringLiteral)getCallArgs()[0]).string;
-                Visibility  v   = mc.searchMethod(arg).getVisibility();
-                rVal = runtime.newBoolean((v != null) && !v.isPrivate() && !(v.isProtected() && mc.getRealClass().isInstance(r)));
                 break;
             }
             case FRAME_SUPER_METHOD_BOUND: {

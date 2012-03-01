@@ -179,6 +179,7 @@ import org.jruby.compiler.ir.instructions.jruby.GetObjectInstr;
 import org.jruby.compiler.ir.instructions.jruby.GlobalIsDefinedInstr;
 import org.jruby.compiler.ir.instructions.jruby.HasInstanceVarInstr;
 import org.jruby.compiler.ir.instructions.jruby.MethodDefinedInstr;
+import org.jruby.compiler.ir.instructions.jruby.MethodIsPublicInstr;
 import org.jruby.compiler.ir.instructions.jruby.RestoreErrorInfoInstr;
 import org.jruby.compiler.ir.instructions.jruby.ThrowExceptionInstr;
 import org.jruby.compiler.ir.instructions.jruby.ToAryInstr;
@@ -1782,7 +1783,7 @@ public class IRBuilder {
                         StringLiteral attrMethodName = new StringLiteral(iVisited.getName());
                         Variable tmpVar     = s.getNewTemporaryVariable();
                         Operand  receiver   = build(iVisited.getReceiverNode(), s);
-                        s.addInstr(new JRubyImplCallInstr(tmpVar, JRubyImplementationMethod.METHOD_PUBLIC_ACCESSIBLE, receiver, new Operand[]{attrMethodName}));
+                        s.addInstr(new MethodIsPublicInstr(tmpVar, receiver, attrMethodName));
                         s.addInstr(BEQInstr.create(tmpVar, manager.getFalse(), undefLabel));
                         s.addInstr(new JRubyImplCallInstr(tmpVar, JRubyImplementationMethod.SELF_IS_METHOD_BOUND, getSelf(s), new Operand[]{attrMethodName}));
                         s.addInstr(BEQInstr.create(tmpVar, manager.getFalse(), undefLabel));
