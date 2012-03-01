@@ -140,8 +140,6 @@ import org.jruby.compiler.ir.instructions.GetGlobalVariableInstr;
 import org.jruby.compiler.ir.instructions.InheritanceSearchConstInstr;
 import org.jruby.compiler.ir.instructions.InstanceOfInstr;
 import org.jruby.compiler.ir.instructions.Instr;
-import org.jruby.compiler.ir.instructions.JRubyImplCallInstr;
-import org.jruby.compiler.ir.instructions.JRubyImplCallInstr.JRubyImplementationMethod;
 import org.jruby.compiler.ir.instructions.JumpIndirectInstr;
 import org.jruby.compiler.ir.instructions.JumpInstr;
 import org.jruby.compiler.ir.instructions.LabelInstr;
@@ -181,6 +179,7 @@ import org.jruby.compiler.ir.instructions.jruby.GetErrorInfoInstr;
 import org.jruby.compiler.ir.instructions.jruby.GetObjectInstr;
 import org.jruby.compiler.ir.instructions.jruby.GlobalIsDefinedInstr;
 import org.jruby.compiler.ir.instructions.jruby.HasInstanceVarInstr;
+import org.jruby.compiler.ir.instructions.jruby.IsMethodBoundInstr;
 import org.jruby.compiler.ir.instructions.jruby.MethodDefinedInstr;
 import org.jruby.compiler.ir.instructions.jruby.MethodIsPublicInstr;
 import org.jruby.compiler.ir.instructions.jruby.RestoreErrorInfoInstr;
@@ -546,12 +545,6 @@ public class IRBuilder {
             n = ((NewlineNode)n).getNextNode();
 
         return n;
-    }
-
-    public Variable generateJRubyUtilityCall(IRScope m, JRubyImplementationMethod meth, boolean hasResult, Operand receiver, Operand[] args) {
-        Variable ret = hasResult ? m.getNewTemporaryVariable() : null;
-        m.addInstr(JRubyImplCallInstr.createJRubyImplementationMethod(ret, meth, receiver, args));
-        return ret;
     }
 
     public Operand build(Node node, IRScope s) {
@@ -1525,14 +1518,6 @@ public class IRBuilder {
         return buildDefnCheckIfThenPaths(s, undefLabel, new StringLiteral(definedReturnValue));        
     }
 
-    protected Variable buildDefinitionCheck(IRScope s, JRubyImplementationMethod defnChecker, Operand receiver, String nameToCheck, String definedReturnValue) {
-        Label undefLabel = s.getNewLabel();
-        Operand[] args   = nameToCheck == null ? NO_ARGS : new Operand[]{new StringLiteral(nameToCheck)};
-        Variable tmpVar  = generateJRubyUtilityCall(s, defnChecker, true, receiver, args);
-        s.addInstr(BEQInstr.create(tmpVar, manager.getFalse(), undefLabel));
-        return buildDefnCheckIfThenPaths(s, undefLabel, new StringLiteral(definedReturnValue));
-    }
-
     public Operand buildGetArgumentDefinition(final Node node, IRScope s, String type) {
         if (node == null) return new StringLiteral(type);
 
@@ -1706,13 +1691,13 @@ public class IRBuilder {
                 Label undefLabel = s.getNewLabel();
                 Variable tmpVar = s.getNewTemporaryVariable();
                 StringLiteral mName = new StringLiteral(((FCallNode)node).getName());
-                s.addInstr(new JRubyImplCallInstr(tmpVar, JRubyImplementationMethod.SELF_IS_METHOD_BOUND, getSelf(s), new Operand[]{mName}));
+                s.addInstr(new IsMethodBoundInstr(tmpVar, getSelf(s), mName));
                 s.addInstr(BEQInstr.create(tmpVar, manager.getFalse(), undefLabel));
                 Operand argsCheckDefn = buildGetArgumentDefinition(((FCallNode) node).getArgsNode(), s, "method");
                 return buildDefnCheckIfThenPaths(s, undefLabel, argsCheckDefn);
             }
             case VCALLNODE:
-                return buildDefinitionCheck(s, JRubyImplementationMethod.SELF_IS_METHOD_BOUND, getSelf(s), ((VCallNode) node).getName(), "method");
+                return buildDefinitionCheck(s, new IsMethodBoundInstr(s.getNewTemporaryVariable(), getSelf(s), new StringLiteral(((VCallNode) node).getName())), "method");
             case CALLNODE: {
             // SSS FIXME: Is there a reason to do this all with low-level IR?
             // Can't this all be folded into a Java method that would be part
@@ -1789,7 +1774,7 @@ public class IRBuilder {
                         Operand  receiver   = build(iVisited.getReceiverNode(), s);
                         s.addInstr(new MethodIsPublicInstr(tmpVar, receiver, attrMethodName));
                         s.addInstr(BEQInstr.create(tmpVar, manager.getFalse(), undefLabel));
-                        s.addInstr(new JRubyImplCallInstr(tmpVar, JRubyImplementationMethod.SELF_IS_METHOD_BOUND, getSelf(s), new Operand[]{attrMethodName}));
+                        s.addInstr(new IsMethodBoundInstr(tmpVar, getSelf(s), attrMethodName));
                         s.addInstr(BEQInstr.create(tmpVar, manager.getFalse(), undefLabel));
                         Operand argsCheckDefn = buildGetArgumentDefinition(((AttrAssignNode) node).getArgsNode(), s, "assignment");
                         return buildDefnCheckIfThenPaths(s, undefLabel, argsCheckDefn);
