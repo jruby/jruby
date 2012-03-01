@@ -126,6 +126,7 @@ public enum Operation {
     
     /* defined */
     CLASS_VAR_IS_DEFINED(0),
+    DEFINED_CONSTANT_OR_METHOD(0),
     SET_WITHIN_DEFINED(0),
     GLOBAL_IS_DEFINED(0),
     METHOD_DEFINED(0),

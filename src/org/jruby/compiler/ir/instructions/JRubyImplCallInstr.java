@@ -16,7 +16,6 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
 
 public class JRubyImplCallInstr extends CallInstr {
     // SSS FIXME: This is a rather arbitrary set of methods 
@@ -30,7 +29,6 @@ public class JRubyImplCallInstr extends CallInstr {
     //    first pass of trying to mimic behavior of the previous AST compiler.  This code
     //    can be cleaned up in a later pass.
     public enum JRubyImplementationMethod {
-       RTH_GET_DEFINED_CONSTANT_OR_BOUND_METHOD("getDefinedConstantOrBoundMethod"),
        SELF_IS_METHOD_BOUND("self_isMethodBound"), // SSS FIXME: Should this be a Ruby internals call rather than a JRUBY internals call?
        BACKREF_IS_RUBY_MATCH_DATA("backref_isRubyMatchData"),
        FRAME_SUPER_METHOD_BOUND("frame_superMethodBound");
@@ -101,18 +99,10 @@ public class JRubyImplCallInstr extends CallInstr {
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         Ruby runtime = context.getRuntime();        
-        String name;
         Object receiver;
         Object rVal = null;
 
         switch (this.implMethod) {
-            case RTH_GET_DEFINED_CONSTANT_OR_BOUND_METHOD: {
-                IRubyObject v = (IRubyObject)getCallArgs()[0].retrieve(context, self, currDynScope, temp);
-                name = ((StringLiteral)getCallArgs()[1]).string;
-                ByteList definedType = RuntimeHelpers.getDefinedConstantOrBoundMethod(v, name);
-                rVal = (definedType == null ? runtime.getIRManager().getNil() : (new StringLiteral(definedType))).retrieve(context, self, currDynScope, temp);
-                break;
-            }
             case SELF_IS_METHOD_BOUND: {
                 receiver = getReceiver().retrieve(context, self, currDynScope, temp);
                 boolean bound = ((IRubyObject)receiver).getMetaClass().isMethodBound(((StringLiteral)getCallArgs()[0]).string, false); 

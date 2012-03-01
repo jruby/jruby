@@ -175,6 +175,7 @@ import org.jruby.compiler.ir.instructions.defined.SetWithinDefinedInstr;
 import org.jruby.compiler.ir.instructions.jruby.BlockGivenInstr;
 import org.jruby.compiler.ir.instructions.jruby.CheckArityInstr;
 import org.jruby.compiler.ir.instructions.jruby.ClassVarIsDefinedInstr;
+import org.jruby.compiler.ir.instructions.jruby.GetDefinedConstantOrMethodInstr;
 import org.jruby.compiler.ir.instructions.jruby.GetErrorInfoInstr;
 import org.jruby.compiler.ir.instructions.jruby.GetObjectInstr;
 import org.jruby.compiler.ir.instructions.jruby.GlobalIsDefinedInstr;
@@ -1675,7 +1676,7 @@ public class IRBuilder {
                             s.addInstr(new GetObjectInstr(tmpVar));
                             v = tmpVar;
                         }
-                        s.addInstr(new JRubyImplCallInstr(tmpVar, JRubyImplementationMethod.RTH_GET_DEFINED_CONSTANT_OR_BOUND_METHOD, null, new Operand[]{v, new StringLiteral(name)}));
+                        s.addInstr(new GetDefinedConstantOrMethodInstr(tmpVar, v, new StringLiteral(name)));
                         return tmpVar;
                     }
                 };
