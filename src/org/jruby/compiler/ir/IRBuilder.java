@@ -172,6 +172,7 @@ import org.jruby.compiler.ir.instructions.UndefMethodInstr;
 import org.jruby.compiler.ir.instructions.YieldInstr;
 import org.jruby.compiler.ir.instructions.ZSuperInstr;
 import org.jruby.compiler.ir.instructions.defined.SetWithinDefinedInstr;
+import org.jruby.compiler.ir.instructions.jruby.BlockGivenInstr;
 import org.jruby.compiler.ir.instructions.jruby.CheckArityInstr;
 import org.jruby.compiler.ir.instructions.jruby.ClassVarIsDefinedInstr;
 import org.jruby.compiler.ir.instructions.jruby.GetErrorInfoInstr;
@@ -1614,7 +1615,7 @@ public class IRBuilder {
             case INSTVARNODE:
                 return buildDefinitionCheck(s, new HasInstanceVarInstr(s.getNewTemporaryVariable(), getSelf(s), new StringLiteral(((InstVarNode) node).getName())), "instance-variable");
             case YIELDNODE:
-                return buildDefinitionCheck(s, JRubyImplementationMethod.BLOCK_GIVEN, null, null, "yield");
+                return buildDefinitionCheck(s, new BlockGivenInstr(s.getNewTemporaryVariable()), "yield");
             case BACKREFNODE:
                 return buildDefinitionCheck(s, JRubyImplementationMethod.BACKREF_IS_RUBY_MATCH_DATA, null, null, "$" + ((BackRefNode) node).getType());
             case NTHREFNODE: {

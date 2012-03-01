@@ -4,7 +4,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyMatchData;
 import org.jruby.RubyModule;
 import org.jruby.compiler.ir.Operation;
-import org.jruby.compiler.ir.instructions.jruby.BlockGivenInstr;
 import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.StringLiteral;
@@ -32,7 +31,6 @@ public class JRubyImplCallInstr extends CallInstr {
     //    can be cleaned up in a later pass.
     public enum JRubyImplementationMethod {
        RTH_GET_DEFINED_CONSTANT_OR_BOUND_METHOD("getDefinedConstantOrBoundMethod"),
-       BLOCK_GIVEN("block_isGiven"), // SSS FIXME: Should this be a Ruby internals call rather than a JRUBY internals call?
        SELF_IS_METHOD_BOUND("self_isMethodBound"), // SSS FIXME: Should this be a Ruby internals call rather than a JRUBY internals call?
        BACKREF_IS_RUBY_MATCH_DATA("backref_isRubyMatchData"),
        FRAME_SUPER_METHOD_BOUND("frame_superMethodBound");
@@ -49,12 +47,7 @@ public class JRubyImplCallInstr extends CallInstr {
     
     public static Instr createJRubyImplementationMethod(Variable result, 
             JRubyImplementationMethod methAddr, Operand receiver, Operand[] args) {
-        switch (methAddr) {
-            case BLOCK_GIVEN:
-                return new BlockGivenInstr(result);
-            default:
-                return new JRubyImplCallInstr(result, methAddr, receiver, args);
-        }
+        return new JRubyImplCallInstr(result, methAddr, receiver, args);
     }
 
     protected JRubyImplementationMethod implMethod;
