@@ -129,6 +129,7 @@ public enum Operation {
     SET_WITHIN_DEFINED(0),
     GLOBAL_IS_DEFINED(0),
     METHOD_DEFINED(0),
+    HAS_INSTANCE_VAR(0),
     
     /** JRuby-impl instructions **/
     BLOCK_GIVEN(0),

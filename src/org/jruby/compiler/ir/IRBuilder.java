@@ -177,6 +177,7 @@ import org.jruby.compiler.ir.instructions.jruby.ClassVarIsDefinedInstr;
 import org.jruby.compiler.ir.instructions.jruby.GetErrorInfoInstr;
 import org.jruby.compiler.ir.instructions.jruby.GetObjectInstr;
 import org.jruby.compiler.ir.instructions.jruby.GlobalIsDefinedInstr;
+import org.jruby.compiler.ir.instructions.jruby.HasInstanceVarInstr;
 import org.jruby.compiler.ir.instructions.jruby.MethodDefinedInstr;
 import org.jruby.compiler.ir.instructions.jruby.RestoreErrorInfoInstr;
 import org.jruby.compiler.ir.instructions.jruby.ThrowExceptionInstr;
@@ -1512,9 +1513,10 @@ public class IRBuilder {
         return tmpVar;
     }
     
-    protected Variable buildDefinitionCheck(IRScope s, ResultInstr defineInstr, String definedReturnValue) {
+    protected Variable buildDefinitionCheck(IRScope s, ResultInstr definedInstr, String definedReturnValue) {
         Label undefLabel = s.getNewLabel();
-        s.addInstr(BEQInstr.create(defineInstr.getResult(), manager.getFalse(), undefLabel));
+        s.addInstr((Instr) definedInstr);
+        s.addInstr(BEQInstr.create(definedInstr.getResult(), manager.getFalse(), undefLabel));
         return buildDefnCheckIfThenPaths(s, undefLabel, new StringLiteral(definedReturnValue));        
     }
 
@@ -1609,7 +1611,7 @@ public class IRBuilder {
             case GLOBALVARNODE:
                 return buildDefinitionCheck(s, new GlobalIsDefinedInstr(s.getNewTemporaryVariable(), new StringLiteral(((GlobalVarNode) node).getName())), "global-variable");
             case INSTVARNODE:
-                return buildDefinitionCheck(s, JRubyImplementationMethod.SELF_HAS_INSTANCE_VARIABLE, getSelf(s), ((InstVarNode) node).getName(), "instance-variable");
+                return buildDefinitionCheck(s, new HasInstanceVarInstr(s.getNewTemporaryVariable(), getSelf(s), new StringLiteral(((InstVarNode) node).getName())), "instance-variable");
             case YIELDNODE:
                 return buildDefinitionCheck(s, JRubyImplementationMethod.BLOCK_GIVEN, null, null, "yield");
             case BACKREFNODE:

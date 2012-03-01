@@ -35,7 +35,6 @@ public class JRubyImplCallInstr extends CallInstr {
     public enum JRubyImplementationMethod {
        RTH_GET_DEFINED_CONSTANT_OR_BOUND_METHOD("getDefinedConstantOrBoundMethod"),
        BLOCK_GIVEN("block_isGiven"), // SSS FIXME: Should this be a Ruby internals call rather than a JRUBY internals call?
-       SELF_HAS_INSTANCE_VARIABLE("self_hasInstanceVariable"), // SSS FIXME: Should this be a Ruby internals call rather than a JRUBY internals call?
        SELF_IS_METHOD_BOUND("self_isMethodBound"), // SSS FIXME: Should this be a Ruby internals call rather than a JRUBY internals call?
        BACKREF_IS_RUBY_MATCH_DATA("backref_isRubyMatchData"),
        METHOD_PUBLIC_ACCESSIBLE("methodIsPublicAccessible"),
@@ -122,13 +121,6 @@ public class JRubyImplCallInstr extends CallInstr {
                 name = ((StringLiteral)getCallArgs()[1]).string;
                 ByteList definedType = RuntimeHelpers.getDefinedConstantOrBoundMethod(v, name);
                 rVal = (definedType == null ? runtime.getIRManager().getNil() : (new StringLiteral(definedType))).retrieve(context, self, currDynScope, temp);
-                break;
-            }
-            case SELF_HAS_INSTANCE_VARIABLE: {
-                receiver = getReceiver().retrieve(context, self, currDynScope, temp);
-                //name = getCallArgs()[0].retrieve(interp).toString();
-                name = ((StringLiteral)getCallArgs()[0]).string;
-                rVal = runtime.newBoolean(((IRubyObject)receiver).getInstanceVariables().hasInstanceVariable(name));
                 break;
             }
             case SELF_IS_METHOD_BOUND: {
