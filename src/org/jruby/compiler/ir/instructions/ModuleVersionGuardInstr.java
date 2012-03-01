@@ -60,9 +60,18 @@ public class ModuleVersionGuardInstr extends Instr {
         return new ModuleVersionGuardInstr(module, expectedVersion, candidateObj.cloneForInlining(ii), ii.getRenamedLabel(failurePathLabel));
     }
 
+    @Override
+    public Instr cloneForBlockCloning(InlinerInfo ii) {
+        return new ModuleVersionGuardInstr(module, expectedVersion, candidateObj.cloneForInlining(ii), failurePathLabel);
+    }
+
     public boolean versionMatches(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp) {
         IRubyObject receiver = (IRubyObject) candidateObj.retrieve(context, self, currDynScope, temp);
         // if (module.getGeneration() != expectedVersion) ... replace this instr with a direct jump
+        //
+        // SSS FIXME: This is not always correct.  Implementation class is not always receiver.getMetaClass()
+        // as we know from how we add instance-methods.  We add it to rubyClass value on the stack.  So, how
+        // do we handle this sticky situation?
         return (receiver.getMetaClass().getGeneration() == expectedVersion);
     }
 }
