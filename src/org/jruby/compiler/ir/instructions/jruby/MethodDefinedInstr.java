@@ -4,6 +4,8 @@
  */
 package org.jruby.compiler.ir.instructions.jruby;
 
+import java.util.Map;
+
 import org.jruby.Ruby;
 import org.jruby.RubyString;
 import org.jruby.compiler.ir.Operation;
@@ -40,6 +42,12 @@ public class MethodDefinedInstr extends Instr implements ResultInstr {
     public Operand[] getOperands() {
         return operands;
     }
+
+    @Override
+    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
+         operands[0] = operands[0].getSimplifiedOperand(valueMap, force);
+         operands[1] = operands[1].getSimplifiedOperand(valueMap, force);
+    }
     
     public Operand getReceiver() {
         return operands[0];
@@ -66,7 +74,7 @@ public class MethodDefinedInstr extends Instr implements ResultInstr {
 
     @Override
     public String toString() {
-        return super.toString() + "(" + operands[0] + ")";
+        return super.toString() + "(" + operands[0] + ", " + operands[1] + ")";
     }
 
     @Override

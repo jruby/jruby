@@ -44,6 +44,11 @@ public class SetReturnAddressInstr extends Instr implements ResultInstr {
     }
 
     @Override
+    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
+        /* Nothing to do since 'Label' is a not a variable */
+    }
+
+    @Override
     public String toString() {
         return "" + result + " = " + returnAddr;
     }

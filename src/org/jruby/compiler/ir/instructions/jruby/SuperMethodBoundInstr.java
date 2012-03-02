@@ -4,6 +4,8 @@
  */
 package org.jruby.compiler.ir.instructions.jruby;
 
+import java.util.Map;
+
 import org.jruby.RubyModule;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.Instr;
@@ -36,6 +38,11 @@ public class SuperMethodBoundInstr extends Instr implements ResultInstr {
     @Override
     public Operand[] getOperands() {
         return operands;
+    }
+
+    @Override
+    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
+         operands[0] = operands[0].getSimplifiedOperand(valueMap, force);
     }
     
     public Variable getResult() {

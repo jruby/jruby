@@ -4,6 +4,8 @@
  */
 package org.jruby.compiler.ir.instructions.jruby;
 
+import java.util.Map;
+
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.ResultInstr;
@@ -25,7 +27,7 @@ import org.jruby.util.ByteList;
  */
 public class GetDefinedConstantOrMethodInstr extends Instr implements ResultInstr {
     private Variable result;
-    private final Operand[] operands;
+    public final Operand[] operands;
    
     public GetDefinedConstantOrMethodInstr(Variable result, Operand object, StringLiteral name) {
         super(Operation.DEFINED_CONSTANT_OR_METHOD);
@@ -37,6 +39,12 @@ public class GetDefinedConstantOrMethodInstr extends Instr implements ResultInst
     @Override
     public Operand[] getOperands() {
         return operands;
+    }
+
+    @Override
+    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
+         operands[0] = operands[0].getSimplifiedOperand(valueMap, force);
+         operands[1] = operands[1].getSimplifiedOperand(valueMap, force);
     }
     
     public Variable getResult() {
@@ -64,7 +72,7 @@ public class GetDefinedConstantOrMethodInstr extends Instr implements ResultInst
 
     @Override
     public String toString() {
-        return super.toString() + "(" + operands[0] + ")";
+        return super.toString() + "(" + operands[0] + ", " + operands[1] + ")";
     }
 
     @Override
@@ -73,9 +81,7 @@ public class GetDefinedConstantOrMethodInstr extends Instr implements ResultInst
         String name = getName().string;
         ByteList definedType = RuntimeHelpers.getDefinedConstantOrBoundMethod(value, name);
         
-        return definedType == null ? 
-                context.runtime.getIRManager().getNil() : 
-                new StringLiteral(definedType).retrieve(context, self, currDynScope, temp);
+        return definedType == null ? context.nil : new StringLiteral(definedType).retrieve(context, self, currDynScope, temp);
     }
 
     @Override

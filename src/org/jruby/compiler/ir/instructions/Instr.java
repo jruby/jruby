@@ -151,7 +151,7 @@ public abstract class Instr {
      * @return a new instruction that can be used in the target scope.
      */
     public Instr cloneForInlining(InlinerInfo inlinerInfo) {
-        throw new RuntimeException("Not implemented for: " + this.getOperation());
+        throw new RuntimeException("cloneForInlining: Not implemented for: " + this.getOperation());
     }
 
     /**
@@ -200,6 +200,10 @@ public abstract class Instr {
      * to simplify
      */
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
+        if (getOperands() != EMPTY_OPERANDS) {
+            System.out.println("simplifyOperands: Missing implementation for: " + this.getOperation());
+            throw new RuntimeException("simplifyOperands: Missing implementation for: " + this.getOperation());
+        }
     }
 
     /**

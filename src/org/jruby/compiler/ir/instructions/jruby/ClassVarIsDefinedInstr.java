@@ -4,6 +4,8 @@
  */
 package org.jruby.compiler.ir.instructions.jruby;
 
+import java.util.Map;
+
 import org.jruby.MetaClass;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
@@ -39,6 +41,12 @@ public class ClassVarIsDefinedInstr extends Instr implements ResultInstr {
     public Operand[] getOperands() {
         return operands;
     }
+
+    @Override
+    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
+         operands[0] = operands[0].getSimplifiedOperand(valueMap, force);
+         operands[1] = operands[1].getSimplifiedOperand(valueMap, force);
+    }
     
     public Variable getResult() {
         return result;
@@ -65,7 +73,7 @@ public class ClassVarIsDefinedInstr extends Instr implements ResultInstr {
 
     @Override
     public String toString() {
-        return super.toString() + "(" + operands[0] + ")";
+        return super.toString() + "(" + operands[0] + ", " + operands[1] + ")";
     }
 
     @Override

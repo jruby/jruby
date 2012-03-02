@@ -1,5 +1,7 @@
 package org.jruby.compiler.ir.instructions.defined;
 
+import java.util.Map;
+
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.operands.BooleanLiteral;
@@ -27,6 +29,11 @@ public class SetWithinDefinedInstr extends Instr {
     @Override
     public String toString() {
         return getOperation().toString() + "(" + define + ")";
+    }
+
+    @Override
+    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
+        /* Nothing to do since 'define' is a ImmutableLiteral */
     }
 
     @Override
