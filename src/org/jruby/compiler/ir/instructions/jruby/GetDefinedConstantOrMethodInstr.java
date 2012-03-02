@@ -4,7 +4,6 @@
  */
 package org.jruby.compiler.ir.instructions.jruby;
 
-import java.util.Map;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.operands.Operand;
@@ -23,23 +22,9 @@ import org.jruby.util.ByteList;
  *
  * @author enebo
  */
-public class GetDefinedConstantOrMethodInstr extends DefinedInstr {
+public class GetDefinedConstantOrMethodInstr extends DefinedObjectNameInstr {
     public GetDefinedConstantOrMethodInstr(Variable result, Operand object, StringLiteral name) {
         super(Operation.DEFINED_CONSTANT_OR_METHOD, result, new Operand[] { object, name });
-    }
-
-    @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-         operands[0] = operands[0].getSimplifiedOperand(valueMap, force);
-         operands[1] = operands[1].getSimplifiedOperand(valueMap, force);
-    }
-    
-    public StringLiteral getName() {
-        return (StringLiteral) operands[1];
-    }
-    
-    public Operand getObject() {
-        return operands[0];
     }
 
     @Override
@@ -47,11 +32,6 @@ public class GetDefinedConstantOrMethodInstr extends DefinedInstr {
         return new GetDefinedConstantOrMethodInstr((Variable) getResult().cloneForInlining(inlinerInfo), 
                 getObject().cloneForInlining(inlinerInfo),
                 (StringLiteral) getName().cloneForInlining(inlinerInfo));
-    }
-
-    @Override
-    public String toString() {
-        return super.toString() + "(" + getObject() + ", " + getName() + ")";
     }
 
     @Override

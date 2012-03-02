@@ -21,23 +21,9 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  * @author enebo
  */
-public class HasInstanceVarInstr extends DefinedInstr {
+public class HasInstanceVarInstr extends DefinedObjectNameInstr {
     public HasInstanceVarInstr(Variable result, Operand object, StringLiteral name) {
         super(Operation.HAS_INSTANCE_VAR, result, new Operand[] { object, name });
-    }
-
-    public StringLiteral getName() {
-        return (StringLiteral) operands[1];
-    }
-    
-    public Operand getObject() {
-        return operands[0];
-    }
-
-    @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-         operands[0] = operands[0].getSimplifiedOperand(valueMap, force);
-         operands[1] = operands[1].getSimplifiedOperand(valueMap, force);
     }
 
     @Override
@@ -45,11 +31,6 @@ public class HasInstanceVarInstr extends DefinedInstr {
         return new HasInstanceVarInstr((Variable) getResult().cloneForInlining(inlinerInfo), 
                 getObject().cloneForInlining(inlinerInfo),
                 (StringLiteral) getName().cloneForInlining(inlinerInfo));
-    }
-
-    @Override
-    public String toString() {
-        return super.toString() + "(" + getObject() + ", " + getName() + ")";
     }
 
     @Override

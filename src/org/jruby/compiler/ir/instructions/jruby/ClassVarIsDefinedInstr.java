@@ -4,7 +4,6 @@
  */
 package org.jruby.compiler.ir.instructions.jruby;
 
-import java.util.Map;
 import org.jruby.MetaClass;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
@@ -23,44 +22,22 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  *
  */
-public class ClassVarIsDefinedInstr extends DefinedInstr {
+public class ClassVarIsDefinedInstr extends DefinedObjectNameInstr {
     public ClassVarIsDefinedInstr(Variable result, Operand module, StringLiteral name) {
         super(Operation.CLASS_VAR_IS_DEFINED, result, new Operand[] { module, name });
-    }
-
-    public StringLiteral getName() {
-        return (StringLiteral) operands[1];
-    }
-    
-    public Operand getModule() {
-        return operands[0];
     }
 
     @Override
     public Instr cloneForInlining(InlinerInfo inlinerInfo) {
         return new ClassVarIsDefinedInstr((Variable) getResult().cloneForInlining(inlinerInfo), 
-                getModule().cloneForInlining(inlinerInfo),
+                getObject().cloneForInlining(inlinerInfo),
                 (StringLiteral) getName().cloneForInlining(inlinerInfo));
-    }
-    
-    @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-        result = (Variable) result.getSimplifiedOperand(valueMap, force);
-        
-        for (int i = 0; i < operands.length; i++) {
-            operands[i] = operands[i].getSimplifiedOperand(valueMap, force);
-        }
-    }    
-
-    @Override
-    public String toString() {
-        return super.toString() + "(" + getModule() + ", " + getName() + ")";
     }
 
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         Ruby runtime = context.runtime;
-        RubyModule cm = (RubyModule) getModule().retrieve(context, self, currDynScope, temp);
+        RubyModule cm = (RubyModule) getObject().retrieve(context, self, currDynScope, temp);
         String name = getName().string;        
         boolean defined = cm.isClassVarDefined(name);
         

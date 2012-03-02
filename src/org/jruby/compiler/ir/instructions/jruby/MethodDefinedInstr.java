@@ -24,25 +24,10 @@ import org.jruby.util.ByteList;
 
 /**
  *
- * @author enebo
  */
-public class MethodDefinedInstr extends DefinedInstr {
+public class MethodDefinedInstr extends DefinedObjectNameInstr {
    public MethodDefinedInstr(Variable result, Operand object, StringLiteral methodName) {
         super(Operation.METHOD_DEFINED, result, new Operand[] { object, methodName });
-    }
-
-    @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-         operands[0] = operands[0].getSimplifiedOperand(valueMap, force);
-         operands[1] = operands[1].getSimplifiedOperand(valueMap, force);
-    }
-    
-    public Operand getObject() {
-        return operands[0];
-    }
-    
-    public StringLiteral getName() {
-        return (StringLiteral) operands[1];
     }
 
     @Override
@@ -50,11 +35,6 @@ public class MethodDefinedInstr extends DefinedInstr {
         return new MethodDefinedInstr((Variable) getResult().cloneForInlining(inlinerInfo), 
                 getObject().cloneForInlining(inlinerInfo),
                 (StringLiteral) getName().cloneForInlining(inlinerInfo));
-    }
-
-    @Override
-    public String toString() {
-        return super.toString() + "(" + getObject() + ", " + getName() + ")";
     }
 
     @Override
