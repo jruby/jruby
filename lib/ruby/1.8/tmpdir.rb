@@ -41,12 +41,21 @@ class Dir
     if $SAFE > 0
       tmp = @@systmpdir
     else
-      for dir in [ENV['TMPDIR'], ENV['TMP'], ENV['TEMP'],
-	          ENV['USERPROFILE'], @@systmpdir, '/tmp']
-	if dir and File.directory?(dir) and File.writable?(dir)
-	  tmp = dir
-	  break
-	end
+      # Search a directory which isn't world-writable first. In JRuby,
+      # FileUtils.remove_entry_secure(dir) crashes when a dir is under
+      # a world-writable directory because it tries to open directory.
+      # Opening directory is not allowed in Java.
+      dirs = [ENV['TMPDIR'], ENV['TMP'], ENV['TEMP'], ENV['USERPROFILE'], @@systmpdir, '/tmp', tmp]
+      for dir in dirs
+        if dir and File.directory?(dir) and File.writable?(dir) and (File.stat(dir).mode & 0002) == 0
+          return File.expand_path(dir)
+        end
+      end
+      for dir in dirs
+        if dir and File.directory?(dir) and File.writable?(dir)
+          tmp = dir
+          break
+        end
       end
       File.expand_path(tmp)
     end
