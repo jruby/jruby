@@ -3481,18 +3481,6 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         return useBlock ? this : result;
     }
 
-    private static int combinationLength(int myLength, int n) {
-        if (n * 2 > myLength) n = myLength - n;
-        if (n == 0) return 1;
-        if (n < 0) return 0;
-        int val = 1;
-        for (int i = 1; i <= n; i++, myLength--) {
-            val *= myLength;
-            val /= i;
-        }
-        return val;
-    }
-
     /** rb_ary_combination
      * 
      */
@@ -3511,20 +3499,20 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             }
         } else if (n >= 0 && realLength >= n) {
             int stack[] = new int[n + 1];
-            int nlen = combinationLength((int)realLength, n);
             IRubyObject chosen[] = new IRubyObject[n];
             int lev = 0;
 
             stack[0] = -1;
-            for (int i = 0; i < nlen; i++) {
+            for (;;) {
                 chosen[lev] = eltOk(stack[lev + 1]);
                 for (lev++; lev < n; lev++) {
                     chosen[lev] = eltOk(stack[lev + 1] = stack[lev] + 1);
                 }
                 block.yield(context, newArray(runtime, chosen));
                 do {
+                    if (lev == 0) return this;
                     stack[lev--]++;
-                } while (lev != 0 && stack[lev + 1] + n == realLength + lev + 1);
+                } while (stack[lev + 1] + n == realLength + lev + 1);
             }
         }
 
