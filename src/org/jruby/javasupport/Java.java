@@ -356,10 +356,10 @@ public class Java implements Library {
     }
 
     /**
-     * Same as Java#getInstance(runtime, rawJavaObject, System.getBoolean('jruby.ji.objectProxyCache')).
+     * Same as Java#getInstance(runtime, rawJavaObject, false).
      */
     public static IRubyObject getInstance(Ruby runtime, Object rawJavaObject) {
-        return getInstance(runtime, rawJavaObject, OBJECT_PROXY_CACHE);
+        return getInstance(runtime, rawJavaObject, false);
     }
     
     /**
@@ -369,19 +369,20 @@ public class Java implements Library {
      * JavaUtil.convertJavaToUsableRubyObject to get coerced types or proxies as
      * appropriate.
      * 
-     * @param runtime
-     * @param rawJavaObject
-     * @param useCache 
-     * @return the new (or cached, if useCache is true) proxy for the specified Java object
+     * @param runtime the JRuby runtime
+     * @param rawJavaObject the object to get a wrapper for
+     * @param forceCache whether to force the use of the proxy cache
+     * @return the new (or cached) proxy for the specified Java object
      * @see JavaUtil#convertJavaToUsableRubyObject
      */
-    public static IRubyObject getInstance(Ruby runtime, Object rawJavaObject, boolean useCache) {
+    public static IRubyObject getInstance(Ruby runtime, Object rawJavaObject, boolean forceCache) {
         if (rawJavaObject != null) {
-            if (OBJECT_PROXY_CACHE && useCache) {
-                return runtime.getJavaSupport().getObjectProxyCache().getOrCreate(rawJavaObject,
-                        (RubyClass) getProxyClass(runtime, JavaClass.get(runtime, rawJavaObject.getClass())));
+            RubyClass proxyClass = (RubyClass) getProxyClass(runtime, JavaClass.get(runtime, rawJavaObject.getClass()));
+
+            if (OBJECT_PROXY_CACHE || forceCache || proxyClass.getCacheProxy()) {
+                return runtime.getJavaSupport().getObjectProxyCache().getOrCreate(rawJavaObject, proxyClass);
             } else {
-                return allocateProxy(rawJavaObject, (RubyClass)getProxyClass(runtime, JavaClass.get(runtime, rawJavaObject.getClass())));
+                return allocateProxy(rawJavaObject, proxyClass);
             }
         }
         return runtime.getNil();

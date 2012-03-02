@@ -62,13 +62,13 @@ public class JVM implements CompilerTarget {
 
         target.codegen(scope);
 
-        try {
-            FileOutputStream fos = new FileOutputStream("tmp.class");
-            fos.write(target.code());
-            fos.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+//        try {
+//            FileOutputStream fos = new FileOutputStream("tmp.class");
+//            fos.write(target.code());
+//            fos.close();
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
 
         return jrubyClassLoader.defineClass(scriptToClass(scope.getName()), target.code());
     }
@@ -175,8 +175,8 @@ public class JVM implements CompilerTarget {
 //        System.out.println(method);
         for (int i = 0; i < instrs.length; i++) {
             Instr instr = instrs[i];
-            System.out.println(instr.getClass());
-            System.out.println(instr);
+//            System.out.println(instr.getClass());
+//            System.out.println(instr);
             if (jumpTable.get(i) != null) {
 //                System.out.println("pc: " + i + " label: " + jumpTable.get(i));
                 for (Label label : jumpTable.get(i)) method().mark(methodData().getLabel(label));

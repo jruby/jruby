@@ -96,7 +96,7 @@ public class JRubyLibrary implements Library {
     public static IRubyObject reference(ThreadContext context, IRubyObject recv, IRubyObject obj) {
         Ruby runtime = context.getRuntime();
 
-        return Java.getInstance(runtime, obj, true);
+        return Java.getInstance(runtime, obj, false);
     }
 
     /**

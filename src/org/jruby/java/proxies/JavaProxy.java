@@ -12,6 +12,8 @@ import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+
+import org.jruby.MetaClass;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
@@ -431,10 +433,48 @@ public class JavaProxy extends RubyObject {
     @Override
     public Object toJava(Class type) {
         if (type.isAssignableFrom(getObject().getClass())) {
-            if (Java.OBJECT_PROXY_CACHE) getRuntime().getJavaSupport().getObjectProxyCache().put(getObject(), this);
+            if (Java.OBJECT_PROXY_CACHE || metaClass.getCacheProxy()) {
+                getRuntime().getJavaSupport().getObjectProxyCache().put(getObject(), this);
+            }
             return getObject();
         } else {
             return super.toJava(type);
+        }
+    }
+
+    @Override
+    public Object getVariable(int index) {
+        confirmCachedProxy();
+        return super.getVariable(index);
+    }
+
+    @Override
+    public void setVariable(int index, Object value) {
+        confirmCachedProxy();
+        super.setVariable(index, value);
+    }
+
+    /** rb_singleton_class
+     *
+     * Note: this method is specialized for RubyFixnum, RubySymbol,
+     * RubyNil and RubyBoolean
+     *
+     * Will either return the existing singleton class for this
+     * object, or create a new one and return that.
+     */
+    @Override
+    public RubyClass getSingletonClass() {
+        confirmCachedProxy();
+        return super.getSingletonClass();
+    }
+
+    private void confirmCachedProxy() {
+        if (!metaClass.getCacheProxy()) {
+            if (!Java.OBJECT_PROXY_CACHE) {
+                getRuntime().getWarnings().warn("instance var access on non-persistent Java type (http://wiki.jruby.org/Persistence");
+                metaClass.setCacheProxy(true);
+                getRuntime().getJavaSupport().getObjectProxyCache().put(getObject(), this);
+            }
         }
     }
     

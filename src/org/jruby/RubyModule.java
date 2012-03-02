@@ -3718,6 +3718,22 @@ public class RubyModule extends RubyObject {
     public boolean getJavaProxy() {
         return javaProxy;
     }
+
+    /**
+     * Get whether this Java proxy class should try to keep its instances idempotent
+     * and alive using the ObjectProxyCache.
+     */
+    public boolean getCacheProxy() {
+        return getFlag(USER0_F);
+    }
+
+    /**
+     * Set whether this Java proxy class should try to keep its instances idempotent
+     * and alive using the ObjectProxyCache.
+     */
+    public void setCacheProxy(boolean cacheProxy) {
+        setFlag(USER0_F, cacheProxy);
+    }
     
     private volatile Map<String, Autoload> autoloads = Collections.EMPTY_MAP;
     private volatile Map<String, DynamicMethod> methods = Collections.EMPTY_MAP;
