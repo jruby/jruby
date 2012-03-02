@@ -5,7 +5,6 @@
 package org.jruby.compiler.ir.instructions.jruby;
 
 import java.util.Map;
-
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.ResultInstr;
@@ -70,7 +69,7 @@ public class IsMethodBoundInstr extends Instr implements ResultInstr {
 
     @Override
     public String toString() {
-        return super.toString() + "(" + operands[0] + ", " + operands[1] + ")";
+        return super.toString() + "(" + getObject() + ", " + getName() + ")";
     }
 
     @Override

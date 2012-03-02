@@ -5,7 +5,6 @@
 package org.jruby.compiler.ir.instructions.jruby;
 
 import java.util.Map;
-
 import org.jruby.RubyClass;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.Instr;
@@ -72,7 +71,7 @@ public class MethodIsPublicInstr extends Instr implements ResultInstr {
 
     @Override
     public String toString() {
-        return super.toString() + "(" + operands[0] + ", " + operands[1] + ")";
+        return super.toString() + "(" + getObject() + ", " + getName() + ")";
     }
 
     // ENEBO: searchMethod on bad name returns undefined method...so we use that visibility?

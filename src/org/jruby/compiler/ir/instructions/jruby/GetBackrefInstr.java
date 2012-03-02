@@ -47,11 +47,6 @@ public class GetBackrefInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public String toString() {
-        return super.toString() + "()";
-    }
-
-    @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         // SSS: FIXME: Or use this directly? "context.getCurrentScope().getBackRef(rt)" What is the diff??
         return RuntimeHelpers.getBackref(context.runtime, context);

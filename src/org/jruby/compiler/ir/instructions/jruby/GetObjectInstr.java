@@ -44,11 +44,6 @@ public class GetObjectInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public String toString() {
-        return super.toString() + "()";
-    }
-
-    @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         return context.runtime.getObject();
     }

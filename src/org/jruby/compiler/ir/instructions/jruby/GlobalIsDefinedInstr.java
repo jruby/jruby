@@ -48,6 +48,10 @@ public class GlobalIsDefinedInstr extends Instr implements ResultInstr {
     public Variable getResult() {
         return result;
     }
+    
+    public StringLiteral getName() {
+        return (StringLiteral) operands[0];
+    }
 
     public void updateResult(Variable v) {
         result = v;
@@ -61,15 +65,14 @@ public class GlobalIsDefinedInstr extends Instr implements ResultInstr {
 
     @Override
     public String toString() {
-        return super.toString() + "(" + operands[0] + ")";
+        return super.toString() + "(" + getName() + ")";
     }
 
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         Ruby runtime = context.runtime;
-        String name = ((StringLiteral)getOperands()[0]).string;
         
-        return runtime.newBoolean(runtime.getGlobalVariables().isDefined(name));
+        return runtime.newBoolean(runtime.getGlobalVariables().isDefined(getName().string));
     }
 
     @Override

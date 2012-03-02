@@ -31,11 +31,11 @@ public class MethodDefinedInstr extends Instr implements ResultInstr {
    private Variable result;
    private final Operand[] operands;
    
-   public MethodDefinedInstr(Variable result, Operand receiver, StringLiteral methodName) {
+   public MethodDefinedInstr(Variable result, Operand object, StringLiteral methodName) {
         super(Operation.METHOD_DEFINED);
         
         this.result = result;
-        this.operands = new Operand[] { receiver, methodName };
+        this.operands = new Operand[] { object, methodName };
     }
 
     @Override
@@ -49,11 +49,11 @@ public class MethodDefinedInstr extends Instr implements ResultInstr {
          operands[1] = operands[1].getSimplifiedOperand(valueMap, force);
     }
     
-    public Operand getReceiver() {
+    public Operand getObject() {
         return operands[0];
     }
     
-    public StringLiteral getMethodName() {
+    public StringLiteral getName() {
         return (StringLiteral) operands[1];
     }
     
@@ -68,23 +68,22 @@ public class MethodDefinedInstr extends Instr implements ResultInstr {
     @Override
     public Instr cloneForInlining(InlinerInfo inlinerInfo) {
         return new MethodDefinedInstr((Variable) getResult().cloneForInlining(inlinerInfo), 
-                getReceiver().cloneForInlining(inlinerInfo),
-                (StringLiteral) getMethodName().cloneForInlining(inlinerInfo));
+                getObject().cloneForInlining(inlinerInfo),
+                (StringLiteral) getName().cloneForInlining(inlinerInfo));
     }
 
     @Override
     public String toString() {
-        return super.toString() + "(" + operands[0] + ", " + operands[1] + ")";
+        return super.toString() + "(" + getObject() + ", " + getName() + ")";
     }
 
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         Ruby runtime = context.runtime;
-        Object receiver = getReceiver().retrieve(context, self, currDynScope, temp);
-        String methodName = getMethodName().string;
-        ByteList boundVal = RuntimeHelpers.getDefinedCall(context, self, (IRubyObject)receiver, methodName);
+        IRubyObject receiver = (IRubyObject) getObject().retrieve(context, self, currDynScope, temp);
+        ByteList boundValue = RuntimeHelpers.getDefinedCall(context, self, receiver, getName().string);
         
-        return boundVal == null ? context.nil : RubyString.newStringShared(runtime, boundVal);        
+        return boundValue == null ? context.nil : RubyString.newStringShared(runtime, boundValue);        
     }
 
     @Override

@@ -45,6 +45,10 @@ public class SuperMethodBoundInstr extends Instr implements ResultInstr {
          operands[0] = operands[0].getSimplifiedOperand(valueMap, force);
     }
     
+    public Operand getObject() {
+        return operands[0];
+    }
+    
     public Variable getResult() {
         return result;
     }
@@ -61,12 +65,12 @@ public class SuperMethodBoundInstr extends Instr implements ResultInstr {
 
     @Override
     public String toString() {
-        return super.toString() + "(" + operands[0] + ")";
+        return super.toString() + "(" + getObject() + ")";
     }
 
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
-        IRubyObject receiver = (IRubyObject) getOperands()[0].retrieve(context, self, currDynScope, temp);
+        IRubyObject receiver = (IRubyObject) getObject().retrieve(context, self, currDynScope, temp);
         boolean flag = false;
         String frameName = context.getFrameName();
         if (frameName != null) {
