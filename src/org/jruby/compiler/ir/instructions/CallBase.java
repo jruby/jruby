@@ -113,6 +113,10 @@ public abstract class CallBase extends Instr implements Specializeable {
         return null; // fallthrough for unknown
     }
     
+    public boolean hasClosure() {
+        return closure != null;
+    }
+    
     public boolean containsSplat() {
         for (int i = 0; i < arguments.length; i++) {
             if (arguments[i] instanceof Splat) return true;
