@@ -9,7 +9,6 @@ import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.Instr;
-import org.jruby.compiler.ir.instructions.ResultInstr;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.StringLiteral;
 import org.jruby.compiler.ir.operands.Variable;
@@ -25,17 +24,8 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author enebo
  */
 public class GlobalIsDefinedInstr extends DefinedInstr {
-   private final Operand[] operands;
-   
    public GlobalIsDefinedInstr(Variable result, StringLiteral name) {
-        super(Operation.GLOBAL_IS_DEFINED, result);
-        
-        this.operands = new Operand[] { name };
-    }
-
-    @Override
-    public Operand[] getOperands() {
-        return operands;
+        super(Operation.GLOBAL_IS_DEFINED, result, new Operand[] { name });
     }
 
     @Override

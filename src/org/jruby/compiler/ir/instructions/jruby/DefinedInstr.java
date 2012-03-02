@@ -1,12 +1,9 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package org.jruby.compiler.ir.instructions.jruby;
 
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.instructions.ResultInstr;
+import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 
 /**
@@ -14,12 +11,18 @@ import org.jruby.compiler.ir.operands.Variable;
  */
 public abstract class DefinedInstr extends Instr implements ResultInstr {
     protected Variable result;
+    protected final Operand[] operands;
     
-    public DefinedInstr(Operation operation, Variable result) {
+    public DefinedInstr(Operation operation, Variable result, Operand[] operands) {
         super(operation);
         
         this.result = result;
+        this.operands = operands;
     }
+    
+    public Operand[] getOperands() {
+        return operands;
+    }    
     
     public Variable getResult() {
         return result;

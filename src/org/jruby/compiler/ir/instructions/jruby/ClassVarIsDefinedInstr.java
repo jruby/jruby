@@ -24,19 +24,10 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  */
 public class ClassVarIsDefinedInstr extends DefinedInstr {
-    private final Operand[] operands;
-   
     public ClassVarIsDefinedInstr(Variable result, Operand module, StringLiteral name) {
-        super(Operation.CLASS_VAR_IS_DEFINED, result);
-        
-        this.operands = new Operand[] { module, name };
+        super(Operation.CLASS_VAR_IS_DEFINED, result, new Operand[] { module, name });
     }
 
-    @Override
-    public Operand[] getOperands() {
-        return operands;
-    }
-    
     public StringLiteral getName() {
         return (StringLiteral) operands[1];
     }

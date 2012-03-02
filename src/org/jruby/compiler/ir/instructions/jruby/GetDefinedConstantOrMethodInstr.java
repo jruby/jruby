@@ -24,17 +24,8 @@ import org.jruby.util.ByteList;
  * @author enebo
  */
 public class GetDefinedConstantOrMethodInstr extends DefinedInstr {
-    private final Operand[] operands;
-   
     public GetDefinedConstantOrMethodInstr(Variable result, Operand object, StringLiteral name) {
-        super(Operation.DEFINED_CONSTANT_OR_METHOD, result);
-        
-        this.operands = new Operand[] { object, name };
-    }
-
-    @Override
-    public Operand[] getOperands() {
-        return operands;
+        super(Operation.DEFINED_CONSTANT_OR_METHOD, result, new Operand[] { object, name });
     }
 
     @Override

@@ -7,7 +7,6 @@ package org.jruby.compiler.ir.instructions.jruby;
 import java.util.Map;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.Instr;
-import org.jruby.compiler.ir.instructions.ResultInstr;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.StringLiteral;
 import org.jruby.compiler.ir.operands.Variable;
@@ -23,19 +22,10 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author enebo
  */
 public class IsMethodBoundInstr extends DefinedInstr {
-    private final Operand[] operands;
-   
     public IsMethodBoundInstr(Variable result, Operand object, StringLiteral name) {
-        super(Operation.IS_METHOD_BOUND, result);
-        
-        this.operands = new Operand[] { object, name };
+        super(Operation.IS_METHOD_BOUND, result, new Operand[] { object, name });
     }
 
-    @Override
-    public Operand[] getOperands() {
-        return operands;
-    }
-    
     public StringLiteral getName() {
         return (StringLiteral) operands[1];
     }

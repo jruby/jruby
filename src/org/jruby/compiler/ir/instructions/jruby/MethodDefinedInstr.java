@@ -27,17 +27,8 @@ import org.jruby.util.ByteList;
  * @author enebo
  */
 public class MethodDefinedInstr extends DefinedInstr {
-   private final Operand[] operands;
-   
    public MethodDefinedInstr(Variable result, Operand object, StringLiteral methodName) {
-        super(Operation.METHOD_DEFINED, result);
-        
-        this.operands = new Operand[] { object, methodName };
-    }
-
-    @Override
-    public Operand[] getOperands() {
-        return operands;
+        super(Operation.METHOD_DEFINED, result, new Operand[] { object, methodName });
     }
 
     @Override

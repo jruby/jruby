@@ -5,11 +5,9 @@
 package org.jruby.compiler.ir.instructions.jruby;
 
 import java.util.Map;
-
 import org.jruby.RubyModule;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.Instr;
-import org.jruby.compiler.ir.instructions.ResultInstr;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
@@ -25,17 +23,8 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author enebo
  */
 public class SuperMethodBoundInstr extends DefinedInstr {
-   private final Operand[] operands;
-   
    public SuperMethodBoundInstr(Variable result, Operand object) {
-        super(Operation.SUPER_METHOD_BOUND, result);
-        
-        this.operands = new Operand[] { object };
-    }
-
-    @Override
-    public Operand[] getOperands() {
-        return operands;
+        super(Operation.SUPER_METHOD_BOUND, result, new Operand[] { object });
     }
 
     @Override
@@ -50,7 +39,7 @@ public class SuperMethodBoundInstr extends DefinedInstr {
     @Override
     public Instr cloneForInlining(InlinerInfo inlinerInfo) {
         return new SuperMethodBoundInstr((Variable) getResult().cloneForInlining(inlinerInfo), 
-                getOperands()[0].cloneForInlining(inlinerInfo));
+                getObject().cloneForInlining(inlinerInfo));
     }
 
     @Override

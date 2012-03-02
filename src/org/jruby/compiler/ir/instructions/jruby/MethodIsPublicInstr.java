@@ -24,19 +24,10 @@ import org.jruby.runtime.builtin.IRubyObject;
  * @author enebo
  */
 public class MethodIsPublicInstr extends DefinedInstr {
-    private final Operand[] operands;
-   
     public MethodIsPublicInstr(Variable result, Operand object, StringLiteral name) {
-        super(Operation.METHOD_IS_PUBLIC, result);
-        
-        this.operands = new Operand[] { object, name };
+        super(Operation.METHOD_IS_PUBLIC, result, new Operand[] { object, name });
     }
 
-    @Override
-    public Operand[] getOperands() {
-        return operands;
-    }
-    
     public StringLiteral getName() {
         return (StringLiteral) operands[1];
     }
