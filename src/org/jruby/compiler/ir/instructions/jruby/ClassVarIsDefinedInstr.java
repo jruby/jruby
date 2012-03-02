@@ -5,7 +5,6 @@
 package org.jruby.compiler.ir.instructions.jruby;
 
 import java.util.Map;
-
 import org.jruby.MetaClass;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
@@ -24,7 +23,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *
- * @author enebo
  */
 public class ClassVarIsDefinedInstr extends Instr implements ResultInstr {
     private Variable result;
@@ -40,12 +38,6 @@ public class ClassVarIsDefinedInstr extends Instr implements ResultInstr {
     @Override
     public Operand[] getOperands() {
         return operands;
-    }
-
-    @Override
-    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-         operands[0] = operands[0].getSimplifiedOperand(valueMap, force);
-         operands[1] = operands[1].getSimplifiedOperand(valueMap, force);
     }
     
     public Variable getResult() {
@@ -70,10 +62,19 @@ public class ClassVarIsDefinedInstr extends Instr implements ResultInstr {
                 getModule().cloneForInlining(inlinerInfo),
                 (StringLiteral) getName().cloneForInlining(inlinerInfo));
     }
+    
+    @Override
+    public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
+        result = (Variable) result.getSimplifiedOperand(valueMap, force);
+        
+        for (int i = 0; i < operands.length; i++) {
+            operands[i] = operands[i].getSimplifiedOperand(valueMap, force);
+        }
+    }    
 
     @Override
     public String toString() {
-        return super.toString() + "(" + operands[0] + ", " + operands[1] + ")";
+        return super.toString() + "(" + getModule() + ", " + getName() + ")";
     }
 
     @Override
