@@ -1,26 +1,40 @@
 package org.jruby.compiler.ir.instructions;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import org.jruby.RubyArray;
+import org.jruby.RubyMethod;
+import org.jruby.RubyProc;
 import org.jruby.compiler.ir.IRClassBody;
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.Operation;
-import org.jruby.compiler.ir.instructions.calladapter.CallAdapter;
+import org.jruby.compiler.ir.operands.Fixnum;
+import org.jruby.compiler.ir.operands.ImmutableLiteral;
 import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.operands.Operand;
+import org.jruby.compiler.ir.operands.Splat;
 import org.jruby.compiler.ir.operands.StringLiteral;
 import org.jruby.compiler.ir.operands.WrappedIRScope;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.runtime.Block;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
+import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.MethodIndex;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.TypeConverter;
 
 public abstract class CallBase extends Instr implements Specializeable {
     protected Operand   receiver;
     protected Operand[] arguments;
     protected Operand   closure;
-    protected CallAdapter callAdapter = null;
     protected MethAddr methAddr;
+    protected CallSite callSite;
     private final CallType callType;
     
     private boolean flagsComputed;
@@ -28,6 +42,7 @@ public abstract class CallBase extends Instr implements Specializeable {
     private boolean targetRequiresCallersBinding;    // Does this call make use of the caller's binding?
     public HashMap<DynamicMethod, Integer> profile;
     private boolean dontInline;
+    private boolean containsSplat;
 
     protected CallBase(Operation op, CallType callType, MethAddr methAddr, Operand receiver, Operand[] args, Operand closure) {
         super(op);
@@ -37,19 +52,17 @@ public abstract class CallBase extends Instr implements Specializeable {
         this.closure = closure;
         this.methAddr = methAddr;
         this.callType = callType;
+        this.callSite = getCallSiteFor(callType, methAddr);
+        containsSplat = containsSplat();
         flagsComputed = false;
         canBeEval = true;
         targetRequiresCallersBinding = true;
-        callAdapter = CallAdapter.createFor(callType, methAddr, arguments, closure);
         dontInline = false;
+
     }
 
     public Operand[] getOperands() {
         return buildAllArgs(getMethodAddr(), receiver, arguments, closure);
-    }
-
-    public CallAdapter getCallAdapter() {
-       return callAdapter;
     }
 
     public MethAddr getMethodAddr() {
@@ -68,6 +81,10 @@ public abstract class CallBase extends Instr implements Specializeable {
         return arguments;
     }
     
+    public CallSite getCallSite() {
+        return callSite;
+    }
+    
     public CallType getCallType() {
         return callType;
     }
@@ -79,6 +96,46 @@ public abstract class CallBase extends Instr implements Specializeable {
     public boolean inliningBlocked() {
         return dontInline;
     }
+    
+    private static CallSite getCallSiteFor(CallType callType, MethAddr methAddr) {
+        assert callType != null: "Calltype should never be null";
+        
+        String name = methAddr.toString();
+        
+        switch (callType) {
+            case NORMAL: return MethodIndex.getCallSite(name);
+            case FUNCTIONAL: return MethodIndex.getFunctionalCallSite(name);
+            case VARIABLE: return MethodIndex.getVariableCallSite(name);
+            case SUPER: return MethodIndex.getSuperCallSite();
+            case UNKNOWN:
+        }
+        
+        return null; // fallthrough for unknown
+    }
+    
+    public boolean containsSplat() {
+        for (int i = 0; i < arguments.length; i++) {
+            if (arguments[i] instanceof Splat) return true;
+        }
+        
+        return false;
+    }
+    
+    public boolean isAllConstants() {
+        for (int i = 0; i < arguments.length; i++) {
+            if (!(arguments[i] instanceof ImmutableLiteral)) return false;
+        }
+        
+        return true;
+    }
+    
+    public boolean isAllFixnums() {
+        for (int i = 0; i < arguments.length; i++) {
+            if (!(arguments[i] instanceof Fixnum)) return false;
+        }
+        
+        return true;
+    }    
     
     /**
      * Interpreter can ask the instruction if it knows how to make a more
@@ -101,8 +158,8 @@ public abstract class CallBase extends Instr implements Specializeable {
         if (closure != null) closure = closure.getSimplifiedOperand(valueMap, force);
         flagsComputed = false; // Forces recomputation of flags
 
-        // recompute call adapter whenever instr operands change!
-        callAdapter = CallAdapter.createFor(callType, methAddr, arguments, closure);
+        // recompute whenever instr operands change! (can this really change though?)
+        callSite = getCallSiteFor(callType, methAddr);
     }
 
     public Operand[] cloneCallArgs(InlinerInfo ii) {
@@ -254,5 +311,72 @@ public abstract class CallBase extends Instr implements Specializeable {
         if (closure != null) allArgs[callArgs.length + 2] = closure;
 
         return allArgs;
+    }
+
+    @Override
+    public Object interpret(ThreadContext context, DynamicScope dynamicScope, IRubyObject self, Object[] temp, Block block) {
+        IRubyObject object = (IRubyObject) receiver.retrieve(context, self, dynamicScope, temp);
+        IRubyObject[] values = prepareArguments(context, self, arguments, dynamicScope, temp);
+        Block preparedBlock = prepareBlock(context, self, dynamicScope, temp);
+        
+        return callSite.call(context, self, object, values, preparedBlock);
+    }
+    
+    protected IRubyObject[] prepareArguments(ThreadContext context, IRubyObject self, Operand[] arguments, DynamicScope dynamicScope, Object[] temp) {
+        return containsSplat ? 
+                prepareArgumentsComplex(context, self, arguments, dynamicScope, temp) :
+                prepareArgumentsSimple(context, self, arguments, dynamicScope, temp);
+    }
+
+    protected IRubyObject[] prepareArgumentsSimple(ThreadContext context, IRubyObject self, Operand[] args, DynamicScope currDynScope, Object[] temp) {
+        IRubyObject[] newArgs = new IRubyObject[args.length];
+
+        for (int i = 0; i < args.length; i++) {
+            newArgs[i] = (IRubyObject) args[i].retrieve(context, self, currDynScope, temp);
+        }
+
+        return newArgs;
+    }
+    
+    protected IRubyObject[] prepareArgumentsComplex(ThreadContext context, IRubyObject self, Operand[] args, DynamicScope currDynScope, Object[] temp) {
+        List<IRubyObject> argList = new ArrayList<IRubyObject>();
+        int numArgs = args.length;
+        for (int i = 0; i < numArgs; i++) {
+            IRubyObject rArg = (IRubyObject) args[i].retrieve(context, self, currDynScope, temp);
+            if (args[i] instanceof Splat) {
+                argList.addAll(Arrays.asList(((RubyArray)rArg).toJavaArray()));
+            } else {
+                argList.add(rArg);
+            }
+        }
+
+        return argList.toArray(new IRubyObject[argList.size()]);
+    }       
+    
+    protected Block prepareBlock(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
+        if (closure == null) return Block.NULL_BLOCK;
+        
+        Object value = closure.retrieve(context, self, currDynScope, temp);
+        
+        Block block;
+        if (value instanceof Block) {
+            block = (Block) value;
+        } else if (value instanceof RubyProc) {
+            block = ((RubyProc) value).getBlock();
+        } else if (value instanceof RubyMethod) {
+            block = ((RubyProc)((RubyMethod)value).to_proc(context, null)).getBlock();
+        } else if ((value instanceof IRubyObject) && ((IRubyObject)value).isNil()) {
+            block = Block.NULL_BLOCK;
+        } else if (value instanceof IRubyObject) {
+            block = ((RubyProc)TypeConverter.convertToType((IRubyObject)value, context.getRuntime().getProc(), "to_proc", true)).getBlock();
+        } else {
+            throw new RuntimeException("Unhandled case in CallInstr:prepareBlock.  Got block arg: " + value);
+        }
+
+        // ENEBO: This came from duplicated logic from SuperInstr....
+        // Blocks passed in through calls are always normal blocks, no matter where they came from
+        block.type = Block.Type.NORMAL;
+        
+        return block;
     }
 }

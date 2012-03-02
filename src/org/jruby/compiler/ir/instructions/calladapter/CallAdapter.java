@@ -13,34 +13,18 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public abstract class CallAdapter {
-    protected final CallSite callSite;
+    protected CallSite callSite = null;
     
     public CallAdapter(CallSite callSite) {
-        this.callSite = callSite;
     }
-        
+
     public abstract Object call(ThreadContext context, IRubyObject self, IRubyObject receiver, DynamicScope currDynScope, Object[] temp);
 
     public CallSite getCallSite() {
-        return callSite;
+        return null;
     }
 
-    private static CallSite getCallSiteFor(CallType callType, MethAddr methAddr) {
-        assert callType != null: "Calltype should never be null";
-        
-        String name = methAddr.toString();
-        
-        switch (callType) {
-            case NORMAL: return MethodIndex.getCallSite(name);
-            case FUNCTIONAL: return MethodIndex.getFunctionalCallSite(name);
-            case VARIABLE: return MethodIndex.getVariableCallSite(name);
-            case SUPER: return MethodIndex.getSuperCallSite();
-            case UNKNOWN:
-        }
-        
-        return null; // fallthrough for unknown
-    }
-
+    /*
     public static CallAdapter createFor(CallType callType, MethAddr methAddr, Operand args[], Operand closure) {
         CallSite callSite = getCallSiteFor(callType, methAddr);
         
@@ -81,28 +65,5 @@ public abstract class CallAdapter {
         
         return new ManyArgBlockOperandCallAdapter(callSite, args, closure);
     }
-    
-    private static boolean containsSplat(Operand args[]) {
-        for (int i = 0; i < args.length; i++) {
-            if (args[i] instanceof Splat) return true;
-        }
-        
-        return false;
-    }
-    
-    private static boolean isConstant(Operand args[]) {
-        for (int i = 0; i < args.length; i++) {
-            if (!(args[i] instanceof ImmutableLiteral)) return false;
-        }
-        
-        return true;
-    }
-    
-    private static boolean isFixnum(Operand args[]) {
-        for (int i = 0; i < args.length; i++) {
-            if (!(args[i] instanceof Fixnum)) return false;
-        }
-        
-        return true;
-    }
+*/   
 }

@@ -246,8 +246,7 @@ public class Interpreter {
                     if ((instr instanceof CallBase) && !((CallBase)instr).inliningBlocked()) {
                         // System.out.println("checking: " + instr);
                         CallBase call = (CallBase)instr;
-                        CallAdapter ca = call.getCallAdapter();
-                        CallSite cs = ca == null ? null: ca.getCallSite();
+                        CallSite cs = call.getCallSite();
                         // System.out.println("callsite: " + cs);
                         if (cs != null && (cs instanceof CachingCallSite)) {
                             CachingCallSite ccs = (CachingCallSite)cs;
@@ -512,12 +511,11 @@ public class Interpreter {
                     }
                     case ATTR_ASSIGN:
                     case CALL: {
-                        CallBase c = (CallBase)lastInstr;
-                        IRubyObject object = (IRubyObject)c.getReceiver().retrieve(context, self, currDynScope, temp);
-                        Object callResult = c.getCallAdapter().call(context, self, object, currDynScope, temp);
-                        if (c instanceof ResultInstr) {
+                        CallBase call = (CallBase)lastInstr;
+                        Object callResult = call.interpret(context, currDynScope, self, temp, block);
+                        if (call instanceof ResultInstr) {
                             result = callResult;
-                            resultVar = ((ResultInstr)c).getResult();
+                            resultVar = ((ResultInstr) call).getResult();
                         }
                         ipc++;
                         break;

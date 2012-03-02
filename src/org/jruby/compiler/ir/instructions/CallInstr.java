@@ -42,6 +42,11 @@ public class CallInstr extends CallBase implements ResultInstr {
     public void updateResult(Variable v) {
         this.result = v;
     }
+    
+    @Override
+    public CallBase specializeForInterpretation() {
+        return this;
+    }    
 
     public Instr discardResult() {
         return new NoResultCallInstr(getOperation(), getCallType(), getMethodAddr(), getReceiver(), getCallArgs(), closure);

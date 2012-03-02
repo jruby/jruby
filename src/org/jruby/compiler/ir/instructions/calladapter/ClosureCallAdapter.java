@@ -29,7 +29,7 @@ public abstract class ClosureCallAdapter extends CallAdapter {
     
     protected Block prepareBlock(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         if (closure == null) return Block.NULL_BLOCK;
-        
+ 
         Object value = closure.retrieve(context, self, currDynScope, temp);
         
         Block block;
