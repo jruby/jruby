@@ -22,24 +22,18 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  * @author enebo
  */
-public class HasInstanceVarInstr extends Instr implements ResultInstr {
-    private Variable result;
+public class HasInstanceVarInstr extends DefinedInstr {
     private final Operand[] operands;
    
     public HasInstanceVarInstr(Variable result, Operand object, StringLiteral name) {
-        super(Operation.HAS_INSTANCE_VAR);
+        super(Operation.HAS_INSTANCE_VAR, result);
         
-        this.result = result;
         this.operands = new Operand[] { object, name };
     }
 
     @Override
     public Operand[] getOperands() {
         return operands;
-    }
-    
-    public Variable getResult() {
-        return result;
     }
     
     public StringLiteral getName() {
@@ -54,10 +48,6 @@ public class HasInstanceVarInstr extends Instr implements ResultInstr {
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
          operands[0] = operands[0].getSimplifiedOperand(valueMap, force);
          operands[1] = operands[1].getSimplifiedOperand(valueMap, force);
-    }
-
-    public void updateResult(Variable v) {
-        result = v;
     }
 
     @Override

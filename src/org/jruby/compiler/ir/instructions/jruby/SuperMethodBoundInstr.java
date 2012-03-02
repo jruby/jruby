@@ -24,14 +24,12 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  * @author enebo
  */
-public class SuperMethodBoundInstr extends Instr implements ResultInstr {
-   private Variable result;
+public class SuperMethodBoundInstr extends DefinedInstr {
    private final Operand[] operands;
    
    public SuperMethodBoundInstr(Variable result, Operand object) {
-        super(Operation.SUPER_METHOD_BOUND);
+        super(Operation.SUPER_METHOD_BOUND, result);
         
-        this.result = result;
         this.operands = new Operand[] { object };
     }
 
@@ -47,14 +45,6 @@ public class SuperMethodBoundInstr extends Instr implements ResultInstr {
     
     public Operand getObject() {
         return operands[0];
-    }
-    
-    public Variable getResult() {
-        return result;
-    }
-
-    public void updateResult(Variable v) {
-        result = v;
     }
 
     @Override

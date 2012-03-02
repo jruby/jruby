@@ -10,7 +10,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.Instr;
-import org.jruby.compiler.ir.instructions.ResultInstr;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.StringLiteral;
 import org.jruby.compiler.ir.operands.Variable;
@@ -24,14 +23,12 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  *
  */
-public class ClassVarIsDefinedInstr extends Instr implements ResultInstr {
-    private Variable result;
+public class ClassVarIsDefinedInstr extends DefinedInstr {
     private final Operand[] operands;
    
     public ClassVarIsDefinedInstr(Variable result, Operand module, StringLiteral name) {
-        super(Operation.CLASS_VAR_IS_DEFINED);
+        super(Operation.CLASS_VAR_IS_DEFINED, result);
         
-        this.result = result;
         this.operands = new Operand[] { module, name };
     }
 
@@ -40,20 +37,12 @@ public class ClassVarIsDefinedInstr extends Instr implements ResultInstr {
         return operands;
     }
     
-    public Variable getResult() {
-        return result;
-    }
-    
     public StringLiteral getName() {
         return (StringLiteral) operands[1];
     }
     
     public Operand getModule() {
         return operands[0];
-    }
-
-    public void updateResult(Variable v) {
-        result = v;
     }
 
     @Override

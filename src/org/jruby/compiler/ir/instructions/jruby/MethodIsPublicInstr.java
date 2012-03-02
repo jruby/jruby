@@ -8,7 +8,6 @@ import java.util.Map;
 import org.jruby.RubyClass;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.Instr;
-import org.jruby.compiler.ir.instructions.ResultInstr;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.StringLiteral;
 import org.jruby.compiler.ir.operands.Variable;
@@ -24,24 +23,18 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  * @author enebo
  */
-public class MethodIsPublicInstr extends Instr implements ResultInstr {
-    private Variable result;
+public class MethodIsPublicInstr extends DefinedInstr {
     private final Operand[] operands;
    
     public MethodIsPublicInstr(Variable result, Operand object, StringLiteral name) {
-        super(Operation.METHOD_IS_PUBLIC);
+        super(Operation.METHOD_IS_PUBLIC, result);
         
-        this.result = result;
         this.operands = new Operand[] { object, name };
     }
 
     @Override
     public Operand[] getOperands() {
         return operands;
-    }
-    
-    public Variable getResult() {
-        return result;
     }
     
     public StringLiteral getName() {

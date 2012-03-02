@@ -22,24 +22,18 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  * @author enebo
  */
-public class IsMethodBoundInstr extends Instr implements ResultInstr {
-   private Variable result;
+public class IsMethodBoundInstr extends DefinedInstr {
     private final Operand[] operands;
    
     public IsMethodBoundInstr(Variable result, Operand object, StringLiteral name) {
-        super(Operation.IS_METHOD_BOUND);
+        super(Operation.IS_METHOD_BOUND, result);
         
-        this.result = result;
         this.operands = new Operand[] { object, name };
     }
 
     @Override
     public Operand[] getOperands() {
         return operands;
-    }
-    
-    public Variable getResult() {
-        return result;
     }
     
     public StringLiteral getName() {

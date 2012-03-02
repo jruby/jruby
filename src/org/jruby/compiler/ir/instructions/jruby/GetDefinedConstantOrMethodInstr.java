@@ -7,7 +7,6 @@ package org.jruby.compiler.ir.instructions.jruby;
 import java.util.Map;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.Instr;
-import org.jruby.compiler.ir.instructions.ResultInstr;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.StringLiteral;
 import org.jruby.compiler.ir.operands.Variable;
@@ -24,14 +23,12 @@ import org.jruby.util.ByteList;
  *
  * @author enebo
  */
-public class GetDefinedConstantOrMethodInstr extends Instr implements ResultInstr {
-    private Variable result;
-    public final Operand[] operands;
+public class GetDefinedConstantOrMethodInstr extends DefinedInstr {
+    private final Operand[] operands;
    
     public GetDefinedConstantOrMethodInstr(Variable result, Operand object, StringLiteral name) {
-        super(Operation.DEFINED_CONSTANT_OR_METHOD);
+        super(Operation.DEFINED_CONSTANT_OR_METHOD, result);
         
-        this.result = result;
         this.operands = new Operand[] { object, name };
     }
 
@@ -46,20 +43,12 @@ public class GetDefinedConstantOrMethodInstr extends Instr implements ResultInst
          operands[1] = operands[1].getSimplifiedOperand(valueMap, force);
     }
     
-    public Variable getResult() {
-        return result;
-    }
-    
     public StringLiteral getName() {
         return (StringLiteral) operands[1];
     }
     
     public Operand getObject() {
         return operands[0];
-    }
-
-    public void updateResult(Variable v) {
-        result = v;
     }
 
     @Override

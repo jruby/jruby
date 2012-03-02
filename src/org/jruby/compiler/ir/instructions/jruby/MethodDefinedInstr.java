@@ -10,7 +10,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyString;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.Instr;
-import org.jruby.compiler.ir.instructions.ResultInstr;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.StringLiteral;
 import org.jruby.compiler.ir.operands.Variable;
@@ -27,14 +26,12 @@ import org.jruby.util.ByteList;
  *
  * @author enebo
  */
-public class MethodDefinedInstr extends Instr implements ResultInstr {
-   private Variable result;
+public class MethodDefinedInstr extends DefinedInstr {
    private final Operand[] operands;
    
    public MethodDefinedInstr(Variable result, Operand object, StringLiteral methodName) {
-        super(Operation.METHOD_DEFINED);
+        super(Operation.METHOD_DEFINED, result);
         
-        this.result = result;
         this.operands = new Operand[] { object, methodName };
     }
 
@@ -55,14 +52,6 @@ public class MethodDefinedInstr extends Instr implements ResultInstr {
     
     public StringLiteral getName() {
         return (StringLiteral) operands[1];
-    }
-    
-    public Variable getResult() {
-        return result;
-    }
-
-    public void updateResult(Variable v) {
-        result = v;
     }
 
     @Override

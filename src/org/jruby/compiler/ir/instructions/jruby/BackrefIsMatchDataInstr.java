@@ -7,7 +7,6 @@ package org.jruby.compiler.ir.instructions.jruby;
 import org.jruby.RubyMatchData;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.Instr;
-import org.jruby.compiler.ir.instructions.ResultInstr;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
@@ -21,25 +20,13 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  * @author enebo
  */
-public class BackrefIsMatchDataInstr extends Instr implements ResultInstr {
-    private Variable result;
-    
+public class BackrefIsMatchDataInstr extends DefinedInstr {
     public BackrefIsMatchDataInstr(Variable result) {
-        super(Operation.BACKREF_IS_MATCH_DATA);
-        
-        this.result = result;
+        super(Operation.BACKREF_IS_MATCH_DATA, result);
     }
 
     public Operand[] getOperands() {
         return EMPTY_OPERANDS;
-    }
-    
-    public Variable getResult() {
-        return result;
-    }
-
-    public void updateResult(Variable v) {
-        this.result = v;
     }
 
     @Override

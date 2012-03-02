@@ -24,14 +24,12 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  * @author enebo
  */
-public class GlobalIsDefinedInstr extends Instr implements ResultInstr {
-   private Variable result;
+public class GlobalIsDefinedInstr extends DefinedInstr {
    private final Operand[] operands;
    
    public GlobalIsDefinedInstr(Variable result, StringLiteral name) {
-        super(Operation.GLOBAL_IS_DEFINED);
+        super(Operation.GLOBAL_IS_DEFINED, result);
         
-        this.result = result;
         this.operands = new Operand[] { name };
     }
 
@@ -45,16 +43,8 @@ public class GlobalIsDefinedInstr extends Instr implements ResultInstr {
          operands[0] = operands[0].getSimplifiedOperand(valueMap, force);
     }
     
-    public Variable getResult() {
-        return result;
-    }
-    
     public StringLiteral getName() {
         return (StringLiteral) operands[0];
-    }
-
-    public void updateResult(Variable v) {
-        result = v;
     }
 
     @Override
