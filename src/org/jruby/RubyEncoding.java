@@ -25,6 +25,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import java.lang.ref.SoftReference;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
@@ -166,11 +167,11 @@ public class RubyEncoding extends RubyObject {
     }
 
     public static byte[] encodeUTF8(CharSequence cs) {
-        return UTF8_CODER.get().encode(cs);
+        return getUTF8Coder().encode(cs);
     }
 
     public static byte[] encodeUTF8(String str) {
-        return UTF8_CODER.get().encode(str);
+        return getUTF8Coder().encode(str);
     }
 
     public static byte[] encode(CharSequence cs, Charset charset) {
@@ -188,11 +189,11 @@ public class RubyEncoding extends RubyObject {
     }
 
     public static String decodeUTF8(byte[] bytes, int start, int length) {
-        return UTF8_CODER.get().decode(bytes, start, length);
+        return getUTF8Coder().decode(bytes, start, length);
     }
 
     public static String decodeUTF8(byte[] bytes) {
-        return UTF8_CODER.get().decode(bytes);
+        return getUTF8Coder().decode(bytes);
     }
 
     public static String decode(byte[] bytes, int start, int length, Charset charset) {
@@ -261,13 +262,25 @@ public class RubyEncoding extends RubyObject {
             return decode(bytes, 0, bytes.length);
         }
     }
-    
-    private static final ThreadLocal<UTF8Coder> UTF8_CODER = new ThreadLocal<UTF8Coder>() {
-        @Override
-        protected UTF8Coder initialValue() {
-            return new UTF8Coder();
+
+    /**
+     * UTF8Coder wrapped in a SoftReference to avoid possible ClassLoader leak.
+     * See JRUBY-6522
+     */
+    private static final ThreadLocal<SoftReference<UTF8Coder>> UTF8_CODER =
+        new ThreadLocal<SoftReference<UTF8Coder>>();
+
+    private static UTF8Coder getUTF8Coder() {
+        UTF8Coder coder;
+        SoftReference<UTF8Coder> ref = UTF8_CODER.get();
+        if (ref == null || (coder = ref.get()) == null) {
+            coder = new UTF8Coder();
+            ref = new SoftReference<UTF8Coder>(coder);
+            UTF8_CODER.set(ref);
         }
-    };
+        
+        return coder;
+    }
 
     @JRubyMethod(name = "list", meta = true)
     public static IRubyObject list(ThreadContext context, IRubyObject recv) {
