@@ -60,24 +60,30 @@ public class LocalOptimizationPass implements CompilerPass {
 
     private static void optimizeTmpVars(IRScope s) {
         // Pass 1: Analyze instructions and find use and def count of temporary variables
-        Map<TemporaryVariable, Integer> tmpVarUseCounts = new HashMap<TemporaryVariable, Integer>();
-        Map<TemporaryVariable, Integer> tmpVarDefCounts = new HashMap<TemporaryVariable, Integer>();
+        Map<TemporaryVariable, List<Instr>> tmpVarUses = new HashMap<TemporaryVariable, List<Instr>>();
+        Map<TemporaryVariable, List<Instr>> tmpVarDefs = new HashMap<TemporaryVariable, List<Instr>>();
         for (Instr i: s.getInstrs()) {
             for (Variable v: i.getUsedVariables()) {
                  if (v instanceof TemporaryVariable) {
                      TemporaryVariable tv = (TemporaryVariable)v;
-                     Integer n = tmpVarUseCounts.get(tv);
-                     if (n == null) n = new Integer(0);
-                     tmpVarUseCounts.put(tv, new Integer(n+1));
+                     List<Instr> uses = tmpVarUses.get(tv);
+                     if (uses == null) {
+                         uses = new ArrayList<Instr>();
+                         tmpVarUses.put(tv, uses);
+                     }
+                     uses.add(i);
                  }
             }
             if (i instanceof ResultInstr) {
                 Variable v = ((ResultInstr)i).getResult();
                 if (v instanceof TemporaryVariable) {
                      TemporaryVariable tv = (TemporaryVariable)v;
-                     Integer n = tmpVarDefCounts.get(tv);
-                     if (n == null) n = new Integer(0);
-                     tmpVarDefCounts.put(tv, new Integer(n+1));
+                     List<Instr> defs = tmpVarDefs.get(tv);
+                     if (defs == null) {
+                         defs = new ArrayList<Instr>();
+                         tmpVarDefs.put(tv, defs);
+                     }
+                     defs.add(i);
                 }
             }
         }
@@ -85,7 +91,6 @@ public class LocalOptimizationPass implements CompilerPass {
         // Pass 2: Transform code and do additional analysis:
         // * If the result of this instr. has not been used, mark it dead
         // * Find copies where constant values are set
-        Map<Operand, Operand> constValMap = new HashMap<Operand, Operand>();
         Map<TemporaryVariable, Variable> removableCopies = new HashMap<TemporaryVariable, Variable>();
         ListIterator<Instr> instrs = s.getInstrs().listIterator();
         while (instrs.hasNext()) {
@@ -97,9 +102,9 @@ public class LocalOptimizationPass implements CompilerPass {
                     // Deal with this code pattern:
                     //    %v = ...
                     // %v not used anywhere
-                    Integer useCount = tmpVarUseCounts.get((TemporaryVariable)v);
-                    Integer defCount = tmpVarDefCounts.get((TemporaryVariable)v);
-                    if (useCount == null) {
+                    List<Instr> uses = tmpVarUses.get((TemporaryVariable)v);
+                    List<Instr> defs = tmpVarDefs.get((TemporaryVariable)v);
+                    if (uses == null) {
                         if (i instanceof CopyInstr) {
                             i.markDead();
                             instrs.remove();
@@ -110,41 +115,48 @@ public class LocalOptimizationPass implements CompilerPass {
                         }
                     }
                     // Deal with this code pattern:
-                    //    %v = 5
+                    //    %v = <some-operand>
                     //    .... %v ...
                     // %v not used or defined anywhere else
-                    // So, %v can be replaced by 5 (or whichever constant it is)
-                    else if ((useCount == 1) && (defCount == 1) && (i instanceof CopyInstr)) {
+                    // So, %v can be replaced by the operand
+                    else if ((uses.size() == 1) && (defs != null) && (defs.size() == 1) && (i instanceof CopyInstr)) {
                         CopyInstr ci = (CopyInstr)i;
                         Operand src = ci.getSource();
-                        if (src.hasKnownValue()) {
-                            i.markDead();
-                            instrs.remove();
-                            constValMap.put(v, src);
-                        }
+                        i.markDead();
+                        instrs.remove();
+
+                        // Fix up use
+                        Map<Operand, Operand> copyMap = new HashMap<Operand, Operand>();
+                        copyMap.put(v, src);
+                        Instr soleUse = uses.get(0);
+                        soleUse.simplifyOperands(copyMap, true);
                     }
                 }
                 // Deal with this code pattern:
-                //    1: %v = ...
+                //    1: %v = ... (not a copy)
                 //    2: x = %v
                 // If %v is not used anywhere else, the result of 1. can be updated to use x and 2. can be removed
                 //
                 // NOTE: consider this pattern:
-                //    %v = 5
+                //    %v = <operand> (copy instr)
                 //    x = %v
                 // This code will have been captured in the previous if branch which would have deleted %v = 5
-                // Hence the check for constValMap.get(src) == null
+                // Hence the check for whether the src def instr is dead
                 else if (i instanceof CopyInstr) {
                     CopyInstr ci = (CopyInstr)i;
                     Operand src = ci.getSource();
                     if (src instanceof TemporaryVariable) {
                         TemporaryVariable vsrc = (TemporaryVariable)src;
-                        Integer useCount = tmpVarUseCounts.get(vsrc);
-                        Integer defCount = tmpVarDefCounts.get(vsrc);
-                        if ((useCount == 1) && (defCount == 1) && (constValMap.get(vsrc) == null)) {
-                            ci.markDead();
-                            instrs.remove();
-                            removableCopies.put(vsrc, ci.getResult());
+                        List<Instr> uses = tmpVarUses.get(vsrc);
+                        List<Instr> defs = tmpVarDefs.get(vsrc);
+                        if ((uses.size() == 1) && (defs.size() == 1)) {
+                            Instr soleDef = defs.get(0);
+                            if (!soleDef.isDead()) {
+                                // Fix up def
+                                ((ResultInstr)soleDef).updateResult(ci.getResult());
+                                ci.markDead();
+                                instrs.remove();
+                            }
                         }
                     }
                 }
@@ -181,24 +193,13 @@ public class LocalOptimizationPass implements CompilerPass {
         for (Instr i: s.getInstrs()) {
             iCount++;
 
-            // rename dest
+            // update last use/def
             if (i instanceof ResultInstr) {
                 Variable v = ((ResultInstr)i).getResult();
-                if (v instanceof TemporaryVariable) {
-                    Variable ci = removableCopies.get((TemporaryVariable)v);
-                    if (ci != null) {
-                        ((ResultInstr)i).updateResult(ci);
-                        if (ci instanceof TemporaryVariable) lastVarUseOrDef.put((TemporaryVariable)ci, iCount);
-                    } else {
-                        lastVarUseOrDef.put((TemporaryVariable)v, iCount);
-                    }
-                }
+                if (v instanceof TemporaryVariable) lastVarUseOrDef.put((TemporaryVariable)v, iCount);
             }
 
-            // rename uses
-            i.simplifyOperands(constValMap, true);
-
-            // compute last use
+            // update last use/def
             for (Variable v: i.getUsedVariables()) {
                 if (v instanceof TemporaryVariable) lastVarUseOrDef.put((TemporaryVariable)v, iCount);
             }
