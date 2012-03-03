@@ -31,14 +31,17 @@ public class CheckArityInstr extends Instr {
 
     @Override
     public Instr cloneForInlinedScope(InlinerInfo ii) {
-        // Since we know arity at a callsite, arity check passes or we have an ArgumentError
-        int numArgs = ii.getArgsCount();
-        
-        if ((numArgs < required) || ((rest == -1) && (numArgs > (required + opt)))) {
-            return new RaiseArgumentErrorInstr(required, opt, rest, rest);
-        }
+        if (ii.canMapArgsStatically()) {
+            // Since we know arity at a callsite, arity check passes or we have an ArgumentError
+            int numArgs = ii.getArgsCount();
+            if ((numArgs < required) || ((rest == -1) && (numArgs > (required + opt)))) {
+                return new RaiseArgumentErrorInstr(required, opt, rest, rest);
+            }
 
-        return null;
+            return null;
+        } else {
+            return new CheckArgsArrayArityInstr(ii.getArgsArray(), required, opt, rest);
+        }
     }
 
     @Override

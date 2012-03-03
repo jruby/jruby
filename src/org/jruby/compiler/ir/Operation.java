@@ -147,6 +147,7 @@ public enum Operation {
     // check_arity instructions cannot be dead-code-eliminated.
     // So, using has_side_effect flag to prevent its deletion. 
     CHECK_ARITY(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
+    CHECK_ARGS_ARRAY_ARITY(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
     RECORD_END_BLOCK(OpFlags.f_has_side_effect),
     TO_ARY(OpFlags.f_can_raise_exception),
 
