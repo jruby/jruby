@@ -17,6 +17,7 @@ import org.jruby.compiler.ir.instructions.YieldInstr;
 import org.jruby.compiler.ir.operands.Array;
 import org.jruby.compiler.ir.operands.Label;
 import org.jruby.compiler.ir.operands.Operand;
+import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.operands.WrappedIRClosure;
 import org.jruby.compiler.ir.representations.CFG.EdgeType;
 import org.jruby.compiler.ir.util.Edge;
@@ -160,7 +161,7 @@ public class CFGInliner {
             if (destination != mExit) {
                 BasicBlock dstBB = ii.getRenamedBB(destination);
                 if (!ii.canMapArgsStatically()) {
-                    dstBB.addInstr(new ToAryInstr(ii.getArgsArray(), new Array(call.getCallArgs()), cfg.getScope().getManager().getTrue()));
+                    dstBB.addInstr(new ToAryInstr((Variable)ii.getArgs(), new Array(call.getCallArgs()), cfg.getScope().getManager().getTrue()));
                 }
                 cfg.addEdge(callBB, dstBB, CFG.EdgeType.FALL_THROUGH);
             }

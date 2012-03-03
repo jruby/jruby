@@ -32,6 +32,14 @@ public class Array extends Operand {
         return elts.length == 0;
     }
 
+    public int size() {
+        return elts.length;
+    }
+
+    public Operand get(int i) {
+        return elts[i];
+    }
+
     @Override
     public String toString() {
         return "Array:" + (isBlank() ? "[]" : java.util.Arrays.toString(elts));

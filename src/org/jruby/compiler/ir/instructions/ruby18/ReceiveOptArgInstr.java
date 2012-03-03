@@ -19,20 +19,15 @@ public class ReceiveOptArgInstr extends ReceiveOptArgBase {
     @Override
     public Instr cloneForInlinedScope(InlinerInfo ii) {
         if (ii.canMapArgsStatically()) {
-            return new CopyInstr(ii.getRenamedVariable(result), ii.getCallArg(argIndex));
+            return new CopyInstr(ii.getRenamedVariable(result), ii.getArg(argIndex));
         } else {
-            return new OptArgMultipleAsgnInstr(ii.getRenamedVariable(result), ii.getArgsArray(), argIndex, argIndex);
+            return new OptArgMultipleAsgnInstr(ii.getRenamedVariable(result), ii.getArgs(), argIndex, argIndex);
         }
     }
 
     @Override
     public Instr cloneForBlockCloning(InlinerInfo ii) {
         return new ReceiveOptArgInstr(ii.getRenamedVariable(result), argIndex);
-    }
-
-    @Override
-    public Instr cloneForInlinedClosure(InlinerInfo ii) {
-        return new OptArgMultipleAsgnInstr(ii.getRenamedVariable(result), ii.getYieldArg(), argIndex, argIndex);
     }
 
     public Object receiveOptArg(IRubyObject[] args) {

@@ -15,22 +15,17 @@ public class ReceivePreReqdArgInstr extends ReceiveArgBase {
     }
 
     @Override
-    public Instr cloneForInlining(InlinerInfo ii) {
+    public Instr cloneForInlinedScope(InlinerInfo ii) {
         if (ii.canMapArgsStatically()) {
-            return new CopyInstr(ii.getRenamedVariable(result), ii.getCallArg(argIndex, false));
+            return new CopyInstr(ii.getRenamedVariable(result), ii.getArg(argIndex));
         } else {
-            return new ReqdArgMultipleAsgnInstr(ii.getRenamedVariable(result), ii.getArgsArray(), -1, -1, argIndex);
+            return new ReqdArgMultipleAsgnInstr(ii.getRenamedVariable(result), ii.getArgs(), -1, -1, argIndex);
         }
     }
 
     @Override
     public Instr cloneForBlockCloning(InlinerInfo ii) {
         return new ReceivePreReqdArgInstr(ii.getRenamedVariable(result), argIndex);
-    }
-
-    @Override
-    public Instr cloneForInlinedClosure(InlinerInfo ii) {
-        return new ReqdArgMultipleAsgnInstr(ii.getRenamedVariable(result), ii.getYieldArg(), -1, -1, argIndex);
     }
 
     public void compile(JVM jvm) {

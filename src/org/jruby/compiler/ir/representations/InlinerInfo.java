@@ -19,6 +19,7 @@ import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Self;
 import org.jruby.compiler.ir.operands.Splat;
+import org.jruby.compiler.ir.operands.UndefinedValue;
 import org.jruby.compiler.ir.operands.Variable;
 
 public class InlinerInfo {
@@ -90,7 +91,7 @@ public class InlinerInfo {
         clone.callReceiver = this.callReceiver;
         clone.inClosureCloneMode = false;
         clone.inClosureInlineMode = true;
-        clone.canMapArgsStatically = this.canMapArgsStatically;
+        clone.canMapArgsStatically = false;
         return clone;
     }
 
@@ -104,7 +105,7 @@ public class InlinerInfo {
         clone.clonedClosure = clonedClosure;
         clone.inClosureCloneMode = true;
         clone.inClosureInlineMode = false;
-        clone.canMapArgsStatically = this.canMapArgsStatically;
+        clone.canMapArgsStatically = false;
         return clone;
     }
 
@@ -130,24 +131,24 @@ public class InlinerInfo {
 
     public void setupYieldArgsAndYieldResult(YieldInstr yi, BasicBlock yieldBB, Arity blockArity) {
         int     blockArityValue = blockArity.getValue();
-        IRScope callerScope   = getInlineHostScope();
         Operand yieldInstrArg = yi.getYieldArg();
 
-        if ((yieldInstrArg == null) || (blockArityValue == 0)) {
+        if ((yieldInstrArg == UndefinedValue.UNDEFINED) || (blockArityValue == 0)) {
             this.yieldArg = new Array(); // Zero-elt array
+        } else if (yieldInstrArg instanceof Array) {
+            this.yieldArg = yieldInstrArg;
+            // 1:1 arg match
+            if (((Array)yieldInstrArg).size() == blockArityValue) canMapArgsStatically = true;
         } else {
             // SSS FIXME: The code below is not entirely correct.  We have to process 'yi.getYieldArg()' similar
             // to how InterpretedIRBlockBody (1.8 and 1.9 modes) processes it.  We may need a special instruction
             // that takes care of aligning the stars and bringing good fortune to arg yielder and arg receiver.
 
+            IRScope callerScope   = getInlineHostScope();
             boolean needSpecialProcessing = (blockArityValue != -1) && (blockArityValue != 1);
-            if (yieldInstrArg instanceof Array) {
-                this.yieldArg = yieldInstrArg;
-            } else {
-                Variable yieldArgArray = callerScope.getNewTemporaryVariable(); 
-                yieldBB.addInstr(new ToAryInstr(yieldArgArray, yieldInstrArg, callerScope.getManager().getTrue()));
-                this.yieldArg = yieldArgArray;
-            }
+            Variable yieldArgArray = callerScope.getNewTemporaryVariable(); 
+            yieldBB.addInstr(new ToAryInstr(yieldArgArray, yieldInstrArg, callerScope.getManager().getTrue()));
+            this.yieldArg = yieldArgArray;
         }
 
         this.yieldResult = yi.getResult();
@@ -196,35 +197,39 @@ public class InlinerInfo {
         return renamedBB;
     }
 
-    public int getArgsCount() {
-        return callArgs.length;
-    }
-
     public boolean canMapArgsStatically() {
         return this.canMapArgsStatically;
     }
 
-    public Variable getArgsArray() {
-        return this.argsArray;
+    public Operand getArgs() {
+        return inClosureInlineMode ? yieldArg : argsArray;
     }
 
-    public Operand getCallArg(int index) {
-        return index < callArgs.length ? callArgs[index] : null;
+    public int getArgsCount() {
+        return canMapArgsStatically ? (inClosureInlineMode ? ((Array)yieldArg).size() : callArgs.length) : -1;
     }
 
-    public Operand getCallArg(int argIndex, boolean restOfArgArray) {
+    public Operand getArg(int index) {
+        int n = getArgsCount();
+        return index < n ? (inClosureInlineMode ? ((Array)yieldArg).get(index) : callArgs[index]) : null;
+    }
+
+    public Operand getArg(int argIndex, boolean restOfArgArray) {
         if (restOfArgArray == false) {
-            return getCallArg(argIndex);
-        }
-        else if (argIndex >= callArgs.length) {
-            return new Array();
-        }
-        else {
-            Operand[] tmp = new Operand[callArgs.length - argIndex];
-            for (int j = argIndex; j < callArgs.length; j++)
-                tmp[j-argIndex] = callArgs[j];
+            return getArg(argIndex);
+        } else if (inClosureInlineMode) {
+            throw new RuntimeException("Cannot get rest yield arg at inline time!");
+        } else {
+            if(argIndex >= callArgs.length) {
+               return new Array();
+           }
+           else {
+               Operand[] tmp = new Operand[callArgs.length - argIndex];
+               for (int j = argIndex; j < callArgs.length; j++)
+                   tmp[j-argIndex] = callArgs[j];
 
-            return new Array(tmp);
+               return new Array(tmp);
+           }
         }
     }
 
@@ -255,9 +260,5 @@ public class InlinerInfo {
 
     public Variable getYieldResult() {
         return yieldResult;
-    }
-
-    public Operand getYieldArg() {
-        return yieldArg;
     }
 }

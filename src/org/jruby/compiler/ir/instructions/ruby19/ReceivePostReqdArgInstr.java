@@ -45,22 +45,17 @@ public class ReceivePostReqdArgInstr extends ReceiveArgBase {
                // SSS: FIXME: Argh!
                argVal = ii.getInlineHostScope().getManager().getNil();
            } else {
-               argVal = (remaining > postReqdArgsCount) ? ii.getCallArg(n - postReqdArgsCount + argIndex) : ii.getCallArg(preReqdArgsCount + argIndex);
+               argVal = (remaining > postReqdArgsCount) ? ii.getArg(n - postReqdArgsCount + argIndex) : ii.getArg(preReqdArgsCount + argIndex);
            }
            return new CopyInstr(ii.getRenamedVariable(result), argVal);
         } else {
-            return new ReqdArgMultipleAsgnInstr(ii.getRenamedVariable(result), ii.getArgsArray(), preReqdArgsCount, postReqdArgsCount, argIndex);
+            return new ReqdArgMultipleAsgnInstr(ii.getRenamedVariable(result), ii.getArgs(), preReqdArgsCount, postReqdArgsCount, argIndex);
         }
     }
 
     @Override
     public Instr cloneForBlockCloning(InlinerInfo ii) {
         return new ReceivePostReqdArgInstr(ii.getRenamedVariable(result), argIndex, preReqdArgsCount, postReqdArgsCount);
-    }
-
-    @Override
-    public Instr cloneForInlinedClosure(InlinerInfo ii) {
-        return new ReqdArgMultipleAsgnInstr(ii.getRenamedVariable(result), ii.getYieldArg(), preReqdArgsCount, postReqdArgsCount, argIndex);
     }
 
     public IRubyObject receivePostReqdArg(IRubyObject[] args) {

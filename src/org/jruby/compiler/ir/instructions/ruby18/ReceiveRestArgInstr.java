@@ -22,20 +22,15 @@ public class ReceiveRestArgInstr extends ReceiveRestArgBase {
     @Override
     public Instr cloneForInlinedScope(InlinerInfo ii) {
         if (ii.canMapArgsStatically()) {
-            return new CopyInstr(ii.getRenamedVariable(result), ii.getCallArg(argIndex, true));
+            return new CopyInstr(ii.getRenamedVariable(result), ii.getArg(argIndex, true));
         } else {
-            return new RestArgMultipleAsgnInstr(ii.getRenamedVariable(result), ii.getArgsArray(), -1, -1, argIndex);
+            return new RestArgMultipleAsgnInstr(ii.getRenamedVariable(result), ii.getArgs(), -1, -1, argIndex);
         }
     }
 
     @Override
     public Instr cloneForBlockCloning(InlinerInfo ii) {
         return new ReceiveRestArgInstr(ii.getRenamedVariable(result), argIndex);
-    }
-
-    @Override
-    public Instr cloneForInlinedClosure(InlinerInfo ii) {
-        return new RestArgMultipleAsgnInstr(ii.getRenamedVariable(result), ii.getYieldArg(), -1, -1, argIndex);
     }
 
     private IRubyObject[] NO_PARAMS = new IRubyObject[0];    

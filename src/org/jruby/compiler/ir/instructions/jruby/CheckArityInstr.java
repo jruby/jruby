@@ -40,7 +40,7 @@ public class CheckArityInstr extends Instr {
 
             return null;
         } else {
-            return new CheckArgsArrayArityInstr(ii.getArgsArray(), required, opt, rest);
+            return new CheckArgsArrayArityInstr(ii.getArgs(), required, opt, rest);
         }
     }
 
