@@ -1694,8 +1694,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return block.isGiven() && !result.isNil() ? block.yield(context, result) : result;
     }
 
-    @JRubyMethod(name = "match", required = 2, rest = true, compat = RUBY1_9, reads = BACKREF)
-    public IRubyObject match19(ThreadContext context, IRubyObject[]args, Block block) {
+    @JRubyMethod(name = "match", required = 1, rest = true, compat = RUBY1_9, reads = BACKREF)
+    public IRubyObject match19(ThreadContext context, IRubyObject[] args, Block block) {
         RubyRegexp pattern = getPattern(args[0]);
         args[0] = this;
         IRubyObject result = pattern.callMethod(context, "match", args);
