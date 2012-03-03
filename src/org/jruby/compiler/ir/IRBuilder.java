@@ -176,7 +176,6 @@ import org.jruby.compiler.ir.instructions.jruby.CheckArityInstr;
 import org.jruby.compiler.ir.instructions.jruby.ClassVarIsDefinedInstr;
 import org.jruby.compiler.ir.instructions.jruby.GetDefinedConstantOrMethodInstr;
 import org.jruby.compiler.ir.instructions.jruby.GetErrorInfoInstr;
-import org.jruby.compiler.ir.instructions.jruby.GetObjectInstr;
 import org.jruby.compiler.ir.instructions.jruby.GlobalIsDefinedInstr;
 import org.jruby.compiler.ir.instructions.jruby.HasInstanceVarInstr;
 import org.jruby.compiler.ir.instructions.jruby.IsMethodBoundInstr;
@@ -208,6 +207,7 @@ import org.jruby.compiler.ir.operands.LiveScopeModule;
 import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.operands.NthRef;
+import org.jruby.compiler.ir.operands.ObjectClass;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Range;
 import org.jruby.compiler.ir.operands.Regexp;
@@ -1652,17 +1652,12 @@ public class IRBuilder {
 
                 CodeBlock protectedCode = new CodeBlock() {
                     public Operand run(Object[] args) {
-                        IRScope  s      = (IRScope)args[0];
-                        Node     n      = (Node)args[1];
-                        String   name   = (String)args[2];
+                        IRScope s    = (IRScope)args[0];
+                        Node    n    = (Node)args[1];
+                        String  name = (String)args[2];
+                        Operand v    = (n instanceof Colon2Node) ? build(((Colon2Node)n).getLeftNode(), s) : new ObjectClass();
+
                         Variable tmpVar = s.getNewTemporaryVariable();
-                        Operand v;
-                        if (n instanceof Colon2Node) {
-                            v = build(((Colon2Node) n).getLeftNode(), s);
-                        } else {
-                            s.addInstr(new GetObjectInstr(tmpVar));
-                            v = tmpVar;
-                        }
                         s.addInstr(new GetDefinedConstantOrMethodInstr(tmpVar, v, new StringLiteral(name)));
                         return tmpVar;
                     }

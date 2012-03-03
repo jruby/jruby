@@ -556,7 +556,7 @@ public class Interpreter {
                         if ((numArgs < ca.required) || ((ca.rest == -1) && (numArgs > (ca.required + ca.opt)))) {
                             Arity.raiseArgumentError(runtime, numArgs, ca.required, ca.required + ca.opt);
                         }
-                         ipc++;
+                        ipc++;
                         break;
                     }
                     default: {
