@@ -4,6 +4,7 @@ import java.util.Map;
 import org.jruby.compiler.ir.Interp;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.operands.Operand;
+import org.jruby.compiler.ir.operands.UndefinedValue;
 import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -26,7 +27,7 @@ public class YieldInstr extends Instr implements ResultInstr {
         assert result != null: "YieldInstr result is null";
         
         this.blockArg = block;
-        this.yieldArg = arg;
+        this.yieldArg = arg == null ? UndefinedValue.UNDEFINED : arg;
         this.unwrapArray = unwrapArray;
         this.result = result;
     }
@@ -51,7 +52,7 @@ public class YieldInstr extends Instr implements ResultInstr {
 
     // if unwrapArray, maybe convert yieldArg into a CompoundArray operand?
     public Operand[] getOperands() {
-        return (yieldArg == null) ? new Operand[]{blockArg} : new Operand[] {blockArg, yieldArg};
+        return new Operand[] {blockArg, yieldArg};
     }
     
     public Variable getResult() {
@@ -63,13 +64,13 @@ public class YieldInstr extends Instr implements ResultInstr {
     }
 
     public Operand[] getNonBlockOperands() {
-        return (yieldArg == null) ? new Operand[]{} : new Operand[] {yieldArg};
+        return new Operand[] {yieldArg};
     }
 
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
         blockArg = blockArg.getSimplifiedOperand(valueMap, force);
-        if (yieldArg != null) yieldArg = yieldArg.getSimplifiedOperand(valueMap, force);
+        yieldArg = yieldArg.getSimplifiedOperand(valueMap, force);
     }
 
     @Interp
@@ -82,7 +83,7 @@ public class YieldInstr extends Instr implements ResultInstr {
         Block b = (Block)blk;
         // Ruby 1.8 mode: yields are always to normal blocks
         if (!context.getRuntime().is1_9()) b.type = Block.Type.NORMAL;
-        if (yieldArg == null) {
+        if (yieldArg == UndefinedValue.UNDEFINED) {
             return b.yieldSpecific(context);
         } else {
             IRubyObject yieldVal = (IRubyObject)yieldArg.retrieve(context, self, currDynScope, temp);
