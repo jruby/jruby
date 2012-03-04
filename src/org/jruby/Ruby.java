@@ -342,6 +342,10 @@ public final class Ruby {
     
     /**
      * Set the thread-local runtime to the given runtime.
+     *
+     * Note that static threadlocals like this one can leak resources across
+     * (for example) application redeploys. If you use this, it is your
+     * responsibility to clean it up appropriately.
      * 
      * @param ruby the new runtime for thread-local
      */
