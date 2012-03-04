@@ -43,6 +43,7 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -273,12 +274,81 @@ public class RubyClass extends RubyModule {
     private volatile VariableAccessor cextHandleAccessor = VariableAccessor.DUMMY_ACCESSOR;
 
     private volatile VariableAccessor ffiHandleAccessor = VariableAccessor.DUMMY_ACCESSOR;
-    private static final AtomicReferenceFieldUpdater<RubyClass, VariableAccessor> objectIdUpdater
-            = AtomicReferenceFieldUpdater.newUpdater(RubyClass.class, VariableAccessor.class, "objectIdAccessor");
-    private static final AtomicReferenceFieldUpdater<RubyClass, VariableAccessor> cextHandleUpdater
-            = AtomicReferenceFieldUpdater.newUpdater(RubyClass.class, VariableAccessor.class, "cextHandleAccessor");
-    private static final AtomicReferenceFieldUpdater<RubyClass, VariableAccessor> ffiHandleUpdater
-            = AtomicReferenceFieldUpdater.newUpdater(RubyClass.class, VariableAccessor.class, "ffiHandleAccessor");
+    private static final Updater objectIdUpdater;
+    private static final Updater cextHandleUpdater;
+    private static final Updater ffiHandleUpdater;
+
+    static {
+        AtomicReferenceFieldUpdater arfu = tryCreateARFU(RubyClass.class, VariableAccessor.class, "objectIdAccessor");
+        if (arfu != null) {
+            objectIdUpdater = new AtomicUpdater(arfu);
+            cextHandleUpdater = new AtomicUpdater(tryCreateARFU(RubyClass.class, VariableAccessor.class, "cextHandleAccessor"));
+            ffiHandleUpdater = new AtomicUpdater(tryCreateARFU(RubyClass.class, VariableAccessor.class, "ffiHandleAccessor"));
+        } else {
+            objectIdUpdater = new Updater() {
+                public void set(RubyClass cls, VariableAccessor accessor) {
+                    synchronized (cls) {
+                        cls.objectIdAccessor = accessor;
+                    }
+                }
+                public VariableAccessor get(RubyClass cls) {
+                    return cls.objectIdAccessor;
+                }
+            };
+            cextHandleUpdater = new Updater() {
+                public void set(RubyClass cls, VariableAccessor accessor) {
+                    synchronized (cls) {
+                        cls.cextHandleAccessor = accessor;
+                    }
+                }
+                public VariableAccessor get(RubyClass cls) {
+                    return cls.cextHandleAccessor;
+                }
+            };
+            ffiHandleUpdater = new Updater() {
+                public void set(RubyClass cls, VariableAccessor accessor) {
+                    synchronized (cls) {
+                        cls.ffiHandleAccessor = accessor;
+                    }
+                }
+                public VariableAccessor get(RubyClass cls) {
+                    return cls.ffiHandleAccessor;
+                }
+            };
+        }
+    }
+
+    private interface Updater {
+        public void set(RubyClass cls, VariableAccessor accessor);
+        public VariableAccessor get(RubyClass cls);
+    }
+
+    private static class AtomicUpdater implements Updater {
+        private final AtomicReferenceFieldUpdater<RubyClass, VariableAccessor> arfu;
+        public AtomicUpdater(AtomicReferenceFieldUpdater arfu) {
+            this.arfu = arfu;
+        }
+        public void set(RubyClass cls, VariableAccessor accessor) {
+            arfu.set(cls, accessor);
+        }
+        public VariableAccessor get(RubyClass cls) {
+            return arfu.get(cls);
+        }
+    }
+
+    private static AtomicReferenceFieldUpdater<RubyClass, VariableAccessor> tryCreateARFU(Class target, Class fieldType, String fieldName) {
+        AtomicReferenceFieldUpdater arfu = null;
+        try {
+            arfu = AtomicReferenceFieldUpdater.newUpdater(target, fieldType, fieldName);
+        } catch (RuntimeException re) {
+            if (re.getCause() instanceof AccessControlException) {
+                // security prevented creation; fall back on synchronized assignment
+            } else {
+                throw re;
+            }
+        }
+        return arfu;
+    }
 
     private synchronized final VariableAccessor allocateVariableAccessor(String name) {
         String[] myVariableNames = variableNames;
@@ -319,7 +389,7 @@ public class RubyClass extends RubyModule {
         return ivarAccessor;
     }
 
-    private synchronized VariableAccessor allocateVariableAccessor(AtomicReferenceFieldUpdater<RubyClass, VariableAccessor> updater,
+    private VariableAccessor allocateVariableAccessor(Updater updater,
                                                                    String name) {
         VariableAccessor accessor = updater.get(this);
         if (accessor == VariableAccessor.DUMMY_ACCESSOR) {

@@ -14,7 +14,7 @@ class TestConstants < Test::Unit::TestCase
 
     x = "abcdef"
     y = [ ?a, ?b, ?c, ?d, ?e, ?f ]
-    y.map! {|ch| ch.getbyte(0)}
+    y.map! {|ch| ch.getbyte(0)} if IS19
     x.each_byte do |ch|
       assert_equal(y.shift, ch)
     end
