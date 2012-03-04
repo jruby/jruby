@@ -14,8 +14,6 @@ final class AllocatedNativeMemoryIO extends BoundedNativeMemoryIO implements All
     /** Keeps strong references to the memory bucket until cleanup */
     private static final Map<AllocationGroup, Boolean> referenceSet = new ConcurrentHashMap<AllocationGroup, Boolean>();
     private static final ThreadLocal<Reference<AllocationGroup>> currentBucket = new ThreadLocal<Reference<AllocationGroup>>();
-    static final AtomicLong nativeMemoryUsed = new AtomicLong(0);
-    static final long NATIVE_MEMORY_HIGHWATER = 512L * 1024 * 1024;
 
     private final MemoryAllocation allocation;
     private final Object sentinel;
@@ -41,9 +39,14 @@ final class AllocatedNativeMemoryIO extends BoundedNativeMemoryIO implements All
      * @param clear Whether the memory should be cleared (zeroed)
      * @return A new {@link AllocatedDirectMemoryIO}
      */
-    static final AllocatedNativeMemoryIO allocateAligned(Ruby runtime, int size, int align, boolean clear) {
-        final long address = IO.allocateMemory(size + align - 1, clear);
-        if (address == 0) {
+    static AllocatedNativeMemoryIO allocateAligned(Ruby runtime, int size, int align, boolean clear) {
+        long address;
+        for (int i = 0; (address = IO.allocateMemory(size + align - 1, clear)) == 0L && i < 100; i++) {
+            // No available memory; trigger a full GC to reclaim some memory
+            System.out.println("triggering full GC");
+            System.gc();
+        }
+        if (address == 0L) {
             throw runtime.newRuntimeError("failed to allocate " + size + " bytes of native memory");
         }
 
@@ -62,9 +65,6 @@ final class AllocatedNativeMemoryIO extends BoundedNativeMemoryIO implements All
             Object sentinel = allocationGroup != null ? allocationGroup.get() : null;
 
             if (sentinel == null || !allocationGroup.canAccept(size)) {
-                if (nativeMemoryUsed.addAndGet(AllocationGroup.MAX_BYTES_PER_BUCKET) >= NATIVE_MEMORY_HIGHWATER) {
-                    System.gc();
-                }
                 referenceSet.put(allocationGroup = new AllocationGroup(sentinel = new Object()), Boolean.TRUE);
                 currentBucket.set(new SoftReference<AllocationGroup>(allocationGroup));
             }
@@ -132,7 +132,6 @@ final class AllocatedNativeMemoryIO extends BoundedNativeMemoryIO implements All
                 }
                 m = m.next;
             }
-            nativeMemoryUsed.addAndGet(0L - MAX_BYTES_PER_BUCKET);
         }
     }
 
