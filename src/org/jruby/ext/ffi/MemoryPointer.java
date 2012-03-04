@@ -106,6 +106,15 @@ public final class MemoryPointer extends Pointer {
     public final String toString() {
         return String.format("MemoryPointer[address=%#x, size=%d]", getAddress(), size);
     }
+
+    @JRubyMethod(name = "==", required = 1)
+    public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
+        return context.getRuntime().newBoolean(this == obj
+                || getAddress() == 0L && obj.isNil()
+                || (obj instanceof MemoryPointer
+                    && ((MemoryPointer) obj).getAddress() == getAddress())
+                    && ((MemoryPointer) obj).getSize() == getSize());
+    }
     
     @JRubyMethod(name = "free")
     public final IRubyObject free(ThreadContext context) {

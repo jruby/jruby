@@ -12,6 +12,8 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import static org.jruby.CompatVersion.RUBY1_9;
 import static org.jruby.runtime.Visibility.*;
 
 /**
@@ -155,6 +157,13 @@ public class Pointer extends AbstractMemory {
      */
     public final long getAddress() {
         return ((DirectMemoryIO) getMemoryIO()).getAddress();
+    }
+
+    @JRubyMethod(name = "==", required = 1)
+    public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
+        return context.getRuntime().newBoolean(this == obj
+                || getAddress() == 0L && obj.isNil()
+                || (obj instanceof Pointer && ((Pointer) obj).getAddress() == getAddress()));
     }
     
     @Override
