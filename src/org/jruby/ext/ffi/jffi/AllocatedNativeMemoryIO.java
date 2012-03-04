@@ -43,7 +43,6 @@ final class AllocatedNativeMemoryIO extends BoundedNativeMemoryIO implements All
         long address;
         for (int i = 0; (address = IO.allocateMemory(size + align - 1, clear)) == 0L && i < 100; i++) {
             // No available memory; trigger a full GC to reclaim some memory
-            System.out.println("triggering full GC");
             System.gc();
         }
         if (address == 0L) {

@@ -58,7 +58,7 @@ public class Factory extends org.jruby.ext.ffi.Factory {
      * @return A new <tt>MemoryIO</tt>.
      */
     public AllocatedDirectMemoryIO allocateDirectMemory(Ruby runtime, int size, boolean clear) {
-        return AllocatedNativeMemoryIO.allocate(runtime, size, clear);
+        return CachingNativeMemoryAllocator.allocateAligned(runtime, size, 8, clear);
     }
 
     /**
@@ -70,7 +70,7 @@ public class Factory extends org.jruby.ext.ffi.Factory {
      * @return A new <tt>MemoryIO</tt>.
      */
     public AllocatedDirectMemoryIO allocateDirectMemory(Ruby runtime, int size, int align, boolean clear) {
-        return AllocatedNativeMemoryIO.allocateAligned(runtime, size, align, clear);
+        return CachingNativeMemoryAllocator.allocateAligned(runtime, size, align, clear);
     }
 
     public DirectMemoryIO allocateTransientDirectMemory(Ruby runtime, int size, int align, boolean clear) {
