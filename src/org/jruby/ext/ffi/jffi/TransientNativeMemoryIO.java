@@ -33,6 +33,9 @@ import org.jruby.Ruby;
 import org.jruby.ext.ffi.DirectMemoryIO;
 import org.jruby.util.WeakReferenceReaper;
 
+import java.lang.ref.Reference;
+import java.lang.ref.SoftReference;
+import java.lang.ref.WeakReference;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -40,7 +43,7 @@ import java.util.concurrent.atomic.AtomicLong;
 final class TransientNativeMemoryIO extends BoundedNativeMemoryIO implements DirectMemoryIO {
     /** Keeps strong references to the memory bucket until cleanup */
     private static final Map<Magazine, Boolean> referenceSet = new ConcurrentHashMap<Magazine, Boolean>();
-    private static final ThreadLocal<Magazine> currentMagazine = new ThreadLocal<Magazine>();
+    private static final ThreadLocal<Reference<Magazine>> currentMagazine = new ThreadLocal<Reference<Magazine>>();
     private static final int PAGES_PER_MAGAZINE = 1;
     private final Object sentinel;
 
@@ -58,7 +61,8 @@ final class TransientNativeMemoryIO extends BoundedNativeMemoryIO implements Dir
             return AllocatedNativeMemoryIO.allocateAligned(runtime, size, align, clear);
         }
 
-        Magazine magazine = currentMagazine.get();
+        Reference<Magazine> magazineReference = currentMagazine.get();
+        Magazine magazine = magazineReference != null ? magazineReference.get() : null;
         Object sentinel = magazine != null ? magazine.get() : null;
         long address;
 
@@ -77,7 +81,7 @@ final class TransientNativeMemoryIO extends BoundedNativeMemoryIO implements Dir
             } while (true);
 
             referenceSet.put(magazine = new Magazine(sentinel = new Object(), pm, memory, pageCount), Boolean.TRUE);
-            currentMagazine.set(magazine);
+            currentMagazine.set(new SoftReference<Magazine>(magazine));
             address = magazine.allocate(size, align);
         }
         

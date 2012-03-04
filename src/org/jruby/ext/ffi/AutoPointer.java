@@ -1,6 +1,9 @@
 
 package org.jruby.ext.ffi;
 
+import java.lang.ref.Reference;
+import java.lang.ref.SoftReference;
+import java.lang.ref.WeakReference;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.jruby.Ruby;
@@ -22,7 +25,7 @@ public final class AutoPointer extends Pointer {
     
     /** Keep strong references to the Reaper until cleanup */
     private static final ConcurrentMap<ReaperGroup, Boolean> referenceSet = new ConcurrentHashMap<ReaperGroup, Boolean>();
-    private static final ThreadLocal<ReaperGroup> currentReaper = new ThreadLocal<ReaperGroup>();
+    private static final ThreadLocal<Reference<ReaperGroup>> currentReaper = new ThreadLocal<Reference<ReaperGroup>>();
     
     private Pointer pointer;
     private Object referent;
@@ -127,11 +130,12 @@ public final class AutoPointer extends Pointer {
     }
 
     private void setReaper(Reaper reaper) {
-        ReaperGroup reaperGroup = currentReaper.get();
+        Reference<ReaperGroup> reaperGroupReference = currentReaper.get();
+        ReaperGroup reaperGroup = reaperGroupReference != null ? reaperGroupReference.get() : null;
         Object referent = reaperGroup != null ? reaperGroup.get() : null;
         if (referent == null || !reaperGroup.canAccept()) {
             reaperGroup = new ReaperGroup(referent = new Object());
-            currentReaper.set(reaperGroup);
+            currentReaper.set(new SoftReference<ReaperGroup>(reaperGroup));
             referenceSet.put(reaperGroup, Boolean.TRUE);
         }
         this.referent = referent;

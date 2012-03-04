@@ -1,5 +1,7 @@
 package org.jruby.ext.ffi.jffi;
 
+import java.lang.ref.Reference;
+import java.lang.ref.SoftReference;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -11,7 +13,7 @@ import org.jruby.util.WeakReferenceReaper;
 final class AllocatedNativeMemoryIO extends BoundedNativeMemoryIO implements AllocatedDirectMemoryIO {
     /** Keeps strong references to the memory bucket until cleanup */
     private static final Map<AllocationGroup, Boolean> referenceSet = new ConcurrentHashMap<AllocationGroup, Boolean>();
-    private static final ThreadLocal<AllocationGroup> currentBucket = new ThreadLocal<AllocationGroup>();
+    private static final ThreadLocal<Reference<AllocationGroup>> currentBucket = new ThreadLocal<Reference<AllocationGroup>>();
     static final AtomicLong nativeMemoryUsed = new AtomicLong(0);
     static final long NATIVE_MEMORY_HIGHWATER = 512L * 1024 * 1024;
 
@@ -55,7 +57,8 @@ final class AllocatedNativeMemoryIO extends BoundedNativeMemoryIO implements All
             *
             * This reduces the overhead of automatically freed native memory allocations by about 70%
             */
-            AllocationGroup allocationGroup = currentBucket.get();
+            Reference<AllocationGroup> allocationGroupReference = currentBucket.get();
+            AllocationGroup allocationGroup = allocationGroupReference != null ? allocationGroupReference.get() : null;
             Object sentinel = allocationGroup != null ? allocationGroup.get() : null;
 
             if (sentinel == null || !allocationGroup.canAccept(size)) {
@@ -63,7 +66,7 @@ final class AllocatedNativeMemoryIO extends BoundedNativeMemoryIO implements All
                     System.gc();
                 }
                 referenceSet.put(allocationGroup = new AllocationGroup(sentinel = new Object()), Boolean.TRUE);
-                currentBucket.set(allocationGroup);
+                currentBucket.set(new SoftReference<AllocationGroup>(allocationGroup));
             }
 
             AllocatedNativeMemoryIO io = new AllocatedNativeMemoryIO(runtime, sentinel, address, size, align);
