@@ -199,6 +199,6 @@ public final class Buffer extends AbstractMemory {
     }
     
     private static MemoryIO allocateMemoryIO(Ruby runtime, int size) {
-        return new ArrayMemoryIO(runtime, size);
+        return Factory.getInstance().allocateTransientDirectMemory(runtime, size, 8, true);
     }
 }
