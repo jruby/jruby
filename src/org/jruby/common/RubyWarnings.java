@@ -33,11 +33,15 @@ import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /** 
  *
  */
 public class RubyWarnings implements IRubyWarnings, WarnCallback {
     private final Ruby runtime;
+    private final Set<ID> oncelers = new HashSet<ID>();
 
     public RubyWarnings(Ruby runtime) {
         this.runtime = runtime;
@@ -79,6 +83,13 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
     public void warn(ID id, String message) {
         ThreadContext context = runtime.getCurrentContext();
         warn(id, context.getFile(), context.getLine(), message);
+    }
+    
+    public void warnOnce(ID id, String message) {
+        if (oncelers.contains(id)) return;
+
+        oncelers.add(id);
+        warn(id, message);
     }
 
     /**

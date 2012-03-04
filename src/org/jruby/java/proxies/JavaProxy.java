@@ -23,6 +23,7 @@ import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.common.IRubyWarnings;
 import org.jruby.java.invokers.InstanceFieldGetter;
 import org.jruby.java.invokers.InstanceFieldSetter;
 import org.jruby.java.invokers.InstanceMethodInvoker;
@@ -145,6 +146,17 @@ public class JavaProxy extends RubyObject {
         } else {
             return Java.get_proxy_class(javaClass, RuntimeHelpers.invoke(context, javaClass, "array_class"));
         }
+    }
+
+    @JRubyMethod(name = "__persistent__=", meta = true)
+    public IRubyObject persistent(IRubyObject value) {
+        metaClass.getRealClass().setCacheProxy(value.isTrue());
+        return this;
+    }
+
+    @JRubyMethod(name = "__persistent__", meta = true)
+    public IRubyObject persistent() {
+        return getRuntime().newBoolean(metaClass.getRealClass().getCacheProxy());
     }
 
     @Override
@@ -469,9 +481,11 @@ public class JavaProxy extends RubyObject {
     }
 
     private void confirmCachedProxy() {
-        if (!metaClass.getCacheProxy()) {
-            if (!Java.OBJECT_PROXY_CACHE) {
-                getRuntime().getWarnings().warn("instance var access on non-persistent Java type (http://wiki.jruby.org/Persistence");
+        if (!metaClass.getRealClass().getCacheProxy()) {
+            if (Java.OBJECT_PROXY_CACHE) {
+                getRuntime().getWarnings().warnOnce(IRubyWarnings.ID.NON_PERSISTENT_JAVA_PROXY, "instance var access on non-persistent Java type (http://wiki.jruby.org/Persistence)");
+            } else {
+                getRuntime().getWarnings().warn("instance var access on non-persistent Java type (http://wiki.jruby.org/Persistence)");
                 metaClass.setCacheProxy(true);
                 getRuntime().getJavaSupport().getObjectProxyCache().put(getObject(), this);
             }
