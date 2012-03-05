@@ -126,17 +126,3 @@ rb_scan_args(int argc, const VALUE* argv, const char* spec, ...)
     rb_raise(rb_eFatal, "bad scan arg format: %s", spec);
     return 0;
 }
-
-extern "C" int
-rb_safe_level()
-{
-    return FIX2INT(rb_gv_get("$SAFE"));
-}
-
-extern "C" void
-rb_secure(int level)
-{
-    if (level <= rb_safe_level()) {
-        rb_raise(rb_eSecurityError, "Insecure operation at level %d", rb_safe_level());
-    }
-}

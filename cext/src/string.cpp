@@ -526,3 +526,15 @@ rb_str2cstr(VALUE str, long* len)
 
     return cstr;
 }
+
+
+extern "C" void
+rb_str_modify(VALUE str)
+{
+    JLocalEnv env;
+    jmethodID mid = getCachedMethodID(env, RubyString_class, "modify", "()V");
+
+    env->CallVoidMethod(valueToObject(env, str), mid);
+    checkExceptions(env);
+}
+

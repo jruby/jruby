@@ -291,6 +291,23 @@ RUBY_DLLSPEC void xfree(void*);
 #define TYPE(x) rb_type((VALUE)(x))
 #define CLASS_OF(x) rb_class_of((VALUE)(x))
 
+#define RB_TYPE_P(obj, type) ( \
+	((type) == T_FIXNUM) ? FIXNUM_P(obj) : \
+	((type) == T_TRUE) ? ((obj) == Qtrue) : \
+	((type) == T_FALSE) ? ((obj) == Qfalse) : \
+	((type) == T_NIL) ? ((obj) == Qnil) : \
+	((type) == T_UNDEF) ? ((obj) == Qundef) : \
+	((type) == T_SYMBOL) ? SYMBOL_P(obj) : \
+	(!SPECIAL_CONST_P(obj) && BUILTIN_TYPE(obj) == (type)))
+
+#ifdef __GNUC__
+#define rb_type_p(obj, type) \
+    __extension__ (__builtin_constant_p(type) ? RB_TYPE_P((obj), (type)) : \
+		   rb_type(obj) == (type))
+#else
+#define rb_type_p(obj, type) (rb_type(obj) == (type))
+#endif
+
 
 /** The length of string str. */
 #define RSTRING_LEN(str)  jruby_str_length((str))
@@ -303,6 +320,35 @@ RUBY_DLLSPEC void xfree(void*);
 #define StringValue(v)        rb_string_value(&(v))
 #define StringValuePtr(v)     rb_string_value_ptr(&(v))
 #define StringValueCStr(str)  rb_string_value_cstr(&(str))
+
+RUBY_DLLSPEC void rb_check_safe_obj(VALUE);
+RUBY_DLLSPEC void rb_check_safe_str(VALUE);
+#define SafeStringValue(v) do {\
+    StringValue(v);\
+    rb_check_safe_obj(v);\
+} while (0)
+/* obsolete macro - use SafeStringValue(v) */
+#define Check_SafeStr(v) rb_check_safe_str((VALUE)(v))
+
+RUBY_DLLSPEC VALUE rb_str_export(VALUE);
+#define ExportStringValue(v) do {\
+    SafeStringValue(v);\
+   (v) = rb_str_export(v);\
+} while (0)
+RUBY_DLLSPEC VALUE rb_str_export_locale(VALUE);
+
+RUBY_DLLSPEC VALUE rb_get_path(VALUE);
+#define FilePathValue(v) (RB_GC_GUARD(v) = rb_get_path(v))
+
+RUBY_DLLSPEC VALUE rb_get_path_no_checksafe(VALUE);
+#define FilePathStringValue(v) ((v) = rb_get_path_no_checksafe(v))
+
+RUBY_DLLSPEC void rb_secure(int);
+RUBY_DLLSPEC int rb_safe_level(void);
+RUBY_DLLSPEC void rb_set_safe_level(int);
+RUBY_DLLSPEC void rb_set_safe_level_force(int);
+RUBY_DLLSPEC void rb_secure_update(VALUE);
+RUBY_DLLSPEC NORETURN(void rb_insecure_operation(void));
 
 /** The length of the array. */
 #define RARRAY_LEN(ary) RARRAY(ary)->len
@@ -396,9 +442,6 @@ RUBY_DLLSPEC VALUE rb_exc_new(VALUE, const char*, long);
 RUBY_DLLSPEC VALUE rb_exc_new2(VALUE, const char*);
 RUBY_DLLSPEC VALUE rb_exc_new3(VALUE, VALUE);
 RUBY_DLLSPEC VALUE rb_exc_raise(VALUE);
-
-RUBY_DLLSPEC void rb_secure(int);
-RUBY_DLLSPEC int rb_safe_level(void);
 
 RUBY_DLLSPEC void rb_num_zerodiv(void);
 RUBY_DLLSPEC long rb_num2long(VALUE);
