@@ -3,6 +3,7 @@ package org.jruby.compiler.ir.instructions;
 import org.jruby.compiler.ir.Operation;
 import org.jruby.compiler.ir.instructions.specialized.OneFixnumArgNoBlockCallInstr;
 import org.jruby.compiler.ir.instructions.specialized.OneOperandArgNoBlockCallInstr;
+import org.jruby.compiler.ir.instructions.specialized.ZeroOperandArgNoBlockCallInstr;
 import org.jruby.compiler.ir.operands.MethAddr;
 import org.jruby.compiler.ir.operands.Operand;
 import org.jruby.compiler.ir.operands.Variable;
@@ -56,10 +57,12 @@ public class CallInstr extends CallBase implements ResultInstr {
         if (hasClosure() || containsSplat()) return this;
         
         switch (getCallArgs().length) {
+            case 0:
+                return new ZeroOperandArgNoBlockCallInstr(this);
             case 1:
                 if (isAllFixnums()) return new OneFixnumArgNoBlockCallInstr(this);
-  // ENEBO: errors with this commented out.
-//                return new OneOperandArgNoBlockCallInstr(this);
+
+                return new OneOperandArgNoBlockCallInstr(this);
         }
         return this;
     }    
