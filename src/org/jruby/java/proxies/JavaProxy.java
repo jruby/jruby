@@ -9,6 +9,7 @@ import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -456,13 +457,13 @@ public class JavaProxy extends RubyObject {
 
     @Override
     public Object getVariable(int index) {
-        confirmCachedProxy();
+        confirmCachedProxy(NONPERSISTENT_IVAR_MESSAGE);
         return super.getVariable(index);
     }
 
     @Override
     public void setVariable(int index, Object value) {
-        confirmCachedProxy();
+        confirmCachedProxy(NONPERSISTENT_IVAR_MESSAGE);
         super.setVariable(index, value);
     }
 
@@ -476,17 +477,18 @@ public class JavaProxy extends RubyObject {
      */
     @Override
     public RubyClass getSingletonClass() {
-        confirmCachedProxy();
+        confirmCachedProxy(NONPERSISTENT_SINGLETON_MESSAGE);
         return super.getSingletonClass();
     }
 
-    private void confirmCachedProxy() {
-        if (!metaClass.getRealClass().getCacheProxy()) {
+    private void confirmCachedProxy(String message) {
+        RubyClass realClass = metaClass.getRealClass();
+        if (!realClass.getCacheProxy()) {
             if (Java.OBJECT_PROXY_CACHE) {
-                getRuntime().getWarnings().warnOnce(IRubyWarnings.ID.NON_PERSISTENT_JAVA_PROXY, "instance var access on non-persistent Java type (http://wiki.jruby.org/Persistence)");
+                getRuntime().getWarnings().warnOnce(IRubyWarnings.ID.NON_PERSISTENT_JAVA_PROXY, MessageFormat.format(message, realClass));
             } else {
-                getRuntime().getWarnings().warn("instance var access on non-persistent Java type (http://wiki.jruby.org/Persistence)");
-                metaClass.setCacheProxy(true);
+                getRuntime().getWarnings().warn(MessageFormat.format(message, realClass));
+                realClass.setCacheProxy(true);
                 getRuntime().getJavaSupport().getObjectProxyCache().put(getObject(), this);
             }
         }
@@ -495,4 +497,7 @@ public class JavaProxy extends RubyObject {
     public Object unwrap() {
         return getObject();
     }
+
+    private static final String NONPERSISTENT_IVAR_MESSAGE = "instance vars on non-persistent Java type {0} (http://wiki.jruby.org/Persistence)";
+    private static final String NONPERSISTENT_SINGLETON_MESSAGE = "singleton on non-persistent Java type {0} (http://wiki.jruby.org/Persistence)";
 }
