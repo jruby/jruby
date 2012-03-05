@@ -513,9 +513,18 @@ public abstract class IRScope {
         for (BasicBlock b : linearizedBBList) {
             labelIPCMap.put(b.getLabel(), ipc);
             labelsToFixup.add(b.getLabel());
-            for (Instr i : b.getInstrs()) {
-                if (!(i instanceof ReceiveSelfInstr)) {
-                    newInstrs.add(i);
+            List<Instr> bbInstrs = b.getInstrs();
+            int bbInstrsLength = bbInstrs.size();
+            for (int i = 0; i < bbInstrsLength; i++) {
+                Instr instr = bbInstrs.get(i);
+                
+                if (instr instanceof Specializeable) {
+                    instr = ((Specializeable) instr).specializeForInterpretation();
+                    bbInstrs.set(i, instr);
+                }
+                
+                if (!(instr instanceof ReceiveSelfInstr)) {
+                    newInstrs.add(instr);
                     ipc++;
                 }
             }
@@ -528,23 +537,9 @@ public abstract class IRScope {
 
         // Exit BB ipc
         cfg().getExitBB().getLabel().setTargetPC(ipc + 1);
-        
-        specializeInstructions(newInstrs);
 
         linearizedInstrArray = newInstrs.toArray(new Instr[newInstrs.size()]);
         return linearizedInstrArray;
-    }
-    
-    private void specializeInstructions(List<Instr> instrs) {
-        for (int i = 0; i < instrs.size(); i++) {
-            Instr instr = instrs.get(i);
-            
-            if (instr instanceof Specializeable) {
-                Instr newInstr = ((Specializeable) instr).specializeForInterpretation();
-                
-                if (newInstr != instr) instrs.set(i, newInstr);
-            }
-        }
     }
     
     private void printPass(String message) {
