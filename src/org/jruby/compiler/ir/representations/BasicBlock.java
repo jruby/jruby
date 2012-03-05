@@ -1,21 +1,13 @@
 package org.jruby.compiler.ir.representations;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
 import org.jruby.compiler.ir.IRScope;
-import org.jruby.compiler.ir.IRClosure;
 import org.jruby.compiler.ir.instructions.CallBase;
 import org.jruby.compiler.ir.instructions.Instr;
-import org.jruby.compiler.ir.instructions.ResultInstr;
 import org.jruby.compiler.ir.instructions.YieldInstr;
-import org.jruby.compiler.ir.operands.Array;
 import org.jruby.compiler.ir.operands.Label;
-import org.jruby.compiler.ir.operands.LocalVariable;
 import org.jruby.compiler.ir.operands.Operand;
-import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.operands.WrappedIRClosure;
 import org.jruby.compiler.ir.util.ExplicitVertexID;
 
@@ -24,13 +16,11 @@ public class BasicBlock implements ExplicitVertexID {
     private CFG cfg;                       // CFG that this basic block belongs to
     private Label label;                   // All basic blocks have a starting label
     private List<Instr> instrs;         // List of non-label instructions
-    private boolean isLive;
     private Instr[] instrsArray = null;    
 
     public BasicBlock(CFG c, Label l) {
         instrs = new ArrayList<Instr>();
         label = l;
-        isLive = true;
         cfg = c;
         id = c.getNextBBID();
     }
