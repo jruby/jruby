@@ -87,10 +87,9 @@ public class LiveVariablesProblem extends DataFlowProblem {
      *
      * In the code snippet above, 'sum' is live on entry to and exit from the closure.
      **/
-    public void setup(IRScope scope, Collection<LocalVariable> allVars) {
+    public final void setup(IRScope scope, Collection<LocalVariable> allVars) {
         // System.out.println("\nCFG:\n" + scope.cfg().toStringGraph());
         // System.out.println("\nInstrs:\n" + scope.cfg().toStringInstrs());
-
         setup(scope);
 
         for (Variable v : allVars) {

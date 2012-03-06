@@ -74,7 +74,7 @@ public class LiveVariableNode extends FlowGraphNode {
         // System.out.println("After MEET, df state for " + basicBlock.getID() + " is:\n" + toString());
         LiveVariablesProblem lvp = (LiveVariablesProblem) problem;
 
-        tmp = (BitSet) in.clone();
+        BitSet living = (BitSet) in.clone();
 
         // Traverse the instructions in this basic block in reverse order!
         List<Instr> instrs = basicBlock.getInstrs();
@@ -86,7 +86,7 @@ public class LiveVariableNode extends FlowGraphNode {
             // v is defined => It is no longer live before 'i'
             if (i instanceof ResultInstr) {
                 Variable v = ((ResultInstr) i).getResult();
-                tmp.clear(lvp.getDFVar(v).getId());
+                living.clear(lvp.getDFVar(v).getId());
             }
 
             // Check if 'i' is a call and uses a closure!
@@ -105,8 +105,8 @@ public class LiveVariableNode extends FlowGraphNode {
 
                     // Collect live local variables at this point.
                     Set<LocalVariable> liveVars = new HashSet<LocalVariable>();
-                    for (int j = 0; j < tmp.size(); j++) {
-                        if (tmp.get(j) == true) {
+                    for (int j = 0; j < living.size(); j++) {
+                        if (living.get(j) == true) {
                             Variable v = lvp.getVariable(j);
                             if (v instanceof LocalVariable) liveVars.add((LocalVariable)v);
                         }
@@ -177,7 +177,7 @@ public class LiveVariableNode extends FlowGraphNode {
                     for (Variable y: liveOnEntryAfter) {
                         DataFlowVar dv = lvp.getDFVar(y);
                         // This can be null for vars used, but not defined!  Yes, the source program is buggy ..
-                        if (dv != null) tmp.set(dv.getId());
+                        if (dv != null) living.set(dv.getId());
                     }
                 }
 
@@ -186,7 +186,7 @@ public class LiveVariableNode extends FlowGraphNode {
                     // System.out.println(".. call is a data flow barrier ..");
                     // Mark all non-self, non-block local variables live if 'c' is a dataflow barrier!
                     for (Variable x: lvp.getNonSelfLocalVars()) {
-                        if (!x.isImplicitBlockArg()) tmp.set(lvp.getDFVar(x).getId());
+                        if (!x.isImplicitBlockArg()) living.set(lvp.getDFVar(x).getId());
                     }
                 } else if (c.canRaiseException()) {
                     // Collect variables live out of the exception target node.  Since this call can directly jump to
@@ -196,7 +196,7 @@ public class LiveVariableNode extends FlowGraphNode {
                     // implicitly here.
                     BitSet etOut = ((LiveVariableNode)getExceptionTargetNode()).out;
                     for (int k = 0; k < etOut.size(); k++) {
-                        if (etOut.get(k) == true) tmp.set(k); 
+                        if (etOut.get(k) == true) living.set(k); 
                     }
                 }
             } else if (i.canRaiseException()) {
@@ -207,7 +207,7 @@ public class LiveVariableNode extends FlowGraphNode {
                  // implicitly here.
                  BitSet etOut = ((LiveVariableNode)getExceptionTargetNode()).out;
                  for (int k = 0; k < etOut.size(); k++) {
-                     if (etOut.get(k) == true) tmp.set(k); 
+                     if (etOut.get(k) == true) living.set(k); 
                  }
             }
 
@@ -216,7 +216,7 @@ public class LiveVariableNode extends FlowGraphNode {
                 DataFlowVar dv = lvp.getDFVar(x);
                 // This can be null for vars used, but not defined!  Yes, the source program is buggy ..
                 if (dv != null) {
-                    tmp.set(dv.getId());
+                    living.set(dv.getId());
                     // System.out.println("set live flag for: " + x);
                 }
             }
@@ -224,10 +224,10 @@ public class LiveVariableNode extends FlowGraphNode {
 
         // System.out.println("After TF, df state is:\n" + toString());
 
-        if (tmp.equals(out)) { // OUT is the same!
+        if (living.equals(out)) { // OUT is the same!
             return false;
         } else { // OUT changed!
-            out = tmp;
+            out = living;
             return true;
         }
     }
@@ -279,7 +279,7 @@ public class LiveVariableNode extends FlowGraphNode {
            return;
         }
 
-        tmp = (BitSet) in.clone();
+        BitSet living = (BitSet) in.clone();
 
         // Traverse the instructions in this basic block in reverse order!
         // Mark as dead all instructions whose results are not used! 
@@ -291,18 +291,19 @@ public class LiveVariableNode extends FlowGraphNode {
             if (i instanceof ResultInstr) {
                 Variable v = ((ResultInstr) i).getResult();
                 DataFlowVar dv = lvp.getDFVar(v);
-                    // If 'v' is not live at the instruction site, and it has no side effects, mark it dead!
+
+                // If 'v' is not live at the instruction site, and it has no side effects, mark it dead!
                 // System.out.println("df var for " + v + " is " + dv.getId());
-                if ((tmp.get(dv.getId()) == false) && i.canBeDeleted(scope)) {
+                if (living.get(dv.getId())) {
+                    living.clear(dv.getId());
+                    // System.out.println("NO! LIVE result:" + v);
+                } else if (i.canBeDeleted(scope)) {
                     // System.out.println("YES!");
                     i.markDead();
                     it.remove();
                     if (v.isImplicitBlockArg()) lvp.getScope().markUnusedImplicitBlockArg();
-                } else if (tmp.get(dv.getId()) == false) {
-                    // System.out.println("NO! has side effects! Op is: " + i.getOperation());
                 } else {
-                    // System.out.println("NO! LIVE result:" + v);
-                    tmp.clear(dv.getId());
+                    // System.out.println("NO! has side effects! Op is: " + i.getOperation());
                 }
             } else if (i.canBeDeleted(scope)) {
                  i.markDead();
@@ -321,12 +322,12 @@ public class LiveVariableNode extends FlowGraphNode {
                     for (Variable y: cl_lvp.getVarsLiveOnScopeEntry()) {
                         DataFlowVar dv = lvp.getDFVar(y);
                         // This can be null for vars used, but not defined!  Yes, the source program is buggy ..
-                        if (dv != null) tmp.set(dv.getId());
+                        if (dv != null) living.set(dv.getId());
                     } 
                 } else if (c.isDataflowBarrier()) {
                     // Mark all non-self, non-block local variables live if 'c' is a dataflow barrier!
                     for (Variable x: lvp.getNonSelfLocalVars()) {
-                        if (!x.isImplicitBlockArg()) tmp.set(lvp.getDFVar(x).getId());
+                        if (!x.isImplicitBlockArg()) living.set(lvp.getDFVar(x).getId());
                     }
                 } else if (c.canRaiseException()) {
                     // Collect variables live out of the exception target node.  Since this call can directly jump to
@@ -336,7 +337,7 @@ public class LiveVariableNode extends FlowGraphNode {
                     // implicitly here.
                     BitSet etOut = ((LiveVariableNode)getExceptionTargetNode()).out;
                     for (int k = 0; k < etOut.size(); k++) {
-                        if (etOut.get(k) == true) tmp.set(k);
+                        if (etOut.get(k) == true) living.set(k);
                     }
                 }
             } else if (i.canRaiseException()) {
@@ -347,7 +348,7 @@ public class LiveVariableNode extends FlowGraphNode {
                  // implicitly here.
                  BitSet etOut = ((LiveVariableNode)getExceptionTargetNode()).out;
                  for (int k = 0; k < etOut.size(); k++) {
-                     if (etOut.get(k) == true) tmp.set(k); 
+                     if (etOut.get(k) == true) living.set(k); 
                  }
             }
 
@@ -355,7 +356,7 @@ public class LiveVariableNode extends FlowGraphNode {
             if (!i.isDead()) {
                for (Variable x: i.getUsedVariables()) {
                    DataFlowVar dv = lvp.getDFVar(x);
-                   if (dv != null) tmp.set(dv.getId());
+                   if (dv != null) living.set(dv.getId());
                }
             }
         }
@@ -371,6 +372,5 @@ public class LiveVariableNode extends FlowGraphNode {
 
     private BitSet in;         // Variables live at entry of this node
     private BitSet out;        // Variables live at exit of node
-    private BitSet tmp;        // Temporary set of live variables
     private int setSize;    // Size of the "this.in" and "this.out" bit sets 
 }
