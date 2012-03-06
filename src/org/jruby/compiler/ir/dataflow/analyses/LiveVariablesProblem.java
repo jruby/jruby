@@ -67,14 +67,11 @@ public class LiveVariablesProblem extends DataFlowProblem {
         List<Variable> liveVars = new ArrayList<Variable>();
         BitSet liveIn = ((LiveVariableNode) getFlowGraphNode(getScope().cfg().getEntryBB())).getLiveOutBitSet();
 
-        // When accessed before LVP is run, this can be null. SSS FIXME: Initialize in bitset to non-null always?
-        if (liveIn != null) {
-            for (int i = 0; i < liveIn.size(); i++) {
-                if (liveIn.get(i) == true) {
-                    Variable v = getVariable(i);
-                    liveVars.add(v);
-                    // System.out.println("variable " + v + " is live on entry!");
-                }
+        for (int i = 0; i < liveIn.size(); i++) {
+            if (liveIn.get(i) == true) {
+                Variable v = getVariable(i);
+                liveVars.add(v);
+                // System.out.println("variable " + v + " is live on entry!");
             }
         }
         

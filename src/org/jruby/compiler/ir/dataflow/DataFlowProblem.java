@@ -51,10 +51,6 @@ public abstract class DataFlowProblem {
     public void compute_MOP_Solution() {
         /** Are there are available data flow facts to run this problem? SSS FIXME: Silly optimization? */
         if (!isEmpty()) {
-            for (FlowGraphNode fg: flowGraphNodes) {
-                fg.init();
-            }
-
             // 2. Initialize work list based on flow direction to make processing efficient!
             LinkedList<FlowGraphNode> workList = getInitialWorkList();
 
@@ -146,6 +142,7 @@ public abstract class DataFlowProblem {
 
         for (BasicBlock bb: scope.cfg().getBasicBlocks()) {
             FlowGraphNode fgNode = buildFlowGraphNode(bb);
+            fgNode.init();
             fgNode.buildDataFlowVars();
             flowGraphNodes.add(fgNode);
             basicBlockToFlowGraph.put(bb.getID(), fgNode);
