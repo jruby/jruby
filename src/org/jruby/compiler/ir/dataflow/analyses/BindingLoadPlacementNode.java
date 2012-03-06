@@ -65,8 +65,8 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
             // Process calls specially -- these are the sites of binding loads!
             if (i instanceof CallBase) {
                 CallBase call = (CallBase) i;
-                Operand o = call.getClosureArg(problem.getScope().getManager().getNil());
-                if ((o != null) && (o instanceof WrappedIRClosure)) {
+                Operand o = call.getClosureArg(null);
+                if (o != null && o instanceof WrappedIRClosure) {
                     IRClosure cl = ((WrappedIRClosure) o).getClosure();
                     BindingLoadPlacementProblem cl_blp = new BindingLoadPlacementProblem();
                     cl_blp.initLoadsOnScopeExit(reqdLoads);
@@ -135,8 +135,8 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
 
             if (i instanceof CallBase) {
                 CallBase call = (CallBase) i;
-                Operand o = call.getClosureArg(problem.getScope().getManager().getNil());
-                if ((o != null) && (o instanceof WrappedIRClosure)) {
+                Operand o = call.getClosureArg(null);
+                if (o != null && o instanceof WrappedIRClosure) {
                     IRClosure scope = ((WrappedIRClosure) o).getClosure();
                     BindingLoadPlacementProblem cl_blp = (BindingLoadPlacementProblem) scope.getDataFlowSolution(blp.getName());
 

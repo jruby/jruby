@@ -72,8 +72,8 @@ public class BindingStorePlacementNode extends FlowGraphNode {
             if (i instanceof CallBase) {
                 CallBase call = (CallBase) i;
                 // At this call site, a binding will get allocated if it has not been already!
-                Operand o = call.getClosureArg(problem.getScope().getManager().getNil());
-                if ((o != null) && (o instanceof WrappedIRClosure)) {
+                Operand o = call.getClosureArg(null);
+                if (o != null && o instanceof WrappedIRClosure) {
                     bindingAllocated = true;
 
                     IRClosure cl = ((WrappedIRClosure) o).getClosure();
@@ -171,8 +171,8 @@ public class BindingStorePlacementNode extends FlowGraphNode {
 
             if (i instanceof CallBase) {
                 CallBase call = (CallBase) i;
-                Operand o = call.getClosureArg(problem.getScope().getManager().getNil());
-                if ((o != null) && (o instanceof WrappedIRClosure)) {
+                Operand o = call.getClosureArg(null);
+                if (o != null && o instanceof WrappedIRClosure) {
                     IRClosure scope = ((WrappedIRClosure) o).getClosure();
 
                     BindingStorePlacementProblem cl_bsp = (BindingStorePlacementProblem) scope.getDataFlowSolution(bsp.getName());

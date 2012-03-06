@@ -104,9 +104,9 @@ public class LiveVariableNode extends FlowGraphNode {
             // If so, we need to process the closure for live variable info.
             if (i instanceof CallBase) {
                 CallBase c = (CallBase) i;
-                Operand  o = c.getClosureArg(problem.getScope().getManager().getNil());
+                Operand  o = c.getClosureArg(null);
                 // System.out.println("Processing closure: " + o + "-------");
-                if ((o != null) && (o instanceof WrappedIRClosure)) {
+                if (o != null && o instanceof WrappedIRClosure) {
                     IRClosure cl = ((WrappedIRClosure)o).getClosure();
                     LiveVariablesProblem cl_lvp = (LiveVariablesProblem)cl.getDataFlowSolution(DataFlowConstants.LVP_NAME);
                     if (cl_lvp == null) {
@@ -313,8 +313,8 @@ public class LiveVariableNode extends FlowGraphNode {
 
             if (i instanceof CallBase) {
                 CallBase c = (CallBase) i;
-                Operand  o = c.getClosureArg(problem.getScope().getManager().getNil());
-                if ((o != null) && (o instanceof WrappedIRClosure)) {
+                Operand  o = c.getClosureArg(null);
+                if (o != null && o instanceof WrappedIRClosure) {
                     IRClosure cl = ((WrappedIRClosure)o).getClosure();
                     LiveVariablesProblem cl_lvp = (LiveVariablesProblem)cl.getDataFlowSolution(lvp.getName());
                     // Collect variables live on entry and merge that info into the current problem.

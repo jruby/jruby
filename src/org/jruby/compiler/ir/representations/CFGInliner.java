@@ -240,7 +240,7 @@ public class CFGInliner {
         cfg.addEdge(failurePathBB, splitBB, CFG.EdgeType.REGULAR);
 
         // 8. Inline any closure argument passed into the call.
-        Operand closureArg = call.getClosureArg(hostScope.getManager().getNil());
+        Operand closureArg = call.getClosureArg(null);
         List yieldSites = ii.getYieldSites();
         if (closureArg != null && !yieldSites.isEmpty()) {
             // Detect unlikely but contrived scenarios where there are far too many yield sites that could lead to code blowup
