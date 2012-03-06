@@ -708,16 +708,20 @@
   </target>
 
   <target name="compile-stdlib" unless="test">
-    <copy todir="${build.dir}/stdlib">
-      <fileset dir="lib/ruby/1.8">
-        <include name="**/*.rb"/>
-      </fileset>
-    </copy>
-    <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true" dir="${build.dir}/stdlib">
+    <mkdir dir="${build.dir}/stdlib"/>
+    <echo message="Compiling 1.8 stdlib..."/>
+    <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
       <classpath refid="jruby.execute.classpath"/>
       <sysproperty key="jruby.home" value="${basedir}"/>
       <jvmarg line="-ea ${java.opts}"/>
-      <arg line="-I bin/ -S jrubyc ."/>
+      <arg line="--1.8 -I bin/ -S jrubyc --target ${build.dir}/stdlib lib/ruby/1.8"/>
+    </java>
+    <echo message="Compiling 1.9 stdlib..."/>
+    <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true">
+      <classpath refid="jruby.execute.classpath"/>
+      <sysproperty key="jruby.home" value="${basedir}"/>
+      <jvmarg line="-ea ${java.opts}"/>
+      <arg line="--1.9 -I bin/ -S jrubyc --target ${build.dir}/stdlib lib/ruby/1.9"/>
     </java>
   </target>
 
