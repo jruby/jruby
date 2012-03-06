@@ -109,7 +109,7 @@ public class RubyIPSocket extends RubyBasicSocket {
     
     private IRubyObject addrCommon(ThreadContext context, boolean reverse) {
         try {
-            InetSocketAddress address = getLocalSocket("addr");
+            InetSocketAddress address = getSocketAddress();
             if (address == null) {
                 throw context.getRuntime().newErrnoENOTSOCKError("Not socket or not connected");
             }
@@ -154,7 +154,7 @@ public class RubyIPSocket extends RubyBasicSocket {
     @Override
     protected IRubyObject getSocknameCommon(ThreadContext context, String caller) {
         try {
-            InetSocketAddress sock = getLocalSocket(caller);
+            InetSocketAddress sock = getSocketAddress();
             return Sockaddr.packSockaddrFromAddress(context, sock);
         } catch (BadDescriptorException e) {
             throw context.runtime.newErrnoEBADFError();

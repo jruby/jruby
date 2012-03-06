@@ -275,7 +275,7 @@ public class RubyUDPSocket extends RubyIPSocket {
                     port = (int)args[3].convertToInteger().getLongValue();
                 }
 
-                InetAddress address = RubySocket.getRubyInetAddress(nameStr.getByteList());
+                InetAddress address = SocketUtils.getRubyInetAddress(nameStr.getByteList());
                 InetSocketAddress addr =
                         new InetSocketAddress(address, port);
 

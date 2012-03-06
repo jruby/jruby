@@ -114,7 +114,7 @@ public class RubyTCPServer extends RubyTCPSocket {
                 portInt = RubyNumeric.fix2int(portInteger);
 
                 if (portInt <= 0) {
-                    portInt = RubyNumeric.fix2int(RubySocket.getservbyname(
+                    portInt = RubyNumeric.fix2int(SocketUtils.getservbyname(
                             context, runtime.getObject(), new IRubyObject[] {portString}));
                 }
             }

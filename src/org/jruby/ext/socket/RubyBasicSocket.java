@@ -45,6 +45,7 @@ import java.nio.channels.DatagramChannel;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
+import jnr.constants.platform.Sock;
 import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -198,7 +199,12 @@ public class RubyBasicSocket extends RubyIO {
         }
     }
 
+    @Deprecated
     protected InetSocketAddress getLocalSocket(String caller) throws BadDescriptorException {
+        return getSocketAddress();
+    }
+
+    protected InetSocketAddress getSocketAddress() throws BadDescriptorException {
         Channel socketChannel = getOpenChannel();
         if (socketChannel instanceof SocketChannel) {
             return (InetSocketAddress)((SocketChannel)socketChannel).socket().getLocalSocketAddress();
@@ -413,17 +419,17 @@ public class RubyBasicSocket extends RubyIO {
     private IRubyObject getOOBInline(Ruby runtime) throws IOException, BadDescriptorException {
         Channel socketChannel = getOpenChannel();
         return trueFalse(runtime,
-                         (socketChannel instanceof SocketChannel) ? asSocket().getOOBInline() : false
-                         );
+                (socketChannel instanceof SocketChannel) ? asSocket().getOOBInline() : false
+        );
     }
 
     private IRubyObject getRcvBuf(Ruby runtime) throws IOException, BadDescriptorException {
         Channel socketChannel = getOpenChannel();
         return number(runtime,
-                      (socketChannel instanceof SocketChannel) ? asSocket().getReceiveBufferSize() : 
-                      ((socketChannel instanceof ServerSocketChannel) ? asServerSocket().getReceiveBufferSize() : 
-                       asDatagramSocket().getReceiveBufferSize())
-                      );
+                (socketChannel instanceof SocketChannel) ? asSocket().getReceiveBufferSize() :
+                        ((socketChannel instanceof ServerSocketChannel) ? asServerSocket().getReceiveBufferSize() :
+                                asDatagramSocket().getReceiveBufferSize())
+        );
     }
 
     private IRubyObject getSndBuf(Ruby runtime) throws IOException, BadDescriptorException {
@@ -452,27 +458,45 @@ public class RubyBasicSocket extends RubyIO {
     private IRubyObject getTimeout(Ruby runtime) throws IOException, BadDescriptorException {
         Channel socketChannel = getOpenChannel();
         return number(runtime,
-                      (socketChannel instanceof SocketChannel) ? asSocket().getSoTimeout() : 
-                      ((socketChannel instanceof ServerSocketChannel) ? asServerSocket().getSoTimeout() : 
-                       ((socketChannel instanceof DatagramChannel) ? asDatagramSocket().getSoTimeout() : 0))
-                      );
+                (socketChannel instanceof SocketChannel) ? asSocket().getSoTimeout() :
+                        ((socketChannel instanceof ServerSocketChannel) ? asServerSocket().getSoTimeout() :
+                                ((socketChannel instanceof DatagramChannel) ? asDatagramSocket().getSoTimeout() : 0))
+        );
     }
 
+    @Deprecated
     protected int getSoTypeDefault() {
         return 0;
     }
+
+    protected Sock getDefaultSocketType() {
+        return Sock.SOCK_STREAM;
+    }
+
+    @Deprecated
     private int getChannelSoType(Channel channel) {
         if (channel instanceof SocketChannel || channel instanceof ServerSocketChannel) {
             return SOCK_STREAM.intValue();
         } else if (channel instanceof DatagramChannel) {
             return SOCK_DGRAM.intValue();
         } else {
-            return getSoTypeDefault();
+            return getDefaultSocketType().intValue();
         }
     }
+
+    private Sock getChannelSocketType(Channel channel) {
+        if (channel instanceof SocketChannel || channel instanceof ServerSocketChannel) {
+            return SOCK_STREAM;
+        } else if (channel instanceof DatagramChannel) {
+            return SOCK_DGRAM;
+        } else {
+            return getDefaultSocketType();
+        }
+    }
+
     private IRubyObject getSoType(Ruby runtime) throws IOException, BadDescriptorException {
         Channel socketChannel = getOpenChannel();
-        return number(runtime, getChannelSoType(socketChannel));
+        return number(runtime, getChannelSocketType(socketChannel).intValue());
     }
 
     private IRubyObject trueFalse(Ruby runtime, boolean val) {
@@ -643,7 +667,7 @@ public class RubyBasicSocket extends RubyIO {
 
     protected IRubyObject getSocknameCommon(ThreadContext context, String caller) {
         try {
-            InetSocketAddress sock = getLocalSocket(caller);
+            InetSocketAddress sock = getSocketAddress();
             if(null == sock) {
                 return Sockaddr.pack_sockaddr_in(context, 0, "0.0.0.0");
             } else {

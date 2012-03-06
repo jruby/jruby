@@ -13,6 +13,7 @@ public class SocketLibrary implements Library {
         runtime.defineClass("SocketError", runtime.getStandardError(), runtime.getStandardError().getAllocator());
         RubyBasicSocket.createBasicSocket(runtime);
         RubySocket.createSocket(runtime);
+        RubyServerSocket.createServerSocket(runtime);
 
         if (runtime.getInstanceConfig().isNativeEnabled() && RubyUNIXSocket.tryUnixDomainSocket()) {
             RubyUNIXSocket.createUNIXSocket(runtime);
