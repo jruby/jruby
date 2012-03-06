@@ -509,17 +509,6 @@ public class Interpreter {
                         ipc++;
                         break;
                     }
-                    case ATTR_ASSIGN:
-                    case CALL: {
-                        CallBase call = (CallBase)lastInstr;
-                        Object callResult = call.interpret(context, currDynScope, self, temp, block);
-                        if (call instanceof ResultInstr) {
-                            result = callResult;
-                            resultVar = ((ResultInstr) call).getResult();
-                        }
-                        ipc++;
-                        break;
-                    }
                     case CLOSURE_RETURN:
                     case RETURN: {
                         rv = (IRubyObject)((ReturnBase)lastInstr).getReturnValue().retrieve(context, self, currDynScope, temp);
