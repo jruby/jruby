@@ -67,6 +67,8 @@ import org.jruby.anno.JRubyClass;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectMarshal;
 import static org.jruby.runtime.Visibility.*;
+
+import org.jruby.util.cli.Options;
 import org.jruby.util.io.BlockingIO;
 import org.jruby.util.io.SelectorFactory;
 import org.jruby.util.log.Logger;
@@ -138,6 +140,12 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     /** The list of locks this thread currently holds, so they can be released on exit */
     private final List<Lock> heldLocks = new ArrayList<Lock>();
 
+    /** Whether or not this thread has been disposed of */
+    private volatile boolean disposed = false;
+
+    /** The thread's initial priority, for use in thread pooled mode */
+    private int initialPriority;
+
     protected RubyThread(Ruby runtime, RubyClass type) {
         super(runtime, type);
 
@@ -207,11 +215,46 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     public Thread getNativeThread() {
         return threadImpl.nativeThread();
     }
+
     /**
-     * Dispose of the current thread by removing it from its parent ThreadGroup.
+     * Perform pre-execution tasks once the native thread is running, but we
+     * have not yet called the Ruby code for the thread.
      */
-    public void dispose() {
-        threadGroup.remove(this);
+    public void beforeStart() {
+        // store initial priority, for restoring pooled threads to normal
+        initialPriority = threadImpl.getPriority();
+
+        // set to "normal" priority
+        threadImpl.setPriority(Thread.NORM_PRIORITY);
+    }
+
+    /**
+     * Dispose of the current thread by tidying up connections to other stuff
+     */
+    public synchronized void dispose() {
+        if (!disposed) {
+            disposed = true;
+
+            // remove from parent thread group
+            threadGroup.remove(this);
+
+            // unlock all locked locks
+            unlockAll();
+
+            // clear all thread locals
+            clearThreadLocals();
+
+            // reset thread priority to initial if pooling
+            if (Options.THREADPOOL_ENABLED.load()) {
+                threadImpl.setPriority(initialPriority);
+            }
+
+            // mark thread as DEAD
+            beDead();
+
+            // unregister from runtime's ThreadService
+            getRuntime().getThreadService().unregisterThread(this);
+        }
     }
    
     public static RubyClass createThreadClass(Ruby runtime) {
@@ -457,6 +500,10 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             threadLocalVariables = new HashMap<IRubyObject, IRubyObject>();
         }
         return threadLocalVariables;
+    }
+
+    private void clearThreadLocals() {
+        threadLocalVariables = null;
     }
 
     public final Map<Object, IRubyObject> getContextVariables() {

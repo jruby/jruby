@@ -92,6 +92,7 @@ public class RubyRunnable implements Runnable {
         }
         
         context.preRunThread(currentFrames);
+        rubyThread.beforeStart();
 
         // uber-ThreadKill catcher, since it should always just mean "be dead"
         try {
@@ -111,13 +112,8 @@ public class RubyRunnable implements Runnable {
                 // Someone called exit!, so we need to kill the main thread
                 runtime.getThreadService().getMainThread().kill();
             } finally {
-                rubyThread.unlockAll();
                 runtime.getThreadService().setCritical(false);
-                rubyThread.beDead();
-                
-                runtime.getThreadService().unregisterThread(rubyThread);
-
-                ((RubyThreadGroup)rubyThread.group()).remove(rubyThread);
+                rubyThread.dispose();
 
                 // restore context classloader, in case we're using a thread pool
                 try {

@@ -45,9 +45,7 @@ class TestThread < Test::Unit::TestCase
     assert(Thread.current.key?(:x))
     Thread.current["y"] = 2
     assert(Thread.current.key?("y"))
-    unless RUBY_VERSION =~ /1\.9/ # JRUBY-6485
-      assert_equal([:x, :y], Thread.current.keys.sort {|x, y| x.to_s <=> y.to_s})
-    end
+    assert_equal([:x, :y], Thread.current.keys.sort {|x, y| x.to_s <=> y.to_s} & [:x, :y])
     assert_raises(TypeError) { Thread.current[Object.new] }
     assert_raises(TypeError) { Thread.current[Object.new] = 1 }
     assert_raises(ArgumentError) { Thread.current[1] }
@@ -156,12 +154,17 @@ class TestThread < Test::Unit::TestCase
     assert_equal(2, x.value)
   end
   
-  def test_dead_thread_priority
-    x = Thread.new {}
-    1 while x.alive?
-    x.priority = 5
-    assert_equal(5, x.priority)
-  end
+  # Because a Ruby thread may use a pooled thread, we will
+  # not preserve priorities set into dead threads. Because
+  # this is a meaningless feature, anyway, I remove it here
+  # and consider this behavior undefined. CON@20120306
+  
+  # def test_dead_thread_priority
+  #   x = Thread.new {}
+  #   1 while x.alive?
+  #   x.priority = 5
+  #   assert_equal(5, x.priority)
+  # end
   
   def test_join_returns_thread
     x = Thread.new {}

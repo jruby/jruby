@@ -151,20 +151,29 @@ public class FutureThread implements ThreadLike {
     }
     
     /**
-     * Jobs from the thread pool do not support setting priorities and always returns
-     * current priority.
-     * 
+     * The current priority of the thread associated with this future.
+     *
      * @return the current priority of the thread in which we this is running
      */
     public int getPriority() {
-        return 1;
+        if (nativeThread == null) {
+            return 1;
+        }
+
+        return nativeThread.getPriority();
     }
 
     /**
-     * Jobs from the thread pool do not support setting priorities and always returns
-     * current priority.
+     * Set the priority of the thread associated with this future.
+     *
+     * @param priority the new priority
      */
     public void setPriority(int priority) {
+        if (nativeThread == null) {
+            return;
+        }
+
+        nativeThread.setPriority(priority);
     }
 
     public boolean isCurrent() {
