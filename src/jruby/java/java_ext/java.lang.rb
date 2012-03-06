@@ -32,14 +32,12 @@ end
 
 class java::lang::Throwable
   def backtrace
-    @backtrace ||= stack_trace.map(&:to_s)
+    stack_trace.map(&:to_s)
   end
 
   def set_backtrace(trace)
-    unless trace.kind_of?(Array) && trace.all? {|x| x.kind_of?(String)}
-      raise TypeError.new("backtrace must be an Array of String")
-    end
-    @backtrace = trace
+    # ignored; Java exceptions can't be set to Ruby trace
+    trace
   end
 
   def message
