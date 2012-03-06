@@ -106,7 +106,7 @@ public class LiveVariableNode extends FlowGraphNode {
                     // Collect live local variables at this point.
                     Set<LocalVariable> liveVars = new HashSet<LocalVariable>();
                     for (int j = 0; j < living.size(); j++) {
-                        if (living.get(j) == true) {
+                        if (living.get(j)) {
                             Variable v = lvp.getVariable(j);
                             if (v instanceof LocalVariable) liveVars.add((LocalVariable)v);
                         }
@@ -136,7 +136,7 @@ public class LiveVariableNode extends FlowGraphNode {
                     if (c.canRaiseException()) {
                         BitSet etOut = ((LiveVariableNode)getExceptionTargetNode()).out;
                         for (int k = 0; k < etOut.size(); k++) {
-                            if (etOut.get(k) == true) {
+                            if (etOut.get(k)) {
                                 Variable v = lvp.getVariable(k);
                                 if (v instanceof LocalVariable) liveVars.add((LocalVariable)v);
                             }
@@ -189,26 +189,10 @@ public class LiveVariableNode extends FlowGraphNode {
                         if (!x.isImplicitBlockArg()) living.set(lvp.getDFVar(x).getId());
                     }
                 } else if (c.canRaiseException()) {
-                    // Collect variables live out of the exception target node.  Since this call can directly jump to
-                    // the rescue block (or scope exit) without executing the rest of the instructions in this bb, we
-                    // have a control-flow edge from this call to that block.  Since we dont want to add a
-                    // control-flow edge from pretty much very call to the rescuer/exit BB, we are handling it
-                    // implicitly here.
-                    BitSet etOut = ((LiveVariableNode)getExceptionTargetNode()).out;
-                    for (int k = 0; k < etOut.size(); k++) {
-                        if (etOut.get(k) == true) living.set(k); 
-                    }
+                    makeOutExceptionVariablesLiving(living);
                 }
             } else if (i.canRaiseException()) {
-                 // Collect variables live out of the exception target node.  Since this instr. can directly jump to
-                 // the rescue block (or scope exit) without executing the rest of the instructions in this bb, we
-                 // have a control-flow edge from this instr. to that block.  Since we dont want to add a
-                 // control-flow edge from pretty much very instr. to the rescuer/exit BB, we are handling it
-                 // implicitly here.
-                 BitSet etOut = ((LiveVariableNode)getExceptionTargetNode()).out;
-                 for (int k = 0; k < etOut.size(); k++) {
-                     if (etOut.get(k) == true) living.set(k); 
-                 }
+                makeOutExceptionVariablesLiving(living);
             }
 
             // Now, for all variables used by 'i', mark them live before 'i'
@@ -231,6 +215,21 @@ public class LiveVariableNode extends FlowGraphNode {
             return true;
         }
     }
+    
+    /**
+     * Collect variables live out of the exception target node.  Since this instr. can directly jump to
+     * the rescue block (or scope exit) without executing the rest of the instructions in this bb, we
+     * have a control-flow edge from this instr. to that block.  Since we dont want to add a
+     * control-flow edge from pretty much every instr. to the rescuer/exit BB, we are handling it
+     * implicitly here.
+     */
+    private void makeOutExceptionVariablesLiving(BitSet living) {
+        BitSet etOut = ((LiveVariableNode)getExceptionTargetNode()).out;
+        
+        for (int i = 0; i < etOut.size(); i++) {
+            if (etOut.get(i)) living.set(i); 
+        }
+    }
 
     @Override
     public String toString() {
@@ -238,7 +237,7 @@ public class LiveVariableNode extends FlowGraphNode {
         buf.append("\tVars Live on Entry: ");
         int count = 0;
         for (int i = 0; i < in.size(); i++) {
-            if (in.get(i) == true) {
+            if (in.get(i)) {
                 count++;
                 buf.append(' ').append(i);
                 if (count % 10 == 0) buf.append("\t\n");
@@ -250,7 +249,7 @@ public class LiveVariableNode extends FlowGraphNode {
         buf.append("\n\tVars Live on Exit: ");
         count = 0;
         for (int i = 0; i < out.size(); i++) {
-            if (out.get(i) == true) {
+            if (out.get(i)) {
                 count++;
                 buf.append(' ').append(i);
                 if (count % 10 == 0) buf.append("\t\n");
@@ -330,26 +329,10 @@ public class LiveVariableNode extends FlowGraphNode {
                         if (!x.isImplicitBlockArg()) living.set(lvp.getDFVar(x).getId());
                     }
                 } else if (c.canRaiseException()) {
-                    // Collect variables live out of the exception target node.  Since this call can directly jump to
-                    // the rescue block (or scope exit) without executing the rest of the instructions in this bb, we
-                    // have a control-flow edge from this call to that block.  Since we dont want to add a
-                    // control-flow edge from pretty much very call to the rescuer/exit BB, we are handling it
-                    // implicitly here.
-                    BitSet etOut = ((LiveVariableNode)getExceptionTargetNode()).out;
-                    for (int k = 0; k < etOut.size(); k++) {
-                        if (etOut.get(k) == true) living.set(k);
-                    }
+                    makeOutExceptionVariablesLiving(living);
                 }
             } else if (i.canRaiseException()) {
-                 // Collect variables live out of the exception target node.  Since this instr. can directly jump to
-                 // the rescue block (or scope exit) without executing the rest of the instructions in this bb, we
-                 // have a control-flow edge from this instr. to that block.  Since we dont want to add a
-                 // control-flow edge from pretty much very instr. to the rescuer/exit BB, we are handling it
-                 // implicitly here.
-                 BitSet etOut = ((LiveVariableNode)getExceptionTargetNode()).out;
-                 for (int k = 0; k < etOut.size(); k++) {
-                     if (etOut.get(k) == true) living.set(k); 
-                 }
+                makeOutExceptionVariablesLiving(living);
             }
 
             // Do not mark this instruction's operands live if the instruction itself is dead!
