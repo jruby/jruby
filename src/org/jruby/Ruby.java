@@ -3118,6 +3118,10 @@ public final class Ruby {
         return newRaiseException(getErrno().getClass("EINPROGRESS"), "Operation now in progress");
     }
 
+    public RaiseException newErrnoEINPROGRESSWritableError() {
+        return newLightweightErrnoException(getModule("JRuby").getClass("EINPROGRESSWritable"), "");
+    }
+
     public RaiseException newErrnoENOPROTOOPTError() {
         return newRaiseException(getErrno().getClass("ENOPROTOOPT"), "Protocol not available");
     }
@@ -3197,6 +3201,10 @@ public final class Ruby {
 
     public RaiseException newErrnoEINPROGRESSError(String message) {
         return newRaiseException(getErrno().getClass("EINPROGRESS"), message);
+    }
+
+    public RaiseException newErrnoEINPROGRESSWritableError(String message) {
+        return newLightweightErrnoException(getModule("JRuby").getClass("EINPROGRESSWritable"), message);
     }
 
     public RaiseException newErrnoEISCONNError(String message) {

@@ -8,4 +8,8 @@ module JRuby
   class EAGAINWritable < Errno::EAGAIN
     include IO::WaitWritable
   end
+
+  class EINPROGRESSWritable < Errno::EINPROGRESS
+    include IO::WaitWritable
+  end
 end

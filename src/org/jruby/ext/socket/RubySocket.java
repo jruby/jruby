@@ -392,7 +392,11 @@ public class RubySocket extends RubyBasicSocket {
                 SocketChannel socket = (SocketChannel)channel;
 
                 if(!socket.connect(iaddr)) {
-                    throw context.getRuntime().newErrnoEINPROGRESSError();
+                    if (context.runtime.is1_9()) {
+                        throw context.getRuntime().newErrnoEINPROGRESSWritableError();
+                    } else {
+                        throw context.getRuntime().newErrnoEINPROGRESSError();
+                    }
                 }
 
             } else if (channel instanceof DatagramChannel) {
