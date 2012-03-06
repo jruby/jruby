@@ -15,8 +15,7 @@ public class DeadCodeElimination implements CompilerPass {
         LiveVariablesProblem lvp = (LiveVariablesProblem) scope.getDataFlowSolution(DataFlowConstants.LVP_NAME);
 
         if (lvp == null) {
-            lvp = new LiveVariablesProblem();
-            lvp.setup(scope);
+            lvp = new LiveVariablesProblem(scope);
             lvp.compute_MOP_Solution();
             scope.setDataFlowSolution(lvp.getName(), lvp);
         }

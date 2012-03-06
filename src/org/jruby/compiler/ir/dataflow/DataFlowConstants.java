@@ -10,7 +10,7 @@ import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.InlinerInfo;
 
 public class DataFlowConstants {
-    public static final String LVP_NAME = (new LiveVariablesProblem()).getName();
+    public static final String LVP_NAME = LiveVariablesProblem.NAME;
     public static final String BLP_NAME = (new BindingLoadPlacementProblem()).getName();
     public static final String BSP_NAME = (new BindingStorePlacementProblem()).getName();
 

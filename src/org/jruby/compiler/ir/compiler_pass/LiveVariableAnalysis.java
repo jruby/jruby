@@ -1,6 +1,5 @@
 package org.jruby.compiler.ir.compiler_pass;
 
-import org.jruby.compiler.ir.IRClosure;
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.dataflow.analyses.LiveVariablesProblem;
 
@@ -10,15 +9,9 @@ public class LiveVariableAnalysis implements CompilerPass {
     }
 
     public void run(IRScope scope) {
-        LiveVariablesProblem lvp = new LiveVariablesProblem();
-        String lvpName = lvp.getName();
-        
-        lvp.setup(scope);
+        LiveVariablesProblem lvp = new LiveVariablesProblem(scope);
         lvp.compute_MOP_Solution();
+        
         scope.setDataFlowSolution(lvp.getName(), lvp);
-//        System.out.println("LVP for " + s + " is: " + lvp);
-        for (IRClosure x: scope.getClosures()) {
-            lvp = (LiveVariablesProblem) x.getDataFlowSolution(lvpName);
-        }
     }
 }

@@ -99,8 +99,7 @@ public class LiveVariableNode extends FlowGraphNode {
                     IRClosure cl = ((WrappedIRClosure)o).getClosure();
                     LiveVariablesProblem cl_lvp = (LiveVariablesProblem)cl.getDataFlowSolution(DataFlowConstants.LVP_NAME);
                     if (cl_lvp == null) {
-                        cl_lvp = new LiveVariablesProblem();
-                        cl_lvp.setup(cl, lvp.getNonSelfLocalVars());
+                        cl_lvp = new LiveVariablesProblem(cl, lvp.getNonSelfLocalVars());
                         cl.setDataFlowSolution(cl_lvp.getName(), cl_lvp);
                     }
 
@@ -367,7 +366,7 @@ public class LiveVariableNode extends FlowGraphNode {
     }
 
     BitSet getLiveOutBitSet() {
-        return this.out;
+        return out;
     }
 
     private BitSet in;         // Variables live at entry of this node
