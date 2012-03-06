@@ -66,8 +66,19 @@ public class LiveVariableNode extends FlowGraphNode {
         // All variables live at the entry of 'pred' are also live at exit of this node
         in.or(((LiveVariableNode) pred).out);
     }
+    
+    private void markAllVariablesLive(LiveVariablesProblem lvp, BitSet living, Collection<? extends Variable> variableList) {
+        for (Variable variable: variableList) {
+            markVariableLive(lvp, living, variable);
+        }
+    }
 
-    private void processClosureLVP(LiveVariablesProblem cl_lvp, Collection<LocalVariable> varsLiveOnScopeExit) {
+    private void markVariableLive(LiveVariablesProblem lvp, BitSet living, Variable x) {
+        DataFlowVar dv = lvp.getDFVar(x);
+
+        // A buggy Ruby program that uses but does not assign a value to a var
+        // will be null.
+        if (dv != null) living.set(dv.getId());
     }
 
     public boolean applyTransferFunction() {
@@ -174,11 +185,7 @@ public class LiveVariableNode extends FlowGraphNode {
                     } while (changed);
 
                     // Merge live on closure entry info into the current problem.
-                    for (Variable y: liveOnEntryAfter) {
-                        DataFlowVar dv = lvp.getDFVar(y);
-                        // This can be null for vars used, but not defined!  Yes, the source program is buggy ..
-                        if (dv != null) living.set(dv.getId());
-                    }
+                    markAllVariablesLive(lvp, living, liveOnEntryAfter);
                 }
 
                 // If this is a dataflow barrier -- mark all local vars but %self and %block live
@@ -196,14 +203,7 @@ public class LiveVariableNode extends FlowGraphNode {
             }
 
             // Now, for all variables used by 'i', mark them live before 'i'
-            for (Variable x: i.getUsedVariables()) {
-                DataFlowVar dv = lvp.getDFVar(x);
-                // This can be null for vars used, but not defined!  Yes, the source program is buggy ..
-                if (dv != null) {
-                    living.set(dv.getId());
-                    // System.out.println("set live flag for: " + x);
-                }
-            }
+            markAllVariablesLive(lvp, living, i.getUsedVariables());
         }
 
         // System.out.println("After TF, df state is:\n" + toString());
@@ -318,11 +318,7 @@ public class LiveVariableNode extends FlowGraphNode {
                     IRClosure cl = ((WrappedIRClosure)o).getClosure();
                     LiveVariablesProblem cl_lvp = (LiveVariablesProblem)cl.getDataFlowSolution(lvp.getName());
                     // Collect variables live on entry and merge that info into the current problem.
-                    for (Variable y: cl_lvp.getVarsLiveOnScopeEntry()) {
-                        DataFlowVar dv = lvp.getDFVar(y);
-                        // This can be null for vars used, but not defined!  Yes, the source program is buggy ..
-                        if (dv != null) living.set(dv.getId());
-                    } 
+                    markAllVariablesLive(lvp, living, cl_lvp.getVarsLiveOnScopeEntry());
                 } else if (c.isDataflowBarrier()) {
                     // Mark all non-self, non-block local variables live if 'c' is a dataflow barrier!
                     for (Variable x: lvp.getNonSelfLocalVars()) {
@@ -336,15 +332,10 @@ public class LiveVariableNode extends FlowGraphNode {
             }
 
             // Do not mark this instruction's operands live if the instruction itself is dead!
-            if (!i.isDead()) {
-               for (Variable x: i.getUsedVariables()) {
-                   DataFlowVar dv = lvp.getDFVar(x);
-                   if (dv != null) living.set(dv.getId());
-               }
-            }
+            if (!i.isDead()) markAllVariablesLive(lvp, living, i.getUsedVariables());
         }
     }
-
+    
     BitSet getLiveInBitSet() {
         return in;
     }
