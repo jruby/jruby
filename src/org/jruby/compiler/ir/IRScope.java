@@ -658,7 +658,7 @@ public abstract class IRScope {
             if (i instanceof CallBase) {
                 CallBase call = (CallBase) i;
 
-                Operand o = ((CallBase)i).getClosureArg(getManager().getNil());
+                Operand o = ((CallBase) i).getClosureArg(null);
                 if (o != null) {
                     if (o instanceof WrappedIRClosure) {
                         IRClosure cl = ((WrappedIRClosure)o).getClosure();
