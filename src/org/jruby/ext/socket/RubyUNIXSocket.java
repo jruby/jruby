@@ -80,7 +80,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
     /**
      * Implements reading and writing to a socket fd using recv and send
      */
-    private static class UnixDomainSocketChannel implements ReadableByteChannel, WritableByteChannel,
+    public static class UnixDomainSocketChannel implements ReadableByteChannel, WritableByteChannel,
                                                             Shutdownable {
         private final static int SHUT_RD = Shutdown.SHUT_RD.intValue();
         private final static int SHUT_WR = Shutdown.SHUT_WR.intValue();

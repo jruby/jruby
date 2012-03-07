@@ -129,17 +129,6 @@ public class RubySocket extends RubyBasicSocket {
         super(runtime, type);
     }
 
-    @Override
-    @Deprecated
-    protected int getSoTypeDefault() {
-        return soType.intValue();
-    }
-
-    @Override
-    protected Sock getDefaultSocketType() {
-        return soType;
-    }
-
     @JRubyMethod(meta = true)
     public static IRubyObject for_fd(ThreadContext context, IRubyObject socketClass, IRubyObject fd) {
         Ruby runtime = context.getRuntime();
@@ -239,6 +228,11 @@ public class RubySocket extends RubyBasicSocket {
     @JRubyMethod(notImplemented = true)
     public IRubyObject accept(ThreadContext context) {
         throw sockerr(context.runtime, JRUBY_SERVER_SOCKET_ERROR);
+    }
+
+    @Override
+    protected Sock getDefaultSocketType() {
+        return soType;
     }
 
     private void initFieldsFromDescriptor(Ruby runtime, ChannelDescriptor descriptor) {

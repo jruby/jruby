@@ -25,6 +25,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
+
 package org.jruby.ext.socket;
 
 import static jnr.constants.platform.IPProto.IPPROTO_TCP;
@@ -40,6 +41,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.net.SocketException;
 import java.nio.channels.Channel;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.ServerSocketChannel;
@@ -74,12 +76,15 @@ import org.jruby.util.io.Sockaddr;
 
 
 /**
- * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
+ * Implementation of the BasicSocket class from Ruby.
  */
 @JRubyClass(name="BasicSocket", parent="IO")
 public class RubyBasicSocket extends RubyIO {
-    private static final ByteList FORMAT_SMALL_I = new ByteList(ByteList.plain("i"));
-    protected MulticastStateManager multicastStateManager = null;
+    static void createBasicSocket(Ruby runtime) {
+        RubyClass rb_cBasicSocket = runtime.defineClass("BasicSocket", runtime.getIO(), BASICSOCKET_ALLOCATOR);
+
+        rb_cBasicSocket.defineAnnotatedMethods(RubyBasicSocket.class);
+    }
 
     private static ObjectAllocator BASICSOCKET_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
@@ -87,83 +92,32 @@ public class RubyBasicSocket extends RubyIO {
         }
     };
 
-    static void createBasicSocket(Ruby runtime) {
-        RubyClass rb_cBasicSocket = runtime.defineClass("BasicSocket", runtime.getIO(), BASICSOCKET_ALLOCATOR);
-
-        rb_cBasicSocket.defineAnnotatedMethods(RubyBasicSocket.class);
-    }
-
-    // By default we always reverse lookup unless do_not_reverse_lookup set.
-    private boolean doNotReverseLookup = false;
-
     public RubyBasicSocket(Ruby runtime, RubyClass type) {
         super(runtime, type);
         doNotReverseLookup = runtime.is1_9();
     }
-    
-    protected void initSocket(Ruby runtime, ChannelDescriptor descriptor) {
-        // continue with normal initialization
-        openFile = new OpenFile();
-        
-        try {
-            openFile.setMainStream(ChannelStream.fdopen(runtime, descriptor, newModeFlags(runtime, ModeFlags.RDONLY)));
-            openFile.setPipeStream(ChannelStream.fdopen(runtime, descriptor, newModeFlags(runtime, ModeFlags.WRONLY)));
-            openFile.getPipeStream().setSync(true);
-        } catch (org.jruby.util.io.InvalidValueException ex) {
-            throw runtime.newErrnoEINVALError();
-        }
-        openFile.setMode(OpenFile.READWRITE | OpenFile.SYNC);
+
+    @JRubyMethod(compat = CompatVersion.RUBY1_9)
+    public IRubyObject do_not_reverse_lookup19(ThreadContext context) {
+        return context.runtime.newBoolean(doNotReverseLookup);
     }
 
-    @Override
-    public IRubyObject close_write(ThreadContext context) {
-        if (context.getRuntime().getSafeLevel() >= 4 && isTaint()) {
-            throw context.getRuntime().newSecurityError("Insecure: can't close");
-        }
-
-        if (!openFile.isWritable()) {
-            return context.getRuntime().getNil();
-        }
-
-        if (openFile.getPipeStream() == null && openFile.isReadable()) {
-            throw context.getRuntime().newIOError("closing non-duplex IO for writing");
-        }
-
-        if (!openFile.isReadable()) {
-            close();
-        } else {
-            // shutdown write
-            try {
-                shutdownInternal(context, 1);
-            } catch (BadDescriptorException e) {
-                throw context.runtime.newErrnoEBADFError();
-            }
-        }
-        return context.getRuntime().getNil();
+    @JRubyMethod(name = "do_not_reverse_lookup=", compat = CompatVersion.RUBY1_9)
+    public IRubyObject set_do_not_reverse_lookup19(ThreadContext context, IRubyObject flag) {
+        doNotReverseLookup = flag.isTrue();
+        return do_not_reverse_lookup19(context);
     }
 
-    @Override
-    public IRubyObject close_read(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
-        if (runtime.getSafeLevel() >= 4 && isTaint()) {
-            throw runtime.newSecurityError("Insecure: can't close");
-        }
+    @JRubyMethod(meta = true)
+    public static IRubyObject do_not_reverse_lookup(ThreadContext context, IRubyObject recv) {
+        return context.runtime.newBoolean(context.runtime.isDoNotReverseLookupEnabled());
+    }
 
-        if (!openFile.isOpen()) {
-            throw context.getRuntime().newIOError("not opened for reading");
-        }
+    @JRubyMethod(name = "do_not_reverse_lookup=", meta = true)
+    public static IRubyObject set_do_not_reverse_lookup(ThreadContext context, IRubyObject recv, IRubyObject flag) {
+        context.runtime.setDoNotReverseLookupEnabled(flag.isTrue());
 
-        if (!openFile.isWritable()) {
-            close();
-        } else {
-            // shutdown read
-            try {
-                shutdownInternal(context, 0);
-            } catch (BadDescriptorException e) {
-                throw context.runtime.newErrnoEBADFError();
-            }
-        }
-        return runtime.getNil();
+        return flag;
     }
 
     @JRubyMethod(name = "send", rest = true)
@@ -171,63 +125,320 @@ public class RubyBasicSocket extends RubyIO {
         return syswrite(context, args[0]);
     }
 
-    @Deprecated
-    public IRubyObject recv(IRubyObject[] args) {
-        return recv(getRuntime().getCurrentContext(), args);
-    }
     @JRubyMethod(rest = true)
     public IRubyObject recv(ThreadContext context, IRubyObject[] args) {
+        Ruby runtime = context.runtime;
         OpenFile openFile = getOpenFileChecked();
+        
         try {
             context.getThread().beforeBlockingCall();
-            return RubyString.newString(context.getRuntime(), openFile.getMainStreamSafe().read(RubyNumeric.fix2int(args[0])));
+            
+            return RubyString.newString(runtime, openFile.getMainStreamSafe().read(RubyNumeric.fix2int(args[0])));
+            
         } catch (BadDescriptorException e) {
-            throw context.getRuntime().newErrnoEBADFError();
+            throw runtime.newErrnoEBADFError();
+            
         } catch (EOFException e) {
             // recv returns nil on EOF
-            return context.getRuntime().getNil();
+            return runtime.getNil();
+            
         } catch (IOException e) {
             // All errors to sysread should be SystemCallErrors, but on a closed stream
             // Ruby returns an IOError.  Java throws same exception for all errors so
             // we resort to this hack...
             if ("Socket not open".equals(e.getMessage())) {
-	            throw context.getRuntime().newIOError(e.getMessage());
+	            throw runtime.newIOError(e.getMessage());
             }
-            throw context.getRuntime().newSystemCallError(e.getMessage());
+
+            throw runtime.newSystemCallError(e.getMessage());
+
         } finally {
             context.getThread().afterBlockingCall();
         }
     }
 
-    @Deprecated
-    protected InetSocketAddress getLocalSocket(String caller) throws BadDescriptorException {
-        return getSocketAddress();
+    @JRubyMethod
+    public IRubyObject getsockopt(ThreadContext context, IRubyObject lev, IRubyObject optname) {
+        Ruby runtime = context.getRuntime();
+        int level = RubyNumeric.fix2int(lev);
+        int opt = RubyNumeric.fix2int(optname);
+
+        try {
+            switch(SocketLevel.valueOf(level)) {
+
+            case SOL_IP:
+            case SOL_SOCKET:
+            case SOL_TCP:
+            case SOL_UDP:
+
+                switch(SocketOption.valueOf(opt)) {
+
+                case SO_BROADCAST:
+                    return getBroadcast(runtime);
+
+                case SO_KEEPALIVE:
+                    return getKeepAlive(runtime);
+
+                case SO_LINGER:
+                    return getLinger(runtime);
+
+                case SO_OOBINLINE:
+                    return getOOBInline(runtime);
+
+                case SO_RCVBUF:
+                    return getRcvBuf(runtime);
+
+                case SO_REUSEADDR:
+                    return getReuseAddr(runtime);
+
+                case SO_SNDBUF:
+                    return getSndBuf(runtime);
+
+                case SO_RCVTIMEO:
+                case SO_SNDTIMEO:
+                    return getTimeout(runtime);
+
+                case SO_TYPE:
+                    return getSoType(runtime);
+
+                    // Can't support the rest with Java
+                case SO_RCVLOWAT:
+                    return number(runtime, 1);
+
+                case SO_SNDLOWAT:
+                    return number(runtime, 2048);
+
+                case SO_DEBUG:
+                case SO_ERROR:
+                case SO_DONTROUTE:
+                case SO_TIMESTAMP:
+                    return trueFalse(runtime, false);
+
+                default:
+                    throw runtime.newErrnoENOPROTOOPTError();
+                }
+
+            default:
+                throw runtime.newErrnoENOPROTOOPTError();
+            }
+
+        } catch (BadDescriptorException e) {
+            throw runtime.newErrnoEBADFError();
+
+        } catch(IOException e) {
+            throw runtime.newErrnoENOPROTOOPTError();
+        }
+    }
+
+    @JRubyMethod
+    public IRubyObject setsockopt(ThreadContext context, IRubyObject lev, IRubyObject optname, IRubyObject val) {
+        Ruby runtime = context.runtime;
+        int level = RubyNumeric.fix2int(lev);
+        int opt = RubyNumeric.fix2int(optname);
+
+        try {
+            switch(SocketLevel.valueOf(level)) {
+
+            case SOL_IP:
+            case SOL_SOCKET:
+            case SOL_TCP:
+            case SOL_UDP:
+
+                switch(SocketOption.valueOf(opt)) {
+
+                case SO_BROADCAST:
+
+                    setBroadcast(val);
+                    break;
+                case SO_KEEPALIVE:
+
+                    setKeepAlive(val);
+                    break;
+                case SO_LINGER:
+
+                    setLinger(val);
+                    break;
+                case SO_OOBINLINE:
+                    setOOBInline(val);
+                    break;
+
+                case SO_RCVBUF:
+                    setRcvBuf(val);
+                    break;
+
+                case SO_REUSEADDR:
+                    setReuseAddr(val);
+                    break;
+
+                case SO_SNDBUF:
+                    setSndBuf(val);
+                    break;
+
+                case SO_RCVTIMEO:
+                case SO_SNDTIMEO:
+                    setTimeout(val);
+                    break;
+
+                    // Can't support the rest with Java
+                case SO_TYPE:
+                case SO_RCVLOWAT:
+                case SO_SNDLOWAT:
+                case SO_DEBUG:
+                case SO_ERROR:
+                case SO_DONTROUTE:
+                case SO_TIMESTAMP:
+                    break;
+
+                default:
+                    if (IPPROTO_TCP.intValue() == level && TCP_NODELAY.intValue() == opt) {
+                        setTcpNoDelay(val);
+
+                    } else if (IPPROTO_IP.intValue() == level) {
+                        if (MulticastStateManager.IP_ADD_MEMBERSHIP == opt) {
+                            joinMulticastGroup(val);
+                        }
+
+                    } else {
+                        throw runtime.newErrnoENOPROTOOPTError();
+                    }
+                }
+
+                break;
+
+            default:
+                if (IPPROTO_TCP.intValue() == level && TCP_NODELAY.intValue() == opt) {
+                    setTcpNoDelay(val);
+
+                } else if (IPPROTO_IP.intValue() == level) {
+                    if (MulticastStateManager.IP_ADD_MEMBERSHIP == opt) {
+                        joinMulticastGroup(val);
+                    }
+
+                } else {
+                    throw runtime.newErrnoENOPROTOOPTError();
+                }
+            }
+
+        } catch (BadDescriptorException e) {
+            throw runtime.newErrnoEBADFError();
+
+        } catch(IOException e) {
+            throw runtime.newErrnoENOPROTOOPTError();
+        }
+        return runtime.newFixnum(0);
+    }
+
+    @JRubyMethod(name = "getsockname")
+    public IRubyObject getsockname(ThreadContext context) {
+        return getSocknameCommon(context, "getsockname");
+    }
+
+    @JRubyMethod(name = "__getsockname")
+    public IRubyObject getsockname_u(ThreadContext context) {
+        return getSocknameCommon(context, "__getsockname");
+    }
+
+    @JRubyMethod(name = {"getpeername", "__getpeername"})
+    public IRubyObject getpeername(ThreadContext context) {
+        Ruby runtime = context.runtime;
+
+        try {
+            SocketAddress sock = getRemoteSocket();
+
+            if(null == sock) {
+                throw runtime.newIOError("Not Supported");
+            }
+
+            return runtime.newString(sock.toString());
+
+        } catch (BadDescriptorException e) {
+            throw runtime.newErrnoEBADFError();
+        }
+    }
+
+    @JRubyMethod(optional = 1)
+    public IRubyObject shutdown(ThreadContext context, IRubyObject[] args) {
+        int how = 2;
+
+        if (args.length > 0) {
+            how = RubyNumeric.fix2int(args[0]);
+        }
+
+        try {
+            return shutdownInternal(context, how);
+
+        } catch (BadDescriptorException e) {
+            throw context.runtime.newErrnoEBADFError();
+        }
+    }
+
+    @Override
+    public IRubyObject close_write(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+
+        if (!openFile.isWritable()) {
+            return runtime.getNil();
+        }
+
+        if (openFile.getPipeStream() == null && openFile.isReadable()) {
+            throw runtime.newIOError("closing non-duplex IO for writing");
+        }
+
+        if (!openFile.isReadable()) {
+            close();
+
+        } else {
+            // shutdown write
+            try {
+                shutdownInternal(context, 1);
+
+            } catch (BadDescriptorException e) {
+                throw runtime.newErrnoEBADFError();
+            }
+        }
+
+        return context.nil;
+    }
+
+    @Override
+    public IRubyObject close_read(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+
+        if (!openFile.isOpen()) {
+            throw context.getRuntime().newIOError("not opened for reading");
+        }
+
+        if (!openFile.isWritable()) {
+            close();
+
+        } else {
+            // shutdown read
+            try {
+                shutdownInternal(context, 0);
+
+            } catch (BadDescriptorException e) {
+                throw runtime.newErrnoEBADFError();
+            }
+        }
+
+        return context.nil;
     }
 
     protected InetSocketAddress getSocketAddress() throws BadDescriptorException {
-        Channel socketChannel = getOpenChannel();
-        if (socketChannel instanceof SocketChannel) {
-            return (InetSocketAddress)((SocketChannel)socketChannel).socket().getLocalSocketAddress();
-        } else if (socketChannel instanceof ServerSocketChannel) {
-            return (InetSocketAddress)((ServerSocketChannel) socketChannel).socket().getLocalSocketAddress();
-        } else if (socketChannel instanceof DatagramChannel) {
-            return (InetSocketAddress)((DatagramChannel) socketChannel).socket().getLocalSocketAddress();
-        } else {
-            return null;
-        }
+        Channel channel = getOpenChannel();
+
+        return (InetSocketAddress)SocketType.forChannel(channel).getLocalSocketAddress(channel);
     }
-    
+
     protected InetSocketAddress getRemoteSocket() throws BadDescriptorException {
-        Channel socketChannel = getOpenChannel();
-        if(socketChannel instanceof SocketChannel) {
-            return (InetSocketAddress)((SocketChannel)socketChannel).socket().getRemoteSocketAddress();
-        } else {
-            return null;
-        }
+        Channel channel = getOpenChannel();
+
+        return (InetSocketAddress)SocketType.forChannel(channel).getRemoteSocketAddress(channel);
     }
 
     private Socket asSocket() throws BadDescriptorException {
         Channel socketChannel = getOpenChannel();
+
         if(!(socketChannel instanceof SocketChannel)) {
             throw getRuntime().newErrnoENOPROTOOPTError();
         }
@@ -235,48 +446,28 @@ public class RubyBasicSocket extends RubyIO {
         return ((SocketChannel)socketChannel).socket();
     }
 
-    private ServerSocket asServerSocket() throws BadDescriptorException {
-        Channel socketChannel = getOpenChannel();
-        if(!(socketChannel instanceof ServerSocketChannel)) {
-            throw getRuntime().newErrnoENOPROTOOPTError();
-        }
-
-        return ((ServerSocketChannel)socketChannel).socket();
-    }
-
-    private DatagramSocket asDatagramSocket() throws BadDescriptorException {
-        Channel socketChannel = getOpenChannel();
-        if(!(socketChannel instanceof DatagramChannel)) {
-            throw getRuntime().newErrnoENOPROTOOPTError();
-        }
-
-        return ((DatagramChannel)socketChannel).socket();
-    }
-
     private IRubyObject getBroadcast(Ruby runtime) throws IOException, BadDescriptorException {
-        Channel socketChannel = getOpenChannel();
-        return trueFalse(runtime, (socketChannel instanceof DatagramChannel) ? asDatagramSocket().getBroadcast() : false);
+        Channel channel = getOpenChannel();
+
+        return trueFalse(runtime, SocketType.forChannel(channel).getBroadcast(channel));
     }
 
     private void setBroadcast(IRubyObject val) throws IOException, BadDescriptorException {
-        Channel socketChannel = getOpenChannel();
-        if(socketChannel instanceof DatagramChannel) {
-            asDatagramSocket().setBroadcast(asBoolean(val));
-        }
+        Channel channel = getOpenChannel();
+
+        SocketType.forChannel(channel).setBroadcast(channel, asBoolean(val));
     }
 
     private void setKeepAlive(IRubyObject val) throws IOException, BadDescriptorException {
-        Channel socketChannel = getOpenChannel();
-        if(socketChannel instanceof SocketChannel) {
-            asSocket().setKeepAlive(asBoolean(val));
-        }
+        Channel channel = getOpenChannel();
+
+        SocketType.forChannel(channel).setKeepAlive(channel, asBoolean(val));
     }
 
     private void setTcpNoDelay(IRubyObject val) throws IOException, BadDescriptorException {
-        Channel socketChannel = getOpenChannel();
-        if(socketChannel instanceof SocketChannel) {
-            asSocket().setTcpNoDelay(asBoolean(val));
-        }
+        Channel channel = getOpenChannel();
+
+        SocketType.forChannel(channel).setTcpNoDelay(channel, asBoolean(val));
     }
 
     private void joinMulticastGroup(IRubyObject val) throws IOException, BadDescriptorException {
@@ -289,78 +480,67 @@ public class RubyBasicSocket extends RubyIO {
 
             if (val instanceof RubyString) {
                 byte [] ipaddr_buf = val.convertToString().getBytes();
+
                 multicastStateManager.addMembership(ipaddr_buf);
             }
         }
     }
 
     private void setReuseAddr(IRubyObject val) throws IOException, BadDescriptorException {
-        Channel socketChannel = getOpenChannel();
-        if (socketChannel instanceof ServerSocketChannel) {
-            asServerSocket().setReuseAddress(asBoolean(val));
-        } else if (socketChannel instanceof SocketChannel) {
-            asSocket().setReuseAddress(asBoolean(val));
-        } else if (socketChannel instanceof DatagramChannel) {
-            asDatagramSocket().setReuseAddress(asBoolean(val));
-        }
+        Channel channel = getOpenChannel();
+
+        SocketType.forChannel(channel).setReuseAddress(channel, asBoolean(val));
     }
 
     private void setRcvBuf(IRubyObject val) throws IOException, BadDescriptorException {
-        Channel socketChannel = getOpenChannel();
-        if(socketChannel instanceof SocketChannel) {
-            asSocket().setReceiveBufferSize(asNumber(val));
-        } else if(socketChannel instanceof ServerSocketChannel) {
-            asServerSocket().setReceiveBufferSize(asNumber(val));
-        } else if(socketChannel instanceof DatagramChannel) {
-            asDatagramSocket().setReceiveBufferSize(asNumber(val));
-        }
+        Channel channel = getOpenChannel();
+
+        SocketType.forChannel(channel).setReceiveBufferSize(channel, asNumber(val));
     }
 
     private void setTimeout(IRubyObject val) throws IOException, BadDescriptorException {
-        Channel socketChannel = getOpenChannel();
-        if(socketChannel instanceof SocketChannel) {
-            asSocket().setSoTimeout(asNumber(val));
-        } else if(socketChannel instanceof ServerSocketChannel) {
-            asServerSocket().setSoTimeout(asNumber(val));
-        } else if(socketChannel instanceof DatagramChannel) {
-            asDatagramSocket().setSoTimeout(asNumber(val));
-        }
+        Channel channel = getOpenChannel();
+
+        SocketType.forChannel(channel).setSoTimeout(channel, asNumber(val));
     }
 
     private void setSndBuf(IRubyObject val) throws IOException, BadDescriptorException {
         try {
-            Channel socketChannel = getOpenChannel();
-            if(socketChannel instanceof SocketChannel) {
-                asSocket().setSendBufferSize(asNumber(val));
-            } else if(socketChannel instanceof DatagramChannel) {
-                asDatagramSocket().setSendBufferSize(asNumber(val));
-            }
+            Channel channel = getOpenChannel();
+
+            SocketType.forChannel(channel).setSendBufferSize(channel, asNumber(val));
+
         } catch (IllegalArgumentException iae) {
             throw getRuntime().newErrnoEINVALError(iae.getMessage());
         }
     }
 
     private void setLinger(IRubyObject val) throws IOException, BadDescriptorException {
-        Channel socketChannel = getOpenChannel();
-        if(socketChannel instanceof SocketChannel) {
-            if(val instanceof RubyBoolean && !val.isTrue()) {
-                asSocket().setSoLinger(false, 0);
-            } else {
-                int num = asNumber(val);
-                if(num == -1) {
-                    asSocket().setSoLinger(false, 0);
-                } else {
-                    asSocket().setSoLinger(true, num);
-                }
+        Channel channel = getOpenChannel();
+
+        boolean linger;
+        int timeout;
+
+        // wacky much, MRI?
+        if(val instanceof RubyBoolean && !val.isTrue()) {
+            linger = false;
+            timeout = 0;
+        } else {
+            linger = true;
+            timeout = asNumber(val);
+            if(timeout == -1) {
+                linger = false;
+                timeout = 0;
             }
         }
+
+        SocketType.forChannel(channel).setSoLinger(channel, linger, timeout);
     }
 
     private void setOOBInline(IRubyObject val) throws IOException, BadDescriptorException {
-        Channel socketChannel = getOpenChannel();
-        if(socketChannel instanceof SocketChannel) {
-            asSocket().setOOBInline(asBoolean(val));
-        }
+        Channel channel = getOpenChannel();
+
+        SocketType.forChannel(channel).setOOBInline(channel, asBoolean(val));
     }
 
     private int asNumber(IRubyObject val) {
@@ -377,7 +557,7 @@ public class RubyBasicSocket extends RubyIO {
     private int stringAsNumber(IRubyObject val) {
         ByteList str = val.convertToString().getByteList();
         IRubyObject res = Pack.unpack(getRuntime(), str, FORMAT_SMALL_I).entry(0);
-        
+
         if (res.isNil()) {
             throw getRuntime().newErrnoEINVALError();
         }
@@ -396,107 +576,61 @@ public class RubyBasicSocket extends RubyIO {
     }
 
     private IRubyObject getKeepAlive(Ruby runtime) throws IOException, BadDescriptorException {
-        Channel socketChannel = getOpenChannel();
-        return trueFalse(runtime,
-                         (socketChannel instanceof SocketChannel) ? asSocket().getKeepAlive() : false
-                         );
+        Channel channel = getOpenChannel();
+
+        return trueFalse(runtime, SocketType.forChannel(channel).getKeepAlive(channel));
     }
 
     private IRubyObject getLinger(Ruby runtime) throws IOException, BadDescriptorException {
-        Channel socketChannel = getOpenChannel();
+        Channel channel = getOpenChannel();
 
-        int linger = 0;
-        if (socketChannel instanceof SocketChannel) {
-            linger = asSocket().getSoLinger();
-            if (linger < 0) {
-                linger = 0;
-            }
+        int linger = SocketType.forChannel(channel).getSoLinger(channel);
+
+        if (linger < 0) {
+            linger = 0;
         }
 
         return number(runtime, linger);
     }
 
     private IRubyObject getOOBInline(Ruby runtime) throws IOException, BadDescriptorException {
-        Channel socketChannel = getOpenChannel();
-        return trueFalse(runtime,
-                (socketChannel instanceof SocketChannel) ? asSocket().getOOBInline() : false
-        );
+        Channel channel = getOpenChannel();
+
+        return trueFalse(runtime, SocketType.forChannel(channel).getOOBInline(channel));
     }
 
     private IRubyObject getRcvBuf(Ruby runtime) throws IOException, BadDescriptorException {
-        Channel socketChannel = getOpenChannel();
-        return number(runtime,
-                (socketChannel instanceof SocketChannel) ? asSocket().getReceiveBufferSize() :
-                        ((socketChannel instanceof ServerSocketChannel) ? asServerSocket().getReceiveBufferSize() :
-                                asDatagramSocket().getReceiveBufferSize())
-        );
+        Channel channel = getOpenChannel();
+
+        return number(runtime, SocketType.forChannel(channel).getReceiveBufferSize(channel));
     }
 
     private IRubyObject getSndBuf(Ruby runtime) throws IOException, BadDescriptorException {
-        Channel socketChannel = getOpenChannel();
-        return number(runtime,
-                      (socketChannel instanceof SocketChannel) ? asSocket().getSendBufferSize() : 
-                      ((socketChannel instanceof DatagramChannel) ? asDatagramSocket().getSendBufferSize() : 0)
-                      );
+        Channel channel = getOpenChannel();
+
+        return number(runtime, SocketType.forChannel(channel).getSendBufferSize(channel));
     }
 
     private IRubyObject getReuseAddr(Ruby runtime) throws IOException, BadDescriptorException {
-        Channel socketChannel = getOpenChannel();
+        Channel channel = getOpenChannel();
 
-        boolean reuse = false;
-        if (socketChannel instanceof ServerSocketChannel) {
-            reuse = asServerSocket().getReuseAddress();
-        } else if (socketChannel instanceof SocketChannel) {
-            reuse = asSocket().getReuseAddress();
-        } else if (socketChannel instanceof DatagramChannel) {
-            reuse = asDatagramSocket().getReuseAddress();
-        }
-
-        return trueFalse(runtime, reuse);
+        return trueFalse(runtime, SocketType.forChannel(channel).getReuseAddress(channel));
     }
 
     private IRubyObject getTimeout(Ruby runtime) throws IOException, BadDescriptorException {
-        Channel socketChannel = getOpenChannel();
-        return number(runtime,
-                (socketChannel instanceof SocketChannel) ? asSocket().getSoTimeout() :
-                        ((socketChannel instanceof ServerSocketChannel) ? asServerSocket().getSoTimeout() :
-                                ((socketChannel instanceof DatagramChannel) ? asDatagramSocket().getSoTimeout() : 0))
-        );
-    }
+        Channel channel = getOpenChannel();
 
-    @Deprecated
-    protected int getSoTypeDefault() {
-        return 0;
+        return number(runtime, SocketType.forChannel(channel).getSoTimeout(channel));
     }
 
     protected Sock getDefaultSocketType() {
         return Sock.SOCK_STREAM;
     }
 
-    @Deprecated
-    private int getChannelSoType(Channel channel) {
-        if (channel instanceof SocketChannel || channel instanceof ServerSocketChannel) {
-            return SOCK_STREAM.intValue();
-        } else if (channel instanceof DatagramChannel) {
-            return SOCK_DGRAM.intValue();
-        } else {
-            return getDefaultSocketType().intValue();
-        }
-    }
-
-    private Sock getChannelSocketType(Channel channel) {
-        if (channel instanceof SocketChannel || channel instanceof ServerSocketChannel) {
-            return SOCK_STREAM;
-        } else if (channel instanceof DatagramChannel) {
-            return SOCK_DGRAM;
-        } else {
-            return getDefaultSocketType();
-        }
-    }
-
     private IRubyObject getSoType(Ruby runtime) throws IOException, BadDescriptorException {
-        Channel socketChannel = getOpenChannel();
-        return number(runtime, getChannelSocketType(socketChannel).intValue());
+        Channel channel = getOpenChannel();
+
+        return number(runtime,  SocketType.forChannel(channel).getSocketType().intValue());
     }
 
     private IRubyObject trueFalse(Ruby runtime, boolean val) {
@@ -505,149 +639,122 @@ public class RubyBasicSocket extends RubyIO {
 
     private static IRubyObject number(Ruby runtime, int s) {
         RubyArray array = runtime.newArray(runtime.newFixnum(s));
+
         return Pack.pack(runtime, array, FORMAT_SMALL_I);
+    }
+
+    protected IRubyObject getSocknameCommon(ThreadContext context, String caller) {
+        try {
+            InetSocketAddress sock = getSocketAddress();
+
+            if(null == sock) {
+                return Sockaddr.pack_sockaddr_in(context, 0, "0.0.0.0");
+
+            } else {
+               return Sockaddr.pack_sockaddr_in(context, sock);
+            }
+
+        } catch (BadDescriptorException e) {
+            throw context.runtime.newErrnoEBADFError();
+        }
+    }
+
+    private IRubyObject shutdownInternal(ThreadContext context, int how) throws BadDescriptorException {
+        Ruby runtime = context.runtime;
+        Channel socketChannel;
+
+        switch (how) {
+        case 0:
+            socketChannel = getOpenChannel();
+
+            try {
+                if (socketChannel instanceof SocketChannel) {
+                    asSocket().shutdownInput();
+
+                } else if (socketChannel instanceof Shutdownable) {
+                    ((Shutdownable)socketChannel).shutdownInput();
+                }
+
+            } catch (IOException e) {
+                throw runtime.newIOError(e.getMessage());
+            }
+
+            if(openFile.getPipeStream() != null) {
+                openFile.setMainStream(openFile.getPipeStream());
+                openFile.setPipeStream(null);
+            }
+
+            openFile.setMode(openFile.getMode() & ~OpenFile.READABLE);
+
+            return RubyFixnum.zero(runtime);
+
+        case 1:
+            socketChannel = getOpenChannel();
+            try {
+                if (socketChannel instanceof SocketChannel) {
+                    asSocket().shutdownOutput();
+
+                } else if (socketChannel instanceof Shutdownable) {
+                    ((Shutdownable)socketChannel).shutdownOutput();
+                }
+
+            } catch (IOException e) {
+                throw runtime.newIOError(e.getMessage());
+            }
+
+            openFile.setPipeStream(null);
+            openFile.setMode(openFile.getMode() & ~OpenFile.WRITABLE);
+
+            return RubyFixnum.zero(runtime);
+
+        case 2:
+            shutdownInternal(context, 0);
+            shutdownInternal(context, 1);
+
+            return RubyFixnum.zero(runtime);
+
+            default:
+            throw runtime.newArgumentError("`how' should be either 0, 1, 2");
+        }
+    }
+
+    protected boolean doNotReverseLookup(ThreadContext context) {
+        return context.runtime.isDoNotReverseLookupEnabled() || doNotReverseLookup;
+    }
+
+    protected void initSocket(Ruby runtime, ChannelDescriptor descriptor) {
+        // continue with normal initialization
+        openFile = new OpenFile();
+
+        try {
+            openFile.setMainStream(ChannelStream.fdopen(runtime, descriptor, newModeFlags(runtime, ModeFlags.RDONLY)));
+            openFile.setPipeStream(ChannelStream.fdopen(runtime, descriptor, newModeFlags(runtime, ModeFlags.WRONLY)));
+            openFile.getPipeStream().setSync(true);
+
+        } catch (org.jruby.util.io.InvalidValueException ex) {
+            throw runtime.newErrnoEINVALError();
+        }
+
+        openFile.setMode(OpenFile.READWRITE | OpenFile.SYNC);
+    }
+    
+    private Channel getOpenChannel() throws BadDescriptorException {
+        return getOpenFileChecked().getMainStreamSafe().getDescriptor().getChannel();
+    }
+
+    @Deprecated
+    public IRubyObject recv(IRubyObject[] args) {
+        return recv(getRuntime().getCurrentContext(), args);
     }
 
     @Deprecated
     public IRubyObject getsockopt(IRubyObject lev, IRubyObject optname) {
         return getsockopt(getRuntime().getCurrentContext(), lev, optname);
     }
-    @JRubyMethod
-    public IRubyObject getsockopt(ThreadContext context, IRubyObject lev, IRubyObject optname) {
-        int level = RubyNumeric.fix2int(lev);
-        int opt = RubyNumeric.fix2int(optname);
-        Ruby runtime = context.getRuntime();
 
-        try {
-            switch(SocketLevel.valueOf(level)) {
-            case SOL_IP:
-            case SOL_SOCKET:
-            case SOL_TCP:
-            case SOL_UDP:
-                switch(SocketOption.valueOf(opt)) {
-                case SO_BROADCAST:
-                    return getBroadcast(runtime);
-                case SO_KEEPALIVE:
-                    return getKeepAlive(runtime);
-                case SO_LINGER:
-                    return getLinger(runtime);
-                case SO_OOBINLINE:
-                    return getOOBInline(runtime);
-                case SO_RCVBUF:
-                    return getRcvBuf(runtime);
-                case SO_REUSEADDR:
-                    return getReuseAddr(runtime);
-                case SO_SNDBUF:
-                    return getSndBuf(runtime);
-                case SO_RCVTIMEO:
-                case SO_SNDTIMEO:
-                    return getTimeout(runtime);
-                case SO_TYPE:
-                    return getSoType(runtime);
-
-                    // Can't support the rest with Java
-                case SO_RCVLOWAT:
-                    return number(runtime, 1);
-                case SO_SNDLOWAT:
-                    return number(runtime, 2048);
-                case SO_DEBUG:
-                case SO_ERROR:
-                case SO_DONTROUTE:
-                case SO_TIMESTAMP:
-                    return trueFalse(runtime, false);
-                default:
-                    throw context.getRuntime().newErrnoENOPROTOOPTError();
-                }
-            default:
-                throw context.getRuntime().newErrnoENOPROTOOPTError();
-            }
-        } catch (BadDescriptorException e) {
-            throw context.getRuntime().newErrnoEBADFError();
-        } catch(IOException e) {
-            throw context.getRuntime().newErrnoENOPROTOOPTError();
-        }
-    }
     @Deprecated
     public IRubyObject setsockopt(IRubyObject lev, IRubyObject optname, IRubyObject val) {
         return setsockopt(getRuntime().getCurrentContext(), lev, optname, val);
-    }
-    @JRubyMethod
-    public IRubyObject setsockopt(ThreadContext context, IRubyObject lev, IRubyObject optname, IRubyObject val) {
-        int level = RubyNumeric.fix2int(lev);
-        int opt = RubyNumeric.fix2int(optname);
-
-        try {
-            switch(SocketLevel.valueOf(level)) {
-            case SOL_IP:
-            case SOL_SOCKET:
-            case SOL_TCP:
-            case SOL_UDP:
-                switch(SocketOption.valueOf(opt)) {
-                case SO_BROADCAST:
-                    setBroadcast(val);
-                    break;
-                case SO_KEEPALIVE:
-                    setKeepAlive(val);
-                    break;
-                case SO_LINGER:
-                    setLinger(val);
-                    break;
-                case SO_OOBINLINE:
-                    setOOBInline(val);
-                    break;
-                case SO_RCVBUF:
-                    setRcvBuf(val);
-                    break;
-                case SO_REUSEADDR:
-                    setReuseAddr(val);
-                    break;
-                case SO_SNDBUF:
-                    setSndBuf(val);
-                    break;
-                case SO_RCVTIMEO:
-                case SO_SNDTIMEO:
-                    setTimeout(val);
-                    break;
-                    // Can't support the rest with Java
-                case SO_TYPE:
-                case SO_RCVLOWAT:
-                case SO_SNDLOWAT:
-                case SO_DEBUG:
-                case SO_ERROR:
-                case SO_DONTROUTE:
-                case SO_TIMESTAMP:
-                    break;
-                default:
-                    if (IPPROTO_TCP.intValue() == level && TCP_NODELAY.intValue() == opt) {
-                        setTcpNoDelay(val);
-                    }
-                    else if (IPPROTO_IP.intValue() == level) {
-                        if (MulticastStateManager.IP_ADD_MEMBERSHIP == opt) {
-                            joinMulticastGroup(val);
-                        }
-                    } else {
-                        throw context.getRuntime().newErrnoENOPROTOOPTError();
-                    }
-                }
-                break;
-            default:
-                if (IPPROTO_TCP.intValue() == level && TCP_NODELAY.intValue() == opt) {
-                    setTcpNoDelay(val);
-                }
-                else if (IPPROTO_IP.intValue() == level) {
-                    if (MulticastStateManager.IP_ADD_MEMBERSHIP == opt) {
-                        joinMulticastGroup(val);
-                    }
-                } else {
-                    throw context.getRuntime().newErrnoENOPROTOOPTError();
-                }
-            }
-        } catch (BadDescriptorException e) {
-            throw context.getRuntime().newErrnoEBADFError();
-        } catch(IOException e) {
-            throw context.getRuntime().newErrnoENOPROTOOPTError();
-        }
-        return context.getRuntime().newFixnum(0);
     }
 
     @Deprecated
@@ -655,135 +762,24 @@ public class RubyBasicSocket extends RubyIO {
         return getsockname(getRuntime().getCurrentContext());
     }
 
-    @JRubyMethod(name = "getsockname")
-    public IRubyObject getsockname(ThreadContext context) {
-        return getSocknameCommon(context, "getsockname");
-    }
-
-    @JRubyMethod(name = "__getsockname")
-    public IRubyObject getsockname_u(ThreadContext context) {
-        return getSocknameCommon(context, "__getsockname");
-    }
-
-    protected IRubyObject getSocknameCommon(ThreadContext context, String caller) {
-        try {
-            InetSocketAddress sock = getSocketAddress();
-            if(null == sock) {
-                return Sockaddr.pack_sockaddr_in(context, 0, "0.0.0.0");
-            } else {
-               return Sockaddr.pack_sockaddr_in(context, sock);
-            }
-        } catch (BadDescriptorException e) {
-            throw context.runtime.newErrnoEBADFError();
-        }
-    }
-
     @Deprecated
     public IRubyObject getpeername() {
         return getpeername(getRuntime().getCurrentContext());
     }
-    @JRubyMethod(name = {"getpeername", "__getpeername"})
-    public IRubyObject getpeername(ThreadContext context) {
-        try {
-            SocketAddress sock = getRemoteSocket();
-            if(null == sock) {
-                throw context.getRuntime().newIOError("Not Supported");
-            }
-            return context.getRuntime().newString(sock.toString());
-        } catch (BadDescriptorException e) {
-            throw context.runtime.newErrnoEBADFError();
-        }
-    }
 
-    @JRubyMethod(optional = 1)
-    public IRubyObject shutdown(ThreadContext context, IRubyObject[] args) {
-        if (context.getRuntime().getSafeLevel() >= 4 && tainted_p(context).isFalse()) {
-            throw context.getRuntime().newSecurityError("Insecure: can't shutdown socket");
-        }
-
-        int how = 2;
-        if (args.length > 0) {
-            how = RubyNumeric.fix2int(args[0]);
-        }
-        try {
-            return shutdownInternal(context, how);
-        } catch (BadDescriptorException e) {
-            throw context.runtime.newErrnoEBADFError();
-        }
-    }
-
-    private IRubyObject shutdownInternal(ThreadContext context, int how) throws BadDescriptorException {
-        Channel socketChannel;
-        switch (how) {
-        case 0:
-            socketChannel = getOpenChannel();
-            try {
-                if (socketChannel instanceof SocketChannel ||
-                        socketChannel instanceof DatagramChannel) {
-                    asSocket().shutdownInput();
-                } else if (socketChannel instanceof Shutdownable) {
-                    ((Shutdownable)socketChannel).shutdownInput();
-                }
-            } catch (IOException e) {
-                throw context.getRuntime().newIOError(e.getMessage());
-            }
-            if(openFile.getPipeStream() != null) {
-                openFile.setMainStream(openFile.getPipeStream());
-                openFile.setPipeStream(null);
-            }
-            openFile.setMode(openFile.getMode() & ~OpenFile.READABLE);
-            return RubyFixnum.zero(context.getRuntime());
-        case 1:
-            socketChannel = getOpenChannel();
-            try {
-                if (socketChannel instanceof SocketChannel ||
-                        socketChannel instanceof DatagramChannel) {
-                    asSocket().shutdownOutput();
-                } else if (socketChannel instanceof Shutdownable) {
-                    ((Shutdownable)socketChannel).shutdownOutput();
-                }
-            } catch (IOException e) {
-                throw context.getRuntime().newIOError(e.getMessage());
-            }
-            openFile.setPipeStream(null);
-            openFile.setMode(openFile.getMode() & ~OpenFile.WRITABLE);
-            return RubyFixnum.zero(context.getRuntime());
-        case 2:
-            shutdownInternal(context, 0);
-            shutdownInternal(context, 1);
-            return RubyFixnum.zero(context.getRuntime());
-        default:
-            throw context.getRuntime().newArgumentError("`how' should be either 0, 1, 2");
-        }
-    }
-
-    protected boolean doNotReverseLookup(ThreadContext context) {
-        return context.getRuntime().isDoNotReverseLookupEnabled() || doNotReverseLookup;
-    }
-
-    @JRubyMethod(compat = CompatVersion.RUBY1_9)
-    public IRubyObject do_not_reverse_lookup19(ThreadContext context) {
-        return context.getRuntime().newBoolean(doNotReverseLookup);
-    }
-
-    @JRubyMethod(name = "do_not_reverse_lookup=", compat = CompatVersion.RUBY1_9)
-    public IRubyObject set_do_not_reverse_lookup19(ThreadContext context, IRubyObject flag) {
-        doNotReverseLookup = flag.isTrue();
-        return do_not_reverse_lookup19(context);
-    }
-
-    @JRubyMethod(meta = true)
+    @Deprecated
     public static IRubyObject do_not_reverse_lookup(IRubyObject recv) {
-        return recv.getRuntime().isDoNotReverseLookupEnabled() ? recv.getRuntime().getTrue() : recv.getRuntime().getFalse();
+        return do_not_reverse_lookup(recv.getRuntime().getCurrentContext(), recv);
     }
-    
-    @JRubyMethod(name = "do_not_reverse_lookup=", meta = true)
+
+    @Deprecated
     public static IRubyObject set_do_not_reverse_lookup(IRubyObject recv, IRubyObject flag) {
-        recv.getRuntime().setDoNotReverseLookupEnabled(flag.isTrue());
-        return recv.getRuntime().isDoNotReverseLookupEnabled() ? recv.getRuntime().getTrue() : recv.getRuntime().getFalse();
+        return set_do_not_reverse_lookup(recv.getRuntime().getCurrentContext(), recv, flag);
     }
-    
-    private Channel getOpenChannel() throws BadDescriptorException {
-        return getOpenFileChecked().getMainStreamSafe().getDescriptor().getChannel();
-    }
+
+    private static final ByteList FORMAT_SMALL_I = new ByteList(ByteList.plain("i"));
+    protected MulticastStateManager multicastStateManager = null;
+
+    // By default we always reverse lookup unless do_not_reverse_lookup set.
+    private boolean doNotReverseLookup = false;
 }// RubyBasicSocket
