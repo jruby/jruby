@@ -9,10 +9,11 @@ describe "A Java Throwable" do
     trace.should == ex.stack_trace.map(&:to_s)
   end
   
-  it "implements backtrace=" do
+  it "implements backtrace= as a no-op" do
     ex = java.lang.Exception.new
+    backtrace = ex.backtrace
     ex.set_backtrace ['blah']
-    ex.backtrace.should == ['blah']
+    ex.backtrace.should == backtrace
   end
   
   it "implements to_s as message" do
