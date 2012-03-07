@@ -45,12 +45,12 @@ public class FiberExtLibrary implements Library {
     }
 
     public static class FiberExtMeta {
-        @JRubyMethod(compat = CompatVersion.RUBY1_9, meta = true)
+        @JRubyMethod(meta = true)
         public static IRubyObject current(ThreadContext context, IRubyObject recv) {
             return context.getRuntime().getCurrentContext().getFiber();
         }
         
-        @JRubyMethod(name = "alive?", compat = CompatVersion.RUBY1_9)
+        @JRubyMethod(name = "alive?")
         public static IRubyObject alive_p(ThreadContext context, IRubyObject recv) {
             if (!(recv instanceof Fiber)) throw context.runtime.newTypeError("wrong self for Fiber#alive?");
             

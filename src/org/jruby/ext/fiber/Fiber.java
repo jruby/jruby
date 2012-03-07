@@ -59,35 +59,35 @@ public abstract class Fiber extends RubyObject implements ExecutionContext {
         return this;
     }
 
-    @JRubyMethod(compat = CompatVersion.RUBY1_9)
+    @JRubyMethod()
     public IRubyObject resume(ThreadContext context) {
         return resumeOrTransfer(context, context.nil, false);
     }
 
-    @JRubyMethod(compat = CompatVersion.RUBY1_9)
+    @JRubyMethod()
     public IRubyObject resume(ThreadContext context, IRubyObject arg) {
         return resumeOrTransfer(context, arg, false);
     }
 
-    @JRubyMethod(rest = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(rest = true)
     public IRubyObject resume(ThreadContext context, IRubyObject[] args) {
         return resumeOrTransfer(context, context.getRuntime().newArrayNoCopyLight(args), false);
     }
 
     // This should only be defined after require 'fiber'
-    @JRubyMethod(compat = CompatVersion.RUBY1_9)
+    @JRubyMethod()
     public IRubyObject transfer(ThreadContext context) {
         return resumeOrTransfer(context, context.nil, true);
     }
 
     // This should only be defined after require 'fiber'
-    @JRubyMethod(compat = CompatVersion.RUBY1_9)
+    @JRubyMethod()
     public IRubyObject transfer(ThreadContext context, IRubyObject arg) {
         return resumeOrTransfer(context, arg, true);
     }
 
     // This should only be defined after require 'fiber'
-    @JRubyMethod(rest = true, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(rest = true)
     public IRubyObject transfer(ThreadContext context, IRubyObject[] args) {
         return resumeOrTransfer(context, context.getRuntime().newArrayNoCopyLight(args), true);
     }
