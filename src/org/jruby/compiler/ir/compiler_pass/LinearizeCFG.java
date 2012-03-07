@@ -2,7 +2,7 @@ package org.jruby.compiler.ir.compiler_pass;
 
 import org.jruby.compiler.ir.IRScope;
 
-public class LinearizeCFG implements CompilerPass {
+public class LinearizeCFG extends CompilerPass {
     public static String[] NAMES = new String[] { "linearize", "linearize_cfg" };
     
     public String getLabel() {
@@ -13,7 +13,9 @@ public class LinearizeCFG implements CompilerPass {
         return true;
     }
 
-    public void run(IRScope scope) {
+    public Object execute(IRScope scope, Object... data) {
         scope.buildLinearization();
+        
+        return null;
     }
 }

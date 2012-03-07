@@ -5,7 +5,7 @@ import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.dataflow.analyses.BindingLoadPlacementProblem;
 import org.jruby.compiler.ir.dataflow.analyses.BindingStorePlacementProblem;
 
-public class AddBindingInstructions implements CompilerPass {
+public class AddBindingInstructions extends CompilerPass {
     public static String[] NAMES = new String[] { "add_binding", "add_binding_instructions" };
     
     public String getLabel() {
@@ -16,8 +16,8 @@ public class AddBindingInstructions implements CompilerPass {
         return false;
     }
 
-    public void run(IRScope s) {
-        if (!(s instanceof IRMethod)) return;
+    public Object execute(IRScope s, Object... data) {
+        if (!(s instanceof IRMethod)) return null;
 
         IRMethod m = (IRMethod) s;
         //        if (m.requiresBinding()) {
@@ -31,5 +31,7 @@ public class AddBindingInstructions implements CompilerPass {
         frp.compute_MOP_Solution();
         frp.addLoads();
         //       }
+        
+        return null;
     }
 }

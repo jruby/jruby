@@ -13,7 +13,7 @@ import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
-public class InlineTest implements CompilerPass {
+public class InlineTest extends CompilerPass {
     public static String[] NAMES = new String[] { "inline_test" };
     
     private static final Logger LOG = LoggerFactory.getLogger("InlineTest");
@@ -49,15 +49,15 @@ public class InlineTest implements CompilerPass {
         return ((InterpretedIRMethod) realMethod).getIRMethod();
     }
 
-    public void run(IRScope s) {
-        if (!(s instanceof IRMethod)) return;
+    public Object execute(IRScope s, Object... data) {
+        if (!(s instanceof IRMethod)) return null;
 
         IRScope mi = getIRMethod(s);
 
         // Cannot inline something not IR
         // FIXME: Add logging indicating aborted inline attempt
         // just a test .. dont bother if we dont have a match!
-        if (mi == null) return;
+        if (mi == null) return null;
 
         IRMethod method = ((IRMethod) s);
         CFG cfg = method.cfg();
@@ -71,11 +71,13 @@ public class InlineTest implements CompilerPass {
                         method.inlineMethod(mi, null, 0, b, call);
                         // Just inline once per scope -- this is a test after all!
                         // Because, the surrounding iterators will break with a concurrent modification exception if we proceed!
-                        return;
+                        return null;
                     }
                 }
             }
         }
+        
+        return true;
     }
     
 }

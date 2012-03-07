@@ -5,7 +5,7 @@ import org.jruby.compiler.ir.representations.CFG;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
-public class IRPrinter implements CompilerPass {
+public class IRPrinter extends CompilerPass {
     public static String[] NAMES = new String[] { "printer", "p" };
 
     private static final Logger LOG = LoggerFactory.getLogger("IR_Printer");
@@ -19,7 +19,7 @@ public class IRPrinter implements CompilerPass {
         return true;
     }
     
-    public void run(IRScope scope) {
+    public Object execute(IRScope scope, Object... data) {
         LOG.info("----------------------------------------");
         LOG.info(scope.toString());
 
@@ -32,5 +32,7 @@ public class IRPrinter implements CompilerPass {
             LOG.info("\n  instrs:\n" + scope.toStringInstrs());
             LOG.info("\n  live variables:\n" + scope.toStringVariables());
         }
+        
+        return null;
     }
 }

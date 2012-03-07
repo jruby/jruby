@@ -19,7 +19,7 @@ import org.jruby.compiler.ir.operands.Variable;
 import org.jruby.compiler.ir.representations.BasicBlock;
 import org.jruby.compiler.ir.representations.CFG;
 
-public class LocalOptimizationPass implements CompilerPass {
+public class LocalOptimizationPass extends CompilerPass {
     public static String[] NAMES = new String[] { "lo", "LO", "local_optimization" };
     
     public String getLabel() {
@@ -31,7 +31,7 @@ public class LocalOptimizationPass implements CompilerPass {
         return false;
     }
 
-    public void run(IRScope s) {
+    public Object execute(IRScope s, Object... data) {
         // Run this pass on nested closures first!
         // This let us compute execute scope flags for a method based on what all nested closures do
         for (IRClosure c: s.getClosures()) {
@@ -49,6 +49,8 @@ public class LocalOptimizationPass implements CompilerPass {
         }
         // Only after running local opts, compute various execution scope flags
         s.computeScopeFlags();
+        
+        return null;
     }
 
     private static void allocVar(Operand oldVar, IRScope s, List<TemporaryVariable> freeVarsList, Map<Operand, Operand> newVarMap) {

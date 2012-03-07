@@ -2,7 +2,7 @@ package org.jruby.compiler.ir.compiler_pass;
 
 import org.jruby.compiler.ir.IRScope;
 
-public class CallSplitter implements CompilerPass {
+public class CallSplitter extends CompilerPass {
     public static String[] NAMES = new String[] {"split_calls"};
     
     public String getLabel() {
@@ -13,7 +13,9 @@ public class CallSplitter implements CompilerPass {
         return true;
     }
 
-    public void run(IRScope scope) {
+    public Object execute(IRScope scope, Object... data) {
         scope.splitCalls();
+        
+        return null;
     }
 }
