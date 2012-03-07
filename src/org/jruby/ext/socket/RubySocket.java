@@ -204,11 +204,6 @@ public class RubySocket extends RubyBasicSocket {
         return this;
     }
 
-    @JRubyMethod(name = "listen")
-    public IRubyObject listen(ThreadContext context, IRubyObject backlog) {
-        return context.getRuntime().newFixnum(0);
-    }
-
     @JRubyMethod()
     public IRubyObject connect_nonblock(ThreadContext context, IRubyObject arg) {
         InetSocketAddress iaddr = Sockaddr.addressFromSockaddr_in(context, arg);
@@ -236,7 +231,12 @@ public class RubySocket extends RubyBasicSocket {
         return RubyFixnum.zero(context.getRuntime());
     }
 
-    @JRubyMethod()
+    @JRubyMethod(notImplemented = true)
+    public IRubyObject listen(ThreadContext context, IRubyObject backlog) {
+        throw sockerr(context.runtime, JRUBY_SERVER_SOCKET_ERROR);
+    }
+
+    @JRubyMethod(notImplemented = true)
     public IRubyObject accept(ThreadContext context) {
         throw sockerr(context.runtime, JRUBY_SERVER_SOCKET_ERROR);
     }
@@ -441,10 +441,6 @@ public class RubySocket extends RubyBasicSocket {
                 Socket socket = ((SocketChannel)channel).socket();
                 socket.bind(iaddr);
 
-            } else if (channel instanceof ServerSocketChannel) {
-                ServerSocket socket = ((ServerSocketChannel)channel).socket();
-                socket.bind(iaddr);
-
             } else if (channel instanceof DatagramChannel) {
                 DatagramSocket socket = ((DatagramChannel)channel).socket();
                 socket.bind(iaddr);
@@ -563,5 +559,5 @@ public class RubySocket extends RubyBasicSocket {
     protected ProtocolFamily soProtocol;
 
     private static final String JRUBY_SERVER_SOCKET_ERROR =
-            "Socket is client-only in JRuby; use ServerSocket for servers (http://wiki.jruby.org/ServerSocket)";
+            "use ServerSocket for servers (http://wiki.jruby.org/ServerSocket)";
 }// RubySocket
