@@ -11,7 +11,6 @@ import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.compiler.ir.compiler_pass.CFGBuilder;
 import org.jruby.compiler.ir.compiler_pass.CompilerPass;
-import org.jruby.compiler.ir.compiler_pass.DominatorTreeBuilder;
 import org.jruby.compiler.ir.compiler_pass.IRPrinter;
 import org.jruby.compiler.ir.compiler_pass.InlineTest;
 import org.jruby.compiler.ir.compiler_pass.LinearizeCFG;
@@ -1072,13 +1071,6 @@ public abstract class IRScope {
         CFG newBuild = new CFG(this);
         newBuild.build(instrList);
         cfg = newBuild;
-    }    
-
-    public void buildDominatorTree(DominatorTreeBuilder builder) {
-        depends(cfg());
-
-        // FIXME: Add result from this build and add to CFG as a field, then add depends() for htings which use it.
-        builder.buildDominatorTree(cfg, cfg.postOrderList(), cfg.getMaxNodeID());
     }
     
     /* Record a begin block -- not all scope implementations can handle them */

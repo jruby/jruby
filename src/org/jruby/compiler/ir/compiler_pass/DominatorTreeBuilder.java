@@ -1,10 +1,13 @@
 package org.jruby.compiler.ir.compiler_pass;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import org.jruby.compiler.ir.IRScope;
+import org.jruby.compiler.ir.Tuple;
 import org.jruby.compiler.ir.representations.BasicBlock;
 import org.jruby.compiler.ir.representations.CFG;
 import org.jruby.util.log.Logger;
@@ -13,7 +16,10 @@ import org.jruby.util.log.LoggerFactory;
 public class DominatorTreeBuilder extends CompilerPass {
     private static String[] NAMES = new String[] {"build_dominator", "dominator"};
     private static final Logger LOG = LoggerFactory.getLogger("DominatorTreeBuilder");
-
+    public static List<Tuple<Class<CompilerPass>, DependencyType>> DEPENDENCIES = new ArrayList<Tuple<Class<CompilerPass>, DependencyType>>() {{
+       add(new Tuple(CFGBuilder.class, CompilerPass.DependencyType.RETRIEVE)); 
+    }};
+    
     public String getLabel() {
         return "Build Dominator Tree";
     }
@@ -21,10 +27,17 @@ public class DominatorTreeBuilder extends CompilerPass {
     public boolean isPreOrder() {
         return false;
     }
+    
+    @Override
+    public List<Tuple<Class<CompilerPass>, DependencyType>> getDependencies() {
+        return DEPENDENCIES;
+    }    
 
     public Object execute(IRScope scope, Object... data) {
+        CFG cfg = (CFG) data[0];
+
         try {
-            scope.buildDominatorTree(this);
+            buildDominatorTree(cfg, cfg.postOrderList(), cfg.getMaxNodeID());
         } catch (Exception e) {
             LOG.debug("Caught exception building dom tree for {}", scope.cfg());
         }
