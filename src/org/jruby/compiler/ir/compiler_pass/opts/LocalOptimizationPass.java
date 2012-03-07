@@ -8,6 +8,8 @@ import java.util.Map;
 import org.jruby.compiler.ir.IRClosure;
 import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.Operation;
+import org.jruby.compiler.ir.Tuple;
+import org.jruby.compiler.ir.compiler_pass.CFGBuilder;
 import org.jruby.compiler.ir.compiler_pass.CompilerPass;
 import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.CopyInstr;
@@ -21,6 +23,9 @@ import org.jruby.compiler.ir.representations.CFG;
 
 public class LocalOptimizationPass extends CompilerPass {
     public static String[] NAMES = new String[] { "lo", "LO", "local_optimization" };
+    public static List<Tuple<Class<CompilerPass>, DependencyType>> DEPENDENCIES = new ArrayList<Tuple<Class<CompilerPass>, DependencyType>>() {{
+       add(new Tuple(CFGBuilder.class, CompilerPass.DependencyType.OPTIONAL)); 
+    }};
     
     public String getLabel() {
         return "Local Optimizations";
@@ -31,6 +36,11 @@ public class LocalOptimizationPass extends CompilerPass {
         return false;
     }
 
+    @Override
+    public List<Tuple<Class<CompilerPass>, DependencyType>> getDependencies() {
+        return DEPENDENCIES;
+    }
+    
     public Object execute(IRScope s, Object... data) {
         // Run this pass on nested closures first!
         // This let us compute execute scope flags for a method based on what all nested closures do
@@ -38,8 +48,9 @@ public class LocalOptimizationPass extends CompilerPass {
             run(c);
         }
 
+        // ENEBO: When can this run on a non-cfg built scope?
         // Now, run on current scope
-        CFG cfg = s.getCFG();
+        CFG cfg = (CFG) data[0];
         if (cfg == null) {
             runLocalOpts(s);
         } else {

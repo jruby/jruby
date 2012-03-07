@@ -18,7 +18,8 @@ public abstract class CompilerPass {
     
     public enum DependencyType {
         RETRIEVE, // If the pass has been previously run just return that
-        RERUN     // Unconditionally re-run dependent pass
+        RERUN,     // Unconditionally re-run dependent pass
+        OPTIONAL // pass data from a pass if it has previously run but do not run if it hasn't
     }
     public abstract String getLabel();
     
@@ -61,12 +62,21 @@ public abstract class CompilerPass {
                 case RERUN:
                     data[i] = executeDependency(dependency.a, scope);
                     break;
+                case OPTIONAL:
+                    data[i] = dependencyDataIfRunAlreay(dependency.a, scope);
+                    break;
             }
         }
 
 //        System.out.println("Executing Pass: " + getLabel());
         return execute(scope, data);
     }
+    
+    private Object dependencyDataIfRunAlreay(Class<CompilerPass> passClass, IRScope scope) {
+        CompilerPass pass = createPassInstance(passClass);
+        
+        return pass.previouslyRun(scope);
+    }    
     
     private Object makeSureDependencyHasRunOnce(Class<CompilerPass> passClass, IRScope scope) {
         CompilerPass pass = createPassInstance(passClass);
