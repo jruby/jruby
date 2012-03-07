@@ -236,6 +236,11 @@ public class RubySocket extends RubyBasicSocket {
         return RubyFixnum.zero(context.getRuntime());
     }
 
+    @JRubyMethod()
+    public IRubyObject accept(ThreadContext context) {
+        throw sockerr(context.runtime, JRUBY_SERVER_SOCKET_ERROR);
+    }
+
     private void initFieldsFromDescriptor(Ruby runtime, ChannelDescriptor descriptor) {
         Channel mainChannel = descriptor.getChannel();
 
@@ -556,4 +561,7 @@ public class RubySocket extends RubyBasicSocket {
     protected AddressFamily soDomain;
     protected Sock soType;
     protected ProtocolFamily soProtocol;
+
+    private static final String JRUBY_SERVER_SOCKET_ERROR =
+            "Socket is client-only in JRuby; use ServerSocket for servers (http://wiki.jruby.org/ServerSocket)";
 }// RubySocket
