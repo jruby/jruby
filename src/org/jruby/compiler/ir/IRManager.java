@@ -1,5 +1,7 @@
 package org.jruby.compiler.ir;
 
+import java.util.List;
+import org.jruby.compiler.ir.compiler_pass.CompilerPass;
 import org.jruby.compiler.ir.operands.BooleanLiteral;
 import org.jruby.compiler.ir.operands.Nil;
 
@@ -30,6 +32,10 @@ public class IRManager {
 
     public IRModuleBody getObject() {
         return object;
+    }
+    
+    public List<CompilerPass> getCompilerPasses(IRScope scope) {
+        return null;
     }
     
     public IRModuleBody getClassMetaClass() {

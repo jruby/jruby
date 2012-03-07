@@ -6,13 +6,19 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
 public class IRPrinter implements CompilerPass {
+    public static String[] NAMES = new String[] { "printer", "p" };
+
     private static final Logger LOG = LoggerFactory.getLogger("IR_Printer");
+    
+    public String getLabel() {
+        return "Printer";
+    }
 
     // Should we run this pass on the current scope before running it on nested scopes?
     public boolean isPreOrder() {
         return true;
     }
-
+    
     public void run(IRScope scope) {
         LOG.info("----------------------------------------");
         LOG.info(scope.toString());

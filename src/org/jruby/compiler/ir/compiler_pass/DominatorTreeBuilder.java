@@ -11,8 +11,13 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
 public class DominatorTreeBuilder implements CompilerPass {
+    private static String[] NAMES = new String[] {"build_dominator", "dominator"};
     private static final Logger LOG = LoggerFactory.getLogger("DominatorTreeBuilder");
 
+    public String getLabel() {
+        return "Build Dominator Tree";
+    }
+    
     public boolean isPreOrder() {
         return false;
     }

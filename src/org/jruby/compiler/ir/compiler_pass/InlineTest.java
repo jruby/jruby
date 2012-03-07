@@ -1,12 +1,12 @@
 package org.jruby.compiler.ir.compiler_pass;
 
 import org.jruby.RubyModule;
-import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.IRMethod;
-import org.jruby.compiler.ir.representations.BasicBlock;
+import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.instructions.CallInstr;
 import org.jruby.compiler.ir.instructions.Instr;
 import org.jruby.compiler.ir.operands.MethAddr;
+import org.jruby.compiler.ir.representations.BasicBlock;
 import org.jruby.compiler.ir.representations.CFG;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
@@ -14,13 +14,18 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
 public class InlineTest implements CompilerPass {
-
+    public static String[] NAMES = new String[] { "inline_test" };
+    
     private static final Logger LOG = LoggerFactory.getLogger("InlineTest");
-
+    
     public final String methodToInline;
 
     public InlineTest(String methodToInline) {
         this.methodToInline = methodToInline;
+    }
+    
+    public String getLabel() {
+        return "Inline Test (" + methodToInline + ")";
     }
 
     public boolean isPreOrder()  {

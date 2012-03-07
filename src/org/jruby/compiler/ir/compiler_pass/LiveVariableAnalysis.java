@@ -4,6 +4,12 @@ import org.jruby.compiler.ir.IRScope;
 import org.jruby.compiler.ir.dataflow.analyses.LiveVariablesProblem;
 
 public class LiveVariableAnalysis implements CompilerPass {
+    public static String[] NAMES = new String[] { "lva", "LVA", "live_variable_analysis" };
+    
+    public String getLabel() {
+        return "Live Variable Analysis";
+    }
+    
     public boolean isPreOrder() {
         return false;
     }

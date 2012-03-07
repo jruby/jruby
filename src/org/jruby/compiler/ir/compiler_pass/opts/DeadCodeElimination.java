@@ -7,6 +7,12 @@ import org.jruby.compiler.ir.dataflow.DataFlowConstants;
 import org.jruby.compiler.ir.dataflow.analyses.LiveVariablesProblem;
 
 public class DeadCodeElimination implements CompilerPass {
+    public static String[] NAMES = new String[] {"dce", "DCE", "dead_code"};
+    
+    public String getLabel() {
+        return "Dead Code Elimination";
+    }
+    
     public boolean isPreOrder() {
         return false;
     }

@@ -20,6 +20,12 @@ import org.jruby.compiler.ir.representations.BasicBlock;
 import org.jruby.compiler.ir.representations.CFG;
 
 public class LocalOptimizationPass implements CompilerPass {
+    public static String[] NAMES = new String[] { "lo", "LO", "local_optimization" };
+    
+    public String getLabel() {
+        return "Local Optimizations";
+    }
+    
     // Should we run this pass on the current scope before running it on nested scopes?
     public boolean isPreOrder() {
         return false;

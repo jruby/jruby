@@ -6,6 +6,12 @@ import org.jruby.compiler.ir.dataflow.analyses.BindingLoadPlacementProblem;
 import org.jruby.compiler.ir.dataflow.analyses.BindingStorePlacementProblem;
 
 public class AddBindingInstructions implements CompilerPass {
+    public static String[] NAMES = new String[] { "add_binding", "add_binding_instructions" };
+    
+    public String getLabel() {
+        return "Add Binding Instructions";
+    }
+    
     public boolean isPreOrder() {
         return false;
     }
