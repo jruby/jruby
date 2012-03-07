@@ -392,10 +392,10 @@ public class RubySocket extends RubyBasicSocket {
                 SocketChannel socket = (SocketChannel)channel;
 
                 if(!socket.connect(iaddr)) {
-                    if (context.runtime.is1_9()) {
-                        throw context.getRuntime().newErrnoEINPROGRESSWritableError();
+                    if (runtime.is1_9()) {
+                        throw runtime.newErrnoEINPROGRESSWritableError();
                     } else {
-                        throw context.getRuntime().newErrnoEINPROGRESSError();
+                        throw runtime.newErrnoEINPROGRESSError();
                     }
                 }
 
@@ -403,7 +403,7 @@ public class RubySocket extends RubyBasicSocket {
                 ((DatagramChannel)channel).connect(iaddr);
 
             } else {
-                throw getRuntime().newErrnoENOPROTOOPTError();
+                throw runtime.newErrnoENOPROTOOPTError();
 
             }
 
@@ -414,16 +414,16 @@ public class RubySocket extends RubyBasicSocket {
             throw runtime.newErrnoEINPROGRESSError();
 
         } catch(UnknownHostException e) {
-            throw sockerr(context.getRuntime(), "connect(2): unknown host");
+            throw sockerr(runtime, "connect(2): unknown host");
 
         } catch(SocketException e) {
-            handleSocketException(context.getRuntime(), "connect", e);
+            handleSocketException(runtime, "connect", e);
 
         } catch(IOException e) {
-            throw sockerr(context.getRuntime(), "connect(2): name or service not known");
+            throw sockerr(runtime, "connect(2): name or service not known");
 
         } catch (IllegalArgumentException iae) {
-            throw sockerr(context.getRuntime(), iae.getMessage());
+            throw sockerr(runtime, iae.getMessage());
 
         }
     }

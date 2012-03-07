@@ -252,18 +252,6 @@ public class SelectBlob {
                     if (timeout == 0) {
                         selector.selectNow();
                     } else {
-                        // not-great logic for JRUBY-5165; we should move finishConnect into RubySocket logic, I think
-                        for(SelectionKey sk:selector.keys()) {
-                            if((sk.interestOps() & SelectionKey.OP_WRITE) != 0) {
-                                if (!sk.isWritable() && sk.channel() instanceof SocketChannel) {
-                                    SocketChannel socketChannel = (SocketChannel)sk.channel();
-                                    if (socketChannel.isConnectionPending()) {
-                                        socketChannel.finishConnect();
-                                    }
-                                }
-                            }
-                        }
-
                         selector.select(timeout);
                     }
                 } else {
@@ -276,7 +264,7 @@ public class SelectBlob {
     }
 
     @SuppressWarnings("unchecked")
-    private void processSelectedKeys(Ruby runtime) {
+    private void processSelectedKeys(Ruby runtime) throws IOException {
         if (selector != null) {
             for (Iterator i = selector.selectedKeys().iterator(); i.hasNext();) {
                 SelectionKey key = (SelectionKey) i.next();
@@ -294,6 +282,14 @@ public class SelectBlob {
                     if (writeArray != null && (interestAndReady & (SelectionKey.OP_WRITE | SelectionKey.OP_CONNECT)) != 0) {
                         writeIoIndex = ((Map<Character,Integer>)key.attachment()).get('w');
                         getWriteResults().append(writeArray.eltOk(writeIoIndex));
+
+                        // not-great logic for JRUBY-5165; we should move finishConnect into RubySocket logic, I think
+                        if (key.channel() instanceof SocketChannel) {
+                            SocketChannel socketChannel = (SocketChannel)key.channel();
+                            if (socketChannel.isConnectionPending()) {
+                                socketChannel.finishConnect();
+                            }
+                        }
                     }
                 } catch (CancelledKeyException cke) {
                     // TODO: is this the right thing to do?
