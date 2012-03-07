@@ -48,11 +48,12 @@ public class LocalOptimizationPass extends CompilerPass {
             run(c);
         }
 
-        // ENEBO: When can this run on a non-cfg built scope?
+        // ENEBO: How do these two different modes work together?  If pre-CFG is run how does that change the latter run?
         // Now, run on current scope
         CFG cfg = (CFG) data[0];
         if (cfg == null) {
-            runLocalOpts(s);
+            optimizeTmpVars(s);
+            runLocalOptsOnInstrList(s, s.getInstrs().listIterator(), true);
         } else {
             for (BasicBlock b: cfg.getBasicBlocks()) {
                 runLocalOptsOnInstrList(s, b.getInstrs().listIterator(), false);
@@ -352,10 +353,5 @@ public class LocalOptimizationPass extends CompilerPass {
                 simplificationMap = new HashMap<Variable,List<Variable>>();
             }
         }
-    }
-
-    private static void runLocalOpts(IRScope s) {
-        optimizeTmpVars(s);
-        runLocalOptsOnInstrList(s, s.getInstrs().listIterator(), s.getCFG() == null);
     }
 }
