@@ -941,7 +941,7 @@ public abstract class IRScope {
 
         if (linearizedBBList != null) return linearizedBBList; // Already linearized
         
-        linearizedBBList = CFGLinearizer.linearize(cfg());
+        linearizedBBList = CFGLinearizer.linearize(cfg);
         
         return linearizedBBList;
     }

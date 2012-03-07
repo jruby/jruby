@@ -57,8 +57,10 @@ public abstract class CompilerPass {
             switch (dependency.b) { // type of dependency
                 case RETRIEVE:
                     data[i] = makeSureDependencyHasRunOnce(dependency.a, scope);
+                    break;
                 case RERUN:
                     data[i] = executeDependency(dependency.a, scope);
+                    break;
             }
         }
 
