@@ -31,6 +31,8 @@ public class AttrAssignInstr extends NoResultCallInstr {
 
     @Override
     public CallBase specializeForInterpretation() {
+        if (containsSplat()) return this;
+        
         switch (getCallArgs().length) {
             case 1:
                 return new OneArgOperandAttrAssignInstr(this);
