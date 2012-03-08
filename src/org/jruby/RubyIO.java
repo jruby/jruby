@@ -2363,22 +2363,6 @@ public class RubyIO extends RubyObject {
 
         return getRuntime().newFixnum(c);
     }
-
-    private ByteList fromEncodedBytes(Ruby runtime, Encoding enc, int value) {
-        int n;
-        try {
-            n = value < 0 ? 0 : enc.codeToMbcLength(value);
-        } catch (EncodingException ee) {
-            n = 0;
-        }
-
-        if (n <= 0) throw runtime.newRangeError(this.toString() + " out of char range");
-
-        ByteList bytes = new ByteList(n);
-        enc.codeToMbc(value, bytes.getUnsafeBytes(), 0);
-        bytes.setRealSize(n);
-        return bytes;
-    }
     
     @JRubyMethod(name = "readchar", compat = RUBY1_9)
     public IRubyObject readchar19(ThreadContext context) {
@@ -2407,25 +2391,85 @@ public class RubyIO extends RubyObject {
     @JRubyMethod(name = "getc", compat = RUBY1_9)
     public IRubyObject getc19(ThreadContext context) {
         Ruby runtime = context.getRuntime();
-        int c = getcCommon();
 
-        if (c == -1) {
-            // CRuby checks ferror(f) and retry getc for non-blocking IO
-            // read. We checks readability first if possible so retry should
-            // not be needed I believe.
-            return runtime.getNil();
+        try {
+            OpenFile myOpenFile = getOpenFileChecked();
+
+            myOpenFile.checkReadable(getRuntime());
+            myOpenFile.setReadBuffered();
+
+            Stream stream = myOpenFile.getMainStreamSafe();
+
+            readCheck(stream);
+            waitReadable(stream);
+            stream.clearerr();
+
+            int c = stream.fgetc();
+
+            if (c == -1) {
+                // CRuby checks ferror(f) and retry getc for non-blocking IO
+                // read. We checks readability first if possible so retry should
+                // not be needed I believe.
+                return runtime.getNil();
+            }
+
+            Encoding external = getExternalEncoding(runtime);
+            Encoding internal = getInternalEncoding(runtime);
+            ByteList bytes = null;
+            boolean shared = false;
+            int cr = 0;
+
+            if (Encoding.isAscii(c)) {
+                if (internal == ASCIIEncoding.INSTANCE) {
+                    bytes = RubyInteger.SINGLE_CHAR_BYTELISTS[(int)c];
+                    shared = true;
+                } else {
+                    bytes = new ByteList(new byte[]{(byte)c}, external, false);
+                    shared = false;
+                    cr = StringSupport.CR_7BIT;
+                }
+            } else {
+                // potential MBC
+                int len = external.length((byte)c);
+                byte[] byteAry = new byte[len];
+
+                byteAry[0] = (byte)c;
+                for (int i = 1; i < len; i++) {
+                    c = (byte)stream.fgetc();
+                    if (c == -1) {
+                        bytes = new ByteList(byteAry, 0, i - 1, external, false);
+                        cr = StringSupport.CR_BROKEN;
+                    }
+                    byteAry[i] = (byte)c;
+                }
+
+                if (bytes == null) {
+                    cr = StringSupport.CR_VALID;
+                    bytes = new ByteList(byteAry, external, false);
+                }
+            }
+
+            if (cr != StringSupport.CR_BROKEN && external != internal) {
+                bytes = RubyString.transcode(context, bytes, external, internal, runtime.getNil());
+            }
+
+            if (internal == null) internal = external;
+
+            if (shared) {
+                return RubyString.newStringShared(runtime, bytes, cr);
+            } else {
+                return RubyString.newStringNoCopy(runtime, bytes, internal, cr);
+            }
+
+        } catch (InvalidValueException ex) {
+            throw getRuntime().newErrnoEINVALError();
+        } catch (BadDescriptorException e) {
+            throw getRuntime().newErrnoEBADFError();
+        } catch (EOFException e) {
+            throw getRuntime().newEOFError();
+        } catch (IOException e) {
+            throw getRuntime().newIOErrorFromException(e);
         }
-
-        Encoding external = getExternalEncoding(runtime);
-        ByteList bytes = fromEncodedBytes(runtime, external, (int) c);
-        Encoding internal = getInternalEncoding(runtime);
-        
-        if (internal != null) {
-            bytes = RubyString.transcode(context, bytes, external, internal, runtime.getNil());
-        }
-
-        // TODO: This should be optimized like RubyInteger.chr is for ascii values
-        return RubyString.newStringNoCopy(runtime, bytes, external, 0);
     }
 
     public int getcCommon() {
@@ -3105,14 +3149,33 @@ public class RubyIO extends RubyObject {
         return this;
     }
 
-    @JRubyMethod
+    public IRubyObject each_charInternal19(final ThreadContext context, final Block block) {
+        IRubyObject ch;
+
+        while(!(ch = getc19(context)).isNil()) {
+            block.yield(context, ch);
+        }
+        return this;
+    }
+
+    @JRubyMethod(compat = RUBY1_8)
     public IRubyObject each_char(final ThreadContext context, final Block block) {
         return block.isGiven() ? each_charInternal(context, block) : enumeratorize(context.getRuntime(), this, "each_char");
     }
 
-    @JRubyMethod
+    @JRubyMethod(name = "each_char", compat = RUBY1_9)
+    public IRubyObject each_char19(final ThreadContext context, final Block block) {
+        return block.isGiven() ? each_charInternal19(context, block) : enumeratorize(context.getRuntime(), this, "each_char");
+    }
+
+    @JRubyMethod(compat = RUBY1_8)
     public IRubyObject chars(final ThreadContext context, final Block block) {
         return block.isGiven() ? each_charInternal(context, block) : enumeratorize(context.getRuntime(), this, "chars");
+    }
+
+    @JRubyMethod(name = "chars", compat = RUBY1_9)
+    public IRubyObject chars19(final ThreadContext context, final Block block) {
+        return block.isGiven() ? each_charInternal19(context, block) : enumeratorize(context.getRuntime(), this, "chars");
     }
 
     @JRubyMethod

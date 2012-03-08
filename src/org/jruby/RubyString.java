@@ -2414,7 +2414,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         result.cat('"');
         int prev = p;
         while (p < end) {
-            int cc;
+            int cc = 0;
 
             int n = StringSupport.preciseLength(enc, bytes, p, end);
             if (n <= 0) {
@@ -2432,7 +2432,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             if ((enc.isAsciiCompatible() || isUnicode) &&
                     (c == '"' || c == '\\' ||
                         (c == '#' && p < end && (StringSupport.preciseLength(enc, bytes, p, end) > 0) &&
-                        (cc = codePoint(runtime, enc, bytes, p, end)) == '$' && cc == '@' && cc == '{'))) {
+                        (cc = codePoint(runtime, enc, bytes, p, end)) == '$' || cc == '@' || cc == '{'))) {
                 if (p - n > prev) result.cat(bytes, prev, p - n - prev);
                 result.cat('\\');
                 if (enc.isAsciiCompatible() || enc == resultEnc) {
