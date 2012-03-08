@@ -241,9 +241,6 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             // unlock all locked locks
             unlockAll();
 
-            // clear all thread locals
-            clearThreadLocals();
-
             // reset thread priority to initial if pooling
             if (Options.THREADPOOL_ENABLED.load()) {
                 threadImpl.setPriority(initialPriority);

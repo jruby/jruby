@@ -4373,7 +4373,8 @@ public class RubyIO extends RubyObject {
         try {
             return new ModeFlags(mode);
         } catch (InvalidValueException ive) {
-            throw runtime.newErrnoEINVALError();
+            // This is used by File and StringIO, which seem to want an ArgumentError instead of EINVAL
+            throw runtime.newArgumentError("illegal access mode " + mode);
         }
     }
 
@@ -4398,7 +4399,8 @@ public class RubyIO extends RubyObject {
         try {
             return new IOOptions(runtime, mode);
         } catch (InvalidValueException ive) {
-            throw runtime.newErrnoEINVALError();
+            // This is used by File and StringIO, which seem to want an ArgumentError instead of EINVAL
+            throw runtime.newArgumentError("illegal access mode " + mode);
         }
     }
 
