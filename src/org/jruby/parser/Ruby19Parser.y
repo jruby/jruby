@@ -1377,7 +1377,7 @@ block_param_def : tPIPE opt_bv_decl tPIPE {
 opt_bv_decl     : opt_nl {
                     $$ = null;
                 }
-                | opt_nl ';' bv_dels opt_nl {
+                | opt_nl ';' bv_decls opt_nl {
                     $$ = null;
                 }
 
