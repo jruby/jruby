@@ -382,7 +382,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/build_lib/joda-time-2.0.jar!/" />
+          <root url="jar://$MODULE_DIR$/build_lib/joda-time-2.1.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
