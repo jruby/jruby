@@ -124,6 +124,7 @@ abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
                 case BUFFER_OUT:
                 case BUFFER_INOUT:
                 case STRING:
+                case TRANSIENT_STRING:
                     Label address = new Label();
                     Label next = new Label();
                     if (pointerCount++ < 1) {
@@ -131,7 +132,10 @@ abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
                         mv.istore(heapPointerCountVar);
                     }
 
-                    mv.invokestatic(p(JITRuntime.class), parameterType == NativeType.STRING ? "stringParameterStrategy" : "pointerParameterStrategy",
+                    String strategyMethod = parameterType == NativeType.STRING
+                            ? "stringParameterStrategy"
+                            : parameterType == NativeType.TRANSIENT_STRING ? "transientStringParameterStrategy" : "pointerParameterStrategy";
+                    mv.invokestatic(p(JITRuntime.class), strategyMethod,
                             sig(PointerParameterStrategy.class, IRubyObject.class));
                     mv.astore(nextStrategyVar);
                     mv.aload(nextStrategyVar);
@@ -228,6 +232,7 @@ abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
                         case BUFFER_OUT:
                         case BUFFER_INOUT:
                         case STRING:
+                        case TRANSIENT_STRING:
                             mv.aload(firstParam + i);
                             mv.aload(firstStrategyVar + ptrIdx);
                             mv.aload(0);
@@ -399,6 +404,7 @@ abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
                 break;
 
             case STRING:
+            case TRANSIENT_STRING:
                 boxResult(mv, "newString");
                 break;
 

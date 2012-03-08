@@ -48,6 +48,7 @@ public final class FFIUtil {
         m.put(NativeType.BUFFER_OUT, com.kenai.jffi.Type.POINTER);
         m.put(NativeType.BUFFER_INOUT, com.kenai.jffi.Type.POINTER);
         m.put(NativeType.STRING, com.kenai.jffi.Type.POINTER);
+        m.put(NativeType.TRANSIENT_STRING, com.kenai.jffi.Type.POINTER);
 
         return m;
     }

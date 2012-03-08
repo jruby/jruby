@@ -70,6 +70,7 @@ abstract public class JITNativeInvoker extends NativeInvoker {
         switch (nativeType) {
             case BUFFER_IN:
             case STRING:
+            case TRANSIENT_STRING:
                 flags |= ObjectParameterInfo.IN | ObjectParameterInfo.NULTERMINATE;
                 break;
 

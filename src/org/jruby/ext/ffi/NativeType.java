@@ -60,8 +60,9 @@ public enum NativeType {
      * An immutable string.  Nul terminated, but only copies in to the native function 
      */
     STRING,
-    /** A Rubinus :string arg - copies data both ways, and nul terminates */
-    RBXSTRING,
+
+    /* As above, but ok to use temporary memory for native copy of string */
+    TRANSIENT_STRING,
 
     VARARGS,
     // ARRAY and STRUCT are only used internally

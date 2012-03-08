@@ -254,6 +254,7 @@ final class NativeClosureProxy implements Closure {
                     return new Pointer(runtime, NativeMemoryIO.wrap(runtime, buffer.getAddress(index)));
 
                 case STRING:
+                case TRANSIENT_STRING:
                     return getStringParameter(runtime, buffer, index);
 
                 case BOOL:

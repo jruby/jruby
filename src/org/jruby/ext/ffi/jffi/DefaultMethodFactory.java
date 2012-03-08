@@ -154,6 +154,7 @@ public final class DefaultMethodFactory extends MethodFactory {
             case DOUBLE:
                 return Float64Invoker.INSTANCE;
             case STRING:
+            case TRANSIENT_STRING:
                 return StringInvoker.INSTANCE;
                 
             default:
@@ -245,6 +246,7 @@ public final class DefaultMethodFactory extends MethodFactory {
             case DOUBLE:
                 return Float64Marshaller.INSTANCE;
             case STRING:
+            case TRANSIENT_STRING:
                 return StringMarshaller.INSTANCE;
             case POINTER:
                 return BufferMarshaller.INOUT;

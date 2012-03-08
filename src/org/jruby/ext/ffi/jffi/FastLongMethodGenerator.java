@@ -109,6 +109,7 @@ final class FastLongMethodGenerator extends AbstractNumericMethodGenerator {
                 
             case POINTER:
             case STRING:
+            case TRANSIENT_STRING:
                 return platform.addressSize() == 64;
 
             default:
@@ -123,6 +124,7 @@ final class FastLongMethodGenerator extends AbstractNumericMethodGenerator {
             case BUFFER_OUT:
             case BUFFER_INOUT:
             case STRING:
+            case TRANSIENT_STRING:
                 return platform.addressSize() == 64;
             
             default:

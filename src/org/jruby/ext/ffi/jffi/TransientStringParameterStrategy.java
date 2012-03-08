@@ -8,8 +8,8 @@ import org.jruby.util.ByteList;
 /**
  *
  */
-public class StringPointerParameterStrategy extends PointerParameterStrategy {
-    public StringPointerParameterStrategy() {
+public class TransientStringParameterStrategy extends PointerParameterStrategy {
+    public TransientStringParameterStrategy() {
         super(HEAP);
     }
 

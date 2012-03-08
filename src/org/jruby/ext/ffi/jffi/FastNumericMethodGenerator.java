@@ -108,6 +108,7 @@ final class FastNumericMethodGenerator extends AbstractNumericMethodGenerator {
             case VOID:
             case POINTER:
             case STRING:
+            case TRANSIENT_STRING:
                 return true;
 
             default:
@@ -122,6 +123,7 @@ final class FastNumericMethodGenerator extends AbstractNumericMethodGenerator {
             case BUFFER_OUT:
             case BUFFER_INOUT:
             case STRING:
+            case TRANSIENT_STRING:
                 return true;
             
             default:

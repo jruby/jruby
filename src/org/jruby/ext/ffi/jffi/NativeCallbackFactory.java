@@ -212,6 +212,7 @@ public class NativeCallbackFactory {
                 case DOUBLE:
                 case POINTER:
                 case STRING:
+                case TRANSIENT_STRING:
                 case BOOL:
                     return true;
             }

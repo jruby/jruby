@@ -303,7 +303,7 @@ public abstract class Type extends RubyObject {
             case BUFFER_OUT:
             case POINTER:
             case STRING:
-            case RBXSTRING:
+            case TRANSIENT_STRING:
                 return true;
             default:
                 return false;
