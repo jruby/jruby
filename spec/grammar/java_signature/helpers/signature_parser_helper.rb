@@ -7,19 +7,20 @@ java_import org.jruby.parser.JavaSignatureParser
 
 java_import java.io.ByteArrayInputStream
 
-BYTE = PrimitiveTypeNode.BYTE
-SHORT = PrimitiveTypeNode.SHORT
-INT = PrimitiveTypeNode.INT
-LONG = PrimitiveTypeNode.LONG
-CHAR = PrimitiveTypeNode.CHAR
-FLOAT = PrimitiveTypeNode.FLOAT
-DOUBLE = PrimitiveTypeNode.DOUBLE
-BOOLEAN = PrimitiveTypeNode.BOOLEAN
-VOID = PrimitiveTypeNode.VOID
+BYTE = PrimitiveTypeNode::BYTE
+SHORT = PrimitiveTypeNode::SHORT
+INT = PrimitiveTypeNode::INT
+LONG = PrimitiveTypeNode::LONG
+CHAR = PrimitiveTypeNode::CHAR
+FLOAT = PrimitiveTypeNode::FLOAT
+DOUBLE = PrimitiveTypeNode::DOUBLE
+BOOLEAN = PrimitiveTypeNode::BOOLEAN
+VOID = PrimitiveTypeNode::VOID
 
 class Object
   def signature(string)
     bytes = string.to_java.bytes
+    puts "string is #{string}"
     JavaSignatureParser.parse ByteArrayInputStream.new(bytes)
   end
 
@@ -157,7 +158,7 @@ class SimpleSignatureMatcher
   end
 end
  
-module Spec::Example::ExampleMethods
+class Object
   def have_signature(*args)
     SimpleSignatureMatcher.new(*args)
   end
