@@ -57,6 +57,10 @@ public class JavaMethodDescriptor {
         }
         
         if (hasContext) {
+            if (isStatic && (parameters.length < 2 || parameters[1] != IRubyObject.class)) {
+                throw new RuntimeException("static method without self argument: " + method);
+            }
+
             if (hasBlock) {
                 // args should be before block
                 hasVarArgs = parameters[parameters.length - 2] == IRubyObject[].class;
@@ -65,6 +69,10 @@ public class JavaMethodDescriptor {
                 hasVarArgs = parameters[parameters.length - 1] == IRubyObject[].class;
             }
         } else {
+            if (isStatic && (parameters.length < 1 || parameters[0] != IRubyObject.class)) {
+                throw new RuntimeException("static method without self argument: " + method);
+            }
+
             if (hasBlock) {
                 hasVarArgs = parameters.length > 1 && parameters[parameters.length - 2] == IRubyObject[].class;
             } else {
