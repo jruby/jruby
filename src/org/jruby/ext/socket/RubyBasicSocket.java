@@ -97,7 +97,7 @@ public class RubyBasicSocket extends RubyIO {
         doNotReverseLookup = runtime.is1_9();
     }
 
-    @JRubyMethod(compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "do_not_reverse_lookup", compat = CompatVersion.RUBY1_9)
     public IRubyObject do_not_reverse_lookup19(ThreadContext context) {
         return context.runtime.newBoolean(doNotReverseLookup);
     }
@@ -333,12 +333,7 @@ public class RubyBasicSocket extends RubyIO {
         return getSocknameCommon(context, "getsockname");
     }
 
-    @JRubyMethod(name = "__getsockname")
-    public IRubyObject getsockname_u(ThreadContext context) {
-        return getSocknameCommon(context, "__getsockname");
-    }
-
-    @JRubyMethod(name = {"getpeername", "__getpeername"})
+    @JRubyMethod(name = "getpeername")
     public IRubyObject getpeername(ThreadContext context) {
         Ruby runtime = context.runtime;
 
@@ -353,6 +348,43 @@ public class RubyBasicSocket extends RubyIO {
 
         } catch (BadDescriptorException e) {
             throw runtime.newErrnoEBADFError();
+        }
+    }
+
+    @JRubyMethod(name = "getpeereid", compat = CompatVersion.RUBY1_9, notImplemented = true)
+    public IRubyObject getpeereid(ThreadContext context) {
+        throw context.runtime.newNotImplementedError("getpeerid not implemented");
+    }
+
+    @JRubyMethod(compat = CompatVersion.RUBY1_9)
+    public IRubyObject local_address(ThreadContext context) {
+        try {
+            InetSocketAddress address = getSocketAddress();
+
+            if (address == null) {
+                return context.nil;
+
+            } else {
+                return new Addrinfo(context.runtime, context.runtime.getClass("Addrinfo"), address.getAddress(), address.getPort(), SocketType.forChannel(getChannel()));
+            }
+        } catch (BadDescriptorException bde) {
+            throw context.runtime.newErrnoEBADFError("address unavailable");
+        }
+    }
+
+    @JRubyMethod(compat = CompatVersion.RUBY1_9)
+    public IRubyObject remote_address(ThreadContext context) {
+        try {
+            InetSocketAddress address = getRemoteSocket();
+
+            if (address == null) {
+                return context.nil;
+
+            } else {
+                return new Addrinfo(context.runtime, context.runtime.getClass("Addrinfo"), address.getAddress(), address.getPort(), SocketType.forChannel(getChannel()));
+            }
+        } catch (BadDescriptorException bde) {
+            throw context.runtime.newErrnoEBADFError("address unavailable");
         }
     }
 
@@ -373,6 +405,7 @@ public class RubyBasicSocket extends RubyIO {
     }
 
     @Override
+    @JRubyMethod
     public IRubyObject close_write(ThreadContext context) {
         Ruby runtime = context.getRuntime();
 
@@ -401,6 +434,7 @@ public class RubyBasicSocket extends RubyIO {
     }
 
     @Override
+    @JRubyMethod
     public IRubyObject close_read(ThreadContext context) {
         Ruby runtime = context.getRuntime();
 
@@ -424,26 +458,20 @@ public class RubyBasicSocket extends RubyIO {
         return context.nil;
     }
 
-    protected InetSocketAddress getSocketAddress() throws BadDescriptorException {
-        Channel channel = getOpenChannel();
-
-        return (InetSocketAddress)SocketType.forChannel(channel).getLocalSocketAddress(channel);
-    }
-
-    protected InetSocketAddress getRemoteSocket() throws BadDescriptorException {
-        Channel channel = getOpenChannel();
-
-        return (InetSocketAddress)SocketType.forChannel(channel).getRemoteSocketAddress(channel);
-    }
-
-    private Socket asSocket() throws BadDescriptorException {
+    private void joinMulticastGroup(IRubyObject val) throws IOException, BadDescriptorException {
         Channel socketChannel = getOpenChannel();
 
-        if(!(socketChannel instanceof SocketChannel)) {
-            throw getRuntime().newErrnoENOPROTOOPTError();
-        }
+        if(socketChannel instanceof DatagramChannel) {
+            if (multicastStateManager == null) {
+                multicastStateManager = new MulticastStateManager();
+            }
 
-        return ((SocketChannel)socketChannel).socket();
+            if (val instanceof RubyString) {
+                byte [] ipaddr_buf = val.convertToString().getBytes();
+
+                multicastStateManager.addMembership(ipaddr_buf);
+            }
+        }
     }
 
     private IRubyObject getBroadcast(Ruby runtime) throws IOException, BadDescriptorException {
@@ -468,22 +496,6 @@ public class RubyBasicSocket extends RubyIO {
         Channel channel = getOpenChannel();
 
         SocketType.forChannel(channel).setTcpNoDelay(channel, asBoolean(val));
-    }
-
-    private void joinMulticastGroup(IRubyObject val) throws IOException, BadDescriptorException {
-        Channel socketChannel = getOpenChannel();
-
-        if(socketChannel instanceof DatagramChannel) {
-            if (multicastStateManager == null) {
-                multicastStateManager = new MulticastStateManager();
-            }
-
-            if (val instanceof RubyString) {
-                byte [] ipaddr_buf = val.convertToString().getBytes();
-
-                multicastStateManager.addMembership(ipaddr_buf);
-            }
-        }
     }
 
     private void setReuseAddr(IRubyObject val) throws IOException, BadDescriptorException {
@@ -543,36 +555,16 @@ public class RubyBasicSocket extends RubyIO {
         SocketType.forChannel(channel).setOOBInline(channel, asBoolean(val));
     }
 
-    private int asNumber(IRubyObject val) {
-        if (val instanceof RubyNumeric) {
-            return RubyNumeric.fix2int(val);
-        } else if (val instanceof RubyBoolean) {
-            return val.isTrue() ? 1 : 0;
-        }
-        else {
-            return stringAsNumber(val);
-        }
+    protected InetSocketAddress getSocketAddress() throws BadDescriptorException {
+        Channel channel = getOpenChannel();
+
+        return (InetSocketAddress)SocketType.forChannel(channel).getLocalSocketAddress(channel);
     }
 
-    private int stringAsNumber(IRubyObject val) {
-        ByteList str = val.convertToString().getByteList();
-        IRubyObject res = Pack.unpack(getRuntime(), str, FORMAT_SMALL_I).entry(0);
+    protected InetSocketAddress getRemoteSocket() throws BadDescriptorException {
+        Channel channel = getOpenChannel();
 
-        if (res.isNil()) {
-            throw getRuntime().newErrnoEINVALError();
-        }
-
-        return RubyNumeric.fix2int(res);
-    }
-
-    protected boolean asBoolean(IRubyObject val) {
-        if (val instanceof RubyString) {
-            return stringAsNumber(val) != 0;
-        } else if(val instanceof RubyNumeric) {
-            return RubyNumeric.fix2int(val) != 0;
-        } else {
-            return val.isTrue();
-        }
+        return (InetSocketAddress)SocketType.forChannel(channel).getRemoteSocketAddress(channel);
     }
 
     private IRubyObject getKeepAlive(Ruby runtime) throws IOException, BadDescriptorException {
@@ -633,16 +625,6 @@ public class RubyBasicSocket extends RubyIO {
         return number(runtime,  SocketType.forChannel(channel).getSocketType().intValue());
     }
 
-    private IRubyObject trueFalse(Ruby runtime, boolean val) {
-        return number(runtime, val ? 1 : 0);
-    }
-
-    private static IRubyObject number(Ruby runtime, int s) {
-        RubyArray array = runtime.newArray(runtime.newFixnum(s));
-
-        return Pack.pack(runtime, array, FORMAT_SMALL_I);
-    }
-
     protected IRubyObject getSocknameCommon(ThreadContext context, String caller) {
         try {
             InetSocketAddress sock = getSocketAddress();
@@ -661,19 +643,13 @@ public class RubyBasicSocket extends RubyIO {
 
     private IRubyObject shutdownInternal(ThreadContext context, int how) throws BadDescriptorException {
         Ruby runtime = context.runtime;
-        Channel socketChannel;
+        Channel channel;
 
         switch (how) {
         case 0:
-            socketChannel = getOpenChannel();
-
+            channel = getOpenChannel();
             try {
-                if (socketChannel instanceof SocketChannel) {
-                    asSocket().shutdownInput();
-
-                } else if (socketChannel instanceof Shutdownable) {
-                    ((Shutdownable)socketChannel).shutdownInput();
-                }
+                SocketType.forChannel(channel).shutdownInput(channel);
 
             } catch (IOException e) {
                 throw runtime.newIOError(e.getMessage());
@@ -689,14 +665,9 @@ public class RubyBasicSocket extends RubyIO {
             return RubyFixnum.zero(runtime);
 
         case 1:
-            socketChannel = getOpenChannel();
+            channel = getOpenChannel();
             try {
-                if (socketChannel instanceof SocketChannel) {
-                    asSocket().shutdownOutput();
-
-                } else if (socketChannel instanceof Shutdownable) {
-                    ((Shutdownable)socketChannel).shutdownOutput();
-                }
+                SocketType.forChannel(channel).shutdownInput(channel);
 
             } catch (IOException e) {
                 throw runtime.newIOError(e.getMessage());
@@ -740,6 +711,48 @@ public class RubyBasicSocket extends RubyIO {
     
     private Channel getOpenChannel() throws BadDescriptorException {
         return getOpenFileChecked().getMainStreamSafe().getDescriptor().getChannel();
+    }
+
+    private int asNumber(IRubyObject val) {
+        if (val instanceof RubyNumeric) {
+            return RubyNumeric.fix2int(val);
+        } else if (val instanceof RubyBoolean) {
+            return val.isTrue() ? 1 : 0;
+        }
+        else {
+            return stringAsNumber(val);
+        }
+    }
+
+    private int stringAsNumber(IRubyObject val) {
+        ByteList str = val.convertToString().getByteList();
+        IRubyObject res = Pack.unpack(getRuntime(), str, FORMAT_SMALL_I).entry(0);
+
+        if (res.isNil()) {
+            throw getRuntime().newErrnoEINVALError();
+        }
+
+        return RubyNumeric.fix2int(res);
+    }
+
+    protected boolean asBoolean(IRubyObject val) {
+        if (val instanceof RubyString) {
+            return stringAsNumber(val) != 0;
+        } else if(val instanceof RubyNumeric) {
+            return RubyNumeric.fix2int(val) != 0;
+        } else {
+            return val.isTrue();
+        }
+    }
+
+    private IRubyObject trueFalse(Ruby runtime, boolean val) {
+        return number(runtime, val ? 1 : 0);
+    }
+
+    private static IRubyObject number(Ruby runtime, int s) {
+        RubyArray array = runtime.newArray(runtime.newFixnum(s));
+
+        return Pack.pack(runtime, array, FORMAT_SMALL_I);
     }
 
     @Deprecated

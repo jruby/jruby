@@ -119,6 +119,14 @@ public enum SocketType {
         public SocketAddress getLocalSocketAddress(Channel channel) {
             return toSocket(channel).getLocalSocketAddress();
         }
+
+        public void shutdownInput(Channel channel)throws IOException {
+            toSocket(channel).shutdownInput();
+        }
+
+        public void shutdownOutput(Channel channel)throws IOException {
+            toSocket(channel).shutdownInput();
+        }
     },
 
     SERVER(Sock.SOCK_STREAM) {
@@ -215,7 +223,19 @@ public enum SocketType {
         }
     },
 
-    UNIX(Sock.SOCK_STREAM),
+    UNIX(Sock.SOCK_STREAM) {
+        private RubyUNIXSocket.UnixDomainSocketChannel toSocket(Channel channel) {
+            return (RubyUNIXSocket.UnixDomainSocketChannel)channel;
+        }
+
+        public void shutdownInput(Channel channel)throws IOException {
+            toSocket(channel).shutdownInput();
+        }
+
+        public void shutdownOutput(Channel channel)throws IOException {
+            toSocket(channel).shutdownInput();
+        }
+    },
 
     UNKNOWN(Sock.SOCK_STREAM);
     
@@ -263,6 +283,9 @@ public enum SocketType {
 
     public boolean getBroadcast(Channel channel) throws IOException { return false; }
     public void setBroadcast(Channel channel, boolean b) throws IOException {}
+
+    public void shutdownInput(Channel channel) throws IOException {}
+    public void shutdownOutput(Channel channel) throws IOException {}
 
     public SocketAddress getRemoteSocketAddress(Channel channel) {
         return null;

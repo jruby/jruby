@@ -37,6 +37,19 @@ public class Addrinfo extends RubyObject {
         this.inetAddress = inetAddress;
     }
 
+    public Addrinfo(Ruby runtime, RubyClass cls, InetAddress inetAddress, int port) {
+        super(runtime, cls);
+        this.inetAddress = inetAddress;
+        this.port = port;
+    }
+
+    public Addrinfo(Ruby runtime, RubyClass cls, InetAddress inetAddress, int port, SocketType socketType) {
+        super(runtime, cls);
+        this.inetAddress = inetAddress;
+        this.port = port;
+        this.socketType = socketType;
+    }
+
     @JRubyMethod(rest = true, notImplemented = true)
     public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
         // unimplemented
@@ -45,8 +58,9 @@ public class Addrinfo extends RubyObject {
 
     @JRubyMethod(notImplemented = true)
     public IRubyObject inspect(ThreadContext context) {
-        // unimplemented
-        return context.nil;
+        // TODO: MRI also shows hostname, but we don't want to reverse every time...
+        String portString = port == 0 ? "" : ":" + port;
+        return context.runtime.newString("#<Addrinfo: " + inetAddress.getHostAddress() +  portString + ">");
     }
 
     @JRubyMethod(notImplemented = true)
@@ -55,13 +69,13 @@ public class Addrinfo extends RubyObject {
         return context.nil;
     }
 
-    @JRubyMethod(rest = true)
+    @JRubyMethod(rest = true, meta = true)
     public static IRubyObject getaddrinfo(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         // unimplemented
         return context.nil;
     }
 
-    @JRubyMethod
+    @JRubyMethod(meta = true)
     public static IRubyObject ip(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         String host = arg.convertToString().toString();
 
@@ -73,19 +87,19 @@ public class Addrinfo extends RubyObject {
         }
     }
 
-    @JRubyMethod(notImplemented = true)
+    @JRubyMethod(notImplemented = true, meta = true)
     public static IRubyObject tcp(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
         // unimplemented
         return context.nil;
     }
 
-    @JRubyMethod(notImplemented = true)
+    @JRubyMethod(notImplemented = true, meta = true)
     public static IRubyObject udp(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
         // unimplemented
         return context.nil;
     }
 
-    @JRubyMethod(rest = true, notImplemented = true)
+    @JRubyMethod(rest = true, meta = true, notImplemented = true)
     public static IRubyObject unix(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         // unimplemented
         return context.nil;
@@ -157,8 +171,7 @@ public class Addrinfo extends RubyObject {
 
     @JRubyMethod(notImplemented = true)
     public IRubyObject ip_port(ThreadContext context) {
-        // unimplemented
-        return context.nil;
+        return context.runtime.newFixnum(port);
     }
 
     @JRubyMethod(name = "ipv4_private?", notImplemented = true)
@@ -277,4 +290,6 @@ public class Addrinfo extends RubyObject {
     }
 
     private InetAddress inetAddress;
+    private int port;
+    private SocketType socketType;
 }

@@ -250,7 +250,7 @@ public class SocketUtils {
                     c = new IRubyObject[7];
                     c[0] = runtime.newString(is_ipv6 ? "AF_INET6" : "AF_INET");
                     c[1] = port;
-                    c[2] = runtime.newString(getHostAddress(recv, addrs[i]));
+                    c[2] = runtime.newString(getHostAddress(context, addrs[i]));
                     c[3] = runtime.newString(addrs[i].getHostAddress());
                     c[4] = runtime.newFixnum(is_ipv6 ? PF_INET6 : PF_INET);
                     c[5] = runtime.newFixnum(SOCK_DGRAM);
@@ -262,7 +262,7 @@ public class SocketUtils {
                     c = new IRubyObject[7];
                     c[0] = runtime.newString(is_ipv6 ? "AF_INET6" : "AF_INET");
                     c[1] = port;
-                    c[2] = runtime.newString(getHostAddress(recv, addrs[i]));
+                    c[2] = runtime.newString(getHostAddress(context, addrs[i]));
                     c[3] = runtime.newString(addrs[i].getHostAddress());
                     c[4] = runtime.newFixnum(is_ipv6 ? PF_INET6 : PF_INET);
                     c[5] = runtime.newFixnum(SOCK_STREAM);
@@ -279,8 +279,8 @@ public class SocketUtils {
         }
     }
 
-    private static String getHostAddress(IRubyObject recv, InetAddress addr) {
-        return RubyBasicSocket.do_not_reverse_lookup(recv).isTrue() ? addr.getHostAddress() : addr.getCanonicalHostName();
+    private static String getHostAddress(ThreadContext context, InetAddress addr) {
+        return context.runtime.isDoNotReverseLookupEnabled() ? addr.getHostAddress() : addr.getCanonicalHostName();
     }
 
     @JRubyMethod(required = 1, optional = 1, meta = true)
