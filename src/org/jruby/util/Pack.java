@@ -428,11 +428,7 @@ public class Pack {
             }
             public void encode(Ruby runtime, IRubyObject o, ByteList result){
                 int s = o == runtime.getNil() ? 0 : (int) RubyNumeric.num2long(o);
-                if (Platform.BYTE_ORDER == Platform.BIG_ENDIAN) {
-                    encodeIntBigEndian(result, s);
-                } else {
-                    encodeIntLittleEndian(result, s);
-                }
+                packInt_i(result, s);
             }
         };
         converters['I'] = tmp; // unsigned int, native
@@ -441,19 +437,12 @@ public class Pack {
         // int, native
         tmp = new Converter(4, "Integer") {
             public IRubyObject decode(Ruby runtime, ByteBuffer enc) {
-                if (Platform.BYTE_ORDER == Platform.BIG_ENDIAN) {
-                    return runtime.newFixnum(decodeIntBigEndian(enc));
-                } else {
-                    return runtime.newFixnum(decodeIntLittleEndian(enc));
-                }
+                int value = unpackInt_i(enc);
+                return runtime.newFixnum(value);
             }
             public void encode(Ruby runtime, IRubyObject o, ByteList result){
                 int s = o == runtime.getNil() ? 0 : (int)RubyNumeric.num2long(o);
-                if (Platform.BYTE_ORDER == Platform.BIG_ENDIAN) {
-                    encodeIntBigEndian(result, s);
-                } else {
-                    encodeIntLittleEndian(result, s);
-                }
+                packInt_i(result, s);
             }
         };
         converters['i'] = tmp; // int, native
@@ -580,6 +569,25 @@ public class Pack {
                 encodeLongBigEndian(result, num2quad19(o));
             }
         };
+    }
+
+    public static int unpackInt_i(ByteBuffer enc) {
+        int value;
+        if (Platform.BYTE_ORDER == Platform.BIG_ENDIAN) {
+            value = decodeIntBigEndian(enc);
+        } else {
+            value = decodeIntLittleEndian(enc);
+        }
+        return value;
+    }
+
+    public static ByteList packInt_i(ByteList result, int s) {
+        if (Platform.BYTE_ORDER == Platform.BIG_ENDIAN) {
+            encodeIntBigEndian(result, s);
+        } else {
+            encodeIntLittleEndian(result, s);
+        }
+        return result;
     }
 
     /**

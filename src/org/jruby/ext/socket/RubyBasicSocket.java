@@ -47,6 +47,7 @@ import java.nio.channels.DatagramChannel;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
+import jnr.constants.platform.ProtocolFamily;
 import jnr.constants.platform.Sock;
 import org.jruby.CompatVersion;
 import org.jruby.Ruby;
@@ -57,6 +58,7 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyIO;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ObjectAllocator;
@@ -158,64 +160,35 @@ public class RubyBasicSocket extends RubyIO {
     }
 
     @JRubyMethod
-    public IRubyObject getsockopt(ThreadContext context, IRubyObject lev, IRubyObject optname) {
+    public IRubyObject getsockopt(ThreadContext context, IRubyObject _level, IRubyObject _opt) {
         Ruby runtime = context.getRuntime();
-        int level = RubyNumeric.fix2int(lev);
-        int opt = RubyNumeric.fix2int(optname);
+
+        SocketLevel level = levelFromArg(_level);
+        SocketOption opt = optionFromArg(_opt);
+        
+        if (opt == null) {
+            throw runtime.newErrnoENOPROTOOPTError();
+        }
+        
+        ByteList data = new ByteList(4);
+        int value = 0;
 
         try {
-            switch(SocketLevel.valueOf(level)) {
+            Channel channel = getOpenChannel();
 
-            case SOL_IP:
+            switch(level) {
+
             case SOL_SOCKET:
+            case SOL_IP:
             case SOL_TCP:
             case SOL_UDP:
 
-                switch(SocketOption.valueOf(opt)) {
-
-                case SO_BROADCAST:
-                    return getBroadcast(runtime);
-
-                case SO_KEEPALIVE:
-                    return getKeepAlive(runtime);
-
-                case SO_LINGER:
-                    return getLinger(runtime);
-
-                case SO_OOBINLINE:
-                    return getOOBInline(runtime);
-
-                case SO_RCVBUF:
-                    return getRcvBuf(runtime);
-
-                case SO_REUSEADDR:
-                    return getReuseAddr(runtime);
-
-                case SO_SNDBUF:
-                    return getSndBuf(runtime);
-
-                case SO_RCVTIMEO:
-                case SO_SNDTIMEO:
-                    return getTimeout(runtime);
-
-                case SO_TYPE:
-                    return getSoType(runtime);
-
-                    // Can't support the rest with Java
-                case SO_RCVLOWAT:
-                    return number(runtime, 1);
-
-                case SO_SNDLOWAT:
-                    return number(runtime, 2048);
-
-                case SO_DEBUG:
-                case SO_ERROR:
-                case SO_DONTROUTE:
-                case SO_TIMESTAMP:
-                    return trueFalse(runtime, false);
-
-                default:
-                    throw runtime.newErrnoENOPROTOOPTError();
+                value = SocketType.forChannel(channel).getSocketOption(channel, opt);
+                
+                if (runtime.is1_9()) {
+                    return new Option(runtime, ProtocolFamily.PF_INET, level, opt, value);
+                } else {
+                    return number(runtime, SocketType.forChannel(channel).getSocketOption(channel, opt));
                 }
 
             default:
@@ -231,20 +204,21 @@ public class RubyBasicSocket extends RubyIO {
     }
 
     @JRubyMethod
-    public IRubyObject setsockopt(ThreadContext context, IRubyObject lev, IRubyObject optname, IRubyObject val) {
+    public IRubyObject setsockopt(ThreadContext context, IRubyObject _level, IRubyObject _opt, IRubyObject val) {
         Ruby runtime = context.runtime;
-        int level = RubyNumeric.fix2int(lev);
-        int opt = RubyNumeric.fix2int(optname);
+
+        SocketLevel level = levelFromArg(_level);
+        SocketOption opt = optionFromArg(_opt);
 
         try {
-            switch(SocketLevel.valueOf(level)) {
+            switch(level) {
 
             case SOL_IP:
             case SOL_SOCKET:
             case SOL_TCP:
             case SOL_UDP:
 
-                switch(SocketOption.valueOf(opt)) {
+                switch(opt) {
 
                 case SO_BROADCAST:
 
@@ -290,11 +264,11 @@ public class RubyBasicSocket extends RubyIO {
                     break;
 
                 default:
-                    if (IPPROTO_TCP.intValue() == level && TCP_NODELAY.intValue() == opt) {
+                    if (IPPROTO_TCP.intValue() == level.intValue() && TCP_NODELAY.intValue() == opt.intValue()) {
                         setTcpNoDelay(val);
 
-                    } else if (IPPROTO_IP.intValue() == level) {
-                        if (MulticastStateManager.IP_ADD_MEMBERSHIP == opt) {
+                    } else if (IPPROTO_IP.intValue() == level.intValue()) {
+                        if (MulticastStateManager.IP_ADD_MEMBERSHIP == opt.intValue()) {
                             joinMulticastGroup(val);
                         }
 
@@ -306,11 +280,11 @@ public class RubyBasicSocket extends RubyIO {
                 break;
 
             default:
-                if (IPPROTO_TCP.intValue() == level && TCP_NODELAY.intValue() == opt) {
+                if (IPPROTO_TCP.intValue() == level.intValue() && TCP_NODELAY.intValue() == opt.intValue()) {
                     setTcpNoDelay(val);
 
-                } else if (IPPROTO_IP.intValue() == level) {
-                    if (MulticastStateManager.IP_ADD_MEMBERSHIP == opt) {
+                } else if (IPPROTO_IP.intValue() == level.intValue()) {
+                    if (MulticastStateManager.IP_ADD_MEMBERSHIP == opt.intValue()) {
                         joinMulticastGroup(val);
                     }
 
@@ -474,12 +448,6 @@ public class RubyBasicSocket extends RubyIO {
         }
     }
 
-    private IRubyObject getBroadcast(Ruby runtime) throws IOException, BadDescriptorException {
-        Channel channel = getOpenChannel();
-
-        return trueFalse(runtime, SocketType.forChannel(channel).getBroadcast(channel));
-    }
-
     private void setBroadcast(IRubyObject val) throws IOException, BadDescriptorException {
         Channel channel = getOpenChannel();
 
@@ -567,62 +535,8 @@ public class RubyBasicSocket extends RubyIO {
         return (InetSocketAddress)SocketType.forChannel(channel).getRemoteSocketAddress(channel);
     }
 
-    private IRubyObject getKeepAlive(Ruby runtime) throws IOException, BadDescriptorException {
-        Channel channel = getOpenChannel();
-
-        return trueFalse(runtime, SocketType.forChannel(channel).getKeepAlive(channel));
-    }
-
-    private IRubyObject getLinger(Ruby runtime) throws IOException, BadDescriptorException {
-        Channel channel = getOpenChannel();
-
-        int linger = SocketType.forChannel(channel).getSoLinger(channel);
-
-        if (linger < 0) {
-            linger = 0;
-        }
-
-        return number(runtime, linger);
-    }
-
-    private IRubyObject getOOBInline(Ruby runtime) throws IOException, BadDescriptorException {
-        Channel channel = getOpenChannel();
-
-        return trueFalse(runtime, SocketType.forChannel(channel).getOOBInline(channel));
-    }
-
-    private IRubyObject getRcvBuf(Ruby runtime) throws IOException, BadDescriptorException {
-        Channel channel = getOpenChannel();
-
-        return number(runtime, SocketType.forChannel(channel).getReceiveBufferSize(channel));
-    }
-
-    private IRubyObject getSndBuf(Ruby runtime) throws IOException, BadDescriptorException {
-        Channel channel = getOpenChannel();
-
-        return number(runtime, SocketType.forChannel(channel).getSendBufferSize(channel));
-    }
-
-    private IRubyObject getReuseAddr(Ruby runtime) throws IOException, BadDescriptorException {
-        Channel channel = getOpenChannel();
-
-        return trueFalse(runtime, SocketType.forChannel(channel).getReuseAddress(channel));
-    }
-
-    private IRubyObject getTimeout(Ruby runtime) throws IOException, BadDescriptorException {
-        Channel channel = getOpenChannel();
-
-        return number(runtime, SocketType.forChannel(channel).getSoTimeout(channel));
-    }
-
     protected Sock getDefaultSocketType() {
         return Sock.SOCK_STREAM;
-    }
-
-    private IRubyObject getSoType(Ruby runtime) throws IOException, BadDescriptorException {
-        Channel channel = getOpenChannel();
-
-        return number(runtime,  SocketType.forChannel(channel).getSocketType().intValue());
     }
 
     protected IRubyObject getSocknameCommon(ThreadContext context, String caller) {
@@ -745,14 +659,28 @@ public class RubyBasicSocket extends RubyIO {
         }
     }
 
-    private IRubyObject trueFalse(Ruby runtime, boolean val) {
-        return number(runtime, val ? 1 : 0);
+    private static IRubyObject number(Ruby runtime, int s) {
+        return RubyString.newString(runtime, Pack.packInt_i(new ByteList(4), s));
     }
 
-    private static IRubyObject number(Ruby runtime, int s) {
-        RubyArray array = runtime.newArray(runtime.newFixnum(s));
+    protected static SocketOption optionFromArg(IRubyObject _opt) {
+        SocketOption opt;
+        if (_opt instanceof RubyString || _opt instanceof RubySymbol) {
+            opt = SocketOption.valueOf(_opt.toString());
+        } else {
+            opt = SocketOption.valueOf(RubyNumeric.fix2int(_opt));
+        }
+        return opt;
+    }
 
-        return Pack.pack(runtime, array, FORMAT_SMALL_I);
+    protected static SocketLevel levelFromArg(IRubyObject _level) {
+        SocketLevel level;
+        if (_level instanceof RubyString || _level instanceof RubySymbol) {
+            level = SocketLevel.valueOf(_level.toString());
+        } else {
+            level = SocketLevel.valueOf(RubyNumeric.fix2int(_level));
+        }
+        return level;
     }
 
     @Deprecated

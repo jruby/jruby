@@ -334,15 +334,15 @@ public class RubyUNIXSocket extends RubyBasicSocket {
     }
 
     @Override
-    public IRubyObject setsockopt(ThreadContext context, IRubyObject lev, IRubyObject optname, IRubyObject val) {
-        int level = RubyNumeric.fix2int(lev);
-        int opt = RubyNumeric.fix2int(optname);
+    public IRubyObject setsockopt(ThreadContext context, IRubyObject _level, IRubyObject _opt, IRubyObject val) {
+        SocketLevel level = levelFromArg(_level);
+        SocketOption opt = optionFromArg(_opt);
 
-        switch(SocketLevel.valueOf(level)) {
+        switch(level) {
         case SOL_SOCKET:
-            switch(SocketOption.valueOf(opt)) {
+            switch(opt) {
             case SO_KEEPALIVE: {
-                int res = INSTANCE.setsockopt(fd, level, opt, asBoolean(val) ? new byte[]{32,0,0,0} : new byte[]{0,0,0,0}, 4);
+                int res = INSTANCE.setsockopt(fd, level.intValue(), opt.intValue(), asBoolean(val) ? new byte[]{32,0,0,0} : new byte[]{0,0,0,0}, 4);
                 if(res == -1) {
                     rb_sys_fail(context.getRuntime(), openFile.getPath());
                 }

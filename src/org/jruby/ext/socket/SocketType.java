@@ -27,6 +27,7 @@
 package org.jruby.ext.socket;
 
 import jnr.constants.platform.Sock;
+import jnr.constants.platform.SocketOption;
 
 import java.io.IOException;
 import java.net.DatagramSocket;
@@ -297,6 +298,57 @@ public enum SocketType {
 
     public Sock getSocketType() {
         return sock;
+    }
+    
+    public int getSocketOption(Channel channel, SocketOption option) throws IOException {
+        switch (option) {
+
+            case SO_BROADCAST:
+                return getBroadcast(channel) ? 1 : 0;
+
+            case SO_KEEPALIVE:
+                return getKeepAlive(channel) ? 1 : 0;
+
+            case SO_LINGER: {
+                int linger = getSoLinger(channel);
+                return linger < 0 ? 0 : linger;
+            }
+
+            case SO_OOBINLINE:
+                return getOOBInline(channel) ? 1 : 0;
+
+            case SO_RCVBUF:
+                return getReceiveBufferSize(channel);
+
+            case SO_REUSEADDR:
+                return getReuseAddress(channel) ? 1 : 0;
+
+            case SO_SNDBUF:
+                return getSendBufferSize(channel);
+
+            case SO_RCVTIMEO:
+            case SO_SNDTIMEO:
+                return getSoTimeout(channel);
+
+            case SO_TYPE:
+                return getSocketType().intValue();
+
+            // Can't support the rest with Java
+            case SO_RCVLOWAT:
+                return 1;
+
+            case SO_SNDLOWAT:
+                return 2048;
+
+            case SO_DEBUG:
+            case SO_ERROR:
+            case SO_DONTROUTE:
+            case SO_TIMESTAMP:
+                return 0;
+
+        }
+
+        return 0;
     }
 
     private SocketType(Sock sock) {

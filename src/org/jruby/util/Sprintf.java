@@ -1314,7 +1314,7 @@ public class Sprintf {
         return tainted;
     }
     
-    private static NumberFormat getNumberFormat(Locale locale) {
+    public static NumberFormat getNumberFormat(Locale locale) {
         NumberFormat format = LOCALE_NUMBER_FORMATS.get().get(locale);
         if (format == null) {
             format = NumberFormat.getNumberInstance(locale);
