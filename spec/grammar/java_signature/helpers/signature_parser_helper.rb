@@ -20,7 +20,6 @@ VOID = PrimitiveTypeNode::VOID
 class Object
   def signature(string)
     bytes = string.to_java.bytes
-    puts "string is #{string}"
     JavaSignatureParser.parse ByteArrayInputStream.new(bytes)
   end
 
