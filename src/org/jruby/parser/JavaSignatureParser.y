@@ -22,6 +22,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jruby.ast.java_signature.Annotation;
+import org.jruby.ast.java_signature.AnnotationParameter;
 import org.jruby.ast.java_signature.ArrayTypeNode;
 import org.jruby.ast.java_signature.ConstructorSignatureNode;
 import org.jruby.ast.java_signature.MethodSignatureNode;
@@ -67,6 +69,7 @@ public class JavaSignatureParser {
 %token <String> IDENTIFIER
 // syntax markers
 %token <String> AND    // '&'
+%token <String> AT     // '@'
 %token <String> DOT    // '.'
 %token <String> COMMA  // ','
 %token <String> ELLIPSIS // '...' or \u2026
@@ -88,6 +91,7 @@ public class JavaSignatureParser {
 %type <ConstructorSignatureNode> constructor_declarator, constructor_declaration
 %type <List> formal_parameter_list_opt, formal_parameter_list // <ParameterNode>
 %type <List> modifiers_opt, modifiers, modifiers_none, throws, class_type_list
+%type <List> annotation_params_opt, annotation_params, annotation_params_none
 %type <ParameterNode> formal_parameter
 %type <TypeNode> primitive_type, type
 %type <ReferenceTypeNode> class_or_interface, class_or_interface_type, array_type
@@ -102,10 +106,13 @@ public class JavaSignatureParser {
 %type <String> type_parameter, type_parameter_1
 %type <String> type_parameter_list, type_parameter_list_1, 
 %type <String> type_bound_opt, type_bound, additional_bound_list, additional_bound_list_opt
+%type <String> annotation_name
 %type <Modifier> modifier
 %type <ArrayTypeNode> dims
 %type <Object> none
 %type <SignatureNode> program
+%type <Annotation> annotation
+%type <AnnotationParameter> annotation_param
 
 %%
 
@@ -323,6 +330,7 @@ modifier : PUBLIC { $$ = Modifier.PUBLIC; }
  | TRANSIENT { $$ = Modifier.TRANSIENT; }
  | VOLATILE { $$ = Modifier.VOLATILE; }
  | STRICTFP { $$ = Modifier.STRICTFP; }
+ | annotation { $$ = null; }
 
 // String
 name : IDENTIFIER { $$ = $1; }                  // Foo (or foo)
@@ -512,6 +520,38 @@ method_header : modifiers_opt type method_declarator throws {
                   $<MethodSignatureNode>$.setReturnType(PrimitiveTypeNode.VOID);
                   $<MethodSignatureNode>$.setThrows($6);
               }
+
+// Annotation
+annotation : annotation_name {
+               $$ = new Annotation($1, null);
+           }
+           | annotation_name LPAREN annotation_params_opt RPAREN {
+               $$ = new Annotation($1, $3);
+           }
+
+// String
+annotation_name : AT name {
+                    $$ = $1;
+                }
+
+// AnnotationParam
+annotation_param : annotation {
+                     $$ = new AnnotationParameter($1);
+                 }
+// List<AnnotationParameter>
+annotation_params : annotation_param {
+                      $$ = new ArrayList<AnnotationParameter>();
+                      $<List>$.add($1);
+                  }
+                  | annotation_params annotation_param {
+                      $1.add($2);
+                  }
+
+// List<AnnotationParameter> -- This is just so we don't deal with null's.
+annotation_params_none : { $$ = new ArrayList<AnnotationParameter>(); }
+
+// List<AnnotationParameter>
+annotation_params_opt : annotation_params | annotation_params_none
 
 %%
 

@@ -51,6 +51,7 @@ Identifier     = [:jletter:] [:jletterdigit:]*
     "volatile"      { return JavaSignatureParser.VOLATILE;     }
     "strictfp"      { return JavaSignatureParser.STRICTFP;     }
 
+    "@"             { return JavaSignatureParser.AT;           }
     "&"             { return JavaSignatureParser.AND;          }
     "."             { return JavaSignatureParser.DOT;          }
     ","             { return JavaSignatureParser.COMMA;        }
