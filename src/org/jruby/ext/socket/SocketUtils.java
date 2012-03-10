@@ -27,8 +27,10 @@
 package org.jruby.ext.socket;
 
 import jnr.netdb.Service;
+import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
@@ -38,10 +40,14 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.io.Sockaddr;
 
+import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -172,19 +178,6 @@ public class SocketUtils {
         }
     }
 
-    public static InetAddress getRubyInetAddress(ByteList address) throws UnknownHostException {
-        if (address.equal(BROADCAST)) {
-            return InetAddress.getByAddress(INADDR_BROADCAST);
-
-        } else if (address.equal(ANY)) {
-            return InetAddress.getByAddress(INADDR_ANY);
-
-        } else {
-            return InetAddress.getByName(address.toString());
-
-        }
-    }
-
     /**
      * Ruby definition would look like:
      *
@@ -277,10 +270,6 @@ public class SocketUtils {
             throw RubySocket.sockerr(runtime, "getaddrinfo: name or service not known");
 
         }
-    }
-
-    private static String getHostAddress(ThreadContext context, InetAddress addr) {
-        return context.runtime.isDoNotReverseLookupEnabled() ? addr.getHostAddress() : addr.getCanonicalHostName();
     }
 
     @JRubyMethod(required = 1, optional = 1, meta = true)
@@ -385,6 +374,43 @@ public class SocketUtils {
 
         return runtime.newArray(runtime.newString(host), runtime.newString(port));
 
+    }
+
+    @JRubyMethod(meta = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject ip_address_list(ThreadContext context, IRubyObject self) {
+        Ruby runtime = context.runtime;
+
+        try {
+            RubyArray list = RubyArray.newArray(runtime);
+            RubyClass addrInfoCls = runtime.getClass("Addrinfo");
+
+            for (Enumeration<NetworkInterface> networkIfcs = NetworkInterface.getNetworkInterfaces() ; networkIfcs.hasMoreElements() ; ) {
+                for (Enumeration<InetAddress> addresses = networkIfcs.nextElement().getInetAddresses() ; addresses.hasMoreElements() ; ) {
+                    list.append(new Addrinfo(runtime, addrInfoCls, addresses.nextElement()));
+                }
+            }
+
+            return list;
+        } catch (SocketException se) {
+            throw RubySocket.sockerr(runtime, se.getLocalizedMessage());
+        }
+    }
+
+    public static InetAddress getRubyInetAddress(ByteList address) throws UnknownHostException {
+        if (address.equal(BROADCAST)) {
+            return InetAddress.getByAddress(INADDR_BROADCAST);
+
+        } else if (address.equal(ANY)) {
+            return InetAddress.getByAddress(INADDR_ANY);
+
+        } else {
+            return InetAddress.getByName(address.toString());
+
+        }
+    }
+
+    private static String getHostAddress(ThreadContext context, InetAddress addr) {
+        return context.runtime.isDoNotReverseLookupEnabled() ? addr.getHostAddress() : addr.getCanonicalHostName();
     }
 
     private static final Pattern STRING_IPV4_ADDRESS_PATTERN =
