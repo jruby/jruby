@@ -195,7 +195,7 @@ public class Option extends RubyObject {
 
     @JRubyMethod
     public IRubyObject unpack(ThreadContext context, IRubyObject arg0) {
-        return context.nil;
+        return Pack.unpack(context.runtime, data, arg0.convertToString().getByteList());
     }
 
     @JRubyMethod

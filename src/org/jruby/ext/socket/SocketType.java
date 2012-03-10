@@ -351,6 +351,49 @@ public enum SocketType {
         return 0;
     }
 
+    public void setSocketOption(Channel channel, SocketOption option, int value) throws IOException {
+        switch (option) {
+
+            case SO_BROADCAST:
+                setBroadcast(channel, asBoolean(value));
+
+            case SO_KEEPALIVE:
+                setKeepAlive(channel, asBoolean(value));
+
+            case SO_LINGER:
+                setSoLinger(channel, value <= 0, value);
+
+            case SO_OOBINLINE:
+                setOOBInline(channel, asBoolean(value));
+
+            case SO_RCVBUF:
+                setReceiveBufferSize(channel, value);
+
+            case SO_REUSEADDR:
+                setReuseAddress(channel, asBoolean(value));
+
+            case SO_SNDBUF:
+                setSendBufferSize(channel, value);
+
+            case SO_RCVTIMEO:
+            case SO_SNDTIMEO:
+                setSoTimeout(channel, value);
+
+            // can't set these
+            case SO_TYPE:
+            case SO_RCVLOWAT:
+            case SO_SNDLOWAT:
+            case SO_DEBUG:
+            case SO_ERROR:
+            case SO_DONTROUTE:
+            case SO_TIMESTAMP:
+        }
+    }
+
+    private static boolean asBoolean(int value) {
+        return value == 0 ? false : true;
+    }
+
     private SocketType(Sock sock) {
         this.sock = sock;
     }
