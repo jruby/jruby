@@ -347,7 +347,7 @@ public abstract class CallBase extends Instr implements Specializeable {
         int numArgs = args.length;
         for (int i = 0; i < numArgs; i++) {
             IRubyObject rArg = (IRubyObject) args[i].retrieve(context, self, currDynScope, temp);
-            if (args[i] instanceof Splat) {
+            if ((numArgs == 1) && args[i] instanceof Splat) {
                 argList.addAll(Arrays.asList(((RubyArray)rArg).toJavaArray()));
             } else {
                 argList.add(rArg);
