@@ -140,9 +140,10 @@ class SimpleSignatureMatcher
   def matches?(ast)
     modifiers, return_type, name, parameters, throws = *@args
     # Mildly brittle to depend on toString, but unlikely to change.
-    modifiers_as_str = modifiers.map(&:to_s)
+    expected_modifiers = modifiers.map(&:to_s)
+    actual_modifiers = ast.modifiers.map(&:to_s)
 
-    @errors << ['modifiers', ast.modifiers, modifiers_as_str] unless modifiers_match? modifiers_as_str, modifiers
+    @errors << ['modifiers', actual_modifiers, expected_modifiers] unless modifiers_match? actual_modifiers, expected_modifiers
     @errors << ['return type', ast.return_type, return_type] unless match_type? ast.return_type.to_s, return_type.to_s
     @errors << ['name', ast.name, name] unless ast.name == name
     @errors << ['parameters', ast.parameters, parameters] unless match_parameters? ast.parameters, parameters

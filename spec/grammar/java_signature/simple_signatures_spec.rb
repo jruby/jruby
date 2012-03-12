@@ -27,8 +27,13 @@ describe JavaSignatureParser do
     signature('Foo(int, String)').should have_constructor_signature('Foo', [INT, :String])
   end
 
-  it "parses simple method annotations" do
-    puts "signature('@Override void foo(float)') = #{signature('@Override void foo(float)')}"
+  it "parses simple marker annotations" do
     signature('@Override void foo(float)').should have_signature(['@Override'], VOID, 'foo', [FLOAT])
+    # Notice this strips off syntax but semantically is still correct
+    signature('@Override void foo()').should have_signature(['@Override'], VOID, 'foo', [])
+  end
+
+  it "parses simple default annotations" do
+    signature('@Cook(@Porridge) void foo()').should have_signature(['@Cook(@Porridge)'], VOID, 'foo', [])
   end
 end
