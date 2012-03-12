@@ -52,10 +52,10 @@ class Dir
         end
       end
       for dir in dirs
-        if dir and File.directory?(dir) and File.writable?(dir)
-          tmp = dir
-          break
-        end
+	if dir and File.directory?(dir) and File.writable?(dir)
+	  tmp = dir
+	  break
+	end
       end
       File.expand_path(tmp)
     end
