@@ -37,6 +37,7 @@ import org.jruby.RubyClass;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -167,10 +168,23 @@ public class RubyIPSocket extends RubyBasicSocket {
         }
     }
 
-    @JRubyMethod(required = 1, optional = 1)
+    @Deprecated
     public IRubyObject recvfrom(ThreadContext context, IRubyObject[] args) {
+        switch (args.length) {
+            case 1:
+                return recvfrom(context, args[0]);
+            case 2:
+                return recvfrom(context, args[0], args[1]);
+            default:
+                Arity.raiseArgumentError(context.runtime, args, 1, 2);
+                return null; // not reached
+        }
+    }
+
+    @JRubyMethod
+    public IRubyObject recvfrom(ThreadContext context, IRubyObject _length) {
         try {
-            IRubyObject result = recv(context, args);
+            IRubyObject result = recv(context, _length);
             InetSocketAddress sender = getRemoteSocket();
 
             int port;
@@ -198,6 +212,12 @@ public class RubyIPSocket extends RubyBasicSocket {
         } catch (BadDescriptorException e) {
             throw context.runtime.newErrnoEBADFError();
         }
+    }
+
+    @JRubyMethod
+    public IRubyObject recvfrom(ThreadContext context, IRubyObject _length, IRubyObject _flags) {
+        // TODO: implement flags
+        return recvfrom(context, _length);
     }
 
 }// RubyIPSocket

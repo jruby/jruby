@@ -61,6 +61,7 @@ import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -127,15 +128,28 @@ public class RubyBasicSocket extends RubyIO {
         return syswrite(context, args[0]);
     }
 
-    @JRubyMethod(rest = true)
+    @Deprecated
     public IRubyObject recv(ThreadContext context, IRubyObject[] args) {
+        switch (args.length) {
+            case 1:
+                return recv(context, args[0]);
+            case 2:
+                return recv(context, args[0], args[1]);
+            default:
+                Arity.raiseArgumentError(context.runtime, args, 1, 2);
+                return null; // not reached
+        }
+    }
+
+    @JRubyMethod
+    public IRubyObject recv(ThreadContext context, IRubyObject _length) {
         Ruby runtime = context.runtime;
         OpenFile openFile = getOpenFileChecked();
         
         try {
             context.getThread().beforeBlockingCall();
             
-            return RubyString.newString(runtime, openFile.getMainStreamSafe().read(RubyNumeric.fix2int(args[0])));
+            return RubyString.newString(runtime, openFile.getMainStreamSafe().read(RubyNumeric.fix2int(_length)));
             
         } catch (BadDescriptorException e) {
             throw runtime.newErrnoEBADFError();
@@ -157,6 +171,12 @@ public class RubyBasicSocket extends RubyIO {
         } finally {
             context.getThread().afterBlockingCall();
         }
+    }
+    
+    @JRubyMethod
+    public IRubyObject recv(ThreadContext context, IRubyObject _length, IRubyObject _flags) {
+        // TODO: implement flags
+        return recv(context, _length);
     }
 
     @JRubyMethod

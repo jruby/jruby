@@ -39,8 +39,7 @@ import java.net.DatagramPacket;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
 import java.nio.channels.DatagramChannel;
-
-import java.nio.channels.SelectionKey;
+import java.nio.channels.IllegalBlockingModeException;
 
 import jnr.netdb.Service;
 import org.jruby.Ruby;
@@ -192,20 +191,14 @@ public class RubyUDPSocket extends RubyIPSocket {
         }
     }
 
-    @JRubyMethod(name = {"recvfrom", "recvfrom_nonblock"}, required = 1, rest = true)
-    public IRubyObject recvfrom(ThreadContext context, IRubyObject[] args) {
+    @JRubyMethod
+    public IRubyObject recvfrom_nonblock(ThreadContext context, IRubyObject _length) {
         Ruby runtime = context.runtime;
 
         try {
-            int length = RubyNumeric.fix2int(args[0]);
+            int length = RubyNumeric.fix2int(_length);
 
-            ReceiveTuple tuple = new ReceiveTuple();
-
-            if (this.multicastStateManager == null) {
-                doReceive(runtime, length, tuple);
-            } else {
-                doReceiveMulticast(runtime, length, tuple);
-            }
+            ReceiveTuple tuple = doReceiveNonblockTuple(runtime, length);
 
             IRubyObject addressArray = addrFor(context, tuple.sender, false);
 
@@ -222,18 +215,10 @@ public class RubyUDPSocket extends RubyIPSocket {
         }
     }
 
-    @Override
-    @JRubyMethod(rest = true)
-    public IRubyObject recv(ThreadContext context, IRubyObject[] args) {
-        Ruby runtime = context.runtime;
-
-        try {
-            return doReceive(runtime, RubyNumeric.fix2int(args[0]));
-
-        } catch (IOException e) {
-            throw sockerr(runtime, "recv: name or service not known");
-
-        }
+    @JRubyMethod
+    public IRubyObject recvfrom_nonblock(ThreadContext context, IRubyObject _length, IRubyObject _flags) {
+        // TODO: handle flags
+        return recvfrom_nonblock(context, _length);
     }
 
     @JRubyMethod(required = 1, rest = true)
@@ -315,6 +300,92 @@ public class RubyUDPSocket extends RubyIPSocket {
         }
     }
 
+    /**
+     * Overrides IPSocket#recvfrom
+     */
+    @Override
+    public IRubyObject recvfrom(ThreadContext context, IRubyObject _length) {
+        Ruby runtime = context.runtime;
+
+        try {
+            int length = RubyNumeric.fix2int(_length);
+
+            ReceiveTuple tuple = doReceiveTuple(runtime, length);
+
+            IRubyObject addressArray = addrFor(context, tuple.sender, false);
+
+            return runtime.newArray(tuple.result, addressArray);
+
+        } catch (UnknownHostException e) {
+            throw sockerr(runtime, "recvfrom: name or service not known");
+
+        } catch (PortUnreachableException e) {
+            throw runtime.newErrnoECONNREFUSEDError();
+
+        } catch (IOException e) {
+            throw sockerr(runtime, "recvfrom: name or service not known");
+        }
+    }
+
+    /**
+     * Overrides IPSocket#recvfrom
+     */
+    @Override
+    public IRubyObject recvfrom(ThreadContext context, IRubyObject _length, IRubyObject _flags) {
+        // TODO: handle flags
+        return recvfrom(context, _length);
+    }
+
+    /**
+     * Overrides BasicSocket#recv
+     */
+    @Override
+    public IRubyObject recv(ThreadContext context, IRubyObject _length) {
+        Ruby runtime = context.runtime;
+
+        try {
+            return doReceive(runtime, RubyNumeric.fix2int(_length));
+
+        } catch (IOException e) {
+            throw sockerr(runtime, "recv: name or service not known");
+
+        }
+    }
+
+    /**
+     * Overrides BasicSocket#recv
+     */
+    @Override
+    public IRubyObject recv(ThreadContext context, IRubyObject _length, IRubyObject _flags) {
+        // TODO: implement flags
+        return recv(context, _length);
+    }
+
+    private ReceiveTuple doReceiveTuple(Ruby runtime, int length) throws IOException {
+        ReceiveTuple tuple = new ReceiveTuple();
+
+        if (this.multicastStateManager == null) {
+            doReceive(runtime, length, tuple);
+        } else {
+            doReceiveMulticast(runtime, length, tuple);
+        }
+
+        return tuple;
+    }
+
+    private ReceiveTuple doReceiveNonblockTuple(Ruby runtime, int length) throws IOException {
+        DatagramChannel channel = (DatagramChannel)getChannel();
+
+        try {
+            channel.configureBlocking(false);
+
+            return doReceiveTuple(runtime, length);
+
+        } finally {
+            channel.configureBlocking(true);
+        }
+    }
+
     private static class ReceiveTuple {
         ReceiveTuple() {}
         ReceiveTuple(RubyString result, InetSocketAddress sender) {
@@ -337,6 +408,15 @@ public class RubyUDPSocket extends RubyIPSocket {
 
         InetSocketAddress sender = (InetSocketAddress)channel.receive(buf);
 
+        if (sender == null) {
+            // noblocking receive
+            if (runtime.is1_9()) {
+                throw runtime.newErrnoEAGAINReadableError("recvfrom(2) would block");
+            } else {
+                throw runtime.newErrnoEAGAINError("recvfrom(2) would block");
+            }
+        }
+
         // see JRUBY-4678
         if (sender == null) {
             throw runtime.newErrnoECONNRESETError();
@@ -358,7 +438,18 @@ public class RubyUDPSocket extends RubyIPSocket {
 
         MulticastSocket ms = this.multicastStateManager.getMulticastSocket();
 
-        ms.receive(recv);
+        try {
+            ms.receive(recv);
+        } catch (IllegalBlockingModeException ibme) {
+            // MulticastSocket does not support nonblocking
+            // TODO: Use Java 7 NIO.2 DatagramChannel to do multicast
+            if (runtime.is1_9()) {
+                throw runtime.newErrnoEAGAINReadableError("multicast UDP does not support nonblocking");
+            } else {
+                throw runtime.newErrnoEAGAINError("multicast UDP does not support nonblocking");
+            }
+        }
+
         InetSocketAddress sender = (InetSocketAddress) recv.getSocketAddress();
 
         // see JRUBY-4678
