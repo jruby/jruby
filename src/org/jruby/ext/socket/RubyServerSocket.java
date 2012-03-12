@@ -27,62 +27,31 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.socket;
 
-import jnr.constants.platform.AddressFamily;
 import jnr.constants.platform.Sock;
-import jnr.netdb.Service;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
-import org.jruby.RubyModule;
-import org.jruby.RubyNumeric;
-import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
-import org.jruby.util.io.BadDescriptorException;
 import org.jruby.util.io.ChannelDescriptor;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.Sockaddr;
 
 import java.io.IOException;
-import java.net.DatagramSocket;
-import java.net.Inet6Address;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
-import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
-import java.nio.channels.AlreadyConnectedException;
 import java.nio.channels.Channel;
-import java.nio.channels.ClosedChannelException;
-import java.nio.channels.ConnectionPendingException;
-import java.nio.channels.DatagramChannel;
 import java.nio.channels.IllegalBlockingModeException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import static jnr.constants.platform.AddressFamily.AF_INET;
-import static jnr.constants.platform.AddressFamily.AF_INET6;
-import static jnr.constants.platform.IPProto.IPPROTO_TCP;
-import static jnr.constants.platform.IPProto.IPPROTO_UDP;
-import static jnr.constants.platform.NameInfo.NI_NUMERICHOST;
-import static jnr.constants.platform.NameInfo.NI_NUMERICSERV;
-import static jnr.constants.platform.ProtocolFamily.PF_INET;
-import static jnr.constants.platform.ProtocolFamily.PF_INET6;
-import static jnr.constants.platform.Sock.SOCK_DGRAM;
-import static jnr.constants.platform.Sock.SOCK_STREAM;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -116,12 +85,12 @@ public class RubyServerSocket extends RubySocket {
 
     @JRubyMethod(notImplemented = true)
     public IRubyObject connect_nonblock(ThreadContext context, IRubyObject arg) {
-        throw sockerr(context.runtime, "server socket cannot connect");
+        throw SocketUtils.sockerr(context.runtime, "server socket cannot connect");
     }
 
     @JRubyMethod(notImplemented = true)
     public IRubyObject connect(ThreadContext context, IRubyObject arg) {
-        throw sockerr(context.runtime, "server socket cannot connect");
+        throw SocketUtils.sockerr(context.runtime, "server socket cannot connect");
     }
 
     @JRubyMethod()
@@ -169,7 +138,7 @@ public class RubyServerSocket extends RubySocket {
             return new ChannelDescriptor(channel, modeFlags);
 
         } catch(IOException e) {
-            throw sockerr(runtime, "initialize: " + e.toString());
+            throw SocketUtils.sockerr(runtime, "initialize: " + e.toString());
 
         }
     }
@@ -193,7 +162,7 @@ public class RubyServerSocket extends RubySocket {
             }
 
         } catch(IOException e) {
-            throw sockerr(context.getRuntime(), e.getLocalizedMessage());
+            throw SocketUtils.sockerr(context.getRuntime(), e.getLocalizedMessage());
 
         }
     }
@@ -228,7 +197,7 @@ public class RubyServerSocket extends RubySocket {
             throw runtime.newErrnoEAGAINReadableError("accept(2) would block");
 
         } catch(IOException e) {
-            throw sockerr(runtime, e.getLocalizedMessage());
+            throw SocketUtils.sockerr(runtime, e.getLocalizedMessage());
 
         }
     }
@@ -246,16 +215,16 @@ public class RubyServerSocket extends RubySocket {
             }
 
         } catch(UnknownHostException e) {
-            throw sockerr(runtime, "bind(2): unknown host");
+            throw SocketUtils.sockerr(runtime, "bind(2): unknown host");
 
         } catch(SocketException e) {
             handleSocketException(runtime, "bind", e);
 
         } catch(IOException e) {
-            throw sockerr(runtime, "bind(2): name or service not known");
+            throw SocketUtils.sockerr(runtime, "bind(2): name or service not known");
 
         } catch (IllegalArgumentException iae) {
-            throw sockerr(runtime, iae.getMessage());
+            throw SocketUtils.sockerr(runtime, iae.getMessage());
 
         }
     }

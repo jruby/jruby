@@ -311,7 +311,7 @@ public class RubyBasicSocket extends RubyIO {
 
     @JRubyMethod(name = "getpeereid", compat = CompatVersion.RUBY1_9, notImplemented = true)
     public IRubyObject getpeereid(ThreadContext context) {
-        throw context.runtime.newNotImplementedError("getpeerid not implemented");
+        throw context.runtime.newNotImplementedError("getpeereid not implemented");
     }
 
     @JRubyMethod(compat = CompatVersion.RUBY1_9)

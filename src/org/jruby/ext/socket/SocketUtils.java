@@ -35,6 +35,7 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -66,8 +67,7 @@ import static jnr.constants.platform.Sock.SOCK_STREAM;
  * Socket class methods for addresses, structures, and so on.
  */
 public class SocketUtils {
-    @JRubyMethod(meta = true)
-    public static IRubyObject gethostname(ThreadContext context, IRubyObject recv) {
+    public static IRubyObject gethostname(ThreadContext context) {
         Ruby runtime = context.runtime;
 
         try {
@@ -79,14 +79,13 @@ public class SocketUtils {
                 return runtime.newString(InetAddress.getByAddress(new byte[]{0,0,0,0}).getHostName());
 
             } catch(UnknownHostException e2) {
-                throw RubySocket.sockerr(runtime, "gethostname: name or service not known");
+                throw sockerr(runtime, "gethostname: name or service not known");
 
             }
         }
     }
 
-    @JRubyMethod(required = 1, rest = true, meta = true)
-    public static IRubyObject gethostbyaddr(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+    public static IRubyObject gethostbyaddr(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
         IRubyObject[] ret = new IRubyObject[4];
 
@@ -98,8 +97,7 @@ public class SocketUtils {
         return runtime.newArrayNoCopy(ret);
     }
 
-    @JRubyMethod(required = 1, optional = 1, meta = true)
-    public static IRubyObject getservbyname(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+    public static IRubyObject getservbyname(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.getRuntime();
         String name = args[0].convertToString().toString();
         String proto = args.length ==  1 ? "tcp" : args[1].convertToString().toString();
@@ -116,7 +114,7 @@ public class SocketUtils {
                 port = Integer.parseInt(name.trim());
 
             } catch (NumberFormatException nfe) {
-                throw RubySocket.sockerr(runtime, "no such service " + name + "/" + proto);
+                throw sockerr(runtime, "no such service " + name + "/" + proto);
 
             }
 
@@ -125,8 +123,7 @@ public class SocketUtils {
         return runtime.newFixnum(port);
     }
 
-    @JRubyMethod(name = {"pack_sockaddr_in", "sockaddr_in"}, meta = true)
-    public static IRubyObject pack_sockaddr_in(ThreadContext context, IRubyObject recv, IRubyObject port, IRubyObject host) {
+    public static IRubyObject pack_sockaddr_in(ThreadContext context, IRubyObject port, IRubyObject host) {
         int portNum = port instanceof RubyString ?
                 Integer.parseInt(port.convertToString().toString()) :
                 RubyNumeric.fix2int(port);
@@ -137,13 +134,11 @@ public class SocketUtils {
                 host.isNil() ? null : host.convertToString().toString());
     }
 
-    @JRubyMethod(meta = true)
-    public static IRubyObject unpack_sockaddr_in(ThreadContext context, IRubyObject recv, IRubyObject addr) {
+    public static IRubyObject unpack_sockaddr_in(ThreadContext context, IRubyObject addr) {
         return Sockaddr.unpack_sockaddr_in(context, addr);
     }
 
-    @JRubyMethod(name = {"pack_sockaddr_un", "sockaddr_un"}, meta = true)
-    public static IRubyObject pack_sockaddr_un(ThreadContext context, IRubyObject recv, IRubyObject filename) {
+    public static IRubyObject pack_sockaddr_un(ThreadContext context, IRubyObject filename) {
         String str = filename.convertToString().toString();
 
         StringBuilder sb = new StringBuilder()
@@ -158,8 +153,7 @@ public class SocketUtils {
         return context.runtime.newString(sb.toString());
     }
 
-    @JRubyMethod(meta = true)
-    public static IRubyObject gethostbyname(ThreadContext context, IRubyObject recv, IRubyObject hostname) {
+    public static IRubyObject gethostbyname(ThreadContext context, IRubyObject hostname) {
         Ruby runtime = context.runtime;
 
         try {
@@ -173,7 +167,7 @@ public class SocketUtils {
             return runtime.newArrayNoCopy(ret);
 
         } catch(UnknownHostException e) {
-            throw RubySocket.sockerr(runtime, "gethostbyname: name or service not known");
+            throw sockerr(runtime, "gethostbyname: name or service not known");
 
         }
     }
@@ -183,8 +177,7 @@ public class SocketUtils {
      *
      * def self.getaddrinfo(host, port, family = nil, socktype = nil, protocol = nil, flags = nil)
      */
-    @JRubyMethod(required = 2, optional = 4, meta = true)
-    public static IRubyObject getaddrinfo(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+    public static IRubyObject getaddrinfo(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
         IRubyObject host = args[0];
         IRubyObject port = args[1];
@@ -192,7 +185,7 @@ public class SocketUtils {
 
         try {
             if(port instanceof RubyString) {
-                port = getservbyname(context, recv, new IRubyObject[]{port});
+                port = getservbyname(context, new IRubyObject[]{port});
             }
 
             IRubyObject family = args.length > 2 ? args[2] : context.nil;
@@ -267,13 +260,12 @@ public class SocketUtils {
             return runtime.newArray(l);
 
         } catch(UnknownHostException e) {
-            throw RubySocket.sockerr(runtime, "getaddrinfo: name or service not known");
+            throw sockerr(runtime, "getaddrinfo: name or service not known");
 
         }
     }
 
-    @JRubyMethod(required = 1, optional = 1, meta = true)
-    public static IRubyObject getnameinfo(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+    public static IRubyObject getnameinfo(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
         int flags = args.length == 2 ? RubyNumeric.num2int(args[1]) : 0;
         IRubyObject arg0 = args[0];
@@ -296,7 +288,7 @@ public class SocketUtils {
             Matcher m = STRING_IPV4_ADDRESS_PATTERN.matcher(arg);
 
             if (!m.matches()) {
-                IRubyObject obj = unpack_sockaddr_in(context, recv, arg0);
+                IRubyObject obj = unpack_sockaddr_in(context, arg0);
 
                 if (obj instanceof RubyArray) {
                     List list = ((RubyArray)obj).getList();
@@ -346,7 +338,7 @@ public class SocketUtils {
             addr = InetAddress.getByName(host);
 
         } catch (UnknownHostException e) {
-            throw RubySocket.sockerr(runtime, "unknown host: "+ host);
+            throw sockerr(runtime, "unknown host: "+ host);
 
         }
 
@@ -376,8 +368,7 @@ public class SocketUtils {
 
     }
 
-    @JRubyMethod(meta = true, compat = CompatVersion.RUBY1_9)
-    public static IRubyObject ip_address_list(ThreadContext context, IRubyObject self) {
+    public static IRubyObject ip_address_list(ThreadContext context) {
         Ruby runtime = context.runtime;
 
         try {
@@ -392,7 +383,7 @@ public class SocketUtils {
 
             return list;
         } catch (SocketException se) {
-            throw RubySocket.sockerr(runtime, se.getLocalizedMessage());
+            throw sockerr(runtime, se.getLocalizedMessage());
         }
     }
 
@@ -407,6 +398,18 @@ public class SocketUtils {
             return InetAddress.getByName(address.toString());
 
         }
+    }
+
+    public static IRubyObject getaddress(ThreadContext context, IRubyObject hostname) {
+        try {
+            return context.getRuntime().newString(InetAddress.getByName(hostname.convertToString().toString()).getHostAddress());
+        } catch(UnknownHostException e) {
+            throw sockerr(context.getRuntime(), "getaddress: name or service not known");
+        }
+    }
+
+    public static RuntimeException sockerr(Ruby runtime, String msg) {
+        return new RaiseException(runtime, runtime.getClass("SocketError"), msg, true);
     }
 
     private static String getHostAddress(ThreadContext context, InetAddress addr) {

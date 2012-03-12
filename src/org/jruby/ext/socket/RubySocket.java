@@ -51,16 +51,13 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
 import org.jruby.util.io.ChannelDescriptor;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.Sockaddr;
 
 import java.io.IOException;
 import java.net.DatagramSocket;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
@@ -70,7 +67,6 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.ConnectionPendingException;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.SelectableChannel;
-import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.regex.Pattern;
 
@@ -116,7 +112,6 @@ public class RubySocket extends RubyBasicSocket {
         rb_cSocket.includeModule(rb_mConstants);
 
         rb_cSocket.defineAnnotatedMethods(RubySocket.class);
-        rb_cSocket.defineAnnotatedMethods(SocketUtils.class);
     }
 
     private static ObjectAllocator SOCKET_ALLOCATOR = new ObjectAllocator() {
@@ -222,12 +217,61 @@ public class RubySocket extends RubyBasicSocket {
 
     @JRubyMethod(notImplemented = true)
     public IRubyObject listen(ThreadContext context, IRubyObject backlog) {
-        throw sockerr(context.runtime, JRUBY_SERVER_SOCKET_ERROR);
+        throw SocketUtils.sockerr(context.runtime, JRUBY_SERVER_SOCKET_ERROR);
     }
 
     @JRubyMethod(notImplemented = true)
     public IRubyObject accept(ThreadContext context) {
-        throw sockerr(context.runtime, JRUBY_SERVER_SOCKET_ERROR);
+        throw SocketUtils.sockerr(context.runtime, JRUBY_SERVER_SOCKET_ERROR);
+    }
+    @JRubyMethod(meta = true)
+    public static IRubyObject gethostname(ThreadContext context, IRubyObject recv) {
+        return SocketUtils.gethostname(context);
+    }
+
+    @JRubyMethod(required = 1, rest = true, meta = true)
+    public static IRubyObject gethostbyaddr(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return SocketUtils.gethostbyaddr(context, args);
+    }
+
+    @JRubyMethod(required = 1, optional = 1, meta = true)
+    public static IRubyObject getservbyname(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return SocketUtils.getservbyname(context, args);
+    }
+
+    @JRubyMethod(name = {"pack_sockaddr_in", "sockaddr_in"}, meta = true)
+    public static IRubyObject pack_sockaddr_in(ThreadContext context, IRubyObject recv, IRubyObject port, IRubyObject host) {
+        return SocketUtils.pack_sockaddr_in(context, port, host);
+    }
+
+    @JRubyMethod(meta = true)
+    public static IRubyObject unpack_sockaddr_in(ThreadContext context, IRubyObject recv, IRubyObject addr) {
+        return Sockaddr.unpack_sockaddr_in(context, addr);
+    }
+
+    @JRubyMethod(name = {"pack_sockaddr_un", "sockaddr_un"}, meta = true)
+    public static IRubyObject pack_sockaddr_un(ThreadContext context, IRubyObject recv, IRubyObject filename) {
+        return SocketUtils.pack_sockaddr_un(context, filename);
+    }
+
+    @JRubyMethod(meta = true)
+    public static IRubyObject gethostbyname(ThreadContext context, IRubyObject recv, IRubyObject hostname) {
+        return SocketUtils.gethostbyname(context, hostname);
+    }
+
+    @JRubyMethod(required = 2, optional = 4, meta = true)
+    public static IRubyObject getaddrinfo(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return SocketUtils.getaddrinfo(context, args);
+    }
+
+    @JRubyMethod(required = 1, optional = 1, meta = true)
+    public static IRubyObject getnameinfo(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        return SocketUtils.getnameinfo(context, args);
+    }
+
+    @JRubyMethod(meta = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject ip_address_list(ThreadContext context, IRubyObject self) {
+        return SocketUtils.ip_address_list(context);
     }
 
     @Override
@@ -297,7 +341,7 @@ public class RubySocket extends RubyBasicSocket {
             return newChannelDescriptor(runtime, channel);
 
         } catch(IOException e) {
-            throw sockerr(runtime, "initialize: " + e.toString());
+            throw SocketUtils.sockerr(runtime, "initialize: " + e.toString());
 
         }
     }
@@ -320,7 +364,7 @@ public class RubySocket extends RubyBasicSocket {
         }
 
         if (protocolFamily == null) {
-            throw sockerr(runtime, "unknown socket protocol " + protocol);
+            throw SocketUtils.sockerr(runtime, "unknown socket protocol " + protocol);
         }
 
         soProtocol = protocolFamily;
@@ -338,7 +382,7 @@ public class RubySocket extends RubyBasicSocket {
         }
 
         if (sockType == null) {
-            throw sockerr(runtime, "unknown socket type " + type);
+            throw SocketUtils.sockerr(runtime, "unknown socket type " + type);
         }
 
         soType = sockType;
@@ -356,7 +400,7 @@ public class RubySocket extends RubyBasicSocket {
         }
 
         if (addressFamily == null) {
-            throw sockerr(runtime, "unknown socket domain " + domain);
+            throw SocketUtils.sockerr(runtime, "unknown socket domain " + domain);
         }
 
         soDomain = addressFamily;
@@ -382,7 +426,7 @@ public class RubySocket extends RubyBasicSocket {
             throw context.getRuntime().newErrnoECONNREFUSEDError();
 
         } catch(IOException e) {
-            throw sockerr(context.getRuntime(), "connect(2): name or service not known");
+            throw SocketUtils.sockerr(context.getRuntime(), "connect(2): name or service not known");
         }
     }
 
@@ -416,16 +460,16 @@ public class RubySocket extends RubyBasicSocket {
             throw runtime.newErrnoEINPROGRESSError();
 
         } catch(UnknownHostException e) {
-            throw sockerr(runtime, "connect(2): unknown host");
+            throw SocketUtils.sockerr(runtime, "connect(2): unknown host");
 
         } catch(SocketException e) {
             handleSocketException(runtime, "connect", e);
 
         } catch(IOException e) {
-            throw sockerr(runtime, "connect(2): name or service not known");
+            throw SocketUtils.sockerr(runtime, "connect(2): name or service not known");
 
         } catch (IllegalArgumentException iae) {
-            throw sockerr(runtime, iae.getMessage());
+            throw SocketUtils.sockerr(runtime, iae.getMessage());
 
         }
     }
@@ -447,16 +491,16 @@ public class RubySocket extends RubyBasicSocket {
             }
 
         } catch(UnknownHostException e) {
-            throw sockerr(runtime, "bind(2): unknown host");
+            throw SocketUtils.sockerr(runtime, "bind(2): unknown host");
 
         } catch(SocketException e) {
             handleSocketException(runtime, "bind", e);
 
         } catch(IOException e) {
-            throw sockerr(runtime, "bind(2): name or service not known");
+            throw SocketUtils.sockerr(runtime, "bind(2): name or service not known");
 
         } catch (IllegalArgumentException iae) {
-            throw sockerr(runtime, iae.getMessage());
+            throw SocketUtils.sockerr(runtime, iae.getMessage());
 
         }
     }
@@ -488,58 +532,9 @@ public class RubySocket extends RubyBasicSocket {
         return msg;
     }
 
+    @Deprecated
     public static RuntimeException sockerr(Ruby runtime, String msg) {
         return new RaiseException(runtime, runtime.getClass("SocketError"), msg, true);
-    }
-
-    @Deprecated
-    public static IRubyObject gethostname(ThreadContext context, IRubyObject recv) {
-        return SocketUtils.gethostname(context, recv);
-    }
-
-    @Deprecated
-    public static IRubyObject gethostbyaddr(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        return SocketUtils.gethostbyaddr(context, recv, args);
-    }
-
-    @Deprecated
-    public static IRubyObject getservbyname(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        return SocketUtils.getservbyname(context, recv, args);
-    }
-
-    @Deprecated
-    public static IRubyObject pack_sockaddr_un(ThreadContext context, IRubyObject recv, IRubyObject filename) {
-        return SocketUtils.pack_sockaddr_un(context, recv, filename);
-    }
-
-    @Deprecated
-    public static IRubyObject pack_sockaddr_in(ThreadContext context, IRubyObject recv, IRubyObject port, IRubyObject host) {
-        return SocketUtils.pack_sockaddr_in(context, recv, port, host);
-    }
-
-    @Deprecated
-    public static IRubyObject unpack_sockaddr_in(ThreadContext context, IRubyObject recv, IRubyObject addr) {
-        return SocketUtils.unpack_sockaddr_in(context, recv, addr);
-    }
-
-    @Deprecated
-    public static IRubyObject gethostbyname(ThreadContext context, IRubyObject recv, IRubyObject hostname) {
-        return SocketUtils.gethostbyname(context, recv, hostname);
-    }
-
-    @Deprecated
-    public static IRubyObject getaddrinfo(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        return SocketUtils.getaddrinfo(context, recv, args);
-    }
-
-    @Deprecated
-    public static IRubyObject getnameinfo(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        return SocketUtils.getnameinfo(context, recv, args);
-    }
-
-    @Deprecated
-    public static InetAddress getRubyInetAddress(ByteList address) throws UnknownHostException {
-        return SocketUtils.getRubyInetAddress(address);
     }
 
     private static final Pattern ALREADY_BOUND_PATTERN = Pattern.compile("[Aa]lready.*bound");

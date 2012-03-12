@@ -83,7 +83,7 @@ public class Addrinfo extends RubyObject {
             InetAddress addy = InetAddress.getByName(host);
             return new Addrinfo(context.runtime, (RubyClass)recv, addy);
         } catch (UnknownHostException uhe) {
-            throw RubySocket.sockerr(context.runtime, "host not found");
+            throw SocketUtils.sockerr(context.runtime, "host not found");
         }
     }
 
