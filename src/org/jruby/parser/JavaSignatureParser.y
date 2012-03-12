@@ -25,6 +25,7 @@ import java.util.List;
 import org.jruby.ast.java_signature.Annotation;
 import org.jruby.ast.java_signature.AnnotationExpression;
 import org.jruby.ast.java_signature.AnnotationParameter;
+import org.jruby.ast.java_signature.ArrayAnnotationExpression;
 import org.jruby.ast.java_signature.ArrayTypeNode;
 import org.jruby.ast.java_signature.ConstructorSignatureNode;
 import org.jruby.ast.java_signature.DefaultAnnotationParameter;
@@ -119,6 +120,7 @@ public class JavaSignatureParser {
 %type <Annotation> annotation
 %type <AnnotationParameter> annotation_param
 %type <AnnotationExpression> annotation_value
+%type <List> annotation_array_values
 
 %%
 
@@ -546,14 +548,6 @@ annotation_param : type_variable EQUAL annotation_value {
                      $$ = new DefaultAnnotationParameter($1);
                  }
 
-// AnnotationExpression
-annotation_value : annotation {
-                     $$ = $<AnnotationExpression>1;
-                 }
-                 | type {
-                     $$ = $<AnnotationExpression>1;
-                 }
-
 // List<AnnotationParameter>
 annotation_params : annotation_param {
                       $$ = new ArrayList<AnnotationParameter>();
@@ -562,6 +556,25 @@ annotation_params : annotation_param {
                   | annotation_params COMMA annotation_param {
                       $1.add($3);
                   }
+
+// AnnotationExpression
+annotation_value : annotation {
+                     $$ = $<AnnotationExpression>1;
+                 }
+                 | type {
+                     $$ = $<AnnotationExpression>1;
+                 }
+                 | LCURLY annotation_array_values RCURLY {
+                     $$ = new ArrayAnnotationExpression($2);
+                 }
+
+// List<AnnotationExpression>
+annotation_array_values : annotation_value {
+                            $$ = new ArrayList<AnnotationExpression>();
+                        }
+                        | annotation_array_values COMMA annotation_value {
+                            $1.add($3);
+                        }
 
 // List<AnnotationParameter> -- This is just so we don't deal with null's.
 annotation_params_none : { $$ = new ArrayList<AnnotationParameter>(); }
