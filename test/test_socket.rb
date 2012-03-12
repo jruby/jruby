@@ -278,6 +278,29 @@ class UNIXSocketTests < Test::Unit::TestCase
       File.unlink(path) if File.exist?(path)
     end
 
+    # JRUBY-5708
+    def test_can_create_socket_server_and_blocking_select_blocks_on_it
+      require 'timeout'
+
+      path = "/tmp/sample"
+
+      File.unlink(path) if File.exist?(path)
+
+      sock = UNIXServer.open(path)
+
+      assert File.exist?(path)
+
+      assert_raises(Timeout::Error) do
+        Timeout::timeout(0.1) do
+          IO.select [sock], nil, nil, 0.2
+        end
+      end
+
+      sock.close
+
+      File.unlink(path) if File.exist?(path)
+    end
+
     def test_can_create_socket_server_and_client_connected_to_it
       path = "/tmp/sample"
 
