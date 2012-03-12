@@ -363,15 +363,19 @@ public class RubySocket extends RubyBasicSocket {
     }
 
     private void doConnectNonblock(ThreadContext context, Channel channel, InetSocketAddress iaddr) {
+        if (!(channel instanceof SelectableChannel)) {
+            throw getRuntime().newErrnoENOPROTOOPTError();
+        }
+
         try {
-            if (channel instanceof SelectableChannel) {
-                SelectableChannel selectable = (SelectableChannel)channel;
-                selectable.configureBlocking(false);
+            SelectableChannel selectable = (SelectableChannel)channel;
+            selectable.configureBlocking(false);
 
+            try {
                 doConnect(context, channel, iaddr);
-            } else {
-                throw getRuntime().newErrnoENOPROTOOPTError();
 
+            } finally {
+                selectable.configureBlocking(true);
             }
 
         } catch(ClosedChannelException e) {
@@ -379,7 +383,6 @@ public class RubySocket extends RubyBasicSocket {
 
         } catch(IOException e) {
             throw sockerr(context.getRuntime(), "connect(2): name or service not known");
-
         }
     }
 

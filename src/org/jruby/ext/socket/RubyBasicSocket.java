@@ -42,8 +42,11 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
+import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.DatagramChannel;
+import java.nio.channels.SelectableChannel;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 
@@ -123,19 +126,6 @@ public class RubyBasicSocket extends RubyIO {
         return flag;
     }
 
-    @Deprecated
-    public IRubyObject send(ThreadContext context, IRubyObject[] args) {
-        switch (args.length) {
-            case 2:
-                return send(context, args[0], args[1]);
-            case 3:
-                return send(context, args[0], args[1], args[2]);
-            default:
-                Arity.raiseArgumentError(context.runtime, args, 2, 3);
-                return null; // never reached
-        }
-    }
-
     @JRubyMethod(name = "send")
     public IRubyObject send(ThreadContext context, IRubyObject _mesg, IRubyObject _flags) {
         // TODO: implement flags
@@ -164,39 +154,41 @@ public class RubyBasicSocket extends RubyIO {
     @JRubyMethod
     public IRubyObject recv(ThreadContext context, IRubyObject _length) {
         Ruby runtime = context.runtime;
-        OpenFile openFile = getOpenFileChecked();
-        
-        try {
-            context.getThread().beforeBlockingCall();
-            
-            return RubyString.newString(runtime, openFile.getMainStreamSafe().read(RubyNumeric.fix2int(_length)));
-            
-        } catch (BadDescriptorException e) {
-            throw runtime.newErrnoEBADFError();
-            
-        } catch (EOFException e) {
-            // recv returns nil on EOF
-            return runtime.getNil();
-            
-        } catch (IOException e) {
-            // All errors to sysread should be SystemCallErrors, but on a closed stream
-            // Ruby returns an IOError.  Java throws same exception for all errors so
-            // we resort to this hack...
-            if ("Socket not open".equals(e.getMessage())) {
-	            throw runtime.newIOError(e.getMessage());
-            }
 
-            throw runtime.newSystemCallError(e.getMessage());
+        ByteList bytes = doReceive(context, RubyNumeric.fix2int(_length));
 
-        } finally {
-            context.getThread().afterBlockingCall();
-        }
+        if (bytes == null) return context.nil;
+
+        return RubyString.newString(runtime, bytes);
     }
     
     @JRubyMethod
     public IRubyObject recv(ThreadContext context, IRubyObject _length, IRubyObject _flags) {
         // TODO: implement flags
         return recv(context, _length);
+    }
+
+    @JRubyMethod
+    public IRubyObject recv_nonblock(ThreadContext context, IRubyObject _length) {
+        Ruby runtime = context.runtime;
+
+        ByteList bytes = doReceiveNonblock(context, RubyNumeric.fix2int(_length));
+
+        if (bytes == null) {
+            if (runtime.is1_9()) {
+                throw runtime.newErrnoEAGAINReadableError("recvfrom(2)");
+            } else {
+                throw runtime.newErrnoEAGAINError("recvfrom(2)");
+            }
+        }
+
+        return RubyString.newString(runtime, bytes);
+    }
+
+    @JRubyMethod
+    public IRubyObject recv_nonblock(ThreadContext context, IRubyObject _length, IRubyObject _flags) {
+        // TODO: implement flags
+        return recv_nonblock(context, _length);
     }
 
     @JRubyMethod
@@ -424,6 +416,64 @@ public class RubyBasicSocket extends RubyIO {
         return context.nil;
     }
 
+    private ByteList doReceive(ThreadContext context, int length) {
+        Ruby runtime = context.runtime;
+        ByteBuffer buf = ByteBuffer.allocate(length);
+
+        try {
+            context.getThread().beforeBlockingCall();
+
+            int read = openFile.getMainStreamSafe().getDescriptor().read(buf);
+
+            if (read == 0) return null;
+
+            return new ByteList(buf.array(), 0, buf.position());
+
+        } catch (BadDescriptorException e) {
+            throw runtime.newIOError("bad descriptor");
+
+        } catch (IOException e) {
+            // All errors to sysread should be SystemCallErrors, but on a closed stream
+            // Ruby returns an IOError.  Java throws same exception for all errors so
+            // we resort to this hack...
+            if ("Socket not open".equals(e.getMessage())) {
+                throw runtime.newIOError(e.getMessage());
+            }
+
+            throw runtime.newSystemCallError(e.getMessage());
+
+        } finally {
+            context.getThread().afterBlockingCall();
+        }
+    }
+
+    public ByteList doReceiveNonblock(ThreadContext context, int length) {
+        Ruby runtime = context.runtime;
+        Channel channel = getChannel();
+
+        if (!(channel instanceof SelectableChannel)) {
+            if (runtime.is1_9()) {
+                throw runtime.newErrnoEAGAINReadableError(channel.getClass().getName() + " does not support nonblocking");
+            } else {
+                throw runtime.newErrnoEAGAINError(channel.getClass().getName() + " does not support nonblocking");
+            }
+        }
+
+        try {
+            SelectableChannel selectable = (SelectableChannel)channel;
+            selectable.configureBlocking(false);
+
+            try {
+                return doReceive(context, length);
+            } finally {
+                selectable.configureBlocking(false);
+            }
+
+        } catch(IOException e) {
+            throw runtime.newIOErrorFromException(e);
+        }
+    }
+
     private void joinMulticastGroup(IRubyObject val) throws IOException, BadDescriptorException {
         Channel socketChannel = getOpenChannel();
 
@@ -438,28 +488,6 @@ public class RubyBasicSocket extends RubyIO {
                 multicastStateManager.addMembership(ipaddr_buf);
             }
         }
-    }
-
-    private void setLinger(IRubyObject val) throws IOException, BadDescriptorException {
-        Channel channel = getOpenChannel();
-
-        boolean linger;
-        int timeout;
-
-        // wacky much, MRI?
-        if(val instanceof RubyBoolean && !val.isTrue()) {
-            linger = false;
-            timeout = 0;
-        } else {
-            linger = true;
-            timeout = asNumber(val);
-            if(timeout == -1) {
-                linger = false;
-                timeout = 0;
-            }
-        }
-
-        SocketType.forChannel(channel).setSoLinger(channel, linger, timeout);
     }
 
     protected InetSocketAddress getSocketAddress() throws BadDescriptorException {
