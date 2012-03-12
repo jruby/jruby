@@ -3275,6 +3275,10 @@ public final class Ruby {
         return newRaiseException(getErrno().getClass("EWOULDBLOCK"), null);
     }
 
+    public RaiseException newErrnoEDESTADDRREQError(String func) {
+        return newRaiseException(getErrno().getClass("EDESTADDRREQ"), func);
+    }
+
     public RaiseException newIndexError(String message) {
         return newRaiseException(getIndexError(), message);
     }

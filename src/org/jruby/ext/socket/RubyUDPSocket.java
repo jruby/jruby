@@ -40,6 +40,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.Channel;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.IllegalBlockingModeException;
+import java.nio.channels.NotYetConnectedException;
 
 import jnr.netdb.Service;
 import org.jruby.Ruby;
@@ -50,6 +51,7 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -221,55 +223,88 @@ public class RubyUDPSocket extends RubyIPSocket {
         return recvfrom_nonblock(context, _length);
     }
 
-    @JRubyMethod(required = 1, rest = true)
-    public IRubyObject send(ThreadContext context, IRubyObject[] args) {
+    @JRubyMethod
+    public IRubyObject send(ThreadContext context, IRubyObject _mesg, IRubyObject _flags) {
+        // TODO: implement flags
         Ruby runtime = context.runtime;
 
         try {
             int written;
 
-            if (args.length >= 3) { // host and port given
-                RubyString nameStr = args[2].convertToString();
-                RubyString data = args[0].convertToString();
-                ByteBuffer buf = ByteBuffer.wrap(data.getBytes());
+            RubyString data = _mesg.convertToString();
+            ByteBuffer buf = ByteBuffer.wrap(data.getBytes());
 
-                byte [] buf2 = data.getBytes();
-                DatagramPacket sendDP = null;
+            written = ((DatagramChannel) this.getChannel()).write(buf);
 
-                int port;
-                if (args[3] instanceof RubyString) {
+            return runtime.newFixnum(written);
 
-                    Service service = Service.getServiceByName(args[3].asJavaString(), "udp");
+        } catch (NotYetConnectedException nyce) {
+            throw runtime.newErrnoEDESTADDRREQError("send(2)");
 
-                    if (service != null) {
-                        port = service.getPort();
-                    } else {
-                        port = (int)args[3].convertToInteger("to_i").getLongValue();
-                    }
+        } catch (UnknownHostException e) {
+            throw sockerr(runtime, "send: name or service not known");
 
+        } catch (IOException e) {
+            throw sockerr(runtime, "send: name or service not known");
+        }
+    }
+
+    @JRubyMethod
+    public IRubyObject send(ThreadContext context, IRubyObject _mesg, IRubyObject _flags, IRubyObject _to) {
+        return send(context, _mesg, _flags);
+    }
+
+    @JRubyMethod(required = 2, optional = 2)
+    public IRubyObject send(ThreadContext context, IRubyObject[] args) {
+        // TODO: implement flags
+        Ruby runtime = context.runtime;
+        IRubyObject _mesg = args[0];
+        IRubyObject _flags = args[1];
+
+        try {
+            int written;
+
+            if (args.length == 2 || args.length == 3) {
+                return send(context, _mesg, _flags);
+            }
+            
+            IRubyObject _host = args[2];
+            IRubyObject _port = args[3];
+
+            RubyString nameStr = _host.convertToString();
+            RubyString data = _mesg.convertToString();
+            ByteBuffer buf = ByteBuffer.wrap(data.getBytes());
+
+            byte[] buf2 = data.getBytes();
+            DatagramPacket sendDP = null;
+
+            int port;
+            if (_port instanceof RubyString) {
+
+                Service service = Service.getServiceByName(_port.asJavaString(), "udp");
+
+                if (service != null) {
+                    port = service.getPort();
                 } else {
-                    port = (int)args[3].convertToInteger().getLongValue();
-                }
-
-                InetAddress address = SocketUtils.getRubyInetAddress(nameStr.getByteList());
-                InetSocketAddress addr = new InetSocketAddress(address, port);
-
-                if (this.multicastStateManager == null) {
-                    written = ((DatagramChannel) this.getChannel()).send(buf, addr);
-
-                } else {
-                    sendDP = new DatagramPacket(buf2, buf2.length, address, port);
-                    MulticastSocket ms = this.multicastStateManager.getMulticastSocket();
-
-                    ms.send(sendDP);
-                    written = sendDP.getLength();
+                    port = (int)_port.convertToInteger("to_i").getLongValue();
                 }
 
             } else {
-                RubyString data = args[0].convertToString();
-                ByteBuffer buf = ByteBuffer.wrap(data.getBytes());
+                port = (int)_port.convertToInteger().getLongValue();
+            }
 
-                written = ((DatagramChannel) this.getChannel()).write(buf);
+            InetAddress address = SocketUtils.getRubyInetAddress(nameStr.getByteList());
+            InetSocketAddress addr = new InetSocketAddress(address, port);
+
+            if (this.multicastStateManager == null) {
+                written = ((DatagramChannel) this.getChannel()).send(buf, addr);
+
+            } else {
+                sendDP = new DatagramPacket(buf2, buf2.length, address, port);
+                MulticastSocket ms = this.multicastStateManager.getMulticastSocket();
+
+                ms.send(sendDP);
+                written = sendDP.getLength();
             }
 
             return runtime.newFixnum(written);

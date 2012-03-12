@@ -123,9 +123,29 @@ public class RubyBasicSocket extends RubyIO {
         return flag;
     }
 
-    @JRubyMethod(name = "send", rest = true)
-    public IRubyObject write_send(ThreadContext context, IRubyObject[] args) {
-        return syswrite(context, args[0]);
+    @Deprecated
+    public IRubyObject send(ThreadContext context, IRubyObject[] args) {
+        switch (args.length) {
+            case 2:
+                return send(context, args[0], args[1]);
+            case 3:
+                return send(context, args[0], args[1], args[2]);
+            default:
+                Arity.raiseArgumentError(context.runtime, args, 2, 3);
+                return null; // never reached
+        }
+    }
+
+    @JRubyMethod(name = "send")
+    public IRubyObject send(ThreadContext context, IRubyObject _mesg, IRubyObject _flags) {
+        // TODO: implement flags
+        return syswrite(context, _mesg);
+    }
+
+    @JRubyMethod(name = "send")
+    public IRubyObject send(ThreadContext context, IRubyObject _mesg, IRubyObject _flags, IRubyObject _to) {
+        // TODO: implement flags and to
+        return send(context, _mesg, _flags);
     }
 
     @Deprecated
