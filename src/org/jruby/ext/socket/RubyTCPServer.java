@@ -115,7 +115,7 @@ public class RubyTCPServer extends RubyTCPSocket {
 
                 if (portInt <= 0) {
                     portInt = RubyNumeric.fix2int(SocketUtils.getservbyname(
-                            context, runtime.getObject(), new IRubyObject[] {portString}));
+                            context, new IRubyObject[] {portString}));
                 }
             }
 
@@ -124,7 +124,7 @@ public class RubyTCPServer extends RubyTCPSocket {
             initSocket(runtime, new ChannelDescriptor(
                     ssc, newModeFlags(runtime, ModeFlags.RDWR)));
         } catch(UnknownHostException e) {
-            throw sockerr(runtime, "initialize: name or service not known");
+            throw SocketUtils.sockerr(runtime, "initialize: name or service not known");
         } catch(BindException e) {
             throw runtime.newErrnoEADDRFromBindException(e);
         } catch(SocketException e) {
@@ -132,12 +132,12 @@ public class RubyTCPServer extends RubyTCPSocket {
             if(msg.indexOf("Permission denied") != -1) {
                 throw runtime.newErrnoEACCESError("bind(2)");
             } else {
-                throw sockerr(runtime, "initialize: name or service not known");
+                throw SocketUtils.sockerr(runtime, "initialize: name or service not known");
             }
         } catch(IOException e) {
-            throw sockerr(runtime, "initialize: name or service not known");
+            throw SocketUtils.sockerr(runtime, "initialize: name or service not known");
         } catch (IllegalArgumentException iae) {
-            throw sockerr(runtime, iae.getMessage());
+            throw SocketUtils.sockerr(runtime, iae.getMessage());
         }
 
         return this;
@@ -177,7 +177,7 @@ public class RubyTCPServer extends RubyTCPSocket {
                 }
             }
         } catch(IOException e) {
-            throw sockerr(runtime, "problem when accepting");
+            throw SocketUtils.sockerr(runtime, "problem when accepting");
         }
     }
 
@@ -207,7 +207,7 @@ public class RubyTCPServer extends RubyTCPSocket {
                     return socket;
                 }
             } catch(IOException e) {
-                throw sockerr(context.getRuntime(), "problem when accepting");
+                throw SocketUtils.sockerr(context.getRuntime(), "problem when accepting");
 
             } finally {
                 try {

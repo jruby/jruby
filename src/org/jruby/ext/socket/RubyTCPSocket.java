@@ -122,7 +122,7 @@ public class RubyTCPSocket extends RubyIPSocket {
                 throw runtime.newErrnoECONNREFUSEDError();
             } catch(UnknownHostException e) {
                 channel.close();
-                throw sockerr(runtime, "initialize: name or service not known");
+                throw SocketUtils.sockerr(runtime, "initialize: name or service not known");
             }
 
         } catch (ClosedChannelException cce) {
@@ -130,9 +130,9 @@ public class RubyTCPSocket extends RubyIPSocket {
         } catch(BindException e) {
             throw runtime.newErrnoEADDRFromBindException(e);
         } catch(IOException e) {
-            throw sockerr(runtime, e.getLocalizedMessage());
+            throw SocketUtils.sockerr(runtime, e.getLocalizedMessage());
         } catch (IllegalArgumentException iae) {
-            throw sockerr(runtime, iae.getMessage());
+            throw SocketUtils.sockerr(runtime, iae.getMessage());
         }
         return this;
     }
@@ -180,7 +180,7 @@ public class RubyTCPSocket extends RubyIPSocket {
             }
             return r.newArrayNoCopy(ret);
         } catch(UnknownHostException e) {
-            throw sockerr(context.getRuntime(), "gethostbyname: name or service not known");
+            throw SocketUtils.sockerr(context.getRuntime(), "gethostbyname: name or service not known");
         }
     }
 }

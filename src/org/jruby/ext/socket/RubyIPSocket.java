@@ -200,7 +200,7 @@ public class RubyIPSocket extends RubyBasicSocket {
             }
 
             return addrFor(context, address, reverse);
-            
+
         } catch (BadDescriptorException e) {
             throw context.runtime.newErrnoEBADFError();
         }
