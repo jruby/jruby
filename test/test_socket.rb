@@ -418,7 +418,7 @@ class ServerTest < Test::Unit::TestCase
     # propagate the thread's termination error, checking it for IOError
     # NOTE: 1.8 raises IOError, 1.9 EBADF, so this isn't consistent. I'm
     # changing it to Exception so we can at least test the interrupt.
-    assert_raise(Exception) {thread.value}
+    assert_raise(IOError) {thread.value}
   end
 
   # JRUBY-2874
