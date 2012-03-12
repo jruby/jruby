@@ -1249,6 +1249,9 @@ public class RubyIO extends RubyObject {
         } catch (BadDescriptorException e) {
             throw runtime.newErrnoEBADFError();
         } catch (IOException e) {
+            if (e.getMessage().equals("Broken pipe")) {
+                throw runtime.newErrnoEPIPEError();
+            }
             throw runtime.newSystemCallError(e.getMessage());
         } finally {
             context.getThread().afterBlockingCall();
