@@ -6,10 +6,29 @@ package org.jruby.ast.java_signature;
 
 /**
  *
+ * 
+ * 
  * @author enebo
  */
+// @Foo(@bar)         DEFAULT for single value anno
+// @Foo(value=@bar)   ANNO
+// @Foo(value={@bar}) LIST
+// @Foo(value="heh")  EXPR
 public class AnnotationParameter {
-    public AnnotationParameter(Annotation annotation) {
-        
+    private String name;
+    private AnnotationExpression expression;
+    
+    public AnnotationParameter(String name, AnnotationExpression value) {
+        this.name = name;
+        this.expression = value;
+    }
+    
+    public AnnotationExpression getExpression() {
+        return expression;
+    }
+    
+    @Override
+    public String toString() {
+        return "name=" + expression;
     }
 }

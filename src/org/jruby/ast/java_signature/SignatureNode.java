@@ -8,7 +8,7 @@ package org.jruby.ast.java_signature;
 import java.util.List;
 
 public class SignatureNode {
-    protected List<Modifier> modifiers;
+    protected List<Object> modifiers;
     protected String name;
     protected List<ParameterNode> parameterList;
     protected String extraTypeInfo;
@@ -27,7 +27,7 @@ public class SignatureNode {
         return parameterList;
     }
 
-    public void setModifiers(List<Modifier> modifiers) {
+    public void setModifiers(List<Object> modifiers) {
         this.modifiers = modifiers;
     }
 
@@ -35,7 +35,7 @@ public class SignatureNode {
         this.extraTypeInfo = extraTypeInfo;
     }
 
-    public List<Modifier> getModifiers() {
+    public List<Object> getModifiers() {
         return modifiers;
     }
 
@@ -51,7 +51,7 @@ public class SignatureNode {
     public String toString() {
         StringBuilder builder = new StringBuilder();
 
-        for (Modifier modifier: modifiers) {
+        for (Object modifier: modifiers) {
             builder.append(modifier).append(' ');
         }
 

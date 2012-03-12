@@ -17,6 +17,8 @@ DOUBLE = PrimitiveTypeNode::DOUBLE
 BOOLEAN = PrimitiveTypeNode::BOOLEAN
 VOID = PrimitiveTypeNode::VOID
 
+Override = java.lang.Override
+
 class Object
   def signature(string)
     bytes = string.to_java.bytes
@@ -128,9 +130,19 @@ class SimpleSignatureMatcher
     true
   end
 
+  def modifiers_match?(modifiers, expected_list)
+    modifiers.each_with_index do |modifier, i|
+      return false if modifier != expected_list[i]
+    end
+    true
+  end
+
   def matches?(ast)
     modifiers, return_type, name, parameters, throws = *@args
-    @errors << ['modifiers', ast.modifiers, modifiers] unless ast.modifiers.equals? modifiers
+    # Mildly brittle to depend on toString, but unlikely to change.
+    modifiers_as_str = modifiers.map(&:to_s)
+
+    @errors << ['modifiers', ast.modifiers, modifiers_as_str] unless modifiers_match? modifiers_as_str, modifiers
     @errors << ['return type', ast.return_type, return_type] unless match_type? ast.return_type.to_s, return_type.to_s
     @errors << ['name', ast.name, name] unless ast.name == name
     @errors << ['parameters', ast.parameters, parameters] unless match_parameters? ast.parameters, parameters

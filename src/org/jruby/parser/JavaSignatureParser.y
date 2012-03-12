@@ -26,6 +26,7 @@ import org.jruby.ast.java_signature.Annotation;
 import org.jruby.ast.java_signature.AnnotationParameter;
 import org.jruby.ast.java_signature.ArrayTypeNode;
 import org.jruby.ast.java_signature.ConstructorSignatureNode;
+import org.jruby.ast.java_signature.DefaultAnnotationParameter;
 import org.jruby.ast.java_signature.MethodSignatureNode;
 import org.jruby.ast.java_signature.Modifier;
 import org.jruby.ast.java_signature.ParameterNode;
@@ -73,6 +74,9 @@ public class JavaSignatureParser {
 %token <String> DOT    // '.'
 %token <String> COMMA  // ','
 %token <String> ELLIPSIS // '...' or \u2026
+%token <String> EQUAL  // '='
+%token <String> LCURLY // '{'
+%token <String> RCURLY // '}'
 %token <String> LPAREN // '('
 %token <String> RPAREN // ')'
 %token <String> LBRACK // '['
@@ -107,7 +111,7 @@ public class JavaSignatureParser {
 %type <String> type_parameter_list, type_parameter_list_1, 
 %type <String> type_bound_opt, type_bound, additional_bound_list, additional_bound_list_opt
 %type <String> annotation_name
-%type <Modifier> modifier
+%type <Object> modifier  // Can be either modifier enum or Annotation instance
 %type <ArrayTypeNode> dims
 %type <Object> none
 %type <SignatureNode> program
@@ -303,22 +307,22 @@ type_argument_2 : reference_type_2 | wildcard_2
 // String
 type_argument_3 : reference_type_3 | wildcard_3
 
-// List<Modifier>
+// List<Object>
 modifiers_opt : modifiers | modifiers_none
 
-// List<Modifier>
+// List<Object>
 modifiers : modifier {
-    $$ = new ArrayList<Modifier>();
+    $$ = new ArrayList<Object>();
     $<List>$.add($1);
  }
  | modifiers modifier {
     $1.add($2);
  }
 
-// List<Modifier> -- This is just so we don't deal with null's.
-modifiers_none : { $$ = new ArrayList<Modifier>(); }
+// List<Object> -- This is just so we don't deal with null's.
+modifiers_none : { $$ = new ArrayList<Object>(); }
 
-// Modifier
+// Object
 modifier : PUBLIC { $$ = Modifier.PUBLIC; }
  | PROTECTED { $$ = Modifier.PROTECTED; }
  | PRIVATE { $$ = Modifier.PRIVATE; }
@@ -330,7 +334,7 @@ modifier : PUBLIC { $$ = Modifier.PUBLIC; }
  | TRANSIENT { $$ = Modifier.TRANSIENT; }
  | VOLATILE { $$ = Modifier.VOLATILE; }
  | STRICTFP { $$ = Modifier.STRICTFP; }
- | annotation { $$ = null; }
+ | annotation { $$ = $1; }
 
 // String
 name : IDENTIFIER { $$ = $1; }                  // Foo (or foo)
@@ -523,28 +527,30 @@ method_header : modifiers_opt type method_declarator throws {
 
 // Annotation
 annotation : annotation_name {
-               $$ = new Annotation($1, null);
+               $$ = new Annotation($1, new ArrayList<AnnotationParameter>());
            }
            | annotation_name LPAREN annotation_params_opt RPAREN {
                $$ = new Annotation($1, $3);
            }
 
 // String
-annotation_name : AT name {
-                    $$ = $1;
-                }
+annotation_name : AT name { $$ = $1 + $2; }
 
 // AnnotationParam
 annotation_param : annotation {
-                     $$ = new AnnotationParameter($1);
+                     $$ = new DefaultAnnotationParameter($1);
                  }
+                 | annotation_name EQUAL annotation {
+                     $$ = new AnnotationParameter($1, $3);
+                 }
+
 // List<AnnotationParameter>
 annotation_params : annotation_param {
                       $$ = new ArrayList<AnnotationParameter>();
                       $<List>$.add($1);
                   }
-                  | annotation_params annotation_param {
-                      $1.add($2);
+                  | annotation_params COMMA annotation_param {
+                      $1.add($3);
                   }
 
 // List<AnnotationParameter> -- This is just so we don't deal with null's.

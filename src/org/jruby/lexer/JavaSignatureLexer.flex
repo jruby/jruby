@@ -57,6 +57,9 @@ Identifier     = [:jletter:] [:jletterdigit:]*
     ","             { return JavaSignatureParser.COMMA;        }
     "\u2026"        { return JavaSignatureParser.ELLIPSIS;     }
     "..."           { return JavaSignatureParser.ELLIPSIS;     }
+    "="             { return JavaSignatureParser.EQUAL;        }
+    "{"             { return JavaSignatureParser.LCURLY;       }
+    "}"             { return JavaSignatureParser.RCURLY;       }
     "("             { return JavaSignatureParser.LPAREN;       }
     ")"             { return JavaSignatureParser.RPAREN;       }
     "["             { return JavaSignatureParser.LBRACK;       }

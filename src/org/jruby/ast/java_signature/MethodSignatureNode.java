@@ -24,7 +24,7 @@ public class MethodSignatureNode extends SignatureNode {
     public String toString() {
         StringBuilder builder = new StringBuilder();
 
-        for (Modifier modifier: modifiers) {
+        for (Object modifier: modifiers) {
             builder.append(modifier).append(' ');
         }
 

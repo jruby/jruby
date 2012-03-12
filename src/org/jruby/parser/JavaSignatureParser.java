@@ -14,6 +14,7 @@ import org.jruby.ast.java_signature.Annotation;
 import org.jruby.ast.java_signature.AnnotationParameter;
 import org.jruby.ast.java_signature.ArrayTypeNode;
 import org.jruby.ast.java_signature.ConstructorSignatureNode;
+import org.jruby.ast.java_signature.DefaultAnnotationParameter;
 import org.jruby.ast.java_signature.MethodSignatureNode;
 import org.jruby.ast.java_signature.Modifier;
 import org.jruby.ast.java_signature.ParameterNode;
@@ -29,7 +30,7 @@ public class JavaSignatureParser {
     public static SignatureNode parse(InputStream in) throws IOException, ParserSyntaxException {
         return (SignatureNode) parser.yyparse(JavaSignatureLexer.create(in));
     }
-					// line 33 "-"
+					// line 34 "-"
   // %token constants
   public static final int BOOLEAN = 257;
   public static final int BYTE = 258;
@@ -57,18 +58,21 @@ public class JavaSignatureParser {
   public static final int DOT = 280;
   public static final int COMMA = 281;
   public static final int ELLIPSIS = 282;
-  public static final int LPAREN = 283;
-  public static final int RPAREN = 284;
-  public static final int LBRACK = 285;
-  public static final int RBRACK = 286;
-  public static final int QUESTION = 287;
-  public static final int LT = 288;
-  public static final int GT = 289;
-  public static final int THROWS = 290;
-  public static final int EXTENDS = 291;
-  public static final int SUPER = 292;
-  public static final int RSHIFT = 293;
-  public static final int URSHIFT = 294;
+  public static final int EQUAL = 283;
+  public static final int LCURLY = 284;
+  public static final int RCURLY = 285;
+  public static final int LPAREN = 286;
+  public static final int RPAREN = 287;
+  public static final int LBRACK = 288;
+  public static final int RBRACK = 289;
+  public static final int QUESTION = 290;
+  public static final int LT = 291;
+  public static final int GT = 292;
+  public static final int THROWS = 293;
+  public static final int EXTENDS = 294;
+  public static final int SUPER = 295;
+  public static final int RSHIFT = 296;
+  public static final int URSHIFT = 297;
   public static final int yyErrorCode = 256;
 
   /** number of final state.
@@ -79,7 +83,7 @@ public class JavaSignatureParser {
       Order is mandated by <i>jay</i>.
     */
   protected static final short[] yyLhs = {
-//yyLhs 135
+//yyLhs 136
     -1,     0,     0,    17,    17,    16,    16,    16,    16,    16,
     16,    16,    16,    23,    23,    25,    18,    18,    19,    19,
     22,    21,    20,    20,    20,    20,    30,    30,    30,    36,
@@ -93,9 +97,9 @@ public class JavaSignatureParser {
     47,    48,    48,    45,    46,    46,    27,    27,    49,    49,
     50,    52,    52,    51,    51,    29,    29,    28,    56,     4,
      4,     3,     2,     2,     2,     2,    57,    57,    53,    58,
-    13,    13,    14,    12,    12,
+    58,    13,    13,    14,    12,    12,
     }, yyLen = {
-//yyLen 135
+//yyLen 136
      2,     1,     1,     1,     1,     1,     1,     1,     1,     1,
      1,     1,     1,     1,     1,     1,     1,     5,     1,     3,
      1,     1,     2,     2,     6,     4,     1,     3,     3,     2,
@@ -109,192 +113,200 @@ public class JavaSignatureParser {
      1,     1,     3,     2,     2,     2,     2,     3,     1,     1,
      3,     1,     1,     2,     1,     2,     2,     2,     0,     3,
      5,     4,     4,     6,     4,     6,     1,     4,     2,     1,
-     1,     2,     0,     1,     1,
+     3,     1,     3,     0,     1,     1,
     }, yyDefRed = {
-//yyDefRed 201
+//yyDefRed 205
      0,    64,    65,    66,    67,    68,    69,    70,    71,    72,
     73,    74,     0,     0,     1,     2,     0,     0,    60,     0,
     61,    75,    76,     0,    10,     5,     6,     7,     8,     9,
     11,    12,     0,     0,     0,     0,     0,     0,    13,    14,
      4,     0,    62,     0,     0,     0,     0,    15,     0,   100,
    101,     0,     0,     0,   119,     0,     0,     0,     0,     0,
-     0,     0,     0,   134,   129,   130,    77,     0,   124,   104,
-     0,   105,   103,   108,   109,     0,     0,     0,     0,     0,
-     0,    20,    82,     0,    78,     0,   122,     0,     0,     0,
-     0,     0,    52,    43,     0,    45,    54,    53,     0,     0,
-     0,     0,    87,     0,   127,   131,     0,     0,   106,    99,
-   102,     0,   120,     0,     0,     0,    79,    29,     0,     0,
-     0,    38,     0,     0,     0,     0,   121,     0,    97,     0,
-     0,    84,     0,     0,   107,   111,   110,   112,   125,   123,
-    83,     0,     0,    30,     0,    31,     0,     0,     0,     0,
-    47,    56,    55,    39,    44,    46,     0,     0,     0,    88,
-    93,     0,     0,   117,     0,   116,   115,   113,     0,     0,
-     0,    32,     0,    40,     0,     0,    95,    98,     0,     0,
-    33,     0,    34,     0,     0,     0,    49,    58,    57,    41,
-    48,     0,     0,    35,    42,     0,     0,    36,     0,    37,
-    50,
+     0,     0,     0,   135,     0,   129,   131,    77,     0,   124,
+   104,     0,   105,   103,   108,   109,     0,     0,     0,     0,
+     0,     0,    20,    82,     0,    78,     0,   122,     0,     0,
+     0,     0,     0,    52,    43,     0,    45,    54,    53,     0,
+     0,     0,     0,    87,     0,   127,     0,     0,     0,     0,
+   106,    99,   102,     0,   120,     0,     0,     0,    79,    29,
+     0,     0,     0,    38,     0,     0,     0,     0,   121,     0,
+    97,     0,     0,   132,   130,    84,     0,     0,   107,   111,
+   110,   112,   125,   123,    83,     0,     0,    30,     0,    31,
+     0,     0,     0,     0,    47,    56,    55,    39,    44,    46,
+     0,     0,     0,    88,    93,     0,     0,   117,     0,   116,
+   115,   113,     0,     0,     0,    32,     0,    40,     0,     0,
+    95,    98,     0,     0,    33,     0,    34,     0,     0,     0,
+    49,    58,    57,    41,    48,     0,     0,    35,    42,     0,
+     0,    36,     0,    37,    50,
     }, yyDgoto = {
 //yyDgoto 59
-    13,    46,    14,    34,    15,   100,   101,    16,    17,    18,
-    54,    79,    61,    62,    63,   102,    88,   103,   147,    38,
-    39,   163,    82,    40,    91,    48,   130,    71,   133,   134,
-    92,    93,    94,    95,   150,   186,    96,   151,   187,    97,
-   152,   188,    98,   153,   189,    49,    50,    51,    52,    72,
-    73,   135,   136,    19,    20,    56,    74,    21,    65,
+    13,    46,    14,    34,    15,   101,   102,    16,    17,    18,
+    54,    80,    61,    62,    63,   103,    89,   104,   151,    38,
+    39,   167,    83,    40,    92,    48,   132,    72,   137,   138,
+    93,    94,    95,    96,   154,   190,    97,   155,   191,    98,
+   156,   192,    99,   157,   193,    49,    50,    51,    52,    73,
+    74,   139,   140,    19,    20,    56,    75,    21,    66,
     }, yySindex = {
-//yySindex 201
-   187,     0,     0,     0,     0,     0,     0,     0,     0,     0,
-     0,     0,  -254,     0,     0,     0,  -226,   187,     0,  -243,
-     0,     0,     0,  -239,     0,     0,     0,     0,     0,     0,
-     0,     0,  -198,  -191,  -193,  -179,  -198,  -165,     0,     0,
-     0,   -91,     0,  -135,  -150,  -136,  -193,     0,  -177,     0,
-     0,  -121,    67,  -254,     0,   -99,  -100,  -193,    14,    77,
-  -100,   -58,  -135,     0,     0,     0,     0,    77,     0,     0,
-    98,     0,     0,     0,     0,  -191,  -198,  -193,  -198,   -34,
-   -42,     0,     0,  -239,     0,   -23,     0,   -67,  -179,   -37,
-   -27,  -232,     0,     0,   -17,     0,     0,     0,  -225,    98,
-   -32,   -14,     0,  -208,     0,     0,   -15,  -263,     0,     0,
-     0,  -193,     0,  -193,  -254,    14,     0,     0,    98,    98,
-    35,     0,    14,  -254,  -100,   -89,     0,    77,     0,     9,
-    -6,     0,    98,    10,     0,     0,     0,     0,     0,     0,
-     0,   -10,   -27,     0,   -27,     0,   -72,    -1,  -228,    19,
-     0,     0,     0,     0,     0,     0,  -232,    25,    -6,     0,
-     0,    -5,     0,     0,   -27,     0,     0,     0,  -254,    98,
-    98,     0,    46,     0,    35,  -100,     0,     0,  -239,  -228,
-     0,  -228,     0,  -137,  -152,    30,     0,     0,     0,     0,
-     0,    98,    98,     0,     0,    46,  -152,     0,  -152,     0,
-     0,
+//yySindex 205
+   226,     0,     0,     0,     0,     0,     0,     0,     0,     0,
+     0,     0,  -266,     0,     0,     0,  -225,   226,     0,  -242,
+     0,     0,     0,  -227,     0,     0,     0,     0,     0,     0,
+     0,     0,  -202,  -188,  -203,  -176,  -202,  -172,     0,     0,
+     0,  -262,     0,  -159,  -149,  -144,  -203,     0,  -232,     0,
+     0,  -154,    87,  -266,     0,  -140,  -127,  -203,    37,   113,
+  -127,   -85,  -122,     0,   -20,     0,     0,     0,   113,     0,
+     0,   134,     0,     0,     0,     0,  -188,  -202,  -203,  -202,
+  -121,   -88,     0,     0,  -227,     0,   -60,     0,   -30,  -176,
+   -58,   -42,  -239,     0,     0,   -47,     0,     0,     0,  -229,
+   134,   -36,   -14,     0,  -136,     0,  -159,  -159,   -19,  -250,
+     0,     0,     0,  -203,     0,  -203,  -266,    37,     0,     0,
+   134,   134,    45,     0,    37,  -266,  -127,  -129,     0,   113,
+     0,    -8,   -18,     0,     0,     0,   134,    -2,     0,     0,
+     0,     0,     0,     0,     0,    -6,   -42,     0,   -42,     0,
+   -57,   -13,  -100,   -10,     0,     0,     0,     0,     0,     0,
+  -239,    10,   -18,     0,     0,   -12,     0,     0,   -42,     0,
+     0,     0,  -266,   134,   134,     0,    79,     0,    45,  -127,
+     0,     0,  -227,  -100,     0,  -100,     0,  -128,   -65,    -1,
+     0,     0,     0,     0,     0,   134,   134,     0,     0,    79,
+   -65,     0,   -65,     0,     0,
     }, yyRindex = {
-//yyRindex 201
-   -29,     0,     0,     0,     0,     0,     0,     0,     0,     0,
-     0,     0,     0,     0,     0,     0,     0,   -20,     0,   -61,
-     0,     0,     0,   -93,     0,     0,     0,     0,     0,     0,
-     0,     0,     0,     0,   280,  -156,     0,  -148,     0,     0,
-     0,  -261,     0,    29,     0,     0,   280,     0,    33,     0,
-     0,     0,     0,     0,     0,     0,   102,   280,     0,    32,
-   116,     0,    34,     0,     0,     0,     0,    32,     0,     0,
-     0,     0,     0,     0,     0,     0,     0,   280,     0,   315,
-     3,     0,     0,     1,     0,     0,     0,    36,     0,  -176,
-    38,   -28,     0,     0,     0,     0,     0,     0,   130,     0,
-     0,    37,     0,  -264,     0,     0,     0,    33,     0,     0,
-     0,   280,     0,   280,     0,     0,     0,     0,     0,     0,
-     0,     0,     0,     0,   144,  -196,     0,     0,     0,  -146,
-  -133,     0,     0,   -34,     0,     0,     0,     0,     0,     0,
-     0,     4,    39,     0,    61,     0,    36,  -194,    38,     0,
-     0,     0,     0,     0,     0,     0,    88,  -122,   -26,     0,
-     0,     0,  -170,     0,     0,     0,     0,     0,     0,     0,
-     0,     0,     0,     0,     0,   158,     0,     0,     2,    39,
-     0,    61,     0,    36,    38,     0,     0,     0,     0,     0,
-     0,     0,     0,     0,     0,     0,    39,     0,    61,     0,
-     0,
+//yyRindex 205
+   -16,     0,     0,     0,     0,     0,     0,     0,     0,     0,
+     0,     0,     0,     0,     0,     0,     0,    -5,     0,   -51,
+     0,     0,     0,   -86,     0,     0,     0,     0,     0,     0,
+     0,     0,     0,     0,   273,  -125,     0,   -83,     0,     0,
+     0,  -230,     0,    23,     0,     0,   273,     0,     7,     0,
+     0,     0,     0,     0,     0,     0,   146,   273,     0,    24,
+   163,     0,    26,     0,  -181,     0,     0,     0,    24,     0,
+     0,     0,     0,     0,     0,     0,     0,     0,   273,     0,
+   279,     3,     0,     0,     1,     0,     0,     0,     8,     0,
+  -193,     9,   122,     0,     0,     0,     0,     0,     0,   170,
+     0,     0,    28,     0,  -174,     0,     0,     0,     0,     7,
+     0,     0,     0,   273,     0,   273,     0,     0,     0,     0,
+     0,     0,     0,     0,     0,     0,   187,  -173,     0,     0,
+     0,  -158,  -151,     0,     0,     0,     0,    31,     0,     0,
+     0,     0,     0,     0,     0,     4,    35,     0,    36,     0,
+     8,  -267,     9,     0,     0,     0,     0,     0,     0,     0,
+   139,  -150,  -142,     0,     0,     0,  -177,     0,     0,     0,
+     0,     0,     0,     0,     0,     0,     0,     0,     0,   194,
+     0,     0,     2,    35,     0,    36,     0,     8,     9,     0,
+     0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
+    35,     0,    36,     0,     0,
     }, yyGindex = {
 //yyGindex 59
-     0,   -24,     0,   291,     0,   278,     0,     0,     0,     0,
-   -35,     0,     0,     0,     0,   219,    -3,    -8,    31,   -39,
-     0,     0,   233,   -52,    -7,     0,   224,     0,     0,   217,
-     0,  -103,   -95,  -101,  -167,   156,     0,     0,     0,   -60,
-   -88,  -162,   237,     0,     0,   288,   289,     0,     0,     0,
-     0,   220,     0,     0,   350,   -41,   261,   -19,   309,
+     0,   -23,     0,   229,     0,   223,     0,     0,     0,     0,
+    25,     0,     0,     0,     0,   189,    -4,    -9,    34,   -53,
+     0,     0,   203,   -52,    -7,     0,   193,     0,     0,   184,
+     0,  -102,   -95,  -101,  -168,   124,     0,     0,     0,   -63,
+   -79,  -175,   207,     0,     0,   249,   250,     0,     0,     0,
+     0,   191,     0,   -26,   312,   -25,   221,   -28,   225,
     };
   protected static final short[] yyTable = {
-//yyTable 467
-    60,    16,    17,    18,    19,    23,    90,   190,    36,    41,
-   108,    68,    57,    35,    81,   132,    16,    90,   107,   154,
-    90,   155,    86,    22,    64,   149,   121,    16,   190,   197,
-   199,    24,    25,    26,    27,    28,    29,    30,    31,    32,
-    43,    44,   112,    64,    78,    41,    83,    37,    44,    35,
-    60,    22,   111,    55,   113,   123,    35,   124,   143,   145,
-    55,   121,    33,    90,    35,   173,   142,   144,   148,   128,
-    90,   154,   165,   155,   129,    81,   138,   185,   139,    45,
-   164,   180,   182,    37,    80,    92,    47,    18,    92,    89,
-    37,   125,   154,   162,   155,    18,    35,    53,    37,    18,
-    18,    89,    18,   180,   182,    18,    55,    83,    21,   143,
-   145,    21,    69,    18,    70,   175,   156,   179,   181,    13,
-   184,     3,   148,    58,    35,     3,     3,    66,     3,    18,
-    37,   143,   145,    18,    18,    94,    18,   121,    94,   196,
-   198,   173,   194,   184,    12,    80,    89,    67,    89,    89,
-    89,    89,   117,    89,   191,   192,   171,   193,    37,    96,
-    75,   178,    96,    89,   128,   128,   128,   128,   128,   128,
+//yyTable 506
+    82,    16,    17,    18,    19,    23,    91,    36,   110,    41,
+   194,    22,    35,    57,    18,    65,    60,    64,    44,   109,
+   201,   203,   158,   159,    59,    18,    55,   153,   136,    18,
+    18,   194,    24,    25,    26,    27,    28,    29,    30,    31,
+    32,    44,   123,    79,    43,    41,    84,    16,    35,    55,
+    37,   125,    22,    44,   113,    35,   115,   147,   149,    55,
+    70,    16,    71,    82,    35,    91,    33,    60,   146,   148,
+   152,    69,    91,   169,   126,    45,   158,   159,    65,   134,
+    64,   189,    87,   166,   168,    18,    37,    81,    18,    47,
+    53,   127,    90,    37,   184,   186,    35,   158,   159,    18,
+   126,    21,    37,   114,    21,    90,   126,    90,    92,    84,
+   147,   149,    55,    90,    92,    13,   184,   186,   160,    58,
+    12,   183,   185,    94,   188,    35,   152,    76,    67,    94,
+    89,    96,   147,   149,    37,   179,    89,    96,   142,    91,
+   143,   130,    68,   200,   202,    91,   131,   188,   130,    85,
+    81,    90,     3,   161,    90,    90,     3,     3,    90,   106,
+   116,    86,     3,    37,   119,   182,   195,   196,   175,   197,
+    90,   128,   128,   128,   128,   128,   128,   128,   128,   128,
    128,   128,   128,   128,   128,   128,   128,   128,   128,   128,
-   128,   128,   128,   128,   128,    85,   128,    84,   128,    44,
-   128,   128,    59,   157,    55,   128,   126,   126,   126,   126,
+   128,   128,   123,   128,    18,   128,   177,   128,    18,    18,
+   128,   128,   105,   117,    18,   128,   126,   126,   126,   126,
    126,   126,   126,   126,   126,   126,   126,   126,   126,   126,
-   126,   126,   126,   126,   126,   126,   126,   117,   126,   169,
-   170,   171,   117,   126,   118,   119,   104,   126,    63,    63,
-    63,    63,    63,    63,    63,    63,    63,    59,    59,    59,
-    59,    59,    59,    59,    59,    59,   115,   114,    63,    16,
-    16,   120,   126,    16,    16,    91,    16,    59,    91,    63,
-    16,    16,   121,   116,   122,    16,    16,   127,    59,   131,
-   168,    24,    25,    26,    27,    28,    29,    30,    31,   161,
-    81,   177,    16,    17,    18,    19,   160,   172,   132,    16,
-    17,    22,    24,    25,    26,    27,    28,    29,    30,    31,
-   174,    87,   176,    24,    25,    26,    27,    28,    29,    30,
-    31,   195,    22,   132,   118,    80,    86,    26,   133,    51,
-    27,    85,   146,    22,    24,    25,    26,    27,    28,    29,
-    30,    31,    76,   183,    24,    25,    26,    27,    28,    29,
-    30,    31,    28,    77,    22,   106,   159,   140,    99,   158,
-   166,   200,   141,   167,    22,    24,    25,    26,    27,    28,
-    29,    30,    31,   109,   110,    17,    17,    42,   137,    17,
-    17,   105,    17,     0,     0,    22,    17,    17,     0,    22,
-    22,    17,    17,    22,    22,     0,    22,     0,     0,     0,
-     0,    22,     0,    23,    23,    22,    22,    23,    23,     0,
-    23,     0,     0,     0,     0,    23,     0,    19,    19,    23,
-    23,    19,    19,     0,    19,     0,     0,     0,     0,    19,
-     0,    25,    25,    19,    19,    25,    25,     0,    25,     0,
-     0,     0,     0,    25,     0,    24,    24,    25,    25,    24,
-    24,     0,    24,     0,     0,     0,     0,    24,     0,     0,
-     0,    24,    24,     1,     2,     3,     4,     5,     6,     7,
-     8,     9,    10,    11,     0,     0,    12,
+   126,   126,   126,   126,   126,   126,   126,   123,   126,   118,
+   126,   177,   198,   122,   124,   119,   126,   173,   174,   175,
+   126,    63,    63,    63,    63,    63,    63,    63,    63,    63,
+   123,   128,    59,    59,    59,    59,    59,    59,    59,    59,
+    59,    63,   119,   107,   120,   121,    43,   129,   135,   164,
+   165,   178,    59,    81,   172,    63,   136,   181,   176,    80,
+   199,    78,    16,    17,    18,    19,    59,   180,   118,    26,
+    51,   108,    16,    17,    24,    25,    26,    27,    28,    29,
+    30,    31,    24,    25,    26,    27,    28,    29,    30,    31,
+   133,    86,   114,   134,    22,    85,    27,    28,   163,   144,
+   162,   170,    22,   204,   145,   111,   112,    88,   171,    42,
+   141,   133,     0,     0,     0,   150,    24,    25,    26,    27,
+    28,    29,    30,    31,    24,    25,    26,    27,    28,    29,
+    30,    31,    77,     0,     0,     0,    22,     0,     0,     0,
+     0,     0,     0,     0,    22,     0,     0,     0,     0,   187,
+    24,    25,    26,    27,    28,    29,    30,    31,     0,     0,
+     0,     0,     0,     0,   100,     0,     0,     0,     0,     0,
+    22,    24,    25,    26,    27,    28,    29,    30,    31,    16,
+    16,     0,     0,    16,    16,     0,     0,     0,     0,    16,
+     0,    22,     0,    16,    16,     0,    17,    17,    16,    16,
+    17,    17,     0,    22,    22,     0,    17,    22,    22,     0,
+    17,    17,     0,    22,     0,    17,    17,     0,    22,     0,
+    23,    23,    22,    22,    23,    23,     0,    19,    19,     0,
+    23,    19,    19,     0,     0,    23,     0,    19,     0,    23,
+    23,     0,    19,     0,    25,    25,    19,    19,    25,    25,
+     0,    24,    24,     0,    25,    24,    24,     0,     0,    25,
+     0,    24,     0,    25,    25,     0,    24,     0,     0,     0,
+    24,    24,     1,     2,     3,     4,     5,     6,     7,     8,
+     9,    10,    11,     0,     0,    12,
     };
   protected static final short[] yyCheck = {
-//yyCheck 467
-    41,     0,     0,     0,     0,    12,    58,   174,    16,    16,
-    70,    46,    36,    16,    53,   278,   277,   281,    70,   122,
-   284,   122,    57,   277,    43,   120,   289,   288,   195,   191,
-   192,   257,   258,   259,   260,   261,   262,   263,   264,   265,
-   283,   280,    77,    62,    52,    52,    53,    16,   280,    52,
-    91,   277,    76,   285,    78,   280,    59,    98,   118,   119,
-   285,   289,   288,   115,    67,   293,   118,   119,   120,   277,
-   122,   174,   132,   174,   282,   114,   111,   172,   113,   277,
-   132,   169,   170,    52,    53,   281,   277,   281,   284,    58,
-    59,    99,   195,   132,   195,   289,    99,   290,    67,   293,
-   294,    70,   278,   191,   192,   281,   285,   114,   278,   169,
-   170,   281,   289,   289,   291,   156,   123,   169,   170,   289,
-   172,   277,   174,   288,   127,   281,   282,   277,   284,   277,
-    99,   191,   192,   281,   282,   281,   284,   289,   284,   191,
-   192,   293,   294,   195,   279,   114,   115,   283,   281,   118,
-   119,   284,   289,   122,   291,   292,   293,   294,   127,   281,
-   281,   168,   284,   132,   257,   258,   259,   260,   261,   262,
-   263,   264,   265,   266,   267,   268,   269,   270,   271,   272,
-   273,   274,   275,   276,   277,   285,   279,   286,   277,   280,
-   283,   284,   283,   282,   285,   288,   257,   258,   259,   260,
+//yyCheck 506
+    53,     0,     0,     0,     0,    12,    58,    16,    71,    16,
+   178,   277,    16,    36,   281,    43,    41,    43,   280,    71,
+   195,   196,   124,   124,   286,   292,   288,   122,   278,   296,
+   297,   199,   257,   258,   259,   260,   261,   262,   263,   264,
+   265,   280,   292,    52,   286,    52,    53,   277,    52,   288,
+    16,   280,   277,   280,    77,    59,    79,   120,   121,   288,
+   292,   291,   294,   116,    68,   117,   291,    92,   120,   121,
+   122,    46,   124,   136,    99,   277,   178,   178,   106,   107,
+   106,   176,    57,   136,   136,   278,    52,    53,   281,   277,
+   293,   100,    58,    59,   173,   174,   100,   199,   199,   292,
+   281,   278,    68,    78,   281,    71,   287,   281,   281,   116,
+   173,   174,   288,   287,   287,   292,   195,   196,   125,   291,
+   279,   173,   174,   281,   176,   129,   178,   281,   277,   287,
+   281,   281,   195,   196,   100,   160,   287,   287,   113,   281,
+   115,   277,   286,   195,   196,   287,   282,   199,   277,   289,
+   116,   117,   277,   282,   120,   121,   281,   282,   124,   281,
+   281,   288,   287,   129,   292,   172,   294,   295,   296,   297,
+   136,   257,   258,   259,   260,   261,   262,   263,   264,   265,
+   266,   267,   268,   269,   270,   271,   272,   273,   274,   275,
+   276,   277,   292,   279,   277,   281,   296,   283,   281,   282,
+   286,   287,   287,   291,   287,   291,   257,   258,   259,   260,
    261,   262,   263,   264,   265,   266,   267,   268,   269,   270,
-   271,   272,   273,   274,   275,   276,   277,   289,   279,   291,
-   292,   293,   289,   284,   291,   292,   284,   288,   257,   258,
-   259,   260,   261,   262,   263,   264,   265,   257,   258,   259,
-   260,   261,   262,   263,   264,   265,   288,   281,   277,   277,
-   278,   288,   284,   281,   282,   281,   284,   277,   284,   288,
-   288,   289,   289,   286,   281,   293,   294,   281,   288,   284,
-   280,   257,   258,   259,   260,   261,   262,   263,   264,   285,
-     0,   286,   281,   281,   281,   281,   277,   288,   278,   288,
-   288,   277,   257,   258,   259,   260,   261,   262,   263,   264,
-   281,   287,   277,   257,   258,   259,   260,   261,   262,   263,
-   264,   281,   277,   284,   281,     0,   284,   281,   284,   281,
-   281,   284,   287,   277,   257,   258,   259,   260,   261,   262,
-   263,   264,   265,   287,   257,   258,   259,   260,   261,   262,
-   263,   264,   281,    52,   277,    67,   127,   114,   271,   125,
-   133,   195,   115,   133,   277,   257,   258,   259,   260,   261,
-   262,   263,   264,    75,    75,   277,   278,    17,   107,   281,
-   282,    62,   284,    -1,    -1,   277,   288,   289,    -1,   277,
-   278,   293,   294,   281,   282,    -1,   284,    -1,    -1,    -1,
-    -1,   289,    -1,   277,   278,   293,   294,   281,   282,    -1,
-   284,    -1,    -1,    -1,    -1,   289,    -1,   277,   278,   293,
-   294,   281,   282,    -1,   284,    -1,    -1,    -1,    -1,   289,
-    -1,   277,   278,   293,   294,   281,   282,    -1,   284,    -1,
-    -1,    -1,    -1,   289,    -1,   277,   278,   293,   294,   281,
-   282,    -1,   284,    -1,    -1,    -1,    -1,   289,    -1,    -1,
-    -1,   293,   294,   266,   267,   268,   269,   270,   271,   272,
-   273,   274,   275,   276,    -1,    -1,   279,
+   271,   272,   273,   274,   275,   276,   277,   292,   279,   289,
+   281,   296,   297,   291,   281,   292,   287,   294,   295,   296,
+   291,   257,   258,   259,   260,   261,   262,   263,   264,   265,
+   292,   287,   257,   258,   259,   260,   261,   262,   263,   264,
+   265,   277,   292,   283,   294,   295,   286,   281,   287,   277,
+   288,   281,   277,     0,   280,   291,   278,   289,   291,     0,
+   281,    52,   281,   281,   281,   281,   291,   277,   281,   281,
+   281,    68,   291,   291,   257,   258,   259,   260,   261,   262,
+   263,   264,   257,   258,   259,   260,   261,   262,   263,   264,
+   287,   287,   281,   287,   277,   287,   281,   281,   129,   116,
+   127,   137,   277,   199,   117,    76,    76,   290,   137,    17,
+   109,   106,    -1,    -1,    -1,   290,   257,   258,   259,   260,
+   261,   262,   263,   264,   257,   258,   259,   260,   261,   262,
+   263,   264,   265,    -1,    -1,    -1,   277,    -1,    -1,    -1,
+    -1,    -1,    -1,    -1,   277,    -1,    -1,    -1,    -1,   290,
+   257,   258,   259,   260,   261,   262,   263,   264,    -1,    -1,
+    -1,    -1,    -1,    -1,   271,    -1,    -1,    -1,    -1,    -1,
+   277,   257,   258,   259,   260,   261,   262,   263,   264,   277,
+   278,    -1,    -1,   281,   282,    -1,    -1,    -1,    -1,   287,
+    -1,   277,    -1,   291,   292,    -1,   277,   278,   296,   297,
+   281,   282,    -1,   277,   278,    -1,   287,   281,   282,    -1,
+   291,   292,    -1,   287,    -1,   296,   297,    -1,   292,    -1,
+   277,   278,   296,   297,   281,   282,    -1,   277,   278,    -1,
+   287,   281,   282,    -1,    -1,   292,    -1,   287,    -1,   296,
+   297,    -1,   292,    -1,   277,   278,   296,   297,   281,   282,
+    -1,   277,   278,    -1,   287,   281,   282,    -1,    -1,   292,
+    -1,   287,    -1,   296,   297,    -1,   292,    -1,    -1,    -1,
+   296,   297,   266,   267,   268,   269,   270,   271,   272,   273,
+   274,   275,   276,    -1,    -1,   279,
     };
 
   /** maps symbol value to printable name.
@@ -323,8 +335,9 @@ public class JavaSignatureParser {
     "LONG","CHAR","FLOAT","DOUBLE","VOID","PUBLIC","PROTECTED","PRIVATE",
     "STATIC","ABSTRACT","FINAL","NATIVE","SYNCHRONIZED","TRANSIENT",
     "VOLATILE","STRICTFP","IDENTIFIER","AND","AT","DOT","COMMA",
-    "ELLIPSIS","LPAREN","RPAREN","LBRACK","RBRACK","QUESTION","LT","GT",
-    "THROWS","EXTENDS","SUPER","RSHIFT","URSHIFT",
+    "ELLIPSIS","EQUAL","LCURLY","RCURLY","LPAREN","RPAREN","LBRACK",
+    "RBRACK","QUESTION","LT","GT","THROWS","EXTENDS","SUPER","RSHIFT",
+    "URSHIFT",
     };
 
 //t  /** printable rules for debugging.
@@ -460,8 +473,9 @@ public class JavaSignatureParser {
 //t    "annotation : annotation_name LPAREN annotation_params_opt RPAREN",
 //t    "annotation_name : AT name",
 //t    "annotation_param : annotation",
+//t    "annotation_param : annotation_name EQUAL annotation",
 //t    "annotation_params : annotation_param",
-//t    "annotation_params : annotation_params annotation_param",
+//t    "annotation_params : annotation_params COMMA annotation_param",
 //t    "annotation_params_none :",
 //t    "annotation_params_opt : annotation_params",
 //t    "annotation_params_opt : annotation_params_none",
@@ -650,95 +664,95 @@ public class JavaSignatureParser {
         switch (yyN) {
 // ACTIONS_BEGIN
 case 1:
-					// line 119 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 123 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = ((MethodSignatureNode)yyVals[0+yyTop]);
  }
   break;
 case 2:
-					// line 121 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 125 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = ((ConstructorSignatureNode)yyVals[0+yyTop]);
  }
   break;
 case 4:
-					// line 125 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 129 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = ((TypeNode)yyVals[0+yyTop]); }
   break;
 case 5:
-					// line 128 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 132 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = PrimitiveTypeNode.BYTE;
  }
   break;
 case 6:
-					// line 131 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 135 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = PrimitiveTypeNode.SHORT;
  }
   break;
 case 7:
-					// line 134 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 138 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = PrimitiveTypeNode.INT;
  }
   break;
 case 8:
-					// line 137 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 141 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = PrimitiveTypeNode.LONG;
  }
   break;
 case 9:
-					// line 140 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 144 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = PrimitiveTypeNode.CHAR;
  }
   break;
 case 10:
-					// line 143 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 147 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = PrimitiveTypeNode.BOOLEAN;
  }
   break;
 case 11:
-					// line 146 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 150 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = PrimitiveTypeNode.FLOAT;
  }
   break;
 case 12:
-					// line 149 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 153 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = PrimitiveTypeNode.DOUBLE;
  }
   break;
 case 13:
-					// line 154 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 158 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = ((ReferenceTypeNode)yyVals[0+yyTop]);
  }
   break;
 case 14:
-					// line 157 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 161 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = ((ReferenceTypeNode)yyVals[0+yyTop]);
  }
   break;
 case 15:
-					// line 162 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 166 "src/org/jruby/parser/JavaSignatureParser.y"
   { 
      yyVal = ((String)yyVals[0+yyTop]); 
  }
   break;
 case 16:
-					// line 167 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 171 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = new ReferenceTypeNode(((String)yyVals[0+yyTop]));
  }
   break;
 case 17:
-					// line 170 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 174 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      String genericTyping = "<" + ((String)yyVals[-2+yyTop]) + "." + ((String)yyVals[0+yyTop]);
      yyVal = ((ReferenceTypeNode)yyVals[-4+yyTop]);
@@ -746,7 +760,7 @@ case 17:
  }
   break;
 case 19:
-					// line 178 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 182 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      String genericTyping = "<" + ((String)yyVals[0+yyTop]);
      yyVal = ((ReferenceTypeNode)yyVals[-2+yyTop]);
@@ -754,21 +768,21 @@ case 19:
  }
   break;
 case 22:
-					// line 191 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 195 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      ((ArrayTypeNode)yyVals[0+yyTop]).setTypeForArray(((TypeNode)yyVals[-1+yyTop]));
      yyVal = ((ArrayTypeNode)yyVals[0+yyTop]);
  }
   break;
 case 23:
-					// line 195 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 199 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      ((ArrayTypeNode)yyVals[0+yyTop]).setTypeForArray(new ReferenceTypeNode(((String)yyVals[-1+yyTop])));
      yyVal = ((ArrayTypeNode)yyVals[0+yyTop]);
  }
   break;
 case 24:
-					// line 199 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 203 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      ((ReferenceTypeNode)yyVals[-5+yyTop]).setGenericsTyping("<" + ((String)yyVals[-3+yyTop]) + "." + ((String)yyVals[-1+yyTop]));
      ((ArrayTypeNode)yyVals[0+yyTop]).setTypeForArray(((ReferenceTypeNode)yyVals[-5+yyTop]));
@@ -776,7 +790,7 @@ case 24:
  }
   break;
 case 25:
-					// line 204 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 208 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      ((ReferenceTypeNode)yyVals[-3+yyTop]).setGenericsTyping("<" + ((String)yyVals[-1+yyTop]));
      ((ArrayTypeNode)yyVals[0+yyTop]).setTypeForArray(((ReferenceTypeNode)yyVals[-3+yyTop]));
@@ -784,261 +798,261 @@ case 25:
  }
   break;
 case 26:
-					// line 211 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 215 "src/org/jruby/parser/JavaSignatureParser.y"
   { 
      yyVal = "?";
  }
   break;
 case 27:
-					// line 213 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 217 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = "? extends " + ((ReferenceTypeNode)yyVals[0+yyTop]).getFullyTypedName();
  }
   break;
 case 28:
-					// line 215 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 219 "src/org/jruby/parser/JavaSignatureParser.y"
   { 
      yyVal = "? super " + ((ReferenceTypeNode)yyVals[0+yyTop]).getFullyTypedName();
  }
   break;
 case 29:
-					// line 220 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 224 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = "?>"; 
  }
   break;
 case 30:
-					// line 222 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 226 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = "? extends " + ((String)yyVals[0+yyTop]);
  }
   break;
 case 31:
-					// line 224 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 228 "src/org/jruby/parser/JavaSignatureParser.y"
   { 
      yyVal = "? super " + ((String)yyVals[0+yyTop]);
  }
   break;
 case 32:
-					// line 229 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 233 "src/org/jruby/parser/JavaSignatureParser.y"
   { 
      yyVal = "?>>"; 
  }
   break;
 case 33:
-					// line 231 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 235 "src/org/jruby/parser/JavaSignatureParser.y"
   { 
      yyVal = "? extends " + ((String)yyVals[0+yyTop]);
  }
   break;
 case 34:
-					// line 233 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 237 "src/org/jruby/parser/JavaSignatureParser.y"
   { 
      yyVal = "? super " + ((String)yyVals[0+yyTop]);
  }
   break;
 case 35:
-					// line 238 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 242 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = "?>>";
  }
   break;
 case 36:
-					// line 240 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 244 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = "? extends " + ((String)yyVals[0+yyTop]);
  }
   break;
 case 37:
-					// line 242 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 246 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = "? super " + ((String)yyVals[0+yyTop]);
  }
   break;
 case 38:
-					// line 247 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 251 "src/org/jruby/parser/JavaSignatureParser.y"
   { 
      yyVal = ((ReferenceTypeNode)yyVals[-1+yyTop]).getFullyTypedName() + ">";
  }
   break;
 case 39:
-					// line 249 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 253 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = ((ReferenceTypeNode)yyVals[-2+yyTop]).getFullyTypedName() + "<" + ((String)yyVals[0+yyTop]);
  }
   break;
 case 40:
-					// line 254 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 258 "src/org/jruby/parser/JavaSignatureParser.y"
   { 
      yyVal = ((ReferenceTypeNode)yyVals[-1+yyTop]).getFullyTypedName() + ">>";
  }
   break;
 case 41:
-					// line 256 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 260 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = ((ReferenceTypeNode)yyVals[-2+yyTop]).getFullyTypedName() + "<" + ((String)yyVals[0+yyTop]);
  }
   break;
 case 42:
-					// line 261 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 265 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = ((ReferenceTypeNode)yyVals[-1+yyTop]).getFullyTypedName() + ">>>";
  }
   break;
 case 43:
-					// line 266 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 270 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = ((String)yyVals[0+yyTop]);
  }
   break;
 case 44:
-					// line 269 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 273 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = ((String)yyVals[-2+yyTop]) + ", " + ((String)yyVals[0+yyTop]);
  }
   break;
 case 46:
-					// line 275 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 279 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = ((String)yyVals[-2+yyTop]) + ", " + ((String)yyVals[0+yyTop]);
  }
   break;
 case 48:
-					// line 281 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 285 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = ((String)yyVals[-2+yyTop]) + ", " + ((String)yyVals[0+yyTop]);
  }
   break;
 case 50:
-					// line 287 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 291 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = ((String)yyVals[-2+yyTop]) + ", " + ((String)yyVals[0+yyTop]);
  }
   break;
 case 51:
-					// line 292 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 296 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = ((ReferenceTypeNode)yyVals[0+yyTop]).getFullyTypedName();
  }
   break;
 case 61:
-					// line 310 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 314 "src/org/jruby/parser/JavaSignatureParser.y"
   {
-    yyVal = new ArrayList<Modifier>();
-    ((List)yyVal).add(((Modifier)yyVals[0+yyTop]));
+    yyVal = new ArrayList<Object>();
+    ((List)yyVal).add(yyVals[0+yyTop]);
  }
   break;
 case 62:
-					// line 314 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 318 "src/org/jruby/parser/JavaSignatureParser.y"
   {
-    ((List)yyVals[-1+yyTop]).add(((Modifier)yyVals[0+yyTop]));
+    ((List)yyVals[-1+yyTop]).add(yyVals[0+yyTop]);
  }
   break;
 case 63:
-					// line 319 "src/org/jruby/parser/JavaSignatureParser.y"
-  { yyVal = new ArrayList<Modifier>(); }
+					// line 323 "src/org/jruby/parser/JavaSignatureParser.y"
+  { yyVal = new ArrayList<Object>(); }
   break;
 case 64:
-					// line 322 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 326 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = Modifier.PUBLIC; }
   break;
 case 65:
-					// line 323 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 327 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = Modifier.PROTECTED; }
   break;
 case 66:
-					// line 324 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 328 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = Modifier.PRIVATE; }
   break;
 case 67:
-					// line 325 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 329 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = Modifier.STATIC; }
   break;
 case 68:
-					// line 326 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 330 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = Modifier.ABSTRACT; }
   break;
 case 69:
-					// line 327 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 331 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = Modifier.FINAL; }
   break;
 case 70:
-					// line 328 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 332 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = Modifier.NATIVE; }
   break;
 case 71:
-					// line 329 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 333 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = Modifier.SYNCHRONIZED; }
   break;
 case 72:
-					// line 330 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 334 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = Modifier.TRANSIENT; }
   break;
 case 73:
-					// line 331 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 335 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = Modifier.VOLATILE; }
   break;
 case 74:
-					// line 332 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 336 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = Modifier.STRICTFP; }
   break;
 case 75:
-					// line 333 "src/org/jruby/parser/JavaSignatureParser.y"
-  { yyVal = null; }
+					// line 337 "src/org/jruby/parser/JavaSignatureParser.y"
+  { yyVal = ((Annotation)yyVals[0+yyTop]); }
   break;
 case 76:
-					// line 336 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 340 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = ((String)yyVals[0+yyTop]); }
   break;
 case 77:
-					// line 337 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 341 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = ((String)yyVals[-2+yyTop]) + "." + ((String)yyVals[0+yyTop]); }
   break;
 case 78:
-					// line 340 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 344 "src/org/jruby/parser/JavaSignatureParser.y"
   { 
      yyVal = new ArrayTypeNode(); 
  }
   break;
 case 79:
-					// line 342 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 346 "src/org/jruby/parser/JavaSignatureParser.y"
   { 
      yyVal = new ArrayTypeNode(((ArrayTypeNode)yyVals[-2+yyTop]));
  }
   break;
 case 80:
-					// line 347 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 351 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = ((List)yyVals[0+yyTop]); }
   break;
 case 81:
-					// line 348 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 352 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = new ArrayList<TypeNode>(); }
   break;
 case 82:
-					// line 351 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 355 "src/org/jruby/parser/JavaSignatureParser.y"
   {
     yyVal = new ArrayList<TypeNode>();
     ((List)yyVal).add(((ReferenceTypeNode)yyVals[0+yyTop]));
  }
   break;
 case 83:
-					// line 355 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 359 "src/org/jruby/parser/JavaSignatureParser.y"
   {
     ((List)yyVals[-2+yyTop]).add(((ReferenceTypeNode)yyVals[0+yyTop]));
  }
   break;
 case 84:
-					// line 360 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 364 "src/org/jruby/parser/JavaSignatureParser.y"
   {
                       yyVal = new MethodSignatureNode(((String)yyVals[-3+yyTop]), ((List)yyVals[-1+yyTop]));
                   }
   break;
 case 86:
-					// line 366 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 370 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = new ArrayList<ParameterNode>(); }
   break;
 case 87:
-					// line 369 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 373 "src/org/jruby/parser/JavaSignatureParser.y"
   {
                           List<ParameterNode> list = new ArrayList<ParameterNode>();
                           list.add(((ParameterNode)yyVals[0+yyTop]));
@@ -1046,67 +1060,67 @@ case 87:
                       }
   break;
 case 88:
-					// line 374 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 378 "src/org/jruby/parser/JavaSignatureParser.y"
   {
                           ((List)yyVals[-2+yyTop]).add(((ParameterNode)yyVals[0+yyTop]));
                       }
   break;
 case 89:
-					// line 379 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 383 "src/org/jruby/parser/JavaSignatureParser.y"
   {
                      yyVal = new ParameterNode(((TypeNode)yyVals[-1+yyTop]), ((String)yyVals[0+yyTop]));
                  }
   break;
 case 90:
-					// line 382 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 386 "src/org/jruby/parser/JavaSignatureParser.y"
   {
                      yyVal = new ParameterNode(((TypeNode)yyVals[0+yyTop]), null);
                  }
   break;
 case 91:
-					// line 385 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 389 "src/org/jruby/parser/JavaSignatureParser.y"
   {
                      yyVal = new ParameterNode(((TypeNode)yyVals[-1+yyTop]), ((String)yyVals[0+yyTop]), true);
                  }
   break;
 case 92:
-					// line 388 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 392 "src/org/jruby/parser/JavaSignatureParser.y"
   {
                      yyVal = new ParameterNode(((TypeNode)yyVals[0+yyTop]), null, true);
                  }
   break;
 case 93:
-					// line 391 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 395 "src/org/jruby/parser/JavaSignatureParser.y"
   {
                      yyVal = new ParameterNode(((TypeNode)yyVals[-2+yyTop]), ((String)yyVals[0+yyTop]), false, true);
                  }
   break;
 case 94:
-					// line 394 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 398 "src/org/jruby/parser/JavaSignatureParser.y"
   {
                      yyVal = new ParameterNode(((TypeNode)yyVals[-1+yyTop]), null, false, true);
                  }
   break;
 case 95:
-					// line 397 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 401 "src/org/jruby/parser/JavaSignatureParser.y"
   {
                      yyVal = new ParameterNode(((TypeNode)yyVals[-2+yyTop]), ((String)yyVals[0+yyTop]), true, true);
                  }
   break;
 case 96:
-					// line 400 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 404 "src/org/jruby/parser/JavaSignatureParser.y"
   {
                      yyVal = new ParameterNode(((TypeNode)yyVals[-1+yyTop]), null, true, true);
                  }
   break;
 case 97:
-					// line 405 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 409 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = ((String)yyVals[0+yyTop]);
  }
   break;
 case 98:
-					// line 407 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 411 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      /* We know this is always preceeded by 'type' production.*/
      yyVals[-3+yyTop] = new ArrayTypeNode(((TypeNode)yyVals[-3+yyTop])); 
@@ -1114,95 +1128,95 @@ case 98:
  }
   break;
 case 99:
-					// line 414 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 418 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = ((String)yyVals[-2+yyTop]) + ", " + ((String)yyVals[0+yyTop]);
  }
   break;
 case 102:
-					// line 420 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 424 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = ((String)yyVals[-2+yyTop]) + ", " + ((String)yyVals[0+yyTop]);
  }
   break;
 case 103:
-					// line 425 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 429 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = ((String)yyVals[-1+yyTop]) + ((String)yyVals[0+yyTop]);
  }
   break;
 case 104:
-					// line 430 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 434 "src/org/jruby/parser/JavaSignatureParser.y"
   { 
      yyVal = ((String)yyVals[-1+yyTop]) + ">"; 
  }
   break;
 case 105:
-					// line 433 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 437 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = ((String)yyVals[-1+yyTop]) + ((String)yyVals[0+yyTop]);
  }
   break;
 case 106:
-					// line 438 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 442 "src/org/jruby/parser/JavaSignatureParser.y"
   { 
      yyVal = " extends " + ((String)yyVals[-1+yyTop]);
  }
   break;
 case 107:
-					// line 441 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 445 "src/org/jruby/parser/JavaSignatureParser.y"
   { 
      yyVal = " extends " + ((ReferenceTypeNode)yyVals[-1+yyTop]).getFullyTypedName() + ((String)yyVals[0+yyTop]);
  }
   break;
 case 109:
-					// line 447 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 451 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = "";
  }
   break;
 case 110:
-					// line 452 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 456 "src/org/jruby/parser/JavaSignatureParser.y"
   { 
      yyVal = "extends " + ((ReferenceTypeNode)yyVals[-1+yyTop]).getFullyTypedName() + ((String)yyVals[0+yyTop]);
  }
   break;
 case 112:
-					// line 458 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 462 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = "";
  }
   break;
 case 113:
-					// line 463 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 467 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = ((String)yyVals[-1+yyTop]) + ((String)yyVals[0+yyTop]);
  }
   break;
 case 115:
-					// line 468 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 472 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = ((String)yyVals[-1+yyTop]) + ((String)yyVals[0+yyTop]);
  }
   break;
 case 116:
-					// line 471 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 475 "src/org/jruby/parser/JavaSignatureParser.y"
   { 
      yyVal = " & " + ((String)yyVals[-1+yyTop]);
  }
   break;
 case 117:
-					// line 476 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 480 "src/org/jruby/parser/JavaSignatureParser.y"
   { 
      yyVal = " & " + ((ReferenceTypeNode)yyVals[0+yyTop]).getFullyTypedName();
 }
   break;
 case 118:
-					// line 480 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 484 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = null; }
   break;
 case 119:
-					// line 482 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 486 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = ((ConstructorSignatureNode)yyVals[-1+yyTop]);
      ((ConstructorSignatureNode)yyVal).setModifiers(((List)yyVals[-2+yyTop]));
@@ -1210,7 +1224,7 @@ case 119:
  }
   break;
 case 120:
-					// line 486 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 490 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = ((ConstructorSignatureNode)yyVals[-1+yyTop]);
      ((ConstructorSignatureNode)yyVal).setModifiers(((List)yyVals[-4+yyTop]));
@@ -1219,13 +1233,13 @@ case 120:
  }
   break;
 case 121:
-					// line 493 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 497 "src/org/jruby/parser/JavaSignatureParser.y"
   {
      yyVal = new ConstructorSignatureNode(((String)yyVals[-3+yyTop]), ((List)yyVals[-1+yyTop]));
  }
   break;
 case 122:
-					// line 497 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 501 "src/org/jruby/parser/JavaSignatureParser.y"
   {
                   yyVal = ((MethodSignatureNode)yyVals[-1+yyTop]);
                   ((MethodSignatureNode)yyVal).setModifiers(((List)yyVals[-3+yyTop]));
@@ -1234,7 +1248,7 @@ case 122:
               }
   break;
 case 123:
-					// line 503 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 507 "src/org/jruby/parser/JavaSignatureParser.y"
   {
                   yyVal = ((MethodSignatureNode)yyVals[-1+yyTop]);
                   ((MethodSignatureNode)yyVal).setModifiers(((List)yyVals[-5+yyTop]));
@@ -1244,7 +1258,7 @@ case 123:
               }
   break;
 case 124:
-					// line 510 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 514 "src/org/jruby/parser/JavaSignatureParser.y"
   {
                   yyVal = ((MethodSignatureNode)yyVals[-1+yyTop]);
                   ((MethodSignatureNode)yyVal).setModifiers(((List)yyVals[-3+yyTop]));
@@ -1253,7 +1267,7 @@ case 124:
               }
   break;
 case 125:
-					// line 516 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 520 "src/org/jruby/parser/JavaSignatureParser.y"
   {
                   yyVal = ((MethodSignatureNode)yyVals[-1+yyTop]);
                   ((MethodSignatureNode)yyVal).setModifiers(((List)yyVals[-5+yyTop]));
@@ -1263,47 +1277,51 @@ case 125:
               }
   break;
 case 126:
-					// line 525 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 529 "src/org/jruby/parser/JavaSignatureParser.y"
   {
-               yyVal = new Annotation(((String)yyVals[0+yyTop]), null);
+               yyVal = new Annotation(((String)yyVals[0+yyTop]), new ArrayList<AnnotationParameter>());
            }
   break;
 case 127:
-					// line 528 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 532 "src/org/jruby/parser/JavaSignatureParser.y"
   {
                yyVal = new Annotation(((String)yyVals[-3+yyTop]), ((List)yyVals[-1+yyTop]));
            }
   break;
 case 128:
-					// line 533 "src/org/jruby/parser/JavaSignatureParser.y"
-  {
-                    yyVal = ((String)yyVals[-1+yyTop]);
-                }
+					// line 537 "src/org/jruby/parser/JavaSignatureParser.y"
+  { yyVal = ((String)yyVals[-1+yyTop]) + ((String)yyVals[0+yyTop]); }
   break;
 case 129:
-					// line 538 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 540 "src/org/jruby/parser/JavaSignatureParser.y"
   {
-                     yyVal = new AnnotationParameter(((Annotation)yyVals[0+yyTop]));
+                     yyVal = new DefaultAnnotationParameter(((Annotation)yyVals[0+yyTop]));
                  }
   break;
 case 130:
-					// line 542 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 543 "src/org/jruby/parser/JavaSignatureParser.y"
+  {
+                     yyVal = new AnnotationParameter(((String)yyVals[-2+yyTop]), ((Annotation)yyVals[0+yyTop]));
+                 }
+  break;
+case 131:
+					// line 548 "src/org/jruby/parser/JavaSignatureParser.y"
   {
                       yyVal = new ArrayList<AnnotationParameter>();
                       ((List)yyVal).add(((AnnotationParameter)yyVals[0+yyTop]));
                   }
   break;
-case 131:
-					// line 546 "src/org/jruby/parser/JavaSignatureParser.y"
+case 132:
+					// line 552 "src/org/jruby/parser/JavaSignatureParser.y"
   {
-                      ((List)yyVals[-1+yyTop]).add(((AnnotationParameter)yyVals[0+yyTop]));
+                      ((List)yyVals[-2+yyTop]).add(((AnnotationParameter)yyVals[0+yyTop]));
                   }
   break;
-case 132:
-					// line 551 "src/org/jruby/parser/JavaSignatureParser.y"
+case 133:
+					// line 557 "src/org/jruby/parser/JavaSignatureParser.y"
   { yyVal = new ArrayList<AnnotationParameter>(); }
   break;
-					// line 1308 "-"
+					// line 1326 "-"
 // ACTIONS_END
         }
         yyTop -= yyLen[yyN];
@@ -1336,7 +1354,7 @@ case 132:
   }
 
 // ACTION_BODIES
-					// line 557 "src/org/jruby/parser/JavaSignatureParser.y"
+					// line 563 "src/org/jruby/parser/JavaSignatureParser.y"
 
 }
-					// line 1344 "-"
+					// line 1362 "-"
