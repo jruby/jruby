@@ -28,12 +28,10 @@
 package org.jruby.ext.socket;
 
 
-import jnr.ffi.byref.IntByReference;
 import jnr.unixsocket.UnixServerSocketChannel;
 import jnr.unixsocket.UnixSocketChannel;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
-import org.jruby.RubyNumeric;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
@@ -43,11 +41,8 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.io.IOException;
+import java.nio.channels.SelectableChannel;
 
-/**
- *
- * @author <a href="mailto:ola.bini@gmail.com">Ola Bini</a>
- */
 @JRubyClass(name="UNIXServer", parent="UNIXSocket")
 public class RubyUNIXServer extends RubyUNIXSocket {
     private static ObjectAllocator UNIXSERVER_ALLOCATOR = new ObjectAllocator() {
@@ -58,6 +53,7 @@ public class RubyUNIXServer extends RubyUNIXSocket {
 
     static void createUNIXServer(Ruby runtime) {
         RubyClass rb_cUNIXServer = runtime.defineClass("UNIXServer", runtime.getClass("UNIXSocket"), UNIXSERVER_ALLOCATOR);
+
         runtime.getObject().setConstant("UNIXserver", rb_cUNIXServer);
         
         rb_cUNIXServer.defineAnnotatedMethods(RubyUNIXServer.class);
@@ -70,82 +66,103 @@ public class RubyUNIXServer extends RubyUNIXSocket {
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject path) {
         init_unixsock(context.getRuntime(), path, true);
+
         return this;
     }
 
-    @Deprecated
-    public IRubyObject accept() {
-        return accept(getRuntime().getCurrentContext());
-    }
     @JRubyMethod
     public IRubyObject accept(ThreadContext context) {
         try {
-            UnixSocketChannel socketChannel = ((UnixServerSocketChannel) channel).accept();
-//            LibCSocket.sockaddr_un from = LibCSocket.sockaddr_un.newInstance();
-//            int fd2 = INSTANCE.accept(fd, from, new IntByReference(LibCSocket.sockaddr_un.LENGTH));
-//            if(fd2 < 0) {
-//                rb_sys_fail(context.getRuntime(), null);
-//            }
+            UnixSocketChannel socketChannel = asUnixServer().accept();
 
             Ruby runtime = context.getRuntime();
             RubyUNIXSocket sock = (RubyUNIXSocket)(RuntimeHelpers.invoke(context, runtime.getClass("UNIXSocket"), "allocate"));
 
             sock.channel = socketChannel;
-            sock.fpath = fpath;
+            sock.fpath = "";
 
             sock.init_sock(context.getRuntime());
 
             return sock;
+
         } catch (IOException ioe) {
             throw context.runtime.newIOErrorFromException(ioe);
         }
     }
-    @Deprecated
-    public IRubyObject accept_nonblock() {
-        return accept_nonblock(getRuntime().getCurrentContext());
-    }
+
     @JRubyMethod
     public IRubyObject accept_nonblock(ThreadContext context) {
-        return accept(context);
-//        LibCSocket.sockaddr_un from = LibCSocket.sockaddr_un.newInstance();
-//        IntByReference fromlen = new IntByReference(LibCSocket.sockaddr_un.LENGTH);
-//
-//        int flags = INSTANCE.fcntl(fd, RubyUNIXSocket.F_GETFL ,0);
-//        INSTANCE.fcntl(fd, RubyUNIXSocket.F_SETFL, flags | RubyUNIXSocket.O_NONBLOCK);
-//
-//        int fd2 = INSTANCE.accept(fd, from, new IntByReference(LibCSocket.sockaddr_un.LENGTH));
-//        if(fd2 < 0) {
-//            rb_sys_fail(context.getRuntime(), null);
-//        }
-//
-//        Ruby runtime = context.getRuntime();
-//        RubyUNIXSocket sock = (RubyUNIXSocket)(RuntimeHelpers.invoke(context, runtime.getClass("UNIXSocket"), "allocate"));
-//
-//        sock.fd = fd2;
-//        sock.fpath = from.path().toString();
-//
-//        sock.init_sock(context.getRuntime());
-//
-//        return sock;
+        Ruby runtime = context.runtime;
+
+        SelectableChannel selectable = (SelectableChannel)channel;
+
+        synchronized (selectable.blockingLock()) {
+            boolean oldBlocking = selectable.isBlocking();
+
+            try {
+                selectable.configureBlocking(false);
+
+                try {
+                    UnixSocketChannel socketChannel = ((UnixServerSocketChannel) channel).accept();
+
+                    RubyUNIXSocket sock = (RubyUNIXSocket)(RuntimeHelpers.invoke(context, runtime.getClass("UNIXSocket"), "allocate"));
+
+                    sock.channel = socketChannel;
+                    sock.fpath = "";
+
+                    sock.init_sock(context.getRuntime());
+
+                    return sock;
+
+                } finally {
+                    selectable.configureBlocking(oldBlocking);
+                }
+
+            } catch (IOException ioe) {
+                if (ioe.getMessage().equals("accept failed: Resource temporarily unavailable")) {
+                    if (runtime.is1_9()) {
+                        throw runtime.newErrnoEAGAINReadableError("accept");
+                    } else {
+                        throw runtime.newErrnoEAGAINError("accept");
+                    }
+                }
+
+                throw context.runtime.newIOErrorFromException(ioe);
+            }
+        }
     }
-    @Deprecated
-    public IRubyObject sysaccept() {
-        return accept(getRuntime().getCurrentContext());
+
+    @JRubyMethod
+    public IRubyObject listen(ThreadContext context, IRubyObject log) {
+        // TODO listen backlog
+        return context.getRuntime().newFixnum(0);
     }
+
     @JRubyMethod
     public IRubyObject sysaccept(ThreadContext context) {
         return accept(context);
     }
-    @Deprecated
-    public IRubyObject listen(IRubyObject log) {
-        return listen(getRuntime().getCurrentContext(), log);
-    }
+
     @JRubyMethod
-    public IRubyObject listen(ThreadContext context, IRubyObject log) {
-//        ((UnixServerSocketChannel)channel)
-//        if(INSTANCE.listen(fd, RubyNumeric.fix2int(log)) < 0) {
-//            rb_sys_fail(context.getRuntime(), "listen(2)");
-//        }
-        return context.getRuntime().newFixnum(0);
+    public IRubyObject path(ThreadContext context) {
+        return context.runtime.newString(fpath);
+    }
+
+    @JRubyMethod
+    public IRubyObject addr(ThreadContext context) {
+        Ruby runtime = context.runtime;
+
+        return runtime.newArray(
+                runtime.newString("AF_UNIX"),
+                runtime.newString(fpath));
+    }
+
+    @JRubyMethod
+    public IRubyObject peeraddr(ThreadContext context) {
+        throw context.runtime.newErrnoENOTCONNError();
+    }
+
+    private UnixServerSocketChannel asUnixServer() {
+        return (UnixServerSocketChannel)channel;
     }
 }// RubyUNIXServer

@@ -28,60 +28,37 @@
 package org.jruby.ext.socket;
 
 import jnr.constants.platform.Fcntl;
-import jnr.constants.platform.Shutdown;
 import jnr.constants.platform.OpenFlags;
 import jnr.constants.platform.SocketLevel;
 import jnr.constants.platform.SocketOption;
 import jnr.ffi.LastError;
-import jnr.ffi.annotations.In;
-import jnr.ffi.annotations.Out;
-import jnr.ffi.annotations.Transient;
-import jnr.ffi.byref.IntByReference;
-
-import java.io.File;
-import java.io.IOException;
-
-import java.net.SocketAddress;
-import java.nio.ByteBuffer;
-import java.nio.channels.Channel;
-import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.WritableByteChannel;
-
-import static jnr.constants.platform.AddressFamily.*;
-import static jnr.constants.platform.ProtocolFamily.*;
-import static jnr.constants.platform.Sock.*;
-
-
 import jnr.unixsocket.UnixServerSocket;
 import jnr.unixsocket.UnixServerSocketChannel;
-import jnr.unixsocket.UnixSocket;
 import jnr.unixsocket.UnixSocketAddress;
 import jnr.unixsocket.UnixSocketChannel;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
-import org.jruby.RubyException;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.exceptions.RaiseException;
-import jnr.posix.util.Platform;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
+import org.jruby.util.io.BadDescriptorException;
 import org.jruby.util.io.ChannelDescriptor;
 import org.jruby.util.io.ChannelStream;
 import org.jruby.util.io.ModeFlags;
-import org.jruby.util.ByteList;
-import org.jruby.util.io.BadDescriptorException;
 
-/**
- * @author <a href="mailto:ola.bini@gmail.com">Ola Bini</a>
- */
+import java.io.File;
+import java.io.IOException;
+import java.nio.channels.Channel;
+
+
 @JRubyClass(name="UNIXSocket", parent="BasicSocket")
 public class RubyUNIXSocket extends RubyBasicSocket {
     private static ObjectAllocator UNIXSOCKET_ALLOCATOR = new ObjectAllocator() {
@@ -101,53 +78,214 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         super(runtime, type);
     }
 
-    protected Channel channel;
-    protected String fpath;
+    @JRubyMethod(visibility = Visibility.PRIVATE)
+    public IRubyObject initialize(ThreadContext context, IRubyObject path) {
+        init_unixsock(context.runtime, path, false);
+
+        return context.nil;
+    }
+
+    @JRubyMethod
+    public IRubyObject recvfrom(ThreadContext context, IRubyObject _length) {
+        Ruby runtime = context.runtime;
+
+        IRubyObject result = recv(context, _length);
+
+        IRubyObject addressArray = runtime.newArray(
+                runtime.newString("AF_UNIX"),
+                RubyString.newEmptyString(runtime));
+
+        return runtime.newArray(result, addressArray);
+    }
+
+    @JRubyMethod
+    public IRubyObject path(ThreadContext context) {
+        return RubyString.newEmptyString(context.runtime);
+    }
+
+    @JRubyMethod
+    public IRubyObject addr(ThreadContext context) {
+        Ruby runtime = context.runtime;
+
+        return runtime.newArray(
+                runtime.newString("AF_UNIX"),
+                RubyString.newEmptyString(runtime));
+    }
+
+    @JRubyMethod
+    public IRubyObject peeraddr(ThreadContext context) {
+        Ruby runtime = context.runtime;
+
+        return runtime.newArray(
+                runtime.newString("AF_UNIX"),
+                runtime.newString(fpath));
+    }
+
+    @JRubyMethod(name = "recvfrom", required = 1, optional = 1)
+    public IRubyObject recvfrom(ThreadContext context, IRubyObject[] args) {
+        Ruby runtime = context.runtime;
+
+        IRubyObject _length = args[0];
+        IRubyObject _flags;
+
+        if(args.length == 2) {
+            _flags = args[1];
+        } else {
+            _flags = runtime.getNil();
+        }
+
+        // TODO
+        int flags;
+
+        _length = args[0];
+
+        if(_flags.isNil()) {
+            flags = 0;
+        } else {
+            flags = RubyNumeric.fix2int(_flags);
+        }
+
+        return runtime.newArray(
+                recv(context, _length),
+                peeraddr(context));
+    }
+
+    @JRubyMethod(notImplemented = true)
+    public IRubyObject send_io(IRubyObject path) {
+        //TODO: implement, won't do this now
+        return  getRuntime().getNil();
+    }
+
+    @JRubyMethod(rest = true, notImplemented = true)
+    public IRubyObject recv_io(IRubyObject[] args) {
+        //TODO: implement, won't do this now
+        return  getRuntime().getNil();
+    }
+
+    @JRubyMethod(meta = true)
+    public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject path) {
+        return RuntimeHelpers.invoke(context, recv, "new", path);
+    }
+
+    @JRubyMethod(name = {"socketpair", "pair"}, optional = 2, meta = true)
+    public static IRubyObject socketpair(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        Ruby runtime = context.getRuntime();
+        Arity.checkArgumentCount(runtime, args, 0, 2);
+
+        // TODO: type and protocol
+
+        UnixSocketChannel[] sp;
+
+        try {
+            sp = UnixSocketChannel.pair();
+
+            RubyUNIXSocket sock = (RubyUNIXSocket)(RuntimeHelpers.invoke(context, runtime.getClass("UNIXSocket"), "allocate"));
+            sock.channel = sp[0];
+            sock.init_sock(runtime);
+
+            RubyUNIXSocket sock2 = (RubyUNIXSocket)(RuntimeHelpers.invoke(context, runtime.getClass("UNIXSocket"), "allocate"));
+            sock2.channel = sp[1];
+            sock2.init_sock(runtime);
+
+            return runtime.newArray(sock, sock2);
+
+        } catch (IOException ioe) {
+            throw runtime.newIOErrorFromException(ioe);
+
+        }
+    }
+
+    @Override
+    public IRubyObject close() {
+        Ruby runtime = getRuntime();
+
+        super.close();
+
+        try {
+            channel.close();
+
+        } catch (IOException ioe) {
+            throw runtime.newIOErrorFromException(ioe);
+        }
+
+        return runtime.getNil();
+    }
+
+    @Override
+    public IRubyObject setsockopt(ThreadContext context, IRubyObject _level, IRubyObject _opt, IRubyObject val) {
+        SocketLevel level = levelFromArg(_level);
+        SocketOption opt = optionFromArg(_opt);
+
+        switch(level) {
+            case SOL_SOCKET:
+                switch(opt) {
+                    case SO_KEEPALIVE: {
+                        // TODO: socket options
+                    }
+                    break;
+                    default:
+                        throw context.getRuntime().newErrnoENOPROTOOPTError();
+                }
+                break;
+            default:
+                throw context.getRuntime().newErrnoENOPROTOOPTError();
+        }
+
+        return context.getRuntime().newFixnum(0);
+    }
 
     protected static void rb_sys_fail(Ruby runtime, String message) {
         final int n = LastError.getLastError(jnr.ffi.Runtime.getSystemRuntime());
 
-        IRubyObject arg = (message != null) ? runtime.newString(message) : runtime.getNil();
-
         RubyClass instance = runtime.getErrno(n);
+
         if(instance == null) {
-            instance = runtime.getSystemCallError();
-            throw new RaiseException((RubyException)(instance.newInstance(runtime.getCurrentContext(), new IRubyObject[]{arg, runtime.newFixnum(n)}, Block.NULL_BLOCK)));
+            throw runtime.newSystemCallError(message);
+
         } else {
-            throw new RaiseException((RubyException)(instance.newInstance(runtime.getCurrentContext(), new IRubyObject[]{arg}, Block.NULL_BLOCK)));
+            throw runtime.newErrnoFromInt(n, message);
         }
     }
 
-    protected final static int F_GETFL = Fcntl.F_GETFL.intValue();
-    protected final static int F_SETFL = Fcntl.F_SETFL.intValue();
-
-    protected final static int O_NONBLOCK = OpenFlags.O_NONBLOCK.intValue();
-
     protected void init_unixsock(Ruby runtime, IRubyObject _path, boolean server) {
-        int status;
-//        fd = -1;
-
         ByteList path = _path.convertToString().getByteList();
         fpath = path.toString();
-        
-        try {
 
+        int maxSize = 103; // Max size from Darwin, lowest common value we know of
+        if (fpath.length() > 103) {
+            throw runtime.newArgumentError("too long unix socket path (max: " + maxSize + "bytes)");
+        }
+
+        try {
             if(server) {
                 UnixServerSocketChannel channel = UnixServerSocketChannel.open();
                 UnixServerSocket socket = channel.socket();
+
                 socket.bind(new UnixSocketAddress(new File(fpath)));
+
                 this.channel = channel;
+
             } else {
+                File fpathFile = new File(fpath);
+
+                if (!fpathFile.exists()) {
+                    throw runtime.newErrnoENOENTError("unix socket");
+                }
+                
                 UnixSocketChannel channel = UnixSocketChannel.open();
-                channel.connect(new UnixSocketAddress(new File(fpath)));
+
+                channel.connect(new UnixSocketAddress(fpathFile));
+
                 this.channel = channel;
+
             }
+
         } catch (IOException ioe) {
             throw runtime.newIOErrorFromException(ioe);
         }
 
         if(server) {
-//            INSTANCE.listen(fd, 5);
+            // TODO: listen backlog
         }
 
         init_sock(runtime);
@@ -157,246 +295,29 @@ public class RubyUNIXSocket extends RubyBasicSocket {
         }
     }
 
-    @Override
-    public IRubyObject setsockopt(ThreadContext context, IRubyObject _level, IRubyObject _opt, IRubyObject val) {
-        SocketLevel level = levelFromArg(_level);
-        SocketOption opt = optionFromArg(_opt);
-
-        switch(level) {
-        case SOL_SOCKET:
-            switch(opt) {
-            case SO_KEEPALIVE: {
-//                int res = INSTANCE.setsockopt(fd, level, opt, asBoolean(val) ? new byte[]{32,0,0,0} : new byte[]{0,0,0,0}, 4);
-//                if(res == -1) {
-//                    rb_sys_fail(context.getRuntime(), openFile.getPath());
-//                }
-            }
-                break;
-            default:
-                throw context.getRuntime().newErrnoENOPROTOOPTError();
-            }
-            break;
-        default:
-            throw context.getRuntime().newErrnoENOPROTOOPTError();
-        }
-
-        return context.getRuntime().newFixnum(0);
-    }
-
     protected void init_sock(Ruby runtime) {
         try {
             ModeFlags modes = newModeFlags(runtime, ModeFlags.RDWR);
-            openFile.setMainStream(ChannelStream.open(runtime, new ChannelDescriptor(
-                    channel, modes)));
+
+            openFile.setMainStream(ChannelStream.open(runtime, new ChannelDescriptor(channel, modes)));
             openFile.setPipeStream(openFile.getMainStreamSafe());
             openFile.setMode(modes.getOpenFileFlags());
             openFile.getMainStreamSafe().setSync(true);
+
         } catch (BadDescriptorException e) {
             throw runtime.newErrnoEBADFError();
         }
     }
 
-    @JRubyMethod(visibility = Visibility.PRIVATE)
-    public IRubyObject initialize(ThreadContext context, IRubyObject path) {
-        init_unixsock(context.getRuntime(), path, false);
-        return this;
+    private UnixSocketChannel asUnixSocket() {
+        return (UnixSocketChannel)channel;
     }
 
-//    private String unixpath(LibCSocket.sockaddr_un addr, IntByReference len) {
-//        if (len.getValue() > 2) {
-//            // There is something valid in the sun_path component
-//            return addr.path().toString();
-//        } else {
-//            return "";
-//        }
-//    }
+    protected Channel channel;
+    protected String fpath;
 
-//    private IRubyObject unixaddr(Ruby runtime, LibCSocket.sockaddr_un addr, IntByReference len) {
-//        return runtime.newArrayNoCopy(new IRubyObject[]{runtime.newString("AF_UNIX"), runtime.newString(unixpath(addr, len))});
-//    }
-    @Deprecated
-    public IRubyObject path() {
-        return path(getRuntime().getCurrentContext());
-    }
-    @JRubyMethod
-    public IRubyObject path(ThreadContext context) {
-//        if(openFile.getPath() == null) {
-//            LibCSocket.sockaddr_un addr = LibCSocket.sockaddr_un.newInstance();
-//            IntByReference len = new IntByReference(LibCSocket.sockaddr_un.LENGTH);
-//            if(INSTANCE.getsockname(fd, addr, len) < 0) {
-//                rb_sys_fail(context.getRuntime(), null);
-//            }
-//            openFile.setPath(unixpath(addr, len));
-//        }
-        return context.getRuntime().newString(fpath);
-    }
+    protected final static int F_GETFL = Fcntl.F_GETFL.intValue();
+    protected final static int F_SETFL = Fcntl.F_SETFL.intValue();
 
-    @Deprecated
-    public IRubyObject addr() {
-        return addr(getRuntime().getCurrentContext());
-    }
-    @JRubyMethod
-    public IRubyObject addr(ThreadContext context) {
-//        LibCSocket.sockaddr_un addr = LibCSocket.sockaddr_un.newInstance();
-//        IntByReference len = new IntByReference(LibCSocket.sockaddr_un.LENGTH);
-//        if(INSTANCE.getsockname(fd, addr, len) < 0) {
-//            rb_sys_fail(context.getRuntime(), "getsockname(2)");
-//        }
-//        return unixaddr(context.getRuntime(), addr, len);
-        return context.nil;
-    }
-    @Deprecated
-    public IRubyObject peeraddr() {
-        return peeraddr(getRuntime().getCurrentContext());
-    }
-    @JRubyMethod
-    public IRubyObject peeraddr(ThreadContext context) {
-//        LibCSocket.sockaddr_un addr = LibCSocket.sockaddr_un.newInstance();
-//        IntByReference len = new IntByReference(LibCSocket.sockaddr_un.LENGTH);
-//        if(INSTANCE.getpeername(fd, addr, len) < 0) {
-//            rb_sys_fail(context.getRuntime(), "getpeername(2)");
-//        }
-//        return unixaddr(context.getRuntime(), addr, len);
-        return context.nil;
-    }
-    @Deprecated
-    public IRubyObject recvfrom(IRubyObject[] args) {
-        return recvfrom(getRuntime().getCurrentContext(), args);
-    }
-
-    @JRubyMethod(name = "recvfrom", required = 1, optional = 1)
-    public IRubyObject recvfrom(ThreadContext context, IRubyObject[] args) {
-        
-//        LibCSocket.sockaddr_un buf = LibCSocket.sockaddr_un.newInstance();
-//        IntByReference alen = new IntByReference(LibCSocket.sockaddr_un.LENGTH);
-
-        IRubyObject len, flg;
-
-        int flags;
-
-        if(Arity.checkArgumentCount(context.getRuntime(), args, 1, 2) == 2) {
-            flg = args[1];
-        } else {
-            flg = context.getRuntime().getNil();
-        }
-
-        len = args[0];
-
-        if(flg.isNil()) {
-            flags = 0;
-        } else {
-            flags = RubyNumeric.fix2int(flg);
-        }
-
-        int buflen = RubyNumeric.fix2int(len);
-        byte[] tmpbuf = new byte[buflen];
-        ByteBuffer str = ByteBuffer.wrap(tmpbuf);
-
-        int slen = 0;//INSTANCE.recvfrom(fd, str, buflen, flags, buf, alen);
-        if(slen < 0) {
-            rb_sys_fail(context.getRuntime(), "recvfrom(2)");
-        }
-
-        if(slen < buflen) {
-            buflen = slen;
-        }
-
-        RubyString _str = context.getRuntime().newString(new ByteList(tmpbuf, 0, buflen, true));
-
-//        return context.getRuntime().newArrayNoCopy(new IRubyObject[]{_str, unixaddr(context.getRuntime(), buf, alen)});
-        return context.nil;
-    }
-
-    @JRubyMethod
-    public IRubyObject send_io(IRubyObject path) {
-        //TODO: implement, won't do this now
-        return  getRuntime().getNil();
-    }
-
-    @JRubyMethod(rest = true)
-    public IRubyObject recv_io(IRubyObject[] args) {
-        //TODO: implement, won't do this now
-        return  getRuntime().getNil();
-    }
-
-    @Override
-    public IRubyObject close() {
-        super.close();
-//        INSTANCE.close(fd);
-        try {
-            channel.close();
-        } catch (IOException ioe) {
-            throw getRuntime().newIOErrorFromException(ioe);
-        }
-        return getRuntime().getNil();
-    }
-    @Deprecated
-    public static IRubyObject open(IRubyObject recv, IRubyObject path) {
-        return open(recv.getRuntime().getCurrentContext(), recv, path);
-    }
-    @JRubyMethod(meta = true)
-    public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject path) {
-        return RuntimeHelpers.invoke(context, recv, "new", path);
-    }
-
-    private static int getSocketType(IRubyObject tp) {
-        if(tp instanceof RubyString) {
-            String str = tp.toString();
-            if("SOCK_STREAM".equals(str)) {
-                return SOCK_STREAM.intValue();
-            } else if("SOCK_DGRAM".equals(str)) {
-                return SOCK_DGRAM.intValue();
-            } else if("SOCK_RAW".equals(str)) {
-                return SOCK_RAW.intValue();
-            } else {
-                return -1;
-            }
-        }
-        return RubyNumeric.fix2int(tp);
-    }
-    @Deprecated
-    public static IRubyObject socketpair(IRubyObject recv, IRubyObject[] args) {
-        return socketpair(recv.getRuntime().getCurrentContext(), recv, args);
-    }
-    @JRubyMethod(name = {"socketpair", "pair"}, optional = 2, meta = true)
-    public static IRubyObject socketpair(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        int domain = PF_UNIX.intValue();
-        Ruby runtime = context.getRuntime();
-        Arity.checkArgumentCount(runtime, args, 0, 2);
-        
-        int type;
-
-        if(args.length == 0) { 
-            type = SOCK_STREAM.intValue();
-        } else {
-            type = getSocketType(args[0]);
-        }
-
-        int protocol;
-
-        if(args.length <= 1) {
-            protocol = 0;
-        } else {
-            protocol = RubyNumeric.fix2int(args[1]);
-        }
-
-        int[] sp = new int[2];
-        int ret = -1;
-        try {
-//            ret = INSTANCE.socketpair(domain, type, protocol, sp);
-        } catch (UnsatisfiedLinkError ule) { }
-        if (ret < 0) {
-            rb_sys_fail(runtime, "socketpair(2)");
-        }
-
-        RubyUNIXSocket sock = (RubyUNIXSocket)(RuntimeHelpers.invoke(context, runtime.getClass("UNIXSocket"), "allocate"));
-//        sock.fd = sp[0];
-        sock.init_sock(runtime);
-        RubyUNIXSocket sock2 = (RubyUNIXSocket)(RuntimeHelpers.invoke(context, runtime.getClass("UNIXSocket"), "allocate"));
-//        sock2.fd = sp[1];
-        sock2.init_sock(runtime);
-
-//        return runtime.newArrayNoCopy(new IRubyObject[]{sock, sock2});
-        return context.nil;
-    }
+    protected final static int O_NONBLOCK = OpenFlags.O_NONBLOCK.intValue();
 }

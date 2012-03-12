@@ -135,6 +135,8 @@ class SocketTest < Test::Unit::TestCase
 end
 
 class UNIXSocketTests < Test::Unit::TestCase
+  IS19 = RUBY_VERSION =~ /1\.9/
+
   # this is intentional, otherwise test run fails on windows
   def test_dummy; end
 
@@ -240,8 +242,11 @@ class UNIXSocketTests < Test::Unit::TestCase
       sock = UNIXServer.open(path)
       assert File.exist?(path)
 
-      assert_raises(Errno::EAGAIN) do 
+      begin
         sock.accept_nonblock
+        assert false, "failed to raise EAGAIN"
+      rescue Errno::EAGAIN => e
+        assert IO::WaitReadable === e if IS19
       end
 
       cli = UNIXSocket.open(path)
