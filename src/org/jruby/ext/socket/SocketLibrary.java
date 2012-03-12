@@ -15,10 +15,10 @@ public class SocketLibrary implements Library {
         RubySocket.createSocket(runtime);
         RubyServerSocket.createServerSocket(runtime);
 
-        if (runtime.getInstanceConfig().isNativeEnabled() && RubyUNIXSocket.tryUnixDomainSocket()) {
+//        if (runtime.getInstanceConfig().isNativeEnabled() && RubyUNIXSocket.tryUnixDomainSocket()) {
             RubyUNIXSocket.createUNIXSocket(runtime);
             RubyUNIXServer.createUNIXServer(runtime);
-        }
+//        }
 
         RubyIPSocket.createIPSocket(runtime);
         RubyTCPSocket.createTCPSocket(runtime);

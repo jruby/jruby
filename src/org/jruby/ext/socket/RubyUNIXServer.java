@@ -29,6 +29,8 @@ package org.jruby.ext.socket;
 
 
 import jnr.ffi.byref.IntByReference;
+import jnr.unixsocket.UnixServerSocketChannel;
+import jnr.unixsocket.UnixSocketChannel;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyNumeric;
@@ -39,6 +41,8 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.io.IOException;
 
 /**
  *
@@ -75,21 +79,26 @@ public class RubyUNIXServer extends RubyUNIXSocket {
     }
     @JRubyMethod
     public IRubyObject accept(ThreadContext context) {
-        LibCSocket.sockaddr_un from = LibCSocket.sockaddr_un.newInstance();
-        int fd2 = INSTANCE.accept(fd, from, new IntByReference(LibCSocket.sockaddr_un.LENGTH));
-        if(fd2 < 0) {
-            rb_sys_fail(context.getRuntime(), null);
+        try {
+            UnixSocketChannel socketChannel = ((UnixServerSocketChannel) channel).accept();
+//            LibCSocket.sockaddr_un from = LibCSocket.sockaddr_un.newInstance();
+//            int fd2 = INSTANCE.accept(fd, from, new IntByReference(LibCSocket.sockaddr_un.LENGTH));
+//            if(fd2 < 0) {
+//                rb_sys_fail(context.getRuntime(), null);
+//            }
+
+            Ruby runtime = context.getRuntime();
+            RubyUNIXSocket sock = (RubyUNIXSocket)(RuntimeHelpers.invoke(context, runtime.getClass("UNIXSocket"), "allocate"));
+
+            sock.channel = socketChannel;
+            sock.fpath = fpath;
+
+            sock.init_sock(context.getRuntime());
+
+            return sock;
+        } catch (IOException ioe) {
+            throw context.runtime.newIOErrorFromException(ioe);
         }
-
-        Ruby runtime = context.getRuntime();
-        RubyUNIXSocket sock = (RubyUNIXSocket)(RuntimeHelpers.invoke(context, runtime.getClass("UNIXSocket"), "allocate"));
-        
-        sock.fd = fd2;
-        sock.fpath = from.path().toString();
-
-        sock.init_sock(context.getRuntime());
-
-        return sock;
     }
     @Deprecated
     public IRubyObject accept_nonblock() {
@@ -97,26 +106,27 @@ public class RubyUNIXServer extends RubyUNIXSocket {
     }
     @JRubyMethod
     public IRubyObject accept_nonblock(ThreadContext context) {
-        LibCSocket.sockaddr_un from = LibCSocket.sockaddr_un.newInstance();
-        IntByReference fromlen = new IntByReference(LibCSocket.sockaddr_un.LENGTH);
-        
-        int flags = INSTANCE.fcntl(fd, RubyUNIXSocket.F_GETFL ,0);
-        INSTANCE.fcntl(fd, RubyUNIXSocket.F_SETFL, flags | RubyUNIXSocket.O_NONBLOCK);
-
-        int fd2 = INSTANCE.accept(fd, from, new IntByReference(LibCSocket.sockaddr_un.LENGTH));
-        if(fd2 < 0) {
-            rb_sys_fail(context.getRuntime(), null);
-        }
-
-        Ruby runtime = context.getRuntime();
-        RubyUNIXSocket sock = (RubyUNIXSocket)(RuntimeHelpers.invoke(context, runtime.getClass("UNIXSocket"), "allocate"));
-        
-        sock.fd = fd2;
-        sock.fpath = from.path().toString();
-
-        sock.init_sock(context.getRuntime());
-
-        return sock;
+        return accept(context);
+//        LibCSocket.sockaddr_un from = LibCSocket.sockaddr_un.newInstance();
+//        IntByReference fromlen = new IntByReference(LibCSocket.sockaddr_un.LENGTH);
+//
+//        int flags = INSTANCE.fcntl(fd, RubyUNIXSocket.F_GETFL ,0);
+//        INSTANCE.fcntl(fd, RubyUNIXSocket.F_SETFL, flags | RubyUNIXSocket.O_NONBLOCK);
+//
+//        int fd2 = INSTANCE.accept(fd, from, new IntByReference(LibCSocket.sockaddr_un.LENGTH));
+//        if(fd2 < 0) {
+//            rb_sys_fail(context.getRuntime(), null);
+//        }
+//
+//        Ruby runtime = context.getRuntime();
+//        RubyUNIXSocket sock = (RubyUNIXSocket)(RuntimeHelpers.invoke(context, runtime.getClass("UNIXSocket"), "allocate"));
+//
+//        sock.fd = fd2;
+//        sock.fpath = from.path().toString();
+//
+//        sock.init_sock(context.getRuntime());
+//
+//        return sock;
     }
     @Deprecated
     public IRubyObject sysaccept() {
@@ -132,9 +142,10 @@ public class RubyUNIXServer extends RubyUNIXSocket {
     }
     @JRubyMethod
     public IRubyObject listen(ThreadContext context, IRubyObject log) {
-        if(INSTANCE.listen(fd, RubyNumeric.fix2int(log)) < 0) {
-            rb_sys_fail(context.getRuntime(), "listen(2)");
-        }
+//        ((UnixServerSocketChannel)channel)
+//        if(INSTANCE.listen(fd, RubyNumeric.fix2int(log)) < 0) {
+//            rb_sys_fail(context.getRuntime(), "listen(2)");
+//        }
         return context.getRuntime().newFixnum(0);
     }
 }// RubyUNIXServer

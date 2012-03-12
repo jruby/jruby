@@ -28,6 +28,8 @@ package org.jruby.ext.socket;
 
 import jnr.constants.platform.Sock;
 import jnr.constants.platform.SocketOption;
+import jnr.unixsocket.UnixServerSocketChannel;
+import jnr.unixsocket.UnixSocketChannel;
 
 import java.io.IOException;
 import java.net.DatagramSocket;
@@ -225,16 +227,16 @@ public enum SocketType {
     },
 
     UNIX(Sock.SOCK_STREAM) {
-        private RubyUNIXSocket.UnixDomainSocketChannel toSocket(Channel channel) {
-            return (RubyUNIXSocket.UnixDomainSocketChannel)channel;
+        private UnixSocketChannel toSocket(Channel channel) {
+            return (UnixSocketChannel)channel;
         }
 
         public void shutdownInput(Channel channel)throws IOException {
-            toSocket(channel).shutdownInput();
+//            toSocket(channel).shutdownInput();
         }
 
         public void shutdownOutput(Channel channel)throws IOException {
-            toSocket(channel).shutdownInput();
+//            toSocket(channel).shutdownInput();
         }
     },
 
@@ -250,7 +252,8 @@ public enum SocketType {
         } else if (channel instanceof DatagramChannel) {
             return DATAGRAM;
 
-        } else if (channel instanceof RubyUNIXSocket.UnixDomainSocketChannel) {
+        } else if (channel instanceof UnixServerSocketChannel
+                || channel instanceof UnixSocketChannel) {
             return UNIX;
 
         }
