@@ -366,6 +366,17 @@ module DRb
   #
   # For alternative mechanisms, see DRb::TimerIdConv in rdb/timeridconv.rb
   # and DRbNameIdConv in sample/name.rb in the full drb distribution.
+  #
+  # JRuby Notes:
+  #
+  # In JRuby, id2ref is tracked manually in a weak hashing structure,
+  # which causes it to have a large performance hit and often minor
+  # behavioral differences from MRI. As a result, it is normally not
+  # enabled unless ObjectSpace is enabled.
+  #
+  # Instead of using _id2ref directly, we implement a similar mechanism
+  # here to localize the performance hit to only those objects being
+  # tracked for DRb purposes.
   class DRbIdConv
     def initialize
       @id2ref = {}

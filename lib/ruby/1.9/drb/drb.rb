@@ -365,14 +365,28 @@ module DRb
   #
   # For alternative mechanisms, see DRb::TimerIdConv in rdb/timeridconv.rb
   # and DRbNameIdConv in sample/name.rb in the full drb distribution.
+  #
+  # JRuby Notes:
+  #
+  # In JRuby, id2ref is tracked manually in a weak hashing structure,
+  # which causes it to have a large performance hit and often minor
+  # behavioral differences from MRI. As a result, it is normally not
+  # enabled unless ObjectSpace is enabled.
+  #
+  # Instead of using _id2ref directly, we implement a similar mechanism
+  # here to localize the performance hit to only those objects being
+  # tracked for DRb purposes.
   class DRbIdConv
+    def initialize
+      @id2ref = {}
+    end
 
     # Convert an object reference id to an object.
     #
     # This implementation looks up the reference id in the local object
     # space and returns the object it refers to.
     def to_obj(ref)
-      ObjectSpace._id2ref(ref)
+      _get(ref)
     end
 
     # Convert an object into a reference id.
@@ -380,8 +394,34 @@ module DRb
     # This implementation returns the object's __id__ in the local
     # object space.
     def to_id(obj)
-      obj.nil? ? nil : obj.__id__
+      obj.nil? ? nil : _put(obj)
     end
+
+    def _clean
+      dead = []
+      @id2ref.each {|id,weakref| dead << id unless weakref.weakref_alive?}
+      dead.each {|id| @id2ref.delete(id)}
+    end
+
+    def _put(obj)
+      _clean
+      @id2ref[obj.__id__] = WeakRef.new(obj)
+      obj.__id__
+    end
+
+    def _get(id)
+      weakref = @id2ref[id]
+      if weakref
+        result = weakref.__getobj__ rescue nil
+        if result
+          return result
+        else
+          @id2ref.delete id
+        end
+      end
+      nil
+    end
+    private :_clean, :_put, :_get
   end
 
   # Mixin module making an object undumpable or unmarshallable.
