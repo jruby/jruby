@@ -475,4 +475,26 @@ class ServerTest < Test::Unit::TestCase
     assert_raises(IOError) { socket.addr }
     assert_raises(IOError) { socket.getsockname }
   end
+
+  # JRUBY-5876
+  def test_syswrite_raises_epipe
+    Thread.new do
+      server = TCPServer.new("127.0.0.1", 1234)
+      while sock = server.accept
+        sock.close
+      end
+    end
+
+    sock = TCPSocket.new("127.0.0.1", 1234)
+    sock.setsockopt Socket::IPPROTO_TCP, Socket::TCP_NODELAY, 1
+
+    delay = 0.1
+    tries = 0
+    loop do
+      sock.syswrite("2")
+    end
+  rescue => ex
+    assert Errno::EPIPE === ex
+  end
 end
+
