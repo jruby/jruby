@@ -3,7 +3,7 @@ package org.jruby.ast.java_signature;
 /**
  * Base class for all typed nodes
  */
-public class TypeNode {
+public class TypeNode implements AnnotationExpression {
     protected String name;
 
     public TypeNode(String name) {

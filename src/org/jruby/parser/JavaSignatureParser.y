@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jruby.ast.java_signature.Annotation;
+import org.jruby.ast.java_signature.AnnotationExpression;
 import org.jruby.ast.java_signature.AnnotationParameter;
 import org.jruby.ast.java_signature.ArrayTypeNode;
 import org.jruby.ast.java_signature.ConstructorSignatureNode;
@@ -117,6 +118,7 @@ public class JavaSignatureParser {
 %type <SignatureNode> program
 %type <Annotation> annotation
 %type <AnnotationParameter> annotation_param
+%type <AnnotationExpression> annotation_value
 
 %%
 
@@ -537,11 +539,19 @@ annotation : annotation_name {
 annotation_name : AT name { $$ = $1 + $2; }
 
 // AnnotationParam
-annotation_param : type_variable EQUAL annotation {
+annotation_param : type_variable EQUAL annotation_value {
                      $$ = new AnnotationParameter($1, $3);
                  }
                  | annotation {
                      $$ = new DefaultAnnotationParameter($1);
+                 }
+
+// AnnotationExpression
+annotation_value : annotation {
+                     $$ = $<AnnotationExpression>1;
+                 }
+                 | type {
+                     $$ = $<AnnotationExpression>1;
                  }
 
 // List<AnnotationParameter>
