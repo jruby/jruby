@@ -537,11 +537,11 @@ annotation : annotation_name {
 annotation_name : AT name { $$ = $1 + $2; }
 
 // AnnotationParam
-annotation_param : annotation {
-                     $$ = new DefaultAnnotationParameter($1);
-                 }
-                 | annotation_name EQUAL annotation {
+annotation_param : type_variable EQUAL annotation {
                      $$ = new AnnotationParameter($1, $3);
+                 }
+                 | annotation {
+                     $$ = new DefaultAnnotationParameter($1);
                  }
 
 // List<AnnotationParameter>

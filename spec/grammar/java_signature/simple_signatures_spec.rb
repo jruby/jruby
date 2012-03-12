@@ -36,4 +36,8 @@ describe JavaSignatureParser do
   it "parses simple default annotations" do
     signature('@Cook(@Porridge) void foo()').should have_signature(['@Cook(@Porridge)'], VOID, 'foo', [])
   end
+
+  it "parses simple named annotations" do
+    signature('@Cook(food=@Porridge) void foo()').should have_signature(['@Cook(food=@Porridge)'], VOID, 'foo', [])
+  end
 end
