@@ -53,11 +53,14 @@ import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ContextAwareBlockBody;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.callsite.FunctionalCachingCallSite;
+import org.jruby.runtime.callsite.NormalCachingCallSite;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
 
@@ -410,12 +413,15 @@ public class RubySymbol extends RubyObject {
     
     @JRubyMethod
     public IRubyObject to_proc(ThreadContext context) {
-        StaticScope scope = context.getRuntime().getStaticScopeFactory().newLocalScope(null);
+        StaticScope scope = context.getRuntime().getStaticScopeFactory().getDummyScope();
+        final CallSite site = new FunctionalCachingCallSite(symbol);
         BlockBody body = new ContextAwareBlockBody(scope, Arity.OPTIONAL, BlockBody.SINGLE_RESTARG) {
             private IRubyObject yieldInner(ThreadContext context, RubyArray array) {
                 if (array.isEmpty()) throw context.getRuntime().newArgumentError("no receiver given");
 
-                return RuntimeHelpers.invoke(context, array.shift(context), symbol, array.toJavaArray());
+                IRubyObject self = array.shift(context);
+
+                return site.call(context, self, self, array.toJavaArray());
             }
             
             @Override
