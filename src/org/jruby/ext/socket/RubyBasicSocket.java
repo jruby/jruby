@@ -502,7 +502,7 @@ public class RubyBasicSocket extends RubyIO {
         }
     }
 
-    protected boolean doNotReverseLookup(ThreadContext context) {
+    public boolean doNotReverseLookup(ThreadContext context) {
         return context.runtime.isDoNotReverseLookupEnabled() || doNotReverseLookup;
     }
 
@@ -580,6 +580,21 @@ public class RubyBasicSocket extends RubyIO {
             level = SocketLevel.valueOf(RubyNumeric.fix2int(_level));
         }
         return level;
+    }
+
+    protected IRubyObject addrFor(ThreadContext context, InetSocketAddress addr, boolean reverse) {
+        Ruby r = context.getRuntime();
+        IRubyObject[] ret = new IRubyObject[4];
+        ret[0] = r.newString("AF_INET");
+        ret[1] = r.newFixnum(addr.getPort());
+        String hostAddress = addr.getAddress().getHostAddress();
+        if (!reverse || doNotReverseLookup(context)) {
+            ret[2] = r.newString(hostAddress);
+        } else {
+            ret[2] = r.newString(addr.getHostName());
+        }
+        ret[3] = r.newString(hostAddress);
+        return r.newArrayNoCopy(ret);
     }
 
     @Deprecated

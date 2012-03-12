@@ -72,21 +72,6 @@ public class RubyIPSocket extends RubyBasicSocket {
         return new RaiseException(runtime, runtime.getClass("SocketError"), msg, true);
     }
 
-    private IRubyObject addrFor(ThreadContext context, InetSocketAddress addr, boolean reverse) {
-        Ruby r = context.getRuntime();
-        IRubyObject[] ret = new IRubyObject[4];
-        ret[0] = r.newString("AF_INET");
-        ret[1] = r.newFixnum(addr.getPort());
-        String hostAddress = addr.getAddress().getHostAddress();
-        if (!reverse || doNotReverseLookup(context)) {
-            ret[2] = r.newString(hostAddress);
-        } else {
-            ret[2] = r.newString(addr.getHostName());
-        }
-        ret[3] = r.newString(hostAddress);
-        return r.newArrayNoCopy(ret);
-    }
-    
     @Deprecated
     public IRubyObject addr() {
         return addr(getRuntime().getCurrentContext());

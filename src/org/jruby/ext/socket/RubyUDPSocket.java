@@ -192,52 +192,24 @@ public class RubyUDPSocket extends RubyIPSocket {
         }
     }
 
-    @JRubyMethod(required = 1, rest = true)
+    @JRubyMethod(name = {"recvfrom", "recvfrom_nonblock"}, required = 1, rest = true)
     public IRubyObject recvfrom(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.runtime;
 
         try {
-            InetSocketAddress sender = null;
             int length = RubyNumeric.fix2int(args[0]);
-            ByteBuffer buf = ByteBuffer.allocate(length);
-            byte[] buf2 = new byte[length];
-            DatagramPacket recv = new DatagramPacket(buf2, buf2.length);
+
+            ReceiveTuple tuple = new ReceiveTuple();
 
             if (this.multicastStateManager == null) {
-                DatagramChannel channel = (DatagramChannel)getChannel();
-
-                channel.configureBlocking(false);
-                context.getThread().select(this, SelectionKey.OP_READ);
-                sender = (InetSocketAddress)channel.receive(buf);
-
+                doReceive(runtime, length, tuple);
             } else {
-                MulticastSocket ms = this.multicastStateManager.getMulticastSocket();
-
-                ms.receive(recv);
-                sender = (InetSocketAddress) recv.getSocketAddress();
+                doReceiveMulticast(runtime, length, tuple);
             }
 
-            // see JRUBY-4678
-            if (sender == null) {
-                throw runtime.newErrnoECONNRESETError();
-            }
+            IRubyObject addressArray = addrFor(context, tuple.sender, false);
 
-            IRubyObject addressArray = runtime.newArray(
-                    runtime.newString("AF_INET"),
-                    runtime.newFixnum(sender.getPort()),
-                    runtime.newString(sender.getHostName()),
-                    runtime.newString(sender.getAddress().getHostAddress())
-            );
-
-            IRubyObject result = null;
-
-            if (this.multicastStateManager == null) {
-                result = runtime.newString(new ByteList(buf.array(), 0, buf.position()));
-            } else {
-                result = runtime.newString(new ByteList(recv.getData(), 0, recv.getLength()));
-            }
-
-            return runtime.newArray(result, addressArray);
+            return runtime.newArray(tuple.result, addressArray);
 
         } catch (UnknownHostException e) {
             throw sockerr(runtime, "recvfrom: name or service not known");
@@ -256,21 +228,7 @@ public class RubyUDPSocket extends RubyIPSocket {
         Ruby runtime = context.runtime;
 
         try {
-            DatagramChannel channel = (DatagramChannel)getChannel();
-
-            int length = RubyNumeric.fix2int(args[0]);
-            ByteBuffer buf = ByteBuffer.allocate(length);
-
-            channel.configureBlocking(false);
-            context.getThread().select(this, SelectionKey.OP_READ);
-            InetSocketAddress sender = (InetSocketAddress)channel.receive(buf);
-
-            // see JRUBY-4678
-            if (sender == null) {
-                throw runtime.newErrnoECONNRESETError();
-            }
-
-            return runtime.newString(new ByteList(buf.array(), 0, buf.position()));
+            return doReceive(runtime, RubyNumeric.fix2int(args[0]));
 
         } catch (IOException e) {
             throw sockerr(runtime, "recv: name or service not known");
@@ -325,7 +283,7 @@ public class RubyUDPSocket extends RubyIPSocket {
             } else {
                 RubyString data = args[0].convertToString();
                 ByteBuffer buf = ByteBuffer.wrap(data.getBytes());
-                
+
                 written = ((DatagramChannel) this.getChannel()).write(buf);
             }
 
@@ -355,6 +313,67 @@ public class RubyUDPSocket extends RubyIPSocket {
                 sock.close();
             }
         }
+    }
+
+    private static class ReceiveTuple {
+        ReceiveTuple() {}
+        ReceiveTuple(RubyString result, InetSocketAddress sender) {
+            this.result = result;
+            this.sender = sender;
+        }
+
+        RubyString result;
+        InetSocketAddress sender;
+    }
+
+    private IRubyObject doReceive(Ruby runtime, int length) throws IOException {
+        return doReceive(runtime, length, null);
+    }
+
+    private IRubyObject doReceive(Ruby runtime, int length, ReceiveTuple tuple) throws IOException {
+        DatagramChannel channel = (DatagramChannel)getChannel();
+
+        ByteBuffer buf = ByteBuffer.allocate(length);
+
+        InetSocketAddress sender = (InetSocketAddress)channel.receive(buf);
+
+        // see JRUBY-4678
+        if (sender == null) {
+            throw runtime.newErrnoECONNRESETError();
+        }
+
+        RubyString result = runtime.newString(new ByteList(buf.array(), 0, buf.position()));
+
+        if (tuple != null) {
+            tuple.result = result;
+            tuple.sender = sender;
+        }
+
+        return result;
+    }
+
+    private IRubyObject doReceiveMulticast(Ruby runtime, int length, ReceiveTuple tuple) throws IOException {
+        byte[] buf2 = new byte[length];
+        DatagramPacket recv = new DatagramPacket(buf2, buf2.length);
+
+        MulticastSocket ms = this.multicastStateManager.getMulticastSocket();
+
+        ms.receive(recv);
+        InetSocketAddress sender = (InetSocketAddress) recv.getSocketAddress();
+
+        // see JRUBY-4678
+        if (sender == null) {
+            throw runtime.newErrnoECONNRESETError();
+        }
+
+        RubyString result = runtime.newString(new ByteList(recv.getData(), 0, recv.getLength()));
+
+        if (tuple != null) {
+            tuple.result = result;
+            tuple.sender = sender;
+        }
+
+        return result;
     }
 
     @Deprecated
