@@ -421,41 +421,46 @@ public class RubyIO extends RubyObject {
         try {
             if (ios.openFile == this.openFile) return;
 
-            OpenFile originalFile = ios.getOpenFileChecked();
+            OpenFile origFile = ios.getOpenFileChecked();
             OpenFile selfFile = getOpenFileChecked();
 
             long pos = 0;
-            if (originalFile.isReadable()) {
-                pos = originalFile.getMainStreamSafe().fgetpos();
+            Stream origStream = origFile.getMainStreamSafe();
+            ChannelDescriptor origDescriptor = origStream.getDescriptor();
+            boolean origIsSeekable = origDescriptor.isSeekable();
+
+            if (origFile.isReadable() && origIsSeekable) {
+                pos = origFile.getMainStreamSafe().fgetpos();
             }
 
-            if (originalFile.getPipeStream() != null) {
-                originalFile.getPipeStream().fflush();
-            } else if (originalFile.isWritable()) {
-                originalFile.getMainStreamSafe().fflush();
+            if (origFile.getPipeStream() != null) {
+                origFile.getPipeStream().fflush();
+            } else if (origFile.isWritable()) {
+                origStream.fflush();
             }
 
             if (selfFile.isWritable()) {
                 selfFile.getWriteStreamSafe().fflush();
             }
 
-            selfFile.setMode(originalFile.getMode());
-            selfFile.setProcess(originalFile.getProcess());
-            selfFile.setLineNumber(originalFile.getLineNumber());
-            selfFile.setPath(originalFile.getPath());
-            selfFile.setFinalizer(originalFile.getFinalizer());
+            selfFile.setMode(origFile.getMode());
+            selfFile.setProcess(origFile.getProcess());
+            selfFile.setLineNumber(origFile.getLineNumber());
+            selfFile.setPath(origFile.getPath());
+            selfFile.setFinalizer(origFile.getFinalizer());
 
+            Stream selfStream = selfFile.getMainStreamSafe();
             ChannelDescriptor selfDescriptor = selfFile.getMainStreamSafe().getDescriptor();
-            ChannelDescriptor originalDescriptor = originalFile.getMainStreamSafe().getDescriptor();
+            boolean selfIsSeekable = selfDescriptor.isSeekable();
 
             // confirm we're not reopening self's channel
-            if (selfDescriptor.getChannel() != originalDescriptor.getChannel()) {
+            if (selfDescriptor.getChannel() != origDescriptor.getChannel()) {
                 // check if we're a stdio IO, and ensure we're not badly mutilated
                 if (runtime.getFileno(selfDescriptor) >= 0 && runtime.getFileno(selfDescriptor) <= 2) {
                     selfFile.getMainStreamSafe().clearerr();
 
                     // dup2 new fd into self to preserve fileno and references to it
-                    originalDescriptor.dup2Into(selfDescriptor);
+                    origDescriptor.dup2Into(selfDescriptor);
                 } else {
                     Stream pipeFile = selfFile.getPipeStream();
                     int mode = selfFile.getMode();
@@ -468,14 +473,14 @@ public class RubyIO extends RubyObject {
                     //fptr->mode &= (m & FMODE_READABLE) ? ~FMODE_READABLE : ~FMODE_WRITABLE;
 
                     if (pipeFile != null) {
-                        selfFile.setMainStream(ChannelStream.fdopen(runtime, originalDescriptor, originalDescriptor.getOriginalModes()));
+                        selfFile.setMainStream(ChannelStream.fdopen(runtime, origDescriptor, origDescriptor.getOriginalModes()));
                         selfFile.setPipeStream(pipeFile);
                     } else {
                         // only use internal fileno here, stdio is handled above
                         selfFile.setMainStream(
                                 ChannelStream.open(
                                 runtime,
-                                originalDescriptor.dup2(selfDescriptor.getFileno())));
+                                origDescriptor.dup2(selfDescriptor.getFileno())));
 
                         // since we're not actually duping the incoming channel into our handler, we need to
                         // copy the original sync behavior from the other handler
@@ -487,9 +492,14 @@ public class RubyIO extends RubyObject {
                 // TODO: anything threads attached to original fd are notified of the close...
                 // see rb_thread_fd_close
 
-                if (originalFile.isReadable() && pos >= 0) {
-                    selfFile.seek(pos, Stream.SEEK_SET);
-                    originalFile.seek(pos, Stream.SEEK_SET);
+                if (origFile.isReadable() && pos >= 0) {
+                    if (selfIsSeekable) {
+                        selfFile.seek(pos, Stream.SEEK_SET);
+                    }
+
+                    if (origIsSeekable) {
+                        origFile.seek(pos, Stream.SEEK_SET);
+                    }
                 }
             }
 
@@ -497,12 +507,12 @@ public class RubyIO extends RubyObject {
             if (selfFile.getPipeStream() != null && selfDescriptor.getFileno() != selfFile.getPipeStream().getDescriptor().getFileno()) {
                 int fd = selfFile.getPipeStream().getDescriptor().getFileno();
 
-                if (originalFile.getPipeStream() == null) {
+                if (origFile.getPipeStream() == null) {
                     selfFile.getPipeStream().fclose();
                     selfFile.setPipeStream(null);
-                } else if (fd != originalFile.getPipeStream().getDescriptor().getFileno()) {
+                } else if (fd != origFile.getPipeStream().getDescriptor().getFileno()) {
                     selfFile.getPipeStream().fclose();
-                    ChannelDescriptor newFD2 = originalFile.getPipeStream().getDescriptor().dup2(fd);
+                    ChannelDescriptor newFD2 = origFile.getPipeStream().getDescriptor().dup2(fd);
                     selfFile.setPipeStream(ChannelStream.fdopen(runtime, newFD2, newIOOptions(runtime, "w").getModeFlags()));
                 }
             }
@@ -519,6 +529,7 @@ public class RubyIO extends RubyObject {
         } catch (BadDescriptorException ex) {
             throw runtime.newIOError("could not reopen: " + ex.getMessage());
         } catch (PipeException ex) {
+            ex.printStackTrace();
             throw runtime.newIOError("could not reopen: " + ex.getMessage());
         } catch (InvalidValueException ive) {
             throw runtime.newErrnoEINVALError();
