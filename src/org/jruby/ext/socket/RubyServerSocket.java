@@ -147,15 +147,24 @@ public class RubyServerSocket extends RubySocket {
         try {
             if (channel instanceof SelectableChannel) {
                 SelectableChannel selectable = (SelectableChannel)channel;
-                selectable.configureBlocking(false);
 
-                RubySocket socket = doAccept(context, channel);
-                SocketChannel socketChannel = (SocketChannel)socket.getChannel();
-                InetSocketAddress addr = (InetSocketAddress)socketChannel.socket().getLocalSocketAddress();
+                synchronized (selectable.blockingLock()) {
+                    boolean oldBlocking = selectable.isBlocking();
 
-                return context.runtime.newArray(
-                        socket,
-                        Sockaddr.packSockaddrFromAddress(context, addr));
+                    try {
+                        selectable.configureBlocking(false);
+
+                        RubySocket socket = doAccept(context, channel);
+                        SocketChannel socketChannel = (SocketChannel)socket.getChannel();
+                        InetSocketAddress addr = (InetSocketAddress)socketChannel.socket().getLocalSocketAddress();
+
+                        return context.runtime.newArray(
+                                socket,
+                                Sockaddr.packSockaddrFromAddress(context, addr));
+                    } finally {
+                        selectable.configureBlocking(oldBlocking);
+                    }
+                }
             } else {
                 throw getRuntime().newErrnoENOPROTOOPTError();
 

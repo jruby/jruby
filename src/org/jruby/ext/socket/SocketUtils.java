@@ -412,6 +412,17 @@ public class SocketUtils {
         return new RaiseException(runtime, runtime.getClass("SocketError"), msg, true);
     }
 
+    public static int getPortFrom(Ruby runtime, IRubyObject arg) {
+        if (arg instanceof RubyString) {
+            Service service = Service.getServiceByName(arg.asJavaString(), "tcp");
+            return service != null ?
+                    service.getPort() :
+                    RubyNumeric.fix2int(RubyNumeric.str2inum(runtime, (RubyString) arg, 0, true));
+        }
+
+        return RubyNumeric.fix2int(arg);
+    }
+
     private static String getHostAddress(ThreadContext context, InetAddress addr) {
         return context.runtime.isDoNotReverseLookupEnabled() ? addr.getHostAddress() : addr.getCanonicalHostName();
     }

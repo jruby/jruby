@@ -411,13 +411,17 @@ public class RubyUDPSocket extends RubyIPSocket {
     private ReceiveTuple doReceiveNonblockTuple(Ruby runtime, int length) throws IOException {
         DatagramChannel channel = (DatagramChannel)getChannel();
 
-        try {
+        synchronized (channel.blockingLock()) {
+            boolean oldBlocking = channel.isBlocking();
+
             channel.configureBlocking(false);
 
-            return doReceiveTuple(runtime, length);
+            try {
+                return doReceiveTuple(runtime, length);
 
-        } finally {
-            channel.configureBlocking(true);
+            } finally {
+                channel.configureBlocking(oldBlocking);
+            }
         }
     }
 

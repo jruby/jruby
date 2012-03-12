@@ -183,6 +183,7 @@ public class ChannelStream implements Stream, Finalizable {
     public boolean writeDataBuffered() {
         return !reading && buffer.position() > 0;
     }
+
     private final int refillBuffer() throws IOException {
         buffer.clear();
         int n = ((ReadableByteChannel) descriptor.getChannel()).read(buffer);

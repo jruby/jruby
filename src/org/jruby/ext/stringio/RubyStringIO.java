@@ -100,7 +100,6 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
     }
 
     @JRubyMethod(optional = 2, meta = true)
-    @SuppressWarnings("deprecated")
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         RubyStringIO strio = (RubyStringIO)((RubyClass)recv).newInstance(context, args, Block.NULL_BLOCK);
         IRubyObject val = strio;

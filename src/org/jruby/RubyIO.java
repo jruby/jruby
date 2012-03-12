@@ -4475,6 +4475,10 @@ public class RubyIO extends RubyObject {
         }
     }
 
+    public boolean writeDataBuffered() {
+        return openFile.getMainStream().writeDataBuffered();
+    }
+
     @Deprecated
     public void registerDescriptor(ChannelDescriptor descriptor, boolean isRetained) {
     }
@@ -4495,11 +4499,6 @@ public class RubyIO extends RubyObject {
     @Deprecated
     public static int getNewFileno() {
         return ChannelDescriptor.getNewFileno();
-    }
-
-    @Deprecated
-    public boolean writeDataBuffered() {
-        return openFile.getMainStream().writeDataBuffered();
     }
 
     @Deprecated

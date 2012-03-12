@@ -411,22 +411,25 @@ public class RubySocket extends RubyBasicSocket {
             throw getRuntime().newErrnoENOPROTOOPTError();
         }
 
-        try {
-            SelectableChannel selectable = (SelectableChannel)channel;
-            selectable.configureBlocking(false);
-
+        SelectableChannel selectable = (SelectableChannel)channel;
+        synchronized (selectable.blockingLock()) {
+            boolean oldBlocking = selectable.isBlocking();
             try {
-                doConnect(context, channel, iaddr);
+                selectable.configureBlocking(false);
 
-            } finally {
-                selectable.configureBlocking(true);
+                try {
+                    doConnect(context, channel, iaddr);
+
+                } finally {
+                    selectable.configureBlocking(oldBlocking);
+                }
+
+            } catch(ClosedChannelException e) {
+                throw context.getRuntime().newErrnoECONNREFUSEDError();
+
+            } catch(IOException e) {
+                throw SocketUtils.sockerr(context.getRuntime(), "connect(2): name or service not known");
             }
-
-        } catch(ClosedChannelException e) {
-            throw context.getRuntime().newErrnoECONNREFUSEDError();
-
-        } catch(IOException e) {
-            throw SocketUtils.sockerr(context.getRuntime(), "connect(2): name or service not known");
         }
     }
 

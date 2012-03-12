@@ -479,18 +479,23 @@ public class RubyBasicSocket extends RubyIO {
             }
         }
 
-        try {
-            SelectableChannel selectable = (SelectableChannel)channel;
-            selectable.configureBlocking(false);
+        SelectableChannel selectable = (SelectableChannel)channel;
+
+        synchronized (selectable.blockingLock()) {
+            boolean oldBlocking = selectable.isBlocking();
 
             try {
-                return doReceive(context, length);
-            } finally {
                 selectable.configureBlocking(false);
-            }
 
-        } catch(IOException e) {
-            throw runtime.newIOErrorFromException(e);
+                try {
+                    return doReceive(context, length);
+                } finally {
+                    selectable.configureBlocking(oldBlocking);
+                }
+
+            } catch(IOException e) {
+                throw runtime.newIOErrorFromException(e);
+            }
         }
     }
 

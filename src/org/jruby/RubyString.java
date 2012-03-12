@@ -924,7 +924,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     private void view(byte[]bytes) {
         modifyCheck();
 
-        value.replace(bytes);
+        value = new ByteList(bytes);
         shareLevel = SHARE_LEVEL_NONE;
 
         value.invalidate();

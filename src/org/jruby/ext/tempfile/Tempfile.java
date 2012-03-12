@@ -39,7 +39,6 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFile;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyKernel;
-import org.jruby.RubyTempfile;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -61,7 +60,7 @@ import org.jruby.util.io.OpenFile;
  */
 @JRubyClass(name="Tempfile", parent="File")
 @SuppressWarnings("deprecation")
-public class Tempfile extends RubyTempfile {
+public class Tempfile extends org.jruby.RubyTempfile {
 
     /** Keep strong references to the Reaper until cleanup */
     private static final ConcurrentMap<Reaper, Boolean> referenceSet

@@ -74,7 +74,6 @@ public abstract class RubyStringIO extends RubyObject {
         super(runtime, klass);
     }
 
-    @Deprecated
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         return org.jruby.ext.stringio.RubyStringIO.open(context, recv, args, block);
     }
