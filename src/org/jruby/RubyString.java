@@ -1161,6 +1161,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             tainted = Sprintf.sprintf(out, Locale.US, value, tmp);
             break;
         case RUBY1_9:
+        case RUBY2_0:
             tainted = Sprintf.sprintf1_9(out, Locale.US, value, tmp);
             break;
         default:
