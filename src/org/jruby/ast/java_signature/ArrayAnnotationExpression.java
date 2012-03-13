@@ -17,4 +17,18 @@ public class ArrayAnnotationExpression implements AnnotationExpression {
         this.expressions = expressions;
     }
     
+    @Override
+    public String toString() {
+        int length = expressions.size();
+        StringBuilder buf = new StringBuilder("{");
+
+        if (length == 0) return buf.append("}").toString();
+        
+        for (int i = 0; i < length - 1; i++) {
+            buf.append(expressions.get(i)).append(", ");
+        }
+        buf.append(expressions.get(length - 1)).append("}");
+        
+        return buf.toString();
+    }
 }

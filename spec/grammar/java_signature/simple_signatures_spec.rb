@@ -42,4 +42,9 @@ describe JavaSignatureParser do
     signature('@Cook(food=Porridge.Cold) void foo()').should have_signature(['@Cook(food=Porridge.Cold)'], VOID, 'foo', [])
     signature('@Cook(food=Porridge.Cold, drink=@Wine) void foo()').should have_signature(['@Cook(food=Porridge.Cold, drink=@Wine)'], VOID, 'foo', [])
   end
+
+  it "parses simple list annotations" do
+    signature('@Cook(food={@Porridge}) void foo()').should have_signature(['@Cook(food={@Porridge})'], VOID, 'foo', [])
+    signature('@Cook(food={}) void foo()').should have_signature(['@Cook(food={})'], VOID, 'foo', [])
+  end
 end

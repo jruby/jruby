@@ -567,10 +567,14 @@ annotation_value : annotation {
                  | LCURLY annotation_array_values RCURLY {
                      $$ = new ArrayAnnotationExpression($2);
                  }
+                 | LCURLY RCURLY {
+                     $$ = new ArrayAnnotationExpression(new ArrayList<AnnotationExpression>());
+                 }
 
 // List<AnnotationExpression>
 annotation_array_values : annotation_value {
                             $$ = new ArrayList<AnnotationExpression>();
+                            $<List>$.add($1);
                         }
                         | annotation_array_values COMMA annotation_value {
                             $1.add($3);
