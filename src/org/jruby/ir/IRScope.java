@@ -663,9 +663,9 @@ public abstract class IRScope {
                         IRClosure cl = ((WrappedIRClosure)o).getClosure();
                         cl.computeScopeFlags();
                         if (cl.usesZSuper()) usesZSuper = true;
-                    } else {
-                        usesZSuper = true;
                     }
+                    // If the closure comes from a variable, then the zsuper invocation in the
+                    // block corresponds to the scope in which it is defined. 
                 }
 
                 if (call.canBeEval()) {
