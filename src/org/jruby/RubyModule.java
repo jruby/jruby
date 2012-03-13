@@ -2137,6 +2137,72 @@ public class RubyModule extends RubyObject {
         return context.getRuntime().getNil();
     }
 
+    @JRubyMethod(name = "mix", visibility = PRIVATE, compat = RUBY2_0)
+    public IRubyObject mix(ThreadContext context, IRubyObject mod) {
+        Ruby runtime = context.runtime;
+
+        if (!mod.isModule()) {
+            throw runtime.newTypeError(mod, runtime.getModule());
+        }
+
+        for (Map.Entry<String, DynamicMethod> entry : ((RubyModule)mod).methods.entrySet()) {
+            if (methods.containsKey(entry.getKey())) {
+                throw runtime.newArgumentError("method would conflict - " + entry.getKey());
+            }
+        }
+
+        for (Map.Entry<String, DynamicMethod> entry : ((RubyModule)mod).methods.entrySet()) {
+            getMethodsForWrite().put(entry.getKey(), entry.getValue().dup());
+        }
+
+        return mod;
+    }
+
+    @JRubyMethod(name = "mix", visibility = PRIVATE, compat = RUBY2_0)
+    public IRubyObject mix(ThreadContext context, IRubyObject mod, IRubyObject hash0) {
+        Ruby runtime = context.runtime;
+        RubyHash methodNames = null;
+
+        if (!mod.isModule()) {
+            throw runtime.newTypeError(mod, runtime.getModule());
+        }
+
+        if (hash0 instanceof RubyHash) {
+            methodNames = (RubyHash)hash0;
+        } else {
+            throw runtime.newTypeError(hash0, runtime.getHash());
+        }
+        
+        for (Map.Entry entry : (Set<Map.Entry<Object, Object>>)methodNames.directEntrySet()) {
+            String name = entry.getValue().toString();
+            if (methods.containsKey(entry.getValue().toString())) {
+                throw runtime.newArgumentError("constant would conflict - " + name);
+            }
+        }
+
+        for (Map.Entry<String, DynamicMethod> entry : ((RubyModule)mod).methods.entrySet()) {
+            if (methods.containsKey(entry.getKey())) {
+                throw runtime.newArgumentError("method would conflict - " + entry.getKey());
+            }
+        }
+
+        for (Map.Entry<String, DynamicMethod> entry : ((RubyModule)mod).methods.entrySet()) {
+            String name = entry.getKey();
+            IRubyObject mapped = methodNames.fastARef(runtime.newSymbol(name));
+            if (mapped == NEVER) {
+                // unmapped
+            } else if (mapped == context.nil) {
+                // do not mix
+                continue;
+            } else {
+                name = mapped.toString();
+            }
+            getMethodsForWrite().put(name, entry.getValue().dup());
+        }
+
+        return mod;
+    }
+
     private void setVisibility(ThreadContext context, IRubyObject[] args, Visibility visibility) {
         if (context.getRuntime().getSafeLevel() >= 4 && !isTaint()) {
             throw context.getRuntime().newSecurityError("Insecure: can't change method visibility");
@@ -3644,6 +3710,10 @@ public class RubyModule extends RubyObject {
         public ConstantEntry(IRubyObject value, boolean hidden) {
             this.value = value;
             this.hidden = hidden;
+        }
+        
+        public ConstantEntry dup() {
+            return new ConstantEntry(value, hidden);
         }
     }
     
