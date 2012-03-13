@@ -65,6 +65,14 @@ public class InvokerGenerator {
                 for (Map.Entry<String, List<JavaMethodDescriptor>> entry : clumper.getAnnotatedMethods1_9().entrySet()) {
                     dumper.getAnnotatedMethodClass(entry.getValue());
                 }
+
+                for (Map.Entry<String, List<JavaMethodDescriptor>> entry : clumper.getStaticAnnotatedMethods2_0().entrySet()) {
+                    dumper.getAnnotatedMethodClass(entry.getValue());
+                }
+
+                for (Map.Entry<String, List<JavaMethodDescriptor>> entry : clumper.getAnnotatedMethods2_0().entrySet()) {
+                    dumper.getAnnotatedMethodClass(entry.getValue());
+                }
             } catch (Exception e) {
                 e.printStackTrace();
                 throw e;

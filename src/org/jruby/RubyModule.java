@@ -620,6 +620,8 @@ public class RubyModule extends RubyObject {
         Map<String, List<JavaMethodDescriptor>> staticAnnotatedMethods1_8 = new HashMap<String, List<JavaMethodDescriptor>>();
         Map<String, List<JavaMethodDescriptor>> annotatedMethods1_9 = new HashMap<String, List<JavaMethodDescriptor>>();
         Map<String, List<JavaMethodDescriptor>> staticAnnotatedMethods1_9 = new HashMap<String, List<JavaMethodDescriptor>>();
+        Map<String, List<JavaMethodDescriptor>> annotatedMethods2_0 = new HashMap<String, List<JavaMethodDescriptor>>();
+        Map<String, List<JavaMethodDescriptor>> staticAnnotatedMethods2_0 = new HashMap<String, List<JavaMethodDescriptor>>();
         Map<String, List<JavaMethodDescriptor>> allAnnotatedMethods = new HashMap<String, List<JavaMethodDescriptor>>();
         
         public void clump(Class cls) {
@@ -639,6 +641,8 @@ public class RubyModule extends RubyObject {
                         methodsHash = staticAnnotatedMethods1_8;
                     } else if (anno.compat() == RUBY1_9) {
                         methodsHash = staticAnnotatedMethods1_9;
+                    } else if (anno.compat() == RUBY2_0) {
+                        methodsHash = staticAnnotatedMethods2_0;
                     } else {
                         methodsHash = staticAnnotatedMethods;
                     }
@@ -647,6 +651,8 @@ public class RubyModule extends RubyObject {
                         methodsHash = annotatedMethods1_8;
                     } else if (anno.compat() == RUBY1_9) {
                         methodsHash = annotatedMethods1_9;
+                    } else if (anno.compat() == RUBY2_0) {
+                        methodsHash = annotatedMethods2_0;
                     } else {
                         methodsHash = annotatedMethods;
                     }
@@ -688,6 +694,10 @@ public class RubyModule extends RubyObject {
             return annotatedMethods1_9;
         }
 
+        public Map<String, List<JavaMethodDescriptor>> getAnnotatedMethods2_0() {
+            return annotatedMethods2_0;
+        }
+
         public Map<String, List<JavaMethodDescriptor>> getStaticAnnotatedMethods() {
             return staticAnnotatedMethods;
         }
@@ -698,6 +708,10 @@ public class RubyModule extends RubyObject {
 
         public Map<String, List<JavaMethodDescriptor>> getStaticAnnotatedMethods1_9() {
             return staticAnnotatedMethods1_9;
+        }
+
+        public Map<String, List<JavaMethodDescriptor>> getStaticAnnotatedMethods2_0() {
+            return staticAnnotatedMethods2_0;
         }
     }
     

@@ -31,6 +31,8 @@
 package org.jruby.ext.jruby;
 
 import java.io.IOException;
+
+import org.jruby.CompatVersion;
 import org.jruby.ast.RestArgNode;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
@@ -131,6 +133,11 @@ public class JRubyLibrary implements Library {
         }
 
         return (IRubyObject)unwrapped;
+    }
+
+    @JRubyMethod(module = true, compat = CompatVersion.RUBY2_0)
+    public static IRubyObject ruby2_0(ThreadContext context, IRubyObject recv) {
+        return context.runtime.newString("Welcome to the future of Ruby!");
     }
     
     public static class MethodExtensions {
