@@ -210,6 +210,10 @@ public class RubyBasicSocket extends RubyIO {
             case SOL_TCP:
             case SOL_UDP:
 
+                if (opt == SocketOption.__UNKNOWN_CONSTANT__) {
+                    throw runtime.newErrnoENOPROTOOPTError();
+                }
+
                 value = SocketType.forChannel(channel).getSocketOption(channel, opt);
                 
                 if (runtime.is1_9()) {
@@ -573,7 +577,7 @@ public class RubyBasicSocket extends RubyIO {
         case 1:
             channel = getOpenChannel();
             try {
-                SocketType.forChannel(channel).shutdownInput(channel);
+                SocketType.forChannel(channel).shutdownOutput(channel);
 
             } catch (IOException e) {
                 throw runtime.newIOError(e.getMessage());

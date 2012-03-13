@@ -128,7 +128,7 @@ public enum SocketType {
         }
 
         public void shutdownOutput(Channel channel)throws IOException {
-            toSocket(channel).shutdownInput();
+            toSocket(channel).shutdownOutput();
         }
     },
 

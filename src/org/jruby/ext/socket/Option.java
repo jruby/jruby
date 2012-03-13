@@ -200,7 +200,7 @@ public class Option extends RubyObject {
 
     @JRubyMethod
     public IRubyObject to_s(ThreadContext context) {
-        return context.nil;
+        return RubyString.newString(context.runtime, data);
     }
 
     private ProtocolFamily family;
