@@ -3,7 +3,7 @@ package org.jruby.runtime.backtrace;
 import java.util.HashMap;
 import java.util.Map;
 import org.jruby.evaluator.ASTInterpreter;
-import org.jruby.interpreter.Interpreter;
+import org.jruby.ir.interpreter.Interpreter;
 
 public enum FrameType {
     METHOD, BLOCK, EVAL, CLASS, ROOT;

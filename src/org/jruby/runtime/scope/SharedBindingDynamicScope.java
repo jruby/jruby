@@ -5,7 +5,7 @@ import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.compiler.ir.IRMethod;
+import org.jruby.ir.IRMethod;
 
 /**
  */

@@ -56,7 +56,7 @@ import org.jruby.runtime.Frame;
 import org.jruby.runtime.InterpretedBlock;
 import org.jruby.util.ByteList;
 import org.jruby.RubyInstanceConfig.CompileMode;
-import org.jruby.interpreter.Interpreter;
+import org.jruby.ir.interpreter.Interpreter;
 
 public class ASTInterpreter {
     public static IRubyObject INTERPRET_METHOD(

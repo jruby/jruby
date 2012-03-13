@@ -1,6 +1,6 @@
 package org.jruby.parser;
 
-import org.jruby.compiler.ir.IRScope;
+import org.jruby.ir.IRScope;
 
 import org.jruby.ast.AssignableNode;
 import org.jruby.ast.LocalAsgnNode;

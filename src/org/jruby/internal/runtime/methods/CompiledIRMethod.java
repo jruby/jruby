@@ -1,10 +1,10 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.RubyModule;
-import org.jruby.compiler.ir.IRMethod;
-import org.jruby.compiler.ir.IRScope;
-import org.jruby.compiler.ir.representations.CFG;
-import org.jruby.interpreter.Interpreter;
+import org.jruby.ir.IRMethod;
+import org.jruby.ir.IRScope;
+import org.jruby.ir.representations.CFG;
+import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;

@@ -5,8 +5,8 @@ import org.jruby.RubyArray;
 import org.jruby.RubyModule;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.common.IRubyWarnings.ID;
-import org.jruby.compiler.ir.IRClosure;
-import org.jruby.interpreter.Interpreter;
+import org.jruby.ir.IRClosure;
+import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.runtime.Block.Type;
 import org.jruby.runtime.builtin.IRubyObject;
 
