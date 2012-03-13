@@ -26,6 +26,9 @@
 
 package org.jruby.ext.socket;
 
+import jnr.constants.platform.AddressFamily;
+import jnr.constants.platform.ProtocolFamily;
+import jnr.constants.platform.Sock;
 import jnr.netdb.Service;
 import org.jruby.CompatVersion;
 import org.jruby.Ruby;
@@ -35,6 +38,7 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyInteger;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ThreadContext;
@@ -427,7 +431,7 @@ public class SocketUtils {
 
             if (port <= 0) {
                 port = RubyNumeric.fix2int(RubySocket.getservbyname(
-                        context, context.runtime.getObject(), new IRubyObject[] {portString}));
+                        context, context.runtime.getObject(), new IRubyObject[]{portString}));
             }
         }
 
@@ -448,4 +452,46 @@ public class SocketUtils {
     private static final byte[] INADDR_BROADCAST = new byte[] {-1,-1,-1,-1}; // 255.255.255.255
     private static final String ANY = "<any>";
     private static final byte[] INADDR_ANY = new byte[] {0,0,0,0}; // 0.0.0.0
+
+    static AddressFamily addressFamilyFromArg(IRubyObject domain) {
+        AddressFamily addressFamily = null;
+
+        if(domain instanceof RubyString || domain instanceof RubySymbol) {
+            String domainString = domain.toString();
+            addressFamily = AddressFamily.valueOf("AF_" + domainString);
+        } else {
+            int domainInt = RubyNumeric.fix2int(domain);
+            addressFamily = AddressFamily.valueOf(domainInt);
+        }
+
+        return addressFamily;
+    }
+
+    static Sock sockFromArg(IRubyObject type) {
+        Sock sockType = null;
+
+        if(type instanceof RubyString || type instanceof RubySymbol) {
+            String typeString = type.toString();
+            sockType = Sock.valueOf("SOCK_" + typeString);
+        } else {
+            int typeInt = RubyNumeric.fix2int(type);
+            sockType = Sock.valueOf(typeInt);
+        }
+
+        return sockType;
+    }
+
+    static ProtocolFamily protocolFamilyFromArg(IRubyObject protocol) {
+        ProtocolFamily protocolFamily = null;
+
+        if(protocol instanceof RubyString || protocol instanceof RubySymbol) {
+            String protocolString = protocol.toString();
+            protocolFamily = ProtocolFamily.valueOf("PF_" + protocolString);
+        } else {
+            int protocolInt = RubyNumeric.fix2int(protocol);
+            protocolFamily = ProtocolFamily.valueOf(protocolInt);
+        }
+
+        return protocolFamily;
+    }
 }

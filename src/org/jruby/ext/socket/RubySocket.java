@@ -42,9 +42,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
-import org.jruby.RubyNumeric;
-import org.jruby.RubyString;
-import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
@@ -353,15 +350,7 @@ public class RubySocket extends RubyBasicSocket {
     }
 
     private void initProtocol(Ruby runtime, IRubyObject protocol) {
-        ProtocolFamily protocolFamily = null;
-        
-        if(protocol instanceof RubyString || protocol instanceof RubySymbol) {
-            String protocolString = protocol.toString();
-            protocolFamily = ProtocolFamily.valueOf("PF_" + protocolString);
-        } else {
-            int protocolInt = RubyNumeric.fix2int(protocol);
-            protocolFamily = ProtocolFamily.valueOf(protocolInt);
-        }
+        ProtocolFamily protocolFamily = SocketUtils.protocolFamilyFromArg(protocol);
 
         if (protocolFamily == null) {
             throw SocketUtils.sockerr(runtime, "unknown socket protocol " + protocol);
@@ -371,15 +360,7 @@ public class RubySocket extends RubyBasicSocket {
     }
 
     private void initType(Ruby runtime, IRubyObject type) {
-        Sock sockType = null;
-
-        if(type instanceof RubyString || type instanceof RubySymbol) {
-            String typeString = type.toString();
-            sockType = Sock.valueOf("SOCK_" + typeString);
-        } else {
-            int typeInt = RubyNumeric.fix2int(type);
-            sockType = Sock.valueOf(typeInt);
-        }
+        Sock sockType = SocketUtils.sockFromArg(type);
 
         if (sockType == null) {
             throw SocketUtils.sockerr(runtime, "unknown socket type " + type);
@@ -389,21 +370,13 @@ public class RubySocket extends RubyBasicSocket {
     }
 
     private void initDomain(Ruby runtime, IRubyObject domain) {
-        AddressFamily addressFamily = null;
+        AddressFamily family = SocketUtils.addressFamilyFromArg(domain);
 
-        if(domain instanceof RubyString || domain instanceof RubySymbol) {
-            String domainString = domain.toString();
-            addressFamily = AddressFamily.valueOf("AF_" + domainString);
-        } else {
-            int domainInt = RubyNumeric.fix2int(domain);
-            addressFamily = AddressFamily.valueOf(domainInt);
-        }
-
-        if (addressFamily == null) {
+        if (family == null) {
             throw SocketUtils.sockerr(runtime, "unknown socket domain " + domain);
         }
 
-        soDomain = addressFamily;
+        soDomain = family;
     }
 
     private void doConnectNonblock(ThreadContext context, Channel channel, InetSocketAddress iaddr) {

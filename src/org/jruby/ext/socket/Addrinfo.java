@@ -1,14 +1,19 @@
 package org.jruby.ext.socket;
 
+import jnr.constants.platform.AddressFamily;
+import jnr.constants.platform.ProtocolFamily;
+import jnr.constants.platform.Sock;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyObject;
 import org.jruby.anno.JRubyMethod;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -50,23 +55,96 @@ public class Addrinfo extends RubyObject {
         this.socketType = socketType;
     }
 
-    @JRubyMethod(rest = true, notImplemented = true)
-    public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
-        // unimplemented
+    @JRubyMethod
+    public IRubyObject initialize(ThreadContext context, IRubyObject _sockaddr) {
+        initializeCommon(context.runtime, _sockaddr, null, null, null);
+
         return context.nil;
     }
 
-    @JRubyMethod(notImplemented = true)
+    @JRubyMethod
+    public IRubyObject initialize(ThreadContext context, IRubyObject _sockaddr, IRubyObject _family) {
+        initializeCommon(context.runtime, _sockaddr, _family, null, null);
+
+        return context.nil;
+    }
+
+    @JRubyMethod
+    public IRubyObject initialize(ThreadContext context, IRubyObject _sockaddr, IRubyObject _family, IRubyObject _socktype) {
+        initializeCommon(context.runtime, _sockaddr, _family, _socktype, null);
+
+        return context.nil;
+    }
+
+    @JRubyMethod(required = 1, optional = 4)
+    public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
+        switch (args.length) {
+            case 1: return initialize(context, args[0]);
+            case 2: return initialize(context, args[0], args[1]);
+            case 3: return initialize(context, args[0], args[1], args[2]);
+        }
+
+        IRubyObject _sockaddr = args[0];
+        IRubyObject _family = args[1];
+        IRubyObject _socktype = args[2];
+        IRubyObject _protocol = args[3];
+
+        initializeCommon(context.runtime, _sockaddr, _family, _socktype, _protocol);
+
+        return context.nil;
+    }
+
+    private void initializeCommon(Ruby runtime, IRubyObject sockaddr, IRubyObject family, IRubyObject sock, IRubyObject port) {
+        try {
+            inetAddress = SocketUtils.getRubyInetAddress(sockaddr.convertToString().getByteList());
+
+            if (family == null) {
+                this.pfamily = inetAddress instanceof Inet4Address ? ProtocolFamily.PF_INET : ProtocolFamily.PF_INET6;
+                this.afamily = inetAddress instanceof Inet4Address ? AddressFamily.AF_INET : AddressFamily.AF_INET6;
+                this.socketType = SocketType.SOCKET;
+            } else {
+                this.pfamily = SocketUtils.protocolFamilyFromArg(family);
+
+                if (this.pfamily == ProtocolFamily.__UNKNOWN_CONSTANT__) {
+                    throw runtime.newErrnoENOPROTOOPTError();
+                }
+
+                this.afamily = SocketUtils.addressFamilyFromArg(family);
+
+                if (this.afamily == AddressFamily.__UNKNOWN_CONSTANT__) {
+                    throw runtime.newErrnoENOPROTOOPTError();
+                }
+
+                this.socketType = SocketType.SOCKET;
+            }
+            
+            if (sock == null) {
+                this.sock = Sock.SOCK_STREAM;
+            } else {
+                this.sock = SocketUtils.sockFromArg(sock);
+            }
+
+            if (port == null) {
+                this.port = 0;
+            } else {
+                this.port = (int)port.convertToInteger().getLongValue();
+            }
+        } catch (IOException ioe) {
+            throw runtime.newIOErrorFromException(ioe);
+        }
+    }
+
+    @JRubyMethod
     public IRubyObject inspect(ThreadContext context) {
         // TODO: MRI also shows hostname, but we don't want to reverse every time...
         String portString = port == 0 ? "" : ":" + port;
         return context.runtime.newString("#<Addrinfo: " + inetAddress.getHostAddress() +  portString + ">");
     }
 
-    @JRubyMethod(notImplemented = true)
+    @JRubyMethod
     public IRubyObject inspect_sockaddr(ThreadContext context) {
-        // unimplemented
-        return context.nil;
+        String portString = port == 0 ? "" : ":" + port;
+        return context.runtime.newString(inetAddress.getHostAddress() + portString);
     }
 
     @JRubyMethod(rest = true, meta = true)
@@ -87,46 +165,43 @@ public class Addrinfo extends RubyObject {
         }
     }
 
-    @JRubyMethod(notImplemented = true, meta = true)
+    @JRubyMethod(meta = true)
     public static IRubyObject tcp(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
-        // unimplemented
-        return context.nil;
+        Addrinfo addrinfo = new Addrinfo(context.runtime, (RubyClass)recv);
+
+        addrinfo.initializeCommon(context.runtime, arg0, null, null, arg1);
+
+        return addrinfo;
     }
 
-    @JRubyMethod(notImplemented = true, meta = true)
+    @JRubyMethod(meta = true)
     public static IRubyObject udp(ThreadContext context, IRubyObject recv, IRubyObject arg0, IRubyObject arg1) {
-        // unimplemented
-        return context.nil;
+        return ((RubyClass)recv).newInstance(context, arg0, arg1, Block.NULL_BLOCK);
     }
 
     @JRubyMethod(rest = true, meta = true, notImplemented = true)
     public static IRubyObject unix(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        // unimplemented
-        return context.nil;
+        return ((RubyClass)recv).newInstance(context, args, Block.NULL_BLOCK);
     }
 
-    @JRubyMethod(notImplemented = true)
+    @JRubyMethod
     public IRubyObject afamily(ThreadContext context) {
-        // unimplemented
-        return context.nil;
+        return context.runtime.newFixnum(pfamily.intValue());
     }
 
     @JRubyMethod(notImplemented = true)
     public IRubyObject pfamily(ThreadContext context) {
-        // unimplemented
-        return context.nil;
+        return context.runtime.newFixnum(afamily.intValue());
     }
 
     @JRubyMethod(notImplemented = true)
     public IRubyObject socktype(ThreadContext context) {
-        // unimplemented
-        return context.nil;
+        return context.runtime.newFixnum(sock.intValue());
     }
 
     @JRubyMethod(notImplemented = true)
     public IRubyObject protocol(ThreadContext context) {
-        // unimplemented
-        return context.nil;
+        return context.runtime.newFixnum(port);
     }
 
     @JRubyMethod
@@ -136,24 +211,22 @@ public class Addrinfo extends RubyObject {
 
     @JRubyMethod(name = "ipv4?")
     public IRubyObject ipv4_p(ThreadContext context) {
-        return context.runtime.newBoolean(inetAddress instanceof Inet4Address);
+        return context.runtime.newBoolean(pfamily == ProtocolFamily.PF_INET);
     }
 
     @JRubyMethod(name = "ipv6?")
     public IRubyObject ipv6_p(ThreadContext context) {
-        return context.runtime.newBoolean(inetAddress instanceof Inet6Address);
+        return context.runtime.newBoolean(pfamily == ProtocolFamily.PF_INET6);
     }
 
-    @JRubyMethod(name = "unix?", notImplemented = true)
+    @JRubyMethod(name = "unix?")
     public IRubyObject unix_p(ThreadContext context) {
-        // unimplemented
-        return context.nil;
+        return context.runtime.newBoolean(pfamily == ProtocolFamily.PF_UNIX);
     }
 
     @JRubyMethod(name = "ip?", notImplemented = true)
     public IRubyObject ip_p(ThreadContext context) {
-        // unimplemented
-        return context.nil;
+        return context.runtime.newBoolean(pfamily == ProtocolFamily.PF_INET || pfamily == ProtocolFamily.PF_INET6);
     }
 
     @JRubyMethod
@@ -291,5 +364,8 @@ public class Addrinfo extends RubyObject {
 
     private InetAddress inetAddress;
     private int port;
+    private ProtocolFamily pfamily;
+    private AddressFamily afamily;
+    private Sock sock;
     private SocketType socketType;
 }
