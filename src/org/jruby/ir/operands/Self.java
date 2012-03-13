@@ -3,7 +3,7 @@ package org.jruby.ir.operands;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.ir.representations.InlinerInfo;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 
 public class Self extends LocalVariable {
     public static final Self SELF = new Self();

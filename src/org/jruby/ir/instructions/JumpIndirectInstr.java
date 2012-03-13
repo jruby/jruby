@@ -4,7 +4,7 @@ import java.util.Map;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
-import org.jruby.ir.representations.InlinerInfo;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 
 // Used in ensure blocks to jump to the label contained in '_target'
 public class JumpIndirectInstr extends Instr {

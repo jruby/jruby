@@ -7,7 +7,7 @@ import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.RestArgMultipleAsgnInstr;
 import org.jruby.ir.instructions.ReceiveRestArgBase;
 import org.jruby.ir.operands.Variable;
-import org.jruby.ir.representations.InlinerInfo;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.Ruby;
 import org.jruby.runtime.builtin.IRubyObject;
 

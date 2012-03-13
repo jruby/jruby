@@ -2,7 +2,7 @@ package org.jruby.ir.operands;
 
 import java.util.List;
 import java.util.Map;
-import org.jruby.ir.representations.InlinerInfo;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 
 // Attribute represents some fact discovered during dataflow analysis.
 //

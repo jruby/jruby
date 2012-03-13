@@ -5,7 +5,7 @@ import java.util.Map;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.representations.InlinerInfo;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.ir.targets.JVM;
 import org.jruby.RubyArray;
 import org.jruby.runtime.Arity;

@@ -9,7 +9,7 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
-import org.jruby.ir.representations.InlinerInfo;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.ir.targets.JVM;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;

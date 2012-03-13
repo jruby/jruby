@@ -3,7 +3,7 @@ package org.jruby.ir.operands;
 import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.RubyLocalJumpError;
-import org.jruby.ir.representations.InlinerInfo;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 
 // Encapsulates exceptions to be thrown at runtime
 public class IRException extends Operand {

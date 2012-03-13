@@ -7,7 +7,7 @@ import org.jruby.ir.dataflow.analyses.BindingLoadPlacementProblem;
 import org.jruby.ir.dataflow.analyses.BindingStorePlacementProblem;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
-import org.jruby.ir.representations.InlinerInfo;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 
 public class DataFlowConstants {
     public static final String LVP_NAME = LiveVariablesProblem.NAME;

@@ -9,6 +9,7 @@ import org.jruby.ir.instructions.YieldInstr;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.WrappedIRClosure;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.ir.util.ExplicitVertexID;
 
 public class BasicBlock implements ExplicitVertexID {

@@ -16,7 +16,7 @@ import org.jruby.runtime.builtin.Variable;
 import org.jruby.runtime.builtin.InternalVariables;
 import org.jruby.runtime.builtin.InstanceVariables;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.ir.representations.InlinerInfo;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 
 /**
  * For argument processing.  If an opt arg does not exist we will return

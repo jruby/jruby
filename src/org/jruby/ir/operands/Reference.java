@@ -1,7 +1,7 @@
 package org.jruby.ir.operands;
 
 import java.util.List;
-import org.jruby.ir.representations.InlinerInfo;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 
 // A ruby value that is not a local variable
 // (method name, symbol, global var, $ vars)

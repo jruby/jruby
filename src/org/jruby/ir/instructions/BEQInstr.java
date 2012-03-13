@@ -6,7 +6,7 @@ import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Nil;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.UndefinedValue;
-import org.jruby.ir.representations.InlinerInfo;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.ir.targets.JVM;
 
 public class BEQInstr extends BranchInstr {

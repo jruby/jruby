@@ -1,6 +1,6 @@
 package org.jruby.ir.operands;
 
-import org.jruby.ir.representations.InlinerInfo;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 
 public class TemporaryClosureVariable extends TemporaryVariable {
     final int closureId;

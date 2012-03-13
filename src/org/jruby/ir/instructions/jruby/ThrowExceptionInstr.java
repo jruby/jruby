@@ -5,7 +5,7 @@ import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.IRException;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.representations.InlinerInfo;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.RubyKernel;
 import org.jruby.runtime.Block;

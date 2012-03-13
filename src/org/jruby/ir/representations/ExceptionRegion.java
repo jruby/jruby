@@ -3,6 +3,7 @@ package org.jruby.ir.representations;
 import java.util.List;
 import java.util.ArrayList;
 import org.jruby.ir.operands.Label;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 
 public class ExceptionRegion {
     private Label ensureBlockLabel; // Label of the ensure block

@@ -3,7 +3,7 @@ package org.jruby.ir.operands;
 import java.util.List;
 import java.util.Map;
 
-import org.jruby.ir.representations.InlinerInfo;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.RubyArray;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;

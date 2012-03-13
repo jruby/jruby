@@ -1,4 +1,4 @@
-package org.jruby.ir.representations;
+package org.jruby.ir.transformations.inlining;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -21,6 +21,8 @@ import org.jruby.ir.operands.Self;
 import org.jruby.ir.operands.Splat;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.representations.BasicBlock;
+import org.jruby.ir.representations.CFG;
 
 public class InlinerInfo {
     private static Integer globalInlineCount = 0;

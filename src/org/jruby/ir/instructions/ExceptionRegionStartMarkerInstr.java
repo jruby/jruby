@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Label;
-import org.jruby.ir.representations.InlinerInfo;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 
 public class ExceptionRegionStartMarkerInstr extends Instr {
     final public Label begin;

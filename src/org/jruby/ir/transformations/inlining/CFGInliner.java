@@ -1,4 +1,4 @@
-package org.jruby.ir.representations;
+package org.jruby.ir.transformations.inlining;
 
 import java.util.Set;
 import java.util.List;
@@ -19,7 +19,10 @@ import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
+import org.jruby.ir.representations.BasicBlock;
+import org.jruby.ir.representations.CFG;
 import org.jruby.ir.representations.CFG.EdgeType;
+import org.jruby.ir.representations.ExceptionRegion;
 import org.jruby.ir.util.Edge;
 
 public class CFGInliner {

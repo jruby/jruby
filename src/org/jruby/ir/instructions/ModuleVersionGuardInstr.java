@@ -4,7 +4,7 @@ import java.util.Map;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.representations.InlinerInfo;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.RubyModule;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;

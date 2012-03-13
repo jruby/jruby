@@ -1,7 +1,7 @@
 package org.jruby.ir.operands;
 
 import org.jruby.ir.IRClosure;
-import org.jruby.ir.representations.InlinerInfo;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 
 /**
  * This represents a variable used in a closure that is

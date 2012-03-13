@@ -28,6 +28,7 @@ import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.ir.util.DirectedGraph;
 import org.jruby.ir.util.Edge;
 import org.jruby.util.log.Logger;
@@ -501,7 +502,7 @@ public class CFG {
         }
     }    
      
-    void removeBB(BasicBlock b) {
+    public void removeBB(BasicBlock b) {
         graph.removeVertexFor(b);
         bbMap.remove(b.getLabel());
         rescuerMap.remove(b);
@@ -574,7 +575,7 @@ public class CFG {
         return buf.toString();
     }
 
-    void removeEdge(BasicBlock a, BasicBlock b) {
+    public void removeEdge(BasicBlock a, BasicBlock b) {
        graph.removeEdge(a, b);
     }
 

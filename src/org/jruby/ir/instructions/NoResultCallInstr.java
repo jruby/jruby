@@ -4,7 +4,7 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockNoResultCallInstr;
 import org.jruby.ir.operands.MethAddr;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.representations.InlinerInfo;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.ir.targets.JVM;
 import org.jruby.runtime.CallType;
 

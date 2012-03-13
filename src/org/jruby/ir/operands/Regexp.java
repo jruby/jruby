@@ -1,6 +1,6 @@
 package org.jruby.ir.operands;
 
-import org.jruby.ir.representations.InlinerInfo;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 
 import java.util.List;
 import java.util.Map;

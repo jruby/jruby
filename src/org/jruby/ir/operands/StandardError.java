@@ -1,7 +1,7 @@
 package org.jruby.ir.operands;
 
 import java.util.List;
-import org.jruby.ir.representations.InlinerInfo;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 
 // Represents the StandardError object -- this operand used in rescue blocks
 // for when the rescue block doesn't specify an exception object class

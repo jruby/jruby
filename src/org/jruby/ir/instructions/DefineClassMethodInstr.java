@@ -9,7 +9,7 @@ import org.jruby.RubySymbol;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.Operation;
-import org.jruby.ir.representations.InlinerInfo;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;

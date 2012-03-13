@@ -4,7 +4,7 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.BooleanLiteral;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.representations.InlinerInfo;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 
 public class BNEInstr extends BranchInstr {
     public static BranchInstr create(Operand v1, Operand v2, Label jmpTarget) {
