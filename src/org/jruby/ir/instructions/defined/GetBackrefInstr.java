@@ -2,7 +2,7 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.jruby.ir.instructions.jruby;
+package org.jruby.ir.instructions.defined;
 
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.Instr;
@@ -11,6 +11,7 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.ir.targets.JVM;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -20,13 +21,11 @@ import org.jruby.runtime.builtin.IRubyObject;
  *
  * @author enebo
  */
-public class GetErrorInfoInstr extends Instr implements ResultInstr {
+public class GetBackrefInstr extends Instr implements ResultInstr {
     private Variable result;
     
-    public GetErrorInfoInstr(Variable result) {
-        super(Operation.GET_ERROR_INFO);
-        
-        this.result = result;
+    public GetBackrefInstr(Variable result) {
+        super(Operation.GET_BACKREF);
     }
 
     @Override
@@ -44,16 +43,17 @@ public class GetErrorInfoInstr extends Instr implements ResultInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo inlinerInfo) {
-        return new GetErrorInfoInstr((Variable) getResult().cloneForInlining(inlinerInfo));
+        return new GetBackrefInstr((Variable) getResult().cloneForInlining(inlinerInfo));
     }
 
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
-        return context.getErrorInfo();
+        // SSS: FIXME: Or use this directly? "context.getCurrentScope().getBackRef(rt)" What is the diff??
+        return RuntimeHelpers.getBackref(context.runtime, context);
     }
 
     @Override
     public void compile(JVM jvm) {
         // no-op right now
-    } 
+    }    
 }

@@ -4,7 +4,7 @@ import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.instructions.ReceiveExceptionInstr;
 import org.jruby.ir.instructions.StoreToBindingInstr;
-import org.jruby.ir.instructions.jruby.ThrowExceptionInstr;
+import org.jruby.ir.instructions.ThrowExceptionInstr;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.dataflow.DataFlowProblem;
 import org.jruby.ir.dataflow.FlowGraphNode;

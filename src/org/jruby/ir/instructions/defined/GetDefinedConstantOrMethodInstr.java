@@ -2,7 +2,7 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.jruby.ir.instructions.jruby;
+package org.jruby.ir.instructions.defined;
 
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.Instr;

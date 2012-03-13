@@ -1,4 +1,4 @@
-package org.jruby.ir.instructions.jruby;
+package org.jruby.ir.instructions;
 
 import java.util.Map;
 

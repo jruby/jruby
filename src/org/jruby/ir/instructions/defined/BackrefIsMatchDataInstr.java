@@ -1,4 +1,4 @@
-package org.jruby.ir.instructions.jruby;
+package org.jruby.ir.instructions.defined;
 
 import org.jruby.RubyMatchData;
 import org.jruby.ir.Operation;
