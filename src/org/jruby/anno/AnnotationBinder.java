@@ -148,6 +148,8 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                     Map<String, List<MethodDeclaration>> staticAnnotatedMethods1_8 = new HashMap<String, List<MethodDeclaration>>();
                     Map<String, List<MethodDeclaration>> annotatedMethods1_9 = new HashMap<String, List<MethodDeclaration>>();
                     Map<String, List<MethodDeclaration>> staticAnnotatedMethods1_9 = new HashMap<String, List<MethodDeclaration>>();
+                    Map<String, List<MethodDeclaration>> annotatedMethods2_0 = new HashMap<String, List<MethodDeclaration>>();
+                    Map<String, List<MethodDeclaration>> staticAnnotatedMethods2_0 = new HashMap<String, List<MethodDeclaration>>();
 
                     Set<String> frameAwareMethods = new HashSet<String>();
                     Set<String> scopeAwareMethods = new HashSet<String>();
@@ -181,6 +183,8 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                                 methodsHash = staticAnnotatedMethods1_8;
                             } else if (anno.compat() == CompatVersion.RUBY1_9) {
                                 methodsHash = staticAnnotatedMethods1_9;
+                            } else if (anno.compat() == CompatVersion.RUBY2_0) {
+                                methodsHash = staticAnnotatedMethods2_0;
                             } else {
                                 methodsHash = staticAnnotatedMethods;
                             }
@@ -189,6 +193,8 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                                 methodsHash = annotatedMethods1_8;
                             } else if (anno.compat() == CompatVersion.RUBY1_9) {
                                 methodsHash = annotatedMethods1_9;
+                            } else if (anno.compat() == CompatVersion.RUBY2_0) {
+                                methodsHash = annotatedMethods2_0;
                             } else {
                                 methodsHash = annotatedMethods;
                             }
@@ -270,6 +276,16 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                         out.println("        }");
                     }
 
+                    if (!staticAnnotatedMethods2_0.isEmpty()) {
+                        out.println("        if (compatVersion.is2_0() || compatVersion == CompatVersion.BOTH) {");
+                        processMethodDeclarations(staticAnnotatedMethods2_0);
+                        for (Map.Entry<String, List<MethodDeclaration>> entry : staticAnnotatedMethods2_0.entrySet()) {
+                            MethodDeclaration decl = entry.getValue().get(0);
+                            if (!decl.getAnnotation(JRubyMethod.class).omit()) addCoreMethodMapping(entry.getKey(), decl, out);
+                        }
+                        out.println("        }");
+                    }
+
                     processMethodDeclarations(annotatedMethods);
                     for (Map.Entry<String, List<MethodDeclaration>> entry : annotatedMethods.entrySet()) {
                         MethodDeclaration decl = entry.getValue().get(0);
@@ -290,6 +306,16 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                         out.println("        if (compatVersion.is1_9() || compatVersion == CompatVersion.BOTH) {");
                         processMethodDeclarations(annotatedMethods1_9);
                         for (Map.Entry<String, List<MethodDeclaration>> entry : annotatedMethods1_9.entrySet()) {
+                            MethodDeclaration decl = entry.getValue().get(0);
+                            if (!decl.getAnnotation(JRubyMethod.class).omit()) addCoreMethodMapping(entry.getKey(), decl, out);
+                        }
+                        out.println("        }");
+                    }
+
+                    if (!annotatedMethods2_0.isEmpty()) {
+                        out.println("        if (compatVersion.is2_0() || compatVersion == CompatVersion.BOTH) {");
+                        processMethodDeclarations(annotatedMethods2_0);
+                        for (Map.Entry<String, List<MethodDeclaration>> entry : annotatedMethods2_0.entrySet()) {
                             MethodDeclaration decl = entry.getValue().get(0);
                             if (!decl.getAnnotation(JRubyMethod.class).omit()) addCoreMethodMapping(entry.getKey(), decl, out);
                         }
