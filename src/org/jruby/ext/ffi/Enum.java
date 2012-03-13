@@ -162,7 +162,10 @@ public final class Enum extends RubyObject {
     public final IRubyObject to_native(ThreadContext context, IRubyObject name, IRubyObject ctx) {
         RubyInteger value;
 
-        if (name instanceof RubySymbol && (value = symbolToValue.get((RubySymbol) name)) != null) {
+        if (name instanceof RubyFixnum) {
+            return name;
+
+        } else if (name instanceof RubySymbol && (value = symbolToValue.get(name)) != null) {
             return value;
 
         } else if (name instanceof RubyInteger) {
