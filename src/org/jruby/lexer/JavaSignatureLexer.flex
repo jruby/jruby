@@ -10,7 +10,23 @@ import org.jruby.parser.JavaSignatureParser;
 %line
 %column
 %{
+  boolean stringResult = false;
+  boolean characterResult = false;
+  StringBuilder stringBuf = new StringBuilder();
+
   public Object value() {
+    if (stringResult) {
+        stringResult = false;
+        String value = stringBuf.toString();
+        stringBuf.setLength(0);
+        return value;
+    } else if (characterResult) {
+        characterResult = false;
+        String value = stringBuf.toString();
+        if (stringBuf.length() != 1) throw new Error("Character not on char ("+ value +")");
+        stringBuf.setLength(0);
+        return value;
+    }
     return yytext();
   }
 
@@ -20,9 +36,18 @@ import org.jruby.parser.JavaSignatureParser;
 %}
 
 LineTerminator = \r|\n|\r\n
-InputCharacter = [^\r\n]
 WhiteSpace     = {LineTerminator} | [ \t\f]
 Identifier     = [:jletter:] [:jletterdigit:]*
+//Digit          = [0-9]
+//HexDigit       = {Digit} | [a-f] | [A-F]
+//UnicodeEscape  = "\\u" {HexDigit} {HexDigit} {HexDigit} {HexDigit}
+//EscapedChar    = "\\" [nybrf\\'\"]
+//NonEscapedChar = [^nybrf\\'\"]
+//CharacterLiteral = "'" ({NonEscapedChar} | {EscapedChar} | {UnicodeEscape}) "'"
+//StringLiteral  = "\"" ({NonEscapedChar} | {EscapedChar} | {UnicodeEscape})* "\""
+
+%state CHARACTER
+%state STRING
 
 %%
 
@@ -73,8 +98,32 @@ Identifier     = [:jletter:] [:jletterdigit:]*
     ">>"            { return JavaSignatureParser.RSHIFT;       }
     ">>>"           { return JavaSignatureParser.URSHIFT;      }
 
-    {Identifier}              { return JavaSignatureParser.IDENTIFIER;   }
-    {WhiteSpace}              { }
+    {Identifier}    { return JavaSignatureParser.IDENTIFIER;   }
+    \"              { yybegin(STRING); } 
+    \'              { yybegin(CHARACTER); } 
+    {WhiteSpace}    { }
+}
+
+<CHARACTER> {
+    \' { characterResult = true;
+         yybegin(YYINITIAL);
+         return JavaSignatureParser.CHARACTER_LITERAL; 
+       }
+    .  { stringBuf.append(yytext()); }
+}
+
+<STRING> {
+  \"                {
+                     stringResult = true;
+                     yybegin(YYINITIAL); 
+                     return JavaSignatureParser.STRING_LITERAL;
+  }
+  [^\n\r\"\\]+      { stringBuf.append( yytext() ); }
+  \\t               { stringBuf.append('\t'); }
+  \\n               { stringBuf.append('\n'); }
+  \\r               { stringBuf.append('\r'); }
+  \\\"              { stringBuf.append('\"'); }
+  \\                { stringBuf.append('\\'); }
 }
 
 .|\n  { throw new Error("Invalid character ("+yytext()+")"); }

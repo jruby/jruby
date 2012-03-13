@@ -27,14 +27,17 @@ import org.jruby.ast.java_signature.AnnotationExpression;
 import org.jruby.ast.java_signature.AnnotationParameter;
 import org.jruby.ast.java_signature.ArrayAnnotationExpression;
 import org.jruby.ast.java_signature.ArrayTypeNode;
+import org.jruby.ast.java_signature.CharacterLiteral;
 import org.jruby.ast.java_signature.ConstructorSignatureNode;
 import org.jruby.ast.java_signature.DefaultAnnotationParameter;
 import org.jruby.ast.java_signature.MethodSignatureNode;
+import org.jruby.ast.java_signature.Literal;
 import org.jruby.ast.java_signature.Modifier;
 import org.jruby.ast.java_signature.ParameterNode;
 import org.jruby.ast.java_signature.PrimitiveTypeNode;
 import org.jruby.ast.java_signature.ReferenceTypeNode;
 import org.jruby.ast.java_signature.SignatureNode;
+import org.jruby.ast.java_signature.StringLiteral;
 import org.jruby.ast.java_signature.TypeNode;
 import org.jruby.lexer.JavaSignatureLexer;
 
@@ -92,6 +95,10 @@ public class JavaSignatureParser {
 %token <String> SUPER // 'super'
 %token <String> RSHIFT // '>>'
 %token <String> URSHIFT // '>>>'
+%token <String> QQ // '"'
+%token <String> Q // "'"
+%token <String> CHARACTER_LITERAL
+%token <String> STRING_LITERAL
 
 %type <MethodSignatureNode> method_declarator, method_header
 %type <ConstructorSignatureNode> constructor_declarator, constructor_declaration
@@ -121,6 +128,7 @@ public class JavaSignatureParser {
 %type <AnnotationParameter> annotation_param
 %type <AnnotationExpression> annotation_value
 %type <List> annotation_array_values
+%type <Literal> literal
 
 %%
 
@@ -544,7 +552,7 @@ annotation_name : AT name { $$ = $1 + $2; }
 annotation_param : type_variable EQUAL annotation_value {
                      $$ = new AnnotationParameter($1, $3);
                  }
-                 | annotation {
+                 | annotation_value {
                      $$ = new DefaultAnnotationParameter($1);
                  }
 
@@ -562,6 +570,9 @@ annotation_value : annotation {
                      $$ = $<AnnotationExpression>1;
                  }
                  | type {
+                     $$ = $<AnnotationExpression>1;
+                 }
+                 | literal {
                      $$ = $<AnnotationExpression>1;
                  }
                  | LCURLY annotation_array_values RCURLY {
@@ -585,6 +596,13 @@ annotation_params_none : { $$ = new ArrayList<AnnotationParameter>(); }
 
 // List<AnnotationParameter>
 annotation_params_opt : annotation_params | annotation_params_none
+
+literal : STRING_LITERAL {
+           $$ = new StringLiteral($1);
+        }
+        | CHARACTER_LITERAL {
+           $$ = new CharacterLiteral($1);
+        }
 
 %%
 

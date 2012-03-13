@@ -35,10 +35,14 @@ describe JavaSignatureParser do
 
   it "parses simple default annotations" do
     signature('@Cook(@Porridge) void foo()').should have_signature(['@Cook(@Porridge)'], VOID, 'foo', [])
+    signature('@Cook("sausage") void foo()').should have_signature(['@Cook("sausage")'], VOID, 'foo', [])
+    signature('@Cook(\'s\') void foo()').should have_signature(['@Cook(\'s\')'], VOID, 'foo', [])
   end
 
   it "parses simple named annotations" do
     signature('@Cook(food=@Porridge) void foo()').should have_signature(['@Cook(food=@Porridge)'], VOID, 'foo', [])
+    signature('@Cook(food=\'s\') void foo()').should have_signature(["@Cook(food='s')"], VOID, 'foo', [])
+    signature('@Cook(food="sausage") void foo()').should have_signature(['@Cook(food="sausage")'], VOID, 'foo', [])
     signature('@Cook(food=Porridge.Cold) void foo()').should have_signature(['@Cook(food=Porridge.Cold)'], VOID, 'foo', [])
     signature('@Cook(food=Porridge.Cold, drink=@Wine) void foo()').should have_signature(['@Cook(food=Porridge.Cold, drink=@Wine)'], VOID, 'foo', [])
   end
@@ -46,5 +50,8 @@ describe JavaSignatureParser do
   it "parses simple list annotations" do
     signature('@Cook(food={@Porridge}) void foo()').should have_signature(['@Cook(food={@Porridge})'], VOID, 'foo', [])
     signature('@Cook(food={}) void foo()').should have_signature(['@Cook(food={})'], VOID, 'foo', [])
+    signature('@Cook(food={"apple"}) void foo()').should have_signature(['@Cook(food={"apple"})'], VOID, 'foo', [])
+    signature('@Cook(food={"apple", "orange"}) void foo()').should have_signature(['@Cook(food={"apple", "orange"})'], VOID, 'foo', [])
+    signature('@Cook(food={\'a\', \'b\'}) void foo()').should have_signature(['@Cook(food={\'a\', \'b\'})'], VOID, 'foo', [])
   end
 end
