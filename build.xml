@@ -200,6 +200,10 @@
           <filter token="version.ruby1_9" value="${version.ruby1_9}"/>
           <filter token="version.ruby1_9.patchlevel" value="${version.ruby1_9.patchlevel}"/>
           <filter token="version.ruby1_9.revision" value="${version.ruby1_9.revision}"/>
+          <filter token="version.ruby2_0.major" value="${version.ruby2_0.major}"/>
+          <filter token="version.ruby2_0" value="${version.ruby2_0}"/>
+          <filter token="version.ruby2_0.patchlevel" value="${version.ruby2_0.patchlevel}"/>
+          <!--filter token="version.ruby2_0.revision" value="${version.ruby2_0.revision}"/-->
           <filter token="build.date" value="${build.date}"/>
           <filter token="version.jruby" value="${version.jruby}"/>
           <filter token="java.specification.version" value="${java.specification.version}"/>

@@ -39,10 +39,16 @@ public final class Constants {
     public static final String RUBY_MAJOR_VERSION = "@version.ruby.major@";
     public static final String RUBY_VERSION = "@version.ruby@";
     public static final int    RUBY_PATCHLEVEL = Integer.parseInt("@version.ruby.patchlevel@");
+
     public static final String RUBY1_9_MAJOR_VERSION = "@version.ruby1_9.major@";
     public static final String RUBY1_9_VERSION = "@version.ruby1_9@";
     public static final int    RUBY1_9_PATCHLEVEL = Integer.parseInt("@version.ruby1_9.patchlevel@");
     public static final int    RUBY1_9_REVISION = Integer.parseInt("@version.ruby1_9.revision@");
+
+    public static final String RUBY2_0_MAJOR_VERSION = "@version.ruby2_0.major@";
+    public static final String RUBY2_0_VERSION = "@version.ruby2_0@";
+    public static final int    RUBY2_0_PATCHLEVEL = Integer.parseInt("@version.ruby2_0.patchlevel@");
+//    public static final int    RUBY2_0_REVISION = Integer.parseInt("@version.ruby2_0.revision@");
 
     public static final String COMPILE_DATE = "@build.date@";
     public static final String VERSION = "@version.jruby@";

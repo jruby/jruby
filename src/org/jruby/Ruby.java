@@ -191,7 +191,8 @@ public final class Ruby {
      */
     private Ruby(RubyInstanceConfig config) {
         this.config             = config;
-        this.is1_9              = config.getCompatVersion() == CompatVersion.RUBY1_9;
+        this.is1_9              = config.getCompatVersion().is1_9();
+        this.is2_0              = config.getCompatVersion().is2_0();
         this.doNotReverseLookupEnabled = is1_9;
         this.threadService      = new ThreadService(this);
         if(config.isSamplingEnabled()) {
@@ -1619,6 +1620,9 @@ public final class Ruby {
                 break;
             case RUBY1_9:
                 loadService.loadFromClassLoader(getClassLoader(), "jruby/kernel19.rb", false);
+                break;
+            case RUBY2_0:
+                loadService.loadFromClassLoader(getClassLoader(), "jruby/kernel20.rb", false);
                 break;
         }
     }
@@ -3920,6 +3924,10 @@ public final class Ruby {
         return is1_9;
     }
 
+    public boolean is2_0() {
+        return is2_0;
+    }
+
     /** GET_VM_STATE_VERSION */
     public long getGlobalState() {
         synchronized(this) {
@@ -4271,6 +4279,7 @@ public final class Ruby {
 
     private final RubyInstanceConfig config;
     private final boolean is1_9;
+    private final boolean is2_0;
 
     private final InputStream in;
     private final PrintStream out;

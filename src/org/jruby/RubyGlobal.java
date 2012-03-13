@@ -108,6 +108,10 @@ public class RubyGlobal {
             version = runtime.newString(Constants.RUBY1_9_VERSION).freeze(context);
             patchlevel = runtime.newFixnum(Constants.RUBY1_9_PATCHLEVEL);
             break;
+        case RUBY2_0:
+            version = runtime.newString(Constants.RUBY2_0_VERSION).freeze(context);
+            patchlevel = runtime.newFixnum(Constants.RUBY2_0_PATCHLEVEL);
+            break;
         }
         runtime.defineGlobalConstant("RUBY_VERSION", version);
         runtime.defineGlobalConstant("RUBY_PATCHLEVEL", patchlevel);

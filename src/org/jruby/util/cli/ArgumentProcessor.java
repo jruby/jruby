@@ -411,6 +411,9 @@ public class ArgumentProcessor {
                     } else if (argument.equals("--1.9")) {
                         config.setCompatVersion(CompatVersion.RUBY1_9);
                         break FOR;
+                    } else if (argument.equals("--2.0")) {
+                        config.setCompatVersion(CompatVersion.RUBY2_0);
+                        break FOR;
                     } else if (argument.equals("--1.8")) {
                         config.setCompatVersion(CompatVersion.RUBY1_8);
                         break FOR;

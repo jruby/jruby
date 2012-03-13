@@ -261,7 +261,7 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                     }
 
                     if (!staticAnnotatedMethods1_9.isEmpty()) {
-                        out.println("        if (compatVersion == CompatVersion.RUBY1_9 || compatVersion == CompatVersion.BOTH) {");
+                        out.println("        if (compatVersion.is1_9() || compatVersion == CompatVersion.BOTH) {");
                         processMethodDeclarations(staticAnnotatedMethods1_9);
                         for (Map.Entry<String, List<MethodDeclaration>> entry : staticAnnotatedMethods1_9.entrySet()) {
                             MethodDeclaration decl = entry.getValue().get(0);
@@ -287,7 +287,7 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
                     }
 
                     if (!annotatedMethods1_9.isEmpty()) {
-                        out.println("        if (compatVersion == CompatVersion.RUBY1_9 || compatVersion == CompatVersion.BOTH) {");
+                        out.println("        if (compatVersion.is1_9() || compatVersion == CompatVersion.BOTH) {");
                         processMethodDeclarations(annotatedMethods1_9);
                         for (Map.Entry<String, List<MethodDeclaration>> entry : annotatedMethods1_9.entrySet()) {
                             MethodDeclaration decl = entry.getValue().get(0);
