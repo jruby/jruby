@@ -252,17 +252,22 @@ public class RubyBasicSocket extends RubyIO {
             case SOL_TCP:
             case SOL_UDP:
 
-                int number = asNumber(val);
                 if (opt == SocketOption.SO_LINGER) {
-                    // massage args into something appropriate
                     if(val instanceof RubyBoolean && !val.isTrue()) {
-                        number = -1;
+                        socketType.setSoLinger(channel, false, 0);
                     } else {
-                        number = asNumber(val);
+                        int num = asNumber(val);
+                        if(num == -1) {
+                            socketType.setSoLinger(channel, false, 0);
+                        } else {
+                            socketType.setSoLinger(channel, true, num);
+                        }
                     }
+
+                } else {
+                    socketType.setSocketOption(channel, opt, asNumber(val));
                 }
 
-                socketType.setSocketOption(channel, opt, asNumber(val));
                 break;
 
             default:

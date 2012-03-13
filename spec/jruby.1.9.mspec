@@ -55,7 +55,6 @@ class MSpecScript
     '^' + SPEC_DIR + '/library/readline',
 
     # unstable
-    '^' + SPEC_DIR + '/library/socket',
     '^' + SPEC_DIR + '/library/syslog',
 
     # obsolete libraries

@@ -1,1 +1,1 @@
-fails:Socket#gethostbyname returns broadcast address info for '<broadcast>'
+fails(minor text mismatch):Socket#gethostbyname returns broadcast address info for '<broadcast>'

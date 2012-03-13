@@ -99,7 +99,7 @@ public class RubyTCPServer extends RubyTCPSocket {
             host = _host.convertToString().toString();
         }
 
-        int port = SocketUtils.getPortFrom(runtime, _port);
+        int port = SocketUtils.getPortFrom(context, _port);
 
         try {
             InetAddress addr = InetAddress.getByName(host);
@@ -243,6 +243,26 @@ public class RubyTCPServer extends RubyTCPSocket {
 
     @Override
     public IRubyObject gets(ThreadContext context) {
+        throw context.getRuntime().newErrnoENOTCONNError();
+    }
+
+    @Override
+    public IRubyObject gets(ThreadContext context, IRubyObject sep) {
+        throw context.getRuntime().newErrnoENOTCONNError();
+    }
+
+    @Override
+    public IRubyObject gets19(ThreadContext context) {
+        throw context.getRuntime().newErrnoENOTCONNError();
+    }
+
+    @Override
+    public IRubyObject gets19(ThreadContext context, IRubyObject sep) {
+        throw context.getRuntime().newErrnoENOTCONNError();
+    }
+
+    @Override
+    public IRubyObject gets19(ThreadContext context, IRubyObject sep, IRubyObject limit) {
         throw context.getRuntime().newErrnoENOTCONNError();
     }
 

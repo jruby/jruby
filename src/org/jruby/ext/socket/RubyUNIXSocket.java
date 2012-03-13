@@ -181,10 +181,12 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
             RubyUNIXSocket sock = (RubyUNIXSocket)(RuntimeHelpers.invoke(context, runtime.getClass("UNIXSocket"), "allocate"));
             sock.channel = sp[0];
+            sock.fpath = "";
             sock.init_sock(runtime);
 
             RubyUNIXSocket sock2 = (RubyUNIXSocket)(RuntimeHelpers.invoke(context, runtime.getClass("UNIXSocket"), "allocate"));
             sock2.channel = sp[1];
+            sock2.fpath = "";
             sock2.init_sock(runtime);
 
             return runtime.newArray(sock, sock2);

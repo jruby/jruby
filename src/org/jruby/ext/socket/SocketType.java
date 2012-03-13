@@ -232,11 +232,11 @@ public enum SocketType {
         }
 
         public void shutdownInput(Channel channel)throws IOException {
-//            toSocket(channel).shutdownInput();
+            toSocket(channel).shutdownInput();
         }
 
-        public void shutdownOutput(Channel channel)throws IOException {
-//            toSocket(channel).shutdownInput();
+        public void shutdownOutput(Channel channel) throws IOException {
+            toSocket(channel).shutdownOutput();
         }
     },
 
@@ -252,8 +252,7 @@ public enum SocketType {
         } else if (channel instanceof DatagramChannel) {
             return DATAGRAM;
 
-        } else if (channel instanceof UnixServerSocketChannel
-                || channel instanceof UnixSocketChannel) {
+        } else if (channel instanceof UnixSocketChannel) {
             return UNIX;
 
         }
@@ -359,28 +358,36 @@ public enum SocketType {
 
             case SO_BROADCAST:
                 setBroadcast(channel, asBoolean(value));
+                break;
 
             case SO_KEEPALIVE:
                 setKeepAlive(channel, asBoolean(value));
+                break;
 
             case SO_LINGER:
                 setSoLinger(channel, value <= 0, value);
+                break;
 
             case SO_OOBINLINE:
                 setOOBInline(channel, asBoolean(value));
+                break;
 
             case SO_RCVBUF:
                 setReceiveBufferSize(channel, value);
+                break;
 
             case SO_REUSEADDR:
                 setReuseAddress(channel, asBoolean(value));
+                break;
 
             case SO_SNDBUF:
                 setSendBufferSize(channel, value);
+                break;
 
             case SO_RCVTIMEO:
             case SO_SNDTIMEO:
                 setSoTimeout(channel, value);
+                break;
 
             // can't set these
             case SO_TYPE:

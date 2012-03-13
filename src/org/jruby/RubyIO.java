@@ -1091,7 +1091,7 @@ public class RubyIO extends RubyObject {
         return context.getRuntime().getEncodingService().getEncodingFromObject(encoding);
     }
 
-    @JRubyMethod(required = 1, optional = 2, meta = true)
+    @JRubyMethod(required = 1, rest = true, meta = true)
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = context.getRuntime();
         RubyClass klass = (RubyClass)recv;

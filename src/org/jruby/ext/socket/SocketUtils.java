@@ -32,6 +32,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyInteger;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
@@ -388,10 +389,13 @@ public class SocketUtils {
     }
 
     public static InetAddress getRubyInetAddress(ByteList address) throws UnknownHostException {
-        if (address.equal(BROADCAST)) {
+        // switched to String because the ByteLists were not comparing properly in 1.9 mode (encoding?
+        String addressString = address.toString();
+
+        if (addressString.equals(BROADCAST)) {
             return InetAddress.getByAddress(INADDR_BROADCAST);
 
-        } else if (address.equal(ANY)) {
+        } else if (addressString.equals(ANY)) {
             return InetAddress.getByAddress(INADDR_ANY);
 
         } else {
@@ -412,15 +416,22 @@ public class SocketUtils {
         return new RaiseException(runtime, runtime.getClass("SocketError"), msg, true);
     }
 
-    public static int getPortFrom(Ruby runtime, IRubyObject arg) {
-        if (arg instanceof RubyString) {
-            Service service = Service.getServiceByName(arg.asJavaString(), "tcp");
-            return service != null ?
-                    service.getPort() :
-                    RubyNumeric.fix2int(RubyNumeric.str2inum(runtime, (RubyString) arg, 0, true));
+    public static int getPortFrom(ThreadContext context, IRubyObject _port) {
+        int port;
+        if (_port instanceof RubyInteger) {
+            port = RubyNumeric.fix2int(_port);
+        } else {
+            IRubyObject portString = _port.convertToString();
+            IRubyObject portInteger = portString.convertToInteger( "to_i");
+            port = RubyNumeric.fix2int(portInteger);
+
+            if (port <= 0) {
+                port = RubyNumeric.fix2int(RubySocket.getservbyname(
+                        context, context.runtime.getObject(), new IRubyObject[] {portString}));
+            }
         }
 
-        return RubyNumeric.fix2int(arg);
+        return port;
     }
 
     private static String getHostAddress(ThreadContext context, InetAddress addr) {
@@ -433,8 +444,8 @@ public class SocketUtils {
     private static final int IPV4_HOST_GROUP = 3;
     private static final int IPV4_PORT_GROUP = 5;
 
-    private static final ByteList BROADCAST = new ByteList("<broadcast>".getBytes());
+    private static final String BROADCAST = "<broadcast>";
     private static final byte[] INADDR_BROADCAST = new byte[] {-1,-1,-1,-1}; // 255.255.255.255
-    private static final ByteList ANY = new ByteList("<any>".getBytes());
+    private static final String ANY = "<any>";
     private static final byte[] INADDR_ANY = new byte[] {0,0,0,0}; // 0.0.0.0
 }

@@ -346,8 +346,8 @@
       <zipfileset src="${build.lib.dir}/jnr-netdb.jar"/>
       <zipfileset src="${build.lib.dir}/jnr-posix.jar"/>
       <zipfileset src="${build.lib.dir}/jnr-ffi.jar"/>
-      <zipfileset src="${build.lib.dir}/jnr-enxio-0.1.jar"/>
-      <zipfileset src="${build.lib.dir}/jnr-unixsocket-0.1.jar"/>
+      <zipfileset src="${build.lib.dir}/jnr-enxio.jar"/>
+      <zipfileset src="${build.lib.dir}/jnr-unixsocket.jar"/>
       <zipfileset src="${build.lib.dir}/jffi.jar"/>
       <zipfileset src="${build.lib.dir}/jffi-i386-Linux.jar"/>
       <zipfileset src="${build.lib.dir}/jffi-x86_64-Linux.jar"/>
@@ -452,6 +452,8 @@
       <zipfileset src="${build.lib.dir}/jnr-netdb.jar"/>
       <zipfileset src="${build.lib.dir}/jnr-posix.jar"/>
       <zipfileset src="${build.lib.dir}/jnr-ffi.jar"/>
+      <zipfileset src="${build.lib.dir}/jnr-enxio.jar"/>
+      <zipfileset src="${build.lib.dir}/jnr-unixsocket.jar"/>
       <zipfileset src="${build.lib.dir}/jffi.jar"/>
       <zipfileset src="${build.lib.dir}/jffi-i386-Linux.jar"/>
       <zipfileset src="${build.lib.dir}/jffi-x86_64-Linux.jar"/>
@@ -608,6 +610,8 @@
       <zipfileset src="${build.lib.dir}/jnr-netdb.jar"/>
       <zipfileset src="${build.lib.dir}/jnr-posix.jar"/>
       <zipfileset src="${build.lib.dir}/jnr-ffi.jar"/>
+      <zipfileset src="${build.lib.dir}/jnr-enxio.jar"/>
+      <zipfileset src="${build.lib.dir}/jnr-unixsocket.jar"/>
       <zipfileset src="${build.lib.dir}/jffi.jar"/>
       <zipfileset src="${build.lib.dir}/jffi-i386-Linux.jar"/>
       <zipfileset src="${build.lib.dir}/jffi-x86_64-Linux.jar"/>

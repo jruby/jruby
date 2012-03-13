@@ -42,6 +42,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import java.io.IOException;
 import java.nio.channels.SelectableChannel;
+import java.nio.channels.SelectionKey;
 
 @JRubyClass(name="UNIXServer", parent="UNIXSocket")
 public class RubyUNIXServer extends RubyUNIXSocket {
@@ -72,18 +73,30 @@ public class RubyUNIXServer extends RubyUNIXSocket {
 
     @JRubyMethod
     public IRubyObject accept(ThreadContext context) {
+        Ruby runtime = context.getRuntime();
+
         try {
-            UnixSocketChannel socketChannel = asUnixServer().accept();
 
-            Ruby runtime = context.getRuntime();
-            RubyUNIXSocket sock = (RubyUNIXSocket)(RuntimeHelpers.invoke(context, runtime.getClass("UNIXSocket"), "allocate"));
+            while (true) { // select loop to allow interrupting
+                boolean ready = context.getThread().select(this, SelectionKey.OP_ACCEPT);
 
-            sock.channel = socketChannel;
-            sock.fpath = "";
+                if (!ready) {
+                    // we were woken up without being selected...poll for thread events and go back to sleep
+                    context.pollThreadEvents();
 
-            sock.init_sock(context.getRuntime());
+                } else {
+                    UnixSocketChannel socketChannel = asUnixServer().accept();
 
-            return sock;
+                    RubyUNIXSocket sock = (RubyUNIXSocket)(RuntimeHelpers.invoke(context, runtime.getClass("UNIXSocket"), "allocate"));
+
+                    sock.channel = socketChannel;
+                    sock.fpath = "";
+
+                    sock.init_sock(context.getRuntime());
+
+                    return sock;
+                }
+            }
 
         } catch (IOException ioe) {
             throw context.runtime.newIOErrorFromException(ioe);

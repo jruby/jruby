@@ -53,7 +53,6 @@ class MSpecScript
     '^' + SPEC_DIR + '/library/readline',
 
     # unstable
-    '^' + SPEC_DIR + '/library/socket',
     '^' + SPEC_DIR + '/library/syslog',
 
     # 1.9 feature

@@ -1,2 +1,0 @@
-fails(JRUBY-2758):UDPSocket.send sends data in ad hoc mode
-fails(JRUBY-2758):UDPSocket.send sends data in connection mode

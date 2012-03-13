@@ -84,10 +84,10 @@ public class RubyTCPSocket extends RubyIPSocket {
         IRubyObject _port = args[1];
 
         String remoteHost = _host.isNil()? "localhost" : _host.convertToString().toString();
-        int remotePort = SocketUtils.getPortFrom(runtime, _port);
+        int remotePort = SocketUtils.getPortFrom(context, _port);
 
         String localHost = (args.length >= 3 && !args[2].isNil()) ? args[2].convertToString().toString() : null;
-        int localPort = (args.length == 4 && !args[3].isNil()) ? SocketUtils.getPortFrom(runtime, args[3]) : 0;
+        int localPort = (args.length == 4 && !args[3].isNil()) ? SocketUtils.getPortFrom(context, args[3]) : 0;
 
         try {
             // This is a bit convoluted because (1) SocketChannel.bind is only in jdk 7 and
