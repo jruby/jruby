@@ -40,9 +40,11 @@ import java.util.Iterator;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.collections.WeakValuedMap;
 import org.jruby.util.func.Function1;
 
 @JRubyModule(name="ObjectSpace")
@@ -56,6 +58,10 @@ public class RubyObjectSpace {
         runtime.setObjectSpaceModule(objectSpaceModule);
         
         objectSpaceModule.defineAnnotatedMethods(RubyObjectSpace.class);
+
+        if (runtime.is2_0()) {
+            WeakMap.createWeakMap(runtime);
+        }
 
         return objectSpaceModule;
     }
@@ -170,5 +176,36 @@ public class RubyObjectSpace {
     @JRubyMethod(name = "garbage_collect", module = true, visibility = PRIVATE)
     public static IRubyObject garbage_collect(ThreadContext context, IRubyObject recv) {
         return RubyGC.start(context, recv);
+    }
+
+    public static class WeakMap extends RubyObject {
+        static void createWeakMap(Ruby runtime) {
+            RubyClass weakMap = runtime.getObjectSpaceModule().defineClassUnder("WeakMap", runtime.getObject(), new ObjectAllocator() {
+                public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
+                    return new WeakMap(runtime, klazz);
+                }
+            });
+
+            weakMap.defineAnnotatedMethods(WeakMap.class);
+        }
+
+        public WeakMap(Ruby runtime, RubyClass cls) {
+            super(runtime, cls);
+        }
+
+        @JRubyMethod(name = "[]")
+        public IRubyObject op_aref(ThreadContext context, IRubyObject key) {
+            IRubyObject value = map.get(key);
+            if (value != null) return value;
+            return context.nil;
+        }
+
+        @JRubyMethod(name = "[]=")
+        public IRubyObject op_aref(ThreadContext context, IRubyObject key, IRubyObject value) {
+            map.put(key, value);
+            return context.runtime.newFixnum(System.identityHashCode(value));
+        }
+
+        private final WeakValuedMap<IRubyObject, IRubyObject> map = new WeakValuedMap<IRubyObject, IRubyObject>();
     }
 }
