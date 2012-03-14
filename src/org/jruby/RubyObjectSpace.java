@@ -44,7 +44,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.collections.WeakValuedMap;
+import org.jruby.util.collections.WeakValuedIdentityMap;
 import org.jruby.util.func.Function1;
 
 @JRubyModule(name="ObjectSpace")
@@ -206,6 +206,6 @@ public class RubyObjectSpace {
             return context.runtime.newFixnum(System.identityHashCode(value));
         }
 
-        private final WeakValuedMap<IRubyObject, IRubyObject> map = new WeakValuedMap<IRubyObject, IRubyObject>();
+        private final WeakValuedIdentityMap<IRubyObject, IRubyObject> map = new WeakValuedIdentityMap<IRubyObject, IRubyObject>();
     }
 }

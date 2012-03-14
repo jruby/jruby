@@ -36,9 +36,9 @@ import java.util.IdentityHashMap;
 import java.util.Map;
 
 /**
- * A Map that holds its values weakly.
+ * A Map that holds its values weakly and uses object identity for keys.
  */
-public class WeakValuedMap<Key, Value> {
+public class WeakValuedIdentityMap<Key, Value> {
     private final ReferenceQueue deadReferences = new ReferenceQueue();
     private final Map<Key, KeyedReference<Key, Value>> references = new IdentityHashMap<Key, KeyedReference<Key, Value>>();
 
