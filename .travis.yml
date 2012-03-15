@@ -1,7 +1,5 @@
 language: java
-script:
-  - ant test
-  - rake test19
+script: ant test
 branches:
   only:
     - master
