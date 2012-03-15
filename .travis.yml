@@ -1,10 +1,8 @@
 language: java
-before_script: env
+before_script:
+  - unset GEM_PATH GEM_HOME IRBRC
+  - "export PATH=`pwd`/bin:$PATH"
 script: "PATH=`pwd`/bin:$PATH ant test"
 install: /bin/true
-branches:
-  only:
-    - master
-    - jruby-1_6
 notifications:
   irc: "irc.freenode.org#jruby"
