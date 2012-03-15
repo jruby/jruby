@@ -1,13 +1,12 @@
 package org.jruby.ir.instructions;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import org.jruby.RubyArray;
 import org.jruby.RubyMethod;
 import org.jruby.RubyProc;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.ir.IRClassBody;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
@@ -19,7 +18,6 @@ import org.jruby.ir.operands.Splat;
 import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.WrappedIRScope;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
@@ -328,7 +326,7 @@ public abstract class CallBase extends Instr implements Specializeable {
     
     protected IRubyObject[] prepareArguments(ThreadContext context, IRubyObject self, Operand[] arguments, DynamicScope dynamicScope, Object[] temp) {
         return containsSplat ? 
-                prepareArgumentsComplex(context, self, arguments, dynamicScope, temp) :
+                prepareArgumentsSplat(context, self, arguments, dynamicScope, temp) :
                 prepareArgumentsSimple(context, self, arguments, dynamicScope, temp);
     }
 
@@ -342,19 +340,10 @@ public abstract class CallBase extends Instr implements Specializeable {
         return newArgs;
     }
     
-    protected IRubyObject[] prepareArgumentsComplex(ThreadContext context, IRubyObject self, Operand[] args, DynamicScope currDynScope, Object[] temp) {
-        List<IRubyObject> argList = new ArrayList<IRubyObject>();
-        int numArgs = args.length;
-        for (int i = 0; i < numArgs; i++) {
-            IRubyObject rArg = (IRubyObject) args[i].retrieve(context, self, currDynScope, temp);
-            if ((numArgs == 1) && args[i] instanceof Splat) {
-                argList.addAll(Arrays.asList(((RubyArray)rArg).toJavaArray()));
-            } else {
-                argList.add(rArg);
-            }
-        }
-
-        return argList.toArray(new IRubyObject[argList.size()]);
+    // All CallInstr which contain a splat (other than special zsuper) will only contain a single call arg.
+    protected IRubyObject[] prepareArgumentsSplat(ThreadContext context, IRubyObject self, Operand[] args, DynamicScope currDynScope, Object[] temp) {
+        IRubyObject rArg = (IRubyObject) args[0].retrieve(context, self, currDynScope, temp);
+        return ((RubyArray)rArg).toJavaArray();
     }       
     
     protected Block prepareBlock(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
