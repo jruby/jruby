@@ -543,7 +543,7 @@ JAVA
     # FIXME: We should allow all valid modifiers
     def modifier_string
       modifiers = {}
-      java_signature.modifiers.each {|m| modifiers[m.to_s] = m.to_s}
+      java_signature.modifiers.reject(&:annotation?).each {|m| modifiers[m.to_s] = m.to_s}
       is_static = static || modifiers["static"]
       static_str = is_static ? ' static' : ''
       abstract_str = modifiers["abstract"] ? ' abstract' : ''
@@ -560,8 +560,10 @@ JAVA
       else
         visibility_str = 'public'
       end
+
+      annotations = java_signature.modifiers.select(&:annotation?).map(&:to_s).join(" ")
       
-      "#{visibility_str}#{static_str}#{final_str}#{abstract_str}#{strictfp_str}#{native_str}#{synchronized_str}"
+      "#{annotations}#{visibility_str}#{static_str}#{final_str}#{abstract_str}#{strictfp_str}#{native_str}#{synchronized_str}"
     end
 
     def typed_args

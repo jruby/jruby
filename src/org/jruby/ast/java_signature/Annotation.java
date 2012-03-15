@@ -14,6 +14,13 @@ public class Annotation implements AnnotationExpression {
         this.parameters = parameters;
     }
     
+    /**
+     * modifiers and annotations can be mixed together in java signatures.
+     */
+    public boolean isAnnotation() {
+        return true;
+    }
+    
     @Override
     public String toString() {
         return name + toStringParameters();

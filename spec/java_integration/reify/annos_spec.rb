@@ -16,7 +16,6 @@ describe "JRuby annotation processing:" do
     end
 
     it "has two annotated methods" do
-      pending
       Java::java_integration.fixtures.MethodAnnotations.countAnnotated(ClassWithAnnotatedMethods).size.should == 2
     end
   end
@@ -35,7 +34,6 @@ describe "JRuby annotation processing:" do
     end
 
     it "has two annotated methods" do
-      pending
       Java::java_integration.fixtures.MethodAnnotations.countAnnotated(ClassWithAnnotatedMethods2).size.should == 2
     end
   end

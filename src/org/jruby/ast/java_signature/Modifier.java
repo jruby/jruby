@@ -13,6 +13,13 @@ public enum Modifier {
     Modifier(String name) {
         this.name = name;
     }
+    
+    /**
+     * Annotations and modifiers can be mixed together in a signature.
+     */
+    public boolean isAnnotation() {
+        return false;
+    }
 
     @Override
     public String toString() {
