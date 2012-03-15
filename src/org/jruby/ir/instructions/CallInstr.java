@@ -54,9 +54,10 @@ public class CallInstr extends CallBase implements ResultInstr {
     
     @Override
     public CallBase specializeForInterpretation() {
-        if (hasClosure() || containsSplat()) return this;
+        Operand[] callArgs = getCallArgs();
+        if (hasClosure() || containsSplat(callArgs)) return this;
         
-        switch (getCallArgs().length) {
+        switch (callArgs.length) {
             case 0:
                 return new ZeroOperandArgNoBlockCallInstr(this);
             case 1:

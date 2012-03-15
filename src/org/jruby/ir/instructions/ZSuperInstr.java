@@ -32,6 +32,14 @@ public class ZSuperInstr extends SuperInstr {
         return (closure == null) ? EMPTY_OPERANDS : new Operand[] { closure };
     }
 
+    protected IRubyObject[] prepareArguments(ThreadContext context, IRubyObject self, Operand[] arguments, DynamicScope dynamicScope, Object[] temp) {
+        // Unlike calls, zsuper args are known only at interpret time, not at constructor time.
+        // So, we cannot use the cached containsSplat field from CallBase
+        return containsSplat(arguments) ? 
+                prepareArgumentsComplex(context, self, arguments, dynamicScope, temp) :
+                prepareArgumentsSimple(context, self, arguments, dynamicScope, temp);
+    }
+
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block aBlock) {
         DynamicScope argsDynScope = currDynScope;

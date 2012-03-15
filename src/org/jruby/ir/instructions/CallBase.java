@@ -1,7 +1,9 @@
 package org.jruby.ir.instructions;
 
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.jruby.RubyArray;
 import org.jruby.RubyMethod;
@@ -51,7 +53,7 @@ public abstract class CallBase extends Instr implements Specializeable {
         this.methAddr = methAddr;
         this.callType = callType;
         this.callSite = getCallSiteFor(callType, methAddr);
-        containsSplat = containsSplat();
+        containsSplat = containsSplat(args);
         flagsComputed = false;
         canBeEval = true;
         targetRequiresCallersBinding = true;
@@ -115,14 +117,6 @@ public abstract class CallBase extends Instr implements Specializeable {
         return closure != null;
     }
     
-    public boolean containsSplat() {
-        for (int i = 0; i < arguments.length; i++) {
-            if (arguments[i] instanceof Splat) return true;
-        }
-        
-        return false;
-    }
-    
     public boolean isAllConstants() {
         for (int i = 0; i < arguments.length; i++) {
             if (!(arguments[i] instanceof ImmutableLiteral)) return false;
@@ -157,6 +151,10 @@ public abstract class CallBase extends Instr implements Specializeable {
         for (int i = 0; i < arguments.length; i++) {
             arguments[i] = arguments[i].getSimplifiedOperand(valueMap, force);
         }
+
+        // Recompute containsSplat flag
+        containsSplat = containsSplat(arguments);
+
         if (closure != null) closure = closure.getSimplifiedOperand(valueMap, force);
         flagsComputed = false; // Forces recomputation of flags
 
@@ -295,6 +293,14 @@ public abstract class CallBase extends Instr implements Specializeable {
                 (closure == null ? "" : ", &" + closure) + ")";
     }
 
+    protected static boolean containsSplat(Operand[] arguments) {
+        for (int i = 0; i < arguments.length; i++) {
+            if (arguments[i] instanceof Splat) return true;
+        }
+
+        return false;
+    }
+
     private static Operand[] buildAllArgs(Operand methAddr, Operand receiver, Operand[] callArgs, Operand closure) {
         Operand[] allArgs = new Operand[callArgs.length + 2 + ((closure != null) ? 1 : 0)];
 
@@ -323,10 +329,10 @@ public abstract class CallBase extends Instr implements Specializeable {
         
         return callSite.call(context, self, object, values, preparedBlock);
     }
-    
+
     protected IRubyObject[] prepareArguments(ThreadContext context, IRubyObject self, Operand[] arguments, DynamicScope dynamicScope, Object[] temp) {
         return containsSplat ? 
-                prepareArgumentsSplat(context, self, arguments, dynamicScope, temp) :
+                prepareArgumentsComplex(context, self, arguments, dynamicScope, temp) :
                 prepareArgumentsSimple(context, self, arguments, dynamicScope, temp);
     }
 
@@ -339,13 +345,25 @@ public abstract class CallBase extends Instr implements Specializeable {
 
         return newArgs;
     }
-    
-    // All CallInstr which contain a splat (other than special zsuper) will only contain a single call arg.
-    protected IRubyObject[] prepareArgumentsSplat(ThreadContext context, IRubyObject self, Operand[] args, DynamicScope currDynScope, Object[] temp) {
-        IRubyObject rArg = (IRubyObject) args[0].retrieve(context, self, currDynScope, temp);
-        return ((RubyArray)rArg).toJavaArray();
-    }       
-    
+
+    protected IRubyObject[] prepareArgumentsComplex(ThreadContext context, IRubyObject self, Operand[] args, DynamicScope currDynScope, Object[] temp) {
+        // SSS: For regular calls, IR builder never introduces splats except as the first argument
+        // But when zsuper is converted to SuperInstr with known args, splats can appear anywhere
+        // in the list.  So, this looping handles both these scenarios, although if we wanted to
+        // optimize for CallInstr which has splats only in the first position, we could do that.
+        List<IRubyObject> argList = new ArrayList<IRubyObject>();
+        for (int i = 0; i < args.length; i++) {
+            IRubyObject rArg = (IRubyObject)args[i].retrieve(context, self, currDynScope, temp);
+            if (args[i] instanceof Splat) {
+                argList.addAll(Arrays.asList(((RubyArray)rArg).toJavaArray()));
+            } else {
+                argList.add(rArg);
+            }
+        }
+
+        return argList.toArray(new IRubyObject[argList.size()]);
+    }
+   
     protected Block prepareBlock(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         if (closure == null) return Block.NULL_BLOCK;
         

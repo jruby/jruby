@@ -27,9 +27,10 @@ public class NoResultCallInstr extends CallBase {
 
     @Override
     public CallBase specializeForInterpretation() {
-        if (hasClosure() || containsSplat()) return this;
+        Operand[] callArgs = getCallArgs();
+        if (hasClosure() || containsSplat(callArgs)) return this;
         
-        switch (getCallArgs().length) {
+        switch (callArgs.length) {
 //            case 0:
 //                return new ZeroOperandArgNoBlockNoResultCallInstr(this);
             case 1:
