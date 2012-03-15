@@ -4,12 +4,8 @@ require 'java'
 class TestPrimitiveToJava < Test::Unit::TestCase
   def test_primitive_conversion
     t = Time.now
+    date = t.to_java(java.util.Date)
 
-    dc = org.jruby.javasupport.test.DateHolder.new
-    tz_pattern = t.zone == 'UTC' ? "'UTC'" : "Z"                                
-    sdf = java.text.SimpleDateFormat.new("EEE MMM dd HH:mm:ss #{tz_pattern} yyyy", java.util.Locale::ENGLISH)
-    dc.date = t
-
-    assert(t.to_s.eql?(sdf.format(dc.date)), "Ruby time #{t} not converted to java date correctly: #{sdf.format(dc.date)}")
+    assert_equal(t.to_i, date.time / 1000, "Ruby time #{t} not converted to java date correctly: #{date}")
   end
 end
