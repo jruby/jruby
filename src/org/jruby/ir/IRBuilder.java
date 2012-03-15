@@ -166,11 +166,13 @@ import org.jruby.ir.instructions.RestArgMultipleAsgnInstr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.ReturnInstr;
 import org.jruby.ir.instructions.SetReturnAddressInstr;
-import org.jruby.ir.instructions.SuperInstr;
+import org.jruby.ir.instructions.ClassSuperInstr;
+import org.jruby.ir.instructions.InstanceSuperInstr;
 import org.jruby.ir.instructions.ThrowExceptionInstr;
 import org.jruby.ir.instructions.ToAryInstr;
 import org.jruby.ir.instructions.ThreadPollInstr;
 import org.jruby.ir.instructions.UndefMethodInstr;
+import org.jruby.ir.instructions.UnresolvedSuperInstr;
 import org.jruby.ir.instructions.YieldInstr;
 import org.jruby.ir.instructions.ZSuperInstr;
 import org.jruby.ir.instructions.defined.BackrefIsMatchDataInstr;
@@ -3205,17 +3207,21 @@ public class IRBuilder {
 
     private Operand buildSuperInstr(IRScope s, Operand block, Operand[] args) {
         MethAddr maddr;
-        if (s instanceof IRClosure) {
+        Variable ret = s.getNewTemporaryVariable();
+        if ((s instanceof IRMethod) && (s.getLexicalParent() instanceof IRClassBody)) {
+            IRMethod m = (IRMethod)s;
+            if (m.isInstanceMethod) {
+                s.addInstr(new InstanceSuperInstr(ret, s.getCurrentModuleVariable(), new MethAddr(s.getName()), args, block));
+            } else {
+                s.addInstr(new ClassSuperInstr(ret, s.getCurrentModuleVariable(), new MethAddr(s.getName()), args, block));
+            }
+        } else {
             // We dont always know the method name we are going to be invoking if the super occurs in a closure.
             // This is because the super can be part of a block that will be used by 'define_method' to define
             // a new method.  In that case, the method called by super will be determined by the 'name' argument
             // to 'define_method'.
-            maddr = MethAddr.UNKNOWN_SUPER_TARGET;
-        } else {
-            maddr = new MethAddr(s.getName());
+            s.addInstr(new UnresolvedSuperInstr(ret, getSelf(s), args, block));
         }
-        Variable ret = s.getNewTemporaryVariable();
-        s.addInstr(new SuperInstr(ret, getSelf(s), maddr, args, block));
         return ret;
     }
 
@@ -3230,7 +3236,7 @@ public class IRBuilder {
     
     private Operand buildSuperInScriptBody(IRScope s) {
         Variable ret = s.getNewTemporaryVariable();
-        s.addInstr(new SuperInstr(ret, getSelf(s), MethAddr.UNKNOWN_SUPER_TARGET, NO_ARGS, null));
+        s.addInstr(new UnresolvedSuperInstr(ret, getSelf(s), NO_ARGS, null));
         return ret;
     }
 
@@ -3387,7 +3393,7 @@ public class IRBuilder {
             // receive args from the nearest method the block is embedded in.  But,
             // in the presence of 'define_method', all bets are off.
             Variable ret = s.getNewTemporaryVariable();
-            s.addInstr(new ZSuperInstr(ret, block));
+            s.addInstr(new ZSuperInstr(ret, getSelf(s), block));
             return ret;
         }
     }

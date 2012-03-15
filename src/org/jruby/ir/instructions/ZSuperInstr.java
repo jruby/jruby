@@ -17,14 +17,15 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 import org.jruby.runtime.DynamicScope;
 
-public class ZSuperInstr extends SuperInstr {
-    public ZSuperInstr(Variable result, Operand closure) {
-        super(Operation.ZSUPER, result, closure);
+public class ZSuperInstr extends UnresolvedSuperInstr {
+	 // SSS FIXME: receiver is never used -- being passed in only to meet requirements of CallInstr
+    public ZSuperInstr(Variable result, Operand receiver, Operand closure) {
+        super(Operation.ZSUPER, result, receiver, closure);
     }
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new ZSuperInstr(ii.getRenamedVariable(result), closure == null ? null : closure.cloneForInlining(ii));
+        return new ZSuperInstr(ii.getRenamedVariable(result), getReceiver().cloneForInlining(ii), closure == null ? null : closure.cloneForInlining(ii));
     }
 
     @Override
