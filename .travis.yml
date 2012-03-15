@@ -1,1 +1,10 @@
 language: java
+script:
+  - ant test
+  - rake test19
+branches:
+  only:
+    - master
+    - jruby-1_6
+notifications:
+  irc: "irc.freenode.org#jruby"
