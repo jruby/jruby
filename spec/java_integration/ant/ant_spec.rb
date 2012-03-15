@@ -4,7 +4,7 @@ describe Ant, '.load' do
   include Ant::RSpec::AntExampleGroup
 
   before :each do
-    @previous_java_home = ENV['JAVA_HOME']
+    @previous_java_home = ENV['JAVA_HOME'] || ENV_JAVA['java.home']
 
     if (TestHelper::WINDOWS)
       ENV['JAVA_HOME'] = '/C:/java6'
