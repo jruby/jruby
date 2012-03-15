@@ -389,12 +389,14 @@ public class CFG {
                 graph.addEdge(b, firstRescueBB, EdgeType.EXCEPTION);
                 if (ensureBlockBB != null) {
                     ensurerMap.put(b, ensureBlockBB);
-                    // SSS FIXME: This is a conservative edge because when a rescue block is present
-                    // that catches an exception, control never reaches the ensure block directly.
-                    // Only when we get an error or threadkill even, or when breaks propagate upward
-                    // do we need to hit an ensure directly.  This edge is present to account for that
-                    // control-flow scneario.
-                    graph.addEdge(b, ensureBlockBB, EdgeType.EXCEPTION);
+                    if (ensureBlockBB != firstRescueBB) {
+                        // SSS FIXME: This is a conservative edge because when a rescue block is present
+                        // that catches an exception, control never reaches the ensure block directly.
+                        // Only when we get an error or threadkill even, or when breaks propagate upward
+                        // do we need to hit an ensure directly.  This edge is present to account for that
+                        // control-flow scneario.
+                        graph.addEdge(b, ensureBlockBB, EdgeType.EXCEPTION);
+                    }
                 }
             }
         }
