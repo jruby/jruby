@@ -6,3 +6,4 @@ script: "PATH=`pwd`/bin:$PATH ant test"
 install: /bin/true
 notifications:
   irc: "irc.freenode.org#jruby"
+  email: false
