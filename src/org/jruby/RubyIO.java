@@ -1252,6 +1252,9 @@ public class RubyIO extends RubyObject {
             if (e.getMessage().equals("Broken pipe")) {
                 throw runtime.newErrnoEPIPEError();
             }
+            if (e.getMessage().equals("Connection reset by peer")) {
+                throw runtime.newErrnoEPIPEError();
+            }
             throw runtime.newSystemCallError(e.getMessage());
         } finally {
             context.getThread().afterBlockingCall();
