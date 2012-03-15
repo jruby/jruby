@@ -481,12 +481,14 @@ class ServerTest < Test::Unit::TestCase
 
   # JRUBY-5876
   def test_syswrite_raises_epipe
-    Thread.new do
+    t = Thread.new do
       server = TCPServer.new("127.0.0.1", 1234)
       while sock = server.accept
         sock.close
       end
     end
+
+    Thread.pass while t.alive? and t.status != 'sleep'
 
     sock = TCPSocket.new("127.0.0.1", 1234)
     sock.setsockopt Socket::IPPROTO_TCP, Socket::TCP_NODELAY, 1
