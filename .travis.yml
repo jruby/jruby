@@ -1,4 +1,5 @@
 language: java
+before_script: env
 script: "PATH=`pwd`/bin:$PATH ant test"
 install: /bin/true
 branches:
