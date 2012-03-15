@@ -1244,6 +1244,7 @@ public final class ThreadContext {
      * Return a binding representing the previous call's state
      * @return the current binding
      */
+    @Deprecated
     public Binding previousBinding() {
         Frame frame = getPreviousFrame();
         return new Binding(frame, getPreviousRubyClass(), getCurrentScope(), backtrace[backtraceIndex].clone());
@@ -1254,6 +1255,7 @@ public final class ThreadContext {
      * @param self the self object to use
      * @return the current binding, using the specified self
      */
+    @Deprecated
     public Binding previousBinding(IRubyObject self) {
         Frame frame = getPreviousFrame();
         return new Binding(self, frame, frame.getVisibility(), getPreviousRubyClass(), getCurrentScope(), backtrace[backtraceIndex].clone());
