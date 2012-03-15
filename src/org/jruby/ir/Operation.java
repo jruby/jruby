@@ -125,6 +125,7 @@ public enum Operation {
     ATTR_ASSIGN(OpFlags.f_is_store | OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
     
     /* defined */
+    SET_WITHIN_DEFINED(OpFlags.f_has_side_effect),
     BACKREF_IS_MATCH_DATA(0),
     CLASS_VAR_IS_DEFINED(0),
     DEFINED_CONSTANT_OR_METHOD(0),
@@ -133,7 +134,6 @@ public enum Operation {
     IS_METHOD_BOUND(0),
     METHOD_DEFINED(0),
     METHOD_IS_PUBLIC(0),
-    SET_WITHIN_DEFINED(0),
     SUPER_METHOD_BOUND(0),
     
     /** JRuby-impl instructions **/
@@ -141,15 +141,12 @@ public enum Operation {
     GET_ERROR_INFO(0),
     GET_OBJECT(0),
     GET_BACKREF(0),
-    RESTORE_ERROR_INFO(0),
+    RESTORE_ERROR_INFO(OpFlags.f_has_side_effect),
     RAISE_ARGUMENT_ERROR(OpFlags.f_can_raise_exception),
-    // SSS FIXME: Come up with a different strategy/flag to handle this situation
-    // check_arity instructions cannot be dead-code-eliminated.
-    // So, using has_side_effect flag to prevent its deletion. 
-    CHECK_ARITY(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
-    CHECK_ARGS_ARRAY_ARITY(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
+    CHECK_ARITY(OpFlags.f_can_raise_exception),
+    CHECK_ARGS_ARRAY_ARITY(OpFlags.f_can_raise_exception),
     RECORD_END_BLOCK(OpFlags.f_has_side_effect),
-    TO_ARY(OpFlags.f_can_raise_exception),
+    TO_ARY(0),
 
     /** rest **/
     MATCH(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_is_call),

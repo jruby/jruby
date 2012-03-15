@@ -72,7 +72,7 @@ public abstract class Instr {
     }
 
     public boolean canBeDeleted(IRScope s) {
-         if (hasSideEffects() || getOperation().isDebugOp() || transfersControl()) {
+         if (hasSideEffects() || getOperation().isDebugOp() || getOperation().canRaiseException() || transfersControl()) {
              return false;
          } else if (this instanceof ResultInstr) {
              Variable r = ((ResultInstr)this).getResult();
