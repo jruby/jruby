@@ -1,5 +1,5 @@
 language: java
-script: ant test
+script: "PATH=`pwd`/bin:$PATH ant test"
 install: /bin/true
 branches:
   only:
