@@ -57,40 +57,6 @@ public class CFGInliner {
 
         return selfClone;
     }
-    
-    private boolean mergeBBs(BasicBlock a, BasicBlock b) {
-        BasicBlock aR = cfg.getRescuerBBFor(a);
-        BasicBlock bR = cfg.getRescuerBBFor(b);
-        // We can merge 'a' and 'b' if one of the following is true:
-        // 1. 'a' and 'b' are both not empty
-        //    They are protected by the same rescue block.
-        //    NOTE: We need not check the ensure block map because all ensure blocks are already
-        //    captured in the bb rescue block map.  So, if aR == bR, it is guaranteed that the
-        //    ensure blocks for the two are identical.
-        // 2. One of 'a' or 'b' is empty.  We dont need to check for rescue block match because
-        //    an empty basic block cannot raise an exception, can it.
-        if ((aR == bR) || a.isEmpty() || b.isEmpty()) {
-            a.swallowBB(b);
-            cfg.removeEdge(a, b);
-            for (Edge<BasicBlock> e : cfg.getOutgoingEdges(b)) {
-                cfg.addEdge(a, e.getDestination().getData(), e.getType());
-            }
-
-            cfg.removeBB(b);
-
-            // Update rescue and ensure maps
-            if ((aR == null) && (bR != null)) {
-                cfg.setRescuerBB(a, bR);
-                BasicBlock aE = cfg.getEnsurerBBFor(a);
-                BasicBlock bE = cfg.getEnsurerBBFor(b);
-                if ((aE == null) && (bE != null)) cfg.setRescuerBB(a, bE);
-            }
-
-            return true;
-        } else {
-            return false;
-        }
-    }
 
     public void inlineMethod(IRScope scope, RubyModule implClass, int classToken, BasicBlock callBB, CallBase call) {
         // Temporarily turn off inlining of recursive methods
@@ -261,24 +227,7 @@ public class CFGInliner {
         }
 
         // 9. Optimize cfg by merging straight-line bbs
-        //
-        // Collect cfgs in a list first since the cfg/graph API returns an iterator
-        // over live data.  But, basic block merging modifies that live data.
-        //
-        // SSS FIXME: So, we need a cfg/graph API that returns an iterator over
-        // frozen data rather than live data.
-        List<BasicBlock> cfgBBs = new ArrayList<BasicBlock>();
-        for (BasicBlock b: cfg.getBasicBlocks()) cfgBBs.add(b);
-        Set<BasicBlock> mergedBBs = new HashSet<BasicBlock>();
-        for (BasicBlock b: cfgBBs) {
-            if (!mergedBBs.contains(b) && (cfg.outDegree(b) == 1)) {
-                BasicBlock outB = cfg.getOutgoingDestination(b);
-                if ((cfg.inDegree(outB) == 1) && (mergeBBs(b, outB) == true)) {
-                    mergedBBs.add(outB);
-                }
-            }
-        }
-
+        cfg.collapseStraightLineBBs();
 /*
         System.out.println("final cfg   :" + cfg.toStringGraph());
         System.out.println("final instrs:" + cfg.toStringInstrs());

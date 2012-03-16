@@ -59,10 +59,22 @@ public class CFGLinearizer {
         list.add(current);
         processed.set(current.getID());
         
+        // First, fall-through BB
         BasicBlock fallThrough = cfg.getOutgoingDestinationOfType(current, EdgeType.FALL_THROUGH);
         if (fallThrough != null) linearizeInner(cfg, list, processed, fallThrough);
         
-        for (BasicBlock destination: cfg.getOutgoingDestinationsNotOfType(current, EdgeType.FALL_THROUGH)) {
+        // Next, regular edges
+        for (BasicBlock destination: cfg.getOutgoingDestinationsOfType(current, EdgeType.REGULAR)) {
+            linearizeInner(cfg, list, processed, destination);
+        }
+        
+        // Next, exception edges
+        for (BasicBlock destination: cfg.getOutgoingDestinationsOfType(current, EdgeType.EXCEPTION)) {
+            linearizeInner(cfg, list, processed, destination);
+        }
+
+        // Next, exit
+        for (BasicBlock destination: cfg.getOutgoingDestinationsOfType(current, EdgeType.EXIT)) {
             linearizeInner(cfg, list, processed, destination);
         }
     }
@@ -101,9 +113,12 @@ public class CFGLinearizer {
                 // We are guaranteed to have at least one non-exception edge because
                 // the exit BB post-dominates all BBs in the CFG even when exception
                 // edges are removed.
+                //
+                // Verify that we have exactly one non-exception target 
+                // SSS FIXME: Is this assertion any different from the BranchInstr assertion above?
                 Iterator<BasicBlock> iter = cfg.getOutgoingDestinationsNotOfType(current, EdgeType.EXCEPTION).iterator();
                 BasicBlock target = iter.next();
-                assert ((target == exitBB) && !iter.hasNext());
+                assert (target != null && !iter.hasNext());
 
                 // System.out.println("BB " + curr.getID() + " is the last bb in the layout! Adding a jump to " + tgt._label);
                 current.addInstr(new JumpInstr(target.getLabel()));

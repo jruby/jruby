@@ -394,7 +394,7 @@ public class CFG {
                         // that catches an exception, control never reaches the ensure block directly.
                         // Only when we get an error or threadkill even, or when breaks propagate upward
                         // do we need to hit an ensure directly.  This edge is present to account for that
-                        // control-flow scneario.
+                        // control-flow scenario.
                         graph.addEdge(b, ensureBlockBB, EdgeType.EXCEPTION);
                     }
                 }
@@ -483,7 +483,7 @@ public class CFG {
     }    
 
     private void deleteOrphanedBlocks(DirectedGraph<BasicBlock> graph) {
-        // System.out.println("\nGraph:\n" + getGraph().toString());
+        // System.out.println("\nGraph:\n" + toStringGraph());
         // System.out.println("\nInstructions:\n" + toStringInstrs());
 
         // FIXME: Quick and dirty implementation
@@ -503,6 +503,48 @@ public class CFG {
             removeBB(bbToRemove);
         }
     }    
+
+    private boolean mergeBBs(BasicBlock a, BasicBlock b) {
+        BasicBlock aR = getRescuerBBFor(a);
+        BasicBlock bR = getRescuerBBFor(b);
+        // We can merge 'a' and 'b' if one of the following is true:
+        // 1. 'a' and 'b' are both not empty
+        //    They are protected by the same rescue block.
+        //    NOTE: We need not check the ensure block map because all ensure blocks are already
+        //    captured in the bb rescue block map.  So, if aR == bR, it is guaranteed that the
+        //    ensure blocks for the two are identical.
+        // 2. One of 'a' or 'b' is empty.  We dont need to check for rescue block match because
+        //    an empty basic block cannot raise an exception, can it.
+        if ((aR == bR) || a.isEmpty() || b.isEmpty()) {
+            // First, remove straight-line jump, if present
+            Instr lastInstr = a.getLastInstr();
+            if (lastInstr instanceof JumpInstr) a.removeInstr(lastInstr);
+
+            // Swallow b's instrs.
+            a.swallowBB(b);
+
+            // Fixup edges
+            removeEdge(a, b);
+            for (Edge<BasicBlock> e : getOutgoingEdges(b)) {
+                addEdge(a, e.getDestination().getData(), e.getType());
+            }
+
+            // Delete bb
+            removeBB(b);
+
+            // Update rescue and ensure maps
+            if ((aR == null) && (bR != null)) {
+                setRescuerBB(a, bR);
+                BasicBlock aE = getEnsurerBBFor(a);
+                BasicBlock bE = getEnsurerBBFor(b);
+                if ((aE == null) && (bE != null)) setRescuerBB(a, bE);
+            }
+
+            return true;
+        } else {
+            return false;
+        }
+    }
      
     public void removeBB(BasicBlock b) {
         graph.removeVertexFor(b);
@@ -510,6 +552,28 @@ public class CFG {
         rescuerMap.remove(b);
         ensurerMap.remove(b);
         // SSS FIXME: Patch up rescued regions as well??
+    }
+
+    public void collapseStraightLineBBs() {
+        // Collect cfgs in a list first since the cfg/graph API returns an iterator
+        // over live data.  But, basic block merging modifies that live data.
+        //
+        // SSS FIXME: So, we need a cfg/graph API that returns an iterator over
+        // frozen data rather than live data.
+        List<BasicBlock> cfgBBs = new ArrayList<BasicBlock>();
+        for (BasicBlock b: getBasicBlocks()) cfgBBs.add(b);
+
+        Set<BasicBlock> mergedBBs = new HashSet<BasicBlock>();
+        for (BasicBlock b: cfgBBs) {
+            if (!mergedBBs.contains(b) && (outDegree(b) == 1)) {
+                for (Edge<BasicBlock> e : getOutgoingEdges(b)) {
+                    BasicBlock outB = e.getDestination().getData();
+                    if ((e.getType() != EdgeType.EXCEPTION) && (inDegree(outB) == 1) && (mergeBBs(b, outB) == true)) {
+                        mergedBBs.add(outB);
+                    }
+                }
+            }
+        }
     }
     
     private void optimize() {
@@ -544,6 +608,8 @@ public class CFG {
         }
 
         deleteOrphanedBlocks(graph);
+
+        collapseStraightLineBBs();
     }
 
     public String toStringGraph() {
@@ -582,11 +648,12 @@ public class CFG {
     }
 
     private LinkedList<BasicBlock> buildPostOrderList() {
-        LinkedList<BasicBlock> list = new LinkedList<BasicBlock>();
-        BasicBlock root = getEntryBB();
-        Stack<BasicBlock> stack = new Stack<BasicBlock>();
+        BasicBlock             root    = getEntryBB();
+        LinkedList<BasicBlock> list    = new LinkedList<BasicBlock>();
+        Stack<BasicBlock>      stack   = new Stack<BasicBlock>();
+        BitSet                 visited = new BitSet(1 + getMaxNodeID());
+
         stack.push(root);
-        BitSet visited = new BitSet(1 + getMaxNodeID());
         visited.set(root.getID());
 
         // Non-recursive post-order traversal (the added flag is required to handle cycles and common ancestors)

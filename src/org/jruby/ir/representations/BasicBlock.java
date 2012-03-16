@@ -13,17 +13,18 @@ import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.ir.util.ExplicitVertexID;
 
 public class BasicBlock implements ExplicitVertexID {
-    private int id;                        // Basic Block id
-    private CFG cfg;                       // CFG that this basic block belongs to
-    private Label label;                   // All basic blocks have a starting label
+    private int         id;             // Basic Block id
+    private CFG         cfg;            // CFG that this basic block belongs to
+    private Label       label;          // All basic blocks have a starting label
     private List<Instr> instrs;         // List of non-label instructions
-    private Instr[] instrsArray = null;    
+    private Instr[]     instrsArray;
 
     public BasicBlock(CFG c, Label l) {
-        instrs = new ArrayList<Instr>();
-        label = l;
-        cfg = c;
-        id = c.getNextBBID();
+        label       = l;
+        cfg         = c;
+        id          = c.getNextBBID();
+        instrs      = new ArrayList<Instr>();
+        instrsArray = null;
     }
 
     public int getID() {
@@ -45,7 +46,6 @@ public class BasicBlock implements ExplicitVertexID {
     public List<Instr> getInstrs() {
         return instrs;
     }
-
 
     public Instr[] getInstrsArray() {
         if (instrsArray == null) instrsArray = instrs.toArray(new Instr[instrs.size()]);
