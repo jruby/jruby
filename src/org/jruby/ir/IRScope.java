@@ -34,6 +34,7 @@ import org.jruby.ir.operands.Self;
 import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
+import org.jruby.ir.passes.opts.OptimizeTempVarsPass;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.representations.CFGLinearizer;
@@ -560,11 +561,11 @@ public abstract class IRScope {
         // and we may need to update the method to return the new method.  Also,
         // if this scope is held in multiple locations how do we update all references?
 
+        printPass("Before Temp var opts");
+        runCompilerPass(new OptimizeTempVarsPass());
         printPass("Before local optimization pass");
         runCompilerPass(new LocalOptimizationPass());
         printPass("After local optimization pass");
-
-        runCompilerPass(new CFGBuilder());
         if (!RubyInstanceConfig.IR_TEST_INLINER.equals("none")) {
             if (RubyInstanceConfig.IR_COMPILER_DEBUG) {
                 LOG.info("Asked to inline " + RubyInstanceConfig.IR_TEST_INLINER);
