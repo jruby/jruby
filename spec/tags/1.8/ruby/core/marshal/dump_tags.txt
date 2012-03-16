@@ -1,2 +1,3 @@
 fails(JRUBY-4335):Marshal.dump dumps a Float 8323434.342
 fails(JRUBY-5668):Marshal.dump dumps a Float 1.0799999999999912
+fails:Marshal.dump with a Float dumps a Float

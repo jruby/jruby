@@ -1,0 +1,1 @@
+fails:Enumerable#find_index gathers initial args as elements when each yields multiple

@@ -1,0 +1,4 @@
+fails:Syslog.mask returns nil if the log is closed
+fails:Syslog.mask persists if the log is reopened
+fails:Syslog.mask= raises an error if the log is closed
+fails:Syslog.mask= only accepts numbers

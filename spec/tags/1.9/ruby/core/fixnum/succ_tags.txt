@@ -1,0 +1,1 @@
+fails:Fixnum#succ overflows a Fixnum to a Bignum

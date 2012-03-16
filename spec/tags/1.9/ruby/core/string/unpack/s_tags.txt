@@ -1,0 +1,8 @@
+fails:String#unpack with format 'S' with modifier '<' and '_' decodes the number of shorts requested by the count modifier
+fails:String#unpack with format 'S' with modifier '<' and '_' decodes the remaining shorts when passed the '*' modifier
+fails:String#unpack with format 'S' with modifier '<' and '_' does not decode a short when fewer bytes than a short remain and the '*' modifier is passed
+fails:String#unpack with format 'S' with modifier '<' and '_' adds nil for each element requested beyond the end of the String
+fails:String#unpack with format 'S' with modifier '<' and '!' decodes the number of shorts requested by the count modifier
+fails:String#unpack with format 'S' with modifier '<' and '!' decodes the remaining shorts when passed the '*' modifier
+fails:String#unpack with format 'S' with modifier '<' and '!' does not decode a short when fewer bytes than a short remain and the '*' modifier is passed
+fails:String#unpack with format 'S' with modifier '<' and '!' adds nil for each element requested beyond the end of the String

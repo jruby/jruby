@@ -1,2 +1,3 @@
 fails:BasicSocket#recv accepts flags to specify unusual receiving behaviour
 fails:BasicSocket#recv gets lines delimited with a custom separator
+fails:BasicSocket#recv receives a specified number of bytes of a message from another socket

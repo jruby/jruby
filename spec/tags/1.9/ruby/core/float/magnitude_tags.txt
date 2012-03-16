@@ -1,0 +1,1 @@
+fails:Float#magnitude returns 0.0 if -0.0

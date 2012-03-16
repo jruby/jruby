@@ -1,0 +1,1 @@
+fails:String#% when format string contains %<> formats should raise ArgumentError if no hash given

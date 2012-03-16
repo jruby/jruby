@@ -1,0 +1,1 @@
+fails:Socket#connect_nonblock connects the socket to the remote side

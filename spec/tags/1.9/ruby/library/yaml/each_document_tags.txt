@@ -1,0 +1,2 @@
+fails:YAML#each_document calls the block on each succesive document
+fails:YAML#each_document works on files

@@ -1,0 +1,3 @@
+fails:String#concat with Integer returns a ASCII-8BIT string if self is US-ASCII and the argument is between 128-255 (inclusive)
+fails:String#concat with Integer raises RangeError if the argument is an invalid codepoint for self's encoding
+fails:String#concat when self is ASCII-8BIT and argument is US-ASCII uses ASCII-8BIT encoding

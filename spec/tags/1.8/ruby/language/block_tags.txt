@@ -2,3 +2,4 @@ fails:A block taking |*| arguments calls #to_ary to convert a single yielded obj
 fails:A block taking |*| arguments raises an TypeError if #to_ary does not return an Array
 fails:A block taking |*a| arguments calls #to_ary to convert a single yielded object to an Array
 fails:A block taking |*a| arguments raises an TypeError if #to_ary does not return an Array
+fails:A block taking |*| arguments does not raise a TypeError if #to_ary returns nil

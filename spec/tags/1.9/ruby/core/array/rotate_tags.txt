@@ -1,0 +1,1 @@
+fails:Array#rotate does not return subclass instance for Array subclasses

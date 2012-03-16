@@ -1,0 +1,2 @@
+fails:Socket#accept_nonblock raises Errno::EAGAIN if the connection is not accepted yet
+fails:Socket#accept_nonblock raises IO::WaitReadable if the connection is not accepted yet

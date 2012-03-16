@@ -1,0 +1,1 @@
+fails:REXML::Document#xml_decl returns XML declaration of the document

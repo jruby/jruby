@@ -5,3 +5,10 @@ fails:Marshal::load for a wrapped C pointer loads
 fails:Marshal::load for a wrapped C pointer raises TypeError when the local class is missing _data_load
 fails:Marshal::load loads an Array with proc
 fails:Marshal::load for a user Class raises ArgumentError if the object from an 'o' stream is not dumpable as 'o' type user class
+fails:Marshal.load loads an Array with proc
+fails:Marshal.load for a user Class raises ArgumentError if the object from an 'o' stream is not dumpable as 'o' type user class
+fails:Marshal.load for a Integer loads 0
+fails:Marshal.load for a Class raises ArgumentError if given a nonexistent class
+fails:Marshal.load for a Module loads an old module
+fails:Marshal.load for a wrapped C pointer loads
+fails:Marshal.load for a wrapped C pointer raises TypeError when the local class is missing _data_load

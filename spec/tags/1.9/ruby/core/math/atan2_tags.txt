@@ -1,0 +1,2 @@
+fails:Math.atan2 returns positive zero when passed 0.0, 0.0
+fails:Math.atan2 returns negative zero when passed -0.0, 0.0

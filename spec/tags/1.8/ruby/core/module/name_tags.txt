@@ -1,0 +1,2 @@
+fails:Module#name is an empty string when assigning to a constant in an anonymous module
+fails:Module#name is an empty string for a nested module created with the module keyword

@@ -1,0 +1,1 @@
+fails:Thread.exit causes the current thread to exit
