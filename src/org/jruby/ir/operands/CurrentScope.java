@@ -1,15 +1,18 @@
 package org.jruby.ir.operands;
 
 import java.util.List;
-
-import org.jruby.ir.operands.Variable;
+import org.jruby.ir.IRScope;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
 
 public class CurrentScope extends Operand {
-    public CurrentScope() { }
+    private IRScope current;
+    
+    public CurrentScope(IRScope current) {
+        this.current = current;
+    }
 
     @Override
     public String toString() {
@@ -33,6 +36,6 @@ public class CurrentScope extends Operand {
 
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
-        return currDynScope.getStaticScope();
+        return current.getStaticScope();
     }
 }

@@ -107,13 +107,6 @@ import org.jruby.ast.XStrNode;
 import org.jruby.ast.YieldNode;
 import org.jruby.ast.ZSuperNode;
 import org.jruby.compiler.NotCompilableException;
-import org.jruby.ir.passes.CFGBuilder;
-import org.jruby.ir.passes.IRPrinter;
-import org.jruby.ir.passes.InlineTest;
-import org.jruby.ir.passes.LinearizeCFG;
-import org.jruby.ir.passes.LiveVariableAnalysis;
-import org.jruby.ir.passes.opts.DeadCodeElimination;
-import org.jruby.ir.passes.opts.LocalOptimizationPass;
 import org.jruby.ir.instructions.AliasInstr;
 import org.jruby.ir.instructions.AttrAssignInstr;
 import org.jruby.ir.instructions.BEQInstr;
@@ -122,6 +115,7 @@ import org.jruby.ir.instructions.BlockGivenInstr;
 import org.jruby.ir.instructions.BreakInstr;
 import org.jruby.ir.instructions.CallInstr;
 import org.jruby.ir.instructions.CheckArityInstr;
+import org.jruby.ir.instructions.ClassSuperInstr;
 import org.jruby.ir.instructions.ClosureReturnInstr;
 import org.jruby.ir.instructions.ConstMissingInstr;
 import org.jruby.ir.instructions.CopyInstr;
@@ -141,6 +135,7 @@ import org.jruby.ir.instructions.GetFieldInstr;
 import org.jruby.ir.instructions.GetGlobalVariableInstr;
 import org.jruby.ir.instructions.InheritanceSearchConstInstr;
 import org.jruby.ir.instructions.InstanceOfInstr;
+import org.jruby.ir.instructions.InstanceSuperInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.JumpIndirectInstr;
 import org.jruby.ir.instructions.JumpInstr;
@@ -166,11 +161,9 @@ import org.jruby.ir.instructions.RestArgMultipleAsgnInstr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.ReturnInstr;
 import org.jruby.ir.instructions.SetReturnAddressInstr;
-import org.jruby.ir.instructions.ClassSuperInstr;
-import org.jruby.ir.instructions.InstanceSuperInstr;
+import org.jruby.ir.instructions.ThreadPollInstr;
 import org.jruby.ir.instructions.ThrowExceptionInstr;
 import org.jruby.ir.instructions.ToAryInstr;
-import org.jruby.ir.instructions.ThreadPollInstr;
 import org.jruby.ir.instructions.UndefMethodInstr;
 import org.jruby.ir.instructions.UnresolvedSuperInstr;
 import org.jruby.ir.instructions.YieldInstr;
@@ -223,6 +216,13 @@ import org.jruby.ir.operands.UnexecutableNil;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.operands.WrappedIRScope;
+import org.jruby.ir.passes.CFGBuilder;
+import org.jruby.ir.passes.IRPrinter;
+import org.jruby.ir.passes.InlineTest;
+import org.jruby.ir.passes.LinearizeCFG;
+import org.jruby.ir.passes.LiveVariableAnalysis;
+import org.jruby.ir.passes.opts.DeadCodeElimination;
+import org.jruby.ir.passes.opts.LocalOptimizationPass;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.BlockBody;
@@ -1200,7 +1200,7 @@ public class IRBuilder {
         // Set %current_scope = <current-scope>
         // Set %current_module = <current-module>
         mc.addInstr(new ReceiveClosureInstr(mc.getImplicitBlockArg()));
-        mc.addInstr(new CopyInstr(mc.getCurrentScopeVariable(), new CurrentScope()));
+        mc.addInstr(new CopyInstr(mc.getCurrentScopeVariable(), new CurrentScope(mc)));
         mc.addInstr(new CopyInstr(mc.getCurrentModuleVariable(), new CurrentModule()));
         // Create a new nested builder to ensure this gets its own IR builder state 
         Operand rv = createIRBuilder(manager).build(sclassNode.getBodyNode(), mc);
@@ -1858,7 +1858,7 @@ public class IRBuilder {
         // Set %current_scope = <current-scope>
         // Set %current_module = isInstanceMethod ? %self.metaclass : %self
         IRScope nearestScope = s.getNearestModuleReferencingScope();
-        method.addInstr(new CopyInstr(method.getCurrentScopeVariable(), nearestScope == null ? new CurrentScope() : new WrappedIRScope(nearestScope)));
+        method.addInstr(new CopyInstr(method.getCurrentScopeVariable(), nearestScope == null ? new CurrentScope(s) : new WrappedIRScope(nearestScope)));
         // SSS FIXME: The last operand of the ternary ? operator should actually be meta-class-of(getSelf(method))
         // method.addInstr(new CopyInstr(method.getCurrentModuleVariable(), isInstanceMethod ? new CurrentModule() : getSelf(method)));
         method.addInstr(new CopyInstr(method.getCurrentModuleVariable(), new CurrentModule()));
@@ -2296,7 +2296,7 @@ public class IRBuilder {
 
         // Set %current_scope = <current-scope>
         // Set %current_module = <current-module>
-        closure.addInstr(new CopyInstr(closure.getCurrentScopeVariable(), new CurrentScope()));
+        closure.addInstr(new CopyInstr(closure.getCurrentScopeVariable(), new CurrentScope(closure)));
         closure.addInstr(new CopyInstr(closure.getCurrentModuleVariable(), new CurrentModule()));
 
         // Thread poll on entry of closure 
@@ -2449,7 +2449,7 @@ public class IRBuilder {
 
         // Set %current_scope = <current-scope>
         // Set %current_module = <current-module>
-        closure.addInstr(new CopyInstr(closure.getCurrentScopeVariable(), new CurrentScope()));
+        closure.addInstr(new CopyInstr(closure.getCurrentScopeVariable(), new CurrentScope(closure)));
         closure.addInstr(new CopyInstr(closure.getCurrentModuleVariable(), new CurrentModule()));
 
         // Thread poll on entry of closure 
@@ -2892,7 +2892,7 @@ public class IRBuilder {
     public Operand buildPostExe(PostExeNode postExeNode, IRScope s) {
         IRClosure endClosure = new IRClosure(manager, s, false, postExeNode.getPosition().getStartLine(), postExeNode.getScope(), Arity.procArityOf(postExeNode.getVarNode()), postExeNode.getArgumentType(), is1_9());
         // Set up %current_scope and %current_module
-        endClosure.addInstr(new CopyInstr(endClosure.getCurrentScopeVariable(), new CurrentScope()));
+        endClosure.addInstr(new CopyInstr(endClosure.getCurrentScopeVariable(), new CurrentScope(endClosure)));
         endClosure.addInstr(new CopyInstr(endClosure.getCurrentModuleVariable(), new CurrentModule()));
         build(postExeNode.getBodyNode(), endClosure);
 
@@ -2904,7 +2904,7 @@ public class IRBuilder {
     public Operand buildPreExe(PreExeNode preExeNode, IRScope s) {
         IRClosure beginClosure = new IRClosure(manager, s, false, preExeNode.getPosition().getStartLine(), preExeNode.getScope(), Arity.procArityOf(preExeNode.getVarNode()), preExeNode.getArgumentType(), is1_9());
         // Set up %current_scope and %current_module
-        beginClosure.addInstr(new CopyInstr(beginClosure.getCurrentScopeVariable(), new CurrentScope()));
+        beginClosure.addInstr(new CopyInstr(beginClosure.getCurrentScopeVariable(), new CurrentScope(beginClosure)));
         beginClosure.addInstr(new CopyInstr(beginClosure.getCurrentModuleVariable(), new CurrentModule()));
         build(preExeNode.getBodyNode(), beginClosure);
 
@@ -3164,7 +3164,7 @@ public class IRBuilder {
 
         // Set %current_scope = <current-scope>
         // Set %current_module = <current-module>
-        script.addInstr(new CopyInstr(script.getCurrentScopeVariable(), new CurrentScope()));
+        script.addInstr(new CopyInstr(script.getCurrentScopeVariable(), new CurrentScope(script)));
         script.addInstr(new CopyInstr(script.getCurrentModuleVariable(), new CurrentModule()));
         // Build IR for the tree and return the result of the expression tree
         Operand rval = rootNode.getBodyNode() == null ? manager.getNil() : build(rootNode.getBodyNode(), script);
@@ -3182,7 +3182,7 @@ public class IRBuilder {
         script.addInstr(new ReceiveSelfInstr(script.getSelf()));
         // Set %current_scope = <current-scope>
         // Set %current_module = <current-module>
-        script.addInstr(new CopyInstr(script.getCurrentScopeVariable(), new CurrentScope()));
+        script.addInstr(new CopyInstr(script.getCurrentScopeVariable(), new CurrentScope(script)));
         script.addInstr(new CopyInstr(script.getCurrentModuleVariable(), new CurrentModule()));
 
         // Build IR for the tree and return the result of the expression tree
