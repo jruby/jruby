@@ -1,0 +1,1 @@
+fails:Mutex#synchronize wraps the lock/unlock pair in an ensure

@@ -1,0 +1,2 @@
+fails:The -c command line option checks syntax in given file
+fails:The -c command line option checks syntax in -e strings

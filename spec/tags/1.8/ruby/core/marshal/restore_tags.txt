@@ -1,0 +1,7 @@
+fails:Marshal.restore loads an Array with proc
+fails:Marshal.restore for a user Class raises ArgumentError if the object from an 'o' stream is not dumpable as 'o' type user class
+fails:Marshal.restore for a Integer loads 0
+fails:Marshal.restore for a Class raises ArgumentError if given a nonexistent class
+fails:Marshal.restore for a Module loads an old module
+fails:Marshal.restore for a wrapped C pointer loads
+fails:Marshal.restore for a wrapped C pointer raises TypeError when the local class is missing _data_load

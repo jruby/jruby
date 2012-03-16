@@ -1,0 +1,1 @@
+fails:Syslog.options returns nil when the log is closed

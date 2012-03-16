@@ -1,1 +1,2 @@
 fails:Process.abort terminates execution immediately
+fails:Process.abort raises a SystemExit with the given message

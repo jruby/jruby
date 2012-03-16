@@ -1,0 +1,1 @@
+fails:Regexp.compile given a String with escaped characters raises a RegexpError if \x is not followed by any hexadecimal digits
