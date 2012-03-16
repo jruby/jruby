@@ -1,0 +1,3 @@
+fails:Array#to_s returns a US-ASCII string for an empty Array
+fails:Array#to_s copies the ASCII-compatible encoding of the result of inspecting the first element
+fails:Array#to_s copies the ASCII-incompatible encoding of the result of inspecting the first element

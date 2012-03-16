@@ -1,0 +1,12 @@
+fails:Encoding.compatible? String, String when the first's Encoding is ASCII compatible and ASCII only returns the first's Encoding if the second is ASCII compatible and ASCII only
+fails:Encoding.compatible? String, Symbol returns US-ASCII if both are ASCII only
+fails:Encoding.compatible? String, Symbol returns the String's Encoding if it is not US-ASCII but both are ASCII only
+fails:Encoding.compatible? String, Symbol returns the String's Encoding if the String is not ASCII only
+fails:Encoding.compatible? Regexp, Symbol returns US-ASCII if both are US-ASCII
+fails:Encoding.compatible? Symbol, String returns US-ASCII if both are ASCII only
+fails:Encoding.compatible? Symbol, Regexp returns US-ASCII if both are US-ASCII
+fails:Encoding.compatible? Symbol, Regexp returns the Regexp's Encoding if it is not US-ASCII and not ASCII only
+fails:Encoding.compatible? Symbol, Symbol returns US-ASCII if both are US-ASCII
+fails:Encoding.compatible? Symbol, Symbol returns the first's Encoding if it is not ASCII only
+fails:Encoding.compatible? Encoding, Encoding returns the first if the second is US-ASCII
+fails:Encoding.compatible? Encoding, Encoding returns the Encoding if both are the same

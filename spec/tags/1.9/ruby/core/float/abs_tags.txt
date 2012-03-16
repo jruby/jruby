@@ -1,0 +1,1 @@
+fails:Float#abs returns 0.0 if -0.0

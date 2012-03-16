@@ -1,0 +1,4 @@
+fails:File.realpath returns the real (absolute) pathname not containing symlinks
+fails:File.realpath uses base directory for interpreting relative pathname
+fails:File.realpath uses current directory for interpreting relative pathname
+fails:File.realpath raises a Errno::ELOOP if symlink points itself

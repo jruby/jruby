@@ -1,0 +1,1 @@
+fails:Range#each raises a TypeError if the first element is a Time object

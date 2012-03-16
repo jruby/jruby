@@ -1,3 +1,5 @@
 fails:IO#set_encoding ignores the internal encoding if the same as external when passed encoding names separanted by ':'
 fails:IO#set_encoding sets the external and internal encoding when passed the names of Encodings separated by ':'
 fails:IO#set_encoding calls #to_str to convert an abject to a String
+fails:IO#set_encoding does not parse encoding names separated by ':' when passed a second argument
+fails:IO#set_encoding warns if passed the name of a nonexistent Encoding

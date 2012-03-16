@@ -1,1 +1,4 @@
 fails:Proc#== returns true if the bodies of self and other are identical but represented by different objects
+fails:Proc#== returns true if both procs have the same body and environment
+fails:Proc#== returns true if both lambdas with the same body and environment
+fails:Proc#== returns true if both different kinds of procs with the same body and env

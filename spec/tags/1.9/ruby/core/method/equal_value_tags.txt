@@ -1,1 +1,2 @@
 fails:Method#== returns true for the same method missing
+fails:Method#== missing methods returns true for the same method missing

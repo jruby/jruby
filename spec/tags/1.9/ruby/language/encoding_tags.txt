@@ -1,0 +1,6 @@
+fails:The __ENCODING__ pseudo-variable is Encoding::ASCII_8BIT when the interpreter is invoked with -Ka
+fails:The __ENCODING__ pseudo-variable is Encoding::ASCII_8BIT when the interpreter is invoked with -KA
+fails:The __ENCODING__ pseudo-variable is Encoding::EUC_JP when the interpreter is invoked with -Ke
+fails:The __ENCODING__ pseudo-variable is Encoding::EUC_JP when the interpreter is invoked with -KE
+fails:The __ENCODING__ pseudo-variable is Encoding::Windows_31J when the interpreter is invoked with -Ks
+fails:The __ENCODING__ pseudo-variable is Encoding::Windows_31J when the interpreter is invoked with -KS

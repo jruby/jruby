@@ -1,0 +1,4 @@
+fails:Float#% returns NaN when called on NaN or Infinities
+fails:Float#% returns NaN when modulus is NaN
+fails:Float#modulo returns NaN when called on NaN or Infinities
+fails:Float#modulo returns NaN when modulus is NaN

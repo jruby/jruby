@@ -1,0 +1,1 @@
+fails:REXML::Document#encoding returns encoding from XML declaration

@@ -1,0 +1,2 @@
+fails:StringIO#gets when passed [limit] tries to convert the passed limit to an Integer using #to_int
+fails:StringIO#gets when passed [separator] and [limit] updates self's lineno by one

@@ -1,0 +1,4 @@
+fails:Marshal.dump with a Symbol dumps an encoded Symbol
+fails:Marshal.dump with a Regexp dumps a binary Regexp
+fails:Marshal.dump with a Regexp dumps a UTF-8 Regexp
+fails:Marshal.dump with a Regexp dumps a Regexp in another encoding

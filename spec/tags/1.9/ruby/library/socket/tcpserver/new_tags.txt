@@ -1,0 +1,3 @@
+fails:TCPServer.new binds to a host and a port
+fails:TCPServer.new binds to localhost and a port with either IPv4 or IPv6
+fails:TCPServer.new coerces port to string, then determines port from that number or service name

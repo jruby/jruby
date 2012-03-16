@@ -1,0 +1,1 @@
+fails:String#+ when self is ASCII-8BIT and argument is US-ASCII uses ASCII-8BIT encoding

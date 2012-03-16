@@ -1,0 +1,2 @@
+fails:DateTime#hour raises an error for Rational
+fails:DateTime#hour raises an error for Float

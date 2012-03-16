@@ -1,0 +1,2 @@
+fails:DateTime.minute raises an error for Rational
+fails:DateTime.minute raises an error for Float

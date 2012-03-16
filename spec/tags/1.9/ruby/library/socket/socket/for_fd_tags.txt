@@ -1,1 +1,2 @@
 fails:Socket.for_fd given a file descriptor adopts that descriptor into a new Socket object
+fails:Socket.for_fd creates a new Socket that aliases the existing Socket's file descriptor

@@ -1,0 +1,4 @@
+fails:Time.local handles fractional microseconds as a Float
+fails:Time.local handles fractional microseconds as a Rational
+fails:Time.local ignores fractional seconds if a passed whole number of microseconds
+fails:Time.local ignores fractional seconds if a passed fractional number of microseconds
