@@ -12,9 +12,11 @@ module Signal
       when 'EXIT'
         Signal::__jtrap_kernel(proc{exit}, sig)
       when 'SIG_IGN', 'IGNORE'
-        Signal::__jtrap_kernel(proc{}, sig)
+        Signal::__jtrap_ignore_kernel(sig)
       when 'SIG_DFL', 'DEFAULT'
-        # do nothing...because I don't think we can return to old default
+        Signal::__jtrap_platform_kernel(sig)
+      when 'SYSTEM_DEFAULT'
+        Signal::__jtrap_osdefault_kernel(sig)
       when String
         Signal::__jtrap_kernel(proc{eval cmd, TOPLEVEL_BINDING}, sig)
       else

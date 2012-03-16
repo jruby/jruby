@@ -43,10 +43,20 @@ import org.jruby.runtime.ThreadContext;
 import sun.misc.Signal;
 import sun.misc.SignalHandler;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * @author <a href="mailto:ola.bini@gmail.com">Ola Bini</a>
  */
 public class SunSignalFacade implements SignalFacade {
+    /**
+     * Remembers the original signal handlers before JRuby started messing around with them,
+     * to emulate {@code Signal.trap(...,"DEFAULT")} that's supposed to restore the platform
+     * default handler.
+     */
+    private final Map<Signal,SignalHandler> original = new HashMap<Signal, SignalHandler>();
+    
     private final static class JRubySignalHandler implements SignalHandler {
         private final Ruby runtime;
         private final IRubyObject block;
@@ -98,11 +108,36 @@ public class SunSignalFacade implements SignalFacade {
     }
 
     private IRubyObject trap(final Ruby runtime, final JRubySignalHandler handler) {
+        return trap(runtime,handler.signal,handler);
+    }
+
+    public IRubyObject restorePlatformDefault(IRubyObject recv, IRubyObject sig) {
+        SignalHandler handler;
+        synchronized (original) {
+            handler = original.get(new Signal(sig.toString()));
+        }
+        if (handler!=null)
+            return trap(recv.getRuntime(),sig.toString(),handler);
+        else {
+            // JRuby hasn't touched this signal handler, so it should be the platform default already
+            return recv.getRuntime().getNil();
+        }
+    }
+
+    public IRubyObject restoreOSDefault(IRubyObject recv, IRubyObject sig) {
+        return trap(recv.getRuntime(),sig.toString(),SignalHandler.SIG_DFL);
+    }
+
+    public IRubyObject ignore(IRubyObject recv, IRubyObject sig) {
+        return trap(recv.getRuntime(),sig.toString(),SignalHandler.SIG_IGN);
+    }
+
+    private IRubyObject trap(final Ruby runtime, final String signalName, final SignalHandler handler) {
         final SignalHandler oldHandler;
         final Signal signal;
 
         try {
-            signal = new Signal(handler.signal);
+            signal = new Signal(signalName);
         } catch (Throwable e) {
             return runtime.getNil();
         }
@@ -111,6 +146,11 @@ public class SunSignalFacade implements SignalFacade {
             oldHandler = Signal.handle(signal, handler);
         } catch (Exception e) {
             throw runtime.newArgumentError(e.getMessage());
+        }
+        
+        synchronized (original) {
+            if (!original.containsKey(signal))
+                original.put(signal,oldHandler);
         }
 
         BlockCallback callback = null;
@@ -125,7 +165,7 @@ public class SunSignalFacade implements SignalFacade {
         if (callback == null) {
             callback = new BlockCallback() {
                 public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
-                    oldHandler.handle(new Signal(handler.signal));
+                    oldHandler.handle(signal);
                     return runtime.getNil();
                 }
             };
