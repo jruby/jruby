@@ -106,31 +106,29 @@ public class OutputStrings {
     }
 
     public static String getVersionString(CompatVersion compatVersion) {
-        String ver = null;
+        String ver;
         String patchDelimeter = "-p";
-        int patchlevel = 0;
+        int patchlevel;
+        String versionString = "";
         switch (compatVersion) {
         case RUBY1_8:
             ver = Constants.RUBY_VERSION;
             patchlevel = Constants.RUBY_PATCHLEVEL;
+            versionString = String.format("ruby-%s%s%d", ver, patchDelimeter, patchlevel);
             break;
         case RUBY1_9:
             ver = Constants.RUBY1_9_VERSION;
             patchlevel = Constants.RUBY1_9_PATCHLEVEL;
+            versionString = String.format("ruby-%s%s%d", ver, patchDelimeter, patchlevel);
+            break;
         case RUBY2_0:
-            return String.format(
-                    "jruby %s (ruby-%s) (%s %s) (%s %s) [%s-%s-java]",
-                    Constants.VERSION, Constants.RUBY2_0_VERSION,
-                    Constants.COMPILE_DATE, Constants.REVISION,
-                    System.getProperty("java.vm.name"), System.getProperty("java.version"),
-                    Platform.getOSName(),
-                    SafePropertyAccessor.getProperty("os.arch", "unknown")
-            );
+            versionString = String.format("ruby-%s", Constants.RUBY2_0_VERSION);
+            break;
         }
 
         String fullVersion = String.format(
-                "jruby %s (ruby-%s%s%d) (%s %s) (%s %s) [%s-%s-java]",
-                Constants.VERSION, ver, patchDelimeter, patchlevel,
+                "jruby %s (%s) (%s %s) (%s %s) [%s-%s-java]",
+                Constants.VERSION, versionString,
                 Constants.COMPILE_DATE, Constants.REVISION,
                 System.getProperty("java.vm.name"), System.getProperty("java.version"),
                 Platform.getOSName(),
