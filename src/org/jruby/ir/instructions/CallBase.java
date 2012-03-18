@@ -18,7 +18,7 @@ import org.jruby.ir.operands.MethAddr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Splat;
 import org.jruby.ir.operands.StringLiteral;
-import org.jruby.ir.operands.WrappedIRScope;
+import org.jruby.ir.operands.CurrentScope;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
@@ -231,10 +231,13 @@ public abstract class CallBase extends Instr implements Specializeable {
         } else if (mname.equals("new")) {
             Operand object = getReceiver();
 
+				// SSS FIXME: This check is incorrect -- something has gone
+				// wrong with the numerous fixes to IR code since this check was written.
+				//
             // Unknown receiver -- could be Proc!!
-            if (!(object instanceof WrappedIRScope)) return true;
+            if (!(object instanceof CurrentScope)) return true;
 
-            IRScope c = ((WrappedIRScope) object).getScope();
+            IRScope c = ((CurrentScope) object).getScope();
             if (c != null && c instanceof IRClassBody && c.getName().equals("Proc")) return true;
         }
 

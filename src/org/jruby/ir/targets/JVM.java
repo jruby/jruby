@@ -11,8 +11,6 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.Tuple;
 import org.jruby.ir.instructions.Instr;
-import org.jruby.ir.operands.CurrentModule;
-import org.jruby.ir.operands.CurrentScope;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Symbol;
@@ -196,10 +194,6 @@ public class JVM implements CompilerTarget {
             operand.compile(this);
         } else if (operand instanceof Variable) {
             emitVariable((Variable)operand);
-        } else if (operand instanceof CurrentScope) {
-            method().adapter.aconst_null();
-        } else if (operand instanceof CurrentModule) {
-            method().adapter.aconst_null();
         } else if (operand instanceof Symbol) {
             operand.compile(this);
         } else {
