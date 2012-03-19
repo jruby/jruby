@@ -1032,108 +1032,99 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         }
         return recv.callMethod(context, "new", _args);
     }
-    
-   @JRubyMethod(name = "union", rest = true, meta = true, compat = CompatVersion.RUBY1_9)
-   public static IRubyObject union19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = context.getRuntime();
-        if (args.length == 0) return newRegexp(runtime, ByteList.create("(?!)"));
 
-        IRubyObject[] realArgs = args;        
-        if (args.length == 1) {
-            // The power of the union of one!
-            IRubyObject v = TypeConverter.convertToTypeWithCheck(args[0], runtime.getRegexp(), "to_regexp");
-            if (!v.isNil()) return v;
-            
-            IRubyObject a = TypeConverter.convertToTypeWithCheck(args[0], runtime.getArray(), "to_ary");
-            if (a.isNil()) return newRegexp(runtime, ((RubyString) quote19(context, recv, args[0])).getByteList());
-
-            RubyArray aa = (RubyArray)a;
-            int len = aa.getLength();
-            realArgs = new IRubyObject[len];
-            for(int i = 0; i<len; i++) {
-                realArgs[i] = aa.entry(i);
-            }
+    @JRubyMethod(name = "union", rest = true, meta = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject union19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
+        IRubyObject obj;
+        if (args.length == 1 && !(obj = args[0].checkArrayType()).isNil()) {
+            RubyArray ary = (RubyArray)obj;
+            IRubyObject[]tmp = new IRubyObject[ary.size()];
+            ary.copyInto(tmp, 0);
+            args = tmp;
         }
 
-        boolean hasAsciiOnly = false;
-        RubyString source = runtime.newString();
-        Encoding hasAsciiCompatFixed = null;
-        Encoding hasAsciiIncompat = null;        
-
-        for (int i = 0; i < realArgs.length; i++) {
-            if (0 < i) source.cat((byte)'|');
-            
-            Encoding enc;
-            IRubyObject v = TypeConverter.convertToTypeWithCheck(realArgs[i], runtime.getRegexp(), "to_regexp");
-            if (!v.isNil()) {
-                RubyRegexp regex = (RubyRegexp) v;
-                enc = regex.getEncoding();
-
-                if (!enc.isAsciiCompatible()) {
-                    if (hasAsciiIncompat == null) { // First regexp of union sets kcode.
-                        hasAsciiIncompat = enc;
-                    } else if (hasAsciiIncompat != enc) { // n kcode doesn't match first one
-                        throw runtime.newArgumentError("incompatible encodings: " + hasAsciiIncompat + " and " + enc);
-                    }
-                } else if (regex.getOptions().isFixed()) {
-                    if (hasAsciiCompatFixed == null) { // First regexp of union sets kcode.
-                        hasAsciiCompatFixed = enc;
-                    } else if (hasAsciiCompatFixed != enc) { // n kcode doesn't match first one
-                        throw runtime.newArgumentError("incompatible encodings: " + hasAsciiCompatFixed + " and " + enc);
-                    }
-                } else {
-                    hasAsciiOnly = true;
-                }
-                v = regex.to_s();
-            } else {
-                RubyString str = realArgs[i].convertToString();
-                enc = str.getEncoding();
-                
-                if (!enc.isAsciiCompatible()) {
-                    if (hasAsciiIncompat == null) { // First regexp of union sets kcode.
-                        hasAsciiIncompat = enc;
-                    } else if (hasAsciiIncompat != enc) { // n kcode doesn't match first one
-                        throw runtime.newArgumentError("incompatible encodings: " + hasAsciiIncompat + " and " + enc);
-                    }
-                } else if (str.isAsciiOnly()) {
-                    hasAsciiOnly = true;
-                } else {
-                    if (hasAsciiCompatFixed == null) { // First regexp of union sets kcode.
-                        hasAsciiCompatFixed = enc;
-                    } else if (hasAsciiCompatFixed != enc) { // n kcode doesn't match first one
-                        throw runtime.newArgumentError("incompatible encodings: " + hasAsciiCompatFixed + " and " + enc);
-                    }
-                }                
-                
-                v = quote(context, recv, new IRubyObject[]{str});
-            }
-            
-            if (hasAsciiIncompat != null) {
-                if (hasAsciiOnly) {
-                    throw runtime.newArgumentError("ASCII incompatible encoding: " + hasAsciiIncompat);
-                }
-                if (hasAsciiCompatFixed != null) {
-                    throw runtime.newArgumentError("incompatible encodings: " + hasAsciiIncompat + " and " + hasAsciiCompatFixed);
-                }
-            }
-            
-            // Enebo: not sure why this is needed.
-            if (i == 0) source.setEncoding(enc);
-
-            source.append(v);
-        }
-        
-        if (hasAsciiIncompat != null) {
-            source.setEncoding(hasAsciiIncompat);
-        } else if (hasAsciiCompatFixed != null) {
-            source.setEncoding(hasAsciiCompatFixed);
+        Ruby runtime = context.runtime;
+        if (args.length == 0) {
+            return runtime.getRegexp().newInstance(context, runtime.newString("(?!)"), Block.NULL_BLOCK);
+        } else if (args.length == 1) {
+            IRubyObject re = TypeConverter.convertToTypeWithCheck(args[0], runtime.getRegexp(), "to_regexp");
+            return !re.isNil() ? re : newRegexp(runtime, ((RubyString)quote19(context, recv, args[0])).getByteList());
         } else {
-            source.setEncoding(ASCIIEncoding.INSTANCE);
-        }
+            boolean hasAsciiOnly = false;
+            RubyString source = runtime.newString();
+            Encoding hasAsciiCompatFixed = null;
+            Encoding hasAsciiIncompat = null;
 
-        return recv.callMethod(context, "new", new IRubyObject[] { source });
+            for(int i = 0; i < args.length; i++) {
+                IRubyObject e = args[i];
+                if (i > 0) source.cat((byte)'|');
+                IRubyObject v = TypeConverter.convertToTypeWithCheck(args[i], runtime.getRegexp(), "to_regexp");
+                Encoding enc;
+                if (!v.isNil()) {
+                    RubyRegexp regex = (RubyRegexp) v;
+                    enc = regex.getEncoding();
+                    if (!enc.isAsciiCompatible()) {
+                        if (hasAsciiIncompat == null) { // First regexp of union sets kcode.
+                            hasAsciiIncompat = enc;
+                        } else if (hasAsciiIncompat != enc) { // n kcode doesn't match first one
+                            throw runtime.newArgumentError("incompatible encodings: " + hasAsciiIncompat + " and " + enc);
+                        }
+                    } else if (regex.getOptions().isFixed()) {
+                        if (hasAsciiCompatFixed == null) { // First regexp of union sets kcode.
+                            hasAsciiCompatFixed = enc;
+                        } else if (hasAsciiCompatFixed != enc) { // n kcode doesn't match first one
+                            throw runtime.newArgumentError("incompatible encodings: " + hasAsciiCompatFixed + " and " + enc);
+                        }
+                    } else {
+                        hasAsciiOnly = true;
+                    }
+                    v = regex.to_s();
+                } else {
+                    RubyString str = args[i].convertToString();
+                    enc = str.getEncoding();
+
+                    if (!enc.isAsciiCompatible()) {
+                        if (hasAsciiIncompat == null) { // First regexp of union sets kcode.
+                            hasAsciiIncompat = enc;
+                        } else if (hasAsciiIncompat != enc) { // n kcode doesn't match first one
+                            throw runtime.newArgumentError("incompatible encodings: " + hasAsciiIncompat + " and " + enc);
+                        }
+                    } else if (str.isAsciiOnly()) {
+                        hasAsciiOnly = true;
+                    } else {
+                        if (hasAsciiCompatFixed == null) { // First regexp of union sets kcode.
+                            hasAsciiCompatFixed = enc;
+                        } else if (hasAsciiCompatFixed != enc) { // n kcode doesn't match first one
+                            throw runtime.newArgumentError("incompatible encodings: " + hasAsciiCompatFixed + " and " + enc);
+                        }
+                    }
+                    v = quote19(context, recv, str);
+                }
+
+                if (hasAsciiIncompat != null) {
+                    if (hasAsciiOnly) {
+                        throw runtime.newArgumentError("ASCII incompatible encoding: " + hasAsciiIncompat);
+                    }
+                    if (hasAsciiCompatFixed != null) {
+                        throw runtime.newArgumentError("incompatible encodings: " + hasAsciiIncompat + " and " + hasAsciiCompatFixed);
+                    }
+                }
+
+                // Enebo: not sure why this is needed.
+                if (i == 0) source.setEncoding(enc);
+                source.append(v);
+            }
+            if (hasAsciiIncompat != null) {
+                source.setEncoding(hasAsciiIncompat);
+            } else if (hasAsciiCompatFixed != null) {
+                source.setEncoding(hasAsciiCompatFixed);
+            } else {
+                source.setEncoding(ASCIIEncoding.INSTANCE);
+            }
+            return runtime.getRegexp().newInstance(context, source, Block.NULL_BLOCK);
+        }
     }
-    
+
     // rb_reg_raise
     private static void raiseRegexpError(Ruby runtime, ByteList bytes, Encoding enc, RegexpOptions options, String err) {
         throw runtime.newRegexpError(err + ": " + regexpDescription(runtime, bytes, enc, options));
