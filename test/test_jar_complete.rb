@@ -111,4 +111,10 @@ class JarCompleteTest < Test::Unit::TestCase
     output = jruby_complete(complete_jar, %{-e "require '_file_constant_'"}).chomp
     assert output =~ /#{tmp}/, "'#{output}' does not match '#{tmp}'"
   end
+
+  def test_binscripts_can_be_run_from_classpath
+    output = `java -cp \"#{COMPLETE_JAR}:test/dir with spaces/testgem.jar\" org.jruby.Main -S testgem`
+
+    assert output == "Testing... 1.. 2.. 3..\n"
+  end
 end
