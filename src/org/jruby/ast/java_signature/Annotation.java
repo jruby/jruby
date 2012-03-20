@@ -21,6 +21,14 @@ public class Annotation implements AnnotationExpression {
         return true;
     }
     
+    public String getName() {
+        return name;
+    }
+    
+    public List<AnnotationParameter> getParameters() {
+        return parameters;
+    }
+    
     @Override
     public String toString() {
         return name + toStringParameters();

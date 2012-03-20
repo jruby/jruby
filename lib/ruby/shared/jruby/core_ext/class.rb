@@ -1,13 +1,29 @@
 require 'java'
 require 'jruby'
+require 'jruby/compiler/java_signature'
 
 class Class
   JClass = java.lang.Class
-  
+
   # Get an array of all known subclasses of this class. If recursive == true,
   # include all descendants.
   def subclasses(recursive = false)
     JRuby.reference0(self).subclasses(recursive).to_a.freeze
+  end
+
+  ##
+  # java_signature will take the argument and annotate the method of the
+  # same name with the Java type and annotation signatures.
+  # 
+  # :call-seq:
+  #   java_signature '@Override void foo(int)'
+  #   java_signature '@Override void foo(int foo, org.foo.Bar bar)'
+  def java_signature(signature_source)
+    signature = JRuby::JavaSignature.parse signature_source.to_s
+    add_method_signature signature.name, signature.types
+
+    annotations = signature.annotations
+    add_method_annotation signature.name, annotations if annotations
   end
   
   # Generate a native Java class for this Ruby class. If dump_dir is specified,
@@ -114,7 +130,7 @@ class Class
     
     nil
   end
-  
+
   # Add a Java signaturefor the named method. The signature is specified as
   # an array of Java classes.
   def add_method_signature(name, classes)
