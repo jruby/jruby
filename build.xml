@@ -1713,7 +1713,7 @@
          passive="yes"
          userid="anonymous"
          password="${tzdata.ftp.anonymous.userid}"
-         remotedir="/pub/oldtz"
+         remotedir="${tzdata.ftp.dir}"
          newer="yes">
       <fileset dir="${tzdata.builddir}/src">
         <include name="tzdata${tzdata.latest.version}.tar.gz" />
