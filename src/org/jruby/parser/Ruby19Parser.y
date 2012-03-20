@@ -899,7 +899,7 @@ arg             : lhs '=' arg {
                   */
                 }
                 | arg tNMATCH arg {
-                    $$ = new NotNode(support.getPosition($1), support.getMatchNode($1, $3));
+                    $$ = support.getOperatorCallNode($1, "!~", $3, lexer.getPosition());
                 }
                 | tBANG arg {
                     $$ = support.getOperatorCallNode(support.getConditionNode($2), "!");
