@@ -820,13 +820,21 @@ public class RubyBigDecimal extends RubyNumeric {
         return new RubyBigDecimal(getRuntime(), value.negate());
     }
 
-    @JRubyMethod(name = {"/", "quo"})
+    @JRubyMethod(name = {"/", "quo"}, compat = CompatVersion.RUBY1_8)
     public IRubyObject op_quo(ThreadContext context, IRubyObject other) {
         // regular division with some default precision
         // TODO: proper algorithm to set the precision
         return op_div(context, other, getRuntime().newFixnum(200));
     }
 
+    @JRubyMethod(name = {"/", "quo"}, compat = CompatVersion.RUBY1_9)
+    public IRubyObject op_quo19(ThreadContext context, IRubyObject other) {
+        other = getVpValue(other, true);
+        // regular division with some default precision
+        // TODO: proper algorithm to set the precision
+        return op_div(context, other, getRuntime().newFixnum(200));
+    }
+    
     @JRubyMethod(name = "div", compat = CompatVersion.RUBY1_8)
     public IRubyObject op_div(ThreadContext context, IRubyObject other) {
         // integer division
@@ -911,7 +919,7 @@ public class RubyBigDecimal extends RubyNumeric {
                     value.divide(val.value, new MathContext(prec, RoundingMode.HALF_UP))).setResult(scale);
         }
     }
-
+    
     @JRubyMethod(name = "div", compat = CompatVersion.RUBY1_9)
     public IRubyObject op_div19(ThreadContext context, IRubyObject other, IRubyObject digits) {
         RubyBigDecimal val = getVpValue(other, false);
