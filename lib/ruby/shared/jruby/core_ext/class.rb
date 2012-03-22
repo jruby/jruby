@@ -2,9 +2,30 @@ require 'java'
 require 'jruby'
 require 'jruby/compiler/java_signature'
 
+##
+# Convenience methods added to class when you want to be able to
+# reify a Ruby class into a honest to goodness type.  Typically, it would look
+# like:
+# :call-seq:
+#
+# class Foo
+#   java_signature '@org.foo.EventHandler(@org.foo.Priority.High) void foo(int)'
+#   def foo(number)
+#   end
+#   become_java!
+# end 
+#
+# Although this will still just be an instance of a IRubyObject versus a 
+# specific type, you can still use this facility for:
+#   1. Adding runtime annotations to methods
+#   2. Making a class still reflectable from Java reflection APIs.
+#
+# Case #1 above is also a useful combination with implementing Java interfaces.
+#
 class Class
   JClass = java.lang.Class
 
+  ##
   # Get an array of all known subclasses of this class. If recursive == true,
   # include all descendants.
   def subclasses(recursive = false)
@@ -26,6 +47,7 @@ class Class
     add_method_annotation signature.name, annotations if annotations
   end
   
+  ##
   # Generate a native Java class for this Ruby class. If dump_dir is specified,
   # dump the JVM bytecode there for inspection. If child_loader is false, do not
   # generate the class into its own classloader (use the parent's loader).
@@ -62,6 +84,7 @@ class Class
     self_r.reified_class
   end
   
+  ##
   # Get the native or reified (a la become_java!) class for this Ruby class.
   def java_class
     self_r = JRuby.reference0(self)
@@ -86,8 +109,14 @@ class Class
   end
   private :_anno_class
   
+  ##
   # Add annotations to the named method. Annotations are specified as a Hash
-  # from the annotation classes to Hashes of name/value pairs for their parameters.
+  # from the annotation classes to Hashes of name/value pairs for their 
+  # parameters. Please refrain from using this in favor of java_signature.
+  # :call-seq:
+  #
+  #  add_method_annotation :foo, {java.lang.Override => {}}
+  #
   def add_method_annotation(name, annotations = {})
     name = name.to_s
     self_r = JRuby.reference0(self)
@@ -100,6 +129,7 @@ class Class
     nil
   end
   
+  ##
   # Add annotations to the parameters of the named method. Annotations are
   # specified as a parameter-list-length Array of Hashes from annotation classes
   # to Hashes of name/value pairs for their parameters.
@@ -117,8 +147,13 @@ class Class
     nil
   end
   
+  ##
   # Add annotations to this class. Annotations are specified as a Hash of
   # annotation classes to Hashes of name/value pairs for their parameters.
+  # :call-seq:
+  #
+  # add_class_annotation java.lang.TypeAnno => {"type" => @com.foo.GoodOne}
+  #
   def add_class_annotations(annotations = {})
     self_r = JRuby.reference0(self)
     
@@ -131,14 +166,17 @@ class Class
     nil
   end
 
+  ##
   # Add a Java signaturefor the named method. The signature is specified as
-  # an array of Java classes.
+  # an array of Java classes where the first class specifies the return
+  # type.
+  # :call-seq:
+  #
+  # add_method_signature :foo, [:void, :int, java.lang.Thread]
+  #
   def add_method_signature(name, classes)
-    name = name.to_s
-    self_r = JRuby.reference0(self)
-    types = []
-    
-    classes.each {|cls| types << _anno_class(cls)}
+    name, self_r = name.to_s, JRuby.reference0(self)
+    types = classes.inject([]) {|arr, cls| arr << _anno_class(cls) }
     
     self_r.add_method_signature(name, types.to_java(JClass))
     
