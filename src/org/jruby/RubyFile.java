@@ -1288,20 +1288,26 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return runtime.newString(padSlashes + canonicalize(path.getAbsolutePath()));
     }
 
-    private static Pattern URI_PREFIX = Pattern.compile("^[a-z]{2,}:(.*)");
+    private static Pattern URI_PREFIX = Pattern.compile("^(jar:)?[a-z]{2,}:(.*)");
     public static String[] splitURI(String path) {
         Matcher m = URI_PREFIX.matcher(path);
         if (m.find()) {
-            if (m.group(1).length() == 0) {
+            if (m.group(2).length() == 0) {
                 return new String[] {path, ""};
             }
+            String pathWithoutJarPrefix;
+            if (m.group(1) != null) {
+                pathWithoutJarPrefix = path.substring(4);
+            } else {
+                pathWithoutJarPrefix = path;
+            }
             try {
-                URI u = new URI(path);
+                URI u = new URI(pathWithoutJarPrefix);
                 String pathPart = u.getPath();
                 return new String[] {path.substring(0, path.indexOf(pathPart)), pathPart};
             } catch (Exception e) {
                 try {
-                    URL u = new URL(path);
+                    URL u = new URL(pathWithoutJarPrefix);
                     String pathPart = u.getPath();
                     return new String[] {path.substring(0, path.indexOf(pathPart)), pathPart};
                 } catch (Exception e2) {
