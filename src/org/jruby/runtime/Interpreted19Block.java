@@ -28,16 +28,13 @@
 package org.jruby.runtime;
 
 import org.jruby.Ruby;
-import org.jruby.RubyArray;
 import org.jruby.RubyModule;
+import org.jruby.ast.ArgsNoArgNode;
+import org.jruby.ast.ArgsNode;
 import org.jruby.ast.IterNode;
 import org.jruby.ast.LambdaNode;
 import org.jruby.ast.NilImplicitNode;
 import org.jruby.ast.Node;
-import org.jruby.ast.ArgsNoArgNode;
-import org.jruby.ast.ArgsNode;
-import org.jruby.ast.util.ArgsUtil;
-import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException;
 import org.jruby.javasupport.util.RuntimeHelpers;
@@ -228,22 +225,6 @@ public class Interpreted19Block  extends ContextAwareBlockBody {
 
     private IRubyObject handleNextJump(ThreadContext context, JumpException.NextJump nj, Block.Type type) {
         return nj.getValue() == null ? context.getRuntime().getNil() : (IRubyObject)nj.getValue();
-    }
-
-    private IRubyObject convertIfAlreadyArray(ThreadContext context, IRubyObject value) {
-        int length = ArgsUtil.arrayLength(value);
-        switch (length) {
-        case 0:
-            value = context.getRuntime().getNil();
-            break;
-        case 1:
-            value = ((RubyArray)value).eltInternal(0);
-            break;
-        default:
-            context.getRuntime().getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (" + length + " for 1)");
-        }
-
-        return value;
     }
 
     private void setupBlockArg(ThreadContext context, IRubyObject value, IRubyObject self, Block block, Block.Type type) {
