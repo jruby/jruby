@@ -40,5 +40,7 @@
 	<classpathentry kind="lib" path="build_lib/jnr-ffi.jar"/>
 	<classpathentry kind="lib" path="build_lib/invokebinder.jar"/>
 	<classpathentry kind="lib" path="build_lib/joda-time-2.1.jar"/>
+	<classpathentry kind="lib" path="build_lib/jnr-unixsocket.jar"/>
+	<classpathentry kind="lib" path="build_lib/jnr-enxio.jar"/>
 	<classpathentry kind="output" path="build.eclipse"/>
 </classpath>
