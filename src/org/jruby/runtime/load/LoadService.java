@@ -1390,12 +1390,15 @@ public class LoadService {
                 entry = entry.substring("classpath:".length());
             }
 
+            String entryName;
             if (name.startsWith(entry)) {
-                name = name.substring(entry.length());
+                entryName = name.substring(entry.length());
+            } else {
+                entryName = name;
             }
 
             // otherwise, try to load from classpath (Note: Jar resources always uses '/')
-            LoadServiceResource foundResource = getClassPathResource(classLoader, entry + "/" + name);
+            LoadServiceResource foundResource = getClassPathResource(classLoader, entry + "/" + entryName);
             if (foundResource != null) {
                 return foundResource;
             }
