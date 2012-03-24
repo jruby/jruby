@@ -14,6 +14,7 @@ import org.jruby.ir.passes.CompilerPass;
 import org.jruby.ir.passes.IRPrinter;
 import org.jruby.ir.passes.InlineTest;
 import org.jruby.ir.passes.LinearizeCFG;
+import org.jruby.ir.passes.AddBindingInstructions;
 import org.jruby.ir.passes.LiveVariableAnalysis;
 import org.jruby.ir.passes.opts.DeadCodeElimination;
 import org.jruby.ir.passes.opts.LocalOptimizationPass;
@@ -472,10 +473,13 @@ public abstract class IRScope {
         return cfg;
     }
 
+    // SSS FIXME: No longer relevant?
     public void runCompilerPassOnNestedScopes(CompilerPass p) {
         // Do nothing...subclasses should override
     }
 
+    // SSS FIXME: Can be simplified to "p.run(this)"
+    // since every pass handle nested scopes on its own
     public void runCompilerPass(CompilerPass p) {
         boolean isPreOrder = p.isPreOrder();
 
@@ -580,6 +584,7 @@ public abstract class IRScope {
             if (RubyInstanceConfig.IR_LIVE_VARIABLE) runCompilerPass(new LiveVariableAnalysis());
             if (RubyInstanceConfig.IR_DEAD_CODE) runCompilerPass(new DeadCodeElimination());
             if (RubyInstanceConfig.IR_DEAD_CODE) printPass("After DCE ");
+            runCompilerPass(new AddBindingInstructions());
         }
         runCompilerPass(new LinearizeCFG());
         printPass("After CFG Linearize");

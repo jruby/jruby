@@ -90,6 +90,10 @@ public class Interpreter {
         return RubyInstanceConfig.IR_DEBUG;
     }
 
+    public static boolean inOptLocalVarAccessMode() {
+        return RubyInstanceConfig.IR_OPT_LVAR_ACCESS;
+    }
+
     private static IRScope getEvalContainerScope(Ruby runtime, StaticScope evalScope) {
         // SSS FIXME: Weirdness here.  We cannot get the containing IR scope from evalScope because of static-scope wrapping
         // that is going on

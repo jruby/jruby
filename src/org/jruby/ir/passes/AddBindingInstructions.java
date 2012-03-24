@@ -1,5 +1,6 @@
 package org.jruby.ir.passes;
 
+import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.dataflow.analyses.BindingLoadPlacementProblem;
@@ -17,21 +18,22 @@ public class AddBindingInstructions extends CompilerPass {
     }
 
     public Object execute(IRScope s, Object... data) {
-        if (!(s instanceof IRMethod)) return null;
-
-        IRMethod m = (IRMethod) s;
-        //        if (m.requiresBinding()) {
+        //        if (s.requiresBinding()) {
         BindingStorePlacementProblem fsp = new BindingStorePlacementProblem();
-        fsp.setup(m);
+        fsp.setup(s);
         fsp.compute_MOP_Solution();
         fsp.addStoreAndBindingAllocInstructions();
 
         BindingLoadPlacementProblem frp = new BindingLoadPlacementProblem();
-        frp.setup(m);
+        frp.setup(s);
         frp.compute_MOP_Solution();
         frp.addLoads();
         //       }
-        
+
+        // Run on all nested closures.
+        // In the current implementation, nested scopes are processed independently (unlike Live Variable Analysis)
+        for (IRClosure c: s.getClosures()) execute(c);
+
         return null;
     }
 }

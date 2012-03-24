@@ -43,14 +43,6 @@ public class BindingLoadPlacementProblem extends DataFlowProblem {
         bindingHasEscaped = flag;
     }
 
-    public boolean scopeDefinesVariable(LocalVariable v) { 
-        return getScope().definesLocalVariable(v);
-    }
-
-    public boolean scopeUsesVariable(LocalVariable v) { 
-        return getScope().usesLocalVariable(v);
-    }
-
     public void addLoads() {
         for (FlowGraphNode n: flowGraphNodes) {
             BindingLoadPlacementNode blpn = (BindingLoadPlacementNode)n;

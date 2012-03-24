@@ -44,14 +44,6 @@ public class BindingStorePlacementProblem extends DataFlowProblem {
         return "";
     }
 
-    public boolean scopeDefinesVariable(Variable v) {
-        return getScope().cfg().getScope().definesLocalVariable(v);
-    }
-
-    public boolean scopeUsesVariable(Variable v) {
-        return getScope().cfg().getScope().usesLocalVariable(v);
-    }
-
     public void addStoreAndBindingAllocInstructions() {
         /* --------------------------------------------------------------------
          * If this is a closure, introduce a global ensure block that spills

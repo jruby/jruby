@@ -49,7 +49,6 @@ public class LoadFromBindingInstr extends Instr implements ResultInstr {
     @Interp
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
-        // NOP for interpretation
-        return null;
+        return var.retrieve(context, self, currDynScope, temp);
     }
 }
