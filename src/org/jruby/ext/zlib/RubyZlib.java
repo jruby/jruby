@@ -1351,11 +1351,8 @@ public class RubyZlib {
          * @return number of bytes
          */
         private long internalPosition() {
-            long n = io.getTotalIn();
-         
-            if (io.getAvailIn() != null) n += io.getAvailIn().length;
-
-            return n;
+            com.jcraft.jzlib.Inflater inflater = io.getInflater();
+            return inflater.getTotalIn() + inflater.getAvailIn();
         }
 
         @JRubyMethod
