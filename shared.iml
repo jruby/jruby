@@ -427,7 +427,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/build_lib/snakeyaml-1.9.jar!/" />
+          <root url="jar://$MODULE_DIR$/build_lib/snakeyaml-1.10.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
