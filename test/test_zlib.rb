@@ -1,6 +1,7 @@
 require 'test/unit'
 require 'zlib'
 require 'stringio'
+require 'tempfile'
 
 class TestZlib < Test::Unit::TestCase
   def teardown;  File.unlink @filename if @filename; end
