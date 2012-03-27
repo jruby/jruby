@@ -12,7 +12,7 @@ import org.jruby.ir.dataflow.DataFlowProblem;
 import org.jruby.ir.dataflow.FlowGraphNode;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.Instr;
-import org.jruby.ir.instructions.LoadFromBindingInstr;
+import org.jruby.ir.instructions.LoadLocalVarInstr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.operands.ClosureLocalVariable;
 import org.jruby.ir.operands.LocalVariable;
@@ -22,8 +22,8 @@ import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.representations.BasicBlock;
 
-public class BindingLoadPlacementNode extends FlowGraphNode {
-    public BindingLoadPlacementNode(DataFlowProblem prob, BasicBlock n) {
+public class LoadLocalVarPlacementNode extends FlowGraphNode {
+    public LoadLocalVarPlacementNode(DataFlowProblem prob, BasicBlock n) {
         super(prob, n);
     }
 
@@ -40,12 +40,12 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
 
     public void initSolnForNode() {
         if (basicBlock == problem.getScope().cfg().getExitBB()) {
-            inRequiredLoads = ((BindingLoadPlacementProblem) problem).getLoadsOnScopeExit();
+            inRequiredLoads = ((LoadLocalVarPlacementProblem) problem).getLoadsOnScopeExit();
         }
     }
 
     public void compute_MEET(BasicBlock source, FlowGraphNode pred) {
-        BindingLoadPlacementNode n = (BindingLoadPlacementNode) pred;
+        LoadLocalVarPlacementNode n = (LoadLocalVarPlacementNode) pred;
         inRequiredLoads.addAll(n.outRequiredLoads);
     }
 
@@ -127,7 +127,7 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
     }
 
     public void addLoads(Map<Operand, Operand> varRenameMap) {
-        BindingLoadPlacementProblem blp = (BindingLoadPlacementProblem) problem;
+        LoadLocalVarPlacementProblem blp = (LoadLocalVarPlacementProblem) problem;
         IRScope s = blp.getScope();
         List<Instr> instrs = basicBlock.getInstrs();
         ListIterator<Instr> it = instrs.listIterator(instrs.size());
@@ -152,7 +152,7 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
                     it.next();
                     for (LocalVariable v : reqdLoads) {
                         if (cl.definesLocalVariable(v)) {
-                            it.add(new LoadFromBindingInstr(s, getLocalVarReplacement(v, s, varRenameMap), v));
+                            it.add(new LoadLocalVarInstr(s, getLocalVarReplacement(v, s, varRenameMap), v));
                             it.previous();
                             newReqdLoads.remove(v);
                         }
@@ -165,7 +165,7 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
                 if (call.targetRequiresCallersBinding()) {
                     it.next();
                     for (LocalVariable v : reqdLoads) {
-                        it.add(new LoadFromBindingInstr(s, getLocalVarReplacement(v, s, varRenameMap), v));
+                        it.add(new LoadLocalVarInstr(s, getLocalVarReplacement(v, s, varRenameMap), v));
                         it.previous();
                     }
                     it.previous();
@@ -197,10 +197,10 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
                         IRClosure definingScope = ((ClosureLocalVariable)v).definingScope;
                         
                         if ((s != definingScope) && s.isNestedInClosure(definingScope)) {
-                            it.add(new LoadFromBindingInstr(s, getLocalVarReplacement(v, s, varRenameMap), v));
+                            it.add(new LoadLocalVarInstr(s, getLocalVarReplacement(v, s, varRenameMap), v));
                         }
                     } else {
-                        it.add(new LoadFromBindingInstr(s, getLocalVarReplacement(v, s, varRenameMap), v));
+                        it.add(new LoadLocalVarInstr(s, getLocalVarReplacement(v, s, varRenameMap), v));
                     }
                 }
             }

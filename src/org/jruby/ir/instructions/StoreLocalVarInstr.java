@@ -12,7 +12,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class StoreToBindingInstr extends Instr {
+public class StoreLocalVarInstr extends Instr {
     private IRScope scope;
     private Operand value;
 
@@ -21,7 +21,7 @@ public class StoreToBindingInstr extends Instr {
      * its (a) name (b) offset (c) scope-depth. */
     private LocalVariable lvar;
 
-    public StoreToBindingInstr(Operand value, IRScope scope, LocalVariable lvar) {
+    public StoreLocalVarInstr(Operand value, IRScope scope, LocalVariable lvar) {
         super(Operation.BINDING_STORE);
 
         this.lvar = lvar;
@@ -46,7 +46,7 @@ public class StoreToBindingInstr extends Instr {
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         // SSS FIXME: Do we need to rename lvar really?  It is just a name-proxy!
-        return new StoreToBindingInstr(value.cloneForInlining(ii), scope, (LocalVariable)lvar.cloneForInlining(ii));
+        return new StoreLocalVarInstr(value.cloneForInlining(ii), scope, (LocalVariable)lvar.cloneForInlining(ii));
     }
 
     @Override

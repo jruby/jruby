@@ -13,7 +13,7 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class LoadFromBindingInstr extends Instr implements ResultInstr {
+public class LoadLocalVarInstr extends Instr implements ResultInstr {
     private IRScope scope;
     private TemporaryVariable result;
 
@@ -22,10 +22,10 @@ public class LoadFromBindingInstr extends Instr implements ResultInstr {
      * its (a) name (b) offset (c) scope-depth. */
     private LocalVariable lvar; 
 
-    public LoadFromBindingInstr(IRScope scope, TemporaryVariable result, LocalVariable lvar) {
+    public LoadLocalVarInstr(IRScope scope, TemporaryVariable result, LocalVariable lvar) {
         super(Operation.BINDING_LOAD);
 
-        assert result != null: "LoadFromBindingInstr result is null";
+        assert result != null: "LoadLocalVarInstr result is null";
 
         this.lvar = lvar;
         this.result = result;
@@ -51,7 +51,7 @@ public class LoadFromBindingInstr extends Instr implements ResultInstr {
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         // SSS FIXME: Do we need to rename lvar really?  It is just a name-proxy!
-        return new LoadFromBindingInstr(scope, (TemporaryVariable)ii.getRenamedVariable(result), (LocalVariable)ii.getRenamedVariable(lvar));
+        return new LoadLocalVarInstr(scope, (TemporaryVariable)ii.getRenamedVariable(result), (LocalVariable)ii.getRenamedVariable(lvar));
     }
 
     @Interp

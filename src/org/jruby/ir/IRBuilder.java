@@ -350,7 +350,7 @@ public class IRBuilder {
             long t7 = new Date().getTime();
             scope.runCompilerPass(new DeadCodeElimination());
             long t8 = new Date().getTime();
-            // scope.runCompilerPass(new AddBindingInstructions());
+            // scope.runCompilerPass(new AddLocalVarLoadStoreInstructions());
             // long t9 = new Date().getTime();
             if (isDebug) {
                 scope.runCompilerPass(new IRPrinter());

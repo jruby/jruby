@@ -14,7 +14,7 @@ import org.jruby.ir.passes.CompilerPass;
 import org.jruby.ir.passes.IRPrinter;
 import org.jruby.ir.passes.InlineTest;
 import org.jruby.ir.passes.LinearizeCFG;
-import org.jruby.ir.passes.AddBindingInstructions;
+import org.jruby.ir.passes.AddLocalVarLoadStoreInstructions;
 import org.jruby.ir.passes.LiveVariableAnalysis;
 import org.jruby.ir.passes.opts.DeadCodeElimination;
 import org.jruby.ir.passes.opts.LocalOptimizationPass;
@@ -579,7 +579,7 @@ public abstract class IRScope {
             printPass("After inline");
         }        
 
-        if (RubyInstanceConfig.IR_OPT_LVAR_ACCESS) runCompilerPass(new AddBindingInstructions());
+        if (RubyInstanceConfig.IR_OPT_LVAR_ACCESS) runCompilerPass(new AddLocalVarLoadStoreInstructions());
 
         // Do not run dead-code-elimination on eval-scripts because they might
         // update their enclosing environments.

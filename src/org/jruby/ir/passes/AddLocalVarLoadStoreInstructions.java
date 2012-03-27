@@ -6,17 +6,17 @@ import java.util.Map;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
-import org.jruby.ir.dataflow.analyses.BindingLoadPlacementProblem;
-import org.jruby.ir.dataflow.analyses.BindingStorePlacementProblem;
+import org.jruby.ir.dataflow.analyses.LoadLocalVarPlacementProblem;
+import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.representations.BasicBlock;
 
-public class AddBindingInstructions extends CompilerPass {
-    public static String[] NAMES = new String[] { "add_binding", "add_binding_instructions" };
+public class AddLocalVarLoadStoreInstructions extends CompilerPass {
+    public static String[] NAMES = new String[] { "add_lvar_load_store", "add_local_var_load_store_instructions" };
     
     public String getLabel() {
-        return "Add Binding Instructions";
+        return "Add Local Variable Load/Store Instructions";
     }
     
     public boolean isPreOrder() {
@@ -26,11 +26,11 @@ public class AddBindingInstructions extends CompilerPass {
     public Object execute(IRScope s, Object... data) {
         //        if (s.requiresBinding()) {
 
-        BindingStorePlacementProblem fsp = new BindingStorePlacementProblem();
+        StoreLocalVarPlacementProblem fsp = new StoreLocalVarPlacementProblem();
         fsp.setup(s);
         fsp.compute_MOP_Solution();
 
-        BindingLoadPlacementProblem frp = new BindingLoadPlacementProblem();
+        LoadLocalVarPlacementProblem frp = new LoadLocalVarPlacementProblem();
         frp.setup(s);
         frp.compute_MOP_Solution();
 

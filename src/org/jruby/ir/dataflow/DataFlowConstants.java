@@ -3,16 +3,16 @@ package org.jruby.ir.dataflow;
 import java.util.List;
 
 import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
-import org.jruby.ir.dataflow.analyses.BindingLoadPlacementProblem;
-import org.jruby.ir.dataflow.analyses.BindingStorePlacementProblem;
+import org.jruby.ir.dataflow.analyses.LoadLocalVarPlacementProblem;
+import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 
 public class DataFlowConstants {
     public static final String LVP_NAME = LiveVariablesProblem.NAME;
-    public static final String BLP_NAME = (new BindingLoadPlacementProblem()).getName();
-    public static final String BSP_NAME = (new BindingStorePlacementProblem()).getName();
+    public static final String LLVP_NAME = (new LoadLocalVarPlacementProblem()).getName();
+    public static final String SLVP_NAME = (new StoreLocalVarPlacementProblem()).getName();
 
     /* Lattice TOP, BOTTOM, ANY values -- these will be used during dataflow analyses */
 

@@ -9,8 +9,8 @@ import org.jruby.ir.representations.BasicBlock;
 import java.util.Map;
 import java.util.Set;
 
-public class BindingLoadPlacementProblem extends DataFlowProblem {
-    public BindingLoadPlacementProblem() { 
+public class LoadLocalVarPlacementProblem extends DataFlowProblem {
+    public LoadLocalVarPlacementProblem() { 
         super(DataFlowProblem.DF_Direction.BACKWARD);
         initLoadsOnExit = new java.util.HashSet<LocalVariable>();
         bindingHasEscaped = false;
@@ -21,7 +21,7 @@ public class BindingLoadPlacementProblem extends DataFlowProblem {
     }
     
     public FlowGraphNode buildFlowGraphNode(BasicBlock bb) {
-        return new BindingLoadPlacementNode(this, bb);
+        return new LoadLocalVarPlacementNode(this, bb);
     }
     
     @Override
@@ -47,7 +47,7 @@ public class BindingLoadPlacementProblem extends DataFlowProblem {
 
     public void addLoads(Map<Operand, Operand> varRenameMap) {
         for (FlowGraphNode n: flowGraphNodes) {
-            BindingLoadPlacementNode blpn = (BindingLoadPlacementNode)n;
+            LoadLocalVarPlacementNode blpn = (LoadLocalVarPlacementNode)n;
             blpn.addLoads(varRenameMap);
         }
     }
