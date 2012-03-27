@@ -9,17 +9,17 @@ require 'rspec'
 # for LOCK_SH below.
 describe 'JRUBY-5627' do
   before :each do
-    filename = '__lock_test_2_'
-    File.open(filename, "w+") { }
+    @filename = '__lock_test_2_'
+    File.open(@filename, "w+") { }
   end
   
   after :each do
-    File.delete(filename)
+    File.delete(@filename)
   end
   
   describe 'a file opened only for read' do
     it 'raises EBADF when exclusively locked' do
-      File.open(filename, "r") do |file|
+      File.open(@filename, "r") do |file|
         begin
           proc {
             file.flock(File::LOCK_EX)
@@ -32,7 +32,7 @@ describe 'JRUBY-5627' do
     
   describe 'a file opened only for write' do
     it 'raises EBADF when shared locked' do
-      File.open(filename, "w") do |file|
+      File.open(@filename, "w") do |file|
         begin
           proc {
             file.flock(File::LOCK_SH)
