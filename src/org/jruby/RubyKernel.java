@@ -397,6 +397,21 @@ public class RubyKernel {
             return (RubyFloat)TypeConverter.convertToType19(object, runtime.getFloat(), "to_f");
         }
     }
+    
+    @JRubyMethod(name = "Hash", required = 1, module = true, visibility = PRIVATE, compat = RUBY1_9)
+    public static IRubyObject new_hash(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        IRubyObject tmp;
+        Ruby runtime = recv.getRuntime();
+        if (arg.isNil()) return RubyHash.newHash(runtime);
+        tmp = TypeConverter.checkHashType(runtime, arg);
+        if (tmp.isNil()) {
+            if (arg instanceof RubyArray && ((RubyArray) arg).isEmpty()) {
+                return RubyHash.newHash(runtime);
+            }
+            throw runtime.newTypeError("can't convert " + arg.getMetaClass() + " into Hash");
+        }
+        return tmp;
+    } 
 
     @JRubyMethod(name = "Integer", required = 1, module = true, visibility = PRIVATE, compat = RUBY1_8)
     public static IRubyObject new_integer(ThreadContext context, IRubyObject recv, IRubyObject object) {
