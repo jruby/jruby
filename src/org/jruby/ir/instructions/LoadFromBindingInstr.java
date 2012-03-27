@@ -4,8 +4,9 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Interp;
 import org.jruby.ir.operands.LocalVariable;
-import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.TemporaryVariable;
+import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
@@ -14,41 +15,48 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class LoadFromBindingInstr extends Instr implements ResultInstr {
     private IRScope scope;
-    private LocalVariable var;
+    private TemporaryVariable result;
 
-    public LoadFromBindingInstr(IRScope scope, LocalVariable var) {
+    /** This is the variable that is being loaded from the scope.  This variable
+     * doesn't participate in the computation itself.  We just use it as a proxy for
+     * its (a) name (b) offset (c) scope-depth. */
+    private LocalVariable lvar; 
+
+    public LoadFromBindingInstr(IRScope scope, TemporaryVariable result, LocalVariable lvar) {
         super(Operation.BINDING_LOAD);
 
-        assert var != null: "LoadFromBindingInstr result is null";
+        assert result != null: "LoadFromBindingInstr result is null";
 
-        this.var = var;
+        this.lvar = lvar;
+        this.result = result;
         this.scope = scope;
     }
 
     public Operand[] getOperands() { 
-        return Operand.EMPTY_ARRAY;
+        return Instr.EMPTY_OPERANDS;
     }
-    
+
     public Variable getResult() {
-        return var;
+        return result;
     }
     
     public void updateResult(Variable v) {
-        this.var = (LocalVariable)v;
+        this.result = (TemporaryVariable)v;
     }
 
     public String toString() {
-        return var + " = load_from_binding(" + scope.getName() + ")";
+        return result + " = load_from_binding(" + scope.getName() + ", " + lvar + ")";
     }
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new LoadFromBindingInstr(scope, (LocalVariable)ii.getRenamedVariable(var));
+        // SSS FIXME: Do we need to rename lvar really?  It is just a name-proxy!
+        return new LoadFromBindingInstr(scope, (TemporaryVariable)ii.getRenamedVariable(result), (LocalVariable)ii.getRenamedVariable(lvar));
     }
 
     @Interp
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
-        return var.retrieve(context, self, currDynScope, temp);
+        return lvar.retrieve(context, self, currDynScope, temp);
     }
 }

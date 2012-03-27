@@ -11,6 +11,7 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Splat;
 import org.jruby.ir.operands.ClosureLocalVariable;
 import org.jruby.ir.operands.LocalVariable;
+import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.TemporaryClosureVariable;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.instructions.Instr;
@@ -120,12 +121,12 @@ public class IRClosure extends IRScope {
     }
 
     @Override
-    public Variable getNewTemporaryVariable() {
+    public TemporaryVariable getNewTemporaryVariable() {
         temporaryVariableIndex++;
         return new TemporaryClosureVariable(closureId, temporaryVariableIndex);
     }
 
-    public Variable getNewTemporaryVariable(String name) {
+    public TemporaryVariable getNewTemporaryVariable(String name) {
         temporaryVariableIndex++;
         return new TemporaryClosureVariable(name, temporaryVariableIndex);
     }    

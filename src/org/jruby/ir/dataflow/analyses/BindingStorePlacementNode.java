@@ -2,6 +2,7 @@ package org.jruby.ir.dataflow.analyses;
 
 import java.util.HashSet;
 import java.util.ListIterator;
+import java.util.Map;
 import java.util.Set;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
@@ -19,6 +20,7 @@ import org.jruby.ir.instructions.StoreToBindingInstr;
 import org.jruby.ir.operands.ClosureLocalVariable;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.representations.BasicBlock;
@@ -125,11 +127,33 @@ public class BindingStorePlacementNode extends FlowGraphNode {
         return "";
     }
 
-    public void addStoreAndBindingAllocInstructions(Set<LocalVariable> callsiteDirtyVars) {
+    private TemporaryVariable getLocalVarReplacement(LocalVariable v, IRScope scope, Map<Operand, Operand> varRenameMap) {
+         TemporaryVariable value = (TemporaryVariable)varRenameMap.get(v);
+         if (value == null) {
+             value = scope.getNewTemporaryVariable("%t_" + v.getName());
+             varRenameMap.put(v, value);
+         }
+         return value;
+    }
+
+    private void addClosureExitBindingStores(IRScope scope, ListIterator<Instr> instrs, Set<LocalVariable> dirtyVars, Map<Operand, Operand> varRenameMap) {
+        for (LocalVariable v : dirtyVars) {
+            if (v instanceof ClosureLocalVariable) {
+                IRClosure definingScope = ((ClosureLocalVariable)v).definingScope;
+                if ((scope != definingScope) && scope.isNestedInClosure(definingScope)) {
+                    instrs.add(new StoreToBindingInstr(getLocalVarReplacement(v, scope, varRenameMap), scope, v));
+                }
+            } else {
+                instrs.add(new StoreToBindingInstr(getLocalVarReplacement(v, scope, varRenameMap), scope, v));
+            }
+        }
+    }
+
+    public void addStoreAndBindingAllocInstructions(Map<Operand, Operand> varRenameMap, Set<LocalVariable> callsiteDirtyVars) {
         boolean addAllocateBindingInstructions = false; // SSS: This is going to be useful during JIT -- we are far away from there at this time
 
         BindingStorePlacementProblem bsp = (BindingStorePlacementProblem) problem;
-        IRScope s = bsp.getScope();
+        IRScope scope = bsp.getScope();
         ListIterator<Instr> instrs = basicBlock.getInstrs().listIterator();
         Set<LocalVariable> dirtyVars = new HashSet<LocalVariable>(inDirtyVars);
         boolean bindingAllocated = inBindingAllocated;
@@ -142,9 +166,9 @@ public class BindingStorePlacementNode extends FlowGraphNode {
         //         Ex: s=0; a.each { |i| j = i+1; sum += j; }; puts sum
         //       i,j are dirty inside the block, but not used outside
 
-        boolean amExitBB = basicBlock == s.cfg().getExitBB();
+        boolean amExitBB = basicBlock == scope.cfg().getExitBB();
         if (amExitBB) {
-            LiveVariablesProblem lvp = (LiveVariablesProblem)s.getDataFlowSolution(DataFlowConstants.LVP_NAME);
+            LiveVariablesProblem lvp = (LiveVariablesProblem)scope.getDataFlowSolution(DataFlowConstants.LVP_NAME);
             if (lvp != null) {
                 java.util.Collection<LocalVariable> liveVars = lvp.getVarsLiveOnScopeExit();
                 if (liveVars != null) {
@@ -169,7 +193,7 @@ public class BindingStorePlacementNode extends FlowGraphNode {
                     if (addAllocateBindingInstructions) {
                        // Add a binding allocation instruction, if necessary
                        if (!bindingAllocated) {
-                           instrs.add(new AllocateBindingInstr(s));
+                           instrs.add(new AllocateBindingInstr(scope));
                            bindingAllocated = true;
                        }
                     }
@@ -183,8 +207,7 @@ public class BindingStorePlacementNode extends FlowGraphNode {
                     Set<LocalVariable> newDirtyVars = new HashSet<LocalVariable>(dirtyVars);
                     for (LocalVariable v : dirtyVars) {
                         if (spillAllVars || cl.usesLocalVariable(v)) {
-                            // FIXME: This may not need check for local variable if it is guaranteed to only be local variables.
-                            instrs.add(new StoreToBindingInstr(s, v));
+                            instrs.add(new StoreToBindingInstr(getLocalVarReplacement(v, scope, varRenameMap), scope, v));
                             newDirtyVars.remove(v);
                         } else if (cl.definesLocalVariable(v)) {
                             // These variables will be spilt inside the closure -- so they will no longer be dirty after the call site!
@@ -197,19 +220,19 @@ public class BindingStorePlacementNode extends FlowGraphNode {
                     instrs.previous();
                     if (addAllocateBindingInstructions) {
                         if (!bindingAllocated) {
-                            instrs.add(new AllocateBindingInstr(s));
+                            instrs.add(new AllocateBindingInstr(scope));
                             bindingAllocated = true;
                         }
                     }
                     for (LocalVariable v : dirtyVars) {
-                        instrs.add(new StoreToBindingInstr(s, v));
+                        instrs.add(new StoreToBindingInstr(getLocalVarReplacement(v, scope, varRenameMap), scope, v));
                     }
                     instrs.next();
                     dirtyVars.clear();
                 } else if (call.canSetDollarVars()) {
                     if (addAllocateBindingInstructions) {
                         if (!bindingAllocated) {
-                            instrs.add(new AllocateBindingInstr(s));
+                            instrs.add(new AllocateBindingInstr(scope));
                             bindingAllocated = true;
                         }
                     }
@@ -231,7 +254,7 @@ public class BindingStorePlacementNode extends FlowGraphNode {
                 //
                 // If this also happens to be exit BB, we would have intersected already earlier -- so no need to do it again!
                 if (!amExitBB) {
-                    LiveVariablesProblem lvp = (LiveVariablesProblem)s.getDataFlowSolution(DataFlowConstants.LVP_NAME);
+                    LiveVariablesProblem lvp = (LiveVariablesProblem)scope.getDataFlowSolution(DataFlowConstants.LVP_NAME);
                     if (lvp != null) {
                         java.util.Collection<LocalVariable> liveVars = lvp.getVarsLiveOnScopeExit();
                         if (liveVars != null) {
@@ -243,7 +266,7 @@ public class BindingStorePlacementNode extends FlowGraphNode {
                 }
 
                 instrs.previous();
-                addClosureExitBindingStores(s, instrs, dirtyVars);
+                addClosureExitBindingStores(scope, instrs, dirtyVars, varRenameMap);
                 instrs.next();
 
                 // Nothing is dirty anymore -- everything that needs spilling has been spilt
@@ -254,25 +277,18 @@ public class BindingStorePlacementNode extends FlowGraphNode {
                 Variable v = ((ResultInstr) i).getResult();
 
                 // %self is local to every scope and never crosses scope boundaries and need not be spilled/refilled
-                if (v instanceof LocalVariable && !((LocalVariable) v).isSelf()) dirtyVars.add((LocalVariable) v);
+                if (v instanceof LocalVariable && !((LocalVariable) v).isSelf()) {
+                    LocalVariable lv = (LocalVariable) v;
+                    dirtyVars.add(lv);
+
+                    // Make sure there is a replacement tmp-var allocated for lv
+                    getLocalVarReplacement(lv, scope, varRenameMap);
+                }
             }             
         }
 
         // If this is the exit BB, add binding stores for all vars that are still dirty
-        if (amExitBB) addClosureExitBindingStores(s, instrs, dirtyVars);
-    }
-
-    private void addClosureExitBindingStores(IRScope s, ListIterator<Instr> instrs, Set<LocalVariable> dirtyVars) {
-        for (LocalVariable v : dirtyVars) {
-            if (v instanceof ClosureLocalVariable) {
-                IRClosure definingScope = ((ClosureLocalVariable)v).definingScope;
-                if ((s != definingScope) && s.isNestedInClosure(definingScope)) {
-                    instrs.add(new StoreToBindingInstr(s, v));
-                }
-            } else {
-                instrs.add(new StoreToBindingInstr(s, v));
-            }
-        }
+        if (amExitBB) addClosureExitBindingStores(scope, instrs, dirtyVars, varRenameMap);
     }
 
     Set<LocalVariable> inDirtyVars;     // On entry to flow graph node:  Variables that need to be stored to the heap binding

@@ -2,20 +2,21 @@ package org.jruby.ir.dataflow.analyses;
 
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
+import org.jruby.ir.dataflow.DataFlowProblem;
+import org.jruby.ir.dataflow.FlowGraphNode;
 import org.jruby.ir.instructions.ReceiveExceptionInstr;
 import org.jruby.ir.instructions.StoreToBindingInstr;
 import org.jruby.ir.instructions.ThrowExceptionInstr;
-import org.jruby.ir.representations.BasicBlock;
-import org.jruby.ir.dataflow.DataFlowProblem;
-import org.jruby.ir.dataflow.FlowGraphNode;
 import org.jruby.ir.operands.Label;
-import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.LocalVariable;
-
-import java.util.Set;
-import java.util.HashSet;
-import org.jruby.ir.IRScope;
+import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.Variable;
+import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
+
+import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
 
 // This problem tries to find places to insert binding stores -- for spilling local variables onto a heap store
 // It does better than spilling all local variables to the heap at all call sites.  This is similar to a
@@ -44,7 +45,7 @@ public class BindingStorePlacementProblem extends DataFlowProblem {
         return "";
     }
 
-    public void addStoreAndBindingAllocInstructions() {
+    public void addStoreAndBindingAllocInstructions(Map<Operand, Operand> varRenameMap) {
         /* --------------------------------------------------------------------
          * If this is a closure, introduce a global ensure block that spills
          * into the binding the union of dirty vars from all call sites that
@@ -66,9 +67,9 @@ public class BindingStorePlacementProblem extends DataFlowProblem {
         for (FlowGraphNode n : flowGraphNodes) {
             BindingStorePlacementNode bspn = (BindingStorePlacementNode) n;
             if (mightRequireGlobalEnsureBlock && !cfg.bbIsProtected(bspn.getBB())) {
-                bspn.addStoreAndBindingAllocInstructions(dirtyVars);
+                bspn.addStoreAndBindingAllocInstructions(varRenameMap, dirtyVars);
             } else {
-                bspn.addStoreAndBindingAllocInstructions(null);
+                bspn.addStoreAndBindingAllocInstructions(varRenameMap, null);
             }
         }
 
@@ -77,7 +78,12 @@ public class BindingStorePlacementProblem extends DataFlowProblem {
             Variable exc = cfgScope.getNewTemporaryVariable();
             geb.addInstr(new ReceiveExceptionInstr(exc));
             for (LocalVariable v : dirtyVars) {
-                geb.addInstr(new StoreToBindingInstr((IRClosure) cfgScope, v));
+                Operand value = varRenameMap.get(v);
+                if (value == null) {
+                    value = cfgScope.getNewTemporaryVariable("%t_" + v.getName());
+                    varRenameMap.put(v, value);
+                }
+                geb.addInstr(new StoreToBindingInstr(value, (IRClosure) cfgScope, v));
             }
             geb.addInstr(new ThrowExceptionInstr(exc));
             cfg.addGlobalEnsureBlock(geb);

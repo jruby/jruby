@@ -14,37 +14,45 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class StoreToBindingInstr extends Instr {
     private IRScope scope;
-    private LocalVariable var;
+    private Operand value;
 
-    public StoreToBindingInstr(IRScope scope, LocalVariable var) {
+    /** This is the variable that is being stored into in this scope.  This variable
+     * doesn't participate in the computation itself.  We just use it as a proxy for
+     * its (a) name (b) offset (c) scope-depth. */
+    private LocalVariable lvar;
+
+    public StoreToBindingInstr(Operand value, IRScope scope, LocalVariable lvar) {
         super(Operation.BINDING_STORE);
 
-        this.var = var;
+        this.lvar = lvar;
+        this.value = value;
         this.scope = scope;
     }
 
     public Operand[] getOperands() {
-        return new Operand[]{var};
+        return new Operand[]{value};
     }
 
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-        var = (LocalVariable)var.getSimplifiedOperand(valueMap, force);
+        value = value.getSimplifiedOperand(valueMap, force);
     }
 
     @Override
     public String toString() {
-        return "store_into_binding(" + scope.getName() + "," + var + ")";
+        return "store_into_binding(" + value + ", " + scope.getName() + ", " + lvar + ")";
     }
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new StoreToBindingInstr(scope, (LocalVariable)var.cloneForInlining(ii));
+        // SSS FIXME: Do we need to rename lvar really?  It is just a name-proxy!
+        return new StoreToBindingInstr(value.cloneForInlining(ii), scope, (LocalVariable)lvar.cloneForInlining(ii));
     }
 
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
-        // NOP for interpretation
+        Object varValue = value.retrieve(context, self, currDynScope, temp);
+        currDynScope.setValue((IRubyObject)varValue, lvar.getLocation(), lvar.getScopeDepth());
         return null;
     }
 }

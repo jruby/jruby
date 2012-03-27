@@ -578,13 +578,15 @@ public abstract class IRScope {
             runCompilerPass(new LocalOptimizationPass());
             printPass("After inline");
         }        
+
+        if (RubyInstanceConfig.IR_OPT_LVAR_ACCESS) runCompilerPass(new AddBindingInstructions());
+
         // Do not run dead-code-elimination on eval-scripts because they might
         // update their enclosing environments.
         if (!(this instanceof IREvalScript)) {
             if (RubyInstanceConfig.IR_LIVE_VARIABLE) runCompilerPass(new LiveVariableAnalysis());
             if (RubyInstanceConfig.IR_DEAD_CODE) runCompilerPass(new DeadCodeElimination());
             if (RubyInstanceConfig.IR_DEAD_CODE) printPass("After DCE ");
-            runCompilerPass(new AddBindingInstructions());
         }
         runCompilerPass(new LinearizeCFG());
         printPass("After CFG Linearize");
@@ -834,12 +836,12 @@ public abstract class IRScope {
         if (reset || evalScopeVars == null) evalScopeVars = new LocalVariableAllocator();
     }
     
-    public Variable getNewTemporaryVariable() {
+    public TemporaryVariable getNewTemporaryVariable() {
         temporaryVariableIndex++;
         return new TemporaryVariable(temporaryVariableIndex);
     }    
 
-    public Variable getNewTemporaryVariable(String name) {
+    public TemporaryVariable getNewTemporaryVariable(String name) {
         temporaryVariableIndex++;
         return new TemporaryVariable(name, temporaryVariableIndex);
     }    
@@ -873,9 +875,12 @@ public abstract class IRScope {
     public int getUsedVariablesCount() {
         // System.out.println("For " + this + ", # lvs: " + nextLocalVariableSlot);
         // # local vars, # flip vars
-        return localVars.nextSlot + getPrefixCountSize("%flip");
+        //
+        // SSS FIXME: When we are opting local var access, 
+        // no need to allocate local var space except when we have been asked to!
+        return getLocalVariablesCount() + getPrefixCountSize("%flip");
     }
-    
+
     public void setUpUseDefLocalVarMaps() {
         definedLocalVars = new java.util.HashSet<Variable>();
         usedLocalVars = new java.util.HashSet<Variable>();

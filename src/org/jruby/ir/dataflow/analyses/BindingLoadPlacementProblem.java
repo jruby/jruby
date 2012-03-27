@@ -2,9 +2,11 @@ package org.jruby.ir.dataflow.analyses;
 
 import org.jruby.ir.dataflow.DataFlowProblem;
 import org.jruby.ir.dataflow.FlowGraphNode;
+import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.representations.BasicBlock;
 
+import java.util.Map;
 import java.util.Set;
 
 public class BindingLoadPlacementProblem extends DataFlowProblem {
@@ -43,10 +45,10 @@ public class BindingLoadPlacementProblem extends DataFlowProblem {
         bindingHasEscaped = flag;
     }
 
-    public void addLoads() {
+    public void addLoads(Map<Operand, Operand> varRenameMap) {
         for (FlowGraphNode n: flowGraphNodes) {
             BindingLoadPlacementNode blpn = (BindingLoadPlacementNode)n;
-            blpn.addLoads();
+            blpn.addLoads(varRenameMap);
         }
     }
 

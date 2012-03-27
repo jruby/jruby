@@ -3,6 +3,7 @@ package org.jruby.ir.dataflow.analyses;
 import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
 import java.util.Set;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
@@ -16,6 +17,7 @@ import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.operands.ClosureLocalVariable;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.representations.BasicBlock;
@@ -115,7 +117,16 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
         return "";
     }
 
-    public void addLoads() {
+    private TemporaryVariable getLocalVarReplacement(LocalVariable v, IRScope scope, Map<Operand, Operand> varRenameMap) {
+         TemporaryVariable value = (TemporaryVariable)varRenameMap.get(v);
+         if (value == null) {
+             value = scope.getNewTemporaryVariable("%t_" + v.getName());
+             varRenameMap.put(v, value);
+         }
+         return value;
+    }
+
+    public void addLoads(Map<Operand, Operand> varRenameMap) {
         BindingLoadPlacementProblem blp = (BindingLoadPlacementProblem) problem;
         IRScope s = blp.getScope();
         List<Instr> instrs = basicBlock.getInstrs();
@@ -141,7 +152,7 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
                     it.next();
                     for (LocalVariable v : reqdLoads) {
                         if (cl.definesLocalVariable(v)) {
-                            it.add(new LoadFromBindingInstr(s, v));
+                            it.add(new LoadFromBindingInstr(s, getLocalVarReplacement(v, s, varRenameMap), v));
                             it.previous();
                             newReqdLoads.remove(v);
                         }
@@ -154,7 +165,7 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
                 if (call.targetRequiresCallersBinding()) {
                     it.next();
                     for (LocalVariable v : reqdLoads) {
-                        it.add(new LoadFromBindingInstr(s, v));
+                        it.add(new LoadFromBindingInstr(s, getLocalVarReplacement(v, s, varRenameMap), v));
                         it.previous();
                     }
                     it.previous();
@@ -164,9 +175,14 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
 
             // The variables used as arguments will need to be loaded
             // %self is local to every scope and never crosses scope boundaries and need not be spilled/refilled
-            for (Variable x : i.getUsedVariables()) {
-                if ((x instanceof LocalVariable) && !((LocalVariable)x).isSelf()) {
-                    reqdLoads.add((LocalVariable)x);
+            for (Variable v : i.getUsedVariables()) {
+                if (!(v instanceof LocalVariable)) continue;
+
+                LocalVariable lv = (LocalVariable)v;
+                if (!lv.isSelf()) {
+                    reqdLoads.add(lv);
+                    // Make sure there is a replacement var for all local vars
+                    getLocalVarReplacement(lv, s, varRenameMap);
                 }
             }
         }
@@ -181,10 +197,10 @@ public class BindingLoadPlacementNode extends FlowGraphNode {
                         IRClosure definingScope = ((ClosureLocalVariable)v).definingScope;
                         
                         if ((s != definingScope) && s.isNestedInClosure(definingScope)) {
-                            it.add(new LoadFromBindingInstr(s, v));
+                            it.add(new LoadFromBindingInstr(s, getLocalVarReplacement(v, s, varRenameMap), v));
                         }
                     } else {
-                        it.add(new LoadFromBindingInstr(s, v));
+                        it.add(new LoadFromBindingInstr(s, getLocalVarReplacement(v, s, varRenameMap), v));
                     }
                 }
             }
