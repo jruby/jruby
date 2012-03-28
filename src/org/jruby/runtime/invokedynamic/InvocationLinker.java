@@ -508,7 +508,7 @@ public class InvocationLinker {
                 }
                 
                 if (nativeArgCount != siteArgCount) {
-                    throw new IndirectBindingException("arity mismatch at call site");
+                    throw new IndirectBindingException("arity mismatch at call site: " + nativeArgCount + " != " + siteArgCount);
                 }
             }
         } else {
