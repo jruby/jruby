@@ -35,69 +35,8 @@ import java.util.HashSet;
 import java.util.Set;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
-import org.jruby.ast.AndNode;
-import org.jruby.ast.ArgsCatNode;
-import org.jruby.ast.ArgsNode;
-import org.jruby.ast.ArgsPushNode;
-import org.jruby.ast.AssignableNode;
-import org.jruby.ast.AttrAssignNode;
-import org.jruby.ast.BeginNode;
-import org.jruby.ast.BinaryOperatorNode;
-import org.jruby.ast.BlockAcceptingNode;
-import org.jruby.ast.BlockNode;
-import org.jruby.ast.BlockPassNode;
-import org.jruby.ast.BreakNode;
-import org.jruby.ast.CallNode;
-import org.jruby.ast.CaseNode;
-import org.jruby.ast.ClassNode;
-import org.jruby.ast.Colon2Node;
-import org.jruby.ast.ConstNode;
-import org.jruby.ast.DefinedNode;
-import org.jruby.ast.DotNode;
-import org.jruby.ast.EvStrNode;
-import org.jruby.ast.FlipNode;
-import org.jruby.ast.ForNode;
-import org.jruby.ast.GlobalAsgnNode;
-import org.jruby.ast.GlobalVarNode;
-import org.jruby.ast.HashNode;
-import org.jruby.ast.IArgumentNode;
-import org.jruby.ast.IScopingNode;
-import org.jruby.ast.IfNode;
-import org.jruby.ast.ListNode;
-import org.jruby.ast.LocalAsgnNode;
-import org.jruby.ast.Match2Node;
-import org.jruby.ast.Match3Node;
-import org.jruby.ast.MatchNode;
-import org.jruby.ast.ModuleNode;
-import org.jruby.ast.MultipleAsgn19Node;
-import org.jruby.ast.MultipleAsgnNode;
-import org.jruby.ast.NewlineNode;
-import org.jruby.ast.NextNode;
-import org.jruby.ast.Node;
-import org.jruby.ast.NotNode;
-import org.jruby.ast.OpAsgnAndNode;
-import org.jruby.ast.OpAsgnNode;
-import org.jruby.ast.OpAsgnOrNode;
-import org.jruby.ast.OpElementAsgnNode;
-import org.jruby.ast.OptArgNode;
-import org.jruby.ast.OrNode;
-import org.jruby.ast.PostExeNode;
-import org.jruby.ast.PreExeNode;
-import org.jruby.ast.RescueBodyNode;
-import org.jruby.ast.RescueNode;
-import org.jruby.ast.ReturnNode;
-import org.jruby.ast.RootNode;
-import org.jruby.ast.SClassNode;
-import org.jruby.ast.SValueNode;
-import org.jruby.ast.SplatNode;
-import org.jruby.ast.SuperNode;
-import org.jruby.ast.ToAryNode;
-import org.jruby.ast.TrueNode;
-import org.jruby.ast.UntilNode;
-import org.jruby.ast.WhenNode;
-import org.jruby.ast.WhileNode;
-import org.jruby.ast.YieldNode;
-import org.jruby.ast.ZSuperNode;
+import org.jruby.ast.*;
+import org.jruby.ast.types.ILiteralNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.util.SafePropertyAccessor;
@@ -750,13 +689,17 @@ public class ASTInspector {
             break;
         case VALIASNODE:
             break;
-        case WHENNODE:
+        case WHENNODE: {
             inspect(((WhenNode)node).getBodyNode());
             inspect(((WhenNode)node).getExpressionNodes());
             inspect(((WhenNode)node).getNextCase());
-            // Because Regexp#=== sets backref, we have to make this backref-aware
-            setFlag(node, BACKREF);
+            // if any elements are not literals or are regexp, set backref
+            Node expr = ((WhenNode)node).getExpressionNodes();
+            if (!(expr instanceof ILiteralNode) || expr.getNodeType() == NodeType.REGEXPNODE) {
+                setFlag(node, BACKREF);
+            }
             break;
+        }
         case WHILENODE:
             WhileNode whileNode = (WhileNode)node;
             ASTInspector whileInspector = subInspect(
