@@ -475,7 +475,7 @@ public class InvocationLinker {
             
             // if frame/scope required, can't dispatch direct
             if (method.getCallConfig() != CallConfiguration.FrameNoneScopeNone) {
-                throw new IndirectBindingException("frame or scope required");
+                throw new IndirectBindingException("frame or scope required: " + method.getCallConfig());
             }
             
             if (nativeCall.isJava()) {
