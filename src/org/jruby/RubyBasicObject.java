@@ -1153,9 +1153,9 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *
      * The name of this method doesn't follow the convention because hierarchy problems
      */
-    @JRubyMethod(name = "==", required = 1, compat = RUBY1_9)
+    @JRubyMethod(name = "==", compat = RUBY1_9)
     public IRubyObject op_equal_19(ThreadContext context, IRubyObject obj) {
-        return this == obj ? context.getRuntime().getTrue() : context.getRuntime().getFalse();
+        return this == obj ? context.runtime.getTrue() : context.runtime.getFalse();
     }
 
     public IRubyObject op_eqq(ThreadContext context, IRubyObject other) {
