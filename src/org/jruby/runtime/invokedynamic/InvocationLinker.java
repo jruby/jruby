@@ -354,14 +354,14 @@ public class InvocationLinker {
             MethodHandle gwt;
 
             // if we've cached no types, and the site is bound and we haven't seen this new type...
-            if (site.seenTypes().size() > 0 && site.getTarget() != null && !site.hasSeenType(selfClass.id)) {
+            if (site.seenTypesCount() > 0 && site.getTarget() != null && !site.hasSeenType(selfClass.id)) {
                 // stack it up into a PIC
-                if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tadded to PIC (#" +entry.method.getSerialNumber() + ")");
+                if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tadded to PIC " + logMethod(entry.method));
                 fallback = site.getTarget();
                 curry = false;
             } else {
                 // wipe out site with this new type and method
-                if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\ttriggered site rebind (#" +entry.method.getSerialNumber() + ")");
+                if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\ttriggered site rebind " + logMethod(entry.method));
                 fallback = (block?FALLBACKS_B:FALLBACKS)[arity];
                 site.clearTypes();
                 curry = true;
@@ -415,7 +415,7 @@ public class InvocationLinker {
     }
 
     private static MethodHandle createFail(MethodHandle fail, JRubyCallSite site, String name, DynamicMethod method) {
-        if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tbound to inline cache (failed #" + method.getSerialNumber() + ")");
+        if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tbound to inline cache failed " + logMethod(method));
         
         MethodHandle myFail = insertArguments(fail, 0, site);
         myFail = postProcess(site, myFail);
@@ -529,12 +529,12 @@ public class InvocationLinker {
 
             // if indirect indy-bound methods (via DynamicMethod.call) are disabled, bail out
             if (!RubyInstanceConfig.INVOKEDYNAMIC_INDIRECT) {
-                if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tfailed to bind to #" + entry.method.getSerialNumber() + ": " + ibe.getMessage());
+                if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tfailed to bind to " + logMethod(entry.method) + ": " + ibe.getMessage());
                 return null;
             }
 
             // no direct native path, use DynamicMethod.call
-            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tbound indirectly to #" + entry.method.getSerialNumber() + ": " + ibe.getMessage());
+            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tbound indirectly to " + logMethod(entry.method) + ": " + ibe.getMessage());
 
             MethodHandle dynMethodTarget = getDynamicMethodTarget(site.type(), arity, entry.method);
             dynMethodTarget = insertArguments(dynMethodTarget, 4, name);
@@ -548,26 +548,26 @@ public class InvocationLinker {
         
         if (method instanceof AttrReaderMethod) {
             // Ruby to attr reader
-            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tbound as attr reader #" + method.getSerialNumber() + ":" + ((AttrReaderMethod)method).getVariableName());
+            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tbound as attr reader " + logMethod(method) + ":" + ((AttrReaderMethod)method).getVariableName());
             nativeTarget = createAttrReaderHandle(site, cls, method);
         } else if (method instanceof AttrWriterMethod) {
             // Ruby to attr writer
-            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tbound as attr writer #" + method.getSerialNumber() + ":" + ((AttrWriterMethod)method).getVariableName());
+            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tbound as attr writer " + logMethod(method) + ":" + ((AttrWriterMethod)method).getVariableName());
             nativeTarget = createAttrWriterHandle(site, cls, method);
         } else if (method.getNativeCall() != null) {
             DynamicMethod.NativeCall nativeCall = method.getNativeCall();
 
             if (nativeCall.isJava()) {
                 // Ruby to Java
-                if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tbound to Java method #" + method.getSerialNumber() + ": " + nativeCall);
+                if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tbound to Java method " + logMethod(method) + ": " + nativeCall);
                 nativeTarget = createJavaHandle(site, method);
             } else if (method instanceof CompiledMethod || method instanceof JittedMethod) {
                 // Ruby to Ruby
-                if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tbound to Ruby method #" + method.getSerialNumber() + ": " + nativeCall);
+                if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tbound to Ruby method " + logMethod(method) + ": " + nativeCall);
                 nativeTarget = createRubyHandle(site, method);
             } else {
                 // Ruby to Core
-                if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tbound to native method #" + method.getSerialNumber() + ": " + nativeCall);
+                if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tbound to native method " + logMethod(method) + ": " + nativeCall);
                 nativeTarget = createNativeHandle(site, method);
             }
         }
@@ -1478,6 +1478,10 @@ public class InvocationLinker {
         }
 
         return length;
+    }
+    
+    private static String logMethod(DynamicMethod method) {
+        return "[#" + method.getSerialNumber() + " " + method.getImplementationClass() + "]";
     }
 
     private static final MethodHandle GETMETHOD;

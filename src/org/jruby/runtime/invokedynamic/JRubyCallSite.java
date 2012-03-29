@@ -93,10 +93,6 @@ public class JRubyCallSite extends MutableCallSite {
         return seenTypes.size();
     }
     
-    public synchronized Set<Integer> seenTypes() {
-        return Collections.unmodifiableSet(seenTypes);
-    }
-    
     public synchronized void clearTypes() {
         seenTypes.clear();
         clearCount++;
