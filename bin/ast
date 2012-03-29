@@ -7,10 +7,15 @@ options = {
   :print_source => false,
   :print_sexp   => false,
   :print_ast    => true,
+  :dot_format   => false
 }
 
 OptionParser.new do |opts|
   opts.banner = "Usage: #{$0} [options]"
+
+  opts.on('-d', '--dot', 'Display as dot data') do |h|
+    options[:dot_format] = true
+  end
   
   opts.on('-h', '--help', 'Display this help') do |h|
     puts opts
@@ -75,6 +80,42 @@ def indent(string)
   string.gsub(/,\s*$/, '').squeeze("\n")
 end
 
+def dot_label(node)
+  extra = case node
+          when org.jruby.ast.StrNode then
+            ": '#{node.value}'"
+          when org.jruby.ast.FixnumNode then
+            ": #{node.value}"
+          when org.jruby.ast.FloatNode then
+            ": #{node.value}"
+          when org.jruby.ast.types.INameNode then
+            ": #{node.name}"
+          else
+            ""
+          end
+
+  "#{short_name(node)}#{extra}"
+end
+
+def short_name(node)
+  node.class.name.split("::")[-1].gsub("Node", "")
+end
+
+def dot_node_def(node)
+  %Q{#{node.hash} [label="#{dot_label(node)}"];\n}
+end
+
+def dot(defs, parent)
+  defs[parent.hash] = dot_node_def(parent)
+
+  "".tap do |str|
+    parent.child_nodes.each do |child|
+      str << "#{parent.hash} -> #{child.hash};\n"
+      str << dot(defs, child)
+    end
+  end
+end
+
 root = JRuby.parse(options[:expression])
 
 if options[:print_source]
@@ -84,9 +125,18 @@ if options[:print_source]
 end
 
 if options[:print_ast]
-  print "AST:"
-  puts indent(root.to_string) 
-  puts
+  if options[:dot_format]
+    defs = {}
+    graph_section = dot(defs, root)
+    puts "digraph AST {"
+    puts defs.values.join('')
+    puts graph_section
+    puts "}"
+  else
+    print "AST:"
+    puts indent(root.to_string) 
+    puts
+  end
 end
 
 if options[:print_sexp]
