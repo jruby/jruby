@@ -45,16 +45,28 @@ class TestFile < Test::Unit::TestCase
     assert_equal("/", File.basename("/"))
   end
 
-  def test_expand_path_cross_platform
-    assert_equal(Dir.pwd, File.expand_path(""))
-    assert_equal(Dir.pwd, File.expand_path("."))
-    assert_equal(Dir.pwd, File.expand_path(".", "."))
-    assert_equal(Dir.pwd, File.expand_path("", "."))
-    assert_equal(Dir.pwd, File.expand_path(".", ""))
-    assert_equal(Dir.pwd, File.expand_path("", ""))
+  # Added to add more flexibility on windows.  Depending on subsystem (msys,
+  # cygwin, cmd) environment sometimes we have mixed case drive letters.  Since
+  # windows is still case insensitive, downcasing seems a simple solution.
+  def paths_equal(expected, actual)
+    if WINDOWS
+      assert_equal(expected.downcase, actual.downcase)
+    else
+      assert_equal(expected, actual)
+    end
+  end
 
-    assert_equal(File.join(Dir.pwd, "x/y/z/a/b"), File.expand_path("a/b", "x/y/z"))
-    assert_equal(File.join(Dir.pwd, "bin"), File.expand_path("../../bin", "tmp/x"))
+
+  def test_expand_path_cross_platform
+    paths_equal(Dir.pwd, File.expand_path(""))
+    paths_equal(Dir.pwd, File.expand_path("."))
+    paths_equal(Dir.pwd, File.expand_path(".", "."))
+    paths_equal(Dir.pwd, File.expand_path("", "."))
+    paths_equal(Dir.pwd, File.expand_path(".", ""))
+    paths_equal(Dir.pwd, File.expand_path("", ""))
+
+    paths_equal(File.join(Dir.pwd, "x/y/z/a/b"), File.expand_path("a/b", "x/y/z"))
+    paths_equal(File.join(Dir.pwd, "bin"), File.expand_path("../../bin", "tmp/x"))
 
     # JRUBY-2143
     assert_nothing_raised {
@@ -114,21 +126,21 @@ class TestFile < Test::Unit::TestCase
 
       # JRUBY-546
       current_drive_letter = Dir.pwd[0..2]
-      assert_equal(current_drive_letter, File.expand_path(".", "/"))
-      assert_equal(current_drive_letter, File.expand_path("..", "/"))
-      assert_equal(current_drive_letter, File.expand_path("/", "/"))
-      assert_equal(current_drive_letter, File.expand_path("../..", "/"))
-      assert_equal(current_drive_letter, File.expand_path("../..", "/dir/two"))
-      assert_equal(current_drive_letter + "dir",
+      paths_equal(current_drive_letter, File.expand_path(".", "/"))
+      paths_equal(current_drive_letter, File.expand_path("..", "/"))
+      paths_equal(current_drive_letter, File.expand_path("/", "/"))
+      paths_equal(current_drive_letter, File.expand_path("../..", "/"))
+      paths_equal(current_drive_letter, File.expand_path("../..", "/dir/two"))
+      paths_equal(current_drive_letter + "dir",
         File.expand_path("../..", "/dir/two/three"))
-      assert_equal(current_drive_letter, File.expand_path("/../..", "/"))
-      assert_equal(current_drive_letter + "hello", File.expand_path("hello", "/"))
-      assert_equal(current_drive_letter, File.expand_path("hello/..", "/"))
-      assert_equal(current_drive_letter, File.expand_path("hello/../../..", "/"))
-      assert_equal(current_drive_letter + "three/four",
+      paths_equal(current_drive_letter, File.expand_path("/../..", "/"))
+      paths_equal(current_drive_letter + "hello", File.expand_path("hello", "/"))
+      paths_equal(current_drive_letter, File.expand_path("hello/..", "/"))
+      paths_equal(current_drive_letter, File.expand_path("hello/../../..", "/"))
+      paths_equal(current_drive_letter + "three/four",
         File.expand_path("/three/four", "/dir/two"))
-      assert_equal(current_drive_letter + "two", File.expand_path("/two", "/one"))
-      assert_equal(current_drive_letter + "three/four",
+      paths_equal(current_drive_letter + "two", File.expand_path("/two", "/one"))
+      paths_equal(current_drive_letter + "three/four",
         File.expand_path("/three/four", "/dir/two"))
 
       assert_equal("C:/two", File.expand_path("/two", "C:/one"))
