@@ -36,7 +36,7 @@ class java::util::regex::Matcher
   end
   
   def end(ix)
-    self.end(ix)
+    self.java_send(:end, [Java::int], ix)
   end
   
   def to_a
