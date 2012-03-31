@@ -36,7 +36,6 @@ import java.lang.invoke.SwitchPoint;
 import java.math.BigInteger;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
-import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
@@ -59,7 +58,6 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.util.ByteList;
-import org.jruby.util.JavaNameMangler;
 import org.jruby.util.RegexpOptions;
 import static org.jruby.util.CodegenUtils.*;
 
@@ -385,9 +383,23 @@ public class InvokeDynamicSupport {
     
     public static class VariableSite extends MutableCallSite {
         public final String name;
+        private int chainCount;
         public VariableSite(MethodType type, String name) {
             super(type);
             this.name = name;
+            this.chainCount = 0;
+        }
+
+        public synchronized int chainCount() {
+            return chainCount;
+        }
+        
+        public synchronized void incrementChainCount() {
+            chainCount += 1;
+        }
+        
+        public synchronized void clearChainCount() {
+            chainCount = 0;
         }
     }
     
@@ -426,8 +438,17 @@ public class InvokeDynamicSupport {
         getValue = filterReturnValue(getValue, nullToNil);
         
         // prepare fallback
-        MethodHandle fallback = findStatic(InvokeDynamicSupport.class, "getVariableFallback", methodType(IRubyObject.class, VariableSite.class, IRubyObject.class));
-        fallback = fallback.bindTo(site);
+        MethodHandle fallback = null;
+        if (site.getTarget() == null || site.chainCount() > RubyInstanceConfig.MAX_POLY_COUNT) {
+            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name + "\tget triggered site rebind " + self.getMetaClass().id);
+            fallback = findStatic(InvokeDynamicSupport.class, "getVariableFallback", methodType(IRubyObject.class, VariableSite.class, IRubyObject.class));
+            fallback = fallback.bindTo(site);
+            site.clearChainCount();
+        } else {
+            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name + "\tget added to PIC " + self.getMetaClass().id);
+            fallback = site.getTarget();
+            site.incrementChainCount();
+        }
         
         // prepare test
         MethodHandle test = findStatic(InvocationLinker.class, "testRealClass", methodType(boolean.class, RubyClass.class, IRubyObject.class));
@@ -455,8 +476,17 @@ public class InvokeDynamicSupport {
         setValue = foldArguments(returnValue, setValue);
         
         // prepare fallback
-        MethodHandle fallback = findStatic(InvokeDynamicSupport.class, "setVariableFallback", methodType(IRubyObject.class, VariableSite.class, IRubyObject.class, IRubyObject.class));
-        fallback = fallback.bindTo(site);
+        MethodHandle fallback = null;
+        if (site.getTarget() == null || site.chainCount() > RubyInstanceConfig.MAX_POLY_COUNT) {
+            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name + "\tset triggered site rebind " + self.getMetaClass().id);
+            fallback = findStatic(InvokeDynamicSupport.class, "setVariableFallback", methodType(IRubyObject.class, VariableSite.class, IRubyObject.class, IRubyObject.class));
+            fallback = fallback.bindTo(site);
+            site.clearChainCount();
+        } else {
+            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name + "\tset added to PIC " + self.getMetaClass().id);
+            fallback = site.getTarget();
+            site.incrementChainCount();
+        }
         
         // prepare test
         MethodHandle test = findStatic(InvocationLinker.class, "testRealClass", methodType(boolean.class, RubyClass.class, IRubyObject.class));
