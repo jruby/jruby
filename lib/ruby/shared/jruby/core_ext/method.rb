@@ -25,12 +25,10 @@ class Method
       end
 
       # optional args in middle
-      optional = args_node.opt_args
-      if optional
-        for opt_arg in optional.child_nodes
-          args_ary << [:opt, opt_arg ? opt_arg.name.intern : nil]
-        end
-      end
+      args_node.opt_args.child_nodes.each do |node|
+        node_intern = node.name.intern if node
+        args_ary << [:opt, node_intern]
+      end if args_node.opt_args
 
       # rest arg
       if args_node.rest_arg >= 0
