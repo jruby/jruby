@@ -14,6 +14,8 @@ abstract public class JITNativeInvoker extends NativeInvoker {
     protected static final Invoker invoker = Invoker.getInstance();
     protected final NativeInvoker fallbackInvoker;
     protected final com.kenai.jffi.Function function;
+    protected final com.kenai.jffi.CallContext callContext;
+    protected final long functionAddress;
     protected final Signature signature;
     protected final int arity;
     protected final NativeDataConverter resultConverter;
@@ -33,6 +35,8 @@ abstract public class JITNativeInvoker extends NativeInvoker {
     public JITNativeInvoker(com.kenai.jffi.Function function, Signature signature, NativeInvoker fallbackInvoker) {
         this.arity = signature.getParameterCount();
         this.function = function;
+        this.callContext = function.getCallContext();
+        this.functionAddress = function.getFunctionAddress();
         this.signature = signature;
         this.fallbackInvoker = fallbackInvoker;
 

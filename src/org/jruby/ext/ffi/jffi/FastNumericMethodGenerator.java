@@ -1,10 +1,10 @@
 package org.jruby.ext.ffi.jffi;
 
 
+import com.kenai.jffi.CallContext;
 import com.kenai.jffi.CallingConvention;
-import org.jruby.ext.ffi.NativeType;
 import com.kenai.jffi.Platform;
-import static org.jruby.util.CodegenUtils.*;
+import org.jruby.ext.ffi.NativeType;
 
 /**
  *
@@ -15,7 +15,7 @@ final class FastNumericMethodGenerator extends AbstractNumericMethodGenerator {
     private static final String[] signatures = buildSignatures(long.class, MAX_PARAMETERS);
 
     private static final String[] methodNames = {
-        "invokeVrN", "invokeNrN", "invokeNNrN", "invokeNNNrN", "invokeNNNNrN", "invokeNNNNNrN", "invokeNNNNNNrN"
+        "invokeN0", "invokeN1", "invokeN2", "invokeN3", "invokeN4", "invokeN5", "invokeN6"
     };
 
     String getInvokerMethodName(JITSignature signature) {
@@ -71,7 +71,7 @@ final class FastNumericMethodGenerator extends AbstractNumericMethodGenerator {
 
     final static int getMaximumFastNumericParameters() {
         try {
-            com.kenai.jffi.Invoker.class.getDeclaredMethod("invokeNNNNNNrN", com.kenai.jffi.Function.class,
+            com.kenai.jffi.Invoker.class.getDeclaredMethod("invokeN6", CallContext.class, long.class,
                     long.class, long.class, long.class, long.class, long.class, long.class);
             return 6;
         } catch (Throwable t) {

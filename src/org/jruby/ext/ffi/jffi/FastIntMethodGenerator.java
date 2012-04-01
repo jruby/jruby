@@ -1,6 +1,7 @@
 package org.jruby.ext.ffi.jffi;
 
 
+import com.kenai.jffi.CallContext;
 import com.kenai.jffi.CallingConvention;
 import org.jruby.ext.ffi.NativeType;
 import com.kenai.jffi.Platform;
@@ -14,21 +15,14 @@ final class FastIntMethodGenerator extends AbstractNumericMethodGenerator {
     private static final String[] signatures = buildSignatures(int.class, MAX_PARAMETERS);
 
     private static final String[] methodNames = {
-        "invokeVrI", "invokeIrI", "invokeIIrI", "invokeIIIrI", "invokeIIIIrI", "invokeIIIIIrI", "invokeIIIIIIrI"
+        "invokeI0", "invokeI1", "invokeI2", "invokeI3", "invokeI4", "invokeI5", "invokeI6"
     };
 
-    private static final String[] noErrnoMethodNames = {
-        "invokeNoErrnoVrI", "invokeNoErrnoIrI", "invokeNoErrnoIIrI", "invokeNoErrnoIIIrI"
-    };
-    
     String getInvokerMethodName(JITSignature signature) {
 
         final int parameterCount = signature.getParameterCount();
 
-        if (signature.isIgnoreError() && parameterCount <= MAX_PARAMETERS && parameterCount <= noErrnoMethodNames.length) {
-            return noErrnoMethodNames[signature.getParameterCount()];
-
-        } else if (parameterCount <= MAX_PARAMETERS && parameterCount <= methodNames.length) {
+        if (parameterCount <= MAX_PARAMETERS && parameterCount <= methodNames.length) {
             return methodNames[parameterCount];
 
         } else {
@@ -76,17 +70,9 @@ final class FastIntMethodGenerator extends AbstractNumericMethodGenerator {
 
     final static int getMaximumFastIntParameters() {
         try {
-            com.kenai.jffi.Invoker.class.getDeclaredMethod("invokeIIIIIIrI", com.kenai.jffi.Function.class,
+            com.kenai.jffi.Invoker.class.getDeclaredMethod("invokeI6", CallContext.class, long.class,
                     int.class, int.class, int.class, int.class, int.class, int.class);
             return 6;
-        } catch (NoSuchMethodException nex) {
-            try {
-                com.kenai.jffi.Invoker.class.getDeclaredMethod("invokeIIIrI", com.kenai.jffi.Function.class,
-                        int.class, int.class, int.class);
-                return 3;
-            } catch (NoSuchMethodException nex2) {
-                return -1;
-            }
         } catch (Throwable t) {
             return -1;
         }
