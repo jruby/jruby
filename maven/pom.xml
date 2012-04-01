@@ -93,20 +93,20 @@
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jffi</artifactId>
-      <version>1.0.12-SNAPSHOT</version>
+      <version>1.1.0</version>
       <scope>${jar.scope}</scope>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jffi</artifactId>
-      <version>1.0.11</version>
+      <version>1.1.0</version>
       <scope>runtime</scope>
       <classifier>native</classifier>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
-      <artifactId>ffi</artifactId>
-      <version>1.0.5</version>
+      <artifactId>jnr-ffi</artifactId>
+      <version>0.7.1</version>
       <scope>${jar.scope}</scope>
     </dependency>
     <dependency>
