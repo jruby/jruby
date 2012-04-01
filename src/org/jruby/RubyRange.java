@@ -475,7 +475,7 @@ public class RubyRange extends RubyObject {
         long unit = RubyNumeric.num2long(step);
         if (unit < 0) throw runtime.newArgumentError("step can't be negative");
 
-        if (begin instanceof RubyFixnum && end instanceof RubyFixnum) {
+        if (begin instanceof RubyFixnum && end instanceof RubyFixnum && step instanceof RubyFixnum) {
             if (unit == 0) throw runtime.newArgumentError("step can't be 0");
             fixnumStep(context, runtime, unit, block);
         } else {
