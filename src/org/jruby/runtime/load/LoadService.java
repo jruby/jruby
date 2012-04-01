@@ -1166,8 +1166,7 @@ public class LoadService {
         Outer: for (int i = 0; i < loadPath.size(); i++) {
             // TODO this is really inefficient, and potentially a problem everytime anyone require's something.
             // we should try to make LoadPath a special array object.
-            RubyString entryString = loadPath.eltInternal(i).convertToString();
-            String loadPathEntry = entryString.asJavaString();
+            String loadPathEntry = getLoadPathEntry(loadPath.eltInternal(i));
 
             if (loadPathEntry.equals(".") || loadPathEntry.equals("")) {
                 foundResource = tryResourceFromCWD(state, baseName, suffixType);
@@ -1207,6 +1206,11 @@ public class LoadService {
         }
 
         return foundResource;
+    }
+    
+    protected String getLoadPathEntry(IRubyObject entry) {
+        RubyString entryString = entry.convertToString();
+        return entryString.asJavaString();
     }
 
     protected LoadServiceResource tryResourceFromJarURLWithLoadPath(String namePlusSuffix, String loadPathEntry) {
@@ -1375,8 +1379,7 @@ public class LoadService {
         for (int i = 0; i < loadPath.size(); i++) {
             // TODO this is really inefficient, and potentially a problem everytime anyone require's something.
             // we should try to make LoadPath a special array object.
-            RubyString entryString = loadPath.eltInternal(i).convertToString();
-            String entry = entryString.asJavaString();
+            String entry = getLoadPathEntry(loadPath.eltInternal(i));
 
             // if entry is an empty string, skip it
             if (entry.length() == 0) continue;
