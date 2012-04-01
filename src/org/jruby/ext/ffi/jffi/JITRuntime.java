@@ -1,20 +1,17 @@
 package org.jruby.ext.ffi.jffi;
 
-import java.math.BigInteger;
-
 import com.kenai.jffi.ObjectParameterInfo;
 import com.kenai.jffi.ObjectParameterInvoker;
-import org.jruby.Ruby;
-import org.jruby.RubyBignum;
-import org.jruby.RubyBoolean;
-import org.jruby.RubyFixnum;
-import org.jruby.RubyFloat;
-import org.jruby.RubyNumeric;
-import org.jruby.RubyString;
-import org.jruby.ext.ffi.*;
+import org.jruby.*;
+import org.jruby.ext.ffi.AbstractMemory;
+import org.jruby.ext.ffi.Buffer;
+import org.jruby.ext.ffi.Pointer;
+import org.jruby.ext.ffi.Struct;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.StringSupport;
+
+import java.math.BigInteger;
 
 /**
  *
@@ -388,7 +385,7 @@ public final class JITRuntime {
 
         if (objCount == 1) {
             return ObjectParameterInvoker.getInstance().invokeN1O1rN(function, n1,
-                    s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info);
+                    s1.object(o1), s1.offset(o1), s1.length(o1), o1info);
 
         } else {
             throw newObjectCountError(objCount);
@@ -400,7 +397,7 @@ public final class JITRuntime {
                                   IRubyObject o1, PointerParameterStrategy s1, ObjectParameterInfo o1info) {
         if (objCount == 1) {
             return ObjectParameterInvoker.getInstance().invokeN2O1rN(function, n1, n2,
-                    s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info);
+                    s1.object(o1), s1.offset(o1), s1.length(o1), o1info);
 
         } else {
             throw newObjectCountError(objCount);
@@ -422,13 +419,13 @@ public final class JITRuntime {
             }
 
             return ObjectParameterInvoker.getInstance().invokeN2O1rN(function, n1, n2,
-                s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info);
+                s1.object(o1), s1.offset(o1), s1.length(o1), o1info);
 
         } else if (objCount == 2) {
             // Two objects to be passed as heap objects, just use both arguments as-is
             return ObjectParameterInvoker.getInstance().invokeN2O2rN(function, n1, n2,
-                s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info,
-                s2.array(o2), s2.arrayOffset(o2), s2.arrayLength(o2), o2info);
+                s1.object(o1), s1.offset(o1), s1.length(o1), o1info,
+                s2.object(o2), s2.offset(o2), s2.length(o2), o2info);
 
         } else {
             throw newObjectCountError(objCount);
@@ -441,7 +438,7 @@ public final class JITRuntime {
         if (objCount == 1) {
 
             return ObjectParameterInvoker.getInstance().invokeN3O1rN(function, n1, n2, n3,
-                    s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info);
+                    s1.object(o1), s1.offset(o1), s1.length(o1), o1info);
 
         } else {
             throw newObjectCountError(objCount);
@@ -464,12 +461,12 @@ public final class JITRuntime {
             }
 
             return ObjectParameterInvoker.getInstance().invokeN3O1rN(function, n1, n2, n3,
-                s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info);
+                s1.object(o1), s1.offset(o1), s1.length(o1), o1info);
 
         } else if (objCount == 2) {
             return ObjectParameterInvoker.getInstance().invokeN3O2rN(function, n1, n2, n3,
-                s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info,
-                s2.array(o2), s2.arrayOffset(o2), s2.arrayLength(o2), o2info);
+                s1.object(o1), s1.offset(o1), s1.length(o1), o1info,
+                s2.object(o2), s2.offset(o2), s2.length(o2), o2info);
 
         } else {
             throw newObjectCountError(objCount);
@@ -503,7 +500,7 @@ public final class JITRuntime {
             if (objCount == 1) {
 
                 return ObjectParameterInvoker.getInstance().invokeN3O1rN(function, n1, n2, n3,
-                        s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info);
+                        s1.object(o1), s1.offset(o1), s1.length(o1), o1info);
 
             } else if (objCount == 2) {
                 // Sort out which is the second non-direct object
@@ -519,8 +516,8 @@ public final class JITRuntime {
                 }
 
                 return ObjectParameterInvoker.getInstance().invokeN3O2rN(function, n1, n2, n3,
-                        s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info,
-                        s2.array(o2), s2.arrayOffset(o2), s2.arrayLength(o2), o2info);
+                        s1.object(o1), s1.offset(o1), s1.length(o1), o1info,
+                        s2.object(o2), s2.offset(o2), s2.length(o2), o2info);
             } else {
                 throw newObjectCountError(objCount);
             }
@@ -528,9 +525,9 @@ public final class JITRuntime {
 
         // Three objects to be passed as heap objects, just use all arguments as-is
         return ObjectParameterInvoker.getInstance().invokeN3O3rN(function, n1, n2, n3,
-            s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info,
-            s2.array(o2), s2.arrayOffset(o2), s2.arrayLength(o2), o2info,
-            s3.array(o3), s3.arrayOffset(o3), s3.arrayLength(o3), o3info);
+            s1.object(o1), s1.offset(o1), s1.length(o1), o1info,
+            s2.object(o2), s2.offset(o2), s2.length(o2), o2info,
+            s3.object(o3), s3.offset(o3), s3.length(o3), o3info);
     }
 
     public static long invokeN4OrN(com.kenai.jffi.Invoker invoker, com.kenai.jffi.Function function,
@@ -539,7 +536,7 @@ public final class JITRuntime {
 
         if (objCount == 1) {
             return ObjectParameterInvoker.getInstance().invokeN4O1rN(function, n1, n2, n3, n4,
-                    s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info);
+                    s1.object(o1), s1.offset(o1), s1.length(o1), o1info);
         } else {
             throw newObjectCountError(objCount);
         }
@@ -560,13 +557,13 @@ public final class JITRuntime {
             }
 
             return ObjectParameterInvoker.getInstance().invokeN4O1rN(function, n1, n2, n3, n4,
-                s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info);
+                s1.object(o1), s1.offset(o1), s1.length(o1), o1info);
 
         } else if (objCount == 2) {
             // Two objects to be passed as heap objects, just use both arguments as-is
             return ObjectParameterInvoker.getInstance().invokeN4O2rN(function, n1, n2, n3, n4,
-                s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info,
-                s2.array(o2), s2.arrayOffset(o2), s2.arrayLength(o2), o2info);
+                s1.object(o1), s1.offset(o1), s1.length(o1), o1info,
+                s2.object(o2), s2.offset(o2), s2.length(o2), o2info);
 
         } else {
             throw newObjectCountError(objCount);
@@ -600,7 +597,7 @@ public final class JITRuntime {
             if (objCount == 1) {
 
                 return ObjectParameterInvoker.getInstance().invokeN4O1rN(function, n1, n2, n3, n4,
-                        s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info);
+                        s1.object(o1), s1.offset(o1), s1.length(o1), o1info);
 
             } else if (objCount == 2) {
                 // Sort out which is the second non-direct object
@@ -617,8 +614,8 @@ public final class JITRuntime {
                 }
 
                 return ObjectParameterInvoker.getInstance().invokeN4O2rN(function, n1, n2, n3, n4,
-                        s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info,
-                        s2.array(o2), s2.arrayOffset(o2), s2.arrayLength(o2), o2info);
+                        s1.object(o1), s1.offset(o1), s1.length(o1), o1info,
+                        s2.object(o2), s2.offset(o2), s2.length(o2), o2info);
             } else {
                 throw newObjectCountError(objCount);
             }
@@ -626,9 +623,9 @@ public final class JITRuntime {
 
         // Three objects to be passed as heap objects, just use all arguments as-is
         return ObjectParameterInvoker.getInstance().invokeN4O3rN(function, n1, n2, n3, n4,
-                s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info,
-                s2.array(o2), s2.arrayOffset(o2), s2.arrayLength(o2), o2info,
-                s3.array(o3), s3.arrayOffset(o3), s3.arrayLength(o3), o3info);
+                s1.object(o1), s1.offset(o1), s1.length(o1), o1info,
+                s2.object(o2), s2.offset(o2), s2.length(o2), o2info,
+                s3.object(o3), s3.offset(o3), s3.length(o3), o3info);
     }
 
     public static long invokeN4OrN(com.kenai.jffi.Invoker invoker, com.kenai.jffi.Function function,
@@ -661,7 +658,7 @@ public final class JITRuntime {
 
         if (objCount == 1) {
             return ObjectParameterInvoker.getInstance().invokeN4O1rN(function, n1, n2, n3, n4,
-                    s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info);
+                    s1.object(o1), s1.offset(o1), s1.length(o1), o1info);
         }
 
         // Sort out which is the second non-direct object
@@ -682,8 +679,8 @@ public final class JITRuntime {
         
         if (objCount == 2) {
             return ObjectParameterInvoker.getInstance().invokeN4O2rN(function, n1, n2, n3, n4,
-                    s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info,
-                    s2.array(o2), s2.arrayOffset(o2), s2.arrayLength(o2), o2info);
+                    s1.object(o1), s1.offset(o1), s1.length(o1), o1info,
+                    s2.object(o2), s2.offset(o2), s2.length(o2), o2info);
         }
         
         // Sort out third parameter
@@ -700,9 +697,9 @@ public final class JITRuntime {
 
         if (objCount == 3) {
             return ObjectParameterInvoker.getInstance().invokeN4O3rN(function, n1, n2, n3, n4,
-                s1.array(o1), s1.arrayOffset(o1), s1.arrayLength(o1), o1info,
-                s2.array(o2), s2.arrayOffset(o2), s2.arrayLength(o2), o2info,
-                s3.array(o3), s3.arrayOffset(o3), s3.arrayLength(o3), o3info);
+                s1.object(o1), s1.offset(o1), s1.length(o1), o1info,
+                s2.object(o2), s2.offset(o2), s2.length(o2), o2info,
+                s3.object(o3), s3.offset(o3), s3.length(o3), o3info);
 
         } else {
             throw newObjectCountError(objCount);

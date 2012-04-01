@@ -1,7 +1,5 @@
 package org.jruby.ext.ffi.jffi;
 
-import org.jruby.runtime.builtin.IRubyObject;
-
 /**
  * 
  */
@@ -11,22 +9,22 @@ public final class NilPointerParameterStrategy extends PointerParameterStrategy 
     }
 
     @Override
-    public long getAddress(IRubyObject parameter) {
+    public long address(Object parameter) {
         return 0L;
     }
 
     @Override
-    public Object array(IRubyObject parameter) {
+    public Object object(Object parameter) {
         return null;
     }
 
     @Override
-    public int arrayOffset(IRubyObject parameter) {
+    public int offset(Object parameter) {
         return 0;
     }
 
     @Override
-    public int arrayLength(IRubyObject parameter) {
+    public int length(Object parameter) {
         return 0;
     }
 }

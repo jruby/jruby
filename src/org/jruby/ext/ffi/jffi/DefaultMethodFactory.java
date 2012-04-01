@@ -7,7 +7,6 @@ import com.kenai.jffi.HeapInvocationBuffer;
 import com.kenai.jffi.InvocationBuffer;
 import com.kenai.jffi.Invoker;
 import com.kenai.jffi.ArrayFlags;
-import org.jruby.RubyBoolean;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
@@ -22,18 +21,14 @@ import org.jruby.ext.ffi.MemoryIO;
 import org.jruby.ext.ffi.MemoryPointer;
 import org.jruby.ext.ffi.NativeType;
 import org.jruby.ext.ffi.Platform;
-import org.jruby.ext.ffi.Pointer;
 import org.jruby.ext.ffi.Struct;
 import org.jruby.ext.ffi.StructByValue;
 import org.jruby.ext.ffi.StructLayout;
 import org.jruby.ext.ffi.Type;
-import org.jruby.ext.ffi.Util;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
-import org.jruby.util.StringSupport;
 
 
 public final class DefaultMethodFactory extends MethodFactory {
@@ -620,10 +615,10 @@ public final class DefaultMethodFactory extends MethodFactory {
         public final void marshal(ThreadContext context, InvocationBuffer buffer, IRubyObject parameter,
                                   PointerParameterStrategy strategy) {
             if (strategy.isDirect()) {
-                buffer.putAddress(strategy.getAddress(parameter));
+                buffer.putAddress(strategy.address(parameter));
 
             } else {
-                buffer.putArray(byte[].class.cast(strategy.array(parameter)), strategy.arrayOffset(parameter), strategy.arrayLength(parameter),
+                buffer.putArray(byte[].class.cast(strategy.object(parameter)), strategy.offset(parameter), strategy.length(parameter),
                         flags);
             }
         }

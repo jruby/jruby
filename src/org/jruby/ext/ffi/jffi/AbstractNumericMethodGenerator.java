@@ -1,20 +1,17 @@
 package org.jruby.ext.ffi.jffi;
 
 import com.kenai.jffi.ObjectParameterInfo;
+import com.kenai.jffi.ObjectParameterStrategy;
 import com.kenai.jffi.Platform;
-import org.jruby.ext.ffi.Buffer;
-import org.jruby.RubyString;
-import org.jruby.ext.ffi.AbstractMemory;
-import org.jruby.ext.ffi.Pointer;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.ext.ffi.NativeType;
-import org.jruby.ext.ffi.Struct;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.objectweb.asm.Label;
 
 import static org.jruby.util.CodegenUtils.*;
-import static org.objectweb.asm.Opcodes.*;
+import static org.objectweb.asm.Opcodes.ACC_FINAL;
+import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 
 /**
  *
@@ -139,7 +136,7 @@ abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
                             sig(PointerParameterStrategy.class, IRubyObject.class));
                     mv.astore(nextStrategyVar);
                     mv.aload(nextStrategyVar);
-                    mv.invokevirtual(p(PointerParameterStrategy.class), "isDirect", sig(boolean.class));
+                    mv.invokevirtual(p(ObjectParameterStrategy.class), "isDirect", sig(boolean.class));
                     mv.iftrue(address);
                     mv.iinc(heapPointerCountVar, 1);
 
@@ -147,7 +144,7 @@ abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
                     // It is now direct, get the address, and convert to the native int type
                     mv.aload(nextStrategyVar);
                     mv.aload(paramVar);
-                    mv.invokevirtual(p(PointerParameterStrategy.class), "getAddress", sig(long.class, IRubyObject.class));
+                    mv.invokevirtual(p(ObjectParameterStrategy.class), "address", sig(long.class, Object.class));
                     narrow(mv, long.class, nativeIntType);
                     nextStrategyVar++;
                     mv.label(next);

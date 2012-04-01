@@ -1,39 +1,39 @@
 package org.jruby.ext.ffi.jffi;
 
-import org.jruby.ext.ffi.AbstractMemory;
-import org.jruby.ext.ffi.ArrayMemoryIO;
+import com.kenai.jffi.ObjectParameterType;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *
  */
 public final class DelegatingPointerParameterStrategy extends PointerParameterStrategy {
+    private static final ObjectParameterType OBJECT_TYPE = ObjectParameterType.create(ObjectParameterType.ARRAY, ObjectParameterType.ComponentType.BYTE);
     private final IRubyObject value;
     private final PointerParameterStrategy strategy;
 
     public DelegatingPointerParameterStrategy(IRubyObject value, PointerParameterStrategy strategy) {
-        super(strategy.isDirect());
+        super(strategy.isDirect(), OBJECT_TYPE);
         this.value = value;
         this.strategy = strategy;
     }
 
     @Override
-    public long getAddress(IRubyObject parameter) {
-        return strategy.getAddress(value);
+    public long address(Object parameter) {
+        return strategy.address(value);
     }
 
     @Override
-    public Object array(IRubyObject parameter) {
-        return strategy.array(value);
+    public Object object(Object parameter) {
+        return strategy.object(value);
     }
 
     @Override
-    public int arrayOffset(IRubyObject parameter) {
-        return strategy.arrayOffset(value);
+    public int offset(Object parameter) {
+        return strategy.offset(value);
     }
 
     @Override
-    public int arrayLength(IRubyObject parameter) {
-        return strategy.arrayLength(value);
+    public int length(Object parameter) {
+        return strategy.length(value);
     }
 }

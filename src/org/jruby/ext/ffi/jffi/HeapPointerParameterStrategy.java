@@ -1,35 +1,34 @@
 package org.jruby.ext.ffi.jffi;
 
+import com.kenai.jffi.ObjectParameterType;
 import org.jruby.ext.ffi.AbstractMemory;
 import org.jruby.ext.ffi.ArrayMemoryIO;
-import org.jruby.ext.ffi.Buffer;
-import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  *
  */
 public final class HeapPointerParameterStrategy extends PointerParameterStrategy {
     public HeapPointerParameterStrategy() {
-        super(false);
+        super(HEAP, ObjectParameterType.create(ObjectParameterType.ARRAY, ObjectParameterType.ComponentType.BYTE));
     }
 
     @Override
-    public long getAddress(IRubyObject parameter) {
+    public long address(Object parameter) {
         return 0;
     }
 
     @Override
-    public Object array(IRubyObject parameter) {
+    public Object object(Object parameter) {
         return ((ArrayMemoryIO) ((AbstractMemory) parameter).getMemoryIO()).array();
     }
 
     @Override
-    public int arrayOffset(IRubyObject parameter) {
+    public int offset(Object parameter) {
         return ((ArrayMemoryIO) ((AbstractMemory) parameter).getMemoryIO()).arrayOffset();
     }
 
     @Override
-    public int arrayLength(IRubyObject parameter) {
+    public int length(Object parameter) {
         return ((ArrayMemoryIO) ((AbstractMemory) parameter).getMemoryIO()).arrayLength();
     }
 }

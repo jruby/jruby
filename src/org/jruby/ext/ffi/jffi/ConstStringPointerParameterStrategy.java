@@ -15,7 +15,7 @@ public class ConstStringPointerParameterStrategy extends PointerParameterStrateg
     }
 
     @Override
-    public long getAddress(IRubyObject parameter) {
+    public long address(Object parameter) {
         RubyString s = (RubyString) parameter;
         Object existingHandle = s.getFFIHandle();
         if (existingHandle instanceof NativeStringHandle) {
@@ -26,8 +26,8 @@ public class ConstStringPointerParameterStrategy extends PointerParameterStrateg
         }
 
         ByteList bl = s.getByteList();
-        StringSupport.checkStringSafety(parameter.getRuntime(), parameter);
-        DirectMemoryIO memory = TransientNativeMemoryIO.allocateAligned(parameter.getRuntime(), bl.length() + 1, 1, false);
+        StringSupport.checkStringSafety(s.getRuntime(), s);
+        DirectMemoryIO memory = TransientNativeMemoryIO.allocateAligned(s.getRuntime(), bl.length() + 1, 1, false);
         memory.putZeroTerminatedByteArray(0, bl.getUnsafeBytes(), bl.begin(), bl.length());
         s.setByteListShared();
         s.setFFIHandle(new NativeStringHandle(memory, s.getByteList()));
@@ -36,18 +36,18 @@ public class ConstStringPointerParameterStrategy extends PointerParameterStrateg
     }
 
     @Override
-    public Object array(IRubyObject parameter) {
-        StringSupport.checkStringSafety(parameter.getRuntime(), parameter);
+    public Object object(Object parameter) {
+        StringSupport.checkStringSafety(((IRubyObject) parameter).getRuntime(), (IRubyObject) parameter);
         return ((RubyString) parameter).getByteList().unsafeBytes();
     }
 
     @Override
-    public int arrayOffset(IRubyObject parameter) {
+    public int offset(Object parameter) {
         return ((RubyString) parameter).getByteList().begin();
     }
 
     @Override
-    public int arrayLength(IRubyObject parameter) {
+    public int length(Object parameter) {
         return ((RubyString) parameter).getByteList().length();
     }
 

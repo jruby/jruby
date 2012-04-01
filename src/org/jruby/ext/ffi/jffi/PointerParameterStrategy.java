@@ -1,32 +1,26 @@
 package org.jruby.ext.ffi.jffi;
 
-import org.jruby.runtime.builtin.IRubyObject;
+import com.kenai.jffi.ObjectParameterStrategy;
+import com.kenai.jffi.ObjectParameterType;
 
 /**
  *
  */
-abstract public class PointerParameterStrategy {
-    private final boolean isDirect;
-    static enum StrategyType { DIRECT, HEAP }
-    protected static final StrategyType DIRECT = StrategyType.DIRECT;
-    protected static final StrategyType HEAP = StrategyType.HEAP;
+abstract public class PointerParameterStrategy extends ObjectParameterStrategy {
 
     PointerParameterStrategy(boolean isDirect) {
-        this.isDirect = isDirect;
+        super(isDirect);
+    }
+
+    PointerParameterStrategy(boolean isDirect, ObjectParameterType objectType) {
+        super(isDirect, objectType);
     }
 
     PointerParameterStrategy(StrategyType type) {
-        this.isDirect = type == StrategyType.DIRECT;
+        super(type);
     }
 
-
-    public final boolean isDirect() {
-        return isDirect;
+    PointerParameterStrategy(StrategyType type, ObjectParameterType objectType) {
+        super(type, objectType);
     }
-
-    abstract public long getAddress(IRubyObject parameter);
-
-    abstract public Object array(IRubyObject parameter);
-    abstract public int arrayOffset(IRubyObject parameter);
-    abstract public int arrayLength(IRubyObject parameter);
 }
