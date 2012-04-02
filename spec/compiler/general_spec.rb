@@ -404,6 +404,12 @@ describe "JRuby's compiler" do
           [57, 58, 59, 60, 61, 62, 63, 64]]
     compile_and_run(big_triple_flip).should == expected
   end
+
+  it "gracefully handles named captures when there's no match" do
+    lambda do
+      compile_and_run('/(?<a>.+)/ =~ ""')
+    end.should_not raise_error
+  end
   
   it "does a bunch of other stuff" do
     silence_warnings {
