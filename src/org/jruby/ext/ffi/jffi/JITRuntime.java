@@ -18,7 +18,7 @@ public final class JITRuntime {
     private JITRuntime() {}
     
     public static RuntimeException newArityError(ThreadContext context, int got, int expected) {
-        return context.getRuntime().newArgumentError(got, expected);
+        return context.runtime.newArgumentError(got, expected);
     }
     
     public static long other2long(IRubyObject parameter) {
@@ -193,121 +193,121 @@ public final class JITRuntime {
     }
     
     public static IRubyObject newSigned8(ThreadContext context, int value) {
-        return RubyFixnum.newFixnum(context.getRuntime(), (byte) value);
+        return RubyFixnum.newFixnum(context.runtime, (byte) value);
     }
 
     public static IRubyObject newSigned8(ThreadContext context, long value) {
-        return RubyFixnum.newFixnum(context.getRuntime(), (byte) value);
+        return RubyFixnum.newFixnum(context.runtime, (byte) value);
     }
 
     public static IRubyObject newUnsigned8(ThreadContext context, int value) {
         int n = (byte) value; // sign-extend the low 8 bits to 32
-        return RubyFixnum.newFixnum(context.getRuntime(), n < 0 ? ((n & 0x7F) + 0x80) : n);
+        return RubyFixnum.newFixnum(context.runtime, n < 0 ? ((n & 0x7F) + 0x80) : n);
     }
 
     public static IRubyObject newUnsigned8(ThreadContext context, long value) {
         int n = (byte) value; // sign-extend the low 8 bits to 32
-        return RubyFixnum.newFixnum(context.getRuntime(), n < 0 ? ((n & 0x7F) + 0x80) : n);
+        return RubyFixnum.newFixnum(context.runtime, n < 0 ? ((n & 0x7F) + 0x80) : n);
     }
 
     public static IRubyObject newSigned16(ThreadContext context, int value) {
-        return RubyFixnum.newFixnum(context.getRuntime(), (short) value);
+        return RubyFixnum.newFixnum(context.runtime, (short) value);
     }
 
     public static IRubyObject newSigned16(ThreadContext context, long value) {
-        return RubyFixnum.newFixnum(context.getRuntime(), (short) value);
+        return RubyFixnum.newFixnum(context.runtime, (short) value);
     }
 
     public static IRubyObject newUnsigned16(ThreadContext context, int value) {
         int n = (short) value; // sign-extend the low 16 bits to 32
-        return RubyFixnum.newFixnum(context.getRuntime(), n < 0 ? ((n & 0x7FFF) + 0x8000) : n);
+        return RubyFixnum.newFixnum(context.runtime, n < 0 ? ((n & 0x7FFF) + 0x8000) : n);
     }
 
     public static IRubyObject newUnsigned16(ThreadContext context, long value) {
         int n = (short) value; // sign-extend the low 16 bits to 32
-        return RubyFixnum.newFixnum(context.getRuntime(), n < 0 ? ((n & 0x7FFF) + 0x8000) : n);
+        return RubyFixnum.newFixnum(context.runtime, n < 0 ? ((n & 0x7FFF) + 0x8000) : n);
     }
 
     public static IRubyObject newSigned32(ThreadContext context, int value) {
-        return RubyFixnum.newFixnum(context.getRuntime(), value);
+        return RubyFixnum.newFixnum(context.runtime, value);
     }
 
     public static IRubyObject newSigned32(ThreadContext context, long value) {
-        return RubyFixnum.newFixnum(context.getRuntime(), (int) value);
+        return RubyFixnum.newFixnum(context.runtime, (int) value);
     }
 
     public static IRubyObject newUnsigned32(ThreadContext context, int value) {
         long n = value;
-        return RubyFixnum.newFixnum(context.getRuntime(), n < 0 ? ((n & 0x7FFFFFFFL) + 0x80000000L) : n);
+        return RubyFixnum.newFixnum(context.runtime, n < 0 ? ((n & 0x7FFFFFFFL) + 0x80000000L) : n);
     }
 
     public static IRubyObject newUnsigned32(ThreadContext context, long value) {
         long n = (int) value; // only keep the low 32 bits
-        return RubyFixnum.newFixnum(context.getRuntime(), n < 0 ? ((n & 0x7FFFFFFFL) + 0x80000000L) : n);
+        return RubyFixnum.newFixnum(context.runtime, n < 0 ? ((n & 0x7FFFFFFFL) + 0x80000000L) : n);
     }
 
     public static IRubyObject newSigned64(ThreadContext context, long value) {
-        return RubyFixnum.newFixnum(context.getRuntime(), value);
+        return RubyFixnum.newFixnum(context.runtime, value);
     }
 
     private static final BigInteger UINT64_BASE = BigInteger.valueOf(Long.MAX_VALUE).add(BigInteger.ONE);
     public static IRubyObject newUnsigned64(ThreadContext context, long value) {
         return value < 0
-                ? RubyBignum.newBignum(context.getRuntime(), BigInteger.valueOf(value & 0x7fffffffffffffffL).add(UINT64_BASE))
-                : RubyFixnum.newFixnum(context.getRuntime(), value);
+                ? RubyBignum.newBignum(context.runtime, BigInteger.valueOf(value & 0x7fffffffffffffffL).add(UINT64_BASE))
+                : RubyFixnum.newFixnum(context.runtime, value);
     }
     
     public static IRubyObject newNil(ThreadContext context, int ignored) {
-        return context.getRuntime().getNil();
+        return context.nil;
     }
     
     public static IRubyObject newNil(ThreadContext context, long ignored) {
-        return context.getRuntime().getNil();
+        return context.nil;
     }
     
     public static IRubyObject newPointer32(ThreadContext context, int address) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         return new Pointer(runtime, 
                 NativeMemoryIO.wrap(runtime, ((long) address) & 0xffffffffL));
     }
     
     public static IRubyObject newPointer32(ThreadContext context, long address) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         return new Pointer(runtime, 
                 NativeMemoryIO.wrap(runtime, address & 0xffffffffL));
     }
     
     public static IRubyObject newPointer64(ThreadContext context, long address) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         return new Pointer(runtime, NativeMemoryIO.wrap(runtime, address));
     }
     
     public static IRubyObject newString(ThreadContext context, int address) {
-        return FFIUtil.getString(context.getRuntime(), address);
+        return FFIUtil.getString(context.runtime, address);
     }
     
     public static IRubyObject newString(ThreadContext context, long address) {
-        return FFIUtil.getString(context.getRuntime(), address);
+        return FFIUtil.getString(context.runtime, address);
     }
     
     public static IRubyObject newBoolean(ThreadContext context, int value) {
-        return context.getRuntime().newBoolean((value & 0x1) != 0);
+        return context.runtime.newBoolean((value & 0x1) != 0);
     }
     
     public static IRubyObject newBoolean(ThreadContext context, long value) {
-        return context.getRuntime().newBoolean((value & 0x1L) != 0);
+        return context.runtime.newBoolean((value & 0x1L) != 0);
     }
     
     public static IRubyObject newFloat32(ThreadContext context, int value) {
-        return RubyFloat.newFloat(context.getRuntime(), Float.intBitsToFloat(value));
+        return RubyFloat.newFloat(context.runtime, Float.intBitsToFloat(value));
     }
     
     public static IRubyObject newFloat32(ThreadContext context, long value) {
-        return RubyFloat.newFloat(context.getRuntime(), Float.intBitsToFloat((int) value));
+        return RubyFloat.newFloat(context.runtime, Float.intBitsToFloat((int) value));
     }
     
     public static IRubyObject newFloat64(ThreadContext context, long value) {
-        return RubyFloat.newFloat(context.getRuntime(), Double.longBitsToDouble(value));
+        return RubyFloat.newFloat(context.runtime, Double.longBitsToDouble(value));
     }
 
     private static final PointerParameterStrategy DIRECT_POINTER = new DirectPointerParameterStrategy();
