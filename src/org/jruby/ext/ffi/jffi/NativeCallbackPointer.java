@@ -19,13 +19,6 @@ class NativeCallbackPointer extends AbstractInvoker {
     final CallbackInfo cbInfo;
     final NativeFunctionInfo closureInfo;
 
-    NativeCallbackPointer(Ruby runtime, Closure.Handle handle, CallbackInfo cbInfo, NativeFunctionInfo closureInfo) {
-        super(runtime, runtime.getModule("FFI").getClass("Callback"),
-                cbInfo.getParameterTypes().length, new CallbackMemoryIO(runtime, handle));
-        this.cbInfo = cbInfo;
-        this.closureInfo = closureInfo;
-    }
-
     NativeCallbackPointer(Ruby runtime, RubyClass klass, Closure.Handle handle, CallbackInfo cbInfo, NativeFunctionInfo closureInfo) {
         super(runtime, klass,
                 cbInfo.getParameterTypes().length, new CallbackMemoryIO(runtime, handle));

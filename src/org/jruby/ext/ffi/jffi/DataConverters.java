@@ -1,16 +1,8 @@
 package org.jruby.ext.ffi.jffi;
 
 import com.kenai.jffi.CallingConvention;
-import org.jruby.RubyFixnum;
-import org.jruby.RubyHash;
-import org.jruby.RubyInteger;
-import org.jruby.RubyProc;
-import org.jruby.RubySymbol;
-import org.jruby.ext.ffi.CallbackInfo;
-import org.jruby.ext.ffi.MappedType;
-import org.jruby.ext.ffi.NativeType;
-import org.jruby.ext.ffi.Pointer;
-import org.jruby.ext.ffi.Type;
+import org.jruby.*;
+import org.jruby.ext.ffi.*;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.WeakIdentityHashMap;
@@ -203,9 +195,9 @@ public class DataConverters {
             if (obj instanceof Pointer || obj.isNil()) {
                 return obj;
             
-            } else if (obj instanceof RubyProc || obj.respondsTo("call")) {
-                return callbackFactory.getCallback(obj);
-                
+            } else if (obj instanceof RubyObject) {
+                return callbackFactory.getCallback((RubyObject) obj);
+
             } else {
                 throw context.getRuntime().newTypeError("wrong argument type.  Expected callable object");
             }

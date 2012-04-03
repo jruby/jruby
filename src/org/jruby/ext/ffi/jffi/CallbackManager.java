@@ -4,40 +4,22 @@ package org.jruby.ext.ffi.jffi;
 import com.kenai.jffi.CallingConvention;
 import com.kenai.jffi.Closure;
 import com.kenai.jffi.ClosureManager;
-
-import java.util.Collections;
-import java.util.Map;
-import java.util.WeakHashMap;
-
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
-import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
-import org.jruby.RubyProc;
-import org.jruby.ext.ffi.ArrayMemoryIO;
 import org.jruby.ext.ffi.CallbackInfo;
-import org.jruby.ext.ffi.DirectMemoryIO;
-import org.jruby.ext.ffi.MappedType;
-import org.jruby.ext.ffi.MemoryIO;
-import org.jruby.ext.ffi.NullMemoryIO;
-import org.jruby.ext.ffi.Platform;
-import org.jruby.ext.ffi.Pointer;
-import org.jruby.ext.ffi.Struct;
-import org.jruby.ext.ffi.StructByValue;
 import org.jruby.ext.ffi.Type;
-import org.jruby.ext.ffi.Util;
-import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.Map;
+import java.util.WeakHashMap;
 
 
 /**
  * Manages Callback instances for the low level FFI backend.
  */
 public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
-    private static final String CALLBACK_ID = "ffi_callback";
-
     private final Map<CallbackInfo, NativeCallbackFactory> factories
             = new WeakHashMap<CallbackInfo, NativeCallbackFactory>();
 
@@ -74,7 +56,7 @@ public class CallbackManager extends org.jruby.ext.ffi.CallbackManager {
     
     public final org.jruby.ext.ffi.Pointer getCallback(Ruby runtime, CallbackInfo cbInfo, Object proc) {
         return proc instanceof RubyObject
-                ? getCallbackFactory(runtime, cbInfo).getCallback(proc)
+                ? getCallbackFactory(runtime, cbInfo).getCallback((RubyObject) proc)
                 : getCallbackFactory(runtime, cbInfo).newCallback(proc);
     }
 
