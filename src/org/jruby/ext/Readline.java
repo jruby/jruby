@@ -32,22 +32,22 @@ package org.jruby.ext;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.lang.reflect.Field;
 import java.nio.CharBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-
-import jline.CandidateListCompletionHandler;
-import jline.Completor;
-import jline.ConsoleReader;
-import jline.CursorBuffer;
-import jline.FileNameCompletor;
-import jline.History;
+import java.util.ListIterator;
 
 import static org.jruby.CompatVersion.*;
+
+import jline.console.ConsoleReader;
+import jline.console.CursorBuffer;
+import jline.console.completer.Completer;
+import jline.console.completer.FileNameCompleter;
+import jline.console.history.History;
+import jline.console.history.MemoryHistory;
+import jline.internal.Configuration;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyIO;
@@ -73,80 +73,16 @@ public class Readline {
     private final static boolean DEBUG = false;
     private static IRubyObject COMPLETION_CASE_FOLD = null;
 
-    public static class ReadlineHistory extends History {
-        ArrayList historyList = null;
-        Field index = null;
-        private boolean securityRestricted = false;
-
-        public ReadlineHistory() {
-            try {
-                Field list = History.class.getDeclaredField("history");
-                list.setAccessible(true);
-                historyList = (ArrayList) list.get(this);
-                index = History.class.getDeclaredField("currentIndex");
-                index.setAccessible(true);
-            } catch (NoSuchFieldException ex) {
-                ex.printStackTrace();
-            } catch (SecurityException ex) {
-                securityRestricted = true;
-            } catch (IllegalArgumentException ex) {
-                ex.printStackTrace();
-            } catch (IllegalAccessException ex) {
-                ex.printStackTrace();
-            }
-        }
-
-        public void setCurrentIndex(int i) {
-            if (securityRestricted) {
-                return; // do nothing
-            }
-            try {
-                index.setInt(this, i);
-            } catch (IllegalArgumentException ex) {
-                ex.printStackTrace();
-            } catch (IllegalAccessException ex) {
-                ex.printStackTrace();
-            }
-        }
-
-        public void set(int i, String s) {
-            if (securityRestricted) {
-                return; // do nothing
-            }
-            historyList.set(i, s);
-        }
-
-        @SuppressWarnings("unchecked")
-        public String pop() {
-            if (securityRestricted) {
-                // Not fully implemented in security restricted environment.
-                // We just return the last value, without really popping it.
-                List histList = getHistoryList();
-                return (String)histList.get(histList.size() - 1);
-            }
-            return remove(historyList.size() - 1);
-        }
-
-        public String remove(int i) {
-            if (securityRestricted) {
-                // do nothing, we can't modify the history without
-                // accessing private members of History.
-                return "";
-            }
-            setCurrentIndex(historyList.size() - 2);
-            return (String)historyList.remove(i);
-        }
-    }
 
     public static class ConsoleHolder {
         public ConsoleReader readline;
-        public Completor currentCompletor;
-        public ReadlineHistory history;
+        public Completer currentCompletor;
+        public History history;
     }
 
     public static void createReadline(Ruby runtime) throws IOException {
         ConsoleHolder holder = new ConsoleHolder();
-        holder.history = new ReadlineHistory();
+        holder.history = new MemoryHistory();
         holder.currentCompletor = null;
         COMPLETION_CASE_FOLD = runtime.getNil();
 
@@ -171,14 +107,13 @@ public class Readline {
         } catch (IOException ioe) {
             throw runtime.newIOErrorFromException(ioe);
         }
-        holder.readline.setUseHistory(false);
-        holder.readline.setUsePagination(true);
+        holder.readline.setHistoryEnabled(false);
+        holder.readline.setPaginationEnabled(true);
         holder.readline.setBellEnabled(true);
-        ((CandidateListCompletionHandler) holder.readline.getCompletionHandler()).setAlwaysIncludeNewline(false);
         if (holder.currentCompletor == null) {
             holder.currentCompletor = new RubyFileNameCompletor();
         }
-        holder.readline.addCompletor(holder.currentCompletor);
+        holder.readline.addCompleter(holder.currentCompletor);
         holder.readline.setHistory(holder.history);
 
         // JRUBY-852, ignore escape key (it causes IRB to quit if we pass it out through readline)
@@ -192,7 +127,7 @@ public class Readline {
             }
         });
 
-        if (DEBUG) holder.readline.setDebug(new PrintWriter(System.err));
+//        if (DEBUG) holder.readline.setDebug(new PrintWriter(System.err));
     }
 
     public static History getHistory(ConsoleHolder holder) {
@@ -203,17 +138,17 @@ public class Readline {
         return (ConsoleHolder) (runtime.getModule("Readline").dataGetStruct());
     }
 
-    public static void setCompletor(ConsoleHolder holder, Completor completor) {
+    public static void setCompletor(ConsoleHolder holder, Completer completor) {
         if (holder.readline != null) {
-            holder.readline.removeCompletor(holder.currentCompletor);
+            holder.readline.removeCompleter(holder.currentCompletor);
         }
         holder.currentCompletor = completor;
         if (holder.readline != null) {
-            holder.readline.addCompletor(holder.currentCompletor);
+            holder.readline.addCompleter(holder.currentCompletor);
         }
     }
 
-    public static Completor getCompletor(ConsoleHolder holder) {
+    public static Completer getCompletor(ConsoleHolder holder) {
         return holder.currentCompletor;
     }
 
@@ -233,27 +168,19 @@ public class Readline {
         String v = null;
         while (true) {
             try {
-                holder.readline.getTerminal().disableEcho();
+                holder.readline.getTerminal().setEchoEnabled(false);
                 v = holder.readline.readLine(prompt.toString());
                 break;
             } catch (IOException ioe) {
-                if (RubyIO.restartSystemCall(ioe)) {
-                    // This is for JRUBY-2988, since after a suspend the terminal seems
-                    // to need to be reinitialized. Since we can't easily detect suspension,
-                    // initialize after every readline. Probably not fast, but this is for
-                    // interactive terminals anyway...so who cares?
-                    try {holder.readline.getTerminal().initializeTerminal();} catch (Exception e) {}
-                    continue;
-                }
                 throw runtime.newIOErrorFromException(ioe);
             } finally {
-                holder.readline.getTerminal().enableEcho();
+                holder.readline.getTerminal().setEchoEnabled(true);
             }
         }
         
         if (null != v) {
             if (add_to_hist.isTrue()) {
-                holder.readline.getHistory().addToHistory(v);
+                holder.readline.getHistory().add(v);
             }
 
             // Enebo: This is a little weird and a little broken.  We just ask
@@ -302,13 +229,13 @@ public class Readline {
         if (!achar.respondsTo("to_str")) {
             throw runtime.newTypeError("can't convert " + achar.getMetaClass() + " into String");
         }
-        ProcCompletor.setDelimiter(achar.convertToString().toString());
+        ProcCompleter.setDelimiter(achar.convertToString().toString());
         return achar;
     }
 
     @JRubyMethod(name = "basic_word_break_characters", module = true, visibility = PRIVATE)
     public static IRubyObject s_get_basic_word_break_character(IRubyObject recv) {
-        return recv.getRuntime().newString(ProcCompletor.getDelimiter());
+        return recv.getRuntime().newString(ProcCompleter.getDelimiter());
     }
 
     @JRubyMethod(name = "completion_append_character=", module = true, visibility = PRIVATE)
@@ -321,7 +248,7 @@ public class Readline {
         if (!proc.respondsTo("call")) {
             throw recv.getRuntime().newArgumentError("argument must respond to call");
         }
-        setCompletor(getHolder(recv.getRuntime()), new ProcCompletor(proc));
+        setCompletor(getHolder(recv.getRuntime()), new ProcCompleter(proc));
         return recv.getRuntime().getNil();
     }
 
@@ -380,8 +307,8 @@ public class Readline {
         runtime.secure(4);
         ConsoleHolder holder = getHolder(runtime);
         IRubyObject[] ary = new IRubyObject[2];
-        ary[0] = runtime.newFixnum(holder.readline.getTermheight());
-        ary[1] = runtime.newFixnum(holder.readline.getTermwidth());
+        ary[0] = runtime.newFixnum(holder.readline.getTerminal().getHeight());
+        ary[1] = runtime.newFixnum(holder.readline.getTerminal().getWidth());
         return RubyArray.newArray(runtime, ary);
 
     }
@@ -429,7 +356,7 @@ public class Readline {
             ConsoleHolder holder = getHolder(recv.getRuntime());
             for (int i = 0; i < lines.length; i++) {
                 RubyString line = lines[i].convertToString();
-                holder.history.addToHistory(line.getUnicodeValue());
+                holder.history.add(line.getUnicodeValue());
             }
             return recv;
         }
@@ -442,7 +369,7 @@ public class Readline {
 
             if (holder.history.size() == 0) return runtime.getNil();
 
-            return runtime.newString((String)holder.history.pop()).taint(runtime.getCurrentContext());
+            return runtime.newString(holder.history.removeLast().toString()).taint(runtime.getCurrentContext());
         }
 
         @JRubyMethod(name = "to_a")
@@ -451,7 +378,7 @@ public class Readline {
             ConsoleHolder holder = getHolder(runtime);
             RubyArray histList = runtime.newArray();
 
-            for (Iterator i = holder.history.getHistoryList().iterator(); i.hasNext();) {
+            for (Iterator i = holder.history.iterator(); i.hasNext();) {
                 histList.append(runtime.newString((String) i.next()));
             }
 
@@ -474,7 +401,7 @@ public class Readline {
             try {
                 ThreadContext context = runtime.getCurrentContext();
 
-                return runtime.newString((String) holder.history.getHistoryList().get(i)).taint(context);
+                return runtime.newString((String) holder.history.get(i)).taint(context);
             } catch (IndexOutOfBoundsException ioobe) {
                 throw runtime.newIndexError("invalid history index: " + i);
             }
@@ -492,7 +419,8 @@ public class Readline {
                 holder.history.set(i, val.asJavaString());
             } catch (IndexOutOfBoundsException ioobe) {
                 throw runtime.newIndexError("invalid history index: " + i);
-        }
+            }
+
             return runtime.getNil();
         }
 
@@ -504,7 +432,7 @@ public class Readline {
             if (holder.history.size() == 0) return runtime.getNil();
 
             try {
-                return runtime.newString(holder.history.remove(0)).taint(runtime.getCurrentContext());
+                return runtime.newString(holder.history.removeFirst().toString()).taint(runtime.getCurrentContext());
             } catch (IndexOutOfBoundsException ioobe) {
                 throw runtime.newIndexError("history shift error");
             }
@@ -535,7 +463,7 @@ public class Readline {
             if (i < 0) i += holder.history.size();
             
             try {
-                return runtime.newString(holder.history.remove(i)).taint(context);
+                return runtime.newString(holder.history.remove(i).toString()).taint(context);
             } catch (IndexOutOfBoundsException ioobe) {
                 throw runtime.newIndexError("invalid history index: " + i);
             }
@@ -547,22 +475,22 @@ public class Readline {
             ThreadContext context = runtime.getCurrentContext();
             ConsoleHolder holder = getHolder(runtime);
 
-            for (Iterator i = holder.history.getHistoryList().iterator(); i.hasNext();) {
-                block.yield(context, runtime.newString((String) i.next()).taint(context));
+            for (Iterator<History.Entry> i = holder.history.iterator(); i.hasNext();) {
+                block.yield(context, runtime.newString(i.next().value().toString()).taint(context));
             }
             return recv;
         }
     }
 
     // Complete using a Proc object
-    public static class ProcCompletor implements Completor {
+    public static class ProcCompleter implements Completer {
 
-        IRubyObject procCompletor;
+        IRubyObject procCompleter;
         //\t\n\"\\'`@$><=;|&{(
         static private String[] delimiters = {" ", "\t", "\n", "\"", "\\", "'", "`", "@", "$", ">", "<", "=", ";", "|", "&", "{", "("};
 
-        public ProcCompletor(IRubyObject procCompletor) {
-            this.procCompletor = procCompletor;
+        public ProcCompleter(IRubyObject procCompleter) {
+            this.procCompleter = procCompleter;
         }
 
         public static String getDelimiter() {
@@ -596,9 +524,9 @@ public class Readline {
             int index = wordIndexOf(buffer);
             if (index != -1) buffer = buffer.substring(index + 1);
 
-            Ruby runtime = procCompletor.getRuntime();
+            Ruby runtime = procCompleter.getRuntime();
             ThreadContext context = runtime.getCurrentContext();
-            IRubyObject result = procCompletor.callMethod(context, "call", runtime.newString(buffer));
+            IRubyObject result = procCompleter.callMethod(context, "call", runtime.newString(buffer));
             IRubyObject comps = result.callMethod(context, "to_a");
             
             if (comps instanceof List) {
@@ -615,7 +543,7 @@ public class Readline {
     }
 
     // Fix FileNameCompletor to work mid-line
-    public static class RubyFileNameCompletor extends FileNameCompletor {
+    public static class RubyFileNameCompletor extends FileNameCompleter {
         @Override
         public int complete(String buffer, int cursor, List candidates) {
             buffer = buffer.substring(0, cursor);
