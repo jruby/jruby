@@ -38,6 +38,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import java.io.IOException;
 import java.nio.channels.CancelledKeyException;
 import java.nio.channels.Channel;
+import java.nio.channels.IllegalBlockingModeException;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -349,14 +350,22 @@ public class SelectBlob {
         if (readBlocking != null) {
             for (int i = 0; i < readBlocking.length; i++) {
                 if (readBlocking[i] != null) {
-                    ((SelectableChannel) readIOs[i].getChannel()).configureBlocking(readBlocking[i]);
+                    try {
+                        ((SelectableChannel) readIOs[i].getChannel()).configureBlocking(readBlocking[i]);
+                    } catch (IllegalBlockingModeException ibme) {
+                        throw runtime.newConcurrencyError("can not set IO blocking after select; concurrent select detected?");
+                    }
                 }
             }
         }
         if (writeBlocking != null) {
             for (int i = 0; i < writeBlocking.length; i++) {
                 if (writeBlocking[i] != null) {
-                    ((SelectableChannel) writeIOs[i].getChannel()).configureBlocking(writeBlocking[i]);
+                    try {
+                        ((SelectableChannel) writeIOs[i].getChannel()).configureBlocking(writeBlocking[i]);
+                    } catch (IllegalBlockingModeException ibme) {
+                        throw runtime.newConcurrencyError("can not set IO blocking after select; concurrent select detected?");
+                    }
                 }
             }
         }
