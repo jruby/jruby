@@ -153,6 +153,8 @@ public class RubyTCPServer extends RubyTCPSocket {
 
                 } else {
                     SocketChannel connected = ssc.accept();
+                    if (connected == null) continue;
+
                     connected.finishConnect();
 
                     // Force the client socket to be blocking
