@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import org.jruby.ir.IRScope;
-import org.jruby.ir.Tuple;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 import org.jruby.util.log.Logger;
@@ -16,8 +15,8 @@ import org.jruby.util.log.LoggerFactory;
 public class DominatorTreeBuilder extends CompilerPass {
     private static String[] NAMES = new String[] {"build_dominator", "dominator"};
     private static final Logger LOG = LoggerFactory.getLogger("DominatorTreeBuilder");
-    public static List<Tuple<Class<CompilerPass>, DependencyType>> DEPENDENCIES = new ArrayList<Tuple<Class<CompilerPass>, DependencyType>>() {{
-       add(new Tuple(CFGBuilder.class, CompilerPass.DependencyType.RETRIEVE)); 
+    public static List<Class<? extends CompilerPass>> DEPENDENCIES = new ArrayList<Class<? extends CompilerPass>>() {{
+       add(CFGBuilder.class);
     }};
     
     public String getLabel() {
@@ -29,7 +28,7 @@ public class DominatorTreeBuilder extends CompilerPass {
     }
     
     @Override
-    public List<Tuple<Class<CompilerPass>, DependencyType>> getDependencies() {
+    public List<Class<? extends CompilerPass>> getDependencies() {
         return DEPENDENCIES;
     }    
 

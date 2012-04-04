@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.jruby.ir.IRScope;
-import org.jruby.ir.Tuple;
 
 //FIXME: Names are not so great
 /**
@@ -14,13 +13,8 @@ import org.jruby.ir.Tuple;
  * @author enebo
  */
 public abstract class CompilerPass {
-    public List<Tuple<Class<CompilerPass>, DependencyType>> NO_DEPENDENCIES = new ArrayList<Tuple<Class<CompilerPass>, DependencyType>>();
+    public List<Class<? extends CompilerPass>> NO_DEPENDENCIES = new ArrayList<Class<? extends CompilerPass>>();
     
-    public enum DependencyType {
-        RETRIEVE, // If the pass has been previously run just return that
-        RERUN,     // Unconditionally re-run dependent pass
-        OPTIONAL // pass data from a pass if it has previously run but do not run if it hasn't
-    }
     public abstract String getLabel();
     
     // Should we run this pass on the current scope before running it on nested scopes?
@@ -34,7 +28,7 @@ public abstract class CompilerPass {
      */
     public abstract Object execute(IRScope scope, Object... dependencyData);
     
-    public List<Tuple<Class<CompilerPass>, DependencyType>> getDependencies() {
+    public List<Class<? extends CompilerPass>> getDependencies() {
         return NO_DEPENDENCIES;
     }
 
@@ -49,47 +43,25 @@ public abstract class CompilerPass {
     // Run the pass on the passed in scope!
     public Object run(IRScope scope) {
         // Make sure all dependencies are satisfied
-        List<Tuple<Class<CompilerPass>, DependencyType>> dependencies = getDependencies();
+        List<Class<? extends CompilerPass>> dependencies = getDependencies();
         Object data[] = new Object[dependencies.size()];
            
         for (int i = 0; i < data.length; i++) {
-            Tuple<Class<CompilerPass>, DependencyType> dependency = dependencies.get(i);
-
-            switch (dependency.b) { // type of dependency
-                case RETRIEVE:
-                    data[i] = makeSureDependencyHasRunOnce(dependency.a, scope);
-                    break;
-                case RERUN:
-                    data[i] = executeDependency(dependency.a, scope);
-                    break;
-                case OPTIONAL:
-                    data[i] = dependencyDataIfRunAlreay(dependency.a, scope);
-                    break;
-            }
+            data[i] = makeSureDependencyHasRunOnce(dependencies.get(i), scope);
         }
 
 //        System.out.println("Executing Pass: " + getLabel());
         return execute(scope, data);
     }
-    
-    private Object dependencyDataIfRunAlreay(Class<CompilerPass> passClass, IRScope scope) {
-        CompilerPass pass = createPassInstance(passClass);
-        
-        return pass.previouslyRun(scope);
-    }    
-    
-    private Object makeSureDependencyHasRunOnce(Class<CompilerPass> passClass, IRScope scope) {
+
+    private Object makeSureDependencyHasRunOnce(Class<? extends CompilerPass> passClass, IRScope scope) {
         CompilerPass pass = createPassInstance(passClass);
         Object data = pass.previouslyRun(scope);
         
         return data == null ? pass.run(scope) : data;
     }
 
-    private Object executeDependency(Class<CompilerPass> passClass, IRScope scope) {
-        return createPassInstance(passClass).run(scope);
-    }
-    
-    private CompilerPass createPassInstance(Class<CompilerPass> passClass) {
+    private CompilerPass createPassInstance(Class<? extends CompilerPass> passClass) {
         try {
             return (CompilerPass) passClass.getDeclaredConstructor().newInstance();
         } catch (InstantiationException ex) {

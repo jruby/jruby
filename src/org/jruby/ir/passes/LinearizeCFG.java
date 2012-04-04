@@ -3,12 +3,11 @@ package org.jruby.ir.passes;
 import java.util.ArrayList;
 import java.util.List;
 import org.jruby.ir.IRScope;
-import org.jruby.ir.Tuple;
 
 public class LinearizeCFG extends CompilerPass {
     public static String[] NAMES = new String[] { "linearize", "linearize_cfg" };
-    public static List<Tuple<Class<CompilerPass>, DependencyType>> DEPENDENCIES = new ArrayList<Tuple<Class<CompilerPass>, DependencyType>>() {{
-       add(new Tuple(CFGBuilder.class, CompilerPass.DependencyType.RETRIEVE)); 
+    public static List<Class<? extends CompilerPass>> DEPENDENCIES = new ArrayList<Class<? extends CompilerPass>>() {{
+       add(CFGBuilder.class);
     }};
         
     public String getLabel() {
@@ -20,7 +19,7 @@ public class LinearizeCFG extends CompilerPass {
     }
     
     @Override
-    public List<Tuple<Class<CompilerPass>, DependencyType>> getDependencies() {
+    public List<Class<? extends CompilerPass>> getDependencies() {
         return DEPENDENCIES;
     }
 

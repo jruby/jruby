@@ -4,15 +4,14 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
-import org.jruby.ir.Tuple;
+import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
 import org.jruby.ir.passes.CompilerPass;
 import org.jruby.ir.passes.LiveVariableAnalysis;
-import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
 
 public class DeadCodeElimination extends CompilerPass {
     public static String[] NAMES = new String[] {"dce", "DCE", "dead_code"};
-    public static List<Tuple<Class<CompilerPass>, DependencyType>> DEPENDENCIES = new ArrayList<Tuple<Class<CompilerPass>, DependencyType>>() {{
-       add(new Tuple(LiveVariableAnalysis.class, CompilerPass.DependencyType.RETRIEVE)); 
+    public static List<Class<? extends CompilerPass>> DEPENDENCIES = new ArrayList<Class<? extends CompilerPass>>() {{
+       add(LiveVariableAnalysis.class);
     }};
     
     public String getLabel() {
@@ -24,7 +23,7 @@ public class DeadCodeElimination extends CompilerPass {
     }
 
     @Override
-    public List<Tuple<Class<CompilerPass>, DependencyType>> getDependencies() {
+    public List<Class<? extends CompilerPass>> getDependencies() {
         return DEPENDENCIES;
     }
     
