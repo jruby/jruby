@@ -20,9 +20,9 @@ public class IRManager {
     private final BooleanLiteral trueObject = new BooleanLiteral(true);
     private final BooleanLiteral falseObject = new BooleanLiteral(false);
     private Set<CompilerPassListener> passListeners = new HashSet<CompilerPassListener>();
+    private CompilerPassListener defaultListener = new BasicCompilerPassListener();
     
     public IRManager() {
-        if (RubyInstanceConfig.IR_COMPILER_DEBUG) addListener(new BasicCompilerPassListener());
     }
     
     public Nil getNil() {
@@ -46,6 +46,13 @@ public class IRManager {
     }
     
     public Set<CompilerPassListener> getListeners() {
+        // FIXME: This is ugly but we want to conditionalize output based on JRuby module setting/unsetting
+        if (RubyInstanceConfig.IR_COMPILER_DEBUG) {
+            addListener(defaultListener);
+        } else {
+            removeListener(defaultListener);
+        }
+        
         return passListeners;
     }
     
