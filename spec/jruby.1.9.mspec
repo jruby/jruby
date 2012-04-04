@@ -52,21 +52,12 @@ class MSpecScript
     '^' + SPEC_DIR + '/library/net',
     '^' + SPEC_DIR + '/library/openssl',
     '^' + SPEC_DIR + '/library/ping',
-    '^' + SPEC_DIR + '/library/readline',
 
     # unstable
     '^' + SPEC_DIR + '/library/syslog',
 
-    # obsolete libraries
-    '^' + SPEC_DIR + '/library/enumerator',
-    '^' + SPEC_DIR + '/library/ftools',
-    '^' + SPEC_DIR + '/library/generator',
-    '^' + SPEC_DIR + '/library/parsedate',
-    '^' + SPEC_DIR + '/library/ping',
-
     # masked out because of load-time errors that can't be tagged
-    '^' + SPEC_DIR + '/library/net/http',
-    '^' + SPEC_DIR + '/library/yaml'
+    '^' + SPEC_DIR + '/library/net/http'
   ]
 
   # Command Line specs

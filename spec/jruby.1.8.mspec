@@ -50,7 +50,6 @@ class MSpecScript
     '^' + SPEC_DIR + '/library/net',
     '^' + SPEC_DIR + '/library/openssl',
     '^' + SPEC_DIR + '/library/ping',
-    '^' + SPEC_DIR + '/library/readline',
 
     # unstable
     '^' + SPEC_DIR + '/library/syslog',
