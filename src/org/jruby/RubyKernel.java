@@ -203,7 +203,7 @@ public class RubyKernel {
     }
 
     private static RubyModule getModuleForAutoload(Ruby runtime, IRubyObject recv) {
-        RubyModule module = recv instanceof RubyModule ? (RubyModule) recv : runtime.getObject();
+        RubyModule module = recv instanceof RubyModule ? (RubyModule) recv : recv.getMetaClass().getRealClass();
         if (module == runtime.getKernel()) {
             // special behavior if calling Kernel.autoload directly
             if (runtime.is1_9()) {
