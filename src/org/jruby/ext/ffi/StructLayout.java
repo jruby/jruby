@@ -28,6 +28,7 @@
 
 package org.jruby.ext.ffi;
 
+import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -303,6 +304,26 @@ public final class StructLayout extends Type {
         }
         
         getMember(context.getRuntime(), name).put(context, cache, (AbstractMemory) ptr, value);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+
+        StructLayout that = (StructLayout) o;
+
+        if (fields != null ? !fields.equals(that.fields) : that.fields != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (fields != null ? fields.hashCode() : 0);
+        return result;
     }
 
     /**
@@ -589,12 +610,12 @@ public final class StructLayout extends Type {
 
         @Override
         public boolean equals(Object obj) {
-            return obj instanceof Field && ((Field) obj).offset == offset;
+            return obj instanceof Field && ((Field) obj).offset == offset && ((Field) obj).type.equals(type);
         }
 
         @Override
         public int hashCode() {
-            return 53 * 5 + (int) (this.offset ^ (this.offset >>> 32));
+            return 53 * 5 + (int) (this.offset ^ (this.offset >>> 32)) ^ type.hashCode();
         }
 
         /**
@@ -1200,7 +1221,21 @@ public final class StructLayout extends Type {
         }
 
         public void put(ThreadContext context, StructLayout.Storage cache, Member m, AbstractMemory ptr, IRubyObject value) {
-            throw context.getRuntime().newNotImplementedError("Cannot set Struct fields");
+            if (!(value instanceof Struct)) {
+                throw context.getRuntime().newTypeError(value, context.getRuntime().getModule("FFI").getClass("Struct"));
+            }
+
+            Struct s = (Struct) value;
+            if (!s.getLayout(context).equals(sbv.getStructLayout())) {
+                throw context.getRuntime().newTypeError("incompatible struct layout");
+            }
+
+            ByteBuffer src = s.getMemoryIO().asByteBuffer();
+            if (src.remaining() != sbv.size) {
+                throw context.getRuntime().newRuntimeError("bad size in " + value.getMetaClass().toString());
+            }
+
+            ptr.getMemoryIO().slice(m.offset(), sbv.size).asByteBuffer().put(src);
         }
 
         public IRubyObject get(ThreadContext context, StructLayout.Storage cache, Member m, AbstractMemory ptr) {
