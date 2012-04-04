@@ -44,6 +44,10 @@ public class DominatorTreeBuilder extends CompilerPass {
         return null;
     }
     
+    public void reset(IRScope scope) {
+        // FIXME: We never store our dominator tree anywhere right?
+    }
+    
     public void buildDominatorTree(CFG cfg, LinkedList<BasicBlock> postOrderList, int maxNodeId) {
         Integer[] bbToPoNumbers = new Integer[maxNodeId + 1]; // Set up a map of bbid -> post order numbering
         BasicBlock[] poNumbersToBB = new BasicBlock[maxNodeId + 1];

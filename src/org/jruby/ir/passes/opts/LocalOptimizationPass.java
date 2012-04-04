@@ -53,6 +53,10 @@ public class LocalOptimizationPass extends CompilerPass {
         
         return null;
     }
+    
+    public void reset(IRScope scope) {
+        // FIXME: what is reset for this?
+    }
 
     private static void recordSimplification(Variable res, Operand val, Map<Operand, Operand> valueMap, Map<Variable, List<Variable>> simplificationMap) {
         valueMap.put(res, val);

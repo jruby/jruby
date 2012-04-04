@@ -80,4 +80,8 @@ public class InlineTest extends CompilerPass {
         return true;
     }
     
+    public void reset(IRScope s) {
+        // FIXME: ???
+    }
+    
 }

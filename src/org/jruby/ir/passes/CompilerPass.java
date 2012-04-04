@@ -27,6 +27,7 @@ public abstract class CompilerPass {
      * @param dependencyData is the data supplied to this pass to use to execute the pass
      */
     public abstract Object execute(IRScope scope, Object... dependencyData);
+    public abstract void reset(IRScope scope);
     
     public List<Class<? extends CompilerPass>> getDependencies() {
         return NO_DEPENDENCIES;

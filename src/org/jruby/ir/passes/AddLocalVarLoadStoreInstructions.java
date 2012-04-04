@@ -2,9 +2,7 @@ package org.jruby.ir.passes;
 
 import java.util.HashMap;
 import java.util.Map;
-
 import org.jruby.ir.IRClosure;
-import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.dataflow.analyses.LoadLocalVarPlacementProblem;
 import org.jruby.ir.dataflow.analyses.StoreLocalVarPlacementProblem;
@@ -50,5 +48,9 @@ public class AddLocalVarLoadStoreInstructions extends CompilerPass {
         for (IRClosure c: s.getClosures()) execute(c);
 
         return null;
+    }
+    
+    public void reset(IRScope scope) {
+        // FIXME: ...
     }
 }

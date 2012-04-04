@@ -23,8 +23,12 @@ public class LiveVariableAnalysis extends CompilerPass {
         LiveVariablesProblem lvp = new LiveVariablesProblem(scope);
         lvp.compute_MOP_Solution();
         
-        scope.setDataFlowSolution(lvp.getName(), lvp);
+        scope.setDataFlowSolution(LiveVariablesProblem.NAME, lvp);
         
         return lvp;
+    }
+    
+    public void reset(IRScope scope) {
+        scope.setDataFlowSolution(LiveVariablesProblem.NAME, null);
     }
 }

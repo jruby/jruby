@@ -46,6 +46,10 @@ public class OptimizeTempVarsPass extends CompilerPass {
         return null;
     }
 
+    public void reset(IRScope s) {
+        // FIXME: How do we un-optmize?
+    }
+    
     private static void allocVar(Operand oldVar, IRScope s, List<TemporaryVariable> freeVarsList, Map<Operand, Operand> newVarMap) {
         // If we dont have a var mapping, get a new var -- try the free list first
         // and if none available, allocate a fresh one

@@ -18,4 +18,8 @@ public class CallSplitter extends CompilerPass {
         
         return null;
     }
+    
+    public void reset(IRScope scope) {
+        // FIXME: ...
+    }
 }

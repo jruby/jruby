@@ -20,4 +20,8 @@ public class CFGBuilder extends CompilerPass {
     public Object execute(IRScope scope, Object... data) {
         return scope.buildCFG();
     }
+    
+    public void reset(IRScope scope) {
+        scope.resetCFG();
+    }
 }

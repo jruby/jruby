@@ -491,10 +491,7 @@ public abstract class IRScope {
     }
     
     private Instr[] prepareInstructionsForInterpretation() {
-        if (relinearizeCFG) {
-            linearizedBBList = null;
-            relinearizeCFG = false;
-        }
+        checkRelinearization();
 
         if (linearizedInstrArray != null) return linearizedInstrArray; // Already prepared
 
@@ -594,11 +591,7 @@ public abstract class IRScope {
 
     /** Run any necessary passes to get the IR ready for interpretation */
     public synchronized Instr[] prepareForInterpretation() {
-        // If the instruction array exists, someone has taken care of setting up the CFG and preparing the instructions
-        if (relinearizeCFG) {
-            linearizedBBList = null;
-            relinearizeCFG = false;
-        }
+        checkRelinearization();
 
         if (linearizedInstrArray != null) return linearizedInstrArray;
 
@@ -944,11 +937,17 @@ public abstract class IRScope {
         return linearizedInstrArray;
     }
     
+    public void resetLinearizationData() {
+        linearizedBBList = null;
+        relinearizeCFG = false;        
+    }
+    
+    public void checkRelinearization() {
+        if (relinearizeCFG) resetLinearizationData();
+    }
+    
     public List<BasicBlock> buildLinearization() {
-        if (relinearizeCFG) {
-            linearizedBBList = null;
-            relinearizeCFG = false;
-        }
+        checkRelinearization();
 
         if (linearizedBBList != null) return linearizedBBList; // Already linearized
         
@@ -1082,6 +1081,10 @@ public abstract class IRScope {
         CFG newBuild = new CFG(this);
         newBuild.build(instrList);
         cfg = newBuild;
+    }
+    
+    public void resetCFG() {
+        cfg = null;
     }
     
     /* Record a begin block -- not all scope implementations can handle them */
