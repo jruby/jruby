@@ -29,7 +29,7 @@ public class LinearizeCFG extends CompilerPass {
         return null;
     }
     
-    public void reset(IRScope scope) {
+    public void invalidate(IRScope scope) {
         scope.resetLinearizationData();
     }
 }

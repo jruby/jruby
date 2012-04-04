@@ -46,7 +46,7 @@ public class IRPrinter extends CompilerPass {
         return null;
     }
     
-    public void reset(IRScope scope) {
+    public void invalidate(IRScope scope) {
         // No state...IRPrint will be going away
     }
 }

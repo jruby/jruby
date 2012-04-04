@@ -7,14 +7,25 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.jruby.ir.IRScope;
 
-//FIXME: Names are not so great
 /**
+ * A mechanism for executing code against an IRScope or transforming the
+ * IRScopes dependent data.  A Compiler pass may or may not affect the state 
+ * of an IRScope (possibly including any child IRScopes) and it may
+ * or may not depend on other compiler passes to execute first.
  * 
- * @author enebo
+ * For dependencies between compiler passes, getDependencies will return
+ * a list of all dependent passes.  Those passes in turn will end up having
+ * their own dependencies.  The order of execution is depth-first, but if the
+ * pass recognizes that the data it depends on already exists, then it does
+ * not run the pass.  It will just return the existing data.  If you want to
+ * guarantee (re)execution, then you should call invalidate().
  */
 public abstract class CompilerPass {
     public List<Class<? extends CompilerPass>> NO_DEPENDENCIES = new ArrayList<Class<? extends CompilerPass>>();
     
+    /**
+     * What is the user-friendly name of this compiler pass
+     */
     public abstract String getLabel();
     
     // Should we run this pass on the current scope before running it on nested scopes?
@@ -27,7 +38,18 @@ public abstract class CompilerPass {
      * @param dependencyData is the data supplied to this pass to use to execute the pass
      */
     public abstract Object execute(IRScope scope, Object... dependencyData);
-    public abstract void reset(IRScope scope);
+    
+    /**
+     * The data that this pass is responsible for will get invalidated so that
+     * if this pass is then execute()d it will generate new pass data.  Note
+     * that some data will destructively manipulate dependent compiler pass
+     * data.  In that case, the pass may wipe more than just it's data.  In
+     * that case an execute() should still rebuild everything fine because all
+     * compiler passes list their dependencies.
+     * 
+     * @param scope is where the pass stores its data.
+     */
+    public abstract void invalidate(IRScope scope);
     
     public List<Class<? extends CompilerPass>> getDependencies() {
         return NO_DEPENDENCIES;

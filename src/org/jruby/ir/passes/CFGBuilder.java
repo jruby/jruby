@@ -21,7 +21,7 @@ public class CFGBuilder extends CompilerPass {
         return scope.buildCFG();
     }
     
-    public void reset(IRScope scope) {
+    public void invalidate(IRScope scope) {
         scope.resetCFG();
     }
 }

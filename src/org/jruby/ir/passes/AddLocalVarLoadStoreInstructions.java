@@ -50,7 +50,7 @@ public class AddLocalVarLoadStoreInstructions extends CompilerPass {
         return null;
     }
     
-    public void reset(IRScope scope) {
+    public void invalidate(IRScope scope) {
         // FIXME: ...
     }
 }

@@ -46,7 +46,7 @@ public class OptimizeTempVarsPass extends CompilerPass {
         return null;
     }
 
-    public void reset(IRScope s) {
+    public void invalidate(IRScope s) {
         // FIXME: How do we un-optmize?
     }
     

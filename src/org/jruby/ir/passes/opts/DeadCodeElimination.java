@@ -38,7 +38,7 @@ public class DeadCodeElimination extends CompilerPass {
         return true;
     }
     
-    public void reset(IRScope scope) {
+    public void invalidate(IRScope scope) {
         // FIXME: Can we reset this?
     }
 }

@@ -44,7 +44,7 @@ public class DominatorTreeBuilder extends CompilerPass {
         return null;
     }
     
-    public void reset(IRScope scope) {
+    public void invalidate(IRScope scope) {
         // FIXME: We never store our dominator tree anywhere right?
     }
     

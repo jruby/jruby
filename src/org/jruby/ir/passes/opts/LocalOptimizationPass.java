@@ -54,7 +54,7 @@ public class LocalOptimizationPass extends CompilerPass {
         return null;
     }
     
-    public void reset(IRScope scope) {
+    public void invalidate(IRScope scope) {
         // FIXME: what is reset for this?
     }
 

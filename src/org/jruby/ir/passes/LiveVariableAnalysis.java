@@ -28,7 +28,7 @@ public class LiveVariableAnalysis extends CompilerPass {
         return lvp;
     }
     
-    public void reset(IRScope scope) {
+    public void invalidate(IRScope scope) {
         scope.setDataFlowSolution(LiveVariablesProblem.NAME, null);
     }
 }
