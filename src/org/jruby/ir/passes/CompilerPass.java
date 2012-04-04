@@ -66,36 +66,40 @@ public abstract class CompilerPass {
     }
     
     // Run the pass on the passed in scope!
-    public Object run(IRScope scope) {
+    protected Object run(IRScope scope, boolean childScope) {
         List<Class<? extends CompilerPass>> dependencies = getDependencies();
         Object data[] = new Object[dependencies.size()];
            
         for (int i = 0; i < data.length; i++) {
-            data[i] = makeSureDependencyHasRunOnce(dependencies.get(i), scope);
+            data[i] = makeSureDependencyHasRunOnce(dependencies.get(i), scope, childScope);
         }
 
         for (CompilerPassListener listener: scope.getManager().getListeners()) {
-            listener.startExecute(this, scope);
+            listener.startExecute(this, scope, childScope);
         }
         
         Object passData = execute(scope, data);
         
-        for (CompilerPassListener listener: scope.getManager().getListeners()) {        
-            listener.endExecute(this, scope, passData);
+        for (CompilerPassListener listener: scope.getManager().getListeners()) {
+            listener.endExecute(this, scope, passData, childScope);
         }
         
         return passData;
     }
-
-    private Object makeSureDependencyHasRunOnce(Class<? extends CompilerPass> passClass, IRScope scope) {
+    
+    public Object run(IRScope scope) {
+        return run(scope, false);
+    }
+    
+    private Object makeSureDependencyHasRunOnce(Class<? extends CompilerPass> passClass, IRScope scope, boolean childScope) {
         CompilerPass pass = createPassInstance(passClass);
         Object data = pass.previouslyRun(scope);
         
         if (data == null) {
-            data = pass.run(scope);
+            data = pass.run(scope, childScope);
         } else {
-            for (CompilerPassListener listener: scope.getManager().getListeners()) {                    
-                listener.alreadyExecuted(pass, scope, data);
+            for (CompilerPassListener listener: scope.getManager().getListeners()) {
+                listener.alreadyExecuted(pass, scope, data, childScope);
             }
         }
         return data;

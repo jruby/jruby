@@ -15,17 +15,17 @@ public interface CompilerPassListener {
      * This dependent pass has been determined to already be satisfied and is
      * not going to call execute().
      */
-    public void alreadyExecuted(CompilerPass passClass, IRScope scope, Object data);
+    public void alreadyExecuted(CompilerPass passClass, IRScope scope, Object data, boolean childScope);
 
     /**
      * This pass is about to begin execute'ing.
      * @param pass 
      */
-    public void startExecute(CompilerPass pass, IRScope scope);
-
+    public void startExecute(CompilerPass pass, IRScope scope, boolean childScope);
+    
     /**
      * This pass has just finished execute'ing.  data is the result it is 
      * returning.
      */
-    public void endExecute(CompilerPass pass, IRScope scope, Object data);
+    public void endExecute(CompilerPass pass, IRScope scope, Object data, boolean childScope);
 }

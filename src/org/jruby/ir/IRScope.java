@@ -555,7 +555,6 @@ public abstract class IRScope {
         // while another thread is using it.  This may need to happen on a clone()
         // and we may need to update the method to return the new method.  Also,
         // if this scope is held in multiple locations how do we update all references?
-        if (RubyInstanceConfig.IR_COMPILER_DEBUG) getManager().addListener(new BasicCompilerPassListener());
 
         runCompilerPass(new OptimizeTempVarsPass());
         runCompilerPass(new LocalOptimizationPass());

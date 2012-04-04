@@ -4,10 +4,13 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.ir.operands.BooleanLiteral;
 import org.jruby.ir.operands.Nil;
+import org.jruby.ir.passes.BasicCompilerPassListener;
 import org.jruby.ir.passes.CompilerPass;
 import org.jruby.ir.passes.CompilerPassListener;
+import org.jruby.runtime.load.LoadService;
 
 /**
  */
@@ -21,6 +24,7 @@ public class IRManager {
     private Set<CompilerPassListener> passListeners = new HashSet<CompilerPassListener>();
     
     public IRManager() {
+        if (RubyInstanceConfig.IR_COMPILER_DEBUG) addListener(new BasicCompilerPassListener());
     }
     
     public Nil getNil() {

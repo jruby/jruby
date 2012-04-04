@@ -32,7 +32,7 @@ public class DeadCodeElimination extends CompilerPass {
         ((LiveVariablesProblem) data[0]).markDeadInstructions();
 
         for (IRClosure cl: scope.getClosures()) {
-            run(cl);
+            run(cl, true);
         }
         
         return true;

@@ -38,7 +38,7 @@ public class OptimizeTempVarsPass extends CompilerPass {
 
     public Object execute(IRScope s, Object... data) {
         for (IRClosure c: s.getClosures()) {
-            run(c);
+            run(c, true);
         }
 
         optimizeTmpVars(s);

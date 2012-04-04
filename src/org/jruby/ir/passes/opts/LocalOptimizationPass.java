@@ -41,7 +41,7 @@ public class LocalOptimizationPass extends CompilerPass {
     public Object execute(IRScope s, Object... data) {
         // This let us compute execute scope flags for a method based on what all nested closures do
         for (IRClosure c: s.getClosures()) {
-            run(c);
+            run(c, true);
         }
 
         for (BasicBlock b: ((CFG) data[0]).getBasicBlocks()) {
