@@ -35,6 +35,7 @@ import org.jruby.ir.operands.Self;
 import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
+import org.jruby.ir.passes.BasicCompilerPassListener;
 import org.jruby.ir.passes.opts.OptimizeTempVarsPass;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
@@ -543,13 +544,6 @@ public abstract class IRScope {
         return linearizedInstrArray;
     }
     
-    private void printPass(String message) {
-        if (RubyInstanceConfig.IR_COMPILER_DEBUG) {
-            LOG.info("################## " + message + "##################");
-            runCompilerPass(new IRPrinter());        
-        }
-    }
-
     private void runCompilerPasses() {
         // forcibly clear out the shared eval-scope variable allocator each time this method executes
         initEvalScopeVariableAllocator(true); 
@@ -561,19 +555,16 @@ public abstract class IRScope {
         // while another thread is using it.  This may need to happen on a clone()
         // and we may need to update the method to return the new method.  Also,
         // if this scope is held in multiple locations how do we update all references?
+        if (RubyInstanceConfig.IR_COMPILER_DEBUG) getManager().addListener(new BasicCompilerPassListener());
 
-        printPass("Before Temp var opts");
         runCompilerPass(new OptimizeTempVarsPass());
-        printPass("Before local optimization pass");
         runCompilerPass(new LocalOptimizationPass());
-        printPass("After local optimization pass");
         if (!RubyInstanceConfig.IR_TEST_INLINER.equals("none")) {
             if (RubyInstanceConfig.IR_COMPILER_DEBUG) {
                 LOG.info("Asked to inline " + RubyInstanceConfig.IR_TEST_INLINER);
             }
             runCompilerPass(new InlineTest(RubyInstanceConfig.IR_TEST_INLINER));
             runCompilerPass(new LocalOptimizationPass());
-            printPass("After inline");
         }        
 
         if (RubyInstanceConfig.IR_OPT_LVAR_ACCESS) runCompilerPass(new AddLocalVarLoadStoreInstructions());
@@ -583,10 +574,8 @@ public abstract class IRScope {
         if (!(this instanceof IREvalScript)) {
             if (RubyInstanceConfig.IR_LIVE_VARIABLE) runCompilerPass(new LiveVariableAnalysis());
             if (RubyInstanceConfig.IR_DEAD_CODE) runCompilerPass(new DeadCodeElimination());
-            if (RubyInstanceConfig.IR_DEAD_CODE) printPass("After DCE ");
         }
         runCompilerPass(new LinearizeCFG());
-        printPass("After CFG Linearize");
     }
 
     /** Run any necessary passes to get the IR ready for interpretation */
