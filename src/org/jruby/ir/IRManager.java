@@ -1,9 +1,13 @@
 package org.jruby.ir;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
-import org.jruby.ir.passes.CompilerPass;
+import java.util.Set;
 import org.jruby.ir.operands.BooleanLiteral;
 import org.jruby.ir.operands.Nil;
+import org.jruby.ir.passes.CompilerPass;
+import org.jruby.ir.passes.CompilerPassListener;
 
 /**
  */
@@ -14,6 +18,7 @@ public class IRManager {
     private final Nil nil = new Nil();
     private final BooleanLiteral trueObject = new BooleanLiteral(true);
     private final BooleanLiteral falseObject = new BooleanLiteral(false);
+    private Set<CompilerPassListener> passListeners = new HashSet<CompilerPassListener>();
     
     public IRManager() {
     }
@@ -36,6 +41,18 @@ public class IRManager {
     
     public List<CompilerPass> getCompilerPasses(IRScope scope) {
         return null;
+    }
+    
+    public Set<CompilerPassListener> getListeners() {
+        return passListeners;
+    }
+    
+    public void addListener(CompilerPassListener listener) {
+        passListeners.add(listener);
+    }
+    
+    public void removeListener(CompilerPassListener listener) {
+        passListeners.remove(listener);
     }
     
     public IRModuleBody getClassMetaClass() {

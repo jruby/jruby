@@ -21,7 +21,9 @@ import org.jruby.ir.IRScope;
  * guarantee (re)execution, then you should call invalidate().
  */
 public abstract class CompilerPass {
-    public List<Class<? extends CompilerPass>> NO_DEPENDENCIES = new ArrayList<Class<? extends CompilerPass>>();
+    public static List<Class<? extends CompilerPass>> NO_DEPENDENCIES = new ArrayList<Class<? extends CompilerPass>>();
+    
+    private List<CompilerPassListener> listeners = new ArrayList<CompilerPassListener>();
     
     /**
      * What is the user-friendly name of this compiler pass
@@ -65,7 +67,6 @@ public abstract class CompilerPass {
     
     // Run the pass on the passed in scope!
     public Object run(IRScope scope) {
-        // Make sure all dependencies are satisfied
         List<Class<? extends CompilerPass>> dependencies = getDependencies();
         Object data[] = new Object[dependencies.size()];
            
@@ -73,15 +74,31 @@ public abstract class CompilerPass {
             data[i] = makeSureDependencyHasRunOnce(dependencies.get(i), scope);
         }
 
-//        System.out.println("Executing Pass: " + getLabel());
-        return execute(scope, data);
+        for (CompilerPassListener listener: scope.getManager().getListeners()) {
+            listener.startExecute(this, scope);
+        }
+        
+        Object passData = execute(scope, data);
+        
+        for (CompilerPassListener listener: scope.getManager().getListeners()) {        
+            listener.endExecute(this, scope, passData);
+        }
+        
+        return passData;
     }
 
     private Object makeSureDependencyHasRunOnce(Class<? extends CompilerPass> passClass, IRScope scope) {
         CompilerPass pass = createPassInstance(passClass);
         Object data = pass.previouslyRun(scope);
         
-        return data == null ? pass.run(scope) : data;
+        if (data == null) {
+            data = pass.run(scope);
+        } else {
+            for (CompilerPassListener listener: scope.getManager().getListeners()) {                    
+                listener.alreadyExecuted(pass, scope, data);
+            }
+        }
+        return data;
     }
 
     private CompilerPass createPassInstance(Class<? extends CompilerPass> passClass) {
