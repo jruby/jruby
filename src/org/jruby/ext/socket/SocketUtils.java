@@ -53,6 +53,7 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -144,18 +145,22 @@ public class SocketUtils {
     }
 
     public static IRubyObject pack_sockaddr_un(ThreadContext context, IRubyObject filename) {
-        String str = filename.convertToString().toString();
+        ByteList str = filename.convertToString().getByteList();
 
-        StringBuilder sb = new StringBuilder()
-                .append((char)0)
-                .append((char) 1)
-                .append(str);
+        AddressFamily af = AddressFamily.AF_UNIX;
+        int high = (af.intValue() & 0xff00) >> 8;
+        int low = af.intValue() & 0xff;
+
+        ByteList bl = new ByteList();
+        bl.append((byte)high);
+        bl.append((byte)low);
+        bl.append(str);
 
         for(int i=str.length();i<104;i++) {
-            sb.append((char)0);
+            bl.append((byte)0);
         }
 
-        return context.runtime.newString(sb.toString());
+        return context.runtime.newString(bl);
     }
 
     public static IRubyObject gethostbyname(ThreadContext context, IRubyObject hostname) {
@@ -489,6 +494,7 @@ public class SocketUtils {
             protocolFamily = ProtocolFamily.valueOf("PF_" + protocolString);
         } else {
             int protocolInt = RubyNumeric.fix2int(protocol);
+            if (protocolInt == 0) return null;
             protocolFamily = ProtocolFamily.valueOf(protocolInt);
         }
 

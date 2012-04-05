@@ -37,6 +37,8 @@ import jnr.constants.platform.Sock;
 import jnr.constants.platform.SocketLevel;
 import jnr.constants.platform.SocketOption;
 import jnr.constants.platform.TCP;
+import jnr.unixsocket.UnixSocketAddress;
+import jnr.unixsocket.UnixSocketChannel;
 import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
@@ -56,6 +58,7 @@ import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.channels.AlreadyConnectedException;
@@ -187,18 +190,18 @@ public class RubySocket extends RubyBasicSocket {
 
     @JRubyMethod()
     public IRubyObject connect_nonblock(ThreadContext context, IRubyObject arg) {
-        InetSocketAddress iaddr = Sockaddr.addressFromSockaddr_in(context, arg);
+        SocketAddress addr = addressForChannel(context, arg);
 
-        doConnectNonblock(context, getChannel(), iaddr);
+        doConnectNonblock(context, getChannel(), addr);
 
         return RubyFixnum.zero(context.runtime);
     }
 
     @JRubyMethod()
     public IRubyObject connect(ThreadContext context, IRubyObject arg) {
-        InetSocketAddress iaddr = Sockaddr.addressFromSockaddr_in(context, arg);
+        SocketAddress addr = addressForChannel(context, arg);
 
-        doConnect(context, getChannel(), iaddr);
+        doConnect(context, getChannel(), addr);
 
         return RubyFixnum.zero(context.runtime);
     }
@@ -286,6 +289,11 @@ public class RubySocket extends RubyBasicSocket {
             soType = Sock.SOCK_STREAM;
             soProtocol = ProtocolFamily.PF_INET;
 
+        } else if (mainChannel instanceof UnixSocketChannel) {
+            soDomain = AddressFamily.AF_UNIX;
+            soType = Sock.SOCK_STREAM;
+            soProtocol = ProtocolFamily.PF_UNIX;
+
         } else if (mainChannel instanceof DatagramChannel) {
             // datagram, set accordingly
             // again, AF_INET
@@ -325,7 +333,17 @@ public class RubySocket extends RubyBasicSocket {
 
         try {
             if(soType == Sock.SOCK_STREAM) {
-                channel = SocketChannel.open();
+
+                if (soProtocol == ProtocolFamily.PF_UNIX ||
+                        soProtocol == ProtocolFamily.PF_LOCAL) {
+                    channel = UnixSocketChannel.open();
+                } else if (soProtocol == ProtocolFamily.PF_INET ||
+                        soProtocol == ProtocolFamily.PF_INET6 ||
+                        soProtocol == ProtocolFamily.PF_UNSPEC) {
+                    channel = SocketChannel.open();
+                } else {
+                    throw runtime.newArgumentError("unsupported protocol family `" + soProtocol + "'");
+                }
 
             } else if(soType == Sock.SOCK_DGRAM) {
                 channel = DatagramChannel.open();
@@ -353,7 +371,7 @@ public class RubySocket extends RubyBasicSocket {
         ProtocolFamily protocolFamily = SocketUtils.protocolFamilyFromArg(protocol);
 
         if (protocolFamily == null) {
-            throw SocketUtils.sockerr(runtime, "unknown socket protocol " + protocol);
+            return; // no protocol specified, ignore it
         }
 
         soProtocol = protocolFamily;
@@ -377,9 +395,10 @@ public class RubySocket extends RubyBasicSocket {
         }
 
         soDomain = family;
+        soProtocol = ProtocolFamily.valueOf("PF" + soDomain.name().substring(2));
     }
 
-    private void doConnectNonblock(ThreadContext context, Channel channel, InetSocketAddress iaddr) {
+    private void doConnectNonblock(ThreadContext context, Channel channel, SocketAddress addr) {
         if (!(channel instanceof SelectableChannel)) {
             throw getRuntime().newErrnoENOPROTOOPTError();
         }
@@ -391,7 +410,7 @@ public class RubySocket extends RubyBasicSocket {
                 selectable.configureBlocking(false);
 
                 try {
-                    doConnect(context, channel, iaddr);
+                    doConnect(context, channel, addr);
 
                 } finally {
                     selectable.configureBlocking(oldBlocking);
@@ -406,14 +425,14 @@ public class RubySocket extends RubyBasicSocket {
         }
     }
 
-    protected void doConnect(ThreadContext context, Channel channel, InetSocketAddress iaddr) {
+    protected void doConnect(ThreadContext context, Channel channel, SocketAddress addr) {
         Ruby runtime = context.runtime;
 
         try {
             if (channel instanceof SocketChannel) {
                 SocketChannel socket = (SocketChannel)channel;
 
-                if(!socket.connect(iaddr)) {
+                if(!socket.connect(addr)) {
                     if (runtime.is1_9()) {
                         throw runtime.newErrnoEINPROGRESSWritableError();
                     } else {
@@ -421,8 +440,11 @@ public class RubySocket extends RubyBasicSocket {
                     }
                 }
 
+            } else if (channel instanceof UnixSocketChannel) {
+                ((UnixSocketChannel)channel).connect((UnixSocketAddress)addr);
+
             } else if (channel instanceof DatagramChannel) {
-                ((DatagramChannel)channel).connect(iaddr);
+                ((DatagramChannel)channel).connect(addr);
 
             } else {
                 throw runtime.newErrnoENOPROTOOPTError();
@@ -457,6 +479,9 @@ public class RubySocket extends RubyBasicSocket {
             if (channel instanceof SocketChannel) {
                 Socket socket = ((SocketChannel)channel).socket();
                 socket.bind(iaddr);
+
+            } else if (channel instanceof UnixSocketChannel) {
+                // do nothing
 
             } else if (channel instanceof DatagramChannel) {
                 DatagramSocket socket = ((DatagramChannel)channel).socket();
@@ -506,6 +531,22 @@ public class RubySocket extends RubyBasicSocket {
             msg = defaultMsg + " - " + msg;
         }
         return msg;
+    }
+
+    private SocketAddress addressForChannel(ThreadContext context, IRubyObject arg) {
+        switch (soProtocol) {
+            case PF_UNIX:
+            case PF_LOCAL:
+                return Sockaddr.addressFromSockaddr_un(context, arg);
+
+            case PF_INET:
+            case PF_INET6:
+            case PF_UNSPEC:
+                return Sockaddr.addressFromSockaddr_in(context, arg);
+
+            default:
+                throw context.runtime.newArgumentError("unsupported protocol family `" + soProtocol + "'");
+        }
     }
 
     @Deprecated

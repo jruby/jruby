@@ -1,5 +1,7 @@
 package org.jruby.util.io;
 
+import jnr.constants.platform.AddressFamily;
+import jnr.unixsocket.UnixSocketAddress;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyNumeric;
@@ -11,6 +13,7 @@ import org.jruby.util.ByteList;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -43,6 +46,21 @@ public class Sockaddr {
 
         return new InetSocketAddress(
                 addr.convertToString().toString(), RubyNumeric.fix2int(port));
+    }
+
+    public static UnixSocketAddress addressFromSockaddr_un(ThreadContext context, IRubyObject arg) {
+        ByteList bl = arg.convertToString().getByteList();
+        byte[] raw = bl.bytes();
+
+        int end = 2;
+        for (; end < raw.length; end++) {
+            if (raw[end] == 0) break;
+        }
+
+        ByteList path = new ByteList(raw, 2, end, false);
+        String pathStr = path.toString();
+
+        return new UnixSocketAddress(new File(pathStr));
     }
 
     public static IRubyObject unpack_sockaddr_in(ThreadContext context, IRubyObject addr) {
@@ -82,7 +100,7 @@ public class Sockaddr {
         try {
             DataOutputStream ds = new DataOutputStream(bufS);
 
-            writeSockaddrHeader(ds);
+            writeSockaddrHeader(AddressFamily.AF_INET, ds);
             writeSockaddrPort(ds, iport);
 
             try {
@@ -112,7 +130,7 @@ public class Sockaddr {
         try {
             DataOutputStream ds = new DataOutputStream(bufS);
 
-            writeSockaddrHeader(ds);
+            writeSockaddrHeader(AddressFamily.AF_INET, ds);
             writeSockaddrPort(ds, sock);
 
             String host = sock.getAddress().getHostAddress();
@@ -137,16 +155,13 @@ public class Sockaddr {
                 false));
     }
 
-    public static void writeSockaddrHeader(DataOutputStream ds) throws IOException {
-        if (Platform.IS_BSD) {
-            ds.write(16);
-            ds.write(2);
+    public static void writeSockaddrHeader(AddressFamily family, DataOutputStream ds) throws IOException {
+        int value = family.intValue();
+        int high = (value & 0xff00) >> 8;
+        int low = value & 0xff;
 
-        } else {
-            ds.write(2);
-            ds.write(0);
-
-        }
+        ds.write((byte)high);
+        ds.write((byte)low);
     }
 
     public static void writeSockaddrFooter(DataOutputStream ds) throws IOException {
