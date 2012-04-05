@@ -12,13 +12,11 @@ import org.jruby.runtime.Visibility;
 abstract class JFFIDynamicMethod extends DynamicMethod {
     protected final Arity arity;
     protected final Function function;
-    protected final FunctionInvoker functionInvoker;
 
-    public JFFIDynamicMethod(RubyModule implementationClass, Arity arity, Function function, FunctionInvoker functionInvoker) {
+    public JFFIDynamicMethod(RubyModule implementationClass, Arity arity, Function function) {
         super(implementationClass, Visibility.PUBLIC, CallConfiguration.FrameNoneScopeNone);
         this.arity = arity;
         this.function = function;
-        this.functionInvoker = functionInvoker;
     }
     @Override
     public final DynamicMethod dup() {

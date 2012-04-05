@@ -10,8 +10,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 class DefaultMethodZeroArg extends DefaultMethod {
     
     public DefaultMethodZeroArg(RubyModule implementationClass, Function function, 
-            FunctionInvoker functionInvoker, Signature signature) {
-        super(implementationClass, function, functionInvoker, new ParameterMarshaller[0], signature);
+            Signature signature, NativeInvoker defaultInvoker) {
+        super(implementationClass, function, signature, defaultInvoker);
     }
 
     @Override

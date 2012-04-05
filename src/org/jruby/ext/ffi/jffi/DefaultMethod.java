@@ -4,7 +4,6 @@ package org.jruby.ext.ffi.jffi;
 import com.kenai.jffi.Function;
 import org.jruby.RubyModule;
 import org.jruby.ext.ffi.CallbackInfo;
-import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -12,8 +11,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
 
 class DefaultMethod extends JFFIDynamicMethod {
-    private final ParameterMarshaller[] marshallers;
-    protected final boolean needsInvocationSession;
     protected final Signature signature;
     private final NativeInvoker defaultInvoker;
     private final int cbIndex;
@@ -22,26 +19,13 @@ class DefaultMethod extends JFFIDynamicMethod {
     private JITHandle jitHandle;
     private IndyCompiler indyCompiler;
 
-    
 
     public DefaultMethod(RubyModule implementationClass, Function function,
-            FunctionInvoker functionInvoker, ParameterMarshaller[] marshallers,
-            Signature signature) {
-        super(implementationClass, Arity.fixed(marshallers.length), function, functionInvoker);
-        this.marshallers = marshallers;
+                         Signature signature, NativeInvoker defaultInvoker) {
+        super(implementationClass, Arity.fixed(function.getParameterCount()), function);
+        this.defaultInvoker = defaultInvoker;
         this.signature = signature;
 
-        int piCount = 0;
-        int refCount = 0;
-        for (ParameterMarshaller m : marshallers) {
-            if (m.requiresPostInvoke()) {
-                ++piCount;
-            }
-
-            if (m.requiresReference()) {
-                ++refCount;
-            }
-        }
 
         int cbIndex = -1;
         NativeCallbackFactory cbFactory = null;
@@ -53,13 +37,8 @@ class DefaultMethod extends JFFIDynamicMethod {
                 break;
             }
         }
-        this.cbFactory = cbFactory;
         this.cbIndex = cbIndex;
-
-        this.needsInvocationSession = piCount > 0 || refCount > 0;
-        this.compiledInvoker = null;
-        this.jitHandle = null;
-        this.defaultInvoker = new BufferNativeInvoker(function, functionInvoker, marshallers);
+        this.cbFactory = cbFactory;
     }
 
     protected final NativeInvoker getNativeInvoker() {

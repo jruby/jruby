@@ -9,9 +9,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 final class DefaultMethodTwoArg extends DefaultMethod {
     
     public DefaultMethodTwoArg(RubyModule implementationClass, Function function,
-            FunctionInvoker functionInvoker, ParameterMarshaller[] marshallers,
-            Signature signature) {
-        super(implementationClass, function, functionInvoker, marshallers, signature);
+                               Signature signature, NativeInvoker defaultInvoker) {
+        super(implementationClass, function, signature, defaultInvoker);
     }
 
     @Override
