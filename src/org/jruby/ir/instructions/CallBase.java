@@ -189,11 +189,12 @@ public abstract class CallBase extends Instr implements Specializeable {
     }
 
     // SSS FIXME: Are all bases covered?
+    // How about aliasing of 'call', 'eval', 'send', 'module_eval', 'class_eval', 'instance_eval'?
     private boolean getEvalFlag() {
         // ENEBO: This could be made into a recursive two-method thing so then: send(:send, :send, :send, :send, :eval, "Hosed") works
         String mname = getMethodAddr().getName();
         // checking for "call" is conservative.  It can be eval only if the receiver is a Method
-        if (mname.equals("call") || mname.equals("eval")) return true;
+        if (mname.equals("call") || mname.equals("eval") || mname.equals("module_eval") || mname.equals("class_eval") || mname.equals("instance_eval")) return true;
 
         // Calls to 'send' where the first arg is either unknown or is eval or send (any others?)
         if (mname.equals("send") || mname.equals("__send__")) {
@@ -202,9 +203,14 @@ public abstract class CallBase extends Instr implements Specializeable {
                 Operand meth = args[0];
                 if (!(meth instanceof StringLiteral)) return true; // We don't know
 
-                // But why?  Why are you killing yourself (and us) doing this?
                 String name = ((StringLiteral) meth).string;
-                if (name.equals("call") || name.equals("eval") || name.equals("send") || name.equals("__send__")) return true;
+                if (   name.equals("call") 
+                    || name.equals("eval") 
+                    || mname.equals("module_eval") 
+                    || mname.equals("class_eval") 
+                    || mname.equals("instance_eval") 
+                    || name.equals("send") 
+                    || name.equals("__send__")) return true;
             }
         }
 
@@ -231,9 +237,9 @@ public abstract class CallBase extends Instr implements Specializeable {
         } else if (mname.equals("new")) {
             Operand object = getReceiver();
 
-				// SSS FIXME: This check is incorrect -- something has gone
-				// wrong with the numerous fixes to IR code since this check was written.
-				//
+            // SSS FIXME: This check is incorrect -- something has gone
+            // wrong with the numerous fixes to IR code since this check was written.
+            //
             // Unknown receiver -- could be Proc!!
             if (!(object instanceof CurrentScope)) return true;
 
