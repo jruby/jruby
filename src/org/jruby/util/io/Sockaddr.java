@@ -179,7 +179,12 @@ public class Sockaddr {
     }
 
     public static void validateSockaddr(Ruby runtime, ByteList val) {
-        if((Platform.IS_BSD && val.get(0) != 16 && val.get(1) != 2) || (!Platform.IS_BSD && val.get(0) != 2)) {
+        int high = val.get(0) & 0xff;
+        int low = val.get(1) & 0xff;
+
+        AddressFamily af = AddressFamily.valueOf((high << 8) + low);
+
+        if (af == AddressFamily.__UNKNOWN_CONSTANT__) {
             throw runtime.newArgumentError("can't resolve socket address of wrong type");
         }
     }
