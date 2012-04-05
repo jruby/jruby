@@ -45,7 +45,7 @@ public class LoadLocalVarInstr extends Instr implements ResultInstr {
     }
 
     public String toString() {
-        return result + " = load_from_binding(" + scope.getName() + ", " + lvar + ")";
+        return result + " = load_lvar(" + scope.getName() + ", " + lvar + ")";
     }
 
     @Override

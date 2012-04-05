@@ -40,7 +40,7 @@ public class StoreLocalVarInstr extends Instr {
 
     @Override
     public String toString() {
-        return "store_into_binding(" + value + ", " + scope.getName() + ", " + lvar + ")";
+        return "store_lvar(" + value + ", " + scope.getName() + ", " + lvar + ")";
     }
 
     @Override
