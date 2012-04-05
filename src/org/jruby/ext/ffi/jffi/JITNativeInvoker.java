@@ -12,7 +12,6 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 abstract public class JITNativeInvoker extends NativeInvoker {
     protected static final Invoker invoker = Invoker.getInstance();
-    protected final NativeInvoker fallbackInvoker;
     protected final com.kenai.jffi.Function function;
     protected final com.kenai.jffi.CallContext callContext;
     protected final long functionAddress;
@@ -32,13 +31,12 @@ abstract public class JITNativeInvoker extends NativeInvoker {
     protected final ObjectParameterInfo parameterInfo4;
     protected final ObjectParameterInfo parameterInfo5;
 
-    public JITNativeInvoker(com.kenai.jffi.Function function, Signature signature, NativeInvoker fallbackInvoker) {
+    public JITNativeInvoker(com.kenai.jffi.Function function, Signature signature) {
         this.arity = signature.getParameterCount();
         this.function = function;
         this.callContext = function.getCallContext();
         this.functionAddress = function.getFunctionAddress();
         this.signature = signature;
-        this.fallbackInvoker = fallbackInvoker;
 
         // Get any result and parameter converters needed
         resultConverter = DataConverters.getResultConverter(signature.getResultType());

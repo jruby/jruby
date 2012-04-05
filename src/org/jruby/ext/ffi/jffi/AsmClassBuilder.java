@@ -67,7 +67,7 @@ final class AsmClassBuilder {
     Class<? extends NativeInvoker> build() {
         // Create the constructor to set the 'library' & functions fields
         SkinnyMethodAdapter init = new SkinnyMethodAdapter(classVisitor, ACC_PUBLIC, "<init>",
-                sig(void.class, com.kenai.jffi.Function.class, Signature.class, NativeInvoker.class),
+                sig(void.class, com.kenai.jffi.Function.class, Signature.class),
                 null, null);
         
         init.start();
@@ -76,9 +76,8 @@ final class AsmClassBuilder {
         init.aload(0); // this
         init.aload(1); // jffi function
         init.aload(2); // signature
-        init.aload(3); // fallback invoker
         init.invokespecial(p(parentClass), "<init>",
-                sig(void.class, com.kenai.jffi.Function.class, Signature.class, NativeInvoker.class));
+                sig(void.class, com.kenai.jffi.Function.class, Signature.class));
         init.voidreturn();
         init.visitMaxs(10, 10);
         init.visitEnd();
