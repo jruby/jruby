@@ -351,7 +351,7 @@ RUBY_DLLSPEC void rb_secure_update(VALUE);
 RUBY_DLLSPEC NORETURN(void rb_insecure_operation(void));
 
 /** The length of the array. */
-#define RARRAY_LEN(ary) RARRAY(ary)->len
+#define RARRAY_LEN(ary) jruby_ary_len(ary)
 /** Returns a pointer to a VALUE[] that mirrors the data in
  * the ruby array. */
 #define RARRAY_PTR(ary) RARRAY(ary)->ptr
@@ -753,6 +753,8 @@ RUBY_DLLSPEC VALUE rb_iterate(VALUE (*ifunc)(VALUE), VALUE ary, VALUE(*cb)(ANYAR
  * which exposes an MRI-like API to the C code.
  */
 RUBY_DLLSPEC struct RArray* jruby_rarray(VALUE ary);
+/** returns the length of the ruby array */
+RUBY_DLLSPEC long jruby_ary_len(VALUE ary);
 
 /* Hash */
 RUBY_DLLSPEC VALUE rb_hash(VALUE);
