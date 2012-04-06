@@ -4,7 +4,7 @@ def foo(depth, count)
   if depth > 0
     foo(depth - 1, count)
   else
-    i = 0;
+    i = 0
     while i < count
       i += 1
       begin
@@ -24,6 +24,16 @@ Benchmark.ips do |bm|
   end
   bm.report("exception raising at depth 50") do |n|
     foo(50, n)
+  end
+  bm.report("exception raising backtrace given") do |n|
+    i = 0
+    while i < n
+      i += 1
+      begin
+        raise ArgumentError, 'foo', nil
+      rescue
+      end
+    end
   end
 end
 
