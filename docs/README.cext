@@ -36,7 +36,7 @@ onwards).
 
 * **RSTRING_PTR(VALUE)**
 
-    *Problem:* In order to support direct manipulaton of C array
+    *Problem:* In order to support direct manipulation of C array
      backed strings, whenever you call this macro, the object
      referenced by VALUE is added to a synchronization list, and
      whenever you transition between C and Java land, the contents of
