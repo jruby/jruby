@@ -1,24 +1,29 @@
-require 'benchmark'
+require 'benchmark/ips'
 
-def foo(count)
-  if (count > 0)
-    foo(count - 1)
+def foo(depth, count)
+  if depth > 0
+    foo(depth - 1, count)
   else
-    puts Benchmark.measure {
-      i = 0;
-      while i < 500000
-        i += 1
-        begin
-          raise ArgumentError("Hoohaw")
-        rescue
-        end
+    i = 0;
+    while i < count
+      i += 1
+      begin
+        raise ArgumentError
+      rescue
       end
-    }
+    end
   end
 end
 
-foo(1)
-foo(40)
-foo(100)
-foo(400)
+Benchmark.ips do |bm|
+  bm.report("exception raising at depth 1") do |n|
+    foo(1, n)
+  end
+  bm.report("exception raising at depth 10") do |n|
+    foo(10, n)
+  end
+  bm.report("exception raising at depth 50") do |n|
+    foo(50, n)
+  end
+end
 
