@@ -1,11 +1,14 @@
 package org.jruby.ext.ffi.jffi;
 
 import com.kenai.jffi.*;
+import org.jruby.RubyModule;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.ext.ffi.NativeType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.objectweb.asm.Label;
+
+import java.util.Arrays;
 
 import static org.jruby.util.CodegenUtils.*;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
@@ -17,18 +20,24 @@ import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
 abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
 
     public void generate(AsmClassBuilder builder, String functionName, JITSignature signature) {
+        Class[] params = new Class[4 + signature.getParameterCount()];
+        params[0] = ThreadContext.class;
+        params[1] = IRubyObject.class;
+        params[2] = RubyModule.class;
+        params[3] = String.class;
+        Arrays.fill(params, 4, params.length, IRubyObject.class);
         SkinnyMethodAdapter mv = new SkinnyMethodAdapter(builder.getClassVisitor(),
                 ACC_PUBLIC | ACC_FINAL, functionName,
-                sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, signature.getParameterCount())),
+                sig(IRubyObject.class, params),
                 null, null);
 
         mv.start();
-        generate(builder, mv, signature);
+        generate(builder, mv, signature, 5);
         mv.visitMaxs(30, 30);
         mv.visitEnd();
     }
 
-    public void generate(AsmClassBuilder builder, SkinnyMethodAdapter mv, JITSignature signature) {
+    public void generate(AsmClassBuilder builder, SkinnyMethodAdapter mv, JITSignature signature, int firstParam) {
         final Class nativeIntType = getInvokerIntType();
         int pointerCount = 0;
 
@@ -41,7 +50,6 @@ abstract class AbstractNumericMethodGenerator implements JITMethodGenerator {
 
         // [ stack now contains: Invoker, CalLContext, function address ]
 
-        final int firstParam = 2;
         int nextLocalVar = firstParam + signature.getParameterCount();
         final int heapPointerCountVar = nextLocalVar++;
         final int firstStrategyVar = nextLocalVar; nextLocalVar += signature.getParameterCount();

@@ -1,9 +1,11 @@
 package org.jruby.ext.ffi.jffi;
 
 import com.kenai.jffi.*;
+import org.jruby.RubyModule;
 import org.jruby.ext.ffi.*;
 import org.jruby.ext.ffi.NativeType;
 import org.jruby.ext.ffi.Type;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -31,7 +33,8 @@ abstract public class JITNativeInvoker extends NativeInvoker {
     protected final ObjectParameterInfo parameterInfo4;
     protected final ObjectParameterInfo parameterInfo5;
 
-    public JITNativeInvoker(com.kenai.jffi.Function function, Signature signature) {
+    public JITNativeInvoker(RubyModule implementationClass, com.kenai.jffi.Function function, Signature signature) {
+        super(implementationClass, function, signature);
         this.arity = signature.getParameterCount();
         this.function = function;
         this.callContext = function.getCallContext();
@@ -91,43 +94,81 @@ abstract public class JITNativeInvoker extends NativeInvoker {
 
         return ObjectParameterInfo.create(i, ObjectParameterInfo.ARRAY, ObjectParameterInfo.BYTE, flags);
     }
-    
-    abstract public IRubyObject invoke(ThreadContext context, IRubyObject arg1, 
-            IRubyObject arg2, IRubyObject arg3, IRubyObject arg4);
-    
-    abstract public IRubyObject invoke(ThreadContext context, IRubyObject arg1, 
-            IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5);
-    
-    abstract public IRubyObject invoke(ThreadContext context, IRubyObject arg1, 
-            IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, 
-            IRubyObject arg5, IRubyObject arg6);
-    
-    public final IRubyObject invoke(ThreadContext context, IRubyObject[] args) {
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name) {
+        throw context.getRuntime().newArgumentError(0, arity);
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name,
+                            IRubyObject arg1) {
+        throw context.getRuntime().newArgumentError(1, arity);
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name,
+                            IRubyObject arg1, IRubyObject arg2) {
+
+        throw context.getRuntime().newArgumentError(2, arity);
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name,
+                            IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
+        throw context.getRuntime().newArgumentError(3, arity);
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name,
+                            IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4) {
+        throw context.getRuntime().newArgumentError(4, arity);
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name,
+                            IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5) {
+        throw context.getRuntime().newArgumentError(5, arity);
+    }
+
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name,
+                            IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4,
+                            IRubyObject arg5, IRubyObject arg6) {
+        throw context.getRuntime().newArgumentError(6, arity);
+    }
+
+    @Override
+    public final IRubyObject call(ThreadContext context, IRubyObject self,
+                                    RubyModule clazz, String name, IRubyObject[] args) {
         if (args.length != arity) {
             throw context.getRuntime().newArgumentError(args.length, arity);
         }
-        
-        // This will never be called in a hot path anyway, so just use a switch statement
+
         switch (args.length) {
             case 0:
-                return invoke(context);
+                return call(context, self, clazz, name);
+
             case 1:
-                return invoke(context, args[0]);
+                return call(context, self, clazz, name, args[0]);
+
             case 2:
-                return invoke(context, args[0], args[1]);
+                return call(context, self, clazz, name, args[0], args[1]);
+
             case 3:
-                return invoke(context, args[0], args[1], args[2]);
+                return call(context, self, clazz, name, args[0], args[1], args[2]);
+
             case 4:
-                return invoke(context, args[0], args[1], args[2], args[3]);
+                return call(context, self, clazz, name, args[0], args[1], args[2], args[3]);
+
             case 5:
-                return invoke(context, args[0], args[1], args[2], args[3], args[4]);
+                return call(context, self, clazz, name, args[0], args[1], args[2], args[3], args[4]);
+
             case 6:
-                return invoke(context, args[0], args[1], args[2], args[3], args[4], args[5]);
+                return call(context, self, clazz, name, args[0], args[1], args[2], args[3], args[4], args[5]);
+
             default:
                 throw context.getRuntime().newArgumentError("too many arguments: " + args.length);
         }
     }
-
-
-    
 }

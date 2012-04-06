@@ -60,7 +60,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * method.
  *
  */
-public class DefaultMethod extends DynamicMethod implements MethodArgs, PositionAware {
+public class DefaultMethod extends DynamicMethod implements MethodArgs, PositionAware, CacheableMethod {
 
     private static class DynamicMethodBox {
         public DynamicMethod actualMethod;

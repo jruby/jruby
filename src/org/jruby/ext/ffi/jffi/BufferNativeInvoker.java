@@ -1,6 +1,8 @@
 package org.jruby.ext.ffi.jffi;
 
 import com.kenai.jffi.HeapInvocationBuffer;
+import org.jruby.RubyModule;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -17,13 +19,13 @@ final class BufferNativeInvoker extends NativeInvoker {
     private final HeapInvocationBuffer dummyBuffer;
     
     
-    BufferNativeInvoker(com.kenai.jffi.Function function,
+    BufferNativeInvoker(RubyModule implementationClass, com.kenai.jffi.Function function, Signature signature,
             FunctionInvoker functionInvoker,
             ParameterMarshaller[] parameterMarshallers) {
-
+        super(implementationClass, function, signature);
         this.function = function;
         this.functionInvoker = functionInvoker;
-        this.parameterMarshallers = (ParameterMarshaller[]) parameterMarshallers.clone();
+        this.parameterMarshallers = parameterMarshallers.clone();
         
         int piCount = 0;
         int refCount = 0;
@@ -43,11 +45,11 @@ final class BufferNativeInvoker extends NativeInvoker {
     }
     
     
-    public IRubyObject invoke(ThreadContext context) {
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name) {
         return functionInvoker.invoke(context, function, dummyBuffer);
     }
     
-    public IRubyObject invoke(ThreadContext context, IRubyObject arg1) {
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject arg1) {
         HeapInvocationBuffer buffer = new HeapInvocationBuffer(function);
         
         if (needsInvocationSession) {
@@ -68,7 +70,8 @@ final class BufferNativeInvoker extends NativeInvoker {
         }
     }
     
-    public IRubyObject invoke(ThreadContext context, IRubyObject arg1, IRubyObject arg2) {
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name,
+                            IRubyObject arg1, IRubyObject arg2) {
         HeapInvocationBuffer buffer = new HeapInvocationBuffer(function);
         if (needsInvocationSession) {
             Invocation invocation = new Invocation(context, postInvokeCount, referenceCount);
@@ -90,8 +93,8 @@ final class BufferNativeInvoker extends NativeInvoker {
         }
     }
     
-    public IRubyObject invoke(ThreadContext context, IRubyObject arg1, 
-            IRubyObject arg2, IRubyObject arg3) {
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name,
+                            IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
         HeapInvocationBuffer buffer = new HeapInvocationBuffer(function);
         if (needsInvocationSession) {
             Invocation invocation = new Invocation(context, postInvokeCount, referenceCount);
@@ -114,23 +117,8 @@ final class BufferNativeInvoker extends NativeInvoker {
         }
     }
 
-    @Override
-    public IRubyObject invoke(ThreadContext context, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4) {
-        return invoke(context, new IRubyObject[] { arg1, arg2, arg3, arg4 });
-    }
 
-    @Override
-    public IRubyObject invoke(ThreadContext context, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5) {
-        return invoke(context, new IRubyObject[] { arg1, arg2, arg3, arg4, arg5 });
-    }
-
-    @Override
-    public IRubyObject invoke(ThreadContext context, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5, IRubyObject arg6) {
-        return invoke(context, new IRubyObject[] { arg1, arg2, arg3, arg4, arg5, arg6 });
-    }
-    
-
-    public IRubyObject invoke(ThreadContext context, IRubyObject[] args) {
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args) {
         
         HeapInvocationBuffer buffer = new HeapInvocationBuffer(function);
 

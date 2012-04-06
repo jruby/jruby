@@ -4,41 +4,52 @@ package org.jruby.ext.ffi.jffi;
 import com.kenai.jffi.Function;
 import org.jruby.RubyModule;
 import org.jruby.ext.ffi.CallbackInfo;
+import org.jruby.internal.runtime.methods.CacheableMethod;
+import org.jruby.internal.runtime.methods.CallConfiguration;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
 
-class DefaultMethod extends JFFIDynamicMethod {
+public class DefaultMethod extends DynamicMethod implements CacheableMethod {
     protected final Signature signature;
     private final NativeInvoker defaultInvoker;
-    private final int cbIndex;
-    private final NativeCallbackFactory cbFactory;
-    private NativeInvoker compiledInvoker;
+    private volatile NativeInvoker compiledInvoker;
     private JITHandle jitHandle;
     private IndyCompiler indyCompiler;
+    protected final Arity arity;
+    protected final Function function;
 
 
     public DefaultMethod(RubyModule implementationClass, Function function,
                          Signature signature, NativeInvoker defaultInvoker) {
-        super(implementationClass, Arity.fixed(function.getParameterCount()), function);
+        super(implementationClass, Visibility.PUBLIC, CallConfiguration.FrameNoneScopeNone);
+        this.arity = Arity.fixed(signature.getParameterCount());
+        this.function = function;
         this.defaultInvoker = defaultInvoker;
         this.signature = signature;
+    }
 
+    @Override
+    public final DynamicMethod dup() {
+        return this;
+    }
 
-        int cbIndex = -1;
-        NativeCallbackFactory cbFactory = null;
-        for (int i = 0; i < signature.getParameterCount(); ++i) {
-            if (signature.getParameterType(i) instanceof CallbackInfo) {
-                cbFactory = CallbackManager.getInstance().getCallbackFactory(implementationClass.getRuntime(),
-                        (CallbackInfo) signature.getParameterType(i));
-                cbIndex = i;
-                break;
-            }
-        }
-        this.cbIndex = cbIndex;
-        this.cbFactory = cbFactory;
+    @Override
+    public final Arity getArity() {
+        return arity;
+    }
+
+    @Override
+    public final boolean isNative() {
+        return true;
+    }
+
+    public DynamicMethod getMethodForCaching() {
+        return compiledInvoker != null ? compiledInvoker : this;
     }
 
     protected final NativeInvoker getNativeInvoker() {
@@ -53,13 +64,16 @@ class DefaultMethod extends JFFIDynamicMethod {
     }
 
     private synchronized NativeInvoker tryCompilation() {
+
         if (compiledInvoker != null) {
             return compiledInvoker;
         }
 
-        NativeInvoker invoker = getJITHandle().compile(function, signature);
+        NativeInvoker invoker = getJITHandle().compile(getImplementationClass(), function, signature);
         if (invoker != null) {
-            return compiledInvoker = invoker;
+            compiledInvoker = invoker;
+            getImplementationClass().invalidateCacheDescendants();
+            return compiledInvoker;
         }
         
         //
@@ -67,42 +81,22 @@ class DefaultMethod extends JFFIDynamicMethod {
         //
         if (getJITHandle().compilationFailed()) {
             compiledInvoker = defaultInvoker;
+            getImplementationClass().invalidateCacheDescendants();
         }
         
         return defaultInvoker;
     }
 
+    @Override
+    public IRubyObject call(ThreadContext context, IRubyObject self,
+                            RubyModule clazz, String name, IRubyObject[] args) {
+        return getNativeInvoker().call(context, self, clazz, name, args);
+    }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self,
             RubyModule clazz, String name, IRubyObject[] args, Block block) {
-
-        if (!block.isGiven() || cbIndex < 0) {
-            arity.checkArity(context.getRuntime(), args);
-            return getNativeInvoker().invoke(context, args);
-
-        } else {
-            Arity.checkArgumentCount(context.getRuntime(), args,
-                    arity.getValue() - 1, arity.getValue());
-
-            IRubyObject[] params = new IRubyObject[arity.getValue()];
-            for (int i = 0; i < cbIndex; i++) {
-                params[i] = args[i];
-            }
-
-            NativeCallbackPointer cb;
-            params[cbIndex] = cb = cbFactory.newCallback(block);
-
-            for (int i = cbIndex + 1; i < params.length; i++) {
-                params[i] = args[i - 1];
-            }
-
-            try {
-                return getNativeInvoker().invoke(context, params);
-            } finally {
-                cb.dispose();
-            }
-        }
+        return getNativeInvoker().call(context, self, clazz, name, args, block);
     }
 
     @Override
@@ -112,7 +106,7 @@ class DefaultMethod extends JFFIDynamicMethod {
         }
 
         NativeInvoker invoker = null;
-        while (!getJITHandle().compilationFailed() && (invoker = getJITHandle().compile(function, signature)) == null)
+        while (!getJITHandle().compilationFailed() && (invoker = getJITHandle().compile(getImplementationClass(), function, signature)) == null)
             ;
         if (indyCompiler == null) {
             indyCompiler = new IndyCompiler(signature, invoker);

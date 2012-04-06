@@ -1,6 +1,8 @@
 package org.jruby.ext.ffi.jffi;
 
 import java.io.PrintWriter;
+
+import org.jruby.RubyModule;
 import org.objectweb.asm.ClassReader;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import java.lang.reflect.Constructor;
@@ -31,26 +33,15 @@ final class AsmClassBuilder {
         
         switch (signature.getParameterCount()) {
             case 0:
-                parentClass = JITNativeInvoker0.class;
-                break;
             case 1:
-                parentClass = JITNativeInvoker1.class;
-                break;
             case 2:
-                parentClass = JITNativeInvoker2.class;
-                break;
             case 3:
-                parentClass = JITNativeInvoker3.class;
-                break;
             case 4:
-                parentClass = JITNativeInvoker4.class;
-                break;
             case 5:
-                parentClass = JITNativeInvoker5.class;
-                break;
             case 6:
-                parentClass = JITNativeInvoker6.class;
+                parentClass = JITNativeInvoker.class;
                 break;
+
             default:
                 throw new UnsupportedOperationException("arity " 
                         + signature.getParameterCount()  + " not supported");
@@ -67,22 +58,23 @@ final class AsmClassBuilder {
     Class<? extends NativeInvoker> build() {
         // Create the constructor to set the 'library' & functions fields
         SkinnyMethodAdapter init = new SkinnyMethodAdapter(classVisitor, ACC_PUBLIC, "<init>",
-                sig(void.class, com.kenai.jffi.Function.class, Signature.class),
+                sig(void.class, RubyModule.class, com.kenai.jffi.Function.class, Signature.class),
                 null, null);
         
         init.start();
 
         // Invoker the superclass's constructor
         init.aload(0); // this
-        init.aload(1); // jffi function
-        init.aload(2); // signature
+        init.aload(1); // implementationClass
+        init.aload(2); // jffi function
+        init.aload(3); // signature
         init.invokespecial(p(parentClass), "<init>",
-                sig(void.class, com.kenai.jffi.Function.class, Signature.class));
+                sig(void.class, RubyModule.class, com.kenai.jffi.Function.class, Signature.class));
         init.voidreturn();
         init.visitMaxs(10, 10);
         init.visitEnd();
         
-        generator.generate(this, "invoke", signature);
+        generator.generate(this, "call", signature);
 
         classVisitor.visitEnd();
 

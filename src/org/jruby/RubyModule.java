@@ -68,7 +68,7 @@ import org.jruby.compiler.ASTInspector;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.CallConfiguration;
-import org.jruby.internal.runtime.methods.DefaultMethod;
+import org.jruby.internal.runtime.methods.CacheableMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.FullFunctionCallbackMethod;
 import org.jruby.internal.runtime.methods.JavaMethod;
@@ -956,8 +956,8 @@ public class RubyModule extends RubyObject {
         int token = getGeneration();
         DynamicMethod method = searchMethodInner(name);
 
-        if (method instanceof DefaultMethod) {
-            method = ((DefaultMethod)method).getMethodForCaching();
+        if (method instanceof CacheableMethod) {
+            method = ((CacheableMethod) method).getMethodForCaching();
         }
 
         return method != null ? addToCache(name, method, token) : addToCache(name, UndefinedMethod.getInstance(), token);

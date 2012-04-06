@@ -65,32 +65,10 @@ public final class DefaultMethodFactory extends MethodFactory {
         Signature signature = new Signature(returnType, parameterTypes, convention, 
                 ignoreError, enums instanceof RubyHash ? (RubyHash) enums : null);
 
-        BufferNativeInvoker fallbackInvoker = new BufferNativeInvoker(function, functionInvoker, marshallers);
-        switch (parameterTypes.length) {
-            case 0:
-                return new DefaultMethodZeroArg(module, function, signature, fallbackInvoker);
-            
-            case 1:
-                return new DefaultMethodOneArg(module, function, signature, fallbackInvoker);
-            
-            case 2:
-                return new DefaultMethodTwoArg(module, function, signature, fallbackInvoker);
-            
-            case 3:
-                return new DefaultMethodThreeArg(module, function, signature, fallbackInvoker);
-            
-            case 4:
-                return new DefaultMethodFourArg(module, function, signature, fallbackInvoker);
-            
-            case 5:
-                return new DefaultMethodFiveArg(module, function, signature, fallbackInvoker);
-            
-            case 6:
-                return new DefaultMethodSixArg(module, function, signature, fallbackInvoker);
-            
-            default:
-                return new DefaultMethod(module, function, signature, fallbackInvoker);
-        }
+        BufferNativeInvoker fallbackInvoker = new BufferNativeInvoker(module, function, signature, functionInvoker, marshallers);
+        return parameterTypes.length <= 6
+            ? new DefaultMethod(module, function, signature, fallbackInvoker)
+            : fallbackInvoker;
     }
 
     static FunctionInvoker getFunctionInvoker(Type returnType) {
