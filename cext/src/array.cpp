@@ -259,7 +259,7 @@ jruby_ary_len(VALUE v)
     Handle* h = Handle::valueOf(v);
     if (h->getType() == T_ARRAY) {
 	JLocalEnv env;
-	return env->CallIntMethod(h->obj, getCachedMethodID(env, RubyArray_class, "getLength", "()I"));
+	return env->CallIntMethod(valueToObject(env, v), getCachedMethodID(env, RubyArray_class, "getLength", "()I"));
     }
 
     rb_raise(rb_eTypeError, "wrong type (expected Array)");
