@@ -2717,11 +2717,16 @@ public final class Ruby {
         }
     }
 
-    public void addBoundMethod(String javaName, String rubyName) {
-        boundMethods.put(javaName, rubyName);
+    public void addBoundMethod(String className, String methodName, String rubyName) {
+        Map<String, String> javaToRuby = boundMethods.get(className);
+        if (javaToRuby == null) {
+            javaToRuby = new HashMap<String, String>();
+            boundMethods.put(className, javaToRuby);
+        }
+        javaToRuby.put(methodName, rubyName);
     }
 
-    public Map<String, String> getBoundMethods() {
+    public Map<String, Map<String, String>> getBoundMethods() {
         return boundMethods;
     }
 
@@ -4377,7 +4382,7 @@ public final class Ruby {
     private final AtomicInteger moduleGeneration = new AtomicInteger(1);
 
     // A list of Java class+method names to include in backtraces
-    private final Map<String, String> boundMethods = new HashMap();
+    private final Map<String, Map<String, String>> boundMethods = new HashMap();
 
     // A soft pool of selectors for blocking IO operations
     private final SelectorPool selectorPool = new SelectorPool();

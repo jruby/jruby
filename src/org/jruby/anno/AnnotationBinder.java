@@ -470,14 +470,14 @@ public class AnnotationBinder implements AnnotationProcessorFactory {
             }
 
             private void addCoreMethodMapping(String rubyName, MethodDeclaration decl, PrintStream out) {
-                out.println(
-                        "        runtime.addBoundMethod(\""
-                        + decl.getDeclaringType().getQualifiedName()
-                        + "."
-                        + decl.getSimpleName()
-                        + "\", \""
-                        + rubyName
-                        + "\");");
+                out.println(new StringBuilder(50)
+                        .append("        runtime.addBoundMethod(")
+                        .append('"').append(decl.getDeclaringType().getQualifiedName()).append('"')
+                        .append(',')
+                        .append('"').append(decl.getSimpleName()).append('"')
+                        .append(',')
+                        .append('"').append(rubyName).append('"')
+                        .append(");").toString());
             }
 
             private String getActualQualifiedName(TypeDeclaration td) {
