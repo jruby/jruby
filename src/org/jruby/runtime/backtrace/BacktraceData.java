@@ -44,22 +44,26 @@ public class BacktraceData implements Serializable {
 
     private RubyStackTraceElement[] transformBacktrace(Map<String, Map<String, String>> boundMethods) {
         List<RubyStackTraceElement> trace = new ArrayList<RubyStackTraceElement>(javaTrace.length);
+
         // used for duplicating the previous Ruby frame when masking native calls
         boolean dupFrame = false;
         String dupFrameName = null;
+
         // a running index into the Ruby backtrace stack, incremented for each
         // interpreter frame we encounter in the Java backtrace.
         int rubyFrameIndex = rubyTrace == null ? -1 : rubyTrace.length - 1;
+
+        // loop over all elements in the Java stack trace
         for (int i = 0; i < javaTrace.length; i++) {
 
             StackTraceElement element = javaTrace[i];
 
-            // skip native and synthetic frames
+            // skip unnumbered frames
             int line = element.getLineNumber();
             if (line == -1) continue;
 
-            String methodName = element.getMethodName();
             String className = element.getClassName();
+            String methodName = element.getMethodName();
             String filename = element.getFileName();
 
             if (filename != null) {
@@ -78,9 +82,12 @@ public class BacktraceData implements Serializable {
                         compiled = true;
 
                         // pull out and demangle the method name
-                        String classAndMethod[] = className.substring(JITCompiler.RUBY_JIT_PREFIX.length() + 1, className.lastIndexOf("_")).split("#");
-                        className = classAndMethod[0];
-                        methodName = JavaNameMangler.demangleMethodName(classAndMethod[1]);
+                        String tmpClassName = className;
+                        int start = JITCompiler.RUBY_JIT_PREFIX.length() + 1;
+                        int hash = tmpClassName.indexOf("#", start);
+                        int end = tmpClassName.lastIndexOf("_");
+                        className = tmpClassName.substring(start, hash);
+                        methodName = tmpClassName.substring(hash + 1, end);
 
                     } else if ((index = methodName.indexOf("$RUBY$")) >= 0) {
 
@@ -88,20 +95,25 @@ public class BacktraceData implements Serializable {
                         compiled = true;
 
                         // pull out and demangle the method name
-                        methodName = methodName.substring(index + "$RUBY$".length());
-                        if (methodName.startsWith("SYNTHETIC")) {
-                            methodName = methodName.substring("SYNTHETIC".length());
+                        index += "$RUBY$".length();
+                        if (methodName.indexOf("SYNTHETIC", index) == 0) {
+                            methodName = methodName.substring(index + "SYNTHETIC".length());
+                        } else {
+                            methodName = methodName.substring(index);
                         }
-                        methodName = JavaNameMangler.demangleMethodName(methodName);
 
                     }
 
+                    // demangle any JVM-prohibited names
+                    methodName = JavaNameMangler.demangleMethodName(methodName);
+
+                    // root body gets named (root)
                     if (methodName.equals("__file__")) methodName = "(root)";
 
                     // construct Ruby trace element
                     RubyStackTraceElement rubyElement = new RubyStackTraceElement(className, methodName, filename, line, false);
 
-                    // add duplicate if masking native and previous frame was native
+                    // add duplicate if masking native and previous frame was native (Kernel#caller)
                     if (maskNative && dupFrame) {
                         dupFrame = false;
                         trace.add(new RubyStackTraceElement(className, dupFrameName, filename, line, false));
@@ -119,7 +131,6 @@ public class BacktraceData implements Serializable {
             }
 
             // Java-based Ruby core methods
-            String dotClassMethod = element.getClassName() + "." + element.getMethodName();
             String rubyName = null;
             if (
                     fullTrace || // full traces show all elements
@@ -129,7 +140,7 @@ public class BacktraceData implements Serializable {
                 if (rubyName == null) rubyName = methodName;
 
                 // add package to filename
-                filename = packagedFilenameFromElement(element);
+                filename = packagedFilenameFromElement(filename, className);
 
                 // mask .java frames out for e.g. Kernel#caller
                 if (maskNative) {
@@ -149,9 +160,9 @@ public class BacktraceData implements Serializable {
             }
 
             // Interpreted frames
-            String classMethod = element.getClassName() + "." + element.getMethodName();
-            FrameType frameType = FrameType.INTERPRETED_FRAMES.get(classMethod);
-            if (frameType != null && rubyFrameIndex >= 0) {
+            if (rubyFrameIndex >= 0 &&
+                    FrameType.INTERPRETED_CLASSES.contains(className) &&
+                    FrameType.INTERPRETED_FRAMES.containsKey(methodName)) {
 
                 // pop interpreter frame
                 BacktraceElement rubyFrame = rubyTrace[rubyFrameIndex--];
@@ -174,7 +185,7 @@ public class BacktraceData implements Serializable {
                 trace.add(new RubyStackTraceElement(
                         className,
                         methodName,
-                        packagedFilenameFromElement(element),
+                        packagedFilenameFromElement(filename, className),
                         line,
                         false
                 ));
@@ -183,7 +194,7 @@ public class BacktraceData implements Serializable {
         }
 
         RubyStackTraceElement[] rubyStackTrace = new RubyStackTraceElement[trace.size()];
-        return (RubyStackTraceElement[]) trace.toArray(rubyStackTrace);
+        return trace.toArray(rubyStackTrace);
     }
 
     public static String getBoundMethodName(Map<String,Map<String,String>> boundMethods, String className, String methodName) {
@@ -194,16 +205,14 @@ public class BacktraceData implements Serializable {
         return javaToRuby.get(methodName);
     }
 
-    private static String packagedFilenameFromElement(StackTraceElement element) {
-        String filename = element.getFileName();
-
+    private static String packagedFilenameFromElement(String filename, String className) {
         // stick package on the beginning
         if (filename == null) {
-            filename = element.getClassName().replaceAll("\\.", "/");
+            filename = className.replaceAll("\\.", "/");
         } else {
-            int lastDot = element.getClassName().lastIndexOf('.');
+            int lastDot = className.lastIndexOf('.');
             if (lastDot != -1) {
-                filename = element.getClassName().substring(0, lastDot + 1).replaceAll("\\.", "/") + filename;
+                filename = className.substring(0, lastDot + 1).replaceAll("\\.", "/") + filename;
             }
         }
 
