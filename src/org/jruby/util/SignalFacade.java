@@ -37,4 +37,16 @@ import org.jruby.runtime.builtin.IRubyObject;
 public interface SignalFacade {
     IRubyObject trap(IRubyObject recv, IRubyObject block, IRubyObject sig);
     IRubyObject trap(Ruby runtime, BlockCallback block, String sig);
+    /**
+     * Restores the platform (JVM's) default signal handler.
+     */
+    IRubyObject restorePlatformDefault(IRubyObject recv, IRubyObject sig);
+    /**
+     * Restores the OS default signal handler.
+     */
+    IRubyObject restoreOSDefault(IRubyObject recv, IRubyObject sig);
+    /**
+     * Ignores this signal.
+     */
+    IRubyObject ignore(IRubyObject recv, IRubyObject sig);
 }// SignalFacade
