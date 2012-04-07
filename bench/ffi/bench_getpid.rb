@@ -1,15 +1,17 @@
 require 'benchmark'
 require 'ffi'
 
-iter = 1000000
+iter = ENV['ITER'] ? ENV['ITER'].to_i : 10000000
 
 module Posix
   extend FFI::Library
-  ffi_lib FFI::Library::CURRENT_PROCESS
-  if FFI::Platform.windows?
+  ffi_lib 'c'
+  if RUBY_ENGINE == 'rbx'
+    attach_function :getpid, [], :uint
+  elsif FFI::Platform.windows?
     attach_function :getpid, :_getpid, [], :uint
   else
-    attach_function :getpid, [], :uint
+    attach_function :getpid, [], :uint, :save_errno => false
   end
 end
 
@@ -20,12 +22,20 @@ puts "Benchmark FFI getpid performance, #{iter}x calls"
 
 10.times {
   puts Benchmark.measure {
-    iter.times { Posix.getpid }
+    i = 0
+    while i < iter
+      Posix.getpid
+      i += 1
+    end
   }
 }
 puts "Benchmark Process.pid performance, #{iter}x calls"
 10.times {
   puts Benchmark.measure {
-    iter.times { Process.pid }
+    i = 0
+    while i < iter
+      Process.pid
+      i += 1
+    end
   }
 }
