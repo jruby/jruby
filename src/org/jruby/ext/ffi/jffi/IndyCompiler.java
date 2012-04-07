@@ -1,5 +1,6 @@
 package org.jruby.ext.ffi.jffi;
 
+import org.jruby.RubyModule;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.ext.ffi.Type;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -47,36 +48,8 @@ public final class IndyCompiler {
     }
 
     private boolean isCompilable(Signature signature) {
-        if (signature.getParameterCount() > 3) {
-            return false;
-        }
-
-        if (false) {
-            // Will need to do more checks when compiling down to x86/64 asm
-            if (!(signature.getResultType() instanceof Type.Builtin)) {
-                return false;
-            }
-
-            switch (signature.getResultType().getNativeType()) {
-                case VOID:
-                    break;
-                default:
-                    return false;
-            }
-
-            for (int i = 0; i < signature.getParameterCount(); i++) {
-                if (!(signature.getParameterType(i) instanceof Type.Builtin)) {
-                    return false;
-                }
-                switch (signature.getParameterType(i).getNativeType()) {
-                    case INT:
-                        break;
-                    default:
-                        return false;
-                }
-            }
-        }
-
+        // Everything currently compiles, as IndyCompiler just generates a stub that defers
+        // to the generated JITNativeInvoker.call() method
         return true;
     }
 
@@ -129,16 +102,24 @@ public final class IndyCompiler {
 
         call.start();
         call.getstatic(className, "invoker", ci(invoker.getClass()));
-        Class[] invokeParams = new Class[signature.getParameterCount() + 1];
+        Class[] invokeParams = new Class[signature.getParameterCount() + 4];
         call.aload(0); // ThreadContext
         invokeParams[0] = ThreadContext.class;
+        invokeParams[1] = IRubyObject.class;
+        invokeParams[2] = RubyModule.class;
+        invokeParams[3] = String.class;
+        call.aconst_null(); // IRubyObject
+        call.aconst_null(); // RubyModule
+        call.aconst_null(); // String
+
         for (int idx = 0; idx < signature.getParameterCount(); idx++) {
             call.aload(2 + idx);
-            invokeParams[1 + idx] = IRubyObject.class;
+            invokeParams[4 + idx] = IRubyObject.class;
         }
-        call.invokevirtual(p(invoker.getClass()), "invoke", sig(IRubyObject.class, invokeParams));
+
+        call.invokevirtual(p(invoker.getClass()), "call", sig(IRubyObject.class, invokeParams));
         call.areturn();
-        call.visitMaxs(10, 10);
+        call.visitMaxs(10 + signature.getParameterCount(), 10 + signature.getParameterCount());
         call.visitEnd();
     }
 
