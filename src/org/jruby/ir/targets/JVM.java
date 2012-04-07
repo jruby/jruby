@@ -189,10 +189,8 @@ public class JVM implements CompilerTarget {
             operand.compile(this);
         } else if (operand instanceof Variable) {
             emitVariable((Variable)operand);
-        } else if (operand instanceof Symbol) {
-            operand.compile(this);
         } else {
-            throw new RuntimeException("unsupported operand in compiler: " + operand.getClass());
+            operand.compile(this);
         }
     }
 

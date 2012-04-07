@@ -82,6 +82,6 @@ public abstract class Operand {
     }
 
     public void compile(JVM jvm) {
-        throw new RuntimeException(this.getClass().getSimpleName() + " has no compile logic.");
+        throw new RuntimeException("operand " + this.getClass().getSimpleName() + " has no compile logic.");
     }
 }

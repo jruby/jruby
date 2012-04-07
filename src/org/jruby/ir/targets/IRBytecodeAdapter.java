@@ -162,6 +162,10 @@ public class IRBytecodeAdapter {
         adapter.areturn();
     }
 
+    public void array(int length) {
+        adapter.invokedynamic("array", sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, length)), Bootstrap.array());
+    }
+
     public int newLocal(String name, Type type) {
         int index = variableCount++;
         variableTypes.put(index, type);

@@ -1,24 +1,18 @@
 package org.jruby.ir.targets;
 
-import com.headius.invoke.binder.Binder;
-import org.jcodings.Encoding;
-import org.jcodings.EncodingDB;
-import org.jcodings.specific.USASCIIEncoding;
+import com.headius.invokebinder.Binder;
+import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
-import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
-import org.jruby.runtime.encoding.EncodingService;
-import org.jruby.runtime.invokedynamic.JRubyCallSite;
 import org.jruby.util.JavaNameMangler;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
@@ -29,13 +23,11 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
-import java.lang.invoke.SwitchPoint;
-import java.util.Arrays;
 
-import static org.jruby.runtime.invokedynamic.InvokeDynamicSupport.*;
-import static org.jruby.util.CodegenUtils.*;
 import static java.lang.invoke.MethodHandles.*;
-import static java.lang.invoke.MethodType.*;
+import static org.jruby.runtime.invokedynamic.InvokeDynamicSupport.*;
+import static org.jruby.util.CodegenUtils.p;
+import static org.jruby.util.CodegenUtils.sig;
 
 public class Bootstrap {
     public static CallSite string(Lookup lookup, String name, MethodType type, String value, int encoding) {
@@ -43,6 +35,15 @@ public class Bootstrap {
                 .from(IRubyObject.class, ThreadContext.class)
                 .insert(0, value, encoding)
                 .invokeStaticQuiet(MethodHandles.lookup(), Bootstrap.class, "string");
+        CallSite site = new ConstantCallSite(handle);
+        return site;
+    }
+
+    public static CallSite array(Lookup lookup, String name, MethodType type) {
+        MethodHandle handle = Binder
+                .from(type)
+                .collect(1, IRubyObject[].class)
+                .invokeStaticQuiet(MethodHandles.lookup(), Bootstrap.class, "array");
         CallSite site = new ConstantCallSite(handle);
         return site;
     }
@@ -117,6 +118,10 @@ public class Bootstrap {
         return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "string", sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, int.class));
     }
 
+    public static Handle array() {
+        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "array", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
+    }
+
     public static Handle invoke() {
         return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "invoke", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
     }
@@ -136,6 +141,10 @@ public class Bootstrap {
     public static IRubyObject string(String value, int encoding, ThreadContext context) {
         // obviously wrong: not caching bytelist, not using encoding
         return RubyString.newStringNoCopy(context.runtime, value.getBytes(RubyEncoding.ISO));
+    }
+
+    public static IRubyObject array(ThreadContext context, IRubyObject[] elts) {
+        return RubyArray.newArrayNoCopy(context.runtime, elts);
     }
 
     public static IRubyObject invoke(InvokeSite site, ThreadContext context, IRubyObject self) throws Throwable {

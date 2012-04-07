@@ -2,6 +2,8 @@ package org.jruby.ir.operands;
 
 import java.util.List;
 import java.util.Map;
+
+import org.jruby.ir.targets.JVM;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -117,5 +119,16 @@ public class Array extends Operand {
         }
 
         return context.getRuntime().newArray(elements);
+    }
+
+    @Override
+    public void compile(JVM jvm) {
+        jvm.method().loadLocal(0);
+
+        for (Operand operand : elts) {
+            jvm.emit(operand);
+        }
+
+        jvm.method().array(elts.length);
     }
 }
