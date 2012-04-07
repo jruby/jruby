@@ -96,6 +96,10 @@ public class IRBytecodeAdapter {
         adapter.invokedynamic("invokeSelf:" + JavaNameMangler.mangleMethodName(name), sig(boolean.class, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, arity)), new Handle(Opcodes.H_INVOKESTATIC, "dummy", "dummy", "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;J)Ljava/lang/invoke/CallSite;"));
     }
 
+    public void attrAssign(String name) {
+        adapter.invokedynamic("attrAssign:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, ThreadContext.class, JVM.OBJECT, JVM.OBJECT), Bootstrap.attrAssign());
+    }
+
     public void invokeVirtual(Type type, Method method) {
         adapter.invokevirtual(type.getInternalName(), method.getName(), method.getDescriptor());
     }

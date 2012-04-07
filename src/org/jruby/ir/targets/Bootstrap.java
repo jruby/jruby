@@ -32,9 +32,7 @@ import java.lang.invoke.MutableCallSite;
 import java.lang.invoke.SwitchPoint;
 import java.util.Arrays;
 
-import static org.jruby.runtime.invokedynamic.InvokeDynamicSupport.callMethodMissing;
-import static org.jruby.runtime.invokedynamic.InvokeDynamicSupport.methodMissing;
-import static org.jruby.runtime.invokedynamic.InvokeDynamicSupport.pollAndGetClass;
+import static org.jruby.runtime.invokedynamic.InvokeDynamicSupport.*;
 import static org.jruby.util.CodegenUtils.*;
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
@@ -66,6 +64,21 @@ public class Bootstrap {
                                 lookup,
                                 Bootstrap.class,
                                 "invoke",
+                                type.insertParameterTypes(0, InvokeSite.class)),
+                        0,
+                        site);
+        site.setTarget(handle);
+        return site;
+    }
+
+    public static CallSite attrAssign(Lookup lookup, String name, MethodType type) {
+        InvokeSite site = new InvokeSite(type, JavaNameMangler.demangleMethodName(name.split(":")[1]));
+        MethodHandle handle =
+                insertArguments(
+                        findStatic(
+                                lookup,
+                                Bootstrap.class,
+                                "attrAssign",
                                 type.insertParameterTypes(0, InvokeSite.class)),
                         0,
                         site);
@@ -110,6 +123,10 @@ public class Bootstrap {
 
     public static Handle invokeSelf() {
         return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "invokeSelf", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
+    }
+
+    public static Handle attrAssign() {
+        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "attrAssign", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
     }
 
     public static Handle ivar() {
@@ -204,6 +221,30 @@ public class Bootstrap {
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, self);
+    }
+
+    public static IRubyObject attrAssign(InvokeSite site, ThreadContext context, IRubyObject self, IRubyObject arg0) throws Throwable {
+        RubyClass selfClass = pollAndGetClass(context, self);
+        String methodName = site.name;
+//        SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
+        CacheEntry entry = selfClass.searchWithCache(methodName);
+        DynamicMethod method = entry.method;
+
+        if (methodMissing(entry, CallType.NORMAL, methodName, self)) {
+            return callMethodMissing(entry, CallType.NORMAL, context, self, methodName, arg0);
+        }
+
+        MethodHandle mh = getHandle(site, method, 1);
+
+        mh = foldArguments(
+                mh,
+                Binder.from(site.type())
+                        .drop(0, 2)
+                        .identity());
+
+        site.setTarget(mh);
+        mh.invokeWithArguments(context, self, arg0);
+        return arg0;
     }
 
     private static final int[][] PERMUTES = new int[][] {
