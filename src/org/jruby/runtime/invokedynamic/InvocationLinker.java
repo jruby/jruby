@@ -38,7 +38,7 @@ import java.lang.invoke.SwitchPoint;
 import java.math.BigInteger;
 import java.util.Arrays;
 
-import com.headius.invoke.binder.Binder;
+import com.headius.invokebinder.Binder;
 import org.jruby.Ruby;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyBoolean;
