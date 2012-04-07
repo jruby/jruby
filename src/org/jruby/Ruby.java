@@ -40,6 +40,8 @@
 package org.jruby;
 
 import org.jruby.ast.executable.AbstractScript;
+import org.jruby.ir.IRBuilder;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.targets.JVM;
 import org.jruby.util.func.Function1;
 import java.io.ByteArrayInputStream;
@@ -693,7 +695,8 @@ public final class Ruby {
 
     private Script tryCompile(Node node, String cachedClassName, JRubyClassLoader classLoader, boolean dump) {
         if (config.getCompileMode() == CompileMode.FORCEIR) {
-            final Class compiled = JVM.compile(this, node, classLoader);
+            final IRScope scope = new IRBuilder(getIRManager()).buildRoot((RootNode) node);
+            final Class compiled = JVM.compile(this, scope, classLoader);
             return new AbstractScript() {
                 public IRubyObject __file__(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
                     try {
@@ -710,7 +713,12 @@ public final class Ruby {
                 }
 
                 public IRubyObject load(ThreadContext context, IRubyObject self, boolean wrap) {
-                    return __file__(context, self, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+                    try {
+                        RuntimeHelpers.preLoadCommon(context, scope.getStaticScope(), false);
+                        return __file__(context, self, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
+                    } finally {
+                        RuntimeHelpers.postLoad(context);
+                    }
                 }
             };
         }

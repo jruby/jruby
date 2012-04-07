@@ -49,12 +49,7 @@ public class JVM implements CompilerTarget {
     public JVM() {
     }
 
-    public static Class compile(Ruby ruby, Node ast, JRubyClassLoader jrubyClassLoader) {
-        IRScope scope = new IRBuilder(ruby.getIRManager()).buildRoot((RootNode) ast);
-
-        // additional passes not enabled in builder yet
-        //scope.runCompilerPass(new DeadCodeElimination());
-
+    public static Class compile(Ruby ruby, IRScope scope, JRubyClassLoader jrubyClassLoader) {
         // run compiler
         CompilerTarget target = new JDK7();
 

@@ -1567,7 +1567,7 @@ public class RuntimeHelpers {
         preLoadCommon(context, staticScope, wrap);
     }
 
-    private static void preLoadCommon(ThreadContext context, StaticScope staticScope, boolean wrap) {
+    public static void preLoadCommon(ThreadContext context, StaticScope staticScope, boolean wrap) {
         RubyClass objectClass = context.getRuntime().getObject();
         IRubyObject topLevel = context.getRuntime().getTopSelf();
         if (wrap) {

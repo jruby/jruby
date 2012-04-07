@@ -10,12 +10,17 @@ import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.targets.JVM;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.objectweb.asm.Type;
+import org.objectweb.asm.commons.Method;
 
 /**
  *
@@ -71,6 +76,16 @@ public class AliasInstr extends Instr {
         module.defineAlias(newNameString, oldNameString);
         
         return null;
+    }
+
+    @Override
+    public void compile(JVM jvm) {
+        jvm.method().loadLocal(0);
+        jvm.method().loadLocal(jvm.methodData().local(receiver));
+        jvm.method().adapter.ldc(((StringLiteral) newName).string);
+        jvm.method().adapter.ldc(((StringLiteral) oldName).string);
+        jvm.method().invokeHelper("defineAlias", IRubyObject.class, ThreadContext.class, IRubyObject.class, Object.class, Object.class);
+        jvm.method().adapter.pop();
     }
     
 }

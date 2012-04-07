@@ -11,6 +11,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
 import org.jruby.RubySymbol;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -97,6 +98,14 @@ public class IRBytecodeAdapter {
 
     public void invokeVirtual(Type type, Method method) {
         adapter.invokevirtual(type.getInternalName(), method.getName(), method.getDescriptor());
+    }
+
+    public void invokeHelper(String name, Class... sig) {
+        adapter.invokestatic(p(RuntimeHelpers.class), name, sig(sig));
+    }
+
+    public void invokeHelper(String name, String sig) {
+        adapter.invokestatic(p(RuntimeHelpers.class), name, sig);
     }
 
     public void goTo(org.objectweb.asm.Label label) {

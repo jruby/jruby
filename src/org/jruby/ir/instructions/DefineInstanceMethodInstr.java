@@ -111,7 +111,7 @@ public class DefineInstanceMethodInstr extends Instr {
     public void compile(JVM jvm) {
         StaticScope scope = method.getStaticScope();
         if (scope.getRequiredArgs() > 3 || scope.getRestArg() >= 0 || scope.getOptionalArgs() != 0) {
-            throw new RuntimeException("can't compile arity != 0 method: " + this);
+            throw new RuntimeException("can't compile variable method: " + this);
         }
 
         String scopeString = RuntimeHelpers.encodeScope(scope);
