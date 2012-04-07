@@ -711,7 +711,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     }
     
     @JRubyMethod(meta = true)
-    public static IRubyObject s_exit(IRubyObject receiver, Block block) {
+    public static IRubyObject exit(IRubyObject receiver, Block block) {
         RubyThread rubyThread = receiver.getRuntime().getThreadService().getCurrentContext().getThread();
 
         synchronized (rubyThread) {
