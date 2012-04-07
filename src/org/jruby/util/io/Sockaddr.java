@@ -184,7 +184,8 @@ public class Sockaddr {
 
         AddressFamily af = AddressFamily.valueOf((high << 8) + low);
 
-        if (af == AddressFamily.__UNKNOWN_CONSTANT__) {
+        if (af != AddressFamily.AF_INET &&
+                af != AddressFamily.AF_INET6) {
             throw runtime.newArgumentError("can't resolve socket address of wrong type");
         }
     }
