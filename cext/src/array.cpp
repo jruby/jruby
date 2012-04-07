@@ -227,6 +227,20 @@ RubyArray::nsync(JNIEnv* env)
     return true;
 }
 
+int
+RubyArray::length()
+{
+    if (rwdata.rarray != NULL && rwdata.valid) {
+	return rwdata.rarray->len;
+    }
+
+    JLocalEnv env;
+    int len = env->GetIntField(valueToObject(env, asValue()), RubyArray_length_field);
+    checkExceptions(env);
+
+    return len;
+}
+
 static VALUE
 newArray(long len)
 {
@@ -258,8 +272,7 @@ jruby_ary_len(VALUE v)
 {
     Handle* h = Handle::valueOf(v);
     if (h->getType() == T_ARRAY) {
-	JLocalEnv env;
-	return env->CallIntMethod(valueToObject(env, v), getCachedMethodID(env, RubyArray_class, "getLength", "()I"));
+	return dynamic_cast<RubyArray *>(h)->length();
     }
 
     rb_raise(rb_eTypeError, "wrong type (expected Array)");
