@@ -57,8 +57,10 @@ import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.NonReadableChannelException;
 import java.nio.channels.Pipe;
+import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SelectableChannel;
 import java.nio.channels.SelectionKey;
+import java.nio.channels.WritableByteChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -4049,39 +4051,27 @@ public class RubyIO extends RubyObject {
             }
 
             ChannelDescriptor d1 = io1.openFile.getMainStreamSafe().getDescriptor();
-            if (!d1.isSeekable()) {
-                throw context.getRuntime().newTypeError("only supports file-to-file copy");
-            }
             ChannelDescriptor d2 = io2.openFile.getMainStreamSafe().getDescriptor();
-            if (!d2.isSeekable()) {
-                throw context.getRuntime().newTypeError("only supports file-to-file copy");
-            }
 
-            FileChannel f1 = (FileChannel)d1.getChannel();
-            FileChannel f2 = (FileChannel)d2.getChannel();
+            if (!d1.isReadable()) throw runtime.newIOError("from IO is not readable");
+            if (!d2.isWritable()) throw runtime.newIOError("from IO is not writable");
 
             try {
-                long size = f1.size();
-
-                // handle large files on 32-bit JVMs (JRUBY-4913)
-                try {
-                    f1.transferTo(f2.position(), size, f2);
-                } catch (IOException ioe) {
-                    // if the failure is "Cannot allocate memory", do the transfer in 100MB max chunks
-                    if (ioe.getMessage().equals("Cannot allocate memory")) {
-                        long _100M = 100 * 1024 * 1024;
-                        while (size > 0) {
-                            if (size > _100M) {
-                                f1.transferTo(f2.position(), _100M, f2);
-                                size -= _100M;
-                            } else {
-                                f1.transferTo(f2.position(), size, f2);
-                                break;
-                            }
-                        }
+                long size = 0;
+                if (!d1.isSeekable()) {
+                    if (!d2.isSeekable()) {
+                        throw context.getRuntime().newTypeError("only supports to file or from file copy");
                     } else {
-                        throw ioe;
+                        ReadableByteChannel from = (ReadableByteChannel)d1.getChannel();
+                        FileChannel to = (FileChannel)d2.getChannel();
+
+                        size = transfer(from, to);
                     }
+                } else {
+                    FileChannel from = (FileChannel)d1.getChannel();
+                    WritableByteChannel to = (WritableByteChannel)d2.getChannel();
+
+                    size = transfer(from, to);
                 }
 
                 return context.getRuntime().newFixnum(size);
@@ -4101,6 +4091,43 @@ public class RubyIO extends RubyObject {
                 }
             }
         }
+    }
+
+    private static long transfer(ReadableByteChannel from, FileChannel to) throws IOException {
+        long transferred = 0;
+        long bytes;
+        while ((bytes = to.transferFrom(from, to.position(), 4196)) > 0) {
+            transferred += bytes;
+        }
+
+        return transferred;
+    }
+
+    private static long transfer(FileChannel from, WritableByteChannel to) throws IOException {
+        long size = from.size();
+
+        // handle large files on 32-bit JVMs (JRUBY-4913)
+        try {
+            from.transferTo(from.position(), size, to);
+        } catch (IOException ioe) {
+            // if the failure is "Cannot allocate memory", do the transfer in 100MB max chunks
+            if (ioe.getMessage().equals("Cannot allocate memory")) {
+                long _100M = 100 * 1024 * 1024;
+                while (size > 0) {
+                    if (size > _100M) {
+                        from.transferTo(from.position(), _100M, to);
+                        size -= _100M;
+                    } else {
+                        from.transferTo(from.position(), size, to);
+                        break;
+                    }
+                }
+            } else {
+                throw ioe;
+            }
+        }
+
+        return size;
     }
 
     @JRubyMethod(name = "try_convert", meta = true, compat = RUBY1_9)
