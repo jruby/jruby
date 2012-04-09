@@ -32,10 +32,8 @@ public class TestJavaReentrantExceptions extends TestCase {
         try {
             //call throwException via JRuby
             JavaEmbedUtils.invokeMethod(runtime, wrappedThrower, "throwException", new Object[] { }, Object.class);
-        } catch(final RaiseException e) {
+        } catch(Throwable ee) {
             exceptionThrown = true;
-            final NativeException ne = (NativeException) e.getException();
-            final ExpectedException ee = (ExpectedException) ne.getCause();
             assertEquals("The unpacked exception we receive should be the one we threw.",
                          ExceptionThrower.expectedException,ee);
         } finally {

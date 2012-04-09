@@ -156,7 +156,7 @@ public class RaiseException extends JumpException {
     }
 
     public static RaiseException createNativeRaiseException(Ruby runtime, Throwable cause, Member target) {
-        NativeException nativeException = new NativeException(runtime, runtime.getClass(NativeException.CLASS_NAME), cause);
+        NativeException nativeException = new NativeException(runtime, runtime.getNativeException(), cause);
 
         // FIXME: someday, add back filtering of reflection/handle methods between JRuby and target
 

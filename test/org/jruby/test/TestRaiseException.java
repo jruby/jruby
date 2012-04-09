@@ -85,7 +85,7 @@ public class TestRaiseException extends TestRubyBase {
         try {
             eval(script);
             fail("should have raised an exception");
-        } catch (RaiseException re) {
+        } catch (Exception re) {
              ByteArrayOutputStream baos = new ByteArrayOutputStream();
              re.printStackTrace(new PrintStream(baos));
              //String trace = baos.toString();

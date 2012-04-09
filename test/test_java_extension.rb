@@ -64,8 +64,8 @@ class TestJavaExtension < Test::Unit::TestCase
     a << 2
 
     assert_equal([1, 2, 3], a.sort.to_a)
-		assert_equal([1, 2], a[1...3].to_a)
-		assert_equal([3, 1], a[0, 2].to_a)
+    assert_equal([1, 2], a[1...3].to_a)
+    assert_equal([3, 1], a[0, 2].to_a)
     assert_equal([3, 2], a.select {|e| e > 1 })
   end
 
@@ -191,9 +191,15 @@ class TestJavaExtension < Test::Unit::TestCase
         result = obj.synchronized { "foo" }
     }
     assert_equal("foo", result)
-    assert_raises(NativeException) {
-        obj.wait 1
-    }
+    
+    begin
+      obj.wait 1
+    rescue java.lang.IllegalMonitorStateException
+      assert true
+    else
+      assert false, "java.lang.IllegalMonitorStateException was not thrown"
+    end
+    
     assert_nothing_raised {
         obj.synchronized { obj.wait 1 }
     }

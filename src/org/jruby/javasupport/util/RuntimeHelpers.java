@@ -1010,15 +1010,26 @@ public class RuntimeHelpers {
     }
 
     private static boolean checkJavaException(Throwable throwable, IRubyObject catchable, ThreadContext context) {
-        if (context.getRuntime().getException().op_ge(catchable).isTrue() ||
-                context.getRuntime().getObject() == catchable) {
+        Ruby runtime = context.runtime;
+        if (
+                // rescue exception needs to catch Java exceptions
+                runtime.getException() == catchable ||
+
+                // rescue Object needs to catch Java exceptions
+                runtime.getObject() == catchable) {
+
             if (throwable instanceof RaiseException) {
                 return isExceptionHandled(((RaiseException)throwable).getException(), catchable, context).isTrue();
             }
+
             // let Ruby exceptions decide if they handle it
-            return isExceptionHandled(JavaUtil.convertJavaToUsableRubyObject(context.getRuntime(), throwable), catchable, context).isTrue();
-        }
-        if (catchable instanceof RubyClass && catchable.getInstanceVariables().hasInstanceVariable("@java_class")) {
+            return isExceptionHandled(JavaUtil.convertJavaToUsableRubyObject(runtime, throwable), catchable, context).isTrue();
+
+        } else if (runtime.getNativeException() == catchable) {
+            // NativeException catches Java exceptions, lazily creating the wrapper
+            return true;
+
+        } else if (catchable instanceof RubyClass && catchable.getInstanceVariables().hasInstanceVariable("@java_class")) {
             RubyClass rubyClass = (RubyClass)catchable;
             JavaClass javaClass = (JavaClass)rubyClass.getInstanceVariable("@java_class");
             if (javaClass != null) {
@@ -1028,6 +1039,7 @@ public class RuntimeHelpers {
                 }
             }
         }
+
         return false;
     }
     
