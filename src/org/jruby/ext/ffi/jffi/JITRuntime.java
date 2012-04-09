@@ -123,7 +123,7 @@ public final class JITRuntime {
             return Float.floatToRawIntBits((float) ((RubyFloat) parameter).getDoubleValue());
 
         } else {
-            return s32Value32(parameter);
+            return (int) other2long(parameter);
         }
     }
 
@@ -132,7 +132,7 @@ public final class JITRuntime {
             return Float.floatToRawIntBits((float) ((RubyFloat) parameter).getDoubleValue());
 
         } else {
-            return s32Value32(parameter);
+            return other2long(parameter);
         }
     }
     
