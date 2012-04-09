@@ -38,6 +38,10 @@ public class StoreLocalVarInstr extends Instr {
         value = value.getSimplifiedOperand(valueMap, force);
     }
 
+    public LocalVariable getLocalVar() {
+        return lvar;
+    }
+
     @Override
     public String toString() {
         return "store_lvar(" + value + ", " + scope.getName() + ", " + lvar + ")";

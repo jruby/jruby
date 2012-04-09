@@ -24,17 +24,26 @@ public class AddLocalVarLoadStoreInstructions extends CompilerPass {
     public Object execute(IRScope s, Object... data) {
         //        if (s.requiresBinding()) {
 
+        // 1. Figure out required stores
+        // 2. Add stores
+        // 3. Figure out required loads
+        // 4. Add loads
+        //
+        // Order is important since loads in 3. depend on stores in 2.
         StoreLocalVarPlacementProblem fsp = new StoreLocalVarPlacementProblem();
         fsp.setup(s);
         fsp.compute_MOP_Solution();
 
+        // Add stores, assigning an equivalent tmp-var for each local var
+        Map<Operand, Operand> varRenameMap = new HashMap<Operand, Operand>();
+        fsp.addStoreAndBindingAllocInstructions(varRenameMap);
+
+        // Once stores have been added, figure out required loads 
         LoadLocalVarPlacementProblem frp = new LoadLocalVarPlacementProblem();
         frp.setup(s);
         frp.compute_MOP_Solution();
 
-        // Add stores and loads, assigning an equivalent tmp-var for each local var
-        Map<Operand, Operand> varRenameMap = new HashMap<Operand, Operand>();
-        fsp.addStoreAndBindingAllocInstructions(varRenameMap);
+        // Add loads, 
         frp.addLoads(varRenameMap);
 
         // Rename all local var uses with their tmp-var stand-ins

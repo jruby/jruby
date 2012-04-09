@@ -14,6 +14,7 @@ import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.LoadLocalVarInstr;
 import org.jruby.ir.instructions.ResultInstr;
+import org.jruby.ir.instructions.StoreLocalVarInstr;
 import org.jruby.ir.operands.ClosureLocalVariable;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
@@ -56,10 +57,8 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode {
         ListIterator<Instr> it = instrs.listIterator(instrs.size());
         while (it.hasPrevious()) {
             Instr i = it.previous();
-            //System.out.println("-----\nInstr " + i);
-            //System.out.println("Before: " + java.util.Arrays.toString(reqdLoads.toArray()));
-
-            if (i.getOperation() == Operation.BINDING_STORE) continue;
+            // System.out.println("-----\nInstr " + i);
+            // System.out.println("Before: " + java.util.Arrays.toString(reqdLoads.toArray()));
 
             // Right away, clear the variable defined by this instruction -- it doesn't have to be loaded!
             if (i instanceof ResultInstr) reqdLoads.remove(((ResultInstr) i).getResult());
@@ -88,21 +87,26 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode {
                 }
             }
 
-            // The variables used as arguments will need to be loaded
-            // %self is local to every scope and never crosses scope boundaries and need not be spilled/refilled
-            for (Variable x : i.getUsedVariables()) {
-                if ((x instanceof LocalVariable) && !((LocalVariable)x).isSelf()) {
-                    reqdLoads.add((LocalVariable)x);
+            if (i.getOperation() == Operation.BINDING_STORE) {
+                LocalVariable lv = ((StoreLocalVarInstr)i).getLocalVar();
+                if (!lv.isSelf()) reqdLoads.add(lv);
+            } else {
+                // The variables used as arguments will need to be loaded
+                // %self is local to every scope and never crosses scope boundaries and need not be spilled/refilled
+                for (Variable x : i.getUsedVariables()) {
+                    if ((x instanceof LocalVariable) && !((LocalVariable)x).isSelf()) {
+                        reqdLoads.add((LocalVariable)x);
+                    }
                 }
             }
-            //System.out.println("After: " + java.util.Arrays.toString(reqdLoads.toArray()));
+            // System.out.println("After: " + java.util.Arrays.toString(reqdLoads.toArray()));
         }
 
         // At the beginning of the scope, required loads can be discarded.
         if (basicBlock == problem.getScope().cfg().getEntryBB()) reqdLoads.clear();
 
         if (outRequiredLoads.equals(reqdLoads)) {
-            //System.out.println("\n For CFG " + _prob.getCFG() + " BB " + _bb.getID());
+            //System.out.println("\n For CFG " + problem.getCFG() + " BB " + _bb.getID());
             //System.out.println("\t--> IN reqd loads   : " + java.util.Arrays.toString(_inReqdLoads.toArray()));
             //System.out.println("\t--> OUT reqd loads  : " + java.util.Arrays.toString(_outReqdLoads.toArray()));
             return false;
@@ -134,8 +138,6 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode {
         Set<LocalVariable> reqdLoads = new HashSet<LocalVariable>(inRequiredLoads);
         while (it.hasPrevious()) {
             Instr i = it.previous();
-
-            if (i.getOperation() == Operation.BINDING_STORE) continue;
 
             // Right away, clear the variable defined by this instruction -- it doesn't have to be loaded!
             if (i instanceof ResultInstr) reqdLoads.remove(((ResultInstr) i).getResult());
@@ -173,26 +175,35 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode {
                 }
             }
 
-            // The variables used as arguments will need to be loaded
-            // %self is local to every scope and never crosses scope boundaries and need not be spilled/refilled
-            for (Variable v : i.getUsedVariables()) {
-                if (!(v instanceof LocalVariable)) continue;
-
-                LocalVariable lv = (LocalVariable)v;
+            if (i.getOperation() == Operation.BINDING_STORE) {
+                LocalVariable lv = ((StoreLocalVarInstr)i).getLocalVar();
                 if (!lv.isSelf()) {
                     reqdLoads.add(lv);
                     // Make sure there is a replacement var for all local vars
                     getLocalVarReplacement(lv, s, varRenameMap);
+                }
+            } else {
+                // The variables used as arguments will need to be loaded
+                // %self is local to every scope and never crosses scope boundaries and need not be spilled/refilled
+                for (Variable v : i.getUsedVariables()) {
+                    if (!(v instanceof LocalVariable)) continue;
+
+                    LocalVariable lv = (LocalVariable)v;
+                    if (!lv.isSelf()) {
+                        reqdLoads.add(lv);
+                        // Make sure there is a replacement var for all local vars
+                        getLocalVarReplacement(lv, s, varRenameMap);
+                    }
                 }
             }
         }
 
         // Load first use of variables in closures
         if ((s instanceof IRClosure) && (basicBlock == problem.getScope().cfg().getEntryBB())) {
-            // System.out.println("\n[In Entry BB] For CFG " + _prob.getCFG() + ":");
+            // System.out.println("\n[In Entry BB] For CFG " + problem.getScope().cfg() + ":");
             // System.out.println("\t--> Reqd loads   : " + java.util.Arrays.toString(reqdLoads.toArray()));
             for (LocalVariable v : reqdLoads) {
-                if (s.usesLocalVariable(v)) {
+                if (s.usesLocalVariable(v) || s.definesLocalVariable(v)) {
                     if (v instanceof ClosureLocalVariable) {
                         IRClosure definingScope = ((ClosureLocalVariable)v).definingScope;
                         
