@@ -1367,18 +1367,18 @@ public class InvocationLinker {
                 throw new RuntimeException(e);
             }
 
-            nativeTarget = nativeTarget.bindTo(method);
-            nativeTarget = MethodHandles.insertArguments(nativeTarget, 2, method.getImplementationClass(), site.name());
-
             int argCount = method.getArity().getValue();
             if (argCount > 3) {
-                // Expand the IRubyObject[] parameter array to individual params
+                // Expand the incoming IRubyObject[] parameter array to individual params
                 nativeTarget = nativeTarget.asSpreader(IRubyObject[].class, argCount);
             }
+
             int sigIndex = Math.min(argCount, 4);
-            MethodType inboundType = STANDARD_NATIVE_TYPES_BLOCK[sigIndex];
-            nativeTarget = explicitCastArguments(nativeTarget, TARGET_TC_SELF_ARGS[sigIndex]);
-            nativeTarget = permuteArguments(nativeTarget, inboundType, TC_SELF_ARGS_PERMUTES[sigIndex]);
+            nativeTarget = Binder.from(STANDARD_NATIVE_TYPES_BLOCK[sigIndex])
+                    .permute(TC_SELF_ARGS_PERMUTES[sigIndex])
+                    .cast(TARGET_TC_SELF_ARGS[sigIndex])
+                    .insert(2, method.getImplementationClass(), site.name())
+                    .invoke(nativeTarget.bindTo(method));
 
             method.setHandle(nativeTarget);
             if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name() + "\tbound to ffi method "
