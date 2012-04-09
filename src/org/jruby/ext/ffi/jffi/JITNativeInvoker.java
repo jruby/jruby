@@ -5,10 +5,13 @@ import org.jruby.RubyModule;
 import org.jruby.ext.ffi.*;
 import org.jruby.ext.ffi.NativeType;
 import org.jruby.ext.ffi.Type;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.cli.Options;
+
+import java.util.Arrays;
 
 /**
  *
@@ -33,8 +36,6 @@ abstract public class JITNativeInvoker extends NativeInvoker {
     protected final ObjectParameterInfo parameterInfo3;
     protected final ObjectParameterInfo parameterInfo4;
     protected final ObjectParameterInfo parameterInfo5;
-
-    private IndyCompiler indyCompiler;
 
     public JITNativeInvoker(RubyModule implementationClass, com.kenai.jffi.Function function, Signature signature) {
         super(implementationClass, function, signature);
@@ -173,24 +174,5 @@ abstract public class JITNativeInvoker extends NativeInvoker {
             default:
                 throw context.getRuntime().newArgumentError("too many arguments: " + args.length);
         }
-    }
-
-
-    @Override
-    public synchronized NativeCall getNativeCall() {
-        if (!Options.FFI_COMPILE_INVOKEDYNAMIC.load()) {
-            return null;
-        }
-
-        if (indyCompiler == null) {
-            indyCompiler = new IndyCompiler(signature, this);
-        }
-
-        return indyCompiler.getNativeCall();
-    }
-
-    @Override
-    public NativeCall getNativeCall(int args, boolean block) {
-        return null;
     }
 }

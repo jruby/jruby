@@ -28,13 +28,11 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime.invokedynamic;
 
-import java.lang.invoke.CallSite;
-import java.lang.invoke.MethodHandle;
+import java.lang.invoke.*;
+
 import static java.lang.invoke.MethodHandles.*;
-import java.lang.invoke.MethodType;
 import static java.lang.invoke.MethodType.*;
-import java.lang.invoke.MutableCallSite;
-import java.lang.invoke.SwitchPoint;
+
 import java.math.BigInteger;
 import java.util.Arrays;
 
@@ -52,6 +50,8 @@ import org.jruby.RubyString;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
+import org.jruby.ext.ffi.jffi.JITNativeInvoker;
+import org.jruby.ext.ffi.jffi.NativeInvoker;
 import org.jruby.internal.runtime.methods.AliasMethod;
 import org.jruby.internal.runtime.methods.AttrReaderMethod;
 import org.jruby.internal.runtime.methods.AttrWriterMethod;
@@ -470,6 +470,27 @@ public class InvocationLinker {
             if (siteArgCount != 1) {
                 throw new IndirectBindingException("attr writer with > 1 args");
             }
+
+        } else if (method instanceof org.jruby.ext.ffi.jffi.DefaultMethod || method instanceof org.jruby.ext.ffi.jffi.JITNativeInvoker) {
+            // if frame/scope required, can't dispatch direct
+            if (method.getCallConfig() != CallConfiguration.FrameNoneScopeNone) {
+                throw new IndirectBindingException("frame or scope required: " + method.getCallConfig());
+            }
+
+            if (!method.getArity().isFixed()) {
+                throw new IndirectBindingException("fixed arity required: " + method.getArity());
+            }
+
+            // Only support 0..6 parameters
+            if (method.getArity().getValue() > 6) {
+                throw new IndirectBindingException("target args > 6");
+            }
+
+            if (site.type().parameterType(site.type().parameterCount() - 1) == Block.class) {
+                // Called with a block to substitute for a callback param - cannot bind directly
+                throw new IndirectBindingException("callback block supplied");
+            }
+
         } else if (nativeCall != null) {
             // has an explicit native call path
             
@@ -554,6 +575,11 @@ public class InvocationLinker {
             // Ruby to attr writer
             if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tbound as attr writer " + logMethod(method) + ":" + ((AttrWriterMethod)method).getVariableName());
             nativeTarget = createAttrWriterHandle(site, cls, method);
+
+        } else if (method instanceof org.jruby.ext.ffi.jffi.JITNativeInvoker || method instanceof org.jruby.ext.ffi.jffi.DefaultMethod) {
+            // Ruby to FFI
+            nativeTarget = createFFIHandle(site, method);
+
         } else if (method.getNativeCall() != null) {
             DynamicMethod.NativeCall nativeCall = method.getNativeCall();
 
@@ -1298,6 +1324,73 @@ public class InvocationLinker {
             return nativeTarget;
         }
         
+        // can't build native handle for it
+        return null;
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // Dispatch via direct handle to FFI native method
+    ////////////////////////////////////////////////////////////////////////////
+
+    private static MethodHandle createFFIHandle(JRubyCallSite site, DynamicMethod method) {
+        if (method instanceof org.jruby.ext.ffi.jffi.DefaultMethod) {
+            NativeInvoker nativeInvoker = ((org.jruby.ext.ffi.jffi.DefaultMethod) method).forceCompilation();
+            if (nativeInvoker == null) {
+                // Compilation failed, cannot build a native handle for it
+                return null;
+            }
+
+            method = nativeInvoker;
+        }
+
+        if (site.type().parameterType(site.type().parameterCount() - 1) == Block.class) {
+            // Called with a block to substitute for a callback param - cannot cache or use a cached handle
+            return null;
+        }
+
+        MethodHandle nativeTarget = (MethodHandle) method.getHandle();
+        if (nativeTarget != null) return nativeTarget;
+
+        if (method.getArity().isFixed() && method.getArity().getValue() <= 6 && method.getCallConfig() == CallConfiguration.FrameNoneScopeNone) {
+            Class[] callMethodParameters = new Class[4 + method.getArity().getValue()];
+            callMethodParameters[0] = ThreadContext.class;
+            callMethodParameters[1] = IRubyObject.class;
+            callMethodParameters[2] = RubyModule.class;
+            callMethodParameters[3] = String.class;
+            Arrays.fill(callMethodParameters, 4, callMethodParameters.length, IRubyObject.class);
+
+            try {
+                nativeTarget = site.lookup().findVirtual(method.getClass(), "call",
+                        methodType(IRubyObject.class, callMethodParameters));
+
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+
+            nativeTarget = nativeTarget.bindTo(method);
+            nativeTarget = MethodHandles.insertArguments(nativeTarget, 2, method.getImplementationClass(), site.name());
+
+            int argCount = method.getArity().getValue();
+            if (argCount > 3) {
+                // Expand the IRubyObject[] parameter array to individual params
+                nativeTarget = nativeTarget.asSpreader(IRubyObject[].class, argCount);
+            }
+            int sigIndex = Math.min(argCount, 4);
+            MethodType inboundType = STANDARD_NATIVE_TYPES_BLOCK[sigIndex];
+            nativeTarget = explicitCastArguments(nativeTarget, TARGET_TC_SELF_ARGS[sigIndex]);
+            nativeTarget = permuteArguments(nativeTarget, inboundType, TC_SELF_ARGS_PERMUTES[sigIndex]);
+
+            method.setHandle(nativeTarget);
+            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name() + "\tbound to ffi method "
+                    + logMethod(method) + ": "
+                    + IRubyObject.class.getSimpleName() + " "
+                    + method.getClass().getSimpleName() + ".call"
+                    + CodegenUtils.prettyShortParams(callMethodParameters));
+
+            return nativeTarget;
+        }
+
+
         // can't build native handle for it
         return null;
     }

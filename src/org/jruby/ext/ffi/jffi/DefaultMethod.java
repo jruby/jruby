@@ -19,7 +19,6 @@ public class DefaultMethod extends DynamicMethod implements CacheableMethod {
     private final NativeInvoker defaultInvoker;
     private volatile NativeInvoker compiledInvoker;
     private JITHandle jitHandle;
-    private IndyCompiler indyCompiler;
     protected final Arity arity;
     protected final Function function;
 
@@ -99,24 +98,10 @@ public class DefaultMethod extends DynamicMethod implements CacheableMethod {
         return getNativeInvoker().call(context, self, clazz, name, args, block);
     }
 
-    @Override
-    public synchronized NativeCall getNativeCall() {
-        if (!Options.FFI_COMPILE_INVOKEDYNAMIC.load()) {
-            return null;
-        }
-
+    public final NativeInvoker forceCompilation() {
         NativeInvoker invoker = null;
         while (!getJITHandle().compilationFailed() && (invoker = getJITHandle().compile(getImplementationClass(), function, signature)) == null)
             ;
-        if (indyCompiler == null) {
-            indyCompiler = new IndyCompiler(signature, invoker);
-        }
-
-        return indyCompiler.getNativeCall();
-    }
-
-    @Override
-    public NativeCall getNativeCall(int args, boolean block) {
-        return null;
+        return invoker;
     }
 }
