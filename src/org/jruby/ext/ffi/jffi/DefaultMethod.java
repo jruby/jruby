@@ -1,6 +1,7 @@
 
 package org.jruby.ext.ffi.jffi;
 
+import com.kenai.jffi.CallContext;
 import com.kenai.jffi.Function;
 import org.jruby.RubyModule;
 import org.jruby.ext.ffi.CallbackInfo;
@@ -49,6 +50,18 @@ public class DefaultMethod extends DynamicMethod implements CacheableMethod {
 
     public DynamicMethod getMethodForCaching() {
         return compiledInvoker != null ? compiledInvoker : this;
+    }
+
+    Signature getSignature() {
+        return signature;
+    }
+
+    CallContext getCallContext() {
+        return function.getCallContext();
+    }
+
+    long getFunctionAddress() {
+        return function.getFunctionAddress();
     }
 
     protected final NativeInvoker getNativeInvoker() {

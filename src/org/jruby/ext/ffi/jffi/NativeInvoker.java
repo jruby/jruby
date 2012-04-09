@@ -1,6 +1,7 @@
 
 package org.jruby.ext.ffi.jffi;
 
+import com.kenai.jffi.CallContext;
 import org.jruby.RubyModule;
 import org.jruby.ext.ffi.CallbackInfo;
 import org.jruby.internal.runtime.methods.CallConfiguration;
@@ -19,12 +20,14 @@ abstract public class NativeInvoker extends DynamicMethod {
     protected final com.kenai.jffi.Function function;
     private final int cbIndex;
     private final NativeCallbackFactory cbFactory;
+    private final Signature signature;
 
 
     public NativeInvoker(RubyModule implementationClass, com.kenai.jffi.Function function, Signature signature) {
         super(implementationClass, Visibility.PUBLIC, CallConfiguration.FrameNoneScopeNone);
         this.arity = Arity.fixed(signature.getParameterCount());
         this.function = function;
+        this.signature = signature;
 
         int cbIndex = -1;
         NativeCallbackFactory cbFactory = null;
@@ -52,6 +55,18 @@ abstract public class NativeInvoker extends DynamicMethod {
     @Override
     public final boolean isNative() {
         return true;
+    }
+
+    Signature getSignature() {
+        return signature;
+    }
+
+    CallContext getCallContext() {
+        return function.getCallContext();
+    }
+
+    long getFunctionAddress() {
+        return function.getFunctionAddress();
     }
 
     @Override

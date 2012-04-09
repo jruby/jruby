@@ -1333,6 +1333,20 @@ public class InvocationLinker {
     ////////////////////////////////////////////////////////////////////////////
 
     private static MethodHandle createFFIHandle(JRubyCallSite site, DynamicMethod method) {
+        if (site.type().parameterType(site.type().parameterCount() - 1) == Block.class) {
+            // Called with a block to substitute for a callback param - cannot cache or use a cached handle
+            return null;
+        }
+
+        MethodHandle nativeTarget = (MethodHandle) method.getHandle();
+        if (nativeTarget != null) return nativeTarget;
+
+        nativeTarget = org.jruby.ext.ffi.jffi.InvokeDynamic.getMethodHandle(site, method);
+        if (nativeTarget != null) {
+            method.setHandle(nativeTarget);
+            return nativeTarget;
+        }
+
         if (method instanceof org.jruby.ext.ffi.jffi.DefaultMethod) {
             NativeInvoker nativeInvoker = ((org.jruby.ext.ffi.jffi.DefaultMethod) method).forceCompilation();
             if (nativeInvoker == null) {
@@ -1342,14 +1356,6 @@ public class InvocationLinker {
 
             method = nativeInvoker;
         }
-
-        if (site.type().parameterType(site.type().parameterCount() - 1) == Block.class) {
-            // Called with a block to substitute for a callback param - cannot cache or use a cached handle
-            return null;
-        }
-
-        MethodHandle nativeTarget = (MethodHandle) method.getHandle();
-        if (nativeTarget != null) return nativeTarget;
 
         if (method.getArity().isFixed() && method.getArity().getValue() <= 6 && method.getCallConfig() == CallConfiguration.FrameNoneScopeNone) {
             Class[] callMethodParameters = new Class[4 + method.getArity().getValue()];

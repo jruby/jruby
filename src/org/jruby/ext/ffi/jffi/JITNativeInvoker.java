@@ -99,6 +99,18 @@ abstract public class JITNativeInvoker extends NativeInvoker {
         return ObjectParameterInfo.create(i, ObjectParameterInfo.ARRAY, ObjectParameterInfo.BYTE, flags);
     }
 
+    Signature getSignature() {
+        return signature;
+    }
+
+    CallContext getCallContext() {
+        return callContext;
+    }
+
+    long getFunctionAddress() {
+        return functionAddress;
+    }
+
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name) {
         throw context.getRuntime().newArgumentError(0, arity);
