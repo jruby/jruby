@@ -22,18 +22,25 @@ puts "Benchmark FFI getpid performance, #{iter}x calls"
 
 10.times {
   puts Benchmark.measure {
-    i = 0
-    while i < iter
+    i = 0; max = iter / 4
+    while i < max
+      Posix.getpid
+      Posix.getpid
+      Posix.getpid
       Posix.getpid
       i += 1
     end
   }
 }
+
 puts "Benchmark Process.pid performance, #{iter}x calls"
 10.times {
   puts Benchmark.measure {
-    i = 0
-    while i < iter
+    i = 0; max = iter / 4
+    while i < max
+      Process.pid
+      Process.pid
+      Process.pid
       Process.pid
       i += 1
     end
