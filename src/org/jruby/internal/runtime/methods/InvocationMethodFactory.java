@@ -77,7 +77,7 @@ import org.jruby.util.log.LoggerFactory;
  * this can be detected, MethodFactory will fall back on the reflection-based
  * factory instead.
  * 
- * @see org.jruby.internal.runtime.methods.MethodFactory
+ * @see org.jruby.runtime.MethodFactory
  */
 public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
@@ -198,7 +198,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     /**
      * Use code generation to provide a method handle for a compiled Ruby method.
      * 
-     * @see org.jruby.internal.runtime.methods.MethodFactory#getCompiledMethod
+     * @see org.jruby.runtime.MethodFactory#getCompiledMethod
      */
     public DynamicMethod getCompiledMethodLazily(
             RubyModule implementationClass,
@@ -231,7 +231,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     /**
      * Use code generation to provide a method handle for a compiled Ruby method.
      * 
-     * @see org.jruby.internal.runtime.methods.MethodFactory#getCompiledMethod
+     * @see org.jruby.runtime.MethodFactory#getCompiledMethod
      */
     public DynamicMethod getCompiledMethod(
             RubyModule implementationClass,
@@ -271,11 +271,15 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
 
                 CompiledMethod compiledMethod = (CompiledMethod)generatedClass.newInstance();
                 compiledMethod.init(implementationClass, arity, visibility, scope, scriptObject, callConfig, position, parameterDesc);
-                
-                if (arity.isFixed() && arity.required() <= 3) {
-                    Class[] params = StandardASMCompiler.getStaticMethodParams(scriptClass, scope.getRequiredArgs());
-                    compiledMethod.setNativeCall(scriptClass, method, IRubyObject.class, params, true);
+
+                Class[] params;
+                if (arity.isFixed()) {
+                    params = StandardASMCompiler.getStaticMethodParams(scriptClass, scope.getRequiredArgs());
+                } else {
+                    params = StandardASMCompiler.getStaticMethodParams(scriptClass, 4);
                 }
+                compiledMethod.setNativeCall(scriptClass, method, IRubyObject.class, params, true);
+
                 return compiledMethod;
             } catch(Exception e) {
                 e.printStackTrace();
@@ -287,7 +291,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
     /**
      * Use code generation to provide a method handle for a compiled Ruby method.
      *
-     * @see org.jruby.internal.runtime.methods.MethodFactory#getCompiledMethod
+     * @see org.jruby.runtime.MethodFactory#getCompiledMethod
      */
     @Override
     public byte[] getCompiledMethodOffline(
@@ -689,7 +693,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
      * Use code generation to provide a method handle based on an annotated Java
      * method.
      * 
-     * @see org.jruby.internal.runtime.methods.MethodFactory#getAnnotatedMethod
+     * @see org.jruby.runtime.MethodFactory#getAnnotatedMethod
      */
     public DynamicMethod getAnnotatedMethod(RubyModule implementationClass, List<JavaMethodDescriptor> descs) {
         JavaMethodDescriptor desc1 = descs.get(0);
@@ -729,7 +733,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
      * Use code generation to provide a method handle based on an annotated Java
      * method. Return the resulting generated or loaded class.
      * 
-     * @see org.jruby.internal.runtime.methods.MethodFactory#getAnnotatedMethod
+     * @see org.jruby.runtime.MethodFactory#getAnnotatedMethod
      */
     public Class getAnnotatedMethodClass(List<JavaMethodDescriptor> descs) throws Exception {
         JavaMethodDescriptor desc1 = descs.get(0);
@@ -804,7 +808,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
      * Use code generation to provide a method handle based on an annotated Java
      * method.
      * 
-     * @see org.jruby.internal.runtime.methods.MethodFactory#getAnnotatedMethod
+     * @see org.jruby.runtime.MethodFactory#getAnnotatedMethod
      */
     public DynamicMethod getAnnotatedMethod(RubyModule implementationClass, JavaMethodDescriptor desc) {
         String javaMethodName = desc.name;
@@ -1016,7 +1020,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
      * Use code generation to provide a method handle based on an annotated Java
      * method.
      * 
-     * @see org.jruby.internal.runtime.methods.MethodFactory#getAnnotatedMethod
+     * @see org.jruby.runtime.MethodFactory#getAnnotatedMethod
      */
     public void prepareAnnotatedMethod(RubyModule implementationClass, JavaMethod javaMethod, JavaMethodDescriptor desc) {
         String javaMethodName = desc.name;

@@ -33,6 +33,7 @@ import org.jruby.compiler.BodyCompiler;
 import org.jruby.compiler.CompilerCallback;
 import org.jruby.compiler.NotCompilableException;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallSite;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -178,6 +179,58 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
             }
         }
         
+        // adapter, tc, recv, args{0,1}, block{0,1}]
+        method.invokedynamic(invokeName, signature, InvokeDynamicSupport.getInvocationHandle());
+    }
+
+    public void invokeDynamicVarargs(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback, CallType callType, CompilerCallback closureArg, boolean iterator) {
+        if (callType == CallType.SUPER) {
+            super.invokeDynamic(name, receiverCallback, argsCallback, callType, closureArg, iterator);
+            return;
+        }
+
+        assert argsCallback.getArity() == -1;
+
+        methodCompiler.loadThreadContext(); // [adapter, tc]
+
+        // for visibility checking without requiring frame self
+        // TODO: don't bother passing when fcall or vcall, and adjust callsite appropriately
+        methodCompiler.loadSelf();
+
+        if (receiverCallback != null) {
+            receiverCallback.call(methodCompiler);
+        } else {
+            methodCompiler.loadSelf();
+        }
+
+        String invokeName;
+        if (iterator) {
+            switch (callType) {
+                case NORMAL:        invokeName = "callIter"; break;
+                case FUNCTIONAL:    invokeName = "fcallIter"; break;
+                default:            throw new NotCompilableException("unknown call type " + callType);
+            }
+        } else {
+            switch (callType) {
+                case NORMAL:        invokeName = "call"; break;
+                case FUNCTIONAL:    invokeName = "fcall"; break;
+                default:            throw new NotCompilableException("unknown call type " + callType);
+            }
+        }
+        invokeName += ":" + JavaNameMangler.mangleMethodName(name);
+        String signature;
+
+        argsCallback.call(methodCompiler);
+
+        // block
+        if (closureArg == null) {
+            signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject[].class));
+        } else {
+            closureArg.call(methodCompiler);
+
+            signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject[].class, Block.class));
+        }
+
         // adapter, tc, recv, args{0,1}, block{0,1}]
         method.invokedynamic(invokeName, signature, InvokeDynamicSupport.getInvocationHandle());
     }

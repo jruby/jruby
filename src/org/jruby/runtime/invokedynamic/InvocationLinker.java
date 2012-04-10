@@ -438,22 +438,21 @@ public class InvocationLinker {
             super(reason);
         }
     }
-    
+
     private static MethodHandle tryDispatchDirect(JRubyCallSite site, String name, RubyClass cls, DynamicMethod method) {
         // get the "real" method in a few ways
         while (method instanceof AliasMethod) method = method.getRealMethod();
         if (method instanceof DefaultMethod) {
-            DefaultMethod defaultMethod = (DefaultMethod)method;
+            DefaultMethod defaultMethod = (DefaultMethod) method;
             if (defaultMethod.getMethodForCaching() instanceof JittedMethod) {
                 method = defaultMethod.getMethodForCaching();
             }
         }
-        
+
         DynamicMethod.NativeCall nativeCall = method.getNativeCall();
-        
-        MethodType trimmed = site.type().dropParameterTypes(2, 3);
-        int siteArgCount = getArgCount(trimmed.parameterArray(), true);
-        
+
+        int siteArgCount = getSiteCount(site.type().parameterArray());
+
         if (method instanceof AttrReaderMethod) {
             // attr reader
             if (!RubyInstanceConfig.INVOKEDYNAMIC_ATTR) {
@@ -493,17 +492,17 @@ public class InvocationLinker {
 
         } else if (nativeCall != null) {
             // has an explicit native call path
-            
+
             // if frame/scope required, can't dispatch direct
             if (method.getCallConfig() != CallConfiguration.FrameNoneScopeNone) {
                 throw new IndirectBindingException("frame or scope required: " + method.getCallConfig());
             }
-            
+
             if (nativeCall.isJava()) {
-                 if (!RubyInstanceConfig.INVOKEDYNAMIC_JAVA) {
+                if (!RubyInstanceConfig.INVOKEDYNAMIC_JAVA) {
                     throw new IndirectBindingException("direct Java dispatch not enabled");
-                 }
-                 
+                }
+
                 // if Java, must:
                 // * match arity <= 3
                 // * not be passed a block (no coercion yet)
@@ -516,53 +515,51 @@ public class InvocationLinker {
                 }
             } else {
                 // if non-Java, must:
-                // * exactly match arities
+                // * exactly match arities or both are [] boxed
                 // * 3 or fewer arguments
-                
+
                 int nativeArgCount = (method instanceof CompiledMethod || method instanceof JittedMethod)
                         ? getRubyArgCount(nativeCall.getNativeSignature())
                         : getArgCount(nativeCall.getNativeSignature(), nativeCall.isStatic());
-                
-                // match arity and arity is not 4 (IRubyObject[].class)
-                if (nativeArgCount == 4) {
-                    throw new IndirectBindingException("target args > 4 or rest/optional");
-                }
-                
+
+                // arity must match or both be [] args
                 if (nativeArgCount != siteArgCount) {
-                    throw new IndirectBindingException("arity mismatch at call site: " + nativeArgCount + " != " + siteArgCount);
+                    throw new IndirectBindingException("arity mismatch or varargs at call site: " + nativeArgCount + " != " + siteArgCount);
                 }
             }
         } else {
             throw new IndirectBindingException("no direct path available for " + method.getClass().getName());
         }
-        
+
         return handleForMethod(site, name, cls, method);
+    }
+
+    private static MethodHandle getTarget(JRubyCallSite site, RubyClass cls, String name, CacheEntry entry, int arity) {
+        IndirectBindingException ibe;
+        try {
+            return tryDispatchDirect(site, name, cls, entry.method);
+        } catch (IndirectBindingException _ibe) {
+            ibe = _ibe;
+            // proceed with indirect, if enabled
         }
 
-        private static MethodHandle getTarget(JRubyCallSite site, RubyClass cls, String name, CacheEntry entry, int arity) {
-            IndirectBindingException ibe;
-            try {
-                return tryDispatchDirect(site, name, cls, entry.method);
-            } catch (IndirectBindingException _ibe) {
-                ibe = _ibe;
-                // proceed with indirect, if enabled
-            }
-
-            // if indirect indy-bound methods (via DynamicMethod.call) are disabled, bail out
-            if (!RubyInstanceConfig.INVOKEDYNAMIC_INDIRECT) {
-                if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tfailed to bind to " + logMethod(entry.method) + ": " + ibe.getMessage());
-                return null;
-            }
-
-            // no direct native path, use DynamicMethod.call
-            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tbound indirectly to " + logMethod(entry.method) + ": " + ibe.getMessage());
-
-            MethodHandle dynMethodTarget = getDynamicMethodTarget(site.type(), arity, entry.method);
-            dynMethodTarget = insertArguments(dynMethodTarget, 4, name);
-            dynMethodTarget = insertArguments(dynMethodTarget, 0, entry);
-
-            return dynMethodTarget;
+        // if indirect indy-bound methods (via DynamicMethod.call) are disabled, bail out
+        if (!RubyInstanceConfig.INVOKEDYNAMIC_INDIRECT) {
+            if (RubyInstanceConfig.LOG_INDY_BINDINGS)
+                LOG.info(name + "\tfailed to bind to " + logMethod(entry.method) + ": " + ibe.getMessage());
+            return null;
         }
+
+        // no direct native path, use DynamicMethod.call
+        if (RubyInstanceConfig.LOG_INDY_BINDINGS)
+            LOG.info(name + "\tbound indirectly to " + logMethod(entry.method) + ": " + ibe.getMessage());
+
+        MethodHandle dynMethodTarget = getDynamicMethodTarget(site.type(), arity, entry.method);
+        dynMethodTarget = insertArguments(dynMethodTarget, 4, name);
+        dynMethodTarget = insertArguments(dynMethodTarget, 0, entry);
+
+        return dynMethodTarget;
+    }
     
     private static MethodHandle handleForMethod(JRubyCallSite site, String name, RubyClass cls, DynamicMethod method) {
         MethodHandle nativeTarget = null;
@@ -1577,6 +1574,22 @@ public class InvocationLinker {
         }
 
         return length;
+    }
+
+    private static int getSiteCount(Class[] args) {
+        if (args[args.length - 1] == Block.class) {
+            if (args[args.length - 2] == IRubyObject[].class) {
+                return 4;
+            } else {
+                return args.length - 4; // TC, caller, self, block
+            }
+        } else {
+            if (args[args.length - 1] == IRubyObject[].class) {
+                return 4;
+            } else {
+                return args.length - 3; // TC, caller, self
+            }
+        }
     }
     
     private static String logMethod(DynamicMethod method) {
