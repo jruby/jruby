@@ -676,3 +676,16 @@ describe "A Ruby class implementing an interface" do
     end
   end
 end
+
+# JRUBY-6590
+require 'delegate'
+describe "A class that extends a DelegateClass" do
+  it "can include a Java interface without error" do
+    c1 = Class.new
+    lambda do
+      c2 = Class.new(DelegateClass(c1)) do
+        include java.io.Serializable
+      end
+    end
+  end
+end
