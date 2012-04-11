@@ -17,10 +17,6 @@ public class DeadCodeElimination extends CompilerPass {
     public String getLabel() {
         return "Dead Code Elimination";
     }
-    
-    public boolean isPreOrder() {
-        return false;
-    }
 
     @Override
     public List<Class<? extends CompilerPass>> getDependencies() {

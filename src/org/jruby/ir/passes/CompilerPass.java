@@ -30,9 +30,6 @@ public abstract class CompilerPass {
      */
     public abstract String getLabel();
     
-    // Should we run this pass on the current scope before running it on nested scopes?
-    public abstract boolean isPreOrder();
-    
     /**
      * Meat of an individual pass. run will call this after dependency
      * resolution.

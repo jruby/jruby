@@ -467,23 +467,6 @@ public abstract class IRScope {
     public CFG getCFG() {
         return cfg;
     }
-
-    // SSS FIXME: No longer relevant?
-    public void runCompilerPassOnNestedScopes(CompilerPass p) {
-        // Do nothing...subclasses should override
-    }
-
-    // SSS FIXME: Can be simplified to "p.run(this)"
-    // since every pass handle nested scopes on its own
-    public void runCompilerPass(CompilerPass p) {
-        boolean isPreOrder = p.isPreOrder();
-
-        if (isPreOrder) p.run(this);
-
-        runCompilerPassOnNestedScopes(p);
-
-        if (!isPreOrder) p.run(this);
-    }
     
     private Instr[] prepareInstructionsForInterpretation() {
         checkRelinearization();
@@ -550,7 +533,7 @@ public abstract class IRScope {
         // and we may need to update the method to return the new method.  Also,
         // if this scope is held in multiple locations how do we update all references?
         for (CompilerPass pass: getManager().getCompilerPasses(this)) {
-            runCompilerPass(pass);
+            pass.run(this);
         }
     }
 
@@ -1039,7 +1022,7 @@ public abstract class IRScope {
         resetState();
 
         // Re-run opts
-        runCompilerPass(new LocalOptimizationPass());
+        new LocalOptimizationPass().run(this);
     }
     
     

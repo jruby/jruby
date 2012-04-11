@@ -27,10 +27,6 @@ public class InlineTest extends CompilerPass {
     public String getLabel() {
         return "Inline Test (" + methodToInline + ")";
     }
-
-    public boolean isPreOrder()  {
-        return true;
-    }
     
     // ENEBO - FIXME: This is fragile and will not work on non-interpreted IR
     private IRScope getIRMethod(IRScope s) {

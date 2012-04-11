@@ -9,10 +9,6 @@ public class LiveVariableAnalysis extends CompilerPass {
     public String getLabel() {
         return "Live Variable Analysis";
     }
-    
-    public boolean isPreOrder() {
-        return false;
-    }
 
     @Override
     public Object previouslyRun(IRScope scope) {

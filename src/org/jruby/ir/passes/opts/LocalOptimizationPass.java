@@ -27,11 +27,6 @@ public class LocalOptimizationPass extends CompilerPass {
     public String getLabel() {
         return "Local Optimizations";
     }
-    
-    // Should we run this pass on the current scope before running it on nested scopes?
-    public boolean isPreOrder() {
-        return false;
-    }
 
     @Override
     public List<Class<? extends CompilerPass>> getDependencies() {

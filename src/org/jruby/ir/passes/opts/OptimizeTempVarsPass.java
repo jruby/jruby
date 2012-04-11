@@ -30,11 +30,6 @@ public class OptimizeTempVarsPass extends CompilerPass {
     public String getLabel() {
         return "Temporary Variable Reduction";
     }
-    
-    // Should we run this pass on the current scope before running it on nested scopes?
-    public boolean isPreOrder() {
-        return false;
-    }
 
     public Object execute(IRScope s, Object... data) {
         for (IRClosure c: s.getClosures()) {

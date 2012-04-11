@@ -8,10 +8,6 @@ public class CallSplitter extends CompilerPass {
     public String getLabel() {
         return "Call Splitting";
     }
-    
-    public boolean isPreOrder() {
-        return true;
-    }
 
     public Object execute(IRScope scope, Object... data) {
         scope.splitCalls();

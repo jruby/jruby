@@ -322,43 +322,43 @@ public class IRBuilder {
             long t3 = new Date().getTime();
             if (isDebug) {
                 LOG.debug("################## Before local optimization pass ##################");
-                scope.runCompilerPass(new IRPrinter());
+                new IRPrinter().run(scope);
             }
-            scope.runCompilerPass(new org.jruby.ir.passes.opts.LocalOptimizationPass());
+            new org.jruby.ir.passes.opts.LocalOptimizationPass().run(scope);
             long t4 = new Date().getTime();
             if (isDebug) {
                 LOG.debug("################## After local optimization pass ##################");
-                scope.runCompilerPass(new IRPrinter());
+                new IRPrinter().run(scope);
             }
-            scope.runCompilerPass(new CFGBuilder());
+            new CFGBuilder().run(scope);
             long t5 = new Date().getTime();
-//            scope.runCompilerPass(new org.jruby.ir.passes.DominatorTreeBuilder());
+//            new org.jruby.ir.passes.DominatorTreeBuilder());
             long t6 = new Date().getTime();
            
             if (methName != null) {
                 LOG.debug("################## After inline pass ##################");
                 LOG.debug("Asked to inline " + methName);
-                scope.runCompilerPass(new InlineTest(methName));
-                scope.runCompilerPass(new LocalOptimizationPass());
-                scope.runCompilerPass(new IRPrinter());
+                new InlineTest(methName).run(scope);
+                new LocalOptimizationPass().run(scope);
+                new IRPrinter().run(scope);
             }
            
             if (isDebug) {
                 LOG.debug("################## After dead code elimination pass ##################");
             }
-            scope.runCompilerPass(new LiveVariableAnalysis());
+            new LiveVariableAnalysis().run(scope);
             long t7 = new Date().getTime();
-            scope.runCompilerPass(new DeadCodeElimination());
+            new DeadCodeElimination().run(scope);
             long t8 = new Date().getTime();
-            // scope.runCompilerPass(new AddLocalVarLoadStoreInstructions());
+            // new AddLocalVarLoadStoreInstructions());
             // long t9 = new Date().getTime();
             if (isDebug) {
-                scope.runCompilerPass(new IRPrinter());
+                new IRPrinter().run(scope);
             }
-            scope.runCompilerPass(new LinearizeCFG());
+            new LinearizeCFG().run(scope);
             if (isDebug) {
                 LOG.debug("################## After cfg linearization pass ##################");
-                scope.runCompilerPass(new IRPrinter());
+                new IRPrinter().run(scope);
             }
            
             LOG.debug("Time to build AST         : {}", (t2 - t1));

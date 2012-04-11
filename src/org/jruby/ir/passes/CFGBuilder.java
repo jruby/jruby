@@ -8,9 +8,6 @@ public class CFGBuilder extends CompilerPass {
     public String getLabel() {
         return "CFG Builder";
     }
-    public boolean isPreOrder() {
-        return true;
-    }
 
     @Override
     public Object previouslyRun(IRScope scope) {

@@ -16,10 +16,6 @@ public class AddLocalVarLoadStoreInstructions extends CompilerPass {
     public String getLabel() {
         return "Add Local Variable Load/Store Instructions";
     }
-    
-    public boolean isPreOrder() {
-        return false;
-    }
 
     public Object execute(IRScope s, Object... data) {
         //        if (s.requiresBinding()) {

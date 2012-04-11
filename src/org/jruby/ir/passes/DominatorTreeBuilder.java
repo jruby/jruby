@@ -23,10 +23,6 @@ public class DominatorTreeBuilder extends CompilerPass {
         return "Build Dominator Tree";
     }
     
-    public boolean isPreOrder() {
-        return false;
-    }
-    
     @Override
     public List<Class<? extends CompilerPass>> getDependencies() {
         return DEPENDENCIES;

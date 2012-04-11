@@ -14,10 +14,6 @@ public class LinearizeCFG extends CompilerPass {
         return "Linearize CFG";
     }
     
-    public boolean isPreOrder()  {
-        return true;
-    }
-    
     @Override
     public List<Class<? extends CompilerPass>> getDependencies() {
         return DEPENDENCIES;

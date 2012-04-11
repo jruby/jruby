@@ -24,11 +24,6 @@ public class IRPrinter extends CompilerPass {
         return DEPENDENCIES;
     }
     
-    // Should we run this pass on the current scope before running it on nested scopes?
-    public boolean isPreOrder() {
-        return true;
-    }
-    
     public Object execute(IRScope scope, Object... data) {
         LOG.info("----------------------------------------");
         LOG.info(scope.toString());
