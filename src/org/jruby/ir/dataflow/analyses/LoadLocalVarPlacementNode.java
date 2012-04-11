@@ -72,7 +72,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode {
 
                     // Variables defined in the closure do not need to be loaded anymore at
                     // program points before the call, because they will be loaded after the
-						  // call completes to fetch the latest value.
+                    // call completes to fetch the latest value.
                     Set<LocalVariable> newReqdLoads = new HashSet<LocalVariable>(reqdLoads);
                     for (LocalVariable v : reqdLoads) {
                         if (cl.definesLocalVariable(v)) {
@@ -82,7 +82,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode {
                     reqdLoads = newReqdLoads;
                 }
                 // In this case, we are going to blindly load everything -- so, at the call site, pending loads dont carry over!
-                if (call.targetRequiresCallersBinding()) {
+                if (call.isDataflowBarrier()) {
                     reqdLoads.clear();
                 }
             }
@@ -164,7 +164,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode {
                 } 
 
                 // In this case, we are going to blindly load everything
-                if (call.targetRequiresCallersBinding()) {
+                if (call.isDataflowBarrier()) {
                     it.next();
                     for (LocalVariable v : reqdLoads) {
                         it.add(new LoadLocalVarInstr(s, getLocalVarReplacement(v, s, varRenameMap), v));

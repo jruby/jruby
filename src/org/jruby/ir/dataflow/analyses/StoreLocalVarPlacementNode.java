@@ -98,7 +98,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode {
                         }
                     }
                     dirtyVars = newDirtyVars;
-                } else if (call.targetRequiresCallersBinding()) { // Call has no closure && it requires stores
+                } else if (call.isDataflowBarrier()) { // Call has no closure && it requires stores
                     bindingAllocated = true;
                     dirtyVars.clear();
                 } else if (call.canSetDollarVars()) {
@@ -216,7 +216,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode {
                     }
                     dirtyVars = newDirtyVars;
                     instrs.next();
-                } else if (call.targetRequiresCallersBinding()) { // Call has no closure && it requires stores
+                } else if (call.isDataflowBarrier()) { // Call has no closure && it requires stores
                     instrs.previous();
                     if (addAllocateBindingInstructions) {
                         if (!bindingAllocated) {
