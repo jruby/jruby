@@ -9,7 +9,6 @@ import org.jruby.ir.passes.CompilerPass;
 import org.jruby.ir.passes.LiveVariableAnalysis;
 
 public class DeadCodeElimination extends CompilerPass {
-    public static String[] NAMES = new String[] {"dce", "DCE", "dead_code"};
     public static List<Class<? extends CompilerPass>> DEPENDENCIES = new ArrayList<Class<? extends CompilerPass>>() {{
        add(LiveVariableAnalysis.class);
     }};

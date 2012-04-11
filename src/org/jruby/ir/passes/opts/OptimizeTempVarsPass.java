@@ -25,8 +25,6 @@ import org.jruby.ir.passes.CompilerPass;
  * @author enebo
  */
 public class OptimizeTempVarsPass extends CompilerPass {
-    public static String[] NAMES = new String[] { "tvr", "temp_vars_reduction"};
-    
     public String getLabel() {
         return "Temporary Variable Reduction";
     }

@@ -11,8 +11,6 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.representations.BasicBlock;
 
 public class AddLocalVarLoadStoreInstructions extends CompilerPass {
-    public static String[] NAMES = new String[] { "add_lvar_load_store", "add_local_var_load_store_instructions" };
-    
     public String getLabel() {
         return "Add Local Variable Load/Store Instructions";
     }

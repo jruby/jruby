@@ -8,7 +8,6 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
 public class IRPrinter extends CompilerPass {
-    public static String[] NAMES = new String[] { "printer", "p" };
     public static List<Class<? extends CompilerPass>> DEPENDENCIES = new ArrayList<Class<? extends CompilerPass>>() {{
        add(CFGBuilder.class);
     }};

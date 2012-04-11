@@ -19,7 +19,6 @@ import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 
 public class LocalOptimizationPass extends CompilerPass {
-    public static String[] NAMES = new String[] { "lo", "LO", "local_optimization" };
     public static List<Class<? extends CompilerPass>> DEPENDENCIES = new ArrayList<Class<? extends CompilerPass>>() {{
        add(CFGBuilder.class);
     }};

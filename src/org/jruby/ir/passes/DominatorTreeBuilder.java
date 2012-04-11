@@ -13,7 +13,6 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
 public class DominatorTreeBuilder extends CompilerPass {
-    private static String[] NAMES = new String[] {"build_dominator", "dominator"};
     private static final Logger LOG = LoggerFactory.getLogger("DominatorTreeBuilder");
     public static List<Class<? extends CompilerPass>> DEPENDENCIES = new ArrayList<Class<? extends CompilerPass>>() {{
        add(CFGBuilder.class);

@@ -92,11 +92,8 @@ public class Options {
     
     public static final Option<Boolean> IR_DEBUG             = bool(IR, "ir.debug", false, "Debug generation of JRuby IR.");
     public static final Option<Boolean> IR_PROFILE           = bool(IR, "ir.profile", false, "[EXPT]: Profile IR code during interpretation.");
-    public static final Option<Boolean> IR_OPT_LVAR_ACCESS   = bool(IR, "ir.opt.lvar_access", false, "[EXPT]: Optimize local var accesses.");
     public static final Option<Boolean> IR_COMPILER_DEBUG    = bool(IR, "ir.compiler.debug", false, "Debug compilation of JRuby IR.");
-    public static final Option<Boolean> IR_PASS_LIVEVARIABLE = bool(IR, "ir.pass.live_variable", false, "Enable live variable analysis of IR.");
-    public static final Option<Boolean> IR_PASS_DEADCODE     = bool(IR, "ir.pass.dead_code", false, "Enable dead code elimination in IR.");
-    public static final Option<String>  IR_PASS_TESTINLINER  = string(IR, "ir.pass.test_inliner", null, "none", "Use specified class for inlining pass in IR.");
+    public static final Option<String>  IR_COMPILER_PASSES = string(IR, "ir.passes", null, "none", "Specify comma delimeted list of passes to run");    
     
     public static final Option<Boolean> NATIVE_ENABLED = bool(NATIVE, "native.enabled", true, "Enable/disable native code, including POSIX features and C exts.");
     public static final Option<Boolean> NATIVE_VERBOSE = bool(NATIVE, "native.verbose", false, "Enable verbose logging of native extension loading.");

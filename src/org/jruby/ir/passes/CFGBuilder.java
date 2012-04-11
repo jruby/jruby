@@ -3,8 +3,6 @@ package org.jruby.ir.passes;
 import org.jruby.ir.IRScope;
 
 public class CFGBuilder extends CompilerPass {
-    public static String[] NAMES = new String[] { "cfg", "cfg_builder" };
-    
     public String getLabel() {
         return "CFG Builder";
     }

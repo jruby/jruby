@@ -3,8 +3,6 @@ package org.jruby.ir.passes;
 import org.jruby.ir.IRScope;
 
 public class CallSplitter extends CompilerPass {
-    public static String[] NAMES = new String[] {"split_calls"};
-    
     public String getLabel() {
         return "Call Splitting";
     }
