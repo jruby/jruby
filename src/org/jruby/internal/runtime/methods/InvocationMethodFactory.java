@@ -273,7 +273,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 compiledMethod.init(implementationClass, arity, visibility, scope, scriptObject, callConfig, position, parameterDesc);
 
                 Class[] params;
-                if (arity.isFixed()) {
+                if (arity.isFixed() && scope.getRequiredArgs() < 4) {
                     params = StandardASMCompiler.getStaticMethodParams(scriptClass, scope.getRequiredArgs());
                 } else {
                     params = StandardASMCompiler.getStaticMethodParams(scriptClass, 4);
