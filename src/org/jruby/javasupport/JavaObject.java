@@ -223,6 +223,8 @@ public class JavaObject extends RubyObject {
             return getRuntime().getTrue();
         }
 
+        if (!(other instanceof JavaObject)) return runtime.getFalse();
+
         boolean isSame = getValue() == ((JavaObject) other).getValue();
         return isSame ? getRuntime().getTrue() : getRuntime().getFalse();
     }
