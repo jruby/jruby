@@ -2283,12 +2283,16 @@ public class IRBuilder {
         IRClosure closure = new IRClosure(manager, s, true, forNode.getPosition().getStartLine(), forNode.getScope(), Arity.procArityOf(forNode.getVarNode()), forNode.getArgumentType(), is1_9());
         s.addClosure(closure);
 
+        // Create a new nested builder to ensure this gets its own IR builder state 
+        // like the ensure block stack
+        IRBuilder forBuilder = createIRBuilder(manager);
+
             // Receive self
         closure.addInstr(new ReceiveSelfInstr(getSelf(closure)));
 
             // Build args
         Node varNode = forNode.getVarNode();
-        if (varNode != null && varNode.getNodeType() != null) receiveBlockArgs(forNode, closure);
+        if (varNode != null && varNode.getNodeType() != null) forBuilder.receiveBlockArgs(forNode, closure);
 
         // Set %current_scope = <current-scope>
         // Set %current_module = <current-module>
@@ -2302,7 +2306,7 @@ public class IRBuilder {
         closure.addInstr(new LabelInstr(closure.startLabel));
 
             // Build closure body and return the result of the closure
-        Operand closureRetVal = forNode.getBodyNode() == null ? manager.getNil() : build(forNode.getBodyNode(), closure);
+        Operand closureRetVal = forNode.getBodyNode() == null ? manager.getNil() : forBuilder.build(forNode.getBodyNode(), closure);
         if (closureRetVal != U_NIL)  // can be null if the node is an if node with returns in both branches.
             closure.addInstr(new ClosureReturnInstr(closureRetVal));
 
