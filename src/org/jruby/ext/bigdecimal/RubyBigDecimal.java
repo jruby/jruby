@@ -48,6 +48,7 @@ import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
+import org.jruby.RubyRational;
 import org.jruby.RubyString;
 
 import org.jruby.anno.JRubyClass;
@@ -327,6 +328,90 @@ public class RubyBigDecimal extends RubyNumeric {
                 .getConstant("EXCEPTION_OVERFLOW");
         return (currentExceptionMode.getLongValue() & EXCEPTION_OVERFLOW.getLongValue()) != 0;
     }
+    
+    private static RubyBigDecimal cannotBeCoerced(ThreadContext context, IRubyObject v, boolean must) {
+        if(must) {
+            String err;
+            
+            if (v.isImmediate()) {
+                err = RubyObject.inspect(context, v).toString();
+            } else {
+                err = v.getMetaClass().getBaseName();
+            }
+            
+            throw context.runtime.newTypeError(err + " can't be coerced into BigDecimal");
+        }
+        
+        return null;
+    }
+    
+    private static RubyBigDecimal unableToCoerceWithoutPrec(ThreadContext context, IRubyObject v, boolean must) {
+        if (must) {
+            throw context.runtime.newArgumentError(v.getMetaClass().getBaseName() + " can't be coerced into BigDecimal without a precision");
+        }
+        
+        return null;
+    }
+    
+    private static RubyBigDecimal getVpValue19(ThreadContext context, IRubyObject v, boolean must) {
+        return getVpValueWithPrec19(context, v, -1, must);
+    }
+    
+    private static IRubyObject getVpRubyObjectWithPrec19Inner(ThreadContext context, RubyRational r, long precision, boolean must) {
+        RubyRational orig = null;
+        IRubyObject numerator = null;
+        while (true) {
+            IRubyObject value;
+            boolean div;
+            if (orig == null) {
+                orig = r;
+                div = true;
+            } else {
+                div = orig != r;
+            }
+                
+            if (div) {
+                numerator = r.numerator(context);
+                RubyBigDecimal pv = getVpValueWithPrec19(context, numerator, -1, must);
+                
+                if (pv == null) cannotBeCoerced(context, r, must);
+                
+                value = pv.div19(context, r.denominator(context)); // FIXME: This should propagate precision
+            } else {
+                value = orig;
+            }
+            
+            if (value instanceof RubyFloat) value = ((RubyFloat) value).to_r(context);            
+
+            if (!(value instanceof RubyRational)) return value;
+
+            r = (RubyRational) value;
+        }
+    }
+    
+    private static RubyBigDecimal getVpValueWithPrec19(ThreadContext context, IRubyObject value, long precision, boolean must) {
+        while (true) {
+            if (value instanceof RubyFloat) {
+//                if (precision < 0) return unableToCoerceWithoutPrec(context, value, must);
+                if (precision > Long.MAX_VALUE) cannotBeCoerced(context, value, must);
+            
+                value = getVpRubyObjectWithPrec19Inner(context, (RubyRational) ((RubyFloat) value).to_r(context), precision, must); // MRI uses built-in
+                continue;
+            } else if (value instanceof RubyRational) {
+                if (precision < 0) return unableToCoerceWithoutPrec(context, value, must);
+                
+                value = getVpRubyObjectWithPrec19Inner(context, (RubyRational) value, precision, must);
+                continue;
+            } else if (value instanceof RubyBigDecimal) {
+                return (RubyBigDecimal) value;
+            } else if (value instanceof RubyFixnum || value instanceof RubyBignum) {
+                String s = value.toString();
+                return newInstance(value.getRuntime().getClass("BigDecimal"),new IRubyObject[]{value.getRuntime().newString(s)});            
+            } 
+            
+            return cannotBeCoerced(context, value, must);            
+        }
+    }
 
     private static RubyBigDecimal getVpValue(IRubyObject v, boolean must) {
         if(v instanceof RubyBigDecimal) {
@@ -335,17 +420,8 @@ public class RubyBigDecimal extends RubyNumeric {
             String s = v.toString();
             return newInstance(v.getRuntime().getClass("BigDecimal"),new IRubyObject[]{v.getRuntime().newString(s)});
         }
-        if(must) {
-            String err;
-            if (v.isImmediate()) {
-                ThreadContext context = v.getRuntime().getCurrentContext();
-                err = RubyObject.inspect(context, v).toString();
-            } else {
-                err = v.getMetaClass().getBaseName();
-            }
-            throw v.getRuntime().newTypeError(err + " can't be coerced into BigDecimal");
-        }
-        return null;
+
+        return cannotBeCoerced(v.getRuntime().getCurrentContext(), v, must);
     }
 
     @JRubyMethod(name = "induced_from", required = 1, meta = true)
@@ -829,7 +905,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
     @JRubyMethod(name = {"/", "quo"}, compat = CompatVersion.RUBY1_9)
     public IRubyObject op_quo19(ThreadContext context, IRubyObject other) {
-        other = getVpValue(other, true);
+        other = getVpValue19(context, other, true);
         // regular division with some default precision
         // TODO: proper algorithm to set the precision
         return op_div(context, other, getRuntime().newFixnum(200));
@@ -856,25 +932,12 @@ public class RubyBigDecimal extends RubyNumeric {
     }
 
     @JRubyMethod(name = "div", compat = CompatVersion.RUBY1_9)
-    public IRubyObject op_div19(ThreadContext context, IRubyObject other) {
-        RubyBigDecimal val = getVpValue(other, false);
-        if (isNaN() || val.isNaN()) {
-            throw getRuntime().newFloatDomainError("Computation results to 'NaN'");
-        }
+    public IRubyObject op_div19(ThreadContext context, IRubyObject r) {
+        IRubyObject b = getVpValue19(context, r, true);
         
-        if (val.isInfinity()) {
-            return RubyFixnum.zero(context.getRuntime());
-        }
+        if (b == null) return cannotBeCoerced(context, b, true);
         
-        if (val.isZero()) {
-            throw context.getRuntime().newZeroDivisionError();
-        }
-        
-        if (isInfinity()) {
-            throw context.getRuntime().newFloatDomainError("Computation results to 'Infinity'");
-        }
-        
-        return op_div(context, other);
+        return op_div(context, r);
     }
 
     @JRubyMethod(name = "div", compat = CompatVersion.RUBY1_8)
