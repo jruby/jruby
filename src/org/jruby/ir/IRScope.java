@@ -26,9 +26,7 @@ import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.passes.CompilerPass;
-import org.jruby.ir.passes.LinearizeCFG;
 import org.jruby.ir.passes.opts.LocalOptimizationPass;
-import org.jruby.ir.passes.opts.OptimizeTempVarsPass;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.representations.CFGLinearizer;
@@ -543,7 +541,7 @@ public abstract class IRScope {
     private void runCompilerPasses() {
         // forcibly clear out the shared eval-scope variable allocator each time this method executes
         initEvalScopeVariableAllocator(true); 
-
+        
         // SSS FIXME: We should configure different optimization levels
         // and run different kinds of analysis depending on time budget.  Accordingly, we need to set
         // IR levels/states (basic, optimized, etc.) and the
@@ -551,10 +549,9 @@ public abstract class IRScope {
         // while another thread is using it.  This may need to happen on a clone()
         // and we may need to update the method to return the new method.  Also,
         // if this scope is held in multiple locations how do we update all references?
-
-        runCompilerPass(new OptimizeTempVarsPass());
-        runCompilerPass(new LocalOptimizationPass());
-        runCompilerPass(new LinearizeCFG());
+        for (CompilerPass pass: getManager().getCompilerPasses(this)) {
+            runCompilerPass(pass);
+        }
     }
 
     /** Run any necessary passes to get the IR ready for interpretation */

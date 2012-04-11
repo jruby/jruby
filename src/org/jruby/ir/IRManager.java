@@ -1,5 +1,6 @@
 package org.jruby.ir;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -9,6 +10,9 @@ import org.jruby.ir.operands.Nil;
 import org.jruby.ir.passes.BasicCompilerPassListener;
 import org.jruby.ir.passes.CompilerPass;
 import org.jruby.ir.passes.CompilerPassListener;
+import org.jruby.ir.passes.LinearizeCFG;
+import org.jruby.ir.passes.opts.LocalOptimizationPass;
+import org.jruby.ir.passes.opts.OptimizeTempVarsPass;
 
 /**
  */
@@ -21,8 +25,12 @@ public class IRManager {
     private final BooleanLiteral falseObject = new BooleanLiteral(false);
     private Set<CompilerPassListener> passListeners = new HashSet<CompilerPassListener>();
     private CompilerPassListener defaultListener = new BasicCompilerPassListener();
+    private List<CompilerPass> defaultCompilerPasses = new ArrayList<CompilerPass>();
     
     public IRManager() {
+        defaultCompilerPasses.add(new OptimizeTempVarsPass());
+        defaultCompilerPasses.add(new LocalOptimizationPass());
+        defaultCompilerPasses.add(new LinearizeCFG());
     }
     
     public Nil getNil() {
@@ -42,7 +50,7 @@ public class IRManager {
     }
     
     public List<CompilerPass> getCompilerPasses(IRScope scope) {
-        return null;
+        return defaultCompilerPasses;
     }
     
     public Set<CompilerPassListener> getListeners() {
