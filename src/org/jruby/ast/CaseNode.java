@@ -126,8 +126,7 @@ public class CaseNode extends Node {
             WhenNode when = (WhenNode) child;
             ISourcePosition position = child.getPosition();
 
-            context.setFile(position.getFile());
-            context.setLine(position.getStartLine());
+            context.setFileAndLine(position.getFile(), position.getStartLine());
 
             if (runtime.hasEventHooks()) ASTInterpreter.callTraceFunction(runtime, context, RubyEvent.LINE);
             IRubyObject result = when.when(expression, context, runtime, self, aBlock);

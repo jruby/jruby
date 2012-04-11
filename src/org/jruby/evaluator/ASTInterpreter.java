@@ -148,8 +148,6 @@ public class ASTInterpreter {
     public static IRubyObject evalWithBinding(ThreadContext context, IRubyObject self, IRubyObject src, Binding binding) {
         Ruby runtime = src.getRuntime();
         DynamicScope evalScope = binding.getDynamicScope().getEvalScope(runtime);
-        String savedFile = context.getFile();
-        int savedLine = context.getLine();
 
         // FIXME:  This determine module is in a strange location and should somehow be in block
         evalScope.getStaticScope().determineModule();
@@ -175,16 +173,15 @@ public class ASTInterpreter {
         } catch (StackOverflowError soe) {
             throw runtime.newSystemStackError("stack level too deep", soe);
         } finally {
-            context.setFile(savedFile);
-            context.setLine(savedLine);
             context.postEvalWithBinding(binding, lastFrame);
         }
     }
 
     /**
      * Evaluate the given string.
-     * @param context TODO
-     * @param evalString The string containing the text to be evaluated
+     * @param context the current thread's context
+     * @param self the self to evaluate under
+     * @param src The string containing the text to be evaluated
      * @param file The filename to use when reporting errors during the evaluation
      * @param lineNumber that the eval supposedly starts from
      * @return An IRubyObject result from the evaluation
@@ -194,8 +191,6 @@ public class ASTInterpreter {
         assert file != null;
 
         Ruby runtime = src.getRuntime();
-        String savedFile = context.getFile();
-        int savedLine = context.getLine();
 
         // no binding, just eval in "current" frame (caller's frame)
         RubyString source = src.convertToString();
@@ -217,10 +212,6 @@ public class ASTInterpreter {
             throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.BREAK, (IRubyObject)bj.getValue(), "unexpected break");
         } catch (StackOverflowError soe) {
             throw runtime.newSystemStackError("stack level too deep", soe);
-        } finally {
-            // restore position
-            context.setFile(savedFile);
-            context.setLine(savedLine);
         }
     }
 
@@ -366,8 +357,7 @@ public class ASTInterpreter {
                 argsArray[i] = argsArrayNode.get(i).interpret(runtime, context, self, aBlock);
             }
 
-            context.setFile(savedFile);
-            context.setLine(savedLine);
+            context.setFileAndLine(savedFile, savedLine);
 
             return argsArray;
         }

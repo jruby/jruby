@@ -2590,7 +2590,7 @@ public final class Ruby {
         try {
             secure(4); /* should alter global state */
 
-            context.setFile(scriptName);
+            ThreadContext.pushBacktrace(context, "(root)", file, 0);
             context.preNodeEval(objectClass, self, scriptName);
 
             Node node = parseFile(in, scriptName, null);
@@ -2603,7 +2603,7 @@ public final class Ruby {
             return;
         } finally {
             context.postNodeEval();
-            context.setFile(file);
+            ThreadContext.popBacktrace(context);
         }
     }
     
@@ -2614,8 +2614,6 @@ public final class Ruby {
         
         try {
             secure(4); /* should alter global state */
-
-            context.setFile(filename);
 
             Script script = null;
             String className = null;
@@ -2673,8 +2671,6 @@ public final class Ruby {
             }
         } catch (JumpException.ReturnJump rj) {
             return;
-        } finally {
-            context.setFile(file);
         }
     }
 
@@ -2706,12 +2702,10 @@ public final class Ruby {
     public void loadExtension(String extName, BasicLibraryService extension, boolean wrap) {
         IRubyObject self = wrap ? TopSelfFactory.createTopSelf(this) : getTopSelf();
         ThreadContext context = getCurrentContext();
-        String file = context.getFile();
 
         try {
             secure(4); /* should alter global state */
 
-            context.setFile(extName);
             context.preExtensionLoad(self);
 
             extension.basicLoad(this);
@@ -2721,7 +2715,6 @@ public final class Ruby {
             return;
         } finally {
             context.postNodeEval();
-            context.setFile(file);
         }
     }
 

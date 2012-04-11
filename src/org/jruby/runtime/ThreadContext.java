@@ -556,13 +556,15 @@ public final class ThreadContext {
     }
     
     public void setFileAndLine(String file, int line) {
-        backtrace[backtraceIndex].filename = file;
-        backtrace[backtraceIndex].line = line;
+        BacktraceElement b = backtrace[backtraceIndex];
+        b.filename = file;
+        b.line = line;
     }
 
     public void setFileAndLine(ISourcePosition position) {
-        backtrace[backtraceIndex].filename = position.getFile();
-        backtrace[backtraceIndex].line = position.getStartLine();
+        BacktraceElement b = backtrace[backtraceIndex];
+        b.filename = position.getFile();
+        b.line = position.getStartLine();
     }
     
     public Visibility getCurrentVisibility() {
