@@ -63,6 +63,7 @@ import static org.jruby.util.StringSupport.unpackResult;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
@@ -7578,6 +7579,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         modify19();
         Encoding encoding = context.runtime.getEncodingService().getEncodingFromObject(enc);
         associateEncoding(encoding);
+        clearCodeRange();
         return this;
     }
 
