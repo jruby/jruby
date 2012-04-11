@@ -7,17 +7,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
-import org.jruby.ir.passes.CFGBuilder;
-import org.jruby.ir.passes.CompilerPass;
-import org.jruby.ir.passes.IRPrinter;
-import org.jruby.ir.passes.InlineTest;
-import org.jruby.ir.passes.LinearizeCFG;
-import org.jruby.ir.passes.AddLocalVarLoadStoreInstructions;
-import org.jruby.ir.passes.LiveVariableAnalysis;
-import org.jruby.ir.passes.opts.DeadCodeElimination;
-import org.jruby.ir.passes.opts.LocalOptimizationPass;
 import org.jruby.ir.dataflow.DataFlowProblem;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.CopyInstr;
@@ -35,7 +25,9 @@ import org.jruby.ir.operands.Self;
 import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
-import org.jruby.ir.passes.BasicCompilerPassListener;
+import org.jruby.ir.passes.CompilerPass;
+import org.jruby.ir.passes.LinearizeCFG;
+import org.jruby.ir.passes.opts.LocalOptimizationPass;
 import org.jruby.ir.passes.opts.OptimizeTempVarsPass;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
@@ -562,23 +554,6 @@ public abstract class IRScope {
 
         runCompilerPass(new OptimizeTempVarsPass());
         runCompilerPass(new LocalOptimizationPass());
-        if (!RubyInstanceConfig.IR_TEST_INLINER.equals("none")) {
-            if (RubyInstanceConfig.IR_COMPILER_DEBUG) {
-                LOG.info("Asked to inline " + RubyInstanceConfig.IR_TEST_INLINER);
-            }
-            runCompilerPass(new InlineTest(RubyInstanceConfig.IR_TEST_INLINER));
-            runCompilerPass(new LocalOptimizationPass());
-        }        
-
-        if (RubyInstanceConfig.IR_OPT_LVAR_ACCESS) runCompilerPass(new AddLocalVarLoadStoreInstructions());
-
-        // Do not run dead-code-elimination on eval-scripts because they might
-        // update their enclosing environments.
-        if (!(this instanceof IREvalScript)) {
-            if (RubyInstanceConfig.IR_LIVE_VARIABLE) runCompilerPass(new LiveVariableAnalysis());
-            if (RubyInstanceConfig.IR_DEAD_CODE) runCompilerPass(new DeadCodeElimination());
-        }
-
         runCompilerPass(new LinearizeCFG());
     }
 
@@ -1068,7 +1043,6 @@ public abstract class IRScope {
 
         // Re-run opts
         runCompilerPass(new LocalOptimizationPass());
-        if (RubyInstanceConfig.IR_DEAD_CODE) runCompilerPass(new DeadCodeElimination());
     }
     
     
