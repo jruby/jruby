@@ -93,7 +93,7 @@ public class Options {
     public static final Option<Boolean> IR_DEBUG             = bool(IR, "ir.debug", false, "Debug generation of JRuby IR.");
     public static final Option<Boolean> IR_PROFILE           = bool(IR, "ir.profile", false, "[EXPT]: Profile IR code during interpretation.");
     public static final Option<Boolean> IR_COMPILER_DEBUG    = bool(IR, "ir.compiler.debug", false, "Debug compilation of JRuby IR.");
-    public static final Option<String>  IR_COMPILER_PASSES = string(IR, "ir.passes", null, "none", "Specify comma delimeted list of passes to run");    
+    public static final Option<String>  IR_COMPILER_PASSES = string(IR, "ir.passes", null, null, "Specify comma delimeted list of passes to run");    
     
     public static final Option<Boolean> NATIVE_ENABLED = bool(NATIVE, "native.enabled", true, "Enable/disable native code, including POSIX features and C exts.");
     public static final Option<Boolean> NATIVE_VERBOSE = bool(NATIVE, "native.verbose", false, "Enable verbose logging of native extension loading.");

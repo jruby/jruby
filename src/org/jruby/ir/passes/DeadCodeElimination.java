@@ -1,4 +1,4 @@
-package org.jruby.ir.passes.opts;
+package org.jruby.ir.passes;
 
 import java.util.ArrayList;
 import java.util.List;

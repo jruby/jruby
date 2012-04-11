@@ -2,7 +2,7 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.jruby.ir.passes.opts;
+package org.jruby.ir.passes;
 
 import java.util.ArrayList;
 import java.util.HashMap;

@@ -11,8 +11,8 @@ import org.jruby.ir.passes.BasicCompilerPassListener;
 import org.jruby.ir.passes.CompilerPass;
 import org.jruby.ir.passes.CompilerPassListener;
 import org.jruby.ir.passes.LinearizeCFG;
-import org.jruby.ir.passes.opts.LocalOptimizationPass;
-import org.jruby.ir.passes.opts.OptimizeTempVarsPass;
+import org.jruby.ir.passes.LocalOptimizationPass;
+import org.jruby.ir.passes.OptimizeTempVarsPass;
 
 /**
  */
@@ -26,11 +26,14 @@ public class IRManager {
     private Set<CompilerPassListener> passListeners = new HashSet<CompilerPassListener>();
     private CompilerPassListener defaultListener = new BasicCompilerPassListener();
     private List<CompilerPass> defaultCompilerPasses = new ArrayList<CompilerPass>();
+    private static String DEFAULT_COMPILER_PASSES = "OptimizeTempVarsPass,LocalOptimizationPass,LinearizeCFG";
     
     public IRManager() {
-        defaultCompilerPasses.add(new OptimizeTempVarsPass());
-        defaultCompilerPasses.add(new LocalOptimizationPass());
-        defaultCompilerPasses.add(new LinearizeCFG());
+        if (RubyInstanceConfig.IR_COMPILER_PASSES == null) {
+            defaultCompilerPasses = CompilerPass.getPassesFromString(DEFAULT_COMPILER_PASSES);
+        } else {
+            defaultCompilerPasses = CompilerPass.getPassesFromString(RubyInstanceConfig.IR_COMPILER_PASSES);
+        }
     }
     
     public Nil getNil() {

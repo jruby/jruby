@@ -102,7 +102,7 @@ public abstract class CompilerPass {
         return data;
     }
 
-    private CompilerPass createPassInstance(Class<? extends CompilerPass> passClass) {
+    public static CompilerPass createPassInstance(Class<? extends CompilerPass> passClass) {
         try {
             return (CompilerPass) passClass.getDeclaredConstructor().newInstance();
         } catch (InstantiationException ex) {
@@ -120,5 +120,30 @@ public abstract class CompilerPass {
         }
         
         return null;
+    }
+    
+    public static CompilerPass createPassInstance(String passClassName) {
+        try {
+            String clazzName = "org.jruby.ir.passes." + passClassName;
+            Class<? extends CompilerPass> clazz = 
+                    (Class<? extends CompilerPass>) Class.forName(clazzName);
+            return createPassInstance(clazz);
+        } catch (ClassNotFoundException ex) {
+            // FIXME: Do this in a nice way even if only for test code
+            System.out.println("No such pass: " + ex);
+            System.exit(-1);
+        }
+        
+        return null;
+    }
+    
+    public static List<CompilerPass> getPassesFromString(String passList) {
+        List<CompilerPass> passes = new ArrayList<CompilerPass>();
+        
+        for (String passClassName :  passList.split(",")) {
+            passes.add(createPassInstance(passClassName));
+        }
+        
+        return passes;
     }
 }

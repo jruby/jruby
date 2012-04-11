@@ -216,11 +216,10 @@ import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.passes.CFGBuilder;
 import org.jruby.ir.passes.IRPrinter;
-import org.jruby.ir.passes.InlineTest;
 import org.jruby.ir.passes.LinearizeCFG;
 import org.jruby.ir.passes.LiveVariableAnalysis;
-import org.jruby.ir.passes.opts.DeadCodeElimination;
-import org.jruby.ir.passes.opts.LocalOptimizationPass;
+import org.jruby.ir.passes.DeadCodeElimination;
+import org.jruby.ir.passes.LocalOptimizationPass;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.BlockBody;
@@ -304,12 +303,6 @@ public class IRBuilder {
         IRBuilder.inIRGenOnlyMode = true;
         LOG.setDebugEnable(isDebug);
 
-        String methName = null;
-        if (args.length > i && args[i].equals("-inline")) {
-            methName = args[i+1];
-            i += 2;
-        }
-
         boolean isCommandLineScript = args.length > i && args[i].equals("-e");
         i += (isCommandLineScript ? 1 : 0);
 
@@ -324,7 +317,7 @@ public class IRBuilder {
                 LOG.debug("################## Before local optimization pass ##################");
                 new IRPrinter().run(scope);
             }
-            new org.jruby.ir.passes.opts.LocalOptimizationPass().run(scope);
+            new org.jruby.ir.passes.LocalOptimizationPass().run(scope);
             long t4 = new Date().getTime();
             if (isDebug) {
                 LOG.debug("################## After local optimization pass ##################");
@@ -334,14 +327,6 @@ public class IRBuilder {
             long t5 = new Date().getTime();
 //            new org.jruby.ir.passes.DominatorTreeBuilder());
             long t6 = new Date().getTime();
-           
-            if (methName != null) {
-                LOG.debug("################## After inline pass ##################");
-                LOG.debug("Asked to inline " + methName);
-                new InlineTest(methName).run(scope);
-                new LocalOptimizationPass().run(scope);
-                new IRPrinter().run(scope);
-            }
            
             if (isDebug) {
                 LOG.debug("################## After dead code elimination pass ##################");

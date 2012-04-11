@@ -1,4 +1,4 @@
-package org.jruby.ir.passes.opts;
+package org.jruby.ir.passes;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -13,8 +13,6 @@ import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
-import org.jruby.ir.passes.CFGBuilder;
-import org.jruby.ir.passes.CompilerPass;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 
