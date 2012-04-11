@@ -118,6 +118,10 @@ public abstract class IRScope {
     /** Is %block implicit block arg unused? */
     private boolean hasUnusedImplicitBlockArg;
 
+    /** %current_module and %current_scope variables */
+    private TemporaryVariable currentModuleVar;
+    private TemporaryVariable currentScopeVar;
+
     /** Map of name -> dataflow problem */
     private Map<String, DataFlowProblem> dfProbs;
     
@@ -543,7 +547,7 @@ public abstract class IRScope {
         linearizedInstrArray = newInstrs.toArray(new Instr[newInstrs.size()]);
         return linearizedInstrArray;
     }
-    
+
     private void runCompilerPasses() {
         // forcibly clear out the shared eval-scope variable allocator each time this method executes
         initEvalScopeVariableAllocator(true); 
@@ -574,6 +578,7 @@ public abstract class IRScope {
             if (RubyInstanceConfig.IR_LIVE_VARIABLE) runCompilerPass(new LiveVariableAnalysis());
             if (RubyInstanceConfig.IR_DEAD_CODE) runCompilerPass(new DeadCodeElimination());
         }
+
         runCompilerPass(new LinearizeCFG());
     }
 
@@ -777,11 +782,13 @@ public abstract class IRScope {
     }
 
     public Variable getCurrentModuleVariable() {
-        return getNewTemporaryVariable(Variable.CURRENT_MODULE);
+        if (currentModuleVar == null) currentModuleVar = getNewTemporaryVariable(Variable.CURRENT_MODULE);
+        return currentModuleVar;
     }
 
     public Variable getCurrentScopeVariable() {
-        return getNewTemporaryVariable(Variable.CURRENT_SCOPE);
+        if (currentScopeVar == null) currentScopeVar = getNewTemporaryVariable(Variable.CURRENT_SCOPE);
+        return currentScopeVar;
     }
 
     public abstract LocalVariable getImplicitBlockArg();
