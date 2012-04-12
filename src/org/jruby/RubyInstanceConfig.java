@@ -1606,6 +1606,7 @@ public class RubyInstanceConfig {
     public static boolean IR_PROFILE = Options.IR_PROFILE.load();
     public static boolean IR_COMPILER_DEBUG = Options.IR_COMPILER_DEBUG.load();
     public static String IR_COMPILER_PASSES = Options.IR_COMPILER_PASSES.load();
+    public static String IR_INLINE_COMPILER_PASSES = Options.IR_INLINE_COMPILER_PASSES.load();
     
     public static final boolean COROUTINE_FIBERS = Options.FIBER_COROUTINES.load();
     

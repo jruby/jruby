@@ -10,13 +10,13 @@ import org.jruby.ir.operands.Nil;
 import org.jruby.ir.passes.BasicCompilerPassListener;
 import org.jruby.ir.passes.CompilerPass;
 import org.jruby.ir.passes.CompilerPassListener;
-import org.jruby.ir.passes.LinearizeCFG;
-import org.jruby.ir.passes.LocalOptimizationPass;
-import org.jruby.ir.passes.OptimizeTempVarsPass;
 
 /**
  */
 public class IRManager {
+    public static String DEFAULT_COMPILER_PASSES = "OptimizeTempVarsPass,LocalOptimizationPass,LinearizeCFG";
+    public static String DEFAULT_INLINING_COMPILER_PASSES = "LocalOptimizationPass";
+    
     private int dummyMetaClassCount = 0;
     private final IRModuleBody classMetaClass = new IRMetaClassBody(this, null, getMetaClassName(), "", 0, null);
     private final IRModuleBody object = new IRClassBody(this, null, "Object", "", 0, null);
@@ -25,15 +25,14 @@ public class IRManager {
     private final BooleanLiteral falseObject = new BooleanLiteral(false);
     private Set<CompilerPassListener> passListeners = new HashSet<CompilerPassListener>();
     private CompilerPassListener defaultListener = new BasicCompilerPassListener();
-    private List<CompilerPass> defaultCompilerPasses = new ArrayList<CompilerPass>();
-    private static String DEFAULT_COMPILER_PASSES = "OptimizeTempVarsPass,LocalOptimizationPass,LinearizeCFG";
+
+    // FIXME: Eventually make these attrs into either a) set b) part of state machine
+    private List<CompilerPass> compilerPasses = new ArrayList<CompilerPass>();
+    private List<CompilerPass> inliningCompilerPasses = new ArrayList<CompilerPass>();
     
     public IRManager() {
-        if (RubyInstanceConfig.IR_COMPILER_PASSES == null) {
-            defaultCompilerPasses = CompilerPass.getPassesFromString(DEFAULT_COMPILER_PASSES);
-        } else {
-            defaultCompilerPasses = CompilerPass.getPassesFromString(RubyInstanceConfig.IR_COMPILER_PASSES);
-        }
+        compilerPasses = CompilerPass.getPassesFromString(RubyInstanceConfig.IR_COMPILER_PASSES, DEFAULT_COMPILER_PASSES);
+        inliningCompilerPasses = CompilerPass.getPassesFromString(RubyInstanceConfig.IR_COMPILER_PASSES, DEFAULT_INLINING_COMPILER_PASSES);
     }
     
     public Nil getNil() {
@@ -53,7 +52,11 @@ public class IRManager {
     }
     
     public List<CompilerPass> getCompilerPasses(IRScope scope) {
-        return defaultCompilerPasses;
+        return compilerPasses;
+    }
+    
+    public List<CompilerPass> getInliningCompilerPasses(IRScope scope) {
+        return inliningCompilerPasses;
     }
     
     public Set<CompilerPassListener> getListeners() {

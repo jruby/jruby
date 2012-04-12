@@ -137,7 +137,9 @@ public abstract class CompilerPass {
         return null;
     }
     
-    public static List<CompilerPass> getPassesFromString(String passList) {
+    public static List<CompilerPass> getPassesFromString(String passList, String defaultPassList) {
+        if (passList == null) passList = defaultPassList;
+        
         List<CompilerPass> passes = new ArrayList<CompilerPass>();
         
         for (String passClassName :  passList.split(",")) {

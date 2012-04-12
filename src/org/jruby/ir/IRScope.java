@@ -26,7 +26,6 @@ import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.passes.CompilerPass;
-import org.jruby.ir.passes.LocalOptimizationPass;
 import org.jruby.ir.representations.BasicBlock;
 import org.jruby.ir.representations.CFG;
 import org.jruby.ir.representations.CFGLinearizer;
@@ -1022,7 +1021,9 @@ public abstract class IRScope {
         resetState();
 
         // Re-run opts
-        new LocalOptimizationPass().run(this);
+        for (CompilerPass pass: getManager().getInliningCompilerPasses(this)) {
+            pass.run(this);
+        }
     }
     
     
