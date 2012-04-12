@@ -6,6 +6,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import org.jruby.ir.IRClosure;
+import org.jruby.ir.IREvalScript;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.dataflow.DataFlowProblem;
@@ -202,16 +203,17 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode {
         if ((s instanceof IRClosure) && (basicBlock == problem.getScope().cfg().getEntryBB())) {
             // System.out.println("\n[In Entry BB] For CFG " + problem.getScope().cfg() + ":");
             // System.out.println("\t--> Reqd loads   : " + java.util.Arrays.toString(reqdLoads.toArray()));
+            boolean isEvalScript = s instanceof IREvalScript;
             for (LocalVariable v : reqdLoads) {
                 if (s.usesLocalVariable(v) || s.definesLocalVariable(v)) {
-                    if (v instanceof ClosureLocalVariable) {
+                    if (isEvalScript || !(v instanceof ClosureLocalVariable)) {
+                        it.add(new LoadLocalVarInstr(s, getLocalVarReplacement(v, s, varRenameMap), v));
+                    } else {
+                        // In a non-eval-script closure, read of a local var from a surrounding scope
                         IRClosure definingScope = ((ClosureLocalVariable)v).definingScope;
-                        
                         if ((s != definingScope) && s.isNestedInClosure(definingScope)) {
                             it.add(new LoadLocalVarInstr(s, getLocalVarReplacement(v, s, varRenameMap), v));
                         }
-                    } else {
-                        it.add(new LoadLocalVarInstr(s, getLocalVarReplacement(v, s, varRenameMap), v));
                     }
                 }
             }

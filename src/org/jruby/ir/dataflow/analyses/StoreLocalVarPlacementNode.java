@@ -5,6 +5,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import org.jruby.ir.IRClosure;
+import org.jruby.ir.IREvalScript;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.dataflow.DataFlowConstants;
@@ -137,14 +138,16 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode {
     }
 
     private void addClosureExitStoreLocalVars(IRScope scope, ListIterator<Instr> instrs, Set<LocalVariable> dirtyVars, Map<Operand, Operand> varRenameMap) {
+        boolean isEvalScript = scope instanceof IREvalScript;
         for (LocalVariable v : dirtyVars) {
-            if (v instanceof ClosureLocalVariable) {
+            if (isEvalScript || !(v instanceof ClosureLocalVariable)) {
+                instrs.add(new StoreLocalVarInstr(getLocalVarReplacement(v, scope, varRenameMap), scope, v));
+            } else {
+                // In a non-eval-script closure, write to a local var from a surrounding scope 
                 IRClosure definingScope = ((ClosureLocalVariable)v).definingScope;
                 if ((scope != definingScope) && scope.isNestedInClosure(definingScope)) {
                     instrs.add(new StoreLocalVarInstr(getLocalVarReplacement(v, scope, varRenameMap), scope, v));
                 }
-            } else {
-                instrs.add(new StoreLocalVarInstr(getLocalVarReplacement(v, scope, varRenameMap), scope, v));
             }
         }
     }
