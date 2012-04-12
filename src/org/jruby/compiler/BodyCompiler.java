@@ -608,7 +608,17 @@ public interface BodyCompiler {
     public void literalSwitch(int[] caseInts, Object[] caseBodies, ArrayCallback casesCallback, CompilerCallback defaultCallback);
     public void typeCheckBranch(Class type, BranchCallback trueCallback, BranchCallback falseCallback);
     public void loadFilename();
+
+    /**
+     * Store the current live exception object in the $! thread-global.
+     */
     public void storeExceptionInErrorInfo();
+
+    /**
+     * Store the current exception in $!, wrapping in NativeException if necessary.
+     */
+    public void storeNativeExceptionInErrorInfo();
+
     public void clearErrorInfo();
 
     public void compileSequencedConditional(

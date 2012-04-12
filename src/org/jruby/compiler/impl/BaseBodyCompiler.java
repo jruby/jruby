@@ -1620,6 +1620,12 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         invokeUtilityMethod("storeExceptionInErrorInfo", sig(void.class, Throwable.class, ThreadContext.class));
     }
 
+    public void storeNativeExceptionInErrorInfo() {
+        loadException();
+        loadThreadContext();
+        invokeUtilityMethod("storeNativeExceptionInErrorInfo", sig(void.class, Throwable.class, ThreadContext.class));
+    }
+
     public void clearErrorInfo() {
         loadThreadContext();
         invokeUtilityMethod("clearErrorInfo", sig(void.class, ThreadContext.class));

@@ -1,8 +1,7 @@
 package org.jruby.javasupport.util;
 
-import java.util.ArrayList;
-import java.util.StringTokenizer;
 import org.jruby.MetaClass;
+import org.jruby.NativeException;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBasicObject;
@@ -73,6 +72,9 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.unsafe.UnsafeFactory;
+
+import java.util.ArrayList;
+import java.util.StringTokenizer;
 
 import static org.jruby.runtime.MethodIndex.OP_EQUAL;
 
@@ -1124,6 +1126,20 @@ public class RuntimeHelpers {
             exception = ((RaiseException)currentThrowable).getException();
         } else {
             exception = JavaUtil.convertJavaToUsableRubyObject(context.getRuntime(), currentThrowable);
+        }
+        context.setErrorInfo(exception);
+    }
+
+    public static void storeNativeExceptionInErrorInfo(Throwable currentThrowable, ThreadContext context) {
+        IRubyObject exception = null;
+        if (currentThrowable instanceof RaiseException) {
+            exception = ((RaiseException)currentThrowable).getException();
+        } else {
+            Ruby runtime = context.runtime;
+
+            // wrap Throwable in a NativeException object
+            exception = new NativeException(runtime, runtime.getNativeException(), currentThrowable);
+            ((NativeException)exception).prepareIntegratedBacktrace(context, currentThrowable.getStackTrace());
         }
         context.setErrorInfo(exception);
     }

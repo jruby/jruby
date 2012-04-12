@@ -3659,7 +3659,26 @@ public class ASTCompiler {
                     compile(realBody, context, true);
                     context.clearErrorInfo();
                 } else {
-                    context.storeExceptionInErrorInfo();
+                    // FIXME
+                    // This is using the static constant name being rescued to determine
+                    // whether to lazily wrap, where the interpreter actually uses the
+                    // runtime rescued type. This is a behavioral difference, but only
+                    // visible if someone is rescuing NativeException as some other name.
+                    // It should be fixed to do it "right" but as rescuing NativeException
+                    // is largely deprecated, this may be a non-issue.
+                    List<Node> exceptionNodes = null;
+                    if (exceptionList != null) {
+                        exceptionNodes = exceptionList.childNodes();
+                    }
+                    if (exceptionNodes != null &&
+                            exceptionNodes.size() == 1 &&
+                            exceptionNodes.get(0) instanceof ConstNode &&
+                            ((ConstNode) exceptionNodes.get(0)).getName().equals("NativeException")) {
+                        context.storeNativeExceptionInErrorInfo();
+                    } else {
+                        context.storeExceptionInErrorInfo();
+                    }
+
                     if (light) {
                         compile(rescueBodyNode.getBodyNode(), context, true);
                     } else {

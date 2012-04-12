@@ -289,6 +289,7 @@ if $0 == __FILE__
   require $0
 else
   # call Tracer.on only if required by -r command-line option
+  p caller(0)
   count = caller.count {|bt| /\/rubygems\/custom_require.rb:/ !~ bt}
   if (defined?(Gem) and count == 0) or
      (!defined?(Gem) and count <= 1)
