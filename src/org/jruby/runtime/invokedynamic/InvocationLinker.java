@@ -361,7 +361,7 @@ public class InvocationLinker {
                 curry = false;
             } else {
                 // wipe out site with this new type and method
-                if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\ttriggered site rebind " + logMethod(entry.method));
+                if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\ttriggered site #" + site.siteID() + " rebind " + logMethod(entry.method));
                 fallback = (block?FALLBACKS_B:FALLBACKS)[arity];
                 site.clearTypes();
                 curry = true;

@@ -33,6 +33,8 @@ import java.lang.invoke.MutableCallSite;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.callsite.CacheEntry;
 
@@ -46,6 +48,8 @@ public class JRubyCallSite extends MutableCallSite {
     private final boolean expression;
     private final String name;
     private int clearCount;
+    private static final AtomicLong SITE_ID = new AtomicLong(1);
+    private final long siteID = SITE_ID.getAndIncrement();
 
     public JRubyCallSite(Lookup lookup, MethodType type, CallType callType, String name, boolean attrAssign, boolean iterator, boolean expression) {
         super(type);
@@ -100,5 +104,9 @@ public class JRubyCallSite extends MutableCallSite {
     
     public int clearCount() {
         return clearCount;
+    }
+
+    public long siteID() {
+        return siteID;
     }
 }
