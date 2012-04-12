@@ -80,7 +80,7 @@ import static org.jruby.runtime.invokedynamic.InvokeDynamicSupport.*;
 public class InvocationLinker {
     private static final Logger LOG = LoggerFactory.getLogger("InvocationLinker");
     
-    public static CallSite invocationBootstrap(Lookup lookup, String name, MethodType type) throws NoSuchMethodException, IllegalAccessException {
+    public static CallSite invocationBootstrap(Lookup lookup, String name, MethodType type, String file, int line) throws NoSuchMethodException, IllegalAccessException {
         CallSite site;
         String[] names = name.split(":");
         String operation = names[0];
@@ -95,25 +95,25 @@ public class InvocationLinker {
         
         String method = JavaNameMangler.demangleMethodName(names[1]);
         if (operation.equals("call")) {
-            site = new JRubyCallSite(lookup, type, CallType.NORMAL, method, false, false, true);
+            site = new JRubyCallSite(lookup, type, CallType.NORMAL, file, line, method, false, false, true);
         } else if (operation.equals("fcall")) {
-            site = new JRubyCallSite(lookup, type, CallType.FUNCTIONAL, method, false, false, true);
+            site = new JRubyCallSite(lookup, type, CallType.FUNCTIONAL, file, line, method, false, false, true);
         } else if (operation.equals("vcall")) {
-            site = new JRubyCallSite(lookup, type, CallType.VARIABLE, method, false, false, true);
+            site = new JRubyCallSite(lookup, type, CallType.VARIABLE, file, line, method, false, false, true);
         } else if (operation.equals("callIter")) {
-            site = new JRubyCallSite(lookup, type, CallType.NORMAL, method, false, true, true);
+            site = new JRubyCallSite(lookup, type, CallType.NORMAL, file, line, method, false, true, true);
         } else if (operation.equals("fcallIter")) {
-            site = new JRubyCallSite(lookup, type, CallType.FUNCTIONAL, method, false, true, true);
+            site = new JRubyCallSite(lookup, type, CallType.FUNCTIONAL, file, line, method, false, true, true);
         } else if (operation.equals("vcallIter")) {
-            site = new JRubyCallSite(lookup, type, CallType.VARIABLE, method, false, true, true);
+            site = new JRubyCallSite(lookup, type, CallType.VARIABLE, file, line, method, false, true, true);
         } else if (operation.equals("attrAssign")) {
-            site = new JRubyCallSite(lookup, type, CallType.NORMAL, method, true, false, false);
+            site = new JRubyCallSite(lookup, type, CallType.NORMAL, file, line, method, true, false, false);
         } else if (operation.equals("attrAssignSelf")) {
-            site = new JRubyCallSite(lookup, type, CallType.VARIABLE, method, true, false, false);
+            site = new JRubyCallSite(lookup, type, CallType.VARIABLE, file, line, method, true, false, false);
         } else if (operation.equals("attrAssignExpr")) {
-            site = new JRubyCallSite(lookup, type, CallType.NORMAL, method, true, false, true);
+            site = new JRubyCallSite(lookup, type, CallType.NORMAL, file, line, method, true, false, true);
         } else if (operation.equals("attrAssignSelfExpr")) {
-            site = new JRubyCallSite(lookup, type, CallType.VARIABLE, method, true, false, true);
+            site = new JRubyCallSite(lookup, type, CallType.VARIABLE, file, line, method, true, false, true);
         } else {
             throw new RuntimeException("wrong invokedynamic target: " + name);
         }
@@ -361,7 +361,7 @@ public class InvocationLinker {
                 curry = false;
             } else {
                 // wipe out site with this new type and method
-                if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\ttriggered site #" + site.siteID() + " rebind " + logMethod(entry.method));
+                if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\ttriggered site #" + site.siteID() + " rebind (" + site.file() + ":" + site.line() + ")");
                 fallback = (block?FALLBACKS_B:FALLBACKS)[arity];
                 site.clearTypes();
                 curry = true;

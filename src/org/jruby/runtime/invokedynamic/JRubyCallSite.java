@@ -50,8 +50,10 @@ public class JRubyCallSite extends MutableCallSite {
     private int clearCount;
     private static final AtomicLong SITE_ID = new AtomicLong(1);
     private final long siteID = SITE_ID.getAndIncrement();
+    private final String file;
+    private final int line;
 
-    public JRubyCallSite(Lookup lookup, MethodType type, CallType callType, String name, boolean attrAssign, boolean iterator, boolean expression) {
+    public JRubyCallSite(Lookup lookup, MethodType type, CallType callType, String file, int line, String name, boolean attrAssign, boolean iterator, boolean expression) {
         super(type);
         this.lookup = lookup;
         this.callType = callType;
@@ -59,6 +61,8 @@ public class JRubyCallSite extends MutableCallSite {
         this.iterator = iterator;
         this.expression = expression;
         this.name = name;
+        this.file = file;
+        this.line = line;
     }
     
     public Lookup lookup() {
@@ -108,5 +112,13 @@ public class JRubyCallSite extends MutableCallSite {
 
     public long siteID() {
         return siteID;
+    }
+
+    public String file() {
+        return file;
+    }
+
+    public int line() {
+        return line;
     }
 }

@@ -84,6 +84,8 @@ public class InvokeDynamicSupport {
     public final static String BOOTSTRAP_STRING_CALLTYPE_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, CallType.class);
     public final static String BOOTSTRAP_LONG_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, long.class);
     public final static String BOOTSTRAP_DOUBLE_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, double.class);
+    public final static String BOOTSTRAP_LONG_STRING_INT_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, long.class, String.class, int.class);
+    public final static String BOOTSTRAP_DOUBLE_STRING_INT_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, double.class, String.class, int.class);
     public final static String BOOTSTRAP_STRING_INT_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, int.class);
     public final static String BOOTSTRAP_STRING_LONG_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, long.class);
     public final static String BOOTSTRAP_STRING_DOUBLE_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, double.class);
@@ -97,7 +99,7 @@ public class InvokeDynamicSupport {
     }
     
     public static Handle getInvocationHandle() {
-        return getBootstrapHandle("invocationBootstrap", InvocationLinker.class, BOOTSTRAP_BARE_SIG);
+        return getBootstrapHandle("invocationBootstrap", InvocationLinker.class, BOOTSTRAP_STRING_INT_SIG);
     }
     
     public static Handle getConstantHandle() {
@@ -157,15 +159,15 @@ public class InvokeDynamicSupport {
     }
     
     public static Handle getFixnumOperatorHandle() {
-        return getBootstrapHandle("fixnumOperatorBootstrap", MathLinker.class, BOOTSTRAP_LONG_SIG);
+        return getBootstrapHandle("fixnumOperatorBootstrap", MathLinker.class, BOOTSTRAP_LONG_STRING_INT_SIG);
     }
     
     public static Handle getFixnumBooleanHandle() {
-        return getBootstrapHandle("fixnumBooleanBootstrap", MathLinker.class, BOOTSTRAP_LONG_SIG);
+        return getBootstrapHandle("fixnumBooleanBootstrap", MathLinker.class, BOOTSTRAP_LONG_STRING_INT_SIG);
     }
     
     public static Handle getFloatOperatorHandle() {
-        return getBootstrapHandle("floatOperatorBootstrap", MathLinker.class, BOOTSTRAP_DOUBLE_SIG);
+        return getBootstrapHandle("floatOperatorBootstrap", MathLinker.class, BOOTSTRAP_DOUBLE_STRING_INT_SIG);
     }
     
     public static Handle getVariableHandle() {

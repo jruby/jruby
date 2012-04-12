@@ -86,7 +86,9 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
         method.invokedynamic(
                 "attrAssign" + (selfCall ? "Self" : "") + (expr ? "Expr" : "") + ":" + JavaNameMangler.mangleMethodName(name),
                 signature,
-                InvokeDynamicSupport.getInvocationHandle());
+                InvokeDynamicSupport.getInvocationHandle(),
+                methodCompiler.getScriptCompiler().getSourcename(),
+                methodCompiler.getLastLine());
         
         // TODO: void invokedynamic to avoid pop
         if (!expr) method.pop();
@@ -180,7 +182,11 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
         }
         
         // adapter, tc, recv, args{0,1}, block{0,1}]
-        method.invokedynamic(invokeName, signature, InvokeDynamicSupport.getInvocationHandle());
+        method.invokedynamic(invokeName,
+                signature,
+                InvokeDynamicSupport.getInvocationHandle(),
+                methodCompiler.getScriptCompiler().getSourcename(),
+                methodCompiler.getLastLine());
     }
 
     public void invokeDynamicVarargs(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback, CallType callType, CompilerCallback closureArg, boolean iterator) {
@@ -232,7 +238,11 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
         }
 
         // adapter, tc, recv, args{0,1}, block{0,1}]
-        method.invokedynamic(invokeName, signature, InvokeDynamicSupport.getInvocationHandle());
+        method.invokedynamic(invokeName,
+                signature,
+                InvokeDynamicSupport.getInvocationHandle(),
+                methodCompiler.getScriptCompiler().getSourcename(),
+                methodCompiler.getLastLine());
     }
 
     @Override
@@ -282,7 +292,12 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
             }
         }
 
-        method.invokedynamic("yieldSpecific", signature, InvokeDynamicSupport.getInvocationHandle());
+        method.invokedynamic(
+                "yieldSpecific",
+                signature,
+                InvokeDynamicSupport.getInvocationHandle(),
+                methodCompiler.getScriptCompiler().getSourcename(),
+                methodCompiler.getLastLine());
     }
 
     @Override
@@ -306,7 +321,13 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
 
         String signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class));
 
-        method.invokedynamic("fixnumOperator:" + JavaNameMangler.mangleMethodName(name), signature, InvokeDynamicSupport.getFixnumOperatorHandle(), fixnum);
+        method.invokedynamic(
+                "fixnumOperator:" + JavaNameMangler.mangleMethodName(name),
+                signature,
+                InvokeDynamicSupport.getFixnumOperatorHandle(),
+                fixnum,
+                methodCompiler.getScriptCompiler().getSourcename(),
+                methodCompiler.getLastLine());
     }
 
     @Override
@@ -330,7 +351,13 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
 
         String signature = sig(boolean.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class));
 
-        method.invokedynamic("fixnumBoolean:" + JavaNameMangler.mangleMethodName(name), signature, InvokeDynamicSupport.getFixnumBooleanHandle(), fixnum);
+        method.invokedynamic(
+                "fixnumBoolean:" + JavaNameMangler.mangleMethodName(name),
+                signature,
+                InvokeDynamicSupport.getFixnumBooleanHandle(),
+                fixnum,
+                methodCompiler.getScriptCompiler().getSourcename(),
+                methodCompiler.getLastLine());
     }
     
     public void invokeBinaryFloatRHS(String name, CompilerCallback receiverCallback, double flote) {
@@ -353,6 +380,12 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
 
         String signature = sig(IRubyObject.class, params(ThreadContext.class, IRubyObject.class, IRubyObject.class));
 
-        method.invokedynamic("floatOperator:" + JavaNameMangler.mangleMethodName(name), signature, InvokeDynamicSupport.getFloatOperatorHandle(), flote);
+        method.invokedynamic(
+                "floatOperator:" + JavaNameMangler.mangleMethodName(name),
+                signature,
+                InvokeDynamicSupport.getFloatOperatorHandle(),
+                flote,
+                methodCompiler.getScriptCompiler().getSourcename(),
+                methodCompiler.getLastLine());
     }
 }

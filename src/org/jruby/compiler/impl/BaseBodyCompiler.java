@@ -181,6 +181,10 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         method.visitLineNumber(thisLine + 1, line);
     }
 
+    public int getLastLine() {
+        return lastLine;
+    }
+
     public void loadThreadContext() {
         method.aload(StandardASMCompiler.THREADCONTEXT_INDEX);
     }
