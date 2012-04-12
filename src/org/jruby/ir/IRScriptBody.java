@@ -17,7 +17,7 @@ public class IRScriptBody extends IRScope {
             StaticScope staticScope) {
         super(manager, null, sourceName, sourceName, 0, staticScope);
         
-        if (!IRBuilder.inIRGenOnlyMode()) {
+        if (!getManager().isDryRun()) {
             if (staticScope != null) ((IRStaticScope)staticScope).setIRScope(this);
         }
     }

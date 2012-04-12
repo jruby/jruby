@@ -62,12 +62,12 @@ public class IRClosure extends IRScope {
         this.isForLoopBody = isForLoopBody;
         this.blockArgs = new ArrayList<Operand>();
         
-        if (!IRBuilder.inIRGenOnlyMode()) {
+        if (getManager().isDryRun()) {
+            this.body = null;
+        } else {
             this.body = is1_9 ? new InterpretedIRBlockBody19(this, arity, argumentType)
                               : new InterpretedIRBlockBody(this, arity, argumentType);
             if ((staticScope != null) && !isForLoopBody) ((IRStaticScope)staticScope).setIRScope(this);
-        } else {
-            this.body = null;
         }
 
         // set nesting depth -- after isForLoopBody value is set

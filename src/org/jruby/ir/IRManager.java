@@ -30,9 +30,20 @@ public class IRManager {
     private List<CompilerPass> compilerPasses = new ArrayList<CompilerPass>();
     private List<CompilerPass> inliningCompilerPasses = new ArrayList<CompilerPass>();
     
+    // If true then code will not execute (see ir/ast tool)
+    private boolean dryRun = false;
+    
     public IRManager() {
         compilerPasses = CompilerPass.getPassesFromString(RubyInstanceConfig.IR_COMPILER_PASSES, DEFAULT_COMPILER_PASSES);
         inliningCompilerPasses = CompilerPass.getPassesFromString(RubyInstanceConfig.IR_COMPILER_PASSES, DEFAULT_INLINING_COMPILER_PASSES);
+    }
+    
+    public boolean isDryRun() {
+        return dryRun;
+    }
+    
+    public void setDryRun(boolean value) {
+        this.dryRun = value;
     }
     
     public Nil getNil() {

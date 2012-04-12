@@ -282,11 +282,6 @@ public class IRBuilder {
 
     private static final Logger LOG = LoggerFactory.getLogger("IRBuilder");
     private static String  rubyVersion = "1.8"; // default is 1.8
-    private static boolean inIRGenOnlyMode = false;
-
-    public static boolean inIRGenOnlyMode() {
-        return inIRGenOnlyMode;
-    }
 
     public static void setRubyVersion(String rubyVersion) {
         IRBuilder.rubyVersion = rubyVersion;
@@ -300,7 +295,6 @@ public class IRBuilder {
         boolean isDebug = args.length > 0 && args[0].equals("-debug");
         int     i = isDebug ? 1 : 0;
 
-        IRBuilder.inIRGenOnlyMode = true;
         LOG.setDebugEnable(isDebug);
 
         boolean isCommandLineScript = args.length > i && args[i].equals("-e");

@@ -30,7 +30,7 @@ public class IRMethod extends IRScope {
         this.isInstanceMethod = isInstanceMethod;
         this.callArgs = new ArrayList<Operand>();
         this.argDesc = new ArrayList<String[]>();
-        if (!IRBuilder.inIRGenOnlyMode()) {
+        if (!getManager().isDryRun()) {
             if (staticScope != null) ((IRStaticScope)staticScope).setIRScope(this);
         }
     }

@@ -15,7 +15,7 @@ public class IRModuleBody extends IRScope {
             String fileName, int lineNumber, StaticScope scope) {
         super(manager, lexicalParent, name, fileName, lineNumber, scope);
 
-        if (!IRBuilder.inIRGenOnlyMode()) {
+        if (!getManager().isDryRun()) {
             if (scope != null) ((IRStaticScope)scope).setIRScope(this);
             updateVersion();
         }

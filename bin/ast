@@ -21,6 +21,10 @@ OptionParser.new do |opts|
     puts opts
     exit true
   end
+
+  opts.on('-i', '--ir', 'Dump all IR passes without executing') do |h|
+    options[:print_ir] = true
+  end
   
   opts.on('-s', '--sexp', 'Display the S-Expression for the AST') do |t|
     options[:print_sexp] = true
@@ -136,6 +140,24 @@ if options[:print_ast]
     print "AST:"
     puts indent(root.to_string) 
     puts
+  end
+end
+
+if options[:print_ir]
+  require 'jruby'
+  runtime = JRuby::runtime
+  manager = runtime.ir_manager
+
+  manager.dry_run = true
+  JRuby::IR.compiler_debug = true
+
+
+  builder = runtime.is1_9 ? org.jruby.ir.IRBuilder19 : org.jruby.ir.IRBuilder
+
+  scope = builder.new(manager).build_root(root)
+
+  manager.get_compiler_passes(scope).each do |pass|
+    pass.run(scope)
   end
 end
 
