@@ -96,7 +96,7 @@ public class BacktraceData implements Serializable {
 
                         // pull out and demangle the method name
                         index += "$RUBY$".length();
-                        if (methodName.indexOf("SYNTHETIC", index) == 0) {
+                        if (methodName.indexOf("SYNTHETIC", index) == index) {
                             methodName = methodName.substring(index + "SYNTHETIC".length());
                         } else {
                             methodName = methodName.substring(index);
