@@ -2,15 +2,16 @@ package org.jruby.ext.ffi.jffi;
 
 import com.headius.invokebinder.Binder;
 import com.kenai.jffi.CallContext;
-import com.kenai.jffi.Invoker;
 import com.kenai.jffi.Platform;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
+import org.jruby.RubyModule;
 import org.jruby.ext.ffi.NativeType;
 import org.jruby.ext.ffi.Type;
+import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
 import org.jruby.runtime.invokedynamic.JRubyCallSite;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.log.Logger;
@@ -19,20 +20,30 @@ import org.jruby.util.log.LoggerFactory;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.reflect.Method;
 import java.util.Arrays;
 
+import static java.lang.invoke.MethodType.methodType;
 import static org.jruby.runtime.invokedynamic.InvokeDynamicSupport.findStatic;
 
 /**
  *
  */
-public class InvokeDynamic {
+public final class InvokeDynamic {
     private static final Logger LOG = LoggerFactory.getLogger("ffi invokedynamic");
     private InvokeDynamic() {}
 
 
     public static MethodHandle getMethodHandle(JRubyCallSite site, DynamicMethod method) {
-        return getFastNumericMethodHandle(site, method);
+        MethodHandle fast = getFastNumericMethodHandle(site, method);
+        if (fast == null) {
+            return generateNativeInvokerHandle(site, method);
+        }
+
+        MethodHandle guard = getDirectPointerParameterGuard(site, method);
+        return guard != null
+            ? MethodHandles.guardWithTest(guard, fast, generateNativeInvokerHandle(site, method))
+            : fast;
     }
 
     public static MethodHandle getFastNumericMethodHandle(JRubyCallSite site, DynamicMethod method) {
@@ -40,13 +51,23 @@ public class InvokeDynamic {
                 ? ((NativeInvoker) method).getSignature()
                 : ((DefaultMethod) method).getSignature();
 
-        JITSignature jitSignature = new JITSignature(signature);
-        AbstractNumericMethodGenerator generator = getNumericMethodGenerator(jitSignature);
-        if (generator == null) {
-            return null;
-        }
 
-        Class nativeIntClass = generator.getInvokerIntType();
+        CallContext callContext = (method instanceof NativeInvoker)
+                ? ((NativeInvoker) method).getCallContext()
+                : ((DefaultMethod) method).getCallContext();
+
+        long functionAddress = (method instanceof NativeInvoker)
+                ? ((NativeInvoker) method).getFunctionAddress()
+                : ((DefaultMethod) method).getFunctionAddress();
+
+        MethodHandle nativeInvoker;
+        Method invokerMethod;
+
+        com.kenai.jffi.InvokeDynamicSupport.Invoker jffiInvoker = com.kenai.jffi.InvokeDynamicSupport.getFastNumericInvoker(callContext, functionAddress);
+        nativeInvoker = (MethodHandle) jffiInvoker.getMethodHandle();
+        invokerMethod = jffiInvoker.getMethod();
+
+        Class nativeIntClass = invokerMethod.getReturnType();
 
         MethodHandle resultFilter = getResultFilter(method.getImplementationClass().getRuntime(), signature.getResultType().getNativeType(), nativeIntClass);
         if (resultFilter == null) {
@@ -58,28 +79,8 @@ public class InvokeDynamic {
             return null;
         }
 
-        Class[] invokerParams = new Class[2 + signature.getParameterCount()];
-        invokerParams[0] = CallContext.class;
-        invokerParams[1] = long.class;
-        Arrays.fill(invokerParams, 2, invokerParams.length, nativeIntClass);
-
-        MethodHandle nativeInvoker = InvokeDynamicSupport.findVirtual(Invoker.class,
-                generator.getInvokerMethodName(jitSignature),
-                MethodType.methodType(nativeIntClass, invokerParams));
-        nativeInvoker = nativeInvoker.bindTo(Invoker.getInstance());
-
-
-        CallContext callContext = (method instanceof NativeInvoker)
-                ? ((NativeInvoker) method).getCallContext()
-                : ((DefaultMethod) method).getCallContext();
-
-        long functionAddress = (method instanceof NativeInvoker)
-                ? ((NativeInvoker) method).getFunctionAddress()
-                : ((DefaultMethod) method).getFunctionAddress();
-
         MethodHandle targetHandle = Binder.from(IRubyObject.class, CodegenUtils.params(IRubyObject.class, signature.getParameterCount()))
                 .filter(0, parameterFilters)
-                .insert(0, callContext, functionAddress)
                 .filterReturn(resultFilter)
                 .invoke(nativeInvoker);
 
@@ -95,11 +96,63 @@ public class InvokeDynamic {
                 + "\tbound to ffi method "
                 + logMethod(method)
                 + String.format("[function address=%x]: ", functionAddress)
-                + generator.getInvokerIntType() + " "
-                + Invoker.class.getName() + "." + generator.getInvokerMethodName(jitSignature)
-                + CodegenUtils.prettyShortParams(invokerParams));
+                + invokerMethod);
 
         return methodHandle;
+    }
+
+    private static MethodHandle generateNativeInvokerHandle(JRubyCallSite site, DynamicMethod method) {
+        if (method instanceof org.jruby.ext.ffi.jffi.DefaultMethod) {
+            NativeInvoker nativeInvoker = ((org.jruby.ext.ffi.jffi.DefaultMethod) method).forceCompilation();
+            if (nativeInvoker == null) {
+                // Compilation failed, cannot build a native handle for it
+                return null;
+            }
+
+            method = nativeInvoker;
+        }
+
+        if (method.getArity().isFixed() && method.getArity().getValue() <= 6 && method.getCallConfig() == CallConfiguration.FrameNoneScopeNone) {
+            Class[] callMethodParameters = new Class[4 + method.getArity().getValue()];
+            callMethodParameters[0] = ThreadContext.class;
+            callMethodParameters[1] = IRubyObject.class;
+            callMethodParameters[2] = RubyModule.class;
+            callMethodParameters[3] = String.class;
+            Arrays.fill(callMethodParameters, 4, callMethodParameters.length, IRubyObject.class);
+
+            MethodHandle nativeTarget;
+            try {
+                nativeTarget = site.lookup().findVirtual(method.getClass(), "call",
+                        methodType(IRubyObject.class, callMethodParameters));
+
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+
+            int argCount = method.getArity().getValue();
+            if (argCount > 3) {
+                // Expand the incoming IRubyObject[] parameter array to individual params
+                nativeTarget = nativeTarget.asSpreader(IRubyObject[].class, argCount);
+            }
+
+            nativeTarget = Binder.from(site.type())
+                    .drop(1, 1)
+                    .insert(2, method.getImplementationClass(), site.name())
+                    .invoke(nativeTarget.bindTo(method));
+
+            method.setHandle(nativeTarget);
+            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name() + "\tbound to ffi method "
+                    + logMethod(method) + ": "
+                    + IRubyObject.class.getSimpleName() + " "
+                    + method.getClass().getSimpleName() + ".call"
+                    + CodegenUtils.prettyShortParams(callMethodParameters));
+
+            return nativeTarget;
+        }
+
+
+        // can't build native handle for it
+        return null;
     }
 
     private static AbstractNumericMethodGenerator getNumericMethodGenerator(JITSignature jitSignature) {
@@ -261,6 +314,13 @@ public class InvokeDynamic {
                     ph = findParameterHelper("u64Value", nativeIntClass);
                     break;
 
+                case POINTER:
+                case BUFFER_IN:
+                case BUFFER_OUT:
+                case BUFFER_INOUT:
+                    ph = findParameterHelper("pointerValue", nativeIntClass);
+                    break;
+
                 default:
                     return null;
             }
@@ -269,5 +329,47 @@ public class InvokeDynamic {
 
         }
         return parameterFilters;
+    }
+
+    private static MethodHandle getDirectPointerParameterGuard(JRubyCallSite site, DynamicMethod method) {
+        Signature signature = (method instanceof NativeInvoker)
+                ? ((NativeInvoker) method).getSignature()
+                : ((DefaultMethod) method).getSignature();
+        MethodHandle[] guards = new MethodHandle[signature.getParameterCount()];
+        Arrays.fill(guards, 0, guards.length, Binder.from(boolean.class, IRubyObject.class).drop(0, 1).constant(true));
+
+        boolean guardNeeded = false;
+        for (int i = 0; i < signature.getParameterCount(); i++) {
+            switch (signature.getParameterType(i).getNativeType()) {
+                case POINTER:
+                case BUFFER_IN:
+                case BUFFER_OUT:
+                case BUFFER_INOUT:
+                    guards[i] = findStatic(JITRuntime.class, "isDirectPointer", MethodType.methodType(boolean.class, IRubyObject.class));
+                    guardNeeded = true;
+                    break;
+
+            }
+        }
+
+        if (!guardNeeded) {
+            return null;
+        }
+
+        MethodHandle isTrue = findStatic(JITRuntime.class, "isTrue",
+                methodType(boolean.class, CodegenUtils.params(boolean.class, signature.getParameterCount())));
+
+        if (signature.getParameterCount() > 3) {
+            // Expand the incoming IRubyObject[] parameter array to individual params
+            isTrue = isTrue.asSpreader(IRubyObject[].class, signature.getParameterCount());
+        }
+
+        isTrue = Binder.from(boolean.class, CodegenUtils.params(IRubyObject.class, signature.getParameterCount()))
+                .filter(0, guards)
+                .invoke(isTrue);
+
+        return Binder.from(site.type().changeReturnType(boolean.class))
+                .drop(0, 3)
+                .invoke(isTrue);
     }
 }

@@ -1344,56 +1344,6 @@ public class InvocationLinker {
             return nativeTarget;
         }
 
-        if (method instanceof org.jruby.ext.ffi.jffi.DefaultMethod) {
-            NativeInvoker nativeInvoker = ((org.jruby.ext.ffi.jffi.DefaultMethod) method).forceCompilation();
-            if (nativeInvoker == null) {
-                // Compilation failed, cannot build a native handle for it
-                return null;
-            }
-
-            method = nativeInvoker;
-        }
-
-        if (method.getArity().isFixed() && method.getArity().getValue() <= 6 && method.getCallConfig() == CallConfiguration.FrameNoneScopeNone) {
-            Class[] callMethodParameters = new Class[4 + method.getArity().getValue()];
-            callMethodParameters[0] = ThreadContext.class;
-            callMethodParameters[1] = IRubyObject.class;
-            callMethodParameters[2] = RubyModule.class;
-            callMethodParameters[3] = String.class;
-            Arrays.fill(callMethodParameters, 4, callMethodParameters.length, IRubyObject.class);
-
-            try {
-                nativeTarget = site.lookup().findVirtual(method.getClass(), "call",
-                        methodType(IRubyObject.class, callMethodParameters));
-
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-
-            int argCount = method.getArity().getValue();
-            if (argCount > 3) {
-                // Expand the incoming IRubyObject[] parameter array to individual params
-                nativeTarget = nativeTarget.asSpreader(IRubyObject[].class, argCount);
-            }
-
-            int sigIndex = Math.min(argCount, 4);
-            nativeTarget = Binder.from(STANDARD_NATIVE_TYPES_BLOCK[sigIndex])
-                    .permute(TC_SELF_ARGS_PERMUTES[sigIndex])
-                    .cast(TARGET_TC_SELF_ARGS[sigIndex])
-                    .insert(2, method.getImplementationClass(), site.name())
-                    .invoke(nativeTarget.bindTo(method));
-
-            method.setHandle(nativeTarget);
-            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name() + "\tbound to ffi method "
-                    + logMethod(method) + ": "
-                    + IRubyObject.class.getSimpleName() + " "
-                    + method.getClass().getSimpleName() + ".call"
-                    + CodegenUtils.prettyShortParams(callMethodParameters));
-
-            return nativeTarget;
-        }
-
-
         // can't build native handle for it
         return null;
     }

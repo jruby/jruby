@@ -483,4 +483,40 @@ public final class JITRuntime {
             throw parameter.getRuntime().newTypeError("cannot convert parameter to native pointer");
         }
     }
+
+    public static boolean isDirectPointer(IRubyObject parameter) {
+        return parameter instanceof Pointer;
+    }
+
+    public static int pointerValue32(IRubyObject parameter) {
+        return (int) pointerParameterStrategy(parameter).address(parameter);
+    }
+
+    public static long pointerValue64(IRubyObject parameter) {
+        return pointerParameterStrategy(parameter).address(parameter);
+    }
+
+    public static boolean isTrue(boolean p1) {
+        return p1;
+    }
+
+    public static boolean isTrue(boolean p1, boolean p2) {
+        return p1 & p2;
+    }
+
+    public static boolean isTrue(boolean p1, boolean p2, boolean p3) {
+        return p1 & p2 & p3;
+    }
+
+    public static boolean isTrue(boolean p1, boolean p2, boolean p3, boolean p4) {
+        return p1 & p2 & p3 & p4;
+    }
+
+    public static boolean isTrue(boolean p1, boolean p2, boolean p3, boolean p4, boolean p5) {
+        return p1 & p2 & p3 & p4 & p5;
+    }
+
+    public static boolean isTrue(boolean p1, boolean p2, boolean p3, boolean p4, boolean p5, boolean p6) {
+        return p1 & p2 & p3 & p4 & p5 & p5 & p6;
+    }
 }
