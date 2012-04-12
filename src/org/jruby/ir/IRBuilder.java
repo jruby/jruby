@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -214,12 +213,6 @@ import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.UnexecutableNil;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
-import org.jruby.ir.passes.CFGBuilder;
-import org.jruby.ir.passes.IRPrinter;
-import org.jruby.ir.passes.LinearizeCFG;
-import org.jruby.ir.passes.LiveVariableAnalysis;
-import org.jruby.ir.passes.DeadCodeElimination;
-import org.jruby.ir.passes.LocalOptimizationPass;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.BlockBody;
@@ -280,7 +273,6 @@ public class IRBuilder {
     protected static final Operand[] NO_ARGS = new Operand[]{};
     protected static final UnexecutableNil U_NIL = UnexecutableNil.U_NIL;
 
-    private static final Logger LOG = LoggerFactory.getLogger("IRBuilder");
     private static String  rubyVersion = "1.8"; // default is 1.8
 
     public static void setRubyVersion(String rubyVersion) {
@@ -289,67 +281,6 @@ public class IRBuilder {
 
     public static boolean is1_9() {
         return rubyVersion.equals("1.9");
-    }
-
-    public static void main(String[] args) {
-        boolean isDebug = args.length > 0 && args[0].equals("-debug");
-        int     i = isDebug ? 1 : 0;
-
-        LOG.setDebugEnable(isDebug);
-
-        boolean isCommandLineScript = args.length > i && args[i].equals("-e");
-        i += (isCommandLineScript ? 1 : 0);
-
-        while (i < args.length) {
-            long t1 = new Date().getTime();
-            Node ast = buildAST(isCommandLineScript, args[i]);
-            long t2 = new Date().getTime();
-            IRManager manager = new IRManager();
-            IRScope scope = createIRBuilder(manager).buildRoot((RootNode) ast);
-            long t3 = new Date().getTime();
-            if (isDebug) {
-                LOG.debug("################## Before local optimization pass ##################");
-                new IRPrinter().run(scope);
-            }
-            new org.jruby.ir.passes.LocalOptimizationPass().run(scope);
-            long t4 = new Date().getTime();
-            if (isDebug) {
-                LOG.debug("################## After local optimization pass ##################");
-                new IRPrinter().run(scope);
-            }
-            new CFGBuilder().run(scope);
-            long t5 = new Date().getTime();
-//            new org.jruby.ir.passes.DominatorTreeBuilder());
-            long t6 = new Date().getTime();
-           
-            if (isDebug) {
-                LOG.debug("################## After dead code elimination pass ##################");
-            }
-            new LiveVariableAnalysis().run(scope);
-            long t7 = new Date().getTime();
-            new DeadCodeElimination().run(scope);
-            long t8 = new Date().getTime();
-            // new AddLocalVarLoadStoreInstructions());
-            // long t9 = new Date().getTime();
-            if (isDebug) {
-                new IRPrinter().run(scope);
-            }
-            new LinearizeCFG().run(scope);
-            if (isDebug) {
-                LOG.debug("################## After cfg linearization pass ##################");
-                new IRPrinter().run(scope);
-            }
-           
-            LOG.debug("Time to build AST         : {}", (t2 - t1));
-            LOG.debug("Time to build IR          : {}", (t3 - t2));
-            LOG.debug("Time to run local opts    : {}", (t4 - t3));
-            LOG.debug("Time to run build cfg     : {}", (t5 - t4));
-            LOG.debug("Time to run build domtree : {}", (t6 - t5));
-            LOG.debug("Time to run lva           : {}", (t7 - t6));
-            LOG.debug("Time to run dead code elim: {}", (t8 - t7));
-            //LOG.debug("Time to add frame instrs  : {}", (t9 - t8));
-            i++;
-        }
     }
 
     /* -----------------------------------------------------------------------------------
