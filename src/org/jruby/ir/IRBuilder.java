@@ -279,8 +279,8 @@ public class IRBuilder {
         IRBuilder.rubyVersion = rubyVersion;
     }
 
-    public static boolean is1_9() {
-        return rubyVersion.equals("1.9");
+    public boolean is1_9() {
+        return false;
     }
 
     /* -----------------------------------------------------------------------------------
@@ -437,8 +437,8 @@ public class IRBuilder {
         }
     }
 
-    public static IRBuilder createIRBuilder(IRManager manager) {
-        return is1_9() ? new IRBuilder19(manager) : new IRBuilder(manager);
+    public static IRBuilder createIRBuilder(IRManager manager, boolean is19) {
+        return is19 ? new IRBuilder19(manager) : new IRBuilder(manager);
     }
 
     public Node skipOverNewlines(IRScope s, Node n) {
@@ -1080,7 +1080,7 @@ public class IRBuilder {
         c.addInstr(new CopyInstr(c.getCurrentScopeVariable(), new CurrentScope(c)));
         c.addInstr(new CopyInstr(c.getCurrentModuleVariable(), new CurrentModule(c)));
         // Create a new nested builder to ensure this gets its own IR builder state 
-        Operand rv = createIRBuilder(manager).build(classNode.getBodyNode(), c);
+        Operand rv = createIRBuilder(manager, is1_9()).build(classNode.getBodyNode(), c);
         if (rv != null) c.addInstr(new ReturnInstr(rv));
 
         return ret;
@@ -1111,7 +1111,7 @@ public class IRBuilder {
         mc.addInstr(new CopyInstr(mc.getCurrentScopeVariable(), new CurrentScope(mc)));
         mc.addInstr(new CopyInstr(mc.getCurrentModuleVariable(), new CurrentModule(mc)));
         // Create a new nested builder to ensure this gets its own IR builder state 
-        Operand rv = createIRBuilder(manager).build(sclassNode.getBodyNode(), mc);
+        Operand rv = createIRBuilder(manager, is1_9()).build(sclassNode.getBodyNode(), mc);
         if (rv != null) mc.addInstr(new ReturnInstr(rv));
 
         return ret;
@@ -1779,7 +1779,7 @@ public class IRBuilder {
         Node bodyNode = defNode.getBodyNode();
         if (bodyNode != null) {
             // Create a new nested builder to ensure this gets its own IR builder state 
-            Operand rv = createIRBuilder(manager).build(bodyNode, method);
+            Operand rv = createIRBuilder(manager, is1_9()).build(bodyNode, method);
             if (rv != null) method.addInstr(new ReturnInstr(rv));
         } else {
             method.addInstr(new ReturnInstr(manager.getNil()));
@@ -2195,7 +2195,7 @@ public class IRBuilder {
 
         // Create a new nested builder to ensure this gets its own IR builder state 
         // like the ensure block stack
-        IRBuilder forBuilder = createIRBuilder(manager);
+        IRBuilder forBuilder = createIRBuilder(manager, is1_9());
 
             // Receive self
         closure.addInstr(new ReceiveSelfInstr(getSelf(closure)));
@@ -2346,7 +2346,7 @@ public class IRBuilder {
 
         // Create a new nested builder to ensure this gets its own IR builder state 
         // like the ensure block stack
-        IRBuilder closureBuilder = createIRBuilder(manager);
+        IRBuilder closureBuilder = createIRBuilder(manager, is1_9());
 
         // Receive self
         closure.addInstr(new ReceiveSelfInstr(getSelf(closure)));
@@ -2470,7 +2470,7 @@ public class IRBuilder {
         m.addInstr(new CopyInstr(m.getCurrentScopeVariable(), new CurrentScope(m)));
         m.addInstr(new CopyInstr(m.getCurrentModuleVariable(), new CurrentModule(m)));
         // Create a new nested builder to ensure this gets its own IR builder state 
-        Operand rv = createIRBuilder(manager).build(moduleNode.getBodyNode(), m);
+        Operand rv = createIRBuilder(manager, is1_9()).build(moduleNode.getBodyNode(), m);
         if (rv != null) m.addInstr(new ReturnInstr(rv));
 
         return ret;

@@ -55,6 +55,11 @@ public class IRBuilder19 extends IRBuilder {
     public IRBuilder19(IRManager manager) {
         super(manager);
     }
+    
+    @Override
+    public boolean is1_9() {
+        return true;
+    }    
 
     @Override
     protected Operand buildVersionSpecificNodes(Node node, IRScope s) {
@@ -376,7 +381,7 @@ public class IRBuilder19 extends IRBuilder {
 
         // Create a new nested builder to ensure this gets its own IR builder state 
         // like the ensure block stack
-        IRBuilder closureBuilder = createIRBuilder(manager);
+        IRBuilder closureBuilder = createIRBuilder(manager, is1_9());
 
         // Receive self
         closure.addInstr(new ReceiveSelfInstr(getSelf(closure)));

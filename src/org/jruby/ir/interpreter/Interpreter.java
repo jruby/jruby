@@ -111,7 +111,7 @@ public class Interpreter {
 
         StaticScope ss = rootNode.getStaticScope();
         IRScope containingIRScope = getEvalContainerScope(runtime, ss);
-        IREvalScript evalScript = IRBuilder.createIRBuilder(runtime.getIRManager()).buildEvalRoot(ss, containingIRScope, file, lineNumber, rootNode);
+        IREvalScript evalScript = IRBuilder.createIRBuilder(runtime.getIRManager(), is_1_9).buildEvalRoot(ss, containingIRScope, file, lineNumber, rootNode);
         evalScript.prepareForInterpretation();
 //        evalScript.runCompilerPass(new CallSplitter());
         ThreadContext context = runtime.getCurrentContext(); 
@@ -143,7 +143,7 @@ public class Interpreter {
     public static IRubyObject interpret(Ruby runtime, Node rootNode, IRubyObject self) {
         if (runtime.is1_9()) IRBuilder.setRubyVersion("1.9");
 
-        IRScriptBody root = (IRScriptBody) IRBuilder.createIRBuilder(runtime.getIRManager()).buildRoot((RootNode) rootNode);
+        IRScriptBody root = (IRScriptBody) IRBuilder.createIRBuilder(runtime.getIRManager(), runtime.is1_9()).buildRoot((RootNode) rootNode);
 
         // We get the live object ball rolling here.  This give a valid value for the top
         // of this lexical tree.  All new scope can then retrieve and set based on lexical parent.
