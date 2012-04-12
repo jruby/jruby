@@ -547,10 +547,6 @@ public final class ThreadContext {
         return backtrace[backtraceIndex].line;
     }
     
-    public void setFile(String file) {
-        backtrace[backtraceIndex].filename = file;
-    }
-    
     public void setLine(int line) {
         backtrace[backtraceIndex].line = line;
     }
@@ -1310,6 +1306,11 @@ public final class ThreadContext {
     
     public void setRecursiveSet(Set<RecursiveComparator.Pair> recursiveSet) {
         this.recursiveSet = recursiveSet;
+    }
+
+    @Deprecated
+    public void setFile(String file) {
+        backtrace[backtraceIndex].filename = file;
     }
     
     private Set<RecursiveComparator.Pair> recursiveSet;
