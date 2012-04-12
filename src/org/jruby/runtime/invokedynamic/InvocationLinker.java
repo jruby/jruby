@@ -81,18 +81,18 @@ public class InvocationLinker {
     private static final Logger LOG = LoggerFactory.getLogger("InvocationLinker");
     
     public static CallSite invocationBootstrap(Lookup lookup, String name, MethodType type, String file, int line) throws NoSuchMethodException, IllegalAccessException {
-        CallSite site;
         String[] names = name.split(":");
         String operation = names[0];
 
         if (name.equals("yieldSpecific")) {
-            site = new MutableCallSite(type);
+            CallSite site = new MutableCallSite(type);
             MethodHandle target = lookup.findStatic(InvocationLinker.class, "yieldSpecificFallback", type.insertParameterTypes(0, MutableCallSite.class));
             target = insertArguments(target, 0, site);
             site.setTarget(target);
             return site;
         }
-        
+
+        JRubyCallSite site;
         String method = JavaNameMangler.demangleMethodName(names[1]);
         if (operation.equals("call")) {
             site = new JRubyCallSite(lookup, type, CallType.NORMAL, file, line, method, false, false, true);
@@ -124,7 +124,8 @@ public class InvocationLinker {
                 fallbackType),
                 0,
                 site);
-        site.setTarget(myFallback);
+
+        site.setInitialTarget(myFallback);
         return site;
     }
     
@@ -361,11 +362,13 @@ public class InvocationLinker {
                 curry = false;
             } else {
                 // wipe out site with this new type and method
-                if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\ttriggered site #" + site.siteID() + " rebind (" + site.file() + ":" + site.line() + ")");
+                String bind = site.boundOnce() ? "rebind" : "bind";
+                if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\ttriggered site #" + site.siteID() + " " + bind + " (" + site.file() + ":" + site.line() + ")");
                 fallback = (block?FALLBACKS_B:FALLBACKS)[arity];
                 site.clearTypes();
                 curry = true;
             }
+
             site.addType(selfClass.id);
             gwt = createGWT(selfClass, (block?TESTS_B:TESTS)[arity], target, fallback, entry, site, curry);
             

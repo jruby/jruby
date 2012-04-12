@@ -27,6 +27,7 @@
 
 package org.jruby.runtime.invokedynamic;
 
+import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
@@ -52,6 +53,7 @@ public class JRubyCallSite extends MutableCallSite {
     private final long siteID = SITE_ID.getAndIncrement();
     private final String file;
     private final int line;
+    private boolean boundOnce = false;
 
     public JRubyCallSite(Lookup lookup, MethodType type, CallType callType, String file, int line, String name, boolean attrAssign, boolean iterator, boolean expression) {
         super(type);
@@ -120,5 +122,23 @@ public class JRubyCallSite extends MutableCallSite {
 
     public int line() {
         return line;
+    }
+
+    public boolean boundOnce() {
+        return boundOnce;
+    }
+
+    public void boundOnce(boolean boundOnce) {
+        this.boundOnce = boundOnce;
+    }
+
+    @Override
+    public void setTarget(MethodHandle target) {
+        super.setTarget(target);
+        boundOnce = true;
+    }
+
+    public void setInitialTarget(MethodHandle target) {
+        super.setTarget(target);
     }
 }
