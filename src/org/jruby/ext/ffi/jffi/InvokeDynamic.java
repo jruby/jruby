@@ -155,24 +155,6 @@ public final class InvokeDynamic {
         return null;
     }
 
-    private static AbstractNumericMethodGenerator getNumericMethodGenerator(JITSignature jitSignature) {
-        // Co-opt the numeric method generators to figure out which jffi method to call
-        AbstractNumericMethodGenerator[] generators = {
-                new FastIntMethodGenerator(),
-                new FastLongMethodGenerator(),
-                new FastNumericMethodGenerator()
-        };
-
-        for (AbstractNumericMethodGenerator generator : generators) {
-            if (generator.isSupported(jitSignature)) {
-                return generator;
-            }
-        }
-
-        return null;
-    }
-
-
     private static String logMethod(DynamicMethod method) {
         return "[#" + method.getSerialNumber() + " " + method.getImplementationClass() + "]";
     }
@@ -312,6 +294,14 @@ public final class InvokeDynamic {
 
                 case ULONG_LONG:
                     ph = findParameterHelper("u64Value", nativeIntClass);
+                    break;
+
+                case FLOAT:
+                    ph = findParameterHelper("f32Value", nativeIntClass);
+                    break;
+
+                case DOUBLE:
+                    ph = findParameterHelper("f64Value", nativeIntClass);
                     break;
 
                 case POINTER:
