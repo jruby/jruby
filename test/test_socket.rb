@@ -294,7 +294,7 @@ class UNIXSocketTests < Test::Unit::TestCase
 
       assert_raises(Timeout::Error) do
         Timeout::timeout(0.1) do
-          IO.select [sock], nil, nil, 0.2
+          IO.select [sock], nil, nil, 1
         end
       end
 
