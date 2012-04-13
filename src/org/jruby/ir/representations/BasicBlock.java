@@ -17,14 +17,16 @@ public class BasicBlock implements ExplicitVertexID {
     private CFG         cfg;            // CFG that this basic block belongs to
     private Label       label;          // All basic blocks have a starting label
     private List<Instr> instrs;         // List of non-label instructions
+    private boolean     isRescueEntry;  // Is this basic block entry of a rescue?
     private Instr[]     instrsArray;
 
     public BasicBlock(CFG c, Label l) {
-        label       = l;
-        cfg         = c;
-        id          = c.getNextBBID();
-        instrs      = new ArrayList<Instr>();
-        instrsArray = null;
+        label         = l;
+        cfg           = c;
+        id            = c.getNextBBID();
+        instrs        = new ArrayList<Instr>();
+        instrsArray   = null;
+        isRescueEntry = false;
     }
 
     public int getID() {
@@ -33,6 +35,14 @@ public class BasicBlock implements ExplicitVertexID {
 
     public Label getLabel() {
         return label;
+    }
+
+    public void markRescueEntryBB() {
+        this.isRescueEntry = true;
+    }
+
+    public boolean isRescueEntry() {
+        return this.isRescueEntry;
     }
 
     public void addInstr(Instr i) {

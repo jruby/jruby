@@ -378,6 +378,9 @@ public class CFG {
         for (ExceptionRegion rr : allExceptionRegions) {
             BasicBlock firstRescueBB = bbMap.get(rr.getFirstRescueBlockLabel());
 
+            // Mark the BB as a rescue entry BB
+            firstRescueBB.markRescueEntryBB();
+
             // 1. Tell the region that firstRescueBB is its protector!
             rr.setFirstRescueBB(firstRescueBB);
 

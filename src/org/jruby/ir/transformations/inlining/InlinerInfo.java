@@ -194,6 +194,7 @@ public class InlinerInfo {
         BasicBlock renamedBB = getRenamedBB(bb);
         if (renamedBB == null) {
             renamedBB =  new BasicBlock(this.callerCFG, getRenamedLabel(bb.getLabel()));
+            if (bb.isRescueEntry()) renamedBB.markRescueEntryBB();
             bbRenameMap.put(bb, renamedBB);
         }
         return renamedBB;
