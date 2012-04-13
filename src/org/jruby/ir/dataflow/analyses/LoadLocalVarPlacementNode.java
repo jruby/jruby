@@ -82,9 +82,16 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode {
                     }
                     reqdLoads = newReqdLoads;
                 }
+
                 // In this case, we are going to blindly load everything -- so, at the call site, pending loads dont carry over!
-                if (call.isDataflowBarrier()) {
-                    reqdLoads.clear();
+                if (call.isDataflowBarrier()) reqdLoads.clear();
+            }
+
+            if (i.canRaiseException()) {
+                // Every one of the vars needed by the exc target would now have to be loaded before the call!
+                // SSS FIXME: Alternatively, the exc. target always loads everything it needs -- that is a better soln.
+                for (LocalVariable v: ((LoadLocalVarPlacementNode)getExceptionTargetNode()).outRequiredLoads) {
+                    reqdLoads.add(v);
                 }
             }
 
@@ -176,10 +183,22 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode {
                 }
             }
 
+            if (i.canRaiseException()) {
+                // Every one of the vars needed by the exc target would now have to be loaded before the call!
+                // SSS FIXME: Alternatively, the exc. target always loads everything it needs -- that is a better soln.
+                for (LocalVariable v: ((LoadLocalVarPlacementNode)getExceptionTargetNode()).outRequiredLoads) {
+                    reqdLoads.add(v);
+                    // SSS FIXME: Why is this reqd again?  Document with example
+                    // Make sure there is a replacement var for all local vars
+                    getLocalVarReplacement(v, s, varRenameMap);
+                }
+            }
+
             if (i.getOperation() == Operation.BINDING_STORE) {
                 LocalVariable lv = ((StoreLocalVarInstr)i).getLocalVar();
                 if (!lv.isSelf()) {
                     reqdLoads.add(lv);
+                    // SSS FIXME: Why is this reqd again?  Document with example
                     // Make sure there is a replacement var for all local vars
                     getLocalVarReplacement(lv, s, varRenameMap);
                 }
@@ -192,6 +211,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode {
                     LocalVariable lv = (LocalVariable)v;
                     if (!lv.isSelf()) {
                         reqdLoads.add(lv);
+                        // SSS FIXME: Why is this reqd again?  Document with example
                         // Make sure there is a replacement var for all local vars
                         getLocalVarReplacement(lv, s, varRenameMap);
                     }
