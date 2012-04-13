@@ -30,6 +30,8 @@
 package org.jruby;
 
 import jnr.constants.platform.Signal;
+import jnr.constants.platform.Sysconf;
+import jnr.posix.Times;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
@@ -931,12 +933,25 @@ public class RubyProcess {
     public static IRubyObject times(ThreadContext context, IRubyObject recv, Block unusedBlock) {
         return times(context.getRuntime());
     }
+
     public static IRubyObject times(Ruby runtime) {
-        double currentTime = System.currentTimeMillis() / 1000.0;
-        double startTime = runtime.getStartTime() / 1000.0;
-        RubyFloat zero = runtime.newFloat(0.0);
-        return RubyStruct.newStruct(runtime.getTmsStruct(), 
-                new IRubyObject[] { runtime.newFloat(currentTime - startTime), zero, zero, zero }, 
+        Times tms = runtime.getPosix().times();
+        if (tms == null) {
+            throw runtime.newErrnoFromLastPOSIXErrno();
+        }
+
+        long hz = runtime.getPosix().sysconf(Sysconf._SC_CLK_TCK);
+        if (hz == -1) {
+            throw runtime.newErrnoFromLastPOSIXErrno();
+        }
+
+        return RubyStruct.newStruct(runtime.getTmsStruct(),
+                new IRubyObject[] {
+                        runtime.newFloat((double) tms.utime() / (double) hz),
+                        runtime.newFloat((double) tms.stime() / (double) hz),
+                        runtime.newFloat((double) tms.cutime() / (double) hz),
+                        runtime.newFloat((double) tms.cstime() / (double) hz)
+                },
                 Block.NULL_BLOCK);
     }
 
