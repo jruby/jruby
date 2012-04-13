@@ -1,6 +1,8 @@
 package org.jruby.ir.passes;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.jruby.ir.IRClosure;
 import org.jruby.ir.IRScope;
@@ -15,8 +17,21 @@ public class AddLocalVarLoadStoreInstructions extends CompilerPass {
         return "Add Local Variable Load/Store Instructions";
     }
 
+    public static List<Class<? extends CompilerPass>> DEPENDENCIES = new ArrayList<Class<? extends CompilerPass>>() {{
+       add(LiveVariableAnalysis.class);
+    }};
+
+    @Override
+    public List<Class<? extends CompilerPass>> getDependencies() {
+        return DEPENDENCIES;
+    }
+
     public Object execute(IRScope s, Object... data) {
-        //        if (s.requiresBinding()) {
+        // SSS FIXME: In ancient times, I had this check that wrapped the code below.
+        // Still useful?
+        //
+        // if (s.requiresBinding()) {
+        // }
 
         // 1. Figure out required stores
         // 2. Add stores
@@ -44,7 +59,6 @@ public class AddLocalVarLoadStoreInstructions extends CompilerPass {
         for (BasicBlock b: s.getCFG().getBasicBlocks()) {
             for (Instr i: b.getInstrs()) i.renameVars(varRenameMap);
         }
-        //       }
 
         // Run on all nested closures.
         // In the current implementation, nested scopes are processed independently (unlike Live Variable Analysis)

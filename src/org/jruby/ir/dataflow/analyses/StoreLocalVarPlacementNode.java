@@ -166,13 +166,11 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode {
         boolean amExitBB = basicBlock == scope.cfg().getExitBB();
         if (amExitBB) {
             LiveVariablesProblem lvp = (LiveVariablesProblem)scope.getDataFlowSolution(DataFlowConstants.LVP_NAME);
-            if (lvp != null) {
-                java.util.Collection<LocalVariable> liveVars = lvp.getVarsLiveOnScopeExit();
-                if (liveVars != null) {
-                    dirtyVars.retainAll(liveVars); // Intersection with variables live on exit from the scope
-                } else {
-                    dirtyVars.clear();
-                }
+            java.util.Collection<LocalVariable> liveVars = lvp.getVarsLiveOnScopeExit();
+            if (liveVars != null) {
+                dirtyVars.retainAll(liveVars); // Intersection with variables live on exit from the scope
+            } else {
+                dirtyVars.clear();
             }
         }
 
@@ -252,13 +250,11 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode {
                 // If this also happens to be exit BB, we would have intersected already earlier -- so no need to do it again!
                 if (!amExitBB) {
                     LiveVariablesProblem lvp = (LiveVariablesProblem)scope.getDataFlowSolution(DataFlowConstants.LVP_NAME);
-                    if (lvp != null) {
-                        java.util.Collection<LocalVariable> liveVars = lvp.getVarsLiveOnScopeExit();
-                        if (liveVars != null) {
-                            dirtyVars.retainAll(liveVars); // Intersection with variables live on exit from the scope
-                        } else {
-                            dirtyVars.clear();
-                        }
+                    java.util.Collection<LocalVariable> liveVars = lvp.getVarsLiveOnScopeExit();
+                    if (liveVars != null) {
+                        dirtyVars.retainAll(liveVars); // Intersection with variables live on exit from the scope
+                    } else {
+                        dirtyVars.clear();
                     }
                 }
 
