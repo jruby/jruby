@@ -46,3 +46,15 @@ end
 def git_move_to_head_detached(label, tag, local_directory)
   git_simple_command('checkout -q `git rev-parse HEAD`', label, local_directory)
 end
+
+def git_submodule_update(path, ignore_error = false)
+  begin
+    sh "git submodule update --init #{path}"
+  rescue Exception => e
+    unless ignore_error
+      raise e
+    else
+      puts "git #{command} failed, but ignored: #{e.message}"
+    end
+  end
+end
