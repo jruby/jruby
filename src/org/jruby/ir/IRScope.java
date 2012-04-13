@@ -521,7 +521,8 @@ public abstract class IRScope {
     }
 
     private void runCompilerPasses() {
-        // forcibly clear out the shared eval-scope variable allocator each time this method executes
+        // SSS FIXME: Why is this again?  Document this weirdness!
+        // Forcibly clear out the shared eval-scope variable allocator each time this method executes
         initEvalScopeVariableAllocator(true); 
         
         // SSS FIXME: We should configure different optimization levels

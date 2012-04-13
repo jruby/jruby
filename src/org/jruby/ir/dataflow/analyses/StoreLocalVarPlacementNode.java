@@ -140,14 +140,8 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode {
     private void addClosureExitStoreLocalVars(IRScope scope, ListIterator<Instr> instrs, Set<LocalVariable> dirtyVars, Map<Operand, Operand> varRenameMap) {
         boolean isEvalScript = scope instanceof IREvalScript;
         for (LocalVariable v : dirtyVars) {
-            if (isEvalScript || !(v instanceof ClosureLocalVariable)) {
+            if (isEvalScript || !(v instanceof ClosureLocalVariable) || (scope != ((ClosureLocalVariable)v).definingScope)) {
                 instrs.add(new StoreLocalVarInstr(getLocalVarReplacement(v, scope, varRenameMap), scope, v));
-            } else {
-                // In a non-eval-script closure, write to a local var from a surrounding scope 
-                IRClosure definingScope = ((ClosureLocalVariable)v).definingScope;
-                if ((scope != definingScope) && scope.isNestedInClosure(definingScope)) {
-                    instrs.add(new StoreLocalVarInstr(getLocalVarReplacement(v, scope, varRenameMap), scope, v));
-                }
             }
         }
     }

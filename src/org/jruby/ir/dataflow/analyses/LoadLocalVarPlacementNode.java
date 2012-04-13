@@ -206,14 +206,8 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode {
             boolean isEvalScript = s instanceof IREvalScript;
             for (LocalVariable v : reqdLoads) {
                 if (s.usesLocalVariable(v) || s.definesLocalVariable(v)) {
-                    if (isEvalScript || !(v instanceof ClosureLocalVariable)) {
+                    if (isEvalScript || !(v instanceof ClosureLocalVariable) || (s != ((ClosureLocalVariable)v).definingScope)) {
                         it.add(new LoadLocalVarInstr(s, getLocalVarReplacement(v, s, varRenameMap), v));
-                    } else {
-                        // In a non-eval-script closure, read of a local var from a surrounding scope
-                        IRClosure definingScope = ((ClosureLocalVariable)v).definingScope;
-                        if ((s != definingScope) && s.isNestedInClosure(definingScope)) {
-                            it.add(new LoadLocalVarInstr(s, getLocalVarReplacement(v, s, varRenameMap), v));
-                        }
                     }
                 }
             }
