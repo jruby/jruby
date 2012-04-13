@@ -4,6 +4,7 @@ import java.util.BitSet;
 import java.util.List;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.representations.BasicBlock;
+import org.jruby.ir.util.Edge;
 
 /* This framework right now implicitly uses the CFG as the flow graph -- perhaps it is worth abstracting away from this assumption
  * so that we can use this framework over non-CFG flow graphs.
@@ -30,7 +31,7 @@ public abstract class FlowGraphNode {
      * is a predecessor of the current node!  The choice of "IN/OUT" is 
      * determined by the direction of data flow.
      */
-    public abstract void compute_MEET(BasicBlock source, FlowGraphNode pred);
+    public abstract void compute_MEET(Edge e, BasicBlock source, FlowGraphNode pred);
 
     /** Compute "OUT/IN" for the current node!  The choice of "IN/OUT" is 
      * determined by the direction of data flow.  OUT/IN = transfer-function
@@ -87,12 +88,14 @@ public abstract class FlowGraphNode {
         // sources & targets depends on direction of the data flow problem
         initSolnForNode();
         if (problem.getFlowDirection() == DataFlowProblem.DF_Direction.FORWARD) {
-            for (BasicBlock b: problem.getScope().cfg().getIncomingSources(basicBlock)) {
-                compute_MEET(b, problem.getFlowGraphNode(b));
+            for (Edge e: problem.getScope().cfg().getIncomingEdges(basicBlock)) {
+                BasicBlock b = (BasicBlock)e.getSource().getData();
+                compute_MEET(e, b, problem.getFlowGraphNode(b));
             }
         } else if (problem.getFlowDirection() == DataFlowProblem.DF_Direction.BACKWARD) {
-            for (BasicBlock b: problem.getScope().cfg().getOutgoingDestinations(basicBlock)) {
-                compute_MEET(b, problem.getFlowGraphNode(b));
+            for (Edge e: problem.getScope().cfg().getOutgoingEdges(basicBlock)) {
+                BasicBlock b = (BasicBlock)e.getDestination().getData();
+                compute_MEET(e, b, problem.getFlowGraphNode(b));
             }
         } else {
             throw new RuntimeException("Bidirectional data flow computation not implemented yet!");

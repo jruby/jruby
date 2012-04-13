@@ -23,6 +23,7 @@ import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.representations.BasicBlock;
+import org.jruby.ir.util.Edge;
 
 public class LoadLocalVarPlacementNode extends FlowGraphNode {
     public LoadLocalVarPlacementNode(DataFlowProblem prob, BasicBlock n) {
@@ -46,7 +47,7 @@ public class LoadLocalVarPlacementNode extends FlowGraphNode {
         }
     }
 
-    public void compute_MEET(BasicBlock source, FlowGraphNode pred) {
+    public void compute_MEET(Edge e, BasicBlock source, FlowGraphNode pred) {
         LoadLocalVarPlacementNode n = (LoadLocalVarPlacementNode) pred;
         inRequiredLoads.addAll(n.outRequiredLoads);
     }

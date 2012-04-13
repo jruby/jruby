@@ -20,6 +20,7 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.representations.BasicBlock;
+import org.jruby.ir.util.Edge;
 
 public class LiveVariableNode extends FlowGraphNode {
     public LiveVariableNode(DataFlowProblem prob, BasicBlock n) {
@@ -61,7 +62,7 @@ public class LiveVariableNode extends FlowGraphNode {
         // System.out.println("Init state for BB " + basicBlock.getID() + " is " + toString());
     }
 
-    public void compute_MEET(BasicBlock source, FlowGraphNode pred) {
+    public void compute_MEET(Edge e, BasicBlock source, FlowGraphNode pred) {
         // System.out.println("computing meet for BB " + basicBlock.getID() + " with BB " + ((LiveVariableNode)pred).basicBlock.getID());
         // All variables live at the entry of 'pred' are also live at exit of this node
         in.or(((LiveVariableNode) pred).out);
@@ -265,7 +266,7 @@ public class LiveVariableNode extends FlowGraphNode {
     void markDeadInstructions() {
         // System.out.println("-- Identifying dead instructions for " + basicBlock.getID() + " -- ");
         LiveVariablesProblem lvp = (LiveVariablesProblem) problem;
-		  IRScope scope = lvp.getScope();
+        IRScope scope = lvp.getScope();
 
         if (in == null) {
            // 'in' cannot be null for reachable bbs
