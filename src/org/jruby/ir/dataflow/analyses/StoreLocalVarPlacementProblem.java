@@ -66,7 +66,7 @@ public class StoreLocalVarPlacementProblem extends DataFlowProblem {
 
         for (FlowGraphNode n : flowGraphNodes) {
             StoreLocalVarPlacementNode bspn = (StoreLocalVarPlacementNode) n;
-            if (mightRequireGlobalEnsureBlock && !cfg.bbIsProtected(bspn.getBB())) {
+            if (mightRequireGlobalEnsureBlock && !bspn.hasExceptionsRescued()) {
                 bspn.addStoreAndBindingAllocInstructions(varRenameMap, dirtyVars);
             } else {
                 bspn.addStoreAndBindingAllocInstructions(varRenameMap, null);

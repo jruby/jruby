@@ -119,9 +119,18 @@ public abstract class FlowGraphNode {
         }
     }
 
+    public boolean hasExceptionsRescued() {
+        return rescuer != null;
+    }
+
     public FlowGraphNode getExceptionTargetNode() {
         // If there is a rescue node, on exception, control goes to the rescuer bb.  If not, it goes to the scope exit.
         return problem.getFlowGraphNode(rescuer == null ? problem.getScope().cfg().getExitBB() : rescuer);
+    }
+
+    public FlowGraphNode getNonExitBBExceptionTargetNode() {
+        // If there is a rescue node, on exception, control goes to the rescuer bb.  If not, it goes to the scope exit.
+        return rescuer == null ? null : problem.getFlowGraphNode(rescuer);
     }
 
 /* --------- protected fields/methods below --------- */
