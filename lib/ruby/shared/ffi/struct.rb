@@ -158,11 +158,12 @@ module FFI
         else
           array_layout(builder, spec)
         end
+
         builder.size = @size if defined?(@size) && @size > builder.size
-        cspec = builder.build
-        @layout = cspec unless self == Struct
-        @size = cspec.size
-        return cspec
+        layout = builder.build
+        @size = layout.size
+        self.layout = layout unless self == Struct
+        layout
       end
 
 

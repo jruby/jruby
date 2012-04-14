@@ -2,6 +2,7 @@
 package org.jruby.ext.ffi;
 
 import java.nio.ByteOrder;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 import org.jruby.*;
 import org.jruby.anno.JRubyClass;
@@ -15,9 +16,9 @@ import static org.jruby.runtime.Visibility.*;
 @JRubyClass(name="FFI::Struct", parent="Object")
 public class Struct extends RubyObject implements StructLayout.Storage {
     private final StructLayout layout;
-    private final Object[] referenceCache;
     private AbstractMemory memory;
-    private IRubyObject[] valueCache;
+    private volatile Object[] referenceCache;
+    private volatile IRubyObject[] valueCache;
     
     private static final class Allocator implements ObjectAllocator {
         public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
@@ -76,7 +77,6 @@ public class Struct extends RubyObject implements StructLayout.Storage {
         }
 
         this.memory = (AbstractMemory) memory;
-        this.referenceCache = new IRubyObject[layout.getReferenceFieldCount()];
     }
 
     static final boolean isStruct(Ruby runtime, RubyClass klass) {
@@ -88,29 +88,31 @@ public class Struct extends RubyObject implements StructLayout.Storage {
     }
     
     static final StructLayout getStructLayout(Ruby runtime, IRubyObject structClass) {
-        if (!(structClass instanceof RubyClass)) {
-            throw runtime.newTypeError("wrong argument type "
-                    + structClass.getMetaClass().getName() + " (expected subclass of Struct");
-        }
         try {
-            StructLayout layout = (StructLayout) ((RubyClass) structClass).getInstanceVariable("@layout");
-            if (layout == null) {
-                throw runtime.newRuntimeError("No struct layout set for " + ((RubyClass) structClass).getName());
+            Object layout = ((RubyClass) structClass).getFFIHandle();
+            if (layout instanceof StructLayout) {
+                return (StructLayout) layout;
             }
-            return layout;
+
+            layout = ((RubyClass) structClass).getInstanceVariable("@layout");
+            if (!(layout instanceof StructLayout)) {
+                throw runtime.newRuntimeError("no valid struct layout for " + ((RubyClass) structClass).getName());
+            }
+
+            // Cache the layout on the Struct metaclass for faster retrieval next time
+            ((RubyClass) structClass).setFFIHandle(layout);
+            return (StructLayout) layout;
 
         } catch (RaiseException ex) {
             throw runtime.newRuntimeError("No layout set for struct " + ((RubyClass) structClass).getName());
+
         } catch (ClassCastException ex) {
-            throw runtime.newRuntimeError("Invalid layout set for struct " + ((RubyClass) structClass).getName());
+            if (!(structClass instanceof RubyClass)) {
+                throw runtime.newTypeError("wrong argument type "
+                        + structClass.getMetaClass().getName() + " (expected subclass of Struct");
+            }
+            throw runtime.newRuntimeError("invalid layout set for struct " + ((RubyClass) structClass).getName());
         }
-    }
-    
-    /*
-     * This variant of newStruct is called from StructLayoutBuilder
-     */
-    static final Struct newStruct(Ruby runtime, RubyClass klass, IRubyObject ptr) {
-        return new Struct(runtime, (RubyClass) klass, getStructLayout(runtime, klass), ptr);
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
@@ -149,7 +151,10 @@ public class Struct extends RubyObject implements StructLayout.Storage {
         }
         Struct orig = (Struct) other;
         memory = (AbstractMemory) orig.getMemory().slice(context.getRuntime(), 0, layout.getSize()).dup();
-        System.arraycopy(orig.referenceCache, 0, referenceCache, 0, referenceCache.length);
+        if (orig.referenceCache != null) {
+            referenceCache = new Object[layout.getReferenceFieldCount()];
+            System.arraycopy(orig.referenceCache, 0, referenceCache, 0, referenceCache.length);
+        }
         return this;
     }
 
@@ -187,20 +192,47 @@ public class Struct extends RubyObject implements StructLayout.Storage {
 
     @JRubyMethod(name = { "size" }, meta = true)
     public static IRubyObject size(ThreadContext context, IRubyObject structClass) {
-        IRubyObject obj = ((RubyClass) structClass).getInstanceVariable("@layout");
+        if (!(structClass instanceof RubyClass)) {
+            throw context.getRuntime().newTypeError(structClass, context.getRuntime().getClassClass());
+        }
+        RubyClass klass = (RubyClass) structClass;
+
+        Object obj = klass.getFFIHandle();
         if (obj instanceof StructLayout) {
+            return ((StructLayout) obj).size(context);
+        }
+
+        if ((obj = ((RubyClass) structClass).getInstanceVariable("@layout")) instanceof StructLayout) {
             return ((StructLayout) obj).size(context);
 
         } else {
             obj = ((RubyClass) structClass).getInstanceVariable("@size");
         }
 
-        return obj instanceof RubyFixnum ? obj : RubyFixnum.zero(context.getRuntime());
+        return obj instanceof RubyFixnum ? (RubyFixnum) obj : RubyFixnum.zero(context.getRuntime());
     }
 
     @JRubyMethod(name = { "alignment" }, meta = true)
     public static IRubyObject alignment(ThreadContext context, IRubyObject structClass) {
         return getStructLayout(context.getRuntime(), structClass).alignment(context);
+    }
+
+    @JRubyMethod(name = { "layout=" }, meta = true)
+    public static IRubyObject set_layout(ThreadContext context, IRubyObject structClass, IRubyObject layout) {
+        if (!(structClass instanceof RubyClass)) {
+            throw context.getRuntime().newTypeError(structClass, context.getRuntime().getClassClass());
+        }
+
+        if (!(layout instanceof StructLayout)) {
+            throw context.getRuntime().newTypeError(layout,
+                    context.getRuntime().getModule("FFI").getClass("StructLayout"));
+        }
+
+        RubyClass klass = (RubyClass) structClass;
+        klass.setFFIHandle(layout);
+        klass.setInstanceVariable("@layout", layout);
+
+        return structClass;
     }
 
 
@@ -271,17 +303,34 @@ public class Struct extends RubyObject implements StructLayout.Storage {
     }
 
     public final void putCachedValue(StructLayout.Member member, IRubyObject value) {
-        if (valueCache == null) {
-            valueCache = new IRubyObject[layout.getCacheableFieldCount()];
-        }
-        valueCache[layout.getCacheableFieldIndex(member)] = value;
+        getValueCacheForWrite()[layout.getCacheableFieldIndex(member)] = value;
     }
-    
-    public void putReference(StructLayout.Member member, IRubyObject value) {
-        referenceCache[layout.getReferenceFieldIndex(member)] = value;
+
+    private IRubyObject[] getValueCacheForWrite() {
+        return valueCache != null ? valueCache : initValueCache();
+    }
+
+    private static final AtomicReferenceFieldUpdater<Struct, IRubyObject[]> valueCacheUpdater
+            = AtomicReferenceFieldUpdater.newUpdater(Struct.class, IRubyObject[].class, "valueCache");
+
+    private IRubyObject[] initValueCache() {
+        valueCacheUpdater.compareAndSet(this, null, new IRubyObject[layout.getCacheableFieldCount()]);
+        return valueCache;
+    }
+
+    private Object[] getReferenceCache() {
+        return referenceCache != null ? referenceCache : initReferenceCache();
+    }
+
+    private static final AtomicReferenceFieldUpdater<Struct, Object[]> referenceCacheUpdater
+            = AtomicReferenceFieldUpdater.newUpdater(Struct.class, Object[].class, "referenceCache");
+
+    private Object[] initReferenceCache() {
+        referenceCacheUpdater.compareAndSet(this, null, new Object[layout.getReferenceFieldCount()]);
+        return referenceCache;
     }
     
     public void putReference(StructLayout.Member member, Object value) {
-        referenceCache[layout.getReferenceFieldIndex(member)] = value;
+        getReferenceCache()[layout.getReferenceFieldIndex(member)] = value;
     }
 }
