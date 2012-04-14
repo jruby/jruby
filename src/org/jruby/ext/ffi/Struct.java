@@ -212,7 +212,7 @@ public class Struct extends RubyObject implements StructLayout.Storage {
         return obj instanceof RubyFixnum ? (RubyFixnum) obj : RubyFixnum.zero(context.getRuntime());
     }
 
-    @JRubyMethod(name = { "alignment" }, meta = true)
+    @JRubyMethod(name = { "alignment", "align" }, meta = true)
     public static IRubyObject alignment(ThreadContext context, IRubyObject structClass) {
         return getStructLayout(context.getRuntime(), structClass).alignment(context);
     }
@@ -235,6 +235,23 @@ public class Struct extends RubyObject implements StructLayout.Storage {
         return structClass;
     }
 
+    @JRubyMethod(name = "members", meta = true)
+    public static IRubyObject members(ThreadContext context, IRubyObject structClass) {
+        return getStructLayout(context.getRuntime(), structClass).members(context);
+    }
+
+    @JRubyMethod(name = "offsets", meta = true)
+    public static IRubyObject offsets(ThreadContext context, IRubyObject structClass) {
+        return getStructLayout(context.getRuntime(), structClass).offsets(context);
+    }
+
+    @JRubyMethod(name = "offset_of", meta = true)
+    public static IRubyObject offset_of(ThreadContext context, IRubyObject structClass, IRubyObject fieldName) {
+        return getStructLayout(context.getRuntime(), structClass).offset_of(context, fieldName);
+    }
+
+
+    /* ------------- instance methods ------------- */
 
     @JRubyMethod(name = "[]")
     public IRubyObject getFieldValue(ThreadContext context, IRubyObject fieldName) {
@@ -253,7 +270,7 @@ public class Struct extends RubyObject implements StructLayout.Storage {
         return layout;
     }
 
-    @JRubyMethod(name = "pointer")
+    @JRubyMethod(name = { "pointer", "to_ptr" })
     public IRubyObject pointer(ThreadContext context) {
         return getMemory();
     }
@@ -262,6 +279,30 @@ public class Struct extends RubyObject implements StructLayout.Storage {
     public IRubyObject members(ThreadContext context) {
         return layout.members(context);
     }
+
+
+    @JRubyMethod(name = "values")
+    public IRubyObject values(ThreadContext context) {
+        IRubyObject[] values = new IRubyObject[layout.getFieldCount()];
+
+        int i = 0;
+        for (StructLayout.Member m : layout.getMembers()) {
+            values[i++] = m.get(context, this, getMemory());
+        }
+
+        return RubyArray.newArrayNoCopy(context.getRuntime(), values);
+    }
+
+    @JRubyMethod(name = "offsets")
+    public IRubyObject offsets(ThreadContext context) {
+        return layout.offsets(context);
+    }
+
+    @JRubyMethod(name = "offset_of")
+    public IRubyObject offset_of(ThreadContext context, IRubyObject fieldName) {
+        return layout.offset_of(context, fieldName);
+    }
+
 
     @JRubyMethod(name = "size")
     public IRubyObject size(ThreadContext context) {
@@ -289,6 +330,13 @@ public class Struct extends RubyObject implements StructLayout.Storage {
         return new Struct(context.getRuntime(), getMetaClass(), layout,
                 getMemory().order(context.getRuntime(), order));
     }
+
+    @JRubyMethod(name = "clear")
+    public IRubyObject clear(ThreadContext context) {
+        getMemoryIO().setMemory(0, layout.size, (byte) 0);
+        return this;
+    }
+
 
     public final AbstractMemory getMemory() {
         return memory != null ? memory : (memory = MemoryPointer.allocate(getRuntime(), layout.getSize(), 1, true));

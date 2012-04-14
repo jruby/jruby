@@ -279,6 +279,11 @@ public final class StructLayout extends Type {
 
         return offsets;
     }
+
+    @JRubyMethod(name = "offset_of")
+    public IRubyObject offset_of(ThreadContext context, IRubyObject fieldName) {
+        return getField(context.getRuntime(), fieldName).offset(context);
+    }
     
     @JRubyMethod(name = "[]")
     public IRubyObject aref(ThreadContext context, IRubyObject fieldName) {

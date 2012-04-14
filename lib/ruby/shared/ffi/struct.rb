@@ -2,6 +2,7 @@
 # Copyright (C) 2008, 2009 Wayne Meissner
 # Copyright (C) 2008, 2009 Andrea Fazzi
 # Copyright (C) 2008, 2009 Luc Heinrich
+# Copyright (c) 2007, 2008 Evan Phoenix
 #
 # All rights reserved.
 #
@@ -33,70 +34,12 @@ require 'ffi/struct_layout_builder'
 
 module FFI
 
-  class StructLayout
-
-    def offsets
-      members.map { |m| [ m, self[m].offset ] }
-    end
-
-    def offset_of(field_name)
-      self[field_name].offset
-    end
-
-    # Enum is implemented in java
-
-    # InnerStruct is implemented in java
-    
-  end
-
-  
   class Struct
     alias_method :align, :alignment
-
-    def offset_of(name)
-      self.class.offset_of(name)
-    end
-
-    def members
-      self.class.members
-    end
-
-    def values
-      members.map { |m| self[m] }
-    end
-
-    def offsets
-      self.class.offsets
-    end
-
-    def clear
-      pointer.clear
-      self
-    end
-
-    def to_ptr
-      pointer
-    end
 
     def self.size=(size)
       raise ArgumentError, "Size already set" if defined?(@size) || defined?(@layout)
       @size = size
-    end
-
-    def self.align
-      self.alignment
-    end
-
-    def self.members
-      @layout.members
-    end
-
-    def self.offsets
-      @layout.offsets
-    end
-
-    def self.offset_of(name)
-      @layout.offset_of(name)
     end
 
     def self.in
