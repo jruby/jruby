@@ -1,8 +1,8 @@
 package org.jruby.ext.ffi.jffi;
 
+import jnr.ffi.util.ref.FinalizableWeakReference;
 import org.jruby.Ruby;
 import org.jruby.ext.ffi.AllocatedDirectMemoryIO;
-import org.jruby.util.WeakReferenceReaper;
 
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
@@ -38,8 +38,8 @@ final class CachingNativeMemoryAllocator {
      * @return A new {@link org.jruby.ext.ffi.AllocatedDirectMemoryIO}
      */
     static AllocatedDirectMemoryIO allocateAligned(Ruby runtime, int size, int align, boolean clear) {
-        // Caching seems to work best for small allocations (<= 32 bytes).  For everything else, use the default allocator
-        if (size > 32 || align > 8) {
+        // Caching seems to work best for small allocations (<= 256 bytes).  For everything else, use the default allocator
+        if (size > 256 || align > 8) {
             return AllocatedNativeMemoryIO.allocateAligned(runtime, size, align, clear);
         }
 
@@ -58,13 +58,13 @@ final class CachingNativeMemoryAllocator {
     }
 
     static int roundUpToPowerOf2(int n) {
-        n = n - 1;
+        --n;
         n |= (n >> 1);
         n |= (n >> 2);
         n |= (n >> 4);
         n |= (n >> 8);
         n |= (n >> 16);
-        n |= (n >> (32 / 2));
+
         return n + 1;
     }
 
@@ -72,7 +72,7 @@ final class CachingNativeMemoryAllocator {
     static final class AllocatedMemoryIO extends BoundedNativeMemoryIO implements AllocatedDirectMemoryIO {
 
         private final MemoryAllocation allocation;
-        private final Object sentinel;
+        private Object sentinel;
 
         private AllocatedMemoryIO(Ruby runtime, Object sentinel, MemoryAllocation allocation, int size) {
             super(runtime, allocation.address, size);
@@ -81,10 +81,11 @@ final class CachingNativeMemoryAllocator {
         }
 
         public void free() {
-            if (allocation.released) {
+            if (allocation.isReleased()) {
                 throw getRuntime().newRuntimeError("memory already freed");
             }
 
+            sentinel = null;
             allocation.free();
         }
 
@@ -95,11 +96,11 @@ final class CachingNativeMemoryAllocator {
     }
 
 
-    private static final class AllocationGroup extends WeakReferenceReaper<Object> implements Runnable {
+    private static final class AllocationGroup extends FinalizableWeakReference<Object> {
         final Magazine magazine;
 
         AllocationGroup(Magazine magazine, Object sentinel) {
-            super(sentinel);
+            super(sentinel, NativeFinalizer.getInstance().getFinalizerQueue());
             this.magazine = magazine;
         }
 
@@ -107,7 +108,7 @@ final class CachingNativeMemoryAllocator {
             return magazine.allocate(clear);
         }
 
-        public void run() {
+        public void finalizeReferent() {
             referenceSet.remove(this);
             magazine.recycle();
         }
@@ -115,11 +116,11 @@ final class CachingNativeMemoryAllocator {
 
 
     private static final class MemoryAllocation {
+        static final int UNMANAGED = 0x1;
+        static final int RELEASED = 0x2;
         final Magazine magazine;
         final long address;
-        volatile boolean released;
-        volatile boolean unmanaged;
-        volatile MemoryAllocation next;
+        volatile int flags;
 
         MemoryAllocation(Magazine magazine, long address) {
             this.magazine = magazine;
@@ -130,18 +131,27 @@ final class CachingNativeMemoryAllocator {
             IO.freeMemory(address);
         }
 
+        final boolean isReleased() {
+            return (flags & RELEASED) != 0;
+        }
+
+        final boolean isUnmanaged() {
+            return (flags & UNMANAGED) != 0;
+        }
 
         public void setAutoRelease(boolean autorelease) {
-            if (autorelease && !released) {
-                unmanaged = !autorelease;
+            if ((flags & RELEASED) == 0) {
+                flags |= !autorelease ? UNMANAGED : 0;
             }
-            magazine.setFragmented();
+
+            if (!autorelease) {
+                magazine.setFragmented();
+            }
         }
 
         final void free() {
-            if (!released) {
-                released = true;
-                unmanaged = true;
+            if ((flags & RELEASED) == 0) {
+                flags = RELEASED | UNMANAGED;
                 magazine.setFragmented();
                 dispose();
             }
@@ -149,26 +159,29 @@ final class CachingNativeMemoryAllocator {
     }
 
     private static final class Magazine {
-        static final int MAX_BYTES_PER_MAGAZINE = 4096;
+        static final int MAX_BYTES_PER_MAGAZINE = 16384;
         final Bucket bucket;
-        private int totalAllocated = 0;
-        private volatile MemoryAllocation allocations;
-        private MemoryAllocation freeList;
+        private final MemoryAllocation[] allocations;
+        private int nextIndex;
         private volatile boolean fragmented;
 
         Magazine(Bucket bucket) {
             this.bucket = bucket;
+            this.allocations = new MemoryAllocation[MAX_BYTES_PER_MAGAZINE / bucket.size];
+            this.nextIndex = 0;
         }
 
         MemoryAllocation allocate(boolean clear) {
-            if (freeList != null) {
-                MemoryAllocation allocation = freeList;
-                freeList = freeList.next;
+            if (nextIndex < allocations.length && allocations[nextIndex] != null) {
+                MemoryAllocation allocation = allocations[nextIndex++];
+                if (clear) {
+                    clearMemory(allocation.address, bucket.size);
+                }
 
                 return allocation;
             }
 
-            if (totalAllocated >= MAX_BYTES_PER_MAGAZINE) {
+            if (nextIndex >= allocations.length) {
                 return null;
             }
 
@@ -177,10 +190,10 @@ final class CachingNativeMemoryAllocator {
             while ((address = IO.allocateMemory(bucket.size, clear)) == 0L) {
                 System.gc();
             }
+
             MemoryAllocation allocation = new MemoryAllocation(this, address);
-            allocation.next = this.allocations;
-            this.allocations = allocation;
-            totalAllocated += bucket.size;
+            allocations[nextIndex++] = allocation;
+
             return allocation;
         }
 
@@ -189,35 +202,31 @@ final class CachingNativeMemoryAllocator {
         }
 
         synchronized void dispose() {
-            MemoryAllocation m = allocations;
-            while (m != null) {
-                if (!m.unmanaged) {
+            for (int i = 0; i < allocations.length; i++) {
+                MemoryAllocation m = allocations[i];
+                if (m != null && !m.isUnmanaged()) {
                     m.dispose();
                 }
-                m = m.next;
             }
-            allocations = freeList = null;
         }
 
         synchronized void recycle() {
             if (fragmented) {
-                MemoryAllocation m = allocations;
-                MemoryAllocation list = null;
-
-                // Re-assemble the free list, skipping any non-autorelease allocations
-                while (m != null) {
-                    MemoryAllocation next = m.next;
-                    if (!m.unmanaged) {
-                        clearMemory(m.address, bucket.size);
-                        m.next = list;
-                        list = m;
+                int size = bucket.size;
+                for (int i = 0; i < allocations.length; i++) {
+                    MemoryAllocation m = allocations[i];
+                    if (m != null) {
+                        if (m.isUnmanaged()) {
+                            allocations[i] = null;
+                        } else {
+                            clearMemory(allocations[i].address, size);
+                        }
                     }
-                    m = next;
                 }
-                allocations = list;
+                fragmented = false;
             }
 
-            freeList = allocations;
+            nextIndex = 0;
             bucket.recycle(this);
         }
     }
@@ -253,15 +262,15 @@ final class CachingNativeMemoryAllocator {
             cache.remove(e);
         }
 
-        final class CacheElement extends WeakReferenceReaper<Object> {
+        final class CacheElement extends FinalizableWeakReference<Object> {
             private final Magazine magazine;
             private final AtomicBoolean disposed = new AtomicBoolean(false);
             CacheElement(Magazine magazine) {
-                super(new Object());
+                super(new Object(), NativeFinalizer.getInstance().getFinalizerQueue());
                 this.magazine = magazine;
             }
 
-            public void run() {
+            public void finalizeReferent() {
                 if (!disposed.getAndSet(true)) {
                     removeCacheElement(this);
                     magazine.dispose();
