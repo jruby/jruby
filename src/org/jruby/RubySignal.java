@@ -27,6 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import jnr.constants.platform.Signal;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
 import org.jruby.internal.runtime.ThreadService;
@@ -41,6 +42,8 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.SignalFacade;
 import org.jruby.util.NoFunctionalitySignalFacade;
 
+import java.util.Arrays;
+
 @JRubyModule(name="Signal")
 public class RubySignal {
     private final static SignalFacade SIGNALS = getSignalFacade();
@@ -53,13 +56,6 @@ public class RubySignal {
             return new NoFunctionalitySignalFacade();
         }
     }
-
-    // NOTE: The indicies here match exactly the signal values; do not reorder
-    public static final String[] NAMES = {
-            "EXIT", "HUP", "INT", "QUIT", "ILL", "TRAP", "ABRT", "EMT",
-            "FPE", "KILL", "BUS", "SEGV", "SYS", "PIPE", "ALRM", "TERM", "URG",
-            "STOP", "TSTP", "CONT", "CHLD", "TTIN", "TTOU", "IO", "XCPU",
-            "XFSZ", "VTALRM", "PROF", "WINCH", "INFO", "USR1", "USR2"};
     
     public static void createSignal(Ruby runtime) {
         RubyModule mSignal = runtime.defineModule("Signal");
@@ -72,13 +68,19 @@ public class RubySignal {
     public static IRubyObject list(ThreadContext context, IRubyObject recv) {
         Ruby runtime = recv.getRuntime();
         RubyHash names = RubyHash.newHash(runtime);
-        for (int i = 0; i < NAMES.length; i++) {
-            names.op_aset(context, runtime.newString(NAMES[i]), runtime.newFixnum(i));
+        for (Signal s : Signal.values()) {
+            if (!s.description().startsWith("SIG")) continue;
+
+            // replace CLD with CHLD value
+            long longValue = s.longValue();
+            if (s == Signal.SIGCLD) longValue = Signal.SIGCHLD.longValue();
+
+            // omit unsupported signals
+            if (longValue >= 20000) continue;
+
+            names.op_aset(context, runtime.newString(s.description().substring("SIG".length())), runtime.newFixnum(longValue));
         }
-        // IOT is also 6
-        names.op_aset(context, runtime.newString("IOT"), runtime.newFixnum(6));
-        // CLD is also 20
-        names.op_aset(context, runtime.newString("CLD"), runtime.newFixnum(20));
+        names.op_aset(context, runtime.newString("EXIT"), runtime.newFixnum(0));
         return names;
     }
 
