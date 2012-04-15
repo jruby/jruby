@@ -292,6 +292,7 @@ module Net   #:nodoc:
   #   * Net::HTTP::Head
   #   * Net::HTTP::Post
   #   * Net::HTTP::Put
+  #   * Net::HTTP::Patch
   #   * Net::HTTP::Proppatch
   #   * Net::HTTP::Lock
   #   * Net::HTTP::Unlock
