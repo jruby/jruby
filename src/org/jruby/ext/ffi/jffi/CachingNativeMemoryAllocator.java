@@ -149,8 +149,8 @@ final class CachingNativeMemoryAllocator {
     }
 
     private static final class Magazine {
-        private static final int MAX_BYTES_PER_MAGAZINE = 4096;
-        private final Bucket bucket;
+        static final int MAX_BYTES_PER_MAGAZINE = 4096;
+        final Bucket bucket;
         private int totalAllocated = 0;
         private volatile MemoryAllocation allocations;
         private MemoryAllocation freeList;
@@ -164,9 +164,7 @@ final class CachingNativeMemoryAllocator {
             if (freeList != null) {
                 MemoryAllocation allocation = freeList;
                 freeList = freeList.next;
-                if (clear) {
-                    IO.setMemory(allocation.address, bucket.size, (byte) 0);
-                }
+
                 return allocation;
             }
 
@@ -210,6 +208,7 @@ final class CachingNativeMemoryAllocator {
                 while (m != null) {
                     MemoryAllocation next = m.next;
                     if (!m.unmanaged) {
+                        clearMemory(m.address, bucket.size);
                         m.next = list;
                         list = m;
                     }
@@ -289,6 +288,29 @@ final class CachingNativeMemoryAllocator {
             }
 
             return new AllocatedMemoryIO(runtime, sentinel, allocation, size);
+        }
+    }
+
+    static void clearMemory(long address, int size) {
+        switch (size) {
+            case 1:
+                IO.putByte(address, (byte) 0);
+                break;
+
+            case 2:
+                IO.putShort(address, (short) 0);
+                break;
+
+            case 4:
+                IO.putInt(address, 0);
+                break;
+
+            case 8:
+                IO.putLong(address, 0L);
+                break;
+
+            default:
+                IO.setMemory(address, size, (byte) 0);
         }
     }
 }
