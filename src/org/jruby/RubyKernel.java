@@ -195,10 +195,13 @@ public class RubyKernel {
             }
 
             public void load(Ruby runtime) {
-                if (runtime.getLoadService().lockAndRequire(file())) {
-                    // Do not finish autoloading by cyclic autoload 
-                    module.finishAutoload(baseName);
-                }
+                runtime.getLoadService().lockAndRequire(file());
+                // From jruby 1.7 it calls finishAutoload if the above require
+                // was NOT a cyclic autoload. But since there's no cyclic
+                // detection in jruby-1_6, when lockAndRequire returns from
+                // LoadService it means that autoload is finished. So it's safe
+                // to call finishAutoload here.
+                module.finishAutoload(baseName);
             }
         });
         return runtime.getNil();
