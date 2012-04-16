@@ -6,11 +6,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.ext.ffi.AllocatedDirectMemoryIO;
-import org.jruby.ext.ffi.CallbackInfo;
-import org.jruby.ext.ffi.DirectMemoryIO;
-import org.jruby.ext.ffi.NativeType;
-import org.jruby.ext.ffi.Pointer;
+import org.jruby.ext.ffi.*;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -25,9 +21,7 @@ public class Factory extends org.jruby.ext.ffi.Factory {
     @Override
     public void init(Ruby runtime, RubyModule ffi) {
         super.init(runtime, ffi);
-        //
-        // Hook up the MemoryPointer class if its not already there
-        //
+
         synchronized (ffi) {
             if (ffi.getClass("DynamicLibrary") == null) {
                 DynamicLibrary.createDynamicLibraryClass(runtime, ffi);
@@ -48,6 +42,8 @@ public class Factory extends org.jruby.ext.ffi.Factory {
                 ffi.defineModuleUnder("LastError").defineAnnotatedMethods(LastError.class);
             }
         }
+
+        runtime.setFFI(new FFI(ffi));
     }
 
     /**

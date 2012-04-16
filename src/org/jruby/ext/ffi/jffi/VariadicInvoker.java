@@ -62,7 +62,7 @@ public class VariadicInvoker extends RubyObject {
     public static VariadicInvoker newInvoker(ThreadContext context, IRubyObject klass, IRubyObject[] args) {
 
         if (!(args[0] instanceof Pointer)) {
-            throw context.getRuntime().newTypeError(args[0], context.getRuntime().getModule("FFI").getClass("Pointer"));
+            throw context.getRuntime().newTypeError(args[0], context.getRuntime().getFFI().pointerClass);
         }
 
         final Pointer address = (Pointer) args[0];

@@ -1,38 +1,61 @@
 package org.jruby.ext.ffi;
 
-import org.jruby.RubyHash;
 import org.jruby.RubyModule;
+import org.jruby.RubySymbol;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.Map;
+
 final class TypeSizeMapper {
+    private final FFI ffi;
+    private volatile Map<RubySymbol, Type> symbolTypeCache = Collections.emptyMap();
 
-    private static final int getTypeSize(ThreadContext context, RubyModule ffi, IRubyObject type) {
-        if (type instanceof Type) {
-            return ((Type) type).getNativeSize();
+    TypeSizeMapper(FFI ffi) {
+        this.ffi = ffi;
+    }
 
-        } else if (type.isNil()) {
-            throw context.getRuntime().newTypeError("nil is invalid FFI type");
+    public final int sizeof(ThreadContext context, RubySymbol name) {
+        Object obj = name.getFFIHandle();
+        if (obj instanceof Type) {
+            return ((Type) obj).size;
         }
 
-        return callTypeSize(context, ffi, type);
+        Type type = symbolTypeCache.get(name);
+        if (type != null) {
+            return type.size;
+        }
+
+        return lookupAndCacheSize(context, name);
     }
 
-    /**
-     * Calls up to ruby code to calculate the size of the type
-     * 
-     * @param context The current thread context
-     * @param ffi The FFI ruby module
-     * @param sizeArg The name of the type
-     * @return size of the type
-     */
-    private static final int callTypeSize(ThreadContext context, RubyModule ffi, IRubyObject sizeArg) {
-        return getTypeSize(context, ffi, ffi.callMethod(context, "find_type", sizeArg));
+    private synchronized int lookupAndCacheSize(ThreadContext context, RubySymbol name) {
+        Type type = lookupType(context, name);
+
+        Map<RubySymbol, Type> map = new IdentityHashMap<RubySymbol, Type>(symbolTypeCache);
+        map.put(name, type);
+        symbolTypeCache = map;
+        name.setFFIHandle(type);
+
+        return type.size;
     }
 
-    public static final int getTypeSize(ThreadContext context, IRubyObject sizeArg) {
-        RubyModule ffi = context.getRuntime().getModule("FFI");
+    private Type lookupType(ThreadContext context, IRubyObject name) {
+        IRubyObject type = ffi.typedefs.fastARef(name);
+        if (type.isNil() && (type = ffi.ffiModule.callMethod(context, "find_type", name)).isNil()) {
+            throw context.getRuntime().newTypeError("cannot resolve type " + name);
+        }
 
-        return getTypeSize(context, ffi, ((RubyHash) ffi.fetchConstant("TypeDefs")).fastARef(sizeArg));
+        if (!(type instanceof Type)) {
+            throw context.getRuntime().newTypeError(name + " resolved to non FFI::Type instance");
+        }
+
+        return (Type) type;
+    }
+
+    public static final int getTypeSize(ThreadContext context, RubySymbol sizeArg) {
+        return context.getRuntime().getFFI().getSizeMapper().sizeof(context, sizeArg);
     }
 }

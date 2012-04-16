@@ -46,7 +46,7 @@ public final class Buffer extends AbstractMemory {
 
 
     public Buffer(Ruby runtime, RubyClass klass) {
-        super(runtime, klass, new NullMemoryIO(runtime), 0, 0);
+        super(runtime, klass, runtime.getFFI().getNullMemoryIO(), 0, 0);
         this.inout = IN | OUT;
     }
     
@@ -55,7 +55,7 @@ public final class Buffer extends AbstractMemory {
     }
     
     public Buffer(Ruby runtime, int size, int flags) {
-        this(runtime, runtime.getModule("FFI").getClass("Buffer"),
+        this(runtime, runtime.getFFI().bufferClass,
             allocateMemoryIO(runtime, size), size, 1, flags);
     }
 

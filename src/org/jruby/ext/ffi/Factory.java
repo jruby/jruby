@@ -31,6 +31,7 @@ package org.jruby.ext.ffi;
 import java.util.ArrayList;
 import java.util.List;
 import org.jruby.Ruby;
+import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.ext.ffi.io.FileDescriptorIO;
 
@@ -138,7 +139,9 @@ public abstract class Factory {
             if (ffi.getClass(FileDescriptorIO.CLASS_NAME) == null) {
                 FileDescriptorIO.createFileDescriptorIOClass(runtime, ffi);
             }
-            
+
+            ffi.setConstant("TypeDefs", RubyHash.newHash(runtime));
+
             Platform.createPlatformModule(runtime, ffi);
             IOModule.createIOModule(runtime, ffi);
             

@@ -40,6 +40,7 @@
 package org.jruby;
 
 import org.jruby.ast.executable.AbstractScript;
+import org.jruby.ext.ffi.FFI;
 import org.jruby.ir.IRBuilder;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.targets.JVM;
@@ -4198,6 +4199,14 @@ public final class Ruby {
         return staticScopeFactory;
     }
 
+    public FFI getFFI() {
+        return ffi;
+    }
+
+    public void setFFI(FFI ffi) {
+        this.ffi = ffi;
+    }
+
     private final Invalidator constantInvalidator;
     private final ThreadService threadService;
     
@@ -4440,4 +4449,6 @@ public final class Ruby {
     private ThreadLocal<Map<String, RubyHash>> recursive = new ThreadLocal<Map<String, RubyHash>>();
     private RubySymbol recursiveKey;
     private boolean inRecursiveListOperation;
+
+    private FFI ffi;
 }

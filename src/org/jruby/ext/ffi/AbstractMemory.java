@@ -79,7 +79,7 @@ abstract public class AbstractMemory extends RubyObject {
             return (int) ((RubyFixnum) sizeArg).getLongValue();
 
         } else if (sizeArg instanceof RubySymbol) {
-            return TypeSizeMapper.getTypeSize(context, sizeArg);
+            return TypeSizeMapper.getTypeSize(context, (RubySymbol) sizeArg);
 
         } else if (sizeArg instanceof Type) {
             return ((Type) sizeArg).getNativeSize();
@@ -1845,7 +1845,7 @@ abstract public class AbstractMemory extends RubyObject {
         } else if (value.respondsTo("to_ptr")) {
             putPointer(context, offset, value.callMethod(context, "to_ptr"));
         } else {
-            throw context.getRuntime().newTypeError(value, context.getRuntime().getModule("FFI").getClass("Pointer"));
+            throw context.getRuntime().newTypeError(value, context.getRuntime().getFFI().pointerClass);
         }
     }
 

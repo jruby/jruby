@@ -51,7 +51,7 @@ public class Pointer extends AbstractMemory {
     }
 
     public static final Pointer getNull(Ruby runtime) {
-        return (Pointer) runtime.getModule("FFI").getClass("Pointer").getConstant("NULL");
+        return (Pointer) runtime.getFFI().pointerClass.getConstant("NULL");
     }
 
     Pointer(Ruby runtime, RubyClass klazz) {
@@ -75,7 +75,7 @@ public class Pointer extends AbstractMemory {
     }
 
     public static final RubyClass getPointerClass(Ruby runtime) {
-        return runtime.getModule("FFI").getClass("Pointer");
+        return runtime.getFFI().pointerClass;
     }
 
     public final AbstractMemory order(Ruby runtime, ByteOrder order) {

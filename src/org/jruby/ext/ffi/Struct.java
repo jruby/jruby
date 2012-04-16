@@ -48,7 +48,7 @@ public class Struct extends RubyObject implements StructLayout.Storage {
      * @param runtime The runtime for the <tt>StructLayout</tt>
      */
     Struct(Ruby runtime) {
-        this(runtime, runtime.getModule("FFI").getClass("Struct"));
+        this(runtime, runtime.getFFI().structClass);
     }
 
     /**
@@ -80,7 +80,7 @@ public class Struct extends RubyObject implements StructLayout.Storage {
     }
 
     static final boolean isStruct(Ruby runtime, RubyClass klass) {
-        return klass.isKindOfModule(runtime.getModule("FFI").getClass("Struct"));
+        return klass.isKindOfModule(runtime.getFFI().structClass);
     }
 
     static final int getStructSize(Ruby runtime, IRubyObject structClass) {
@@ -109,7 +109,7 @@ public class Struct extends RubyObject implements StructLayout.Storage {
         } catch (ClassCastException ex) {
             if (!(structClass instanceof RubyClass)) {
                 throw runtime.newTypeError("wrong argument type "
-                        + structClass.getMetaClass().getName() + " (expected subclass of Struct");
+                        + structClass.getMetaClass().getName() + " (expected subclass of Struct)");
             }
             throw runtime.newRuntimeError("invalid layout set for struct " + ((RubyClass) structClass).getName());
         }

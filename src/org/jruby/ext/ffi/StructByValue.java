@@ -35,7 +35,7 @@ public final class StructByValue extends Type {
             throw context.getRuntime().newTypeError("wrong argument type " 
                     + structClass.getMetaClass().getName() + " (expected Class)");
         }
-        if (!((RubyClass) structClass).isKindOfModule(context.getRuntime().getModule("FFI").getClass("Struct"))) {
+        if (!((RubyClass) structClass).isKindOfModule(context.getRuntime().getFFI().structClass)) {
             throw context.getRuntime().newTypeError("wrong argument type " 
                     + structClass.getMetaClass().getName() + " (expected subclass of FFI::Struct)");
         }

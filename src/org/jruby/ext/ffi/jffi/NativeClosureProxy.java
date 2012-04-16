@@ -191,7 +191,7 @@ final class NativeClosureProxy implements Closure {
                 buffer.setStructReturn(new byte[type.getNativeSize()], 0);
 
             } else {
-                throw runtime.newTypeError(value, runtime.getModule("FFI").getClass("Struct"));
+                throw runtime.newTypeError(value, runtime.getFFI().structClass);
             }
 
         } else if (type instanceof MappedType) {

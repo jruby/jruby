@@ -98,8 +98,9 @@ public abstract class Type extends RubyObject {
         } catch (UnsupportedOperationException ex) {
         }
     }
+
     public static final RubyClass getTypeClass(Ruby runtime) {
-        return runtime.getModule("FFI").getClass("Type");
+        return runtime.getFFI().typeClass;
     }
 
     /**
