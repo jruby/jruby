@@ -379,7 +379,7 @@ public class Readline {
             RubyArray histList = runtime.newArray();
 
             for (Iterator i = holder.history.iterator(); i.hasNext();) {
-                histList.append(runtime.newString((String) i.next()));
+                histList.append(runtime.newString(i.next().toString()));
             }
 
             return histList;
