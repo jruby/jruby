@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 
 import static org.jruby.CompatVersion.*;
 
@@ -375,8 +376,10 @@ public class Readline {
             ConsoleHolder holder = getHolder(runtime);
             RubyArray histList = runtime.newArray();
 
-            for (Iterator i = holder.history.iterator(); i.hasNext();) {
-                histList.append(runtime.newString(i.next().toString()));
+            ListIterator<History.Entry> historyIterator = holder.history.entries();
+            while (historyIterator.hasNext()) {
+                History.Entry nextEntry = historyIterator.next();
+                histList.append(runtime.newString((String) nextEntry.value()));
             }
 
             return histList;
