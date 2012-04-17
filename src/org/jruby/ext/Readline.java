@@ -364,7 +364,7 @@ public class Readline {
             Ruby runtime = recv.getRuntime();
             ConsoleHolder holder = getHolder(runtime);
 
-            if (holder.history.size() == 0) return runtime.getNil();
+            if (holder.history.isEmpty()) return runtime.getNil();
 
             return runtime.newString(holder.history.removeLast().toString()).taint(runtime.getCurrentContext());
         }
@@ -426,7 +426,7 @@ public class Readline {
             Ruby runtime = recv.getRuntime();
             ConsoleHolder holder = getHolder(runtime);
 
-            if (holder.history.size() == 0) return runtime.getNil();
+            if (holder.history.isEmpty()) return runtime.getNil();
 
             try {
                 return runtime.newString(holder.history.removeFirst().toString()).taint(runtime.getCurrentContext());
@@ -446,7 +446,7 @@ public class Readline {
         public static IRubyObject s_hist_empty_p(IRubyObject recv) {
             ConsoleHolder holder = getHolder(recv.getRuntime());
 
-            return recv.getRuntime().newBoolean(holder.history.size() == 0);
+            return recv.getRuntime().newBoolean(holder.history.isEmpty());
         }
 
         @JRubyMethod(name = "delete_at")
