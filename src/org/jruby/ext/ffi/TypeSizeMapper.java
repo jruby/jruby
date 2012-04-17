@@ -44,15 +44,15 @@ final class TypeSizeMapper {
 
     private Type lookupType(ThreadContext context, IRubyObject name) {
         IRubyObject type = ffi.typedefs.fastARef(name);
-        if (type.isNil() && (type = ffi.ffiModule.callMethod(context, "find_type", name)).isNil()) {
-            throw context.getRuntime().newTypeError("cannot resolve type " + name);
+        if (type instanceof Type) {
+            return (Type) type;
         }
 
-        if (!(type instanceof Type)) {
-            throw context.getRuntime().newTypeError(name + " resolved to non FFI::Type instance");
+        if ((type = ffi.ffiModule.callMethod(context, "find_type", name)) instanceof Type) {
+            return (Type) type;
         }
 
-        return (Type) type;
+        throw context.getRuntime().newTypeError("cannot resolve type " + name);
     }
 
     public static final int getTypeSize(ThreadContext context, RubySymbol sizeArg) {

@@ -17,7 +17,7 @@ class NativeMemoryIO implements MemoryIO, DirectMemoryIO {
     static final DirectMemoryIO wrap(Ruby runtime, long address) {
         return address != 0
                 ? new NativeMemoryIO(runtime, address)
-                : new NullMemoryIO(runtime);
+                : runtime.getFFI().getNullMemoryIO();
     }
 
     NativeMemoryIO(Ruby runtime, long address) {

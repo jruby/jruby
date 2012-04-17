@@ -81,10 +81,7 @@ public class DynamicLibrary extends RubyObject {
             return context.getRuntime().getNil();
         }
 
-        return new Symbol(context.getRuntime(), this, sym,
-                address != 0
-                ? new DataSymbolMemoryIO(context.getRuntime(), this, address)
-                : new NullMemoryIO(context.getRuntime()));
+        return new Symbol(context.getRuntime(), this, sym, new DataSymbolMemoryIO(context.getRuntime(), this, address));
     }
 
     @JRubyMethod(name = {  "find_function" })

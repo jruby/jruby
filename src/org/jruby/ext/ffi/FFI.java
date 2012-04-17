@@ -11,11 +11,11 @@ import java.util.Map;
  */
 public class FFI {
     public final RubyModule ffiModule;
-    public final RubyClass bufferClass, pointerClass, memoryClass;
+    public final RubyClass memoryClass, bufferClass, pointerClass, memptrClass;
     public final RubyClass structClass, functionClass, callbackClass;
     public final RubyClass typeClass;
     public final RubyHash typedefs;
-    private final MemoryIO nullMemoryIO;
+    private final NullMemoryIO nullMemoryIO;
     private final TypeSizeMapper sizeMapper;
 
 
@@ -23,6 +23,7 @@ public class FFI {
         this.ffiModule = ffiModule;
         this.bufferClass = ffiModule.getClass("Buffer");
         this.pointerClass = ffiModule.getClass("Pointer");
+        this.memptrClass = ffiModule.getClass("MemoryPointer");
         this.memoryClass = ffiModule.getClass("AbstractMemory");
         this.structClass = ffiModule.getClass("Struct");
         this.functionClass = ffiModule.getClass("Function");
@@ -37,7 +38,7 @@ public class FFI {
         return sizeMapper;
     }
 
-    public MemoryIO getNullMemoryIO() {
+    public NullMemoryIO getNullMemoryIO() {
         return nullMemoryIO;
     }
 }

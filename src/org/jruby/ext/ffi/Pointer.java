@@ -55,7 +55,7 @@ public class Pointer extends AbstractMemory {
     }
 
     Pointer(Ruby runtime, RubyClass klazz) {
-        super(runtime, klazz, new NullMemoryIO(runtime), 0);
+        super(runtime, klazz, runtime.getFFI().getNullMemoryIO(), 0);
     }
 
     public Pointer(Ruby runtime, DirectMemoryIO io) {

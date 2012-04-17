@@ -281,7 +281,7 @@ final class NativeClosureProxy implements Closure {
             final long address = buffer.getStruct(index);
             DirectMemoryIO memory = address != 0
                     ? new BoundedNativeMemoryIO(runtime, address, type.getNativeSize())
-                    : new NullMemoryIO(runtime);
+                    : runtime.getFFI().getNullMemoryIO();
 
             return sbv.getStructClass().newInstance(runtime.getCurrentContext(),
                         new IRubyObject[] { new Pointer(runtime, memory) },

@@ -51,7 +51,7 @@ public final class AutoPointer extends Pointer {
     }
 
     private AutoPointer(Ruby runtime, RubyClass klazz) {
-        super(runtime, klazz, new NullMemoryIO(runtime));
+        super(runtime, klazz, runtime.getFFI().getNullMemoryIO());
     }
     
     private static final void checkPointer(Ruby runtime, IRubyObject ptr) {
