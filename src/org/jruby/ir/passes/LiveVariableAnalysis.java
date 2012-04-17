@@ -1,5 +1,8 @@
 package org.jruby.ir.passes;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.jruby.ir.IRScope;
 import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
 
