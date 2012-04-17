@@ -379,7 +379,7 @@ public class Readline {
             ListIterator<History.Entry> historyIterator = holder.history.entries();
             while (historyIterator.hasNext()) {
                 History.Entry nextEntry = historyIterator.next();
-                histList.append(runtime.newString((String) nextEntry.value()));
+                histList.append(runtime.newString(nextEntry.value().toString()));
             }
 
             return histList;
