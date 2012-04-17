@@ -37,7 +37,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
 
 import static org.jruby.CompatVersion.*;
 
@@ -47,10 +46,8 @@ import jline.console.completer.Completer;
 import jline.console.completer.FileNameCompleter;
 import jline.console.history.History;
 import jline.console.history.MemoryHistory;
-import jline.internal.Configuration;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
-import org.jruby.RubyIO;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
