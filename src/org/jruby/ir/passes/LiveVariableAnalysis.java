@@ -4,8 +4,17 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.dataflow.analyses.LiveVariablesProblem;
 
 public class LiveVariableAnalysis extends CompilerPass {
+    public static List<Class<? extends CompilerPass>> DEPENDENCIES = new ArrayList<Class<? extends CompilerPass>>() {{
+       add(CFGBuilder.class);
+    }};
+    
     public String getLabel() {
         return "Live Variable Analysis";
+    }
+
+    @Override
+    public List<Class<? extends CompilerPass>> getDependencies() {
+        return DEPENDENCIES;
     }
 
     @Override
