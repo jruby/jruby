@@ -24,16 +24,17 @@ import org.jruby.runtime.builtin.IRubyObject;
 // this call to the parent scope.
 
 public class InheritanceSearchConstInstr extends Instr implements ResultInstr {
-    Operand currentModule;
-    String constName;
+    Operand  currentModule;
+    String   constName;
     private Variable result;
+    private boolean  noPrivateConsts;
 
     // Constant caching 
     private volatile transient Object cachedConstant = null;
     private volatile int hash = -1;
     private volatile Object generation = -1;
 
-    public InheritanceSearchConstInstr(Variable result, Operand currentModule, String constName) {
+    public InheritanceSearchConstInstr(Variable result, Operand currentModule, String constName, boolean noPrivateConsts) {
         super(Operation.INHERITANCE_SEARCH_CONST);
         
         assert result != null: "InheritanceSearchConstInstr result is null";
@@ -41,6 +42,7 @@ public class InheritanceSearchConstInstr extends Instr implements ResultInstr {
         this.currentModule = currentModule;
         this.constName = constName;
         this.result = result;
+        this.noPrivateConsts = noPrivateConsts;
     }
 
     @Override
@@ -63,7 +65,7 @@ public class InheritanceSearchConstInstr extends Instr implements ResultInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new InheritanceSearchConstInstr(ii.getRenamedVariable(result), currentModule.cloneForInlining(ii), constName);
+        return new InheritanceSearchConstInstr(ii.getRenamedVariable(result), currentModule.cloneForInlining(ii), constName, noPrivateConsts);
     }
 
     @Override
@@ -72,7 +74,7 @@ public class InheritanceSearchConstInstr extends Instr implements ResultInstr {
     }
 
     private Object cache(Ruby runtime, RubyModule module) {
-        Object constant = module.getConstantNoConstMissing(constName);
+        Object constant = noPrivateConsts ? module.getConstantFromNoConstMissing(constName, false) : module.getConstantNoConstMissing(constName);
         if (constant == null) {
             constant = UndefinedValue.UNDEFINED;
         } else {

@@ -1215,6 +1215,7 @@ public class IRBuilder {
     }
 
     private Operand searchConst(IRScope s, IRScope startingScope, String name) {
+		  boolean sameScopeSearch = (s == startingScope);
         Variable v = s.getNewTemporaryVariable();
         Label foundLabel = s.getNewLabel();
         Operand startingSearchScope = startingSearchScope(startingScope);
@@ -1223,7 +1224,7 @@ public class IRBuilder {
         // SSS FIXME: should this be the current-module-var or can we resolve
         // this to some statically-known value instead?
         Operand currentModule = s.getCurrentModuleVariable(); 
-        s.addInstr(new InheritanceSearchConstInstr(v, currentModule, name));
+        s.addInstr(new InheritanceSearchConstInstr(v, currentModule, name, !sameScopeSearch));
         s.addInstr(BNEInstr.create(v, UndefinedValue.UNDEFINED, foundLabel));
         s.addInstr(new ConstMissingInstr(v, currentModule, name));
         s.addInstr(new LabelInstr(foundLabel));
@@ -1243,7 +1244,7 @@ public class IRBuilder {
             Operand module = build(leftNode, s);
             Variable constVal = s.getNewTemporaryVariable();
             Label foundLabel = s.getNewLabel();
-            s.addInstr(new InheritanceSearchConstInstr(constVal, module, name));
+            s.addInstr(new InheritanceSearchConstInstr(constVal, module, name, true));
             s.addInstr(BNEInstr.create(constVal, UndefinedValue.UNDEFINED, foundLabel));
             s.addInstr(new ConstMissingInstr(constVal, module, name));
             s.addInstr(new LabelInstr(foundLabel));
@@ -1499,7 +1500,7 @@ public class IRBuilder {
                 String constName = ((ConstNode) node).getName();
                 s.addInstr(new LexicalSearchConstInstr(tmpVar, startingSearchScope(s), constName));
                 s.addInstr(BNEInstr.create(tmpVar, UndefinedValue.UNDEFINED, defLabel));
-                s.addInstr(new InheritanceSearchConstInstr(tmpVar, s.getCurrentModuleVariable(), constName)); // SSS FIXME: should this be the current-module var or something else?
+                s.addInstr(new InheritanceSearchConstInstr(tmpVar, s.getCurrentModuleVariable(), constName, false)); // SSS FIXME: should this be the current-module var or something else?
                 s.addInstr(BNEInstr.create(tmpVar, UndefinedValue.UNDEFINED, defLabel));
                 s.addInstr(new CopyInstr(tmpVar, manager.getNil()));
                 s.addInstr(new JumpInstr(doneLabel));
@@ -2966,14 +2967,15 @@ public class IRBuilder {
             // We generate explicit IR for this test here.  But, this can lead to inconsistent
             // behavior (when compared to MRI) in certain scenarios.  See example:
             //
-            //   self.class.const_set(:StandardError, 1) 
+            //   self.class.const_set(:StandardError, 1)
             //   begin; raise TypeError.new; rescue; puts "AHA"; end
             //
             // MRI rescues the error, but we will raise an exception because of reassignment
-            // of StandardError.  I am ignoring this for now and treating this as undefined behavior. 
-            // 
+            // of StandardError.  I am ignoring this for now and treating this as undefined behavior.
+            //
+				// SSS FIXME: Create a 'StandardError' operand type to eliminate this.
             Variable v = s.getNewTemporaryVariable();
-            s.addInstr(new InheritanceSearchConstInstr(v, s.getCurrentModuleVariable(), "StandardError"));
+            s.addInstr(new InheritanceSearchConstInstr(v, s.getCurrentModuleVariable(), "StandardError", false));
             outputExceptionCheck(s, v, exc, caughtLabel);
         }
 
