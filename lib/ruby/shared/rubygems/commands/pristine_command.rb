@@ -94,12 +94,14 @@ extensions.
       end
 
       # TODO use installer options
-      # Modified for JRUBY-5031, to propagate --env-shebang if set
+      install_defaults = Gem::ConfigFile::PLATFORM_DEFAULTS['install']
+      installer_env_shebang = install_defaults.to_s['--env-shebang']
+      
       installer = Gem::Installer.new(gem,
                                      :wrappers => true,
                                      :force => true,
                                      :install_dir => spec.base_dir,
-                                     :env_shebang => !Gem::ConfigFile::PLATFORM_DEFAULTS['install'].to_s['--env-shebang'].nil?)
+                                     :env_shebang => installer_env_shebang)
       installer.install
 
       say "Restored #{spec.full_name}"
