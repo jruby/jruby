@@ -1214,8 +1214,21 @@ public class IRBuilder {
         return val;
     }
 
+    private void genInheritanceSearchInstrs(IRScope s, Operand startingModule, Variable constVal, Label foundLabel, boolean noPrivateConstants, String name) {
+        s.addInstr(new InheritanceSearchConstInstr(constVal, startingModule, name, noPrivateConstants));
+        s.addInstr(BNEInstr.create(constVal, UndefinedValue.UNDEFINED, foundLabel));
+        s.addInstr(new ConstMissingInstr(constVal, startingModule, name));
+        s.addInstr(new LabelInstr(foundLabel));
+    }
+
+    private Operand searchConstInInheritanceHierarchy(IRScope s, Operand startingModule, String name) {
+        Variable constVal = s.getNewTemporaryVariable();
+        genInheritanceSearchInstrs(s, startingModule, constVal, s.getNewLabel(), true, name);
+        return constVal;
+    }
+
     private Operand searchConst(IRScope s, IRScope startingScope, String name) {
-		  boolean sameScopeSearch = (s == startingScope);
+        boolean noPrivateConstants = (s != startingScope);
         Variable v = s.getNewTemporaryVariable();
         Label foundLabel = s.getNewLabel();
         Operand startingSearchScope = startingSearchScope(startingScope);
@@ -1223,11 +1236,7 @@ public class IRBuilder {
         s.addInstr(BNEInstr.create(v, UndefinedValue.UNDEFINED, foundLabel));
         // SSS FIXME: should this be the current-module-var or can we resolve
         // this to some statically-known value instead?
-        Operand currentModule = s.getCurrentModuleVariable(); 
-        s.addInstr(new InheritanceSearchConstInstr(v, currentModule, name, !sameScopeSearch));
-        s.addInstr(BNEInstr.create(v, UndefinedValue.UNDEFINED, foundLabel));
-        s.addInstr(new ConstMissingInstr(v, currentModule, name));
-        s.addInstr(new LabelInstr(foundLabel));
+        genInheritanceSearchInstrs(s, s.getCurrentModuleVariable(), v, foundLabel, noPrivateConstants, name);
         return v;
     }
 
@@ -1242,13 +1251,7 @@ public class IRBuilder {
             // 1. Load the module first (lhs of node)
             // 2. Then load the constant from the module
             Operand module = build(leftNode, s);
-            Variable constVal = s.getNewTemporaryVariable();
-            Label foundLabel = s.getNewLabel();
-            s.addInstr(new InheritanceSearchConstInstr(constVal, module, name, true));
-            s.addInstr(BNEInstr.create(constVal, UndefinedValue.UNDEFINED, foundLabel));
-            s.addInstr(new ConstMissingInstr(constVal, module, name));
-            s.addInstr(new LabelInstr(foundLabel));
-            return constVal;
+            return searchConstInInheritanceHierarchy(s, module, name);
         } else if (iVisited instanceof Colon2MethodNode) {
             Colon2MethodNode c2mNode = (Colon2MethodNode)iVisited;
             List<Operand> args       = setupCallArgs(null, s);
@@ -1264,7 +1267,7 @@ public class IRBuilder {
     }
 
     public Operand buildColon3(Colon3Node node, IRScope s) {
-        return searchConst(s, manager.getObject(), node.getName());
+        return searchConstInInheritanceHierarchy(s, new ObjectClass(), node.getName());
     }
 
     interface CodeBlock {
@@ -2973,7 +2976,7 @@ public class IRBuilder {
             // MRI rescues the error, but we will raise an exception because of reassignment
             // of StandardError.  I am ignoring this for now and treating this as undefined behavior.
             //
-				// SSS FIXME: Create a 'StandardError' operand type to eliminate this.
+            // SSS FIXME: Create a 'StandardError' operand type to eliminate this.
             Variable v = s.getNewTemporaryVariable();
             s.addInstr(new InheritanceSearchConstInstr(v, s.getCurrentModuleVariable(), "StandardError", false));
             outputExceptionCheck(s, v, exc, caughtLabel);

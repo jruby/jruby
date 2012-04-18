@@ -126,13 +126,13 @@ public enum Operation {
     
     /* defined */
     SET_WITHIN_DEFINED(OpFlags.f_has_side_effect),
+    DEFINED_CONSTANT_OR_METHOD(OpFlags.f_can_raise_exception),
+    METHOD_DEFINED(OpFlags.f_can_raise_exception),
     BACKREF_IS_MATCH_DATA(0),
     CLASS_VAR_IS_DEFINED(0),
-    DEFINED_CONSTANT_OR_METHOD(0),
     GLOBAL_IS_DEFINED(0),
     HAS_INSTANCE_VAR(0),
     IS_METHOD_BOUND(0),
-    METHOD_DEFINED(0),
     METHOD_IS_PUBLIC(0),
     SUPER_METHOD_BOUND(0),
     
