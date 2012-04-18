@@ -7,7 +7,9 @@
 
 module Gem
   QUICKLOADER_SUCKAGE = RUBY_VERSION =~ /^1\.9\.1/
-  GEM_PRELUDE_SUCKAGE = false
+
+  # Only MRI 1.9.2 has the custom prelude.
+  GEM_PRELUDE_SUCKAGE = RUBY_VERSION =~ /^1\.9\.2/ && RUBY_ENGINE == "ruby"
 end
 
 if Gem::GEM_PRELUDE_SUCKAGE and defined?(Gem::QuickLoader) then
@@ -118,7 +120,7 @@ require "rubygems/deprecate"
 # -The RubyGems Team
 
 module Gem
-  VERSION = '1.8.15'
+  VERSION = '1.8.21'
 
   ##
   # Raised when RubyGems is unable to load or activate a gem.  Contains the
@@ -256,7 +258,7 @@ module Gem
 
     Gem.path.each do |gemdir|
       each_load_path all_partials(gemdir) do |load_path|
-        result << gemdir.add(load_path).expand_path
+        result << load_path
       end
     end
 
@@ -442,10 +444,10 @@ module Gem
   # problem, then we will silently continue.
 
   def self.ensure_gem_subdirectories dir = Gem.dir
-    require 'fileutils'
-
     old_umask = File.umask
-    File.umask old_umask | 022
+    File.umask old_umask | 002
+
+    require 'fileutils'
 
     %w[cache doc gems specifications].each do |name|
       subdir = File.join dir, name
@@ -647,19 +649,39 @@ module Gem
   def self.load_yaml
     return if @yaml_loaded
 
-    begin
-      gem 'psych', '~> 1.2', '>= 1.2.1' unless ENV['TEST_SYCK']
-    rescue Gem::LoadError
-      # It's OK if the user does not have the psych gem installed.  We will
-      # attempt to require the stdlib version
+    test_syck = ENV['TEST_SYCK']
+
+    unless test_syck
+      begin
+        gem 'psych', '~> 1.2', '>= 1.2.1'
+      rescue Gem::LoadError
+        # It's OK if the user does not have the psych gem installed.  We will
+        # attempt to require the stdlib version
+      end
+
+      begin
+        # Try requiring the gem version *or* stdlib version of psych.
+        require 'psych'
+      rescue ::LoadError
+        # If we can't load psych, thats fine, go on.
+      else
+        # If 'yaml' has already been required, then we have to
+        # be sure to switch it over to the newly loaded psych.
+        if defined?(YAML::ENGINE) && YAML::ENGINE.yamler != "psych"
+          YAML::ENGINE.yamler = "psych"
+        end
+
+        require 'rubygems/psych_additions'
+        require 'rubygems/psych_tree'
+      end
     end
 
-    begin
-      # Try requiring the gem version *or* stdlib version of psych.
-      require 'psych' unless ENV['TEST_SYCK']
-    rescue ::LoadError
-    ensure
-      require 'yaml'
+    require 'yaml'
+
+    # If we're supposed to be using syck, then we may have to force
+    # activate it via the YAML::ENGINE API.
+    if test_syck and defined?(YAML::ENGINE)
+      YAML::ENGINE.yamler = "syck" unless YAML::ENGINE.syck?
     end
 
     # Now that we're sure some kind of yaml library is loaded, pull
