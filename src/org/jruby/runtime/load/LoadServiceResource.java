@@ -77,7 +77,12 @@ public class LoadServiceResource {
 
     public InputStream getInputStream() throws IOException {
         if (resource != null) {
-            return new LoadServiceResourceInputStream(resource.openStream());
+            InputStream is = resource.openStream();
+            try {
+                return new LoadServiceResourceInputStream(is);
+            } finally {
+                is.close();
+            }
         }
         byte[] bytes = new byte[(int)path.length()];
         ByteBuffer buffer = ByteBuffer.wrap(bytes);
