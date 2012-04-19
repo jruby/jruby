@@ -491,7 +491,9 @@ public class RubyFixnum extends RubyInteger {
     public IRubyObject op_mul(ThreadContext context, long otherValue) {
         Ruby runtime = context.getRuntime();
         long result = value * otherValue;
-        if (value != 0 && result / value != otherValue) {
+        // Long.MIN_VALUE is a special case where the result can be incorrect
+        // See JRUBY-6612
+        if ((value != 0 && result / value != otherValue) || otherValue == Long.MIN_VALUE) {
             return RubyBignum.newBignum(runtime, value).op_mul(context, otherValue);
         }
         return newFixnum(runtime, result);
