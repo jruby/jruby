@@ -20,24 +20,24 @@ public class InterpretedIRBlockBody19 extends InterpretedIRBlockBody {
         return this.closure.getParameterList();
     }
 
-    private IRubyObject[] convertValueIntoArgArray(ThreadContext context, IRubyObject value, boolean isYieldSpecific, boolean isArray) {
+    private IRubyObject[] convertValueIntoArgArray(ThreadContext context, IRubyObject value, boolean passArrayArg, boolean argIsArray) {
         // SSS FIXME: But this should not happen -- so, some places in the runtime library are breaking this contract.
-        if (isArray && !(value instanceof RubyArray)) isArray = false;
+        if (argIsArray && !(value instanceof RubyArray)) argIsArray = false;
 
         int blockArity = arity().getValue();
         switch (blockArity) {
             case 0  : return new IRubyObject[] { value };
-            case -1 : return isArray ? ((RubyArray)value).toJavaArray() : new IRubyObject[] { value };
+            case -1 : return argIsArray ? ((RubyArray)value).toJavaArray() : new IRubyObject[] { value };
             case 1  : {
-               if (isArray) {
+               if (argIsArray) {
                    RubyArray valArray = ((RubyArray)value);
-                   if (valArray.size() == 0) value = isYieldSpecific ? RubyArray.newEmptyArray(context.getRuntime()) : context.nil;
-                   else if (!isYieldSpecific) value = valArray.eltInternal(0);
+                   if (valArray.size() == 0) value = passArrayArg ? RubyArray.newEmptyArray(context.getRuntime()) : context.nil;
+                   else if (!passArrayArg) value = valArray.eltInternal(0);
                }
                return new IRubyObject[] { value };
             }
             default : 
-                if (isArray) {
+                if (argIsArray) {
                     RubyArray valArray = (RubyArray)value;
                     if (valArray.size() == 1) value = valArray.eltInternal(0);
                     value = RuntimeHelpers.aryToAry(value);
@@ -52,24 +52,24 @@ public class InterpretedIRBlockBody19 extends InterpretedIRBlockBody {
         }
     }
 
-    private IRubyObject[] getLambdaArgs(ThreadContext context, IRubyObject value, boolean isYieldSpecific, boolean isArray) {
-        IRubyObject[] args = (value == null) ? IRubyObject.NULL_ARRAY : (isArray ? ((RubyArray)value).toJavaArray() : new IRubyObject[] { value });
+    private IRubyObject[] getLambdaArgs(ThreadContext context, IRubyObject value, boolean passArrayArg, boolean argIsArray) {
+        IRubyObject[] args = (value == null) ? IRubyObject.NULL_ARRAY : (argIsArray ? ((RubyArray)value).toJavaArray() : new IRubyObject[] { value });
         arity().checkArity(context.getRuntime(), args);
         return args;
     }
 
-    private IRubyObject[] getYieldArgs(ThreadContext context, IRubyObject value, boolean isYieldSpecific, boolean isArray, Type type) {
+    private IRubyObject[] getYieldArgs(ThreadContext context, IRubyObject value, boolean passArrayArg, boolean argIsArray, Type type) {
         if (type == Block.Type.LAMBDA) {
-            return getLambdaArgs(context, value, isYieldSpecific, isArray);
+            return getLambdaArgs(context, value, passArrayArg, argIsArray);
         } else {
-            return (value == null) ? IRubyObject.NULL_ARRAY : convertValueIntoArgArray(context, value, isYieldSpecific, isArray);
+            return (value == null) ? IRubyObject.NULL_ARRAY : convertValueIntoArgArray(context, value, passArrayArg, argIsArray);
         }
     }
 
     // SSS: Looks like yieldSpecific and yieldArray need to treat array unwrapping differently.
     // This is a little baffling to me.  I think the runtime library code needs to turn off 
-    // the isArray flag if it wants an array and not create this artificial distinction
-    // between the two.  In any case, it looks like in certain contexts, isArray flag is being
+    // the argIsArray flag if it wants an array and not create this artificial distinction
+    // between the two.  In any case, it looks like in certain contexts, argIsArray flag is being
     // passed in as true even when the argument is not an array.
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, Binding binding, Block.Type type) {
@@ -88,14 +88,16 @@ public class InterpretedIRBlockBody19 extends InterpretedIRBlockBody {
         return yieldSpecificInternal(context, context.getRuntime().newArrayNoCopyLight(arg0, arg1, arg2), null, null, true, binding, type);
     }
 
-    private IRubyObject yieldSpecificInternal(ThreadContext context, IRubyObject value, IRubyObject self, RubyModule klass, boolean isArray, Binding binding, Type type) {
-        IRubyObject[] args = getYieldArgs(context, value, true, isArray, type);
+    private IRubyObject yieldSpecificInternal(ThreadContext context, IRubyObject value, IRubyObject self, RubyModule klass, boolean argIsArray, Binding binding, Type type) {
+		  // Do not unwrap the array arg
+        IRubyObject[] args = getYieldArgs(context, value, true, argIsArray, type);
         return commonYieldPath(context, args, self, klass, binding, type, Block.NULL_BLOCK);
     }
 
     @Override
-    public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, RubyModule klass, boolean isArray, Binding binding, Type type) {
-        IRubyObject[] args = getYieldArgs(context, value, false, isArray, type);
+    public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, RubyModule klass, boolean argIsArray, Binding binding, Type type) {
+		  // Unwrap the array arg
+        IRubyObject[] args = getYieldArgs(context, value, false, argIsArray, type);
         return commonYieldPath(context, args, self, klass, binding, type, Block.NULL_BLOCK);
     }
 
