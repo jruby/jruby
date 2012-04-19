@@ -110,7 +110,7 @@ public class InterpretedIRBlockBody19 extends InterpretedIRBlockBody {
             // I thought only procs & lambdas can be called, and blocks are yielded to.
             if (args.length == 1) {
                 // Convert value to arg-array, unwrapping where necessary
-                args = convertValueIntoArgArray(context, args[0], false, (type == Block.Type.NORMAL) && (args[0] instanceof RubyArray));
+                args = convertValueIntoArgArray(context, args[0], true, (type == Block.Type.NORMAL) && (args[0] instanceof RubyArray));
             } else if (arity().getValue() == 1) {
                // discard excess arguments
                 args = (args.length == 0) ? context.getRuntime().getSingleNilArray() : new IRubyObject[] { args[0] };
