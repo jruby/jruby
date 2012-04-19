@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import org.jruby.ext.socket.SocketUtils;
 
 public class Sockaddr {
 
@@ -42,10 +43,11 @@ public class Sockaddr {
         RubyArray sockaddr = (RubyArray) unpack_sockaddr_in(context, arg);
 
         IRubyObject addr = sockaddr.pop(context);
-        IRubyObject port = sockaddr.pop(context);
+        IRubyObject _port = sockaddr.pop(context);
+        int port = SocketUtils.portToInt(_port);
 
         return new InetSocketAddress(
-                addr.convertToString().toString(), RubyNumeric.fix2int(port));
+                addr.convertToString().toString(), port);
     }
 
     public static UnixSocketAddress addressFromSockaddr_un(ThreadContext context, IRubyObject arg) {

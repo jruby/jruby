@@ -500,4 +500,8 @@ public class SocketUtils {
 
         return protocolFamily;
     }
+    
+    public static int portToInt(IRubyObject port) {
+        return port.isNil() ? 0 : RubyNumeric.fix2int(port);
+    }
 }

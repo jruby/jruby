@@ -116,19 +116,20 @@ public class RubyUDPSocket extends RubyIPSocket {
     }
 
     @JRubyMethod
-    public IRubyObject bind(ThreadContext context, IRubyObject host, IRubyObject port) {
+    public IRubyObject bind(ThreadContext context, IRubyObject host, IRubyObject _port) {
         Ruby runtime = context.runtime;
         InetSocketAddress addr = null;
 
         try {
             Channel channel = getChannel();
+            int port = SocketUtils.portToInt(_port);
 
             if (host.isNil()
                 || ((host instanceof RubyString)
                 && ((RubyString) host).isEmpty())) {
 
                 // host is nil or the empty string, bind to INADDR_ANY
-                addr = new InetSocketAddress(RubyNumeric.fix2int(port));
+                addr = new InetSocketAddress(port);
 
             } else if (host instanceof RubyFixnum) {
 
@@ -136,18 +137,18 @@ public class RubyUDPSocket extends RubyIPSocket {
                 int intAddr = RubyNumeric.fix2int(host);
                 RubyModule socketMod = runtime.getModule("Socket");
                 if (intAddr == RubyNumeric.fix2int(socketMod.getConstant("INADDR_ANY"))) {
-                    addr = new InetSocketAddress(InetAddress.getByName("0.0.0.0"), RubyNumeric.fix2int(port));
+                    addr = new InetSocketAddress(InetAddress.getByName("0.0.0.0"), port);
                 }
 
             } else {
                 // passing in something like INADDR_ANY
-                addr = new InetSocketAddress(InetAddress.getByName(host.convertToString().toString()), RubyNumeric.fix2int(port));
+                addr = new InetSocketAddress(InetAddress.getByName(host.convertToString().toString()), port);
             }
 
             if (multicastStateManager == null) {
                 ((DatagramChannel) channel).socket().bind(addr);
             } else {
-                multicastStateManager.rebindToPort(RubyNumeric.fix2int(port));
+                multicastStateManager.rebindToPort(port);
             }
 
             return RubyFixnum.zero(runtime);
@@ -179,7 +180,7 @@ public class RubyUDPSocket extends RubyIPSocket {
         Ruby runtime = context.runtime;
 
         try {
-            InetSocketAddress addr = new InetSocketAddress(InetAddress.getByName(host.convertToString().toString()), RubyNumeric.fix2int(port));
+            InetSocketAddress addr = new InetSocketAddress(InetAddress.getByName(host.convertToString().toString()), SocketUtils.portToInt(port));
 
             ((DatagramChannel) this.getChannel()).connect(addr);
 
