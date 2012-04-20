@@ -1377,7 +1377,8 @@ public final class Ruby {
             keyError = defineClassIfAllowed("KeyError", indexError);
 
             mathDomainError = defineClassUnder("DomainError", argumentError, argumentError.getAllocator(), mathModule);
-            recursiveKey = newSymbol("__recursive_key__");
+            recursiveKey.set(newSymbol("__recursive_key__"));
+            inRecursiveListOperation.set(false);
         }
 
         initErrno();
@@ -3659,7 +3660,7 @@ public final class Ruby {
         ExecRecursiveParams p = new ExecRecursiveParams();
         p.list = recursiveListAccess();
         p.objid = obj.id();
-        boolean outermost = outer && !recursiveCheck(p.list, recursiveKey, null);
+        boolean outermost = outer && !recursiveCheck(p.list, recursiveKey.get(), null);
         if(recursiveCheck(p.list, p.objid, pairid)) {
             if(outer && !outermost) {
                 throw new RecursiveError(p.list);
@@ -3672,7 +3673,7 @@ public final class Ruby {
             p.pairid = pairid;
 
             if(outermost) {
-                recursivePush(p.list, recursiveKey, null);
+                recursivePush(p.list, recursiveKey.get(), null);
                 try {
                     result = execRecursiveI(p);
                 } catch(RecursiveError e) {
@@ -3682,7 +3683,7 @@ public final class Ruby {
                         result = p.list;
                     }
                 }
-                recursivePop(p.list, recursiveKey, null);
+                recursivePop(p.list, recursiveKey.get(), null);
                 if(result == p.list) {
                     result = func.call(obj, true);
                 }
@@ -3712,7 +3713,7 @@ public final class Ruby {
      * @return
      */
     public IRubyObject execRecursive(RecursiveFunction func, IRubyObject obj) {
-        if (!inRecursiveListOperation) {
+        if (!inRecursiveListOperation.get()) {
             throw newThreadError("BUG: execRecursive called outside recursiveListOperation");
         }
         return execRecursiveInternal(func, obj, null, false);
@@ -3751,14 +3752,14 @@ public final class Ruby {
      */
     public <T extends IRubyObject> T recursiveListOperation(Callable<T> body) {
         try {
-            inRecursiveListOperation = true;
+            inRecursiveListOperation.set(true);
             return body.call();
         } catch (Exception e) {
             UnsafeFactory.getUnsafe().throwException(e);
             return null; // not reached
         } finally {
             recursiveListClear();
-            inRecursiveListOperation = false;
+            inRecursiveListOperation.set(false);
         }
     }
 
@@ -4280,6 +4281,6 @@ public final class Ruby {
 
     // structures and such for recursive operations
     private ThreadLocal<Map<String, RubyHash>> recursive = new ThreadLocal<Map<String, RubyHash>>();
-    private RubySymbol recursiveKey;
-    private boolean inRecursiveListOperation;
+    private ThreadLocal<RubySymbol> recursiveKey = new ThreadLocal<RubySymbol>();
+    private ThreadLocal<Boolean> inRecursiveListOperation = new ThreadLocal<Boolean>();
 }
