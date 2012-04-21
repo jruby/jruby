@@ -572,7 +572,7 @@ public class Interpreter {
                 } catch (IRBreakJump bj) {
                     if ((lastInstr instanceof BreakInstr) || bj.breakInEval) {
                         handleBreakJump(context, scope, bj, self, blockType, inClosure);
-                    } else if (inLambda(blockType)) {
+                    } else if (inNonMethodBodyLambda(scope, blockType)) {
                         // We just unwound all the way up because of a non-local break
                         throw IRException.BREAK_LocalJumpError.getException(runtime);
                     } else if (bj.caughtByLambda || (bj.scopeToReturnTo == scope)) {
