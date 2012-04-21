@@ -76,7 +76,14 @@ public class ToAryInstr extends Instr implements ResultInstr {
         if (dontToAryArrays.isTrue() && receiver instanceof RubyArray) {
             return receiver;
         } else {
-            return RuntimeHelpers.aryToAry((IRubyObject) receiver);
+            IRubyObject rcvr = (IRubyObject)receiver;
+            IRubyObject ary  = RuntimeHelpers.aryToAry(rcvr);
+            if (ary instanceof RubyArray) {
+                return ary;
+            } else {
+                String receiverType = rcvr.getType().getName();
+                throw context.getRuntime().newTypeError("can't convert " + receiverType + " to Array (" + receiverType + "#to_ary gives " + ary.getType().getName() + ")");
+            }
         }
     }
 }
