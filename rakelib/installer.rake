@@ -42,8 +42,8 @@ task :macos_installer do
 
     puts "- Building package"
     mkdir_p PKG_DIR
-    sh "time /usr/bin/xcrun packagemaker --no-recommend -v --doc JRuby-installer.pmdoc --out #{PKG_DIR}/JRuby-#{VERSION_JRUBY}.pkg --version #{VERSION_JRUBY}"
-    sh "time /usr/bin/xcrun packagemaker --no-recommend -v --doc JRuby-uninstaller.pmdoc --out #{PKG_DIR}/JRuby-uninstaller-#{VERSION_JRUBY}.pkg --version #{VERSION_JRUBY}"
+    sh "time #{packagemaker} --no-recommend -v --doc JRuby-installer.pmdoc --out #{PKG_DIR}/JRuby-#{VERSION_JRUBY}.pkg --version #{VERSION_JRUBY}"
+    sh "time #{packagemaker} --no-recommend -v --doc JRuby-uninstaller.pmdoc --out #{PKG_DIR}/JRuby-uninstaller-#{VERSION_JRUBY}.pkg --version #{VERSION_JRUBY}"
 
     rm DMG if File.exist? DMG = File.join(BASE_DIR, DIST_DIR, "JRuby-#{VERSION_JRUBY}.dmg")
     sh "time hdiutil create #{DMG} -volname JRuby-#{VERSION_JRUBY} -fs HFS+ -srcfolder #{PKG_DIR}"
@@ -93,4 +93,12 @@ def cleanup
   [MAC_DIST, GEMS_DIST_DIR, PKG_DIR ].each do |f|
     rm_r f if File.exist? f
   end
+end
+
+def packagemaker
+  pkgmaker = `mdfind "kMDItemDisplayName=='PackageMaker*'"`.chomp
+  if pkgmaker == ""
+    raise 'PackageMaker not found'
+  end
+  File.join(pkgmaker, 'Contents', 'MacOS', 'PackageMaker')
 end
