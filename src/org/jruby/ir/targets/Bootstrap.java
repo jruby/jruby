@@ -5,6 +5,7 @@ import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
@@ -15,6 +16,7 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
+import org.jruby.runtime.opto.GenerationAndSwitchPointInvalidator;
 import org.jruby.util.JavaNameMangler;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
@@ -25,6 +27,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
+import java.lang.invoke.SwitchPoint;
 
 import static java.lang.invoke.MethodHandles.*;
 import static org.jruby.runtime.invokedynamic.InvokeDynamicSupport.*;
@@ -152,7 +155,7 @@ public class Bootstrap {
     public static IRubyObject invoke(InvokeSite site, ThreadContext context, IRubyObject self) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
         String methodName = site.name;
-//        SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
+        SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
         CacheEntry entry = selfClass.searchWithCache(methodName);
         DynamicMethod method = entry.method;
 
@@ -160,7 +163,7 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.NORMAL, context, self, methodName);
         }
 
-        MethodHandle mh = getHandle(site, method, 0);
+        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 0);
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, self);
@@ -169,7 +172,7 @@ public class Bootstrap {
     public static IRubyObject invoke(InvokeSite site, ThreadContext context, IRubyObject self, IRubyObject arg0) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
         String methodName = site.name;
-//        SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
+        SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
         CacheEntry entry = selfClass.searchWithCache(methodName);
         DynamicMethod method = entry.method;
 
@@ -177,7 +180,7 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.NORMAL, context, self, methodName, arg0);
         }
 
-        MethodHandle mh = getHandle(site, method, 1);
+        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 1);
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, self, arg0);
@@ -186,7 +189,7 @@ public class Bootstrap {
     public static IRubyObject invoke(InvokeSite site, ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
         String methodName = site.name;
-//        SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
+        SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
         CacheEntry entry = selfClass.searchWithCache(methodName);
         DynamicMethod method = entry.method;
 
@@ -194,7 +197,7 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.NORMAL, context, self, methodName);
         }
 
-        MethodHandle mh = getHandle(site, method, 2);
+        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 2);
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, self);
@@ -203,7 +206,7 @@ public class Bootstrap {
     public static IRubyObject invoke(InvokeSite site, ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
         String methodName = site.name;
-//        SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
+        SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
         CacheEntry entry = selfClass.searchWithCache(methodName);
         DynamicMethod method = entry.method;
 
@@ -211,7 +214,7 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.NORMAL, context, self, methodName);
         }
 
-        MethodHandle mh = getHandle(site, method, 3);
+        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 3);
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, self);
@@ -220,7 +223,7 @@ public class Bootstrap {
     public static IRubyObject invokeSelf(InvokeSite site, ThreadContext context, IRubyObject self) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
         String methodName = site.name;
-//        SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
+        SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
         CacheEntry entry = selfClass.searchWithCache(methodName);
         DynamicMethod method = entry.method;
 
@@ -228,7 +231,7 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.FUNCTIONAL, context, self, methodName);
         }
 
-        MethodHandle mh = getHandle(site, method, 0);
+        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 0);
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, self);
@@ -237,7 +240,7 @@ public class Bootstrap {
     public static IRubyObject attrAssign(InvokeSite site, ThreadContext context, IRubyObject self, IRubyObject arg0) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
         String methodName = site.name;
-//        SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
+        SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
         CacheEntry entry = selfClass.searchWithCache(methodName);
         DynamicMethod method = entry.method;
 
@@ -245,7 +248,7 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.NORMAL, context, self, methodName, arg0);
         }
 
-        MethodHandle mh = getHandle(site, method, 1);
+        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 1);
 
         mh = foldArguments(
                 mh,
@@ -265,7 +268,7 @@ public class Bootstrap {
             new int[]{1, 0, 2, 3, 4},
     };
 
-    private static MethodHandle getHandle(InvokeSite site, DynamicMethod method, int arity) throws Throwable {
+    private static MethodHandle getHandle(RubyClass selfClass, SwitchPoint switchPoint, InvokeSite site, DynamicMethod method, int arity) throws Throwable {
         MethodHandle mh = null;
         if (method.getNativeCall() != null) {
             DynamicMethod.NativeCall nc = method.getNativeCall();
@@ -312,11 +315,20 @@ public class Bootstrap {
             }
         }
 
+        MethodHandle fallback = Binder
+                .from(site.type())
+                .insert(0, site.name)
+                .invokeStatic(MethodHandles.lookup(), Bootstrap.class, "invokeSelfSimple");
+
         if (mh == null) {
-            mh = Binder
-                    .from(site.type())
-                    .insert(0, site.name)
-                    .invokeStatic(MethodHandles.lookup(), Bootstrap.class, "invokeSelfSimple");
+            return fallback;
+        } else {
+            MethodHandle test = Binder
+                    .from(site.type().changeReturnType(boolean.class))
+                    .insert(0, new Class[]{RubyClass.class}, selfClass)
+                    .invokeStatic(MethodHandles.lookup(), Bootstrap.class, "testType");
+            mh = MethodHandles.guardWithTest(test, mh, fallback);
+            mh = switchPoint.guardWithTest(mh, fallback);
         }
 
         return mh;
@@ -329,7 +341,7 @@ public class Bootstrap {
     public static IRubyObject invokeSelf(InvokeSite site, ThreadContext context, IRubyObject self, IRubyObject arg0) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
         String methodName = site.name;
-//        SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
+        SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
         CacheEntry entry = selfClass.searchWithCache(methodName);
         DynamicMethod method = entry.method;
 
@@ -337,7 +349,7 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.FUNCTIONAL, context, self, methodName, arg0);
         }
 
-        MethodHandle mh = getHandle(site, method, 1);
+        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 1);
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, self, arg0);
@@ -350,7 +362,7 @@ public class Bootstrap {
     public static IRubyObject invokeSelf(InvokeSite site, ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
         String methodName = site.name;
-//        SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
+        SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
         CacheEntry entry = selfClass.searchWithCache(methodName);
         DynamicMethod method = entry.method;
 
@@ -358,7 +370,7 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.FUNCTIONAL, context, self, methodName, arg0, arg1);
         }
 
-        MethodHandle mh = getHandle(site, method, 2);
+        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 2);
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, self, arg0, arg1);
@@ -371,7 +383,7 @@ public class Bootstrap {
     public static IRubyObject invokeSelf(InvokeSite site, ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) throws Throwable {
         RubyClass selfClass = pollAndGetClass(context, self);
         String methodName = site.name;
-//        SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
+        SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
         CacheEntry entry = selfClass.searchWithCache(methodName);
         DynamicMethod method = entry.method;
 
@@ -379,7 +391,7 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.FUNCTIONAL, context, self, methodName, arg0, arg1, arg2);
         }
 
-        MethodHandle mh = getHandle(site, method, 3);
+        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 3);
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, self, arg0, arg1, arg2);
@@ -407,6 +419,31 @@ public class Bootstrap {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static boolean testType(RubyClass original, ThreadContext context, IRubyObject self) {
+        // naive test
+        return self.getMetaClass() == original;
+    }
+
+    public static boolean testType(RubyClass original, ThreadContext context, IRubyObject self, IRubyObject arg0) {
+        // naive test
+        return self.getMetaClass() == original;
+    }
+
+    public static boolean testType(RubyClass original, ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1) {
+        // naive test
+        return self.getMetaClass() == original;
+    }
+
+    public static boolean testType(RubyClass original, ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        // naive test
+        return self.getMetaClass() == original;
+    }
+
+    public static boolean testType(RubyClass original, ThreadContext context, IRubyObject self, IRubyObject[] args) {
+        // naive test
+        return self.getMetaClass() == original;
     }
 
     ///////////////////////////////////////////////////////////////////////////
