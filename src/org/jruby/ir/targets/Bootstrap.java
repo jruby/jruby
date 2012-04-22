@@ -8,6 +8,7 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
@@ -33,7 +34,7 @@ public class Bootstrap {
     public static CallSite string(Lookup lookup, String name, MethodType type, String value, int encoding) {
         MethodHandle handle = Binder
                 .from(IRubyObject.class, ThreadContext.class)
-                .insert(0, value, encoding)
+                .insert(0, new Class[]{String.class, int.class}, value, encoding)
                 .invokeStaticQuiet(MethodHandles.lookup(), Bootstrap.class, "string");
         CallSite site = new ConstantCallSite(handle);
         return site;

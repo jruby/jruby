@@ -15,6 +15,7 @@ import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Symbol;
 import org.jruby.ir.operands.Variable;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JRubyClassLoader;
@@ -114,6 +115,7 @@ public class JVM implements CompilerTarget {
 
         // locals for ThreadContext and self
         methodData().local("$context", JVM.THREADCONTEXT_TYPE);
+        methodData().local("$scope", JVM.STATICSCOPE_TYPE);
         methodData().local("$self");//, JVM.OBJECT_TYPE);
     }
 
@@ -210,6 +212,8 @@ public class JVM implements CompilerTarget {
 
     public static final Class OBJECT = IRubyObject.class;
     public static final Class THREADCONTEXT = ThreadContext.class;
+    public static final Class STATICSCOPE = StaticScope.class;
     public static final Type OBJECT_TYPE = Type.getType(OBJECT);
     public static final Type THREADCONTEXT_TYPE = Type.getType(THREADCONTEXT);
+    public static final Type STATICSCOPE_TYPE = Type.getType(STATICSCOPE);
 }

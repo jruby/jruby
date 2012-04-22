@@ -44,6 +44,7 @@ import org.jruby.ext.ffi.FFI;
 import org.jruby.ir.IRBuilder;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.targets.JVM;
+import org.jruby.parser.StaticScope;
 import org.jruby.util.func.Function1;
 import java.io.ByteArrayInputStream;
 import java.io.FileDescriptor;
@@ -701,7 +702,7 @@ public final class Ruby {
             return new AbstractScript() {
                 public IRubyObject __file__(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
                     try {
-                        return (IRubyObject)compiled.getMethod("__script__", ThreadContext.class, IRubyObject.class).invoke(null, getCurrentContext(), getTopSelf());
+                        return (IRubyObject)compiled.getMethod("__script__", ThreadContext.class, StaticScope.class, IRubyObject.class).invoke(null, getCurrentContext(), scope.getStaticScope(), getTopSelf());
                     } catch (InvocationTargetException ite) {
                         if (ite.getCause() instanceof JumpException) {
                             throw (JumpException)ite.getCause();

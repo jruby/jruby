@@ -67,7 +67,7 @@ public class CompiledIRMethod extends DynamicMethod implements PositionAware {
             RubyModule implementationClass = getImplementationClass();
             context.preMethodFrameAndScope(implementationClass, name, self, block, scope);
             context.setCurrentVisibility(getVisibility());
-            return (IRubyObject)this.method.invokeWithArguments(context, self, args);
+            return (IRubyObject)this.method.invokeWithArguments(context, scope, self, args);
         } catch (Throwable t) {
             UnsafeFactory.getUnsafe().throwException(t);
             // not reached
@@ -92,7 +92,7 @@ public class CompiledIRMethod extends DynamicMethod implements PositionAware {
             RubyModule implementationClass = getImplementationClass();
             context.preMethodFrameAndScope(implementationClass, name, self, block, scope);
             context.setCurrentVisibility(getVisibility());
-            return (IRubyObject)this.method.invokeWithArguments(context, self);
+            return (IRubyObject)this.method.invokeWithArguments(context, scope, self);
         } catch (Throwable t) {
             UnsafeFactory.getUnsafe().throwException(t);
             // not reached
@@ -117,7 +117,7 @@ public class CompiledIRMethod extends DynamicMethod implements PositionAware {
             RubyModule implementationClass = getImplementationClass();
             context.preMethodFrameAndScope(implementationClass, name, self, block, scope);
             context.setCurrentVisibility(getVisibility());
-            return (IRubyObject)this.method.invokeWithArguments(context, self, arg0);
+            return (IRubyObject)this.method.invokeWithArguments(context, scope, self, arg0);
         } catch (Throwable t) {
             UnsafeFactory.getUnsafe().throwException(t);
             // not reached
@@ -142,7 +142,7 @@ public class CompiledIRMethod extends DynamicMethod implements PositionAware {
             RubyModule implementationClass = getImplementationClass();
             context.preMethodFrameAndScope(implementationClass, name, self, block, scope);
             context.setCurrentVisibility(getVisibility());
-            return (IRubyObject)this.method.invokeWithArguments(context, self, arg0, arg1);
+            return (IRubyObject)this.method.invokeWithArguments(context, scope, self, arg0, arg1);
         } catch (Throwable t) {
             UnsafeFactory.getUnsafe().throwException(t);
             // not reached
@@ -167,7 +167,7 @@ public class CompiledIRMethod extends DynamicMethod implements PositionAware {
             RubyModule implementationClass = getImplementationClass();
             context.preMethodFrameAndScope(implementationClass, name, self, block, scope);
             context.setCurrentVisibility(getVisibility());
-            return (IRubyObject)this.method.invokeWithArguments(context, self, arg0, arg1, arg2);
+            return (IRubyObject)this.method.invokeWithArguments(context, scope, self, arg0, arg1, arg2);
         } catch (Throwable t) {
             UnsafeFactory.getUnsafe().throwException(t);
             // not reached

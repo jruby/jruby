@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.Stack;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
+import org.jruby.util.CodegenUtils;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -32,11 +33,25 @@ class ClassData {
         return methodStack.peek();
     }
 
-    private static final Type[][] PARAMS = new Type[][] {
+    public static final Type[][] PARAMS = new Type[][] {
             new Type[]{JVM.THREADCONTEXT_TYPE, JVM.OBJECT_TYPE},
             new Type[]{JVM.THREADCONTEXT_TYPE, JVM.OBJECT_TYPE, JVM.OBJECT_TYPE},
             new Type[]{JVM.THREADCONTEXT_TYPE, JVM.OBJECT_TYPE, JVM.OBJECT_TYPE, JVM.OBJECT_TYPE},
             new Type[]{JVM.THREADCONTEXT_TYPE, JVM.OBJECT_TYPE, JVM.OBJECT_TYPE, JVM.OBJECT_TYPE, JVM.OBJECT_TYPE}
+    };
+
+    public static final Type[][] ARGS = new Type[][] {
+            new Type[]{JVM.THREADCONTEXT_TYPE, JVM.STATICSCOPE_TYPE, JVM.OBJECT_TYPE},
+            new Type[]{JVM.THREADCONTEXT_TYPE, JVM.STATICSCOPE_TYPE, JVM.OBJECT_TYPE, JVM.OBJECT_TYPE},
+            new Type[]{JVM.THREADCONTEXT_TYPE, JVM.STATICSCOPE_TYPE, JVM.OBJECT_TYPE, JVM.OBJECT_TYPE, JVM.OBJECT_TYPE},
+            new Type[]{JVM.THREADCONTEXT_TYPE, JVM.STATICSCOPE_TYPE, JVM.OBJECT_TYPE, JVM.OBJECT_TYPE, JVM.OBJECT_TYPE, JVM.OBJECT_TYPE}
+    };
+
+    public static final String[] SIGS = new String[] {
+            CodegenUtils.sig(JVM.OBJECT, JVM.THREADCONTEXT, JVM.STATICSCOPE, JVM.OBJECT),
+            CodegenUtils.sig(JVM.OBJECT, JVM.THREADCONTEXT, JVM.STATICSCOPE, JVM.OBJECT, JVM.OBJECT),
+            CodegenUtils.sig(JVM.OBJECT, JVM.THREADCONTEXT, JVM.STATICSCOPE, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT),
+            CodegenUtils.sig(JVM.OBJECT, JVM.THREADCONTEXT, JVM.STATICSCOPE, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT, JVM.OBJECT)
     };
 
     public void pushmethod(String name, int arity) {
@@ -46,7 +61,7 @@ class ClassData {
             case 1:
             case 2:
             case 3:
-                m = new Method(name, JVM.OBJECT_TYPE, PARAMS[arity]);
+                m = new Method(name, JVM.OBJECT_TYPE, ARGS[arity]);
                 break;
             default:
                 throw new RuntimeException("Unsupported arity " + arity + " for " + name);
