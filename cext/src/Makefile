@@ -154,17 +154,19 @@ endif
 
 ifeq ($(OS), darwin)
   PLATFORM = Darwin
-  ifneq ($(realpath $(wildcard /Xcode3/usr/bin/gcc)),)
+  # First try to locate a legacy Xcode 3 install, so a universal binary (ppc + intel) can be built
+  ifneq ($(realpath /Xcode3/usr/bin/gcc),)
     XCODE=/Xcode3
   else
-    XCODE=/Developer
+    XCODE=$(shell xcode-select -print-path)
   endif
+
   ifneq ($(realpath $(wildcard $(XCODE)/usr/bin/gcc)),)
     CC = $(XCODE)/usr/bin/gcc
     CXX = $(XCODE)/usr/bin/g++
   else
-    CC = gcc
-    CXX = g++
+    CC = cc
+    CXX = c++
   endif
 
   ARCHES =
@@ -182,7 +184,7 @@ ifeq ($(OS), darwin)
       ARCHES += ppc
     endif
   else
-    MACSDK = $(firstword $(strip $(wildcard $(XCODE)/SDKs/MacOSX10.*.sdk)))
+    MACSDK = $(firstword $(strip $(wildcard $(XCODE)/SDKs/MacOSX10.*.sdk)) $(strip $(wildcard $(XCODE)/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.*.sdk)))
   endif
 
   JDK_INCLUDES = -I$(MACSDK)/System/Library/Frameworks/JavaVM.framework/Headers
