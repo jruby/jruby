@@ -7,6 +7,7 @@ import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.internal.runtime.methods.CompiledIRMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
@@ -300,6 +301,14 @@ public class Bootstrap {
                         }
                     }
                 }
+            }
+        }
+
+        if (mh == null) {
+            // attempt IR direct binding
+            if (method instanceof CompiledIRMethod) {
+                mh = (MethodHandle)((CompiledIRMethod)method).getHandle();
+                mh = MethodHandles.insertArguments(mh, 1, ((CompiledIRMethod)method).getStaticScope());
             }
         }
 

@@ -40,6 +40,8 @@ public class CompiledIRMethod extends DynamicMethod implements PositionAware {
         this.line = line;
         this.scope = scope;
         this.arity = calculateArity();
+
+        setHandle(method);
     }
 
     private Arity calculateArity() {
@@ -191,4 +193,8 @@ public class CompiledIRMethod extends DynamicMethod implements PositionAware {
     public int getLine() {
         return line;
 	}
+
+    public StaticScope getStaticScope() {
+        return scope;
+    }
 }
