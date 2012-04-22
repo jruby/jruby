@@ -106,6 +106,9 @@ lib/ruby/1.9, and lib/ruby/site_ruby/1.8/rubygems*.
  Bouncycastle is released under the MIT license, and is Copyright (c)
  2000 - 2006 The Legion Of The Bouncy Castle.
 
+ The "yecht" library is Copyright (c) 2009-2011 Ola Bini, and released
+ under the MIT license.
+
 The complete text of the Common Public License is as follows:
 
   Common Public License - v 1.0
