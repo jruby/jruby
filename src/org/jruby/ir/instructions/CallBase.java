@@ -217,23 +217,20 @@ public abstract class CallBase extends Instr implements Specializeable {
         return false; // All checks passed
     }
 
-    // SSS FIXME: No one uses this for now
     private boolean computeRequiresCallersBindingFlag() {
-        if (canBeEval() /*|| canCaptureCallersBinding()*/) return true;
+        if (canBeEval()) return true;
 
-        if (closure != null) {
-            /****
-            IRClosure cl = (IRClosure) ((WrappedIRClosure) closure).scope;
-            if (cl.requiresBinding()) return true;
-            ****/
-            // SSS FIXME: This is conservative!
-            return true;
-        }
+        // Conservative -- assuming that the callee will save the closure
+        // and use it at a later point.
+        if (closure != null) return true;
 
-        // Check if we are calling Proc.new or lambda
         String mname = getMethodAddr().getName();
         if (mname.equals("lambda")) {
             return true;
+/**
+ * SSS: Not required currently.  You cannot Proc.new without passing it a closure
+ * which means it will be captured by the check earlier.
+ *
         } else if (mname.equals("new")) {
             Operand object = getReceiver();
 
@@ -245,6 +242,18 @@ public abstract class CallBase extends Instr implements Specializeable {
 
             IRScope c = ((CurrentScope) object).getScope();
             if (c != null && c instanceof IRClassBody && c.getName().equals("Proc")) return true;
+**/
+        } else if (mname.equals("binding")) {
+            return true;
+        } else if (mname.equals("send") || mname.equals("__send__")) {
+            Operand[] args = getCallArgs();
+            if (args.length >= 1) {
+                Operand meth = args[0];
+                if (!(meth instanceof StringLiteral)) return true; // We don't know -- could be "binding"
+
+                String name = ((StringLiteral) meth).string;
+                if (name.equals("binding")) return true;
+            }
         }
 
         // SSS FIXME: Are all bases covered?  What about aliases?
@@ -273,25 +282,6 @@ public abstract class CallBase extends Instr implements Specializeable {
     // Regexp and IO calls can do this -- and since we do not know at IR-build time 
     // what the call target is, we have to conservatively assume yes
     public boolean canSetDollarVars() {
-        return true;
-    }
-
-    public boolean isDataflowBarrier() {
-        // If the call is an eval, OR if it passes a closure and the callee can capture the caller's binding,
-        // we cannot propagate dataflow analysis information across it (in either direction), except where
-        // the dataflow analysis has additional information for ignoring this barrier. 
-        //
-        // return canBeEval() || targetRequiresCallersBinding();
-        //
-        // SSS FIXME: For now, force all calls with closures to be dataflow barriers
-        //
-        // return canBeEval() || (closure != null);
-        //
-        // Argh! If the current method has threading code in there, all local variables have effectively escaped
-        // into the new thread which means all calls in this method downstream of the threading code are dataflow
-        // barriers.
-        //
-        // SSS FIXME: For now, force all calls to be dataflow barriers
         return true;
     }
 

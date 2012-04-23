@@ -70,6 +70,9 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode {
     }
 
     public boolean applyTransferFunction() {
+        IRScope scope = problem.getScope();
+        boolean scopeBindingHasEscaped = scope.bindingHasEscaped();
+
         // Rescue node, if any
         StoreLocalVarPlacementNode rescueNode = (StoreLocalVarPlacementNode)getNonExitBBExceptionTargetNode();
 
@@ -91,7 +94,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode {
                     IRClosure cl = ((WrappedIRClosure) o).getClosure();
 
                     // If the call is a dataflow barrier, we have to spill everything here
-                    boolean spillAllVars = call.isDataflowBarrier();
+                    boolean spillAllVars = scopeBindingHasEscaped || call.targetRequiresCallersBinding();
 
                     // - If all variables have to be spilled, then those variables will no longer be dirty after the call site
                     // - If a variable is used in the closure (FIXME: Strictly only those vars that are live at the call site -- 
@@ -106,12 +109,32 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode {
                         }
                     }
                     dirtyVars = newDirtyVars;
-                } else if (call.isDataflowBarrier()) { // Call has no closure && it requires stores
+                } else if (scopeBindingHasEscaped || call.targetRequiresCallersBinding()) { // Call has no closure && it requires stores
                     bindingAllocated = true;
                     dirtyVars.clear();
-                } else if (call.canSetDollarVars()) {
-                    bindingAllocated = true;
+                } else {
+                    if (call.canSetDollarVars()) bindingAllocated = true;
+
+                    // All variables not local to the current scope have to be always spilled because of
+                    // multi-threading scenarios where some other scope could load this variable concurrently.
+                    //
+                    // Allocate a new hash-set and modify it to get around ConcurrentModificationException on dirtyVars
+                    Set<LocalVariable> newDirtyVars = new HashSet<LocalVariable>(dirtyVars);
+                    for (LocalVariable v : dirtyVars) {
+                        if ((v instanceof ClosureLocalVariable) && ((ClosureLocalVariable)v).definingScope != scope) {
+                            bindingAllocated = true;
+                            newDirtyVars.remove(v);
+                        }
+                    }
+                    dirtyVars = newDirtyVars;
                 }
+            }
+
+            if (scopeBindingHasEscaped && (i.getOperation() == Operation.PUT_GLOBAL_VAR)) {
+                // global-var tracing can execute closures set up in previous trace-var calls
+                // in which case we would have the 'scopeBindingHasEscaped' flag set to true
+                bindingAllocated = true;
+                dirtyVars.clear();
             }
 
             // If this instruction can raise an exception and we are going to be rescued,
@@ -169,6 +192,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode {
         boolean isEvalScript                   = scope instanceof IREvalScript;
         boolean addAllocateBindingInstructions = false; // SSS: This is going to be useful during JIT -- we are far away from there at this time
         boolean bindingAllocated               = inBindingAllocated;
+        boolean scopeBindingHasEscaped         = scope.bindingHasEscaped();
 
         ListIterator<Instr> instrs    = basicBlock.getInstrs().listIterator();
         Set<LocalVariable>  dirtyVars = new HashSet<LocalVariable>(inDirtyVars);
@@ -210,17 +234,15 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode {
                     IRClosure cl = ((WrappedIRClosure) o).getClosure();
 
                     // Add before call -- hence instrs.previous & instrs.next
+                    // Add a binding allocation instruction, if necessary
                     instrs.previous();
-                    if (addAllocateBindingInstructions) {
-                       // Add a binding allocation instruction, if necessary
-                       if (!bindingAllocated) {
-                           instrs.add(new AllocateBindingInstr(scope));
-                           bindingAllocated = true;
-                       }
+                    if (addAllocateBindingInstructions && !bindingAllocated) {
+                        instrs.add(new AllocateBindingInstr(scope));
+                        bindingAllocated = true;
                     }
 
                     // If the call is a dataflow barrier, we have to spill everything here
-                    boolean spillAllVars = call.isDataflowBarrier();
+                    boolean spillAllVars = scopeBindingHasEscaped || call.targetRequiresCallersBinding();
 
                     // Unless we have to spill everything, spill only those dirty variables that are:
                     // - used in the closure (FIXME: Strictly only those vars that are live at the call site -- but we dont have this info!)
@@ -236,30 +258,42 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode {
                     }
                     dirtyVars = newDirtyVars;
                     instrs.next();
-                } else if (call.isDataflowBarrier()) { // Call has no closure && it requires stores
+                } else if (scopeBindingHasEscaped || call.targetRequiresCallersBinding()) { // Call has no closure && it requires stores
                     // Add before call -- hence instrs.previous & instrs.next
                     instrs.previous();
-                    if (addAllocateBindingInstructions) {
-                        if (!bindingAllocated) {
-                            instrs.add(new AllocateBindingInstr(scope));
-                            bindingAllocated = true;
-                        }
+                    if (addAllocateBindingInstructions && !bindingAllocated) {
+                        instrs.add(new AllocateBindingInstr(scope));
+                        bindingAllocated = true;
                     }
                     for (LocalVariable v : dirtyVars) {
                         instrs.add(new StoreLocalVarInstr(getLocalVarReplacement(v, scope, varRenameMap), scope, v));
                     }
                     instrs.next();
                     dirtyVars.clear();
-                } else if (call.canSetDollarVars()) {
-                    if (addAllocateBindingInstructions) {
-                        if (!bindingAllocated) {
-                            // Add before call -- hence instrs.previous & instrs.next
-                            instrs.previous();
-                            instrs.add(new AllocateBindingInstr(scope));
-                            instrs.next();
-                            bindingAllocated = true;
+                } else {
+                    instrs.previous();
+                    if (call.canSetDollarVars() && addAllocateBindingInstructions && !bindingAllocated) {
+                        instrs.add(new AllocateBindingInstr(scope));
+                        bindingAllocated = true;
+                    }
+
+                    // All variables not local to the current scope have to be always spilled because of
+                    // multi-threading scenarios where some other scope could load this variable concurrently.
+                    //
+                    // Allocate a new hash-set and modify it to get around ConcurrentModificationException on dirtyVars
+                    Set<LocalVariable> newDirtyVars = new HashSet<LocalVariable>(dirtyVars);
+                    for (LocalVariable v : dirtyVars) {
+                        if ((v instanceof ClosureLocalVariable) && ((ClosureLocalVariable)v).definingScope != scope) {
+                            if (addAllocateBindingInstructions && !bindingAllocated) {
+                                 instrs.add(new AllocateBindingInstr(scope));
+                                 bindingAllocated = true;
+                            }
+                            instrs.add(new StoreLocalVarInstr(getLocalVarReplacement(v, scope, varRenameMap), scope, v));
+                            newDirtyVars.remove(v);
                         }
                     }
+                    dirtyVars = newDirtyVars;
+                    instrs.next();
                 }
             } else if ((i instanceof ClosureReturnInstr) || (i instanceof BreakInstr)) {
                 // At closure return and break instructions (both of which are exits from the closure),
@@ -293,6 +327,25 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode {
                 instrs.next();
 
                 // Nothing is dirty anymore -- everything that needs spilling has been spilt
+                dirtyVars.clear();
+            }
+
+            if (scopeBindingHasEscaped && (i.getOperation() == Operation.PUT_GLOBAL_VAR)) {
+                // SSS FIXME: Argh! Refactor this repeated code into a method call.
+                //
+                // global-var tracing can execute closures set up in previous trace-var calls
+                // in which case we would have the 'scopeBindingHasEscaped' flag set to true
+                instrs.previous();
+                if (addAllocateBindingInstructions) {
+                    if (!bindingAllocated) {
+                        instrs.add(new AllocateBindingInstr(scope));
+                        bindingAllocated = true;
+                    }
+                }
+                for (LocalVariable v : dirtyVars) {
+                    instrs.add(new StoreLocalVarInstr(getLocalVarReplacement(v, scope, varRenameMap), scope, v));
+                }
+                instrs.next();
                 dirtyVars.clear();
             }
 

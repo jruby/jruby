@@ -85,6 +85,7 @@ public class LiveVariableNode extends FlowGraphNode {
     public boolean applyTransferFunction() {
         // System.out.println("After MEET, df state for " + basicBlock.getID() + " is:\n" + toString());
         LiveVariablesProblem lvp = (LiveVariablesProblem) problem;
+        boolean scopeBindingHasEscaped = lvp.getScope().bindingHasEscaped();
 
         BitSet living = (BitSet) in.clone();
 
@@ -190,7 +191,7 @@ public class LiveVariableNode extends FlowGraphNode {
                 }
 
                 // If this is a dataflow barrier -- mark all local vars but %self and %block live
-                if (c.isDataflowBarrier()) {
+                if (scopeBindingHasEscaped || c.targetRequiresCallersBinding()) {
                     // System.out.println(".. call is a data flow barrier ..");
                     // Mark all non-self, non-block local variables live if 'c' is a dataflow barrier!
                     for (Variable x: lvp.getNonSelfLocalVars()) {
@@ -267,6 +268,7 @@ public class LiveVariableNode extends FlowGraphNode {
         // System.out.println("-- Identifying dead instructions for " + basicBlock.getID() + " -- ");
         LiveVariablesProblem lvp = (LiveVariablesProblem) problem;
         IRScope scope = lvp.getScope();
+        boolean scopeBindingHasEscaped = scope.bindingHasEscaped();
 
         if (in == null) {
            // 'in' cannot be null for reachable bbs
@@ -320,7 +322,7 @@ public class LiveVariableNode extends FlowGraphNode {
                     LiveVariablesProblem cl_lvp = (LiveVariablesProblem)cl.getDataFlowSolution(lvp.getName());
                     // Collect variables live on entry and merge that info into the current problem.
                     markAllVariablesLive(lvp, living, cl_lvp.getVarsLiveOnScopeEntry());
-                } else if (c.isDataflowBarrier()) {
+                } else if (scopeBindingHasEscaped || c.targetRequiresCallersBinding()) {
                     // Mark all non-self, non-block local variables live if 'c' is a dataflow barrier!
                     for (Variable x: lvp.getNonSelfLocalVars()) {
                         if (!x.isImplicitBlockArg()) living.set(lvp.getDFVar(x).getId());

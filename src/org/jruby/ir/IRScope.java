@@ -606,6 +606,8 @@ public abstract class IRScope {
             if (i instanceof CallBase) {
                 CallBase call = (CallBase) i;
 
+                if (call.targetRequiresCallersBinding()) bindingHasEscaped = true;
+
                 Operand o = ((CallBase) i).getClosureArg(null);
                 if (o != null) {
                     if (o instanceof WrappedIRClosure) {
@@ -643,6 +645,7 @@ public abstract class IRScope {
         canCaptureCallersBinding = false;
         usesZSuper = false;
         usesEval = false;
+        bindingHasEscaped = (this instanceof IREvalScript); // for eval scopes, bindings are considered escaped ...
 
         // recompute flags -- we could be calling this method different times
         // definitely once after ir generation and local optimizations propagates constants locally
