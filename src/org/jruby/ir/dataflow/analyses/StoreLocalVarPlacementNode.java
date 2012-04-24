@@ -210,9 +210,6 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode {
 
         boolean amExitBB = basicBlock == scope.cfg().getExitBB();
 
-/*
- * SSS FIXME: LVA output needs fixing for vars that cross eval boundaries
- *
         if (amExitBB) {
             LiveVariablesProblem lvp = (LiveVariablesProblem)scope.getDataFlowSolution(DataFlowConstants.LVP_NAME);
             java.util.Collection<LocalVariable> liveVars = lvp.getVarsLiveOnScopeExit();
@@ -222,7 +219,6 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode {
                 dirtyVars.clear();
             }
         }
- */
 
         while (instrs.hasNext()) {
             Instr i = instrs.next();
@@ -307,9 +303,6 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode {
                 //
                 // If this also happens to be exit BB, we would have intersected already earlier -- so no need to do it again!
 
-/*
- * SSS FIXME: LVA output needs fixing for vars that cross eval boundaries
- *
                 if (!amExitBB) {
                     LiveVariablesProblem lvp = (LiveVariablesProblem)scope.getDataFlowSolution(DataFlowConstants.LVP_NAME);
                     java.util.Collection<LocalVariable> liveVars = lvp.getVarsLiveOnScopeExit();
@@ -319,7 +312,6 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode {
                         dirtyVars.clear();
                     }
                 }
-*/
 
                 // Add before call
                 instrs.previous();
