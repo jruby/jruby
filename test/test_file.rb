@@ -725,14 +725,16 @@ class TestFile < Test::Unit::TestCase
 
   def test_file_times
     # Note: atime, mtime, ctime are all implemented using modification time
-    assert_nothing_raised {
-      File.mtime("build.xml")
-      File.atime("build.xml")
-      File.ctime("build.xml")
-      File.new("build.xml").mtime
-      File.new("build.xml").atime
-      File.new("build.xml").ctime
-    }
+    assert_nothing_raised do
+      [ "build.xml", "file:test/dir with spaces/test_jar.jar!/abc/foo.rb" ].each do |file|
+        File.mtime(file)
+        File.atime(file)
+        File.ctime(file)
+        File.new(file).mtime
+        File.new(file).atime
+        File.new(file).ctime
+      end
+    end
 
     assert_raises(Errno::ENOENT) { File.mtime("NO_SUCH_FILE_EVER") }
   end
