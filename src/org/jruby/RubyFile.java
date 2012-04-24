@@ -75,6 +75,7 @@ import org.jruby.util.io.PermissionDeniedException;
 import org.jruby.util.io.Stream;
 import org.jruby.util.io.ChannelStream;
 import org.jruby.util.io.IOOptions;
+import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.io.BadDescriptorException;
@@ -1457,7 +1458,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     // Fast path since JNA stat is about 10x slower than this
     private static IRubyObject getLastModified(Ruby runtime, String path) {
-        JRubyFile file = JRubyFile.create(runtime.getCurrentDirectory(), path);
+        FileResource file = JRubyFile.createResource(runtime.getCurrentDirectory(), path);
         
         if (!file.exists()) {
             throw runtime.newErrnoENOENTError(path);

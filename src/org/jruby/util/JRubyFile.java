@@ -45,11 +45,20 @@ import org.jruby.platform.Platform;
  * directory.</p>
  *
  */
-public class JRubyFile extends JavaSecuredFile {
+public class JRubyFile extends JavaSecuredFile implements FileResource {
     private static final long serialVersionUID = 435364547567567L;
 
     public static JRubyFile create(String cwd, String pathname) {
         return createNoUnicodeConversion(cwd, pathname);
+    }
+
+    public static FileResource createResource(String cwd, String pathname) {
+      if (pathname.indexOf('!') > 0) {
+        return JarFileResource.load(pathname);
+      } else {
+        // Regular file is fine
+        return create(cwd, pathname);
+      }
     }
 
     public static String normalizeSeps(String path) {
