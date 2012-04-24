@@ -7,10 +7,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.jruby.ir.IREvalScript;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.dataflow.DataFlowProblem;
 import org.jruby.ir.dataflow.DataFlowVar;
 import org.jruby.ir.dataflow.FlowGraphNode;
+import org.jruby.ir.operands.ClosureLocalVariable;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.representations.BasicBlock;
@@ -50,7 +52,20 @@ public class LiveVariablesProblem extends DataFlowProblem {
         dfVarMap.put(v, dfv);
         varDfVarMap.put(dfv.id, v);
         if ((v instanceof LocalVariable) && !((LocalVariable) v).isSelf()) {
-            // System.out.println("Adding df var for " + v + ":" + dfv.id);
+            //System.out.println("Adding df var for " + v + ":" + dfv.id);
+            int n = ((LocalVariable)v).getScopeDepth();
+            IRScope s = getScope();
+            while ((s != null) && (n >= 0)) {
+                if (s instanceof IREvalScript) {
+                    // If a variable is at the topmost scope of the eval OR crosses an eval boundary,
+                    // it is going to be marked always live since it could be used by other evals (n = 0)
+                    // or by enclosing scopes (n > 0)
+                    alwaysLiveVars.add((LocalVariable)v);
+                    break;
+                }
+                s = s.getLexicalParent();
+                n--;
+            }
             localVars.add((LocalVariable) v);
         }
     }
@@ -90,7 +105,12 @@ public class LiveVariablesProblem extends DataFlowProblem {
     public final void setup(IRScope scope, Collection<LocalVariable> allVars) {
         // System.out.println("\nCFG:\n" + scope.cfg().toStringGraph());
         // System.out.println("\nInstrs:\n" + scope.cfg().toStringInstrs());
+
+        alwaysLiveVars = new ArrayList<LocalVariable>();
         setup(scope);
+
+        // Init vars live on scope exit to vars that always live throughout the scope
+        this.varsLiveOnScopeExit = new ArrayList<LocalVariable>(alwaysLiveVars);
 
         for (Variable v : allVars) {
             if (getDFVar(v) == null) addDFVar(v); 
@@ -113,8 +133,8 @@ public class LiveVariablesProblem extends DataFlowProblem {
         }
     }
 
-    public void setVarsLiveOnScopeExit(Collection<LocalVariable> varsLiveOnScopeExit) {
-        this.varsLiveOnScopeExit = varsLiveOnScopeExit;
+    public void setVarsLiveOnScopeExit(Collection<LocalVariable> vars) {
+        varsLiveOnScopeExit.addAll(vars);
     }
 
     public Collection<LocalVariable> getVarsLiveOnScopeExit() {
@@ -137,5 +157,7 @@ public class LiveVariablesProblem extends DataFlowProblem {
     private HashMap<Variable, DataFlowVar> dfVarMap = new HashMap<Variable, DataFlowVar>();
     private HashMap<Integer, Variable> varDfVarMap = new HashMap<Integer, Variable>();
     private HashSet<LocalVariable> localVars = new HashSet<LocalVariable>(); // Local variables that can be live across dataflow barriers
+    // SSS FIXME: Should this be part of IRScope??
+    private List<LocalVariable> alwaysLiveVars; // Variables that cross eval boundaries and are always live in this scope
     private Collection<LocalVariable> varsLiveOnScopeExit;
 }
