@@ -1481,7 +1481,6 @@ public final class Ruby {
             keyError = defineClassIfAllowed("KeyError", indexError);
 
             mathDomainError = defineClassUnder("DomainError", argumentError, argumentError.getAllocator(), mathModule);
-            recursiveKey.set(newSymbol("__recursive_key__"));
             inRecursiveListOperation.set(false);
         }
 
@@ -4449,7 +4448,11 @@ public final class Ruby {
 
     // structures and such for recursive operations
     private ThreadLocal<Map<String, RubyHash>> recursive = new ThreadLocal<Map<String, RubyHash>>();
-    private ThreadLocal<RubySymbol> recursiveKey = new ThreadLocal<RubySymbol>();
+    private ThreadLocal<RubySymbol> recursiveKey = new ThreadLocal<RubySymbol>() {
+        protected RubySymbol initialValue() {
+            return newSymbol("__recursive_key__");
+        }
+    };
     private ThreadLocal<Boolean> inRecursiveListOperation = new ThreadLocal<Boolean>();
 
     private FFI ffi;
