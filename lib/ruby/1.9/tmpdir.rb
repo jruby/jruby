@@ -18,28 +18,33 @@ class Dir
   # Returns the operating system's temporary file path.
 
   def Dir::tmpdir
+    tmp = '.'
     if $SAFE > 0
       tmp = @@systmpdir
     else
-      tmp = nil
-      for dir in [ENV['TMPDIR'], ENV['TMP'], ENV['TEMP'], @@systmpdir, '/tmp', '.']
-        next if !dir
-        dir = File.expand_path(dir)
-        if stat = File.stat(dir) and stat.directory? and stat.writable? and
-            (!stat.world_writable? or stat.sticky?)
+      # Search a directory which isn't world-writable first. In JRuby,
+      # FileUtils.remove_entry_secure(dir) crashes when a dir is under
+      # a world-writable directory because it tries to open directory.
+      # Opening directory is not allowed in Java.
+      dirs = [ENV['TMPDIR'], ENV['TMP'], ENV['TEMP'], @@systmpdir, '/tmp', tmp]
+      for dir in dirs
+        if dir and stat = File.stat(dir) and stat.directory? and stat.writable? and !stat.world_writable?
+          return File.expand_path(dir)
+        end
+      end
+      for dir in dirs
+        if dir and stat = File.stat(dir) and stat.directory? and stat.writable?
           tmp = dir
           break
         end rescue nil
       end
-      raise ArgumentError, "could not find a temporary directory" if !tmp
-      tmp
+      File.expand_path(tmp)
     end
   end
 
   # Dir.mktmpdir creates a temporary directory.
   #
   # The directory is created with 0700 permission.
-  # Application should not change the permission to make the temporary directory accesible from other users.
   #
   # The prefix and suffix of the name of the directory is specified by
   # the optional first argument, <i>prefix_suffix</i>.
@@ -60,7 +65,7 @@ class Dir
   # If a block is given,
   # it is yielded with the path of the directory.
   # The directory and its contents are removed
-  # using FileUtils.remove_entry before Dir.mktmpdir returns.
+  # using FileUtils.remove_entry_secure before Dir.mktmpdir returns.
   # The value of the block is returned.
   #
   #  Dir.mktmpdir {|dir|
@@ -78,7 +83,7 @@ class Dir
   #    open("#{dir}/foo", "w") { ... }
   #  ensure
   #    # remove the directory.
-  #    FileUtils.remove_entry dir
+  #    FileUtils.remove_entry_secure dir
   #  end
   #
   def Dir.mktmpdir(prefix_suffix=nil, *rest)
@@ -87,11 +92,7 @@ class Dir
       begin
         yield path
       ensure
-        stat = File.stat(File.dirname(path))
-        if stat.world_writable? and !stat.sticky?
-          raise ArgumentError, "parent directory is world writable but not sticky"
-        end
-        FileUtils.remove_entry path
+        FileUtils.remove_entry_secure path
       end
     else
       path
