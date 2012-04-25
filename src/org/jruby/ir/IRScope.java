@@ -740,11 +740,17 @@ public abstract class IRScope {
     }
 
     public Variable getCurrentModuleVariable() {
+        // SSS: Used in only 3 cases in generated IR:
+        // -> searching a constant in the inheritance hierarchy
+        // -> searching a super-method in the inheritance hierarchy
+        // -> looking up 'StandardError' (which can be eliminated by creating a special operand type for this)
         if (currentModuleVar == null) currentModuleVar = getNewTemporaryVariable(Variable.CURRENT_MODULE);
         return currentModuleVar;
     }
 
     public Variable getCurrentScopeVariable() {
+        // SSS: Used in only 1 case in generated IR:
+        // -> searching a constant in the lexical scope hierarchy
         if (currentScopeVar == null) currentScopeVar = getNewTemporaryVariable(Variable.CURRENT_SCOPE);
         return currentScopeVar;
     }

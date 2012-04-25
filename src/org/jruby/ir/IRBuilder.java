@@ -1231,12 +1231,9 @@ public class IRBuilder {
         boolean noPrivateConstants = (s != startingScope);
         Variable v = s.getNewTemporaryVariable();
         Label foundLabel = s.getNewLabel();
-        Operand startingSearchScope = startingSearchScope(startingScope);
-        s.addInstr(new LexicalSearchConstInstr(v, startingSearchScope, name));
+        s.addInstr(new LexicalSearchConstInstr(v, startingSearchScope(startingScope), name));
         s.addInstr(BNEInstr.create(v, UndefinedValue.UNDEFINED, foundLabel));
-        // SSS FIXME: should this be the current-module-var or can we resolve
-        // this to some statically-known value instead?
-        genInheritanceSearchInstrs(s, s.getCurrentModuleVariable(), v, foundLabel, noPrivateConstants, name);
+        genInheritanceSearchInstrs(s, findContainerModule(startingScope), v, foundLabel, noPrivateConstants, name);
         return v;
     }
 
@@ -1503,7 +1500,7 @@ public class IRBuilder {
                 String constName = ((ConstNode) node).getName();
                 s.addInstr(new LexicalSearchConstInstr(tmpVar, startingSearchScope(s), constName));
                 s.addInstr(BNEInstr.create(tmpVar, UndefinedValue.UNDEFINED, defLabel));
-                s.addInstr(new InheritanceSearchConstInstr(tmpVar, s.getCurrentModuleVariable(), constName, false)); // SSS FIXME: should this be the current-module var or something else?
+                s.addInstr(new InheritanceSearchConstInstr(tmpVar, findContainerModule(s), constName, false)); // SSS FIXME: should this be the current-module var or something else?
                 s.addInstr(BNEInstr.create(tmpVar, UndefinedValue.UNDEFINED, defLabel));
                 s.addInstr(new CopyInstr(tmpVar, manager.getNil()));
                 s.addInstr(new JumpInstr(doneLabel));
