@@ -30,39 +30,14 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import org.jruby.util.StringSupport;
-import org.jcodings.Encoding;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import org.jruby.CompatVersion;
 import org.jruby.Ruby;
-import org.jruby.RubyArray;
 import org.jruby.RubyClass;
-import org.jruby.RubyFixnum;
-import org.jruby.RubyIO;
-import org.jruby.RubyKernel;
-import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
-import org.jruby.RubyString;
-
-import org.jruby.anno.FrameField;
 import org.jruby.anno.JRubyClass;
-import org.jruby.anno.JRubyMethod;
-import org.jruby.java.addons.IOJavaAddons;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
-import static org.jruby.runtime.Visibility.*;
-import static org.jruby.CompatVersion.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
-import org.jruby.util.TypeConverter;
-import org.jruby.util.io.InvalidValueException;
-import org.jruby.util.io.ModeFlags;
-import org.jruby.util.io.Stream;
-
-import static org.jruby.RubyEnumerator.enumeratorize;
 
 /**
  * Deprecated shim for what's now in org.jruby.ext.stringio.RubyStringIO

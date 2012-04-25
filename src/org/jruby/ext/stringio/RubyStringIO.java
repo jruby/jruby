@@ -408,7 +408,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
                     ByteList buf = data.internal.getByteList().makeShared(
                         (int)data.pos, bytesToUse);
                     data.pos += buf.getRealSize();
-                    return RubyString.newString(runtime, buf);
+                    return makeString(runtime, buf);
                 }
 
                 sep = sepArg.convertToString().getByteList();
@@ -456,7 +456,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
                 data.lineno++;
             }
 
-            return RubyString.newString(runtime,line);
+            return makeString(runtime, line);
         }
         return runtime.getNil();
     }
@@ -552,7 +552,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
             }
         } else {
             IRubyObject arg = runtime.getGlobalVariables().get("$_");
-            append(context, arg.isNil() ? runtime.newString("nil") : arg);
+            append(context, arg.isNil() ? makeString(runtime, new ByteList(new byte[] {'n', 'i', 'l'})) : arg);
         }
         IRubyObject sep = runtime.getGlobalVariables().get("$\\");
         if (!sep.isNil()) append(context, sep);
@@ -661,6 +661,19 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
             getRuntime().unregisterInspecting(array);
         }
     }
+    
+    // Make string based on internal data encoding (which ironically is its
+    // external encoding.  This seems messy and we should consider a more
+    // uniform method for makeing strings (we have a slightly different variant
+    // of this in RubyIO.
+    private RubyString makeString(Ruby runtime, ByteList buf) {
+        if (runtime.is1_9()) buf.setEncoding(data.internal.getEncoding());
+
+        RubyString str = RubyString.newString(runtime, buf);
+        str.setTaint(true);
+
+        return str;        
+    }
 
     @SuppressWarnings("fallthrough")
     @JRubyMethod(name = "read", optional = 2)
@@ -708,7 +721,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
                     buf.setRealSize(0);
                 }
 
-                return getRuntime().newString(buf);
+                return makeString(getRuntime(), buf);
             } else {
                 length -= data.pos;
             }
@@ -760,7 +773,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
 
         if (oldLength < 0 || oldLength > length) data.eof = true;
 
-        return originalString != null ? originalString : getRuntime().newString(buf);
+        return originalString != null ? originalString : makeString(getRuntime(), buf);
     }
 
     @JRubyMethod(name="read_nonblock", compat = CompatVersion.RUBY1_9, required = 1, optional = 1)
