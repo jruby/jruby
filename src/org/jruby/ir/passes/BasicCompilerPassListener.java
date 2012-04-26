@@ -19,15 +19,11 @@ public class BasicCompilerPassListener implements CompilerPassListener {
     }
 
     public void startExecute(CompilerPass pass, IRScope scope, boolean childScope) {
-        if (childScope) return;
-        
         times.put(pass, new Long(System.currentTimeMillis()));
         LOG.info("Starting " + pass.getLabel() + " on scope " + scope);
     }
 
     public void endExecute(CompilerPass pass, IRScope scope, Object data, boolean childScope) {
-        if (childScope) return;
-        
         Long startTime = times.get(pass);
         long timeTaken = startTime != null ? System.currentTimeMillis() - startTime.longValue() : -1;
         
