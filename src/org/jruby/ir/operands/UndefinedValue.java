@@ -9,6 +9,7 @@ import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
 import org.jruby.RubyInteger;
 import org.jruby.RubyString;
+import org.jruby.ir.targets.JVM;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -26,7 +27,7 @@ import org.jruby.ir.transformations.inlining.InlinerInfo;
  * But since it can never really participate in any operation, all calls throw a runtime exception. 
  */
 public class UndefinedValue extends Operand implements IRubyObject {
-    public static final Operand UNDEFINED = new UndefinedValue();
+    public static final UndefinedValue UNDEFINED = new UndefinedValue();
     
     private UndefinedValue() {}
 
@@ -392,5 +393,10 @@ public class UndefinedValue extends Operand implements IRubyObject {
     @Override
     public String toString() {
         return "%undefined";
+    }
+
+    @Override
+    public void compile(JVM jvm) {
+        jvm.method().pushUndefined();
     }
 }

@@ -42,6 +42,7 @@ import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.internal.runtime.methods.WrapperMethod;
+import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -2719,5 +2720,16 @@ public class RuntimeHelpers {
         }
 
         return parameters;
+    }
+
+    public static boolean BEQ(ThreadContext context, IRubyObject value1, IRubyObject value2) {
+        return value1.op_equal(context, value2).isTrue();
+    }
+
+    public static boolean BNE(ThreadContext context, IRubyObject value1, IRubyObject value2) {
+        boolean eql = value2 == context.nil || value2 == UndefinedValue.UNDEFINED ?
+                value1 == value2 : value1.op_equal(context, value2).isTrue();
+
+        return !eql;
     }
 }

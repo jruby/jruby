@@ -5,37 +5,35 @@ import java.util.Map;
 import org.jruby.RubyModule;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
+import org.jruby.ir.operands.MethAddr;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.Symbol;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.targets.JVM;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class ConstMissingInstr extends Instr implements ResultInstr {
-    private Operand currentModule;
-    private String  missingConst;
-    private Variable result;
+public class ConstMissingInstr extends CallInstr implements ResultInstr {
+    private String missingConst;
 
     public ConstMissingInstr(Variable result, Operand currentModule, String missingConst) {
-        super(Operation.CONST_MISSING);
-        
-        assert result != null: "ConstMissingInstr result is null";
-        
-        this.currentModule = currentModule;
+        super(Operation.CONST_MISSING, CallType.FUNCTIONAL, result, new MethAddr("const_missing"), currentModule, new Operand[]{new Symbol(missingConst)}, null);
+
         this.missingConst = missingConst;
-        this.result = result;
     }
 
     @Override
     public Operand[] getOperands() { 
-        return new Operand[] { currentModule };
+        return new Operand[] { receiver };
     }
 
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-        currentModule = currentModule.getSimplifiedOperand(valueMap, force);
+        receiver = receiver.getSimplifiedOperand(valueMap, force);
     }
     
     public Variable getResult() {
@@ -48,17 +46,17 @@ public class ConstMissingInstr extends Instr implements ResultInstr {
     
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new ConstMissingInstr(ii.getRenamedVariable(result), currentModule.cloneForInlining(ii), missingConst);
+        return new ConstMissingInstr(ii.getRenamedVariable(result), receiver.cloneForInlining(ii), missingConst);
     }
 
     @Override
     public String toString() { 
-        return super.toString() + "(" + currentModule + "," + missingConst  + ")";
+        return super.toString() + "(" + receiver + "," + missingConst  + ")";
     }
 
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
-        RubyModule module = (RubyModule) currentModule.retrieve(context, self, currDynScope, temp);
+        RubyModule module = (RubyModule) receiver.retrieve(context, self, currDynScope, temp);
         return module.callMethod(context, "const_missing", context.getRuntime().fastNewSymbol(missingConst));
     }
 }

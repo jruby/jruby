@@ -6,6 +6,7 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.targets.JVM;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 
 import org.jruby.Ruby;
@@ -104,5 +105,15 @@ public class InheritanceSearchConstInstr extends Instr implements ResultInstr {
         if (!isCached(runtime, module, constant)) constant = cache(runtime, module);
 
         return constant;
+    }
+
+    @Override
+    public void compile(JVM jvm) {
+        jvm.method().loadLocal(0);
+        jvm.emit(currentModule);
+
+        // TODO: private consts
+        jvm.method().inheritanceSearchConst(constName);
+        jvm.method().storeLocal(jvm.methodData().local(getResult()));
     }
 }

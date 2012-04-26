@@ -4,7 +4,10 @@ import org.jruby.ir.Operation;
 import org.jruby.ir.operands.BooleanLiteral;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.targets.JVM;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 public class BNEInstr extends BranchInstr {
     public static BranchInstr create(Operand v1, Operand v2, Label jmpTarget) {
@@ -27,5 +30,15 @@ public class BNEInstr extends BranchInstr {
     @Override
     public Instr cloneForBlockCloning(InlinerInfo ii) {
         return new BNEInstr(getArg1().cloneForInlining(ii), getArg2().cloneForInlining(ii), getJumpTarget());
+    }
+
+    @Override
+    public void compile(JVM jvm) {
+        Operand[] args = getOperands();
+        jvm.method().loadLocal(0);
+        jvm.emit(args[0]);
+        jvm.emit(args[1]);
+        jvm.method().invokeHelper("BNE", boolean.class, ThreadContext.class, IRubyObject.class, IRubyObject.class);
+        jvm.method().adapter.iftrue(jvm.methodData().getLabel(getJumpTarget()));
     }
 }

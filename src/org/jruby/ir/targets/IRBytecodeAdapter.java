@@ -8,9 +8,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.jruby.Ruby;
+import org.jruby.RubyClass;
 import org.jruby.RubyEncoding;
+import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
+import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ThreadContext;
@@ -114,9 +117,11 @@ public class IRBytecodeAdapter {
     }
 
     public void searchConst(String name) {
-        loadLocal(0);
-        loadLocal(1);
         adapter.invokedynamic("searchConst:" + name, sig(JVM.OBJECT, params(ThreadContext.class, StaticScope.class)), Bootstrap.searchConst());
+    }
+
+    public void inheritanceSearchConst(String name) {
+        adapter.invokedynamic("inheritanceSearchConst:" + name, sig(JVM.OBJECT, params(ThreadContext.class, IRubyObject.class)), Bootstrap.inheritanceSearchConst());
     }
 
     public void goTo(org.objectweb.asm.Label label) {
@@ -147,6 +152,16 @@ public class IRBytecodeAdapter {
     public void pushNil() {
         adapter.aload(0);
         adapter.getfield(p(ThreadContext.class), "nil", ci(IRubyObject.class));
+    }
+
+    public void pushObjectClass() {
+        adapter.aload(0);
+        adapter.getfield(p(ThreadContext.class), "runtime", ci(Ruby.class));
+        adapter.invokevirtual(p(Ruby.class), "getObject", sig(RubyClass.class));
+    }
+
+    public void pushUndefined() {
+        adapter.getstatic(p(UndefinedValue.class), "UNDEFINED", ci(UndefinedValue.class));
     }
     
     public void pushHandle(String className, String methodName, int arity) {

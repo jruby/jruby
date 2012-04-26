@@ -11,6 +11,7 @@ import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
@@ -135,6 +136,21 @@ public class Bootstrap {
         return site;
     }
 
+    public static CallSite inheritanceSearchConst(Lookup lookup, String name, MethodType type) {
+        MutableCallSite site = new MutableCallSite(type);
+        String[] bits = name.split(":");
+        String constName = bits[1];
+
+        MethodHandle handle = Binder
+                .from(type)
+                .insert(0, site, constName)
+                .invokeStaticQuiet(MethodHandles.lookup(), Bootstrap.class, "inheritanceSearchConst");
+
+        site.setTarget(handle);
+
+        return site;
+    }
+
     public static Handle string() {
         return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "string", sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, int.class));
     }
@@ -161,6 +177,10 @@ public class Bootstrap {
 
     public static Handle searchConst() {
         return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "searchConst", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
+    }
+
+    public static Handle inheritanceSearchConst() {
+        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "inheritanceSearchConst", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
     }
 
     public static IRubyObject string(String value, int encoding, ThreadContext context) {
@@ -485,6 +505,36 @@ public class Bootstrap {
         MethodHandle fallback = Binder.from(site.type())
                 .insert(0, site, constName)
                 .invokeStatic(MethodHandles.lookup(), Bootstrap.class, "searchConst");
+
+        site.setTarget(switchPoint.guardWithTest(target, fallback));
+
+        return value;
+    }
+
+    public static IRubyObject inheritanceSearchConst(MutableCallSite site, String constName, ThreadContext context, IRubyObject cmVal) throws Throwable {
+        Ruby runtime = context.runtime;
+        RubyModule module;
+
+        if (cmVal instanceof RubyModule) {
+            module = (RubyModule) cmVal;
+        } else {
+            throw runtime.newTypeError(cmVal + " is not a type/class");
+        }
+
+        SwitchPoint switchPoint = (SwitchPoint)runtime.getConstantInvalidator().getData();
+
+        IRubyObject value = module.getConstantFromNoConstMissing(constName, false);
+        if (value == null) {
+            return (IRubyObject)UndefinedValue.UNDEFINED;
+        }
+
+        // bind constant until invalidated
+        MethodHandle target = Binder.from(site.type())
+                .drop(0, 2)
+                .constant(value);
+        MethodHandle fallback = Binder.from(site.type())
+                .insert(0, site, constName)
+                .invokeStatic(MethodHandles.lookup(), Bootstrap.class, "inheritanceSearchConst");
 
         site.setTarget(switchPoint.guardWithTest(target, fallback));
 
