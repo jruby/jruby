@@ -37,7 +37,12 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Locale;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
@@ -54,6 +59,7 @@ import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DefaultMethod;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.threading.DaemonThreadFactory;
 import org.jruby.util.ClassCache;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.cli.Options;
@@ -82,6 +88,13 @@ public class JITCompiler implements JITCompilerMBean {
     }
 
     private final JITCounts counts = new JITCounts();
+    private final ExecutorService executor = new ThreadPoolExecutor(
+                    2, // always two threads
+                    2,
+                    0, // never stop
+                    TimeUnit.SECONDS,
+                    new LinkedBlockingQueue<Runnable>(),
+                    new DaemonThreadFactory());
     
     public JITCompiler(Ruby ruby) {
         ruby.getBeanManager().register(this);
@@ -188,10 +201,10 @@ public class JITCompiler implements JITCompilerMBean {
         // if background JIT is enabled and threshold is > 0 and we have an executor...
         if (config.getJitBackground() &&
                 config.getJitThreshold() > 0 &&
-                runtime.getExecutor() != null) {
+                executor != null) {
             // JIT in background
             try {
-                runtime.getExecutor().submit(jitTask);
+                executor.submit(jitTask);
             } catch (RejectedExecutionException ree) {
                 // failed to submit, just run it directly
                 jitTask.run();
