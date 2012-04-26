@@ -89,7 +89,7 @@ public class InheritanceSearchConstInstr extends Instr implements ResultInstr {
     private boolean isCached(Ruby runtime, RubyModule target, Object value) {
         return value != null && generation == runtime.getConstantInvalidator().getData() && hash == target.hashCode();
     }
-    
+
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         Ruby runtime = context.getRuntime();

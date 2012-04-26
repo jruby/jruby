@@ -159,6 +159,7 @@ import org.jruby.ir.instructions.RescueEQQInstr;
 import org.jruby.ir.instructions.RestArgMultipleAsgnInstr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.ReturnInstr;
+import org.jruby.ir.instructions.SearchConstInstr;
 import org.jruby.ir.instructions.SetReturnAddressInstr;
 import org.jruby.ir.instructions.ThreadPollInstr;
 import org.jruby.ir.instructions.ThrowExceptionInstr;
@@ -1230,10 +1231,17 @@ public class IRBuilder {
     private Operand searchConst(IRScope s, IRScope startingScope, String name) {
         boolean noPrivateConstants = (s != startingScope);
         Variable v = s.getNewTemporaryVariable();
+/**
+ * SSS FIXME: Go back to a single instruction for now.
+ *
+ * Do not split search into lexical-search, inheritance-search, and const-missing instrs.
+ *
         Label foundLabel = s.getNewLabel();
         s.addInstr(new LexicalSearchConstInstr(v, startingSearchScope(startingScope), name));
         s.addInstr(BNEInstr.create(v, UndefinedValue.UNDEFINED, foundLabel));
         genInheritanceSearchInstrs(s, findContainerModule(startingScope), v, foundLabel, noPrivateConstants, name);
+**/
+        s.addInstr(new SearchConstInstr(v, name, startingSearchScope(startingScope), noPrivateConstants));
         return v;
     }
 
