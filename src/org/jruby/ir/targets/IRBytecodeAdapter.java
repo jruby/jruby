@@ -12,6 +12,7 @@ import org.jruby.RubyEncoding;
 import org.jruby.RubySymbol;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
@@ -110,6 +111,12 @@ public class IRBytecodeAdapter {
 
     public void invokeHelper(String name, String sig) {
         adapter.invokestatic(p(RuntimeHelpers.class), name, sig);
+    }
+
+    public void searchConst(String name) {
+        loadLocal(0);
+        loadLocal(1);
+        adapter.invokedynamic("searchConst:" + name, sig(JVM.OBJECT, params(ThreadContext.class, StaticScope.class)), Bootstrap.searchConst());
     }
 
     public void goTo(org.objectweb.asm.Label label) {

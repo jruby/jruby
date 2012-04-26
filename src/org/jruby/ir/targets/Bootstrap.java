@@ -1,6 +1,7 @@
 package org.jruby.ir.targets;
 
 import com.headius.invokebinder.Binder;
+import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyEncoding;
@@ -119,6 +120,21 @@ public class Bootstrap {
         return new ConstantCallSite(handle);
     }
 
+    public static CallSite searchConst(Lookup lookup, String name, MethodType type) {
+        MutableCallSite site = new MutableCallSite(type);
+        String[] bits = name.split(":");
+        String constName = bits[1];
+
+        MethodHandle handle = Binder
+                .from(type)
+                .insert(0, site, constName)
+                .invokeStaticQuiet(MethodHandles.lookup(), Bootstrap.class, "searchConst");
+
+        site.setTarget(handle);
+
+        return site;
+    }
+
     public static Handle string() {
         return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "string", sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, int.class));
     }
@@ -141,6 +157,10 @@ public class Bootstrap {
 
     public static Handle ivar() {
         return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "ivar", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
+    }
+
+    public static Handle searchConst() {
+        return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "searchConst", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
     }
 
     public static IRubyObject string(String value, int encoding, ThreadContext context) {
@@ -444,6 +464,31 @@ public class Bootstrap {
     public static boolean testType(RubyClass original, ThreadContext context, IRubyObject self, IRubyObject[] args) {
         // naive test
         return self.getMetaClass() == original;
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // constant lookup
+
+    public static IRubyObject searchConst(MutableCallSite site, String constName, ThreadContext context, StaticScope staticScope) throws Throwable {
+        Ruby runtime = context.runtime;
+        SwitchPoint switchPoint = (SwitchPoint)runtime.getConstantInvalidator().getData();
+        IRubyObject value = staticScope.getConstant(runtime, constName, runtime.getObject());
+
+        if (value == null) {
+            return staticScope.getModule().callMethod(context, "const_missing", runtime.fastNewSymbol(constName));
+        }
+
+        // bind constant until invalidated
+        MethodHandle target = Binder.from(site.type())
+                .drop(0, 2)
+                .constant(value);
+        MethodHandle fallback = Binder.from(site.type())
+                .insert(0, site, constName)
+                .invokeStatic(MethodHandles.lookup(), Bootstrap.class, "searchConst");
+
+        site.setTarget(switchPoint.guardWithTest(target, fallback));
+
+        return value;
     }
 
     ///////////////////////////////////////////////////////////////////////////

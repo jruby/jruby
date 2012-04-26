@@ -5,6 +5,7 @@ import java.util.Map;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+import org.jruby.ir.targets.JVM;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 
 import org.jruby.Ruby;
@@ -104,6 +105,11 @@ public class SearchConstInstr extends Instr implements ResultInstr {
         if (!isCached(runtime, constant)) constant = cache(context, currDynScope, self, temp, runtime);
 
         return constant;
+    }
+
+    public void compile(JVM jvm) {
+        jvm.method().searchConst(constName);
+        jvm.method().storeLocal(jvm.methodData().local(getResult()));
     }
 
 }
