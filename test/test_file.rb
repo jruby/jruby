@@ -563,6 +563,11 @@ class TestFile < Test::Unit::TestCase
     assert(!FileTest.exists?("file:/!"))
   end
 
+  def test_file_exists_uri_prefixes
+    assert(File.exists?("file:test/dir with spaces/test_jar.jar!/abc/foo.rb"))
+    assert(File.exists?("jar:file:test/dir with spaces/test_jar.jar!/abc/foo.rb"))
+  end
+
   # JRUBY-2524
   def test_file_stat_uri_prefixes
     assert_raise(Errno::ENOENT) do
