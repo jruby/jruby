@@ -122,7 +122,10 @@ def dot(defs, parent)
 end
 
 def print_passes_on(scope, passes)
-  passes.each { |pass| pass.run(scope) }
+  if !scope.kind_of? org.jruby.ir.IRClosure
+    passes.each { |pass| pass.run(scope) } 
+  end
+
   scope.lexical_scopes.each do |child_scope|
     print_passes_on(child_scope, passes)
   end
