@@ -3,6 +3,7 @@ package org.jruby.ir.targets;
 import com.headius.invokebinder.Binder;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
@@ -463,27 +464,27 @@ public class Bootstrap {
 
     public static boolean testType(RubyClass original, ThreadContext context, IRubyObject self) {
         // naive test
-        return self.getMetaClass() == original;
+        return ((RubyBasicObject)self).getMetaClass() == original;
     }
 
     public static boolean testType(RubyClass original, ThreadContext context, IRubyObject self, IRubyObject arg0) {
         // naive test
-        return self.getMetaClass() == original;
+        return ((RubyBasicObject)self).getMetaClass() == original;
     }
 
     public static boolean testType(RubyClass original, ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1) {
         // naive test
-        return self.getMetaClass() == original;
+        return ((RubyBasicObject)self).getMetaClass() == original;
     }
 
     public static boolean testType(RubyClass original, ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         // naive test
-        return self.getMetaClass() == original;
+        return ((RubyBasicObject)self).getMetaClass() == original;
     }
 
     public static boolean testType(RubyClass original, ThreadContext context, IRubyObject self, IRubyObject[] args) {
         // naive test
-        return self.getMetaClass() == original;
+        return ((RubyBasicObject)self).getMetaClass() == original;
     }
 
     ///////////////////////////////////////////////////////////////////////////
