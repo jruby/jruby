@@ -567,6 +567,9 @@ public class RubyFileTest {
 
         RubyString pathStr = get_path(runtime.getCurrentContext(), path);
         String pathJStr = pathStr.getUnicodeValue();
+        if (pathJStr.startsWith("jar:")) {
+            pathJStr = pathJStr.substring(4);
+        }
         if (pathJStr.startsWith("file:")) {
             String file = pathJStr.substring(5);
             int bang = file.indexOf('!');
