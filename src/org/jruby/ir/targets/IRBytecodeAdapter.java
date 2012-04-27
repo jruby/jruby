@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.jruby.Ruby;
+import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyModule;
@@ -152,6 +153,16 @@ public class IRBytecodeAdapter {
     public void pushNil() {
         adapter.aload(0);
         adapter.getfield(p(ThreadContext.class), "nil", ci(IRubyObject.class));
+    }
+
+    public void pushBoolean(boolean b) {
+        adapter.aload(0);
+        adapter.getfield(p(ThreadContext.class), "runtime", ci(Ruby.class));
+        if (b) {
+            adapter.invokevirtual(p(Ruby.class), "getTrue", sig(RubyBoolean.class));
+        } else {
+            adapter.invokevirtual(p(Ruby.class), "getFalse", sig(RubyBoolean.class));
+        }
     }
 
     public void pushObjectClass() {

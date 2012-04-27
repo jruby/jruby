@@ -1,5 +1,6 @@
 package org.jruby.ir.operands;
 
+import org.jruby.ir.targets.JVM;
 import org.jruby.runtime.ThreadContext;
 
 public class BooleanLiteral extends ImmutableLiteral {
@@ -25,5 +26,10 @@ public class BooleanLiteral extends ImmutableLiteral {
     @Override
     public String toString() {
         return isTrue() ? "true" : "false";
+    }
+
+    @Override
+    public void compile(JVM jvm) {
+        jvm.method().pushBoolean(isTrue());
     }
 }
