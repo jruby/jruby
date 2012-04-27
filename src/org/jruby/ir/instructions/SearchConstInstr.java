@@ -110,7 +110,7 @@ public class SearchConstInstr extends Instr implements ResultInstr {
     @Override
     public void compile(JVM jvm) {
         jvm.method().loadLocal(0);
-        jvm.method().loadLocal(1);
+        jvm.emit(startingScope);
         jvm.method().searchConst(constName);
         jvm.method().storeLocal(jvm.methodData().local(getResult()));
     }
