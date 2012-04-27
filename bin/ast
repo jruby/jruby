@@ -121,6 +121,13 @@ def dot(defs, parent)
   end
 end
 
+def print_passes_on(scope, passes)
+  passes.each { |pass| pass.run(scope) }
+  scope.lexical_scopes.each do |child_scope|
+    print_passes_on(child_scope, passes)
+  end
+end
+
 root = JRuby.parse(options[:expression])
 
 if options[:print_source]
@@ -156,10 +163,9 @@ if options[:print_ir]
   builder = runtime.is1_9 ? org.jruby.ir.IRBuilder19 : org.jruby.ir.IRBuilder
 
   scope = builder.new(manager).build_root(root)
+  passes = manager.get_compiler_passes(scope)
 
-  manager.get_compiler_passes(scope).each do |pass|
-    pass.run(scope)
-  end
+  print_passes_on(scope, passes)
 end
 
 if options[:print_sexp]

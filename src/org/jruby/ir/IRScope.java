@@ -123,6 +123,10 @@ public abstract class IRScope {
 
     // Index values to guarantee we don't assign same internal index twice
     private int nextClosureIndex;
+    
+    // List of all scopes this scope contains lexically.  This is not used
+    // for execution, but is used during dry-runs for debugging.
+    List<IRScope> lexicalChildren; 
 
     protected static class LocalVariableAllocator {
         public int nextSlot;
@@ -241,6 +245,8 @@ public abstract class IRScope {
         this.localVars = new LocalVariableAllocator(); // SSS FIXME: clone!
         this.localVars.nextSlot = s.localVars.nextSlot;
         this.relinearizeCFG = false;
+        
+        setupLexicalContainment();
     }
     
     public IRScope(IRManager manager, IRScope lexicalParent, String name, 
@@ -274,11 +280,28 @@ public abstract class IRScope {
         this.localVars = new LocalVariableAllocator();
         synchronized(globalScopeCount) { this.scopeId = globalScopeCount++; }
         this.relinearizeCFG = false;
+        
+        setupLexicalContainment();
+    }
+    
+    private final void setupLexicalContainment() {
+        if (manager.isDryRun()) {
+            lexicalChildren = new ArrayList<IRScope>();
+            if (lexicalParent != null) lexicalParent.addChildScope(this);
+        }        
     }
 
     @Override
     public int hashCode() {
         return scopeId;
+    }
+    
+    protected void addChildScope(IRScope scope) {
+        lexicalChildren.add(scope);
+    }
+    
+    public List<IRScope> getLexicalScopes() {
+        return lexicalChildren;
     }
 
     public void addClosure(IRClosure c) {
