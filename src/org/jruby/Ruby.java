@@ -1146,7 +1146,7 @@ public final class Ruby {
                 RubyInstanceConfig.POOL_TTL,
                 TimeUnit.SECONDS,
                 new SynchronousQueue<Runnable>(),
-                new DaemonThreadFactory());
+                new DaemonThreadFactory("JRubyWorker"));
         
         // initialize the root of the class hierarchy completely
         initRoot();

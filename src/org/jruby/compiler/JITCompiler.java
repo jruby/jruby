@@ -94,7 +94,7 @@ public class JITCompiler implements JITCompilerMBean {
                     0, // never stop
                     TimeUnit.SECONDS,
                     new LinkedBlockingQueue<Runnable>(),
-                    new DaemonThreadFactory());
+                    new DaemonThreadFactory("JRubyJIT"));
     
     public JITCompiler(Ruby ruby) {
         ruby.getBeanManager().register(this);
