@@ -2052,6 +2052,14 @@ public class RuntimeHelpers {
         return scope;
     }
 
+    public static StaticScope decodeLocalScope(ThreadContext context, StaticScope parent, String scopeString) {
+        String[][] decodedScope = decodeScopeDescriptor(scopeString);
+        StaticScope scope = context.getRuntime().getStaticScopeFactory().newLocalScope(parent, decodedScope[1]);
+        scope.determineModule();
+        setAritiesFromDecodedScope(scope, decodedScope[0]);
+        return scope;
+    }
+
     public static StaticScope decodeBlockScope(ThreadContext context, String scopeString) {
         String[][] decodedScope = decodeScopeDescriptor(scopeString);
         StaticScope scope = context.getRuntime().getStaticScopeFactory().newBlockScope(context.getCurrentScope().getStaticScope(), decodedScope[1]);

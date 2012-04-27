@@ -24,7 +24,6 @@ public class BTrueInstr extends BranchInstr {
     public void compile(JVM jvm) {
         jvm.emit(getArg1());
         jvm.method().isTrue();
-        System.out.println("btrue jump: " + getJumpTarget());
         jvm.method().btrue(jvm.methodData().getLabel(getJumpTarget()));
     }
 }

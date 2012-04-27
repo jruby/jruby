@@ -193,7 +193,7 @@ public class Bootstrap {
     }
 
     public static IRubyObject invoke(InvokeSite site, ThreadContext context, IRubyObject self) throws Throwable {
-        RubyClass selfClass = pollAndGetClass(context, self);
+        RubyClass selfClass = self.getMetaClass();
         String methodName = site.name;
         SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
         CacheEntry entry = selfClass.searchWithCache(methodName);
@@ -210,7 +210,7 @@ public class Bootstrap {
     }
 
     public static IRubyObject invoke(InvokeSite site, ThreadContext context, IRubyObject self, IRubyObject arg0) throws Throwable {
-        RubyClass selfClass = pollAndGetClass(context, self);
+        RubyClass selfClass = self.getMetaClass();
         String methodName = site.name;
         SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
         CacheEntry entry = selfClass.searchWithCache(methodName);
@@ -227,7 +227,7 @@ public class Bootstrap {
     }
 
     public static IRubyObject invoke(InvokeSite site, ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1) throws Throwable {
-        RubyClass selfClass = pollAndGetClass(context, self);
+        RubyClass selfClass = self.getMetaClass();
         String methodName = site.name;
         SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
         CacheEntry entry = selfClass.searchWithCache(methodName);
@@ -244,7 +244,7 @@ public class Bootstrap {
     }
 
     public static IRubyObject invoke(InvokeSite site, ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) throws Throwable {
-        RubyClass selfClass = pollAndGetClass(context, self);
+        RubyClass selfClass = self.getMetaClass();
         String methodName = site.name;
         SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
         CacheEntry entry = selfClass.searchWithCache(methodName);
@@ -261,7 +261,7 @@ public class Bootstrap {
     }
 
     public static IRubyObject invokeSelf(InvokeSite site, ThreadContext context, IRubyObject self) throws Throwable {
-        RubyClass selfClass = pollAndGetClass(context, self);
+        RubyClass selfClass = self.getMetaClass();
         String methodName = site.name;
         SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
         CacheEntry entry = selfClass.searchWithCache(methodName);
@@ -278,7 +278,7 @@ public class Bootstrap {
     }
 
     public static IRubyObject attrAssign(InvokeSite site, ThreadContext context, IRubyObject self, IRubyObject arg0) throws Throwable {
-        RubyClass selfClass = pollAndGetClass(context, self);
+        RubyClass selfClass = self.getMetaClass();
         String methodName = site.name;
         SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
         CacheEntry entry = selfClass.searchWithCache(methodName);
@@ -379,7 +379,7 @@ public class Bootstrap {
     }
 
     public static IRubyObject invokeSelf(InvokeSite site, ThreadContext context, IRubyObject self, IRubyObject arg0) throws Throwable {
-        RubyClass selfClass = pollAndGetClass(context, self);
+        RubyClass selfClass = self.getMetaClass();
         String methodName = site.name;
         SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
         CacheEntry entry = selfClass.searchWithCache(methodName);
@@ -400,7 +400,7 @@ public class Bootstrap {
     }
 
     public static IRubyObject invokeSelf(InvokeSite site, ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1) throws Throwable {
-        RubyClass selfClass = pollAndGetClass(context, self);
+        RubyClass selfClass = self.getMetaClass();
         String methodName = site.name;
         SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
         CacheEntry entry = selfClass.searchWithCache(methodName);
@@ -421,7 +421,7 @@ public class Bootstrap {
     }
 
     public static IRubyObject invokeSelf(InvokeSite site, ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) throws Throwable {
-        RubyClass selfClass = pollAndGetClass(context, self);
+        RubyClass selfClass = self.getMetaClass();
         String methodName = site.name;
         SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
         CacheEntry entry = selfClass.searchWithCache(methodName);

@@ -117,6 +117,10 @@ public class JVM implements CompilerTarget {
         methodData().local("$context", JVM.THREADCONTEXT_TYPE);
         methodData().local("$scope", JVM.STATICSCOPE_TYPE);
         methodData().local("$self");//, JVM.OBJECT_TYPE);
+        for (int i = 0; i < arity; i++) {
+            // incoming arguments
+            methodData().local("$argument" + i);
+        }
     }
 
     public void popmethod() {

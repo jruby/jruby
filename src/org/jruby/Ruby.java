@@ -699,6 +699,8 @@ public final class Ruby {
         if (config.getCompileMode() == CompileMode.FORCEIR) {
             final IRScope scope = new IRBuilder(getIRManager()).buildRoot((RootNode) node);
             final Class compiled = JVM.compile(this, scope, classLoader);
+            final StaticScope staticScope = scope.getStaticScope();
+            staticScope.setModule(getTopSelf().getMetaClass());
             return new AbstractScript() {
                 public IRubyObject __file__(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
                     try {
@@ -716,7 +718,7 @@ public final class Ruby {
 
                 public IRubyObject load(ThreadContext context, IRubyObject self, boolean wrap) {
                     try {
-                        RuntimeHelpers.preLoadCommon(context, scope.getStaticScope(), false);
+                        RuntimeHelpers.preLoadCommon(context, staticScope, false);
                         return __file__(context, self, IRubyObject.NULL_ARRAY, Block.NULL_BLOCK);
                     } finally {
                         RuntimeHelpers.postLoad(context);

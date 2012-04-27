@@ -30,5 +30,7 @@ public class ReceivePreReqdArgInstr extends ReceiveArgBase {
 
     public void compile(JVM jvm) {
         int index = jvm.methodData().local(getResult());
+        jvm.method().loadLocal(3 + argIndex);
+        jvm.method().storeLocal(index);
     }
 }

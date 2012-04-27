@@ -134,8 +134,9 @@ public class DefineInstanceMethodInstr extends Instr {
         jvm.method().adapter.ldc(method.getLineNumber());
 
         jvm.method().adapter.aload(0);
+        jvm.method().adapter.aload(1);
         jvm.method().adapter.ldc(scopeString);
-        jvm.method().adapter.invokestatic(CodegenUtils.p(RuntimeHelpers.class), "decodeLocalScope", "(Lorg/jruby/runtime/ThreadContext;Ljava/lang/String;)Lorg/jruby/parser/StaticScope;");
+        jvm.method().adapter.invokestatic(CodegenUtils.p(RuntimeHelpers.class), "decodeLocalScope", "(Lorg/jruby/runtime/ThreadContext;Lorg/jruby/parser/StaticScope;Ljava/lang/String;)Lorg/jruby/parser/StaticScope;");
 
         jvm.method().adapter.aload(0);
         jvm.method().adapter.invokevirtual(CodegenUtils.p(ThreadContext.class), "getCurrentVisibility", "()Lorg/jruby/runtime/Visibility;");

@@ -2,6 +2,7 @@ package org.jruby.ir.operands;
 
 import java.util.List;
 import org.jruby.ir.IRScope;
+import org.jruby.ir.targets.JVM;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -41,5 +42,10 @@ public class CurrentScope extends Operand {
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         return scope.getStaticScope();
+    }
+
+    @Override
+    public void compile(JVM jvm) {
+        jvm.method().adapter.aload(1);
     }
 }

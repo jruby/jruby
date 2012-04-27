@@ -48,7 +48,7 @@ public class ReceiveSelfInstr extends Instr implements ResultInstr {
 
     public void compile(JVM jvm) {
         int $selfIndex = jvm.methodData().local(getResult());
-        jvm.method().loadLocal(1);
+        jvm.method().loadLocal(2);
         jvm.method().storeLocal($selfIndex);
     }
 }
