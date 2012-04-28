@@ -204,7 +204,7 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.NORMAL, context, self, methodName);
         }
 
-        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 0);
+        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 0, false);
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, self);
@@ -221,7 +221,7 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.NORMAL, context, self, methodName, arg0);
         }
 
-        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 1);
+        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 1, false);
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, self, arg0);
@@ -238,10 +238,10 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.NORMAL, context, self, methodName);
         }
 
-        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 2);
+        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 2, false);
 
         site.setTarget(mh);
-        return (IRubyObject)mh.invokeWithArguments(context, self);
+        return (IRubyObject)mh.invokeWithArguments(context, self, arg0, arg1);
     }
 
     public static IRubyObject invoke(InvokeSite site, ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) throws Throwable {
@@ -255,10 +255,10 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.NORMAL, context, self, methodName);
         }
 
-        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 3);
+        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 3, false);
 
         site.setTarget(mh);
-        return (IRubyObject)mh.invokeWithArguments(context, self);
+        return (IRubyObject)mh.invokeWithArguments(context, self, arg0, arg1, arg2);
     }
 
     public static IRubyObject invokeSelf(InvokeSite site, ThreadContext context, IRubyObject self) throws Throwable {
@@ -272,10 +272,100 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.FUNCTIONAL, context, self, methodName);
         }
 
-        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 0);
+        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 0, false);
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, self);
+    }
+
+    public static IRubyObject invoke(InvokeSite site, ThreadContext context, IRubyObject self, Block block) throws Throwable {
+        // TODO: literal block handling of break, etc
+        RubyClass selfClass = self.getMetaClass();
+        String methodName = site.name;
+        SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
+        CacheEntry entry = selfClass.searchWithCache(methodName);
+        DynamicMethod method = entry.method;
+
+        if (methodMissing(entry, CallType.NORMAL, methodName, self)) {
+            return callMethodMissing(entry, CallType.NORMAL, context, self, methodName);
+        }
+
+        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 0, true);
+
+        site.setTarget(mh);
+        return (IRubyObject)mh.invokeWithArguments(context, self, block);
+    }
+
+    public static IRubyObject invoke(InvokeSite site, ThreadContext context, IRubyObject self, IRubyObject arg0, Block block) throws Throwable {
+        // TODO: literal block handling of break, etc
+        RubyClass selfClass = self.getMetaClass();
+        String methodName = site.name;
+        SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
+        CacheEntry entry = selfClass.searchWithCache(methodName);
+        DynamicMethod method = entry.method;
+
+        if (methodMissing(entry, CallType.NORMAL, methodName, self)) {
+            return callMethodMissing(entry, CallType.NORMAL, context, self, methodName, arg0);
+        }
+
+        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 1, true);
+
+        site.setTarget(mh);
+        return (IRubyObject)mh.invokeWithArguments(context, self, arg0, block);
+    }
+
+    public static IRubyObject invoke(InvokeSite site, ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, Block block) throws Throwable {
+        // TODO: literal block handling of break, etc
+        RubyClass selfClass = self.getMetaClass();
+        String methodName = site.name;
+        SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
+        CacheEntry entry = selfClass.searchWithCache(methodName);
+        DynamicMethod method = entry.method;
+
+        if (methodMissing(entry, CallType.NORMAL, methodName, self)) {
+            return callMethodMissing(entry, CallType.NORMAL, context, self, methodName);
+        }
+
+        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 2, true);
+
+        site.setTarget(mh);
+        return (IRubyObject)mh.invokeWithArguments(context, self, arg0, arg1, block);
+    }
+
+    public static IRubyObject invoke(InvokeSite site, ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) throws Throwable {
+        // TODO: literal block handling of break, etc
+        RubyClass selfClass = self.getMetaClass();
+        String methodName = site.name;
+        SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
+        CacheEntry entry = selfClass.searchWithCache(methodName);
+        DynamicMethod method = entry.method;
+
+        if (methodMissing(entry, CallType.NORMAL, methodName, self)) {
+            return callMethodMissing(entry, CallType.NORMAL, context, self, methodName);
+        }
+
+        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 3, true);
+
+        site.setTarget(mh);
+        return (IRubyObject)mh.invokeWithArguments(context, self, arg0, arg1, arg2, block);
+    }
+
+    public static IRubyObject invokeSelf(InvokeSite site, ThreadContext context, IRubyObject self, Block block) throws Throwable {
+        // TODO: literal block handling of break, etc
+        RubyClass selfClass = self.getMetaClass();
+        String methodName = site.name;
+        SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
+        CacheEntry entry = selfClass.searchWithCache(methodName);
+        DynamicMethod method = entry.method;
+
+        if (methodMissing(entry, CallType.FUNCTIONAL, methodName, self)) {
+            return callMethodMissing(entry, CallType.FUNCTIONAL, context, self, methodName);
+        }
+
+        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 0, true);
+
+        site.setTarget(mh);
+        return (IRubyObject)mh.invokeWithArguments(context, self, block);
     }
 
     public static IRubyObject attrAssign(InvokeSite site, ThreadContext context, IRubyObject self, IRubyObject arg0) throws Throwable {
@@ -289,7 +379,7 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.NORMAL, context, self, methodName, arg0);
         }
 
-        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 1);
+        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 1, false);
 
         mh = foldArguments(
                 mh,
@@ -309,7 +399,7 @@ public class Bootstrap {
             new int[]{1, 0, 2, 3, 4},
     };
 
-    private static MethodHandle getHandle(RubyClass selfClass, SwitchPoint switchPoint, InvokeSite site, DynamicMethod method, int arity) throws Throwable {
+    private static MethodHandle getHandle(RubyClass selfClass, SwitchPoint switchPoint, InvokeSite site, DynamicMethod method, int arity, boolean block) throws Throwable {
         MethodHandle mh = null;
         if (method.getNativeCall() != null) {
             DynamicMethod.NativeCall nc = method.getNativeCall();
@@ -320,8 +410,10 @@ public class Bootstrap {
                         b.drop(0);
                     }
 
-                    if (nc.hasBlock()) {
+                    if (nc.hasBlock() && !block) {
                         b.insert(site.type().parameterCount() - 1, Block.NULL_BLOCK);
+                    } else if (!nc.hasBlock() && block) {
+                        b.drop(site.type().parameterCount() - 2, 1);
                     }
 
 
@@ -352,6 +444,11 @@ public class Bootstrap {
             // attempt IR direct binding
             if (method instanceof CompiledIRMethod) {
                 mh = (MethodHandle)((CompiledIRMethod)method).getHandle();
+
+                if (!block) {
+                    mh = MethodHandles.insertArguments(mh, mh.type().parameterCount() - 1, Block.NULL_BLOCK);
+                }
+
                 mh = MethodHandles.insertArguments(mh, 1, ((CompiledIRMethod)method).getStaticScope());
             }
         }
@@ -390,7 +487,7 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.FUNCTIONAL, context, self, methodName, arg0);
         }
 
-        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 1);
+        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 1, false);
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, self, arg0);
@@ -411,7 +508,7 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.FUNCTIONAL, context, self, methodName, arg0, arg1);
         }
 
-        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 2);
+        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 2, false);
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, self, arg0, arg1);
@@ -432,13 +529,87 @@ public class Bootstrap {
             return callMethodMissing(entry, CallType.FUNCTIONAL, context, self, methodName, arg0, arg1, arg2);
         }
 
-        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 3);
+        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 3, false);
 
         site.setTarget(mh);
         return (IRubyObject)mh.invokeWithArguments(context, self, arg0, arg1, arg2);
     }
 
     public static IRubyObject invokeSelfSimple(String name, ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+        return self.getMetaClass().invoke(context, self, name, arg0, arg1, arg2, CallType.FUNCTIONAL);
+    }
+
+    public static IRubyObject invokeSelfSimple(String name, ThreadContext context, IRubyObject self, Block block) throws Throwable {
+        // TODO: literal block wrapper for break, etc
+        return self.getMetaClass().invoke(context, self, name, CallType.FUNCTIONAL);
+    }
+
+    public static IRubyObject invokeSelf(InvokeSite site, ThreadContext context, IRubyObject self, IRubyObject arg0, Block block) throws Throwable {
+        // TODO: literal block wrapper for break, etc
+        RubyClass selfClass = self.getMetaClass();
+        String methodName = site.name;
+        SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
+        CacheEntry entry = selfClass.searchWithCache(methodName);
+        DynamicMethod method = entry.method;
+
+        if (methodMissing(entry, CallType.FUNCTIONAL, methodName, self)) {
+            return callMethodMissing(entry, CallType.FUNCTIONAL, context, self, methodName, arg0);
+        }
+
+        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 1, true);
+
+        site.setTarget(mh);
+        return (IRubyObject)mh.invokeWithArguments(context, self, arg0, block);
+    }
+
+    public static IRubyObject invokeSelfSimple(String name, ThreadContext context, IRubyObject self, IRubyObject arg0, Block block) throws Throwable {
+        // TODO: literal block wrapper for break, etc
+        return self.getMetaClass().invoke(context, self, name, arg0, CallType.FUNCTIONAL);
+    }
+
+    public static IRubyObject invokeSelf(InvokeSite site, ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, Block block) throws Throwable {
+        // TODO: literal block wrapper for break, etc
+        RubyClass selfClass = self.getMetaClass();
+        String methodName = site.name;
+        SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
+        CacheEntry entry = selfClass.searchWithCache(methodName);
+        DynamicMethod method = entry.method;
+
+        if (methodMissing(entry, CallType.FUNCTIONAL, methodName, self)) {
+            return callMethodMissing(entry, CallType.FUNCTIONAL, context, self, methodName, arg0, arg1);
+        }
+
+        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 2, true);
+
+        site.setTarget(mh);
+        return (IRubyObject)mh.invokeWithArguments(context, self, arg0, arg1, block);
+    }
+
+    public static IRubyObject invokeSelfSimple(String name, ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, Block block) throws Throwable {
+        // TODO: literal block wrapper for break, etc
+        return self.getMetaClass().invoke(context, self, name, arg0, arg1, CallType.FUNCTIONAL);
+    }
+
+    public static IRubyObject invokeSelf(InvokeSite site, ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) throws Throwable {
+        // TODO: literal block wrapper for break, etc
+        RubyClass selfClass = self.getMetaClass();
+        String methodName = site.name;
+        SwitchPoint switchPoint = (SwitchPoint)selfClass.getInvalidator().getData();
+        CacheEntry entry = selfClass.searchWithCache(methodName);
+        DynamicMethod method = entry.method;
+
+        if (methodMissing(entry, CallType.FUNCTIONAL, methodName, self)) {
+            return callMethodMissing(entry, CallType.FUNCTIONAL, context, self, methodName, arg0, arg1, arg2);
+        }
+
+        MethodHandle mh = getHandle(selfClass, switchPoint, site, method, 3, true);
+
+        site.setTarget(mh);
+        return (IRubyObject)mh.invokeWithArguments(context, self, arg0, arg1, arg2, block);
+    }
+
+    public static IRubyObject invokeSelfSimple(String name, ThreadContext context, IRubyObject self, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) throws Throwable {
+        // TODO: literal block wrapper for break, etc
         return self.getMetaClass().invoke(context, self, name, arg0, arg1, arg2, CallType.FUNCTIONAL);
     }
 

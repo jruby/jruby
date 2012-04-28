@@ -160,24 +160,26 @@ public class JVM implements CompilerTarget {
     }
 
     public void emit(IRMethod method) {
-        emitScope(method, method.getName(), method.getCallArgs().length);
+        String name = emitScope(method, method.getName(), method.getCallArgs().length);
 
         // push a method handle for binding purposes
-        method().pushHandle(clsData().clsName, method.getName(), method.getStaticScope().getRequiredArgs());
+        method().pushHandle(clsData().clsName, name, method.getStaticScope().getRequiredArgs());
     }
 
     public void emit(IRModuleBody method) {
         String name = method.getName();
         if (name.indexOf("DUMMY_MC") != -1) {
-            name = "METACLASS:" + Math.abs(method.hashCode());
+            name = "METACLASS";
         }
-        emitScope(method, name, 0);
+
+        name = emitScope(method, name, 0);
 
         // push a method handle for binding purposes
         method().pushHandle(clsData().clsName, name, method.getStaticScope().getRequiredArgs());
     }
     
-    public void emitScope(IRScope scope, String name, int arity) {
+    public String emitScope(IRScope scope, String name, int arity) {
+        name = name + scope.getLineNumber();
         pushmethod(name, arity);
 
         Tuple<Instr[], Map<Integer,Label[]>> t = scope.prepareForCompilation();
@@ -198,6 +200,8 @@ public class JVM implements CompilerTarget {
         }
 
         popmethod();
+
+        return name;
     }
 
     public void emit(Instr instr) {
