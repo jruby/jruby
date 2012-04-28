@@ -165,10 +165,14 @@ public class JVM implements CompilerTarget {
     }
 
     public void emit(IRModuleBody method) {
-        emitScope(method, method.getName(), 0);
+        String name = method.getName();
+        if (name.indexOf("DUMMY_MC") != -1) {
+            name = "METACLASS:" + Math.abs(method.hashCode());
+        }
+        emitScope(method, name, 0);
 
         // push a method handle for binding purposes
-        method().pushHandle(clsData().clsName, method.getName(), method.getStaticScope().getRequiredArgs());
+        method().pushHandle(clsData().clsName, name, method.getStaticScope().getRequiredArgs());
     }
     
     public void emitScope(IRScope scope, String name, int arity) {

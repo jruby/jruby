@@ -73,6 +73,11 @@ public class IRBytecodeAdapter {
         adapter.invokedynamic("symbol", sig(JVM.OBJECT, ThreadContext.class), Bootstrap.symbol(), sym);
     }
 
+    public void pushRuntime() {
+        adapter.aload(0);
+        adapter.getfield(p(ThreadContext.class), "runtime", ci(Ruby.class));
+    }
+
     public void loadLocal(int i) {
         adapter.aload(i);
     }
