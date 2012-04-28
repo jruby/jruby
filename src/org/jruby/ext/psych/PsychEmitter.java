@@ -110,7 +110,7 @@ public class PsychEmitter extends RubyObject {
     public IRubyObject start_document(ThreadContext context, IRubyObject version, IRubyObject tags, IRubyObject implicit) {
         Integer[] versionInts = null;
         boolean implicitBool = implicit.isTrue();
-        Map<String, String> tagsMap = Collections.EMPTY_MAP;
+        Map<String, String> tagsMap = null;
 
         RubyArray versionAry = version.convertToArray();
         if (versionAry.size() == 2) {
