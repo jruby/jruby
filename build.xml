@@ -378,6 +378,12 @@
       <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
       <zipfileset src="${build.lib.dir}/jzlib-1.1.0.jar"/>
       <zipfileset src="${build.lib.dir}/invokebinder.jar"/>
+        <zipfileset src="${build.lib.dir}/bcmail-jdk15-146.jar">
+            <exclude name="META-INF/BCKEY.*"/>
+        </zipfileset>
+        <zipfileset src="${build.lib.dir}/bcprov-jdk15-146.jar">
+            <exclude name="META-INF/BCKEY.*"/>
+        </zipfileset>
       <metainf dir="spi">
         <include name="services/**"/>
       </metainf>
@@ -484,7 +490,13 @@
       <zipfileset src="${build.lib.dir}/yydebug.jar"/>
       <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
       <zipfileset src="${build.lib.dir}/jzlib-1.1.0.jar"/>
-        <zipfileset src="${build.lib.dir}/invokebinder.jar"/>
+      <zipfileset src="${build.lib.dir}/invokebinder.jar"/>
+        <zipfileset src="${build.lib.dir}/bcmail-jdk15-146.jar">
+            <exclude name="META-INF/BCKEY.*"/>
+        </zipfileset>
+        <zipfileset src="${build.lib.dir}/bcprov-jdk15-146.jar">
+            <exclude name="META-INF/BCKEY.*"/>
+        </zipfileset>
       <metainf dir="spi">
         <include name="services/**"/>
       </metainf>
@@ -643,7 +655,13 @@
       <zipfileset src="${build.lib.dir}/yydebug.jar"/>
       <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
       <zipfileset src="${build.lib.dir}/jzlib-1.1.0.jar"/>
-        <zipfileset src="${build.lib.dir}/invokebinder.jar"/>
+      <zipfileset src="${build.lib.dir}/invokebinder.jar"/>
+        <zipfileset src="${build.lib.dir}/bcmail-jdk15-146.jar">
+            <exclude name="META-INF/BCKEY.*"/>
+        </zipfileset>
+        <zipfileset src="${build.lib.dir}/bcprov-jdk15-146.jar">
+            <exclude name="META-INF/BCKEY.*"/>
+        </zipfileset>
       <metainf dir="spi">
         <include name="services/**"/>
       </metainf>

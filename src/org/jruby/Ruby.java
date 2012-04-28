@@ -1583,6 +1583,7 @@ public final class Ruby {
         addLazyBuiltin("fcntl.rb", "fcntl", "org.jruby.ext.fcntl.FcntlLibrary");
         addLazyBuiltin("rubinius.jar", "rubinius", "org.jruby.ext.rubinius.RubiniusLibrary");
         addLazyBuiltin("yecht.jar", "yecht", "YechtService");
+        addLazyBuiltin("jopenssl.jar", "jopenssl", "org.jruby.ext.openssl.OSSLLibrary");
 
         if (is1_9()) {
             addLazyBuiltin("mathn/complex.jar", "mathn/complex", "org.jruby.ext.mathn.Complex");
@@ -1606,12 +1607,6 @@ public final class Ruby {
         if(RubyInstanceConfig.NATIVE_NET_PROTOCOL) {
             addLazyBuiltin("net/protocol.rb", "net/protocol", "org.jruby.ext.net.protocol.NetProtocolBufferedIOLibrary");
         }
-        
-        addBuiltinIfAllowed("openssl.jar", new Library() {
-            public void load(Ruby runtime, boolean wrap) throws IOException {
-                runtime.getLoadService().require("jruby/openssl/stub");
-            }
-        });
 
         addBuiltinIfAllowed("win32ole.jar", new Library() {
             public void load(Ruby runtime, boolean wrap) throws IOException {

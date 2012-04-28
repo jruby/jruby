@@ -1971,7 +1971,8 @@ public class RubyModule extends RubyObject {
     }
 
     /** rb_mod_attr_accessor
-     *
+     *  Note: this method should not be called from Java in most cases, since
+     *  it depends on Ruby frame state for visibility. Use add[Read/Write]Attribute instead.
      */
     @JRubyMethod(name = "attr_accessor", rest = true, visibility = PRIVATE, reads = VISIBILITY)
     public IRubyObject attr_accessor(ThreadContext context, IRubyObject[] args) {
