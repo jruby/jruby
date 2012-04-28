@@ -447,6 +447,7 @@ public class Bootstrap {
                     }
                 }
             }
+//            if (mh != null) System.out.println("binding to native: " + site.name);
         }
 
         if (mh == null) {
@@ -459,13 +460,37 @@ public class Bootstrap {
                 }
 
                 mh = MethodHandles.insertArguments(mh, 1, ((CompiledIRMethod)method).getStaticScope());
+//                System.out.println("binding IR compiled direct: " + site.name);
             }
+        }
+//        System.out.println(site.name);
+//        System.out.println("before: " + mh);
+
+        if (mh == null) {
+//            System.out.println(site.type());
+
+            // use DynamicMethod binding
+            MethodType type2 = site.type()
+                    .insertParameterTypes(2, RubyModule.class, String.class)
+                    .insertParameterTypes(0, DynamicMethod.class);
+            mh = Binder.from(site.type())
+                    .insert(2, selfClass, site.name)
+//                    .printType()
+                    .insert(0, method)
+//                    .printType()
+                    .cast(type2)
+                    .invokeVirtual(MethodHandles.lookup(), "call");
+
+//            System.out.println("binding to DynamicMethod: " + mh);
+//            System.out.println("binding to DynamicMethod.call: " + site.name);
         }
 
         MethodHandle fallback = Binder
                 .from(site.type())
                 .insert(0, site.name)
+//                .printType()
                 .invokeStatic(MethodHandles.lookup(), Bootstrap.class, "invokeSelfSimple");
+//        System.out.println("simple fallback: " + fallback);
 
         if (mh == null) {
             return fallback;
