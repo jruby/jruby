@@ -7,18 +7,23 @@ import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.internal.runtime.methods.CompiledIRMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.ir.operands.UndefinedValue;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
+import org.jruby.runtime.invokedynamic.InvocationLinker;
+import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
+import org.jruby.runtime.invokedynamic.VariableSite;
 import org.jruby.runtime.opto.GenerationAndSwitchPointInvalidator;
 import org.jruby.util.JavaNameMangler;
 import org.objectweb.asm.Handle;
@@ -33,6 +38,7 @@ import java.lang.invoke.MutableCallSite;
 import java.lang.invoke.SwitchPoint;
 
 import static java.lang.invoke.MethodHandles.*;
+import static java.lang.invoke.MethodType.methodType;
 import static org.jruby.runtime.invokedynamic.InvokeDynamicSupport.*;
 import static org.jruby.util.CodegenUtils.p;
 import static org.jruby.util.CodegenUtils.sig;
@@ -110,16 +116,19 @@ public class Bootstrap {
         return site;
     }
 
-    public static CallSite ivar(Lookup lookup, String name, MethodType type) {
-        String[] bits = name.split(":");
-        String getSet = bits[0];
-        String varName = JavaNameMangler.demangleMethodName(bits[1]);
+    public static CallSite ivar(Lookup lookup, String name, MethodType type) throws Throwable {
+        String[] names = name.split(":");
+        String operation = names[0];
+        String varName = names[1];
+        VariableSite site = new VariableSite(type, varName);
+        MethodHandle handle;
 
-        MethodHandle handle = Binder
-                .from(type)
-                .insert(0, varName)
-                .invokeStaticQuiet(MethodHandles.lookup(), Bootstrap.class, getSet);
-        return new ConstantCallSite(handle);
+        handle = lookup.findStatic(Bootstrap.class, operation, type.insertParameterTypes(0, VariableSite.class));
+
+        handle = handle.bindTo(site);
+        site.setTarget(handle.asType(site.type()));
+
+        return site;
     }
 
     public static CallSite searchConst(Lookup lookup, String name, MethodType type) {
@@ -613,14 +622,76 @@ public class Bootstrap {
         return self.getMetaClass().invoke(context, self, name, arg0, arg1, arg2, CallType.FUNCTIONAL);
     }
 
-    public static IRubyObject ivarGet(String name, IRubyObject self) {
-        IRubyObject value = self.getInstanceVariables().getInstanceVariable(name);
-        if (value == null) return self.getRuntime().getNil();
-        return value;
+    public static IRubyObject ivarGet(VariableSite site, IRubyObject self) throws Throwable {
+        RubyClass.VariableAccessor accessor = self.getMetaClass().getRealClass().getVariableAccessorForRead(site.name);
+
+        // produce nil if the variable has not been initialize
+        MethodHandle nullToNil = findStatic(RuntimeHelpers.class, "nullToNil", methodType(IRubyObject.class, IRubyObject.class, IRubyObject.class));
+        nullToNil = insertArguments(nullToNil, 1, self.getRuntime().getNil());
+        nullToNil = explicitCastArguments(nullToNil, methodType(IRubyObject.class, Object.class));
+
+        // get variable value and filter with nullToNil
+        MethodHandle getValue = findVirtual(IRubyObject.class, "getVariable", methodType(Object.class, int.class));
+        getValue = insertArguments(getValue, 1, accessor.getIndex());
+        getValue = filterReturnValue(getValue, nullToNil);
+
+        // prepare fallback
+        MethodHandle fallback = null;
+        if (site.getTarget() == null || site.chainCount() > RubyInstanceConfig.MAX_POLY_COUNT) {
+//            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name + "\tget triggered site rebind " + self.getMetaClass().id);
+            fallback = findStatic(InvokeDynamicSupport.class, "getVariableFallback", methodType(IRubyObject.class, VariableSite.class, IRubyObject.class));
+            fallback = fallback.bindTo(site);
+            site.clearChainCount();
+        } else {
+//            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name + "\tget added to PIC " + self.getMetaClass().id);
+            fallback = site.getTarget();
+            site.incrementChainCount();
+        }
+
+        // prepare test
+        MethodHandle test = findStatic(InvocationLinker.class, "testRealClass", methodType(boolean.class, RubyClass.class, IRubyObject.class));
+        test = test.bindTo(self.getMetaClass().getRealClass());
+
+        getValue = guardWithTest(test, getValue, fallback);
+
+//        if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name + "\tget on class " + self.getMetaClass().id + " bound directly");
+        site.setTarget(getValue);
+
+        return (IRubyObject)getValue.invokeWithArguments(self);
     }
 
-    public static void ivarSet(String name, IRubyObject self, IRubyObject value) {
-        self.getInstanceVariables().setInstanceVariable(name, value);
+    public static void ivarSet(VariableSite site, IRubyObject self, IRubyObject value) throws Throwable {
+        RubyClass.VariableAccessor accessor = self.getMetaClass().getRealClass().getVariableAccessorForWrite(site.name);
+
+        // set variable value and fold by returning value
+        MethodHandle setValue = findVirtual(IRubyObject.class, "setVariable", methodType(void.class, int.class, Object.class));
+        setValue = explicitCastArguments(setValue, methodType(void.class, IRubyObject.class, int.class, IRubyObject.class));
+        setValue = insertArguments(setValue, 1, accessor.getIndex());
+
+        // prepare fallback
+        MethodHandle fallback = null;
+        if (site.getTarget() == null || site.chainCount() > RubyInstanceConfig.MAX_POLY_COUNT) {
+//            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name + "\tset triggered site rebind " + self.getMetaClass().id);
+            fallback = findStatic(InvokeDynamicSupport.class, "setVariableFallback", methodType(void.class, VariableSite.class, IRubyObject.class, IRubyObject.class));
+            fallback = fallback.bindTo(site);
+            site.clearChainCount();
+        } else {
+//            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name + "\tset added to PIC " + self.getMetaClass().id);
+            fallback = site.getTarget();
+            site.incrementChainCount();
+        }
+
+        // prepare test
+        MethodHandle test = findStatic(InvocationLinker.class, "testRealClass", methodType(boolean.class, RubyClass.class, IRubyObject.class));
+        test = test.bindTo(self.getMetaClass().getRealClass());
+        test = dropArguments(test, 1, IRubyObject.class);
+
+        setValue = guardWithTest(test, setValue, fallback);
+
+//        if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name + "\tset on class " + self.getMetaClass().id + " bound directly");
+        site.setTarget(setValue);
+
+        setValue.invokeWithArguments(self, value);
     }
 
     private static MethodHandle findStatic(Class target, String name, MethodType type) {
