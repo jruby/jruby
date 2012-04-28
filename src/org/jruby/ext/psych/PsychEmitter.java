@@ -135,7 +135,7 @@ public class PsychEmitter extends RubyObject {
             }
         }
 
-        DocumentStartEvent event = new DocumentStartEvent(NULL_MARK, NULL_MARK, implicitBool, versionInts, tagsMap);
+        DocumentStartEvent event = new DocumentStartEvent(NULL_MARK, NULL_MARK, !implicitBool, versionInts, tagsMap);
         emit(context, event);
         return this;
     }
