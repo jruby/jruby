@@ -39,6 +39,7 @@ import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.internal.runtime.methods.CallConfiguration;
+import org.jruby.internal.runtime.methods.CompiledIRMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.internal.runtime.methods.WrapperMethod;
@@ -2739,5 +2740,17 @@ public class RuntimeHelpers {
                 value1 == value2 : value1.op_equal(context, value2).isTrue();
 
         return !eql;
+    }
+
+    public static RubyModule checkIsRubyModule(ThreadContext context, Object object) {
+        if (!(object instanceof RubyModule)) throw context.getRuntime().newTypeError("no outer class/module");
+
+        return (RubyModule)object;
+    }
+
+    public static IRubyObject invokeModuleBody(ThreadContext context, CompiledIRMethod method) {
+        RubyModule implClass = method.getImplementationClass();
+
+        return method.call(context, implClass, implClass, "");
     }
 }

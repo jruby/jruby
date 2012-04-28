@@ -7,6 +7,7 @@ import org.jruby.ast.RootNode;
 import org.jruby.ir.CompilerTarget;
 import org.jruby.ir.IRBuilder;
 import org.jruby.ir.IRMethod;
+import org.jruby.ir.IRModuleBody;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.IRScriptBody;
 import org.jruby.ir.Tuple;
@@ -158,6 +159,13 @@ public class JVM implements CompilerTarget {
 
     public void emit(IRMethod method) {
         emitScope(method, method.getName(), method.getCallArgs().length);
+
+        // push a method handle for binding purposes
+        method().pushHandle(clsData().clsName, method.getName(), method.getStaticScope().getRequiredArgs());
+    }
+
+    public void emit(IRModuleBody method) {
+        emitScope(method, method.getName(), 0);
 
         // push a method handle for binding purposes
         method().pushHandle(clsData().clsName, method.getName(), method.getStaticScope().getRequiredArgs());
