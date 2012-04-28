@@ -69,8 +69,6 @@ public class DefineMetaClassInstr extends Instr implements ResultInstr {
         
         RubyClass singletonClass = RuntimeHelpers.getSingletonClass(runtime, obj);
         metaClassBody.getStaticScope().setModule(singletonClass);
-        DynamicMethod method = new InterpretedIRMethod(metaClassBody, Visibility.PUBLIC, singletonClass);
-        // SSS FIXME: Rather than pass the block implicitly, should we add %block as another operand to DefineMetaClass instr?
-        return method.call(context, singletonClass, singletonClass, "", new IRubyObject[]{}, block);
+		  return new InterpretedIRMethod(metaClassBody, Visibility.PUBLIC, singletonClass);
     }
 }

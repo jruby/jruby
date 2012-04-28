@@ -20,7 +20,7 @@ public class DefineModuleInstr extends Instr implements ResultInstr {
     private Operand container;
     private Variable result;
 
-    public DefineModuleInstr(IRModuleBody newIRModuleBody, Variable result, Operand container) {
+    public DefineModuleInstr(Variable result, IRModuleBody newIRModuleBody, Operand container) {
         super(Operation.DEF_MODULE);
         
         assert result != null : "DefineModuleInstr result is null";
@@ -54,8 +54,8 @@ public class DefineModuleInstr extends Instr implements ResultInstr {
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        // SSS FIxME: So, do we clone the module body scope or not?
-        return new DefineModuleInstr(this.newIRModuleBody, ii.getRenamedVariable(result), container.cloneForInlining(ii));
+        // SSS FIXME: So, do we clone the module body scope or not?
+        return new DefineModuleInstr(ii.getRenamedVariable(result), this.newIRModuleBody, container.cloneForInlining(ii));
     }
 
     @Override
@@ -66,9 +66,6 @@ public class DefineModuleInstr extends Instr implements ResultInstr {
 
         RubyModule newRubyModule = ((RubyModule) rubyContainer).defineOrGetModuleUnder(newIRModuleBody.getName());
         newIRModuleBody.getStaticScope().setModule(newRubyModule);
-        DynamicMethod method = new InterpretedIRMethod(newIRModuleBody, Visibility.PUBLIC, newRubyModule);
-
-        // SSS FIXME: Rather than pass the block implicitly, should we add %block as another operand to DefineClass, DefineModule instrs?
-        return method.call(context, newRubyModule, newRubyModule, "", new IRubyObject[]{}, block);
+        return new InterpretedIRMethod(newIRModuleBody, Visibility.PUBLIC, newRubyModule);
     }
 }

@@ -87,11 +87,7 @@ public class DefineClassInstr extends Instr implements ResultInstr {
         if (!(rubyContainer instanceof RubyModule)) throw context.getRuntime().newTypeError("no outer class/module");
 
         RubyModule newRubyClass = newClass(context, self, (RubyModule) rubyContainer, currDynScope, temp);
-
-        // Interpret the body
         newIRClassBody.getStaticScope().setModule(newRubyClass);
-        DynamicMethod method = new InterpretedIRMethod(newIRClassBody, Visibility.PUBLIC, newRubyClass);
-        // SSS FIXME: Rather than pass the block implicitly, should we add %block as another operand to DefineClass, DefineModule instrs?
-        return method.call(context, newRubyClass, newRubyClass, "", new IRubyObject[]{}, block);
+        return new InterpretedIRMethod(newIRClassBody, Visibility.PUBLIC, newRubyClass);
     }
 }

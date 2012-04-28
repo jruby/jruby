@@ -145,6 +145,7 @@ import org.jruby.ir.instructions.Match2Instr;
 import org.jruby.ir.instructions.Match3Instr;
 import org.jruby.ir.instructions.MatchInstr;
 import org.jruby.ir.instructions.NotInstr;
+import org.jruby.ir.instructions.ProcessModuleBodyInstr;
 import org.jruby.ir.instructions.PutClassVariableInstr;
 import org.jruby.ir.instructions.PutConstInstr;
 import org.jruby.ir.instructions.PutFieldInstr;
@@ -1072,8 +1073,10 @@ public class IRBuilder {
         Operand container = getContainerFromCPath(cpath, s);
 
         IRClassBody c = new IRClassBody(manager, s, className, classNode.getPosition().getLine(), classNode.getScope());
+        Variable classBody = s.getNewTemporaryVariable();
+        s.addInstr(new DefineClassInstr(classBody, c, container, superClass));
         Variable ret = s.getNewTemporaryVariable();
-        s.addInstr(new DefineClassInstr(ret, c, container, superClass));
+        s.addInstr(new ProcessModuleBodyInstr(ret, classBody));
 
         c.addInstr(new ReceiveSelfInstr(c.getSelf()));
         // Set %current_scope = <c>
@@ -1102,8 +1105,10 @@ public class IRBuilder {
 
         // Create a dummy meta class and record it as being lexically defined in scope s
         IRModuleBody mc = new IRMetaClassBody(manager, s, manager.getMetaClassName(), sclassNode.getPosition().getLine(), sclassNode.getScope());
+        Variable classBody = s.getNewTemporaryVariable();
+        s.addInstr(new DefineMetaClassInstr(classBody, receiver, mc));
         Variable ret = s.getNewTemporaryVariable();
-        s.addInstr(new DefineMetaClassInstr(ret, receiver, mc));
+        s.addInstr(new ProcessModuleBodyInstr(ret, classBody));
 
         mc.addInstr(new ReceiveSelfInstr(mc.getSelf()));
         // Set %current_scope = <current-scope>
@@ -2470,8 +2475,10 @@ public class IRBuilder {
 
         // Build the new module
         IRModuleBody m = new IRModuleBody(manager, s, moduleName, moduleNode.getPosition().getLine(), moduleNode.getScope());
+        Variable moduleBody = s.getNewTemporaryVariable();
+        s.addInstr(new DefineModuleInstr(moduleBody, m, container));
         Variable ret = s.getNewTemporaryVariable();
-        s.addInstr(new DefineModuleInstr(m, ret, container));
+        s.addInstr(new ProcessModuleBodyInstr(ret, moduleBody));
 
         m.addInstr(new ReceiveSelfInstr(m.getSelf()));
         // Set %current_scope = <c>
