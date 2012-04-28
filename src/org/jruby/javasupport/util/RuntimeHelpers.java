@@ -2753,4 +2753,19 @@ public class RuntimeHelpers {
 
         return method.call(context, implClass, implClass, "");
     }
+
+    public static RubyClass newClassForIR(ThreadContext context, String name, IRubyObject self, RubyModule classContainer, Object superClass, boolean meta) {
+        if (meta) return classContainer.getMetaClass();
+
+        RubyClass sc = null;
+
+        if (superClass != null) {
+            if (!(superClass instanceof RubyClass)) throw context.getRuntime().newTypeError("superclass must be Class (" + superClass + " given)");
+
+            sc = (RubyClass) superClass;
+        }
+
+
+        return classContainer.defineOrGetClassUnder(name, sc);
+    }
 }

@@ -100,7 +100,7 @@ public class DefineModuleInstr extends Instr implements ResultInstr {
         jvm.method().adapter.ldc(scopeString);
         jvm.method().adapter.invokestatic(CodegenUtils.p(RuntimeHelpers.class), "decodeLocalScope", "(Lorg/jruby/runtime/ThreadContext;Lorg/jruby/parser/StaticScope;Ljava/lang/String;)Lorg/jruby/parser/StaticScope;");
 
-        // impl class
+        // create module
         jvm.method().loadLocal(0);
         jvm.emit(container);
         jvm.method().invokeHelper("checkIsRubyModule", RubyModule.class, ThreadContext.class, Object.class);
