@@ -103,6 +103,13 @@ public class PsychParser extends RubyObject {
     @JRubyMethod
     public IRubyObject parse(ThreadContext context, IRubyObject yaml) {
         Ruby runtime = context.runtime;
+
+        return parse(context, yaml, RubyString.newString(runtime, "<unknown>"));
+    }
+
+    @JRubyMethod
+    public IRubyObject parse(ThreadContext context, IRubyObject yaml, IRubyObject path) {
+        Ruby runtime = context.runtime;
         boolean tainted = yaml.isTaint();
         
         // FIXME? only supports Unicode, since we have to produces strings...
