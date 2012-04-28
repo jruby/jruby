@@ -614,7 +614,9 @@ public class Bootstrap {
     }
 
     public static IRubyObject ivarGet(String name, IRubyObject self) {
-        return self.getInstanceVariables().getInstanceVariable(name);
+        IRubyObject value = self.getInstanceVariables().getInstanceVariable(name);
+        if (value == null) return self.getRuntime().getNil();
+        return value;
     }
 
     public static void ivarSet(String name, IRubyObject self, IRubyObject value) {

@@ -147,7 +147,7 @@ public class IRBytecodeAdapter {
     }
 
     public void btrue(org.objectweb.asm.Label label) {
-        adapter.iffalse(label);
+        adapter.iftrue(label);
     }
 
     public void poll() {
