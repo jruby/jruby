@@ -51,6 +51,9 @@ public class ReceiveClosureInstr extends Instr implements ResultInstr {
     }
 
     public void compile(JVM jvm) {
-        int closureIndex = jvm.method().newLocal("$block", org.objectweb.asm.Type.getType(Block.class));
+//        int index = jvm.methodData().local(result);
+//        jvm.method().loadLocal(4);
+//        jvm.method().storeLocal(index);
+        // block parameter is always $block and always present
     }
 }

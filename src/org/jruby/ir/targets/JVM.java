@@ -17,6 +17,7 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Symbol;
 import org.jruby.ir.operands.Variable;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JRubyClassLoader;
@@ -122,6 +123,7 @@ public class JVM implements CompilerTarget {
             // incoming arguments
             methodData().local("$argument" + i);
         }
+        methodData().local("$block", Type.getType(Block.class));
     }
 
     public void popmethod() {
@@ -227,9 +229,11 @@ public class JVM implements CompilerTarget {
     }
 
     public static final Class OBJECT = IRubyObject.class;
+    public static final Class BLOCK = Block.class;
     public static final Class THREADCONTEXT = ThreadContext.class;
     public static final Class STATICSCOPE = StaticScope.class;
     public static final Type OBJECT_TYPE = Type.getType(OBJECT);
+    public static final Type BLOCK_TYPE = Type.getType(BLOCK);
     public static final Type THREADCONTEXT_TYPE = Type.getType(THREADCONTEXT);
     public static final Type STATICSCOPE_TYPE = Type.getType(STATICSCOPE);
 }

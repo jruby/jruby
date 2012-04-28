@@ -704,7 +704,7 @@ public final class Ruby {
             return new AbstractScript() {
                 public IRubyObject __file__(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
                     try {
-                        return (IRubyObject)compiled.getMethod("__script__", ThreadContext.class, StaticScope.class, IRubyObject.class).invoke(null, getCurrentContext(), scope.getStaticScope(), getTopSelf());
+                        return (IRubyObject)compiled.getMethod("__script__", ThreadContext.class, StaticScope.class, IRubyObject.class, Block.class).invoke(null, getCurrentContext(), scope.getStaticScope(), getTopSelf(), block);
                     } catch (InvocationTargetException ite) {
                         if (ite.getCause() instanceof JumpException) {
                             throw (JumpException)ite.getCause();
