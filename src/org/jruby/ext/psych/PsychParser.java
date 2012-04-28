@@ -134,7 +134,7 @@ public class PsychParser extends RubyObject {
 
                     Integer[] versionInts = dse.getVersion();
                     IRubyObject version = versionInts == null ?
-                        runtime.getNil() :
+                        RubyArray.newArray(runtime) :
                         RubyArray.newArray(runtime, runtime.newFixnum(versionInts[0]), runtime.newFixnum(versionInts[1]));
                     
                     Map<String, String> tagsMap = dse.getTags();
