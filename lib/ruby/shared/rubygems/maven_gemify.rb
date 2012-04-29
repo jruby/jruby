@@ -1,5 +1,4 @@
 require 'uri'
-require 'rubygems/spec_fetcher'
 require 'rubygems/remote_fetcher'
 
 module Gem
