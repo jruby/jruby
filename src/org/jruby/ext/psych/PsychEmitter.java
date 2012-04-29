@@ -142,7 +142,7 @@ public class PsychEmitter extends RubyObject {
 
     @JRubyMethod
     public IRubyObject end_document(ThreadContext context, IRubyObject implicit) {
-        DocumentEndEvent event = new DocumentEndEvent(NULL_MARK, NULL_MARK, implicit.isTrue());
+        DocumentEndEvent event = new DocumentEndEvent(NULL_MARK, NULL_MARK, !implicit.isTrue());
         emit(context, event);
         return this;
     }
