@@ -30,6 +30,7 @@ package org.jruby.ext.tempfile;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.jruby.CompatVersion;
@@ -38,6 +39,7 @@ import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyFile;
 import org.jruby.RubyFixnum;
+import org.jruby.RubyHash;
 import org.jruby.RubyKernel;
 
 import org.jruby.anno.JRubyClass;
@@ -50,6 +52,7 @@ import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.PhantomReferenceReaper;
+import org.jruby.util.io.EncodingOption;
 import org.jruby.util.io.IOOptions;
 import org.jruby.util.io.InvalidValueException;
 import org.jruby.util.io.ModeFlags;
@@ -111,7 +114,7 @@ public class Tempfile extends org.jruby.RubyTempfile {
         super(runtime, type);
     }
 
-    @JRubyMethod(required = 1, optional = 1, visibility = PRIVATE)
+    @JRubyMethod(required = 1, optional = 1, visibility = PRIVATE, compat = CompatVersion.RUBY1_8)
     @Override
     public IRubyObject initialize(IRubyObject[] args, Block block) {
         Ruby runtime = getRuntime();
@@ -154,6 +157,31 @@ public class Tempfile extends org.jruby.RubyTempfile {
                 }
             }
         }
+    }
+
+    @JRubyMethod(required = 1, optional = 2, visibility = PRIVATE, compat = CompatVersion.RUBY1_9)
+    @Override
+    public IRubyObject initialize19(ThreadContext context, IRubyObject[] args, Block block) {
+        RubyHash options = null;
+
+        // check for trailing hash
+        if (args.length > 1) {
+            if (args[args.length - 1] instanceof RubyHash) {
+                options = (RubyHash)args[args.length - 1];
+                args = Arrays.copyOfRange(args, 0, args.length - 1);
+            }
+        }
+
+        initialize(args, block);
+
+        if (options != null) {
+            EncodingOption encodingOption = EncodingOption.getEncodingOptionFromObject(options);
+            if (encodingOption != null) {
+                setEncodingFromOptions(encodingOption);
+            }
+        }
+
+        return this;
     }
 
     private IRubyObject defaultTmpDir(Ruby runtime, IRubyObject[] args) {
