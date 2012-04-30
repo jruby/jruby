@@ -1,3 +1,4 @@
+# encoding: utf-8
 # -*- mode: ruby; ruby-indent-level: 4; tab-width: 4 -*-
 #												vim:sw=4:ts=4
 # $Id: test_yaml.rb 16084 2008-04-19 11:45:39Z knu $
