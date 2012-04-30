@@ -161,6 +161,7 @@ public class Readline {
         if (holder.readline == null) {
             initReadline(runtime, holder); // not overridden, let's go
         }
+        holder.readline.setExpandEvents(false);
         
         IRubyObject line = runtime.getNil();
         String v = null;
