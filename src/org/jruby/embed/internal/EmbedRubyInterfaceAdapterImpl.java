@@ -80,16 +80,6 @@ public class EmbedRubyInterfaceAdapterImpl implements EmbedRubyInterfaceAdapter 
             Class<T> c = (Class<T>) Class.forName(name, true, o.getClass().getClassLoader());
             return c.cast(o);
         } catch (ClassNotFoundException e) {
-            Writer w = container.getErrorWriter();
-            if (w instanceof PrintWriter) {
-                e.printStackTrace((PrintWriter)w);
-            } else {
-                try {
-                    w.write(e.getMessage());
-                } catch (IOException ex) {
-                    throw new InvokeFailedException(ex);
-                }
-            }
             throw new InvokeFailedException(e);
         }
     }

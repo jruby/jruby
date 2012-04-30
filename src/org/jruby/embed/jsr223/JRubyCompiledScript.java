@@ -100,21 +100,7 @@ public class JRubyCompiledScript extends CompiledScript {
     }
 
     private ScriptException wrapException(Exception e) throws ScriptException {
-        Writer w = container.getErrorWriter();
-        if (w instanceof PrintWriter) {
-            e.printStackTrace((PrintWriter) w);
-        } else {
-            try {
-                w.write(e.getMessage());
-            } catch (IOException ex) {
-                return new ScriptException(ex);
-            }
-        }
-        if (e.getCause() instanceof Exception) {
-            return new ScriptException((Exception) e.getCause());
-        } else {
-            return new ScriptException(e);
-        }
+        return new ScriptException(e);
     }
 
     public ScriptEngine getEngine() {

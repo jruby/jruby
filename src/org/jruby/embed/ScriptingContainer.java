@@ -226,8 +226,6 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
         try {
             initConfig();
         } catch (Exception ex) {
-            Writer w = getErrorWriter();
-            ex.printStackTrace((PrintWriter)w);
             throw new RuntimeException(ex);
         }
         setBasicProperties();

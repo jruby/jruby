@@ -129,16 +129,6 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
             }
             return parse(istream, filename, lines);
         } catch (FileNotFoundException e) {
-            Writer w = container.getErrorWriter();
-            if (w instanceof PrintWriter) {
-                e.printStackTrace((PrintWriter)w);
-            } else {
-                try {
-                    w.write(e.getMessage());
-                } catch (IOException ex) {
-                    throw new ParseFailedException(ex);
-                }
-            }
             throw new ParseFailedException(e);
         } finally {
             if (istream != null) {
@@ -205,16 +195,6 @@ public class EmbedRubyRuntimeAdapterImpl implements EmbedRubyRuntimeAdapter {
             runtime.printError(e.getException());
             throw new ParseFailedException(e.getMessage(), e);
         } catch (Throwable e) {
-            Writer w = container.getErrorWriter();
-            if (w instanceof PrintWriter) {
-                e.printStackTrace((PrintWriter)w);
-            } else {
-                try {
-                    w.write(e.getMessage());
-                } catch (IOException ex) {
-                    throw new ParseFailedException(ex);
-                }
-            }
             throw new ParseFailedException(e);
         } finally {
             try {

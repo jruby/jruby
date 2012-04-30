@@ -101,21 +101,7 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
     }
 
     private ScriptException wrapException(Exception e) {
-        if (e.getCause() instanceof Exception) {
-            Writer w = container.getErrorWriter();
-            if (w instanceof PrintWriter) {
-                e.printStackTrace((PrintWriter) w);
-            } else {
-                try {
-                    w.write(e.getMessage());
-                } catch (IOException ex) {
-                    return new ScriptException(ex);
-                }
-            }
-            return new ScriptException((Exception) e.getCause());
-        } else {
-            return new ScriptException(e);
-        }
+        return new ScriptException(e);
     }
 
     public Object eval(Reader reader, ScriptContext context) throws ScriptException {
@@ -235,16 +221,6 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
     }
 
     private NoSuchMethodException wrapMethodException(Exception e) {
-        Writer w = container.getErrorWriter();
-        if (w instanceof PrintWriter) {
-            e.printStackTrace((PrintWriter) w);
-        } else {
-            try {
-                w.write(e.getMessage());
-            } catch (IOException ex) {
-                return (NoSuchMethodException)new NoSuchMethodException(ex.getMessage()).initCause(ex);
-            }
-        }
         return (NoSuchMethodException)new NoSuchMethodException(e.getCause().getMessage()).initCause(e);
     }
 

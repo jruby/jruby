@@ -133,16 +133,6 @@ public class EmbedEvalUnitImpl implements EmbedEvalUnit {
         } catch (StackOverflowError soe) {
             throw runtime.newSystemStackError("stack level too deep", soe);
         } catch (Throwable e) {
-            Writer w = container.getErrorWriter();
-            if (w instanceof PrintWriter) {
-                e.printStackTrace((PrintWriter)w);
-            } else {
-                try {
-                    w.write(e.getMessage());
-                } catch (IOException ex) {
-                    throw new EvalFailedException(ex);
-                }
-            }
             throw new EvalFailedException(e);
         } finally {
             if (sharing_variables) {
