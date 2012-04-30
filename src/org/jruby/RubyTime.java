@@ -780,9 +780,13 @@ public class RubyTime extends RubyObject {
     }    
 
     public RubyObject mdump() {
+        Ruby runtime = getRuntime();
         RubyTime obj = this;
         DateTime dateTime = obj.dt.toDateTime(DateTimeZone.UTC);
         byte dumpValue[] = new byte[8];
+        long nanos = this.nsec;
+        long usec = this.nsec / 1000;
+        long nsec = this.nsec % 1000;
         
         int pe = 
             0x1                                 << 31 |
@@ -794,7 +798,7 @@ public class RubyTime extends RubyObject {
         int se =
             dateTime.getMinuteOfHour()          << 26 |
             dateTime.getSecondOfMinute()        << 20 |
-            (dateTime.getMillisOfSecond() * 1000 + (int)getUSec()); // dump usec, not msec
+            (dateTime.getMillisOfSecond() * 1000 + (int)usec); // dump usec, not msec
 
         for(int i = 0; i < 4; i++) {
             dumpValue[i] = (byte)(pe & 0xFF);
@@ -804,7 +808,37 @@ public class RubyTime extends RubyObject {
             dumpValue[i] = (byte)(se & 0xFF);
             se >>>= 8;
         }
-        return RubyString.newString(obj.getRuntime(), new ByteList(dumpValue));
+
+        RubyString string = RubyString.newString(obj.getRuntime(), new ByteList(dumpValue));
+
+        // 1.9 includes more nsecs
+        if (runtime.is1_9()) {
+            copyInstanceVariablesInto(string);
+
+            // nanos in numerator/denominator form
+            if (nsec != 0) {
+                string.setInstanceVariable("nano_num", runtime.newFixnum(nsec));
+                string.setInstanceVariable("nano_den", runtime.newFixnum(1));
+            }
+
+            // submicro for 1.9.1 compat
+            byte[] submicro = new byte[2];
+            int len = 2;
+            submicro[1] = (byte)((nsec % 10) << 4);
+            nsec /= 10;
+            submicro[0] = (byte)(nsec % 10);
+            nsec /= 10;
+            submicro[0] |= (byte)((nsec % 10) << 4);
+            if (submicro[1] == 0) len = 1;
+            string.setInstanceVariable("submicro", RubyString.newString(runtime, submicro, 0, len));
+
+            // time zone
+            if (dt.getZone() != DateTimeZone.UTC) {
+                long offset = dt.getZone().getStandardOffset(System.currentTimeMillis());
+                string.setInstanceVariable("offset", runtime.newFixnum(offset / 1000));
+            }
+        }
+        return string;
     }
 
     @JRubyMethod(visibility = PRIVATE)
@@ -1005,6 +1039,23 @@ public class RubyTime extends RubyObject {
         if (!utc) time.localtime();
 
         from.getInstanceVariables().copyInstanceVariablesInto(time);
+
+        if (runtime.is1_9()) {
+            // pull out nanos, offset
+            IRubyObject nano_num = from.getInstanceVariables().getInstanceVariable("nano_num");
+            IRubyObject nano_den = from.getInstanceVariables().getInstanceVariable("nano_den");
+            IRubyObject offset = from.getInstanceVariables().getInstanceVariable("offset");
+
+            if (nano_num != null && nano_den != null) {
+                long nanos = nano_num.convertToInteger().getLongValue() / nano_den.convertToInteger().getLongValue();
+                time.nsec += nanos;
+            }
+
+            if (offset != null) {
+                long tz = offset.convertToInteger().getLongValue();
+                time.dt = dt.withZone(DateTimeZone.forOffsetMillis((int)(tz * 1000)));
+            }
+        }
         return time;
     }
 
