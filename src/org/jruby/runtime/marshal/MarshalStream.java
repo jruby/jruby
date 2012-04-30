@@ -358,7 +358,6 @@ public class MarshalStream extends FilterOutputStream {
     }
 
     private void userCommon(IRubyObject value, DynamicMethod method) throws IOException {
-        registerLinkTarget(value);
         RubyFixnum depthLimitFixnum = runtime.newFixnum(depthLimit);
 
         IRubyObject dumpResult;
@@ -388,6 +387,8 @@ public class MarshalStream extends FilterOutputStream {
         if (hasVars) {
             dumpVariables(marshaled.getVariableList());
         }
+
+        registerLinkTarget(value);
     }
     
     public void writeUserClass(IRubyObject obj, RubyClass type) throws IOException {

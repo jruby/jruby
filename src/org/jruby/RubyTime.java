@@ -834,7 +834,7 @@ public class RubyTime extends RubyObject {
 
             // time zone
             if (dt.getZone() != DateTimeZone.UTC) {
-                long offset = dt.getZone().getOffset(System.currentTimeMillis());
+                long offset = dt.getZone().getOffset(dt.getMillis());
                 string.setInstanceVariable("offset", runtime.newFixnum(offset / 1000));
             }
         }
