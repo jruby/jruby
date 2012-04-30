@@ -865,7 +865,15 @@ public class RubyTime extends RubyObject {
             // the decimal point is honored.
             if (arg instanceof RubyFloat || arg instanceof RubyRational) {
                 double dbl = RubyNumeric.num2dbl(arg);
-                long nano = Math.round((dbl - seconds) * 1000000000);
+                long nano;
+
+                if (runtime.is1_9()) {
+                    nano = Math.round((dbl - seconds) * 1000000000);
+                } else {
+                    long micro = Math.round((dbl - seconds) * 1000000);
+                    nano = micro * 1000;
+                }
+
                 if (dbl < 0 && nano != 0) {
                     nano += 1000000000;
                 }
