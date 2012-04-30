@@ -3042,6 +3042,10 @@ public final class Ruby {
         return RubyRational.newRationalRaw(this, newFixnum(num), newFixnum(den));
     }
 
+    public RubyRational newRationalReduced(long num, long den) {
+        return (RubyRational)RubyRational.newRationalConvert(getCurrentContext(), newFixnum(num), newFixnum(den));
+    }
+
     public RubyProc newProc(Block.Type type, Block block) {
         if (type != Block.Type.LAMBDA && block.getProcObject() != null) return block.getProcObject();
 

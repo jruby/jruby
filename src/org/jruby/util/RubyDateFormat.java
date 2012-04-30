@@ -362,9 +362,14 @@ public class RubyDateFormat extends DateFormat {
     }
 
     private DateTime dt;
+    private long nsec;
 
     public void setDateTime(final DateTime dt) {
         this.dt = dt;
+    }
+
+    public void setNSec(long nsec) {
+        this.nsec = nsec;
     }
 
     /**
@@ -374,6 +379,7 @@ public class RubyDateFormat extends DateFormat {
         TimeOutputFormatter formatter = null;
         for (Token token: compiledPattern) {
             String output = null;
+            long value = 0;
             boolean format = true;
 
             switch (token.getFormat()) {
@@ -407,12 +413,12 @@ public class RubyDateFormat extends DateFormat {
                     output = formatSymbols.getShortMonths()[dt.getMonthOfYear()-1];
                     break;
                 case FORMAT_DAY:
-                    int value = dt.getDayOfMonth();
+                    value = dt.getDayOfMonth();
                     output = String.format("%02d", value);
                     break;
                 case FORMAT_DAY_S: 
                     value = dt.getDayOfMonth();
-                    output = (value < 10 ? " " : "") + Integer.toString(value);
+                    output = (value < 10 ? " " : "") + Long.toString(value);
                     break;
                 case FORMAT_HOUR:
                 case FORMAT_HOUR_BLANK:
@@ -463,7 +469,7 @@ public class RubyDateFormat extends DateFormat {
                     break;
                 case FORMAT_SECONDS:
                     value = dt.getSecondOfMinute();
-                    output = (value < 10 ? "0" : "") + Integer.toString(value);
+                    output = (value < 10 ? "0" : "") + Long.toString(value);
                     break;
                 case FORMAT_WEEK_YEAR_M:
                     output = formatWeekYear(java.util.Calendar.MONDAY);
@@ -477,7 +483,7 @@ public class RubyDateFormat extends DateFormat {
                     if (token.getFormat() == FORMAT_DAY_WEEK) {
                         value = value % 7;
                     }
-                    output = Integer.toString(value);
+                    output = Long.toString(value);
                     break;
                 case FORMAT_YEAR_LONG:
                     value = dt.getYear();
@@ -521,7 +527,8 @@ public class RubyDateFormat extends DateFormat {
                     break;
                 case FORMAT_NANOSEC:
                     value = dt.getMillisOfSecond() * 1000000;
-                    String width = "3";
+                    if (ruby_1_9) value += nsec;
+                    String width = ruby_1_9 ? "9" : "3";
                     if (formatter != null) width = formatter.getFormatter();
                     output = formatTruncate(String.valueOf(value), Integer.valueOf(width), "0");
                     break;
