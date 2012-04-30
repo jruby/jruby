@@ -1,5 +1,6 @@
 package org.jruby.ir.operands;
 
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 
 public class TemporaryClosureVariable extends TemporaryVariable {
@@ -27,5 +28,10 @@ public class TemporaryClosureVariable extends TemporaryVariable {
     @Override
     protected String getPrefix() {
         return this.prefix;
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.TemporaryClosureVariable(this);
     }
 }

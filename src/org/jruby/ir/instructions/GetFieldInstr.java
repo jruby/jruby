@@ -3,11 +3,11 @@ package org.jruby.ir.instructions;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyClass.VariableAccessor;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.ir.targets.JVM;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -46,10 +46,7 @@ public class GetFieldInstr extends GetInstr {
     }
 
     @Override
-    public void compile(JVM jvm) {
-        String field = getRef();
-        jvm.emit(getSource());
-        jvm.method().getField(field);
-        jvm.method().storeLocal(jvm.methodData().local(getResult()));
+    public void visit(IRVisitor visitor) {
+        visitor.GetFieldInstr(this);
     }
 }

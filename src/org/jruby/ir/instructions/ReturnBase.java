@@ -1,8 +1,8 @@
 package org.jruby.ir.instructions;
 
-import org.jruby.ir.instructions.Instr;
-import org.jruby.ir.operands.Operand;
 import org.jruby.ir.Operation;
+import org.jruby.ir.operands.Operand;
+
 import java.util.Map;
 
 public abstract class ReturnBase extends Instr {

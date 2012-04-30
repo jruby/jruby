@@ -1,13 +1,14 @@
 package org.jruby.ir.operands;
 
-import java.util.List;
-import java.util.Map;
-
-import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.RubyArray;
+import org.jruby.ir.IRVisitor;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.List;
+import java.util.Map;
 
 // Represents a svalue node in Ruby code
 //
@@ -76,5 +77,10 @@ public class SValue extends Operand {
 
             return context.nil;
         }
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.SValue(this);
     }
 }

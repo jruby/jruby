@@ -1,15 +1,16 @@
 package org.jruby.ir.operands;
 
-import org.jruby.ir.transformations.inlining.InlinerInfo;
-
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Map;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyString;
+import org.jruby.ir.IRVisitor;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 // This represents a backtick string in Ruby
 // Ex: `ls .`; `cp #{src} #{dst}`
@@ -73,9 +74,14 @@ public class BacktickString extends Operand {
 
         for (Operand p: pieces) {
             RubyBasicObject piece = (RubyBasicObject) p.retrieve(context, self, currDynScope, temp);
-            newString.append((piece instanceof RubyString) ? (RubyString)piece : piece.to_s());
+            newString.append((piece instanceof RubyString) ? (RubyString) piece : piece.to_s());
         }
         
         return self.callMethod(context, "`", newString);
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.BacktickString(this);
     }
 }

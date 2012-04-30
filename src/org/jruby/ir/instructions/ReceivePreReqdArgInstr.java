@@ -1,10 +1,9 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Variable;
-import org.jruby.ir.instructions.ReqdArgMultipleAsgnInstr;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.ir.targets.JVM;
 
 /*
  * Assign Argument passed into scope/method to a result variable
@@ -28,9 +27,8 @@ public class ReceivePreReqdArgInstr extends ReceiveArgBase {
         return new ReceivePreReqdArgInstr(ii.getRenamedVariable(result), argIndex);
     }
 
-    public void compile(JVM jvm) {
-        int index = jvm.methodData().local(getResult());
-        jvm.method().loadLocal(3 + argIndex);
-        jvm.method().storeLocal(index);
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.ReceivePreReqdArgInstr(this);
     }
 }

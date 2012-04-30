@@ -1,8 +1,10 @@
 package org.jruby.ir.operands;
 
-import java.math.BigInteger;
 import org.jruby.RubyBignum;
+import org.jruby.ir.IRVisitor;
 import org.jruby.runtime.ThreadContext;
+
+import java.math.BigInteger;
 
 /**
  * Represents a literal Bignum.
@@ -39,5 +41,10 @@ public class Bignum extends ImmutableLiteral {
     @Override
     public String toString() { 
         return value + ":bignum";
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.Bignum(this);
     }
 }

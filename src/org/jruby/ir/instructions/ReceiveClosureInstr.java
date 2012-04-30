@@ -1,17 +1,11 @@
 package org.jruby.ir.instructions;
 
-import org.jruby.ir.Interp;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.Ruby;
-import org.jruby.ir.targets.JVM;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.Block.Type;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 /* Receive the closure argument (either implicit or explicit in Ruby source code) */
 public class ReceiveClosureInstr extends Instr implements ResultInstr {
@@ -50,10 +44,8 @@ public class ReceiveClosureInstr extends Instr implements ResultInstr {
         return new ReceiveClosureInstr(ii.getRenamedVariable(result));
     }
 
-    public void compile(JVM jvm) {
-//        int index = jvm.methodData().local(result);
-//        jvm.method().loadLocal(4);
-//        jvm.method().storeLocal(index);
-        // block parameter is always $block and always present
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.ReceiveClosureInstr(this);
     }
 }

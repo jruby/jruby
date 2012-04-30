@@ -1,10 +1,10 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.ir.targets.JVM;
 
 public class BTrueInstr extends BranchInstr {
     protected BTrueInstr(Operand v, Label jmpTarget) {
@@ -21,9 +21,7 @@ public class BTrueInstr extends BranchInstr {
         return new BTrueInstr(getArg1().cloneForInlining(ii), getJumpTarget());
     }
 
-    public void compile(JVM jvm) {
-        jvm.emit(getArg1());
-        jvm.method().isTrue();
-        jvm.method().btrue(jvm.methodData().getLabel(getJumpTarget()));
+    public void visit(IRVisitor visitor) {
+        visitor.BTrueInstr(this);
     }
 }

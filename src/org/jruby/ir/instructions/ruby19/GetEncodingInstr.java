@@ -1,14 +1,13 @@
 package org.jruby.ir.instructions.ruby19;
 
-import java.util.Map;
-
 import org.jcodings.Encoding;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
+import org.jruby.ir.instructions.Instr;
+import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.ir.instructions.Instr;
-import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -51,5 +50,10 @@ public class GetEncodingInstr extends Instr implements ResultInstr {
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         return context.getRuntime().getEncodingService().getEncoding(encoding);
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.GetEncodingInstr(this);
     }
 }

@@ -1,9 +1,10 @@
 package org.jruby.ir.operands;
 
+import org.jruby.ir.IRVisitor;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
 
 /**
  * A set of variables which are only used in a particular scope and never
@@ -64,5 +65,10 @@ public class TemporaryVariable extends Variable {
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         return temp[offset];
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.TemporaryVariable(this);
     }
 }

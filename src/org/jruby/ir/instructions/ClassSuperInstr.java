@@ -2,13 +2,14 @@ package org.jruby.ir.instructions;
 
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
+import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.UndefinedMethod;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.MethAddr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.internal.runtime.methods.UndefinedMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
@@ -53,5 +54,10 @@ public class ClassSuperInstr extends CallInstr {
         Object rVal = method.isUndefined() ? RuntimeHelpers.callMethodMissing(context, self, method.getVisibility(), methodName, CallType.SUPER, args, block)
                                            : method.call(context, self, superClass, methodName, args, block);
         return hasUnusedResult() ? null : rVal;
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.ClassSuperInstr(this);
     }
 }

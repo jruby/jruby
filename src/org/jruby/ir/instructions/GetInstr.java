@@ -1,10 +1,10 @@
 package org.jruby.ir.instructions;
 
-import java.util.Map;
-
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
+
+import java.util.Map;
 
 // Represents result = source.ref or result = source where source is not a stack variable
 public abstract class GetInstr extends Instr implements ResultInstr {

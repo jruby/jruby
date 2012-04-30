@@ -1,15 +1,16 @@
 package org.jruby.ir.operands;
 
-import org.jruby.ir.transformations.inlining.InlinerInfo;
-
-import java.util.List;
-import java.util.Map;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
+import org.jruby.ir.IRVisitor;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.RegexpOptions;
+
+import java.util.List;
+import java.util.Map;
 
 // Represents a regexp from ruby
 //
@@ -77,5 +78,10 @@ public class Regexp extends Operand {
         }
 
         return rubyRegexp;
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.Regexp(this);
     }
 }

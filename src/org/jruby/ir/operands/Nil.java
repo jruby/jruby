@@ -2,7 +2,7 @@ package org.jruby.ir.operands;
 
 // Records the nil object
 
-import org.jruby.ir.targets.JVM;
+import org.jruby.ir.IRVisitor;
 import org.jruby.runtime.ThreadContext;
 
 /**
@@ -23,7 +23,7 @@ public class Nil extends ImmutableLiteral {
     }
 
     @Override
-    public void compile(JVM jvm) {
-        jvm.method().pushNil();
+    public void visit(IRVisitor visitor) {
+        visitor.Nil(this);
     }
 }

@@ -1,9 +1,9 @@
 package org.jruby.ir.instructions;
 
-import java.util.Map;
-
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
+
+import java.util.Map;
 
 // Represents target.ref = value or target = value where target is not a stack variable
 public abstract class PutInstr extends Instr {

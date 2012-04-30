@@ -1,16 +1,9 @@
 package org.jruby.ir.instructions;
 
-import java.util.Arrays;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import org.jruby.RubyArray;
 import org.jruby.RubyMethod;
 import org.jruby.RubyProc;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.ir.IRClassBody;
-import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Fixnum;
 import org.jruby.ir.operands.ImmutableLiteral;
@@ -18,7 +11,6 @@ import org.jruby.ir.operands.MethAddr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Splat;
 import org.jruby.ir.operands.StringLiteral;
-import org.jruby.ir.operands.CurrentScope;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
@@ -28,6 +20,12 @@ import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.TypeConverter;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public abstract class CallBase extends Instr implements Specializeable {
     protected Operand   receiver;

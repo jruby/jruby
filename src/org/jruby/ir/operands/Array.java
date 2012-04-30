@@ -1,13 +1,13 @@
 package org.jruby.ir.operands;
 
-import java.util.List;
-import java.util.Map;
-
-import org.jruby.ir.targets.JVM;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.List;
+import java.util.Map;
 
 // Represents an array [_, _, .., _] in ruby
 //
@@ -122,13 +122,11 @@ public class Array extends Operand {
     }
 
     @Override
-    public void compile(JVM jvm) {
-        jvm.method().loadLocal(0);
+    public void visit(IRVisitor visitor) {
+        visitor.Array(this);
+    }
 
-        for (Operand operand : elts) {
-            jvm.emit(operand);
-        }
-
-        jvm.method().array(elts.length);
+    public Operand[] getElts() {
+        return elts;
     }
 }

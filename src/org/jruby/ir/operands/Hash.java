@@ -1,14 +1,15 @@
 package org.jruby.ir.operands;
 
-import java.util.List;
-import java.util.Map;
 import org.jruby.Ruby;
 import org.jruby.RubyHash;
-
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.List;
+import java.util.Map;
 
 // Represents a hash { _ =>_, _ => _ .. } in ruby
 //
@@ -78,5 +79,10 @@ public class Hash extends Operand {
         }
 
         return hash;
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.Hash(this);
     }
 }

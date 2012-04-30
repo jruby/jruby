@@ -1,8 +1,9 @@
 package org.jruby.ir.operands;
 
-import java.math.BigInteger;
-import org.jruby.ir.targets.JVM;
+import org.jruby.ir.IRVisitor;
 import org.jruby.runtime.ThreadContext;
+
+import java.math.BigInteger;
 
 /*
  * Represents a literal fixnum.
@@ -70,7 +71,11 @@ public class Fixnum extends ImmutableLiteral {
     }
 
     @Override
-    public void compile(JVM jvm) {
-        jvm.method().push(value);
+    public void visit(IRVisitor visitor) {
+        visitor.Fixnum(this);
+    }
+
+    public Long getValue() {
+        return value;
     }
 }

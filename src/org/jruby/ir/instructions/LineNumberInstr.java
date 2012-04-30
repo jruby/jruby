@@ -1,10 +1,10 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.ir.targets.JVM;
 
 public class LineNumberInstr extends Instr {
     public final int lineNumber;
@@ -31,7 +31,12 @@ public class LineNumberInstr extends Instr {
         return this;
     }
 
-    public void compile(JVM jvm) {
-        jvm.method().adapter.line(lineNumber);
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.LineNumberInstr(this);
+    }
+
+    public int getLineNumber() {
+        return lineNumber;
     }
 }

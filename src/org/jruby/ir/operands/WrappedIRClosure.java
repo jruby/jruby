@@ -1,14 +1,16 @@
 package org.jruby.ir.operands;
 
-import java.util.List;
 import org.jruby.ir.IRClosure;
+import org.jruby.ir.IRVisitor;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.Binding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.BlockBody;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+
+import java.util.List;
 
 public class WrappedIRClosure extends Operand {
     private final IRClosure closure;
@@ -48,5 +50,10 @@ public class WrappedIRClosure extends Operand {
         Binding binding = context.currentBinding(self, currDynScope);
 
         return new Block(body, binding);
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.WrappedIRClosure(this);
     }
 }

@@ -1,14 +1,14 @@
 package org.jruby.ir.operands;
 
-import org.jruby.ir.transformations.inlining.InlinerInfo;
-
-import java.util.List;
-import java.util.Map;
 import org.jruby.RubyRange;
-
+import org.jruby.ir.IRVisitor;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.List;
+import java.util.Map;
 
 // Represents a range (1..5) or (a..b) in ruby code
 //
@@ -70,5 +70,10 @@ public class Range extends Operand {
         return RubyRange.newRange(context.getRuntime(), context,
                 (IRubyObject) begin.retrieve(context, self, currDynScope, temp), 
                 (IRubyObject) end.retrieve(context, self, currDynScope, temp), exclusive);
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.Range(this);
     }
 }

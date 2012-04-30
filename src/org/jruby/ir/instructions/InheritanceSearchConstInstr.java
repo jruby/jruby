@@ -1,23 +1,19 @@
 package org.jruby.ir.instructions;
 
-import java.util.Map;
-
+import org.jruby.Ruby;
+import org.jruby.RubyModule;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
-import org.jruby.ir.targets.JVM;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-
-import org.jruby.Ruby;
-import org.jruby.runtime.ThreadContext;
-
-import org.jruby.RubyModule;
-import org.jruby.ir.IRScope;
-import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.Map;
 
 // The runtime method call that GET_CONST is translated to in this case will call
 // a get_constant method on the scope meta-object which does the lookup of the constant table
@@ -108,12 +104,19 @@ public class InheritanceSearchConstInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public void compile(JVM jvm) {
-        jvm.method().loadLocal(0);
-        jvm.emit(currentModule);
+    public void visit(IRVisitor visitor) {
+        visitor.InheritanceSearchConstInstr(this);
+    }
 
-        // TODO: private consts
-        jvm.method().inheritanceSearchConst(constName);
-        jvm.method().storeLocal(jvm.methodData().local(getResult()));
+    public Operand getCurrentModule() {
+        return currentModule;
+    }
+
+    public String getConstName() {
+        return constName;
+    }
+
+    public boolean isNoPrivateConsts() {
+        return noPrivateConsts;
     }
 }

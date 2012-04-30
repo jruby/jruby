@@ -1,12 +1,11 @@
 package org.jruby.ir.instructions;
 
-import java.util.Map;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.ir.targets.JVM;
 
 public class ReturnInstr extends ReturnBase {
     public final IRMethod methodToReturnFrom;
@@ -43,8 +42,8 @@ public class ReturnInstr extends ReturnBase {
         }
     }
 
-    public void compile(JVM jvm) {
-        jvm.emit(getOperands()[0]);
-        jvm.method().returnValue();
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.ReturnInstr(this);
     }
 }

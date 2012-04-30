@@ -1,17 +1,17 @@
 package org.jruby.ir.operands;
 
-import java.util.List;
-import java.util.Map;
-
 import org.jcodings.Encoding;
-
+import org.jruby.RubyString;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.StringSupport;
-import org.jruby.RubyString;
-import org.jruby.runtime.DynamicScope;
+
+import java.util.List;
+import java.util.Map;
 
 // This represents a compound string in Ruby
 // Ex: - "Hi " + "there"
@@ -127,5 +127,10 @@ public class CompoundString extends Operand {
         }
 
         return str;
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.CompoundString(this);
     }
 }

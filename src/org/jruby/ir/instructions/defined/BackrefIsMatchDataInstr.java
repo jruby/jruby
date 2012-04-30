@@ -1,6 +1,7 @@
 package org.jruby.ir.instructions.defined;
 
 import org.jruby.RubyMatchData;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.Variable;
@@ -30,5 +31,10 @@ public class BackrefIsMatchDataInstr extends DefinedInstr {
         IRubyObject backref = RuntimeHelpers.getBackref(context.runtime, context);
         
         return context.runtime.newBoolean(RubyMatchData.class.isInstance(backref));        
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.BackrefIsMatchDataInstr(this);
     }
 }

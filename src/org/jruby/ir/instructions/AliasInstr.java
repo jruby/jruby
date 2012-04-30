@@ -4,30 +4,27 @@
  */
 package org.jruby.ir.instructions;
 
-import java.util.Map;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Variable;
-import org.jruby.ir.targets.JVM;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.objectweb.asm.Type;
-import org.objectweb.asm.commons.Method;
+
+import java.util.Map;
 
 /**
  *
  * @author enebo
  */
 public class AliasInstr extends Instr {
-    final Variable receiver;
+    private final Variable receiver;
     private Operand newName;
     private Operand oldName;
 
@@ -41,24 +38,24 @@ public class AliasInstr extends Instr {
 
     @Override
     public Operand[] getOperands() {
-        return new Operand[] { receiver, newName, oldName };
+        return new Operand[] {getReceiver(), getNewName(), getOldName()};
     }
 
     @Override
     public String toString() {
-        return getOperation().toString() + "(" + receiver + ", " + newName + ", " + oldName + ")";
+        return getOperation().toString() + "(" + getReceiver() + ", " + getNewName() + ", " + getOldName() + ")";
     }
 
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
-        oldName = oldName.getSimplifiedOperand(valueMap, force);
-        newName = newName.getSimplifiedOperand(valueMap, force);
+        oldName = getOldName().getSimplifiedOperand(valueMap, force);
+        newName = getNewName().getSimplifiedOperand(valueMap, force);
     }
 
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
-        return new AliasInstr((Variable) receiver.cloneForInlining(ii), newName.cloneForInlining(ii),
-                oldName.cloneForInlining(ii));
+        return new AliasInstr((Variable) receiver.cloneForInlining(ii), getNewName().cloneForInlining(ii),
+                getOldName().cloneForInlining(ii));
     }
 
     @Override
@@ -69,8 +66,8 @@ public class AliasInstr extends Instr {
             throw context.getRuntime().newTypeError("no class to make alias");
         }
 
-        String newNameString = newName.retrieve(context, self, currDynScope, temp).toString();
-        String oldNameString = oldName.retrieve(context, self, currDynScope, temp).toString();
+        String newNameString = getNewName().retrieve(context, self, currDynScope, temp).toString();
+        String oldNameString = getOldName().retrieve(context, self, currDynScope, temp).toString();
 
         RubyModule module = (object instanceof RubyModule) ? (RubyModule) object : object.getMetaClass();
         module.defineAlias(newNameString, oldNameString);
@@ -79,13 +76,19 @@ public class AliasInstr extends Instr {
     }
 
     @Override
-    public void compile(JVM jvm) {
-        jvm.method().loadLocal(0);
-        jvm.method().loadLocal(jvm.methodData().local(receiver));
-        jvm.method().adapter.ldc(((StringLiteral) newName).string);
-        jvm.method().adapter.ldc(((StringLiteral) oldName).string);
-        jvm.method().invokeHelper("defineAlias", IRubyObject.class, ThreadContext.class, IRubyObject.class, Object.class, Object.class);
-        jvm.method().adapter.pop();
+    public void visit(IRVisitor visitor) {
+        visitor.AliasInstr(this);
     }
-    
+
+    public Variable getReceiver() {
+        return receiver;
+    }
+
+    public Operand getNewName() {
+        return newName;
+    }
+
+    public Operand getOldName() {
+        return oldName;
+    }
 }

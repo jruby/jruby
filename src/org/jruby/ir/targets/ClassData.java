@@ -4,15 +4,16 @@
  */
 package org.jruby.ir.targets;
 
-import java.util.HashSet;
-import java.util.Set;
-import java.util.Stack;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.util.CodegenUtils;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
+
+import java.util.HashSet;
+import java.util.Set;
+import java.util.Stack;
 
 /**
  *

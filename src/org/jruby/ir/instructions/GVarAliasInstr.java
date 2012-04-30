@@ -1,6 +1,6 @@
 package org.jruby.ir.instructions;
 
-import java.util.Map;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
@@ -8,6 +8,8 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.Map;
 
 public class GVarAliasInstr extends Instr {
     private Operand newName;
@@ -48,5 +50,10 @@ public class GVarAliasInstr extends Instr {
 
         context.getRuntime().getGlobalVariables().alias(newNameString, oldNameString);
         return null;
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.GVarAliasInstr(this);
     }
 }

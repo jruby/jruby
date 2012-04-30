@@ -1,10 +1,10 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.RubyClass;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.ir.targets.JVM;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -33,10 +33,8 @@ public class PutFieldInstr extends PutInstr {
         return null;
     }
 
-    public void compile(JVM jvm) {
-        String field = getRef();
-        jvm.emit(getTarget());
-        jvm.emit(getValue());
-        jvm.method().putField(field);
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.PutFieldInstr(this);
     }
 }

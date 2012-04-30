@@ -1,16 +1,18 @@
 package org.jruby.ir.instructions;
 
-import java.util.Map;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
+import org.jruby.ir.interpreter.IRBreakJump;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.ir.interpreter.IRBreakJump;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.Map;
 
 // NOTE: breaks that jump out of while/until loops would have
 // been transformed by the IR building into an ordinary jump.
@@ -79,5 +81,10 @@ public class BreakInstr extends Instr {
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
         returnValue = returnValue.getSimplifiedOperand(valueMap, force);
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.BreakInstr(this);
     }
 }

@@ -1,17 +1,18 @@
 package org.jruby.ir.instructions;
 
-import java.util.Map;
-import org.jruby.ir.instructions.Instr;
+import org.jruby.RubyKernel;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.IRException;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.RubyKernel;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.unsafe.UnsafeFactory;
+
+import java.util.Map;
 
 // Right now, this is primarily used by the JRuby implementation.
 // Ruby exceptions go through RubyKernel.raise (or RubyThread.raise).
@@ -57,5 +58,10 @@ public class ThrowExceptionInstr extends Instr {
 
         // should never get here
         throw new RuntimeException("Control shouldn't have reached here in ThrowExceptionInstr.  excObj is: " + excObj);
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.ThrowExceptionInstr(this);
     }
 }

@@ -1,8 +1,7 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.instructions.Instr;
-import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
@@ -42,5 +41,10 @@ public class BlockGivenInstr extends Instr implements ResultInstr {
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         return context.getRuntime().newBoolean(block.isGiven());
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.BlockGivenInstr(this);
     }
 }

@@ -1,7 +1,9 @@
 package org.jruby.ir.operands;
 
-import java.util.List;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
+
+import java.util.List;
 
 // SSS FIXME: Should we try to enforce the canonical property that within a method,
 // there is exactly one label object with the same label string?
@@ -53,4 +55,9 @@ public class Label extends Operand {
     public void setTargetPC(int i) { this.targetPC = i; }
 
     public int getTargetPC() { return this.targetPC; }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.Label(this);
+    }
 }

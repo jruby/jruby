@@ -1,6 +1,7 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRClosure;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
@@ -41,5 +42,10 @@ public class RecordEndBlockInstr extends Instr {
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         declaringScope.getTopLevelScope().recordEndBlock(endBlockClosure);
         return null;
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.RecordEndBlockInstr(this);
     }
 }

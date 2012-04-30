@@ -1,8 +1,7 @@
 package org.jruby.ir.instructions;
 
-import java.util.Map;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.IRScope;
-
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.BooleanLiteral;
 import org.jruby.ir.operands.Operand;
@@ -12,6 +11,8 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.Map;
 
 public class NotInstr extends Instr implements ResultInstr {
     private Operand arg;
@@ -67,5 +68,10 @@ public class NotInstr extends Instr implements ResultInstr {
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         boolean not = !((IRubyObject) arg.retrieve(context, self, currDynScope, temp)).isTrue();
         return context.getRuntime().newBoolean(not);
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.NotInstr(this);
     }
 }

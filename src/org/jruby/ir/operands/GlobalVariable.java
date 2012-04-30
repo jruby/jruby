@@ -1,5 +1,6 @@
 package org.jruby.ir.operands;
 
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Interp;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -21,5 +22,10 @@ public class GlobalVariable extends Reference {
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         return context.getRuntime().getGlobalVariables().get(getName());
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.GlobalVariable(this);
     }
 }

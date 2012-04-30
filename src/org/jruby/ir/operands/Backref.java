@@ -1,8 +1,7 @@
 package org.jruby.ir.operands;
 
-import java.util.List;
-
 import org.jruby.RubyRegexp;
+import org.jruby.ir.IRVisitor;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -35,5 +34,10 @@ public class Backref extends Reference {
             assert false: "backref with invalid type";
             return null;
         } 
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.Backref(this);
     }
 }

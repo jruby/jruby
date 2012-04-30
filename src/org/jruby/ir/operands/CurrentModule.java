@@ -1,16 +1,14 @@
 package org.jruby.ir.operands;
 
-import java.util.List;
-
-import org.jruby.RubyModule;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.IRScope;
-import org.jruby.ir.targets.JVM;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.util.CodegenUtils;
+
+import java.util.List;
 
 /**
  * Wrap current scope for the purpose of finding live module which
@@ -56,8 +54,7 @@ public class CurrentModule extends Operand {
     }
 
     @Override
-    public void compile(JVM jvm) {
-        jvm.method().adapter.aload(1);
-        jvm.method().adapter.invokevirtual(CodegenUtils.p(StaticScope.class), "getModule", CodegenUtils.sig(RubyModule.class));
+    public void visit(IRVisitor visitor) {
+        visitor.CurrentModule(this);
     }
 }

@@ -1,11 +1,13 @@
 package org.jruby.ir.operands;
 
-import java.util.List;
-import java.util.Map;
+import org.jruby.ir.IRVisitor;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+
+import java.util.List;
+import java.util.Map;
 
 public class DynamicSymbol extends Operand {
     // SSS FIXME: Should this be Operand or CompoundString?
@@ -36,6 +38,11 @@ public class DynamicSymbol extends Operand {
 
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
-        return context.getRuntime().newSymbol(((IRubyObject)symbolName.retrieve(context, self, currDynScope, temp)).asJavaString());
+        return context.getRuntime().newSymbol(((IRubyObject) symbolName.retrieve(context, self, currDynScope, temp)).asJavaString());
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.DynamicSymbol(this);
     }
 }

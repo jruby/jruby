@@ -1,6 +1,6 @@
 package org.jruby.ir.instructions;
 
-import java.util.Map;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.MethodHandle;
 import org.jruby.ir.operands.Operand;
@@ -10,6 +10,8 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.Map;
 
 public class MethodLookupInstr extends Instr implements ResultInstr {
     private Operand methodHandle;
@@ -62,5 +64,10 @@ public class MethodLookupInstr extends Instr implements ResultInstr {
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         return methodHandle.retrieve(context, self, currDynScope, temp);
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.MethodLookupInstr(this);
     }
 }

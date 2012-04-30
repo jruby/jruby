@@ -1,20 +1,18 @@
-package org.jruby.ir.instructions; 
+package org.jruby.ir.instructions;
 
-import java.util.Map;
 import org.jruby.RubyModule;
-import org.jruby.internal.runtime.methods.CompiledIRMethod;
-import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.InterpretedIRMethod;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
-import org.jruby.ir.targets.JVM;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.internal.runtime.methods.InterpretedIRMethod;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.CodegenUtils;
+
+import java.util.Map;
 
 public class ProcessModuleBodyInstr extends Instr implements ResultInstr {
     private Operand  moduleBody;
@@ -65,10 +63,11 @@ public class ProcessModuleBodyInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public void compile(JVM jvm) {
-        jvm.method().loadLocal(0);
-        jvm.emit(moduleBody);
-        jvm.method().invokeHelper("invokeModuleBody", IRubyObject.class, ThreadContext.class, CompiledIRMethod.class);
-        jvm.method().storeLocal(jvm.methodData().local(getResult()));
+    public void visit(IRVisitor visitor) {
+        visitor.ProcessModuleBodyInstr(this);
+    }
+
+    public Operand getModuleBody() {
+        return moduleBody;
     }
 }

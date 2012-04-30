@@ -1,13 +1,9 @@
 package org.jruby.ir.instructions;
 
-import java.util.Map;
-import org.jruby.ir.Interp;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 public class ClosureReturnInstr extends ReturnBase {
     public ClosureReturnInstr(Operand rv) {
@@ -22,5 +18,10 @@ public class ClosureReturnInstr extends ReturnBase {
     @Override
     public Instr cloneForInlinedClosure(InlinerInfo ii) {
         return new CopyInstr(ii.getYieldResult(), returnValue.cloneForInlining(ii));
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.ClosureReturnInstr(this);
     }
 }

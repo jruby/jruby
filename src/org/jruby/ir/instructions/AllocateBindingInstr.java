@@ -5,12 +5,12 @@ package org.jruby.ir.instructions;
  * Does nothing if a frame already exists.
  **/
 
+import org.jruby.ir.IRVisitor;
+import org.jruby.ir.IRMethod;
+import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.IRScope;
-import org.jruby.ir.IRMethod;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
@@ -65,5 +65,10 @@ public class AllocateBindingInstr extends Instr {
         interp.allocateSharedBindingScope(scope);
 **/
         return null;
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.AllocateBindingInstr(this);
     }
 }

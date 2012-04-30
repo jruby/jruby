@@ -1,7 +1,7 @@
 package org.jruby.ir.instructions;
 
-import java.util.Map;
 import org.jruby.RubyRegexp;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
@@ -10,6 +10,8 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.Map;
 
 public class MatchInstr extends Instr implements ResultInstr {
     private Variable result;
@@ -58,5 +60,10 @@ public class MatchInstr extends Instr implements ResultInstr {
         return context.runtime.is1_9() ?
                 regexp.op_match2_19(context) :
                 regexp.op_match2(context);
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.MatchInstr(this);
     }
 }

@@ -1,14 +1,16 @@
 package org.jruby.ir.instructions;
 
-import java.util.Map;
+import org.jruby.RubyModule;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.RubyModule;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.Map;
 
 /**
  * This instruction will be generated whenever speculative optimizations are performed
@@ -73,5 +75,10 @@ public class ModuleVersionGuardInstr extends Instr {
         // as we know from how we add instance-methods.  We add it to rubyClass value on the stack.  So, how
         // do we handle this sticky situation?
         return (receiver.getMetaClass().getGeneration() == expectedVersion);
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.ModuleVersionGuardInstr(this);
     }
 }

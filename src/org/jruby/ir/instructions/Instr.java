@@ -1,23 +1,23 @@
 package org.jruby.ir.instructions;
 
 // A generic IR instruction is of the form: v = OP(arg_array, attribute_array)
-import org.jruby.ir.Interp;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.IRScope;
+import org.jruby.ir.Interp;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-
-import org.jruby.ir.targets.JVM;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 //
 // Specialized forms:
@@ -229,7 +229,7 @@ public abstract class Instr {
         throw new RuntimeException(this.getClass().getSimpleName() + " should not be directly interpreted");
     }
 
-    public void compile(JVM jvm) {
+    public void visit(IRVisitor visitor) {
         throw new RuntimeException(this.getClass().getSimpleName() + " has no compile logic");
     }
 }

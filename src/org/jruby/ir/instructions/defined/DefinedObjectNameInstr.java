@@ -4,11 +4,12 @@
  */
 package org.jruby.ir.instructions.defined;
 
-import java.util.Map;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.StringLiteral;
 import org.jruby.ir.operands.Variable;
+
+import java.util.Map;
 
 /**
  * This is a base class for define instructions which have a receiver (object)

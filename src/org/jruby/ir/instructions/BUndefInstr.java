@@ -1,5 +1,6 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
@@ -18,5 +19,10 @@ public class BUndefInstr extends BranchInstr {
     @Override
     public Instr cloneForBlockCloning(InlinerInfo ii) {
         return new BUndefInstr(getArg1().cloneForInlining(ii), getJumpTarget());
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.BUndefInstr(this);
     }
 }

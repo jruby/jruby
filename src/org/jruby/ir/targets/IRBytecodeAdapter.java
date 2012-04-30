@@ -4,15 +4,10 @@
  */
 package org.jruby.ir.targets;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
 import org.jruby.RubyEncoding;
-import org.jruby.RubyModule;
-import org.jruby.RubySymbol;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.javasupport.util.RuntimeHelpers;
@@ -25,6 +20,10 @@ import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.Method;
+
+import java.util.HashMap;
+import java.util.Map;
+
 import static org.jruby.util.CodegenUtils.*;
 
 /**

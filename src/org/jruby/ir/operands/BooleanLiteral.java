@@ -1,6 +1,6 @@
 package org.jruby.ir.operands;
 
-import org.jruby.ir.targets.JVM;
+import org.jruby.ir.IRVisitor;
 import org.jruby.runtime.ThreadContext;
 
 public class BooleanLiteral extends ImmutableLiteral {
@@ -29,7 +29,7 @@ public class BooleanLiteral extends ImmutableLiteral {
     }
 
     @Override
-    public void compile(JVM jvm) {
-        jvm.method().pushBoolean(isTrue());
+    public void visit(IRVisitor visitor) {
+        visitor.BooleanLiteral(this);
     }
 }

@@ -1,13 +1,10 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.ir.targets.JVM;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 public class JumpInstr extends Instr {
     public final Label target;
@@ -40,7 +37,7 @@ public class JumpInstr extends Instr {
         return new JumpInstr(target);
     }
 
-    public void compile(JVM jvm) {
-        jvm.method().goTo(jvm.methodData().getLabel(target));
+    public void visit(IRVisitor visitor) {
+        visitor.JumpInstr(this);
     }
 }

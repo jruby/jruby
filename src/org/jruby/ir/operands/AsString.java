@@ -1,11 +1,13 @@
 package org.jruby.ir.operands;
 
-import java.util.List;
-import java.util.Map;
+import org.jruby.ir.IRVisitor;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+
+import java.util.List;
+import java.util.Map;
 
 public class AsString extends Operand {
     final private Operand source; 
@@ -39,5 +41,10 @@ public class AsString extends Operand {
     @Override
     public String toString() {
         return "#{" + source + "}";
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.AsString(this);
     }
 }

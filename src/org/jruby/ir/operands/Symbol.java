@@ -1,7 +1,6 @@
 package org.jruby.ir.operands;
 
-import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.ir.targets.JVM;
+import org.jruby.ir.IRVisitor;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -27,7 +26,7 @@ public class Symbol extends Reference {
     }
 
     @Override
-    public void compile(JVM jvm) {
-        jvm.method().push(getName());
+    public void visit(IRVisitor visitor) {
+        visitor.Symbol(this);
     }
 }

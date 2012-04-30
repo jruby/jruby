@@ -1,15 +1,16 @@
 package org.jruby.ir.instructions;
 
-import org.jruby.RubyClass;
 import org.jruby.RubyBasicObject;
+import org.jruby.RubyClass;
 import org.jruby.RubyModule;
-import org.jruby.ir.Operation;
-import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.MethAddr;
-import org.jruby.ir.operands.Variable;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.UndefinedMethod;
+import org.jruby.ir.IRVisitor;
+import org.jruby.ir.Operation;
+import org.jruby.ir.operands.MethAddr;
+import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.Variable;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
@@ -75,5 +76,10 @@ public class UnresolvedSuperInstr extends CallInstr {
                 throw context.getRuntime().newNoMethodError("super called outside of method", null, context.getRuntime().getNil());
             }
         }
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.UnresolvedSuperInstr(this);
     }
 }

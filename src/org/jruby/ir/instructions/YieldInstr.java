@@ -1,21 +1,21 @@
 package org.jruby.ir.instructions;
 
-import java.util.Map;
+import org.jruby.RubyArray;
+import org.jruby.RubyNil;
+import org.jruby.RubyProc;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Interp;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
-import org.jruby.ir.targets.JVM;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.RubyArray;
-import org.jruby.RubyProc;
-import org.jruby.RubyNil;
 import org.jruby.runtime.DynamicScope;
-import org.jruby.util.CodegenUtils;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.Map;
 
 public class YieldInstr extends Instr implements ResultInstr {
     public final boolean unwrapArray;
@@ -94,22 +94,7 @@ public class YieldInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public void compile(JVM jvm) {
-        jvm.emit(blockArg);
-
-        // TODO: proc, nil block logic
-
-        jvm.method().loadLocal(0);
-        if (yieldArg == UndefinedValue.UNDEFINED) {
-            jvm.method().adapter.invokevirtual(CodegenUtils.p(Block.class), "yieldSpecific", CodegenUtils.sig(IRubyObject.class, ThreadContext.class));
-        } else {
-            jvm.emit(yieldArg);
-
-            // TODO: if yielding array, call yieldArray
-
-            jvm.method().adapter.invokevirtual(CodegenUtils.p(Block.class), "yield", CodegenUtils.sig(IRubyObject.class, ThreadContext.class, IRubyObject.class));
-        }
-
-        jvm.method().storeLocal(jvm.methodData().local(getResult()));
+    public void visit(IRVisitor visitor) {
+        visitor.YieldInstr(this);
     }
 }

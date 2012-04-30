@@ -4,9 +4,9 @@
  */
 package org.jruby.ir.instructions;
 
-import java.util.Map;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
@@ -15,6 +15,8 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.Map;
 
 public class Match3Instr extends Instr implements ResultInstr {
     private Variable result;
@@ -73,5 +75,10 @@ public class Match3Instr extends Instr implements ResultInstr {
         } else {
             return argValue.callMethod(context, "=~", regexp);
         }
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.Match3Instr(this);
     }
 }

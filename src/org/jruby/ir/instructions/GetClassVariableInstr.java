@@ -1,6 +1,7 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.RubyModule;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
@@ -24,5 +25,10 @@ public class GetClassVariableInstr extends GetInstr {
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         return ((RubyModule) getSource().retrieve(context, self, currDynScope, temp)).getClassVar(getRef());
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.GetClassVariableInstr(this);
     }
 }

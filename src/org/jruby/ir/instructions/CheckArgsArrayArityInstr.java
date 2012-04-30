@@ -1,18 +1,17 @@
 package org.jruby.ir.instructions;
 
-import java.util.Map;
-
+import org.jruby.RubyArray;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.ir.targets.JVM;
-import org.jruby.RubyArray;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.Map;
 
 public class CheckArgsArrayArityInstr extends Instr {
     public final int required;
@@ -57,5 +56,10 @@ public class CheckArgsArrayArityInstr extends Instr {
             Arity.raiseArgumentError(context.getRuntime(), numArgs, required, required + opt);
         }
         return null;
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.CheckArgsArrayArityInstr(this);
     }
 }

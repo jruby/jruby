@@ -1,21 +1,23 @@
 package org.jruby.ir.instructions;
 
-import java.util.Map;
 import org.jruby.Ruby;
-import org.jruby.RubyObject;
-import org.jruby.RubyFixnum;
 import org.jruby.RubyClass;
+import org.jruby.RubyFixnum;
+import org.jruby.RubyObject;
 import org.jruby.RubySymbol;
-import org.jruby.ir.IRMethod;
-import org.jruby.ir.operands.Operand;
-import org.jruby.ir.Operation;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.internal.runtime.methods.InterpretedIRMethod;
+import org.jruby.ir.IRVisitor;
+import org.jruby.ir.IRMethod;
+import org.jruby.ir.Operation;
+import org.jruby.ir.operands.Operand;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.Map;
 
 // SSS FIXME: Should we merge DefineInstanceMethod and DefineClassMethod instructions?
 // identical except for 1 bit in interpret -- or will they diverge?
@@ -78,5 +80,10 @@ public class DefineClassMethodInstr extends Instr {
     @Override
     public void simplifyOperands(Map<Operand, Operand> valueMap, boolean force) {
         container = container.getSimplifiedOperand(valueMap, force);
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.DefineClassMethodInstr(this);
     }
 }

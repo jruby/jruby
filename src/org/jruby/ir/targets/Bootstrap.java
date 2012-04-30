@@ -24,7 +24,6 @@ import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.invokedynamic.InvocationLinker;
 import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
 import org.jruby.runtime.invokedynamic.VariableSite;
-import org.jruby.runtime.opto.GenerationAndSwitchPointInvalidator;
 import org.jruby.util.JavaNameMangler;
 import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;

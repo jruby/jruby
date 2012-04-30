@@ -1,6 +1,6 @@
 package org.jruby.ir.instructions.ruby18;
 
-import org.jruby.ir.Operation;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.instructions.CopyInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.OptArgMultipleAsgnInstr;
@@ -11,8 +11,8 @@ import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.builtin.IRubyObject;
 
 // Assign the 'index' argument to 'dest'.
-public class ReceiveOptArgInstr extends ReceiveOptArgBase {
-    public ReceiveOptArgInstr(Variable result, int index) {
+public class ReceiveOptArgInstr18 extends ReceiveOptArgBase {
+    public ReceiveOptArgInstr18(Variable result, int index) {
         super(result, index);
     }
 
@@ -27,10 +27,15 @@ public class ReceiveOptArgInstr extends ReceiveOptArgBase {
 
     @Override
     public Instr cloneForBlockCloning(InlinerInfo ii) {
-        return new ReceiveOptArgInstr(ii.getRenamedVariable(result), argIndex);
+        return new ReceiveOptArgInstr18(ii.getRenamedVariable(result), argIndex);
     }
 
     public Object receiveOptArg(IRubyObject[] args) {
         return (argIndex < args.length ? args[argIndex] : UndefinedValue.UNDEFINED);
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.ReceiveOptArgInstr18(this);
     }
 }

@@ -1,9 +1,10 @@
 package org.jruby.ir.operands;
 
+import org.jruby.ir.IRVisitor;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
 
 public class Self extends LocalVariable {
     public static final Self SELF = new Self();
@@ -39,5 +40,10 @@ public class Self extends LocalVariable {
     @Override
     public Variable cloneForCloningClosure(InlinerInfo ii) {
         return this;
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.Self(this);
     }
 }

@@ -4,12 +4,13 @@
  */
 package org.jruby.ir.targets;
 
-import java.util.HashMap;
-import java.util.Map;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Variable;
 import org.objectweb.asm.Type;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  *

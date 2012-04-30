@@ -1,21 +1,18 @@
 package org.jruby.ir.instructions;
 
 import org.jruby.ir.IRClosure;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.IRMethod;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
-import org.jruby.ir.operands.MethAddr;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-
 import org.jruby.parser.IRStaticScope;
-
 import org.jruby.runtime.Block;
+import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-
-import org.jruby.runtime.DynamicScope;
 
 public class ZSuperInstr extends UnresolvedSuperInstr {
 	 // SSS FIXME: receiver is never used -- being passed in only to meet requirements of CallInstr
@@ -58,5 +55,10 @@ public class ZSuperInstr extends UnresolvedSuperInstr {
         if (block == null || !block.isGiven()) block = context.getFrameBlock();
 
         return interpretSuper(context, self, args, block);
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.ZSuperInstr(this);
     }
 }

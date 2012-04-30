@@ -1,5 +1,6 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.specialized.OneFixnumArgNoBlockCallInstr;
 import org.jruby.ir.instructions.specialized.OneOperandArgNoBlockCallInstr;
@@ -8,7 +9,6 @@ import org.jruby.ir.operands.MethAddr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.ir.targets.JVM;
 import org.jruby.runtime.CallType;
 
 /*
@@ -86,28 +86,8 @@ public class CallInstr extends CallBase implements ResultInstr {
     }
 
     @Override
-    public void compile(JVM jvm) {
-        jvm.method().loadLocal(0);
-        jvm.emit(getReceiver());
-        for (Operand operand : getCallArgs()) {
-            jvm.emit(operand);
-        }
-
-        switch (getCallType()) {
-            case FUNCTIONAL:
-            case VARIABLE:
-                jvm.method().invokeSelf(getMethodAddr().getName(), getCallArgs().length);
-                break;
-            case NORMAL:
-                jvm.method().invokeOther(getMethodAddr().getName(), getCallArgs().length);
-                break;
-            case SUPER:
-                jvm.method().invokeSuper(getMethodAddr().getName(), getCallArgs().length);
-                break;
-        }
-
-        int index = jvm.methodData().local(getResult());
-        jvm.method().storeLocal(index);
+    public void visit(IRVisitor visitor) {
+        visitor.CallInstr(this);
     }
     
 /* FIXME: Dead code which I think should be a special instr (enebo)

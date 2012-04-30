@@ -1,13 +1,14 @@
 package org.jruby.ir.operands;
 
-import java.util.List;
-import org.jruby.ir.targets.JVM;
-import org.jruby.util.ByteList;
 import org.jruby.RubyString;
+import org.jruby.ir.IRVisitor;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.util.ByteList;
+
+import java.util.List;
 
 /**
  * Represents a literal string value.
@@ -58,7 +59,15 @@ public class StringLiteral extends Operand {
     }
 
     @Override
-    public void compile(JVM jvm) {
-        jvm.method().push(bytelist);
+    public void visit(IRVisitor visitor) {
+        visitor.StringLiteral(this);
+    }
+
+    public ByteList getByteList() {
+        return bytelist;
+    }
+
+    public String getString() {
+        return string;
     }
 }

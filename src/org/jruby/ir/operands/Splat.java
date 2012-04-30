@@ -1,14 +1,14 @@
 package org.jruby.ir.operands;
 
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-
-import java.util.List;
-import java.util.Map;
-
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.List;
+import java.util.Map;
 
 // Represents a splat value in Ruby code: *array
 //
@@ -69,5 +69,10 @@ public class Splat extends Operand {
         IRubyObject arrayVal = (IRubyObject) array.retrieve(context, self, currDynScope, temp);
         // SSS FIXME: Some way to specialize this code?
         return (context.getRuntime().is1_9()) ? RuntimeHelpers.splatValue19(arrayVal) : RuntimeHelpers.splatValue(arrayVal);
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.Splat(this);
     }
 }

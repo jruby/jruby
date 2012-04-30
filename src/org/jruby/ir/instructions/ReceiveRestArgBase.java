@@ -1,11 +1,9 @@
 package org.jruby.ir.instructions;
 
-import org.jruby.ir.Interp;
+import org.jruby.Ruby;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Variable;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.Ruby;
 
 /*
  * Assign rest arg passed into method to a result variable

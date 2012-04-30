@@ -1,13 +1,11 @@
 package org.jruby.ir.instructions;
 
-import java.util.Map;
 import org.jruby.RubyArray;
-import org.jruby.ir.IRScope;
-
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.UndefinedValue;
+import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
@@ -45,5 +43,10 @@ public class OptArgMultipleAsgnInstr extends MultipleAsgnBase {
         
         int n = rubyArray.getLength();
 		  return minArgsLength <= n ? rubyArray.entry(index) : UndefinedValue.UNDEFINED;
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.OptArgMultipleAsgnInstr(this);
     }
 }

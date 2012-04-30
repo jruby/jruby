@@ -1,14 +1,16 @@
 package org.jruby.ir.instructions;
 
-import java.util.Map;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.Variable;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.Map;
 
 // SSS FIXME: Get rid of this instruction
 public class InstanceOfInstr extends Instr implements ResultInstr {
@@ -67,5 +69,10 @@ public class InstanceOfInstr extends Instr implements ResultInstr {
             throw new RuntimeException(e);
         }
         return context.getRuntime().newBoolean(type.isInstance(object.retrieve(context, self, currDynScope, temp))); 
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.InstanceOfInstr(this);
     }
 }

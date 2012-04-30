@@ -1,21 +1,19 @@
 package org.jruby.ir.instructions;
 
-import java.util.Map;
-
+import org.jruby.Ruby;
+import org.jruby.RubyModule;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
-import org.jruby.ir.targets.JVM;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-
-import org.jruby.Ruby;
-import org.jruby.runtime.ThreadContext;
-
-import org.jruby.RubyModule;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.Map;
 
 // Const search:
 // - looks up lexical scopes
@@ -108,11 +106,19 @@ public class SearchConstInstr extends Instr implements ResultInstr {
     }
 
     @Override
-    public void compile(JVM jvm) {
-        jvm.method().loadLocal(0);
-        jvm.emit(startingScope);
-        jvm.method().searchConst(constName);
-        jvm.method().storeLocal(jvm.methodData().local(getResult()));
+    public void visit(IRVisitor visitor) {
+        visitor.SearchConstInstr(this);
     }
 
+    public Operand getStartingScope() {
+        return startingScope;
+    }
+
+    public String getConstName() {
+        return constName;
+    }
+
+    public boolean isNoPrivateConsts() {
+        return noPrivateConsts;
+    }
 }

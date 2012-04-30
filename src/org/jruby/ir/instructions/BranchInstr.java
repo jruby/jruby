@@ -1,9 +1,10 @@
 package org.jruby.ir.instructions;
 
-import java.util.Map;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.Operand;
+
+import java.util.Map;
 
 public abstract class BranchInstr extends Instr {
     private Label target;

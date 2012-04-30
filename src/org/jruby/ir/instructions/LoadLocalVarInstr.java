@@ -1,8 +1,9 @@
 package org.jruby.ir.instructions;
 
-import org.jruby.ir.Operation;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Interp;
+import org.jruby.ir.Operation;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.TemporaryVariable;
@@ -58,5 +59,10 @@ public class LoadLocalVarInstr extends Instr implements ResultInstr {
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         return lvar.retrieve(context, self, currDynScope, temp);
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.LoadLocalVarInstr(this);
     }
 }

@@ -1,6 +1,7 @@
 package org.jruby.ir.operands;
 
 import org.jruby.ir.IRClosure;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 
 /**
@@ -47,5 +48,10 @@ public class ClosureLocalVariable extends LocalVariable {
     // SSS FIXME: Better name than this?
     public LocalVariable cloneForDepth(int n) {
         return new ClosureLocalVariable(definingScope, name, n, offset);
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.ClosureLocalVariable(this);
     }
 }

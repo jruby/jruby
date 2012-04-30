@@ -1,12 +1,10 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 public class ReceiveExceptionInstr extends Instr implements ResultInstr {
     private Variable result;
@@ -34,5 +32,10 @@ public class ReceiveExceptionInstr extends Instr implements ResultInstr {
     @Override
     public Instr cloneForInlining(InlinerInfo ii) {
         return new ReceiveExceptionInstr(ii.getRenamedVariable(result));
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.ReceiveExceptionInstr(this);
     }
 }

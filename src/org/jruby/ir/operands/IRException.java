@@ -1,9 +1,11 @@
 package org.jruby.ir.operands;
 
-import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.RubyLocalJumpError;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
+
+import java.util.List;
 
 // Encapsulates exceptions to be thrown at runtime
 public class IRException extends Operand {
@@ -46,5 +48,10 @@ public class IRException extends Operand {
         else if (this == REDO_LocalJumpError) return runtime.newLocalJumpError(RubyLocalJumpError.Reason.REDO, null, "unexpected redo");
         else if (this == RETRY_LocalJumpError) return runtime.newLocalJumpError(RubyLocalJumpError.Reason.REDO, null, "retry outside of rescue not supported");
         else throw new RuntimeException("Unhandled case in operands/IRException.java");
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.IRException(this);
     }
 }

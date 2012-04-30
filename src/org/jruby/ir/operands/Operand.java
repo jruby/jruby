@@ -1,13 +1,14 @@
 package org.jruby.ir.operands;
 
-import java.util.List;
-import java.util.Map;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Interp;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.ir.targets.JVM;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.List;
+import java.util.Map;
 
 public abstract class Operand {
     public static final Operand[] EMPTY_ARRAY = new Operand[0];
@@ -81,7 +82,7 @@ public abstract class Operand {
         throw new RuntimeException(this.getClass().getSimpleName() + " should not be directly retrieved.");
     }
 
-    public void compile(JVM jvm) {
-        throw new RuntimeException("operand " + this.getClass().getSimpleName() + " has no compile logic.");
+    public void visit(IRVisitor visitor) {
+        throw new RuntimeException("operand " + this.getClass().getSimpleName() + " has no visit logic.");
     }
 }

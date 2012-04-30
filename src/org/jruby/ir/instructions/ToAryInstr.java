@@ -1,12 +1,9 @@
 package org.jruby.ir.instructions;
 
-import java.util.Map;
-
 import org.jruby.RubyArray;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.IRScope;
 import org.jruby.ir.Operation;
-import org.jruby.ir.instructions.Instr;
-import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.operands.Array;
 import org.jruby.ir.operands.BooleanLiteral;
 import org.jruby.ir.operands.Operand;
@@ -17,6 +14,8 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.Map;
 
 public class ToAryInstr extends Instr implements ResultInstr {
     private Variable result;
@@ -85,5 +84,10 @@ public class ToAryInstr extends Instr implements ResultInstr {
                 throw context.getRuntime().newTypeError("can't convert " + receiverType + " to Array (" + receiverType + "#to_ary gives " + ary.getType().getName() + ")");
             }
         }
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.ToAryInstr(this);
     }
 }

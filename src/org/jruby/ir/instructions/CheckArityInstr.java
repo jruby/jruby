@@ -1,10 +1,9 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.ir.targets.JVM;
 
 public class CheckArityInstr extends Instr {
     public final int required;
@@ -50,7 +49,7 @@ public class CheckArityInstr extends Instr {
     }
 
     @Override
-    public void compile(JVM jvm) {
-        // no-op right now
+    public void visit(IRVisitor visitor) {
+        visitor.CheckArityInstr(this);
     }
 }

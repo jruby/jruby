@@ -1,16 +1,18 @@
 package org.jruby.ir.instructions;
 
-import java.util.Map;
+import org.jruby.RubyArray;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.RubyArray;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.Map;
 
 // If v2 is an array, compare v1 with every element of v2 and stop on first match!
 public class EQQInstr extends Instr implements ResultInstr {
@@ -74,5 +76,10 @@ public class EQQInstr extends Instr implements ResultInstr {
         } else {
             return isUndefValue ? receiver : receiver.callMethod(context, "===", value);
         }
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.EQQInstr(this);
     }
 }

@@ -1,22 +1,20 @@
 package org.jruby.ir.instructions;
 
-import java.util.Map;
-
+import org.jruby.Ruby;
+import org.jruby.RubyModule;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.UndefinedValue;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-
-import org.jruby.Ruby;
-import org.jruby.runtime.ThreadContext;
-
-import org.jruby.RubyModule;
-import org.jruby.ir.IRScope;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.Map;
 
 // The runtime method call that GET_CONST is translated to in this case will call
 // a get_constant method on the scope meta-object which does the lookup of the constant table
@@ -97,5 +95,10 @@ public class LexicalSearchConstInstr extends Instr implements ResultInstr {
         if (!isCached(runtime, constant)) constant = cache(context, currDynScope, self, temp, runtime, constant);
 
         return constant;
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.LexicalSearchConstInstr(this);
     }
 }

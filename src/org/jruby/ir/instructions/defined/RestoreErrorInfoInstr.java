@@ -4,8 +4,7 @@
  */
 package org.jruby.ir.instructions.defined;
 
-import java.util.Map;
-
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.Operand;
@@ -14,6 +13,8 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.Map;
 
 /**
  *
@@ -53,5 +54,10 @@ public class RestoreErrorInfoInstr extends Instr {
         context.setErrorInfo((IRubyObject) arg.retrieve(context, self, currDynScope, temp));
         
         return null;
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.RestoreErrorInfoInstr(this);
     }
 }

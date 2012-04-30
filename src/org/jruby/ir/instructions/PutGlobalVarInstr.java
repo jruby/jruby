@@ -1,5 +1,6 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.GlobalVariable;
 import org.jruby.ir.operands.Operand;
@@ -25,5 +26,10 @@ public class PutGlobalVarInstr extends PutInstr {
         IRubyObject    value  = (IRubyObject) getValue().retrieve(context, self, currDynScope, temp);
         context.getRuntime().getGlobalVariables().set(target.getName(), value);
         return null;
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.PutGlobalVarInstr(this);
     }
 }

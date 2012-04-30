@@ -1,8 +1,8 @@
 package org.jruby.ir.instructions.ruby19;
 
-import java.util.Map;
 import org.jruby.RubyProc;
 import org.jruby.ir.IRClosure;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.ResultInstr;
@@ -15,6 +15,8 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.Map;
 
 public class BuildLambdaInstr extends Instr implements ResultInstr {
     /** The position for the block */
@@ -68,8 +70,13 @@ public class BuildLambdaInstr extends Instr implements ResultInstr {
 
         IRClosure body = getLambdaBody();
         // ENEBO: Now can live nil be passed as block reference?
-        return RubyProc.newProc(context.getRuntime(), 
+        return RubyProc.newProc(context.getRuntime(),
                 (Block) (body == null ? context.getRuntime().getIRManager().getNil() : operands[0]).retrieve(context, self, currDynScope, temp),
                 Block.Type.LAMBDA, position);
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.BuildLambdaInstr(this);
     }
 }

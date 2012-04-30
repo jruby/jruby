@@ -1,13 +1,9 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.ir.targets.JVM;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
 
 public class ThreadPollInstr extends Instr {
     public final boolean onBackEdge;
@@ -37,7 +33,8 @@ public class ThreadPollInstr extends Instr {
         return onBackEdge ? this : null;
     }
 
-    public void compile(JVM jvm) {
-        jvm.method().poll();
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.ThreadPollInstr(this);
     }
 }

@@ -1,14 +1,15 @@
 package org.jruby.ir.operands;
+
+import org.jruby.RubyArray;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.runtime.DynamicScope;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.List;
 import java.util.Map;
-
-import org.jruby.RubyArray;
-import org.jruby.javasupport.util.RuntimeHelpers;
-import org.jruby.runtime.DynamicScope;
-import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.runtime.ThreadContext;
 
 // This represents an array that is used solely during arguments construction
 //   * Array + Splat ([1,2,3], *[5,6,7])
@@ -87,5 +88,10 @@ public class CompoundArray extends Operand {
         IRubyObject v1 = (IRubyObject)a1.retrieve(context, self, currDynScope, temp);
         IRubyObject v2 = (IRubyObject)a2.retrieve(context, self, currDynScope, temp);
         return isArgsPush ? RuntimeHelpers.argsPush((RubyArray)v1, v2) : RuntimeHelpers.argsCat(v1, v2);
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.CompoundArray(this);
     }
 }

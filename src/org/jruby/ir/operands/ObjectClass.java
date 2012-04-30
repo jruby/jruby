@@ -1,12 +1,12 @@
 package org.jruby.ir.operands;
 
-import java.util.List;
-
-import org.jruby.ir.targets.JVM;
+import org.jruby.ir.IRVisitor;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+
+import java.util.List;
 
 public class ObjectClass extends Operand {
     public ObjectClass() { }
@@ -37,7 +37,7 @@ public class ObjectClass extends Operand {
     }
 
     @Override
-    public void compile(JVM jvm) {
-        jvm.method().pushObjectClass();
+    public void visit(IRVisitor visitor) {
+        visitor.ObjectClass(this);
     }
 }

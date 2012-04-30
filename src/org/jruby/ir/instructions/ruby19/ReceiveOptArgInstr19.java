@@ -1,6 +1,6 @@
 package org.jruby.ir.instructions.ruby19;
 
-import org.jruby.ir.Operation;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.instructions.CopyInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.OptArgMultipleAsgnInstr;
@@ -10,12 +10,12 @@ import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.builtin.IRubyObject;
 
-public class ReceiveOptArgInstr extends ReceiveOptArgBase {
+public class ReceiveOptArgInstr19 extends ReceiveOptArgBase {
     /** This instruction gets to pick an argument off the incoming list only if
      *  there are at least this many incoming arguments */
     public final int minArgsLength;
 
-    public ReceiveOptArgInstr(Variable result, int index, int minArgsLength) {
+    public ReceiveOptArgInstr19(Variable result, int index, int minArgsLength) {
         super(result, index);
         this.minArgsLength = minArgsLength;
     }
@@ -37,10 +37,15 @@ public class ReceiveOptArgInstr extends ReceiveOptArgBase {
 
     @Override
     public Instr cloneForBlockCloning(InlinerInfo ii) {
-        return new ReceiveOptArgInstr(ii.getRenamedVariable(result), argIndex, minArgsLength);
+        return new ReceiveOptArgInstr19(ii.getRenamedVariable(result), argIndex, minArgsLength);
     }
 
     public Object receiveOptArg(IRubyObject[] args) {
         return (minArgsLength <= args.length ? args[argIndex] : UndefinedValue.UNDEFINED);
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.ReceiveOptArgInstr19(this);
     }
 }

@@ -1,12 +1,12 @@
 package org.jruby.ir.instructions.ruby19;
 
-import org.jruby.ir.operands.Operand;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.CopyInstr;
 import org.jruby.ir.instructions.Instr;
-import org.jruby.ir.instructions.ReqdArgMultipleAsgnInstr;
 import org.jruby.ir.instructions.ReceiveArgBase;
-import org.jruby.ir.operands.UndefinedValue;
+import org.jruby.ir.instructions.ReqdArgMultipleAsgnInstr;
+import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -66,5 +66,10 @@ public class ReceivePostReqdArgInstr extends ReceiveArgBase {
         } else {
             return (remaining > postReqdArgsCount) ? args[n - postReqdArgsCount + argIndex] : args[preReqdArgsCount + argIndex];
         }
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.ReceivePostReqdArgInstr(this);
     }
 }

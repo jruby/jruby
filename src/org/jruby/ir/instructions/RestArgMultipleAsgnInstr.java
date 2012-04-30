@@ -1,9 +1,7 @@
 package org.jruby.ir.instructions;
 
-import java.util.Map;
 import org.jruby.RubyArray;
-import org.jruby.ir.IRScope;
-
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
@@ -60,5 +58,10 @@ public class RestArgMultipleAsgnInstr extends MultipleAsgnBase {
                 return RubyArray.newArrayNoCopy(context.getRuntime(), rubyArray.toJavaArray(), preArgsCount, (n - preArgsCount - postArgsCount));
             }
         }
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.RestArgMultipleAsgnInstr(this);
     }
 }

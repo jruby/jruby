@@ -1,16 +1,17 @@
 package org.jruby.ir.instructions;
 
-import java.util.Map;
-import org.jruby.ir.Operation;
-import org.jruby.ir.operands.Operand;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.IRScope;
+import org.jruby.ir.Operation;
 import org.jruby.ir.operands.LocalVariable;
-import org.jruby.ir.operands.Variable;
+import org.jruby.ir.operands.Operand;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.Map;
 
 public class StoreLocalVarInstr extends Instr {
     private IRScope scope;
@@ -58,5 +59,10 @@ public class StoreLocalVarInstr extends Instr {
         Object varValue = value.retrieve(context, self, currDynScope, temp);
         currDynScope.setValue((IRubyObject)varValue, lvar.getLocation(), lvar.getScopeDepth());
         return null;
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.StoreLocalVarInstr(this);
     }
 }

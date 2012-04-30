@@ -1,10 +1,10 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.specialized.OneArgOperandAttrAssignInstr;
 import org.jruby.ir.operands.MethAddr;
 import org.jruby.ir.operands.Operand;
-import org.jruby.ir.targets.JVM;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
@@ -53,14 +53,7 @@ public class AttrAssignInstr extends NoResultCallInstr {
     }
 
     @Override
-    public void compile(JVM jvm) {
-        jvm.method().loadLocal(0);
-        jvm.emit(receiver);
-        for (Operand operand : getCallArgs()) {
-            jvm.emit(operand);
-        }
-
-        jvm.method().invokeOther(getMethodAddr().getName(), getCallArgs().length);
-        jvm.method().adapter.pop();
+    public void visit(IRVisitor visitor) {
+        visitor.AttrAssignInstr(this);
     }
 }

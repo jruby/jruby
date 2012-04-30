@@ -3,17 +3,14 @@ package org.jruby.ir.instructions;
 // This is of the form:
 //   d = s
 
-import java.util.Map;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.IRScope;
-
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.ir.targets.JVM;
-import org.jruby.runtime.Block;
-import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.IRubyObject;
+
+import java.util.Map;
 
 public class CopyInstr extends Instr implements ResultInstr {
     private Operand arg;
@@ -67,10 +64,9 @@ public class CopyInstr extends Instr implements ResultInstr {
         return (arg instanceof Variable) ? (super.toString() + "(" + arg + ")") : (result + " = " + arg);
     }
 
-    public void compile(JVM jvm) {
-        int index = jvm.methodData().local(getResult());
-        jvm.emit(getSource());
-        jvm.method().storeLocal(index);
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.CopyInstr(this);
     }
 
 }

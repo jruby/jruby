@@ -1,7 +1,7 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.Arity;
@@ -44,6 +44,11 @@ public class RaiseArgumentErrorInstr extends Instr {
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         Arity.raiseArgumentError(context.getRuntime(), numArgs, required, required + opt);
         return null;
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.RaiseArgumentErrorInstr(this);
     }
     
 }

@@ -1,5 +1,6 @@
 package org.jruby.ir.operands;
 
+import org.jruby.ir.IRVisitor;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -23,5 +24,10 @@ public class UnexecutableNil extends Nil {
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         throw new RuntimeException(this.getClass().getSimpleName() + " should not be directly interpreted");
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.UnexecutableNil(this);
     }
 }

@@ -1,13 +1,9 @@
 package org.jruby.ir.instructions;
 
-import java.util.Map;
-import java.util.List;
-import java.util.ArrayList;
-
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
-import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Label;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.ir.operands.Operand;
 
 public class ExceptionRegionStartMarkerInstr extends Instr {
     final public Label begin;
@@ -38,5 +34,10 @@ public class ExceptionRegionStartMarkerInstr extends Instr {
 
     public Operand[] getOperands() {
         return EMPTY_OPERANDS;
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.ExceptionRegionStartMarkerInstr(this);
     }
 }

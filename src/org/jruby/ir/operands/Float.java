@@ -1,6 +1,6 @@
 package org.jruby.ir.operands;
 
-import java.util.List;
+import org.jruby.ir.IRVisitor;
 import org.jruby.runtime.ThreadContext;
 
 public class Float extends ImmutableLiteral {
@@ -40,5 +40,10 @@ public class Float extends ImmutableLiteral {
         }
 
         return null;
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.Float(this);
     }
 }

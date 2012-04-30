@@ -1,17 +1,18 @@
 package org.jruby.ir.operands;
 
-import java.util.Map;
-import java.util.List;
-
 import org.jruby.RubyClass;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
-import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.ir.IRVisitor;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
+
+import java.util.List;
+import java.util.Map;
 
 // This represents a method handle bound to a receiver -- it is used during
 // compilation / interpretation to represent a method handle returned by a
@@ -103,5 +104,10 @@ public class MethodHandle extends Operand {
         }
 
         return this;
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.MethodHandle(this);
     }
 }

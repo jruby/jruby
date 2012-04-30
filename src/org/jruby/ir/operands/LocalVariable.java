@@ -5,10 +5,11 @@
 
 package org.jruby.ir.operands;
 
+import org.jruby.ir.IRVisitor;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
 
 /**
  * @author enebo
@@ -81,5 +82,10 @@ public class LocalVariable extends Variable {
     // SSS FIXME: Better name than this?
     public LocalVariable cloneForDepth(int n) {
         return new LocalVariable(name, n, offset);
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.LocalVariable(this);
     }
 }

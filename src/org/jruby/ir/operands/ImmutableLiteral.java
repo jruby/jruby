@@ -1,10 +1,11 @@
 package org.jruby.ir.operands;
 
-import java.util.List;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+
+import java.util.List;
 
 /**
  * Operands extending this type can make a reasonable assumption of 

@@ -1,7 +1,5 @@
 package org.jruby.ir.operands;
 
-import java.util.List;
-
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
@@ -9,15 +7,17 @@ import org.jruby.RubyFloat;
 import org.jruby.RubyHash;
 import org.jruby.RubyInteger;
 import org.jruby.RubyString;
-import org.jruby.ir.targets.JVM;
+import org.jruby.ir.IRVisitor;
+import org.jruby.ir.transformations.inlining.InlinerInfo;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
-import org.jruby.runtime.builtin.Variable;
-import org.jruby.runtime.builtin.InternalVariables;
-import org.jruby.runtime.builtin.InstanceVariables;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.ir.transformations.inlining.InlinerInfo;
+import org.jruby.runtime.builtin.InstanceVariables;
+import org.jruby.runtime.builtin.InternalVariables;
+import org.jruby.runtime.builtin.Variable;
+
+import java.util.List;
 
 /**
  * For argument processing.  If an opt arg does not exist we will return
@@ -396,7 +396,7 @@ public class UndefinedValue extends Operand implements IRubyObject {
     }
 
     @Override
-    public void compile(JVM jvm) {
-        jvm.method().pushUndefined();
+    public void visit(IRVisitor visitor) {
+        visitor.UndefinedValue(this);
     }
 }

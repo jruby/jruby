@@ -1,7 +1,9 @@
 package org.jruby.ir.operands;
 
-import java.util.List;
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
+
+import java.util.List;
 
 // Represents the StandardError object -- this operand used in rescue blocks
 // for when the rescue block doesn't specify an exception object class
@@ -16,5 +18,10 @@ public class StandardError extends Operand {
     @Override
     public Operand cloneForInlining(InlinerInfo ii) {
         return this;
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.StandardError(this);
     }
 }
