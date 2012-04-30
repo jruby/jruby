@@ -827,6 +827,12 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (shareLevel != SHARE_LEVEL_BYTELIST) shareLevel = SHARE_LEVEL_BYTELIST;
     }
 
+    /**
+     * Check that the string can be modified, raising error otherwise.
+     *
+     * If you plan to modify a string with shared backing store, this
+     * method is not sufficient; you will need to call modify() instead.
+     */
     public final void modifyCheck() {
         frozenCheck();
 
@@ -4359,7 +4365,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "setbyte", compat = RUBY1_9)
     public IRubyObject setbyte(ThreadContext context, IRubyObject index, IRubyObject val) {
-        modifyCheck();
+        modifyAndKeepCodeRange();
         int i = RubyNumeric.num2int(index);
         int b = RubyNumeric.num2int(val);
         value.getUnsafeBytes()[checkIndexForRef(i, value.getRealSize())] = (byte)b;
@@ -5726,7 +5732,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
         modifyCheck();
         Ruby runtime = context.getRuntime();
         if (value.getRealSize() == 0) {
-            modifyCheck();
             return runtime.getNil();
         }
 
@@ -5801,7 +5806,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
         modifyCheck();
         Ruby runtime = context.getRuntime();
         if (value.getRealSize() == 0) {
-            modifyCheck();
             return runtime.getNil();
         }
 
