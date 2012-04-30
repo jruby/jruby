@@ -9,10 +9,25 @@ import java.io.InputStream;
  * @author nicksieger
  */
 public class LoadServiceResourceInputStream extends ByteArrayInputStream {
+    /**
+     * Construct a LoadServiceResourceInputStream from the given bytes.
+     *
+     * @param bytes the bytes to wrap in this stream
+     */
     public LoadServiceResourceInputStream(byte[] bytes) {
         super(bytes);
     }
 
+    /**
+     * Construct a new LoadServiceInputStream by reading all bytes from the
+     * specified stream.
+     *
+     * You are responsible for the lifecycle of the given stream after this
+     * constructor has been called (i.e. it will not be closed for you).
+     *
+     * @param stream the stream from which to read bytes
+     * @throws IOException if the reading causes an IOException
+     */
     public LoadServiceResourceInputStream(InputStream stream) throws IOException {
         super(new byte[0]);
         bufferEntireStream(stream);
