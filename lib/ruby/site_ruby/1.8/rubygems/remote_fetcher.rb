@@ -317,17 +317,26 @@ class Gem::RemoteFetcher
     @connections[connection_id] ||= Net::HTTP.new(*net_http_args)
     connection = @connections[connection_id]
 
-    if uri.scheme == 'https' and not connection.started? then
-      require 'net/https'
-      connection.use_ssl = true
-      connection.verify_mode = OpenSSL::SSL::VERIFY_NONE
+    if https?(uri) and !connection.started? then
+      configure_connection_for_https(connection)
+
+      # Don't refactor this with the else branch. We don't want the
+      # http-only code path to not depend on anything in OpenSSL.
+      #
+      begin
+        connection.start
+      rescue OpenSSL::SSL::SSLError, Errno::EHOSTDOWN => e
+        raise FetchError.new(e.message, uri)
+      end
+    else
+      begin
+        connection.start unless connection.started?
+      rescue Errno::EHOSTDOWN => e
+        raise FetchError.new(e.message, uri)
+      end
     end
 
-    connection.start unless connection.started?
-
     connection
-  rescue Errno::EHOSTDOWN => e
-    raise FetchError.new(e.message, uri)
   end
 
   def correct_for_windows_path(path)
