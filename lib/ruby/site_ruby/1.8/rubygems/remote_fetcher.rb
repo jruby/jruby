@@ -8,6 +8,8 @@ require 'uri'
 
 class Gem::RemoteFetcher
 
+  BuiltinSSLCerts = File.expand_path("./ssl_certs/*.pem", File.dirname(__FILE__))
+
   include Gem::UserInteraction
 
   ##
@@ -179,7 +181,7 @@ class Gem::RemoteFetcher
 
       begin
         FileUtils.cp source_path, local_gem_path unless
-          File.expand_path(source_path) == File.expand_path(local_gem_path)
+          File.identical?(source_path, local_gem_path)
       rescue Errno::EACCES
         local_gem_path = source_uri.to_s
       end
@@ -215,6 +217,11 @@ class Gem::RemoteFetcher
       raise FetchError.new('too many redirects', uri) if depth > 10
 
       location = URI.parse response['Location']
+
+      if https?(uri) && !https?(location)
+        raise FetchError.new("redirecting to non-https resource: #{location}", uri)
+      end
+
       fetch_http(location, last_modified, head, depth + 1)
     else
       raise FetchError.new("bad response #{response.message} #{response.code}", uri)
@@ -337,6 +344,35 @@ class Gem::RemoteFetcher
     end
 
     connection
+  end
+
+  def configure_connection_for_https(connection)
+    require 'net/https'
+
+    connection.use_ssl = true
+    connection.verify_mode =
+      Gem.configuration.ssl_verify_mode || OpenSSL::SSL::VERIFY_PEER
+
+    store = OpenSSL::X509::Store.new
+
+    if Gem.configuration.ssl_ca_cert
+      if File.directory? Gem.configuration.ssl_ca_cert
+        store.add_path Gem.configuration.ssl_ca_cert
+      else
+        store.add_file Gem.configuration.ssl_ca_cert
+      end
+    else
+      store.set_default_paths
+      add_rubygems_trusted_certs(store)
+    end
+
+    connection.cert_store = store
+  end
+
+  def add_rubygems_trusted_certs(store)
+    Dir.glob(BuiltinSSLCerts).each do |ssl_cert_file|
+      store.add_file ssl_cert_file
+    end
   end
 
   def correct_for_windows_path(path)
@@ -477,6 +513,10 @@ class Gem::RemoteFetcher
     ua << " #{RUBY_ENGINE}" if defined?(RUBY_ENGINE) and RUBY_ENGINE != 'ruby'
 
     ua
+  end
+
+  def https?(uri)
+    uri.scheme.downcase == 'https'
   end
 
 end
