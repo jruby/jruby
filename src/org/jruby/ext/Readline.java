@@ -49,6 +49,7 @@ import jline.console.history.History;
 import jline.console.history.MemoryHistory;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyFile;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
@@ -70,6 +71,9 @@ public class Readline {
     public static final char ESC_KEY_CODE = (char)27;
     private final static boolean DEBUG = false;
     private static IRubyObject COMPLETION_CASE_FOLD = null;
+    
+    private static RubyFile instream = null;
+    private static RubyFile outstream = null;
 
 
     public static class ConsoleHolder {
@@ -202,14 +206,26 @@ public class Readline {
 
     @JRubyMethod(name = "input=", module = true, visibility = PRIVATE, compat = RUBY1_9)
     public static IRubyObject setInput(ThreadContext context, IRubyObject recv, IRubyObject input) {
-        // FIXME: JRUBY-3604
-        return context.getRuntime().getNil();
+        Ruby runtime = context.getRuntime();
+        runtime.secure(4);
+        if (!(input instanceof RubyFile)) {
+            throw runtime.newTypeError(input, runtime.getClassClass());
+        }
+        RubyFile file = (RubyFile) input;
+        instream = file;
+        return input;
     }
 
     @JRubyMethod(name = "output=", module = true, visibility = PRIVATE, compat = RUBY1_9)
     public static IRubyObject setOutput(ThreadContext context, IRubyObject recv, IRubyObject output) {
-        // FIXME: JRUBY-3604
-        return context.getRuntime().getNil();
+        Ruby runtime = context.getRuntime();
+        runtime.secure(4);
+        if (!(output instanceof RubyFile)) {
+            throw runtime.newTypeError(output, runtime.getClassClass());
+        }
+        RubyFile file = (RubyFile) output;
+        outstream = file;
+        return output;
     }
 
     @JRubyMethod(name = "readline", module = true, visibility = PRIVATE)
