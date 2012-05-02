@@ -161,7 +161,8 @@ public enum Operation {
     IS_TRUE(0), // checks if the operand is non-null and non-false
     EQQ(0), // (FIXME: Exceptions?) a === call used in when
     RESCUE_EQQ(OpFlags.f_can_raise_exception), // a === call used in rescue
-    ALLOC_BINDING(OpFlags.f_has_side_effect),
+    PUSH_BINDING(OpFlags.f_has_side_effect),
+    POP_BINDING(OpFlags.f_has_side_effect),
     THREAD_POLL(OpFlags.f_has_side_effect),
     ENSURE_RUBY_ARRAY(0),
     GET_ENCODING(0),

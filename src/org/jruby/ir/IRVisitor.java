@@ -77,7 +77,6 @@ public abstract class IRVisitor {
 
     // standard instructions
     public void AliasInstr(AliasInstr aliasinstr) { error(aliasinstr); }
-    public void AllocateBindingInstr(AllocateBindingInstr allocatebindinginstr) { error(allocatebindinginstr); }
     public void AttrAssignInstr(AttrAssignInstr attrassigninstr) { error(attrassigninstr); }
     public void BEQInstr(BEQInstr beqinstr) { error(beqinstr); }
     public void BFalseInstr(BFalseInstr bfalseinstr) { error(bfalseinstr); }
@@ -127,11 +126,13 @@ public abstract class IRVisitor {
     public void NoResultCallInstr(NoResultCallInstr noresultcallinstr) { error(noresultcallinstr); }
     public void NotInstr(NotInstr notinstr) { error(notinstr); }
     public void OptArgMultipleAsgnInstr(OptArgMultipleAsgnInstr optargmultipleasgninstr) { error(optargmultipleasgninstr); }
+    public void PopBindingInstr(PopBindingInstr popbindinginstr) { error(popbindinginstr); }
     public void ProcessModuleBodyInstr(ProcessModuleBodyInstr processmodulebodyinstr) { error(processmodulebodyinstr); }
     public void PutClassVariableInstr(PutClassVariableInstr putclassvariableinstr) { error(putclassvariableinstr); }
     public void PutConstInstr(PutConstInstr putconstinstr) { error(putconstinstr); }
     public void PutFieldInstr(PutFieldInstr putfieldinstr) { error(putfieldinstr); }
     public void PutGlobalVarInstr(PutGlobalVarInstr putglobalvarinstr) { error(putglobalvarinstr); }
+    public void PushBindingInstr(PushBindingInstr pushbindinginstr) { error(pushbindinginstr); }
     public void RaiseArgumentErrorInstr(RaiseArgumentErrorInstr raiseargumenterrorinstr) { error(raiseargumenterrorinstr); }
     public void ReceiveClosureInstr(ReceiveClosureInstr receiveclosureinstr) { error(receiveclosureinstr); }
     public void ReceiveExceptionInstr(ReceiveExceptionInstr receiveexceptioninstr) { error(receiveexceptioninstr); }

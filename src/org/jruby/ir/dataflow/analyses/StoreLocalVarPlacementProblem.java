@@ -21,11 +21,6 @@ import java.util.Set;
 // This problem tries to find places to insert binding stores -- for spilling local variables onto a heap store
 // It does better than spilling all local variables to the heap at all call sites.  This is similar to a
 // available expressions analysis in that it tries to propagate availability of stores through the flow graph.
-//
-// We have piggybacked the problem of identifying sites where binding allocation instrutions are necessary.  So,
-// strictly speaking, this is a AND of two independent dataflow analyses -- we are doing these together for
-// efficiency reasons, and also because the binding allocation problem is also a forwards flow problem and is a
-// relatively straightforward analysis.
 public class StoreLocalVarPlacementProblem extends DataFlowProblem {
 
     public StoreLocalVarPlacementProblem() {

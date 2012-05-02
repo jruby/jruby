@@ -398,6 +398,20 @@ public class Interpreter {
                 Object result = null;
                 try {
                     switch(operation) {
+                    case PUSH_BINDING: {
+                        // SSS FIXME: this is not entirely correct.  
+                        // -> methods don't have a prev scope
+                        // -> blocks need to use static-scope from the blockbody (see comment in InterpretedIRBlockBody.java)
+                        currDynScope = DynamicScope.newDynamicScope(scope.getStaticScope(), currDynScope);
+                        context.pushScope(currDynScope);
+                        ipc++;
+                        break;
+                    }
+                    case POP_BINDING: {
+                        context.popScope();
+                        ipc++;
+                        break;
+                    }
                     case JUMP: {
                         ipc = ((JumpInstr)lastInstr).getJumpTarget().getTargetPC();
                         break;

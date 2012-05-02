@@ -207,11 +207,6 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
-    public void AllocateBindingInstr(AllocateBindingInstr allocatebindinginstr) {
-        super.AllocateBindingInstr(allocatebindinginstr);    //To change body of overridden methods use File | Settings | File Templates.
-    }
-
-    @Override
     public void AttrAssignInstr(AttrAssignInstr attrAssignInstr) {
         jvm.method().loadLocal(0);
         visit(attrAssignInstr.getReceiver());
@@ -708,11 +703,21 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
+    public void PopBindingInstr(PopBindingInstr popbindinginstr) {
+        super.PopBindingInstr(popbindinginstr);    //To change body of overridden methods use File | Settings | File Templates.
+    }
+
+    @Override
     public void ProcessModuleBodyInstr(ProcessModuleBodyInstr processmodulebodyinstr) {
         jvm.method().loadLocal(0);
         visit(processmodulebodyinstr.getModuleBody());
         jvm.method().invokeHelper("invokeModuleBody", IRubyObject.class, ThreadContext.class, CompiledIRMethod.class);
         jvm.method().storeLocal(jvm.methodData().local(processmodulebodyinstr.getResult()));
+    }
+
+    @Override
+    public void PushBindingInstr(PushBindingInstr pushbindinginstr) {
+        super.PushBindingInstr(pushbindinginstr);    //To change body of overridden methods use File | Settings | File Templates.
     }
 
     @Override

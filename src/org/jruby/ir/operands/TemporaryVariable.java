@@ -64,7 +64,7 @@ public class TemporaryVariable extends Variable {
 
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
-        return temp[offset];
+		  return temp[offset];
     }
 
     @Override
