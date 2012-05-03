@@ -247,6 +247,16 @@ public class RubyZlib {
         return recv.getRuntime().newFixnum(ext.getValue());
     }
 
+    @JRubyMethod(compat = RUBY1_9)
+    public static IRubyObject inflate(ThreadContext context, IRubyObject recv, IRubyObject string) {
+        return JZlibInflate.s_inflate(context, recv, string);
+    }
+
+    @JRubyMethod(required = 1, optional = 1, compat = RUBY1_9)
+    public static IRubyObject deflate(IRubyObject recv, IRubyObject[] args) {
+        return JZlibDeflate.s_deflate(recv, args);
+    }
+
     // TODO: com.jcraft.jzlib.CRC32 has this table...
     private final static long[] crctab = new long[]{
         0L, 1996959894L, 3993919788L, 2567524794L, 124634137L, 1886057615L, 3915621685L, 2657392035L, 249268274L, 2044508324L, 3772115230L, 2547177864L, 162941995L, 
