@@ -1054,7 +1054,7 @@ public class RuntimeHelpers {
             return isExceptionHandled(((RaiseException)currentThrowable).getException(), throwables, context);
         } else {
             for (int i = 0; i < throwables.length; i++) {
-                if (checkJavaException(currentThrowable, throwables[0], context)) {
+                if (checkJavaException(currentThrowable, throwables[i], context)) {
                     return context.getRuntime().getTrue();
                 }
             }
