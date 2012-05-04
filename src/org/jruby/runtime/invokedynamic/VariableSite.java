@@ -1,10 +1,17 @@
 package org.jruby.runtime.invokedynamic;
 
+import org.jruby.Ruby;
+import org.jruby.RubyClass;
+import org.jruby.common.IRubyWarnings;
+import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.builtin.IRubyObject;
+
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
 
 public class VariableSite extends MutableCallSite {
     public final String name;
+    private RubyClass.VariableAccessor accessor = RubyClass.VariableAccessor.DUMMY_ACCESSOR;
     private int chainCount;
     public VariableSite(MethodType type, String name) {
         super(type);
@@ -22,5 +29,28 @@ public class VariableSite extends MutableCallSite {
 
     public synchronized void clearChainCount() {
         chainCount = 0;
+    }
+
+    public final IRubyObject getVariable(IRubyObject object) {
+        RubyClass.VariableAccessor variableAccessor = accessor;
+        RubyClass cls = object.getMetaClass().getRealClass();
+        if (variableAccessor.getClassId() != cls.hashCode()) {
+            accessor = variableAccessor = cls.getVariableAccessorForRead(name);
+        }
+        IRubyObject value = (IRubyObject) variableAccessor.get(object);
+        if (value != null) {
+            return value;
+        }
+        return object.getRuntime().getNil();
+    }
+
+    public final IRubyObject setVariable(IRubyObject object, IRubyObject value) {
+        RubyClass.VariableAccessor variableAccessor = accessor;
+        RubyClass cls = object.getMetaClass().getRealClass();
+        if (variableAccessor.getClassId() != cls.hashCode()) {
+            accessor = variableAccessor = cls.getVariableAccessorForWrite(name);
+        }
+        variableAccessor.set(object, value);
+        return value;
     }
 }
