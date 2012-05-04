@@ -119,7 +119,7 @@ public class Bootstrap {
         String[] names = name.split(":");
         String operation = names[0];
         String varName = names[1];
-        VariableSite site = new VariableSite(type, varName);
+        VariableSite site = new VariableSite(type, varName, "noname", 0);
         MethodHandle handle;
 
         handle = lookup.findStatic(Bootstrap.class, operation, type.insertParameterTypes(0, VariableSite.class));
