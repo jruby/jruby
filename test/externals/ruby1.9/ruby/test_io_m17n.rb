@@ -2325,4 +2325,57 @@ EOT
       end
     }
   end if /mswin|mingw/ =~ RUBY_PLATFORM
+
+  def test_error_nonascii
+    bug6071 = '[ruby-dev:45279]'
+    paths = ["\u{3042}".encode("sjis"), "\u{ff}".encode("iso-8859-1")]
+    encs = with_tmpdir {
+      paths.map {|path|
+        open(path) rescue $!.message.encoding
+      }
+    }
+    assert_equal(paths.map(&:encoding), encs, bug6071)
+  end
+
+  def test_inspect_nonascii
+    bug6072 = '[ruby-dev:45280]'
+    paths = ["\u{3042}".encode("sjis"), "\u{ff}".encode("iso-8859-1")]
+    encs = with_tmpdir {
+      paths.map {|path|
+        open(path, "wb") {|f| f.inspect.encoding}
+      }
+    }
+    assert_equal(paths.map(&:encoding), encs, bug6072)
+  end
+
+  def test_pos_dont_move_cursor_position
+    bug6179 = '[ruby-core:43497]'
+    with_tmpdir {
+      str = "line one\r\nline two\r\nline three\r\n"
+      generate_file("tmp", str)
+      open("tmp", "r") do |f|
+        assert_equal("line one\n", f.readline)
+        assert_equal(10, f.pos, bug6179)
+        assert_equal("line two\n", f.readline, bug6179)
+        assert_equal(20, f.pos, bug6179)
+        assert_equal("line three\n", f.readline, bug6179)
+      end
+    }
+  end if /mswin|mingw/ =~ RUBY_PLATFORM
+
+  def test_read_crlf_and_eof
+    bug6271 = '[ruby-core:44189]'
+    with_tmpdir {
+      str = "a\r\nb\r\nc\r\n"
+      generate_file("tmp", str)
+      open("tmp", "r") do |f|
+        i = 0
+        until f.eof?
+          assert_equal(str[i], f.read(1), bug6271)
+          i += 1
+        end
+        assert_equal(str.size, i, bug6271)
+      end
+    }
+  end if /mswin|mingw/ =~ RUBY_PLATFORM
 end
