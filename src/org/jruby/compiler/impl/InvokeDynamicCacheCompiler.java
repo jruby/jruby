@@ -411,7 +411,10 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
         method.method.invokedynamic(
                 "get:" + name,
                 sig(IRubyObject.class, IRubyObject.class),
-                InvokeDynamicSupport.getVariableHandle());
+                InvokeDynamicSupport.getVariableHandle(),
+                method.getScriptCompiler().getSourcename(),
+                method.getLastLine()
+                );
     }
 
     public void cachedSetVariable(BaseBodyCompiler method, String name, CompilerCallback valueCallback) {
@@ -426,6 +429,9 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
         method.method.invokedynamic(
                 "set:" + name,
                 sig(IRubyObject.class, IRubyObject.class, IRubyObject.class),
-                InvokeDynamicSupport.getVariableHandle());
+                InvokeDynamicSupport.getVariableHandle(),
+                method.getScriptCompiler().getSourcename(),
+                method.getLastLine()
+        );
     }
 }

@@ -12,10 +12,15 @@ import java.lang.invoke.MutableCallSite;
 public class VariableSite extends MutableCallSite {
     public final String name;
     private RubyClass.VariableAccessor accessor = RubyClass.VariableAccessor.DUMMY_ACCESSOR;
+    private final String file;
+    private final int line;
     private int chainCount;
-    public VariableSite(MethodType type, String name) {
+
+    public VariableSite(MethodType type, String name, String file, int line) {
         super(type);
         this.name = name;
+        this.file = file;
+        this.line = line;
         this.chainCount = 0;
     }
 
@@ -52,5 +57,13 @@ public class VariableSite extends MutableCallSite {
         }
         variableAccessor.set(object, value);
         return value;
+    }
+
+    public String file() {
+        return file;
+    }
+
+    public int line() {
+        return line;
     }
 }
