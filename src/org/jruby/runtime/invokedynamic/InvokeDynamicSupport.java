@@ -420,13 +420,13 @@ public class InvokeDynamicSupport {
         // prepare fallback
         MethodHandle fallback = null;
         if (site.chainCount() > RubyInstanceConfig.MAX_POLY_COUNT) {
-            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name + "\tqet on type " + self.getMetaClass().id + " failed (polymorphic)" + " (" + site.file() + ":" + site.line() + ")");
+            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name + "\tqet on type " + self.getMetaClass().id + " failed (polymorphic)" + extractSourceInfo(site));
             fallback = findStatic(InvokeDynamicSupport.class, "getVariableFail", methodType(IRubyObject.class, VariableSite.class, IRubyObject.class));
             fallback = fallback.bindTo(site);
             site.setTarget(fallback);
             return (IRubyObject)fallback.invokeWithArguments(self);
         } else {
-            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name + "\tget on type " + self.getMetaClass().id + " added to PIC" + " (" + site.file() + ":" + site.line() + ")");
+            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name + "\tget on type " + self.getMetaClass().id + " added to PIC" + extractSourceInfo(site));
             fallback = site.getTarget();
             site.incrementChainCount();
         }
@@ -437,7 +437,7 @@ public class InvokeDynamicSupport {
         
         getValue = guardWithTest(test, getValue, fallback);
         
-        if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name + "\tget on class " + self.getMetaClass().id + " bound directly" + " (" + site.file() + ":" + site.line() + ")");
+        if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name + "\tget on class " + self.getMetaClass().id + " bound directly" + extractSourceInfo(site));
         site.setTarget(getValue);
         
         return (IRubyObject)getValue.invokeWithArguments(self);
@@ -463,13 +463,13 @@ public class InvokeDynamicSupport {
         // prepare fallback
         MethodHandle fallback = null;
         if (site.chainCount() > RubyInstanceConfig.MAX_POLY_COUNT) {
-            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name + "\tset on type " + self.getMetaClass().id + " failed (polymorphic)" + " (" + site.file() + ":" + site.line() + ")");
+            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name + "\tset on type " + self.getMetaClass().id + " failed (polymorphic)" + extractSourceInfo(site));
             fallback = findStatic(InvokeDynamicSupport.class, "setVariableFail", methodType(IRubyObject.class, VariableSite.class, IRubyObject.class, IRubyObject.class));
             fallback = fallback.bindTo(site);
             site.setTarget(fallback);
             return (IRubyObject)fallback.invokeWithArguments(self, value);
         } else {
-            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name + "\tset on type " + self.getMetaClass().id + " added to PIC" + " (" + site.file() + ":" + site.line() + ")");
+            if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name + "\tset on type " + self.getMetaClass().id + " added to PIC" + extractSourceInfo(site));
             fallback = site.getTarget();
             site.incrementChainCount();
         }
@@ -481,7 +481,7 @@ public class InvokeDynamicSupport {
 
         setValue = guardWithTest(test, setValue, fallback);
 
-        if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name + "\tset on class " + self.getMetaClass().id + " bound directly" + " (" + site.file() + ":" + site.line() + ")");
+        if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(site.name + "\tset on class " + self.getMetaClass().id + " bound directly" + extractSourceInfo(site));
         site.setTarget(setValue);
 
         return (IRubyObject)setValue.invokeWithArguments(self, value);
@@ -686,5 +686,9 @@ public class InvokeDynamicSupport {
         } catch (IllegalAccessException nae) {
             throw new RuntimeException(nae);
         }
+    }
+
+    private static String extractSourceInfo(VariableSite site) {
+        return " (" + site.file() + ":" + site.line() + ")";
     }
 }
