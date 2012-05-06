@@ -146,7 +146,7 @@ public class PsychParser extends RubyObject {
                     
                     Map<String, String> tagsMap = dse.getTags();
                     RubyArray tags = RubyArray.newArray(runtime);
-                    if (tagsMap.size() > 0) {
+                    if (tagsMap != null && tagsMap.size() > 0) {
                         for (Map.Entry<String, String> tag : tagsMap.entrySet()) {
                             RubyString key   = RubyString.newString(runtime, tag.getKey());
                             RubyString value = RubyString.newString(runtime, tag.getValue());
