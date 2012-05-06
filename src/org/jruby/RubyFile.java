@@ -584,7 +584,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     public static IRubyObject dirname(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         RubyString filename = get_path(context, arg);
         
-        String jfilename = filename.getUnicodeValue();
+        String jfilename = filename.asJavaString();
         
         String name = jfilename.replace('\\', '/');
         int minPathLength = 1;
@@ -1308,7 +1308,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             return JRubyFile.create(runtime.getCurrentDirectory(), ((RubyFile) pathOrFile).getPath());
         } else {
             RubyString pathStr = get_path(runtime.getCurrentContext(), pathOrFile);
-            String path = pathStr.getUnicodeValue();
+            String path = pathStr.asJavaString();
             String[] pathParts = splitURI(path);
             if (pathParts != null && pathParts[0].equals("file:")) {
                 path = pathParts[1];

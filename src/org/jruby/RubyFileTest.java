@@ -99,7 +99,7 @@ public class RubyFileTest {
         }
         JRubyFile file = file(filename);
 
-        return runtime.newBoolean(file.exists() && runtime.getPosix().stat(file.getAbsolutePath()).isDirectory());
+        return runtime.newBoolean(file.exists() && file.isDirectory());
     }
 
     @JRubyMethod(name = "executable?", required = 1, module = true)
@@ -566,7 +566,7 @@ public class RubyFileTest {
         }
 
         RubyString pathStr = get_path(runtime.getCurrentContext(), path);
-        String pathJStr = pathStr.getUnicodeValue();
+        String pathJStr = pathStr.asJavaString();
         if (pathJStr.startsWith("file:")) {
             String file = pathJStr.substring(5);
             int bang = file.indexOf('!');
