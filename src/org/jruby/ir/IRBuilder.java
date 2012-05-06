@@ -1006,20 +1006,8 @@ public class IRBuilder {
     // SSS FIXME: This feels a little ugly.  Is there a better way of representing this?
     public Operand classVarContainer(IRScope s, boolean declContext) {
         /* -------------------------------------------------------------------------------
-         * Find the nearest class/module scope (within which 's' is embedded) that can
-         * hold class variables and return its ModuleBody.  Skip module bodies since
-         * they can never contain class variables!
-         *
-         * Ex: check out this ruby code
-         * 
-         *     o = "huh?"
-         *     class << o
-         *       @@c = "I escape o!"
-         *     end
-         *
-         *     p @@c
-         * 
-         * So @@c is accessible outside the singleton class in the script
+         * We are looking for the nearest enclosing scope that is a non-singleton class body
+         * without running into an eval-scope in between.
          *
          * Stop lexical scope walking at an eval script boundary.  Evals are essentially
          * a way for a programmer to splice an entire tree of lexical scopes at the point
@@ -1027,11 +1015,11 @@ public class IRBuilder {
          * defer scope traversal to when we know where this scope has been spliced in.
          * ------------------------------------------------------------------------------- */
         IRScope cvarScope = s;
-        while (cvarScope != null && !(cvarScope instanceof IREvalScript) && (!cvarScope.isModuleBody() || cvarScope.isSingletonModuleBody())) {
+        while (cvarScope != null && !(cvarScope instanceof IREvalScript) && !cvarScope.isNonSingletonClassBody()) {
             cvarScope = cvarScope.getLexicalParent();
         }
 
-        if (cvarScope != null) {
+        if ((cvarScope != null) && cvarScope.isNonSingletonClassBody()) {
             return new ScopeModule(cvarScope);
         } else {
             Variable tmp = s.getNewTemporaryVariable();

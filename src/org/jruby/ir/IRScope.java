@@ -1120,9 +1120,9 @@ public abstract class IRScope {
     }
 
     /**
-     * Is this IRMetaClass?
+     * Is this IRClassBody but not IRMetaClassBody?
      */
-    public boolean isSingletonModuleBody() {
+    public boolean isNonSingletonClassBody() {
         return false;
     }
 

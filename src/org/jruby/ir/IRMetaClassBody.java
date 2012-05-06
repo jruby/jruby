@@ -26,7 +26,7 @@ public class IRMetaClassBody extends IRClassBody {
     }
 
     @Override
-    public boolean isSingletonModuleBody() {
-        return true;
+    public boolean isNonSingletonClassBody() {
+        return false;
     }
 }

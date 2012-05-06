@@ -17,4 +17,9 @@ public class IRClassBody extends IRModuleBody {
     public String getScopeName() {
         return "ClassBody";
     }
+
+    @Override
+    public boolean isNonSingletonClassBody() {
+        return true;
+    }
 }
