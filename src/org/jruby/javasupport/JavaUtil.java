@@ -713,7 +713,7 @@ public class JavaUtil {
     private static final JavaConverter JAVA_STRING_CONVERTER = new JavaConverter(String.class) {
         public IRubyObject convert(Ruby runtime, Object object) {
             if (object == null) return runtime.getNil();
-            return RubyString.newUnicodeString(runtime, (String)object);
+            return RubyString.newString(runtime, (String)object);
         }
         public IRubyObject get(Ruby runtime, Object array, int i) {
             return convert(runtime, ((String[]) array)[i]);

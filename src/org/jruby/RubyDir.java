@@ -443,7 +443,7 @@ public class RubyDir extends RubyObject {
         Ruby runtime = context.getRuntime();
         RubyString path = args.length == 1 ?
             RubyFile.get_path(context, args[0]) : getHomeDirectoryPath(context);
-        String adjustedPath = RubyFile.adjustRootPathOnWindows(runtime, path.getUnicodeValue(), null);
+        String adjustedPath = RubyFile.adjustRootPathOnWindows(runtime, path.asJavaString(), null);
         checkDirIsTwoSlashesOnWindows(runtime, adjustedPath);
         JRubyFile dir = getDir(runtime, adjustedPath, true);
         String realPath = null;
@@ -733,7 +733,7 @@ public class RubyDir extends RubyObject {
 // ----- Helper Methods --------------------------------------------------------
     protected static String getPath19(ThreadContext context, IRubyObject arg) {
         RubyString pathObject = arg instanceof RubyString ? (RubyString) arg : arg.callMethod(context, "to_path").convertToString();
-        return pathObject.getUnicodeValue();
+        return pathObject.asJavaString();
     }
 
     /** Returns a Java <code>File</code> object for the specified path.  If
