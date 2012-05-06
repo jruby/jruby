@@ -43,7 +43,6 @@ import org.jruby.ir.operands.BooleanLiteral;
 import org.jruby.ir.operands.ClosureLocalVariable;
 import org.jruby.ir.operands.CompoundArray;
 import org.jruby.ir.operands.CompoundString;
-import org.jruby.ir.operands.CurrentModule;
 import org.jruby.ir.operands.CurrentScope;
 import org.jruby.ir.operands.DynamicSymbol;
 import org.jruby.ir.operands.Fixnum;
@@ -61,6 +60,7 @@ import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Range;
 import org.jruby.ir.operands.Regexp;
 import org.jruby.ir.operands.SValue;
+import org.jruby.ir.operands.ScopeModule;
 import org.jruby.ir.operands.Self;
 import org.jruby.ir.operands.Splat;
 import org.jruby.ir.operands.StandardError;
@@ -1037,12 +1037,6 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
-    public void CurrentModule(CurrentModule currentmodule) {
-        jvm.method().adapter.aload(1);
-        jvm.method().adapter.invokevirtual(CodegenUtils.p(StaticScope.class), "getModule", CodegenUtils.sig(RubyModule.class));
-    }
-
-    @Override
     public void CurrentScope(CurrentScope currentscope) {
         jvm.method().adapter.aload(1);
     }
@@ -1120,6 +1114,12 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void Regexp(Regexp regexp) {
         super.Regexp(regexp);    //To change body of overridden methods use File | Settings | File Templates.
+    }
+
+    @Override
+    public void ScopeModule(ScopeModule scopemodule) {
+        jvm.method().adapter.aload(1);
+        jvm.method().adapter.invokevirtual(CodegenUtils.p(StaticScope.class), "getModule", CodegenUtils.sig(RubyModule.class));
     }
 
     @Override

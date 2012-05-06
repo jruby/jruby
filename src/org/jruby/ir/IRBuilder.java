@@ -26,7 +26,7 @@ import org.jruby.ir.operands.BacktickString;
 import org.jruby.ir.operands.Bignum;
 import org.jruby.ir.operands.CompoundArray;
 import org.jruby.ir.operands.CompoundString;
-import org.jruby.ir.operands.CurrentModule;
+import org.jruby.ir.operands.ScopeModule;
 import org.jruby.ir.operands.CurrentScope;
 import org.jruby.ir.operands.DynamicSymbol;
 import org.jruby.ir.operands.Fixnum;
@@ -925,7 +925,7 @@ public class IRBuilder {
         // Set %current_scope = <c>
         // Set %current_module = module<c>
         c.addInstr(new CopyInstr(c.getCurrentScopeVariable(), new CurrentScope(c)));
-        c.addInstr(new CopyInstr(c.getCurrentModuleVariable(), new CurrentModule(c)));
+        c.addInstr(new CopyInstr(c.getCurrentModuleVariable(), new ScopeModule(c)));
         // Create a new nested builder to ensure this gets its own IR builder state 
         Operand rv = createIRBuilder(manager, is1_9()).build(classNode.getBodyNode(), c);
         if (rv != null) c.addInstr(new ReturnInstr(rv));
@@ -958,7 +958,7 @@ public class IRBuilder {
         // Set %current_module = <current-module>
         mc.addInstr(new ReceiveClosureInstr(mc.getImplicitBlockArg()));
         mc.addInstr(new CopyInstr(mc.getCurrentScopeVariable(), new CurrentScope(mc)));
-        mc.addInstr(new CopyInstr(mc.getCurrentModuleVariable(), new CurrentModule(mc)));
+        mc.addInstr(new CopyInstr(mc.getCurrentModuleVariable(), new ScopeModule(mc)));
         // Create a new nested builder to ensure this gets its own IR builder state 
         Operand rv = createIRBuilder(manager, is1_9()).build(sclassNode.getBodyNode(), mc);
         if (rv != null) mc.addInstr(new ReturnInstr(rv));
@@ -1032,7 +1032,7 @@ public class IRBuilder {
         }
 
         if (cvarScope != null) {
-            return new CurrentModule(cvarScope);
+            return new ScopeModule(cvarScope);
         } else {
             Variable tmp = s.getNewTemporaryVariable();
             s.addInstr(new GetClassVarContainerModuleInstr(tmp, s.getCurrentScopeVariable(), declContext ? null : getSelf(s)));
@@ -1047,7 +1047,7 @@ public class IRBuilder {
 
     private Operand findContainerModule(IRScope s) {
         IRScope nearestModuleBody = s.getNearestModuleReferencingScope();
-        return (nearestModuleBody == null) ? s.getCurrentModuleVariable() : new CurrentModule(nearestModuleBody);
+        return (nearestModuleBody == null) ? s.getCurrentModuleVariable() : new ScopeModule(nearestModuleBody);
     }
 
     private Operand startingSearchScope(IRScope s) {
@@ -1064,7 +1064,7 @@ public class IRBuilder {
             Operand module = build(((Colon2Node) constNode).getLeftNode(), s);
             s.addInstr(new PutConstInstr(module, constDeclNode.getName(), val));
         } else { // colon3, assign in Object
-            CurrentModule object = new CurrentModule(manager.getObject());            
+            ScopeModule object = new ScopeModule(manager.getObject());            
             s.addInstr(new PutConstInstr(object, constDeclNode.getName(), val));            
         }
 
@@ -1632,7 +1632,7 @@ public class IRBuilder {
         // Set %current_module = isInstanceMethod ? %self.metaclass : %self
         IRScope nearestScope = s.getNearestModuleReferencingScope();
         method.addInstr(new CopyInstr(method.getCurrentScopeVariable(), new CurrentScope(nearestScope == null ? s : nearestScope)));
-        method.addInstr(new CopyInstr(method.getCurrentModuleVariable(), new CurrentModule(nearestScope == null ? s : nearestScope)));
+        method.addInstr(new CopyInstr(method.getCurrentModuleVariable(), new ScopeModule(nearestScope == null ? s : nearestScope)));
 
         // Build IR for arguments (including the block arg)
         receiveMethodArgs(defNode.getArgsNode(), method);
@@ -2072,7 +2072,7 @@ public class IRBuilder {
         // Set %current_scope = <current-scope>
         // Set %current_module = <current-module>
         closure.addInstr(new CopyInstr(closure.getCurrentScopeVariable(), new CurrentScope(closure)));
-        closure.addInstr(new CopyInstr(closure.getCurrentModuleVariable(), new CurrentModule(closure)));
+        closure.addInstr(new CopyInstr(closure.getCurrentModuleVariable(), new ScopeModule(closure)));
 
         // Thread poll on entry of closure 
         closure.addInstr(new ThreadPollInstr());
@@ -2225,7 +2225,7 @@ public class IRBuilder {
         // Set %current_scope = <current-scope>
         // Set %current_module = <current-module>
         closure.addInstr(new CopyInstr(closure.getCurrentScopeVariable(), new CurrentScope(closure)));
-        closure.addInstr(new CopyInstr(closure.getCurrentModuleVariable(), new CurrentModule(closure)));
+        closure.addInstr(new CopyInstr(closure.getCurrentModuleVariable(), new ScopeModule(closure)));
 
         // Thread poll on entry of closure 
         closure.addInstr(new ThreadPollInstr());
@@ -2313,7 +2313,7 @@ public class IRBuilder {
                 container = findContainerModule(s);
             }
         } else { //::Bar
-            container = new CurrentModule(manager.getObject());
+            container = new ScopeModule(manager.getObject());
         }
 
         return container;
@@ -2335,7 +2335,7 @@ public class IRBuilder {
         // Set %current_scope = <c>
         // Set %current_module = module<c>
         m.addInstr(new CopyInstr(m.getCurrentScopeVariable(), new CurrentScope(m)));
-        m.addInstr(new CopyInstr(m.getCurrentModuleVariable(), new CurrentModule(m)));
+        m.addInstr(new CopyInstr(m.getCurrentModuleVariable(), new ScopeModule(m)));
         // Create a new nested builder to ensure this gets its own IR builder state 
         Operand rv = createIRBuilder(manager, is1_9()).build(moduleNode.getBodyNode(), m);
         if (rv != null) m.addInstr(new ReturnInstr(rv));
@@ -2670,7 +2670,7 @@ public class IRBuilder {
         IRClosure endClosure = new IRClosure(manager, s, false, postExeNode.getPosition().getStartLine(), postExeNode.getScope(), Arity.procArityOf(postExeNode.getVarNode()), postExeNode.getArgumentType(), is1_9());
         // Set up %current_scope and %current_module
         endClosure.addInstr(new CopyInstr(endClosure.getCurrentScopeVariable(), new CurrentScope(endClosure)));
-        endClosure.addInstr(new CopyInstr(endClosure.getCurrentModuleVariable(), new CurrentModule(endClosure)));
+        endClosure.addInstr(new CopyInstr(endClosure.getCurrentModuleVariable(), new ScopeModule(endClosure)));
         build(postExeNode.getBodyNode(), endClosure);
 
         // Add an instruction to record the end block at runtime
@@ -2682,7 +2682,7 @@ public class IRBuilder {
         IRClosure beginClosure = new IRClosure(manager, s, false, preExeNode.getPosition().getStartLine(), preExeNode.getScope(), Arity.procArityOf(preExeNode.getVarNode()), preExeNode.getArgumentType(), is1_9());
         // Set up %current_scope and %current_module
         beginClosure.addInstr(new CopyInstr(beginClosure.getCurrentScopeVariable(), new CurrentScope(beginClosure)));
-        beginClosure.addInstr(new CopyInstr(beginClosure.getCurrentModuleVariable(), new CurrentModule(beginClosure)));
+        beginClosure.addInstr(new CopyInstr(beginClosure.getCurrentModuleVariable(), new ScopeModule(beginClosure)));
         build(preExeNode.getBodyNode(), beginClosure);
 
         // Record the begin block at IR build time
@@ -2943,7 +2943,7 @@ public class IRBuilder {
         // Set %current_scope = <current-scope>
         // Set %current_module = <current-module>
         script.addInstr(new CopyInstr(script.getCurrentScopeVariable(), new CurrentScope(script)));
-        script.addInstr(new CopyInstr(script.getCurrentModuleVariable(), new CurrentModule(script)));
+        script.addInstr(new CopyInstr(script.getCurrentModuleVariable(), new ScopeModule(script)));
         // Build IR for the tree and return the result of the expression tree
         Operand rval = rootNode.getBodyNode() == null ? manager.getNil() : build(rootNode.getBodyNode(), script);
         script.addInstr(new ClosureReturnInstr(rval));
@@ -2961,7 +2961,7 @@ public class IRBuilder {
         // Set %current_scope = <current-scope>
         // Set %current_module = <current-module>
         script.addInstr(new CopyInstr(script.getCurrentScopeVariable(), new CurrentScope(script)));
-        script.addInstr(new CopyInstr(script.getCurrentModuleVariable(), new CurrentModule(script)));
+        script.addInstr(new CopyInstr(script.getCurrentModuleVariable(), new ScopeModule(script)));
 
         // Build IR for the tree and return the result of the expression tree
         script.addInstr(new ReturnInstr(build(rootNode.getBodyNode(), script)));

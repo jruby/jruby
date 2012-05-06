@@ -11,15 +11,12 @@ import org.jruby.runtime.builtin.IRubyObject;
 import java.util.List;
 
 /**
- * Wrap current scope for the purpose of finding live module which
- * happens to be associated with it. For IRModuleBody and below it represents
- * those scopes live value.  For scopes like IRScriptBody, it represents
- * the current module we contained in.
+ * Wrap a scope for the purpose of finding live module which happens to be associated with it.
  */
-public class CurrentModule extends Operand {
+public class ScopeModule extends Operand {
     private final IRScope scope;
 
-    public CurrentModule(IRScope scope) {
+    public ScopeModule(IRScope scope) {
         this.scope = scope;
     }
 
@@ -55,6 +52,6 @@ public class CurrentModule extends Operand {
 
     @Override
     public void visit(IRVisitor visitor) {
-        visitor.CurrentModule(this);
+        visitor.ScopeModule(this);
     }
 }
