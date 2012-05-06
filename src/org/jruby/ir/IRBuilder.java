@@ -526,10 +526,10 @@ public class IRBuilder {
                 buildAttrAssignAssignment(node, s, rhsVal);
                 break;
             case CLASSVARASGNNODE:
-                s.addInstr(new PutClassVariableInstr(classVarDefinitionContainer(s, true), ((ClassVarAsgnNode)node).getName(), rhsVal));
+                s.addInstr(new PutClassVariableInstr(classVarDefinitionContainer(s), ((ClassVarAsgnNode)node).getName(), rhsVal));
                 break;
             case CLASSVARDECLNODE:
-                s.addInstr(new PutClassVariableInstr(classVarDefinitionContainer(s, false), ((ClassVarDeclNode)node).getName(), rhsVal));
+                s.addInstr(new PutClassVariableInstr(classVarDeclarationContainer(s), ((ClassVarDeclNode)node).getName(), rhsVal));
                 break;
             case CONSTDECLNODE:
                 buildConstDeclAssignment((ConstDeclNode) node, s, rhsVal);
@@ -624,12 +624,12 @@ public class IRBuilder {
             case CLASSVARASGNNODE:
                 v = s.getNewTemporaryVariable();
                 receiveBlockArg(s, v, argsArray, argIndex, isClosureArg, isSplat);
-                s.addInstr(new PutClassVariableInstr(classVarDefinitionContainer(s, true), ((ClassVarAsgnNode)node).getName(), v));
+                s.addInstr(new PutClassVariableInstr(classVarDefinitionContainer(s), ((ClassVarAsgnNode)node).getName(), v));
                 break;
             case CLASSVARDECLNODE:
                 v = s.getNewTemporaryVariable();
                 receiveBlockArg(s, v, argsArray, argIndex, isClosureArg, isSplat);
-                s.addInstr(new PutClassVariableInstr(classVarDefinitionContainer(s, false), ((ClassVarDeclNode)node).getName(), v));
+                s.addInstr(new PutClassVariableInstr(classVarDeclarationContainer(s), ((ClassVarDeclNode)node).getName(), v));
                 break;
             case CONSTDECLNODE:
                 v = s.getNewTemporaryVariable();
@@ -969,8 +969,7 @@ public class IRBuilder {
     // @@c
     public Operand buildClassVar(ClassVarNode node, IRScope s) {
         Variable ret = s.getNewTemporaryVariable();
-        Variable classVarContainer = classVarDefinitionContainer(s, true);
-        s.addInstr(new GetClassVariableInstr(ret, classVarContainer, node.getName()));
+        s.addInstr(new GetClassVariableInstr(ret, classVarDefinitionContainer(s), node.getName()));
         return ret;
     }
 
@@ -981,8 +980,7 @@ public class IRBuilder {
     // end
     public Operand buildClassVarAsgn(final ClassVarAsgnNode classVarAsgnNode, IRScope s) {
         Operand val = build(classVarAsgnNode.getValueNode(), s);
-        Variable classVarContainer = classVarDefinitionContainer(s, true);
-        s.addInstr(new PutClassVariableInstr(classVarContainer, classVarAsgnNode.getName(), val));
+        s.addInstr(new PutClassVariableInstr(classVarDefinitionContainer(s), classVarAsgnNode.getName(), val));
         return val;
     }
 
@@ -993,13 +991,20 @@ public class IRBuilder {
     // end
     public Operand buildClassVarDecl(final ClassVarDeclNode classVarDeclNode, IRScope s) {
         Operand val = build(classVarDeclNode.getValueNode(), s);
-        Variable classVarContainer = classVarDefinitionContainer(s, false);
-        s.addInstr(new PutClassVariableInstr(classVarContainer, classVarDeclNode.getName(), val));
+        s.addInstr(new PutClassVariableInstr(classVarDeclarationContainer(s), classVarDeclNode.getName(), val));
         return val;
+    }
+
+    public Operand classVarDeclarationContainer(IRScope s) {
+        return classVarContainer(s, true);
+    }
+
+    public Operand classVarDefinitionContainer(IRScope s) {
+        return classVarContainer(s, false);
     }
     
     // SSS FIXME: This feels a little ugly.  Is there a better way of representing this?
-    public Variable classVarDefinitionContainer(IRScope s, boolean lookInMetaClass) {
+    public Operand classVarContainer(IRScope s, boolean declContext) {
         /* -------------------------------------------------------------------------------
          * Find the nearest class/module scope (within which 's' is embedded) that can
          * hold class variables and return its ModuleBody.  Skip module bodies since
@@ -1021,15 +1026,18 @@ public class IRBuilder {
          * where the eval happens.  So, when we hit an eval-script boundary at compile-time,
          * defer scope traversal to when we know where this scope has been spliced in.
          * ------------------------------------------------------------------------------- */
-        IRScope current = s;
-        while (current != null && !(current instanceof IREvalScript) &&
-                !(current.isModuleBody() && (current.getLexicalParent() == null || !current.getLexicalParent().isModuleBody()))) {
-            current = current.getLexicalParent();
+        IRScope cvarScope = s;
+        while (cvarScope != null && !(cvarScope instanceof IREvalScript) && (!cvarScope.isModuleBody() || cvarScope.isSingletonModuleBody())) {
+            cvarScope = cvarScope.getLexicalParent();
         }
 
-        Variable tmp = s.getNewTemporaryVariable();
-        s.addInstr(new GetClassVarContainerModuleInstr(tmp, current instanceof IRMethod ? (IRMethod)current : null, lookInMetaClass ? getSelf(s) : null));
-        return tmp;
+        if (cvarScope != null) {
+            return new CurrentModule(cvarScope);
+        } else {
+            Variable tmp = s.getNewTemporaryVariable();
+            s.addInstr(new GetClassVarContainerModuleInstr(tmp, s.getCurrentScopeVariable(), declContext ? null : getSelf(s)));
+            return tmp;
+        }
     }
 
     public Operand buildConstDecl(ConstDeclNode node, IRScope s) {
@@ -1502,7 +1510,7 @@ public class IRBuilder {
                  *   cm.isClassVarDefined ? "class variable" : nil
                  * ------------------------------------------------------------------------------ */
                 ClassVarNode iVisited = (ClassVarNode) node;
-                Variable cm = classVarDefinitionContainer(s, true);
+                Operand cm = classVarDefinitionContainer(s);
                 return buildDefinitionCheck(s, new ClassVarIsDefinedInstr(s.getNewTemporaryVariable(), cm, new StringLiteral(iVisited.getName())), "class variable");
             }
             case ATTRASSIGNNODE: {

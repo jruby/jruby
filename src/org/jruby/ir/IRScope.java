@@ -1119,6 +1119,13 @@ public abstract class IRScope {
         return false;
     }
 
+    /**
+     * Is this IRMetaClass?
+     */
+    public boolean isSingletonModuleBody() {
+        return false;
+    }
+
     public boolean isFlipScope() {
         return true;
     }
