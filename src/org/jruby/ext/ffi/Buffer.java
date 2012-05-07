@@ -71,7 +71,6 @@ public final class Buffer extends AbstractMemory {
 
         @Override
         public NativeCall getNativeCall() {
-            System.out.println("default native call requested");
             return new1;
         }
 
@@ -80,7 +79,6 @@ public final class Buffer extends AbstractMemory {
 
         @Override
         public NativeCall getNativeCall(int args, boolean block) {
-            System.out.println("native call requested for args=" + args);
             switch (args) {
                 case 1:
                     return new1;
