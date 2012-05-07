@@ -78,7 +78,7 @@ public class IREvalScript extends IRClosure {
         return endBlocks;
     }
 
-    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, DynamicScope evalScope, Block block, String backtraceName) {
+    public IRubyObject call(ThreadContext context, IRubyObject self, DynamicScope evalScope, Block block, String backtraceName) {
         if (Interpreter.isDebug()) {
             LOG.info("CFG:\n" + cfg());
         }

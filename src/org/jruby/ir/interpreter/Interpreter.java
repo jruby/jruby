@@ -116,7 +116,7 @@ public class Interpreter {
 //        evalScript.runCompilerPass(new CallSplitter());
         ThreadContext context = runtime.getCurrentContext(); 
         runBeginEndBlocks(evalScript.getBeginBlocks(), context, self, null); // FIXME: No temp vars yet right?
-        IRubyObject rv = evalScript.call(context, self, evalScript.getStaticScope().getModule(), rootNode.getScope(), block, backtraceName);
+        IRubyObject rv = evalScript.call(context, self, rootNode.getScope(), block, backtraceName);
         runBeginEndBlocks(evalScript.getEndBlocks(), context, self, null); // FIXME: No temp vars right?
         return rv;
     }
@@ -399,10 +399,9 @@ public class Interpreter {
                 try {
                     switch(operation) {
                     case PUSH_BINDING: {
-                        // SSS FIXME: this is not entirely correct.  
-                        // -> methods don't have a prev scope
-                        // -> blocks need to use static-scope from the blockbody (see comment in InterpretedIRBlockBody.java)
-                        currDynScope = DynamicScope.newDynamicScope(scope.getStaticScope(), currDynScope);
+                        // SSS FIXME: Blocks are a headache -- so, these instrs. are only added to IRMethods
+                        // They have more complicated logic for pushing a dynamic scope (see InterpretedIRBlockBody)
+                        currDynScope = DynamicScope.newDynamicScope(scope.getStaticScope());
                         context.pushScope(currDynScope);
                         ipc++;
                         break;
