@@ -34,6 +34,7 @@ public class LiveVariableAnalysis extends CompilerPass {
         return lvp;
     }
     
+    @Override
     public void invalidate(IRScope scope) {
         scope.setDataFlowSolution(LiveVariablesProblem.NAME, null);
     }

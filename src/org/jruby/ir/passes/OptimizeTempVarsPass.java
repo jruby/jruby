@@ -25,6 +25,8 @@ import org.jruby.ir.passes.CompilerPass;
  * @author enebo
  */
 public class OptimizeTempVarsPass extends CompilerPass {
+    boolean optimizedTempVars = false;
+
     public String getLabel() {
         return "Temporary Variable Reduction";
     }
@@ -35,8 +37,15 @@ public class OptimizeTempVarsPass extends CompilerPass {
         }
 
         optimizeTmpVars(s);
+
+        optimizedTempVars = true;
         
         return null;
+    }
+    
+    @Override
+    public Object previouslyRun(IRScope scope) {
+        return optimizedTempVars ? new Object() : null;
     }
 
     public void invalidate(IRScope s) {
@@ -57,6 +66,9 @@ public class OptimizeTempVarsPass extends CompilerPass {
     }
 
     private static void optimizeTmpVars(IRScope s) {
+        // Cannot run after CFG has been built in the form it has been written here.
+        if (s.getCFG() != null) return;
+
         // Pass 1: Analyze instructions and find use and def count of temporary variables
         Map<TemporaryVariable, List<Instr>> tmpVarUses = new HashMap<TemporaryVariable, List<Instr>>();
         Map<TemporaryVariable, List<Instr>> tmpVarDefs = new HashMap<TemporaryVariable, List<Instr>>();
