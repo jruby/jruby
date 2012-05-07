@@ -39,21 +39,21 @@ public class AddLocalVarLoadStoreInstructions extends CompilerPass {
         // 4. Add loads
         //
         // Order is important since loads in 3. depend on stores in 2.
-        StoreLocalVarPlacementProblem fsp = new StoreLocalVarPlacementProblem();
-        fsp.setup(s);
-        fsp.compute_MOP_Solution();
+        StoreLocalVarPlacementProblem slvp = new StoreLocalVarPlacementProblem();
+        slvp.setup(s);
+        slvp.compute_MOP_Solution();
 
         // Add stores, assigning an equivalent tmp-var for each local var
         Map<Operand, Operand> varRenameMap = new HashMap<Operand, Operand>();
-        fsp.addStoreAndBindingAllocInstructions(varRenameMap);
+        slvp.addStores(varRenameMap);
 
         // Once stores have been added, figure out required loads 
-        LoadLocalVarPlacementProblem frp = new LoadLocalVarPlacementProblem();
-        frp.setup(s);
-        frp.compute_MOP_Solution();
+        LoadLocalVarPlacementProblem llvp = new LoadLocalVarPlacementProblem();
+        llvp.setup(s);
+        llvp.compute_MOP_Solution();
 
         // Add loads, 
-        frp.addLoads(varRenameMap);
+        llvp.addLoads(varRenameMap);
 
         // Rename all local var uses with their tmp-var stand-ins
         for (BasicBlock b: s.getCFG().getBasicBlocks()) {
@@ -64,10 +64,18 @@ public class AddLocalVarLoadStoreInstructions extends CompilerPass {
         // In the current implementation, nested scopes are processed independently (unlike Live Variable Analysis)
         for (IRClosure c: s.getClosures()) execute(c);
 
-        return null;
+        s.setDataFlowSolution(StoreLocalVarPlacementProblem.NAME, slvp);
+
+        return slvp;
+    }
+
+    @Override
+    public Object previouslyRun(IRScope scope) {
+        return scope.getDataFlowSolution(StoreLocalVarPlacementProblem.NAME);
     }
     
+    @Override
     public void invalidate(IRScope scope) {
-        // FIXME: ...
+        scope.setDataFlowSolution(StoreLocalVarPlacementProblem.NAME, null);
     }
 }

@@ -97,8 +97,6 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode {
                 } else if (scopeBindingHasEscaped || call.targetRequiresCallersBinding()) { // Call has no closure && it requires stores
                     dirtyVars.clear();
                 } else {
-                    // if (call.canSetDollarVars()) bindingAllocated = true;
-
                     // All variables not local to the current scope have to be always spilled because of
                     // multi-threading scenarios where some other scope could load this variable concurrently.
                     //
@@ -156,19 +154,23 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode {
          return value;
     }
 
-    private void addClosureExitStoreLocalVars(IRScope scope, ListIterator<Instr> instrs, Set<LocalVariable> dirtyVars, Map<Operand, Operand> varRenameMap) {
+    private boolean addClosureExitStoreLocalVars(IRScope scope, ListIterator<Instr> instrs, Set<LocalVariable> dirtyVars, Map<Operand, Operand> varRenameMap) {
+        boolean addedStores  = false;
         boolean isEvalScript = scope instanceof IREvalScript;
         for (LocalVariable v : dirtyVars) {
             if (isEvalScript || !(v instanceof ClosureLocalVariable) || (scope != ((ClosureLocalVariable)v).definingScope)) {
+                addedStores = true;
                 instrs.add(new StoreLocalVarInstr(getLocalVarReplacement(v, scope, varRenameMap), scope, v));
             }
         }
+        return addedStores;
     }
 
-    public void addStoreAndBindingAllocInstructions(Map<Operand, Operand> varRenameMap, Set<LocalVariable> excTargetDirtyVars) {
+    public boolean addStores(Map<Operand, Operand> varRenameMap, Set<LocalVariable> excTargetDirtyVars) {
         StoreLocalVarPlacementProblem bsp = (StoreLocalVarPlacementProblem) problem;
         IRScope scope = bsp.getScope();
 
+        boolean addedStores            = false;
         boolean isEvalScript           = scope instanceof IREvalScript;
         boolean scopeBindingHasEscaped = scope.bindingHasEscaped();
 
@@ -221,6 +223,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode {
                         // will attempt to load the var always.  So, if the call doesn't actually call the closure,
                         // we'll be in trouble in that scenario!
                         if (spillAllVars || cl.usesLocalVariable(v) || cl.definesLocalVariable(v)) {
+                            addedStores = true;
                             instrs.add(new StoreLocalVarInstr(getLocalVarReplacement(v, scope, varRenameMap), scope, v));
                             newDirtyVars.remove(v);
                         }
@@ -231,6 +234,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode {
                     // Add before call -- hence instrs.previous & instrs.next
                     instrs.previous();
                     for (LocalVariable v : dirtyVars) {
+                        addedStores = true;
                         instrs.add(new StoreLocalVarInstr(getLocalVarReplacement(v, scope, varRenameMap), scope, v));
                     }
                     instrs.next();
@@ -245,6 +249,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode {
                     Set<LocalVariable> newDirtyVars = new HashSet<LocalVariable>(dirtyVars);
                     for (LocalVariable v : dirtyVars) {
                         if ((v instanceof ClosureLocalVariable) && ((ClosureLocalVariable)v).definingScope != scope) {
+                            addedStores = true;
                             instrs.add(new StoreLocalVarInstr(getLocalVarReplacement(v, scope, varRenameMap), scope, v));
                             newDirtyVars.remove(v);
                         }
@@ -276,7 +281,8 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode {
 
                 // Add before call
                 instrs.previous();
-                addClosureExitStoreLocalVars(scope, instrs, dirtyVars, varRenameMap);
+                boolean f = addClosureExitStoreLocalVars(scope, instrs, dirtyVars, varRenameMap);
+                addedStores = addedStores || f;
                 instrs.next();
 
                 // Nothing is dirty anymore -- everything that needs spilling has been spilt
@@ -288,6 +294,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode {
                 // in which case we would have the 'scopeBindingHasEscaped' flag set to true
                 instrs.previous();
                 for (LocalVariable v : dirtyVars) {
+                    addedStores = true;
                     instrs.add(new StoreLocalVarInstr(getLocalVarReplacement(v, scope, varRenameMap), scope, v));
                 }
                 instrs.next();
@@ -300,6 +307,7 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode {
                     // Add before excepting instr -- hence instrs.previous & instrs.next
                     instrs.previous();
                     for (LocalVariable v : dirtyVars) {
+                        addedStores = true;
                         instrs.add(new StoreLocalVarInstr(getLocalVarReplacement(v, scope, varRenameMap), scope, v));
                     }
                     instrs.next();
@@ -328,8 +336,11 @@ public class StoreLocalVarPlacementNode extends FlowGraphNode {
         if (amExitBB) {
             // Last instr could be a return -- so, move iterator one position back
             if (instrs.hasPrevious()) instrs.previous();
-            addClosureExitStoreLocalVars(scope, instrs, dirtyVars, varRenameMap);
+            boolean f = addClosureExitStoreLocalVars(scope, instrs, dirtyVars, varRenameMap);
+            addedStores = addedStores || f;
         }
+
+        return addedStores;
     }
 
     Set<LocalVariable> inDirtyVars;   // On entry to flow graph node:  Variables that need to be stored to the heap binding

@@ -59,9 +59,17 @@ public class CFG {
     private Map<BasicBlock, BasicBlock> ensurerMap;
         
     private List<ExceptionRegion> outermostERs;
-    
+
+    /** Entry BB */
     private BasicBlock entryBB;
+
+    /** Exit BB */
     private BasicBlock exitBB;
+
+    /** BB that traps all exception-edges out of the cfg where we could add any cleanup/ensure code (ex: pop frames, etc.) */
+    private BasicBlock globalEnsureBB;
+
+    /** The graph itself */
     private DirectedGraph<BasicBlock> graph;
     
     private int nextBBId;       // Next available basic block id
@@ -77,6 +85,7 @@ public class CFG {
         this.outermostERs = new ArrayList<ExceptionRegion>();
         this.nextBBId = 0;
         this.entryBB = this.exitBB = null;
+        this.globalEnsureBB = null;
         this.postOrderList = null;
     }
     
@@ -108,6 +117,10 @@ public class CFG {
     
     public BasicBlock getExitBB() {
         return exitBB;
+    }
+
+    public BasicBlock getGlobalEnsureBB() {
+        return globalEnsureBB;
     }
     
     public List<ExceptionRegion> getOutermostExceptionRegions() {
@@ -217,7 +230,11 @@ public class CFG {
     }
     
     /* Add 'b' as a global ensure block that protects all unprotected blocks in this scope */
-    public void addGlobalEnsureBlock(BasicBlock geb) {
+    public void addGlobalEnsureBB(BasicBlock geb) {
+        assert globalEnsureBB == null: "CFG for scope " + getScope() + " already has a global ensure block.";
+
+        globalEnsureBB = geb;
+
         addEdge(geb, getExitBB(), EdgeType.EXIT);
         
         for (BasicBlock basicBlock: getBasicBlocks()) {
