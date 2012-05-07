@@ -219,6 +219,13 @@ public abstract class IRScope {
     /** # of thread poll instrs added to this scope */
     private int threadPollInstrsCount;
 
+    /** Does this scope have explicit call protocol instructions?
+     *  If yes, there are IR instructions for managing bindings/frames, etc.
+     *  If not, this has to be managed implicitly as in the current runtime
+     *  For now, only dyn-scopes are managed explicitly.
+     *  Others will come in time */
+    private boolean hasExplicitCallProtocol;
+
     /** Should we re-run compiler passes -- yes after we've inlined, for example */
     private boolean relinearizeCFG;
     
@@ -249,6 +256,7 @@ public abstract class IRScope {
         this.usesEval = s.usesEval;
         this.usesBackrefOrLastline = s.usesBackrefOrLastline;
         this.usesZSuper = s.usesZSuper;
+        this.hasExplicitCallProtocol = s.hasExplicitCallProtocol;
 
         this.localVars = new LocalVariableAllocator(); // SSS FIXME: clone!
         this.localVars.nextSlot = s.localVars.nextSlot;
@@ -285,6 +293,8 @@ public abstract class IRScope {
         this.usesEval = true;
         this.usesBackrefOrLastline = true;
         this.usesZSuper = true;
+
+        this.hasExplicitCallProtocol = false;
 
         this.localVars = new LocalVariableAllocator();
         synchronized(globalScopeCount) { this.scopeId = globalScopeCount++; }
@@ -457,6 +467,14 @@ public abstract class IRScope {
 
     public boolean hasLoops() {
         return hasLoops;
+    }
+
+    public boolean hasExplicitCallProtocol() {
+        return hasExplicitCallProtocol;
+    }
+
+    public void setExplicitCallProtocolFlag(boolean flag) {
+        this.hasExplicitCallProtocol = flag;
     }
 
     public void setCodeModificationFlag(boolean f) { 

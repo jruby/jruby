@@ -908,6 +908,14 @@ public final class ThreadContext {
     public void postBsfApply() {
         popFrame();
     }
+
+    public void preMethodFrameAndClass(RubyModule implClass, String name, IRubyObject self, Block block, StaticScope staticScope) {
+        RubyModule ssModule = staticScope.getModule();
+        // FIXME: This is currently only here because of some problems with IOOutputStream writing to a "bare" runtime without a proper scope
+        if (ssModule == null) ssModule = implClass;
+        pushRubyClass(ssModule);
+        pushCallFrame(implClass, name, self, block);
+    }
     
     public void preMethodFrameAndScope(RubyModule clazz, String name, IRubyObject self, Block block, 
             StaticScope staticScope) {

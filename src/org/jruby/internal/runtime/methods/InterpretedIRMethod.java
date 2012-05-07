@@ -79,16 +79,23 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
             displayedCFG = true;
         }
 
+        boolean hasExplicitCallProtocol = method.hasExplicitCallProtocol();
         try {
             // update call stacks (push: frame, class, scope, etc.)
-            RubyModule implementationClass = getImplementationClass();
-            context.preMethodFrameAndScope(implementationClass, name, self, block, method.getStaticScope());
+            RubyModule  implClass   = getImplementationClass();
+            StaticScope staticScope = method.getStaticScope();
+            if (hasExplicitCallProtocol) {
+                context.preMethodFrameAndClass(implClass, name, self, block, staticScope);
+            } else {
+                context.preMethodFrameAndScope(implClass, name, self, block, staticScope);
+            }
             context.setCurrentVisibility(getVisibility());
-            return Interpreter.INTERPRET_METHOD(context, method, self, name, implementationClass, args, block, null, false);
+            return Interpreter.INTERPRET_METHOD(context, method, self, name, implClass, args, block, null, false);
         } finally {
             // update call stacks (pop: ..)
             context.popFrame();
-            context.postMethodScopeOnly();
+            context.popRubyClass();
+            if (!hasExplicitCallProtocol) context.popScope();
         }
     }
 
@@ -103,5 +110,5 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
 
     public int getLine() {
         return method.getLineNumber();
-	}
+   }
 }
