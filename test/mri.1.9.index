@@ -4,6 +4,8 @@ externals/ruby1.9/bigdecimal/test_bigdecimal
 externals/ruby1.9/bigdecimal/test_bigdecimal_util
 externals/ruby1.9/bigdecimal/test_bigmath
 
+externals/ruby1.9/date/test_date_strftime.rb
+
 externals/ruby1.9/digest/test_digest
 externals/ruby1.9/digest/test_digest_extend
 externals/ruby1.9/digest/test_digest_hmac
