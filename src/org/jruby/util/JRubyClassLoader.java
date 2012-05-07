@@ -1,5 +1,8 @@
 package org.jruby.util;
 
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
+
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.IOException;
@@ -19,6 +22,9 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 
 public class JRubyClassLoader extends URLClassLoader implements ClassDefiningClassLoader {
+
+    private static final Logger LOG = LoggerFactory.getLogger("JRubyClassLoader");
+
     private final static ProtectionDomain DEFAULT_DOMAIN
             = JRubyClassLoader.class.getProtectionDomain();
 
@@ -47,7 +53,7 @@ public class JRubyClassLoader extends URLClassLoader implements ClassDefiningCla
             getJDBCDriverUnloader().run();
         } catch (Exception e) {
             if (debug) {
-                e.printStackTrace(System.out);
+                LOG.debug(e);
             }
         }
     }
