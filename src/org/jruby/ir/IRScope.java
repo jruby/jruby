@@ -11,13 +11,16 @@ import org.jruby.RubyModule;
 import org.jruby.ir.dataflow.DataFlowProblem;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.CopyInstr;
+import org.jruby.ir.instructions.GetGlobalVariableInstr;
 import org.jruby.ir.instructions.Instr;
-import org.jruby.ir.instructions.ReceiveClosureInstr;
+import org.jruby.ir.instructions.PutGlobalVarInstr;
+import org.jruby.ir.instructions.ReceiveSelfInstr;
 import org.jruby.ir.instructions.ReceiveSelfInstr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.Specializeable;
 import org.jruby.ir.instructions.ThreadPollInstr;
 import org.jruby.ir.instructions.ZSuperInstr;
+import org.jruby.ir.operands.GlobalVariable;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
@@ -203,6 +206,10 @@ public abstract class IRScope {
     /** Does this scope call any eval */
     private boolean usesEval;
 
+    /** Since backref ($~) and lastline ($_) vars are allocated space on the dynamic scope,
+     * this is an useful flag to compute. */
+    private boolean usesBackrefOrLastline;
+
     /** Does this scope call any zsuper */
     private boolean usesZSuper;
 
@@ -240,6 +247,7 @@ public abstract class IRScope {
         this.canCaptureCallersBinding = s.canCaptureCallersBinding;
         this.bindingHasEscaped = s.bindingHasEscaped;
         this.usesEval = s.usesEval;
+        this.usesBackrefOrLastline = s.usesBackrefOrLastline;
         this.usesZSuper = s.usesZSuper;
 
         this.localVars = new LocalVariableAllocator(); // SSS FIXME: clone!
@@ -275,6 +283,7 @@ public abstract class IRScope {
         this.canCaptureCallersBinding = true;
         this.bindingHasEscaped = true;
         this.usesEval = true;
+        this.usesBackrefOrLastline = true;
         this.usesZSuper = true;
 
         this.localVars = new LocalVariableAllocator();
@@ -462,6 +471,10 @@ public abstract class IRScope {
         return bindingHasEscaped;
     }
 
+    public boolean usesBackrefOrLastline() {
+        return usesBackrefOrLastline;
+    }
+
     public boolean usesEval() {
         return usesEval;
     }
@@ -618,15 +631,13 @@ public abstract class IRScope {
 
     private boolean computeScopeFlags(boolean receivesClosureArg, List<Instr> instrs) {
         for (Instr i: instrs) {
-            if (i instanceof ReceiveClosureInstr)
+            Operation op = i.getOperation();
+            if (op == Operation.RECV_CLOSURE) {
                 receivesClosureArg = true;
-
-            if (i instanceof ZSuperInstr) {
+            } else if (op == Operation.ZSUPER) {
                 canCaptureCallersBinding = true;
                 usesZSuper = true;
-            }
-
-            if (i instanceof CallBase) {
+            } else if (i instanceof CallBase) {
                 CallBase call = (CallBase) i;
 
                 if (call.targetRequiresCallersBinding()) bindingHasEscaped = true;
@@ -648,9 +659,31 @@ public abstract class IRScope {
                     // If this method receives a closure arg, and this call is an eval that has more than 1 argument,
                     // it could be using the closure as a binding -- which means it could be using pretty much any
                     // variable from the caller's binding!
-                    if (receivesClosureArg && (call.getCallArgs().length > 1))
+                    if (receivesClosureArg && (call.getCallArgs().length > 1)) {
                         canCaptureCallersBinding = true;
+                    }
                 }
+            } else if (op == Operation.GET_GLOBAL_VAR) {
+                GlobalVariable gv = (GlobalVariable)((GetGlobalVariableInstr)i).getSource();
+                String gvName = gv.getName();
+                if (gvName.equals("$_") || 
+                    gvName.equals("$~") ||
+                    gvName.equals("$`") ||
+                    gvName.equals("$'") ||
+                    gvName.equals("$+") ||
+                    gvName.equals("$LAST_READ_LINE") ||
+                    gvName.equals("$LAST_MATCH_INFO") ||
+                    gvName.equals("$PREMATCH") ||
+                    gvName.equals("$POSTMATCH") ||
+                    gvName.equals("$LAST_PAREN_MATCH")) {
+                    usesBackrefOrLastline = true;
+                }
+            } else if (op == Operation.PUT_GLOBAL_VAR) {
+                GlobalVariable gv = (GlobalVariable)((PutGlobalVarInstr)i).getTarget();
+                String gvName = gv.getName();
+                if (gvName.equals("$_") || gvName.equals("$~")) usesBackrefOrLastline = true;
+            } else if (op == Operation.MATCH || op == Operation.MATCH2 || op == Operation.MATCH3) {
+                usesBackrefOrLastline = true;
             }
         }
 
@@ -668,6 +701,7 @@ public abstract class IRScope {
         canCaptureCallersBinding = false;
         usesZSuper = false;
         usesEval = false;
+        usesBackrefOrLastline = false;
         bindingHasEscaped = (this instanceof IREvalScript); // for eval scopes, bindings are considered escaped ...
 
         // recompute flags -- we could be calling this method different times
