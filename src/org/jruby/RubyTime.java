@@ -817,8 +817,8 @@ public class RubyTime extends RubyObject {
 
             // nanos in numerator/denominator form
             if (nsec != 0) {
-                string.setInstanceVariable("nano_num", runtime.newFixnum(nsec));
-                string.setInstanceVariable("nano_den", runtime.newFixnum(1));
+                string.setInternalVariable("nano_num", runtime.newFixnum(nsec));
+                string.setInternalVariable("nano_den", runtime.newFixnum(1));
             }
 
             // submicro for 1.9.1 compat
@@ -830,12 +830,12 @@ public class RubyTime extends RubyObject {
             nsec /= 10;
             submicro[0] |= (byte)((nsec % 10) << 4);
             if (submicro[1] == 0) len = 1;
-            string.setInstanceVariable("submicro", RubyString.newString(runtime, submicro, 0, len));
+            string.setInternalVariable("submicro", RubyString.newString(runtime, submicro, 0, len));
 
             // time zone
             if (dt.getZone() != DateTimeZone.UTC) {
                 long offset = dt.getZone().getOffset(dt.getMillis());
-                string.setInstanceVariable("offset", runtime.newFixnum(offset / 1000));
+                string.setInternalVariable("offset", runtime.newFixnum(offset / 1000));
             }
         }
         return string;
@@ -1042,9 +1042,9 @@ public class RubyTime extends RubyObject {
 
         if (runtime.is1_9()) {
             // pull out nanos, offset
-            IRubyObject nano_num = from.getInstanceVariables().getInstanceVariable("nano_num");
-            IRubyObject nano_den = from.getInstanceVariables().getInstanceVariable("nano_den");
-            IRubyObject offset = from.getInstanceVariables().getInstanceVariable("offset");
+            IRubyObject nano_num = (IRubyObject) from.getInternalVariables().getInternalVariable("nano_num");
+            IRubyObject nano_den = (IRubyObject) from.getInternalVariables().getInternalVariable("nano_den");
+            IRubyObject offset = (IRubyObject) from.getInternalVariables().getInternalVariable("offset");
 
             if (nano_num != null && nano_den != null) {
                 long nanos = nano_num.convertToInteger().getLongValue() / nano_den.convertToInteger().getLongValue();
