@@ -28,6 +28,8 @@
 
 package org.jruby.platform;
 
+import org.jruby.util.SafePropertyAccessor;
+
 import java.nio.ByteOrder;
 import java.util.HashMap;
 import java.util.Map;
@@ -88,6 +90,17 @@ public class Platform {
         for (String s : ARCH_NAMES.keySet()) {
             if (s.equalsIgnoreCase(arch)) {
                 return ARCH_NAMES.get(s);
+            }
+        }
+        if ("universal".equals(arch)) {
+            // OS X OpenJDK7 builds report "universal" right now
+            String bits = SafePropertyAccessor.getProperty("sun.arch.data.model");
+            if ("32".equals(bits)) {
+                System.setProperty("os.arch", "i386");
+                arch = "i386";
+            } else if ("64".equals(bits)) {
+                System.setProperty("os.arch", "x86_64");
+                arch = "x86_64";
             }
         }
         return arch;
