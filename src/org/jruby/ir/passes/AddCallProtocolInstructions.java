@@ -98,7 +98,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
                         }
                     }
 
-                    if (bb == exitBB) {
+                    if ((bb == exitBB) && !bb.isEmpty()) {
                         // Last instr could be a return -- so, move iterator one position back
                         if (instrs.hasPrevious()) instrs.previous();
                         instrs.add(new PopBindingInstr());
