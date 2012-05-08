@@ -1,5 +1,6 @@
 package org.jruby.ir.instructions;
 
+import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.IRScope;
@@ -28,5 +29,10 @@ public class PopBindingInstr extends Instr {
     @Override
     public String toString() {
         return "" + getOperation();
+    }
+
+    @Override
+    public void visit(IRVisitor visitor) {
+        visitor.PopBindingInstr(this);
     }
 }

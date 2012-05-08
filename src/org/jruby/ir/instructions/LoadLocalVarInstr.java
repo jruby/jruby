@@ -65,4 +65,8 @@ public class LoadLocalVarInstr extends Instr implements ResultInstr {
     public void visit(IRVisitor visitor) {
         visitor.LoadLocalVarInstr(this);
     }
+
+    public LocalVariable getLocalVar() {
+        return lvar;
+    }
 }

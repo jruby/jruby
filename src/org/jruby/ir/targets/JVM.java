@@ -88,6 +88,9 @@ public class JVM {
             methodData().local("$argument" + i);
         }
         methodData().local("$block", Type.getType(Block.class));
+
+        // TODO: this should go into the PushBinding instruction
+        methodData().local("$dynamicScope");
     }
 
     public void popmethod() {

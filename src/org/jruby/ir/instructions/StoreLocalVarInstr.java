@@ -65,4 +65,8 @@ public class StoreLocalVarInstr extends Instr {
     public void visit(IRVisitor visitor) {
         visitor.StoreLocalVarInstr(this);
     }
+
+    public Operand getValue() {
+        return value;
+    }
 }

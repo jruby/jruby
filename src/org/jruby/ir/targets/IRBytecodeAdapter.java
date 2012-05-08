@@ -81,6 +81,18 @@ public class IRBytecodeAdapter {
         adapter.aload(i);
     }
 
+    public void loadContext() {
+        adapter.aload(0);
+    }
+
+    public void loadStaticScope() {
+        adapter.aload(1);
+    }
+
+    public void loadSelf() {
+        adapter.aload(2);
+    }
+
     public void storeLocal(int i) {
         adapter.astore(i);
     }
