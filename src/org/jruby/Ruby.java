@@ -2883,6 +2883,14 @@ public final class Ruby {
     public void tearDown(boolean systemExit) {
         int status = 0;
 
+        // clear out threadlocals so they don't leak
+        recursive = new ThreadLocal<Map<String, RubyHash>>();
+        recursiveKey = new ThreadLocal<RubySymbol>() {
+            protected RubySymbol initialValue() {
+                return newSymbol("__recursive_key__");
+            }
+        };
+
         while (!atExitBlocks.empty()) {
             RubyProc proc = atExitBlocks.pop();
             try {
