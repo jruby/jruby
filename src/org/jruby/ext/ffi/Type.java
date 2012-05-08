@@ -271,7 +271,7 @@ public abstract class Type extends RubyObject {
             return new Array(context.getRuntime(), (RubyClass) klass, (Type) componentType, RubyNumeric.fix2int(length));
         }
 
-        @JRubyMethod
+        @JRubyMethod(name = { "count"})
         public final IRubyObject length(ThreadContext context) {
             return context.getRuntime().newFixnum(length);
         }
