@@ -427,7 +427,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
      */
     @JRubyMethod(name = "abort_on_exception", meta = true)
     public static RubyBoolean abort_on_exception_x(IRubyObject recv) {
-    	Ruby runtime = recv.getRuntime();
+        Ruby runtime = recv.getRuntime();
         return runtime.isGlobalAbortOnExceptionEnabled() ? runtime.getTrue() : runtime.getFalse();
     }
 
@@ -464,7 +464,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(name = "list", meta = true)
     public static RubyArray list(IRubyObject recv) {
-    	RubyThread[] activeThreads = recv.getRuntime().getThreadService().getActiveRubyThreads();
+        RubyThread[] activeThreads = recv.getRuntime().getThreadService().getActiveRubyThreads();
         
         return recv.getRuntime().newArrayNoCopy(activeThreads);
     }
@@ -557,13 +557,13 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             // than or equal to zero returns immediately; returns nil
             timeoutMillis = (long)(1000.0D * args[0].convertToFloat().getValue());
             if (timeoutMillis <= 0) {
-	        // TODO: not sure that we should skip calling join() altogether.
-		// Thread.join() has some implications for Java Memory Model, etc.
-	        if (threadImpl.isAlive()) {
-		   return getRuntime().getNil();
-		} else {   
+            // TODO: not sure that we should skip calling join() altogether.
+            // Thread.join() has some implications for Java Memory Model, etc.
+                if (threadImpl.isAlive()) {
+                    return getRuntime().getNil();
+                } else {   
                    return this;
-		}
+                }
             }
         }
 
@@ -621,7 +621,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             return getRuntime().getNil();
         } else {
             return this;
-	}
+        }
     }
 
     @JRubyMethod
@@ -635,14 +635,14 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     @JRubyMethod
     public IRubyObject group() {
         if (threadGroup == null) {
-        	return getRuntime().getNil();
+            return getRuntime().getNil();
         }
         
         return threadGroup;
     }
     
     void setThreadGroup(RubyThreadGroup rubyThreadGroup) {
-    	threadGroup = rubyThreadGroup;
+        threadGroup = rubyThreadGroup;
     }
     
     @JRubyMethod(name = "inspect")
@@ -675,14 +675,14 @@ public class RubyThread extends RubyObject implements ExecutionContext {
     
     @JRubyMethod(name = "critical=", required = 1, meta = true, compat = CompatVersion.RUBY1_8)
     public static IRubyObject critical_set(IRubyObject receiver, IRubyObject value) {
-    	receiver.getRuntime().getThreadService().setCritical(value.isTrue());
-    	
-    	return value;
+        receiver.getRuntime().getThreadService().setCritical(value.isTrue());
+
+        return value;
     }
 
     @JRubyMethod(name = "critical", meta = true, compat = CompatVersion.RUBY1_8)
     public static IRubyObject critical(IRubyObject receiver) {
-    	return receiver.getRuntime().newBoolean(receiver.getRuntime().getThreadService().getCritical());
+        return receiver.getRuntime().newBoolean(receiver.getRuntime().getThreadService().getCritical());
     }
     
     @JRubyMethod(name = "stop", meta = true)
@@ -726,8 +726,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(name = "stop?")
     public RubyBoolean stop_p() {
-    	// not valid for "dead" state
-    	return getRuntime().newBoolean(status.get() == Status.SLEEP || status.get() == Status.DEAD);
+        // not valid for "dead" state
+        return getRuntime().newBoolean(status.get() == Status.SLEEP || status.get() == Status.DEAD);
     }
     
     @JRubyMethod(name = "wakeup")
@@ -738,8 +738,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
         status.set(Status.RUN);
         notifyAll();
-    	
-    	return this;
+
+        return this;
     }
     
     @JRubyMethod(name = "priority")
@@ -936,7 +936,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(name = {"kill", "exit", "terminate"})
     public IRubyObject kill() {
-    	// need to reexamine this
+        // need to reexamine this
         RubyThread currentThread = getRuntime().getCurrentContext().getThread();
         
         // If the killee thread is the same as the killer thread, just die
