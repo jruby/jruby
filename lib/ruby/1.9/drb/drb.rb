@@ -54,6 +54,7 @@
 require 'socket'
 require 'thread'
 require 'fcntl'
+require 'weakref'
 require 'drb/eq'
 
 #
