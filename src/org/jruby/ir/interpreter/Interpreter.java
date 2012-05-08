@@ -400,7 +400,7 @@ public class Interpreter {
                     switch(operation) {
                     case PUSH_BINDING: {
                         // SSS FIXME: Blocks are a headache -- so, these instrs. are only added to IRMethods
-                        // They have more complicated logic for pushing a dynamic scope (see InterpretedIRBlockBody)
+                        // Blocks have more complicated logic for pushing a dynamic scope (see InterpretedIRBlockBody)
                         currDynScope = DynamicScope.newDynamicScope(scope.getStaticScope());
                         context.pushScope(currDynScope);
                         ipc++;
@@ -620,11 +620,6 @@ public class Interpreter {
                 if (ipc == -1) throw re; // No one rescued exception, pass it on!
 
                 exception = re.getException();
-                // SSS: Copied this comment and line from ast/RescueNode.java:handleException
-                // TODO: Rubicon TestKernel dies without this line.  A cursory glance implies we
-                // falsely set $! to nil and this sets it back to something valid.  This should 
-                // get fixed at the same time we address bug #1296484.
-                runtime.getGlobalVariables().set("$!", (IRubyObject)exception);
             } catch (Throwable t) {
                 if (t instanceof Unrescuable) {
                     // ThreadKill, RubyContinuation, MainExitException, etc.
@@ -660,6 +655,15 @@ public class Interpreter {
 
         if (inClosure) {
             if (methodToReturnFrom == null) {
+                // SSS FIXME: As Tom correctly pointed out, this is not correct.  The example that breaks this code is:
+                //
+                //      jruby -X-CIR -e "Thread.new { Proc.new { return }.call }.join"
+                //
+                // This should report a LocalJumpError, not a ThreadError.
+                //
+                // The right fix would involve checking the closure to see who it is associated with.
+                // If it is a thread-body, it would be a ThreadError.  If not, it would be a local-jump-error
+                // This requires having access to the block -- same requirement as in handleBreakJump.
                 if (context.getThread() == context.getRuntime().getThreadService().getMainThread()) {
                     throw IRException.RETURN_LocalJumpError.getException(context.getRuntime());
                 } else {

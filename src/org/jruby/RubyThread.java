@@ -612,6 +612,8 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
 
         if (exitingException != null) {
+            // Set $! in the current thread before exiting
+            getRuntime().getGlobalVariables().set("$!", (IRubyObject)exitingException.getException());
             throw exitingException;
         }
 

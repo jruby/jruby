@@ -170,11 +170,6 @@ public class RescueNode extends Node {
 
     private IRubyObject handleException(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock, RaiseException raiseJump) {
         RubyException raisedException = raiseJump.getException();
-        // TODO: Rubicon TestKernel dies without this line.  A cursory glance implies we
-        // falsely set $! to nil and this sets it back to something valid.  This should 
-        // get fixed at the same time we address bug #1296484.
-        runtime.getGlobalVariables().set("$!", raisedException);
-
         RescueBodyNode cRescueNode = rescueNode;
 
         while (cRescueNode != null) {
