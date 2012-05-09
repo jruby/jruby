@@ -1051,7 +1051,8 @@ public class InvocationLinker {
         boolean isStatic = nativeCall.isStatic();
 
         // varargs broken, so ignore methods that take a trailing array
-        if (nativeCall.getNativeSignature()[nativeCall.getNativeSignature().length - 1].isArray()) {
+        Class[] signature = nativeCall.getNativeSignature();
+        if (signature.length > 0 && signature[signature.length - 1].isArray()) {
             return null;
         }
         
