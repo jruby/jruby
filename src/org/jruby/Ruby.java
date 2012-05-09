@@ -2954,6 +2954,8 @@ public final class Ruby {
 
         getSelectorPool().cleanup();
 
+        getJITCompiler().tearDown();
+
         if (getJRubyClassLoader() != null) {
             getJRubyClassLoader().tearDown(isDebug());
         }
