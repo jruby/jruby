@@ -627,10 +627,7 @@ public class Interpreter {
                     ipc = scope.getEnsurerPC(lastInstr);
                 } else {
                     // Error and other java exceptions which could be rescued
-                    if (debug) {
-                        LOG.info("in scope: " + scope + ", caught Java throwable: " + t + "; excepting instr: " + lastInstr);
-                    }
-                    //t.printStackTrace();
+                    if (debug) LOG.info("in scope: " + scope + ", caught Java throwable: " + t + "; excepting instr: " + lastInstr);
                     ipc = scope.getRescuerPC(lastInstr);
                     if (debug) LOG.info("ipc for rescuer: " + ipc);
                 }

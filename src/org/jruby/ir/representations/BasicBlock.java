@@ -57,6 +57,10 @@ public class BasicBlock implements ExplicitVertexID {
         return instrs;
     }
 
+    public int instrCount() {
+        return instrs.size();
+    }
+
     public Instr[] getInstrsArray() {
         if (instrsArray == null) instrsArray = instrs.toArray(new Instr[instrs.size()]);
 

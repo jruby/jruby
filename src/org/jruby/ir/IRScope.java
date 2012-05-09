@@ -8,6 +8,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import org.jruby.RubyModule;
+import org.jruby.exceptions.Unrescuable;
 import org.jruby.ir.dataflow.DataFlowProblem;
 import org.jruby.ir.instructions.CallBase;
 import org.jruby.ir.instructions.CopyInstr;
@@ -520,6 +521,13 @@ public abstract class IRScope {
     public CFG getCFG() {
         return cfg;
     }
+
+    private void setupLabelPCs(HashMap<Label, Integer> labelIPCMap) {
+        for (BasicBlock b: linearizedBBList) {
+            Label l = b.getLabel();
+            l.setTargetPC(labelIPCMap.get(l));
+        }
+    }
     
     private Instr[] prepareInstructionsForInterpretation() {
         checkRelinearization();
@@ -539,12 +547,10 @@ public abstract class IRScope {
 
         // Set up IPCs
         HashMap<Label, Integer> labelIPCMap = new HashMap<Label, Integer>();
-        List<Label> labelsToFixup = new ArrayList<Label>();
         List<Instr> newInstrs = new ArrayList<Instr>();
         int ipc = 0;
-        for (BasicBlock b : linearizedBBList) {
+        for (BasicBlock b: linearizedBBList) {
             labelIPCMap.put(b.getLabel(), ipc);
-            labelsToFixup.add(b.getLabel());
             List<Instr> bbInstrs = b.getInstrs();
             int bbInstrsLength = bbInstrs.size();
             for (int i = 0; i < bbInstrsLength; i++) {
@@ -562,10 +568,8 @@ public abstract class IRScope {
             }
         }
 
-        // Fix up labels
-        for (Label l : labelsToFixup) {
-            l.setTargetPC(labelIPCMap.get(l));
-        }
+        // Set up label PCs
+        setupLabelPCs(labelIPCMap);
 
         // Exit BB ipc
         cfg().getExitBB().getLabel().setTargetPC(ipc + 1);
@@ -624,10 +628,13 @@ public abstract class IRScope {
         // Set up IPCs
         // FIXME: Would be nice to collapse duplicate labels; for now, using Label[]
         HashMap<Integer, Label[]> ipcLabelMap = new HashMap<Integer, Label[]>();
+        HashMap<Label, Integer>   labelIPCMap = new HashMap<Label, Integer>();
         List<Instr> newInstrs = new ArrayList<Instr>();
         int ipc = 0;
         for (BasicBlock b : linearizedBBList) {
-            ipcLabelMap.put(ipc, catLabels(ipcLabelMap.get(ipc), b.getLabel()));
+            Label l = b.getLabel();
+            labelIPCMap.put(l, ipc);
+            ipcLabelMap.put(ipc, catLabels(ipcLabelMap.get(ipc), l));
             for (Instr i : b.getInstrs()) {
                 if (!(i instanceof ReceiveSelfInstr)) {
                     newInstrs.add(i);
@@ -636,7 +643,46 @@ public abstract class IRScope {
             }
         }
 
+        // Set up label PCs
+        setupLabelPCs(labelIPCMap);
+
         return new Tuple<Instr[], Map<Integer,Label[]>>(newInstrs.toArray(new Instr[newInstrs.size()]), ipcLabelMap);
+    }
+
+    private List<Object[]> buildJVMExceptionTable() {
+        List<Object[]> etEntries = new ArrayList<Object[]>();
+        for (BasicBlock b: linearizedBBList) {
+            // We need handlers for:
+            // - RaiseException (Ruby exceptions -- handled by rescues),
+            // - Unrescuable    (JRuby exceptions -- handled by ensures),
+            // - Throwable      (JRuby/Java exceptions -- handled by rescues)
+            // in that order since Throwable < Unrescuable and Throwable < RaiseException
+            BasicBlock rBB = cfg().getRescuerBBFor(b);
+            BasicBlock eBB = cfg().getEnsurerBBFor(b);
+            if ((eBB != null) && (rBB == eBB || rBB == null)) {
+                // 1. same rescue and ensure handler ==> just spit out one entry with a Throwable class
+                // 2. only ensure handler            ==> just spit out one entry with a Throwable class
+                //
+                // The rescue handler knows whether to unwrap or not.  But for now, the rescue handler
+                // has to process its recv_exception instruction as
+                //    e = (e instanceof RaiseException) ? unwrap(e) : e;
+
+                int start = b.getLabel().getTargetPC();
+                int end   = start + b.instrCount();
+                etEntries.add(new Object[] {start, end, eBB.getLabel().getTargetPC(), Throwable.class});
+            } else if (rBB != null) {
+                int start = b.getLabel().getTargetPC();
+                int end   = start + b.instrCount();
+                // Unrescuable comes before Throwable
+                if (eBB != null) etEntries.add(new Object[] {start, end, eBB.getLabel().getTargetPC(), Unrescuable.class});
+                etEntries.add(new Object[] {start, end, rBB.getLabel().getTargetPC(), Throwable.class});
+            }
+        }
+
+        // SSS FIXME: This could be optimized by compressing entries for adjacent BBs that have identical handlers
+        // This could be optimized either during generation or as another pass over the table.  But, if the JVM
+        // does that already, do we need to bother with it?
+        return etEntries;
     }
     
     private static Label[] catLabels(Label[] labels, Label cat) {
