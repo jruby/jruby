@@ -399,7 +399,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     @JRubyMethod
     public IRubyObject mtime(ThreadContext context) {
         checkClosed(context);
-        return getLastModified(context.getRuntime(), path);
+        return context.getRuntime().newFileStat(path, false).mtime();
     }
 
     @JRubyMethod(meta = true, compat = RUBY1_9)
@@ -851,7 +851,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     @JRubyMethod(name = "mtime", required = 1, meta = true)
     public static IRubyObject mtime(ThreadContext context, IRubyObject recv, IRubyObject filename) {
-        return getLastModified(context.getRuntime(), get_path(context, filename).getUnicodeValue());
+        return context.getRuntime().newFileStat(get_path(context, filename).getUnicodeValue(), false).mtime();
     }
     
     @JRubyMethod(required = 2, meta = true)
@@ -1460,17 +1460,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
 
         return timeval;
-    }
-
-    // Fast path since JNA stat is about 10x slower than this
-    private static IRubyObject getLastModified(Ruby runtime, String path) {
-        FileResource file = JRubyFile.createResource(runtime.getCurrentDirectory(), path);
-        
-        if (!file.exists()) {
-            throw runtime.newErrnoENOENTError(path);
-        }
-        
-        return runtime.newTime(file.lastModified());
     }
 
     private void checkClosed(ThreadContext context) {
