@@ -54,30 +54,51 @@ public final class FFIUtil {
     }
 
     static final com.kenai.jffi.Type getFFIType(Type type) {
+        Object jffiType;
 
-        if (type instanceof Type.Builtin || type instanceof CallbackInfo) {
-
-            return FFIUtil.getFFIType(type.getNativeType());
-        
-        } else if (type instanceof org.jruby.ext.ffi.StructLayout) {
-
-            return FFIUtil.newStruct((org.jruby.ext.ffi.StructLayout) type);
-
-        } else if (type instanceof org.jruby.ext.ffi.StructByValue) {
-
-            return FFIUtil.newStruct(((org.jruby.ext.ffi.StructByValue) type).getStructLayout());
-
-        } else if (type instanceof org.jruby.ext.ffi.Type.Array) {
-
-            return FFIUtil.newArray((org.jruby.ext.ffi.Type.Array) type);
-
-        } else if (type instanceof org.jruby.ext.ffi.MappedType) {
-
-            return FFIUtil.getFFIType(((org.jruby.ext.ffi.MappedType) type).getRealType());
-
-        } else {
-            return null;
+        if ((jffiType = type.getFFIHandle()) instanceof com.kenai.jffi.Type) {
+            return (com.kenai.jffi.Type) jffiType;
         }
+
+        return cacheFFIType(type);
+    }
+
+    private static com.kenai.jffi.Type cacheFFIType(Type type) {
+        Object ffiType;
+        synchronized (type) {
+
+            if ((ffiType = type.getFFIHandle()) instanceof com.kenai.jffi.Type) {
+                return (com.kenai.jffi.Type) ffiType;
+            }
+
+            if (type instanceof Type.Builtin || type instanceof CallbackInfo) {
+
+                ffiType = FFIUtil.getFFIType(type.getNativeType());
+
+            } else if (type instanceof org.jruby.ext.ffi.StructLayout) {
+
+                ffiType = FFIUtil.newStruct((org.jruby.ext.ffi.StructLayout) type);
+
+            } else if (type instanceof org.jruby.ext.ffi.StructByValue) {
+
+                ffiType = FFIUtil.newStruct(((org.jruby.ext.ffi.StructByValue) type).getStructLayout());
+
+            } else if (type instanceof org.jruby.ext.ffi.Type.Array) {
+
+                ffiType = FFIUtil.newArray((org.jruby.ext.ffi.Type.Array) type);
+
+            } else if (type instanceof org.jruby.ext.ffi.MappedType) {
+
+                ffiType = FFIUtil.getFFIType(((org.jruby.ext.ffi.MappedType) type).getRealType());
+
+            } else {
+                return null;
+            }
+
+            type.setFFIHandle(ffiType);
+        }
+
+        return (com.kenai.jffi.Type) ffiType;
     }
 
     static final com.kenai.jffi.Type getFFIType(NativeType type) {
@@ -104,7 +125,7 @@ public final class FFIUtil {
             fields[i++] = fieldType;
         }
 
-        return new com.kenai.jffi.Struct(fields);
+        return com.kenai.jffi.Struct.newStruct(fields);
     }
 
     /**
@@ -120,7 +141,7 @@ public final class FFIUtil {
             throw arrayType.getRuntime().newTypeError("unsupported array element type " + arrayType.getComponentType());
         }
 
-        return new com.kenai.jffi.Array(componentType, arrayType.length());
+        return com.kenai.jffi.Array.newArray(componentType, arrayType.length());
     }
 
     /**
