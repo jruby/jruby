@@ -119,6 +119,31 @@ describe "Java String and primitive-typed methods" do
     
     CoreTypeMethods.setNull(nil).should == "null"
   end
+
+  it "coerce from boxed Java types to primitives when passing parameters" do
+    CoreTypeMethods.setString("string".to_java(:string)).should == "string"
+
+    CoreTypeMethods.setByte(1.to_java(:byte)).should == "1"
+    CoreTypeMethods.setShort(1.to_java(:short)).should == "1"
+    CoreTypeMethods.setChar(1.to_java(:char)).should == "\001"
+    CoreTypeMethods.setInt(1.to_java(:int)).should == "1"
+    CoreTypeMethods.setLong(1.to_java(:long)).should == "1"
+
+    CoreTypeMethods.setFloat(1.to_java(:float)).should == "1.0"
+    CoreTypeMethods.setDouble(1.to_java(:double)).should == "1.0"
+
+    CoreTypeMethods.setByte(1.5.to_java(:byte)).should == "1"
+    CoreTypeMethods.setShort(1.5.to_java(:short)).should == "1"
+    CoreTypeMethods.setChar(1.5.to_java(:char)).should == "\001"
+    CoreTypeMethods.setInt(1.5.to_java(:int)).should == "1"
+    CoreTypeMethods.setLong(1.5.to_java(:long)).should == "1"
+
+    CoreTypeMethods.setFloat(1.5.to_java(:float)).should == "1.5"
+    CoreTypeMethods.setDouble(1.5.to_java(:double)).should == "1.5"
+
+    CoreTypeMethods.setBooleanTrue(true.to_java(:boolean)).should == "true"
+    CoreTypeMethods.setBooleanFalse(false.to_java(:boolean)).should == "false"
+  end
   
   it "should raise errors when passed values can not be precisely coerced" do
     lambda { CoreTypeMethods.setByte(1 << 8) }.should raise_error(RangeError)
@@ -128,23 +153,12 @@ describe "Java String and primitive-typed methods" do
     lambda { CoreTypeMethods.setLong(1 << 64) }.should raise_error(RangeError)
   end
   
-  it "should select the most narrow and precise overloaded method" do
-    pending "selection based on precision is not supported yet" do
-      CoreTypeMethods.getType(1).should == "byte"
-      CoreTypeMethods.getType(1 << 8).should == "short"
-      CoreTypeMethods.getType(1 << 16).should == "int"
-      CoreTypeMethods.getType(1.0).should == "float"
-    end
+  it "should select the method that matches precision of the incoming value" do
     CoreTypeMethods.getType(1 << 32).should == "long"
     
     CoreTypeMethods.getType(2.0 ** 128).should == "double"
     
     CoreTypeMethods.getType("foo").should == "String"
-    pending "passing null to overloaded methods randomly selects from them" do
-      CoreTypeMethods.getType(nil).should == "CharSequence"
-    end
-
-    CoreTypeMethods.getType(BigDecimal.new('1.1')).should == "BigDecimal"
   end
 end
 

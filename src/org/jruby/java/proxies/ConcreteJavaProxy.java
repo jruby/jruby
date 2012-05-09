@@ -4,6 +4,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.javasupport.Java;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallSite;
 import org.jruby.runtime.MethodIndex;
@@ -185,5 +186,30 @@ public class ConcreteJavaProxy extends JavaProxy {
      */
     public IRubyObject id() {
         return getRuntime().newFixnum(System.identityHashCode(getObject()));
+    }
+
+    @Override
+    public Object toJava(Class type) {
+        Object obj = getObject();
+        Class cls = obj.getClass();
+
+        if (type.isPrimitive()) {
+            if (obj instanceof Number && type != Boolean.TYPE ||
+                    obj instanceof Character && type == Character.TYPE ||
+                    obj instanceof Boolean && type == Boolean.TYPE) {
+                // FIXME in more permissive call paths, like invokedynamic, this can allow
+                // precision-loading downcasts to happen silently
+                return obj;
+            } else {
+                throw getRuntime().newTypeError("failed to coerce " + cls.getName() + " to " + type.getName());
+            }
+        } else if (type.isAssignableFrom(cls)) {
+            if (Java.OBJECT_PROXY_CACHE || metaClass.getCacheProxy()) {
+                getRuntime().getJavaSupport().getObjectProxyCache().put(obj, this);
+            }
+            return obj;
+        } else {
+            return super.toJava(type);
+        }
     }
 }
