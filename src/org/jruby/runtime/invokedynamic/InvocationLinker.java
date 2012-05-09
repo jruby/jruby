@@ -1049,6 +1049,11 @@ public class InvocationLinker {
         Ruby runtime = method.getImplementationClass().getRuntime();
         DynamicMethod.NativeCall nativeCall = method.getNativeCall();
         boolean isStatic = nativeCall.isStatic();
+
+        // varargs broken, so ignore methods that take a trailing array
+        if (nativeCall.getNativeSignature()[nativeCall.getNativeSignature().length - 1].isArray()) {
+            return null;
+        }
         
         // the "apparent" type from the NativeCall, excluding receiver
         MethodType apparentType = methodType(nativeCall.getNativeReturn(), nativeCall.getNativeSignature());
