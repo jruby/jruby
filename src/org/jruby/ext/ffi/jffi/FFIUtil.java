@@ -1,6 +1,7 @@
 
 package org.jruby.ext.ffi.jffi;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumMap;
 import java.util.Map;
@@ -111,30 +112,67 @@ public final class FFIUtil {
      * @param layout The structure layout
      * @return A new Struct descriptor.
      */
-    static final com.kenai.jffi.Struct newStruct(org.jruby.ext.ffi.StructLayout layout) {
-        Collection<StructLayout.Member> structMembers = layout.getMembers();
-        com.kenai.jffi.Type[] fields = new com.kenai.jffi.Type[structMembers.size()];
+    static final com.kenai.jffi.Aggregate newStruct(org.jruby.ext.ffi.StructLayout layout) {
 
-        int i = 0;
-        for (StructLayout.Member m : structMembers) {
-            com.kenai.jffi.Type fieldType;
-            fieldType = FFIUtil.getFFIType(m.type());
-            if (fieldType == null) {
-                throw layout.getRuntime().newTypeError("unsupported Struct field type " + m);
+        if (layout.isUnion()) {
+
+            //
+            // The jffi union type is broken, so emulate a union with a Struct type, containing
+            // an array of elements of the correct alignment.
+            //
+            com.kenai.jffi.Type[] alignmentTypes = {
+                    com.kenai.jffi.Type.SINT8,
+                    com.kenai.jffi.Type.SINT16,
+                    com.kenai.jffi.Type.SINT32,
+                    com.kenai.jffi.Type.SINT64,
+                    com.kenai.jffi.Type.FLOAT,
+                    com.kenai.jffi.Type.DOUBLE,
+                    com.kenai.jffi.Type.LONGDOUBLE,
+            };
+
+            com.kenai.jffi.Type alignmentType = null;
+            for (com.kenai.jffi.Type t : alignmentTypes) {
+                if (t.alignment() == layout.getNativeAlignment()) {
+                    alignmentType = t;
+                    break;
+                }
             }
-            fields[i++] = fieldType;
-        }
+            if (alignmentType == null) {
+                throw layout.getRuntime().newRuntimeError("cannot discern base alignment type for union of alignment "
+                        + layout.getNativeAlignment());
+            }
 
-        return com.kenai.jffi.Struct.newStruct(fields);
+            com.kenai.jffi.Type[] fields = new com.kenai.jffi.Type[layout.getNativeSize() / alignmentType.size()];
+            Arrays.fill(fields, alignmentType);
+
+            return com.kenai.jffi.Struct.newStruct(fields);
+
+        } else {
+
+            Collection<StructLayout.Member> structMembers = layout.getMembers();
+            com.kenai.jffi.Type[] fields = new com.kenai.jffi.Type[structMembers.size()];
+
+            int i = 0;
+            for (StructLayout.Member m : structMembers) {
+                com.kenai.jffi.Type fieldType;
+                fieldType = FFIUtil.getFFIType(m.type());
+                if (fieldType == null) {
+                    throw layout.getRuntime().newTypeError("unsupported Struct field type " + m);
+                }
+                fields[i++] = fieldType;
+            }
+
+            return com.kenai.jffi.Struct.newStruct(fields);
+        }
     }
 
     /**
      * Creates a new JFFI type descriptor for an array
      *
-     * @param layout The structure layout
+     * @param arrayType The structure layout
      * @return A new Struct descriptor.
      */
-    static final com.kenai.jffi.Array newArray(org.jruby.ext.ffi.Type.Array arrayType) {
+    static com.kenai.jffi.Array newArray(org.jruby.ext.ffi.Type.Array arrayType) {
         com.kenai.jffi.Type componentType = FFIUtil.getFFIType(arrayType.getComponentType());
 
         if (componentType == null) {

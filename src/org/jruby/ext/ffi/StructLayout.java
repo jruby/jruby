@@ -88,6 +88,8 @@ public final class StructLayout extends Type {
     /** The number of reference fields in this struct */
     private final int referenceFieldCount;
 
+    private final boolean isUnion;
+
     /**
      * Registers the StructLayout class in the JRuby runtime.
      * @param runtime The JRuby runtime to register the new class in.
@@ -166,6 +168,7 @@ public final class StructLayout extends Type {
         List<Member> memberList = new ArrayList<Member>(fields.size());
         Map<IRubyObject, Member> memberStringMap = new HashMap<IRubyObject, Member>(fields.size());
         Map<IRubyObject, Member> memberSymbolMap = new IdentityHashMap<IRubyObject, Member>(fields.size() * 2);
+        int offset = 0;
         
         int index = 0;
         for (IRubyObject obj : fields) {
@@ -189,6 +192,7 @@ public final class StructLayout extends Type {
             memberStringMap.put(f.name, m);
             memberStringMap.put(f.name.asString(), m);
             memberList.add(m);
+            offset = Math.max(offset, f.offset);
         }
 
 
@@ -201,6 +205,7 @@ public final class StructLayout extends Type {
         this.fieldStringMap = Collections.unmodifiableMap(memberStringMap);
         this.fieldSymbolMap = Collections.unmodifiableMap(memberSymbolMap);
         this.members = Collections.unmodifiableList(memberList);
+        this.isUnion = offset == 0 && memberList.size() > 1;
     }
     
     @JRubyMethod(name = "new", meta = true, required = 3, optional = 1)
@@ -391,6 +396,10 @@ public final class StructLayout extends Type {
 
     public final java.util.Collection<Member> getMembers() {
         return members;
+    }
+
+    public final boolean isUnion() {
+        return isUnion;
     }
 
     /**
