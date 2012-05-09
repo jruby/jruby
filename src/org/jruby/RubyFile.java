@@ -1083,7 +1083,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 modes = parseIOOptions19(args[1]);
 
                 if (args[1] instanceof RubyFixnum) {
-                    perm = getFilePermissions(args);
+                    perm = RubyNumeric.num2int(args[1]);
                 } else {
                     modeString = args[1].convertToString().toString();
                 }
