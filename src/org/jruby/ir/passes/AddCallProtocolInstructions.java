@@ -79,7 +79,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
                 if (geb == null && scopeHasLocalVarStores && scopeHasUnrescuedExceptions) {
                     Variable exc = scope.getNewTemporaryVariable();
                     geb = new BasicBlock(cfg, new Label("_GLOBAL_ENSURE_BLOCK"));
-                    geb.addInstr(new ReceiveExceptionInstr(exc));
+                    geb.addInstr(new ReceiveExceptionInstr(exc, false)); // No need to check type since it is not used before rethrowing
                     geb.addInstr(new ThrowExceptionInstr(exc));
                     cfg.addGlobalEnsureBB(geb);
                 }

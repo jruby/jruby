@@ -504,6 +504,8 @@ public class Interpreter {
                         break;
                     }
                     case RECV_EXCEPTION: {
+                        // In the interpreter, we dont use the 'checkType' field because the exception is
+                        // properly set up in the places below where it is caught and setup.
                         result = exception;
                         resultVar = ((ResultInstr)lastInstr).getResult();
                         ipc++;

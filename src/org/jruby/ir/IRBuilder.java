@@ -1879,7 +1879,7 @@ public class IRBuilder {
         Label rethrowExcLabel = s.getNewLabel();
         Variable exc = s.getNewTemporaryVariable();
         s.addInstr(new LabelInstr(ebi.dummyRescueBlockLabel));
-        s.addInstr(new ReceiveExceptionInstr(exc));
+        s.addInstr(new ReceiveExceptionInstr(exc, false)); // Dont check type since we are simply throwing it back
         s.addInstr(new SetReturnAddressInstr(ebi.returnAddr, rethrowExcLabel));
 
         // Generate the ensure block now

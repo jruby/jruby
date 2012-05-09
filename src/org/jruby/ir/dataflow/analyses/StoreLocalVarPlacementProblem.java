@@ -100,7 +100,7 @@ public class StoreLocalVarPlacementProblem extends DataFlowProblem {
         if ((mightRequireGlobalEnsureBlock == true) && !dirtyVars.isEmpty()) {
             Variable exc = cfgScope.getNewTemporaryVariable();
             geb = new BasicBlock(cfg, new Label("_GLOBAL_ENSURE_BLOCK"));
-            geb.addInstr(new ReceiveExceptionInstr(exc));
+            geb.addInstr(new ReceiveExceptionInstr(exc, false)); // No need to check type since it is not used before rethrowing
             for (LocalVariable v : dirtyVars) {
                 Operand value = varRenameMap.get(v);
                 if (value == null) {
