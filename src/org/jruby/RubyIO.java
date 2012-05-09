@@ -4212,7 +4212,7 @@ public class RubyIO extends RubyObject {
         Ruby runtime = context.getRuntime();
 
         if (options.containsKey(runtime.newSymbol("mode"))) {
-            ioOptions = parseIOOptions19(options.fastARef(runtime.newSymbol("mode")).asString());
+            ioOptions = parseIOOptions19(options.fastARef(runtime.newSymbol("mode")));
         }
 
         // This duplicates the non-error behavior of MRI 1.9: the
