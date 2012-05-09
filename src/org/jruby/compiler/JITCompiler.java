@@ -106,6 +106,12 @@ public class JITCompiler implements JITCompilerMBean {
         }
     }
 
+    public void tearDown() {
+        if (executor != null) {
+            executor.shutdown();
+        }
+    }
+
     private void jitIsEnabled(DefaultMethod method, ThreadContext context, String className, String methodName) {
         RubyInstanceConfig instanceConfig = context.getRuntime().getInstanceConfig();
         
