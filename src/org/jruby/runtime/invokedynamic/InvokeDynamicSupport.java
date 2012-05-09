@@ -405,7 +405,8 @@ public class InvokeDynamicSupport {
     }
     
     public static IRubyObject getVariableFallback(VariableSite site, IRubyObject self) throws Throwable {
-        RubyClass.VariableAccessor accessor = self.getMetaClass().getRealClass().getVariableAccessorForRead(site.name);
+        RubyClass realClass = self.getMetaClass().getRealClass();
+        RubyClass.VariableAccessor accessor = realClass.getVariableAccessorForRead(site.name);
         
         // produce nil if the variable has not been initialize
         MethodHandle nullToNil = findStatic(RuntimeHelpers.class, "nullToNil", methodType(IRubyObject.class, IRubyObject.class, IRubyObject.class));
@@ -432,8 +433,8 @@ public class InvokeDynamicSupport {
         }
         
         // prepare test
-        MethodHandle test = findStatic(InvocationLinker.class, "testRealClass", methodType(boolean.class, RubyClass.class, IRubyObject.class));
-        test = test.bindTo(self.getMetaClass().getRealClass());
+        MethodHandle test = findStatic(InvocationLinker.class, "testRealClass", methodType(boolean.class, int.class, IRubyObject.class));
+        test = insertArguments(test, 0, accessor.getClassId());
         
         getValue = guardWithTest(test, getValue, fallback);
         
@@ -448,7 +449,8 @@ public class InvokeDynamicSupport {
     }
     
     public static IRubyObject setVariableFallback(VariableSite site, IRubyObject self, IRubyObject value) throws Throwable {
-        RubyClass.VariableAccessor accessor = self.getMetaClass().getRealClass().getVariableAccessorForWrite(site.name);
+        RubyClass realClass = self.getMetaClass().getRealClass();
+        RubyClass.VariableAccessor accessor = realClass.getVariableAccessorForWrite(site.name);
 
         // return provided value
         MethodHandle returnValue = identity(IRubyObject.class);
@@ -475,8 +477,8 @@ public class InvokeDynamicSupport {
         }
 
         // prepare test
-        MethodHandle test = findStatic(InvocationLinker.class, "testRealClass", methodType(boolean.class, RubyClass.class, IRubyObject.class));
-        test = test.bindTo(self.getMetaClass().getRealClass());
+        MethodHandle test = findStatic(InvocationLinker.class, "testRealClass", methodType(boolean.class, int.class, IRubyObject.class));
+        test = insertArguments(test, 0, accessor.getClassId());
         test = dropArguments(test, 1, IRubyObject.class);
 
         setValue = guardWithTest(test, setValue, fallback);

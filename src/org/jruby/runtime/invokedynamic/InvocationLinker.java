@@ -628,8 +628,8 @@ public class InvocationLinker {
         return metaclass == ((RubyBasicObject)self).getMetaClass();
     }
 
-    public static boolean testRealClass(RubyClass realclass, IRubyObject self) {
-        return realclass == ((RubyBasicObject)self).getMetaClass().getRealClass();
+    public static boolean testRealClass(int id, IRubyObject self) {
+        return id == ((RubyBasicObject)self).getMetaClass().getRealClass().id;
     }
     
     public static IRubyObject getLast(IRubyObject[] args) {
