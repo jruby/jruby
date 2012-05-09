@@ -43,6 +43,7 @@ lib/ruby/cext/
 *.so
 *.bundle
 *.[oa]
+*.versionsBackup
 dev_null
 .redcar
 /.externalToolBuilders/
