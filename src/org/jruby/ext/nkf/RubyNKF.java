@@ -77,7 +77,7 @@ public class RubyNKF {
     private static final ByteList END_MIME_STRING = new ByteList(ByteList.plain("?="));
     private static final ByteList PACK_BASE64 = new ByteList(ByteList.plain("m"));
     private static final ByteList PACK_QENCODE = new ByteList(ByteList.plain("M"));
-
+    
     public static class NKFCharset {
         private final int value;
         private final String charset;
@@ -95,22 +95,37 @@ public class RubyNKF {
             return charset;
         }
     }
+    
+    public static Map<IRubyObject, String> NKFCharsetMap = new HashMap();
 
     public static void createNKF(Ruby runtime) {
         RubyModule nkfModule = runtime.defineModule("NKF");
-
-        nkfModule.defineConstant("AUTO", RubyFixnum.newFixnum(runtime, AUTO.getValue()));
-        nkfModule.defineConstant("JIS", RubyFixnum.newFixnum(runtime, JIS.getValue()));
-        nkfModule.defineConstant("EUC", RubyFixnum.newFixnum(runtime, EUC.getValue()));
-        nkfModule.defineConstant("SJIS", RubyFixnum.newFixnum(runtime, SJIS.getValue()));
-        nkfModule.defineConstant("BINARY", RubyFixnum.newFixnum(runtime, BINARY.getValue()));
-        nkfModule.defineConstant("NOCONV", RubyFixnum.newFixnum(runtime, NOCONV.getValue()));
-        nkfModule.defineConstant("UNKNOWN", RubyFixnum.newFixnum(runtime, UNKNOWN.getValue()));
-        nkfModule.defineConstant("ASCII", RubyFixnum.newFixnum(runtime, ASCII.getValue()));
-        nkfModule.defineConstant("UTF8", RubyFixnum.newFixnum(runtime, UTF8.getValue()));
-        nkfModule.defineConstant("UTF16", RubyFixnum.newFixnum(runtime, UTF16.getValue()));
-        nkfModule.defineConstant("UTF32", RubyFixnum.newFixnum(runtime, UTF32.getValue()));
-        nkfModule.defineConstant("OTHER", RubyFixnum.newFixnum(runtime, OTHER.getValue()));
+        
+        RubyFixnum index = null;
+        index = RubyFixnum.newFixnum(runtime, AUTO.getValue());
+        nkfModule.defineConstant("AUTO", index); NKFCharsetMap.put(index, "AUTO");
+        index = RubyFixnum.newFixnum(runtime, JIS.getValue());
+        nkfModule.defineConstant("JIS", index); NKFCharsetMap.put(index, "JIS");
+        index = RubyFixnum.newFixnum(runtime, EUC.getValue());
+        nkfModule.defineConstant("EUC", index); NKFCharsetMap.put(index, "EUC");
+        index = RubyFixnum.newFixnum(runtime, SJIS.getValue());
+        nkfModule.defineConstant("SJIS", index); NKFCharsetMap.put(index, "SJIS");
+        index = RubyFixnum.newFixnum(runtime, BINARY.getValue());
+        nkfModule.defineConstant("BINARY", index); NKFCharsetMap.put(index, "BINARY");
+        index = RubyFixnum.newFixnum(runtime, NOCONV.getValue());
+        nkfModule.defineConstant("NOCONV", index); NKFCharsetMap.put(index, "NOCONV");
+        index = RubyFixnum.newFixnum(runtime, UNKNOWN.getValue());
+        nkfModule.defineConstant("UNKNOWN", index); NKFCharsetMap.put(index, "UNKNOWN");
+        index = RubyFixnum.newFixnum(runtime, ASCII.getValue());
+        nkfModule.defineConstant("ASCII", index); NKFCharsetMap.put(index, "ASCII");
+        index = RubyFixnum.newFixnum(runtime, UTF8.getValue());
+        nkfModule.defineConstant("UTF8", index); NKFCharsetMap.put(index, "UTF8");
+        index = RubyFixnum.newFixnum(runtime, UTF16.getValue());
+        nkfModule.defineConstant("UTF16", index); NKFCharsetMap.put(index, "UTF16");
+        index = RubyFixnum.newFixnum(runtime, UTF32.getValue());
+        nkfModule.defineConstant("UTF32", index); NKFCharsetMap.put(index, "UTF32");
+        index = RubyFixnum.newFixnum(runtime, OTHER.getValue());
+        nkfModule.defineConstant("OTHER", index); NKFCharsetMap.put(index, "OTHER");
 
         RubyString version = runtime.newString("2.0.7 (JRuby 2007-05-11)");
         RubyString nkfVersion = runtime.newString("2.0.7");
