@@ -1438,6 +1438,8 @@ public class ASTCompiler {
                 };
                 
                 context.getInvocationCompiler().invokeDynamic(name, receiverCallback, null, CallType.FUNCTIONAL, null, false);
+            } else {
+                compile(iVisited.getLeftNode(), context, true);
             }
         }
         // TODO: don't require pop

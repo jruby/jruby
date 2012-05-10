@@ -410,6 +410,12 @@ describe "JRuby's compiler" do
       compile_and_run('/(?<a>.+)/ =~ ""')
     end.should_not raise_error
   end
+
+  it "handles module/class opening from colon2 with non-method, non-const LHS" do
+    lambda do
+      compile_and_run('m = Object; class m::FOOCLASS1234; end; module m::FOOMOD1234; end')
+    end.should_not raise_error
+  end
   
   it "does a bunch of other stuff" do
     silence_warnings {

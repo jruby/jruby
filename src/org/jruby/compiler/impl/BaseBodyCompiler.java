@@ -2298,53 +2298,22 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
         final RootScopedBodyCompiler classBody = new ClassBodyCompiler(script, classMethodName, rubyName, inspector, staticScope);
 
-        CompilerCallback bodyPrep = new CompilerCallback() {
+        // Here starts the logic for the class definition
+        Label start = new Label();
+        Label end = new Label();
+        Label after = new Label();
+        Label noException = new Label();
+        classBody.method.trycatch(start, end, after, null);
+
+        classBody.beginMethod(new ArgumentsCallback() {
+            public int getArity() {
+                return 0;  //To change body of implemented methods use File | Settings | File Templates.
+            }
+
             public void call(BodyCompiler context) {
-                if (receiverCallback == null) {
-                    // no receiver for singleton class
-                    if (superCallback != null) {
-                        // but there's a superclass passed in, use it
-                        classBody.loadRuntime();
-                        classBody.method.aload(StandardASMCompiler.SELF_INDEX);
-
-                        classBody.invokeUtilityMethod("prepareSuperClass", sig(RubyClass.class, params(Ruby.class, IRubyObject.class)));
-                    } else {
-                        classBody.method.aconst_null();
-                    }
-
-                    classBody.loadThreadContext();
-
-                    pathCallback.call(classBody);
-
-                    classBody.invokeUtilityMethod("prepareClassNamespace", sig(RubyModule.class, params(ThreadContext.class, IRubyObject.class)));
-
-                    classBody.method.swap();
-
-                    classBody.method.ldc(name);
-
-                    classBody.method.swap();
-
-                    classBody.method.invokevirtual(p(RubyModule.class), "defineOrGetClassUnder", sig(RubyClass.class, params(String.class, RubyClass.class)));
-                } else {
-                    classBody.loadRuntime();
-
-                    // we re-set self to the class, but store the old self in a temporary local variable
-                    // this is to prevent it GCing in case the singleton is short-lived
-                    classBody.method.aload(StandardASMCompiler.SELF_INDEX);
-                    int selfTemp = classBody.getVariableCompiler().grabTempLocal();
-                    classBody.getVariableCompiler().setTempLocal(selfTemp);
-                    classBody.method.aload(StandardASMCompiler.SELF_INDEX);
-
-                    classBody.invokeUtilityMethod("getSingletonClass", sig(RubyClass.class, params(Ruby.class, IRubyObject.class)));
-                }
-
-                // set self to the class
-                classBody.method.dup();
-                classBody.method.astore(StandardASMCompiler.SELF_INDEX);
-
-                // CLASS BODY
                 classBody.loadThreadContext();
-                classBody.method.swap();
+                classBody.method.aload(StandardASMCompiler.SELF_INDEX); // module to run the class under passed in as self
+                classBody.method.checkcast(p(RubyModule.class));
 
                 // static scope
                 script.getCacheCompiler().cacheStaticScope(classBody, staticScope);
@@ -2353,23 +2322,16 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
                 } else {
                     classBody.invokeThreadContext("preCompiledClassDummyScope", sig(Void.TYPE, params(RubyModule.class, StaticScope.class)));
                 }
-
-                if (RubyInstanceConfig.FULL_TRACE_ENABLED) classBody.traceClass();
             }
-        };
+        }, staticScope);
 
-        // Here starts the logic for the class definition
-        Label start = new Label();
-        Label end = new Label();
-        Label after = new Label();
-        Label noException = new Label();
-        classBody.method.trycatch(start, end, after, null);
-
-        classBody.beginMethod(bodyPrep, staticScope);
+        // CLASS BODY
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) classBody.traceClass();
 
         classBody.method.label(start);
 
         bodyCallback.call(classBody);
+
         classBody.method.label(end);
         // finally with no exception
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) classBody.traceEnd();
@@ -2392,18 +2354,40 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         // prepare to call class definition method
         method.aload(StandardASMCompiler.THIS);
         loadThreadContext();
+
+        // class object
         if (receiverCallback == null) {
-            // if there's no receiver, evaluate and pass in the superclass, or
-            // pass self if it no superclass
+            // no receiver for singleton class
             if (superCallback != null) {
+                // but there's a superclass provided
+                loadRuntime();
                 superCallback.call(this);
+
+                invokeUtilityMethod("prepareSuperClass", sig(RubyClass.class, params(Ruby.class, IRubyObject.class)));
             } else {
-                method.aload(StandardASMCompiler.SELF_INDEX);
+                method.aconst_null();
             }
+
+            loadThreadContext();
+
+            pathCallback.call(this);
+
+            invokeUtilityMethod("prepareClassNamespace", sig(RubyModule.class, params(ThreadContext.class, IRubyObject.class)));
+
+            method.swap();
+
+            method.ldc(name);
+
+            method.swap();
+
+            method.invokevirtual(p(RubyModule.class), "defineOrGetClassUnder", sig(RubyClass.class, params(String.class, RubyClass.class)));
         } else {
-            // otherwise, there's a receiver, so we pass that in directly for the sclass logic
+            loadRuntime();
             receiverCallback.call(this);
+
+            invokeUtilityMethod("getSingletonClass", sig(RubyClass.class, params(Ruby.class, IRubyObject.class)));
         }
+
         method.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
 
         method.invokestatic(script.getClassname(), classMethodName, StandardASMCompiler.getStaticMethodSignature(script.getClassname(), 0));
@@ -2415,26 +2399,22 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
         final RootScopedBodyCompiler classBody = new ClassBodyCompiler(script, moduleMethodName, mangledName, inspector, staticScope);
 
-        CompilerCallback bodyPrep = new CompilerCallback() {
+        // Here starts the logic for the class definition
+        Label start = new Label();
+        Label end = new Label();
+        Label after = new Label();
+        Label noException = new Label();
+        classBody.method.trycatch(start, end, after, null);
+
+        classBody.beginMethod(new ArgumentsCallback() {
+            public int getArity() {
+                return 0;
+            }
 
             public void call(BodyCompiler context) {
                 classBody.loadThreadContext();
-
-                pathCallback.call(classBody);
-
-                classBody.invokeUtilityMethod("prepareClassNamespace", sig(RubyModule.class, params(ThreadContext.class, IRubyObject.class)));
-
-                classBody.method.ldc(name);
-
-                classBody.method.invokevirtual(p(RubyModule.class), "defineOrGetModuleUnder", sig(RubyModule.class, params(String.class)));
-
-                // set self to the class
-                classBody.method.dup();
-                classBody.method.astore(StandardASMCompiler.SELF_INDEX);
-
-                // CLASS BODY
-                classBody.loadThreadContext();
-                classBody.method.swap();
+                classBody.method.aload(StandardASMCompiler.SELF_INDEX); // module to run the module under passed in as self
+                classBody.method.checkcast(p(RubyModule.class));
 
                 // static scope
                 script.getCacheCompiler().cacheStaticScope(classBody, staticScope);
@@ -2443,19 +2423,12 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
                 } else {
                     classBody.invokeThreadContext("preCompiledClassDummyScope", sig(Void.TYPE, params(RubyModule.class, StaticScope.class)));
                 }
-
-                if (RubyInstanceConfig.FULL_TRACE_ENABLED) classBody.traceClass();
             }
-        };
+        }, staticScope);
 
-        // Here starts the logic for the class definition
-        Label start = new Label();
-        Label end = new Label();
-        Label after = new Label();
-        Label noException = new Label();
-        classBody.method.trycatch(start, end, after, null);
+        // CLASS BODY
 
-        classBody.beginMethod(bodyPrep, staticScope);
+        if (RubyInstanceConfig.FULL_TRACE_ENABLED) classBody.traceClass();
 
         classBody.method.label(start);
 
@@ -2480,11 +2453,17 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         // prepare to call class definition method
         method.aload(StandardASMCompiler.THIS);
         loadThreadContext();
-        loadSelf();
-        method.getstatic(p(IRubyObject.class), "NULL_ARRAY", ci(IRubyObject[].class));
+
+        // prepare module object
+        loadThreadContext();
+        pathCallback.call(this);
+        invokeUtilityMethod("prepareClassNamespace", sig(RubyModule.class, params(ThreadContext.class, IRubyObject.class)));
+        method.ldc(name);
+        method.invokevirtual(p(RubyModule.class), "defineOrGetModuleUnder", sig(RubyModule.class, params(String.class)));
+
         method.getstatic(p(Block.class), "NULL_BLOCK", ci(Block.class));
 
-        method.invokestatic(script.getClassname(), moduleMethodName, StandardASMCompiler.getStaticMethodSignature(script.getClassname(), 4));
+        method.invokestatic(script.getClassname(), moduleMethodName, StandardASMCompiler.getStaticMethodSignature(script.getClassname(), 0));
     }
 
     public void unwrapPassedBlock() {
