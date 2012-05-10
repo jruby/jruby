@@ -45,6 +45,7 @@ import static org.jruby.util.StringSupport.codePoint;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.jcodings.Encoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.ast.util.ArgsUtil;
@@ -100,7 +101,7 @@ public class RubySymbol extends RubyObject {
     }
 
     private RubySymbol(Ruby runtime, String internedSymbol) {
-        this(runtime, internedSymbol, ByteList.create(internedSymbol));
+        this(runtime, internedSymbol, symbolBytesFromString(runtime, internedSymbol));
     }
 
     public static RubyClass createSymbolClass(Ruby runtime) {
@@ -619,6 +620,14 @@ public class RubySymbol extends RubyObject {
         return super.toJava(target);
     }
 
+    private static ByteList symbolBytesFromString(Ruby runtime, String internedSymbol) {
+        if (runtime.is1_9()) {
+            return new ByteList(ByteList.plain(internedSymbol), USASCIIEncoding.INSTANCE, false);
+        } else {
+            return ByteList.create(internedSymbol);
+        }
+    }
+
     public static final class SymbolTable {
         static final int DEFAULT_INITIAL_CAPACITY = 2048; // *must* be power of 2!
         static final int MAXIMUM_CAPACITY = 1 << 30;
@@ -663,7 +672,7 @@ public class RubySymbol extends RubyObject {
                 if (isSymbolMatch(name, hash, e)) return e.symbol;
             }
             
-            return createSymbol(name, ByteList.create(name), hash, table);
+            return createSymbol(name, symbolBytesFromString(runtime, name), hash, table);
         }
 
         public RubySymbol getSymbol(ByteList bytes) {
