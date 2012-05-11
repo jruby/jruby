@@ -111,7 +111,7 @@ ifeq ($(OS), win64)
   CFLAGS += -mwin32 -D_JNI_IMPLEMENTATION_
   LDFLAGS += -Wl,--add-stdcall-alias
   PICFLAGS=
-  SOFLAGS += -shared -mimpure-text -static-libgcc
+  SOFLAGS += -shared -static-libgcc
   PREFIX =
   JNIEXT=dll
   CXX = x86_64-w64-mingw32-g++ -m64
@@ -146,7 +146,7 @@ ifeq ($(OS), win32)
   CFLAGS += -march=native -mtune=native -D_JNI_IMPLEMENTATION_ -DRUBY_DLLSPEC="__declspec(dllexport)"
   LDFLAGS += -Wl,--add-stdcall-alias
   PICFLAGS=
-  SOFLAGS += -shared -mimpure-text -Wl,--enable-auto-image-base,--enable-auto-import
+  SOFLAGS += -shared -Wl,--enable-auto-image-base,--enable-auto-import
   PREFIX =
   JNIEXT=dll
   LIBS += -lws2_32
@@ -173,7 +173,7 @@ endif
 
 ifeq ($(OS), linux)
   PLATFORM = $(CPU)-Linux
-  SOFLAGS = -shared -mimpure-text -static-libgcc -Wl,-soname,$(@F) -Wl,-O1
+  SOFLAGS = -shared -static-libgcc -Wl,-soname,$(@F) -Wl,-O1
   CFLAGS += -pthread
 endif
 
