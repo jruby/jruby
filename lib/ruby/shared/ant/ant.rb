@@ -1,5 +1,12 @@
 require 'java'
-require 'ant/element'
+begin
+  require 'ant/element'
+rescue NameError => ne
+  # uncaught, we should get a NameError, such as:
+  # NameError: uppercase package names not accessible this way (`org.apache.tools.ant.IntrospectionHelper')
+  # this probably means $ANT_HOME is not set properly
+  raise RuntimeError, "Caught NameError; examine $ANT_HOME"
+end
 require 'ant/target'
 
 class Ant
@@ -169,7 +176,8 @@ class Ant
         @ant
       else
         options = options.join(" ") if options.respond_to? :to_ary
-        sh "ant #{options.to_s}"  # FIXME: Make this more secure if using array form
+        ant_bin = ENV['ANT_HOME'] ? File.join(ENV['ANT_HOME'], 'bin', 'ant') : 'ant' # find one on $PATH
+        sh "#{ant_bin} #{options.to_s}" # FIXME: Make this more secure if using array form
       end
     rescue => e
       warn e.message

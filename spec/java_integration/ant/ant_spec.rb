@@ -119,3 +119,15 @@ describe Ant do
     @ant.properties["msg"].should == "hello"
   end
 end
+
+describe Ant, '.ant' do
+  it "prefers $ANT_HOME to $PATH" do
+    if ENV['ANT_HOME']
+      hide_ant_from_path
+      lambda { Ant.ant(:basedir => File.join(File.dirname(__FILE__), '..', '..', '..')) }.
+        should_not raise_error
+    else
+      pending '$ANT_HOME is not set'
+    end
+  end
+end
