@@ -524,6 +524,7 @@ public class RubyDateFormat extends DateFormat {
                     String width = "3";
                     if (formatter != null) width = formatter.getFormatter();
                     output = formatTruncate(String.valueOf(value), Integer.valueOf(width), "0");
+                    formatter = null; // we are done with this formatter
                     break;
                 case FORMAT_WEEKYEAR:
                     output = Integer.toString(dt.getWeekyear());
