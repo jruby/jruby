@@ -441,7 +441,7 @@ RUBY_DLLSPEC void rb_bug(const char*, ...) __attribute__((noreturn));
 RUBY_DLLSPEC VALUE rb_exc_new(VALUE, const char*, long);
 RUBY_DLLSPEC VALUE rb_exc_new2(VALUE, const char*);
 RUBY_DLLSPEC VALUE rb_exc_new3(VALUE, VALUE);
-RUBY_DLLSPEC VALUE rb_exc_raise(VALUE);
+RUBY_DLLSPEC void rb_exc_raise(VALUE);
 
 RUBY_DLLSPEC void rb_num_zerodiv(void);
 RUBY_DLLSPEC long rb_num2long(VALUE);
