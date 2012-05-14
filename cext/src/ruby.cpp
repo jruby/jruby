@@ -215,6 +215,7 @@ rb_sys_fail(const char* msg)
 {
     JLocalEnv env;
     env->CallVoidMethod(JRuby_class, JRuby_sysFail, getRuntime(), env->NewStringUTF(msg), errno);
+    rb_bug("rb_sys_fail does return"); // to suppress warning: noreturn function does return
 }
 
 extern "C" void
@@ -222,6 +223,7 @@ rb_throw(const char* symbol, VALUE result)
 {
     VALUE params[2] = {ID2SYM(rb_intern(symbol)), result};
     callMethodA(rb_mKernel, "throw", 2, params);
+    rb_bug("rb_throw does return"); // to suppress warning: noreturn function does return
 }
 
 extern "C" VALUE 

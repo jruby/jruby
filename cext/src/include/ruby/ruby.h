@@ -433,15 +433,15 @@ RUBY_DLLSPEC VALUE rb_rescue2(VALUE(*)(ANYARGS),VALUE,VALUE(*)(ANYARGS),VALUE,..
 RUBY_DLLSPEC VALUE rb_ensure(VALUE(*)(ANYARGS),VALUE,VALUE(*)(ANYARGS),VALUE);
 RUBY_DLLSPEC VALUE rb_protect(VALUE (*func)(VALUE), VALUE data, int* status);
 RUBY_DLLSPEC void rb_jump_tag(int status);
-RUBY_DLLSPEC void rb_throw(const char* symbol, VALUE result);
+RUBY_DLLSPEC void rb_throw(const char* symbol, VALUE result) __attribute__((noreturn));
 
 RUBY_DLLSPEC void rb_fatal(const char *fmt, ...) __attribute__((noreturn));
-RUBY_DLLSPEC void rb_sys_fail(const char *msg);
+RUBY_DLLSPEC void rb_sys_fail(const char *msg) __attribute__((noreturn));
 RUBY_DLLSPEC void rb_bug(const char*, ...) __attribute__((noreturn));
 RUBY_DLLSPEC VALUE rb_exc_new(VALUE, const char*, long);
 RUBY_DLLSPEC VALUE rb_exc_new2(VALUE, const char*);
 RUBY_DLLSPEC VALUE rb_exc_new3(VALUE, VALUE);
-RUBY_DLLSPEC void rb_exc_raise(VALUE);
+RUBY_DLLSPEC void rb_exc_raise(VALUE) __attribute__((noreturn));
 
 RUBY_DLLSPEC void rb_num_zerodiv(void);
 RUBY_DLLSPEC long rb_num2long(VALUE);
@@ -463,7 +463,7 @@ RUBY_DLLSPEC long long rb_big2ll(VALUE);
 RUBY_DLLSPEC double rb_big2dbl(VALUE);
 RUBY_DLLSPEC VALUE rb_big2str(VALUE, int);
 RUBY_DLLSPEC int rb_cmpint(VALUE, VALUE, VALUE);
-RUBY_DLLSPEC void rb_cmperr(VALUE, VALUE);
+RUBY_DLLSPEC void rb_cmperr(VALUE, VALUE) __attribute__((noreturn));
 
 RUBY_DLLSPEC VALUE rb_int2inum(long);
 RUBY_DLLSPEC VALUE rb_uint2inum(unsigned long);
