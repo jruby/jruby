@@ -1270,6 +1270,8 @@ public final class Ruby {
         encodingService = new EncodingService(this);
 
         RubySymbol.createSymbolClass(this);
+        
+        recursiveKey = newSymbol("__recursive_key__");
 
         if (profile.allowClass("ThreadGroup")) {
             RubyThreadGroup.createThreadGroupClass(this);
@@ -2885,11 +2887,6 @@ public final class Ruby {
 
         // clear out threadlocals so they don't leak
         recursive = new ThreadLocal<Map<String, RubyHash>>();
-        recursiveKey = new ThreadLocal<RubySymbol>() {
-            protected RubySymbol initialValue() {
-                return newSymbol("__recursive_key__");
-            }
-        };
 
         while (!atExitBlocks.empty()) {
             RubyProc proc = atExitBlocks.pop();
@@ -3806,7 +3803,7 @@ public final class Ruby {
         ExecRecursiveParams p = new ExecRecursiveParams();
         p.list = recursiveListAccess();
         p.objid = obj.id();
-        boolean outermost = outer && !recursiveCheck(p.list, recursiveKey.get(), null);
+        boolean outermost = outer && !recursiveCheck(p.list, recursiveKey, null);
         if(recursiveCheck(p.list, p.objid, pairid)) {
             if(outer && !outermost) {
                 throw new RecursiveError(p.list);
@@ -3819,7 +3816,7 @@ public final class Ruby {
             p.pairid = pairid;
 
             if(outermost) {
-                recursivePush(p.list, recursiveKey.get(), null);
+                recursivePush(p.list, recursiveKey, null);
                 try {
                     result = execRecursiveI(p);
                 } catch(RecursiveError e) {
@@ -3829,7 +3826,7 @@ public final class Ruby {
                         result = p.list;
                     }
                 }
-                recursivePop(p.list, recursiveKey.get(), null);
+                recursivePop(p.list, recursiveKey, null);
                 if(result == p.list) {
                     result = func.call(obj, true);
                 }
@@ -4457,11 +4454,7 @@ public final class Ruby {
 
     // structures and such for recursive operations
     private ThreadLocal<Map<String, RubyHash>> recursive = new ThreadLocal<Map<String, RubyHash>>();
-    private ThreadLocal<RubySymbol> recursiveKey = new ThreadLocal<RubySymbol>() {
-        protected RubySymbol initialValue() {
-            return newSymbol("__recursive_key__");
-        }
-    };
+    private RubySymbol recursiveKey;
     private ThreadLocal<Boolean> inRecursiveListOperation = new ThreadLocal<Boolean>();
 
     private FFI ffi;
