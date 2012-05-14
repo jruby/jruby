@@ -208,7 +208,7 @@ public class TraceType {
             }
         }
 
-        exception.printBacktrace(errorStream);
+        exception.printBacktrace(errorStream, 1);
 
         return new String(baos.toByteArray());
     }

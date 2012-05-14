@@ -85,7 +85,7 @@ public class RaiseException extends JumpException {
      * @param backtrace
      */
     public RaiseException(RubyException exception, IRubyObject backtrace) {
-        super();
+        super(exception.message.toString());
         if (DEBUG) {
             Thread.dumpStack();
         }
@@ -132,7 +132,7 @@ public class RaiseException extends JumpException {
     }
 
     public RaiseException(RubyException exception, boolean isNativeException) {
-        super();
+        super(exception.message.toString());
         if (DEBUG) {
             Thread.dumpStack();
         }
