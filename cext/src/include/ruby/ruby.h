@@ -1191,13 +1191,12 @@ RUBY_DLLSPEC void rb_set_errinfo(VALUE err);
 
 #define ALLOCA_N(type,n) (type*)alloca(sizeof(type)*(n))
 
-static void ruby_setenv(const char *name, const char *value) {
-  setenv(name, value, 1);
-}
+RUBY_DLLSPEC void ruby_setenv(const char* name, const char* value);
   
 #undef setenv
 #define setenv(name,val) ruby_setenv(name,val)
 
+RUBY_DLLSPEC char* ruby_strdup(const char* str);
 #undef strdup
 #define strdup(s) ruby_strdup(s)
 

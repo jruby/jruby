@@ -129,12 +129,20 @@ rb_scan_args(int argc, const VALUE* argv, const char* spec, ...)
 
 // Imported from MRI
 extern "C" char *
-ruby_strdup(const char *str) {
-  char *tmp;
-  size_t len = strlen(str) + 1;
+ruby_strdup(const char *str) 
+{
+    char *tmp;
+    size_t len = strlen(str) + 1;
 
-  tmp = (char*)xmalloc(len);
-  memcpy(tmp, str, len);
+    tmp = (char *) xmalloc(len);
+    memcpy(tmp, str, len);
 
-  return tmp;
+    return tmp;
+}
+
+#undef setenv
+extern "C" void 
+ruby_setenv(const char *name, const char *value)
+{
+    setenv(name, value, 1);
 }
