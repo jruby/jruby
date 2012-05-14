@@ -28,7 +28,6 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 module FFI
-  TypeDefs = Hash.new
 
   def self.typedef(old, add)
     TypeDefs[add] = self.find_type(old)
