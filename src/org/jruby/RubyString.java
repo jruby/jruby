@@ -385,8 +385,14 @@ public class RubyString extends RubyObject implements EncodingCapable {
     public RubyString(Ruby runtime, RubyClass rubyClass, CharSequence value) {
         super(runtime, rubyClass);
         assert value != null;
-        byte[] bytes = RubyEncoding.encode(value, Charset.defaultCharset());
-        this.value = new ByteList(bytes, runtime.getDefaultExternalEncoding(), false);
+        Charset charset = null;
+        Encoding defaultEncoding = runtime.getEncodingService().getLocaleEncoding();
+        if (defaultEncoding == null) defaultEncoding = UTF8;
+
+        charset = defaultEncoding.getCharset();
+        byte[] bytes = RubyEncoding.encode(value, charset);
+
+        this.value = new ByteList(bytes, defaultEncoding, false);
     }
 
     public RubyString(Ruby runtime, RubyClass rubyClass, byte[] value) {

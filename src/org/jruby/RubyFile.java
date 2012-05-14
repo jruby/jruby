@@ -1069,7 +1069,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         RubyString filename = get_path(context, args[0]);
         runtime.checkSafeString(filename);
 
-        path = adjustRootPathOnWindows(runtime, filename.getUnicodeValue(), runtime.getCurrentDirectory());
+        path = adjustRootPathOnWindows(runtime, filename.asJavaString(), runtime.getCurrentDirectory());
 
         String modeString = "r";
         IOOptions modes = newIOOptions(runtime, modeString);
@@ -1114,7 +1114,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         RubyString filename = get_path(runtime.getCurrentContext(), args[0]);
         runtime.checkSafeString(filename);
 
-        path = adjustRootPathOnWindows(runtime, filename.getUnicodeValue(), runtime.getCurrentDirectory());
+        path = adjustRootPathOnWindows(runtime, filename.asJavaString(), runtime.getCurrentDirectory());
 
         String modeString;
         IOOptions modes;

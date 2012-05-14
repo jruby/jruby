@@ -99,7 +99,7 @@ public class RubyFileTest {
         }
         JRubyFile file = file(filename);
 
-        return runtime.newBoolean(file.exists() && file.isDirectory());
+        return runtime.newBoolean(file.exists() && runtime.getPosix().stat(file.getAbsolutePath()).isDirectory());
     }
 
     @JRubyMethod(name = "executable?", required = 1, module = true)
