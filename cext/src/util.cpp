@@ -126,3 +126,15 @@ rb_scan_args(int argc, const VALUE* argv, const char* spec, ...)
     rb_raise(rb_eFatal, "bad scan arg format: %s", spec);
     return 0;
 }
+
+// Imported from MRI
+extern "C" char *
+ruby_strdup(const char *str) {
+  char *tmp;
+  size_t len = strlen(str) + 1;
+
+  tmp = (char*)xmalloc(len);
+  memcpy(tmp, str, len);
+
+  return tmp;
+}

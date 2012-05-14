@@ -1191,6 +1191,16 @@ RUBY_DLLSPEC void rb_set_errinfo(VALUE err);
 
 #define ALLOCA_N(type,n) (type*)alloca(sizeof(type)*(n))
 
+static void ruby_setenv(const char *name, const char *value) {
+  setenv(name, value, 1);
+}
+  
+#undef setenv
+#define setenv(name,val) ruby_setenv(name,val)
+
+#undef strdup
+#define strdup(s) ruby_strdup(s)
+
 #ifdef  __cplusplus
 #if 0
 { /* satisfy cc-mode */
