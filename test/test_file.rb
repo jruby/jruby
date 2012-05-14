@@ -4,6 +4,7 @@ require 'rbconfig'
 require 'fileutils'
 require 'tempfile'
 require 'pathname'
+require 'jruby'
 
 class TestFile < Test::Unit::TestCase
   WINDOWS = RbConfig::CONFIG['host_os'] =~ /Windows|mswin/
@@ -667,7 +668,7 @@ class TestFile < Test::Unit::TestCase
     assert(stat2.readable?)
   end
 
-  if (WINDOWS)
+  if WINDOWS && JRuby::runtime.posix.native?
     # JRUBY-2351
     def test_not_implemented_methods_on_windows
       # the goal here is to make sure that those "weird"
