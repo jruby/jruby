@@ -55,7 +55,7 @@ rb_exc_new3(VALUE etype, VALUE str)
     return callMethod(etype, "new", 1, str);
 }
 
-extern "C" VALUE
+extern "C" void
 rb_exc_raise(VALUE exc)
 {
     using namespace jruby;
