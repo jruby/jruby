@@ -315,6 +315,9 @@ public class Tempfile extends org.jruby.RubyTempfile {
         }
     }
 
+    // FIXME This reaper never actually runs; delete it or implement it properly
+    // For JRUBY-6477, I add the finalize above to do basically what this was
+    // intended to do.
     private static final class Reaper extends PhantomReferenceReaper<Tempfile> implements Runnable {
         private volatile boolean released = false;
         private final Ruby runtime;
