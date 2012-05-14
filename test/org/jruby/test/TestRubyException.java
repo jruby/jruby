@@ -69,7 +69,7 @@ public class TestRubyException extends TestCase {
 	private String[] printError() {
 		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(2048);
 		PrintStream stream = new PrintStream(byteArrayOutputStream);
-		exception.printBacktrace(stream);
+		exception.printBacktrace(stream, 1);
 		String output = new String(byteArrayOutputStream.toByteArray());
 		if (output.trim().length() == 0) {
 		    return new String[0];

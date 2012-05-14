@@ -315,11 +315,15 @@ public class RubyException extends RubyObject {
     }
 
     public void printBacktrace(PrintStream errorStream) {
+        printBacktrace(errorStream, 0);
+    }
+
+    public void printBacktrace(PrintStream errorStream, int skip) {
         IRubyObject backtrace = callMethod(getRuntime().getCurrentContext(), "backtrace");
         if (!backtrace.isNil() && backtrace instanceof RubyArray) {
             IRubyObject[] elements = backtrace.convertToArray().toJavaArray();
 
-            for (int i = 1; i < elements.length; i++) {
+            for (int i = skip; i < elements.length; i++) {
                 IRubyObject stackTraceLine = elements[i];
                 if (stackTraceLine instanceof RubyString) {
                     printStackTraceLine(errorStream, stackTraceLine);
