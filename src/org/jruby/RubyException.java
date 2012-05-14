@@ -314,10 +314,22 @@ public class RubyException extends RubyObject {
         exception.message = message;
     }
 
+    /**
+     * Print the Ruby exception's backtrace to the given PrintStream.
+     *
+     * @param errorStream the PrintStream to which backtrace should be printed
+     */
     public void printBacktrace(PrintStream errorStream) {
         printBacktrace(errorStream, 0);
     }
 
+    /**
+     * Print the Ruby exception's backtrace to the given PrintStream. This
+     * version accepts a number of lines to skip and is primarily used
+     * internally for exception printing where the first line is treated specially.
+     *
+     * @param errorStream the PrintStream to which backtrace should be printed
+     */
     public void printBacktrace(PrintStream errorStream, int skip) {
         IRubyObject backtrace = callMethod(getRuntime().getCurrentContext(), "backtrace");
         if (!backtrace.isNil() && backtrace instanceof RubyArray) {
