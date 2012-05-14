@@ -252,59 +252,19 @@ public class SSLSocket extends RubyObject {
         RubyThread thread = runtime.getCurrentContext().getThread();
 
         SelectableChannel selectable = (SelectableChannel)io.getChannel();
+        boolean oldBlocking = selectable.isBlocking();
         selectable.configureBlocking(false);
-        SelectionKey key = null;
-        Selector selector = null;
         try {
             io.addBlockingThread(thread);
-            selector = runtime.getSelectorPool().get();
 
-            key = selectable.register(selector, operations);
-
-            thread.beforeBlockingCall();
-            int result = selector.select();
+            thread.select(selectable, io, operations);
 
             // check for thread events, in case we've been woken up to die
             thread.pollThreadEvents();
-
-            if (result == 1) {
-                Set<SelectionKey> keySet = selector.selectedKeys();
-
-                if (keySet.iterator().next() == key) {
-                    return;
-                }
-            }
-        } catch (IOException ioe) {
-            throw runtime.newRuntimeError("Error with selector: " + ioe.getMessage());
         } finally {
-            // Note: I don't like ignoring these exceptions, but it's
-            // unclear how likely they are to happen or what damage we
-            // might do by ignoring them. Note that the pieces are separate
-            // so that we can ensure one failing does not affect the others
-            // running.
-
-            // clean up the key in the selector
-            try {
-                if (key != null) key.cancel();
-                if (selector != null) selector.selectNow();
-            } catch (Exception e) {
-                // ignore
-            }
-
-            // shut down and null out the selector
-            try {
-                if (selector != null) {
-                    runtime.getSelectorPool().put(selector);
-                }
-            } catch (Exception e) {
-                // ignore
-            }
-
             // remove this thread as a blocker against the given IO
             io.removeBlockingThread(thread);
-
-            // clear thread state from blocking call
-            thread.afterBlockingCall();
+            selectable.configureBlocking(oldBlocking);
         }
     }
 
