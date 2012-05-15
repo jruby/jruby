@@ -535,22 +535,28 @@ public class Sprintf {
                     ByteList bytes = strArg.getByteList();
                     Encoding enc = wrapper.checkEncoding(strArg);
                     int len = bytes.length();
+                    int strLen = strArg.strLength();
+
                     if (arg.isTaint()) tainted = true;
+
                     if ((flags & FLAG_PRECISION) != 0 && precision < len) {
+                        // TODO: precision is not considering actual character length
+                        // See below as well.
                         len = precision;
+                        strLen = precision;
                     }
-                    // TODO: adjust length so it won't fall in the middle 
+                    // TODO: adjust length so it won't fall in the middle
                     // of a multi-byte character. MRI's sprintf.c uses tables
                     // in a modified version of regex.c, which assume some
                     // particular  encoding for a given installation/application.
-                    // (See regex.c#re_mbcinit in ruby-1.8.5-p12) 
+                    // (See regex.c#re_mbcinit in ruby-1.8.5-p12)
                     //
                     // This is only an issue if the user specifies a precision
                     // that causes the string to be truncated. The same issue
                     // would arise taking a substring of a ByteList-backed RubyString.
 
-                    if ((flags & FLAG_WIDTH) != 0 && width > len) {
-                        width -= len;
+                    if ((flags & FLAG_WIDTH) != 0 && width > strLen) {
+                        width -= strLen;
                         if ((flags & FLAG_MINUS) != 0) {
                             buf.append(bytes.getUnsafeBytes(),bytes.begin(),len);
                             buf.fill(' ',width);
