@@ -1464,15 +1464,25 @@ public class ShellLauncher {
     private static String[] parseCommandLine(ThreadContext context, Ruby runtime, IRubyObject[] rawArgs) {
         String[] args;
         if (rawArgs.length == 1) {
-            synchronized (runtime.getLoadService()) {
-                runtime.getLoadService().require("jruby/path_helper");
-            }
-            RubyModule pathHelper = runtime.getClassFromPath("JRuby::PathHelper");
-            RubyArray parts = (RubyArray) RuntimeHelpers.invoke(
-                    context, pathHelper, "smart_split_command", rawArgs);
-            args = new String[parts.getLength()];
-            for (int i = 0; i < parts.getLength(); i++) {
-                args[i] = parts.entry(i).toString();
+            if ((rawArgs[0] instanceof RubyArray)
+                && (((RubyArray) rawArgs[0]).getLength() == 2)) {
+                // a two-element array containing path and argv[0]
+                // but we can't pass argv[0] to ProcessBuilder
+                // so discard it
+                RubyArray initArray = (RubyArray) rawArgs[0];
+                args = new String[1];
+                args[0] = initArray.entry(0).toString();
+            } else {
+                synchronized (runtime.getLoadService()) {
+                    runtime.getLoadService().require("jruby/path_helper");
+                }
+                RubyModule pathHelper = runtime.getClassFromPath("JRuby::PathHelper");
+                RubyArray parts = (RubyArray) RuntimeHelpers.invoke(
+                                                                    context, pathHelper, "smart_split_command", rawArgs);
+                args = new String[parts.getLength()];
+                for (int i = 0; i < parts.getLength(); i++) {
+                    args[i] = parts.entry(i).toString();
+                }
             }
         } else {
             args = new String[rawArgs.length];
