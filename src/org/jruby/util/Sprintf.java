@@ -248,6 +248,7 @@ public class Sprintf {
     }
 
     private static boolean rubySprintfToBuffer(ByteList buf, CharSequence charFormat, Args args, boolean usePrefixForZero) {
+        Ruby runtime = args.runtime;
         boolean tainted = false;
         final byte[] format;
 
@@ -257,6 +258,9 @@ public class Sprintf {
         int mark;
         ByteList name = null;
         Encoding encoding = null;
+
+        // used for RubyString functions to manage encoding, etc
+        RubyString wrapper = RubyString.newString(runtime, buf);
 
         if (charFormat instanceof ByteList) {
             ByteList list = (ByteList)charFormat;
@@ -527,7 +531,9 @@ public class Sprintf {
                     if (fchar == 'p') {
                         arg = arg.callMethod(arg.getRuntime().getCurrentContext(),"inspect");
                     }
-                    ByteList bytes = arg.asString().getByteList();
+                    RubyString strArg = arg.asString();
+                    ByteList bytes = strArg.getByteList();
+                    Encoding enc = wrapper.checkEncoding(strArg);
                     int len = bytes.length();
                     if (arg.isTaint()) tainted = true;
                     if ((flags & FLAG_PRECISION) != 0 && precision < len) {
@@ -557,6 +563,7 @@ public class Sprintf {
                     }
                     offset++;
                     incomplete = false;
+                    buf.setEncoding(enc);
                     break;
                 }
                 case 'd':

@@ -293,7 +293,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return null;
     }
 
-    final Encoding checkEncoding(RubyString other) {
+    public final Encoding checkEncoding(RubyString other) {
         Encoding enc = isCompatibleWith(other);
         if (enc == null) throw getRuntime().newEncodingCompatibilityError("incompatible character encodings: " + 
                                 value.getEncoding() + " and " + other.value.getEncoding());
