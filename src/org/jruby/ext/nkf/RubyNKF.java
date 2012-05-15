@@ -56,35 +56,27 @@ import org.jruby.util.Pack;
 
 @JRubyModule(name="NKF")
 public class RubyNKF {
-    public static final NKFCharset AUTO = new NKFCharset(0, "x-JISAutoDetect");
-    // no ISO-2022-JP in jcodings
-    public static final NKFCharset JIS = new NKFCharset(1, "iso-2022-jp");
-    public static final NKFCharset EUC = new NKFCharset(2, "EUC-JP");
-    public static final NKFCharset SJIS = new NKFCharset(3, "Windows-31J");
-    public static final NKFCharset BINARY = new NKFCharset(4, null);
-    public static final NKFCharset NOCONV = new NKFCharset(4, null);
-    public static final NKFCharset UNKNOWN = new NKFCharset(0, null);
-    public static final NKFCharset ASCII = new NKFCharset(5, "iso-8859-1");
-    public static final NKFCharset UTF8 = new NKFCharset(6, "UTF-8");
-    public static final NKFCharset UTF16 = new NKFCharset(8, "UTF-16");
-    public static final NKFCharset UTF32 = new NKFCharset(12, "UTF-32");
-    public static final NKFCharset OTHER = new NKFCharset(16, null);
-    public static final NKFCharset BASE64 = new NKFCharset(20, "base64");
-    public static final NKFCharset QENCODE = new NKFCharset(21, "qencode");
-    public static final NKFCharset MIME_DETECT = new NKFCharset(22, "MimeAutoDetect");
+    public static enum NKFCharset {
+        AUTO(0, "x-JISAutoDetect"),
+        // no ISO-2022-JP in jcodings
+        JIS(1, "iso-2022-jp"),
+        EUC(2, "EUC-JP"),
+        SJIS(3, "Windows-31J"),
+        BINARY(4, null),
+        NOCONV(4, null),
+        UNKNOWN(0, null),
+        ASCII(5, "iso-8859-1"),
+        UTF8(6, "UTF-8"),
+        UTF16(8, "UTF-16"),
+        UTF32(12, "UTF-32"),
+        OTHER(16, null),
+        BASE64(20, "base64"),
+        QENCODE(21, "qencode"),
+        MIME_DETECT(22, "MimeAutoDetect");
 
-    private static final ByteList BEGIN_MIME_STRING = new ByteList(ByteList.plain("=?"));
-    private static final ByteList END_MIME_STRING = new ByteList(ByteList.plain("?="));
-    private static final ByteList PACK_BASE64 = new ByteList(ByteList.plain("m"));
-    private static final ByteList PACK_QENCODE = new ByteList(ByteList.plain("M"));
-    
-    public static class NKFCharset {
-        private final int value;
-        private final String charset;
-
-        public NKFCharset(int v, String c) {
-            value = v;
-            charset = c;
+        private NKFCharset(int value, String charset) {
+            this.value = value;
+            this.charset = charset;
         }
 
         public int getValue() {
@@ -94,38 +86,25 @@ public class RubyNKF {
         public String getCharset() {
             return charset;
         }
+
+        private final int value;
+        private final String charset;
     }
+
+    private static final ByteList BEGIN_MIME_STRING = new ByteList(ByteList.plain("=?"));
+    private static final ByteList END_MIME_STRING = new ByteList(ByteList.plain("?="));
+    private static final ByteList PACK_BASE64 = new ByteList(ByteList.plain("m"));
+    private static final ByteList PACK_QENCODE = new ByteList(ByteList.plain("M"));
     
-    public static Map<IRubyObject, String> NKFCharsetMap = new HashMap();
+    public static Map<Integer, String> NKFCharsetMap = new HashMap();
 
     public static void createNKF(Ruby runtime) {
         RubyModule nkfModule = runtime.defineModule("NKF");
-        
-        RubyFixnum index = null;
-        index = RubyFixnum.newFixnum(runtime, AUTO.getValue());
-        nkfModule.defineConstant("AUTO", index); NKFCharsetMap.put(index, "AUTO");
-        index = RubyFixnum.newFixnum(runtime, JIS.getValue());
-        nkfModule.defineConstant("JIS", index); NKFCharsetMap.put(index, "JIS");
-        index = RubyFixnum.newFixnum(runtime, EUC.getValue());
-        nkfModule.defineConstant("EUC", index); NKFCharsetMap.put(index, "EUC");
-        index = RubyFixnum.newFixnum(runtime, SJIS.getValue());
-        nkfModule.defineConstant("SJIS", index); NKFCharsetMap.put(index, "SJIS");
-        index = RubyFixnum.newFixnum(runtime, BINARY.getValue());
-        nkfModule.defineConstant("BINARY", index); NKFCharsetMap.put(index, "BINARY");
-        index = RubyFixnum.newFixnum(runtime, NOCONV.getValue());
-        nkfModule.defineConstant("NOCONV", index); NKFCharsetMap.put(index, "NOCONV");
-        index = RubyFixnum.newFixnum(runtime, UNKNOWN.getValue());
-        nkfModule.defineConstant("UNKNOWN", index); NKFCharsetMap.put(index, "UNKNOWN");
-        index = RubyFixnum.newFixnum(runtime, ASCII.getValue());
-        nkfModule.defineConstant("ASCII", index); NKFCharsetMap.put(index, "ASCII");
-        index = RubyFixnum.newFixnum(runtime, UTF8.getValue());
-        nkfModule.defineConstant("UTF8", index); NKFCharsetMap.put(index, "UTF8");
-        index = RubyFixnum.newFixnum(runtime, UTF16.getValue());
-        nkfModule.defineConstant("UTF16", index); NKFCharsetMap.put(index, "UTF16");
-        index = RubyFixnum.newFixnum(runtime, UTF32.getValue());
-        nkfModule.defineConstant("UTF32", index); NKFCharsetMap.put(index, "UTF32");
-        index = RubyFixnum.newFixnum(runtime, OTHER.getValue());
-        nkfModule.defineConstant("OTHER", index); NKFCharsetMap.put(index, "OTHER");
+
+        for (NKFCharset nkf : NKFCharset.values()) {
+            nkfModule.defineConstant(nkf.name(), RubyFixnum.newFixnum(runtime, nkf.getValue()));
+            NKFCharsetMap.put(nkf.getValue(), nkf.name());
+        }
 
         RubyString version = runtime.newString("2.0.7 (JRuby 2007-05-11)");
         RubyString nkfVersion = runtime.newString("2.0.7");
@@ -562,4 +541,36 @@ public class RubyNKF {
         }
 
     }
+
+    @Deprecated
+    public static final NKFCharset AUTO = NKFCharset.AUTO;
+    // no ISO-2022-JP in jcodings
+    @Deprecated
+    public static final NKFCharset JIS = NKFCharset.JIS;
+    @Deprecated
+    public static final NKFCharset EUC = NKFCharset.EUC;
+    @Deprecated
+    public static final NKFCharset SJIS = NKFCharset.SJIS;
+    @Deprecated
+    public static final NKFCharset BINARY = NKFCharset.BINARY;
+    @Deprecated
+    public static final NKFCharset NOCONV = NKFCharset.NOCONV;
+    @Deprecated
+    public static final NKFCharset UNKNOWN = NKFCharset.UNKNOWN;
+    @Deprecated
+    public static final NKFCharset ASCII = NKFCharset.ASCII;
+    @Deprecated
+    public static final NKFCharset UTF8 = NKFCharset.UTF8;
+    @Deprecated
+    public static final NKFCharset UTF16 = NKFCharset.UTF16;
+    @Deprecated
+    public static final NKFCharset UTF32 = NKFCharset.UTF32;
+    @Deprecated
+    public static final NKFCharset OTHER = NKFCharset.OTHER;
+    @Deprecated
+    public static final NKFCharset BASE64 = NKFCharset.BASE64;
+    @Deprecated
+    public static final NKFCharset QENCODE = NKFCharset.QENCODE;
+    @Deprecated
+    public static final NKFCharset MIME_DETECT = NKFCharset.MIME_DETECT;
 }

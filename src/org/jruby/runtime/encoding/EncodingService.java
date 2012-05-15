@@ -253,7 +253,7 @@ public final class EncodingService {
         Encoding encoding = null;
         if (arg instanceof RubyEncoding) {
             encoding = ((RubyEncoding) arg).getEncoding();
-        } else if (arg instanceof RubyFixnum && RubyNKF.NKFCharsetMap.containsKey(arg)) {
+        } else if (arg instanceof RubyFixnum && RubyNKF.NKFCharsetMap.containsKey((int)arg.convertToInteger().getLongValue())) {
             return getEncodingFromNKFId(arg);
         } else if (!arg.isNil()) {
             encoding = arg.convertToString().toEncoding(runtime);
@@ -262,7 +262,7 @@ public final class EncodingService {
     }
     
     private Encoding getEncodingFromNKFId(IRubyObject id) {
-        String name = RubyNKF.NKFCharsetMap.get(id);
+        String name = RubyNKF.NKFCharsetMap.get((int)id.convertToInteger().getLongValue());
         HashEntryIterator hei = encodings.entryIterator();
         while (hei.hasNext()) {
             CaseInsensitiveBytesHash.CaseInsensitiveBytesHashEntry<Entry> e = 
@@ -415,7 +415,6 @@ public final class EncodingService {
     /**
      * Find a non-special encoding Entry, raising argument error if it does not exist.
      *
-     * @param runtime current Ruby instance
      * @param name the name of the encoding to look up
      * @return the EncodingDB.Entry object found, or raises ArgumentError
      */
