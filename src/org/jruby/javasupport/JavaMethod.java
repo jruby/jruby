@@ -51,8 +51,6 @@ import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.compiler.util.HandleFactory;
-import org.jruby.compiler.util.HandleFactory.Handle;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.proxy.InternalJavaProxy;
 import org.jruby.javasupport.proxy.JavaProxyClass;
@@ -68,7 +66,6 @@ public class JavaMethod extends JavaCallable {
     private final Method method;
     private final Class boxedReturnType;
     private final boolean isFinal;
-    private final Handle handle;
     private final JavaUtil.JavaConverter returnConverter;
 
     public Object getValue() {
@@ -101,72 +98,6 @@ public class JavaMethod extends JavaCallable {
 
         boolean methodIsPublic = Modifier.isPublic(method.getModifiers());
         boolean classIsPublic = Modifier.isPublic(method.getDeclaringClass().getModifiers());
-
-        // try to find a "totally" public version of the method using superclasses and interfaces
-        if (methodIsPublic && !classIsPublic) {
-            if (HANDLE_DEBUG) System.out.println("Method " + method + " is not on a public class, searching for a better one");
-            Method newMethod = method;
-            Class newClass = method.getDeclaringClass();
-
-            OUTER: while (newClass != null) {
-                // try class
-                try {
-                    if (HANDLE_DEBUG) System.out.println("Trying to find " + method + " on " + newClass);
-                    newMethod = newClass.getMethod(method.getName(), method.getParameterTypes());
-
-                    // got it; break if this class is public
-                    if (Modifier.isPublic(newMethod.getDeclaringClass().getModifiers())) {
-                        break;
-                    }
-                } catch (NoSuchMethodException nsme) {
-                }
-
-                // try interfaces
-                for (Class ifc : newClass.getInterfaces()) {
-                    try {
-                        if (HANDLE_DEBUG) System.out.println("Trying to find " + method + " on " + ifc);
-                        newMethod = ifc.getMethod(method.getName(), method.getParameterTypes());
-                        break OUTER;
-                    } catch (NoSuchMethodException nsme) {
-                    }
-                }
-
-                // go to superclass
-                newClass = newClass.getSuperclass();
-                newMethod = null;
-            }
-            
-            if (newMethod != null) {
-                if (HANDLE_DEBUG) System.out.println("Found a better method target: " + newMethod);
-                method = newMethod;
-                methodIsPublic = Modifier.isPublic(method.getModifiers());
-                classIsPublic = Modifier.isPublic(method.getDeclaringClass().getModifiers());
-            }
-        }
-
-        // prepare a faster handle if handles are enabled and the method and class are public
-        Handle tmpHandle = null;
-        try {
-            if (USE_HANDLES &&
-                    // must be a public method
-                    methodIsPublic &&
-                    // must be a public class
-                    classIsPublic &&
-                    // must have been loaded from our known classloader hierarchy
-                    runtime.getJRubyClassLoader().loadClass(method.getDeclaringClass().getCanonicalName()) == method.getDeclaringClass()) {
-                tmpHandle = HandleFactory.createHandle(runtime.getJRubyClassLoader(), method);
-            } else {
-                tmpHandle = null;
-            }
-        } catch (ClassNotFoundException cnfe) {
-            tmpHandle = null;
-        }
-
-        if (tmpHandle == null) {
-            if (HANDLE_DEBUG) System.out.println("did not use handle for " + method);
-        }
-        
-        handle = tmpHandle;
 
         // Special classes like Collections.EMPTY_LIST are inner classes that are private but 
         // implement public interfaces.  Their methods are all public methods for the public 
@@ -454,9 +385,7 @@ public class JavaMethod extends JavaCallable {
 
     private IRubyObject invokeWithExceptionHandling(Method method, Object javaInvokee, Object[] arguments) {
         try {
-            Object result = handle != null
-                    ? handle.invoke(javaInvokee, arguments)
-                    : method.invoke(javaInvokee, arguments);
+            Object result = method.invoke(javaInvokee, arguments);
             return returnConverter.convert(getRuntime(), result);
         } catch (IllegalArgumentException iae) {
             return handlelIllegalArgumentEx(method, iae, arguments);
@@ -488,9 +417,7 @@ public class JavaMethod extends JavaCallable {
 
     private IRubyObject invokeDirectWithExceptionHandling(Method method, Object javaInvokee, Object[] arguments) {
         try {
-            Object result = handle != null
-                    ? handle.invoke(javaInvokee, arguments)
-                    : method.invoke(javaInvokee, arguments);
+            Object result = method.invoke(javaInvokee, arguments);
             return convertReturn(result);
         } catch (IllegalArgumentException iae) {
             return handlelIllegalArgumentEx(method, iae, arguments);
@@ -505,9 +432,7 @@ public class JavaMethod extends JavaCallable {
 
     private IRubyObject invokeDirectWithExceptionHandling(Method method, Object javaInvokee) {
         try {
-            Object result = handle != null
-                    ? handle.invoke(javaInvokee)
-                    : method.invoke(javaInvokee);
+            Object result = method.invoke(javaInvokee);
             return convertReturn(result);
         } catch (IllegalArgumentException iae) {
             return handlelIllegalArgumentEx(method, iae);
@@ -522,9 +447,7 @@ public class JavaMethod extends JavaCallable {
 
     private IRubyObject invokeDirectWithExceptionHandling(Method method, Object javaInvokee, Object arg0) {
         try {
-            Object result = handle != null
-                    ? handle.invoke(javaInvokee, arg0)
-                    : method.invoke(javaInvokee, arg0);
+            Object result = method.invoke(javaInvokee, arg0);
             return convertReturn(result);
         } catch (IllegalArgumentException iae) {
             return handlelIllegalArgumentEx(method, iae, arg0);
@@ -539,9 +462,7 @@ public class JavaMethod extends JavaCallable {
 
     private IRubyObject invokeDirectWithExceptionHandling(Method method, Object javaInvokee, Object arg0, Object arg1) {
         try {
-            Object result = handle != null
-                    ? handle.invoke(javaInvokee, arg0, arg1)
-                    : method.invoke(javaInvokee, arg0, arg1);
+            Object result = method.invoke(javaInvokee, arg0, arg1);
             return convertReturn(result);
         } catch (IllegalArgumentException iae) {
             return handlelIllegalArgumentEx(method, iae, arg0, arg1);
@@ -556,9 +477,7 @@ public class JavaMethod extends JavaCallable {
 
     private IRubyObject invokeDirectWithExceptionHandling(Method method, Object javaInvokee, Object arg0, Object arg1, Object arg2) {
         try {
-            Object result = handle != null
-                    ? handle.invoke(javaInvokee, arg0, arg1, arg2)
-                    : method.invoke(javaInvokee, arg0, arg1, arg2);
+            Object result = method.invoke(javaInvokee, arg0, arg1, arg2);
             return convertReturn(result);
         } catch (IllegalArgumentException iae) {
             return handlelIllegalArgumentEx(method, iae, arg0, arg1, arg2);
@@ -573,9 +492,7 @@ public class JavaMethod extends JavaCallable {
 
     private IRubyObject invokeDirectWithExceptionHandling(Method method, Object javaInvokee, Object arg0, Object arg1, Object arg2, Object arg3) {
         try {
-            Object result = handle != null
-                    ? handle.invoke(javaInvokee, arg0, arg1, arg2, arg3)
-                    : method.invoke(javaInvokee, arg0, arg1, arg2, arg3);
+            Object result = method.invoke(javaInvokee, arg0, arg1, arg2, arg3);
             return convertReturn(result);
         } catch (IllegalArgumentException iae) {
             return handlelIllegalArgumentEx(method, iae, arg0, arg1, arg2, arg3);

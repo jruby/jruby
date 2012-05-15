@@ -99,16 +99,20 @@ public class RubyTCPSocket extends RubyIPSocket {
         int remotePort = getPortFrom(context.getRuntime(), args[1]);
         String localHost = args.length >= 3 && !args[2].isNil() ? args[2].convertToString().toString() : null;
         int localPort = args.length == 4 && !args[3].isNil() ? getPortFrom(context.getRuntime(), args[3]) : 0;
+        
+        SocketChannel channel = null;
+        
+        // attempt to ensure the channel gets closed if we don't complete connecting
+        boolean success = false;
 
         try {
             // This is a bit convoluted because (1) SocketChannel.bind is only in jdk 7 and
             // (2) Socket.getChannel() seems to return null in some cases
-            final SocketChannel channel = SocketChannel.open();
+            channel = SocketChannel.open();
             final Socket socket = channel.socket();
             if (localHost != null) {
                 socket.bind( new InetSocketAddress(InetAddress.getByName(localHost), localPort) );
             }
-            boolean success = false;
             try {
                 channel.configureBlocking(false);
                 channel.connect( new InetSocketAddress(InetAddress.getByName(remoteHost), remotePort) );
@@ -134,6 +138,14 @@ public class RubyTCPSocket extends RubyIPSocket {
             throw sockerr(context.getRuntime(), e.getLocalizedMessage());
         } catch (IllegalArgumentException iae) {
             throw sockerr(context.getRuntime(), iae.getMessage());
+        } finally {
+            if (!success && channel != null) {
+                try {
+                    channel.close();
+                } catch (IOException ioe) {
+                    // ignore
+                }
+            }
         }
         return this;
     }
