@@ -38,7 +38,6 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -46,6 +45,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jruby.Ruby;
+import org.jruby.javasupport.JavaSupport;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.FieldVisitor;
@@ -100,8 +100,6 @@ public class JavaProxyClassFactory {
 
     private static int counter;
 
-    private static Map proxies = Collections.synchronizedMap(new HashMap());
-
     private static Method defineClass_method; // statically initialized below
 
     private static synchronized int nextId() {
@@ -146,7 +144,9 @@ public class JavaProxyClassFactory {
             key.addAll(names);
         }
 
-        JavaProxyClass proxyClass = (JavaProxyClass) proxies.get(key);
+        Map<Set<?>, JavaProxyClass> proxyCache =
+                runtime.getJavaSupport().getJavaProxyClassCache();
+        JavaProxyClass proxyClass = proxyCache.get(key);
         if (proxyClass == null) {
 
             if (targetClassName == null) {
@@ -174,7 +174,7 @@ public class JavaProxyClassFactory {
             proxyClass = generate(loader, targetClassName, superClass,
                     interfaces, methods, selfType);
 
-            proxies.put(key, proxyClass);
+            proxyCache.put(key, proxyClass);
         }
 
         return proxyClass;

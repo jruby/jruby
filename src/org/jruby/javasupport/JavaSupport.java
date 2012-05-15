@@ -40,6 +40,7 @@ import java.lang.reflect.Member;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -49,6 +50,7 @@ import org.jruby.RubyModule;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.java.proxies.ProxyCache;
+import org.jruby.javasupport.proxy.JavaProxyClass;
 import org.jruby.javasupport.util.ObjectProxyCache;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.WeakIdentityHashMap;
@@ -124,6 +126,9 @@ public class JavaSupport {
     private final Map<String, JavaClass> nameClassMap = new HashMap<String, JavaClass>();
 
     private final Map<Object, Object[]> javaObjectVariables = new WeakIdentityHashMap();
+
+    // A cache of all JavaProxyClass objects created for this runtime
+    private Map<Set<?>, JavaProxyClass> javaProxyClassCache = Collections.synchronizedMap(new HashMap<Set<?>, JavaProxyClass>());
     
     public JavaSupport(Ruby ruby) {
         this.runtime = ruby;
@@ -340,6 +345,10 @@ public class JavaSupport {
         RubyClass clazz;
         if ((clazz = javaConstructorClass) != null) return clazz;
         return javaConstructorClass = getJavaModule().getClass("JavaConstructor");
+    }
+
+    public Map<Set<?>, JavaProxyClass> getJavaProxyClassCache() {
+        return this.javaProxyClassCache;
     }
 
 }
