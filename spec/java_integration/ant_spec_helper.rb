@@ -120,10 +120,10 @@ end
 
 def hide_ant_from_path
   env=[]
-  ENV['PATH'].split(':').each do |dir|
+  ENV['PATH'].split(File::PATH_SEPARATOR).each do |dir|
     if File.executable?(File.join(dir, 'ant'))
       env << dir
     end
   end
-  ENV['PATH'] = env.join(':')
+  ENV['PATH'] = env.join(File::PATH_SEPARATOR)
 end
