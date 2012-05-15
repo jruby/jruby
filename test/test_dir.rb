@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# coding: utf-8
 require 'test/unit'
 require 'rbconfig'
 
@@ -202,18 +202,21 @@ class TestDir < Test::Unit::TestCase
 
   # JRUBY-4983
   def test_entries_unicode
+    utf8_dir = "testDir_1/glk\u00a9"
+    
     Dir.mkdir("./testDir_1")
-    Dir.mkdir("./testDir_1/glück")
+    Dir.mkdir(utf8_dir)
 
-    assert_nothing_raised { Dir.entries("./testDir_1/glück") }
+    assert_nothing_raised { Dir.entries(utf8_dir) }
+
     require 'fileutils'
     assert_nothing_raised do
-      FileUtils.cp_r("./testDir_1/glück", "./testDir_1/target")
-      FileUtils.rm_r("./testDir_1/glück")
+      FileUtils.cp_r(utf8_dir, "./testDir_1/target")
+      FileUtils.rm_r(utf8_dir)
     end
   ensure
     Dir.unlink "./testDir_1/target" rescue nil
-    Dir.unlink "./testDir_1/glück" rescue nil
+    Dir.unlink utf8_dir rescue nil
   end
 
   # JRUBY-5286
