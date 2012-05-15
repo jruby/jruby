@@ -1,7 +1,7 @@
 # TODO java.util.Comparator support?
 module java::util::Collection
   include Enumerable
-  def each(&block)
+  def each
     iter = iterator
     while iter.hasNext
       yield(iter.next)
