@@ -36,13 +36,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.javasupport;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.AccessibleObject;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.Type;
-
 import org.jruby.Ruby;
 import org.jruby.RubyBoolean;
 import org.jruby.RubyClass;
@@ -51,8 +44,6 @@ import org.jruby.RubyModule;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.compiler.util.HandleFactory;
-import org.jruby.compiler.util.HandleFactory.Handle;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.proxy.InternalJavaProxy;
 import org.jruby.javasupport.proxy.JavaProxyClass;
@@ -62,6 +53,13 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.CodegenUtils;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.AccessibleObject;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.Type;
 
 @JRubyClass(name="Java::JavaMethod")
 public class JavaMethod extends JavaCallable {
@@ -73,7 +71,6 @@ public class JavaMethod extends JavaCallable {
     private final Method method;
     private final Class boxedReturnType;
     private final boolean isFinal;
-    private final Handle handle;
     private final JavaUtil.JavaConverter returnConverter;
 
     public Object getValue() {
@@ -106,72 +103,6 @@ public class JavaMethod extends JavaCallable {
 
         boolean methodIsPublic = Modifier.isPublic(method.getModifiers());
         boolean classIsPublic = Modifier.isPublic(method.getDeclaringClass().getModifiers());
-
-        // try to find a "totally" public version of the method using superclasses and interfaces
-        if (methodIsPublic && !classIsPublic) {
-            if (HANDLE_DEBUG) LOG.debug("Method {} is not on a public class, searching for a better one", method);
-            Method newMethod = method;
-            Class newClass = method.getDeclaringClass();
-
-            OUTER: while (newClass != null) {
-                // try class
-                try {
-                    if (HANDLE_DEBUG) LOG.debug("Trying to find {} on {}", method, newClass);
-                    newMethod = newClass.getMethod(method.getName(), method.getParameterTypes());
-
-                    // got it; break if this class is public
-                    if (Modifier.isPublic(newMethod.getDeclaringClass().getModifiers())) {
-                        break;
-                    }
-                } catch (NoSuchMethodException nsme) {
-                }
-
-                // try interfaces
-                for (Class ifc : newClass.getInterfaces()) {
-                    try {
-                        if (HANDLE_DEBUG) LOG.debug("Trying to find {} on {}", method, ifc);
-                        newMethod = ifc.getMethod(method.getName(), method.getParameterTypes());
-                        break OUTER;
-                    } catch (NoSuchMethodException nsme) {
-                    }
-                }
-
-                // go to superclass
-                newClass = newClass.getSuperclass();
-                newMethod = null;
-            }
-            
-            if (newMethod != null) {
-                if (HANDLE_DEBUG) LOG.debug("Found a better method target: {}", newMethod);
-                method = newMethod;
-                methodIsPublic = Modifier.isPublic(method.getModifiers());
-                classIsPublic = Modifier.isPublic(method.getDeclaringClass().getModifiers());
-            }
-        }
-
-        // prepare a faster handle if handles are enabled and the method and class are public
-        Handle tmpHandle = null;
-        try {
-            if (USE_HANDLES &&
-                    // must be a public method
-                    methodIsPublic &&
-                    // must be a public class
-                    classIsPublic &&
-                    // must have been loaded from our known classloader hierarchy
-                    runtime.getJRubyClassLoader().loadClass(method.getDeclaringClass().getCanonicalName()) == method.getDeclaringClass()) {
-                tmpHandle = HandleFactory.createHandle(runtime.getJRubyClassLoader(), method);
-            } else {
-                tmpHandle = null;
-            }
-        } catch (ClassNotFoundException cnfe) {
-            tmpHandle = null;
-        }
-
-        if (tmpHandle == null) {
-            if (HANDLE_DEBUG) LOG.debug("did not use handle for {}", method);
-        }
-        
-        handle = tmpHandle;
 
         // Special classes like Collections.EMPTY_LIST are inner classes that are private but 
         // implement public interfaces.  Their methods are all public methods for the public 
@@ -459,9 +390,7 @@ public class JavaMethod extends JavaCallable {
 
     private IRubyObject invokeWithExceptionHandling(Method method, Object javaInvokee, Object[] arguments) {
         try {
-            Object result = handle != null
-                    ? handle.invoke(javaInvokee, arguments)
-                    : method.invoke(javaInvokee, arguments);
+            Object result = method.invoke(javaInvokee, arguments);
             return returnConverter.convert(getRuntime(), result);
         } catch (IllegalArgumentException iae) {
             return handlelIllegalArgumentEx(method, iae, arguments);
@@ -493,9 +422,7 @@ public class JavaMethod extends JavaCallable {
 
     private IRubyObject invokeDirectWithExceptionHandling(Method method, Object javaInvokee, Object[] arguments) {
         try {
-            Object result = handle != null
-                    ? handle.invoke(javaInvokee, arguments)
-                    : method.invoke(javaInvokee, arguments);
+            Object result = method.invoke(javaInvokee, arguments);
             return convertReturn(result);
         } catch (IllegalArgumentException iae) {
             return handlelIllegalArgumentEx(method, iae, arguments);
@@ -510,9 +437,7 @@ public class JavaMethod extends JavaCallable {
 
     private IRubyObject invokeDirectWithExceptionHandling(Method method, Object javaInvokee) {
         try {
-            Object result = handle != null
-                    ? handle.invoke(javaInvokee)
-                    : method.invoke(javaInvokee);
+            Object result = method.invoke(javaInvokee);
             return convertReturn(result);
         } catch (IllegalArgumentException iae) {
             return handlelIllegalArgumentEx(method, iae);
@@ -527,9 +452,7 @@ public class JavaMethod extends JavaCallable {
 
     private IRubyObject invokeDirectWithExceptionHandling(Method method, Object javaInvokee, Object arg0) {
         try {
-            Object result = handle != null
-                    ? handle.invoke(javaInvokee, arg0)
-                    : method.invoke(javaInvokee, arg0);
+            Object result = method.invoke(javaInvokee, arg0);
             return convertReturn(result);
         } catch (IllegalArgumentException iae) {
             return handlelIllegalArgumentEx(method, iae, arg0);
@@ -544,9 +467,7 @@ public class JavaMethod extends JavaCallable {
 
     private IRubyObject invokeDirectWithExceptionHandling(Method method, Object javaInvokee, Object arg0, Object arg1) {
         try {
-            Object result = handle != null
-                    ? handle.invoke(javaInvokee, arg0, arg1)
-                    : method.invoke(javaInvokee, arg0, arg1);
+            Object result = method.invoke(javaInvokee, arg0, arg1);
             return convertReturn(result);
         } catch (IllegalArgumentException iae) {
             return handlelIllegalArgumentEx(method, iae, arg0, arg1);
@@ -561,9 +482,7 @@ public class JavaMethod extends JavaCallable {
 
     private IRubyObject invokeDirectWithExceptionHandling(Method method, Object javaInvokee, Object arg0, Object arg1, Object arg2) {
         try {
-            Object result = handle != null
-                    ? handle.invoke(javaInvokee, arg0, arg1, arg2)
-                    : method.invoke(javaInvokee, arg0, arg1, arg2);
+            Object result = method.invoke(javaInvokee, arg0, arg1, arg2);
             return convertReturn(result);
         } catch (IllegalArgumentException iae) {
             return handlelIllegalArgumentEx(method, iae, arg0, arg1, arg2);
@@ -578,9 +497,7 @@ public class JavaMethod extends JavaCallable {
 
     private IRubyObject invokeDirectWithExceptionHandling(Method method, Object javaInvokee, Object arg0, Object arg1, Object arg2, Object arg3) {
         try {
-            Object result = handle != null
-                    ? handle.invoke(javaInvokee, arg0, arg1, arg2, arg3)
-                    : method.invoke(javaInvokee, arg0, arg1, arg2, arg3);
+            Object result = method.invoke(javaInvokee, arg0, arg1, arg2, arg3);
             return convertReturn(result);
         } catch (IllegalArgumentException iae) {
             return handlelIllegalArgumentEx(method, iae, arg0, arg1, arg2, arg3);
