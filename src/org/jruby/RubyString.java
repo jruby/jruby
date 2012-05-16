@@ -626,6 +626,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     private static EmptyByteListHolder EMPTY_BYTELISTS[] = new EmptyByteListHolder[4];
 
     static EmptyByteListHolder getEmptyByteList(Encoding enc) {
+        if (enc == null) enc = ASCIIEncoding.INSTANCE;
         int index = enc.getIndex();
         EmptyByteListHolder bytes;
         if (index < EMPTY_BYTELISTS.length && (bytes = EMPTY_BYTELISTS[index]) != null) {
@@ -635,6 +636,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     private static EmptyByteListHolder prepareEmptyByteList(Encoding enc) {
+        if (enc == null) enc = ASCIIEncoding.INSTANCE;
         int index = enc.getIndex();
         if (index >= EMPTY_BYTELISTS.length) {
             EmptyByteListHolder tmp[] = new EmptyByteListHolder[index + 4];

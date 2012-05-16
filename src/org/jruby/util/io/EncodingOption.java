@@ -86,18 +86,30 @@ public class EncodingOption {
         return createEncodingOption(runtime, extEncoding, intEncoding, false);
     }
 
+    // c: rb_io_ext_int_to_encs
     private static EncodingOption createEncodingOption(Ruby runtime, Encoding extEncoding,
                                                        Encoding intEncoding, boolean isBom) {
+        boolean defaultExt = false;
         if (extEncoding == null) {
             extEncoding = runtime.getDefaultExternalEncoding();
+            defaultExt = true;
         }
-        if (intEncoding == null) {
+        if (intEncoding == null && extEncoding != ASCIIEncoding.INSTANCE) {
+            /* If external is ASCII-8BIT, no default transcoding */
             intEncoding = runtime.getDefaultInternalEncoding();
         }
-        // NOTE: This logic used to do checks for int == ext, etc, like in rb_io_ext_int_to_encs,
-        // but that logic seems specific to how MRI's IO sets up "enc" and "enc2". We explicitly separate
-        // external and internal, so consumers should decide how to deal with int == ext.
-        return new EncodingOption(extEncoding, intEncoding, isBom);
+        if (intEncoding == null || intEncoding == extEncoding) {
+            /* No internal encoding => use external + no transcoding */
+            return new EncodingOption(
+                    null,
+                    (defaultExt && intEncoding != extEncoding) ? null : extEncoding,
+                    isBom);
+        } else {
+            return new EncodingOption(
+                    extEncoding,
+                    intEncoding,
+                    isBom);
+        }
     }
 
     // c: parse_mode_enc
@@ -142,11 +154,15 @@ public class EncodingOption {
         if (modeFlags.isBinary()) {
             return new EncodingOption(
                     ASCIIEncoding.INSTANCE,
-                    runtime.getDefaultInternalEncoding(), false);
+                    null, false);
         } else {
             return new EncodingOption(
                     runtime.getDefaultExternalEncoding(),
                     runtime.getDefaultInternalEncoding(), false);
         }
+    }
+
+    public String toString() {
+        return "EncodingOption(int:" + internalEncoding + ", ext:" + externalEncoding + ", bom:" + bom + ")";
     }
 }

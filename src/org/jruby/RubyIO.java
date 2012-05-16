@@ -622,12 +622,13 @@ public class RubyIO extends RubyObject {
         IRubyObject result = getlineInner(runtime, separator, limit, cache);
 
         if (runtime.is1_9() && !result.isNil()) {
-            Encoding internal = getInternalEncoding(runtime);
+            Encoding internal = internalEncoding;
+            Encoding external = externalEncoding;
 
-            if (internal != null) {
+            if (internal != external) {
                 result = RubyString.newStringNoCopy(runtime,
                         RubyString.transcode(runtime.getCurrentContext(),
-                        ((RubyString) result).getByteList(), getExternalEncoding(runtime), internal,
+                        ((RubyString) result).getByteList(), external, internal,
                         runtime.getNil()));
             }
         }
@@ -659,7 +660,7 @@ public class RubyIO extends RubyObject {
                 return str;
             } else if (limit == 0) {
                 if (runtime.is1_9()) {
-                    return RubyString.newEmptyString(runtime, getExternalEncoding(runtime));
+                    return RubyString.newEmptyString(runtime, externalEncoding);
                 } else {
                     return RubyString.newEmptyString(runtime);
                 }
