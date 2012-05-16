@@ -215,26 +215,38 @@ public class ShellLauncher {
     }
 
     private static String[] getCurrentEnv(Ruby runtime, Map mergeEnv) {
-        RubyHash hash = (RubyHash)runtime.getObject().getConstant("ENV").dup();
-        String[] ret;
-        
-        if (mergeEnv != null && !mergeEnv.isEmpty()) {
-            ret = new String[hash.size() + mergeEnv.size()];
-        } else {
-            ret = new String[hash.size()];
-        }
+        ThreadContext context = runtime.getCurrentContext();
 
-        int i=0;
-        for(Map.Entry e : (Set<Map.Entry>)hash.directEntrySet()) {
-            ret[i] = e.getKey().toString() + "=" + e.getValue().toString();
-            i++;
-        }
-        if (mergeEnv != null) for(Map.Entry e : (Set<Map.Entry>)mergeEnv.entrySet()) {
-            ret[i] = e.getKey().toString() + "=" + e.getValue().toString();
-            i++;
-        }
+        // disable tracing for the dup call below
+        boolean traceEnabled = context.isEventHooksEnabled();
+        context.setEventHooksEnabled(false);
 
-        return ret;
+        try {
+            // dup for JRUBY-6603 (avoid concurrent modification while we walk it)
+            RubyHash hash = (RubyHash)runtime.getObject().getConstant("ENV").dup();
+            String[] ret;
+
+            if (mergeEnv != null && !mergeEnv.isEmpty()) {
+                ret = new String[hash.size() + mergeEnv.size()];
+            } else {
+                ret = new String[hash.size()];
+            }
+
+            int i=0;
+            for(Map.Entry e : (Set<Map.Entry>)hash.directEntrySet()) {
+                ret[i] = e.getKey().toString() + "=" + e.getValue().toString();
+                i++;
+            }
+            if (mergeEnv != null) for(Map.Entry e : (Set<Map.Entry>)mergeEnv.entrySet()) {
+                ret[i] = e.getKey().toString() + "=" + e.getValue().toString();
+                i++;
+            }
+
+            return ret;
+
+        } finally {
+            context.setEventHooksEnabled(traceEnabled);
+        }
     }
 
     private static boolean filenameIsPathSearchable(String fname, boolean forExec) {
