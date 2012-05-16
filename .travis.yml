@@ -2,7 +2,7 @@ language: java
 before_script:
   - unset GEM_PATH GEM_HOME IRBRC
   - "export PATH=`pwd`/bin:$PATH"
-script: "ant test; rake test19"
+script: "ant test spec-short && rake test19"
 install: /bin/true
 notifications:
   irc: "irc.freenode.org#jruby"
