@@ -25,7 +25,7 @@ module REXML
   COPYRIGHT = "Copyright \xC2\xA9 2001-2006 Sean Russell <ser@germane-software.com>"
   VERSION = "3.1.7.3"
   DATE = "2007/275"
-  REVISION = "$Revision: 22842 $".gsub(/\$Revision:|\$/,'').strip
+  REVISION = "$Revision$".gsub(/\$Revision:|\$/,'').strip
 
   Copyright = COPYRIGHT
   Version = VERSION
