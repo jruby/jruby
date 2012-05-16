@@ -1137,7 +1137,10 @@ public final class Ruby {
         loadService = config.createLoadService(this);
         posix = POSIXFactory.getPOSIX(new JRubyPOSIXHandler(this), config.isNativeEnabled());
         javaSupport = new JavaSupport(this);
-        
+
+        // HACK HACK HACK (jansi (part of jline) + classloader + windows == stacktrace barf)
+        if (Platform.IS_WINDOWS) System.setProperty("jline.terminal", "none");
+
         executor = new ThreadPoolExecutor(
                 RubyInstanceConfig.POOL_MIN,
                 RubyInstanceConfig.POOL_MAX,
