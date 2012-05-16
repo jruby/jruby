@@ -215,7 +215,7 @@ public class ShellLauncher {
     }
 
     private static String[] getCurrentEnv(Ruby runtime, Map mergeEnv) {
-        RubyHash hash = (RubyHash)runtime.getObject().getConstant("ENV");
+        RubyHash hash = (RubyHash)runtime.getObject().getConstant("ENV").dup();
         String[] ret;
         
         if (mergeEnv != null && !mergeEnv.isEmpty()) {
