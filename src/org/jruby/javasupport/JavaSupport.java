@@ -54,6 +54,7 @@ import org.jruby.javasupport.proxy.JavaProxyClass;
 import org.jruby.javasupport.util.ObjectProxyCache;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.WeakIdentityHashMap;
+import org.jruby.util.cli.Options;
 
 public class JavaSupport {
     private static final Map<String,Class> PRIMITIVE_CLASSES = new HashMap<String,Class>();
@@ -89,19 +90,27 @@ public class JavaSupport {
     
     static {
         Constructor<? extends ProxyCache> constructor = null;
-        try {
-            // try to load the ClassValue class. If it succeeds, we can use our
-            // ClassValue-based cache.
-            Class.forName("java.lang.ClassValue");
-            constructor = (Constructor<ProxyCache>)Class.forName("org.jruby.java.proxies.ClassValueProxyCache").getConstructor(Ruby.class);
+
+        if (Options.INVOKEDYNAMIC_CLASS_VALUES.load()) {
+            try {
+                // try to load the ClassValue class. If it succeeds, we can use our
+                // ClassValue-based cache.
+                Class.forName("java.lang.ClassValue");
+                constructor = (Constructor<ProxyCache>)Class.forName("org.jruby.java.proxies.ClassValueProxyCache").getConstructor(Ruby.class);
+            }
+            catch (Exception ex) {
+                // fall through to Map version
+            }
         }
-        catch (Exception ex) {
+
+        if (constructor == null) {
             try {
                 constructor = MapBasedProxyCache.class.getConstructor(Ruby.class);
             } catch (Exception ex2) {
                 throw new RuntimeException(ex2);
             }
         }
+
         PROXY_CACHE_CONSTRUCTOR = constructor;
     }
 
