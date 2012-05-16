@@ -584,7 +584,7 @@ class TestKernel < Test::Unit::TestCase
     else
       result = `sh -c pwd`.strip
     end
-    expected = Dir.pwd
+    expected = Dir.pwd.downcase
     assert_equal(expected, result)
   end
 
@@ -594,7 +594,7 @@ class TestKernel < Test::Unit::TestCase
     else
       result = `pwd`.strip
     end
-    expected = Dir.pwd
+    expected = Dir.pwd.downcase
     assert_equal(expected, result)
   end
 
