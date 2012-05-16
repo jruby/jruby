@@ -626,10 +626,17 @@ public class RubyIO extends RubyObject {
             Encoding external = externalEncoding;
 
             if (internal != external) {
-                result = RubyString.newStringNoCopy(runtime,
-                        RubyString.transcode(runtime.getCurrentContext(),
-                        ((RubyString) result).getByteList(), external, internal,
-                        runtime.getNil()));
+                ByteList transcoded = RubyString.transcode(
+                        runtime.getCurrentContext(),
+                        ((RubyString) result).getByteList(),
+                        external, internal,
+                        runtime.getNil());
+
+                RubyString newResult = RubyString.newStringNoCopy(runtime, transcoded);
+
+                newResult.infectBy(result);
+
+                result = newResult;
             }
         }
 
@@ -3289,7 +3296,7 @@ public class RubyIO extends RubyObject {
         runtime.checkSafeString(filename);
 
         RubyIO io = (RubyIO)RubyFile.open(context, runtime.getFile(), new IRubyObject[] { filename }, Block.NULL_BLOCK);
-        
+
         ByteListCache cache = new ByteListCache();
         if (!io.isNil()) {
             try {

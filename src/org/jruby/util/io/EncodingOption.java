@@ -100,8 +100,9 @@ public class EncodingOption {
         }
         if (intEncoding == null || intEncoding == extEncoding) {
             /* No internal encoding => use external + no transcoding */
+            // JRuby passes extEncoding instead of null for external, since we use this for final encoding of strings
             return new EncodingOption(
-                    null,
+                    extEncoding,
                     (defaultExt && intEncoding != extEncoding) ? null : extEncoding,
                     isBom);
         } else {
