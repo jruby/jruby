@@ -1,18 +1,18 @@
 module REXML
   module Encoding
-    class UTF_8Encoder
-      def encode content
-        content
-      end
-      
-      def decode(str)
-        str
-      end
+    def encode_utf8 content
+      content
     end
 
-    utf_8 = UTF_8Encoder.new
+    def decode_utf8(str)
+      str
+    end
+
     register(UTF_8) do |obj|
-      obj.encoder = utf_8
+      class << obj
+        alias decode decode_utf8
+        alias encode encode_utf8
+      end
     end
   end
 end

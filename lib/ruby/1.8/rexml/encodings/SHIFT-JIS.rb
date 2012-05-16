@@ -2,36 +2,34 @@ module REXML
   module Encoding
     begin
       require 'uconv'
-      
-      class SHIFT_JISEncoder
-        def decode content
-          Uconv::sjistou8(content)
-        end
-        
-        def encode(str)
-          Uconv::u8tosjis(str)
-        end
+
+      def decode_sjis content
+        Uconv::sjistou8(content)
+      end
+
+      def encode_sjis(str)
+        Uconv::u8tosjis(str)
       end
     rescue LoadError
       require 'nkf'
 
       SJISTOU8 = '-Swm0x'
       U8TOSJIS = '-Wsm0x'
-      
-      class SHIFT_JISEncoder
-        def decode(str)
-          NKF.nkf(SJISTOU8, str)
-        end
-        
-        def encode content
-          NKF.nkf(U8TOSJIS, content)
-        end
+
+      def decode_sjis(str)
+        NKF.nkf(SJISTOU8, str)
+      end
+
+      def encode_sjis content
+        NKF.nkf(U8TOSJIS, content)
       end
     end
 
-    shift_jis = SHIFT_JISEncoder.new
     b = proc do |obj|
-      obj.encoder = shift_jis
+      class << obj
+        alias decode decode_sjis
+        alias encode encode_sjis
+      end
     end
     register("SHIFT-JIS", &b)
     register("SHIFT_JIS", &b)

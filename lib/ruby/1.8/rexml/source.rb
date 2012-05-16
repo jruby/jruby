@@ -52,9 +52,9 @@ module REXML
     # Overridden to support optimized en/decoding
     def encoding=(enc)
       return unless super
-      @line_break = @encoder.encode( '>' )
+      @line_break = encode( '>' )
       if enc != UTF_8
-        @buffer = @encoder.decode(@buffer)
+        @buffer = decode(@buffer)
         @to_utf = true
       else
         @to_utf = false
