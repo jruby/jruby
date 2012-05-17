@@ -100,10 +100,9 @@ public class RubyTCPSocket extends RubyIPSocket {
         String localHost = args.length >= 3 && !args[2].isNil() ? args[2].convertToString().toString() : null;
         int localPort = args.length == 4 && !args[3].isNil() ? getPortFrom(context.getRuntime(), args[3]) : 0;
         
-        SocketChannel channel = null;
-        
-        // attempt to ensure the channel gets closed if we don't complete connecting
+        // try to ensure the socket closes if it doesn't succeed
         boolean success = false;
+        SocketChannel channel = null;
 
         try {
             // This is a bit convoluted because (1) SocketChannel.bind is only in jdk 7 and
@@ -140,11 +139,7 @@ public class RubyTCPSocket extends RubyIPSocket {
             throw sockerr(context.getRuntime(), iae.getMessage());
         } finally {
             if (!success && channel != null) {
-                try {
-                    channel.close();
-                } catch (IOException ioe) {
-                    // ignore
-                }
+                try {channel.close();} catch (IOException ioe) {}
             }
         }
         return this;
