@@ -580,11 +580,12 @@ class TestKernel < Test::Unit::TestCase
 
   def test_backquote1
     if (WINDOWS)
-      result = `cmd /c cd`.strip.gsub('\\', '/')
+      result = `cmd /c cd`.strip.gsub('\\', '/').downcase
+      expected = Dir.pwd.downcase
     else
       result = `sh -c pwd`.strip
+      expected = Dir.pwd
     end
-    expected = Dir.pwd.downcase
     assert_equal(expected, result)
   end
 
