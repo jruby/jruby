@@ -89,10 +89,14 @@ public class RubyTCPSocket extends RubyIPSocket {
         String localHost = (args.length >= 3 && !args[2].isNil()) ? args[2].convertToString().toString() : null;
         int localPort = (args.length == 4 && !args[3].isNil()) ? SocketUtils.getPortFrom(context, args[3]) : 0;
 
+        // try to ensure the socket closes if it doesn't succeed
+        boolean success = false;
+        SocketChannel channel = null;
+
         try {
             // This is a bit convoluted because (1) SocketChannel.bind is only in jdk 7 and
             // (2) Socket.getChannel() seems to return null in some cases
-            SocketChannel channel = SocketChannel.open();
+            channel = SocketChannel.open();
             Socket socket = channel.socket();
 
             if (localHost != null) {
@@ -110,16 +114,14 @@ public class RubyTCPSocket extends RubyIPSocket {
                 channel.configureBlocking(true);
 
                 initSocket(runtime, new ChannelDescriptor(channel, newModeFlags(runtime, ModeFlags.RDWR)));
+                success = true;
             } catch (NoRouteToHostException nrthe) {
-                channel.close();
                 throw runtime.newErrnoEHOSTUNREACHError("SocketChannel.connect");
 
             } catch(ConnectException e) {
-                channel.close();
                 throw runtime.newErrnoECONNREFUSEDError();
 
             } catch(UnknownHostException e) {
-                channel.close();
                 throw SocketUtils.sockerr(runtime, "initialize: name or service not known");
 
             }
@@ -136,6 +138,10 @@ public class RubyTCPSocket extends RubyIPSocket {
         } catch (IllegalArgumentException iae) {
             throw SocketUtils.sockerr(runtime, iae.getMessage());
 
+        } finally {
+            if (!success && channel != null) {
+                try {channel.close();} catch (IOException ioe) {}
+            }
         }
 
         return context.nil;
