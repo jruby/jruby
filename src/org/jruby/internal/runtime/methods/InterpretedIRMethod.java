@@ -67,16 +67,14 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
             // FIXME: name should probably not be "" ever.
             String realName = name == null || "".equals(name) ? method.getName() : name;
             LOG.info("Executing '" + realName + "'");
-        }
-
-        // The base IR may not have been processed yet
-        if (method.getInstrsForInterpretation() == null) method.prepareForInterpretation();
-
-        if (Interpreter.isDebug() && displayedCFG == false) {
-            CFG cfg = method.getCFG();
-            LOG.info("Graph:\n" + cfg.toStringGraph());
-            LOG.info("CFG:\n" + cfg.toStringInstrs());
-            displayedCFG = true;
+            if (displayedCFG == false) {
+                // The base IR may not have been processed yet
+                if (method.getInstrsForInterpretation() == null) method.prepareForInterpretation();
+                CFG cfg = method.getCFG();
+                LOG.info("Graph:\n" + cfg.toStringGraph());
+                LOG.info("CFG:\n" + cfg.toStringInstrs());
+                displayedCFG = true;
+            }
         }
 
         boolean hasExplicitCallProtocol = method.hasExplicitCallProtocol();
