@@ -63,9 +63,9 @@ import static org.jruby.util.StringSupport.unpackResult;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CodingErrorAction;
 import java.util.HashSet;
@@ -7434,9 +7434,9 @@ public class RubyString extends RubyObject implements EncodingCapable {
         IRubyObject options;
 
         if (arg instanceof RubyHash) {
-            Encoding defaultInternal = runtime.getDefaultInternalEncoding();
-            if (defaultInternal == null) return dup();
-            forceEncoding = defaultInternal;
+            forceEncoding = runtime.getDefaultInternalEncoding();
+            if (forceEncoding == null) forceEncoding = runtime.getEncodingService().getLocaleEncoding();
+            if (forceEncoding == null) return dup();
             options = arg;
         } else {
             forceEncoding = getEncoding(runtime, arg);
@@ -7483,7 +7483,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         add("CP50221");
     }};
 
-    private static Charset lookupCharsetFor(Ruby runtime, Encoding encoding, String fromName, String toName) {
+    private static Charset transcodeCharsetFor(Ruby runtime, Encoding encoding, String fromName, String toName) {
         Charset from = null;
         String realEncodingName = new String(encoding.getName());
         
@@ -7528,48 +7528,117 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (toEncoding == null) return value;
         Ruby runtime = context.getRuntime();
         Encoding fromEncoding = forceEncoding != null ? forceEncoding : value.getEncoding();
-        Charset from = lookupCharsetFor(runtime, fromEncoding, fromEncoding.toString(), toEncoding.toString());
-        Charset to = lookupCharsetFor(runtime, toEncoding, fromEncoding.toString(), toEncoding.toString());
-        CharsetEncoder encoder = getCharsetEncoder(context, runtime, to, opts);
+
+        String fromName = fromEncoding.toString();
+        String toName = toEncoding.toString();
+
+        Charset from = transcodeCharsetFor(runtime, fromEncoding, fromEncoding.toString(), toEncoding.toString());
+        Charset to = transcodeCharsetFor(runtime, toEncoding, fromEncoding.toString(), toEncoding.toString());
+
+        CharsetEncoder encoder = getCharsetEncoder(context, to, opts);
+        CharsetDecoder decoder = getCharsetDecoder(context, from, opts);
+
         ByteBuffer fromBytes = ByteBuffer.wrap(value.getUnsafeBytes(), value.begin(), value.length());
+
+        // MRI does not allow ASCII-8BIT chars > 127 to transcode to multibyte encodings
+        if (fromName.equals("ASCII-8BIT") && encoder.maxBytesPerChar() > 1.0) {
+            for (byte b : fromBytes.array()) {
+                if ((b & 0xFF) > 0x7F) {
+                    throw runtime.newUndefinedConversionError(
+                            "\"\\x" + Integer.toHexString(b & 0xFF).toUpperCase() +
+                                    "\" from " + fromName +
+                                    " to " + toName);
+                }
+            }
+        }
         
         try {
-            ByteBuffer toBytes = encoder.encode(from.decode(fromBytes));
+            ByteBuffer toBytes = encoder.encode(decoder.decode(fromBytes));
 
             // CharsetEncoder#encode guarantees a newly-allocated buffer, so no need to copy.
             return new ByteList(toBytes.array(), toBytes.arrayOffset(),
                     toBytes.limit() - toBytes.arrayOffset(), toEncoding, false);
         } catch (CharacterCodingException e) {
-            throw runtime.newInvalidByteSequenceError("");
+            throw runtime.newUndefinedConversionError(e.getLocalizedMessage());
         }
     }
 
-    private static CharsetEncoder getCharsetEncoder(ThreadContext context, Ruby runtime, Charset charset, IRubyObject opts) {
+    private static CharsetDecoder getCharsetDecoder(ThreadContext context, Charset charset, IRubyObject opts) {
+        CharsetDecoder decoder = charset.newDecoder();
+
+        CodingErrorActions actions = getCodingErrorActions(context, opts);
+        decoder.onUnmappableCharacter(actions.onUnmappableCharacter);
+        decoder.onMalformedInput(actions.onMalformedInput);
+        if (actions.replaceWith != null) {
+            decoder.replaceWith(actions.replaceWith.toString());
+        }
+
+        return decoder;
+    }
+
+    private static CharsetEncoder getCharsetEncoder(ThreadContext context, Charset charset, IRubyObject opts) {
         CharsetEncoder encoder = charset.newEncoder();
 
-        if (!opts.isNil()) {
+        CodingErrorActions actions = getCodingErrorActions(context, opts);
+        encoder.onUnmappableCharacter(actions.onUnmappableCharacter);
+        encoder.onMalformedInput(actions.onMalformedInput);
+        if (actions.replaceWith != null) {
+            encoder.replaceWith(actions.replaceWith.getBytes());
+        }
+
+        return encoder;
+    }
+
+    private static class CodingErrorActions {
+        final CodingErrorAction onUnmappableCharacter;
+        final CodingErrorAction onMalformedInput;
+        final RubyString replaceWith;
+
+        CodingErrorActions(
+                CodingErrorAction onUnmappableCharacter,
+                CodingErrorAction onMalformedInput,
+                RubyString replaceWith) {
+            this.onUnmappableCharacter = onUnmappableCharacter;
+            this.onMalformedInput = onMalformedInput;
+            this.replaceWith = replaceWith;
+        }
+    }
+
+    private static CodingErrorActions getCodingErrorActions(ThreadContext context, IRubyObject opts) {
+        if (opts.isNil()) {
+            return new CodingErrorActions(
+                    CodingErrorAction.REPORT,
+                    CodingErrorAction.REPORT,
+                    null);
+        } else {
+            Ruby runtime = context.runtime;
             RubyHash hash = (RubyHash) opts;
-            CodingErrorAction action = CodingErrorAction.REPLACE;
+            CodingErrorAction onMalformedInput = CodingErrorAction.REPORT;
+            CodingErrorAction onUnmappableCharacter = CodingErrorAction.REPORT;
+            RubyString replaceWith = null;
             
             IRubyObject replace = hash.fastARef(runtime.newSymbol("replace"));
             if (replace != null && !replace.isNil()) {
-                String replaceWith = replace.toString();
-                if (replaceWith.length() == 1) { // we can only replaceWith a single char
-                    encoder.replaceWith(replaceWith.getBytes());
-                } else {
-                    action = CodingErrorAction.IGNORE;
+                RubyString replaceWithStr = replace.convertToString();
+                if (replaceWithStr.size() == 1) { // we can only replaceWith a single char
+                    replaceWith = replaceWithStr;
                 }
             }
             
             IRubyObject invalid = hash.fastARef(runtime.newSymbol("invalid"));
             if (invalid != null && invalid.op_equal(context, runtime.newSymbol("replace")).isTrue()) {
-                encoder.onMalformedInput(action);
+                onMalformedInput = CodingErrorAction.REPLACE;
             }
 
             IRubyObject undef = hash.fastARef(runtime.newSymbol("undef"));
             if (undef != null && undef.op_equal(context, runtime.newSymbol("replace")).isTrue()) {
-                encoder.onUnmappableCharacter(action);
+                onUnmappableCharacter = CodingErrorAction.REPLACE;
             }
+
+            return new CodingErrorActions(
+                    onUnmappableCharacter,
+                    onMalformedInput,
+                    replaceWith);
 
             /*
             Missing options from MRI 1.9.3 source:
@@ -7600,8 +7669,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
  *    
              */
         }
-
-        return encoder;
     }
 
     private static Encoding getEncoding(Ruby runtime, IRubyObject toEnc) {
