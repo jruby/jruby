@@ -396,7 +396,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return enc;
     }
 
-    final Regex preparePattern(RubyString str) {
+    public final Regex preparePattern(RubyString str) {
         check();
         Encoding enc = checkEncoding(str, true);
         if (enc == pattern.getEncoding()) return pattern;

@@ -227,10 +227,11 @@ public class RubyStringScanner extends RubyObject {
     }
     
     private IRubyObject scan(IRubyObject regex, boolean succptr, boolean getstr, boolean headonly) {
-        if (!(regex instanceof RubyRegexp)) throw getRuntime().newTypeError("wrong argument type " + regex.getMetaClass() + " (expected Regexp)");
+        Ruby runtime = getRuntime();
+        if (!(regex instanceof RubyRegexp)) throw runtime.newTypeError("wrong argument type " + regex.getMetaClass() + " (expected Regexp)");
         check();
         
-        Regex pattern = ((RubyRegexp)regex).getPattern();
+        Regex pattern = ((RubyRegexp)regex).preparePattern(str);
 
         clearMatched();
         int rest = str.getByteList().getRealSize() - pos;
