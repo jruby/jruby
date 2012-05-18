@@ -75,6 +75,7 @@ import org.jruby.util.io.IOOptions;
  * Runtime.getRuntime().exec(). Thanks dude, that really helped.
  * @author nicksieger
  */
+@SuppressWarnings("deprecation")
 public class ShellLauncher {
     private static final boolean DEBUG = false;
 
@@ -1372,6 +1373,7 @@ public class ShellLauncher {
             synchronized (waitLock) {
                 waitLock.notify();
             }
+            stop();
         }
     }
 
@@ -1423,6 +1425,7 @@ public class ShellLauncher {
         public void quit() {
             interrupt();
             this.quit = true;
+            stop();
         }
     }
 
@@ -1458,6 +1461,14 @@ public class ShellLauncher {
         // Note: On some platforms, even interrupt might not
         // have an effect if the thread is IO blocked.
         try { t3.interrupt(); } catch (SecurityException se) {}
+
+        // finally, forcibly stop the threads. Yeah, I know.
+        t1.stop();
+        t2.stop();
+        t3.stop();
+        try { t1.join(); } catch (InterruptedException ie) {}
+        try { t2.join(); } catch (InterruptedException ie) {}
+        try { t3.join(); } catch (InterruptedException ie) {}
     }
 
     private static void handleStreamsNonblocking(Ruby runtime, Process p, OutputStream out, OutputStream err) throws IOException {
