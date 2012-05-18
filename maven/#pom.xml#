@@ -4,7 +4,7 @@
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>shared</artifactId>
-    <version>1.7.0.preview1</version>
+    <version>1.7.0.dev</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
@@ -57,7 +57,7 @@
     <dependency>
       <groupId>org.jruby.joni</groupId>
       <artifactId>joni</artifactId>
-      <version>1.1.8</version>
+      <version>1.1.7</version>
       <scope>${jar.scope}</scope>
     </dependency>
     <dependency>
@@ -81,38 +81,44 @@
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-constants</artifactId>
-      <version>0.8.3</version>
+       <version>0.8.3</version>
       <scope>${jar.scope}</scope>
     </dependency>
     <dependency>
       <groupId>org.jruby.jcodings</groupId>
       <artifactId>jcodings</artifactId>
-      <version>1.0.9</version>
+      <version>1.0.7</version>
       <scope>${jar.scope}</scope>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jffi</artifactId>
-      <version>1.2.2</version>
+      <version>1.2.1</version>
       <scope>${jar.scope}</scope>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jffi</artifactId>
-      <version>1.2.2</version>
+      <version>1.1.0</version>
       <scope>runtime</scope>
       <classifier>native</classifier>
     </dependency>
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-ffi</artifactId>
-      <version>0.7.4</version>
+      <version>0.7.2</version>
       <scope>${jar.scope}</scope>
     </dependency>
     <dependency>
       <groupId>org.yaml</groupId>
       <artifactId>snakeyaml</artifactId>
       <version>1.10</version>
+      <scope>${jar.scope}</scope>
+    </dependency>
+    <dependency>
+      <groupId>jline</groupId>
+      <artifactId>jline</artifactId>
+      <version>2.7</version>
       <scope>${jar.scope}</scope>
     </dependency>
     <dependency>
