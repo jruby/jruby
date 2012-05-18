@@ -44,6 +44,7 @@ import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -76,7 +77,7 @@ public abstract class PKey extends RubyObject {
 
     @Override
     @JRubyMethod
-    public IRubyObject initialize() {
+    public IRubyObject initialize(ThreadContext context) {
         return this;
     }
 

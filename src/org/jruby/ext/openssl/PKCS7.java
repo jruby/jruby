@@ -115,7 +115,7 @@ public class PKCS7 extends RubyObject {
         } else {
             RubyString str = obj.convertToString();
             ByteList bl = str.getByteList();
-            return BIO.memBuf(bl.bytes, bl.begin, bl.realSize);
+            return BIO.memBuf(bl.unsafeBytes(), bl.begin(), bl.getRealSize());
         }
     }
 
