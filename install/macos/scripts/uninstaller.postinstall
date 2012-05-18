@@ -1,6 +1,6 @@
 #!/bin/sh
 
-JRUBYVER="1.7.0.dev"
+JRUBYVER="1.7.0.preview1"
 JRUBY_ROOT="/Library/Frameworks/JRuby.framework/Versions"
 
 JRUBY_VERSION_PATH="$JRUBY_ROOT/$JRUBYVER"

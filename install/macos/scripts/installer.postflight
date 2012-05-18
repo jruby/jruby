@@ -5,7 +5,7 @@ echo "of jruby is not early enough of the PATH of your shell."
 echo "These changes will be effective only in shell windows that you open"
 echo "after running this script."
 
-JRUBYVER="1.7.0.dev"
+JRUBYVER="1.7.0.preview1"
 JRUBY_ROOT="/Library/Frameworks/JRuby.framework/Versions"
 
 JRUBY_VERSION_PATH="$JRUBY_ROOT/$JRUBYVER"
