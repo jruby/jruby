@@ -87,7 +87,7 @@
     <dependency>
       <groupId>org.jruby.jcodings</groupId>
       <artifactId>jcodings</artifactId>
-      <version>1.0.8</version>
+      <version>1.0.9</version>
       <scope>${jar.scope}</scope>
     </dependency>
     <dependency>
