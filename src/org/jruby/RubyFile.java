@@ -922,26 +922,24 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     @JRubyMethod(required = 1, meta = true)
     public static IRubyObject readlink(ThreadContext context, IRubyObject recv, IRubyObject path) {
         Ruby runtime = context.getRuntime();
-        JRubyFile link = file(path);
         
         try {
-            String realPath = runtime.getPosix().readlink(link.toString());
-
+            String realPath = runtime.getPosix().readlink(path.convertToString().getUnicodeValue());
+        
+            if (!RubyFileTest.exist_p(recv, path).isTrue()) {
+                throw runtime.newErrnoENOENTError(path.toString());
+            }
+        
             if (!RubyFileTest.symlink_p(recv, path).isTrue()) {
                 throw runtime.newErrnoEINVALError(path.toString());
             }
         
             if (realPath == null) {
                 //FIXME: When we get JNA3 we need to properly write this to errno.
-                throw runtime.newErrnoFromLastPOSIXErrno();
             }
 
             return runtime.newString(realPath);
         } catch (IOException e) {
-            if (!RubyFileTest.exist_p(recv, path).isTrue()) {
-                throw runtime.newErrnoENOENTError(link.toString());
-            }
-
             throw runtime.newIOError(e.getMessage());
         }
     }
