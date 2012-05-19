@@ -87,19 +87,23 @@ public class OutputStrings {
         StringBuilder sb = new StringBuilder();
 
         sb
-                .append("These properties can be used to alter runtime behavior for perf or compatibility.\n")
-                .append("Specify them by passing -X<property>=<value>\n")
-                .append("  or if passing directly to Java, -Djruby.<property>=<value>\n")
-                .append("  or put <property>=<value> in .jrubyrc\n");
+                .append("# These properties can be used to alter runtime behavior for perf or compatibility.\n")
+                .append("# Specify them by passing -X<property>=<value>\n")
+                .append("#   or if passing directly to Java, -Djruby.<property>=<value>\n")
+                .append("#   or put <property>=<value> in .jrubyrc\n")
+                .append("#\n# This dump is a valid .jrubyrc file of current settings.\n");
         
         Category category = null;
         for (Option property : Options.PROPERTIES) {
             if (category != property.category) {
                 category = property.category;
-                sb.append('\n').append(category).append(" settings:\n\n");
+                sb.append("\n################################################################################");
+                sb.append("\n# ").append(category).append(" settings");
+                sb.append("\n################################################################################\n\n");
             }
-            sb.append("   ").append(property.name).append('=').append(Arrays.toString(property.options)).append('\n');
-            sb.append("      ").append(property.description).append(" Default is ").append(property.defval).append(".\n");
+            sb.append("# ").append(property.description).append('\n');
+            sb.append("# Options: ").append(Arrays.toString(property.options)).append(", Default: ").append(property.defval).append(".\n");
+            sb.append(property.name).append('=').append(property.load()).append("\n\n");
         }
 
         return sb.toString();

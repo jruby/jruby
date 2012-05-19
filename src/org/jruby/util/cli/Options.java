@@ -41,6 +41,23 @@ import static org.jruby.util.cli.Category.*;
  * of the built-in structure.
  */
 public class Options {
+    public static String dump() {
+        StringBuilder sb = new StringBuilder("# JRuby configuration options with current values\n");
+        Category category = null;
+        for (Option option : _loadedOptions) {
+            if (category != option.category) {
+                category = option.category;
+                sb.append('\n').append(category.desc()).append('\n');
+            }
+            sb
+                    .append(option.name)
+                    .append('=')
+                    .append(option.load())
+                    .append('\n');
+        }
+        return sb.toString();
+    }
+
     private static final List<Option> _loadedOptions = new ArrayList<Option>();
     
     // This section holds all Options for JRuby. They will be listed in the
