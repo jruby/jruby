@@ -53,6 +53,9 @@ import org.jruby.internal.runtime.methods.CallConfiguration;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.ClassIndex;
+
+import java.util.concurrent.Callable;
+
 import static org.jruby.runtime.Visibility.*;
 
 import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
@@ -81,8 +84,6 @@ public class RubyStruct extends RubyObject {
     }
 
     public static RubyClass createStructClass(Ruby runtime) {
-        // TODO: NOT_ALLOCATABLE_ALLOCATOR may be ok here, but it's unclear how Structs
-        // work with marshalling. Confirm behavior and ensure we're doing this correctly. JRUBY-415
         RubyClass structClass = runtime.defineClass("Struct", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         runtime.setStructClass(structClass);
         structClass.index = ClassIndex.STRUCT;
@@ -489,31 +490,55 @@ public class RubyStruct extends RubyObject {
     }
 
     @JRubyMethod(name = "==", required = 1)
-    public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
+    public IRubyObject op_equal(final ThreadContext context, IRubyObject other) {
         if (this == other) return getRuntime().getTrue();
         if (!(other instanceof RubyStruct)) return getRuntime().getFalse();
         if (getMetaClass().getRealClass() != other.getMetaClass().getRealClass()) return getRuntime().getFalse();
         
-        Ruby runtime = getRuntime();
-        RubyStruct otherStruct = (RubyStruct)other;
-        for (int i = 0; i < values.length; i++) {
-            if (!equalInternal(context, values[i], otherStruct.values[i])) return runtime.getFalse();
-        }
-        return runtime.getTrue();
+        final Ruby runtime = getRuntime();
+        final RubyStruct otherStruct = (RubyStruct)other;
+
+        // identical
+        if (other == this) return runtime.getTrue();
+
+        // recursion guard
+        return runtime.execRecursiveOuter(new Ruby.RecursiveFunction() {
+            public IRubyObject call(IRubyObject obj, boolean recur) {
+                if (recur) {
+                    return runtime.getTrue();
+                }
+                for (int i = 0; i < values.length; i++) {
+                    if (!equalInternal(context, values[i], otherStruct.values[i])) return runtime.getFalse();
+                }
+                return runtime.getTrue();
+            }
+        }, this);
     }
     
     @JRubyMethod(name = "eql?", required = 1)
-    public IRubyObject eql_p(ThreadContext context, IRubyObject other) {
+    public IRubyObject eql_p(final ThreadContext context, IRubyObject other) {
         if (this == other) return getRuntime().getTrue();
         if (!(other instanceof RubyStruct)) return getRuntime().getFalse();
         if (getMetaClass() != other.getMetaClass()) return getRuntime().getFalse();
         
-        Ruby runtime = getRuntime();
-        RubyStruct otherStruct = (RubyStruct)other;
-        for (int i = 0; i < values.length; i++) {
-            if (!eqlInternal(context, values[i], otherStruct.values[i])) return runtime.getFalse();
-        }
-        return runtime.getTrue();        
+        final Ruby runtime = getRuntime();
+        final RubyStruct otherStruct = (RubyStruct)other;
+
+        // identical
+        if (other == this) return runtime.getTrue();
+
+        // recursion guard
+        return runtime.execRecursiveOuter(new Ruby.RecursiveFunction() {
+            public IRubyObject call(IRubyObject obj, boolean recur) {
+                if (recur) {
+                    return runtime.getTrue();
+                }
+                for (int i = 0; i < values.length; i++) {
+                    if (!eqlInternal(context, values[i], otherStruct.values[i])) return runtime.getFalse();
+                }
+                return runtime.getTrue();
+            }
+        }, this);
     }
 
     /** inspect_struct
