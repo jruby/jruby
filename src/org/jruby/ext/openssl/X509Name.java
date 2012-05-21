@@ -341,7 +341,7 @@ else
         if(eql_p(other).isTrue()) {
             return RubyFixnum.zero(getRuntime());
         }
-
+        // TODO: huh?
         return RubyFixnum.one(getRuntime());
     }
 

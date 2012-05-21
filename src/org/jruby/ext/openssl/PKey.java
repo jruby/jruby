@@ -27,14 +27,24 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.StringReader;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
+import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
+import java.security.interfaces.DSAPrivateKey;
+import java.security.interfaces.DSAPublicKey;
+import java.security.interfaces.RSAPrivateCrtKey;
+import java.security.interfaces.RSAPublicKey;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
@@ -43,6 +53,8 @@ import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.ext.openssl.x509store.PEMInputOutput;
+import org.jruby.runtime.Arity;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -55,6 +67,7 @@ public abstract class PKey extends RubyObject {
 
     public static void createPKey(Ruby runtime, RubyModule ossl) {
         RubyModule mPKey = ossl.defineModuleUnder("PKey");
+        mPKey.defineAnnotatedMethods(PKeyModule.class);
         // PKey is abstract
         RubyClass cPKey = mPKey.defineClassUnder("PKey",runtime.getObject(),ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         RubyClass openSSLError = ossl.getClass("OpenSSLError");
@@ -71,13 +84,88 @@ public abstract class PKey extends RubyObject {
         return Utils.newError(runtime, "OpenSSL::PKey::PKeyError", message);
     }
 
+    public static class PKeyModule {
+
+        @JRubyMethod(name = "read", meta = true, optional = 1)
+        public static IRubyObject read(ThreadContext ctx, IRubyObject recv, IRubyObject[] args) {
+            Ruby runtime = ctx.runtime;
+            IRubyObject data;
+            char[] pass;
+            int argc = Arity.checkArgumentCount(runtime, args, 1, 2);
+            switch (argc) {
+            case 1:
+                data = args[0];
+                pass = null;
+                break;
+            default:
+                data = args[0];
+                pass = args[1].isNil() ? null : args[1].toString().toCharArray();
+            }
+            byte[] input = OpenSSLImpl.readX509PEM(data);
+            KeyPair key = null;
+            // d2i_PrivateKey_bio
+            try {
+                key = org.jruby.ext.openssl.impl.PKey.readPrivateKey(input);
+            } catch (IOException ioe) {
+                // ignore
+            } catch (GeneralSecurityException gse) {
+                // ignore
+            }
+            // PEM_read_bio_PrivateKey
+            if (key == null) {
+                try {
+                    key = PEMInputOutput.readPrivateKey(new InputStreamReader(new ByteArrayInputStream(input)), pass);
+                } catch (IOException ioe) {
+                    // ignore
+                }
+            }
+            if (key != null) {
+                if (key.getPublic().getAlgorithm().equals("RSA")) {
+                    return new PKeyRSA(runtime, Utils.getClassFromPath(runtime, "OpenSSL::PKey::RSA"), (RSAPrivateCrtKey) key.getPrivate(),
+                            (RSAPublicKey) key.getPublic());
+                } else if (key.getPublic().getAlgorithm().equals("DSA")) {
+                    return new PKeyDSA(runtime, Utils.getClassFromPath(runtime, "OpenSSL::PKey::DSA"), (DSAPrivateKey) key.getPrivate(),
+                            (DSAPublicKey) key.getPublic());
+                }
+            }
+
+            PublicKey pubKey = null;
+            // d2i_PUBKEY_bio
+            try {
+                pubKey = org.jruby.ext.openssl.impl.PKey.readPublicKey(input);
+            } catch (IOException ioe) {
+                // ignore
+            } catch (GeneralSecurityException gse) {
+                // ignore
+            }
+            // PEM_read_bio_PUBKEY
+            if (pubKey == null) {
+                try {
+                    pubKey = PEMInputOutput.readPubKey(new InputStreamReader(new ByteArrayInputStream(input)));
+                } catch (IOException ioe) {
+                    // ignore
+                }
+            }
+
+            if (pubKey != null) {
+                if (pubKey.getAlgorithm().equals("RSA")) {
+                    return new PKeyRSA(runtime, Utils.getClassFromPath(runtime, "OpenSSL::PKey::RSA"), (RSAPublicKey) pubKey);
+                } else if (key.getPublic().getAlgorithm().equals("DSA")) {
+                    return new PKeyDSA(runtime, Utils.getClassFromPath(runtime, "OpenSSL::PKey::DSA"), (DSAPublicKey) pubKey);
+                }
+            }
+
+            throw runtime.newArgumentError("Could not parse PKey");
+        }
+    }
+
     public PKey(Ruby runtime, RubyClass type) {
         super(runtime,type);
     }
 
     @Override
     @JRubyMethod
-    public IRubyObject initialize(ThreadContext context) {
+    public IRubyObject initialize() {
         return this;
     }
 
@@ -93,10 +181,10 @@ public abstract class PKey extends RubyObject {
         return "NONE";
     }
 
-    // FIXME: any compelling reason for abstract method here?
+    // NetscapeSPKI uses it.
     public abstract IRubyObject to_der();
 
-    @JRubyMethod
+    @JRubyMethod(name = "sign")
     public IRubyObject sign(IRubyObject digest, IRubyObject data) {
         if (!this.callMethod(getRuntime().getCurrentContext(), "private?").isTrue()) {
             throw getRuntime().newArgumentError("Private key is needed.");
@@ -128,7 +216,7 @@ public abstract class PKey extends RubyObject {
          */
     }
 
-    @JRubyMethod
+    @JRubyMethod(name = "verify")
     public IRubyObject verify(IRubyObject digest, IRubyObject sig, IRubyObject data) {
         if (!(digest instanceof Digest)) {
             throw newPKeyError(getRuntime(), "invalid digest");

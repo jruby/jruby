@@ -55,6 +55,7 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.ext.openssl.impl.CipherSpec;
 import org.jruby.ext.openssl.x509store.PEMInputOutput;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -83,9 +84,19 @@ public class PKeyDSA extends PKey {
     public static RaiseException newDSAError(Ruby runtime, String message) {
         return Utils.newError(runtime, "OpenSSL::PKey::DSAError", message);
     }
-    
+
     public PKeyDSA(Ruby runtime, RubyClass type) {
-        super(runtime,type);
+        super(runtime, type);
+    }
+
+    public PKeyDSA(Ruby runtime, RubyClass type, DSAPrivateKey privKey, DSAPublicKey pubKey) {
+        super(runtime, type);
+        this.privKey = privKey;
+        this.pubKey = pubKey;
+    }
+
+    public PKeyDSA(Ruby runtime, RubyClass type, DSAPublicKey pubKey) {
+        this(runtime, type, null, pubKey);
     }
 
     private DSAPrivateKey privKey;
@@ -194,7 +205,7 @@ public class PKeyDSA extends PKey {
                 if (null == val) {
                     // PEM_read_bio_DSA_PUBKEY
                     try {
-                        val = PEMInputOutput.readDSAPubKey(new StringReader(str.toString()), passwd);
+                        val = PEMInputOutput.readDSAPubKey(new StringReader(str.toString()));
                     } catch (NoClassDefFoundError e) {
                         val = null;
                     } catch (Exception e) {
@@ -240,8 +251,14 @@ public class PKeyDSA extends PKey {
                 }
 
                 if (val instanceof KeyPair) {
-                    privKey = (DSAPrivateKey) (((KeyPair) val).getPrivate());
-                    pubKey = (DSAPublicKey) (((KeyPair) val).getPublic());
+                    PrivateKey privateKey = ((KeyPair) val).getPrivate();
+                    PublicKey publicKey = ((KeyPair) val).getPublic();
+                    if (privateKey instanceof DSAPrivateKey) {
+                        privKey = (DSAPrivateKey) privateKey;
+                        pubKey = (DSAPublicKey) publicKey;
+                    } else {
+                        throw newDSAError(getRuntime(), "Neither PUB key nor PRIV key:");
+                    }
                 } else if (val instanceof DSAPrivateKey) {
                     privKey = (DSAPrivateKey) val;
                 } else if (val instanceof DSAPublicKey) {
@@ -305,21 +322,22 @@ public class PKeyDSA extends PKey {
         return val;
     }
 
-    @JRubyMethod(name = {"export", "to_pem", "to_s"}, rest = true)
+    @JRubyMethod(name = { "export", "to_pem", "to_s" }, rest = true)
     public IRubyObject export(IRubyObject[] args) {
         StringWriter w = new StringWriter();
         org.jruby.runtime.Arity.checkArgumentCount(getRuntime(), args, 0, 2);
+        CipherSpec ciph = null;
         char[] passwd = null;
-        String algo = null;
         if (args.length > 0 && !args[0].isNil()) {
-            algo = ((Cipher) args[0]).getAlgorithm();
+            org.jruby.ext.openssl.Cipher c = (org.jruby.ext.openssl.Cipher) args[0];
+            ciph = new CipherSpec(c.getCipher(), c.getName(), c.getKeyLen() * 8);
             if (args.length > 1 && !args[1].isNil()) {
                 passwd = args[1].toString().toCharArray();
             }
         }
         try {
             if (privKey != null) {
-                PEMInputOutput.writeDSAPrivateKey(w, privKey, algo, passwd);
+                PEMInputOutput.writeDSAPrivateKey(w, privKey, ciph, passwd);
             } else {
                 PEMInputOutput.writeDSAPublicKey(w, pubKey);
             }
@@ -420,6 +438,16 @@ public class PKeyDSA extends PKey {
             if ((param = specValues[SPEC_Y]) != null) {
                 return BN.newBN(getRuntime(), param);
             }
+        }
+        return getRuntime().getNil();
+    }
+
+    @JRubyMethod(name="priv_key")
+    public synchronized IRubyObject get_priv_key() {
+        DSAPrivateKey key;
+        BigInteger param;
+        if ((key = this.privKey) != null) {
+            return BN.newBN(getRuntime(), key.getX());
         }
         return getRuntime().getNil();
     }

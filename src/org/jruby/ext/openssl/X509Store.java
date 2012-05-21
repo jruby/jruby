@@ -43,7 +43,6 @@ import org.jruby.ext.openssl.x509store.StoreContext;
 import org.jruby.ext.openssl.x509store.X509Utils;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
-import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -59,14 +58,11 @@ public class X509Store extends RubyObject {
     };
     
     public static void createX509Store(Ruby runtime, RubyModule mX509) {
-        ThreadContext context = runtime.getCurrentContext();
         RubyClass cX509Store = mX509.defineClassUnder("Store",runtime.getObject(),X509STORE_ALLOCATOR);
         RubyClass openSSLError = runtime.getModule("OpenSSL").getClass("OpenSSLError");
         mX509.defineClassUnder("StoreError",openSSLError,openSSLError.getAllocator());
-        cX509Store.addReadWriteAttribute(context, "verify_callback");
-        cX509Store.addReadWriteAttribute(context, "error");
-        cX509Store.addReadWriteAttribute(context, "error_string");
-        cX509Store.addReadWriteAttribute(context, "chain");
+        cX509Store.attr_accessor(runtime.getCurrentContext(), new IRubyObject[]{runtime.newSymbol("verify_callback"),runtime.newSymbol("error"),
+                                                                                runtime.newSymbol("error_string"),runtime.newSymbol("chain")});
 
         cX509Store.defineAnnotatedMethods(X509Store.class);
 
@@ -159,7 +155,7 @@ public class X509Store extends RubyObject {
     @JRubyMethod
     public IRubyObject set_default_paths() {
         try {
-            RubyHash env = (RubyHash)getRuntime().getObject().getConstant("ENV");
+            RubyHash env = (RubyHash)getRuntime().getObject().fastGetConstant("ENV");
             String file = (String)env.get(getRuntime().newString(X509Utils.getDefaultCertificateFileEnvironment()));
             store.loadLocations(file, null);
             String path = (String)env.get(getRuntime().newString(X509Utils.getDefaultCertificateDirectoryEnvironment()));

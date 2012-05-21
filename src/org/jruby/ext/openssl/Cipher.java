@@ -89,7 +89,7 @@ public class Cipher extends RubyObject {
             return recv.getRuntime().newArray(result);
         }
 
-        static boolean isSupportedCipher(String name) {
+        public static boolean isSupportedCipher(String name) {
             initializeCiphers();
             return CIPHERS.indexOf(name.toUpperCase()) != -1;
         }
@@ -231,6 +231,60 @@ public class Cipher extends RubyObject {
 
             return new String[]{cryptoBase, cryptoVersion, cryptoMode, realName, paddingType};
         }
+        
+        public static int[] osslKeyIvLength(String name) {
+            String[] values = Algorithm.osslToJsse(name);
+            String cryptoBase = values[0];
+            String cryptoVersion = values[1];
+            String cryptoMode = values[2];
+            String realName = values[3];
+
+            int keyLen = -1;
+            int ivLen = -1;
+
+            if (hasLen(cryptoBase) && null != cryptoVersion) {
+                try {
+                    keyLen = Integer.parseInt(cryptoVersion) / 8;
+                } catch (NumberFormatException e) {
+                    keyLen = -1;
+                }
+            }
+            if (keyLen == -1) {
+                if ("DES".equalsIgnoreCase(cryptoBase)) {
+                    ivLen = 8;
+                    if ("EDE3".equalsIgnoreCase(cryptoVersion)) {
+                        keyLen = 24;
+                    } else {
+                        keyLen = 8;
+                    }
+                } else if ("RC4".equalsIgnoreCase(cryptoBase)) {
+                    ivLen = 0;
+                    keyLen = 16;
+                } else {
+                    keyLen = 16;
+                    try {
+                        if ((javax.crypto.Cipher.getMaxAllowedKeyLength(name) / 8) < keyLen) {
+                            keyLen = javax.crypto.Cipher.getMaxAllowedKeyLength(name) / 8;
+                        }
+                    } catch (Exception e) {
+                        // I hate checked exceptions
+                    }
+                }
+            }
+
+            if (ivLen == -1) {
+                if ("AES".equalsIgnoreCase(cryptoBase)) {
+                    ivLen = 16;
+                } else {
+                    ivLen = 8;
+                }
+            }
+            return new int[] { keyLen, ivLen };
+        }
+
+        public static boolean hasLen(String cryptoBase) {
+            return "AES".equalsIgnoreCase(cryptoBase) || "RC2".equalsIgnoreCase(cryptoBase) || "RC4".equalsIgnoreCase(cryptoBase);
+        }
     }
 
     private static boolean tryCipher(final String rubyName) {
@@ -298,59 +352,10 @@ public class Cipher extends RubyObject {
         if (!CipherModule.isSupportedCipher(name)) {
             throw newCipherError(getRuntime(), String.format("unsupported cipher algorithm (%s)", name));
         }
-        String[] values = Algorithm.osslToJsse(name, padding);
-        cryptoBase = values[0];
-        cryptoVersion = values[1];
-        cryptoMode = values[2];
-        realName = values[3];
-        padding_type = values[4];
-        ciph = getCipher();
-
-        if (hasLen(cryptoBase) && null != cryptoVersion) {
-            try {
-                keyLen = Integer.parseInt(cryptoVersion) / 8;
-            } catch (NumberFormatException e) {
-                keyLen = -1;
-            }
+        if (ciph != null) {
+            throw getRuntime().newRuntimeError("Cipher already inititalized!");
         }
-        if (keyLen == -1) {
-            if ("DES".equalsIgnoreCase(cryptoBase)) {
-                ivLen = 8;
-                if ("EDE3".equalsIgnoreCase(cryptoVersion)) {
-                    keyLen = 24;
-                } else {
-                    keyLen = 8;
-                }
-                generateKeyLen = keyLen / 8 * 7;
-            } else if ("RC4".equalsIgnoreCase(cryptoBase)) {
-                ivLen = 0;
-                keyLen = 16;
-            } else {
-                keyLen = 16;
-                try {
-                    if ((javax.crypto.Cipher.getMaxAllowedKeyLength(name) / 8) < keyLen) {
-                        keyLen = javax.crypto.Cipher.getMaxAllowedKeyLength(name) / 8;
-                    }
-                } catch (Exception e) {
-                    // I hate checked exceptions
-                }
-            }
-        }
-
-        if (ivLen == -1) {
-            if ("AES".equalsIgnoreCase(cryptoBase)) {
-                ivLen = 16;
-            } else {
-                ivLen = 8;
-            }
-        }
-        
-        // given 'rc4' must be 'RC4' here. OpenSSL checks it as a LN of object
-        // ID and set SN. We don't check 'name' is allowed as a LN in ASN.1 for
-        // the possibility of JCE specific algorithm so just do upperCase here
-        // for OpenSSL compatibility.
-        name = name.toUpperCase();
-
+        updateCipher(name, padding);
         return this;
     }
 
@@ -467,6 +472,7 @@ public class Cipher extends RubyObject {
 
     @JRubyMethod
     public IRubyObject block_size() {
+        checkInitialized();
         if (isStreamCipher()) {
             // getBlockSize() returns 0 for stream cipher in JCE. OpenSSL returns 1 for RC4.
             return getRuntime().newFixnum(1);
@@ -530,11 +536,37 @@ public class Cipher extends RubyObject {
 
     @JRubyMethod
     public IRubyObject reset() {
+        checkInitialized();
         if (!isStreamCipher()) {
             this.realIV = orgIV;
             doInitialize();
         }
         return this;
+    }
+
+    private void updateCipher(String name, String padding) {
+        // given 'rc4' must be 'RC4' here. OpenSSL checks it as a LN of object
+        // ID and set SN. We don't check 'name' is allowed as a LN in ASN.1 for
+        // the possibility of JCE specific algorithm so just do upperCase here
+        // for OpenSSL compatibility.
+        this.name = name.toUpperCase();
+        this.padding = padding;
+
+        String[] values = Algorithm.osslToJsse(name, padding);
+        cryptoBase = values[0];
+        cryptoVersion = values[1];
+        cryptoMode = values[2];
+        realName = values[3];
+        padding_type = values[4];
+
+        int[] lengths = Algorithm.osslKeyIvLength(name);
+        keyLen = lengths[0];
+        ivLen = lengths[1];
+        if ("DES".equalsIgnoreCase(cryptoBase)) {
+            generateKeyLen = keyLen / 8 * 7;
+        }
+
+        ciph = getCipher();
     }
 
     javax.crypto.Cipher getCipher() {
@@ -549,10 +581,6 @@ public class Cipher extends RubyObject {
         } catch (javax.crypto.NoSuchPaddingException e) {
             throw newCipherError(getRuntime(), "unsupported cipher padding (" + realName + ")");
         }
-    }
-
-    private static boolean hasLen(String cryptoBase) {
-        return "AES".equalsIgnoreCase(cryptoBase) || "RC2".equalsIgnoreCase(cryptoBase) || "RC4".equalsIgnoreCase(cryptoBase);
     }
 
     @JRubyMethod(required = 1, optional = 3)
@@ -598,10 +626,11 @@ public class Cipher extends RubyObject {
             System.out.println("*** doInitialize");
             dumpVars();
         }
-        ciphInited = true;
+        checkInitialized();
+        if (key == null) {
+            throw newCipherError(getRuntime(), "key not specified");
+        }
         try {
-            assert (key.length * 8 == keyLen) || (key.length == keyLen) : "Key wrong length";
-            assert (this.realIV.length * 8 == ivLen) || (this.realIV.length == ivLen) : "IV wrong length";
             if (!"ECB".equalsIgnoreCase(cryptoMode)) {
                 if (this.realIV == null) {
                     this.realIV = new byte[ivLen];
@@ -618,12 +647,15 @@ public class Cipher extends RubyObject {
             } else {
                 this.ciph.init(encryptMode ? javax.crypto.Cipher.ENCRYPT_MODE : javax.crypto.Cipher.DECRYPT_MODE, new SimpleSecretKey(realName.split("/")[0], this.key));
             }
+        } catch (java.security.InvalidKeyException ike) {
+            throw newCipherError(getRuntime(), ike.getMessage() + ": possibly you need to install Java Cryptography Extension (JCE) Unlimited Strength Jurisdiction Policy Files for your JRE");
         } catch (Exception e) {
             if (DEBUG) {
                 e.printStackTrace();
             }
             throw newCipherError(getRuntime(), e.getMessage());
         }
+        ciphInited = true;
     }
     private byte[] lastIv = null;
 
@@ -632,7 +664,7 @@ public class Cipher extends RubyObject {
         if (DEBUG) {
             System.out.println("*** update [" + data + "]");
         }
-
+        checkInitialized();
         byte[] val = data.convertToString().getBytes();
         if (val.length == 0) {
             throw getRuntime().newArgumentError("data must not be empty");
@@ -682,6 +714,7 @@ public class Cipher extends RubyObject {
 
     @JRubyMethod(name = "final")
     public IRubyObject _final() {
+        checkInitialized();
         if (!ciphInited) {
             doInitialize();
         }
@@ -721,8 +754,7 @@ public class Cipher extends RubyObject {
 
     @JRubyMethod(name = "padding=")
     public IRubyObject set_padding(IRubyObject padding) {
-        this.padding = padding.toString();
-        initialize(getRuntime().newString(name));
+        updateCipher(name, padding.toString());
         return padding;
     }
 
@@ -742,8 +774,18 @@ public class Cipher extends RubyObject {
         return this.cryptoMode;
     }
 
+    int getKeyLen() {
+        return keyLen;
+    }
+    
     int getGenerateKeyLen() {
         return (generateKeyLen == -1) ? keyLen : generateKeyLen;
+    }
+    
+    private void checkInitialized() {
+        if (ciph == null) {
+            throw getRuntime().newRuntimeError("Cipher not inititalized!");
+        }
     }
     
     private boolean isStreamCipher() {

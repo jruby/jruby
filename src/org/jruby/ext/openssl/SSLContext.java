@@ -121,10 +121,9 @@ public class SSLContext extends RubyObject {
     };
     
     public static void createSSLContext(Ruby runtime, RubyModule mSSL) {
-        ThreadContext context = runtime.getCurrentContext();
         RubyClass cSSLContext = mSSL.defineClassUnder("SSLContext",runtime.getObject(),SSLCONTEXT_ALLOCATOR);
         for(int i=0;i<ctx_attrs.length;i++) {
-            cSSLContext.addReadWriteAttribute(context, ctx_attrs[i]);
+            cSSLContext.attr_accessor(runtime.getCurrentContext(),new IRubyObject[]{runtime.newSymbol(ctx_attrs[i])});
         }
 
         cSSLContext.defineAnnotatedMethods(SSLContext.class);
@@ -238,6 +237,8 @@ public class SSLContext extends RubyObject {
         value = getInstanceVariable("@verify_callback");
         if (value != null && !value.isNil()) {
             internalCtx.store.setExtraData(1, value);
+        } else {
+            internalCtx.store.setExtraData(1, null);
         }
 
         value = getInstanceVariable("@timeout");
@@ -248,6 +249,8 @@ public class SSLContext extends RubyObject {
         value = getInstanceVariable("@verify_depth");
         if (value != null && !value.isNil()) {
             internalCtx.store.setDepth(RubyNumeric.fix2int(value));
+        } else {
+            internalCtx.store.setDepth(-1);
         }
 
         /* TODO: should be implemented for SSLSession
@@ -506,7 +509,8 @@ public class SSLContext extends RubyObject {
     private X509Cert[] convertToX509Certs(IRubyObject value) {
         final ArrayList<X509Cert> result = new ArrayList<X509Cert>();
         ThreadContext ctx = getRuntime().getCurrentContext();
-        RuntimeHelpers.invoke(ctx, value, "each", CallBlock.newCallClosure(value, value.getMetaClass(), Arity.NO_ARGUMENTS, new BlockCallback() {
+        RubyClass klass = Utils.getClassFromPath(ctx.runtime, "OpenSSL::SSL::SSLContext");
+        RuntimeHelpers.invoke(ctx, value, "each", CallBlock.newCallClosure(value, klass, Arity.NO_ARGUMENTS, new BlockCallback() {
 
             public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
                 Utils.checkKind(getRuntime(), args[0], "OpenSSL::X509::Certificate");
@@ -724,6 +728,10 @@ public class SSLContext extends RubyObject {
                     throw new CertificateException("certificate verify failed");
                 }
             } catch (Exception e) {
+                ctx.setLastVerifyResultInternal(storeCtx.error);
+                if (storeCtx.error == X509Utils.V_OK) {
+                    ctx.setLastVerifyResultInternal(X509Utils.V_ERR_CERT_REJECTED);
+                }
                 throw new CertificateException("certificate verify failed", e);
             }
         }

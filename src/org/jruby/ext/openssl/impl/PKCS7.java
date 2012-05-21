@@ -79,6 +79,9 @@ import org.jruby.ext.openssl.x509store.X509Utils;
  * @author <a href="mailto:ola.bini@gmail.com">Ola Bini</a>
  */
 public class PKCS7 {
+    // OpenSSL behavior: PKCS#7 ObjectId for "ITU-T" + "0"
+    private static final String EMPTY_PKCS7_OID = "0.0";
+    
 	/* content as defined by the type */
 	/* all encryption/message digests are applied to the 'contents',
 	 * leaving out the 'type' field. */
@@ -112,22 +115,27 @@ public class PKCS7 {
      * ContentType ::= OBJECT IDENTIFIER
      */
     public static PKCS7 fromASN1(DEREncodable obj) throws PKCS7Exception {
-        int size = ((ASN1Sequence)obj).size();
-        if(size == 0) {
-            return new PKCS7();
-        }
-
-        DERObjectIdentifier contentType = (DERObjectIdentifier)(((ASN1Sequence)obj).getObjectAt(0));
-        int nid = ASN1Registry.obj2nid(contentType);
-        
-        DEREncodable content = size == 1 ? (DEREncodable)null : ((ASN1Sequence)obj).getObjectAt(1);
-
-        if(content != null && content instanceof DERTaggedObject && ((DERTaggedObject)content).getTagNo() == 0) {
-            content = ((DERTaggedObject)content).getObject();
-        }
-        
         PKCS7 p7 = new PKCS7();
-        p7.initiateWith(nid, content);
+
+        int size = ((ASN1Sequence) obj).size();
+        if (size == 0) {
+            return p7;
+        }
+
+        DERObjectIdentifier contentType = (DERObjectIdentifier) (((ASN1Sequence) obj).getObjectAt(0));
+        if (EMPTY_PKCS7_OID.equals(contentType.getId())) {
+            // OpenSSL behavior
+            p7.setType(ASN1Registry.NID_undef);
+        } else {
+            int nid = ASN1Registry.obj2nid(contentType);
+
+            DEREncodable content = size == 1 ? (DEREncodable) null : ((ASN1Sequence) obj).getObjectAt(1);
+
+            if (content != null && content instanceof DERTaggedObject && ((DERTaggedObject) content).getTagNo() == 0) {
+                content = ((DERTaggedObject) content).getObject();
+            }
+            p7.initiateWith(nid, content);
+        }
         return p7;
     }
 
@@ -141,10 +149,17 @@ public class PKCS7 {
 
     public ASN1Encodable asASN1() {
         ASN1EncodableVector vector = new ASN1EncodableVector();
-        DERObjectIdentifier contentType = ASN1Registry.nid2obj(getType());
+        DERObjectIdentifier contentType;
+        if (data == null) {
+            // OpenSSL behavior
+            contentType = new DERObjectIdentifier(EMPTY_PKCS7_OID);
+        } else {
+            contentType = ASN1Registry.nid2obj(getType());
+        }
         vector.add(contentType);
-        vector.add(new DERTaggedObject(0, data.asASN1()));
-
+        if (data != null) {
+            vector.add(new DERTaggedObject(0, data.asASN1()));
+        }
         return new DERSequence(vector);
     }
 
@@ -498,6 +513,9 @@ public class PKCS7 {
      */
     public void setType(int type) throws PKCS7Exception {
         switch(type) {
+        case ASN1Registry.NID_undef:
+            this.data = null;
+            break;
         case ASN1Registry.NID_pkcs7_signed:
             this.data = new PKCS7DataSigned();
             break;

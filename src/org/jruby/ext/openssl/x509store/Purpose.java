@@ -357,7 +357,8 @@ public class Purpose {
                     // when the cert has nsCertType, it must include NS_SSL_SERVER
                     return 0;
                 }
-                if(x.getKeyUsage() != null && (!x.getKeyUsage()[0] || !x.getKeyUsage()[2])) {
+                /* Now as for keyUsage: we'll at least need to sign OR encipher */      
+                if(x.getKeyUsage() != null && !(x.getKeyUsage()[0] || x.getKeyUsage()[2])) {
                     return 0;
                 }
                 return 1;

@@ -27,6 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl.impl;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
@@ -41,10 +42,16 @@ import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.DSAPrivateKeySpec;
 import java.security.spec.DSAPublicKeySpec;
+import java.security.spec.KeySpec;
 import java.security.spec.RSAPrivateCrtKeySpec;
 import java.security.spec.RSAPublicKeySpec;
+
+import javax.crypto.spec.DHParameterSpec;
+
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERInteger;
 import org.bouncycastle.asn1.DERSequence;
 import org.jruby.util.ByteList;
@@ -57,8 +64,73 @@ import org.jruby.util.ByteList;
  */
 public class PKey {
 
+    public static KeyPair readPrivateKey(byte[] input, String type) throws IOException, GeneralSecurityException {
+        KeySpec pubSpec = null;
+        KeySpec privSpec = null;
+        ASN1Sequence seq = (ASN1Sequence) new ASN1InputStream(input).readObject();
+        if (type.equals("RSA")) {
+            DERInteger mod = (DERInteger) seq.getObjectAt(1);
+            DERInteger pubExp = (DERInteger) seq.getObjectAt(2);
+            DERInteger privExp = (DERInteger) seq.getObjectAt(3);
+            DERInteger p1 = (DERInteger) seq.getObjectAt(4);
+            DERInteger p2 = (DERInteger) seq.getObjectAt(5);
+            DERInteger exp1 = (DERInteger) seq.getObjectAt(6);
+            DERInteger exp2 = (DERInteger) seq.getObjectAt(7);
+            DERInteger crtCoef = (DERInteger) seq.getObjectAt(8);
+            pubSpec = new RSAPublicKeySpec(mod.getValue(), pubExp.getValue());
+            privSpec = new RSAPrivateCrtKeySpec(mod.getValue(), pubExp.getValue(), privExp.getValue(), p1.getValue(), p2.getValue(), exp1.getValue(),
+                    exp2.getValue(), crtCoef.getValue());
+        } else { // assume "DSA" for now.
+            DERInteger p = (DERInteger) seq.getObjectAt(1);
+            DERInteger q = (DERInteger) seq.getObjectAt(2);
+            DERInteger g = (DERInteger) seq.getObjectAt(3);
+            DERInteger y = (DERInteger) seq.getObjectAt(4);
+            DERInteger x = (DERInteger) seq.getObjectAt(5);
+            privSpec = new DSAPrivateKeySpec(x.getValue(), p.getValue(), q.getValue(), g.getValue());
+            pubSpec = new DSAPublicKeySpec(y.getValue(), p.getValue(), q.getValue(), g.getValue());
+        }
+        KeyFactory fact = KeyFactory.getInstance(type);
+        return new KeyPair(fact.generatePublic(pubSpec), fact.generatePrivate(privSpec));
+    }
+
+    // d2i_PrivateKey_bio
+    public static KeyPair readPrivateKey(byte[] input) throws IOException, GeneralSecurityException {
+        KeyPair key = null;
+        try {
+            key = readRSAPrivateKey(input);
+        } catch (Exception e) {
+            // ignore
+        }
+        if (key == null) {
+            try {
+                key = readDSAPrivateKey(input);
+            } catch (Exception e) {
+                // ignore
+            }
+        }
+        return key;
+    }
+
+    // d2i_PUBKEY_bio
+    public static PublicKey readPublicKey(byte[] input) throws IOException, GeneralSecurityException {
+        PublicKey key = null;
+        try {
+            key = readRSAPublicKey(input);
+        } catch (Exception e) {
+            // ignore
+        }
+        if (key == null) {
+            try {
+                key = readDSAPublicKey(input);
+            } catch (Exception e) {
+                // ignore
+            }
+        }
+        return key;
+    }
+
     // d2i_RSAPrivateKey_bio
-    public static PrivateKey readRSAPrivateKey(byte[] input) throws IOException, GeneralSecurityException {
+    public static KeyPair readRSAPrivateKey(byte[] input) throws IOException, GeneralSecurityException {
         KeyFactory fact = KeyFactory.getInstance("RSA");
         DERSequence seq = (DERSequence) (new ASN1InputStream(input).readObject());
         if (seq.size() == 9) {
@@ -70,7 +142,9 @@ public class PKey {
             BigInteger primeep = ((DERInteger) seq.getObjectAt(6)).getValue();
             BigInteger primeeq = ((DERInteger) seq.getObjectAt(7)).getValue();
             BigInteger crtcoeff = ((DERInteger) seq.getObjectAt(8)).getValue();
-            return fact.generatePrivate(new RSAPrivateCrtKeySpec(mod, pubexp, privexp, primep, primeq, primeep, primeeq, crtcoeff));
+            PrivateKey priv = fact.generatePrivate(new RSAPrivateCrtKeySpec(mod, pubexp, privexp, primep, primeq, primeep, primeeq, crtcoeff));
+            PublicKey pub = fact.generatePublic(new RSAPublicKeySpec(mod, pubexp));
+            return new KeyPair(pub, priv);
         } else {
             return null;
         }
@@ -120,6 +194,15 @@ public class PKey {
         } else {
             return null;
         }
+    }
+    
+    // d2i_DHparams_bio
+    public static DHParameterSpec readDHParameter(byte[] input) throws IOException {
+        ASN1InputStream aIn = new ASN1InputStream(input);
+        ASN1Sequence seq = (ASN1Sequence) aIn.readObject();
+        BigInteger p = ((DERInteger) seq.getObjectAt(0)).getValue();
+        BigInteger g = ((DERInteger) seq.getObjectAt(1)).getValue();
+        return new DHParameterSpec(p, g);
     }
 
     public static byte[] toDerRSAKey(RSAPublicKey pubKey, RSAPrivateCrtKey privKey) throws IOException {

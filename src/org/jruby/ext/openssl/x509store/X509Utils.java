@@ -395,6 +395,9 @@ public abstract class X509Utils {
     public static final int X509_R_UNSUPPORTED_ALGORITHM = 111;
     public static final int X509_R_WRONG_LOOKUP_TYPE = 112;
     public static final int X509_R_WRONG_TYPE = 122;
+    public static final int X509_R_METHOD_NOT_SUPPORTED = 124;
+    public static final int X509_R_PUBLIC_KEY_DECODE_ERROR = 125;
+    public static final int X509_R_PUBLIC_KEY_ENCODE_ERROR = 126;
 
     public static final int X509_VP_FLAG_DEFAULT = 0x1;
     public static final int X509_VP_FLAG_OVERWRITE = 0x2;

@@ -131,17 +131,21 @@ public class PKeyDH extends PKey {
             if (argc == 1 && arg0 instanceof RubyString) {
                 try {
                     DHParameterSpec spec = PEMInputOutput.readDHParameters(new StringReader(arg0.toString()));
+                    if (spec == null) {
+                        spec = org.jruby.ext.openssl.impl.PKey.readDHParameter(arg0.asString().getByteList().bytes());
+                    }
+                    if (spec == null) {
+                        throw runtime.newArgumentError("invalid DH PARAMETERS");
+                    }
                     this.dh_p = spec.getP();
                     this.dh_g = spec.getG();
                 } catch (NoClassDefFoundError ncdfe) {
                     throw newDHError(runtime, OpenSSLReal.bcExceptionMessage(ncdfe));
                 } catch (IOException e) {
                     throw runtime.newIOErrorFromException(e);
-                } catch (InvalidParameterSpecException e) {
-                    throw runtime.newArgumentError(e.getMessage());
                 }
             } else {
-                int bits = RubyNumeric.fix2int(args[0]);
+                int bits = RubyNumeric.fix2int(arg0);
                 // g defaults to 2
                 int gval = argc == 2 ? RubyNumeric.fix2int(args[1]) : 2;
                 BigInteger p;

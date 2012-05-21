@@ -257,7 +257,6 @@ public class ASN1 {
     }
     
     public static void createASN1(Ruby runtime, RubyModule ossl) {
-        ThreadContext context = runtime.getCurrentContext();
         RubyModule mASN1 = ossl.defineModuleUnder("ASN1");
         RubyClass openSSLError = ossl.getClass("OpenSSLError");
         mASN1.defineClassUnder("ASN1Error",openSSLError, openSSLError.getAllocator());
@@ -276,18 +275,16 @@ public class ASN1 {
         }
 
         RubyClass cASN1Data = mASN1.defineClassUnder("ASN1Data",runtime.getObject(), ASN1Data.ALLOCATOR);
-        cASN1Data.addReadWriteAttribute(context, "value");
-        cASN1Data.addReadWriteAttribute(context, "tag");
-        cASN1Data.addReadWriteAttribute(context, "tag_class");
+        cASN1Data.attr_accessor(runtime.getCurrentContext(), new IRubyObject[]{runtime.newString("value"),runtime.newString("tag"),runtime.newString("tag_class")});
         cASN1Data.defineAnnotatedMethods(ASN1Data.class);
 
         RubyClass cASN1Primitive = mASN1.defineClassUnder("Primitive",cASN1Data, ASN1Primitive.ALLOCATOR);
-        cASN1Primitive.addReadWriteAttribute(context, "tagging");
+        cASN1Primitive.attr_accessor(runtime.getCurrentContext(), new IRubyObject[]{runtime.newString("tagging")});
         cASN1Primitive.defineAnnotatedMethods(ASN1Primitive.class);
 
         RubyClass cASN1Constructive = mASN1.defineClassUnder("Constructive",cASN1Data,ASN1Constructive.ALLOCATOR);
         cASN1Constructive.includeModule(runtime.getModule("Enumerable"));
-        cASN1Constructive.addReadWriteAttribute(context, "tagging");
+        cASN1Constructive.attr_accessor(runtime.getCurrentContext(), new IRubyObject[]{runtime.newString("tagging")});
         cASN1Constructive.defineAnnotatedMethods(ASN1Constructive.class);
 
         mASN1.defineClassUnder("Boolean",cASN1Primitive,cASN1Primitive.getAllocator());
@@ -318,7 +315,7 @@ public class ASN1 {
 
         cASN1ObjectId.defineAnnotatedMethods(ObjectId.class);
 
-        cASN1BitString.addReadWriteAttribute(context, "unused_bits");
+        cASN1BitString.attr_accessor(runtime.getCurrentContext(), new IRubyObject[]{runtime.newSymbol("unused_bits")});
     }
 
 
@@ -538,7 +535,7 @@ public class ASN1 {
             } else if(v instanceof DERNull) {
                 return c.callMethod(tc,"new",asnM.getRuntime().getNil());
             } else if(v instanceof DERInteger) {
-                return c.callMethod(tc,"new",RubyNumeric.str2inum(asnM.getRuntime(),asnM.getRuntime().newString(((DERInteger)v).getValue().toString()),10));
+                return c.callMethod(tc, "new", BN.newBN(asnM.getRuntime(), ((DERInteger) v).getValue()));
             } else if(v instanceof DERUTCTime) {
                 Date d = dateF.parse(((DERUTCTime)v).getAdjustedTime());
                 Calendar cal = Calendar.getInstance();

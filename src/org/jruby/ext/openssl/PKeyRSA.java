@@ -59,6 +59,7 @@ import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.ext.openssl.impl.CipherSpec;
 import org.jruby.ext.openssl.x509store.PEMInputOutput;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -94,9 +95,19 @@ public class PKeyRSA extends PKey {
     public static RaiseException newRSAError(Ruby runtime, String message) {
         return Utils.newError(runtime, "OpenSSL::PKey::RSAError", message);
     }
-   
+
     public PKeyRSA(Ruby runtime, RubyClass type) {
-        super(runtime,type);
+        super(runtime, type);
+    }
+
+    public PKeyRSA(Ruby runtime, RubyClass type, RSAPrivateCrtKey privKey, RSAPublicKey pubKey) {
+        super(runtime, type);
+        this.privKey = privKey;
+        this.pubKey = pubKey;
+    }
+
+    public PKeyRSA(Ruby runtime, RubyClass type, RSAPublicKey pubKey) {
+        this(runtime, type, null, pubKey);
     }
 
     private transient volatile RSAPrivateCrtKey privKey;
@@ -220,7 +231,7 @@ public class PKeyRSA extends PKey {
                 if (null == val) {
                     // PEM_read_bio_RSA_PUBKEY
                     try {
-                        val = PEMInputOutput.readRSAPubKey(new StringReader(str.toString()), passwd);
+                        val = PEMInputOutput.readRSAPubKey(new StringReader(str.toString()));
                     } catch (NoClassDefFoundError e) {
                         val = null;
                     } catch (Exception e) {
@@ -268,8 +279,14 @@ public class PKeyRSA extends PKey {
                 }
 
                 if (val instanceof KeyPair) {
-                    privKey = (RSAPrivateCrtKey) (((KeyPair) val).getPrivate());
-                    pubKey = (RSAPublicKey) (((KeyPair) val).getPublic());
+                    PrivateKey privateKey = ((KeyPair) val).getPrivate();
+                    PublicKey publicKey = ((KeyPair) val).getPublic();
+                    if (privateKey instanceof RSAPrivateCrtKey) {
+                        privKey = (RSAPrivateCrtKey) privateKey;
+                        pubKey = (RSAPublicKey) publicKey;
+                    } else {
+                        throw newRSAError(getRuntime(), "Neither PUB key nor PRIV key:");
+                    }
                 } else if (val instanceof RSAPrivateCrtKey) {
                     privKey = (RSAPrivateCrtKey) val;
                     try {
@@ -375,21 +392,22 @@ public class PKeyRSA extends PKey {
         return getRuntime().newString(result.toString());
     }
 
-    @JRubyMethod(name = {"export", "to_pem", "to_s"}, rest = true)
+    @JRubyMethod(name = { "export", "to_pem", "to_s" }, rest = true)
     public IRubyObject export(IRubyObject[] args) {
         StringWriter w = new StringWriter();
         org.jruby.runtime.Arity.checkArgumentCount(getRuntime(), args, 0, 2);
+        CipherSpec ciph = null;
         char[] passwd = null;
-        String algo = null;
         if (args.length > 0 && !args[0].isNil()) {
-            algo = ((org.jruby.ext.openssl.Cipher) args[0]).getAlgorithm();
+            org.jruby.ext.openssl.Cipher c = (org.jruby.ext.openssl.Cipher) args[0];
+            ciph = new CipherSpec(c.getCipher(), c.getName(), c.getKeyLen() * 8);
             if (args.length > 1 && !args[1].isNil()) {
                 passwd = args[1].toString().toCharArray();
             }
         }
         try {
             if (privKey != null) {
-                PEMInputOutput.writeRSAPrivateKey(w, privKey, algo, passwd);
+                PEMInputOutput.writeRSAPrivateKey(w, privKey, ciph, passwd);
             } else {
                 PEMInputOutput.writeRSAPublicKey(w, pubKey);
             }

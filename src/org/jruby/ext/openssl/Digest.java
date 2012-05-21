@@ -56,8 +56,8 @@ public class Digest extends RubyObject {
 
     public static void createDigest(Ruby runtime, RubyModule mOSSL) {
         runtime.getLoadService().require("digest");
-        RubyModule mDigest = runtime.getModule("Digest");
-        RubyClass cDigestClass = mDigest.getClass("Class");
+        RubyModule mDigest = runtime.fastGetModule("Digest");
+        RubyClass cDigestClass = mDigest.fastGetClass("Class");
         RubyClass cDigest = mOSSL.defineClassUnder("Digest", cDigestClass, DIGEST_ALLOCATOR);
         cDigest.defineAnnotatedMethods(Digest.class);
         RubyClass openSSLError = mOSSL.getClass("OpenSSLError");
@@ -146,7 +146,7 @@ public class Digest extends RubyObject {
     @JRubyMethod(name={"update","<<"})
     public IRubyObject update(IRubyObject obj) {
         ByteList bytes = obj.convertToString().getByteList();
-        algo.update(bytes.unsafeBytes(), bytes.begin(), bytes.getRealSize());
+        algo.update(bytes.bytes, bytes.begin, bytes.realSize);
         return this;
     }
 
