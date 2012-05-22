@@ -61,9 +61,10 @@ public class X509Store extends RubyObject {
         RubyClass cX509Store = mX509.defineClassUnder("Store",runtime.getObject(),X509STORE_ALLOCATOR);
         RubyClass openSSLError = runtime.getModule("OpenSSL").getClass("OpenSSLError");
         mX509.defineClassUnder("StoreError",openSSLError,openSSLError.getAllocator());
-        cX509Store.attr_accessor(runtime.getCurrentContext(), new IRubyObject[]{runtime.newSymbol("verify_callback"),runtime.newSymbol("error"),
-                                                                                runtime.newSymbol("error_string"),runtime.newSymbol("chain")});
-
+        cX509Store.addReadWriteAttribute(runtime.getCurrentContext(), "verify_callback");
+        cX509Store.addReadWriteAttribute(runtime.getCurrentContext(), "error");
+        cX509Store.addReadWriteAttribute(runtime.getCurrentContext(), "error_string");
+        cX509Store.addReadWriteAttribute(runtime.getCurrentContext(), "chain");
         cX509Store.defineAnnotatedMethods(X509Store.class);
 
         X509StoreCtx.createX509StoreCtx(runtime, mX509);

@@ -85,12 +85,10 @@ public class SSLSocket extends RubyObject {
     
     public static void createSSLSocket(Ruby runtime, RubyModule mSSL) {
         RubyClass cSSLSocket = mSSL.defineClassUnder("SSLSocket",runtime.getObject(),SSLSOCKET_ALLOCATOR);
-
-        cSSLSocket.attr_accessor(runtime.getCurrentContext(), new IRubyObject[]{runtime.newSymbol("io")});
-        cSSLSocket.attr_accessor(runtime.getCurrentContext(), new IRubyObject[]{runtime.newSymbol("context")});
-        cSSLSocket.attr_accessor(runtime.getCurrentContext(), new IRubyObject[]{runtime.newSymbol("sync_close")});
+        cSSLSocket.addReadWriteAttribute(runtime.getCurrentContext(), "io");
+        cSSLSocket.addReadWriteAttribute(runtime.getCurrentContext(), "context");
+        cSSLSocket.addReadWriteAttribute(runtime.getCurrentContext(), "sync_close");
         cSSLSocket.defineAlias("to_io","io");
-
         cSSLSocket.defineAnnotatedMethods(SSLSocket.class);
     }
 

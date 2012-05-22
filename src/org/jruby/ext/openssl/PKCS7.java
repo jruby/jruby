@@ -86,7 +86,8 @@ public class PKCS7 extends RubyObject {
         RubyClass cPKCS7 = mOSSL.defineClassUnder("PKCS7",runtime.getObject(),PKCS7_ALLOCATOR);
         RubyClass openSSLError = runtime.getModule("OpenSSL").getClass("OpenSSLError");
         cPKCS7.defineClassUnder("PKCS7Error",openSSLError,openSSLError.getAllocator());
-        cPKCS7.attr_accessor(runtime.getCurrentContext(), new IRubyObject[]{runtime.newSymbol("data"),runtime.newSymbol("error_string")});
+        cPKCS7.addReadWriteAttribute(runtime.getCurrentContext(), "data");
+        cPKCS7.addReadWriteAttribute(runtime.getCurrentContext(), "error_string");
         cPKCS7.defineAnnotatedMethods(PKCS7.class);
         cPKCS7.defineAnnotatedMethods(ModuleMethods.class);
 
