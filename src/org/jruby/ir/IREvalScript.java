@@ -78,7 +78,7 @@ public class IREvalScript extends IRClosure {
         return endBlocks;
     }
 
-    public IRubyObject call(ThreadContext context, IRubyObject self, DynamicScope evalScope, Block block, String backtraceName) {
+    public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, DynamicScope evalScope, Block block, String backtraceName) {
         if (Interpreter.isDebug()) {
             LOG.info("CFG:\n" + cfg());
         }
@@ -95,7 +95,7 @@ public class IREvalScript extends IRClosure {
             evalScope.growIfNeeded();
 
             // FIXME: Do not push new empty arg array in every time
-            return Interpreter.INTERPRET_EVAL(context, self, this, new IRubyObject[] {}, backtraceName, block, null);
+            return Interpreter.INTERPRET_EVAL(context, self, this, clazz, new IRubyObject[] {}, backtraceName, block, null);
         }
         finally {
             context.popScope();

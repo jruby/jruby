@@ -12,7 +12,9 @@ import org.jruby.ir.IRScope;
 import org.jruby.ir.instructions.BreakInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.PopBindingInstr;
+import org.jruby.ir.instructions.PopFrameInstr;
 import org.jruby.ir.instructions.PushBindingInstr;
+import org.jruby.ir.instructions.PushFrameInstr;
 import org.jruby.ir.instructions.ReceiveExceptionInstr;
 import org.jruby.ir.instructions.ReturnBase;
 import org.jruby.ir.instructions.ThrowExceptionInstr;
@@ -67,16 +69,22 @@ public class AddCallProtocolInstructions extends CompilerPass {
             }
         }
 
-        // Add explicit binding push/pop instrs ONLY for methods -- we cannot handle this in closures and evals yet
+        BasicBlock entryBB = cfg.getEntryBB();
+
+        // SSS FIXME: Right now, we always add push/pop frame instrs -- in the future, we may skip them
+        // for certain scopes.
+        //
+        // Add explicit frame and binding push/pop instrs ONLY for methods -- we cannot handle this in closures and evals yet
         // If the scope uses $_ or $~ family of vars, has local load/stores, or if its binding has escaped, we have
         // to allocate a dynamic scope for it and add binding push/pop instructions.
         if ((scope instanceof IRMethod) || (scope instanceof IRScriptBody) || (scope instanceof IRModuleBody)) {
-            if (scope.bindingHasEscaped() || scope.usesBackrefOrLastline() || scopeHasLocalVarStores) {
+            if (scope.bindingHasEscaped() || scope.usesBackrefOrLastline() || scopeHasLocalVarStores || scopeHasUnrescuedExceptions) {
                 // Push
-                cfg.getEntryBB().addInstr(new PushBindingInstr(scope));
+                entryBB.addInstr(new PushFrameInstr());
+                entryBB.addInstr(new PushBindingInstr(scope));
 
                 // Allocate GEB if necessary for popping binding
-                if (geb == null && scopeHasLocalVarStores && scopeHasUnrescuedExceptions) {
+                if (geb == null && (scopeHasLocalVarStores || scopeHasUnrescuedExceptions)) {
                     Variable exc = scope.getNewTemporaryVariable();
                     geb = new BasicBlock(cfg, new Label("_GLOBAL_ENSURE_BLOCK"));
                     geb.addInstr(new ReceiveExceptionInstr(exc, false)); // No need to check type since it is not used before rethrowing
@@ -94,6 +102,7 @@ public class AddCallProtocolInstructions extends CompilerPass {
                             // Add before the break/return
                             instrs.previous();
                             instrs.add(new PopBindingInstr());
+                            instrs.add(new PopFrameInstr());
                             break;
                         }
                     }
@@ -102,12 +111,14 @@ public class AddCallProtocolInstructions extends CompilerPass {
                         // Last instr could be a return -- so, move iterator one position back
                         if (instrs.hasPrevious()) instrs.previous();
                         instrs.add(new PopBindingInstr());
+                        instrs.add(new PopFrameInstr());
                     }
 
                     if (bb == geb) {
                         // Add before throw-exception-instr which would be the last instr
                         instrs.previous();
                         instrs.add(new PopBindingInstr());
+                        instrs.add(new PopFrameInstr());
                     }
                 }
             }

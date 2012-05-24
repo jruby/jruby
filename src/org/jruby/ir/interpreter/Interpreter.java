@@ -62,6 +62,7 @@ import org.jruby.runtime.Block.Type;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
@@ -116,7 +117,7 @@ public class Interpreter {
 //        evalScript.runCompilerPass(new CallSplitter());
         ThreadContext context = runtime.getCurrentContext(); 
         runBeginEndBlocks(evalScript.getBeginBlocks(), context, self, null); // FIXME: No temp vars yet right?
-        IRubyObject rv = evalScript.call(context, self, rootNode.getScope(), block, backtraceName);
+        IRubyObject rv = evalScript.call(context, self, evalScript.getStaticScope().getModule(), rootNode.getScope(), block, backtraceName);
         runBeginEndBlocks(evalScript.getEndBlocks(), context, self, null); // FIXME: No temp vars right?
         return rv;
     }
@@ -345,7 +346,7 @@ public class Interpreter {
     }
 
     private static IRubyObject interpret(ThreadContext context, IRubyObject self, 
-            IRScope scope, IRubyObject[] args, Block block, Block.Type blockType) {
+            IRScope scope, Visibility visibility, RubyModule implClass, IRubyObject[] args, Block block, Block.Type blockType) {
         boolean debug = isDebug();
         boolean profile = inProfileMode();
         boolean inClosure = (scope instanceof IRClosure);
@@ -398,11 +399,23 @@ public class Interpreter {
                 Object result = null;
                 try {
                     switch(operation) {
+                    case PUSH_FRAME: {
+                        context.preMethodFrameAndClass(implClass, scope.getName(), self, block, scope.getStaticScope());
+                        context.setCurrentVisibility(visibility);
+                        ipc++;
+                        break;
+                    }
                     case PUSH_BINDING: {
                         // SSS FIXME: Blocks are a headache -- so, these instrs. are only added to IRMethods
                         // Blocks have more complicated logic for pushing a dynamic scope (see InterpretedIRBlockBody)
                         currDynScope = DynamicScope.newDynamicScope(scope.getStaticScope());
                         context.pushScope(currDynScope);
+                        ipc++;
+                        break;
+                    }
+                    case POP_FRAME: {
+                        context.popFrame();
+                        context.popRubyClass();
                         ipc++;
                         break;
                     }
@@ -712,10 +725,10 @@ public class Interpreter {
     }
 
     public static IRubyObject INTERPRET_EVAL(ThreadContext context, IRubyObject self, 
-            IRScope scope, IRubyObject[] args, String name, Block block, Block.Type blockType) {
+            IRScope scope, RubyModule clazz, IRubyObject[] args, String name, Block block, Block.Type blockType) {
         try {
             ThreadContext.pushBacktrace(context, name, scope.getFileName(), context.getLine());
-            return interpret(context, self, scope, args, block, blockType);
+            return interpret(context, self, scope, null, clazz, args, block, blockType);
         } finally {
             ThreadContext.popBacktrace(context);
         }
@@ -725,21 +738,24 @@ public class Interpreter {
             IRScope scope, IRubyObject[] args, String name, Block block, Block.Type blockType) {
         try {
             ThreadContext.pushBacktrace(context, name, scope.getFileName(), context.getLine());
-            return interpret(context, self, scope, args, block, blockType);
+            return interpret(context, self, scope, null, null, args, block, blockType);
         } finally {
             ThreadContext.popBacktrace(context);
         }
     }
 
-    public static IRubyObject INTERPRET_METHOD(ThreadContext context, IRScope scope, 
-        IRubyObject self, String name, RubyModule implClass, IRubyObject[] args, Block block, Block.Type blockType, boolean isTraceable) {
-        Ruby runtime = context.getRuntime();
+    public static IRubyObject INTERPRET_METHOD(ThreadContext context, InterpretedIRMethod irMethod, 
+        IRubyObject self, String name, IRubyObject[] args, Block block, Block.Type blockType, boolean isTraceable) {
+        Ruby       runtime   = context.getRuntime();
+        IRScope    scope     = irMethod.getIRMethod();
+        RubyModule implClass = irMethod.getImplementationClass();
+		  Visibility viz       = irMethod.getVisibility();
         boolean syntheticMethod = name == null || name.equals("");
 
         try {
             if (!syntheticMethod) ThreadContext.pushBacktrace(context, name, scope.getFileName(), context.getLine());
             if (isTraceable) methodPreTrace(runtime, context, name, implClass);
-            return interpret(context, self, scope, args, block, blockType);
+            return interpret(context, self, scope, viz, implClass, args, block, blockType);
         } finally {
             if (isTraceable) {
                 try {methodPostTrace(runtime, context, name, implClass);}

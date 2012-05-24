@@ -63,13 +63,16 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
+        // SSS FIXME: Move this out of here to some other place?
+        // Prepare method if not yet done so we know if the method has an explicit/implicit call protocol
+        if (method.getInstrsForInterpretation() == null) method.prepareForInterpretation();
+
         if (Interpreter.isDebug()) {
             // FIXME: name should probably not be "" ever.
             String realName = name == null || "".equals(name) ? method.getName() : name;
             LOG.info("Executing '" + realName + "'");
             if (displayedCFG == false) {
                 // The base IR may not have been processed yet
-                if (method.getInstrsForInterpretation() == null) method.prepareForInterpretation();
                 CFG cfg = method.getCFG();
                 LOG.info("Graph:\n" + cfg.toStringGraph());
                 LOG.info("CFG:\n" + cfg.toStringInstrs());
@@ -77,23 +80,20 @@ public class InterpretedIRMethod extends DynamicMethod implements IRMethodArgs, 
             }
         }
 
-        boolean hasExplicitCallProtocol = method.hasExplicitCallProtocol();
-        try {
-            // update call stacks (push: frame, class, scope, etc.)
-            RubyModule  implClass   = getImplementationClass();
-            StaticScope staticScope = method.getStaticScope();
-            if (hasExplicitCallProtocol) {
-                context.preMethodFrameAndClass(implClass, name, self, block, staticScope);
-            } else {
-                context.preMethodFrameAndScope(implClass, name, self, block, staticScope);
+        if (method.hasExplicitCallProtocol()) {
+            return Interpreter.INTERPRET_METHOD(context, this, self, name, args, block, null, false);
+        } else {
+            try {
+                // update call stacks (push: frame, class, scope, etc.)
+                context.preMethodFrameAndScope(getImplementationClass(), name, self, block, method.getStaticScope());
+                context.setCurrentVisibility(getVisibility());
+                return Interpreter.INTERPRET_METHOD(context, this, self, name, args, block, null, false);
+            } finally {
+                // update call stacks (pop: ..)
+                context.popFrame();
+                context.popRubyClass();
+                context.popScope();
             }
-            context.setCurrentVisibility(getVisibility());
-            return Interpreter.INTERPRET_METHOD(context, method, self, name, implClass, args, block, null, false);
-        } finally {
-            // update call stacks (pop: ..)
-            context.popFrame();
-            context.popRubyClass();
-            if (!hasExplicitCallProtocol) context.popScope();
         }
     }
 
