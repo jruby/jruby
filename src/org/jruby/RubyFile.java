@@ -613,6 +613,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         } else {
             //TODO deal with UNC names
             int index = name.lastIndexOf('/');
+
             if (index == -1) {
                 if (startsWithDriveLetterOnWindows) {
                     return context.getRuntime().newString(jfilename.substring(0, 2) + ".");
@@ -628,9 +629,20 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 index++;
             }
 
+            if (jfilename.startsWith("\\\\")) {
+                index = jfilename.length();
+                String[] splitted = jfilename.split(Pattern.quote("\\"));
+                int last = splitted.length-1;
+                if (splitted[last].contains(".")) {
+                    index = jfilename.lastIndexOf("\\");
+                }
+                
+            }
+            
             result = jfilename.substring(0, index);
+            
         }
-
+        
         char endChar;
         // trim trailing slashes
         while (result.length() > minPathLength) {
