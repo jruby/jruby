@@ -64,7 +64,20 @@ public class TemporaryVariable extends Variable {
 
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
-		  return temp[offset];
+		  // SSS FIXME: When AddLocalVarLoadStoreInstructions pass is not enabled, we don't need this check.
+		  // We only need these because Ruby code can have local vars used before being defined.
+		  // 
+		  //    a = 1 if always-false
+		  //    p a   # should print nil since a is not defined on the else path
+		  //
+		  // Now, when locals are promoted to temps, this local-var behavior gets transferred to tmp-vars as well!
+		  //
+		  // If can canonicalize Ruby code to get rid of use-before-defs, we can get rid of the null checks
+		  // both here and in DynamicScope var lookups.  To be done later.
+		  //
+		  // I dont like this at all.  This feels ugly!
+		  Object o = temp[offset];
+		  return o == null ? context.nil : o;
     }
 
     @Override
