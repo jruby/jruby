@@ -306,11 +306,11 @@ $(LIBCEXT):  $(OBJS) $(CXXOBJS) $(RUBY_HEADERS)
 	$(CXX) -o $@ $(LDFLAGS) $(SOFLAGS) $(OBJS) $(CXXOBJS) $(LIBS)
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c $(wildcard $(SRC_DIR)/*.h) $(JAVA_HDRS)
-	$(CCACHE) $(CC) $(CFLAGS) -c $< -o $@
+	$(CCACHE) $(patsubst %ccache,,$(CC)) $(CFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp  $(wildcard $(SRC_DIR)/*.h) $(JAVA_HDRS)
 	@mkdir -p $(@D)
-	$(CCACHE) $(CXX) $(CXXFLAGS) -c $< -o $@
+	$(CCACHE) $(patsubst %ccache,,$(CXX)) $(CXXFLAGS) -c $< -o $@
 
 $(RUBY_HEADERS): $(wildcard $(SRC_DIR)/include/ruby/*.h) $(SRC_DIR)/include/ruby.h
 	@mkdir -p $(HDR_DIR)/ruby
