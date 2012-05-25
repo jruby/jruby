@@ -99,10 +99,18 @@ public class SizedQueue extends Queue {
         return context.getRuntime().getNil();
     }
 
-    @JRubyMethod(name = {"pop", "deq", "shift"}, optional = 1)
+    @JRubyMethod(name = {"pop", "deq", "shift"})
     @Override
-    public synchronized IRubyObject pop(ThreadContext context, IRubyObject[] args) {
-        IRubyObject result = super.pop(context, args);
+    public synchronized IRubyObject pop(ThreadContext context) {
+        IRubyObject result = super.pop(context);
+        notifyAll();
+        return result;
+    }
+
+    @JRubyMethod(name = {"pop", "deq", "shift"})
+    @Override
+    public synchronized IRubyObject pop(ThreadContext context, IRubyObject arg0) {
+        IRubyObject result = super.pop(context, arg0);
         notifyAll();
         return result;
     }
