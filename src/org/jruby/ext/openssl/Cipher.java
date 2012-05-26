@@ -169,6 +169,14 @@ public class Cipher extends RubyObject {
             return cryptoBase + "-" + cryptoVersion + "-" + cryptoMode;
         }
 
+        public static String getAlgorithmBase(javax.crypto.Cipher cipher) {
+            String algoBase = cipher.getAlgorithm();
+            if (algoBase.indexOf('/') != -1) {
+                algoBase = algoBase.split("/")[0];
+            }
+            return algoBase;
+        }
+        
         public static String[] osslToJsse(String inName) {
             // assume PKCS5Padding
             return osslToJsse(inName, null);

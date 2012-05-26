@@ -689,7 +689,7 @@ public class PKCS7 {
             dataBody = getEnveloped().getEncData().getEncData().getOctets();
             encAlg = getEnveloped().getEncData().getAlgorithm();
             try {
-                evpCipher = getCipher(encAlg.getObjectId());
+                evpCipher = getCipher(encAlg.getAlgorithm());
             } catch(Exception e) {
                 e.printStackTrace(System.err);
                 throw new PKCS7Exception(F_PKCS7_DATADECODE, R_UNSUPPORTED_CIPHER_TYPE, e);
@@ -703,7 +703,7 @@ public class PKCS7 {
         if(mdSk != null) {
             for(AlgorithmIdentifier xa : mdSk) {
                 try {
-                    MessageDigest evpMd = EVP.getDigest(xa.getObjectId());
+                    MessageDigest evpMd = EVP.getDigest(xa.getAlgorithm());
                     btmp = BIO.mdFilter(evpMd);
                     if(out == null) {
                         out = btmp;
@@ -771,20 +771,21 @@ public class PKCS7 {
 
             DEREncodable params = encAlg.getParameters();
             try {
+                String algo = org.jruby.ext.openssl.Cipher.Algorithm.getAlgorithmBase(evpCipher);
                 if(params != null && params instanceof ASN1OctetString) {
-                    if (evpCipher.getAlgorithm().startsWith("RC2")) {
+                    if (algo.startsWith("RC2")) {
                         // J9's IBMJCE needs this exceptional RC2 support.
                         // Giving IvParameterSpec throws 'Illegal parameter' on IBMJCE.
-                        SecretKeySpec sks = new SecretKeySpec(tmp, evpCipher.getAlgorithm());
+                        SecretKeySpec sks = new SecretKeySpec(tmp, algo);
                         RC2ParameterSpec s = new RC2ParameterSpec(tmp.length * 8, ((ASN1OctetString) params).getOctets());
                         evpCipher.init(Cipher.DECRYPT_MODE, sks, s);
                     } else {
-                        SecretKeySpec sks = new SecretKeySpec(tmp, evpCipher.getAlgorithm());
+                        SecretKeySpec sks = new SecretKeySpec(tmp, algo);
                         IvParameterSpec iv = new IvParameterSpec(((ASN1OctetString) params).getOctets());
                         evpCipher.init(Cipher.DECRYPT_MODE, sks, iv);
                     }
                 } else {
-                    evpCipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(tmp, evpCipher.getAlgorithm()));
+                    evpCipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(tmp, algo));
                 }
             } catch(Exception e) {
                 e.printStackTrace(System.err);
