@@ -7377,11 +7377,22 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     @JRubyMethod(name = "encode!", compat = RUBY1_9)
-    public IRubyObject encode_bang(ThreadContext context, IRubyObject enc) {
+    public IRubyObject encode_bang(ThreadContext context, IRubyObject arg) {
         Ruby runtime = context.getRuntime();
         modify19();
+        Encoding toEncoding;
+        IRubyObject options;
 
-        value = transcode(context, value, null, getEncoding(runtime, enc), runtime.getNil());
+        if (arg instanceof RubyHash) {
+            toEncoding = runtime.getDefaultInternalEncoding();
+            if (toEncoding == null) toEncoding = runtime.getEncodingService().getLocaleEncoding();
+            options = arg;
+        } else {
+            toEncoding = getEncoding(runtime, arg);
+            options = runtime.getNil();
+        }
+
+        value = transcode(context, value, null, toEncoding, options);
 
         return this;
     }
