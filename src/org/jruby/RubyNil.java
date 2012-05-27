@@ -138,7 +138,7 @@ public class RubyNil extends RubyObject {
     /** nil_type
      *
      */
-    @JRubyMethod(name = "type")
+    @JRubyMethod(name = "type", compat = CompatVersion.RUBY1_9)
     public static RubyClass type(IRubyObject recv) {
         return recv.getRuntime().getNilClass();
     }

@@ -114,13 +114,26 @@ public class Queue extends RubyObject {
         return context.getRuntime().newFixnum(numWaiting);
     }
 
-    @JRubyMethod(name = {"pop", "deq", "shift"}, optional = 1)
-    public synchronized IRubyObject pop(ThreadContext context, IRubyObject[] args) {
+    @JRubyMethod(name = {"pop", "deq", "shift"})
+    public synchronized IRubyObject pop(ThreadContext context) {
+        return pop(context, true);
+    }
+
+    @JRubyMethod(name = {"pop", "deq", "shift"})
+    public synchronized IRubyObject pop(ThreadContext context, IRubyObject arg0) {
+        return pop(context, !arg0.isTrue());
+    }
+
+    @JRubyMethod(name = {"push", "<<", "enq"})
+    public synchronized IRubyObject push(ThreadContext context, IRubyObject value) {
         checkShutdown(context);
-        boolean should_block = true;
-        if (Arity.checkArgumentCount(context.getRuntime(), args, 0, 1) == 1) {
-            should_block = !args[0].isTrue();
-        }
+        entries.addLast(value);
+        notify();
+        return context.getRuntime().getNil();
+    }
+
+    private synchronized IRubyObject pop(ThreadContext context, boolean should_block) {
+        checkShutdown(context);
         if (!should_block && entries.size() == 0) {
             throw new RaiseException(context.getRuntime(), context.getRuntime().getThreadError(), "queue empty", false);
         }
@@ -137,14 +150,6 @@ public class Queue extends RubyObject {
             numWaiting--;
         }
         return (IRubyObject) entries.removeFirst();
-    }
-
-    @JRubyMethod(name = {"push", "<<", "enq"})
-    public synchronized IRubyObject push(ThreadContext context, IRubyObject value) {
-        checkShutdown(context);
-        entries.addLast(value);
-        notify();
-        return context.getRuntime().getNil();
     }
     
 }
