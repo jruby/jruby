@@ -1789,7 +1789,7 @@ public class RubyKernel {
         return ((RubyBasicObject)self).type();
     }
 
-    @JRubyMethod(name = "type", compat = RUBY1_9)
+    @JRubyMethod(name = "type", compat = RUBY1_8)
     public static RubyClass type_deprecated(IRubyObject self) {
         return ((RubyBasicObject)self).type_deprecated();
     }
