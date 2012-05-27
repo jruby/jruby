@@ -121,7 +121,48 @@ class OpenSSL::TestPKCS7 < Test::Unit::TestCase
     assert_equal(@ee1_cert.issuer.to_s, signers[0].issuer.to_s)
   end
 
-  def test_enveloped
+  def test_enveloped_aes
+    if OpenSSL::OPENSSL_VERSION_NUMBER <= 0x0090704f
+      # PKCS7_encrypt() of OpenSSL-0.9.7d goes to SEGV.
+      # http://www.mail-archive.com/openssl-dev@openssl.org/msg17376.html
+      return
+    end
+
+    certs = [@ee2_cert]
+    cipher = OpenSSL::Cipher::AES.new("128-CBC")
+    data = "aaaaa\nbbbbb\nccccc\n"
+
+    tmp = OpenSSL::PKCS7.encrypt(certs, data, cipher, OpenSSL::PKCS7::BINARY)
+    p7 = OpenSSL::PKCS7.new(tmp.to_der)
+    recip = p7.recipients
+    assert_equal(:enveloped, p7.type)
+    assert_equal(1, recip.size)
+
+    assert_equal(@ca_cert.subject.to_s, recip[0].issuer.to_s)
+    assert_equal(3, recip[0].serial)
+    assert_equal(data, p7.decrypt(@rsa1024, @ee2_cert))
+  end
+
+  def test_enveloped_3des
+    if OpenSSL::OPENSSL_VERSION_NUMBER <= 0x0090704f
+      # PKCS7_encrypt() of OpenSSL-0.9.7d goes to SEGV.
+      # http://www.mail-archive.com/openssl-dev@openssl.org/msg17376.html
+      return
+    end
+
+    certs = [@ee1_cert]
+    cipher = OpenSSL::Cipher::DES.new(:EDE3, :CBC)
+    data = "aaaaa\nbbbbb\nccccc\n"
+
+    tmp = OpenSSL::PKCS7.encrypt(certs, data, cipher, OpenSSL::PKCS7::BINARY)
+    p7 = OpenSSL::PKCS7.new(tmp.to_der)
+    recip = p7.recipients
+    assert_equal(@ca_cert.subject.to_s, recip[0].issuer.to_s)
+    assert_equal(2, recip[0].serial)
+    assert_equal(data, p7.decrypt(@rsa1024, @ee1_cert))
+  end
+
+  def test_enveloped_multiple
     if OpenSSL::OPENSSL_VERSION_NUMBER <= 0x0090704f
       # PKCS7_encrypt() of OpenSSL-0.9.7d goes to SEGV.
       # http://www.mail-archive.com/openssl-dev@openssl.org/msg17376.html
