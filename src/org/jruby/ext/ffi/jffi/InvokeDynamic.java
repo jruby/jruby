@@ -349,14 +349,14 @@ public final class InvokeDynamic {
         MethodHandle isTrue = findStatic(JITRuntime.class, "isTrue",
                 methodType(boolean.class, CodegenUtils.params(boolean.class, signature.getParameterCount())));
 
+        isTrue = Binder.from(boolean.class, CodegenUtils.params(IRubyObject.class, signature.getParameterCount()))
+                .filter(0, guards)
+                .invoke(isTrue);
+
         if (signature.getParameterCount() > 3) {
             // Expand the incoming IRubyObject[] parameter array to individual params
             isTrue = isTrue.asSpreader(IRubyObject[].class, signature.getParameterCount());
         }
-
-        isTrue = Binder.from(boolean.class, CodegenUtils.params(IRubyObject.class, signature.getParameterCount()))
-                .filter(0, guards)
-                .invoke(isTrue);
 
         return Binder.from(site.type().changeReturnType(boolean.class))
                 .drop(0, 3)
