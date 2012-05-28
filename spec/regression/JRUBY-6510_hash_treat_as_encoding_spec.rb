@@ -2,7 +2,7 @@
 require 'rspec'
 
 describe 'JRUBY-6510: String.encode!' do
-  it 'takes a hash argument' do
+  it 'should accept a hash as only argument' do
     enc_dft_in = Encoding.default_internal
     begin
       Encoding.default_internal = 'ISO-8859-1'
