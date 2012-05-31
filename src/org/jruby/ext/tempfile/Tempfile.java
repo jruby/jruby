@@ -266,7 +266,15 @@ public class Tempfile extends org.jruby.RubyTempfile {
 
     @JRubyMethod(name = {"unlink", "delete"})
     public IRubyObject unlink(ThreadContext context) {
-        // no-op, since we can't unlink the file without breaking stat et al
+        if (isClosed()) {
+            // the user intends to delete the file immediately, so do it
+            if (!tmpFile.exists() || tmpFile.delete()) {
+                referenceSet.remove(reaper);
+                reaper.released = true;
+                path = null;
+            }
+        }
+        // else, no-op, since we can't unlink the file without breaking stat et al
         return context.getRuntime().getNil();
     }
 
