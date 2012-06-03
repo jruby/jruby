@@ -653,25 +653,6 @@ public class StandardInvocationCompiler implements InvocationCompiler {
     }
     
     public void invokeDynamic(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback, CallType callType, CompilerCallback closureArg, boolean iterator) {
-        if (RubyInstanceConfig.INLINE_DYNCALL_ENABLED && closureArg == null) {
-            if (callType == CallType.FUNCTIONAL || callType == CallType.VARIABLE) {
-                if (argsCallback == null) {
-                    invokeDynamicSelfNoBlockZero(name);
-                    return;
-                } else if (argsCallback.getArity() >= 1 && argsCallback.getArity() <= 3) {
-                    invokeDynamicSelfNoBlockSpecificArity(name, argsCallback);
-                    return;
-                }
-//            } else if (callType == CallType.NORMAL) {
-//                if (argsCallback == null) {
-//                    invokeDynamicNoBlockZero(name, receiverCallback);
-//                    return;
-//                } else if (argsCallback.getArity() >= 1 && argsCallback.getArity() <= 3) {
-//                    invokeDynamicNoBlockSpecificArity(name, receiverCallback, argsCallback);
-//                    return;
-//                }
-            }
-        }
         methodCompiler.getScriptCompiler().getCacheCompiler().cacheCallSite(methodCompiler, name, callType);
 
         methodCompiler.loadThreadContext(); // [adapter, tc]

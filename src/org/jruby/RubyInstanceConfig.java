@@ -1403,14 +1403,6 @@ public class RubyInstanceConfig {
     public static boolean LAZYHANDLES_COMPILE = Options.COMPILE_LAZYHANDLES.load();
 
     /**
-     * Inline dynamic calls.
-     *
-     * Set with the <tt>jruby.compile.inlineDyncalls</tt> system property.
-     */
-    public static boolean INLINE_DYNCALL_ENABLED
-            = FASTEST_COMPILE_ENABLED || Options.COMPILE_INLINEDYNCALLS.load();
-
-    /**
      * Enable fast multiple assignment optimization.
      *
      * Set with the <tt>jruby.compile.fastMasgn</tt> system property.
