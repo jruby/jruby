@@ -150,14 +150,14 @@ public class JavaProxy extends RubyObject {
     }
 
     @JRubyMethod(name = "__persistent__=", meta = true)
-    public IRubyObject persistent(IRubyObject value) {
-        metaClass.getRealClass().setCacheProxy(value.isTrue());
-        return this;
+    public static IRubyObject persistent(IRubyObject cls, IRubyObject value) {
+        ((RubyClass)cls).getRealClass().setCacheProxy(value.isTrue());
+        return value;
     }
 
     @JRubyMethod(name = "__persistent__", meta = true)
-    public IRubyObject persistent() {
-        return getRuntime().newBoolean(metaClass.getRealClass().getCacheProxy());
+    public static IRubyObject persistent(ThreadContext context, IRubyObject cls) {
+        return context.runtime.newBoolean(((RubyClass)cls).getRealClass().getCacheProxy());
     }
 
     @Override
