@@ -1475,6 +1475,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         str.cat((byte)'[');
         boolean tainted = isTaint();
         boolean untrust = isUntrusted();
+        boolean is19 = context.getRuntime().is1_9();
 
         for (int i = 0; i < realLength; i++) {
             if (i > 0) str.cat((byte)',').cat((byte)' ');
@@ -1483,8 +1484,11 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             if (str2.isTaint()) tainted = true;
             if (str2.isUntrusted()) untrust = true;
             
-            // safe for both 1.9 and 1.8
-            str.cat19(str2);
+            if (is19) {
+                str.cat19(str2);
+            } else {
+                str.cat(str2);
+            }
         }
         str.cat((byte)']');
 
