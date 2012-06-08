@@ -191,7 +191,7 @@ For detail, see the MSDN[http://msdn.microsoft.com/library/en-us/sysinfo/base/pr
       def class
         Registry
       end
-3
+
       # Make all
       Constants.constants.grep(/^HKEY_/) do |c|
         Registry.const_set c, new(Constants.const_get(c), c)
