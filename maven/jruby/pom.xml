@@ -60,6 +60,11 @@
       <scope>${jar.scope}</scope>
     </dependency>
     <dependency>
+      <groupId>jline</groupId>
+      <artifactId>jline</artifactId>
+      <scope>${jar.scope}</scope>
+    </dependency>
+    <dependency>
       <groupId>joda-time</groupId>
       <artifactId>joda-time</artifactId>
       <scope>${jar.scope}</scope>

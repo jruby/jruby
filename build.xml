@@ -435,8 +435,6 @@
         <attribute name="Main-Class" value="org.jruby.Main"/>
       </manifest>
       <rule pattern="org.objectweb.asm.**" result="org.jruby.org.objectweb.asm.@1"/>
-      <rule pattern="jline.**" result="org.jruby.hidden.jline.@1"/>
-      <rule pattern="org.fusesource.**" result="org.jruby.hidden.org.fusesource.@1"/>
     </jarjar>
     <antcall target="_osgify-jar_">
       <param name="bndfile" value="jruby.bnd" />
@@ -507,8 +505,6 @@
         <attribute name="Main-Class" value="org.jruby.Main"/>
       </manifest>
       <rule pattern="org.objectweb.asm.**" result="org.jruby.org.objectweb.asm.@1"/>
-      <rule pattern="jline.**" result="org.jruby.hidden.jline.@1"/>
-      <rule pattern="org.fusesource.**" result="org.jruby.hidden.org.fusesource.@1"/>
     </jarjar>
     <antcall target="_osgify-jar_">
       <param name="bndfile" value="jruby.bnd" />
@@ -674,8 +670,6 @@
         <attribute name="Main-Class" value="${mainclass}"/>
       </manifest>
       <rule pattern="org.objectweb.asm.**" result="org.jruby.org.objectweb.asm.@1"/>
-      <rule pattern="jline.**" result="org.jruby.hidden.jline.@1"/>
-      <rule pattern="org.fusesource.**" result="org.jruby.hidden.org.fusesource.@1"/>
     </jarjar>
     <antcall target="_osgify-jar_">
       <param name="bndfile" value="jruby-complete.bnd" />
