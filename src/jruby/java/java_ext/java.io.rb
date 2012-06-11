@@ -1,4 +1,4 @@
-require 'jruby'
+require 'jruby' unless defined? JRuby
 
 class java::io::InputStream
   def to_io(opts = nil)
