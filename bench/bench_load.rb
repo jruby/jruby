@@ -53,5 +53,9 @@ DATA_FILE2 = File.join(File.expand_path(File.dirname(__FILE__)), "..", "lib/ruby
         end
       }
     }
+
+    bm.report("100K require 'already loaded'") {
+      100_000.times { require 'benchmark' }
+    }
   end
 end

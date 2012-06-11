@@ -370,8 +370,10 @@ public class LoadService {
             throw runtime.newLoadError("No such file to load -- " + file);
         }
 
-        if (featureAlreadyLoaded(RubyString.newString(runtime, file))) {
-            return false;
+        for (String suffix : SuffixType.sourceSuffixes) {
+            if (featureAlreadyLoaded(RubyString.newString(runtime, file + suffix))) {
+                return false;
+            }
         }
 
         long startTime = loadTimer.startLoad(file);
