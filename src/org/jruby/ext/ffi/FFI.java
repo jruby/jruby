@@ -1,10 +1,12 @@
 package org.jruby.ext.ffi;
 
 import org.jruby.*;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.WeakHashMap;
 
 /**
  * The holder of all per-ruby-runtime FFI data
@@ -17,6 +19,13 @@ public class FFI {
     public final RubyHash typedefs;
     private final NullMemoryIO nullMemoryIO;
     private final TypeSizeMapper sizeMapper;
+    
+    /**
+     * Reference map to keep libraries open for as long as there is a method mapped
+     * to that library.
+     */
+    private final Map<DynamicMethod, AbstractInvoker> refmap
+            = Collections.synchronizedMap(new WeakHashMap<DynamicMethod, AbstractInvoker>());
 
 
     public FFI(RubyModule ffiModule) {
@@ -40,5 +49,9 @@ public class FFI {
 
     public NullMemoryIO getNullMemoryIO() {
         return nullMemoryIO;
+    }
+
+    public void registerAttachedMethod(DynamicMethod method, AbstractInvoker invoker) {
+        refmap.put(method, invoker);
     }
 }
