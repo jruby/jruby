@@ -1,22 +1,6 @@
-LBL_2:
-LBL_3:
- 	check_arity(1, 0, -1)
- 	n(0:0) = recv_pre_reqd_arg(0)
- 	%block(0:1) = recv_closure
- 	thread_poll
- 	line_num(1)
- 	%v_0 = call(< , n(0:0), [2:fixnum])
- 	b_false(%v_0, LBL_0)
-LBL_4:
- 	%v_0 = copy(n(0:0))
- 	jump LBL_1
-LBL_0:
- 	%v_1 = call(-, n(0:0), [2:fixnum])
- 	%v_2 = call(fib_ruby, %self, [%v_1])
- 	%v_1 = call(-, n(0:0), [1:fixnum])
- 	%v_3 = call(fib_ruby, %self, [%v_1])
- 	%v_1 = call(+, %v_2, [%v_3])
- 	%v_0 = copy(%v_1)
-LBL_1:
- 	return(%v_0)
-LBL_5:
+  0	%self = recv_self
+  1	%current_scope = scope<->
+  2	%current_module = module<->
+  3	line_num(0)
+  4	def_inst_meth("--unused--", fib_ruby, -)
+  5	return(nil)
