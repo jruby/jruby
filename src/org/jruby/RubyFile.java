@@ -998,7 +998,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 throw runtime.newErrnoENOENTError(filename.toString());
             }
 
-            runtime.getPosix().utimes(fileToTouch.getAbsolutePath(), atimeval, mtimeval);
+            int result = runtime.getPosix().utimes(fileToTouch.getAbsolutePath(), atimeval, mtimeval);
+            if (result == -1) {
+                throw runtime.newErrnoFromInt(runtime.getPosix().errno());
+            }
         }
         
         return runtime.newFixnum(args.length - 2);
