@@ -4235,7 +4235,6 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     }
 
     public Object get(int index) {
-        System.out.println("before get: " + this);
         return elt(index).toJava(Object.class);
     }
 
