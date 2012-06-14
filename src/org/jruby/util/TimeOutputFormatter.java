@@ -35,22 +35,70 @@ public class TimeOutputFormatter {
     private final String formatter;
     private final int totalPadding;
 
-    private static final String formatPattern = "%([\\^0_-]+)?(\\d+)?.+";
-    private static final Pattern regexp = Pattern.compile(formatPattern);
-
     public TimeOutputFormatter(String formatter, int totalPadding) {
         this.formatter = formatter;
         this.totalPadding = totalPadding;
     }
 
+    // Really ugly stop-gap method to eliminate using regexp for create TimeOutputFormatter.
+    // FIXME: Make all of strftime an honest to goodness parser
     public static TimeOutputFormatter getFormatter(String pattern) {
-        Matcher matcher = regexp.matcher(pattern);
-        if (matcher.matches() && (matcher.group(1) != null || matcher.group(2) != null)) {
-            String formatter = matcher.group(1);
-            int totalPadding = matcher.group(2) != null ? Integer.valueOf(matcher.group(2)) : 0;
+        int length = pattern.length();
+        
+        if (length <= 1 || pattern.charAt(0) != '%') return null;
 
-            return new TimeOutputFormatter(formatter, totalPadding);
+        int totalPadding = 0;
+        
+        int i = 1;
+        boolean done = false;
+        boolean formatterFound = false;
+        
+        for (; i < length && !done; i++) {
+            char c = pattern.charAt(i);
+            switch(c) {
+                case '^': case '_': case '0': case '-':
+                    formatterFound = true;
+                    break;
+                case '1': case '2': case '3': case '4': case '5': 
+                case '6': case '7': case '8': case '9':
+                    totalPadding = Character.getNumericValue(c);
+                    done = true;
+                    break;
+                default:
+                    done = true;
+                    break;
+            }
         }
+        
+        if (totalPadding == 0 && !formatterFound) return null;
+        
+        String formatter;
+        if (i > 2) { // found something
+            formatter = pattern.substring(1, i-1);
+        } else {
+            formatter = "";
+        }
+
+        // We found some formatting instructions but no padding values.
+        if (totalPadding == 0 && i > 2) return new TimeOutputFormatter(formatter, 0);
+        
+        done = false;
+        for (; i < length && !done; i++) {
+            char c = pattern.charAt(i);
+            
+            switch(c) {
+                case '1': case '2': case '3': case '4': case '5': 
+                case '6': case '7': case '8': case '9': case '0':
+                    totalPadding = totalPadding * 10 + Character.getNumericValue(c);
+                    break;
+                default:
+                    done = true;
+                    break;
+            }
+        }
+        
+        if (totalPadding != 0) return new TimeOutputFormatter(formatter, totalPadding);
+        
         return null;
     }
 
