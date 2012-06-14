@@ -1486,7 +1486,7 @@ public class ScriptingContainerTest {
             "equals__method", "equals__method?", "extend", "finalize", "finalize__method",
             "find", "find_all", "find_index", "first", "freeze", "frozen?", "get",
             "getClass", "getClass__method", "get__method", "get_class", "get_class__method",
-            "grep", "group_by", "handle_different_imports", "hash", "hashCode",
+            "grep", "group_by", "hash", "hashCode",
             "hashCode__method", "hash_code", "hash_code__method", "id", "include?",
             "java_import", "initialize", "inject", "inspect", "instance_eval",
             "instance_exec", "instance_of?", "instance_variable_defined?",

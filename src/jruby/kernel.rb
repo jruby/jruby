@@ -5,3 +5,6 @@
 # These are loads so they don't pollute LOADED_FEATURES
 load 'jruby/kernel/generator.rb'
 load 'jruby/kernel/signal.rb'
+
+# Java 7 process launching support
+load 'jruby/kernel/jruby/process_manager.rb' if ENV_JAVA['java.specification.version'] == '1.7'

@@ -28,6 +28,7 @@ import junit.framework.TestSuite;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyInstanceConfig;
 import org.jruby.exceptions.RaiseException;
 
 /**
@@ -97,13 +98,19 @@ public class TestUnitTestSuite extends TestSuite {
             err = new ByteArrayOutputStream();
             printOut = new PrintStream(out);
             printErr = new PrintStream(err);
-            runtime = Ruby.newInstance(in, printOut, printErr);
+            RubyInstanceConfig config = new RubyInstanceConfig();
             ArrayList loadPath = new ArrayList();
 
             loadPath.add("test/externals/bfts");
             loadPath.add("test/externals/ruby_test/lib");
+            config.setLoadPaths(loadPath);
+            config.setInput(in);
+            config.setOutput(printOut);
+            config.setError(printErr);
 
-            runtime.getLoadService().init(loadPath);
+            runtime = Ruby.newInstance(config);
+
+            // clear ARGV
             runtime.defineGlobalConstant("ARGV", runtime.newArray());
         }
 

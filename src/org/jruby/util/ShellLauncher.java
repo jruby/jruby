@@ -211,7 +211,7 @@ public class ShellLauncher {
         }
     }
 
-    private static String[] getCurrentEnv(Ruby runtime) {
+    public static String[] getCurrentEnv(Ruby runtime) {
         return getCurrentEnv(runtime, null);
     }
 
@@ -977,8 +977,8 @@ public class ShellLauncher {
         }
     }
 
-    private static class LaunchConfig {
-        LaunchConfig(Ruby runtime, IRubyObject[] rawArgs, boolean doExecutableSearch) {
+    public static class LaunchConfig {
+        public LaunchConfig(Ruby runtime, IRubyObject[] rawArgs, boolean doExecutableSearch) {
             this.runtime = runtime;
             this.rawArgs = rawArgs;
             this.doExecutableSearch = doExecutableSearch;
@@ -990,7 +990,7 @@ public class ShellLauncher {
          * Only run an in-process script if the script name has "ruby", ".rb",
          * or "irb" in the name.
          */
-        private boolean shouldRunInProcess() {
+        public boolean shouldRunInProcess() {
             if (!runtime.getInstanceConfig().isRunRubyInProcess()
                     || RubyInstanceConfig.hasLoadedNativeExtensions()) {
                 return false;
@@ -1061,7 +1061,7 @@ public class ShellLauncher {
          * In that case it's better to try passing the bare arguments to runtime.exec.
          * On all other platforms we'll always run the command in the shell.
          */
-        private boolean shouldRunInShell() {
+        public boolean shouldRunInShell() {
             if (rawArgs.length != 1) {
                 // this is the case when exact executable and its parameters passed,
                 // in such cases MRI just executes it, without any shell.
@@ -1109,7 +1109,7 @@ public class ShellLauncher {
             return false;
         }
 
-        private void verifyExecutableForShell() {
+        public void verifyExecutableForShell() {
             String cmdline = rawArgs[0].toString().trim();
             if (doExecutableSearch && shouldVerifyPathExecutable(cmdline) && !cmdBuiltin) {
                 verifyExecutable();
@@ -1129,7 +1129,7 @@ public class ShellLauncher {
             }
         }
 
-        private void verifyExecutableForDirect() {
+        public void verifyExecutableForDirect() {
             verifyExecutable();
             execArgs = args;
             try {
@@ -1151,7 +1151,7 @@ public class ShellLauncher {
             }
         }
 
-        private String[] getExecArgs() {
+        public String[] getExecArgs() {
             return execArgs;
         }
 

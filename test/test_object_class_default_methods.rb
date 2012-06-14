@@ -85,9 +85,31 @@ class TestObjectClassDefaultMethods < Test::Unit::TestCase
     untaint
   )
 
+  JAVA_METHODS = %w(
+    method_added
+    handle_different_imports
+    include_class
+    java_kind_of?
+    java_signature
+    com
+    to_java
+    java_annotation
+    org
+    java_implements
+    java
+    java_package
+    java_name
+    java_require
+    javax
+  )
+
   def test_no_rogue_methods_on_object_class
     rogue_methods = Object.methods - METHODS
+    # reject Java methods, since we have started loading it for core functionality
+    rogue_methods -= JAVA_METHODS
+
     rogue_methods.reject!{|m| m =~ /^__.+__$/}
-    assert rogue_methods.empty?
+
+    assert rogue_methods.empty?, "Rogue methods found: #{rogue_methods.inspect}"
   end
 end
