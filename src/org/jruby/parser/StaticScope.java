@@ -68,8 +68,6 @@ public abstract class StaticScope implements Serializable {
     // Our name holder (offsets are assigned as variables are added
     private String[] variableNames;
     
-    private boolean[] variableCaptured;
-    
     // number of variables in this scope representing required arguments
     private int requiredArgs = 0;
     
@@ -97,7 +95,6 @@ public abstract class StaticScope implements Serializable {
         
         this.enclosingScope = enclosingScope;
         this.variableNames = names;
-        this.variableCaptured = new boolean[variableNames.length];
     }
 
     /**
@@ -166,7 +163,6 @@ public abstract class StaticScope implements Serializable {
         
         variableNames = new String[names.length];
         System.arraycopy(names, 0, variableNames, 0, names.length);
-        variableCaptured = new boolean[variableNames.length];
     }
 
     /* Note: Only used by compiler until it can use getConstant again or use some other refactoring */
@@ -275,14 +271,6 @@ public abstract class StaticScope implements Serializable {
      */
     public Node declare(ISourcePosition position, String name) {
         return declare(position, name, 0);
-    }
-    
-    public void capture(int index) {
-        variableCaptured[index] = true;
-    }
-    
-    public boolean isCaptured(int index) {
-        return variableCaptured[index];
     }
 
     /**
@@ -409,9 +397,6 @@ public abstract class StaticScope implements Serializable {
         System.arraycopy(variableNames, 0, newVariableNames, 0, variableNames.length);
         variableNames = newVariableNames;
         variableNames[variableNames.length - 1] = name;
-        boolean[] newVariableCaptured = new boolean[variableCaptured.length + 1];
-        System.arraycopy(variableCaptured, 0, newVariableCaptured, 0, variableCaptured.length);
-        variableCaptured = newVariableCaptured;
     }
 
     @Override

@@ -1,14 +1,13 @@
 package org.jruby.parser;
 
-import org.jruby.ir.IRScope;
-
 import org.jruby.ast.AssignableNode;
-import org.jruby.ast.LocalAsgnNode;
-import org.jruby.ast.LocalVarNode;
 import org.jruby.ast.DAsgnNode;
 import org.jruby.ast.DVarNode;
+import org.jruby.ast.LocalAsgnNode;
+import org.jruby.ast.LocalVarNode;
 import org.jruby.ast.Node;
 import org.jruby.ast.VCallNode;
+import org.jruby.ir.IRScope;
 import org.jruby.lexer.yacc.ISourcePosition;
 
 public class IRStaticScope extends StaticScope {
@@ -99,9 +98,6 @@ public class IRStaticScope extends StaticScope {
         // We can assign if we already have variable of that name here or we are the only
         // scope in the chain (which Local scopes always are).
         if (slot >= 0) {
-            // mark as captured if from containing scope
-            if (depth > 0) capture(slot);
-
             return isBlockOrEval ? new DAsgnNode(position, name, ((depth << 16) | slot), value) 
                            : new LocalAsgnNode(position, name, ((depth << 16) | slot), value);
         } else if (!isBlockOrEval && (topScope == this)) {
@@ -121,9 +117,6 @@ public class IRStaticScope extends StaticScope {
         int slot = exists(name);
 
         if (slot >= 0) {
-            // mark as captured if from containing scope
-            if (depth > 0) capture(slot);
-            
             return isBlockOrEval ? new DVarNode(position, ((depth << 16) | slot), name) : new LocalVarNode(position, ((depth << 16) | slot), name);
         }
 
