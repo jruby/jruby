@@ -357,7 +357,7 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(name = "strftime", required = 1)
     public RubyString strftime(IRubyObject format) {
-        final RubyDateFormat rubyDateFormat = new RubyDateFormat("-", Locale.US, getRuntime().is1_9());
+        final RubyDateFormat rubyDateFormat = getRuntime().getCurrentContext().getRubyDateFormat();
         rubyDateFormat.applyPattern(format.convertToString().getUnicodeValue());
         rubyDateFormat.setDateTime(dt);
         rubyDateFormat.setNSec(nsec);

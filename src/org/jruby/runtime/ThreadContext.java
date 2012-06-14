@@ -41,6 +41,7 @@ import org.jruby.runtime.profile.IProfileData;
 import java.util.ArrayList;
 import org.jruby.runtime.profile.ProfileData;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 
@@ -61,6 +62,7 @@ import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.backtrace.TraceType.Gather;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.RecursiveComparator;
+import org.jruby.util.RubyDateFormat;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
@@ -92,6 +94,8 @@ public final class ThreadContext {
     
     private RubyThread thread;
     private Fiber fiber;
+    // Cache format string because it is expensive to create on demand
+    private RubyDateFormat dateFormat;
     
     private RubyModule[] parentStack = new RubyModule[INITIAL_SIZE];
     private int parentIndex = -1;
@@ -280,6 +284,12 @@ public final class ThreadContext {
     
     public RubyThread getThread() {
         return thread;
+    }
+    
+    public RubyDateFormat getRubyDateFormat() {
+        if (dateFormat == null) dateFormat = new RubyDateFormat("-", Locale.US, runtime.is1_9());
+        
+        return dateFormat;
     }
     
     public void setThread(RubyThread thread) {
