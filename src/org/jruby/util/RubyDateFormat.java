@@ -34,6 +34,7 @@ import java.text.DateFormat;
 import java.text.DateFormatSymbols;
 import java.text.FieldPosition;
 import java.text.ParsePosition;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.LinkedList;
@@ -145,7 +146,7 @@ public class RubyDateFormat extends DateFormat {
     public void applyPattern(String pattern) {
         compilePattern(pattern);
     }
-
+    
     private void compilePattern(String pattern) {
         compiledPattern = new LinkedList<Token>();
         
@@ -417,6 +418,30 @@ public class RubyDateFormat extends DateFormat {
     public void setNSec(long nsec) {
         this.nsec = nsec;
     }
+    
+    // Much faster then generic String.format()
+    private String twoCharDigit(long value) {
+        if (value == 0) return "00";
+        if (value < 10) return "0"+value;
+        return ""+value;        
+    }
+    
+    // Much faster then generic String.format()
+    private String threeCharDigit(long value) {
+        if (value == 0) return "000";
+        if (value < 10) return "00"+value;
+        if (value < 100) return "0"+value;
+        return ""+value;
+    }
+
+    // Much faster then generic String.format()
+    private String fourCharDigit(long value) {
+        if (value == 0) return "0000";
+        if (value < 10) return "000"+value;
+        if (value < 100) return "00"+value;
+        if (value < 1000) return "0"+value;
+        return ""+value;
+    }
 
     /**
      * @see DateFormat#format(Date, StringBuffer, FieldPosition)
@@ -459,8 +484,7 @@ public class RubyDateFormat extends DateFormat {
                     output = formatSymbols.getShortMonths()[dt.getMonthOfYear()-1];
                     break;
                 case FORMAT_DAY:
-                    value = dt.getDayOfMonth();
-                    output = String.format("%02d", value);
+                    output = twoCharDigit(dt.getDayOfMonth());
                     break;
                 case FORMAT_DAY_S: 
                     value = dt.getDayOfMonth();
@@ -494,16 +518,13 @@ public class RubyDateFormat extends DateFormat {
                     }
                     break;
                 case FORMAT_DAY_YEAR:
-                    value = dt.getDayOfYear();
-                    output = String.format("%03d", value);
+                    output = threeCharDigit(dt.getDayOfYear());
                     break;
                 case FORMAT_MINUTES:
-                    value = dt.getMinuteOfHour();
-                    output = String.format("%02d", value);
+                    output = twoCharDigit(dt.getMinuteOfHour());
                     break;
                 case FORMAT_MONTH:
-                    value = dt.getMonthOfYear();
-                    output = String.format("%02d", value);
+                    output = twoCharDigit(dt.getMonthOfYear());
                     break;
                 case FORMAT_MERIDIAN:
                 case FORMAT_MERIDIAN_LOWER_CASE:
@@ -532,12 +553,10 @@ public class RubyDateFormat extends DateFormat {
                     output = Long.toString(value);
                     break;
                 case FORMAT_YEAR_LONG:
-                    value = dt.getYear();
-                    output = String.format("%04d", value);
+                    output = fourCharDigit(dt.getYear());
                     break;
                 case FORMAT_YEAR_SHORT:
-                    value = dt.getYear() % 100;
-                    output = String.format("%02d", value);
+                    output = twoCharDigit(dt.getYear() % 100);
                     break;
                 case FORMAT_ZONE_OFF:
                 case FORMAT_COLON_ZONE_OFF:
@@ -583,15 +602,13 @@ public class RubyDateFormat extends DateFormat {
                     toAppendTo.append(dt.getCenturyOfEra());
                     break;
                 case FORMAT_MILLISEC:
-                    value = dt.getMillisOfSecond();
-                    output = String.format("%03d", value);
+                    output = threeCharDigit(dt.getMillisOfSecond());
                     break;
                 case FORMAT_EPOCH:
                     output = Long.toString(dt.getMillis()/1000);
                     break;
                 case FORMAT_WEEK_WEEKYEAR:
-                    value = dt.getWeekOfWeekyear();
-                    output = String.format("%02d", value);
+                    output = twoCharDigit(dt.getWeekOfWeekyear());
                     break;
                 case FORMAT_NANOSEC:
                     value = dt.getMillisOfSecond() * 1000000;
@@ -626,7 +643,7 @@ public class RubyDateFormat extends DateFormat {
                 // will get the value of 0, not 52 or 53, as in Java.
                 value = 0;
             }
-            return String.format("%02d", value);
+            return twoCharDigit(value);
 	}
 
     /**
