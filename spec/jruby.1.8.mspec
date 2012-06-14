@@ -3,7 +3,7 @@
 # detect windows platform:
 require 'rbconfig'
 require 'java'
-require 'jruby/util'
+require 'jruby'
 
 IKVM = java.lang.System.get_property('java.vm.name') =~ /IKVM\.NET/
 WINDOWS = RbConfig::CONFIG['host_os'] =~ /mswin/
