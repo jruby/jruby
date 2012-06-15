@@ -342,6 +342,13 @@ rb_equal(VALUE obj, VALUE other)
     return RTEST(callMethod(obj, "==", 1, other)) ? Qtrue : Qfalse;
 }
 
+
+extern "C" int
+rb_eql(VALUE obj1, VALUE obj2)
+{
+    return RTEST(callMethodA(obj1, "eql?", 1, &obj2));
+}
+
 extern "C" void
 jruby_infect(VALUE object1, VALUE object2)
 {
