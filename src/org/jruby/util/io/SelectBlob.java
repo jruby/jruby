@@ -36,16 +36,13 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.io.IOException;
-import java.nio.channels.CancelledKeyException;
-import java.nio.channels.Channel;
-import java.nio.channels.IllegalBlockingModeException;
-import java.nio.channels.SelectableChannel;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.SocketChannel;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.nio.ByteBuffer;
+import java.nio.channels.*;
+import java.nio.channels.spi.SelectorProvider;
+import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 /**
  * This is a reimplementation of MRI's IO#select logic. It has been rewritten
@@ -89,7 +86,7 @@ public class SelectBlob {
 
                 }
             } else {
-                doSelect(has_timeout, timeout);
+                doSelect(runtime, has_timeout, timeout);
                 processSelectedKeys(runtime);
                 processPendingAndUnselectable();
                 tidyUp();
@@ -106,7 +103,7 @@ public class SelectBlob {
         } catch (InterruptedException ie) {
             throw runtime.newThreadError("select interrupted");
         } finally {
-            if (selector != null) {
+            for (Selector selector : selectors.values()) {
                 try {
                     selector.close();
                 } catch (Exception e) {
@@ -246,27 +243,49 @@ public class SelectBlob {
         return timeout;
     }
 
-    private void doSelect(final boolean has_timeout, long timeout) throws IOException {
-        if (selector != null) {
+    private void doSelect(Ruby runtime, final boolean has_timeout, long timeout) throws IOException {
+        if (mainSelector != null) {
             if (pendingReads == null && unselectableReads == null && unselectableWrites == null) {
-                if (has_timeout) {
-                    if (timeout == 0) {
-                        selector.selectNow();
-                    } else {
-                        selector.select(timeout);
-                    }
+                if (has_timeout && timeout == 0) {
+                    for (Selector selector : selectors.values()) selector.selectNow();
                 } else {
-                    selector.select();
+                    List<Future> futures = new ArrayList<Future>(enxioSelectors.size());
+                    for (ENXIOSelector enxioSelector : enxioSelectors) {
+                        futures.add(runtime.getExecutor().submit(enxioSelector));
+                    }
+
+                    mainSelector.select(has_timeout ? timeout : 0);
+                    for (ENXIOSelector enxioSelector : enxioSelectors) enxioSelector.selector.wakeup();
+                    // ensure all the enxio threads have finished
+                    for (Future f : futures) try {
+                        f.get();
+                    } catch (InterruptedException iex) {
+                    } catch (ExecutionException eex) {
+                        if (eex.getCause() instanceof IOException) {
+                            throw (IOException) eex.getCause();
+                        }
+                    }
                 }
             } else {
-                selector.selectNow();
+                for (Selector selector : selectors.values()) selector.selectNow();
+            }
+        }
+
+        // If any enxio selectors woke up, remove them from the selected key set of the main selector
+        for (ENXIOSelector enxioSelector : enxioSelectors) {
+            Pipe.SourceChannel source = enxioSelector.pipe.source();
+            SelectionKey key = source.keyFor(mainSelector);
+            if (key != null && mainSelector.selectedKeys().contains(key)) {
+                mainSelector.selectedKeys().remove(key);
+                ByteBuffer buf = ByteBuffer.allocate(1);
+                source.read(buf);
             }
         }
     }
 
     @SuppressWarnings("unchecked")
     private void processSelectedKeys(Ruby runtime) throws IOException {
-        if (selector != null) {
+        for (Selector selector : selectors.values()) {
             for (Iterator i = selector.selectedKeys().iterator(); i.hasNext();) {
                 SelectionKey key = (SelectionKey) i.next();
                 int readIoIndex = 0;
@@ -344,7 +363,7 @@ public class SelectBlob {
 
     private void tidyUp() throws IOException {
         // make all sockets blocking as configured again
-        if (selector != null) {
+        for (Selector selector : selectors.values()) {
             selector.close(); // close unregisters all channels, so we can safely reset blocking modes
         }
         if (readBlocking != null) {
@@ -393,9 +412,27 @@ public class SelectBlob {
     }
 
     private Selector getSelector(ThreadContext context, SelectableChannel channel) throws IOException {
+        Selector selector = selectors.get(channel.provider());
         if (selector == null) {
             selector = SelectorFactory.openWithRetryFrom(context.getRuntime(), channel.provider());
+            if (selectors.isEmpty()) {
+                selectors = new HashMap<SelectorProvider, Selector>();
+            }
+            selectors.put(channel.provider(), selector);
+
+            if (!selector.provider().equals(SelectorProvider.provider())) {
+                // need to create pipe between alt impl selector and native NIO selector
+                Pipe pipe = Pipe.open();
+                ENXIOSelector enxioSelector = new ENXIOSelector(selector, pipe);
+                if (enxioSelectors.isEmpty()) enxioSelectors = new ArrayList<ENXIOSelector>();
+                enxioSelectors.add(enxioSelector);
+                pipe.source().configureBlocking(false);
+                pipe.source().register(getSelector(context, pipe.source()), SelectionKey.OP_READ, enxioSelector);
+            } else if (mainSelector == null) {
+                mainSelector = selector;
+            }
         }
+
         return selector;
     }
 
@@ -482,6 +519,29 @@ public class SelectBlob {
 
         return true;
     }
+
+    private static final class ENXIOSelector implements Callable<Object> {
+        private final Selector selector;
+        private final Pipe pipe;
+
+        private ENXIOSelector(Selector selector, Pipe pipe) {
+            this.selector = selector;
+            this.pipe = pipe;
+        }
+
+        public Object call() throws Exception {
+            try {
+                selector.select();
+            } finally {
+                ByteBuffer buf = ByteBuffer.allocate(1);
+                buf.put((byte) 0);
+                buf.flip();
+                pipe.sink().write(buf);
+            }
+
+            return null;
+        }
+    }
     
     Ruby runtime;
     RubyArray readArray = null;
@@ -497,7 +557,9 @@ public class SelectBlob {
     boolean[] unselectableWrites = null;
     Boolean[] writeBlocking = null;
     int selectedWrites = 0;
-    Selector selector = null;
+    Selector mainSelector = null;
+    Map<SelectorProvider, Selector> selectors = Collections.emptyMap();
+    Collection<ENXIOSelector> enxioSelectors = Collections.emptyList();
     RubyArray readResults = null;
     RubyArray writeResults = null;
     RubyArray errorResults = null;
