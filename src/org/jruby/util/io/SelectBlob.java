@@ -366,6 +366,12 @@ public class SelectBlob {
         for (Selector selector : selectors.values()) {
             selector.close(); // close unregisters all channels, so we can safely reset blocking modes
         }
+
+        for (ENXIOSelector enxioSelector : enxioSelectors) {
+            enxioSelector.pipe.sink().close();
+            enxioSelector.pipe.source().close();
+        }
+
         if (readBlocking != null) {
             for (int i = 0; i < readBlocking.length; i++) {
                 if (readBlocking[i] != null) {
