@@ -1274,15 +1274,17 @@ public class ShellLauncher {
                         runtime, cfg.getExecArgs(), getCurrentEnv(runtime), pwd);
                 ipScript.start();
                 return ipScript;
-            } else if (cfg.shouldRunInShell()) {
-                log(runtime, "Launching with shell");
-                // execute command with sh -c
-                // this does shell expansion of wildcards
-                cfg.verifyExecutableForShell();
-                aProcess = buildProcess(runtime, cfg.getExecArgs(), getCurrentEnv(runtime), pwd);
             } else {
-                log(runtime, "Launching directly (no shell)");
-                cfg.verifyExecutableForDirect();
+                if (cfg.shouldRunInShell()) {
+                    log(runtime, "Launching with shell");
+                    // execute command with sh -c
+                    // this does shell expansion of wildcards
+                    cfg.verifyExecutableForShell();
+                } else {
+                    log(runtime, "Launching directly (no shell)");
+                    cfg.verifyExecutableForDirect();
+                }
+
                 aProcess = buildProcess(runtime, cfg.getExecArgs(), getCurrentEnv(runtime), pwd);
             }
         } catch (SecurityException se) {

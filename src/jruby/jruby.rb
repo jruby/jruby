@@ -143,6 +143,3 @@ module JRuby
     end
   end
 end
-
-# Load in the native bits
-require 'jruby_ext'
