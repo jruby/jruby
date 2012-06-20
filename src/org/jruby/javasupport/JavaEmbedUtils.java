@@ -92,7 +92,7 @@ public class JavaEmbedUtils {
      */
     public static Ruby initialize(List loadPaths, RubyInstanceConfig config) {
         Ruby runtime = Ruby.newInstance(config);
-        runtime.getLoadService().init(loadPaths);
+        runtime.getLoadService().addPaths((List<String>)loadPaths);
         runtime.getLoadService().require("java");
 
         return runtime;

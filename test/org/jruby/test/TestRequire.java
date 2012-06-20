@@ -45,7 +45,6 @@ public class TestRequire extends TestRubyBase {
     protected void setUp() throws Exception {
         super.setUp();
         runtime = Ruby.newInstance();
-        runtime.getLoadService().init(new ArrayList());
     }
 
     public void testRubyRequire() throws Exception {
