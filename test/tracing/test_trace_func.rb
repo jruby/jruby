@@ -4,6 +4,8 @@ class TestTraceFunc < Test::Unit::TestCase
 
   def setup
     super
+    # put back normal method_added so ours doesn't pollute traces
+    class << Object; alias method_added java_package_method_added; end
     @test_dir = File.dirname(__FILE__)
   end
 
