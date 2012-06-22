@@ -1489,20 +1489,7 @@ public class ASTCompiler {
             compileGetDefinitionBase(((NewlineNode)node).getNextNode(), context);
             break;
         default:
-            BranchCallback reg = new BranchCallback() {
-
-                        public void branch(BodyCompiler context) {
-                            context.inDefined();
-                            compileGetDefinition(node, context);
-                        }
-                    };
-            BranchCallback out = new BranchCallback() {
-
-                        public void branch(BodyCompiler context) {
-                            context.outDefined();
-                        }
-                    };
-            context.protect(reg, out, ByteList.class);
+            compileGetDefinition(node, context);
         }
     }
 

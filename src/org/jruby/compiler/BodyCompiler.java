@@ -535,8 +535,6 @@ public interface BodyCompiler {
     public void performRescue(BranchCallback regularCode, BranchCallback rubyCatchCode, BranchCallback rubyElseCode, boolean needsRetry);
     public void performRescueLight(BranchCallback regularCode, BranchCallback rubyCatchCode, BranchCallback rubyElseCode, boolean needsRetry);
     public void performEnsure(BranchCallback regularCode, BranchCallback ensuredCode);
-    public void inDefined();
-    public void outDefined();
     public void stringOrNil();
     public void pushNull();
     public void pushString(String strVal);

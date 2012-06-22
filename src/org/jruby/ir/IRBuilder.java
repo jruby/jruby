@@ -15,7 +15,6 @@ import org.jruby.ir.instructions.defined.IsMethodBoundInstr;
 import org.jruby.ir.instructions.defined.MethodDefinedInstr;
 import org.jruby.ir.instructions.defined.MethodIsPublicInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
-import org.jruby.ir.instructions.defined.SetWithinDefinedInstr;
 import org.jruby.ir.instructions.defined.SuperMethodBoundInstr;
 import org.jruby.ir.instructions.ruby18.ReceiveOptArgInstr18;
 import org.jruby.ir.instructions.ruby18.ReceiveRestArgInstr18;
@@ -1123,43 +1122,6 @@ public class IRBuilder {
         public Operand run(Object[] args);
     }
 
-    private Variable protectCodeWithEnsure(IRScope s, CodeBlock protectedCode, Object[] protectedCodeArgs, CodeBlock ensureCode, Object[] ensureCodeArgs) {
-        // This effectively mimics a begin-ensure-end code block
-        // Except this silently swallows all exceptions raised by the protected code
-
-        Variable ret = s.getNewTemporaryVariable();
-
-        // Push a new ensure block info node onto the stack of ensure block
-        EnsureBlockInfo ebi = new EnsureBlockInfo(s, null, getCurrentLoop());
-        _ensureBlockStack.push(ebi);
-        Label rBeginLabel = ebi.regionStart;
-        Label rEndLabel   = ebi.end;
-
-        // Protected region code
-        s.addInstr(new LabelInstr(rBeginLabel));
-        s.addInstr(new ExceptionRegionStartMarkerInstr(rBeginLabel, rEndLabel, ebi.dummyRescueBlockLabel, ebi.dummyRescueBlockLabel));
-        Operand v1 = protectedCode.run(protectedCodeArgs); // YIELD: Run the protected code block
-        s.addInstr(new CopyInstr(ret, v1));
-        s.addInstr(new JumpInstr(ebi.start));
-        s.addInstr(new ExceptionRegionEndMarkerInstr());
-
-        // Rescue block code
-        // SSS FIXME: How do we get this to catch all exceptions, not just Ruby exceptions?
-        s.addInstr(new LabelInstr(ebi.dummyRescueBlockLabel));
-        s.addInstr(new CopyInstr(ret, manager.getNil()));
-
-        _ensureBlockStack.pop();
-
-        // Ensure block code -- this should not throw exceptions
-        s.addInstr(new LabelInstr(ebi.start));
-        ensureCode.run(ensureCodeArgs); // YIELD: Run the ensure code block
-
-        // End
-        s.addInstr(new LabelInstr(rEndLabel));
-
-        return ret;
-    }
-
     private Operand protectCodeWithRescue(IRScope m, CodeBlock protectedCode, Object[] protectedCodeArgs, CodeBlock rescueBlock, Object[] rescueBlockArgs) {
         // This effectively mimics a begin-rescue-end code block
         // Except this catches all exceptions raised by the protected code
@@ -1202,25 +1164,7 @@ public class IRBuilder {
     }
 
     protected Operand buildGenericGetDefinitionIR(Node node, IRScope s) {
-        s.addInstr(new SetWithinDefinedInstr(manager.getTrue()));
-
-        // Protected code
-        CodeBlock protectedCode = new CodeBlock() {
-            public Operand run(Object[] args) {
-               return buildGetDefinition((Node)args[0], (IRScope)args[1]);
-            }
-        };
-
-        // Ensure code
-        CodeBlock ensureCode = new CodeBlock() {
-            public Operand run(Object[] args) {
-                IRScope m = (IRScope)args[0];
-                m.addInstr(new SetWithinDefinedInstr(manager.getFalse()));
-                return manager.getNil();
-            }
-        };
-
-        return protectCodeWithEnsure(s, protectedCode, new Object[] {node, s}, ensureCode, new Object[] {s});
+        return buildGetDefinition(node, s);
     }
 
     protected Operand buildVersionSpecificGetDefinitionIR(Node node, IRScope s) {

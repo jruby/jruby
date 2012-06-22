@@ -104,12 +104,7 @@ public class OpAsgnOrNode extends Node implements BinaryOperatorNode {
     }
 
     private boolean defined(Ruby runtime, ThreadContext context, Node node, IRubyObject self, Block aBlock) {
-        try {
-            context.setWithinDefined(true);
-            return node.definition(runtime, context, self, aBlock) != null;
-        } finally {
-            context.setWithinDefined(false);
-        }
+        return node.definition(runtime, context, self, aBlock) != null;
     }
 
     @Override

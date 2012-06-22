@@ -25,7 +25,6 @@ import org.jruby.ir.instructions.defined.IsMethodBoundInstr;
 import org.jruby.ir.instructions.defined.MethodDefinedInstr;
 import org.jruby.ir.instructions.defined.MethodIsPublicInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
-import org.jruby.ir.instructions.defined.SetWithinDefinedInstr;
 import org.jruby.ir.instructions.defined.SuperMethodBoundInstr;
 import org.jruby.ir.instructions.ruby18.ReceiveOptArgInstr18;
 import org.jruby.ir.instructions.ruby18.ReceiveRestArgInstr18;
@@ -1023,11 +1022,6 @@ public class JVMVisitor extends IRVisitor {
     @Override
     public void RestoreErrorInfoInstr(RestoreErrorInfoInstr restoreerrorinfoinstr) {
         super.RestoreErrorInfoInstr(restoreerrorinfoinstr);    //To change body of overridden methods use File | Settings | File Templates.
-    }
-
-    @Override
-    public void SetWithinDefinedInstr(SetWithinDefinedInstr setwithindefinedinstr) {
-        super.SetWithinDefinedInstr(setwithindefinedinstr);    //To change body of overridden methods use File | Settings | File Templates.
     }
 
     @Override

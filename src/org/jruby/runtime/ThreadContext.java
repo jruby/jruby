@@ -89,9 +89,6 @@ public final class ThreadContext {
     // Is this thread currently with in a function trace?
     private boolean isWithinTrace;
     
-    // Is this thread currently doing an defined? defined should set things like $!
-    private boolean isWithinDefined;
-    
     private RubyThread thread;
     private Fiber fiber;
     // Cache format string because it is expensive to create on demand
@@ -1182,24 +1179,6 @@ public final class ThreadContext {
         this.isWithinTrace = isWithinTrace;
     }
     
-    /**
-     * Is this thread actively in defined? at the moment.
-     *
-     * @return true if within defined?
-     */
-    public boolean isWithinDefined() {
-        return isWithinDefined;
-    }
-    
-    /**
-     * Set whether we are actively within defined? or not.
-     *
-     * @param isWithinDefined true if so
-     */
-    public void setWithinDefined(boolean isWithinDefined) {
-        this.isWithinDefined = isWithinDefined;
-    }
-
     /**
      * Return a binding representing the current call's state
      * @return the current binding

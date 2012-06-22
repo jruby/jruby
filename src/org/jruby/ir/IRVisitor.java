@@ -12,7 +12,6 @@ import org.jruby.ir.instructions.defined.IsMethodBoundInstr;
 import org.jruby.ir.instructions.defined.MethodDefinedInstr;
 import org.jruby.ir.instructions.defined.MethodIsPublicInstr;
 import org.jruby.ir.instructions.defined.RestoreErrorInfoInstr;
-import org.jruby.ir.instructions.defined.SetWithinDefinedInstr;
 import org.jruby.ir.instructions.defined.SuperMethodBoundInstr;
 import org.jruby.ir.instructions.ruby18.ReceiveOptArgInstr18;
 import org.jruby.ir.instructions.ruby18.ReceiveRestArgInstr18;
@@ -168,7 +167,6 @@ public abstract class IRVisitor {
     public void MethodDefinedInstr(MethodDefinedInstr methoddefinedinstr) { error(methoddefinedinstr); }
     public void MethodIsPublicInstr(MethodIsPublicInstr methodispublicinstr) { error(methodispublicinstr); }
     public void RestoreErrorInfoInstr(RestoreErrorInfoInstr restoreerrorinfoinstr) { error(restoreerrorinfoinstr); }
-    public void SetWithinDefinedInstr(SetWithinDefinedInstr setwithindefinedinstr) { error(setwithindefinedinstr); }
     public void SuperMethodBoundInstr(SuperMethodBoundInstr supermethodboundinstr) { error(supermethodboundinstr); }
 
     // ruby 1.8 specific

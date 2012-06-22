@@ -1852,18 +1852,6 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         method.invokestatic(p(JavaUtil.class), "convertJavaToUsableRubyObject", sig(IRubyObject.class, Ruby.class, Object.class));
     }
 
-    public void inDefined() {
-        method.aload(StandardASMCompiler.THREADCONTEXT_INDEX);
-        method.iconst_1();
-        invokeThreadContext("setWithinDefined", sig(void.class, params(boolean.class)));
-    }
-
-    public void outDefined() {
-        method.aload(StandardASMCompiler.THREADCONTEXT_INDEX);
-        method.iconst_0();
-        invokeThreadContext("setWithinDefined", sig(void.class, params(boolean.class)));
-    }
-
     public void stringOrNil() {
         loadThreadContext();
         invokeUtilityMethod("stringOrNil", sig(IRubyObject.class, ByteList.class, ThreadContext.class));

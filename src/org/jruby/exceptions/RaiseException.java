@@ -236,9 +236,7 @@ public class RaiseException extends JumpException {
     }
 
     private void doSetLastError(ThreadContext context) {
-        if (!context.isWithinDefined()) {
-            context.runtime.getGlobalVariables().set("$!", exception);
-        }
+        context.runtime.getGlobalVariables().set("$!", exception);
     }
     
     /**

@@ -83,12 +83,7 @@ public class DefinedNode extends Node {
 
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        try {
-            context.setWithinDefined(true);
-            ByteList definition = expressionNode.definition(runtime, context, self, aBlock);
-            return definition != null ? RubyString.newStringShared(runtime, definition) : runtime.getNil();
-        } finally {
-            context.setWithinDefined(false);
-        }
+			ByteList definition = expressionNode.definition(runtime, context, self, aBlock);
+			return definition != null ? RubyString.newStringShared(runtime, definition) : runtime.getNil();
     }
 }
