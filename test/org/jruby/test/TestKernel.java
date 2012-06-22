@@ -53,7 +53,6 @@ public class TestKernel extends TestRubyBase {
     protected void setUp() throws Exception {
         super.setUp();
         runtime = Ruby.newInstance();
-        runtime.getLoadService().init(new ArrayList());
     }
 
     public void testLoad() throws Exception {

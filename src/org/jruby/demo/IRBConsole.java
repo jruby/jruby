@@ -76,7 +76,6 @@ public class IRBConsole extends JFrame {
         final Ruby runtime = Ruby.newInstance(config);
 
         runtime.getGlobalVariables().defineReadonly("$$", new ValueAccessor(runtime.newFixnum(System.identityHashCode(runtime))));
-        runtime.getLoadService().init(new ArrayList());
 
         tar.hookIntoRuntime(runtime);
 

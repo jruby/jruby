@@ -215,16 +215,23 @@ public class LoadService {
         }
     }
 
-    public void init(List additionalDirectories) {
+    /**
+     * Called to initialize the load path with a set of optional prepended
+     * directories and then the standard set of dirs.
+     *
+     * This should only be called once, at load time, since it wipes out loaded
+     * features.
+     *
+     * @param prependDirectories
+     */
+    public void init(List prependDirectories) {
         loadPath = RubyArray.newArray(runtime);
 
         String jrubyHome = runtime.getJRubyHome();
         loadedFeatures = new StringArraySet(runtime);
 
         // add all startup load paths to the list first
-        for (Iterator iter = additionalDirectories.iterator(); iter.hasNext();) {
-            addPath((String) iter.next());
-        }
+        addPaths(prependDirectories);
 
         // add $RUBYLIB paths
         RubyHash env = (RubyHash) runtime.getObject().getConstant("ENV");
@@ -232,9 +239,7 @@ public class LoadService {
         if (env.has_key_p(env_rubylib).isTrue()) {
             String rubylib = env.op_aref(runtime.getCurrentContext(), env_rubylib).toString();
             String[] paths = rubylib.split(File.pathSeparator);
-            for (int i = 0; i < paths.length; i++) {
-                addPath(paths[i]);
-            }
+            addPaths(paths);
         }
 
         // wrap in try/catch for security exceptions in an applet
@@ -267,6 +272,28 @@ public class LoadService {
         // "." dir is used for relative path loads from a given file, as in require '../foo/bar'
         if (!runtime.is1_9() && runtime.getSafeLevel() == 0) {
             addPath(".");
+        }
+    }
+
+    /**
+     * Add additional directories to the load path.
+     *
+     * @param additionalDirectories a List of additional dirs to append to the load path
+     */
+    public void addPaths(List<String> additionalDirectories) {
+        for (String dir : additionalDirectories) {
+            addPath(dir);
+        }
+    }
+
+    /**
+     * Add additional directories to the load path.
+     *
+     * @param additionalDirectories an array of additional dirs to append to the load path
+     */
+    public void addPaths(String... additionalDirectories) {
+        for (String dir : additionalDirectories) {
+            addPath(dir);
         }
     }
 

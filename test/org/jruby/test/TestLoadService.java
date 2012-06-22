@@ -41,8 +41,6 @@ public class TestLoadService extends TestRubyBase {
     public void setUp() {
         runtime = Ruby.newInstance();
         loadService = (LoadService) runtime.getLoadService();
-        
-        loadService.init(new ArrayList());
     }
     
     public void testRequireSocket() {

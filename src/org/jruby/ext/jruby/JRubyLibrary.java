@@ -75,6 +75,11 @@ public class JRubyLibrary implements Library {
     public void load(Ruby runtime, boolean wrap) {
         ThreadContext context = runtime.getCurrentContext();
         runtime.getKernel().callMethod(context, "require", runtime.newString("java"));
+
+        // load Ruby parts of the 'jruby' library
+        runtime.getLoadService().loadFromClassLoader(runtime.getJRubyClassLoader(), "jruby/jruby.rb", false);
+
+        // define JRuby module
         RubyModule jrubyModule = runtime.getOrCreateModule("JRuby");
 
         jrubyModule.defineAnnotatedMethods(JRubyLibrary.class);
