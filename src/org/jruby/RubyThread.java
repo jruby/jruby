@@ -365,10 +365,10 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
                 addToCorrectThreadGroup(context);
 
-                threadImpl.start();
-
                 // JRUBY-2380, associate thread early so it shows up in Thread.list right away, in case it doesn't run immediately
                 runtime.getThreadService().associateThread(thread, this);
+
+                threadImpl.start();
             }
 
             // We yield here to hopefully permit the target thread to schedule
