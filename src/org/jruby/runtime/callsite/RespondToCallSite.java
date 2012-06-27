@@ -1,5 +1,6 @@
 package org.jruby.runtime.callsite;
 
+import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -44,13 +45,7 @@ public class RespondToCallSite extends NormalCachingCallSite {
             if (strName.equals(tuple.name) && tuple.checkVisibility) return tuple.respondsTo;
         }
         // go through normal call logic, which will hit overridden cacheAndCall
-        IRubyObject respond = super.call(context, caller, self, name);
-
-        if (!respond.isTrue() && context.getRuntime().is1_9()) {
-            respond = self.callMethod(context, "respond_to_missing?", new IRubyObject[]{name, context.getRuntime().getFalse()});
-            respond = context.getRuntime().newBoolean(respond.isTrue());
-        }
-        return respond;
+        return super.call(context, caller, self, name);
     }
 
     @Override
@@ -62,13 +57,7 @@ public class RespondToCallSite extends NormalCachingCallSite {
             if (strName.equals(tuple.name) && !bool.isTrue() == tuple.checkVisibility) return tuple.respondsTo;
         }
         // go through normal call logic, which will hit overridden cacheAndCall
-        IRubyObject respond = super.call(context, caller, self, name, bool);
-
-        if (!respond.isTrue() && context.getRuntime().is1_9()) {
-            respond = self.callMethod(context, "respond_to_missing?", new IRubyObject[]{name, bool});
-            respond = context.getRuntime().newBoolean(respond.isTrue());
-        }
-        return respond;
+        return super.call(context, caller, self, name, bool);
     }
 
     @Override
@@ -80,7 +69,9 @@ public class RespondToCallSite extends NormalCachingCallSite {
         }
 
         // alternate logic to cache the result of respond_to if it's the standard one
-        if (entry.method == context.getRuntime().getRespondToMethod()) {
+        // FIXME: 1.9's respond_to_missing breaks this, so we have to bail out
+        if (!context.runtime.is1_9() &&
+                entry.method == context.getRuntime().getRespondToMethod()) {
             String name = arg.asJavaString();
             RespondToTuple tuple = recacheRespondsTo(entry, name, selfType, true, context);
             respondToTuple = tuple;
@@ -101,7 +92,10 @@ public class RespondToCallSite extends NormalCachingCallSite {
         }
 
         // alternate logic to cache the result of respond_to if it's the standard one
-        if (entry.method == context.getRuntime().getRespondToMethod()) {
+        // FIXME: 1.9's respond_to_missing breaks this, so we have to bail out
+        // FIXME: 1.9's respond_to_missing breaks this, so we have to bail out
+        if (!context.runtime.is1_9() &&
+                entry.method == context.runtime.getRespondToMethod()) {
             String name = arg0.asJavaString();
             RespondToTuple tuple = recacheRespondsTo(entry, name, selfType, !arg1.isTrue(), context);
             respondToTuple = tuple;
