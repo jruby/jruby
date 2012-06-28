@@ -790,7 +790,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         return context.getRuntime().newFileStat(f, false).ctime();
     }
 
-    @JRubyMethod(required = 2, rest = true, meta = true)
+    @JRubyMethod(required = 1, rest = true, meta = true)
     public static IRubyObject lchmod(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.getRuntime();
         
