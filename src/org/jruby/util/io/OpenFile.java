@@ -6,6 +6,7 @@ import org.jruby.util.ShellLauncher;
 
 public class OpenFile {
 
+    // IO Mode flags
     public static final int READABLE           = 0x00000001;
     public static final int WRITABLE           = 0x00000002;
     public static final int READWRITE          = READABLE | WRITABLE;
@@ -22,6 +23,12 @@ public class OpenFile {
     public static final int SETENC_BY_BOM      = 0x00100000;
     
     public static final int SYNCWRITE = SYNC | WRITABLE;
+    
+    // Encoding conversion flags
+    public static final int ECONV_DECORATOR_MASK               = 0x0000ff00;
+    public static final int ECONV_NEWLINE_DECORATOR_MASK       = 0x00003f00;
+    public static final int ECONV_NEWLINE_DECORATOR_READ_MASK  = 0x00000f00;
+    public static final int ECONV_NEWLINE_DECORATOR_WRITE_MASK = 0x00003000;
 
     public static interface Finalizer {
 
@@ -30,6 +37,7 @@ public class OpenFile {
     private Stream mainStream;
     private Stream pipeStream;
     private int mode;
+    private int ecflags;
     private Process process;
     private int lineNumber = 0;
     private String path;
@@ -75,6 +83,10 @@ public class OpenFile {
 
     public int getMode() {
         return mode;
+    }
+    
+    public int getECFlags() {
+        return ecflags;
     }
 
     public String getModeAsString(Ruby runtime) {
@@ -248,6 +260,10 @@ public class OpenFile {
 
     public void setMode(int modes) {
         this.mode = modes;
+    }
+    
+    public void setECFlags(int ecflags) {
+        this.ecflags = ecflags;
     }
 
     public Process getProcess() {
