@@ -187,6 +187,10 @@ public class OpenFile {
     public boolean isBinmode() {
         return (mode & BINMODE) != 0;
     }
+    
+    public boolean isTextMode() {
+        return (mode & TEXTMODE) != 0;
+    }
 
     public void setBinmode() {
         mode |= BINMODE;
