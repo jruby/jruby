@@ -89,11 +89,26 @@ public class CallableSelector {
         List<ParameterTypes> newFinds = findCallable(methods, args);
         if (newFinds.size() > 0) {
             // new way found one, so let's go with that
-            if (newFinds.size() > 1 && args[0].getRuntime().isDebug()) {
-                // warn about multiple potentials during debug (should only happen once per ambiguity)
-                warnMultipleMatches(args, newFinds);
+            if (newFinds.size() == 1) {
+                method = newFinds.get(0);
+            } else {
+                // narrow to most specific version (or first version, if none are more specific
+                ParameterTypes mostSpecific = null;
+                for (ParameterTypes candidate : newFinds) {
+                    if (mostSpecific == null) mostSpecific = candidate;
+
+                    Class[] msTypes = mostSpecific.getParameterTypes();
+                    Class[] cTypes = candidate.getParameterTypes();
+
+                    for (int i = 0; i < msTypes.length; i++) {
+                        if (msTypes[i] != cTypes[i] && msTypes[i].isAssignableFrom(cTypes[i])) {
+                            mostSpecific = candidate;
+                            continue;
+                        }
+                    }
+                }
+                method = mostSpecific;
             }
-            method = newFinds.get(0);
         }
 
         // fall back on old ways

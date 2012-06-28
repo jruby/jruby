@@ -2,6 +2,7 @@
 require File.dirname(__FILE__) + "/../spec_helper"
 
 java_import 'java_integration.fixtures.ClassWithMultipleSignaturesWithPrimitiveArgs'
+java_import 'java_integration.fixtures.GenericComparable'
 
 describe "JRuby" do
   before :each do
@@ -15,5 +16,12 @@ describe "JRuby" do
     C.foo1(@float).should == "float"
     C.foo2(Object.new, @int).should == "int"
     C.foo2(Object.new, @float).should == "float"
+  end
+end
+
+describe "A class with two inexact overloads" do
+  it "will have the most specific overload called" do
+    GenericComparable.new.compareTo(0).should == 0
+    GenericComparable.new.compareTo('foo').should == 1
   end
 end
