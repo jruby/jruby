@@ -6,17 +6,21 @@ import org.jruby.util.ShellLauncher;
 
 public class OpenFile {
 
-    public static final int READABLE = 1;
-    public static final int WRITABLE = 2;
-    public static final int READWRITE = 3;
-    public static final int APPEND = 64;
-    public static final int CREATE = 128;
-    public static final int BINMODE = 4;
-    public static final int SYNC = 8;
-    public static final int WBUF = 16;
-    public static final int RBUF = 32;
-    public static final int WSPLIT = 512;
-    public static final int WSPLIT_INITIALIZED = 1024;
+    public static final int READABLE           = 0x00000001;
+    public static final int WRITABLE           = 0x00000002;
+    public static final int READWRITE          = READABLE | WRITABLE;
+    public static final int BINMODE            = 0x00000004;
+    public static final int SYNC               = 0x00000008;
+    public static final int WBUF               = 0x00000010; // TTY
+    public static final int RBUF               = 0x00000020; // DUPLEX
+    public static final int APPEND             = 0x00000040;
+    public static final int CREATE             = 0x00000080;
+    public static final int WSPLIT             = 0x00000200;
+    public static final int WSPLIT_INITIALIZED = 0x00000400;
+    public static final int TRUNC              = 0x00000800;
+    public static final int TEXTMODE           = 0x00001000;
+    public static final int SETENC_BY_BOM      = 0x00100000;
+    
     public static final int SYNCWRITE = SYNC | WRITABLE;
 
     public static interface Finalizer {
