@@ -25,10 +25,8 @@ public class OpenFile {
     public static final int SYNCWRITE = SYNC | WRITABLE;
     
     // Encoding conversion flags
-    public static final int ECONV_DECORATOR_MASK               = 0x0000ff00;
-    public static final int ECONV_NEWLINE_DECORATOR_MASK       = 0x00003f00;
-    public static final int ECONV_NEWLINE_DECORATOR_READ_MASK  = 0x00000f00;
-    public static final int ECONV_NEWLINE_DECORATOR_WRITE_MASK = 0x00003000;
+    public static final int DECORATOR_MASK               = 0x0000ff00;
+    public static final int STATEFUL_DECORATOR_MASK      = 0x00f00000;
 
     public static interface Finalizer {
 

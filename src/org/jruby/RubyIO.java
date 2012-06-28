@@ -44,7 +44,6 @@ import org.jruby.util.StringSupport;
 import org.jruby.util.io.EncodingOption;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.SelectBlob;
-import org.jcodings.exception.EncodingException;
 import jnr.constants.platform.Fcntl;
 import java.io.EOFException;
 import java.io.FileDescriptor;
@@ -4564,10 +4563,22 @@ public class RubyIO extends RubyObject {
         return args.length == 0 ? readline(context) : readline(context, args[0]);
     }
     
+    // MRI: NEED_WRITECONV (FIXME: Windows has slightly different version)
+    private boolean needsWriteConversion(ThreadContext context) {
+        Encoding ascii8bit = context.runtime.getEncodingService().getAscii8bitEncoding();
+        
+        return (readEncoding != null && readEncoding != ascii8bit) ||
+                openFile.isTextMode() || 
+                ((openFile.getECFlags() & (OpenFile.DECORATOR_MASK|OpenFile.STATEFUL_DECORATOR_MASK)) != 0);
+    }
+    
     protected OpenFile openFile;
     protected List<RubyThread> blockingThreads;
     protected Encoding externalEncoding;
     protected Encoding internalEncoding;
+    protected Encoding readEncoding; // MRI:enc
+    protected Encoding writeEncoding; // MRI:enc2
+    
     /**
      * If the stream is being used for popen, we don't want to destroy the process
      * when we close the stream.
