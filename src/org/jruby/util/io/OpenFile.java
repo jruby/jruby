@@ -326,7 +326,6 @@ public class OpenFile {
 
     public void finalize(Ruby runtime, boolean raise) {
         try {
-            ChannelDescriptor main = null;
             ChannelDescriptor pipe = null;
             
             // Recent JDKs shut down streams in the parent when child
@@ -358,7 +357,7 @@ public class OpenFile {
                 Stream ms = mainStream;
                 if (ms != null) {
                     // TODO: Ruby logic is somewhat more complicated here, see comments after
-                    main = ms.getDescriptor();
+                    ChannelDescriptor main = ms.getDescriptor();
                     runtime.removeFilenoIntMap(main.getFileno());
                     try {
                         // Newer JDKs actively close the process streams when
@@ -393,10 +392,7 @@ public class OpenFile {
                             ms.fclose();
                         }
                     } catch (BadDescriptorException bde) {
-                        if (main == pipe) {
-                        } else {
-                            throw bde;
-                        }
+                        if (main != pipe) throw bde;
                     } finally {
                         // make sure the main stream is set to null
                         mainStream = null;
