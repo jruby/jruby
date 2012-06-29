@@ -1348,6 +1348,11 @@ public class InvocationLinker {
             return null;
         }
 
+        // If param counts do not match, or the method is varargs, fallback to the non-invokedynamic path
+        if (site.type().parameterCount() != method.getArity().getValue() || !method.getArity().isFixed()) {
+            return null;
+        }
+
         MethodHandle nativeTarget = (MethodHandle) method.getHandle();
         if (nativeTarget != null) return nativeTarget;
 
