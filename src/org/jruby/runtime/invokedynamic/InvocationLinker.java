@@ -485,7 +485,7 @@ public class InvocationLinker {
             }
 
             // Arity must match, otherwise let the indirect method process errors
-            if (method.getArity().getValue() != site.type().parameterCount()) {
+            if (method.getArity().getValue() != siteArgCount) {
                 throw new IndirectBindingException("arity mismatch");
             }
 
@@ -1350,11 +1350,6 @@ public class InvocationLinker {
     private static MethodHandle createFFIHandle(JRubyCallSite site, DynamicMethod method) {
         if (site.type().parameterType(site.type().parameterCount() - 1) == Block.class) {
             // Called with a block to substitute for a callback param - cannot cache or use a cached handle
-            return null;
-        }
-
-        // If param counts do not match, or the method is varargs, fallback to the non-invokedynamic path
-        if (site.type().parameterCount() != method.getArity().getValue() || !method.getArity().isFixed()) {
             return null;
         }
 
