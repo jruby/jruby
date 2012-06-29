@@ -23,11 +23,7 @@ public class OpenFile {
     public static final int SETENC_BY_BOM      = 0x00100000;
     
     public static final int SYNCWRITE = SYNC | WRITABLE;
-    
-    // Encoding conversion flags
-    public static final int DECORATOR_MASK               = 0x0000ff00;
-    public static final int STATEFUL_DECORATOR_MASK      = 0x00f00000;
-
+ 
     public static interface Finalizer {
 
         public void finalize(Ruby runtime, boolean raise);
@@ -35,7 +31,6 @@ public class OpenFile {
     private Stream mainStream;
     private Stream pipeStream;
     private int mode;
-    private int ecflags;
     private Process process;
     private int lineNumber = 0;
     private String path;
@@ -83,10 +78,6 @@ public class OpenFile {
         return mode;
     }
     
-    public int getECFlags() {
-        return ecflags;
-    }
-
     public String getModeAsString(Ruby runtime) {
         String modeString = getStringFromMode(mode);
 
@@ -260,10 +251,6 @@ public class OpenFile {
         this.mode = modes;
     }
     
-    public void setECFlags(int ecflags) {
-        this.ecflags = ecflags;
-    }
-
     public Process getProcess() {
         return process;
     }

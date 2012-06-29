@@ -4563,13 +4563,22 @@ public class RubyIO extends RubyObject {
         return args.length == 0 ? readline(context) : readline(context, args[0]);
     }
     
+    // MRI: do_writeconv
+    private ByteList doWriteConversion(ThreadContext context, ByteList str) {
+        if (!needsWriteConversion(context)) return str;
+        
+        // openFile.setBinmode(); // In MRI this does not affect flags like we do in OpenFile
+        
+        return str;
+    }
+    
     // MRI: NEED_WRITECONV (FIXME: Windows has slightly different version)
     private boolean needsWriteConversion(ThreadContext context) {
         Encoding ascii8bit = context.runtime.getEncodingService().getAscii8bitEncoding();
         
-        return (readEncoding != null && readEncoding != ascii8bit) ||
-                openFile.isTextMode() || 
-                ((openFile.getECFlags() & (OpenFile.DECORATOR_MASK|OpenFile.STATEFUL_DECORATOR_MASK)) != 0);
+        return (readEncoding != null && readEncoding != ascii8bit) || openFile.isTextMode();
+        // This is basically from MRI and until I understand it better I am leaving it out
+        // ||  ((ecflags & (DECORATOR_MASK|STATEFUL_DECORATOR_MASK)) != 0);
     }
     
     protected OpenFile openFile;
