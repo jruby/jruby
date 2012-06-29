@@ -52,9 +52,8 @@ public class RubyThreadGroup extends RubyObject {
     private final Set<RubyThread> rubyThreadList = Collections.synchronizedSet(new WeakHashSet<RubyThread>());
     private boolean enclosed = false;
 
-    // ENEBO: Can these be fast?
     public static RubyClass createThreadGroupClass(Ruby runtime) {
-        RubyClass threadGroupClass = runtime.defineClass("ThreadGroup", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        RubyClass threadGroupClass = runtime.defineClass("ThreadGroup", runtime.getObject(), THREADGROUP_ALLOCATOR);
         runtime.setThreadGroup(threadGroupClass);
 
         threadGroupClass.index = ClassIndex.THREADGROUP;
@@ -68,11 +67,12 @@ public class RubyThreadGroup extends RubyObject {
 
         return threadGroupClass;
     }
-    
-    @JRubyMethod(name = "new", meta = true)
-    public static IRubyObject newInstance(IRubyObject recv, Block block) {
-        return new RubyThreadGroup(recv.getRuntime(), (RubyClass)recv);
-    }
+
+    private static final ObjectAllocator THREADGROUP_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
+            return new RubyThreadGroup(runtime, klazz);
+        }
+    };
 
     @JRubyMethod(name = "add", required = 1)
     public IRubyObject add(IRubyObject rubyThread, Block block) {
