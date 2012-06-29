@@ -723,6 +723,9 @@ public class Java implements Library {
         RubyClass rubySubclass = (RubyClass)subclass;
         rubySubclass.getInstanceVariables().setInstanceVariable("@java_proxy_class", runtime.getNil());
 
+        // Subclasses of Java classes can safely use ivars, so we set this to silence warnings
+        rubySubclass.setCacheProxy(true);
+
         RubyClass subclassSingleton = rubySubclass.getSingletonClass();
         subclassSingleton.addReadWriteAttribute(context, "java_proxy_class");
         subclassSingleton.addMethod("java_interfaces", new JavaMethodZero(subclassSingleton, PUBLIC) {
