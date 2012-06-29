@@ -28,16 +28,17 @@ public class BlankSlateWrapper extends IncludedModuleWrapper {
     public DynamicMethod searchMethodInner(String name) {
         // this module is special and only searches itself; do not go to superclasses
         // except for special methods
-        if (KEEP.matcher(name).find()) {
-            return superClass.searchMethodInner(name);
-        }
 
         if (name.equals("__constants__")) {
-            return superClass.searchMethod("constants");
+            return superClass.searchMethodInner("constants");
         }
 
         if (name.equals("__methods__")) {
-            return superClass.searchMethod("methods");
+            return superClass.searchMethodInner("methods");
+        }
+
+        if (KEEP.matcher(name).find()) {
+            return superClass.searchMethodInner(name);
         }
 
         return null;
