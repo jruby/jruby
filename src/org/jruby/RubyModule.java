@@ -1094,7 +1094,7 @@ public class RubyModule extends RubyObject {
         return entry;
     }
     
-    protected DynamicMethod searchMethodInner(String name) {
+    public DynamicMethod searchMethodInner(String name) {
         DynamicMethod method = getMethods().get(name);
         
         if (method != null) return method;

@@ -1,23 +1,4 @@
 class Object
-  # Prevent methods added to Object from being added to the 
-  # blank-slate JavaPackageModuleTemplate
-  class << self
-    alias_method :java_package_method_added, :method_added
-
-    def method_added(name)
-      # If someone added a new method_added since we aliased original, then 
-      # lets defer to that.  Otherwise run one we aliased.
-      if self.class.superclass.instance_method(:method_added) != method(:java_package_method_added)
-        result = super 
-      else
-        result = java_package_method_added(name)
-      end
-      JavaPackageModuleTemplate.__block__(name) if self == Object
-      result
-    end
-    private :method_added
-  end
-
   # include the class specified by +include_class+ into the current namespace,
   # using either its base name or by using a name returned from an optional block,
   # passing all specified classes in turn and providing the block package name

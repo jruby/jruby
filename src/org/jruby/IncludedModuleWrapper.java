@@ -52,7 +52,7 @@ import org.jruby.runtime.builtin.Variable;
  * 
  * @see org.jruby.RubyModule
  */
-public final class IncludedModuleWrapper extends RubyClass {
+public class IncludedModuleWrapper extends RubyClass {
     private final RubyModule delegate;
 
     public IncludedModuleWrapper(Ruby runtime, RubyClass superClass, RubyModule delegate) {
