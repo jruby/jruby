@@ -29,7 +29,15 @@ public class CharsetTranscoder {
         add("CP50220");
         add("CP50221");
     }};
-
+    
+    /**
+     * This will try and transcode the supplied ByteList to the supplied toEncoding.  It will use
+     * forceEncoding as its encoding if it is supplied; otherwise it will use the encoding it has
+     * tucked away in the bytelist.  This will return a new copy of a ByteList in the request
+     * encoding or die trying (ConverterNotFound).
+     * 
+     * c: rb_str_conv_enc_opts
+     */
     public static ByteList transcode(ThreadContext context, ByteList value, Encoding forceEncoding,
             Encoding toEncoding, IRubyObject opts) {
         if (toEncoding == null) return value;

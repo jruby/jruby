@@ -7368,7 +7368,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
         if (defaultInternal == null) return dup();
 
-        value = transcode(context, value, null, defaultInternal, runtime.getNil());
+        value = CharsetTranscoder.transcode(context, value, null, defaultInternal, runtime.getNil());
 
         return this;
     }
@@ -7378,7 +7378,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         Ruby runtime = context.getRuntime();
         modify19();
 
-        value = transcode(context, value, null, getEncoding(runtime, enc), runtime.getNil());
+        value = CharsetTranscoder.transcode(context, value, null, getEncoding(runtime, enc), runtime.getNil());
 
         return this;
     }
@@ -7398,7 +7398,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             options = runtime.getNil();
         }
 
-        value = transcode(context, value, forceEncoding, getEncoding(runtime, toEncoding), options);
+        value = CharsetTranscoder.transcode(context, value, forceEncoding, getEncoding(runtime, toEncoding), options);
 
         return this;
     }
@@ -7408,7 +7408,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         Ruby runtime = context.getRuntime();
         modify19();
 
-        value = transcode(context, value, getEncoding(runtime, forceEncoding),
+        value = CharsetTranscoder.transcode(context, value, getEncoding(runtime, forceEncoding),
                 getEncoding(runtime, toEncoding), opts);
 
         return this;
@@ -7421,7 +7421,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
         if (defaultInternal == null) return dup();
 
-        return runtime.newString(transcode(context, value, null, defaultInternal, runtime.getNil()));
+        return runtime.newString(CharsetTranscoder.transcode(context, value, null, defaultInternal, runtime.getNil()));
     }
 
     @JRubyMethod(name = "encode", compat = RUBY1_9)
@@ -7440,7 +7440,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             options = runtime.getNil();
         }
 
-        return runtime.newString(transcode(context, value, null, forceEncoding, options));
+        return runtime.newString(CharsetTranscoder.transcode(context, value, null, forceEncoding, options));
     }
 
     @JRubyMethod(name = "encode", compat = RUBY1_9)
@@ -7457,7 +7457,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             options = runtime.getNil();
         }
 
-        return runtime.newString(transcode(context, value, forceEncoding,
+        return runtime.newString(CharsetTranscoder.transcode(context, value, forceEncoding,
                 getEncoding(runtime, toEncoding), options));
     }
 
@@ -7466,18 +7466,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
             IRubyObject forcedEncoding, IRubyObject opts) {
         Ruby runtime = context.getRuntime();
 
-        return runtime.newString(transcode(context, value, getEncoding(runtime, forcedEncoding),
+        return runtime.newString(CharsetTranscoder.transcode(context, value, getEncoding(runtime, forcedEncoding),
                 getEncoding(runtime, toEncoding), opts));
     }
 
-    /*
-     * This will try and transcode the supplied ByteList to the supplied toEncoding.  It will use
-     * forceEncoding as its encoding if it is supplied; otherwise it will use the encoding it has
-     * tucked away in the bytelist.  This will return a new copy of a ByteList in the request
-     * encoding or die trying (ConverterNotFound).
-     * 
-     * c: rb_str_conv_enc_opts
-     */
+    @Deprecated
     public static ByteList transcode(ThreadContext context, ByteList value, Encoding forceEncoding,
             Encoding toEncoding, IRubyObject opts) {
         return CharsetTranscoder.transcode(context, value, forceEncoding, toEncoding, opts);

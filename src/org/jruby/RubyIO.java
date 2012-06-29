@@ -103,6 +103,7 @@ import org.jruby.runtime.Arity;
 
 import static org.jruby.CompatVersion.*;
 import static org.jruby.RubyEnumerator.enumeratorize;
+import org.jruby.util.CharsetTranscoder;
 
 /**
  * 
@@ -583,7 +584,7 @@ public class RubyIO extends RubyObject {
                 Encoding internal = getInternalEncoding(runtime);
 
                 if (internal != null) {
-                    separator = RubyString.transcode(runtime.getCurrentContext(), separator,
+                    separator = CharsetTranscoder.transcode(runtime.getCurrentContext(), separator,
                             internal, getExternalEncoding(runtime), runtime.getNil());
                 }
             }
@@ -625,7 +626,7 @@ public class RubyIO extends RubyObject {
             Encoding external = externalEncoding;
 
             if (internal != external) {
-                ByteList transcoded = RubyString.transcode(
+                ByteList transcoded = CharsetTranscoder.transcode(
                         runtime.getCurrentContext(),
                         ((RubyString) result).getByteList(),
                         external, internal,
@@ -2476,7 +2477,7 @@ public class RubyIO extends RubyObject {
             }
 
             if (cr != StringSupport.CR_BROKEN && external != internal) {
-                bytes = RubyString.transcode(context, bytes, external, internal, runtime.getNil());
+                bytes = CharsetTranscoder.transcode(context, bytes, external, internal, runtime.getNil());
             }
 
             if (internal == null) internal = external;
