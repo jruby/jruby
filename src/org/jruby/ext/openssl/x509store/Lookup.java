@@ -555,7 +555,7 @@ public class Lookup {
                 int tp = iter.next();
                 int k = 0;
                 for(;;) {
-                    b.append(String.format("%s/%08x.%s%d", cdir, h, postfix, k));
+                    b.append(String.format("%s%s%08x.%s%d", cdir, File.separator, h, postfix, k));
                     k++;
                     if(!(new File(b.toString()).exists())) {
                         break;
