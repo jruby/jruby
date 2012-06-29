@@ -484,6 +484,11 @@ public class InvocationLinker {
                 throw new IndirectBindingException("fixed arity required: " + method.getArity());
             }
 
+            // Arity must match, otherwise let the indirect method process errors
+            if (method.getArity().getValue() != site.type().parameterCount()) {
+                throw new IndirectBindingException("arity mismatch");
+            }
+
             // Only support 0..6 parameters
             if (method.getArity().getValue() > 6) {
                 throw new IndirectBindingException("target args > 6");
