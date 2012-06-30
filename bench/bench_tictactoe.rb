@@ -10,9 +10,6 @@
 # X player, means that no human will ever be able to win. I'm positive
 # that is only a small taste of what is to come, once robots take
 # over the world.
-
-# Modified to be a benchmark for JRuby by headius.
-
 require 'benchmark'
 
 class GameState
@@ -185,9 +182,5 @@ class Game
   end
 end
 
-(ARGV[0] || 5).to_i.times {
-  puts Benchmark.measure {
-    GameTree.new.generate
-  }
-}
-
+#Game.new.turn
+10.times { puts Benchmark.measure { GameTree.new.generate } }
