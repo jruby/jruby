@@ -266,6 +266,7 @@ public class Tempfile extends org.jruby.RubyTempfile {
 
     @JRubyMethod(name = {"unlink", "delete"})
     public IRubyObject unlink(ThreadContext context) {
+        // JRUBY-6688: delete when closed, warn otherwise
         if (isClosed()) {
             // the user intends to delete the file immediately, so do it
             if (!tmpFile.exists() || tmpFile.delete()) {
@@ -273,8 +274,10 @@ public class Tempfile extends org.jruby.RubyTempfile {
                 reaper.released = true;
                 path = null;
             }
+        } else {
+            // else, no-op, since we can't unlink the file without breaking stat et al
+            context.runtime.getWarnings().warn("Tempfile#unlink or delete called on open file; ignoring");
         }
-        // else, no-op, since we can't unlink the file without breaking stat et al
         return context.getRuntime().getNil();
     }
 
