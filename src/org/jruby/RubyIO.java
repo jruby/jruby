@@ -165,7 +165,7 @@ public class RubyIO extends RubyObject {
         
         // We only want IO objects with valid streams (better to error now). 
         if (channel == null) {
-            throw runtime.newRuntimeError("Opening null channelpo");
+            throw runtime.newRuntimeError("Opening null channel");
         }
         
         openFile = new OpenFile();
