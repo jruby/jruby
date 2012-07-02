@@ -390,6 +390,10 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (defaultEncoding == null) defaultEncoding = UTF8;
 
         charset = defaultEncoding.getCharset();
+
+        // if null charset, fall back on Java default charset
+        if (charset == null) charset = Charset.defaultCharset();
+        
         byte[] bytes = RubyEncoding.encode(value, charset);
 
         this.value = new ByteList(bytes, defaultEncoding, false);
