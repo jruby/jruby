@@ -383,7 +383,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         Encoding defaultEncoding = runtime.getEncodingService().getLocaleEncoding();
         if (defaultEncoding == null) defaultEncoding = UTF8;
 
-        charset = defaultEncoding.getCharset();
+        Charset charset = defaultEncoding.getCharset();
 
         // if null charset, fall back on Java default charset
         if (charset == null) charset = Charset.defaultCharset();
