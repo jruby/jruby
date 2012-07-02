@@ -247,44 +247,47 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         Class scriptClass = scriptObject.getClass();
         String typePath = p(scriptClass);
         String invokerPath = getCompiledCallbackName(typePath, method);
-        synchronized (syncObject) {
+        try {
             Class generatedClass = tryClass(invokerPath, scriptClass);
-
-            try {
-                if (generatedClass == null) {
-                    if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                        LOG.debug("no generated handle in classloader for: {}", invokerPath);
+            if (generatedClass == null) {
+                synchronized (syncObject) {
+                    // try again in case someone else loaded it under us
+                    generatedClass = tryClass(invokerPath, scriptClass);
+                    if (generatedClass == null) {
+                        if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
+                            LOG.debug("no generated handle in classloader for: {}", invokerPath);
+                        }
+                        byte[] invokerBytes = getCompiledMethodOffline(
+                                method,
+                                typePath,
+                                invokerPath,
+                                arity,
+                                scope,
+                                callConfig,
+                                position.getFile(),
+                                position.getStartLine());
+                        generatedClass = endCallWithBytes(invokerBytes, invokerPath);
                     }
-                    byte[] invokerBytes = getCompiledMethodOffline(
-                            method,
-                            typePath,
-                            invokerPath,
-                            arity,
-                            scope,
-                            callConfig,
-                            position.getFile(),
-                            position.getStartLine());
-                    generatedClass = endCallWithBytes(invokerBytes, invokerPath);
-                } else if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
-                    LOG.debug("found generated handle in classloader: {}", invokerPath);
                 }
-
-                CompiledMethod compiledMethod = (CompiledMethod)generatedClass.newInstance();
-                compiledMethod.init(implementationClass, arity, visibility, scope, scriptObject, callConfig, position, parameterDesc);
-
-                Class[] params;
-                if (arity.isFixed() && scope.getRequiredArgs() < 4) {
-                    params = StandardASMCompiler.getStaticMethodParams(scriptClass, scope.getRequiredArgs());
-                } else {
-                    params = StandardASMCompiler.getStaticMethodParams(scriptClass, 4);
-                }
-                compiledMethod.setNativeCall(scriptClass, method, IRubyObject.class, params, true);
-
-                return compiledMethod;
-            } catch(Exception e) {
-                e.printStackTrace();
-                throw implementationClass.getRuntime().newLoadError(e.getMessage());
+            } else if (RubyInstanceConfig.JIT_LOADING_DEBUG) {
+                LOG.debug("found generated handle in classloader: {}", invokerPath);
             }
+
+            CompiledMethod compiledMethod = (CompiledMethod)generatedClass.newInstance();
+            compiledMethod.init(implementationClass, arity, visibility, scope, scriptObject, callConfig, position, parameterDesc);
+
+            Class[] params;
+            if (arity.isFixed() && scope.getRequiredArgs() < 4) {
+                params = StandardASMCompiler.getStaticMethodParams(scriptClass, scope.getRequiredArgs());
+            } else {
+                params = StandardASMCompiler.getStaticMethodParams(scriptClass, 4);
+            }
+            compiledMethod.setNativeCall(scriptClass, method, IRubyObject.class, params, true);
+
+            return compiledMethod;
+        } catch(Exception e) {
+            e.printStackTrace();
+            throw implementationClass.getRuntime().newLoadError(e.getMessage());
         }
     }
 
@@ -700,32 +703,30 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         String javaMethodName = desc1.name;
         
         if (DEBUG) out.println("Binding multiple: " + desc1.declaringClassName + "." + javaMethodName);
-        
-        synchronized (syncObject) {
-            try {
-                Class c = getAnnotatedMethodClass(descs);
-                
-                DescriptorInfo info = new DescriptorInfo(descs);
-                if (DEBUG) out.println(" min: " + info.getMin() + ", max: " + info.getMax());
 
-                JavaMethod ic = (JavaMethod)c.getConstructor(new Class[]{RubyModule.class, Visibility.class}).newInstance(new Object[]{implementationClass, desc1.anno.visibility()});
+        try {
+            Class c = getAnnotatedMethodClass(descs);
 
-                TypePopulator.populateMethod(
-                        ic,
-                        Arity.optional().getValue(),
-                        javaMethodName,
-                        desc1.isStatic,
-                        CallConfiguration.getCallConfig(info.isFrame(), info.isScope()),
-                        desc1.anno.notImplemented(),
-                        desc1.getDeclaringClass(),
-                        desc1.name,
-                        desc1.getReturnClass(),
-                        desc1.getParameterClasses());
-                return ic;
-            } catch(Exception e) {
-                e.printStackTrace();
-                throw implementationClass.getRuntime().newLoadError(e.getMessage());
-            }
+            DescriptorInfo info = new DescriptorInfo(descs);
+            if (DEBUG) out.println(" min: " + info.getMin() + ", max: " + info.getMax());
+
+            JavaMethod ic = (JavaMethod)c.getConstructor(new Class[]{RubyModule.class, Visibility.class}).newInstance(new Object[]{implementationClass, desc1.anno.visibility()});
+
+            TypePopulator.populateMethod(
+                    ic,
+                    Arity.optional().getValue(),
+                    javaMethodName,
+                    desc1.isStatic,
+                    CallConfiguration.getCallConfig(info.isFrame(), info.isScope()),
+                    desc1.anno.notImplemented(),
+                    desc1.getDeclaringClass(),
+                    desc1.name,
+                    desc1.getReturnClass(),
+                    desc1.getParameterClasses());
+            return ic;
+        } catch(Exception e) {
+            e.printStackTrace();
+            throw implementationClass.getRuntime().newLoadError(e.getMessage());
         }
     }
 
@@ -758,50 +759,53 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
             generatedClassName += "_DBG";
         }
         String generatedClassPath = generatedClassName.replace('.', '/');
-        
-        synchronized (syncObject) {
-            Class c = tryClass(generatedClassName, desc1.getDeclaringClass());
 
-            DescriptorInfo info = new DescriptorInfo(descs);
-            if (DEBUG) out.println(" min: " + info.getMin() + ", max: " + info.getMax() + ", hasBlock: " + info.isBlock() + ", rest: " + info.isRest());
+        Class c = tryClass(generatedClassName, desc1.getDeclaringClass());
+        if (c == null) {
+            synchronized (syncObject) {
+                // try again
+                c = tryClass(generatedClassName, desc1.getDeclaringClass());
+                if (c == null) {
+                    DescriptorInfo info = new DescriptorInfo(descs);
+                    if (DEBUG) out.println(" min: " + info.getMin() + ", max: " + info.getMax() + ", hasBlock: " + info.isBlock() + ", rest: " + info.isRest());
 
-            if (c == null) {
-                Class superClass = null;
-                if (info.getMin() == -1) {
-                    // normal all-rest method
-                    if (info.isBlock()) {
-                        superClass = JavaMethod.JavaMethodNBlock.class;
-                    } else {
-                        superClass = JavaMethod.JavaMethodN.class;
-                    }
-                } else {
-                    if (info.isRest()) {
+                    Class superClass = null;
+                    if (info.getMin() == -1) {
+                        // normal all-rest method
                         if (info.isBlock()) {
-                            superClass = JavaMethod.BLOCK_REST_METHODS[info.getMin()][info.getMax()];
+                            superClass = JavaMethod.JavaMethodNBlock.class;
                         } else {
-                            superClass = JavaMethod.REST_METHODS[info.getMin()][info.getMax()];
+                            superClass = JavaMethod.JavaMethodN.class;
                         }
                     } else {
-                        if (info.isBlock()) {
-                            superClass = JavaMethod.BLOCK_METHODS[info.getMin()][info.getMax()];
+                        if (info.isRest()) {
+                            if (info.isBlock()) {
+                                superClass = JavaMethod.BLOCK_REST_METHODS[info.getMin()][info.getMax()];
+                            } else {
+                                superClass = JavaMethod.REST_METHODS[info.getMin()][info.getMax()];
+                            }
                         } else {
-                            superClass = JavaMethod.METHODS[info.getMin()][info.getMax()];
+                            if (info.isBlock()) {
+                                superClass = JavaMethod.BLOCK_METHODS[info.getMin()][info.getMax()];
+                            } else {
+                                superClass = JavaMethod.METHODS[info.getMin()][info.getMax()];
+                            }
                         }
                     }
+
+                    if (superClass == null) throw new RuntimeException("invalid multi combination");
+                    String superClassString = p(superClass);
+                    int dotIndex = desc1.declaringClassName.lastIndexOf('.');
+                    ClassWriter cw = createJavaMethodCtor(generatedClassPath, desc1.declaringClassName.substring(dotIndex + 1) + "$" + desc1.name, superClassString);
+
+                    addAnnotatedMethodInvoker(cw, "call", superClassString, descs);
+
+                    c = endClass(cw, generatedClassName);
                 }
-                
-                if (superClass == null) throw new RuntimeException("invalid multi combination");
-                String superClassString = p(superClass);
-                int dotIndex = desc1.declaringClassName.lastIndexOf('.');
-                ClassWriter cw = createJavaMethodCtor(generatedClassPath, desc1.declaringClassName.substring(dotIndex + 1) + "$" + desc1.name, superClassString);
-
-                addAnnotatedMethodInvoker(cw, "call", superClassString, descs);
-
-                c = endClass(cw, generatedClassName);
             }
-
-            return c;
         }
+
+        return c;
     }
 
     /**
@@ -812,29 +816,27 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
      */
     public DynamicMethod getAnnotatedMethod(RubyModule implementationClass, JavaMethodDescriptor desc) {
         String javaMethodName = desc.name;
-        
-        synchronized (syncObject) {
-            try {
-                Class c = getAnnotatedMethodClass(Arrays.asList(desc));
 
-                JavaMethod ic = (JavaMethod)c.getConstructor(new Class[]{RubyModule.class, Visibility.class}).newInstance(new Object[]{implementationClass, desc.anno.visibility()});
+        try {
+            Class c = getAnnotatedMethodClass(Arrays.asList(desc));
 
-                TypePopulator.populateMethod(
-                        ic,
-                        Arity.fromAnnotation(desc.anno, desc.actualRequired).getValue(),
-                        javaMethodName,
-                        desc.isStatic,
-                        CallConfiguration.getCallConfigByAnno(desc.anno),
-                        desc.anno.notImplemented(),
-                        desc.getDeclaringClass(),
-                        desc.name,
-                        desc.getReturnClass(),
-                        desc.getParameterClasses());
-                return ic;
-            } catch(Exception e) {
-                e.printStackTrace();
-                throw implementationClass.getRuntime().newLoadError(e.getMessage());
-            }
+            JavaMethod ic = (JavaMethod)c.getConstructor(new Class[]{RubyModule.class, Visibility.class}).newInstance(new Object[]{implementationClass, desc.anno.visibility()});
+
+            TypePopulator.populateMethod(
+                    ic,
+                    Arity.fromAnnotation(desc.anno, desc.actualRequired).getValue(),
+                    javaMethodName,
+                    desc.isStatic,
+                    CallConfiguration.getCallConfigByAnno(desc.anno),
+                    desc.anno.notImplemented(),
+                    desc.getDeclaringClass(),
+                    desc.name,
+                    desc.getReturnClass(),
+                    desc.getParameterClasses());
+            return ic;
+        } catch(Exception e) {
+            e.printStackTrace();
+            throw implementationClass.getRuntime().newLoadError(e.getMessage());
         }
     }
 
