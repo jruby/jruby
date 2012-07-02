@@ -30,28 +30,37 @@ public class CharsetTranscoder {
         add("CP50221");
     }};
     
-    /**
-     * This will try and transcode the supplied ByteList to the supplied toEncoding.  It will use
-     * forceEncoding as its encoding if it is supplied; otherwise it will use the encoding it has
-     * tucked away in the bytelist.  This will return a new copy of a ByteList in the request
-     * encoding or die trying (ConverterNotFound).
-     * 
-     * c: rb_str_conv_enc_opts
-     */
-    public static ByteList transcode(ThreadContext context, ByteList value, Encoding forceEncoding,
-            Encoding toEncoding, IRubyObject opts) {
-        if (toEncoding == null) return value;
-        Ruby runtime = context.getRuntime();
+    private Encoding toEncoding;
+    private String toName;
+    private CodingErrorActions actions;
+    private Encoding forceEncoding = null;
+    
+    public CharsetTranscoder(ThreadContext context, Encoding toEncoding, IRubyObject options) {
+        this.toEncoding = toEncoding;
+        toName = toEncoding.toString();
+        actions = getCodingErrorActions(context, options);
+    }
+    
+    public CharsetTranscoder(ThreadContext context, Encoding toEncoding, Encoding forceEncoding, IRubyObject options) {
+        this(context, toEncoding, options);
+        
+        this.forceEncoding = forceEncoding;
+    }
+    
+    public ByteList transcode(ThreadContext context, ByteList value) {
         Encoding fromEncoding = forceEncoding != null ? forceEncoding : value.getEncoding();
-
+        
+        return transcode(context.runtime, value, fromEncoding);
+    }
+    
+    protected ByteList transcode(Ruby runtime, ByteList value, Encoding fromEncoding) {
         String fromName = fromEncoding.toString();
-        String toName = toEncoding.toString();
 
-        Charset from = transcodeCharsetFor(runtime, fromEncoding, fromEncoding.toString(), toEncoding.toString());
-        Charset to = transcodeCharsetFor(runtime, toEncoding, fromEncoding.toString(), toEncoding.toString());
+        Charset from = transcodeCharsetFor(runtime, fromEncoding, fromName, toName);
+        Charset to = transcodeCharsetFor(runtime, toEncoding, fromName, toName);
 
-        CharsetEncoder encoder = getCharsetEncoder(context, to, opts);
-        CharsetDecoder decoder = getCharsetDecoder(context, from, opts);
+        CharsetEncoder encoder = getCharsetEncoder(to);
+        CharsetDecoder decoder = getCharsetDecoder(from);
 
         ByteBuffer fromBytes = ByteBuffer.wrap(value.getUnsafeBytes(), value.begin(), value.length());
 
@@ -76,7 +85,22 @@ public class CharsetTranscoder {
                     toBytes.limit() - toBytes.arrayOffset(), toEncoding, false);
         } catch (CharacterCodingException e) {
             throw runtime.newUndefinedConversionError(e.getLocalizedMessage());
-        }
+        }        
+    }
+
+    /**
+     * This will try and transcode the supplied ByteList to the supplied toEncoding.  It will use
+     * forceEncoding as its encoding if it is supplied; otherwise it will use the encoding it has
+     * tucked away in the bytelist.  This will return a new copy of a ByteList in the request
+     * encoding or die trying (ConverterNotFound).
+     * 
+     * c: rb_str_conv_enc_opts
+     */
+    public static ByteList transcode(ThreadContext context, ByteList value, Encoding forceEncoding,
+            Encoding toEncoding, IRubyObject opts) {
+        if (toEncoding == null) return value;
+        
+        return new CharsetTranscoder(context, toEncoding, forceEncoding, opts).transcode(context, value);
     }
 
     private static class CodingErrorActions {
@@ -154,10 +178,9 @@ public class CharsetTranscoder {
              */
     }    
 
-    private static CharsetDecoder getCharsetDecoder(ThreadContext context, Charset charset, IRubyObject opts) {
+    private CharsetDecoder getCharsetDecoder(Charset charset) {
         CharsetDecoder decoder = charset.newDecoder();
 
-        CodingErrorActions actions = getCodingErrorActions(context, opts);
         decoder.onUnmappableCharacter(actions.onUnmappableCharacter);
         decoder.onMalformedInput(actions.onMalformedInput);
         
@@ -166,10 +189,9 @@ public class CharsetTranscoder {
         return decoder;
     }
 
-    private static CharsetEncoder getCharsetEncoder(ThreadContext context, Charset charset, IRubyObject opts) {
+    private CharsetEncoder getCharsetEncoder(Charset charset) {
         CharsetEncoder encoder = charset.newEncoder();
 
-        CodingErrorActions actions = getCodingErrorActions(context, opts);
         encoder.onUnmappableCharacter(actions.onUnmappableCharacter);
         encoder.onMalformedInput(actions.onMalformedInput);
         if (actions.replaceWith != null) {
