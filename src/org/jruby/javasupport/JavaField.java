@@ -213,7 +213,7 @@ public class JavaField extends JavaAccessibleObject {
         return getRuntime().newString(field.getName());
     }
     
-    protected AccessibleObject accessibleObject() {
+    public AccessibleObject accessibleObject() {
         return field;
     }
 }

@@ -69,7 +69,6 @@ import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.RubyUnboundMethod;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.java.util.SystemPropertiesMap;
 import org.jruby.javasupport.proxy.JavaProxyClass;
 import org.jruby.javasupport.proxy.JavaProxyConstructor;
 import org.jruby.javasupport.util.RuntimeHelpers;
@@ -720,7 +719,7 @@ public class Java implements Library {
     }
 
     private static IRubyObject setupJavaSubclass(ThreadContext context, IRubyObject subclass, IRubyObject java_class) {
-        Ruby runtime = context.getRuntime();
+        final Ruby runtime = context.getRuntime();
 
         if (!(subclass instanceof RubyClass)) {
             throw runtime.newTypeError(subclass, runtime.getClassClass());
@@ -763,15 +762,15 @@ public class Java implements Library {
                 }
                 
                 if (forArity.size() == 0) {
-                    throw context.getRuntime().newArgumentError("wrong number of arguments for constructor");
+                    throw runtime.newArgumentError("wrong number of arguments for constructor");
                 }
 
                 JavaProxyConstructor matching = (JavaProxyConstructor)CallableSelector.matchingCallableArityN(
-                        methodCache,
+                        runtime, methodCache,
                         forArity.toArray(new JavaProxyConstructor[forArity.size()]), args, args.length);
 
                 if (matching == null) {
-                    throw context.getRuntime().newArgumentError("wrong number of arguments for constructor");
+                    throw runtime.newArgumentError("wrong number of arguments for constructor");
                 }
 
                 Object[] newArgs = new Object[args.length];

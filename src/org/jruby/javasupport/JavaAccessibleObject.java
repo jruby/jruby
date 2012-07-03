@@ -50,7 +50,7 @@ public abstract class JavaAccessibleObject extends RubyObject {
         result.defineAnnotatedMethods(JavaAccessibleObject.class);
     }
 
-    protected abstract AccessibleObject accessibleObject();
+    public abstract AccessibleObject accessibleObject();
 
     public boolean equals(Object other) {
         return other instanceof JavaAccessibleObject &&

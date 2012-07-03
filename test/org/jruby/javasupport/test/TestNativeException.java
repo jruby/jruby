@@ -45,7 +45,7 @@ public class TestNativeException extends TestRubyBase {
     }
 
     public void testCauseIsProxied() throws Exception {
-        String result = eval("require 'java'\n" +
+        String result = eval("$-w = nil; require 'java'\n" +
                 "java_import('java.io.File') { 'JFile' }\n" +
                 "begin\n" +
                 "  JFile.new(nil)\n" +

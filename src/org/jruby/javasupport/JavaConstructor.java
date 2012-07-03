@@ -171,7 +171,7 @@ public class JavaConstructor extends JavaCallable {
         return constructor.toGenericString();
     }
 
-    protected AccessibleObject accessibleObject() {
+    public AccessibleObject accessibleObject() {
         return constructor;
     }
     

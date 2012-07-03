@@ -593,7 +593,7 @@ public class JavaMethod extends JavaCallable {
         return method.toGenericString();
     }
 
-    protected AccessibleObject accessibleObject() {
+    public AccessibleObject accessibleObject() {
         return method;
     }
 

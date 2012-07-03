@@ -1,5 +1,6 @@
 package org.jruby.java.dispatch;
 
+import java.lang.reflect.Member;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -25,11 +26,11 @@ import org.jruby.util.CodegenUtils;
  * Method selection logic for calling from Ruby to Java.
  */
 public class CallableSelector {
-    public static ParameterTypes matchingCallableArityN(Map cache, ParameterTypes[] methods, IRubyObject[] args, int argsLength) {
+    public static ParameterTypes matchingCallableArityN(Ruby runtime, Map cache, ParameterTypes[] methods, IRubyObject[] args, int argsLength) {
         int signatureCode = argsHashCode(args);
         ParameterTypes method = (ParameterTypes)cache.get(signatureCode);
         if (method == null) {
-            method = findMatchingCallableForArgs(cache, signatureCode, methods, args);
+            method = findMatchingCallableForArgs(runtime, cache, signatureCode, methods, args);
         }
         return method;
     }
@@ -37,52 +38,54 @@ public class CallableSelector {
     // NOTE: The five match methods are arity-split to avoid the cost of boxing arguments
     // when there's already a cached match. Do not condense them into a single
     // method.
-    public static JavaCallable matchingCallableArityN(Map cache, JavaCallable[] methods, IRubyObject[] args, int argsLength) {
+    public static JavaCallable matchingCallableArityN(Ruby runtime, Map cache, JavaCallable[] methods, IRubyObject[] args, int argsLength) {
         int signatureCode = argsHashCode(args);
         JavaCallable method = (JavaCallable)cache.get(signatureCode);
         if (method == null) {
-            method = (JavaCallable)findMatchingCallableForArgs(cache, signatureCode, methods, args);
+            method = (JavaCallable)findMatchingCallableForArgs(runtime, cache, signatureCode, methods, args);
         }
         return method;
     }
 
-    public static JavaCallable matchingCallableArityOne(Map cache, JavaCallable[] methods, IRubyObject arg0) {
+    public static JavaCallable matchingCallableArityOne(Ruby runtime, Map cache, JavaCallable[] methods, IRubyObject arg0) {
         int signatureCode = argsHashCode(arg0);
         JavaCallable method = (JavaCallable)cache.get(signatureCode);
         if (method == null) {
-            method = (JavaCallable)findMatchingCallableForArgs(cache, signatureCode, methods, arg0);
+            method = (JavaCallable)findMatchingCallableForArgs(runtime, cache, signatureCode, methods, arg0);
         }
         return method;
     }
 
-    public static JavaCallable matchingCallableArityTwo(Map cache, JavaCallable[] methods, IRubyObject arg0, IRubyObject arg1) {
+    public static JavaCallable matchingCallableArityTwo(Ruby runtime, Map cache, JavaCallable[] methods, IRubyObject arg0, IRubyObject arg1) {
         int signatureCode = argsHashCode(arg0, arg1);
         JavaCallable method = (JavaCallable)cache.get(signatureCode);
         if (method == null) {
-            method = (JavaCallable)findMatchingCallableForArgs(cache, signatureCode, methods, arg0, arg1);
+            method = (JavaCallable)findMatchingCallableForArgs(runtime, cache, signatureCode, methods, arg0, arg1);
         }
         return method;
     }
 
-    public static JavaCallable matchingCallableArityThree(Map cache, JavaCallable[] methods, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
+    public static JavaCallable matchingCallableArityThree(Ruby runtime, Map cache, JavaCallable[] methods, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
         int signatureCode = argsHashCode(arg0, arg1, arg2);
         JavaCallable method = (JavaCallable)cache.get(signatureCode);
         if (method == null) {
-            method = (JavaCallable)findMatchingCallableForArgs(cache, signatureCode, methods, arg0, arg1, arg2);
+            method = (JavaCallable)findMatchingCallableForArgs(runtime, cache, signatureCode, methods, arg0, arg1, arg2);
         }
         return method;
     }
 
-    public static JavaCallable matchingCallableArityFour(Map cache, JavaCallable[] methods, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
+    public static JavaCallable matchingCallableArityFour(Ruby runtime, Map cache, JavaCallable[] methods, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
         int signatureCode = argsHashCode(arg0, arg1, arg2, arg3);
         JavaCallable method = (JavaCallable)cache.get(signatureCode);
         if (method == null) {
-            method = (JavaCallable)findMatchingCallableForArgs(cache, signatureCode, methods, arg0, arg1, arg2, arg3);
+            method = (JavaCallable)findMatchingCallableForArgs(runtime, cache, signatureCode, methods, arg0, arg1, arg2, arg3);
         }
         return method;
     }
 
-    private static ParameterTypes findMatchingCallableForArgs(Map cache, int signatureCode, ParameterTypes[] methods, IRubyObject... args) {
+    private static final boolean DEBUG = true;
+
+    private static ParameterTypes findMatchingCallableForArgs(Ruby runtime, Map cache, int signatureCode, ParameterTypes[] methods, IRubyObject... args) {
         ParameterTypes method = null;
 
         // try the new way first
@@ -94,20 +97,41 @@ public class CallableSelector {
             } else {
                 // narrow to most specific version (or first version, if none are more specific
                 ParameterTypes mostSpecific = null;
-                for (ParameterTypes candidate : newFinds) {
-                    if (mostSpecific == null) mostSpecific = candidate;
+                Class[] msTypes = null;
+                boolean ambiguous = false;
+                OUTER: for (ParameterTypes candidate : newFinds) {
+                    if (mostSpecific == null) {
+                        mostSpecific = candidate;
+                        msTypes = mostSpecific.getParameterTypes();
+                        continue;
+                    }
 
-                    Class[] msTypes = mostSpecific.getParameterTypes();
                     Class[] cTypes = candidate.getParameterTypes();
 
                     for (int i = 0; i < msTypes.length; i++) {
                         if (msTypes[i] != cTypes[i] && msTypes[i].isAssignableFrom(cTypes[i])) {
                             mostSpecific = candidate;
-                            continue;
+                            msTypes = cTypes;
+                            ambiguous = false;
+                            continue OUTER;
+                        }
+                    }
+
+                    // none more specific; check for ambiguities
+                    for (int i = 0; i < msTypes.length; i++) {
+                        if (msTypes[i] != cTypes[i] && !msTypes[i].isAssignableFrom(cTypes[i]) && !cTypes[i].isAssignableFrom(msTypes[i])) {
+                            ambiguous = true;
+                        } else {
+                            ambiguous = false;
+                            continue OUTER;
                         }
                     }
                 }
                 method = mostSpecific;
+
+                if (ambiguous) {
+                    runtime.getWarnings().warn("ambiguous Java methods found, using " + ((Member) ((JavaCallable) method).accessibleObject()).getName() + CodegenUtils.prettyParams(msTypes));
+                }
             }
         }
 
