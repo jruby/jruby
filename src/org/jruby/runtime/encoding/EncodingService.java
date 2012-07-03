@@ -11,6 +11,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyConverter;
 import org.jruby.RubyEncoding;
 import org.jruby.exceptions.MainExitException;
+import org.jruby.platform.Platform;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
@@ -89,6 +90,8 @@ public final class EncodingService {
      * @return console codepage
      */
     private Encoding getConsoleEncoding() {
+        if (!Platform.IS_WINDOWS) return null;
+
         Encoding consoleEncoding = null;
         try {
             Console console = System.console();
@@ -100,7 +103,7 @@ public final class EncodingService {
                 consoleEncoding = loadEncoding(ByteList.create(cs.name()));
             }
         } catch (Throwable e) { // to cover both Exceptions and Errors
-            throw runtime.newEncodingError("unable to load console encoding, caused by " + e.getMessage());
+            // just fall back on local encoding above
         }
         return consoleEncoding;
     }
