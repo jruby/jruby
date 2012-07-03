@@ -644,7 +644,7 @@ public class RubyIO extends RubyObject {
     }
     /**
      * getline using logic of gets.  If limit is -1 then read unlimited amount.
-     *
+     * mri: rb_io_getline_1 (mostly)
      */
     private IRubyObject getlineInner(Ruby runtime, ByteList separator, long limit, ByteListCache cache) {
         try {
@@ -1381,7 +1381,9 @@ public class RubyIO extends RubyObject {
         boolean eagain = false;
         Stream writeStream = openFile.getWriteStream();
         
-        buffer = doWriteConversion(getRuntime().getCurrentContext(), buffer);
+        if (getRuntime().is1_9()) {
+            buffer = doWriteConversion(getRuntime().getCurrentContext(), buffer);
+        }
 
         int len = buffer.length();
         
@@ -2526,6 +2528,7 @@ public class RubyIO extends RubyObject {
         }
     }
     
+    // MRI: NEED_NEWLINE_DECORATOR_ON_READ_CHECK
     private void readCheck(Stream stream) {
         if (!stream.readDataBuffered()) {
             openFile.checkClosed(getRuntime());
@@ -4576,6 +4579,11 @@ public class RubyIO extends RubyObject {
         makeWriteConversion(context);
         
         return transcoder.transcode(context, str);
+    }
+    
+    // MRI: NEED_READCONF (FIXME: Windows has slightly different version)
+    private boolean needsReadConversion() {
+        return writeEncoding != null || openFile.isTextMode();
     }
     
     // MRI: NEED_WRITECONV (FIXME: Windows has slightly different version)
