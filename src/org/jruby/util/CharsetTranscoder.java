@@ -117,7 +117,7 @@ public class CharsetTranscoder {
     }
     
    private static CodingErrorActions getCodingErrorActions(ThreadContext context, IRubyObject opts) {
-        if (opts.isNil()) {
+        if (opts == null || opts.isNil()) {
             return new CodingErrorActions(CodingErrorAction.REPORT,
                     CodingErrorAction.REPORT, null);
         } 

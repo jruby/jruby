@@ -1380,6 +1380,8 @@ public class RubyIO extends RubyObject {
         int n, r, l, offset = 0;
         boolean eagain = false;
         Stream writeStream = openFile.getWriteStream();
+        
+        buffer = doWriteConversion(getRuntime().getCurrentContext(), buffer);
 
         int len = buffer.length();
         
@@ -4277,6 +4279,8 @@ public class RubyIO extends RubyObject {
         externalEncoding = external;
         if (internal == externalEncoding) return;
         internalEncoding = internal;
+        
+        setupReadWriteEncodings(getRuntime().getCurrentContext());
     }
 
     // io_strip_bom
@@ -4569,8 +4573,9 @@ public class RubyIO extends RubyObject {
         if (!needsWriteConversion(context)) return str;
         
         // openFile.setBinmode(); // In MRI this does not affect flags like we do in OpenFile
+        makeWriteConversion(context);
         
-        return str;
+        return transcoder.transcode(context, str);
     }
     
     // MRI: NEED_WRITECONV (FIXME: Windows has slightly different version)
@@ -4582,6 +4587,46 @@ public class RubyIO extends RubyObject {
         // ||  ((ecflags & (DECORATOR_MASK|STATEFUL_DECORATOR_MASK)) != 0);
     }
     
+    // MRI: make_writeconv
+    // Actually this is quite a bit different and simpler for now.
+    private void makeWriteConversion(ThreadContext context) {
+        if (transcoder != null) return;
+        
+        Encoding ascii8bit = context.runtime.getEncodingService().getAscii8bitEncoding();
+        
+        if (readEncoding == null || (readEncoding == ascii8bit  && writeEncoding == null)) { // No encoding conversion
+            // Leave for extra MRI bittwiddling which is missing from our IO
+            // Hack to initialize transcoder but do no transcoding
+            transcoder = new CharsetTranscoder(context, ascii8bit, ascii8bit, null);
+        } else {
+            transcoder = new CharsetTranscoder(context, readEncoding, writeEncoding, null);
+        }
+    }
+    
+    // MRI: rb_io_ext_int_to_encs
+    private void setupReadWriteEncodings(ThreadContext context) {
+        Encoding ascii8bit = context.runtime.getEncodingService().getAscii8bitEncoding();
+        boolean defaultExternal = false;
+        
+        if (externalEncoding == null) {
+            externalEncoding = context.runtime.getDefaultExternalEncoding();
+            defaultExternal = true;
+        }
+        
+        if (internalEncoding == null && externalEncoding != ascii8bit) {
+            internalEncoding = context.runtime.getDefaultInternalEncoding();
+        }
+        
+        if (internalEncoding == null || internalEncoding == externalEncoding) { // missing internal == nil?
+            readEncoding = (defaultExternal && internalEncoding != externalEncoding) ? null : externalEncoding;
+            writeEncoding = null;
+        } else {
+            readEncoding = internalEncoding;
+            writeEncoding = externalEncoding;
+        }
+    }
+    
+    protected CharsetTranscoder transcoder = null;
     protected OpenFile openFile;
     protected List<RubyThread> blockingThreads;
     protected Encoding externalEncoding;
