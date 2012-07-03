@@ -31,6 +31,9 @@ import org.joni.WarnCallback;
 import org.jruby.Ruby;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.ThreadContext;
+import org.jruby.runtime.backtrace.BacktraceData;
+import org.jruby.runtime.backtrace.RubyStackTraceElement;
+import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.builtin.IRubyObject;
 
 import java.util.HashSet;
@@ -63,6 +66,8 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
      * Prints a warning, unless $VERBOSE is nil.
      */
     public void warn(ID id, ISourcePosition position, String message) {
+        if (!runtime.warningsEnabled()) return;
+
         warn(id, position.getFile(), position.getStartLine(), message);
     }
 
@@ -70,7 +75,7 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
      * Prints a warning, unless $VERBOSE is nil.
      */
     public void warn(ID id, String fileName, int lineNumber, String message) {
-        if (!runtime.warningsEnabled()) return; // TODO make an assert here
+        if (!runtime.warningsEnabled()) return;
 
         StringBuilder buffer = new StringBuilder(100);
 
@@ -81,11 +86,25 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
     }
 
     public void warn(ID id, String message) {
-        ThreadContext context = runtime.getCurrentContext();
-        warn(id, context.getFile(), context.getLine(), message);
+        if (!runtime.warningsEnabled()) return;
+
+        RubyStackTraceElement[] stack = getRubyStackTrace(runtime);
+        String file;
+        int line;
+
+        if (stack.length == 0) {
+            file = "(unknown)";
+            line = -1;
+        } else {
+            file = stack[0].getFileName();
+            line = stack[0].getLineNumber();
+        }
+
+        warn(id, file, line, message);
     }
     
     public void warnOnce(ID id, String message) {
+        if (!runtime.warningsEnabled()) return;
         if (oncelers.contains(id)) return;
 
         oncelers.add(id);
@@ -97,18 +116,35 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
      * before calling them
      */
     public void warning(String message) {
+        if (!runtime.warningsEnabled()) return;
+
         warning(ID.MISCELLANEOUS, message);
     }
 
     public void warning(ID id, String message) {
-        ThreadContext context = runtime.getCurrentContext();
-        warning(id, context.getFile(), context.getLine(), message);
+        if (!runtime.warningsEnabled()) return;
+
+        RubyStackTraceElement[] stack = getRubyStackTrace(runtime);
+        String file;
+        int line;
+
+        if (stack.length == 0) {
+            file = "(unknown)";
+            line = -1;
+        } else {
+            file = stack[0].getFileName();
+            line = stack[0].getLineNumber();
+        }
+
+        warning(id, file, line, message);
     }
 
     /**
      * Prints a warning, only in verbose mode.
      */
     public void warning(ID id, ISourcePosition position, String message) {
+        if (!runtime.warningsEnabled()) return;
+
         warning(id, position.getFile(), position.getStartLine(), message);
     }
 
@@ -116,8 +152,18 @@ public class RubyWarnings implements IRubyWarnings, WarnCallback {
      * Prints a warning, only in verbose mode.
      */
     public void warning(ID id, String fileName, int lineNumber, String message) {
-        assert isVerbose(); 
+        assert isVerbose();
+
+        if (!runtime.warningsEnabled()) return;
+
         warn(id, fileName, lineNumber, message);
+    }
+
+    private static RubyStackTraceElement[] getRubyStackTrace(Ruby runtime) {
+        ThreadContext context = runtime.getCurrentContext();
+        RubyStackTraceElement[] stack = context.createWarningBacktrace(runtime);
+
+        return stack;
     }
 
     @Deprecated

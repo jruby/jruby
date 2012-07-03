@@ -702,7 +702,7 @@ public final class ThreadContext {
     }
     
     /**
-     * Create an Array with backtrace information.
+     * Create an Array with backtrace information for Kernel#caller
      * @param runtime
      * @param level
      * @return an Array with the backtrace
@@ -710,7 +710,7 @@ public final class ThreadContext {
     public IRubyObject createCallerBacktrace(Ruby runtime, int level) {
         runtime.incrementCallerCount();
         
-        RubyStackTraceElement[] trace = gatherCallerBacktrace(level);
+        RubyStackTraceElement[] trace = gatherCallerBacktrace();
         
         RubyArray newTrace = runtime.newArray(trace.length - level);
 
@@ -722,8 +722,23 @@ public final class ThreadContext {
         
         return newTrace;
     }
+
+    /**
+     * Create an Array with backtrace information for a built-in warning
+     * @param runtime
+     * @return an Array with the backtrace
+     */
+    public RubyStackTraceElement[] createWarningBacktrace(Ruby runtime) {
+        runtime.incrementWarningCount();
+
+        RubyStackTraceElement[] trace = gatherCallerBacktrace();
+
+        if (RubyInstanceConfig.LOG_WARNINGS) TraceType.dumpWarning(trace);
+
+        return trace;
+    }
     
-    public RubyStackTraceElement[] gatherCallerBacktrace(int level) {
+    public RubyStackTraceElement[] gatherCallerBacktrace() {
         Thread nativeThread = thread.getNativeThread();
 
         // Future thread or otherwise unforthgiving thread impl.

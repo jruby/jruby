@@ -1600,6 +1600,7 @@ public class RubyInstanceConfig {
     public static final boolean LOG_EXCEPTIONS = Options.LOG_EXCEPTIONS.load();
     public static final boolean LOG_BACKTRACES = Options.LOG_BACKTRACES.load();
     public static final boolean LOG_CALLERS = Options.LOG_CALLERS.load();
+    public static final boolean LOG_WARNINGS = Options.LOG_WARNINGS.load();
     
     public static final boolean ERRNO_BACKTRACE = Options.ERRNO_BACKTRACE.load();
     

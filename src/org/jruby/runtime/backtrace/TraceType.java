@@ -3,6 +3,7 @@ package org.jruby.runtime.backtrace;
 import java.io.ByteArrayOutputStream;
 import java.io.FileDescriptor;
 import java.io.PrintStream;
+import java.util.Arrays;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -71,6 +72,10 @@ public class TraceType {
     
     public static void dumpCaller(RubyArray trace) {
         LOG.info("Caller backtrace generated:\n" + trace);
+    }
+
+    public static void dumpWarning(RubyStackTraceElement[] trace) {
+        LOG.info("Warning backtrace generated:\n" + Arrays.toString(trace));
     }
 
     public static TraceType traceTypeFor(String style) {
