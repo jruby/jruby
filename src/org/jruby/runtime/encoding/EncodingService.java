@@ -14,6 +14,8 @@ import org.jruby.exceptions.MainExitException;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 
+import java.io.Console;
+import java.lang.reflect.Field;
 import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.Iterator;
@@ -65,7 +67,9 @@ public final class EncodingService {
                 if (loadedEncoding == null) throw new MainExitException(1, "unknown encoding name - " + encoding);
                 runtime.setDefaultExternalEncoding(loadedEncoding);
             } else {
-                runtime.setDefaultExternalEncoding(getLocaleEncoding());
+                Encoding consoleEncoding = getConsoleEncoding();
+                Encoding availableEncoding = consoleEncoding == null ? getLocaleEncoding() : consoleEncoding;
+                runtime.setDefaultExternalEncoding(availableEncoding);
             }
 
             encoding = runtime.getInstanceConfig().getInternalEncoding();
@@ -75,6 +79,30 @@ public final class EncodingService {
                 runtime.setDefaultInternalEncoding(loadedEncoding);
             }
         }
+    }
+
+    /**
+     * Since Java 1.6, class {@link java.io.Console} is available.
+     * But the encoding or codepage of the underlying connected
+     * console is currently private. Had to use Reflection to get it.
+     *
+     * @return console codepage
+     */
+    private Encoding getConsoleEncoding() {
+        Encoding consoleEncoding = null;
+        try {
+            Console console = System.console();
+            if (console != null) {
+                final String CONSOLE_CHARSET = "cs";
+                Field fcs = Console.class.getDeclaredField(CONSOLE_CHARSET);
+                fcs.setAccessible(true);
+                Charset cs = (Charset) fcs.get(console);
+                consoleEncoding = loadEncoding(ByteList.create(cs.name()));
+            }
+        } catch (Throwable e) { // to cover both Exceptions and Errors
+            throw runtime.newEncodingError("unable to load console encoding, caused by " + e.getMessage());
+        }
+        return consoleEncoding;
     }
 
     public Encoding getAscii8bitEncoding() {
