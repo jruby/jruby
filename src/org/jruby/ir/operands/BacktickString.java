@@ -84,4 +84,9 @@ public class BacktickString extends Operand {
     public void visit(IRVisitor visitor) {
         visitor.BacktickString(this);
     }
+    
+    @Override
+    public String toString() {
+        return "`" + (pieces == null ? "[]" : pieces) + "`";
+    }
 }

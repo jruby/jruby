@@ -22,7 +22,7 @@ public class Symbol extends Reference {
 
     @Override
     public String toString() {
-        return ":" + getName();
+        return ":'" + getName() + "'";
     }
 
     @Override

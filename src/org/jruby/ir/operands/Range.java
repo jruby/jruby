@@ -28,7 +28,7 @@ public class Range extends Operand {
 
     @Override
     public String toString() {
-        return "(" + begin + (exclusive ? ".." : "...") + end + "):Range";
+        return begin + (exclusive ? ".." : "...") + end;
     }
 
 // ---------- These methods below are used during compile-time optimizations ------- 

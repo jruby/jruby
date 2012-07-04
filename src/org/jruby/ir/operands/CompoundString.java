@@ -46,7 +46,7 @@ public class CompoundString extends Operand {
 
     @Override
     public String toString() {
-        return "COMPOUND_STRING" + (pieces == null ? "" : java.util.Arrays.toString(pieces.toArray()));
+        return "CompoundString:" + (encoding == null? "" : encoding) + (pieces == null ? "[]" : java.util.Arrays.toString(pieces.toArray()));
     }
 
     @Override

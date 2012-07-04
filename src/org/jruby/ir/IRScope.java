@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+
 import org.jruby.RubyModule;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.ir.dataflow.DataFlowProblem;
@@ -16,15 +17,15 @@ import org.jruby.ir.instructions.GetGlobalVariableInstr;
 import org.jruby.ir.instructions.Instr;
 import org.jruby.ir.instructions.PutGlobalVarInstr;
 import org.jruby.ir.instructions.ReceiveSelfInstr;
-import org.jruby.ir.instructions.ReceiveSelfInstr;
 import org.jruby.ir.instructions.ResultInstr;
 import org.jruby.ir.instructions.Specializeable;
 import org.jruby.ir.instructions.ThreadPollInstr;
-import org.jruby.ir.instructions.ZSuperInstr;
+import org.jruby.ir.operands.CurrentScope;
 import org.jruby.ir.operands.GlobalVariable;
 import org.jruby.ir.operands.Label;
 import org.jruby.ir.operands.LocalVariable;
 import org.jruby.ir.operands.Operand;
+import org.jruby.ir.operands.ScopeModule;
 import org.jruby.ir.operands.Self;
 import org.jruby.ir.operands.TemporaryVariable;
 import org.jruby.ir.operands.Variable;
@@ -807,6 +808,20 @@ public abstract class IRScope {
             b.append("------------------------------------------------\n");
         }
 
+        return b.toString();
+    }
+    
+    public String toPersistableString() {
+        StringBuilder b = new StringBuilder();
+
+        b.append("Scope:<");
+        b.append(name);
+        b.append(">");
+        for (Instr instr : instrList) {
+            b.append("\n");
+            b.append(instr);
+        }
+        
         return b.toString();
     }
 

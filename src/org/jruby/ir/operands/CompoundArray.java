@@ -34,7 +34,7 @@ public class CompoundArray extends Operand {
 
     public boolean hasKnownValue() { return false; /*return a1.isConstant() && a2.isConstant();*/ }
 
-    public String toString() { return (isArgsPush ? "ArgsPush[" : "ArgsCat[") + a1 + ", " + a2 + "]"; }
+    public String toString() { return (isArgsPush ? "ArgsPush:[" : "ArgsCat:[") + a1 + ", " + a2 + "]"; }
 
     public Operand getAppendedArg() { return a2; }
 

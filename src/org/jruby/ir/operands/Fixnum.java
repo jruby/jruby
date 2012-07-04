@@ -43,7 +43,7 @@ public class Fixnum extends ImmutableLiteral {
 
     @Override
     public String toString() { 
-        return value + ":fixnum";
+        return "Fixnum:" + value;
     }
 
 // ---------- These methods below are used during compile-time optimizations ------- 

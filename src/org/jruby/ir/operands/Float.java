@@ -22,7 +22,7 @@ public class Float extends ImmutableLiteral {
 
     @Override
     public String toString() {
-        return value + ":float";
+        return "Float:" + value;
     }
 
     public Operand computeValue(String methodName, Operand arg) {

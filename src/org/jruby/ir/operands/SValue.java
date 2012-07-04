@@ -34,7 +34,7 @@ public class SValue extends Operand {
 
     @Override
     public String toString() {
-        return "SValue(" + array + ")";
+        return "SValue:" + array;
     }
 
     @Override

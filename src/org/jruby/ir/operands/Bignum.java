@@ -40,7 +40,7 @@ public class Bignum extends ImmutableLiteral {
 
     @Override
     public String toString() { 
-        return value + ":bignum";
+        return "Bignum:" + value;
     }
 
     @Override
