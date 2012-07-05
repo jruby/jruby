@@ -86,8 +86,8 @@ public class ReflectedJavaMethod extends JavaMethod {
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name,
             IRubyObject[] args, Block block) {
-        Ruby runtime = context.getRuntime();
-        Arity.checkArgumentCount(runtime, args, required, max);
+        Ruby runtime = context.runtime;
+        Arity.checkArgumentCount(runtime, name, args, required, max);
         
         callConfig.pre(context, self, getImplementationClass(), name, block, null);
         

@@ -170,7 +170,6 @@ public class RubyUNIXSocket extends RubyBasicSocket {
     @JRubyMethod(name = {"socketpair", "pair"}, optional = 2, meta = true)
     public static IRubyObject socketpair(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.getRuntime();
-        Arity.checkArgumentCount(runtime, args, 0, 2);
 
         // TODO: type and protocol
 

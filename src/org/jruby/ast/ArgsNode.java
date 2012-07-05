@@ -397,10 +397,12 @@ public class ArgsNode extends Node {
         if (getBlock() != null) processBlockArg(scope, runtime, block);
     }
 
-
     public void checkArgCount(Ruby runtime, int argsLength) {
-//        arity.checkArity(runtime, argsLength);
         Arity.checkArgumentCount(runtime, argsLength, requiredArgsCount, maxArgsCount);
+    }
+
+    public void checkArgCount(Ruby runtime, String name, int argsLength) {
+        Arity.checkArgumentCount(runtime, name, argsLength, requiredArgsCount, maxArgsCount);
     }
 
     protected void prepareOptOrRestArgs(ThreadContext context, Ruby runtime, DynamicScope scope,

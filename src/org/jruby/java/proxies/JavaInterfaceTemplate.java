@@ -355,7 +355,7 @@ public class JavaInterfaceTemplate {
                 new org.jruby.internal.runtime.methods.JavaMethod(implClass, Visibility.PUBLIC) {
                     @Override
                     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-                        Arity.checkArgumentCount(context.getRuntime(), args.length, 1, -1);
+                        Arity.checkArgumentCount(context.runtime, name, args.length, 1, -1);
 
                         if (methodNames == null || methodNames.include_p(context, args[0]).isTrue()) {
                             return implBlock.call(context, args);

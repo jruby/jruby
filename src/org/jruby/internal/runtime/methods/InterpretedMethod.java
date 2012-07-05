@@ -106,7 +106,7 @@ public class InterpretedMethod extends DynamicMethod implements MethodArgs, Posi
 
         try {
             pre(context, name, self, block, runtime);
-            argsNode.checkArgCount(runtime, args.length);
+            argsNode.checkArgCount(runtime, name, args.length);
             argsNode.prepare(context, runtime, self, args, block);
 
             return ASTInterpreter.INTERPRET_METHOD(runtime, context, file, line, getImplementationClass(), body, name, self, block, isTraceable());
@@ -133,7 +133,7 @@ public class InterpretedMethod extends DynamicMethod implements MethodArgs, Posi
 
         try {
             pre(context, name, self, Block.NULL_BLOCK, runtime);
-            argsNode.checkArgCount(runtime, 0);
+            argsNode.checkArgCount(runtime, name, 0);
             argsNode.prepare(context, runtime, self, Block.NULL_BLOCK);
 
             return ASTInterpreter.INTERPRET_METHOD(runtime, context, file, line, getImplementationClass(), body, name, self, Block.NULL_BLOCK, isTraceable());
@@ -155,7 +155,7 @@ public class InterpretedMethod extends DynamicMethod implements MethodArgs, Posi
 
         try {
             pre(context, name, self, block, runtime);
-            argsNode.checkArgCount(runtime, 0);
+            argsNode.checkArgCount(runtime, name, 0);
             argsNode.prepare(context, runtime, self, block);
 
             return ASTInterpreter.INTERPRET_METHOD(runtime, context, file, line, getImplementationClass(), body, name, self, block, isTraceable());
@@ -176,7 +176,7 @@ public class InterpretedMethod extends DynamicMethod implements MethodArgs, Posi
 
         try {
             pre(context, name, self, Block.NULL_BLOCK, runtime);
-            argsNode.checkArgCount(runtime, 1);
+            argsNode.checkArgCount(runtime, name, 1);
             argsNode.prepare(context, runtime, self, arg0, Block.NULL_BLOCK);
 
             return ASTInterpreter.INTERPRET_METHOD(runtime, context, file, line, getImplementationClass(), body, name, self, Block.NULL_BLOCK, isTraceable());
@@ -198,7 +198,7 @@ public class InterpretedMethod extends DynamicMethod implements MethodArgs, Posi
 
         try {
             pre(context, name, self, block, runtime);
-            argsNode.checkArgCount(runtime, 1);
+            argsNode.checkArgCount(runtime, name, 1);
             argsNode.prepare(context, runtime, self, arg0, block);
 
             return ASTInterpreter.INTERPRET_METHOD(runtime, context, file, line, getImplementationClass(), body, name, self, block, isTraceable());
@@ -219,7 +219,7 @@ public class InterpretedMethod extends DynamicMethod implements MethodArgs, Posi
 
         try {
             pre(context, name, self, Block.NULL_BLOCK, runtime);
-            argsNode.checkArgCount(runtime, 2);
+            argsNode.checkArgCount(runtime, name, 2);
             argsNode.prepare(context, runtime, self, arg0, arg1, Block.NULL_BLOCK);
 
             return ASTInterpreter.INTERPRET_METHOD(runtime, context, file, line, getImplementationClass(), body, name, self, Block.NULL_BLOCK, isTraceable());
@@ -241,7 +241,7 @@ public class InterpretedMethod extends DynamicMethod implements MethodArgs, Posi
 
         try {
             pre(context, name, self, block, runtime);
-            argsNode.checkArgCount(runtime, 2);
+            argsNode.checkArgCount(runtime, name, 2);
             argsNode.prepare(context, runtime, self, arg0, arg1, block);
 
             return ASTInterpreter.INTERPRET_METHOD(runtime, context, file, line, getImplementationClass(), body, name, self, block, isTraceable());
@@ -262,7 +262,7 @@ public class InterpretedMethod extends DynamicMethod implements MethodArgs, Posi
 
         try {
             pre(context, name, self, Block.NULL_BLOCK, runtime);
-            argsNode.checkArgCount(runtime, 3);
+            argsNode.checkArgCount(runtime, name, 3);
             argsNode.prepare(context, runtime, self, arg0, arg1, arg2, Block.NULL_BLOCK);
 
             return ASTInterpreter.INTERPRET_METHOD(runtime, context, file, line, getImplementationClass(), body, name, self, Block.NULL_BLOCK, isTraceable());
@@ -284,7 +284,7 @@ public class InterpretedMethod extends DynamicMethod implements MethodArgs, Posi
 
         try {
             pre(context, name, self, block, runtime);
-            argsNode.checkArgCount(runtime, 3);
+            argsNode.checkArgCount(runtime, name, 3);
             argsNode.prepare(context, runtime, self, arg0, arg1, arg2, block);
 
             return ASTInterpreter.INTERPRET_METHOD(runtime, context, file, line, getImplementationClass(), body, name, self, block, isTraceable());

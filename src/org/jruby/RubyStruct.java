@@ -235,7 +235,7 @@ public class RubyStruct extends RubyObject {
             newStruct.addMethod(memberName, new DynamicMethod(newStruct, Visibility.PUBLIC, CallConfiguration.FrameNoneScopeNone) {
                 @Override
                 public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-                    Arity.checkArgumentCount(self.getRuntime(), args, 0, 0);
+                    Arity.checkArgumentCount(context.runtime, name, args, 0, 0);
                     return ((RubyStruct)self).get(index);
                 }
 
@@ -252,7 +252,7 @@ public class RubyStruct extends RubyObject {
             newStruct.addMethod(memberName + "=", new DynamicMethod(newStruct, Visibility.PUBLIC, CallConfiguration.FrameNoneScopeNone) {
                 @Override
                 public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-                    Arity.checkArgumentCount(self.getRuntime(), args, 1, 1);
+                    Arity.checkArgumentCount(context.runtime, name, args, 1, 1);
                     return ((RubyStruct)self).set(args[0], index);
                 }
 
