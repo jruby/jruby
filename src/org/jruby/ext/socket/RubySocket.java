@@ -215,6 +215,26 @@ public class RubySocket extends RubyBasicSocket {
         return RubyFixnum.zero(context.getRuntime());
     }
 
+    @JRubyMethod
+    public IRubyObject recvfrom(ThreadContext context, IRubyObject length) {
+        return super.recv(context, length);
+    }
+
+    @JRubyMethod
+    public IRubyObject recvfrom(ThreadContext context, IRubyObject length, IRubyObject flags) {
+        return super.recv(context, length, flags);
+    }
+
+    @JRubyMethod
+    public IRubyObject recvfrom_nonblock(ThreadContext context, IRubyObject length) {
+        return super.recv_nonblock(context, length);
+    }
+
+    @JRubyMethod
+    public IRubyObject recvfrom_nonblock(ThreadContext context, IRubyObject length, IRubyObject flags) {
+        return super.recv_nonblock(context, length, flags);
+    }
+
     @JRubyMethod(notImplemented = true)
     public IRubyObject listen(ThreadContext context, IRubyObject backlog) {
         throw SocketUtils.sockerr(context.runtime, JRUBY_SERVER_SOCKET_ERROR);
@@ -224,6 +244,7 @@ public class RubySocket extends RubyBasicSocket {
     public IRubyObject accept(ThreadContext context) {
         throw SocketUtils.sockerr(context.runtime, JRUBY_SERVER_SOCKET_ERROR);
     }
+
     @JRubyMethod(meta = true)
     public static IRubyObject gethostname(ThreadContext context, IRubyObject recv) {
         return SocketUtils.gethostname(context);
