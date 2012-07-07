@@ -4,11 +4,11 @@ def bench_dstr(bm)
   bm.report("1m x100 \"abcd\#{'efgh'}ijkl") do
     x = 'efgh'
     1_000_000.times do
-      "abcd#{x}ijkl"; "abcd#{x}ijkl"
-      "abcd#{x}ijkl"; "abcd#{x}ijkl"
-      "abcd#{x}ijkl"; "abcd#{x}ijkl"
-      "abcd#{x}ijkl"; "abcd#{x}ijkl"
-      "abcd#{x}ijkl"; "abcd#{x}ijkl"
+      a = "abcd#{x}ijkl"; a = "abcd#{x}ijkl"
+      a = "abcd#{x}ijkl"; a = "abcd#{x}ijkl"
+      a = "abcd#{x}ijkl"; a = "abcd#{x}ijkl"
+      a = "abcd#{x}ijkl"; a = "abcd#{x}ijkl"
+      a = "abcd#{x}ijkl"; a = "abcd#{x}ijkl"
     end
   end
 end
