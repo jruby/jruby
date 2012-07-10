@@ -63,7 +63,7 @@
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-netdb</artifactId>
-      <version>1.0.6</version>
+      <version>1.1.0</version>
       <scope>${jar.scope}</scope>
     </dependency>
     <dependency>
