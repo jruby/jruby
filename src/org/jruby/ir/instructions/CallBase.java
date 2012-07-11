@@ -98,7 +98,7 @@ public abstract class CallBase extends Instr implements Specializeable {
     private static CallSite getCallSiteFor(CallType callType, MethAddr methAddr) {
         assert callType != null: "Calltype should never be null";
         
-        String name = methAddr.toString();
+        String name = methAddr.getName();
         
         switch (callType) {
             case NORMAL: return MethodIndex.getCallSite(name);
