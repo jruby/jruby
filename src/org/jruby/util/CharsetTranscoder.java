@@ -56,8 +56,7 @@ public class CharsetTranscoder {
         Encoding encoding = toEncoding != null ? toEncoding : value.getEncoding();
         String toName = encoding.toString();
         String fromName = fromEncoding.toString();
-
-//        System.out.println("transcode: to: " + toEncoding + "enc, " + encoding + ", from: " + fromEncoding + ", force: " + forceEncoding);
+        
         Charset from = transcodeCharsetFor(runtime, fromEncoding, fromName, toName);
         Charset to = transcodeCharsetFor(runtime, encoding, fromName, toName);
 

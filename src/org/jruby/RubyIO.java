@@ -103,6 +103,7 @@ import org.jruby.runtime.Arity;
 
 import static org.jruby.CompatVersion.*;
 import static org.jruby.RubyEnumerator.enumeratorize;
+import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.util.CharsetTranscoder;
 
 /**
@@ -1062,9 +1063,15 @@ public class RubyIO extends RubyObject {
 
     @JRubyMethod(compat = RUBY1_9)
     public IRubyObject external_encoding(ThreadContext context) {
-        return externalEncoding != null ?
-            context.getRuntime().getEncodingService().getEncoding(externalEncoding) :
-            context.getRuntime().getNil();
+        EncodingService encodingService = context.runtime.getEncodingService();
+        
+        if (writeEncoding != null) return encodingService.getEncoding(writeEncoding);
+        
+        if (openFile.isWritable()) {
+            return readEncoding == null ? context.runtime.getNil() : encodingService.getEncoding(readEncoding);
+        }
+        
+        return encodingService.getEncoding(getReadEncoding(context.runtime));
     }
 
     @JRubyMethod(compat = RUBY1_9)
@@ -2504,7 +2511,7 @@ public class RubyIO extends RubyObject {
             cr = StringSupport.CR_VALID;
             bytes = new ByteList(byteAry, read, false);
         }            
-        
+    
         bytes = readTranscoder.transcode(context, bytes);
         
         return RubyString.newStringNoCopy(context.runtime, bytes, bytes.getEncoding(), cr);
