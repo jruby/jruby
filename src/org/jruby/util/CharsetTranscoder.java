@@ -31,13 +31,12 @@ public class CharsetTranscoder {
     }};
     
     private Encoding toEncoding;
-    private String toName;
     private CodingErrorActions actions;
     private Encoding forceEncoding = null;
     
     public CharsetTranscoder(ThreadContext context, Encoding toEncoding, IRubyObject options) {
         this.toEncoding = toEncoding;
-        toName = toEncoding.toString();
+
         actions = getCodingErrorActions(context, options);
     }
     
@@ -54,10 +53,13 @@ public class CharsetTranscoder {
     }
     
     protected ByteList transcode(Ruby runtime, ByteList value, Encoding fromEncoding) {
+        Encoding encoding = toEncoding != null ? toEncoding : value.getEncoding();
+        String toName = encoding.toString();
         String fromName = fromEncoding.toString();
 
+//        System.out.println("transcode: to: " + toEncoding + "enc, " + encoding + ", from: " + fromEncoding + ", force: " + forceEncoding);
         Charset from = transcodeCharsetFor(runtime, fromEncoding, fromName, toName);
-        Charset to = transcodeCharsetFor(runtime, toEncoding, fromName, toName);
+        Charset to = transcodeCharsetFor(runtime, encoding, fromName, toName);
 
         CharsetEncoder encoder = getCharsetEncoder(to);
         CharsetDecoder decoder = getCharsetDecoder(from);
@@ -82,7 +84,7 @@ public class CharsetTranscoder {
 
             // CharsetEncoder#encode guarantees a newly-allocated buffer, so no need to copy.
             return new ByteList(toBytes.array(), toBytes.arrayOffset(),
-                    toBytes.limit() - toBytes.arrayOffset(), toEncoding, false);
+                    toBytes.limit() - toBytes.arrayOffset(), encoding, false);
         } catch (CharacterCodingException e) {
             throw runtime.newUndefinedConversionError(e.getLocalizedMessage());
         }        

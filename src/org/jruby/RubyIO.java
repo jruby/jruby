@@ -1076,43 +1076,77 @@ public class RubyIO extends RubyObject {
 
     @JRubyMethod(compat=RUBY1_9)
     public IRubyObject set_encoding(ThreadContext context, IRubyObject encodingObj) {
-        if (encodingObj instanceof RubyString) {
-            EncodingOption encodingOption = EncodingOption.getEncodingOptionFromString(context.runtime, encodingObj.convertToString().toString());
-            setEncodingFromOptions(encodingOption);
-        } else {
-            setExternalEncoding(context, encodingObj);
-        }
+        setEncoding(context, encodingObj, context.runtime.getNil(), null);
+
         return context.getRuntime().getNil();
+    }
+    
+    // mri: io_encoding_set
+    private void setEncoding(ThreadContext context, IRubyObject external, IRubyObject internal, IRubyObject options) {
+        if (!internal.isNil()) {
+            writeEncoding = getEncodingCommon(context, external);
+            
+            if (internal instanceof RubyString) {
+                RubyString internalAsString = (RubyString) internal;
+                
+                // No encoding '-'
+                if (internalAsString.size() == 1 && internalAsString.asJavaString().equals("-")) {
+                    readEncoding = writeEncoding;
+                    writeEncoding = null;
+                } else {
+                    EncodingOption encodingOption = EncodingOption.getEncodingOptionFromString(context.runtime, internalAsString.asJavaString());
+                    readEncoding = encodingOption.getExternalEncoding(); // Not really external... :) and bom handling?
+                }
+                
+                if (readEncoding == writeEncoding) {
+                    context.runtime.getWarnings().warn("Ignoring internal encoding " + 
+                            readEncoding + ": it is identical to external encoding " + writeEncoding);
+                    writeEncoding = null;
+                }
+            } else {
+                readEncoding = getEncodingCommon(context, internal);
+
+                if (readEncoding == writeEncoding) {
+                    context.runtime.getWarnings().warn("Ignoring internal encoding " + 
+                            readEncoding + ": it is identical to external encoding " + writeEncoding);
+                    writeEncoding = null;
+                }
+            }
+            
+        } else {
+            if (external.isNil()) {
+                setupReadWriteEncodings(context, null, null);
+            } else {
+                if (external instanceof RubyString) {
+                    RubyString externalAsString = (RubyString) external;
+                    
+                    // FIXME: I think this can handle a:b syntax and I didn't (also BOM)
+                    EncodingOption encodingOption = EncodingOption.getEncodingOptionFromString(context.runtime, externalAsString.asJavaString());
+
+                    readEncoding = encodingOption.getExternalEncoding();
+                } else {
+                    readEncoding = getEncodingCommon(context, external);
+                }
+            }
+        }
+        
+        clearCodeConversion();
     }
 
     @JRubyMethod(compat=RUBY1_9)
     public IRubyObject set_encoding(ThreadContext context, IRubyObject encodingString, IRubyObject internalEncoding) {
-        setExternalEncoding(context, encodingString);
-        setInternalEncoding(context, internalEncoding);
+        setEncoding(context, encodingString, internalEncoding, null);
+
         return context.getRuntime().getNil();
     }
 
     @JRubyMethod(compat = RUBY1_9)
     public IRubyObject set_encoding(ThreadContext context, IRubyObject encodingString, IRubyObject internalEncoding, IRubyObject options) {
-        setExternalEncoding(context, encodingString);
-        setInternalEncoding(context, internalEncoding);
+        setEncoding(context, encodingString, internalEncoding, options);
+
         return context.getRuntime().getNil();
     }
 
-    private void setExternalEncoding(ThreadContext context, IRubyObject encoding) {
-        externalEncoding = getEncodingCommon(context, encoding);
-    }
-
-    private void setInternalEncoding(ThreadContext context, IRubyObject encoding) {
-        Encoding internalEncodingOption = getEncodingCommon(context, encoding);
-
-        if (internalEncodingOption == externalEncoding) {
-            context.getRuntime().getWarnings().warn("Ignoring internal encoding " + encoding
-                    + ": it is identical to external encoding " + external_encoding(context));
-        } else {
-            internalEncoding = internalEncodingOption;
-        }
-    }
 
     private static Encoding getEncodingCommon(ThreadContext context, IRubyObject encoding) {
         if (encoding instanceof RubyEncoding) return ((RubyEncoding) encoding).getEncoding();
@@ -1401,6 +1435,7 @@ public class RubyIO extends RubyObject {
         Stream writeStream = openFile.getWriteStream();
         
         if (getRuntime().is1_9()) {
+            //System.out.println("BUF iz " + buffer.getEncoding() + " for " + new String(buffer.bytes()));
             buffer = doWriteConversion(getRuntime().getCurrentContext(), buffer);
         }
 
@@ -2442,7 +2477,7 @@ public class RubyIO extends RubyObject {
             BadDescriptorException, InvalidValueException {        
         makeReadConversion(context);
         
-        Encoding read = getReadEncoding(context.runtime);
+        Encoding read = getInputEncoding(context.runtime); // MRI has readencoding
         int cr = 0;
         ByteList bytes = null;
         
@@ -4071,6 +4106,9 @@ public class RubyIO extends RubyObject {
             source.setEncodingFromOptions(EncodingOption.getEncodingOptionFromString(runtime, modes.toString()));
             RubyIO sink = new RubyIO(runtime, pipe.sink());
 
+//            Encoding ascii8bit = context.runtime.getEncodingService().getAscii8bitEncoding();
+//            sink.setupReadWriteEncodings(context, ascii8bit, ascii8bit);
+
             sink.openFile.getMainStreamSafe().setSync(true);
             return runtime.newArrayNoCopy(new IRubyObject[]{source, sink});
         } catch (BadDescriptorException e) {
@@ -4668,10 +4706,28 @@ public class RubyIO extends RubyObject {
         if (readEncoding == null || (readEncoding == ascii8bit  && writeEncoding == null)) { // No encoding conversion
             // Leave for extra MRI bittwiddling which is missing from our IO
             // Hack to initialize transcoder but do no transcoding
+            //System.out.println("No conversion");
             writeTranscoder = new CharsetTranscoder(context, ascii8bit, ascii8bit, null);
         } else {
-            writeTranscoder = new CharsetTranscoder(context, readEncoding, writeEncoding, null);
+            Encoding fromEncoding = readEncoding;
+            Encoding toEncoding;
+            if (writeEncoding != null) {
+                toEncoding = writeEncoding;
+            } else {
+                fromEncoding = null;
+                toEncoding = readEncoding;
+            }
+            // If no write then default -> readEncoding
+            // If write then writeEncoding -> readEncoding
+            // If no read (see if above)
+            //System.out.println("WRITE: " + writeEncoding + ", READ: " + readEncoding);
+            writeTranscoder = new CharsetTranscoder(context, toEncoding, fromEncoding, null);
         }
+    }
+    
+    private void clearCodeConversion() {
+        readTranscoder = null;
+        writeTranscoder = null;
     }
     
     // MRI: rb_io_ext_int_to_encs
@@ -4689,11 +4745,9 @@ public class RubyIO extends RubyObject {
         }
         
         if (internal == null || internal == external) { // missing internal == nil?
-//            System.out.println("ONE, INT: " + internalEncoding + ", EXT: " +externalEncoding);
             readEncoding = (defaultExternal && internal != external) ? null : external;
             writeEncoding = null;
         } else {
-//            System.out.println("TWO");
             readEncoding = internal;
             writeEncoding = external;
         }
