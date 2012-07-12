@@ -1076,9 +1076,9 @@ public class RubyIO extends RubyObject {
 
     @JRubyMethod(compat = RUBY1_9)
     public IRubyObject internal_encoding(ThreadContext context) {
-        return internalEncoding != null ?
-            context.getRuntime().getEncodingService().getEncoding(internalEncoding) :
-            context.getRuntime().getNil();
+        if (writeEncoding == null) return context.runtime.getNil();
+        
+        return context.runtime.getEncodingService().getEncoding(getReadEncoding(context.runtime));
     }
 
     @JRubyMethod(compat=RUBY1_9)
