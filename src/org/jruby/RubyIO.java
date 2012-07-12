@@ -1082,28 +1082,27 @@ public class RubyIO extends RubyObject {
     }
     
     // mri: io_encoding_set
-    private void setEncoding(ThreadContext context, IRubyObject external, IRubyObject internal, IRubyObject options) {
-        Encoding enc2;
-        
+    private void setEncoding(ThreadContext context, IRubyObject external, IRubyObject internal, IRubyObject options) {        
         if (!internal.isNil()) {
-            Encoding enc = getEncodingCommon(context, external);
+            Encoding enc = null;
+            Encoding enc2 = getEncodingCommon(context, external);
             
             if (internal instanceof RubyString) {
                 RubyString internalAsString = (RubyString) internal;
                 
                 // No encoding '-'
                 if (internalAsString.size() == 1 && internalAsString.asJavaString().equals("-")) {
-                    enc2 = enc;
-                    enc = null;
+                    enc = enc2;
+                    enc2 = null;
                 } else {
                     EncodingOption encodingOption = EncodingOption.getEncodingOptionFromString(context.runtime, internalAsString.asJavaString());
-                    enc2 = encodingOption.getExternalEncoding(); // Not really external... :) and bom handling?
+                    enc = encodingOption.getExternalEncoding(); // Not really external... :) and bom handling?
                 }
                 
-                if (enc2 == enc) {
+                if (enc == enc2) {
                     context.runtime.getWarnings().warn("Ignoring internal encoding " + 
-                            enc2 + ": it is identical to external encoding " + enc);
-                    enc = null;
+                            enc + ": it is identical to external encoding " + enc2);
+                    enc2 = null;
                 }
                 
                 setupReadWriteEncodings(context, enc, enc2);
@@ -1129,8 +1128,8 @@ public class RubyIO extends RubyObject {
 
 //                    readEncoding = encodingOption.getExternalEncoding();
                 } else {
-                    enc2 = getEncodingCommon(context, external);
-                    setupReadWriteEncodings(context, enc2, null);
+                    Encoding enc = getEncodingCommon(context, external);
+                    setupReadWriteEncodings(context, enc, null);
                 }
             }
         }
