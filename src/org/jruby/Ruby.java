@@ -1159,7 +1159,7 @@ public final class Ruby {
         ThreadContext tc = getCurrentContext();
 
         // Construct the top-level execution frame and scope for the main thread
-        tc.prepareTopLevel(objectClass, topSelf);
+        tc.prepareTopLevel(objectClass, getTopSelf());
 
         // Initialize all the core classes
         bootstrap();
@@ -1195,7 +1195,7 @@ public final class Ruby {
         // Require in all libraries specified on command line
         for (String scriptName : config.getRequiredLibraries()) {
             if (is1_9) {
-                topSelf.callMethod(getCurrentContext(), "require", RubyString.newString(this, scriptName));
+                getTopSelf().callMethod(getCurrentContext(), "require", RubyString.newString(this, scriptName));
             } else {
                 loadService.require(scriptName);
             }
@@ -1246,7 +1246,7 @@ public final class Ruby {
         objectClass.includeModule(kernelModule);
 
         // Object is ready, create top self
-        topSelf = TopSelfFactory.createTopSelf(this);
+        //topSelf = TopSelfFactory.createTopSelf(this);
         
         // Pre-create all the core classes potentially referenced during startup
         RubyNil.createNilClass(this);
@@ -1617,7 +1617,7 @@ public final class Ruby {
             }
         });
         
-        RubyKernel.autoload(topSelf, newSymbol("Java"), newString("java"));
+        RubyKernel.autoload(getTopSelf(), newSymbol("Java"), newString("java"));
     }
     
     private void initRubyKernel() {
@@ -1663,6 +1663,7 @@ public final class Ruby {
      * @return Value of property rubyTopSelf.
      */
     public IRubyObject getTopSelf() {
+        if (topSelf == null) topSelf = TopSelfFactory.createTopSelf(this);
         return topSelf;
     }
 
