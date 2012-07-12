@@ -1083,33 +1083,37 @@ public class RubyIO extends RubyObject {
     
     // mri: io_encoding_set
     private void setEncoding(ThreadContext context, IRubyObject external, IRubyObject internal, IRubyObject options) {
+        Encoding enc2;
+        
         if (!internal.isNil()) {
-            writeEncoding = getEncodingCommon(context, external);
+            Encoding enc = getEncodingCommon(context, external);
             
             if (internal instanceof RubyString) {
                 RubyString internalAsString = (RubyString) internal;
                 
                 // No encoding '-'
                 if (internalAsString.size() == 1 && internalAsString.asJavaString().equals("-")) {
-                    readEncoding = writeEncoding;
-                    writeEncoding = null;
+                    enc2 = enc;
+                    enc = null;
                 } else {
                     EncodingOption encodingOption = EncodingOption.getEncodingOptionFromString(context.runtime, internalAsString.asJavaString());
-                    readEncoding = encodingOption.getExternalEncoding(); // Not really external... :) and bom handling?
+                    enc2 = encodingOption.getExternalEncoding(); // Not really external... :) and bom handling?
                 }
                 
-                if (readEncoding == writeEncoding) {
+                if (enc2 == enc) {
                     context.runtime.getWarnings().warn("Ignoring internal encoding " + 
-                            readEncoding + ": it is identical to external encoding " + writeEncoding);
-                    writeEncoding = null;
+                            enc2 + ": it is identical to external encoding " + enc);
+                    enc = null;
                 }
+                
+                setupReadWriteEncodings(context, enc, enc2);
             } else {
-                readEncoding = getEncodingCommon(context, internal);
+                enc2 = getEncodingCommon(context, internal);
 
-                if (readEncoding == writeEncoding) {
+                if (enc2 == enc) {
                     context.runtime.getWarnings().warn("Ignoring internal encoding " + 
-                            readEncoding + ": it is identical to external encoding " + writeEncoding);
-                    writeEncoding = null;
+                            enc2 + ": it is identical to external encoding " + enc);
+                    enc = null;
                 }
             }
             
@@ -1121,11 +1125,12 @@ public class RubyIO extends RubyObject {
                     RubyString externalAsString = (RubyString) external;
                     
                     // FIXME: I think this can handle a:b syntax and I didn't (also BOM)
-                    EncodingOption encodingOption = EncodingOption.getEncodingOptionFromString(context.runtime, externalAsString.asJavaString());
+                    setEncodingFromOptions(EncodingOption.getEncodingOptionFromString(context.runtime, externalAsString.asJavaString()));
 
-                    readEncoding = encodingOption.getExternalEncoding();
+//                    readEncoding = encodingOption.getExternalEncoding();
                 } else {
-                    readEncoding = getEncodingCommon(context, external);
+                    enc2 = getEncodingCommon(context, external);
+                    setupReadWriteEncodings(context, enc2, null);
                 }
             }
         }
@@ -4370,7 +4375,6 @@ public class RubyIO extends RubyObject {
         externalEncoding = external;
         if (internal == externalEncoding) return;
         internalEncoding = internal;
-
     }
 
     // io_strip_bom
