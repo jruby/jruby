@@ -8,3 +8,7 @@ fails:String#encode! replaces xml characters
 fails:String#encode! replaces xml characters and quotes the result
 java1.5:String#encode raises an Encoding::InvalidByteSequenceError for invalid byte sequences
 java1.5:String#encode! raises an Encoding::InvalidByteSequenceError for invalid byte sequences
+fails:String#encode raises an Encoding::InvalidByteSequenceError for invalid byte sequences
+fails:String#encode replaces undefined characters
+fails:String#encode! raises an Encoding::InvalidByteSequenceError for invalid byte sequences
+fails:String#encode! replaces undefined characters
