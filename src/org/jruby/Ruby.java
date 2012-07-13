@@ -1249,9 +1249,9 @@ public final class Ruby {
         //topSelf = TopSelfFactory.createTopSelf(this);
         
         // Pre-create all the core classes potentially referenced during startup
-        RubyNil.createNilClass(this);
-        RubyBoolean.createFalseClass(this);
-        RubyBoolean.createTrueClass(this);
+        nilClass = RubyNil.createNilClass(this);
+        falseClass = RubyBoolean.createFalseClass(this);
+        trueClass = RubyBoolean.createTrueClass(this);
         
         rootInitialized = true;
     }
@@ -1911,22 +1911,13 @@ public final class Ruby {
     public RubyClass getNilClass() {
         return nilClass;
     }
-    void setNilClass(RubyClass nilClass) {
-        this.nilClass = nilClass;
-    }
 
     public RubyClass getTrueClass() {
         return trueClass;
     }
-    void setTrueClass(RubyClass trueClass) {
-        this.trueClass = trueClass;
-    }
 
     public RubyClass getFalseClass() {
         return falseClass;
-    }
-    void setFalseClass(RubyClass falseClass) {
-        this.falseClass = falseClass;
     }
 
     public RubyClass getProc() {
