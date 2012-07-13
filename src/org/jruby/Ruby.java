@@ -1253,12 +1253,10 @@ public final class Ruby {
         RubyBoolean.createFalseClass(this);
         RubyBoolean.createTrueClass(this);
 
-        nilObject = new RubyNil(this);
-        for (int i=0; i<NIL_PREFILLED_ARRAY_SIZE; i++) nilPrefilledArray[i] = nilObject;
-        singleNilArray = new IRubyObject[] {nilObject};
-
         falseObject = new RubyBoolean(this, false);
         trueObject = new RubyBoolean(this, true);
+        
+        rootInitialized = true;
     }
 
     private void initCore() {
@@ -1423,6 +1421,10 @@ public final class Ruby {
     public static final int NIL_PREFILLED_ARRAY_SIZE = RubyArray.ARRAY_DEFAULT_SIZE * 8;
     private final IRubyObject nilPrefilledArray[] = new IRubyObject[NIL_PREFILLED_ARRAY_SIZE];
     public IRubyObject[] getNilPrefilledArray() {
+        if (nilPrefilledArray[0] != getNil()) {
+            IRubyObject nil = getNil();
+            for (int i=0; i<NIL_PREFILLED_ARRAY_SIZE; i++) nilPrefilledArray[i] = nil;
+        }
         return nilPrefilledArray;
     }
 
@@ -1908,10 +1910,12 @@ public final class Ruby {
      * @return "nil"
      */
     public IRubyObject getNil() {
+        if (nilObject == null) nilObject = new RubyNil(this);
         return nilObject;
     }
 
     public IRubyObject[] getSingleNilArray() {
+        if (singleNilArray == null) singleNilArray = new IRubyObject[] {getNil()};
         return singleNilArray;
     }
 
@@ -2409,6 +2413,10 @@ public final class Ruby {
         }
         
         return jrubyClassLoader;
+    }
+    
+    public boolean isRootInitialized() {
+        return rootInitialized;
     }
 
     /** Defines a global variable
@@ -4485,4 +4493,8 @@ public final class Ruby {
     private ThreadLocal<Boolean> inRecursiveListOperation = new ThreadLocal<Boolean>();
 
     private FFI ffi;
+    
+    
+    /** A flag shows Ruby runtime is initialized or not */
+    private boolean rootInitialized = false;
 }
