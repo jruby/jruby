@@ -1252,8 +1252,6 @@ public final class Ruby {
         RubyNil.createNilClass(this);
         RubyBoolean.createFalseClass(this);
         RubyBoolean.createTrueClass(this);
-
-        trueObject = new RubyBoolean(this, true);
         
         rootInitialized = true;
     }
@@ -1895,6 +1893,7 @@ public final class Ruby {
      * @return The "true" instance.
      */
     public RubyBoolean getTrue() {
+        if (trueObject == null) trueObject = new RubyBoolean(this, true);
         return trueObject;
     }
 
