@@ -1253,7 +1253,6 @@ public final class Ruby {
         RubyBoolean.createFalseClass(this);
         RubyBoolean.createTrueClass(this);
 
-        falseObject = new RubyBoolean(this, false);
         trueObject = new RubyBoolean(this, true);
         
         rootInitialized = true;
@@ -1903,6 +1902,7 @@ public final class Ruby {
      * @return The "false" instance.
      */
     public RubyBoolean getFalse() {
+        if (falseObject == null) falseObject = new RubyBoolean(this, false);
         return falseObject;
     }
 
