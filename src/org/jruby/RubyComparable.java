@@ -48,7 +48,6 @@ import static org.jruby.runtime.MethodIndex.OP_CMP;
 public class RubyComparable {
     public static RubyModule createComparable(Ruby runtime) {
         RubyModule comparableModule = runtime.defineModule("Comparable");
-        runtime.setComparable(comparableModule);
         
         comparableModule.defineAnnotatedMethods(RubyComparable.class);
 

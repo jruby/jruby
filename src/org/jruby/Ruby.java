@@ -1261,10 +1261,6 @@ public final class Ruby {
             defineClass("Data", objectClass, ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         }
 
-        RubyComparable.createComparable(this);
-        RubyEnumerable.createEnumerableModule(this);
-        RubyString.createStringClass(this);
-
         encodingService = new EncodingService(this);
 
         RubySymbol.createSymbolClass(this);
@@ -1771,11 +1767,9 @@ public final class Ruby {
     }
 
     public RubyModule getComparable() {
+        if (comparableModule == null) comparableModule = RubyComparable.createComparable(this);
         return comparableModule;
-    }
-    void setComparable(RubyModule comparableModule) {
-        this.comparableModule = comparableModule;
-    }    
+    } 
 
     public RubyClass getNumeric() {
         return numericClass;
@@ -1820,10 +1814,8 @@ public final class Ruby {
     }
 
     public RubyModule getEnumerable() {
+        if (enumerableModule == null) enumerableModule = RubyEnumerable.createEnumerableModule(this);
         return enumerableModule;
-    }
-    void setEnumerable(RubyModule enumerableModule) {
-        this.enumerableModule = enumerableModule;
     }
 
     public RubyClass getEnumerator() {
@@ -1841,10 +1833,8 @@ public final class Ruby {
     }
 
     public RubyClass getString() {
+        if (stringClass == null) stringClass = RubyString.createStringClass(this);
         return stringClass;
-    }
-    void setString(RubyClass stringClass) {
-        this.stringClass = stringClass;
     }
 
     public RubyClass getEncoding() {
