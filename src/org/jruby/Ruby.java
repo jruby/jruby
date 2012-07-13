@@ -1261,10 +1261,6 @@ public final class Ruby {
             defineClass("Data", objectClass, ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         }
 
-        encodingService = new EncodingService(this);
-
-        RubySymbol.createSymbolClass(this);
-        
         recursiveKey = newSymbol("__recursive_key__");
 
         if (profile.allowClass("ThreadGroup")) {
@@ -1852,10 +1848,8 @@ public final class Ruby {
     }
 
     public RubyClass getSymbol() {
+        if (symbolClass == null) symbolClass = RubySymbol.createSymbolClass(this);
         return symbolClass;
-    }
-    void setSymbol(RubyClass symbolClass) {
-        this.symbolClass = symbolClass;
     }
 
     public RubyClass getArray() {
@@ -2504,6 +2498,7 @@ public final class Ruby {
     }
 
     public EncodingService getEncodingService() {
+        if (encodingService == null) encodingService = new EncodingService(this);
         return encodingService;
     }
 
