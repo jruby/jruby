@@ -14,6 +14,8 @@ import java.util.Map;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.Type;
 
+import javax.lang.model.element.Name;
+
 /**
  *
  * @author headius
@@ -208,7 +210,11 @@ public class CodegenUtils {
         return classes;
     }
     
-    public static String getAnnotatedBindingClassName(String javaMethodName, String typeName, boolean isStatic, int required, int optional, boolean multi, boolean framed) {
+    public static String getAnnotatedBindingClassName(Name javaMethodName, CharSequence typeName, boolean isStatic, int required, int optional, boolean multi, boolean framed) {
+        return getAnnotatedBindingClassName(javaMethodName.toString(), typeName, isStatic, required, optional, multi, framed);
+    }
+
+    public static String getAnnotatedBindingClassName(String javaMethodName, CharSequence typeName, boolean isStatic, int required, int optional, boolean multi, boolean framed) {
         String commonClassSuffix = "$INVOKER" + (isStatic ? "$s$" : "$i$" );
         if (multi) {
             commonClassSuffix += javaMethodName;

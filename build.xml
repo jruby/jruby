@@ -267,20 +267,20 @@
           description="Compile the source files for the project.">
   </target>
 
-  <target name="compile-jruby" depends="prepare, compile-annotation-binder" unless="compiled">    
-    <apt factory="org.jruby.anno.AnnotationBinder" destdir="${jruby.classes.dir}"
+  <target name="compile-jruby" depends="prepare, compile-annotation-binder" unless="compiled">
+    <javac destdir="${jruby.classes.dir}" fork="true"
         debug="true" source="${javac.version}" target="${javac.version}"
-        deprecation="true" encoding="UTF-8" includeantruntime="true">
+        deprecation="true" encoding="UTF-8" includeantruntime="true" memorymaximumsize="${jruby.compile.memory}">
       <classpath refid="jruby.execute.classpath"/>
       <src path="${src.dir}"/>
       <exclude name="org/jruby/runtime/Constants.java"/>
       <exclude name="java/dyn/**"/>
       <patternset refid="java.src.pattern"/>
       <compilerarg line="-XDignore.symbol.file=true"/>
-      <compilerarg line="-J-Xmx${jruby.compile.memory}"/>
       <compilerarg line="-J-Dfile.encoding=UTF-8"/>
       <compilerarg line="-J-Duser.language=en"/>
-    </apt>
+      <compilerarg line="-processor org.jruby.anno.AnnotationBinder"/>
+    </javac>
 
     <!-- Apply any instrumentation that is enabled (code coverage, etc) -->
     <antcall target="instrument"/>
