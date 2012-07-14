@@ -197,6 +197,7 @@ public final class Ruby {
         this.config             = config;
         this.is1_9              = config.getCompatVersion().is1_9();
         this.is2_0              = config.getCompatVersion().is2_0();
+        this.is1_8 = (!is1_9 && !is2_0) ? true : false;
 
         if (config.getCompileMode() == CompileMode.OFFIR ||
                 config.getCompileMode() == CompileMode.FORCEIR) {
@@ -1284,7 +1285,7 @@ public final class Ruby {
 
         recursiveKey = newSymbol("__recursive_key__");
 
-        if (!is1_9()) {
+        if (is1_8()) {
             if (profile.allowModule("Precision")) {
                 RubyPrecision.createPrecisionModule(this);
             }
@@ -3931,6 +3932,10 @@ public final class Ruby {
         return config;
     }
 
+    public boolean is1_8() {
+        return is1_8;
+    }
+    
     public boolean is1_9() {
         return is1_9;
     }
@@ -4313,6 +4318,7 @@ public final class Ruby {
     private final long startTime = System.currentTimeMillis();
 
     private final RubyInstanceConfig config;
+    private final boolean is1_8;
     private final boolean is1_9;
     private final boolean is2_0;
 
