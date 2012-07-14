@@ -101,7 +101,6 @@ public class RubyKernel {
     }
     public static RubyModule createKernelModule(Ruby runtime) {
         RubyModule module = runtime.defineModule("Kernel");
-        runtime.setKernel(module);
 
         module.defineAnnotatedMethods(RubyKernel.class);
         

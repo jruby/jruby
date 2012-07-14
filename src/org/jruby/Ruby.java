@@ -1263,7 +1263,7 @@ public final class Ruby {
         objectClass.setConstant("Module", moduleClass);
 
         // Initialize Kernel and include into Object
-        RubyKernel.createKernelModule(this);
+        kernelModule = RubyKernel.createKernelModule(this);
         objectClass.includeModule(kernelModule);
 
         // Object is ready, create top self
@@ -1732,9 +1732,6 @@ public final class Ruby {
     
     public RubyModule getKernel() {
         return kernelModule;
-    }
-    void setKernel(RubyModule kernelModule) {
-        this.kernelModule = kernelModule;
     }
 
     public DynamicMethod getPrivateMethodMissing() {
