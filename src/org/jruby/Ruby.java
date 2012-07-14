@@ -1285,12 +1285,6 @@ public final class Ruby {
 
         recursiveKey = newSymbol("__recursive_key__");
 
-        if (is1_8()) {
-            if (profile.allowModule("Precision")) {
-                RubyPrecision.createPrecisionModule(this);
-            }
-        }
-
         if (profile.allowClass("Numeric")) {
             RubyNumeric.createNumericClass(this);
         }
@@ -2138,10 +2132,12 @@ public final class Ruby {
     }
 
     public RubyModule getPrecision() {
+        if (is1_8()) {
+            if (precisionModule == null && profile.allowModule("Precision")) {
+                precisionModule = RubyPrecision.createPrecisionModule(this);
+            }
+        }
         return precisionModule;
-    }
-    void setPrecision(RubyModule precisionModule) {
-        this.precisionModule = precisionModule;
     }
     
     public RubyHash getENV() {
