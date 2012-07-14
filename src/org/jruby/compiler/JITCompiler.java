@@ -96,9 +96,7 @@ public class JITCompiler implements JITCompilerMBean {
                     new LinkedBlockingQueue<Runnable>(),
                     new DaemonThreadFactory("JRubyJIT"));
     
-    public JITCompiler(Ruby ruby) {
-        ruby.getBeanManager().register(this);
-    }
+    public JITCompiler() {}
 
     public void tryJIT(DefaultMethod method, ThreadContext context, String className, String methodName) {
         if (context.getRuntime().getInstanceConfig().getCompileMode().shouldJIT()) {

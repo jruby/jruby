@@ -162,6 +162,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
+import org.jruby.internal.runtime.NativeThread;
+import org.jruby.internal.runtime.ThreadLike;
 
 /**
  * The Ruby object represents the top-level of a JRuby "instance" in a given VM.
@@ -195,12 +197,7 @@ public final class Ruby {
         this.config             = config;
         this.is1_9              = config.getCompatVersion().is1_9();
         this.is2_0              = config.getCompatVersion().is2_0();
-        this.doNotReverseLookupEnabled = is1_9;
-        this.threadService      = new ThreadService(this);
-        if(config.isSamplingEnabled()) {
-            org.jruby.util.SimpleSampler.registerThreadContext(threadService.getCurrentContext());
-        }
-        
+
         if (config.getCompileMode() == CompileMode.OFFIR ||
                 config.getCompileMode() == CompileMode.FORCEIR) {
             this.staticScopeFactory = new IRStaticScopeFactory(this);
@@ -211,13 +208,6 @@ public final class Ruby {
         this.in                 = config.getInput();
         this.out                = config.getOutput();
         this.err                = config.getError();
-        this.objectSpaceEnabled = config.isObjectSpaceEnabled();
-        this.profile            = config.getProfile();
-        this.currentDirectory   = config.getCurrentDirectory();
-        this.kcode              = config.getKCode();
-        this.beanManager        = BeanManagerFactory.create(this, config.isManagementEnabled());
-        this.jitCompiler        = new JITCompiler(this);
-        this.parserStats        = new ParserStats(this);
         
         Random myRandom;
         try {
@@ -228,16 +218,6 @@ public final class Ruby {
         }
         this.random = myRandom;
         this.hashSeed = this.random.nextInt();
-        
-        this.beanManager.register(new Config(this));
-        this.beanManager.register(parserStats);
-        this.beanManager.register(new ClassCache(this));
-        this.beanManager.register(new org.jruby.management.Runtime(this));
-
-        this.runtimeCache = new RuntimeCache();
-        runtimeCache.initMethodCache(ClassIndex.MAX_CLASSES * MethodIndex.MAX_METHODS);
-        
-        constantInvalidator = OptoFactory.newConstantInvalidator();
     }
     
     /**
@@ -1131,10 +1111,12 @@ public final class Ruby {
      * loaded.
      */
     private void init() {
-        safeLevel = config.getSafeLevel();
+        setConfigParams();
+        initBeanManager();
+        
+        runtimeCache.initMethodCache(ClassIndex.MAX_CLASSES * MethodIndex.MAX_METHODS);
         
         // Construct key services
-        loadService = config.createLoadService(this);
         posix = POSIXFactory.getPOSIX(new JRubyPOSIXHandler(this), config.isNativeEnabled());
         javaSupport = new JavaSupport(this);
 
@@ -1151,9 +1133,8 @@ public final class Ruby {
         
         // initialize the root of the class hierarchy completely
         initRoot();
-
-        // Set up the main thread in thread service
-        threadService.initMainThread();
+        
+        initThreadService();
 
         // Get the main threadcontext (gets constructed for us)
         ThreadContext tc = getCurrentContext();
@@ -1200,6 +1181,46 @@ public final class Ruby {
                 loadService.require(scriptName);
             }
         }
+    }
+    
+    private void initThreadService() {
+        // Set up the main thread in thread service
+        threadService.initMainThread();
+
+        RubyThread rubyThread = new RubyThread(this, getThread());
+        // TODO: need to isolate the "current" thread from class creation
+        rubyThread.setThreadImpl((ThreadLike)(new NativeThread(rubyThread, Thread.currentThread())));
+        threadService.setMainThread(Thread.currentThread(), rubyThread);
+        
+        defaultThreadGroup = new RubyThreadGroup(this, getThreadGroup());
+        getThreadGroup().defineConstant("Default", defaultThreadGroup);
+        
+        // set to default thread group
+        defaultThreadGroup.addDirectly(rubyThread);
+    }
+    
+    private void setConfigParams() {
+        this.doNotReverseLookupEnabled = is1_9;
+        if(config.isSamplingEnabled()) {
+            org.jruby.util.SimpleSampler.registerThreadContext(threadService.getCurrentContext());
+        }
+        objectSpaceEnabled = config.isObjectSpaceEnabled();
+        profile            = config.getProfile();
+        currentDirectory   = config.getCurrentDirectory();
+        kcode              = config.getKCode();
+        safeLevel = config.getSafeLevel();
+        loadService = config.createLoadService(this);
+    }
+    
+    private void initBeanManager() {
+        beanManager        = BeanManagerFactory.create(this, config.isManagementEnabled());
+        parserStats        = new ParserStats(this);
+        
+        beanManager.register(jitCompiler);
+        beanManager.register(new Config(this));
+        beanManager.register(parserStats);
+        beanManager.register(new ClassCache(this));
+        beanManager.register(new org.jruby.management.Runtime(this));
     }
 
     private void bootstrap() {
@@ -1263,12 +1284,7 @@ public final class Ruby {
 
         recursiveKey = newSymbol("__recursive_key__");
 
-        if (profile.allowClass("ThreadGroup")) {
-            RubyThreadGroup.createThreadGroupClass(this);
-        }
-        if (profile.allowClass("Thread")) {
-            RubyThread.createThreadClass(this);
-        }
+        
         if (profile.allowClass("Exception")) {
             RubyException.createExceptionClass(this);
         }
@@ -2020,24 +2036,21 @@ public final class Ruby {
     }    
 
     public RubyClass getThread() {
+        if (threadClass == null && getProfile().allowClass("Thread")) {
+            threadClass = RubyThread.createThreadClass(this);
+        }
         return threadClass;
-    }
-    void setThread(RubyClass threadClass) {
-        this.threadClass = threadClass;
-    }    
+    } 
 
     public RubyClass getThreadGroup() {
+        if (threadGroupClass == null && getProfile().allowClass("ThreadGroup")) {
+            threadGroupClass = RubyThreadGroup.createThreadGroupClass(this);
+        }
         return threadGroupClass;
-    }
-    void setThreadGroup(RubyClass threadGroupClass) {
-        this.threadGroupClass = threadGroupClass;
     }
     
     public RubyThreadGroup getDefaultThreadGroup() {
         return defaultThreadGroup;
-    }
-    void setDefaultThreadGroup(RubyThreadGroup defaultThreadGroup) {
-        this.defaultThreadGroup = defaultThreadGroup;
     }
 
     public RubyClass getContinuation() {
@@ -4221,8 +4234,8 @@ public final class Ruby {
         this.ffi = ffi;
     }
 
-    private final Invalidator constantInvalidator;
-    private final ThreadService threadService;
+    private final Invalidator constantInvalidator = OptoFactory.newConstantInvalidator();
+    private final ThreadService threadService = new ThreadService(this);
     
     private POSIX posix;
 
@@ -4325,7 +4338,7 @@ public final class Ruby {
     private ParserStats parserStats;
     
     // Compilation
-    private final JITCompiler jitCompiler;
+    private final JITCompiler jitCompiler = new JITCompiler();
 
     // Note: this field and the following static initializer
     // must be located be in this order!
@@ -4412,7 +4425,7 @@ public final class Ruby {
     private final SelectorPool selectorPool = new SelectorPool();
 
     // A global cache for Java-to-Ruby calls
-    private final RuntimeCache runtimeCache;
+    private final RuntimeCache runtimeCache  = new RuntimeCache();;
 
     // The maximum number of methods we will track for profiling purposes
     private static final int MAX_PROFILE_METHODS = 100000;

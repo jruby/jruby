@@ -54,16 +54,10 @@ public class RubyThreadGroup extends RubyObject {
 
     public static RubyClass createThreadGroupClass(Ruby runtime) {
         RubyClass threadGroupClass = runtime.defineClass("ThreadGroup", runtime.getObject(), THREADGROUP_ALLOCATOR);
-        runtime.setThreadGroup(threadGroupClass);
 
         threadGroupClass.index = ClassIndex.THREADGROUP;
         
         threadGroupClass.defineAnnotatedMethods(RubyThreadGroup.class);
-        
-        // create the default thread group
-        RubyThreadGroup defaultThreadGroup = new RubyThreadGroup(runtime, threadGroupClass);
-        runtime.setDefaultThreadGroup(defaultThreadGroup);
-        threadGroupClass.defineConstant("Default", defaultThreadGroup);
 
         return threadGroupClass;
     }
@@ -130,7 +124,7 @@ public class RubyThreadGroup extends RubyObject {
         return RubyArray.newArray(getRuntime(), rubyThreadList);
     }
 
-    private RubyThreadGroup(Ruby runtime, RubyClass type) {
+    RubyThreadGroup(Ruby runtime, RubyClass type) {
         super(runtime, type);
     }
 

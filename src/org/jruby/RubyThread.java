@@ -253,30 +253,25 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             getRuntime().getThreadService().unregisterThread(this);
         }
     }
-   
+
     public static RubyClass createThreadClass(Ruby runtime) {
         // FIXME: In order for Thread to play well with the standard 'new' behavior,
         // it must provide an allocator that can create empty object instances which
         // initialize then fills with appropriate data.
         RubyClass threadClass = runtime.defineClass("Thread", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        runtime.setThread(threadClass);
 
         threadClass.index = ClassIndex.THREAD;
         threadClass.setReifiedClass(RubyThread.class);
 
         threadClass.defineAnnotatedMethods(RubyThread.class);
-
-        RubyThread rubyThread = new RubyThread(runtime, threadClass);
-        // TODO: need to isolate the "current" thread from class creation
-        rubyThread.threadImpl = new NativeThread(rubyThread, Thread.currentThread());
-        runtime.getThreadService().setMainThread(Thread.currentThread(), rubyThread);
-        
-        // set to default thread group
-        runtime.getDefaultThreadGroup().addDirectly(rubyThread);
         
         threadClass.setMarshal(ObjectMarshal.NOT_MARSHALABLE_MARSHAL);
         
         return threadClass;
+    }
+    
+    void setThreadImpl(ThreadLike threadImpl) {
+        this.threadImpl = threadImpl;
     }
 
     /**
