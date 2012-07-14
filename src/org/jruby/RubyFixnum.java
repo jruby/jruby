@@ -142,6 +142,11 @@ public class RubyFixnum extends RubyInteger {
 
     @Override
     public IRubyObject equal_p(ThreadContext context, IRubyObject obj) {
+        return equal_p19(context, obj);
+    }
+
+    @Override
+    public IRubyObject equal_p19(ThreadContext context, IRubyObject obj) {
         return context.getRuntime().newBoolean(this == obj || eql(obj));
     }
     
