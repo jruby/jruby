@@ -232,7 +232,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
   # TODO --jdb: cannot figure out how to test
 
   def test_dash_dash_properties_shows_list_of_properties
-    assert_match /^These properties can be used/, `#{RUBY} --properties`
+    assert_match /These properties can be used/, `#{RUBY} --properties`
     assert_equal 0, $?.exitstatus
   end
 

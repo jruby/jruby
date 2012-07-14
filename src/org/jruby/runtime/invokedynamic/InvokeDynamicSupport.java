@@ -518,7 +518,7 @@ public class InvokeDynamicSupport {
             site.setTarget(gwt);
         } else {
             value = context.getCurrentScope().getStaticScope().getModule()
-                    .callMethod(context, "const_missing", context.getRuntime().fastNewSymbol(site.name()));
+                    .callMethod(context, "const_missing", context.getRuntime().newSymbol(site.name()));
         }
         
         return value;

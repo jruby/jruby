@@ -2981,7 +2981,7 @@ public class RubyModule extends RubyObject {
         Ruby runtime = getRuntime();
 
         return value == null ? callMethod(runtime.getCurrentContext(), "const_missing",
-                runtime.fastNewSymbol(name)) : value;
+                runtime.newSymbol(name)) : value;
     }
 
     @Deprecated
