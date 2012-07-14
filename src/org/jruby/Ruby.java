@@ -1284,11 +1284,6 @@ public final class Ruby {
 
         recursiveKey = newSymbol("__recursive_key__");
 
-        
-        if (profile.allowClass("Exception")) {
-            RubyException.createExceptionClass(this);
-        }
-
         if (!is1_9()) {
             if (profile.allowModule("Precision")) {
                 RubyPrecision.createPrecisionModule(this);
@@ -1434,60 +1429,60 @@ public final class Ruby {
     }
 
     private void initExceptions() {
-        standardError = defineClassIfAllowed("StandardError", exceptionClass);
-        runtimeError = defineClassIfAllowed("RuntimeError", standardError);
-        ioError = defineClassIfAllowed("IOError", standardError);
-        scriptError = defineClassIfAllowed("ScriptError", exceptionClass);
-        rangeError = defineClassIfAllowed("RangeError", standardError);
-        signalException = defineClassIfAllowed("SignalException", exceptionClass);
+        
+        runtimeError = defineClassIfAllowed("RuntimeError", getStandardError());
+        ioError = defineClassIfAllowed("IOError", getStandardError());
+        scriptError = defineClassIfAllowed("ScriptError", getException());
+        rangeError = defineClassIfAllowed("RangeError", getStandardError());
+        signalException = defineClassIfAllowed("SignalException", getException());
         
         if (profile.allowClass("NameError")) {
-            nameError = RubyNameError.createNameErrorClass(this, standardError);
+            nameError = RubyNameError.createNameErrorClass(this, getStandardError());
             nameErrorMessage = RubyNameError.createNameErrorMessageClass(this, nameError);            
         }
         if (profile.allowClass("NoMethodError")) {
             noMethodError = RubyNoMethodError.createNoMethodErrorClass(this, nameError);
         }
         if (profile.allowClass("SystemExit")) {
-            systemExit = RubySystemExit.createSystemExitClass(this, exceptionClass);
+            systemExit = RubySystemExit.createSystemExitClass(this, getException());
         }
         if (profile.allowClass("LocalJumpError")) {
-            localJumpError = RubyLocalJumpError.createLocalJumpErrorClass(this, standardError);
+            localJumpError = RubyLocalJumpError.createLocalJumpErrorClass(this, getStandardError());
         }
         if (profile.allowClass("NativeException")) {
             nativeException = NativeException.createClass(this, runtimeError);
         }
         if (profile.allowClass("SystemCallError")) {
-            systemCallError = RubySystemCallError.createSystemCallErrorClass(this, standardError);
+            systemCallError = RubySystemCallError.createSystemCallErrorClass(this, getStandardError());
         }
 
-        fatal = defineClassIfAllowed("Fatal", exceptionClass);
+        fatal = defineClassIfAllowed("Fatal", getException());
         interrupt = defineClassIfAllowed("Interrupt", signalException);
-        typeError = defineClassIfAllowed("TypeError", standardError);
-        argumentError = defineClassIfAllowed("ArgumentError", standardError);
-        indexError = defineClassIfAllowed("IndexError", standardError);
+        typeError = defineClassIfAllowed("TypeError", getStandardError());
+        argumentError = defineClassIfAllowed("ArgumentError", getStandardError());
+        indexError = defineClassIfAllowed("IndexError", getStandardError());
         stopIteration = defineClassIfAllowed("StopIteration", indexError);
         syntaxError = defineClassIfAllowed("SyntaxError", scriptError);
         loadError = defineClassIfAllowed("LoadError", scriptError);
         notImplementedError = defineClassIfAllowed("NotImplementedError", scriptError);
-        securityError = defineClassIfAllowed("SecurityError", standardError);
-        noMemoryError = defineClassIfAllowed("NoMemoryError", exceptionClass);
-        regexpError = defineClassIfAllowed("RegexpError", standardError);
+        securityError = defineClassIfAllowed("SecurityError", getStandardError());
+        noMemoryError = defineClassIfAllowed("NoMemoryError", getException());
+        regexpError = defineClassIfAllowed("RegexpError", getStandardError());
         eofError = defineClassIfAllowed("EOFError", ioError);
-        threadError = defineClassIfAllowed("ThreadError", standardError);
+        threadError = defineClassIfAllowed("ThreadError", getStandardError());
         concurrencyError = defineClassIfAllowed("ConcurrencyError", threadError);
-        systemStackError = defineClassIfAllowed("SystemStackError", is1_9 ? exceptionClass : standardError);
-        zeroDivisionError = defineClassIfAllowed("ZeroDivisionError", standardError);
+        systemStackError = defineClassIfAllowed("SystemStackError", is1_9 ? getException() : getStandardError());
+        zeroDivisionError = defineClassIfAllowed("ZeroDivisionError", getStandardError());
         floatDomainError  = defineClassIfAllowed("FloatDomainError", rangeError);
 
         if (is1_9()) {
             if (profile.allowClass("EncodingError")) {
-                encodingError = defineClass("EncodingError", standardError, standardError.getAllocator());
+                encodingError = defineClass("EncodingError", getStandardError(), getStandardError().getAllocator());
                 encodingCompatibilityError = defineClassUnder("CompatibilityError", encodingError, encodingError.getAllocator(), encodingClass);
                 invalidByteSequenceError = defineClassUnder("InvalidByteSequenceError", encodingError, encodingError.getAllocator(), encodingClass);
                 undefinedConversionError = defineClassUnder("UndefinedConversionError", encodingError, encodingError.getAllocator(), encodingClass);
                 converterNotFoundError = defineClassUnder("ConverterNotFoundError", encodingError, encodingError.getAllocator(), encodingClass);
-                fiberError = defineClass("FiberError", standardError, standardError.getAllocator());
+                fiberError = defineClass("FiberError", getStandardError(), getStandardError().getAllocator());
             }
             concurrencyError = defineClassIfAllowed("ConcurrencyError", threadError);
             keyError = defineClassIfAllowed("KeyError", indexError);
@@ -2161,10 +2156,10 @@ public final class Ruby {
     }
 
     public RubyClass getException() {
+        if (exceptionClass == null && profile.allowClass("Exception")) {
+            exceptionClass = RubyException.createExceptionClass(this);
+        }
         return exceptionClass;
-    }
-    void setException(RubyClass exceptionClass) {
-        this.exceptionClass = exceptionClass;
     }
 
     public RubyClass getNameError() {
@@ -2236,6 +2231,7 @@ public final class Ruby {
     }
 
     public RubyClass getStandardError() {
+        if (standardError == null) standardError = defineClassIfAllowed("StandardError", getException());
         return standardError;
     }
     
