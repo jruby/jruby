@@ -1285,9 +1285,6 @@ public final class Ruby {
 
         recursiveKey = newSymbol("__recursive_key__");
 
-        if (profile.allowClass("Numeric")) {
-            RubyNumeric.createNumericClass(this);
-        }
         if (profile.allowClass("Integer")) {
             RubyInteger.createIntegerClass(this);
         }
@@ -1771,11 +1768,11 @@ public final class Ruby {
     } 
 
     public RubyClass getNumeric() {
+        if (numericClass == null && profile.allowClass("Numeric")) {
+            numericClass = RubyNumeric.createNumericClass(this);
+        }
         return numericClass;
-    }
-    void setNumeric(RubyClass numericClass) {
-        this.numericClass = numericClass;
-    }    
+    } 
 
     public RubyClass getFloat() {
         return floatClass;

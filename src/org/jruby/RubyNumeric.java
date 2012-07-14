@@ -72,7 +72,6 @@ public class RubyNumeric extends RubyObject {
     
     public static RubyClass createNumericClass(Ruby runtime) {
         RubyClass numeric = runtime.defineClass("Numeric", runtime.getObject(), NUMERIC_ALLOCATOR);
-        runtime.setNumeric(numeric);
 
         numeric.index = ClassIndex.NUMERIC;
         numeric.setReifiedClass(RubyNumeric.class);
