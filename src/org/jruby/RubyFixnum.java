@@ -79,10 +79,6 @@ public class RubyFixnum extends RubyInteger {
         }
 
         fixnum.defineAnnotatedMethods(RubyFixnum.class);
-        
-        for (int i = 0; i < runtime.fixnumCache.length; i++) {
-            runtime.fixnumCache[i] = new RubyFixnum(fixnum, i - CACHE_OFFSET);
-        }
 
         return fixnum;
     }
@@ -181,7 +177,7 @@ public class RubyFixnum extends RubyInteger {
 
     public static RubyFixnum newFixnum(Ruby runtime, long value) {
         if (isInCacheRange(value)) {
-            return runtime.fixnumCache[(int) value + CACHE_OFFSET];
+            return runtime.getFixnumCache()[(int) value + CACHE_OFFSET];
         }
         return new RubyFixnum(runtime, value);
     }
@@ -195,31 +191,31 @@ public class RubyFixnum extends RubyInteger {
     }
 
     public static RubyFixnum zero(Ruby runtime) {
-        return runtime.fixnumCache[CACHE_OFFSET];
+        return runtime.getFixnumCache()[CACHE_OFFSET];
     }
 
     public static RubyFixnum one(Ruby runtime) {
-        return runtime.fixnumCache[CACHE_OFFSET + 1];
+        return runtime.getFixnumCache()[CACHE_OFFSET + 1];
     }
     
     public static RubyFixnum two(Ruby runtime) {
-        return runtime.fixnumCache[CACHE_OFFSET + 2];
+        return runtime.getFixnumCache()[CACHE_OFFSET + 2];
     }
     
     public static RubyFixnum three(Ruby runtime) {
-        return runtime.fixnumCache[CACHE_OFFSET + 3];
+        return runtime.getFixnumCache()[CACHE_OFFSET + 3];
     }
     
     public static RubyFixnum four(Ruby runtime) {
-        return runtime.fixnumCache[CACHE_OFFSET + 4];
+        return runtime.getFixnumCache()[CACHE_OFFSET + 4];
     }
     
     public static RubyFixnum five(Ruby runtime) {
-        return runtime.fixnumCache[CACHE_OFFSET + 5];
+        return runtime.getFixnumCache()[CACHE_OFFSET + 5];
     }
 
     public static RubyFixnum minus_one(Ruby runtime) {
-        return runtime.fixnumCache[CACHE_OFFSET - 1];
+        return runtime.getFixnumCache()[CACHE_OFFSET - 1];
     }
 
     @Override

@@ -1284,7 +1284,7 @@ public final class Ruby {
         }
 
         recursiveKey = newSymbol("__recursive_key__");
-
+        
         if (profile.allowClass("Hash")) {
             RubyHash.createHashClass(this);
         }
@@ -1777,6 +1777,15 @@ public final class Ruby {
             fixnumClass = RubyFixnum.createFixnumClass(this);
         }
         return fixnumClass;
+    }
+    
+    public RubyFixnum[] getFixnumCache() {
+        if (fixnumCache[0] == null) {
+            for (int i = 0; i < fixnumCache.length; i++) {
+                fixnumCache[i] = new RubyFixnum(this, i - RubyFixnum.CACHE_OFFSET);
+            }
+        }
+        return fixnumCache;
     }
 
     public RubyClass getComplex() {
@@ -4241,7 +4250,7 @@ public final class Ruby {
     private IRubyObject[] singleNilArray;
     private RubyBoolean trueObject;
     private RubyBoolean falseObject;
-    public final RubyFixnum[] fixnumCache = new RubyFixnum[2 * RubyFixnum.CACHE_OFFSET];
+    private final RubyFixnum[] fixnumCache = new RubyFixnum[2 * RubyFixnum.CACHE_OFFSET];
 
     private boolean verbose, warningsEnabled, debug;
     private IRubyObject verboseValue;
