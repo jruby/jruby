@@ -64,7 +64,6 @@ public abstract class RubyInteger extends RubyNumeric {
     public static RubyClass createIntegerClass(Ruby runtime) {
         RubyClass integer = runtime.defineClass("Integer", runtime.getNumeric(),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        runtime.setInteger(integer);
 
         integer.index = ClassIndex.INTEGER;
         integer.setReifiedClass(RubyInteger.class);
