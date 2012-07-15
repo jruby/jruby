@@ -114,7 +114,6 @@ public class RubyHash extends RubyObject implements Map {
 
     public static RubyClass createHashClass(Ruby runtime) {
         RubyClass hashc = runtime.defineClass("Hash", runtime.getObject(), HASH_ALLOCATOR);
-        runtime.setHash(hashc);
 
         hashc.index = ClassIndex.HASH;
         hashc.setReifiedClass(RubyHash.class);

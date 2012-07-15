@@ -1285,9 +1285,7 @@ public final class Ruby {
 
         recursiveKey = newSymbol("__recursive_key__");
         
-        if (profile.allowClass("Hash")) {
-            RubyHash.createHashClass(this);
-        }
+        
         if (profile.allowClass("Array")) {
             RubyArray.createArrayClass(this);
         }
@@ -1857,10 +1855,10 @@ public final class Ruby {
     }
 
     public RubyClass getHash() {
+        if (hashClass == null && profile.allowClass("Hash")) {
+            hashClass = RubyHash.createHashClass(this);
+        }
         return hashClass;
-    }
-    void setHash(RubyClass hashClass) {
-        this.hashClass = hashClass;
     }
 
     public RubyClass getRange() {
