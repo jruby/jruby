@@ -1285,19 +1285,6 @@ public final class Ruby {
 
         recursiveKey = newSymbol("__recursive_key__");
 
-        if (profile.allowClass("Fixnum")) {
-            RubyFixnum.createFixnumClass(this);
-        }
-
-        if (is1_9()) {
-            if (profile.allowClass("Complex")) {
-                RubyComplex.createComplexClass(this);
-            }
-            if (profile.allowClass("Rational")) {
-                RubyRational.createRationalClass(this);
-            }
-        }
-
         if (profile.allowClass("Hash")) {
             RubyHash.createHashClass(this);
         }
@@ -1786,24 +1773,28 @@ public final class Ruby {
     } 
     
     public RubyClass getFixnum() {
+        if (fixnumClass == null && profile.allowClass("Fixnum")) {
+            fixnumClass = RubyFixnum.createFixnumClass(this);
+        }
         return fixnumClass;
-    }
-    void setFixnum(RubyClass fixnumClass) {
-        this.fixnumClass = fixnumClass;
     }
 
     public RubyClass getComplex() {
+        if (is1_9()) {
+            if (complexClass == null && profile.allowClass("Complex")) {
+                complexClass = RubyComplex.createComplexClass(this);
+            }
+        }
         return complexClass;
-    }
-    void setComplex(RubyClass complexClass) {
-        this.complexClass = complexClass;
     }
 
     public RubyClass getRational() {
+        if (is1_9()) {
+            if (rationalClass == null && profile.allowClass("Rational")) {
+                rationalClass = RubyRational.createRationalClass(this);
+            }
+        }
         return rationalClass;
-    }
-    void setRational(RubyClass rationalClass) {
-        this.rationalClass = rationalClass;
     }
 
     public RubyModule getEnumerable() {

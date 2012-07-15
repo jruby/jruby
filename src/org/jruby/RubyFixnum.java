@@ -63,7 +63,6 @@ public class RubyFixnum extends RubyInteger {
     public static RubyClass createFixnumClass(Ruby runtime) {
         RubyClass fixnum = runtime.defineClass("Fixnum", runtime.getInteger(),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        runtime.setFixnum(fixnum);
 
         fixnum.index = ClassIndex.FIXNUM;
         fixnum.setReifiedClass(RubyFixnum.class);
