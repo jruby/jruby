@@ -96,7 +96,6 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
 
     public static RubyClass createArrayClass(Ruby runtime) {
         RubyClass arrayc = runtime.defineClass("Array", runtime.getObject(), ARRAY_ALLOCATOR);
-        runtime.setArray(arrayc);
 
         arrayc.index = ClassIndex.ARRAY;
         arrayc.setReifiedClass(RubyArray.class);

@@ -1284,11 +1284,7 @@ public final class Ruby {
         }
 
         recursiveKey = newSymbol("__recursive_key__");
-        
-        
-        if (profile.allowClass("Array")) {
-            RubyArray.createArrayClass(this);
-        }
+
         if (profile.allowClass("Float")) {
             RubyFloat.createFloatClass(this);
         }
@@ -1848,10 +1844,10 @@ public final class Ruby {
     }
 
     public RubyClass getArray() {
+        if (arrayClass == null && profile.allowClass("Array")) {
+            arrayClass = RubyArray.createArrayClass(this);
+        }
         return arrayClass;
-    }    
-    void setArray(RubyClass arrayClass) {
-        this.arrayClass = arrayClass;
     }
 
     public RubyClass getHash() {
