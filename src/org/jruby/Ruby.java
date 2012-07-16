@@ -1289,10 +1289,6 @@ public final class Ruby {
         rationalClass = getRational();
         bignumClass = getBignum();
 
-        if (profile.allowClass("Tms")) {
-            tmsStruct = RubyStruct.newInstance(getStructClass(), new IRubyObject[]{newString("Tms"), newSymbol("utime"), newSymbol("stime"), newSymbol("cutime"), newSymbol("cstime")}, Block.NULL_BLOCK);
-        }
-
         if (profile.allowClass("Binding")) {
             RubyBinding.createBindingClass(this);
         }
@@ -2039,10 +2035,10 @@ public final class Ruby {
     }
 
     public IRubyObject getTmsStruct() {
+        if (tmsStruct == null && profile.allowClass("Tms")) {
+            tmsStruct = RubyStruct.newInstance(getStructClass(), new IRubyObject[]{newString("Tms"), newSymbol("utime"), newSymbol("stime"), newSymbol("cutime"), newSymbol("cstime")}, Block.NULL_BLOCK);
+        }
         return tmsStruct;
-    }
-    void setTmsStruct(RubyClass tmsStruct) {
-        this.tmsStruct = tmsStruct;
     }
     
     public IRubyObject getPasswdStruct() {
