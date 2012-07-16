@@ -1289,11 +1289,8 @@ public final class Ruby {
         rationalClass = getRational();
         bignumClass = getBignum();
 
-        if (profile.allowClass("Struct")) {
-            RubyStruct.createStructClass(this);
-        }
         if (profile.allowClass("Tms")) {
-            tmsStruct = RubyStruct.newInstance(structClass, new IRubyObject[]{newString("Tms"), newSymbol("utime"), newSymbol("stime"), newSymbol("cutime"), newSymbol("cstime")}, Block.NULL_BLOCK);
+            tmsStruct = RubyStruct.newInstance(getStructClass(), new IRubyObject[]{newString("Tms"), newSymbol("utime"), newSymbol("stime"), newSymbol("cutime"), newSymbol("cstime")}, Block.NULL_BLOCK);
         }
 
         if (profile.allowClass("Binding")) {
@@ -2026,10 +2023,10 @@ public final class Ruby {
     }    
 
     public RubyClass getStructClass() {
+        if (structClass == null && profile.allowClass("Struct")) {
+            structClass = RubyStruct.createStructClass(this);
+        }
         return structClass;
-    }
-    void setStructClass(RubyClass structClass) {
-        this.structClass = structClass;
     }
     
     public RubyClass getRandomClass() {
