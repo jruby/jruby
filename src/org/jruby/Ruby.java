@@ -138,6 +138,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.BindException;
 import java.nio.channels.ClosedChannelException;
 import java.security.SecureRandom;
@@ -1381,21 +1382,44 @@ public final class Ruby {
         }
         return nilPrefilledArray;
     }
-
+    
+    private Map<String, Method> classCreatorMap = new HashMap<String, Method>();
+    
+    private void initClassCreatorMap() {
+        try {
+            classCreatorMap.put("IOError", this.getClass().getMethod("getIOError"));
+            classCreatorMap.put("ScriptError", this.getClass().getMethod("getScriptError"));
+            classCreatorMap.put("RangeError", this.getClass().getMethod("getRangeError"));
+            classCreatorMap.put("SignalException", this.getClass().getMethod("getInterrupt"));
+            classCreatorMap.put("NoMethodError", this.getClass().getMethod("getNoMethodError"));
+            classCreatorMap.put("Interrupt", this.getClass().getMethod("getSignalException"));
+            classCreatorMap.put("TypeError", this.getClass().getMethod("getTypeError"));
+            classCreatorMap.put("ArgumentError", this.getClass().getMethod("getArgumentError"));
+            classCreatorMap.put("IndexError", this.getClass().getMethod("getIndexError"));
+            classCreatorMap.put("StopIteration", this.getClass().getMethod("getStopIteration"));
+            classCreatorMap.put("SyntaxError", this.getClass().getMethod("getSyntaxError"));
+            classCreatorMap.put("LoadError", this.getClass().getMethod("getLoadError"));
+            classCreatorMap.put("NotImplementedError", this.getClass().getMethod("getNotImplementedError"));
+            classCreatorMap.put("SecurityError", this.getClass().getMethod("getSecurityError"));
+            classCreatorMap.put("NoMemoryError", this.getClass().getMethod("getNoMemoryError"));
+            classCreatorMap.put("RegexError", this.getClass().getMethod("getRegexError"));
+            classCreatorMap.put("EOFError", this.getClass().getMethod("getEOFError"));
+        } catch (NoSuchMethodException ex) {
+            // should not happen
+        } catch (SecurityException ex) {
+            // should not happen
+        }
+    }
+    
+    public Method findClassCreatorMethod(String name) {
+        return classCreatorMap.get(name);
+    }
+    
     private void initExceptions() {
-        
-        
-        ioError = defineClassIfAllowed("IOError", getStandardError());
-        scriptError = defineClassIfAllowed("ScriptError", getException());
-        rangeError = defineClassIfAllowed("RangeError", getStandardError());
-        signalException = defineClassIfAllowed("SignalException", getException());
-        
+        initClassCreatorMap();
         if (profile.allowClass("NameError")) {
             nameError = RubyNameError.createNameErrorClass(this, getStandardError());
             nameErrorMessage = RubyNameError.createNameErrorMessageClass(this, nameError);            
-        }
-        if (profile.allowClass("NoMethodError")) {
-            noMethodError = RubyNoMethodError.createNoMethodErrorClass(this, nameError);
         }
         if (profile.allowClass("SystemExit")) {
             systemExit = RubySystemExit.createSystemExitClass(this, getException());
@@ -1410,24 +1434,11 @@ public final class Ruby {
             systemCallError = RubySystemCallError.createSystemCallErrorClass(this, getStandardError());
         }
 
-        fatal = defineClassIfAllowed("Fatal", getException());
-        interrupt = defineClassIfAllowed("Interrupt", signalException);
-        typeError = defineClassIfAllowed("TypeError", getStandardError());
-        argumentError = defineClassIfAllowed("ArgumentError", getStandardError());
-        indexError = defineClassIfAllowed("IndexError", getStandardError());
-        stopIteration = defineClassIfAllowed("StopIteration", indexError);
-        syntaxError = defineClassIfAllowed("SyntaxError", scriptError);
-        loadError = defineClassIfAllowed("LoadError", scriptError);
-        notImplementedError = defineClassIfAllowed("NotImplementedError", scriptError);
-        securityError = defineClassIfAllowed("SecurityError", getStandardError());
-        noMemoryError = defineClassIfAllowed("NoMemoryError", getException());
-        regexpError = defineClassIfAllowed("RegexpError", getStandardError());
-        eofError = defineClassIfAllowed("EOFError", ioError);
         threadError = defineClassIfAllowed("ThreadError", getStandardError());
         concurrencyError = defineClassIfAllowed("ConcurrencyError", threadError);
         systemStackError = defineClassIfAllowed("SystemStackError", is1_9 ? getException() : getStandardError());
         zeroDivisionError = defineClassIfAllowed("ZeroDivisionError", getStandardError());
-        floatDomainError  = defineClassIfAllowed("FloatDomainError", rangeError);
+        floatDomainError  = defineClassIfAllowed("FloatDomainError", getRangeError());
 
         if (is1_9()) {
             if (profile.allowClass("EncodingError")) {
@@ -1439,9 +1450,9 @@ public final class Ruby {
                 fiberError = defineClass("FiberError", getStandardError(), getStandardError().getAllocator());
             }
             concurrencyError = defineClassIfAllowed("ConcurrencyError", threadError);
-            keyError = defineClassIfAllowed("KeyError", indexError);
+            keyError = defineClassIfAllowed("KeyError", getIndexError());
 
-            mathDomainError = defineClassUnder("DomainError", argumentError, argumentError.getAllocator(), mathModule);
+            mathDomainError = defineClassUnder("DomainError", getArgumentError(), getArgumentError().getAllocator(), mathModule);
             inRecursiveListOperation.set(false);
         }
 
@@ -2142,14 +2153,19 @@ public final class Ruby {
     }
 
     public RubyClass getNoMethodError() {
+        if (noMethodError == null && profile.allowClass("NoMethodError")) {
+            noMethodError = RubyNoMethodError.createNoMethodErrorClass(this, getNameError());
+        }
         return noMethodError;
     }
 
     public RubyClass getSignalException() {
+        if (signalException == null) signalException = defineClassIfAllowed("SignalException", getException());
         return signalException;
     }
 
     public RubyClass getRangeError() {
+        if (rangeError == null) rangeError = defineClassIfAllowed("RangeError", getStandardError());
         return rangeError;
     }
 
@@ -2174,30 +2190,37 @@ public final class Ruby {
     }
 
     public RubyClass getFatal() {
+        if (fatal == null) fatal = defineClassIfAllowed("Fatal", getException());
         return fatal;
     }
     
     public RubyClass getInterrupt() {
+        if (interrupt == null) interrupt = defineClassIfAllowed("Interrupt", getSignalException());
         return interrupt;
     }
     
     public RubyClass getTypeError() {
+        if (typeError == null) typeError = defineClassIfAllowed("TypeError", getStandardError());
         return typeError;
     }
 
     public RubyClass getArgumentError() {
+        if (argumentError == null) argumentError = defineClassIfAllowed("ArgumentError", getStandardError());
         return argumentError;
     }
 
     public RubyClass getIndexError() {
+        if (indexError == null) indexError = defineClassIfAllowed("IndexError", getStandardError());
         return indexError;
     }
 
     public RubyClass getStopIteration() {
+        if (stopIteration == null) stopIteration = defineClassIfAllowed("StopIteration", getIndexError());
         return stopIteration;
     }
 
     public RubyClass getSyntaxError() {
+        if (syntaxError == null) syntaxError = defineClassIfAllowed("SyntaxError", getScriptError());
         return syntaxError;
     }
 
@@ -2212,30 +2235,42 @@ public final class Ruby {
     }
     
     public RubyClass getIOError() {
+        if (ioError == null) ioError = defineClassIfAllowed("IOError", getStandardError());
         return ioError;
+    }
+    
+    public RubyClass getScriptError() {
+        if (scriptError == null) scriptError = defineClassIfAllowed("ScriptError", getException());
+        return scriptError;
     }
 
     public RubyClass getLoadError() {
+        if (loadError == null) loadError = defineClassIfAllowed("LoadError", getScriptError());
         return loadError;
     }
 
     public RubyClass getNotImplementedError() {
+        if (notImplementedError == null) notImplementedError = defineClassIfAllowed("NotImplementedError", getScriptError());
         return notImplementedError;
     }
 
     public RubyClass getSecurityError() {
+        if (securityError == null) securityError = defineClassIfAllowed("SecurityError", getStandardError());
         return securityError;
     }
 
     public RubyClass getNoMemoryError() {
+        if (noMemoryError == null) noMemoryError = defineClassIfAllowed("NoMemoryError", getException());
         return noMemoryError;
     }
 
     public RubyClass getRegexpError() {
+        if (regexpError == null) regexpError = defineClassIfAllowed("RegexpError", getStandardError());
         return regexpError;
     }
 
     public RubyClass getEOFError() {
+        if (eofError == null) eofError = defineClassIfAllowed("EOFError", getIOError());
         return eofError;
     }
 

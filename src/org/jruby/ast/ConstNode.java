@@ -31,9 +31,13 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ast;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.List;
 
 import org.jruby.Ruby;
+import org.jruby.RubyClass;
+import org.jruby.RubyModule;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -110,11 +114,28 @@ public class ConstNode extends Node implements INameNode {
     public IRubyObject reCache(ThreadContext context, String name) {
         Object newGeneration = context.getRuntime().getConstantInvalidator().getData();
         IRubyObject value = context.getConstant(name);
-            
+        if (value == null) value = tryGetConstantIfPossible(context.getRuntime(), name);
         cachedValue = value;
             
         if (value != null) generation = newGeneration;
         
         return value;
+    }
+    
+    private IRubyObject tryGetConstantIfPossible(Ruby runtime, String name) {
+        Method method = runtime.findClassCreatorMethod(name);
+        if (method != null) {
+            try {
+                Object obj = method.invoke(runtime);
+                if (obj instanceof IRubyObject) return (IRubyObject)obj;
+            } catch (IllegalAccessException ex) {
+                return null;
+            } catch (IllegalArgumentException ex) {
+                return null;
+            } catch (InvocationTargetException ex) {
+                return null;
+            }
+        }
+        return null;
     }
 }
