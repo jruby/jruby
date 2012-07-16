@@ -1288,6 +1288,7 @@ public final class Ruby {
         complexClass = getComplex();
         rationalClass = getRational();
         bignumClass = getBignum();
+        structClass = getStructClass();
 
         if (profile.allowClass("Binding")) {
             RubyBinding.createBindingClass(this);
@@ -1383,7 +1384,7 @@ public final class Ruby {
 
     private void initExceptions() {
         
-        runtimeError = defineClassIfAllowed("RuntimeError", getStandardError());
+        
         ioError = defineClassIfAllowed("IOError", getStandardError());
         scriptError = defineClassIfAllowed("ScriptError", getException());
         rangeError = defineClassIfAllowed("RangeError", getStandardError());
@@ -1403,7 +1404,7 @@ public final class Ruby {
             localJumpError = RubyLocalJumpError.createLocalJumpErrorClass(this, getStandardError());
         }
         if (profile.allowClass("NativeException")) {
-            nativeException = NativeException.createClass(this, runtimeError);
+            nativeException = NativeException.createClass(this, getRuntimeError());
         }
         if (profile.allowClass("SystemCallError")) {
             systemCallError = RubySystemCallError.createSystemCallErrorClass(this, getStandardError());
@@ -2206,6 +2207,7 @@ public final class Ruby {
     }
     
     public RubyClass getRuntimeError() {
+        if (runtimeError == null) runtimeError = defineClassIfAllowed("RuntimeError", getStandardError());
         return runtimeError;
     }
     
