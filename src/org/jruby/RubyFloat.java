@@ -91,7 +91,6 @@ public class RubyFloat extends RubyNumeric {
 
     public static RubyClass createFloatClass(Ruby runtime) {
         RubyClass floatc = runtime.defineClass("Float", runtime.getNumeric(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        runtime.setFloat(floatc);
 
         floatc.index = ClassIndex.FLOAT;
         floatc.setReifiedClass(RubyFloat.class);
@@ -109,6 +108,12 @@ public class RubyFloat extends RubyNumeric {
             floatc.includeModule(runtime.getPrecision());
         }
 
+        floatc.defineAnnotatedMethods(RubyFloat.class);
+
+        return floatc;
+    }
+    
+    public static void defineFloatConstans(Ruby runtime, RubyClass floatc) {
         // Java Doubles are 64 bit long:            
         floatc.defineConstant("ROUNDS", RubyFixnum.newFixnum(runtime, ROUNDS));
         floatc.defineConstant("RADIX", RubyFixnum.newFixnum(runtime, RADIX));
@@ -128,10 +133,6 @@ public class RubyFloat extends RubyNumeric {
             floatc.defineConstant("INFINITY", RubyFloat.newFloat(runtime, INFINITY));
             floatc.defineConstant("NAN", RubyFloat.newFloat(runtime, NAN));
         }
-
-        floatc.defineAnnotatedMethods(RubyFloat.class);
-
-        return floatc;
     }
 
     private final double value;

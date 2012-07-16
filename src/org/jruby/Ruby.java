@@ -1285,9 +1285,6 @@ public final class Ruby {
 
         recursiveKey = newSymbol("__recursive_key__");
 
-        if (profile.allowClass("Float")) {
-            RubyFloat.createFloatClass(this);
-        }
         if (profile.allowClass("Bignum")) {
             RubyBignum.createBignumClass(this);
             // RubyRandom depends on Bignum existence.
@@ -1753,10 +1750,11 @@ public final class Ruby {
     } 
 
     public RubyClass getFloat() {
+        if (floatClass == null && profile.allowClass("Float")) {
+            floatClass = RubyFloat.createFloatClass(this);
+            RubyFloat.defineFloatConstans(this, floatClass);
+        }
         return floatClass;
-    }
-    void setFloat(RubyClass floatClass) {
-        this.floatClass = floatClass;
     }
     
     public RubyClass getInteger() {
