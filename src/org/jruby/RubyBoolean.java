@@ -75,7 +75,7 @@ public class RubyBoolean extends RubyObject {
         return boolean.class;
     }
 
-    public static RubyClass createFalseClass(Ruby runtime) {
+    static RubyClass createFalseClass(Ruby runtime) {
         RubyClass falseClass = runtime.defineClass("FalseClass", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         falseClass.index = ClassIndex.FALSE;
         falseClass.setReifiedClass(RubyBoolean.class);
@@ -87,7 +87,7 @@ public class RubyBoolean extends RubyObject {
         return falseClass;
     }
     
-    public static RubyClass createTrueClass(Ruby runtime) {
+    static RubyClass createTrueClass(Ruby runtime) {
         RubyClass trueClass = runtime.defineClass("TrueClass", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         trueClass.index = ClassIndex.TRUE;
         trueClass.setReifiedClass(RubyBoolean.class);

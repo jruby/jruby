@@ -112,7 +112,7 @@ import static org.jruby.runtime.MethodIndex.HASH;
 public class RubyHash extends RubyObject implements Map {
     public static final int DEFAULT_INSPECT_STR_SIZE = 20;
 
-    public static RubyClass createHashClass(Ruby runtime) {
+    static RubyClass createHashClass(Ruby runtime) {
         RubyClass hashc = runtime.defineClass("Hash", runtime.getObject(), HASH_ALLOCATOR);
 
         hashc.index = ClassIndex.HASH;

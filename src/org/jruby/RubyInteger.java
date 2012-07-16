@@ -61,7 +61,7 @@ import org.jruby.util.Numeric;
 @JRubyClass(name="Integer", parent="Numeric", include="Precision")
 public abstract class RubyInteger extends RubyNumeric { 
 
-    public static RubyClass createIntegerClass(Ruby runtime) {
+    static RubyClass createIntegerClass(Ruby runtime) {
         RubyClass integer = runtime.defineClass("Integer", runtime.getNumeric(),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
 

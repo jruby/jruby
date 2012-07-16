@@ -56,7 +56,7 @@ public class RubyNil extends RubyObject {
         }
     };
     
-    public static RubyClass createNilClass(Ruby runtime) {
+    static RubyClass createNilClass(Ruby runtime) {
         RubyClass nilClass = runtime.defineClass("NilClass", runtime.getObject(), NIL_ALLOCATOR);
         nilClass.index = ClassIndex.NIL;
         nilClass.setReifiedClass(RubyNil.class);

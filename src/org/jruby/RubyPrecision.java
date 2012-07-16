@@ -45,7 +45,7 @@ import org.jruby.runtime.callback.Callback;
 @JRubyModule(name="Precision")
 public class RubyPrecision {
     
-    public static RubyModule createPrecisionModule(Ruby runtime) {
+    static RubyModule createPrecisionModule(Ruby runtime) {
         RubyModule precisionModule = runtime.defineModule("Precision");
         
         precisionModule.defineAnnotatedMethods(RubyPrecision.class);

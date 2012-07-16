@@ -136,7 +136,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     private ByteList value;
 
-    public static RubyClass createStringClass(Ruby runtime) {
+    static RubyClass createStringClass(Ruby runtime) {
         RubyClass stringClass = runtime.defineClass("String", runtime.getObject(), STRING_ALLOCATOR);
         stringClass.index = ClassIndex.STRING;
         stringClass.setReifiedClass(RubyString.class);

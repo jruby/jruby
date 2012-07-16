@@ -53,10 +53,9 @@ import static org.jruby.CompatVersion.*;
  */
 @JRubyClass(name="Bignum", parent="Integer")
 public class RubyBignum extends RubyInteger {
-    public static RubyClass createBignumClass(Ruby runtime) {
+    static RubyClass createBignumClass(Ruby runtime) {
         RubyClass bignum = runtime.defineClass("Bignum", runtime.getInteger(),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        runtime.setBignum(bignum);
 
         bignum.index = ClassIndex.BIGNUM;
         bignum.setReifiedClass(RubyBignum.class);

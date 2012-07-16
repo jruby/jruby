@@ -81,7 +81,7 @@ import static org.jruby.runtime.MethodIndex.HASH;
 @JRubyClass(name = "Rational", parent = "Numeric", include = "Precision")
 public class RubyRational extends RubyNumeric {
     
-    public static RubyClass createRationalClass(Ruby runtime) {
+    static RubyClass createRationalClass(Ruby runtime) {
         RubyClass rationalc = runtime.defineClass("Rational", runtime.getNumeric(), RATIONAL_ALLOCATOR);
 
         rationalc.index = ClassIndex.RATIONAL;

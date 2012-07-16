@@ -94,7 +94,7 @@ import static org.jruby.runtime.MethodIndex.OP_CMP;
 public class RubyArray extends RubyObject implements List, RandomAccess {
     public static final int DEFAULT_INSPECT_STR_SIZE = 10;
 
-    public static RubyClass createArrayClass(Ruby runtime) {
+    static RubyClass createArrayClass(Ruby runtime) {
         RubyClass arrayc = runtime.defineClass("Array", runtime.getObject(), ARRAY_ALLOCATOR);
 
         arrayc.index = ClassIndex.ARRAY;

@@ -52,7 +52,7 @@ public class RubyThreadGroup extends RubyObject {
     private final Set<RubyThread> rubyThreadList = Collections.synchronizedSet(new WeakHashSet<RubyThread>());
     private boolean enclosed = false;
 
-    public static RubyClass createThreadGroupClass(Ruby runtime) {
+    static RubyClass createThreadGroupClass(Ruby runtime) {
         RubyClass threadGroupClass = runtime.defineClass("ThreadGroup", runtime.getObject(), THREADGROUP_ALLOCATOR);
 
         threadGroupClass.index = ClassIndex.THREADGROUP;

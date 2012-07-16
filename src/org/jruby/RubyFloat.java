@@ -113,7 +113,7 @@ public class RubyFloat extends RubyNumeric {
         return floatc;
     }
     
-    public static void defineFloatConstans(Ruby runtime, RubyClass floatc) {
+    static void defineFloatConstans(Ruby runtime, RubyClass floatc) {
         // Java Doubles are 64 bit long:            
         floatc.defineConstant("ROUNDS", RubyFixnum.newFixnum(runtime, ROUNDS));
         floatc.defineConstant("RADIX", RubyFixnum.newFixnum(runtime, RADIX));

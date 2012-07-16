@@ -70,7 +70,7 @@ import static org.jruby.runtime.MethodIndex.OP_EQUAL;
 @JRubyClass(name="Numeric", include="Comparable")
 public class RubyNumeric extends RubyObject {
     
-    public static RubyClass createNumericClass(Ruby runtime) {
+    static RubyClass createNumericClass(Ruby runtime) {
         RubyClass numeric = runtime.defineClass("Numeric", runtime.getObject(), NUMERIC_ALLOCATOR);
 
         numeric.index = ClassIndex.NUMERIC;

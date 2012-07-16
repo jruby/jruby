@@ -80,7 +80,7 @@ import static org.jruby.runtime.MethodIndex.HASH;
 @JRubyClass(name = "Complex", parent = "Numeric")
 public class RubyComplex extends RubyNumeric {
 
-    public static RubyClass createComplexClass(Ruby runtime) {
+    static RubyClass createComplexClass(Ruby runtime) {
         RubyClass complexc = runtime.defineClass("Complex", runtime.getNumeric(), COMPLEX_ALLOCATOR);
 
         complexc.index = ClassIndex.COMPLEX;

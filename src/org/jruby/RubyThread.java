@@ -254,7 +254,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         }
     }
 
-    public static RubyClass createThreadClass(Ruby runtime) {
+    static RubyClass createThreadClass(Ruby runtime) {
         // FIXME: In order for Thread to play well with the standard 'new' behavior,
         // it must provide an allocator that can create empty object instances which
         // initialize then fills with appropriate data.

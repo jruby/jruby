@@ -209,16 +209,17 @@ public class RubyRandom extends RubyObject {
         return RubyBignum.newBignum(runtime, (new BigInteger(seed)).abs());
     }
 
-    public static RubyClass createRandomClass(Ruby runtime) {
-        RubyClass randomClass = runtime
-                .defineClass("Random", runtime.getObject(), RANDOM_ALLOCATOR);
+    static RubyClass createRandomClass(Ruby runtime) {
+        RubyClass randomClass = runtime.defineClass("Random", runtime.getObject(), RANDOM_ALLOCATOR);
         randomClass.defineAnnotatedMethods(RubyRandom.class);
+        return randomClass;
+    }
+    
+    static RubyRandom.RandomType defineRandConstants(Ruby runtime, RubyClass randomClass) {
         RubyRandom defaultRand = new RubyRandom(runtime, randomClass);
         defaultRand.random = new RandomType(randomSeed(runtime));
         randomClass.setConstant("DEFAULT", defaultRand);
-        runtime.setDefaultRand(defaultRand.random);
-        runtime.setRandomClass(randomClass);
-        return randomClass;
+        return defaultRand.random;
     }
 
     private static ObjectAllocator RANDOM_ALLOCATOR = new ObjectAllocator() {

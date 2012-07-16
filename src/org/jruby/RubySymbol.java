@@ -104,7 +104,7 @@ public class RubySymbol extends RubyObject {
         this(runtime, internedSymbol, symbolBytesFromString(runtime, internedSymbol));
     }
 
-    public static RubyClass createSymbolClass(Ruby runtime) {
+    static RubyClass createSymbolClass(Ruby runtime) {
         RubyClass symbolClass = runtime.defineClass("Symbol", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         RubyClass symbolMetaClass = symbolClass.getMetaClass();
         symbolClass.index = ClassIndex.SYMBOL;

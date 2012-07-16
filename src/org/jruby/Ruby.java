@@ -1285,15 +1285,6 @@ public final class Ruby {
 
         recursiveKey = newSymbol("__recursive_key__");
 
-        if (profile.allowClass("Bignum")) {
-            RubyBignum.createBignumClass(this);
-            // RubyRandom depends on Bignum existence.
-            if (is1_9()) {
-                RubyRandom.createRandomClass(this);
-            } else {
-                setDefaultRand(new RubyRandom.RandomType(this));
-            }
-        }
         ioClass = RubyIO.createIOClass(this);
 
         if (profile.allowClass("Struct")) {
@@ -1967,10 +1958,10 @@ public final class Ruby {
     }    
 
     public RubyClass getBignum() {
+        if (bignumClass == null && profile.allowClass("Bignum")) {
+            bignumClass = RubyBignum.createBignumClass(this);
+        }
         return bignumClass;
-    }
-    void setBignum(RubyClass bignumClass) {
-        this.bignumClass = bignumClass;
     }    
 
     public RubyClass getDir() {
@@ -2041,10 +2032,13 @@ public final class Ruby {
     }
     
     public RubyClass getRandomClass() {
+        if (is1_9()) {
+            if (randomClass == null && profile.allowClass("Random")) {
+                randomClass = RubyRandom.createRandomClass(this);
+                defaultRand = RubyRandom.defineRandConstants(this, randomClass);
+            }
+        }
         return randomClass;
-    }
-    void setRandomClass(RubyClass randomClass) {
-        this.randomClass = randomClass;
     }
 
     public IRubyObject getTmsStruct() {
@@ -2300,6 +2294,13 @@ public final class Ruby {
 
     private RubyRandom.RandomType defaultRand;
     public RubyRandom.RandomType getDefaultRand() {
+        if (defaultRand == null) {
+            if (is1_9()) {
+                // this should not happen.
+            } else {
+                defaultRand = new RubyRandom.RandomType(this);
+            }
+        }
         return defaultRand;
     }
     

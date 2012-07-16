@@ -60,7 +60,7 @@ import static org.jruby.CompatVersion.*;
 @JRubyClass(name="Fixnum", parent="Integer", include="Precision")
 public class RubyFixnum extends RubyInteger {
     
-    public static RubyClass createFixnumClass(Ruby runtime) {
+    static RubyClass createFixnumClass(Ruby runtime) {
         RubyClass fixnum = runtime.defineClass("Fixnum", runtime.getInteger(),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
 

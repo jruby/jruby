@@ -64,7 +64,7 @@ import static org.jruby.runtime.MethodIndex.OP_CMP;
 @JRubyModule(name="Enumerable")
 public class RubyEnumerable {
 
-    public static RubyModule createEnumerableModule(Ruby runtime) {
+    static RubyModule createEnumerableModule(Ruby runtime) {
         RubyModule enumModule = runtime.defineModule("Enumerable");
         
         enumModule.defineAnnotatedMethods(RubyEnumerable.class);
