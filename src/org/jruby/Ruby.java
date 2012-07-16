@@ -218,7 +218,6 @@ public final class Ruby {
             myRandom = new Random();
         }
         this.random = myRandom;
-        this.hashSeed = this.random.nextInt();
     }
     
     /**
@@ -1112,6 +1111,7 @@ public final class Ruby {
      * loaded.
      */
     private void init() {
+        hashSeed = getRandom().nextInt();
         setConfigParams();
         initBeanManager();
         
@@ -1285,7 +1285,9 @@ public final class Ruby {
 
         recursiveKey = newSymbol("__recursive_key__");
 
-        ioClass = RubyIO.createIOClass(this);
+        complexClass = getComplex();
+        rationalClass = getRational();
+        bignumClass = getBignum();
 
         if (profile.allowClass("Struct")) {
             RubyStruct.createStructClass(this);
@@ -1775,6 +1777,7 @@ public final class Ruby {
         if (is1_9()) {
             if (complexClass == null && profile.allowClass("Complex")) {
                 complexClass = RubyComplex.createComplexClass(this);
+                RubyComplex.defineComplexConstants(this, complexClass);
             }
         }
         return complexClass;
@@ -1993,11 +1996,9 @@ public final class Ruby {
     }
     
     public RubyClass getIO() {
+        if (ioClass == null) ioClass = RubyIO.createIOClass(this);
         return ioClass;
-    }
-    void setIO(RubyClass ioClass) {
-        this.ioClass = ioClass;
-    }    
+    }   
 
     public RubyClass getThread() {
         if (threadClass == null && getProfile().allowClass("Thread")) {
@@ -2035,7 +2036,6 @@ public final class Ruby {
         if (is1_9()) {
             if (randomClass == null && profile.allowClass("Random")) {
                 randomClass = RubyRandom.createRandomClass(this);
-                defaultRand = RubyRandom.defineRandConstants(this, randomClass);
             }
         }
         return randomClass;
@@ -2296,7 +2296,7 @@ public final class Ruby {
     public RubyRandom.RandomType getDefaultRand() {
         if (defaultRand == null) {
             if (is1_9()) {
-                // this should not happen.
+                defaultRand = RubyRandom.defineRandConstants(this, getRandomClass());
             } else {
                 defaultRand = new RubyRandom.RandomType(this);
             }

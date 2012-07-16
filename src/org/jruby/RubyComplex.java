@@ -105,9 +105,11 @@ public class RubyComplex extends RubyNumeric {
             complexc.undefineMethod(undef);
         }
 
-        complexc.defineConstant("I", RubyComplex.newComplexConvert(runtime.getCurrentContext(), RubyFixnum.zero(runtime), RubyFixnum.one(runtime)));
-
         return complexc;
+    }
+    
+    static void defineComplexConstants(Ruby runtime, RubyClass complexc) {
+        complexc.defineConstant("I", RubyComplex.newComplexConvert(runtime.getCurrentContext(), RubyFixnum.zero(runtime), RubyFixnum.one(runtime)));
     }
 
     private static ObjectAllocator COMPLEX_ALLOCATOR = new ObjectAllocator() {
