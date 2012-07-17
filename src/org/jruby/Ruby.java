@@ -1287,16 +1287,7 @@ public final class Ruby {
         recursiveKey = newSymbol("__recursive_key__");
 
         mathModule = getMath();
-        
-        if (profile.allowClass("Range")) {
-            RubyRange.createRangeClass(this);
-        }
-        if (profile.allowModule("ObjectSpace")) {
-            RubyObjectSpace.createObjectSpaceModule(this);
-        }
-        if (profile.allowModule("GC")) {
-            RubyGC.createGCModule(this);
-        }
+
         if (profile.allowClass("Proc")) {
             RubyProc.createProcClass(this);
         }
@@ -1381,6 +1372,9 @@ public final class Ruby {
             classCreatorMap.put("Binding", this.getClass().getMethod("getBinding"));
             classCreatorMap.put("Math", this.getClass().getMethod("getMath"));
             classCreatorMap.put("Regexp", this.getClass().getMethod("getRegexp"));
+            classCreatorMap.put("Range", this.getClass().getMethod("getRange"));
+            classCreatorMap.put("ObjectSpace", this.getClass().getMethod("getObjectSpaceModule"));
+            classCreatorMap.put("GC", this.getClass().getMethod("getGC"));
             classCreatorMap.put("StandardError", this.getClass().getMethod("getStandardError"));
             classCreatorMap.put("IOError", this.getClass().getMethod("getIOError"));
             classCreatorMap.put("ScriptError", this.getClass().getMethod("getScriptError"));
@@ -1448,7 +1442,7 @@ public final class Ruby {
             concurrencyError = defineClassIfAllowed("ConcurrencyError", threadError);
             keyError = defineClassIfAllowed("KeyError", getIndexError());
 
-            mathDomainError = defineClassUnder("DomainError", getArgumentError(), getArgumentError().getAllocator(), mathModule);
+            mathDomainError = defineClassUnder("DomainError", getArgumentError(), getArgumentError().getAllocator(), getMath());
             inRecursiveListOperation.set(false);
         }
 
@@ -1851,12 +1845,12 @@ public final class Ruby {
     }
 
     public RubyClass getRange() {
+        if (rangeClass == null && profile.allowClass("Range")) {
+            rangeClass = RubyRange.createRangeClass(this);
+        }
         return rangeClass;
     }
-    void setRange(RubyClass rangeClass) {
-        this.rangeClass = rangeClass;
-    }
-
+    
     /** Returns the "true" instance from the instance pool.
      * @return The "true" instance.
      */
@@ -2066,18 +2060,18 @@ public final class Ruby {
     }
 
     public RubyModule getGC() {
+        if (gcModule == null && profile.allowModule("GC")) {
+            gcModule = RubyGC.createGCModule(this);
+        }
         return gcModule;
-    }
-    void setGC(RubyModule gcModule) {
-        this.gcModule = gcModule;
-    }    
+    }   
 
     public RubyModule getObjectSpaceModule() {
+        if (objectSpaceModule == null && profile.allowModule("ObjectSpace")) {
+            objectSpaceModule = RubyObjectSpace.createObjectSpaceModule(this);
+        }
         return objectSpaceModule;
-    }
-    void setObjectSpaceModule(RubyModule objectSpaceModule) {
-        this.objectSpaceModule = objectSpaceModule;
-    }    
+    }  
 
     public RubyModule getProcess() {
         return processModule;

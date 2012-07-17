@@ -55,7 +55,6 @@ public class RubyObjectSpace {
      */
     public static RubyModule createObjectSpaceModule(Ruby runtime) {
         RubyModule objectSpaceModule = runtime.defineModule("ObjectSpace");
-        runtime.setObjectSpaceModule(objectSpaceModule);
         
         objectSpaceModule.defineAnnotatedMethods(RubyObjectSpace.class);
 
