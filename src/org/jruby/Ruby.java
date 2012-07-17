@@ -1288,15 +1288,6 @@ public final class Ruby {
 
         mathModule = getMath();
 
-        if (profile.allowClass("Proc")) {
-            RubyProc.createProcClass(this);
-        }
-        if (profile.allowClass("Method")) {
-            RubyMethod.createMethodClass(this);
-        }
-        if (profile.allowClass("MatchData")) {
-            RubyMatchData.createMatchDataClass(this);
-        }
         if (profile.allowModule("Marshal")) {
             RubyMarshal.createMarshalModule(this);
         }
@@ -1375,6 +1366,9 @@ public final class Ruby {
             classCreatorMap.put("Range", this.getClass().getMethod("getRange"));
             classCreatorMap.put("ObjectSpace", this.getClass().getMethod("getObjectSpaceModule"));
             classCreatorMap.put("GC", this.getClass().getMethod("getGC"));
+            classCreatorMap.put("Proc", this.getClass().getMethod("getProc"));
+            classCreatorMap.put("Method", this.getClass().getMethod("getMethod"));
+            classCreatorMap.put("MatchData", this.getClass().getMethod("getMatchData"));
             classCreatorMap.put("StandardError", this.getClass().getMethod("getStandardError"));
             classCreatorMap.put("IOError", this.getClass().getMethod("getIOError"));
             classCreatorMap.put("ScriptError", this.getClass().getMethod("getScriptError"));
@@ -1893,10 +1887,10 @@ public final class Ruby {
     }
 
     public RubyClass getProc() {
+        if (procClass == null && profile.allowClass("Proc")) {
+            procClass = RubyProc.createProcClass(this);
+        }
         return procClass;
-    }
-    void setProc(RubyClass procClass) {
-        this.procClass = procClass;
     }
 
     public RubyClass getBinding() {
@@ -1907,11 +1901,11 @@ public final class Ruby {
     }
 
     public RubyClass getMethod() {
+        if (methodClass == null && profile.allowClass("Method")) {
+            methodClass = RubyMethod.createMethodClass(this);
+        }
         return methodClass;
-    }
-    void setMethod(RubyClass methodClass) {
-        this.methodClass = methodClass;
-    }    
+    }  
 
     public RubyClass getUnboundMethod() {
         return unboundMethodClass;
@@ -1921,11 +1915,11 @@ public final class Ruby {
     }    
 
     public RubyClass getMatchData() {
+        if (matchDataClass == null && profile.allowClass("MatchData")) {
+            matchDataClass = RubyMatchData.createMatchDataClass(this);
+        }
         return matchDataClass;
-    }
-    void setMatchData(RubyClass matchDataClass) {
-        this.matchDataClass = matchDataClass;
-    }    
+    }  
 
     public RubyClass getRegexp() {
         if (regexpClass == null && profile.allowClass("Regexp")) {

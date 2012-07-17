@@ -66,9 +66,8 @@ public class RubyMatchData extends RubyObject {
     boolean charOffsetUpdated;
     Region charOffsets;
 
-    public static RubyClass createMatchDataClass(Ruby runtime) {
+    static RubyClass createMatchDataClass(Ruby runtime) {
         RubyClass matchDataClass = runtime.defineClass("MatchData", runtime.getObject(), MATCH_DATA_ALLOCATOR);
-        runtime.setMatchData(matchDataClass);
 
         matchDataClass.index = ClassIndex.MATCHDATA;
         matchDataClass.setReifiedClass(RubyMatchData.class);
