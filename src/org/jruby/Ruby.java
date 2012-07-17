@@ -1286,14 +1286,6 @@ public final class Ruby {
 
         recursiveKey = newSymbol("__recursive_key__");
 
-        mathModule = getMath();
-
-        if (profile.allowModule("Marshal")) {
-            RubyMarshal.createMarshalModule(this);
-        }
-        if (profile.allowClass("Dir")) {
-            RubyDir.createDirClass(this);
-        }
         if (profile.allowModule("FileTest")) {
             RubyFileTest.createFileTestModule(this);
         }
@@ -1356,11 +1348,29 @@ public final class Ruby {
     
     private void initClassCreatorMap() {
         try {
+            classCreatorMap.put("Comparable", this.getClass().getMethod("getComparable"));
+            classCreatorMap.put("Enumerable", this.getClass().getMethod("getEnumerable"));
+            classCreatorMap.put("String", this.getClass().getMethod("getString"));
+            classCreatorMap.put("Symbol", this.getClass().getMethod("getSymbol"));
             classCreatorMap.put("Exception", this.getClass().getMethod("getException"));
+            
+            classCreatorMap.put("Precision", this.getClass().getMethod("getPrecision"));
+            classCreatorMap.put("Numeric", this.getClass().getMethod("getNumeric"));
+            classCreatorMap.put("Integer", this.getClass().getMethod("getInteger"));
+            classCreatorMap.put("Fixnum", this.getClass().getMethod("getFixnum"));
             classCreatorMap.put("Complex", this.getClass().getMethod("getComplex"));
             classCreatorMap.put("Rational", this.getClass().getMethod("getRational"));
+            
+            classCreatorMap.put("Hash", this.getClass().getMethod("getHash"));
+            classCreatorMap.put("Array", this.getClass().getMethod("getArray"));
+            classCreatorMap.put("Float", this.getClass().getMethod("getFloat"));
+            
             classCreatorMap.put("Bignum", this.getClass().getMethod("getBignum"));
+            classCreatorMap.put("Random", this.getClass().getMethod("getRandomClass"));
+            classCreatorMap.put("IO", this.getClass().getMethod("getIO"));
             classCreatorMap.put("Struct", this.getClass().getMethod("getStructClass"));
+            classCreatorMap.put("Tms", this.getClass().getMethod("getTmsStruct"));
+            
             classCreatorMap.put("Binding", this.getClass().getMethod("getBinding"));
             classCreatorMap.put("Math", this.getClass().getMethod("getMath"));
             classCreatorMap.put("Regexp", this.getClass().getMethod("getRegexp"));
@@ -1370,6 +1380,9 @@ public final class Ruby {
             classCreatorMap.put("Proc", this.getClass().getMethod("getProc"));
             classCreatorMap.put("Method", this.getClass().getMethod("getMethod"));
             classCreatorMap.put("MatchData", this.getClass().getMethod("getMatchData"));
+            classCreatorMap.put("Marshal", this.getClass().getMethod("getMarshal"));
+            classCreatorMap.put("Dir", this.getClass().getMethod("getDir"));
+            
             classCreatorMap.put("StandardError", this.getClass().getMethod("getStandardError"));
             classCreatorMap.put("RuntimeError", this.getClass().getMethod("getRuntimeError"));
             classCreatorMap.put("IOError", this.getClass().getMethod("getIOError"));
@@ -1425,8 +1438,6 @@ public final class Ruby {
         if (profile.allowClass("NativeException")) {
             nativeException = NativeException.createClass(this, getRuntimeError());
         }
-
-        //systemCallError = getSystemCallError();
 
         if (is1_9()) {
             if (profile.allowClass("EncodingError")) {
@@ -1733,10 +1744,12 @@ public final class Ruby {
 
     public RubyClass getFloat() {
         if (floatClass == null && profile.allowClass("Float")) {
-            floatClass = RubyFloat.createFloatClass(this);
-            RubyFloat.defineFloatConstans(this, floatClass);
+            RubyFloat.createFloatClass(this);
         }
         return floatClass;
+    }
+    void setFloat(RubyClass floatClass) {
+        this.floatClass = floatClass;
     }
     
     public RubyClass getInteger() {
@@ -1945,11 +1958,11 @@ public final class Ruby {
     } 
 
     public RubyModule getMarshal() {
+        if (marshalModule == null && profile.allowModule("Marshal")) {
+            marshalModule = RubyMarshal.createMarshalModule(this);
+        }
         return marshalModule;
     }
-    void setMarshal(RubyModule marshalModule) {
-        this.marshalModule = marshalModule;
-    }    
 
     public RubyClass getBignum() {
         if (bignumClass == null && profile.allowClass("Bignum")) {
@@ -1959,11 +1972,11 @@ public final class Ruby {
     }    
 
     public RubyClass getDir() {
+        if (dirClass == null && profile.allowClass("Dir")) {
+            dirClass = RubyDir.createDirClass(this);
+        }
         return dirClass;
-    }
-    void setDir(RubyClass dirClass) {
-        this.dirClass = dirClass;
-    }    
+    } 
 
     public RubyClass getFile() {
         return fileClass;

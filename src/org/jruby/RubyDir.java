@@ -85,9 +85,8 @@ public class RubyDir extends RubyObject {
         }
     };
 
-    public static RubyClass createDirClass(Ruby runtime) {
+    static RubyClass createDirClass(Ruby runtime) {
         RubyClass dirClass = runtime.defineClass("Dir", runtime.getObject(), DIR_ALLOCATOR);
-        runtime.setDir(dirClass);
 
         dirClass.index = ClassIndex.DIR;
         dirClass.setReifiedClass(RubyDir.class);

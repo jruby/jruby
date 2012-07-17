@@ -60,9 +60,8 @@ import org.jruby.util.IOOutputStream;
 @JRubyModule(name="Marshal")
 public class RubyMarshal {
 
-    public static RubyModule createMarshalModule(Ruby runtime) {
+    static RubyModule createMarshalModule(Ruby runtime) {
         RubyModule module = runtime.defineModule("Marshal");
-        runtime.setMarshal(module);
 
         module.defineAnnotatedMethods(RubyMarshal.class);
         module.defineConstant("MAJOR_VERSION", runtime.newFixnum(Constants.MARSHAL_MAJOR));
