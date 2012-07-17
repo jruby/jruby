@@ -1,0 +1,2 @@
+fails(linux/openbsd, not supposed to impl):File.lchmod returns false from #respond_to?
+fails(linux/openbsd, not supposed to impl):File.lchmod raises a NotImplementedError when called

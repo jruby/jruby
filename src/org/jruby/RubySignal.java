@@ -42,7 +42,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.SignalFacade;
 import org.jruby.util.NoFunctionalitySignalFacade;
 
-import java.util.Arrays;
+import java.util.*;
 
 @JRubyModule(name="Signal")
 public class RubySignal {
@@ -70,6 +70,7 @@ public class RubySignal {
         RubyHash names = RubyHash.newHash(runtime);
         for (Signal s : Signal.values()) {
             if (!s.description().startsWith("SIG")) continue;
+            if (!RUBY_18_SIGNALS.contains(s.description().substring(3))) continue;
 
             // replace CLD with CHLD value
             long longValue = s.longValue();
@@ -102,5 +103,58 @@ public class RubySignal {
     @JRubyMethod(name = "__jtrap_ignore_kernel", required = 1, module = true)
     public static IRubyObject __jtrap_restore_kernel(final IRubyObject recv, IRubyObject sig) {
         return SIGNALS.ignore(recv, sig);
+    }
+    
+    private static final Set<String> RUBY_18_SIGNALS;
+    static {
+        RUBY_18_SIGNALS = new HashSet<String>();
+        for (String name : new String[] {
+                "EXIT",
+                "HUP",
+                "INT",
+                "QUIT",
+                "ILL",
+                "TRAP",
+                "IOT",
+                "ABRT",
+                "EMT",
+                "FPE",
+                "KILL",
+                "BUS",
+                "SEGV",
+                "SYS",
+                "PIPE",
+                "ALRM",
+                "TERM",
+                "URG",
+                "STOP",
+                "TSTP",
+                "CONT",
+                "CHLD",
+                "CLD",
+                "TTIN",
+                "TTOU",
+                "IO",
+                "XCPU",
+                "XFSZ",
+                "VTALRM",
+                "PROF",
+                "WINCH",
+                "USR1",
+                "USR2",
+                "LOST",
+                "MSG",
+                "PWR",
+                "POLL",
+                "DANGER",
+                "MIGRATE",
+                "PRE",
+                "GRANT",
+                "RETRACT",
+                "SOUND",
+                "INFO",
+        }) {
+            RUBY_18_SIGNALS.add(name);
+        }
     }
 }// RubySignal
