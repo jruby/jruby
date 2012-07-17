@@ -201,7 +201,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
 
     public static RubyClass createRegexpClass(Ruby runtime) {
         RubyClass regexpClass = runtime.defineClass("Regexp", runtime.getObject(), REGEXP_ALLOCATOR);
-        runtime.setRegexp(regexpClass);
 
         regexpClass.index = ClassIndex.REGEXP;
         regexpClass.setReifiedClass(RubyRegexp.class);

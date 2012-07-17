@@ -42,18 +42,18 @@ public class RubyMath {
     /** Create the Math module and add it to the Ruby runtime.
      * 
      */
-    public static RubyModule createMathModule(Ruby runtime) {
-        RubyModule result = runtime.defineModule("Math");
-        runtime.setMath(result);
+    static RubyModule createMathModule(Ruby runtime) {
+        RubyModule mathc = runtime.defineModule("Math");
         
-        result.defineConstant("E", RubyFloat.newFloat(runtime, Math.E));
-        result.defineConstant("PI", RubyFloat.newFloat(runtime, Math.PI));
-        
-        result.defineAnnotatedMethods(RubyMath.class);
+        mathc.defineAnnotatedMethods(RubyMath.class);
 
-        return result;
+        return mathc;
     }
     
+    static void defineMathConstans(Ruby runtime, RubyModule mathc) {
+        mathc.defineConstant("E", RubyFloat.newFloat(runtime, Math.E));
+        mathc.defineConstant("PI", RubyFloat.newFloat(runtime, Math.PI));
+    }
     
     private static void domainCheck(IRubyObject recv, double value, String msg) {
         if (Double.isNaN(value)) {

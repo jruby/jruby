@@ -1286,21 +1286,8 @@ public final class Ruby {
 
         recursiveKey = newSymbol("__recursive_key__");
 
-        complexClass = getComplex();
-        rationalClass = getRational();
-        bignumClass = getBignum();
-        structClass = getStructClass();
-
-        if (profile.allowClass("Binding")) {
-            RubyBinding.createBindingClass(this);
-        }
-        // Math depends on all numeric types
-        if (profile.allowModule("Math")) {
-            RubyMath.createMathModule(this);
-        }
-        if (profile.allowClass("Regexp")) {
-            RubyRegexp.createRegexpClass(this);
-        }
+        mathModule = getMath();
+        
         if (profile.allowClass("Range")) {
             RubyRange.createRangeClass(this);
         }
@@ -1387,6 +1374,13 @@ public final class Ruby {
     
     private void initClassCreatorMap() {
         try {
+            classCreatorMap.put("Complex", this.getClass().getMethod("getComplex"));
+            classCreatorMap.put("Rational", this.getClass().getMethod("getRational"));
+            classCreatorMap.put("Bignum", this.getClass().getMethod("getBignum"));
+            classCreatorMap.put("Struct", this.getClass().getMethod("getStructClass"));
+            classCreatorMap.put("Binding", this.getClass().getMethod("getBinding"));
+            classCreatorMap.put("Math", this.getClass().getMethod("getMath"));
+            classCreatorMap.put("Regexp", this.getClass().getMethod("getRegexp"));
             classCreatorMap.put("StandardError", this.getClass().getMethod("getStandardError"));
             classCreatorMap.put("IOError", this.getClass().getMethod("getIOError"));
             classCreatorMap.put("ScriptError", this.getClass().getMethod("getScriptError"));
@@ -1418,6 +1412,7 @@ public final class Ruby {
     
     private void initExceptions() {
         initClassCreatorMap();
+        eofError = getEOFError();
         if (profile.allowClass("NameError")) {
             nameError = RubyNameError.createNameErrorClass(this, getStandardError());
             nameErrorMessage = RubyNameError.createNameErrorMessageClass(this, nameError);            
@@ -1911,10 +1906,10 @@ public final class Ruby {
     }
 
     public RubyClass getBinding() {
+        if (bindingClass == null && profile.allowClass("Binding")) {
+            bindingClass = RubyBinding.createBindingClass(this);
+        }
         return bindingClass;
-    }
-    void setBinding(RubyClass bindingClass) {
-        this.bindingClass = bindingClass;
     }
 
     public RubyClass getMethod() {
@@ -1939,11 +1934,11 @@ public final class Ruby {
     }    
 
     public RubyClass getRegexp() {
+        if (regexpClass == null && profile.allowClass("Regexp")) {
+            regexpClass = RubyRegexp.createRegexpClass(this);
+        }
         return regexpClass;
-    }
-    void setRegexp(RubyClass regexpClass) {
-        this.regexpClass = regexpClass;
-    }    
+    }  
 
     public RubyClass getTime() {
         return timeClass;
@@ -1953,11 +1948,13 @@ public final class Ruby {
     }    
 
     public RubyModule getMath() {
+        // Math depends on all numeric types
+        if (mathModule == null && profile.allowModule("Math")) {
+            mathModule = RubyMath.createMathModule(this);
+            RubyMath.defineMathConstans(this, mathModule);
+        }
         return mathModule;
-    }
-    void setMath(RubyModule mathModule) {
-        this.mathModule = mathModule;
-    }    
+    } 
 
     public RubyModule getMarshal() {
         return marshalModule;
