@@ -56,7 +56,7 @@ public class RubyGC {
     private static volatile boolean gcDisabled = false;
     private static volatile boolean stress = false;
 
-    public static RubyModule createGCModule(Ruby runtime) {
+    static RubyModule createGCModule(Ruby runtime) {
         RubyModule result = runtime.defineModule("GC");
         
         result.defineAnnotatedMethods(RubyGC.class);

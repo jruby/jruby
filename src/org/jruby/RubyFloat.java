@@ -89,7 +89,7 @@ public class RubyFloat extends RubyNumeric {
     public static final double INFINITY = Double.POSITIVE_INFINITY;
     public static final double NAN = Double.NaN;
 
-    public static RubyClass createFloatClass(Ruby runtime) {
+    static RubyClass createFloatClass(Ruby runtime) {
         RubyClass floatc = runtime.defineClass("Float", runtime.getNumeric(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
 
         floatc.index = ClassIndex.FLOAT;

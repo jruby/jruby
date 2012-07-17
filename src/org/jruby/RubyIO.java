@@ -299,7 +299,7 @@ public class RubyIO extends RubyObject {
         return ClassIndex.FILE;
     }
 
-    public static RubyClass createIOClass(Ruby runtime) {
+    static RubyClass createIOClass(Ruby runtime) {
         RubyClass ioClass = runtime.defineClass("IO", runtime.getObject(), IO_ALLOCATOR);
 
         ioClass.index = ClassIndex.IO;

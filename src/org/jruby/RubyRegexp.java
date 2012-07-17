@@ -199,7 +199,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
         return regex;
     }
 
-    public static RubyClass createRegexpClass(Ruby runtime) {
+    static RubyClass createRegexpClass(Ruby runtime) {
         RubyClass regexpClass = runtime.defineClass("Regexp", runtime.getObject(), REGEXP_ALLOCATOR);
 
         regexpClass.index = ClassIndex.REGEXP;

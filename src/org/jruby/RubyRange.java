@@ -80,7 +80,7 @@ public class RubyRange extends RubyObject {
     private IRubyObject end;
     private boolean isExclusive;
 
-    public static RubyClass createRangeClass(Ruby runtime) {
+    static RubyClass createRangeClass(Ruby runtime) {
         RubyClass result = runtime.defineClass("Range", runtime.getObject(), RANGE_ALLOCATOR);
 
         result.index = ClassIndex.RANGE;
