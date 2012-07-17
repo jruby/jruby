@@ -35,16 +35,10 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
-import org.jruby.runtime.backtrace.BacktraceElement;
-import org.jruby.runtime.backtrace.RubyStackTraceElement;
-import org.jruby.runtime.profile.IProfileData;
 import java.util.ArrayList;
-import org.jruby.runtime.profile.ProfileData;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import org.jruby.runtime.scope.ManyVarsDynamicScope;
-
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
@@ -55,12 +49,17 @@ import org.jruby.RubyString;
 import org.jruby.RubyThread;
 import org.jruby.ast.executable.RuntimeCache;
 import org.jruby.exceptions.JumpException.ReturnJump;
-import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.ext.fiber.Fiber;
+import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
+import org.jruby.runtime.backtrace.BacktraceElement;
+import org.jruby.runtime.backtrace.RubyStackTraceElement;
 import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.backtrace.TraceType.Gather;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.profile.IProfileData;
+import org.jruby.runtime.profile.ProfileData;
+import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.util.RecursiveComparator;
 import org.jruby.util.RubyDateFormat;
 import org.jruby.util.log.Logger;
@@ -653,9 +652,11 @@ public final class ThreadContext {
      * Used by the evaluator and the compiler to look up a constant by name
      */
     public IRubyObject getConstant(String internedName) {
-        return getCurrentScope().getStaticScope().getConstant(runtime, internedName, runtime.getObject());
+        IRubyObject value = 
+            getCurrentScope().getStaticScope().getConstant(runtime, internedName, runtime.getObject());
+        return value;
     }
-    
+
     /**
      * Used by the evaluator and the compiler to set a constant by name
      * This is for a null const decl

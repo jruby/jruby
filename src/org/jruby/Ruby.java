@@ -1387,6 +1387,7 @@ public final class Ruby {
     
     private void initClassCreatorMap() {
         try {
+            classCreatorMap.put("StandardError", this.getClass().getMethod("getStandardError"));
             classCreatorMap.put("IOError", this.getClass().getMethod("getIOError"));
             classCreatorMap.put("ScriptError", this.getClass().getMethod("getScriptError"));
             classCreatorMap.put("RangeError", this.getClass().getMethod("getRangeError"));

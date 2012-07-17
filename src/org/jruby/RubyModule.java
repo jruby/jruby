@@ -44,6 +44,7 @@ import static org.jruby.runtime.Visibility.*;
 import static org.jruby.CompatVersion.*;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.security.AccessControlException;
@@ -3010,6 +3011,8 @@ public class RubyModule extends RubyObject {
         if (constant == null && !isClass() && includeObject) {
             constant = iterateConstantNoConstMissing(name, getRuntime().getObject(), inherit);
         }
+        
+        if (constant == null) constant = tryGetConstantIfPossible(getRuntime(), name);
 
         return constant;
     }
@@ -3065,7 +3068,8 @@ public class RubyModule extends RubyObject {
             }
             p = p.getSuperClass();
         }
-        return null;
+        value = tryGetConstantIfPossible(getRuntime(), name);
+        return value;
     }
     
     @Deprecated
@@ -3470,13 +3474,33 @@ public class RubyModule extends RubyObject {
 
         return entry.value;
     }
+    
+    private IRubyObject tryGetConstantIfPossible(Ruby runtime, String name) {
+        Method method = runtime.findClassCreatorMethod(name);
+        if (method != null) {
+            try {
+                Object obj = method.invoke(runtime);
+                if (obj instanceof IRubyObject) {
+                    constantTableStore(name, (IRubyObject)obj);
+                    return (IRubyObject)obj;
+                }
+            } catch (IllegalAccessException ex) {
+                return null;
+            } catch (IllegalArgumentException ex) {
+                return null;
+            } catch (InvocationTargetException ex) {
+                return null;
+            }
+        }
+        return null;
+    }
 
     @Deprecated
     public IRubyObject fastFetchConstant(String internedName) {
         return fetchConstant(internedName);
     }
 
-    public IRubyObject storeConstant(String name, IRubyObject value) {
+    public IRubyObject storeConstant(String name, IRubyObject value) {   
         assert IdUtil.isConstant(name) && value != null;
         ensureConstantsSettable();
         return constantTableStore(name, value);
