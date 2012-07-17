@@ -1371,12 +1371,15 @@ public final class Ruby {
             classCreatorMap.put("Method", this.getClass().getMethod("getMethod"));
             classCreatorMap.put("MatchData", this.getClass().getMethod("getMatchData"));
             classCreatorMap.put("StandardError", this.getClass().getMethod("getStandardError"));
+            classCreatorMap.put("RuntimeError", this.getClass().getMethod("getRuntimeError"));
             classCreatorMap.put("IOError", this.getClass().getMethod("getIOError"));
             classCreatorMap.put("ScriptError", this.getClass().getMethod("getScriptError"));
             classCreatorMap.put("RangeError", this.getClass().getMethod("getRangeError"));
-            classCreatorMap.put("SignalException", this.getClass().getMethod("getInterrupt"));
+            classCreatorMap.put("SignalException", this.getClass().getMethod("getSignalException"));
             classCreatorMap.put("NoMethodError", this.getClass().getMethod("getNoMethodError"));
-            classCreatorMap.put("Interrupt", this.getClass().getMethod("getSignalException"));
+            classCreatorMap.put("SystemCallError", this.getClass().getMethod("getSystemCallError"));
+            classCreatorMap.put("Fatal", this.getClass().getMethod("getFatal"));
+            classCreatorMap.put("Interrupt", this.getClass().getMethod("getInterrupt"));
             classCreatorMap.put("TypeError", this.getClass().getMethod("getTypeError"));
             classCreatorMap.put("ArgumentError", this.getClass().getMethod("getArgumentError"));
             classCreatorMap.put("IndexError", this.getClass().getMethod("getIndexError"));
@@ -1392,6 +1395,9 @@ public final class Ruby {
             classCreatorMap.put("ConcurrencyError", this.getClass().getMethod("getConcurrencyError"));
             classCreatorMap.put("SystemStackError", this.getClass().getMethod("getSystemStackError"));
             classCreatorMap.put("ZeroDivisionError", this.getClass().getMethod("getZeroDivisionError"));
+            classCreatorMap.put("FloatDomainError", this.getClass().getMethod("getFloatDomainError"));
+            classCreatorMap.put("KeyError", this.getClass().getMethod("getKeyError"));
+            classCreatorMap.put("DomainError", this.getClass().getMethod("getMathDomainError"));
         } catch (NoSuchMethodException ex) {
             // should not happen
         } catch (SecurityException ex) {
@@ -1419,14 +1425,8 @@ public final class Ruby {
         if (profile.allowClass("NativeException")) {
             nativeException = NativeException.createClass(this, getRuntimeError());
         }
-        if (profile.allowClass("SystemCallError")) {
-            systemCallError = RubySystemCallError.createSystemCallErrorClass(this, getStandardError());
-        }
 
-        eofError = getEOFError();
-        threadError = getThreadError();
-        zeroDivisionError = getZeroDivisionError();
-        floatDomainError  = defineClassIfAllowed("FloatDomainError", getRangeError());
+        //systemCallError = getSystemCallError();
 
         if (is1_9()) {
             if (profile.allowClass("EncodingError")) {
@@ -1437,9 +1437,6 @@ public final class Ruby {
                 converterNotFoundError = defineClassUnder("ConverterNotFoundError", encodingError, encodingError.getAllocator(), encodingClass);
                 fiberError = defineClass("FiberError", getStandardError(), getStandardError().getAllocator());
             }
-            keyError = defineClassIfAllowed("KeyError", getIndexError());
-
-            mathDomainError = defineClassUnder("DomainError", getArgumentError(), getArgumentError().getAllocator(), getMath());
             inRecursiveListOperation.set(false);
         }
 
@@ -1497,7 +1494,7 @@ public final class Ruby {
     private void createSysErr(int i, String name) {
         if(profile.allowClass(name)) {
             if (errnos.get(i) == null) {
-                RubyClass errno = getErrno().defineClassUnder(name, systemCallError, systemCallError.getAllocator());
+                RubyClass errno = getErrno().defineClassUnder(name, getSystemCallError(), getSystemCallError().getAllocator());
                 errnos.put(i, errno);
                 errno.defineConstant("Errno", newFixnum(i));
             } else {
@@ -2171,11 +2168,18 @@ public final class Ruby {
     }
 
     public RubyClass getSystemCallError() {
+        if (systemCallError == null && profile.allowClass("SystemCallError")) {
+            systemCallError = RubySystemCallError.createSystemCallErrorClass(this, getStandardError());
+        }
         return systemCallError;
     }
 
     public RubyClass getKeyError() {
-        return keyError;
+        if (is1_9()) {
+            if (keyError == null) keyError = defineClassIfAllowed("KeyError", getIndexError());
+            return keyError;
+        }
+        return null;
     }
 
     public RubyClass getFatal() {
@@ -2288,11 +2292,18 @@ public final class Ruby {
     }
 
     public RubyClass getFloatDomainError() {
+        if (floatDomainError == null) floatDomainError  = defineClassIfAllowed("FloatDomainError", getRangeError());
         return floatDomainError;
     }
 
     public RubyClass getMathDomainError() {
-        return mathDomainError;
+        if (is1_9()) {
+            if (mathDomainError == null) {
+                mathDomainError = defineClassUnder("DomainError", getArgumentError(), getArgumentError().getAllocator(), getMath());
+            }
+            return mathDomainError;
+        }
+        return null;
     }
 
     public RubyClass getEncodingError() {

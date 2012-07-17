@@ -167,7 +167,7 @@ public class RubySystemCallError extends RubyException {
         }
     };
 
-    public static RubyClass createSystemCallErrorClass(Ruby runtime, RubyClass standardError) {
+    static RubyClass createSystemCallErrorClass(Ruby runtime, RubyClass standardError) {
         RubyClass exceptionClass = runtime.defineClass("SystemCallError", standardError, SYSTEM_CALL_ERROR_ALLOCATOR);
 
         exceptionClass.setMarshal(SYSTEM_CALL_ERROR_MARSHAL);
