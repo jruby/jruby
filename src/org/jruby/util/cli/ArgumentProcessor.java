@@ -60,6 +60,10 @@ public class ArgumentProcessor {
             this.originalValue = value;
             this.dashedValue = dashed && !value.startsWith("-") ? "-" + value : value;
         }
+
+        public String toString() {
+            return dashedValue;
+        }
     }
 
     private List<Argument> arguments;
