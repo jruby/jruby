@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project basedir="..">
+
+    <macrodef name="rake">
+        <attribute name="compile.mode" default="OFF"/>
+        <attribute name="jit.threshold" default="20"/>
+        <attribute name="jit.max" default="-1"/>
+        <attribute name="objectspace.enabled" default="true"/>
+        <attribute name="thread.pooling" default="false"/>
+        <attribute name="reflection" default="false"/>
+        <attribute name="inproc" default="true"/>
+        <attribute name="jruby.args" default=""/>
+        <attribute name="task"/>
+        <attribute name="dir" default="${basedir}"/>
+        <attribute name="jvm.args" default="-ea"/>
+
+        <sequential>
+            <echo message="Running rake @{task}"/>
+            <echo message="compile=@{compile.mode}, threshold=@{jit.threshold}, objectspace=@{objectspace.enabled} threadpool=@{thread.pooling} reflection=@{reflection}"/>
+
+            <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="true"
+                  dir="@{dir}">
+                <classpath refid="test.class.path"/>
+
+                <jvmarg line="@{jvm.args}"/>
+                <jvmarg line="${java.opts}"/>
+
+                <sysproperty key="jruby.home" value="${basedir}"/>
+                <sysproperty key="jruby.launch.inproc" value="false"/>
+
+                <!-- properties tweaked for individual runs -->
+                <sysproperty key="jruby.compile.mode" value="@{compile.mode}"/>
+                <sysproperty key="jruby.jit.threshold" value="@{jit.threshold}"/>
+                <sysproperty key="jruby.jit.max" value="@{jit.max}"/>
+                <sysproperty key="jruby.objectspace.enabled" value="@{objectspace.enabled}"/>
+                <sysproperty key="jruby.thread.pool.enabled" value="@{thread.pooling}"/>
+                <sysproperty key="jruby.reflection" value="@{reflection}"/>
+                <sysproperty key="jruby.launch.inproc" value="@{inproc}"/>
+                <sysproperty key="emma.coverage.out.file" value="${test.results.dir}/coverage.emma"/>
+                <sysproperty key="emma.coverage.out.merge" value="true"/>
+                <sysproperty key="emma.verbosity.level" value="silent"/>
+
+                <arg line="@{jruby.args} -S rake @{task} ${rake.args}"/>
+                <env key="JRUBY_OPTS" value=""/>
+            </java>
+        </sequential>
+    </macrodef>
+
+    <macrodef name="fixEOLs">
+        <attribute name="dist-stage-dir" default="${dist.stage.bin.dir}"/>
+        <sequential>
+            <fixcrlf srcdir="@{dist-stage-dir}/bin" excludes="*.bat,*.exe,*.dll" eol="lf"/>
+            <fixcrlf srcdir="@{dist-stage-dir}/bin" includes="*.bat" eol="crlf"/>
+        </sequential>
+    </macrodef>
+
+    <!-- extract native libraries from the jfii*.jar files to a director -->
+    <macrodef name="unzip-native-libs">
+        <attribute name="destination.dir"/>
+        <sequential>
+            <mkdir dir="@{destination.dir}"/>
+            <unzip dest="@{destination.dir}">
+                <fileset dir="build_lib">
+                    <include name="jffi-*.jar"/>
+                </fileset>
+                <patternset>
+                    <include name="**/libjffi-*.so"/>
+                    <include name="**/libjffi-*.a"/>
+                    <include name="**/libjffi-*.jnilib"/>
+                    <include name="**/jffi-*.dll"/>
+                </patternset>
+                <mapper>
+                    <filtermapper>
+                        <replacestring from="jni/" to="./"/>
+                    </filtermapper>
+                </mapper>
+            </unzip>
+        </sequential>
+    </macrodef>
+
+</project>

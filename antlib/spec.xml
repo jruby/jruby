@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project basedir="..">
+
+    <!-- FIXME: Cannot run Rake on clean until minijruby so keep this target -->
+    <target name="clear-specs">
+        <delete dir="${rubyspec.dir}"/>
+        <delete dir="${mspec.dir}"/>
+        <delete file="${rubyspec.tar.file}"/>
+        <delete file="${mspec.tar.file}"/>
+        <delete file="${spec.dir}/rubyspecs.current.revision"/>
+    </target>
+
+    <!-- Utilities to manage rubyspecs/mspec files -->
+    <target name="fetch-stable-specs" depends="init">
+        <rake task="spec:fetch_stable_specs"/>
+    </target>
+    <target name="fetch-latest-specs" depends="init">
+        <rake task="spec:fetch_latest_specs"/>
+    </target>
+
+    <!-- Main spec runs (See rakelib/spec.rake for definitions/descriptions) -->
+    <target name="spec:ci_18" depends="install-gems">
+        <rake task="spec:ci_18"/>
+    </target>
+    <target name="spec:ci_19" depends="install-gems">
+        <rake task="spec:ci_19"/>
+    </target>
+    <target name="spec:ci_interpreted_18_19" depends="install-gems">
+        <rake task="spec:ci_interpreted_18_19"/>
+    </target>
+    <target name="spec:ci_interpreted_18" depends="install-gems">
+        <rake task="spec:ci_interpreted_18"/>
+    </target>
+    <target name="spec:ci_interpreted_19" depends="install-gems">
+        <rake task="spec:ci_interpreted_19"/>
+    </target>
+    <target name="spec:ci_compiled_18" depends="install-gems">
+        <rake task="spec:ci_compiled_18"/>
+    </target>
+    <target name="spec:ci_compiled_19" depends="install-gems">
+        <rake task="spec:ci_compiled_19"/>
+    </target>
+    <target name="spec:ci_precompiled_18" depends="install-gems">
+        <rake task="spec:ci_precompiled_18"/>
+    </target>
+    <target name="spec:ci_precompiled_19" depends="install-gems">
+        <rake task="spec:ci_precompiled_19"/>
+    </target>
+    <target name="spec:ci_all_precompiled_18" depends="install-gems">
+        <rake task="spec:ci_all_precompiled_18"/>
+    </target>
+    <target name="spec:ci_all_precompiled_19" depends="install-gems">
+        <rake task="spec:ci_all_precompiled_19"/>
+    </target>
+    <target name="spec:ci_all_interpreted_18" depends="install-gems">
+        <rake task="spec:ci_all_interpreted_18"/>
+    </target>
+    <target name="spec:ci_all_interpreted_19" depends="install-gems">
+        <rake task="spec:ci_all_interpreted_19"/>
+    </target>
+    <target name="spec:ci_all" depends="install-gems">
+        <rake task="spec:ci_all"/>
+    </target>
+    <target name="spec:ci_latest" depends="install-gems">
+        <rake task="spec:ci_latest"/>
+    </target>
+    <target name="spec:ci_latest_19" depends="install-gems">
+        <rake task="spec:ci_latest_19"/>
+    </target>
+    <target name="spec:ci_cext" depends="install-gems,build-jruby-cext-native">
+        <rake task="spec:ci_cext"/>
+    </target>
+
+    <!-- Old compatibility targets which call to newer Rake-based ones -->
+    <target name="spec" depends="spec:ci_18"/>
+    <target name="spec-ci" depends="spec:ci_18"/>
+    <target name="spec-short" depends="spec:ci_interpreted_18_19"/>
+    <target name="spec-ci-1.9" depends="spec:ci_19"/>
+    <target name="spec-short-1.9" depends="spec:ci_interpreted_19"/>
+    <target name="spec-all" depends="spec:ci_all_precompiled_18"/>
+    <target name="spec-all-interpreted" depends="spec:ci_all_interpreted_18"/>
+
+    <!-- For CI, because target names become filesystem paths with matrix builds -->
+    <target name="spec-ci_interpreted_18" depends="spec:ci_interpreted_18"></target>
+    <target name="spec-ci_interpreted_19" depends="spec:ci_interpreted_19"></target>
+    <target name="spec-ci_compiled_18" depends="spec:ci_compiled_18"></target>
+    <target name="spec-ci_compiled_19" depends="spec:ci_compiled_19"></target>
+    <target name="spec-ci_precompiled_18" depends="spec:ci_precompiled_18"></target>
+    <target name="spec-ci_precompiled_19" depends="spec:ci_precompiled_19"></target>
+
+
+    <!-- latest, unstable specs -->
+    <target name="spec-latest-all" depends="spec:ci_all"/>
+    <target name="spec-latest" depends="spec:ci_latest"/>
+    <target name="spec-cext" depends="spec:ci_cext"/>
+
+    <target name="update-excludes">
+        <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="false"
+              dir="${spec.dir}">
+            <classpath refid="jruby.execute.classpath"/>
+            <sysproperty key="jruby.home" value="${basedir}"/>
+            <sysproperty key="jruby.launch.inproc" value="false"/>
+
+            <arg line="${mspec.dir}/bin/mspec tag"/>
+            <arg line="--add fails --fail -B ${spec.dir}/default.mspec"/>
+        </java>
+    </target>
+
+    <target name="spec-show-excludes" depends="prepare"
+            description="Prints out all currently excluded rubyspecs.">
+        <spec-show-excludes/>
+    </target>
+
+    <target name="spec-show-excludes-1.9" depends="prepare"
+            description="Prints out all currently excluded rubyspecs in 1.9 mode.">
+        <spec-show-excludes spec.mode="1.9"/>
+    </target>
+
+    <macrodef name="spec-show-excludes">
+        <attribute name="spec.mode" default="1.8"/>
+
+        <sequential>
+            <available property="mspec-available" file="${mspec.dir}/bin/mspec"/>
+            <fail unless="mspec-available"
+                  message="No rubyspecs found. Download them via 'ant spec'."/>
+
+            <java classname="org.jruby.Main" fork="true" maxmemory="${jruby.launch.memory}" failonerror="false">
+                <classpath refid="jruby.execute.classpath"/>
+                <sysproperty key="jruby.home" value="${basedir}"/>
+                <sysproperty key="jruby.launch.inproc" value="false"/>
+                <arg line="${mspec.dir}/bin/mspec"/>
+                <arg line="-f s -g fails -g critical ${spec.windows.flag} --dry-run"/>
+                <arg line="-T--@{spec.mode}"/>
+                <arg line="-B ${spec.dir}/jruby.@{spec.mode}.mspec"/>
+                <arg value=":ci_files"/>
+            </java>
+        </sequential>
+    </macrodef>
+
+</project>
