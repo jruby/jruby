@@ -1356,6 +1356,7 @@ public final class Ruby {
     
     private void initClassCreatorMap() {
         try {
+            classCreatorMap.put("Exception", this.getClass().getMethod("getException"));
             classCreatorMap.put("Complex", this.getClass().getMethod("getComplex"));
             classCreatorMap.put("Rational", this.getClass().getMethod("getRational"));
             classCreatorMap.put("Bignum", this.getClass().getMethod("getBignum"));
@@ -1385,8 +1386,12 @@ public final class Ruby {
             classCreatorMap.put("NotImplementedError", this.getClass().getMethod("getNotImplementedError"));
             classCreatorMap.put("SecurityError", this.getClass().getMethod("getSecurityError"));
             classCreatorMap.put("NoMemoryError", this.getClass().getMethod("getNoMemoryError"));
-            classCreatorMap.put("RegexError", this.getClass().getMethod("getRegexError"));
+            classCreatorMap.put("RegexpError", this.getClass().getMethod("getRegexpError"));
             classCreatorMap.put("EOFError", this.getClass().getMethod("getEOFError"));
+            classCreatorMap.put("ThreadError", this.getClass().getMethod("getThreadError"));
+            classCreatorMap.put("ConcurrencyError", this.getClass().getMethod("getConcurrencyError"));
+            classCreatorMap.put("SystemStackError", this.getClass().getMethod("getSystemStackError"));
+            classCreatorMap.put("ZeroDivisionError", this.getClass().getMethod("getZeroDivisionError"));
         } catch (NoSuchMethodException ex) {
             // should not happen
         } catch (SecurityException ex) {
@@ -1400,7 +1405,7 @@ public final class Ruby {
     
     private void initExceptions() {
         initClassCreatorMap();
-        eofError = getEOFError();
+
         if (profile.allowClass("NameError")) {
             nameError = RubyNameError.createNameErrorClass(this, getStandardError());
             nameErrorMessage = RubyNameError.createNameErrorMessageClass(this, nameError);            
@@ -1418,10 +1423,9 @@ public final class Ruby {
             systemCallError = RubySystemCallError.createSystemCallErrorClass(this, getStandardError());
         }
 
-        threadError = defineClassIfAllowed("ThreadError", getStandardError());
-        concurrencyError = defineClassIfAllowed("ConcurrencyError", threadError);
-        systemStackError = defineClassIfAllowed("SystemStackError", is1_9 ? getException() : getStandardError());
-        zeroDivisionError = defineClassIfAllowed("ZeroDivisionError", getStandardError());
+        eofError = getEOFError();
+        threadError = getThreadError();
+        zeroDivisionError = getZeroDivisionError();
         floatDomainError  = defineClassIfAllowed("FloatDomainError", getRangeError());
 
         if (is1_9()) {
@@ -1433,7 +1437,6 @@ public final class Ruby {
                 converterNotFoundError = defineClassUnder("ConverterNotFoundError", encodingError, encodingError.getAllocator(), encodingClass);
                 fiberError = defineClass("FiberError", getStandardError(), getStandardError().getAllocator());
             }
-            concurrencyError = defineClassIfAllowed("ConcurrencyError", threadError);
             keyError = defineClassIfAllowed("KeyError", getIndexError());
 
             mathDomainError = defineClassUnder("DomainError", getArgumentError(), getArgumentError().getAllocator(), getMath());
@@ -2261,18 +2264,26 @@ public final class Ruby {
     }
 
     public RubyClass getThreadError() {
+        if (threadError == null) threadError = defineClassIfAllowed("ThreadError", getStandardError());
         return threadError;
     }
 
     public RubyClass getConcurrencyError() {
+        if (concurrencyError == null) {
+            concurrencyError = defineClassIfAllowed("ConcurrencyError", getThreadError());
+        }
         return concurrencyError;
     }
 
     public RubyClass getSystemStackError() {
+        if (systemStackError == null) {
+            systemStackError = defineClassIfAllowed("SystemStackError", is1_9 ? getException() : getStandardError());
+        }
         return systemStackError;
     }
 
     public RubyClass getZeroDivisionError() {
+        if (zeroDivisionError == null) zeroDivisionError = defineClassIfAllowed("ZeroDivisionError", getStandardError());
         return zeroDivisionError;
     }
 
