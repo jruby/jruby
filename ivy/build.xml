@@ -53,7 +53,7 @@
     <taskdef name="findbugs" classpathref="check.path" classname="edu.umd.cs.findbugs.anttask.FindBugsTask"/>
             
     <findbugs classpathref="check.path" pluginList="" output="html" outputfile="${basedir}/jruby-findbugs.html" 
-              excludefilter="${basedir}/findbugs.xml" jvmargs="-Xmx512M">
+              excludefilter="${basedir}/findbugs.xml" jvmargs="-Xmx1024M">
       <sourcepath path="${basedir}/source" />
       <class location="${jruby.classes.dir}" />
       <auxclasspath>
