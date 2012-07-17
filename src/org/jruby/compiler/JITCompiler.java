@@ -108,7 +108,11 @@ public class JITCompiler implements JITCompilerMBean {
 
     public void tearDown() {
         if (executor != null) {
-            executor.shutdown();
+            try {
+                executor.shutdown();
+            } catch (SecurityException se) {
+                // ignore, can't shut down executor
+            }
         }
     }
 
