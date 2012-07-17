@@ -8,6 +8,8 @@ import org.jruby.util.log.LoggerFactory;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
+import javax.annotation.processing.SupportedSourceVersion;
+import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
@@ -15,6 +17,7 @@ import java.io.*;
 import java.util.*;
 
 @SupportedAnnotationTypes({"org.jruby.anno.JRubyMethod", "org.jruby.anno.JRubyClass"})
+@SupportedSourceVersion(SourceVersion.RELEASE_6)
 public class AnnotationBinder extends AbstractProcessor {
 
     public static final String POPULATOR_SUFFIX = "$POPULATOR";
