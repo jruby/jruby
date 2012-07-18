@@ -43,7 +43,7 @@ public class RubySystemExit extends RubyException {
         }
     };    
     
-    public static RubyClass createSystemExitClass(Ruby runtime, RubyClass exceptionClass) {
+    static RubyClass createSystemExitClass(Ruby runtime, RubyClass exceptionClass) {
         RubyClass systemExitClass = runtime.defineClass("SystemExit", exceptionClass, SYSTEMEXIT_ALLOCATOR);
 
         systemExitClass.defineAnnotatedMethods(RubySystemExit.class);

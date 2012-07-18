@@ -3465,7 +3465,7 @@ public class RubyModule extends RubyObject {
     public IRubyObject fetchConstant(String name, boolean includePrivate) {
         assert IdUtil.isConstant(name);
         ConstantEntry entry = constantEntryFetch(name);
-
+ 
         if (entry == null) return null;
 
         if (entry.hidden && !includePrivate) {

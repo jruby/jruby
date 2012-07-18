@@ -141,13 +141,13 @@ public class RubyNameError extends RubyException {
         }
     };
 
-    public static RubyClass createNameErrorClass(Ruby runtime, RubyClass standardErrorClass) {
+    static RubyClass createNameErrorClass(Ruby runtime, RubyClass standardErrorClass) {
         RubyClass nameErrorClass = runtime.defineClass("NameError", standardErrorClass, NAMEERROR_ALLOCATOR);
         nameErrorClass.defineAnnotatedMethods(RubyNameError.class);
         return nameErrorClass;
     }
 
-    public static RubyClass createNameErrorMessageClass(Ruby runtime, RubyClass nameErrorClass) {
+    static RubyClass createNameErrorMessageClass(Ruby runtime, RubyClass nameErrorClass) {
         RubyClass messageClass = nameErrorClass.defineClassUnder("Message", runtime.getClass("Data"), RubyNameErrorMessage.NAMEERRORMESSAGE_ALLOCATOR);
         messageClass.defineAnnotatedMethods(RubyNameErrorMessage.class);
         return messageClass;

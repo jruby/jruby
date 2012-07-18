@@ -50,7 +50,7 @@ public class RubyLocalJumpError extends RubyException {
         }
     };
 
-    public static RubyClass createLocalJumpErrorClass(Ruby runtime, RubyClass standardErrorClass) {
+    static RubyClass createLocalJumpErrorClass(Ruby runtime, RubyClass standardErrorClass) {
         RubyClass nameErrorClass = runtime.defineClass("LocalJumpError", standardErrorClass, LOCALJUMPERROR_ALLOCATOR);
         
         nameErrorClass.defineAnnotatedMethods(RubyLocalJumpError.class);

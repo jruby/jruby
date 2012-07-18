@@ -1389,7 +1389,13 @@ public final class Ruby {
             classCreatorMap.put("ScriptError", this.getClass().getMethod("getScriptError"));
             classCreatorMap.put("RangeError", this.getClass().getMethod("getRangeError"));
             classCreatorMap.put("SignalException", this.getClass().getMethod("getSignalException"));
+            classCreatorMap.put("NameError", this.getClass().getMethod("getNameError"));
+            classCreatorMap.put("NameError::Message", this.getClass().getMethod("getNameErrorMessage"));
+            classCreatorMap.put("SystemExit", this.getClass().getMethod("getSystemExit"));
+            
             classCreatorMap.put("NoMethodError", this.getClass().getMethod("getNoMethodError"));
+            classCreatorMap.put("LocalJumpError", this.getClass().getMethod("getLocalJumpError"));
+            classCreatorMap.put("NativeException", this.getClass().getMethod("getNativeException"));
             classCreatorMap.put("SystemCallError", this.getClass().getMethod("getSystemCallError"));
             classCreatorMap.put("Fatal", this.getClass().getMethod("getFatal"));
             classCreatorMap.put("Interrupt", this.getClass().getMethod("getInterrupt"));
@@ -1424,21 +1430,8 @@ public final class Ruby {
     
     private void initExceptions() {
         initClassCreatorMap();
-
-        if (profile.allowClass("NameError")) {
-            nameError = RubyNameError.createNameErrorClass(this, getStandardError());
-            nameErrorMessage = RubyNameError.createNameErrorMessageClass(this, nameError);            
-        }
-        if (profile.allowClass("SystemExit")) {
-            systemExit = RubySystemExit.createSystemExitClass(this, getException());
-        }
-        if (profile.allowClass("LocalJumpError")) {
-            localJumpError = RubyLocalJumpError.createLocalJumpErrorClass(this, getStandardError());
-        }
-        if (profile.allowClass("NativeException")) {
-            nativeException = NativeException.createClass(this, getRuntimeError());
-        }
-
+        nameError = getNameError();
+        
         if (is1_9()) {
             if (profile.allowClass("EncodingError")) {
                 encodingError = defineClass("EncodingError", getStandardError(), getStandardError().getAllocator());
@@ -2144,10 +2137,16 @@ public final class Ruby {
     }
 
     public RubyClass getNameError() {
+        if (nameError == null && profile.allowClass("NameError")) {
+            nameError = RubyNameError.createNameErrorClass(this, getStandardError());           
+        }
         return nameError;
     }
 
     public RubyClass getNameErrorMessage() {
+        if (nameErrorMessage == null && profile.allowClass("NameError")) {
+            nameErrorMessage = RubyNameError.createNameErrorMessageClass(this, getNameError());            
+        }
         return nameErrorMessage;
     }
 
@@ -2169,14 +2168,23 @@ public final class Ruby {
     }
 
     public RubyClass getSystemExit() {
+        if (systemExit == null && profile.allowClass("SystemExit")) {
+            systemExit = RubySystemExit.createSystemExitClass(this, getException());
+        }
         return systemExit;
     }
 
     public RubyClass getLocalJumpError() {
+        if (localJumpError == null && profile.allowClass("LocalJumpError")) {
+            localJumpError = RubyLocalJumpError.createLocalJumpErrorClass(this, getStandardError());
+        }
         return localJumpError;
     }
 
     public RubyClass getNativeException() {
+        if (nativeException == null && profile.allowClass("NativeException")) {
+            nativeException = NativeException.createClass(this, getRuntimeError());
+        }
         return nativeException;
     }
 
