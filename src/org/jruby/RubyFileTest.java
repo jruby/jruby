@@ -51,7 +51,6 @@ public class RubyFileTest {
 
     public static RubyModule createFileTestModule(Ruby runtime) {
         RubyModule fileTestModule = runtime.defineModule("FileTest");
-        runtime.setFileTest(fileTestModule);
 
         fileTestModule.defineAnnotatedMethods(RubyFileTest.class);
 

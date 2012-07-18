@@ -1286,13 +1286,6 @@ public final class Ruby {
 
         recursiveKey = newSymbol("__recursive_key__");
 
-        if (profile.allowModule("FileTest")) {
-            RubyFileTest.createFileTestModule(this);
-        }
-        // depends on IO, FileTest
-        if (profile.allowClass("File")) {
-            RubyFile.createFileClass(this);
-        }
         if (profile.allowClass("File::Stat")) {
             RubyFileStat.createFileStatClass(this);
         }
@@ -1382,6 +1375,8 @@ public final class Ruby {
             classCreatorMap.put("MatchData", this.getClass().getMethod("getMatchData"));
             classCreatorMap.put("Marshal", this.getClass().getMethod("getMarshal"));
             classCreatorMap.put("Dir", this.getClass().getMethod("getDir"));
+            classCreatorMap.put("FileTest", this.getClass().getMethod("getFileTest"));
+            classCreatorMap.put("File", this.getClass().getMethod("getFile"));
             
             classCreatorMap.put("StandardError", this.getClass().getMethod("getStandardError"));
             classCreatorMap.put("RuntimeError", this.getClass().getMethod("getRuntimeError"));
@@ -1972,11 +1967,12 @@ public final class Ruby {
     } 
 
     public RubyClass getFile() {
+        // depends on IO, FileTest
+        if (fileClass == null && profile.allowClass("File")) {
+            fileClass = RubyFile.createFileClass(this);
+        }
         return fileClass;
     }
-    void setFile(RubyClass fileClass) {
-        this.fileClass = fileClass;
-    }    
 
     public RubyClass getFileStat() {
         return fileStatClass;
@@ -1986,10 +1982,10 @@ public final class Ruby {
     }    
 
     public RubyModule getFileTest() {
+        if (fileTestModule == null && profile.allowModule("FileTest")) {
+            fileTestModule = RubyFileTest.createFileTestModule(this);
+        }
         return fileTestModule;
-    }
-    void setFileTest(RubyModule fileTestModule) {
-        this.fileTestModule = fileTestModule;
     }
     
     public RubyClass getIO() {
