@@ -767,7 +767,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 c = tryClass(generatedClassName, desc1.getDeclaringClass());
                 if (c == null) {
                     DescriptorInfo info = new DescriptorInfo(descs);
-                    if (DEBUG) out.println(" min: " + info.getMin() + ", max: " + info.getMax() + ", hasBlock: " + info.isBlock() + ", rest: " + info.isRest());
+                    if (DEBUG) out.println("Generating " + generatedClassName + ", min: " + info.getMin() + ", max: " + info.getMax() + ", hasBlock: " + info.isBlock() + ", rest: " + info.isRest());
 
                     Class superClass = null;
                     if (info.getMin() == -1) {

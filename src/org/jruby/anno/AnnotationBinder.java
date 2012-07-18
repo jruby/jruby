@@ -16,7 +16,7 @@ import javax.lang.model.util.ElementFilter;
 import java.io.*;
 import java.util.*;
 
-@SupportedAnnotationTypes({"org.jruby.anno.JRubyMethod", "org.jruby.anno.JRubyClass"})
+@SupportedAnnotationTypes({"org.jruby.anno.JRubyMethod"})
 @SupportedSourceVersion(SourceVersion.RELEASE_6)
 public class AnnotationBinder extends AbstractProcessor {
 
@@ -28,9 +28,10 @@ public class AnnotationBinder extends AbstractProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> typeElements, RoundEnvironment roundEnvironment) {
-        for (TypeElement typeDecl : typeElements) {
-            processType(typeDecl);
+        for (TypeElement element : ElementFilter.typesIn(roundEnvironment.getRootElements())) {
+            processType(element);
         }
+
         try {
             FileWriter fw = new FileWriter("src_gen/annotated_classes.txt");
             for (CharSequence name : classNames) {
@@ -46,6 +47,11 @@ public class AnnotationBinder extends AbstractProcessor {
     }
 
     public void processType(TypeElement cd) {
+        // process inner classes
+        for (TypeElement innerType : ElementFilter.typesIn(cd.getEnclosedElements())) {
+            processType(innerType);
+        }
+
         try {
             String qualifiedName = cd.getQualifiedName().toString().replace('.', '$');
 
@@ -81,6 +87,7 @@ public class AnnotationBinder extends AbstractProcessor {
             }
 
             // scan for meta, compat, etc to reduce findbugs complaints about "dead assignments"
+            boolean hasAnno = false;
             boolean hasMeta = false;
             boolean hasModule = false;
             boolean hasCompat = false;
@@ -89,10 +96,13 @@ public class AnnotationBinder extends AbstractProcessor {
                 if (anno == null) {
                     continue;
                 }
+                hasAnno = true;
                 hasMeta |= anno.meta();
                 hasModule |= anno.module();
                 hasCompat |= anno.compat() != CompatVersion.BOTH;
             }
+
+            if (!hasAnno) return;
 
             out.println("        JavaMethod javaMethod;");
             out.println("        DynamicMethod moduleMethod;");
@@ -344,7 +354,7 @@ public class AnnotationBinder extends AbstractProcessor {
         JRubyMethod anno = method.getAnnotation(JRubyMethod.class);
         if (anno != null && out != null) {
             boolean isStatic = method.getModifiers().contains(Modifier.STATIC);
-            CharSequence qualifiedName = getActualQualifiedName(method.getEnclosingElement());
+            CharSequence qualifiedName = getActualQualifiedName((TypeElement)method.getEnclosingElement());
 
             boolean hasContext = false;
             boolean hasBlock = false;
@@ -379,7 +389,7 @@ public class AnnotationBinder extends AbstractProcessor {
                     + isStatic + ", "
                     + "CallConfiguration." + getCallConfigNameByAnno(anno) + ", "
                     + anno.notImplemented() + ", "
-                    + method.getEnclosingElement().getSimpleName() + ".class, "
+                    + ((TypeElement)method.getEnclosingElement()).getQualifiedName() + ".class, "
                     + "\"" + method.getSimpleName() + "\", "
                     + method.getReturnType().toString() + ".class, "
                     + "new Class[] {" + buffer.toString() + "});");
@@ -391,7 +401,7 @@ public class AnnotationBinder extends AbstractProcessor {
         JRubyMethod anno = method.getAnnotation(JRubyMethod.class);
         if (anno != null && out != null) {
             boolean isStatic = method.getModifiers().contains(Modifier.STATIC);
-            CharSequence qualifiedName = getActualQualifiedName(method.getEnclosingElement());
+            CharSequence qualifiedName = getActualQualifiedName((TypeElement)method.getEnclosingElement());
 
             boolean hasContext = false;
             boolean hasBlock = false;
@@ -426,7 +436,7 @@ public class AnnotationBinder extends AbstractProcessor {
                     isStatic + ", " +
                     "CallConfiguration." + getCallConfigNameByAnno(anno) + ", " +
                     anno.notImplemented() + ", "
-                    + method.getEnclosingElement().getSimpleName() + ".class, "
+                    + ((TypeElement)method.getEnclosingElement()).getQualifiedName() + ".class, "
                     + "\"" + method.getSimpleName() + "\", "
                     + method.getReturnType().toString() + ".class, "
                     + "new Class[] {" + buffer.toString() + "});");
@@ -437,7 +447,7 @@ public class AnnotationBinder extends AbstractProcessor {
     private void addCoreMethodMapping(CharSequence rubyName, ExecutableElement decl, PrintStream out) {
         out.println(new StringBuilder(50)
                 .append("        runtime.addBoundMethod(")
-                .append('"').append(decl.getEnclosingElement().getSimpleName()).append('"')
+                .append('"').append(((TypeElement)decl.getEnclosingElement()).getQualifiedName()).append('"')
                 .append(',')
                 .append('"').append(decl.getSimpleName()).append('"')
                 .append(',')
@@ -445,21 +455,11 @@ public class AnnotationBinder extends AbstractProcessor {
                 .append(");").toString());
     }
 
-    private CharSequence getActualQualifiedName(Element td) {
-        // declared type returns the qualified name without $ for inner classes!!!
-        CharSequence qualifiedName;
-        if (td.getEnclosingElement() != null) {
-            // inner class, use $ to delimit
-            if (td.getEnclosingElement().getEnclosingElement() != null) {
-                qualifiedName = td.getEnclosingElement().getEnclosingElement().getSimpleName() + "$" + td.getEnclosingElement().getSimpleName() + "$" + td.getSimpleName();
-            } else {
-                qualifiedName = td.getEnclosingElement().getSimpleName() + "$" + td.getSimpleName();
-            }
-        } else {
-            qualifiedName = td.getSimpleName();
+    private CharSequence getActualQualifiedName(TypeElement td) {
+        if (td.getNestingKind() == NestingKind.MEMBER) {
+            return getActualQualifiedName((TypeElement)td.getEnclosingElement()) + "$" + td.getSimpleName();
         }
-
-        return qualifiedName;
+        return td.getQualifiedName().toString();
     }
 
     private int calculateActualRequired(ExecutableElement md, int paramsLength, int optional, boolean rest, boolean isStatic, boolean hasContext, boolean hasBlock) {
@@ -504,7 +504,7 @@ public class AnnotationBinder extends AbstractProcessor {
 
             if (actualRequired != 0) {
                 throw new RuntimeException("Combining specific args with IRubyObject[] is not yet supported: "
-                        + md.getEnclosingElement().getSimpleName() + "." + md.toString());
+                        + ((TypeElement)md.getEnclosingElement()).getQualifiedName() + "." + md.toString());
             }
         }
 

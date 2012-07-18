@@ -86,19 +86,6 @@ public class RubyUNIXSocket extends RubyBasicSocket {
     }
 
     @JRubyMethod
-    public IRubyObject recvfrom(ThreadContext context, IRubyObject _length) {
-        Ruby runtime = context.runtime;
-
-        IRubyObject result = recv(context, _length);
-
-        IRubyObject addressArray = runtime.newArray(
-                runtime.newString("AF_UNIX"),
-                RubyString.newEmptyString(runtime));
-
-        return runtime.newArray(result, addressArray);
-    }
-
-    @JRubyMethod
     public IRubyObject path(ThreadContext context) {
         return RubyString.newEmptyString(context.runtime);
     }
