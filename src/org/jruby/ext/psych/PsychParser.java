@@ -174,7 +174,7 @@ public class PsychParser extends RubyObject {
         } catch (ParserException pe) {
             parser = null;
             RubyKernel.raise(context, runtime.getKernel(),
-                    new IRubyObject[] {runtime.getModule("Psych").getConstant("SyntaxError"), runtime.newString(syntaxError(context, yaml, pe))},
+                    new IRubyObject[] {runtime.getModule("Psych").getConstant("SyntaxError"), runtime.newString(syntaxError(context, yaml, pe, path))},
                     Block.NULL_BLOCK);
         } catch (ScannerException se) {
             parser = null;
@@ -182,7 +182,14 @@ public class PsychParser extends RubyObject {
             if (se.getProblemMark() != null) {
                 message.append(se.getProblemMark().toString());
             }
-            throw runtime.newArgumentError(message.toString());
+
+            RubyKernel.raise(context, runtime.getKernel(),
+                    new IRubyObject[] {
+                      runtime.getModule("Psych").getConstant("SyntaxError"),
+                      runtime.newString(syntaxError(context, yaml, se, path))
+                    },
+                    Block.NULL_BLOCK);
+
         } catch (ReaderException re) {
             parser = null;
             RubyKernel.raise(context, runtime.getKernel(),
@@ -251,14 +258,14 @@ public class PsychParser extends RubyObject {
         invoke(context, handler, "start_sequence", anchor, tag, implicit, style);
     }
 
-    private static String syntaxError(ThreadContext context, IRubyObject yaml, MarkedYAMLException mye) {
+    private static String syntaxError(ThreadContext context, IRubyObject yaml, MarkedYAMLException mye, IRubyObject rbPath) {
         String path;
         if (yaml.respondsTo("path")) {
             path = yaml.callMethod(context, "path").toString();
         } else {
-            path = "<unknown>";
+            path = rbPath.asJavaString();
         }
-        return path + ": couldn't parse YAML at line " + mye.getProblemMark().getLine() + " column " + mye.getProblemMark().getColumn();
+        return "(" + path + "): couldn't parse YAML at line " + mye.getProblemMark().getLine() + " column " + mye.getProblemMark().getColumn();
     }
 
     private static int translateStyle(Character style) {
