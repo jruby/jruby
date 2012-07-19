@@ -21,7 +21,7 @@ module JRuby
       if config.should_run_in_shell?
         config.verify_executable_for_shell
       else
-        config.verifiy_executable_for_direct
+        config.verify_executable_for_direct
       end
 
       pb = ProcessBuilder.new(config.exec_args)
