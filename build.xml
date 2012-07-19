@@ -424,9 +424,9 @@ other than ASM, which is rewritten to avoid conflicts. -->
                  classpath="${build.lib.dir}/jarjar-1.0.jar"/>
         <jarjar destfile="${lib.dir}/jruby-core.jar" compress="true" index="true">
             <fileset dir="${jruby.classes.dir}"/>
-            <zipfileset dir="${build.lib.dir}" src="${asm.jar}"/>
-            <zipfileset dir="${build.lib.dir}" src="${asm.util.jar}"/>
-            <zipfileset dir="${build.lib.dir}" src="yecht.jar"/>
+            <zipfileset src="${build.lib.dir}/${asm.jar}"/>
+            <zipfileset src="${build.lib.dir}/${asm.util.jar}"/>
+            <zipfileset src="${build.lib.dir}/yecht.jar"/>
             <metainf dir="spi">
                 <include name="services/**"/>
             </metainf>
