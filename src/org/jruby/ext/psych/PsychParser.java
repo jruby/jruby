@@ -105,7 +105,9 @@ public class PsychParser extends RubyObject {
 
     @JRubyMethod
     public IRubyObject parse(ThreadContext context, IRubyObject yaml) {
-        return parse(context, yaml, RubyString.newString(context.runtime, "<unknown>"));
+        Ruby runtime = context.runtime;
+
+        return parse(context, yaml, runtime.getNil());
     }
 
     private IRubyObject stringOrNilFor(Ruby runtime, String value, boolean tainted) {
@@ -139,6 +141,11 @@ public class PsychParser extends RubyObject {
         // FIXME? only supports Unicode, since we have to produces strings...
         try {
             parser = new ParserImpl(readerFor(yaml));
+
+            if (path.isNil() && yaml.respondsTo("path")) {
+                path = yaml.callMethod(context, "path");
+            }
+
             IRubyObject handler = getInstanceVariable("@handler");
 
             while (true) {
