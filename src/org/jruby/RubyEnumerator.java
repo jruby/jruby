@@ -57,7 +57,8 @@ public class RubyEnumerator extends RubyObject {
     public static void defineEnumerator(Ruby runtime) {
         runtime.getKernel().defineAnnotatedMethods(RubyEnumeratorKernel.class);
 
-        RubyModule enm = runtime.getClassFromPath("Enumerable");
+        //RubyModule enm = runtime.getClassFromPath("Enumerable");
+        RubyModule enm = runtime.getEnumerable();
         enm.defineAnnotatedMethods(RubyEnumeratorEnumerable.class);
 
         final RubyClass enmr;

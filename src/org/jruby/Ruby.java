@@ -1280,21 +1280,15 @@ public final class Ruby {
     }
 
     private void initCore() {
+        org.jruby.runtime.backtrace.FrameType frameType = org.jruby.runtime.backtrace.FrameType.METHOD;
         if (profile.allowClass("Data")) {
             defineClass("Data", objectClass, ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         }
 
         recursiveKey = newSymbol("__recursive_key__");
 
-        if (profile.allowClass("File::Stat")) {
-            RubyFileStat.createFileStatClass(this);
-        }
-        if (profile.allowModule("Process")) {
-            RubyProcess.createProcessModule(this);
-        }
-        if (profile.allowClass("Time")) {
-            RubyTime.createTimeClass(this);
-        }
+        processModule = getProcess();
+
         if (profile.allowClass("UnboundMethod")) {
             RubyUnboundMethod.defineUnboundMethodClass(this);
         }
@@ -1377,6 +1371,12 @@ public final class Ruby {
             classCreatorMap.put("Dir", this.getClass().getMethod("getDir"));
             classCreatorMap.put("FileTest", this.getClass().getMethod("getFileTest"));
             classCreatorMap.put("File", this.getClass().getMethod("getFile"));
+            classCreatorMap.put("File::Stat", this.getClass().getMethod("getFileStat"));
+            classCreatorMap.put("Stat", this.getClass().getMethod("getFileStat"));
+            classCreatorMap.put("Process", this.getClass().getMethod("getProcess"));
+            classCreatorMap.put("Time", this.getClass().getMethod("getTime"));
+            
+            classCreatorMap.put("Encoding", this.getClass().getMethod("getEncoding"));
             
             classCreatorMap.put("StandardError", this.getClass().getMethod("getStandardError"));
             classCreatorMap.put("RuntimeError", this.getClass().getMethod("getRuntimeError"));
@@ -1426,14 +1426,15 @@ public final class Ruby {
     private void initExceptions() {
         initClassCreatorMap();
         nameError = getNameError();
+        //nameErrorMessage = getNameErrorMessage();
         
         if (is1_9()) {
             if (profile.allowClass("EncodingError")) {
                 encodingError = defineClass("EncodingError", getStandardError(), getStandardError().getAllocator());
-                encodingCompatibilityError = defineClassUnder("CompatibilityError", encodingError, encodingError.getAllocator(), encodingClass);
-                invalidByteSequenceError = defineClassUnder("InvalidByteSequenceError", encodingError, encodingError.getAllocator(), encodingClass);
-                undefinedConversionError = defineClassUnder("UndefinedConversionError", encodingError, encodingError.getAllocator(), encodingClass);
-                converterNotFoundError = defineClassUnder("ConverterNotFoundError", encodingError, encodingError.getAllocator(), encodingClass);
+                encodingCompatibilityError = defineClassUnder("CompatibilityError", encodingError, encodingError.getAllocator(), getEncoding());
+                invalidByteSequenceError = defineClassUnder("InvalidByteSequenceError", encodingError, encodingError.getAllocator(), getEncoding());
+                undefinedConversionError = defineClassUnder("UndefinedConversionError", encodingError, encodingError.getAllocator(), getEncoding());
+                converterNotFoundError = defineClassUnder("ConverterNotFoundError", encodingError, encodingError.getAllocator(), getEncoding());
                 fiberError = defineClass("FiberError", getStandardError(), getStandardError().getAllocator());
             }
             inRecursiveListOperation.set(false);
@@ -1807,10 +1808,12 @@ public final class Ruby {
     }
 
     public RubyClass getEncoding() {
+        if (is1_9()) {
+            if (encodingClass == null && profile.allowClass("Encoding")) {
+                encodingClass = RubyEncoding.createEncodingClass(this);
+            }
+        }
         return encodingClass;
-    }
-    void setEncoding(RubyClass encodingClass) {
-        this.encodingClass = encodingClass;
     }
 
     public RubyClass getConverter() {
@@ -1930,11 +1933,11 @@ public final class Ruby {
     }  
 
     public RubyClass getTime() {
+        if (timeClass == null && profile.allowClass("Time")) {
+            timeClass = RubyTime.createTimeClass(this);
+        }
         return timeClass;
-    }
-    void setTime(RubyClass timeClass) {
-        this.timeClass = timeClass;
-    }    
+    }   
 
     public RubyModule getMath() {
         // Math depends on all numeric types
@@ -1975,11 +1978,11 @@ public final class Ruby {
     }
 
     public RubyClass getFileStat() {
+        if (fileStatClass == null && profile.allowClass("File::Stat")) {
+            fileStatClass = RubyFileStat.createFileStatClass(this);
+        }
         return fileStatClass;
-    }
-    void setFileStat(RubyClass fileStatClass) {
-        this.fileStatClass = fileStatClass;
-    }    
+    } 
 
     public RubyModule getFileTest() {
         if (fileTestModule == null && profile.allowModule("FileTest")) {
@@ -2070,13 +2073,14 @@ public final class Ruby {
     }  
 
     public RubyModule getProcess() {
+        if (processModule == null && profile.allowModule("Process")) {
+            processModule = RubyProcess.createProcessModule(this);
+        }
         return processModule;
     }
-    void setProcess(RubyModule processModule) {
-        this.processModule = processModule;
-    }    
 
     public RubyClass getProcStatus() {
+        if (procStatusClass == null) getProcess();
         return procStatusClass; 
     }
     void setProcStatus(RubyClass procStatusClass) {
@@ -2084,6 +2088,7 @@ public final class Ruby {
     }
     
     public RubyModule getProcUID() {
+        if (procUIDModule == null) getProcess();
         return procUIDModule;
     }
     void setProcUID(RubyModule procUIDModule) {
@@ -2091,6 +2096,7 @@ public final class Ruby {
     }
     
     public RubyModule getProcGID() {
+        if (procGIDModule == null) getProcess();
         return procGIDModule;
     }
     void setProcGID(RubyModule procGIDModule) {
@@ -2098,6 +2104,7 @@ public final class Ruby {
     }
     
     public RubyModule getProcSysModule() {
+        if (procSysModule == null) getProcess();
         return procSysModule;
     }
     void setProcSys(RubyModule procSysModule) {
