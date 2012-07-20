@@ -1097,11 +1097,9 @@ public class RubyIO extends RubyObject {
                     context.runtime.getWarnings().warn("Ignoring internal encoding " + 
                             enc + ": it is identical to external encoding " + enc2);
                     enc2 = null;
-                }
-                
-                setupReadWriteEncodings(context, enc, enc2);
+                }                
             } else {
-                enc2 = getEncodingCommon(context, internal);
+                enc = getEncodingCommon(context, internal);
 
                 if (enc2 == enc) {
                     context.runtime.getWarnings().warn("Ignoring internal encoding " + 
@@ -1109,6 +1107,7 @@ public class RubyIO extends RubyObject {
                     enc = null;
                 }
             }
+            setupReadWriteEncodings(context, enc, enc2);            
             
         } else {
             if (external.isNil()) {
