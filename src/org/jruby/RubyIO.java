@@ -4365,8 +4365,6 @@ public class RubyIO extends RubyObject {
         setupReadWriteEncodings(getRuntime().getCurrentContext(), internal, external);
         
         externalEncoding = external;
-        if (internal == externalEncoding) return;
-        internalEncoding = internal;
     }
 
     // io_strip_bom
@@ -4752,7 +4750,6 @@ public class RubyIO extends RubyObject {
     protected OpenFile openFile;
     protected List<RubyThread> blockingThreads;
     protected Encoding externalEncoding;
-    protected Encoding internalEncoding;
     protected Encoding readEncoding; // MRI:enc
     protected Encoding writeEncoding; // MRI:enc2
     
