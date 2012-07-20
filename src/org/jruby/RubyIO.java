@@ -3048,12 +3048,11 @@ public class RubyIO extends RubyObject {
         // TODO: handle writing into original buffer better
         ByteList buf = readAllCommon(runtime);
         
-        /*
-        if (runtime.is1_9()) {
+        if (runtime.is1_9() && buf != null) {
             makeReadConversion(runtime.getCurrentContext());
             
             buf = readTranscoder.transcode(runtime.getCurrentContext(), buf);
-        }*/
+        }
 
         RubyString str;
         if (buf == null) {
