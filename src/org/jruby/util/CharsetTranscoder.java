@@ -19,6 +19,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  * Encapsulate all logic associated with using Java Charset transcoding 
  * facilities.
  */
+// FIXME: Originally this was meant to capture invariant state.  Use specialization to make this much more efficient.
 public class CharsetTranscoder {
     // Java seems to find these specific Java charsets but they seem to trancode
     // some strings a little differently than MRI.  Since Java Charset transcoding

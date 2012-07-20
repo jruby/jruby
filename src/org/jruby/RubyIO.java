@@ -97,7 +97,6 @@ import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.ChannelDescriptor;
 
 import org.jcodings.specific.ASCIIEncoding;
-import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 
@@ -667,6 +666,7 @@ public class RubyIO extends RubyObject {
                 int n = -1;
                 int newline = (separator != null) ? (separator.get(separator.length() - 1) & 0xFF) : -1;
                 
+                // FIXME: Change how we consume streams to match MRI (see append_line/more_char/fill_cbuf)
                 // Awful hack.  MRI pre-transcodes lines into read-ahead whereas
                 // we read a single line at a time PRE-transcoded.  To keep our
                 // logic we need to do one additional transcode of the sep to
@@ -1078,7 +1078,7 @@ public class RubyIO extends RubyObject {
     // mri: io_encoding_set
     private void setEncoding(ThreadContext context, IRubyObject external, IRubyObject internal, IRubyObject options) {        
         if (!internal.isNil()) {
-            Encoding enc = null;
+            Encoding enc;
             Encoding enc2 = getEncodingCommon(context, external);
             
             if (internal instanceof RubyString) {
@@ -1201,7 +1201,7 @@ public class RubyIO extends RubyObject {
         runtime.checkSafeString(pathString);
         String path = pathString.toString();
 
-        IOOptions modes = null;
+        IOOptions modes;
         int perms = -1; // -1 == don't set permissions
 
         if (args.length > 1) {
@@ -3758,7 +3758,7 @@ public class RubyIO extends RubyObject {
         Ruby runtime = context.getRuntime();
         int mode;
 
-        IRubyObject cmdObj = null;
+        IRubyObject cmdObj;
         if (Platform.IS_WINDOWS) {
             String[] tokens = args[0].convertToString().toString().split(" ", 2);
             String commandString = tokens[0].replace('/', '\\') +
@@ -3825,7 +3825,7 @@ public class RubyIO extends RubyObject {
         public Ruby19POpen(Ruby runtime, IRubyObject[] args) {
             IRubyObject[] _cmdPlusArgs = null;
             RubyHash _env = null;
-            IRubyObject _cmd = null;
+            IRubyObject _cmd;
             IRubyObject arg0 = args[0].checkArrayType();
 
             if (args[0] instanceof RubyHash) {
@@ -3884,7 +3884,7 @@ public class RubyIO extends RubyObject {
         }
     }
 
-    @JRubyMethod(name = "popen", required = 1, optional = 1, meta = true, compat = RUBY1_9)
+    @JRubyMethod(name = "popen", required = 1, optional = 2, meta = true, compat = RUBY1_9)
     public static IRubyObject popen19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = context.getRuntime();
         int mode;
@@ -4748,6 +4748,27 @@ public class RubyIO extends RubyObject {
     protected CharsetTranscoder writeTranscoder = null;
     protected OpenFile openFile;
     protected List<RubyThread> blockingThreads;
+    
+    /**
+     * readEncoding/writeEncoding deserve a paragraph explanation.  In spite
+     * of appearing to be a better name than enc/enc as is used in MRI, it is
+     * probably a wash.  readEncoding represents the encoding we want the string
+     * to be.  If writeEncoding is not null this represents the source encoding
+     * to use.
+     * 
+     * Reading:
+     * So if we are reading and there is no writeEncoding then we assume that
+     * the io is already readEncoding and read it as such.  If both are set
+     * then we assume readEncoding is external encoding and we transcode to
+     * writeEncoding (internal).
+     * 
+     * Writing:
+     * If writeEncoding is null then we write the bytes as readEncoding.  If
+     * writeEncoding is set then we convert from writeEncoding to readEncoding.
+     * 
+     * Note: This naming is clearly wrong, but it is no worse then enc/enc2 so
+     * I did not feel the need to fix it.
+     */
     protected Encoding readEncoding; // MRI:enc
     protected Encoding writeEncoding; // MRI:enc2
     
