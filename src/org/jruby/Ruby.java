@@ -1292,10 +1292,7 @@ public final class Ruby {
         if (profile.allowModule("Signal")) {
             RubySignal.createSignal(this);
         }
-        if (profile.allowClass("Continuation")) {
-            RubyContinuation.createContinuation(this);
-        }
-        
+
         if (profile.allowClass("Enumerator")) {
             RubyEnumerator.defineEnumerator(this);
         }
@@ -1373,6 +1370,7 @@ public final class Ruby {
             classCreatorMap.put("Process", this.getClass().getMethod("getProcess"));
             classCreatorMap.put("Time", this.getClass().getMethod("getTime"));
             classCreatorMap.put("UnboundMethod", this.getClass().getMethod("getUnboundMethod"));
+            classCreatorMap.put("Continuation", this.getClass().getMethod("getContinuation"));
             
             classCreatorMap.put("Encoding", this.getClass().getMethod("getEncoding"));
             
@@ -2013,11 +2011,11 @@ public final class Ruby {
     }
 
     public RubyClass getContinuation() {
+        if (continuationClass == null && profile.allowClass("Continuation")) {
+            continuationClass = RubyContinuation.createContinuation(this);
+        }
         return continuationClass;
-    }
-    void setContinuation(RubyClass continuationClass) {
-        this.continuationClass = continuationClass;
-    }    
+    }   
 
     public RubyClass getStructClass() {
         if (structClass == null && profile.allowClass("Struct")) {

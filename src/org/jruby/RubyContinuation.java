@@ -59,7 +59,7 @@ public class RubyContinuation extends RubyObject {
     private final Continuation continuation;
     private boolean disabled;
     
-    public static void createContinuation(Ruby runtime) {
+    static RubyClass createContinuation(Ruby runtime) {
         RubyClass cContinuation = runtime.defineClass("Continuation",runtime.getObject(),runtime.getObject().getAllocator());
 
         cContinuation.index = ClassIndex.CONTINUATION;
@@ -68,7 +68,7 @@ public class RubyContinuation extends RubyObject {
         cContinuation.defineAnnotatedMethods(RubyContinuation.class);
         cContinuation.getSingletonClass().undefineMethod("new");
         
-        runtime.setContinuation(cContinuation);
+        return cContinuation;
     }
 
     public RubyContinuation(Ruby runtime) {
