@@ -582,11 +582,9 @@ public class RubyIO extends RubyObject {
             if (separator.getRealSize() == 0) separator = Stream.PARAGRAPH_DELIMETER;
 
             if (runtime.is1_9()) {
-                Encoding internal = getInternalEncoding(runtime);
-
-                if (internal != null) {
+                if (separator.getEncoding() != getReadEncoding(runtime)) {
                     separator = CharsetTranscoder.transcode(runtime.getCurrentContext(), separator,
-                            internal, getExternalEncoding(runtime), runtime.getNil());
+                            getInputEncoding(runtime), getReadEncoding(runtime), runtime.getNil());
                 }
             }
         }
@@ -620,28 +618,7 @@ public class RubyIO extends RubyObject {
     }
 
     private IRubyObject getline(Ruby runtime, ByteList separator, long limit, ByteListCache cache) {
-        IRubyObject result = getlineInner(runtime, separator, limit, cache);
-
-        if (runtime.is1_9() && !result.isNil()) {
-            Encoding internal = internalEncoding;
-            Encoding external = externalEncoding;
-
-            if (internal != external) {
-                ByteList transcoded = CharsetTranscoder.transcode(
-                        runtime.getCurrentContext(),
-                        ((RubyString) result).getByteList(),
-                        external, internal,
-                        runtime.getNil());
-
-                RubyString newResult = RubyString.newStringNoCopy(runtime, transcoded);
-
-                newResult.infectBy(result);
-
-                result = newResult;
-            }
-        }
-
-        return result;
+        return getlineInner(runtime, separator, limit, cache);
     }
     
     private IRubyObject getlineEmptyString(Ruby runtime) {
@@ -692,9 +669,12 @@ public class RubyIO extends RubyObject {
 
                 ByteList buf = cache != null ? cache.allocate(0) : new ByteList(0);
                 try {
+                    ThreadContext context = runtime.getCurrentContext();
                     boolean update = false;
                     boolean limitReached = false;
-
+                    
+                    if (is19) makeReadConversion(context);
+                    
                     while (true) {
                         do {
                             readCheck(readStream);
@@ -731,9 +711,13 @@ public class RubyIO extends RubyObject {
 
                             update = true;
                         } while (c != newline); // loop until we see the nth separator char
+                        
+                        if (is19) buf = readTranscoder.transcode(context, buf);
 
                         // if we hit EOF or reached limit then we're done
-                        if (n == -1 || limitReached) break;
+                        if (n == -1 || limitReached) {
+                            break;
+                        }
 
                         // if we've found the last char of the separator,
                         // and we've found at least as many characters as separator length,
@@ -779,15 +763,11 @@ public class RubyIO extends RubyObject {
     private Encoding getInputEncoding(Ruby runtime) {
         return writeEncoding != null ? writeEncoding : getReadEncoding(runtime);
     }
-    
-    private Encoding getInternalEncoding(Ruby runtime) {
-        return internalEncoding != null ? internalEncoding : runtime.getDefaultInternalEncoding();
-    }
 
     private RubyString makeString(Ruby runtime, ByteList buffer, boolean isCached) {
         ByteList newBuf = isCached ? new ByteList(buffer) : buffer;
 
-        if (runtime.is1_9()) newBuf.setEncoding(getExternalEncoding(runtime));
+        if (runtime.is1_9()) newBuf.setEncoding(getReadEncoding(runtime));
 
         RubyString str = RubyString.newString(runtime, newBuf);
         str.setTaint(true);
@@ -1446,7 +1426,6 @@ public class RubyIO extends RubyObject {
         Stream writeStream = openFile.getWriteStream();
         
         if (getRuntime().is1_9()) {
-            //System.out.println("BUF iz " + buffer.getEncoding() + " for " + new String(buffer.bytes()));
             buffer = doWriteConversion(getRuntime().getCurrentContext(), buffer);
         }
 
@@ -3073,6 +3052,13 @@ public class RubyIO extends RubyObject {
 
         // TODO: handle writing into original buffer better
         ByteList buf = readAllCommon(runtime);
+        
+        /*
+        if (runtime.is1_9()) {
+            makeReadConversion(runtime.getCurrentContext());
+            
+            buf = readTranscoder.transcode(runtime.getCurrentContext(), buf);
+        }*/
 
         RubyString str;
         if (buf == null) {
@@ -4716,7 +4702,6 @@ public class RubyIO extends RubyObject {
         if (readEncoding == null || (readEncoding == ascii8bit  && writeEncoding == null)) { // No encoding conversion
             // Leave for extra MRI bittwiddling which is missing from our IO
             // Hack to initialize transcoder but do no transcoding
-            //System.out.println("No conversion");
             writeTranscoder = new CharsetTranscoder(context, ascii8bit, ascii8bit, null);
         } else {
             Encoding fromEncoding = readEncoding;
@@ -4730,7 +4715,6 @@ public class RubyIO extends RubyObject {
             // If no write then default -> readEncoding
             // If write then writeEncoding -> readEncoding
             // If no read (see if above)
-            //System.out.println("WRITE: " + writeEncoding + ", READ: " + readEncoding);
             writeTranscoder = new CharsetTranscoder(context, toEncoding, fromEncoding, null);
         }
     }
