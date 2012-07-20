@@ -1289,9 +1289,6 @@ public final class Ruby {
 
         processModule = getProcess();
 
-        if (profile.allowClass("UnboundMethod")) {
-            RubyUnboundMethod.defineUnboundMethodClass(this);
-        }
         if (profile.allowModule("Signal")) {
             RubySignal.createSignal(this);
         }
@@ -1375,6 +1372,7 @@ public final class Ruby {
             classCreatorMap.put("Stat", this.getClass().getMethod("getFileStat"));
             classCreatorMap.put("Process", this.getClass().getMethod("getProcess"));
             classCreatorMap.put("Time", this.getClass().getMethod("getTime"));
+            classCreatorMap.put("UnboundMethod", this.getClass().getMethod("getUnboundMethod"));
             
             classCreatorMap.put("Encoding", this.getClass().getMethod("getEncoding"));
             
@@ -1912,11 +1910,11 @@ public final class Ruby {
     }  
 
     public RubyClass getUnboundMethod() {
+        if (unboundMethodClass == null && profile.allowClass("UnboundMethod")) {
+            unboundMethodClass = RubyUnboundMethod.defineUnboundMethodClass(this);
+        }
         return unboundMethodClass;
-    }
-    void setUnboundMethod(RubyClass unboundMethodClass) {
-        this.unboundMethodClass = unboundMethodClass;
-    }    
+    }   
 
     public RubyClass getMatchData() {
         if (matchDataClass == null && profile.allowClass("MatchData")) {

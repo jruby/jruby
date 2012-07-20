@@ -67,11 +67,10 @@ public class RubyUnboundMethod extends RubyMethod {
         return newMethod;
     }
 
-    public static RubyClass defineUnboundMethodClass(Ruby runtime) {
+    static RubyClass defineUnboundMethodClass(Ruby runtime) {
         // TODO: NOT_ALLOCATABLE_ALLOCATOR is probably ok here. Confirm. JRUBY-415
         RubyClass newClass = 
         	runtime.defineClass("UnboundMethod", runtime.getMethod(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
-        runtime.setUnboundMethod(newClass);
 
         newClass.index = ClassIndex.UNBOUNDMETHOD;
         newClass.setReifiedClass(RubyUnboundMethod.class);
