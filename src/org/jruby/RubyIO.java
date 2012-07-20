@@ -1124,8 +1124,21 @@ public class RubyIO extends RubyObject {
                 }
             }
         }
-        
+
+        validateEncodingBinmode();
         clearCodeConversion();
+    }
+    
+    private void validateEncodingBinmode() {
+        if (openFile.isReadable() && writeEncoding == null && 
+                !openFile.isBinmode() && readEncoding != null && !readEncoding.isAsciiCompatible()) {
+            throw getRuntime().newArgumentError("ASCII incompatible encoding needs binmode");
+        }
+        
+        // FIXME: Replace false with ecflags equiv when impl'd
+        if (openFile.isBinmode() && false) { // DEFAULT_TEXTMODE & ECONV_DEC_MASK w/ ecflags
+            openFile.setTextMode();
+        }
     }
 
     @JRubyMethod(compat=RUBY1_9)

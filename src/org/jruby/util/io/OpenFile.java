@@ -23,7 +23,7 @@ public class OpenFile {
     public static final int SETENC_BY_BOM      = 0x00100000;
     
     public static final int SYNCWRITE = SYNC | WRITABLE;
- 
+
     public static interface Finalizer {
 
         public void finalize(Ruby runtime, boolean raise);
@@ -192,7 +192,12 @@ public class OpenFile {
     public boolean isTextMode() {
         return (mode & TEXTMODE) != 0;
     }
-
+    
+    public void setTextMode() {
+        mode |= TEXTMODE;
+        // FIXME: Make stream(s) know about text mode.
+    }
+ 
     public void setBinmode() {
         mode |= BINMODE;
         if (mainStream != null) {
