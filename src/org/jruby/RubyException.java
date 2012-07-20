@@ -151,10 +151,11 @@ public class RubyException extends RubyObject {
      */
     @JRubyMethod(name = "inspect")
     public IRubyObject inspect(ThreadContext context) {
-        RubyModule rubyClass = getMetaClass();
+        // rb_class_name skips intermediate classes (JRUBY-6786)
+        RubyModule rubyClass = getMetaClass().getRealClass();
         RubyString exception = RubyString.objAsString(context, this);
 
-        if (exception.getByteList().getRealSize() == 0) return getRuntime().newString(rubyClass.getName());
+        if (exception.size() == 0) return getRuntime().newString(rubyClass.getName());
         StringBuilder sb = new StringBuilder("#<");
         sb.append(rubyClass.getName()).append(": ").append(exception.getByteList()).append(">");
         return getRuntime().newString(sb.toString());
@@ -163,8 +164,10 @@ public class RubyException extends RubyObject {
     @JRubyMethod(name = "==", compat = CompatVersion.RUBY1_9)
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
+        if (this == other) return context.runtime.getTrue();
+
         boolean equal =
-                getMetaClass() == other.getMetaClass() &&
+                getMetaClass().getRealClass() == other.getMetaClass().getRealClass() &&
                         context.getRuntime().getException().isInstance(other) &&
                         callMethod(context, "message").equals(other.callMethod(context, "message")) &&
                         callMethod(context, "backtrace").equals(other.callMethod(context, "backtrace"));
