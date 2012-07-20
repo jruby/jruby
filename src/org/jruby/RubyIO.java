@@ -579,7 +579,7 @@ public class RubyIO extends RubyObject {
             separatorValue.convertToString().getByteList();
 
         if (separator != null) {
-            if (separator.getRealSize() == 0) separator = Stream.PARAGRAPH_DELIMETER;
+            if (separator.getRealSize() == 0) return Stream.PARAGRAPH_DELIMETER;
 
             if (runtime.is1_9()) {
                 if (separator.getEncoding() != getReadEncoding(runtime)) {
