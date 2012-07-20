@@ -622,7 +622,7 @@ public class RubyIO extends RubyObject {
     }
     
     private IRubyObject getlineEmptyString(Ruby runtime) {
-        if (runtime.is1_9()) return RubyString.newEmptyString(runtime, externalEncoding);
+        if (runtime.is1_9()) return RubyString.newEmptyString(runtime, getReadEncoding(runtime));
 
         return RubyString.newEmptyString(runtime);
     }
@@ -755,10 +755,6 @@ public class RubyIO extends RubyObject {
         return readEncoding != null ? readEncoding : runtime.getDefaultExternalEncoding();
     }
     
-    private Encoding getExternalEncoding(Ruby runtime) {
-        return externalEncoding != null ? externalEncoding : runtime.getDefaultExternalEncoding();
-    }
-
     // mri: io_input_encoding
     private Encoding getInputEncoding(Ruby runtime) {
         return writeEncoding != null ? writeEncoding : getReadEncoding(runtime);
@@ -1112,8 +1108,6 @@ public class RubyIO extends RubyObject {
                     
                     // FIXME: I think this can handle a:b syntax and I didn't (also BOM)
                     setEncodingFromOptions(EncodingOption.getEncodingOptionFromString(context.runtime, externalAsString.asJavaString()));
-
-//                    readEncoding = encodingOption.getExternalEncoding();
                 } else {
                     Encoding enc = getEncodingCommon(context, external);
                     setupReadWriteEncodings(context, enc, null);
@@ -1256,10 +1250,11 @@ public class RubyIO extends RubyObject {
     public IRubyObject binmode() {
         if (isClosed()) throw getRuntime().newIOError("closed stream");
 
-        Ruby runtime = getRuntime();
+        // rb_econv_binmode({read/write}_conv) stuff missing
+/*        Ruby runtime = getRuntime();
         if (getExternalEncoding(runtime) == USASCIIEncoding.INSTANCE) {
             externalEncoding = ASCIIEncoding.INSTANCE;
-        }
+        }*/
         openFile.setBinmode();
         return this;
     }
@@ -3245,7 +3240,7 @@ public class RubyIO extends RubyObject {
             byte c = (byte)RubyNumeric.fix2int(ch);
             int n = runtime.getKCode().getEncoding().length(c);
             RubyString str = runtime.newString();
-            if (runtime.is1_9()) str.setEncoding(getExternalEncoding(runtime));
+            if (runtime.is1_9()) str.setEncoding(getReadEncoding(runtime));
             str.setTaint(true);
             str.cat(c);
 
@@ -4345,26 +4340,21 @@ public class RubyIO extends RubyObject {
         return ioOptions;
     }
 
-    public void setEncodingFromOptions(EncodingOption encodingOption) {
-        Encoding external = null, internal = null;
+    public void setEncodingFromOptions(EncodingOption option) {
+        Encoding internal = null;
 
-        if (encodingOption.hasBom()) {
+        Encoding external;
+        if (option.hasBom()) {
             external = encodingFromBOM();
+        } else if (option.getExternalEncoding() != null) {
+            external = option.getExternalEncoding();
+        } else {
+            external = null;
         }
 
-        if (external == null) {
-            if (encodingOption.getExternalEncoding() != null) {
-                external = encodingOption.getExternalEncoding();
-            }
-        }
-
-        if (encodingOption.getInternalEncoding() != null) {
-            internal = encodingOption.getInternalEncoding();
-        }
+        if (option.getInternalEncoding() != null) internal = option.getInternalEncoding();
 
         setupReadWriteEncodings(getRuntime().getCurrentContext(), internal, external);
-        
-        externalEncoding = external;
     }
 
     // io_strip_bom
@@ -4749,7 +4739,6 @@ public class RubyIO extends RubyObject {
     protected CharsetTranscoder writeTranscoder = null;
     protected OpenFile openFile;
     protected List<RubyThread> blockingThreads;
-    protected Encoding externalEncoding;
     protected Encoding readEncoding; // MRI:enc
     protected Encoding writeEncoding; // MRI:enc2
     

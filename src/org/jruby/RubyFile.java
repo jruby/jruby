@@ -1151,7 +1151,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         openFile.setPath(path);
         openFile.setMode(modes.getOpenFileFlags());
-        if (modes.isBinary()) externalEncoding = ASCIIEncoding.INSTANCE;
+        if (modes.isBinary()) readEncoding = ASCIIEncoding.INSTANCE;
 
         int umask = getUmaskSafe( getRuntime() );
         perm = perm - (perm & umask);
@@ -1175,7 +1175,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         openFile = new OpenFile();
 
         openFile.setMode(modes.getOpenFileFlags());
-        if (modes.isBinary()) externalEncoding = ASCIIEncoding.INSTANCE;
+        if (modes.isBinary()) readEncoding = ASCIIEncoding.INSTANCE;
         openFile.setPath(path);
         openFile.setMainStream(fopen(path, modes));
     }
@@ -1188,7 +1188,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         IOOptions modes = newIOOptions(getRuntime(), modeString);
         openFile.setMode(modes.getModeFlags().getOpenFileFlags());
-        if (modes.getModeFlags().isBinary()) externalEncoding = ASCIIEncoding.INSTANCE;
+        if (modes.getModeFlags().isBinary()) readEncoding = ASCIIEncoding.INSTANCE;
         openFile.setPath(path);
         openFile.setMainStream(fopen(path, modes.getModeFlags()));
     }
