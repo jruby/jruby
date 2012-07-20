@@ -666,6 +666,16 @@ public class RubyIO extends RubyObject {
                 int c = -1;
                 int n = -1;
                 int newline = (separator != null) ? (separator.get(separator.length() - 1) & 0xFF) : -1;
+                
+                // Awful hack.  MRI pre-transcodes lines into read-ahead whereas
+                // we read a single line at a time PRE-transcoded.  To keep our
+                // logic we need to do one additional transcode of the sep to
+                // match the pre-transcoded encoding.  This is gross and we should
+                // mimick MRI.
+                if (is19 && separator != null && separator.getEncoding() != getInputEncoding(runtime)) {
+                    ByteList hackSeparator = CharsetTranscoder.transcode(runtime.getCurrentContext(), separator, separator.getEncoding(), getInputEncoding(runtime), null);
+                    newline = hackSeparator.get(hackSeparator.length() - 1) & 0xFF;
+                }
 
                 ByteList buf = cache != null ? cache.allocate(0) : new ByteList(0);
                 try {
