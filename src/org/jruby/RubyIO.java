@@ -673,8 +673,8 @@ public class RubyIO extends RubyObject {
                 // match the pre-transcoded encoding.  This is gross and we should
                 // mimick MRI.
                 if (is19 && separator != null && separator.getEncoding() != getInputEncoding(runtime)) {
-                    ByteList hackSeparator = CharsetTranscoder.transcode(runtime.getCurrentContext(), separator, separator.getEncoding(), getInputEncoding(runtime), null);
-                    newline = hackSeparator.get(hackSeparator.length() - 1) & 0xFF;
+                    separator = CharsetTranscoder.transcode(runtime.getCurrentContext(), separator, separator.getEncoding(), getInputEncoding(runtime), null);
+                    newline = separator.get(separator.length() - 1) & 0xFF;
                 }
 
                 ByteList buf = cache != null ? cache.allocate(0) : new ByteList(0);
@@ -721,8 +721,7 @@ public class RubyIO extends RubyObject {
 
                             update = true;
                         } while (c != newline); // loop until we see the nth separator char
-                        
-                        if (is19) buf = readTranscoder.transcode(context, buf);
+
 
                         // if we hit EOF or reached limit then we're done
                         if (n == -1 || limitReached) {
@@ -737,6 +736,8 @@ public class RubyIO extends RubyObject {
                             break;
                         }
                     }
+                    
+                    if (is19) buf = readTranscoder.transcode(context, buf);
                     
                     if (isParagraph && c != -1) swallow('\n');
                     if (!update) return runtime.getNil();
