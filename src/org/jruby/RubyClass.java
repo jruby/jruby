@@ -980,7 +980,7 @@ public class RubyClass extends RubyModule {
      *
      * @param subclass The subclass to add
      */
-    public synchronized void addSubclass(RubyClass subclass) {
+    public void addSubclass(RubyClass subclass) {
         synchronized (runtime.getHierarchyLock()) {
             Set<RubyClass> oldSubclasses = subclasses;
             if (oldSubclasses == null) subclasses = oldSubclasses = new WeakHashSet<RubyClass>(4);

@@ -1226,6 +1226,7 @@ public final class Ruby {
     }
 
     private void bootstrap() {
+        initClassCreatorMap();
         initCore();
         initExceptions();
     }
@@ -1420,7 +1421,6 @@ public final class Ruby {
     }
     
     private void initExceptions() {
-        initClassCreatorMap();
         nameError = getNameError();
         //nameErrorMessage = getNameErrorMessage();
         

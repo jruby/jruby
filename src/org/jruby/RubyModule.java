@@ -3068,8 +3068,7 @@ public class RubyModule extends RubyObject {
             }
             p = p.getSuperClass();
         }
-        value = tryGetConstantIfPossible(getRuntime(), name);
-        return value;
+        return tryGetConstantIfPossible(getRuntime(), name);
     }
     
     @Deprecated
@@ -3465,7 +3464,7 @@ public class RubyModule extends RubyObject {
     public IRubyObject fetchConstant(String name, boolean includePrivate) {
         assert IdUtil.isConstant(name);
         ConstantEntry entry = constantEntryFetch(name);
- 
+
         if (entry == null) return null;
 
         if (entry.hidden && !includePrivate) {
@@ -3481,7 +3480,14 @@ public class RubyModule extends RubyObject {
             try {
                 Object obj = method.invoke(runtime);
                 if (obj instanceof IRubyObject) {
-                    constantTableStore(name, (IRubyObject)obj);
+                    if (getSuperClass() != null) {
+                        getSuperClass().storeConstant(name, (IRubyObject)obj);
+                        getSuperClass().invalidateConstantCache();
+                    }
+                    else {
+                        storeConstant(name, (IRubyObject)obj);
+                        invalidateConstantCache();
+                    }
                     return (IRubyObject)obj;
                 }
             } catch (IllegalAccessException ex) {
