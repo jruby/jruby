@@ -3413,9 +3413,6 @@ public class RubyIO extends RubyObject {
                 while (!str.isNil()) {
                     block.yield(context, str);
                     str = io.getline(runtime, separator, cache);
-                    if (runtime.is1_9()) {
-                        separator = io.getSeparatorFromArgs(runtime, args, 1);
-                    }
                 }
             } finally {
                 io.close();
@@ -3433,7 +3430,6 @@ public class RubyIO extends RubyObject {
         IRubyObject filename = args[0].convertToString();
         runtime.checkSafeString(filename);
 
-        boolean hasOptions = false;
         RubyIO io;
         // FIXME: This is gross; centralize options logic somewhere.
         switch (args.length) {
@@ -4359,7 +4355,7 @@ public class RubyIO extends RubyObject {
 
             ioOptions = newIOOptions(runtime, ioOptions, ModeFlags.TEXT);
         }
-
+        
         EncodingOption encodingOption = EncodingOption.getEncodingOptionFromObject(options);
         if (encodingOption != null) {
             ioOptions.setEncodingOption(encodingOption);
