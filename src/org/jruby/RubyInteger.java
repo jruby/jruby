@@ -243,7 +243,7 @@ public abstract class RubyInteger extends RubyNumeric {
     @JRubyMethod(name = {"succ", "next"})
     public IRubyObject succ(ThreadContext context) {
         if (this instanceof RubyFixnum) {
-            return RubyFixnum.newFixnum(context.getRuntime(), getLongValue() + 1L);
+            return ((RubyFixnum)this).op_plus_one(context);
         } else {
             return callMethod(context, "+", RubyFixnum.one(context.getRuntime()));
         }
