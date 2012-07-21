@@ -36,16 +36,19 @@ public class CharsetTranscoder {
     private Encoding forceEncoding = null;
     
     public CharsetTranscoder(ThreadContext context, Encoding toEncoding, IRubyObject options) {
-        this.toEncoding = toEncoding;
-
-        actions = getCodingErrorActions(context, options);
+        this(context, toEncoding, null, getCodingErrorActions(context, options));
     }
     
-    public CharsetTranscoder(ThreadContext context, Encoding toEncoding, Encoding forceEncoding, IRubyObject options) {
-        this(context, toEncoding, options);
-        
+    public CharsetTranscoder(ThreadContext context, Encoding toEncoding, Encoding forceEncoding, CodingErrorActions actions) {
+        this.toEncoding = toEncoding;
         this.forceEncoding = forceEncoding;
-    }
+        
+        if (actions == null) {
+            this.actions = getCodingErrorActions(context, null);
+        } else {
+            this.actions = actions;
+        }
+    }    
     
     public ByteList transcode(ThreadContext context, ByteList value) {
         Encoding fromEncoding = forceEncoding != null ? forceEncoding : value.getEncoding();
@@ -102,10 +105,10 @@ public class CharsetTranscoder {
             Encoding toEncoding, IRubyObject opts) {
         if (toEncoding == null) return value;
         
-        return new CharsetTranscoder(context, toEncoding, forceEncoding, opts).transcode(context, value);
+        return new CharsetTranscoder(context, toEncoding, forceEncoding, getCodingErrorActions(context, opts)).transcode(context, value);
     }
 
-    private static class CodingErrorActions {
+    public static class CodingErrorActions {
         final CodingErrorAction onUnmappableCharacter;
         final CodingErrorAction onMalformedInput;
         final RubyString replaceWith;
@@ -116,9 +119,14 @@ public class CharsetTranscoder {
             this.onMalformedInput = onMalformedInput;
             this.replaceWith = replaceWith;
         }
+        
+        @Override
+        public String toString() {
+            return "UnmappableCharacter: " + onUnmappableCharacter + ", MalformedInput: " + onMalformedInput + ", replaceWith: " + replaceWith;
+        }
     }
     
-   private static CodingErrorActions getCodingErrorActions(ThreadContext context, IRubyObject opts) {
+   public static CodingErrorActions getCodingErrorActions(ThreadContext context, IRubyObject opts) {
         if (opts == null || opts.isNil()) {
             return new CodingErrorActions(CodingErrorAction.REPORT,
                     CodingErrorAction.REPORT, null);
@@ -147,7 +155,11 @@ public class CharsetTranscoder {
         if (undef != null && undef.op_equal(context, runtime.newSymbol("replace")).isTrue()) {
             onUnmappableCharacter = CodingErrorAction.REPLACE;
         }
-
+        
+        if (replaceWith == null && (onUnmappableCharacter == CodingErrorAction.REPLACE || onMalformedInput == CodingErrorAction.REPLACE)) {
+            replaceWith = context.runtime.newString("?");
+        }
+        
         return new CodingErrorActions(onUnmappableCharacter, onMalformedInput, replaceWith);
 
         /*
@@ -182,7 +194,7 @@ public class CharsetTranscoder {
 
     private CharsetDecoder getCharsetDecoder(Charset charset) {
         CharsetDecoder decoder = charset.newDecoder();
-
+        
         decoder.onUnmappableCharacter(actions.onUnmappableCharacter);
         decoder.onMalformedInput(actions.onMalformedInput);
         
@@ -193,7 +205,7 @@ public class CharsetTranscoder {
 
     private CharsetEncoder getCharsetEncoder(Charset charset) {
         CharsetEncoder encoder = charset.newEncoder();
-
+        
         encoder.onUnmappableCharacter(actions.onUnmappableCharacter);
         encoder.onMalformedInput(actions.onMalformedInput);
         if (actions.replaceWith != null) {

@@ -1097,7 +1097,7 @@ public class RubyIO extends RubyObject {
                     context.runtime.getWarnings().warn("Ignoring internal encoding " + 
                             enc + ": it is identical to external encoding " + enc2);
                     enc2 = null;
-                }                
+                }
             } else {
                 enc = getEncodingCommon(context, internal);
 
@@ -1107,6 +1107,7 @@ public class RubyIO extends RubyObject {
                     enc = null;
                 }
             }
+            transcodingActions = CharsetTranscoder.getCodingErrorActions(context, options);            
             setupReadWriteEncodings(context, enc, enc2);            
             
         } else {
@@ -1122,6 +1123,7 @@ public class RubyIO extends RubyObject {
                     Encoding enc = getEncodingCommon(context, external);
                     setupReadWriteEncodings(context, enc, null);
                 }
+                transcodingActions = CharsetTranscoder.getCodingErrorActions(context, options);
             }
         }
 
@@ -4698,11 +4700,11 @@ public class RubyIO extends RubyObject {
         if (readTranscoder != null) return;
         
         if (writeEncoding != null) {
-            readTranscoder = new CharsetTranscoder(context, readEncoding, writeEncoding, null);
+            readTranscoder = new CharsetTranscoder(context, readEncoding, writeEncoding, transcodingActions);
         } else {
             Encoding ascii8bit = context.runtime.getEncodingService().getAscii8bitEncoding();
             
-            readTranscoder = new CharsetTranscoder(context, ascii8bit, ascii8bit, null);
+            readTranscoder = new CharsetTranscoder(context, ascii8bit, ascii8bit, transcodingActions);
         }
     }
     
@@ -4716,7 +4718,7 @@ public class RubyIO extends RubyObject {
         if (readEncoding == null || (readEncoding == ascii8bit  && writeEncoding == null)) { // No encoding conversion
             // Leave for extra MRI bittwiddling which is missing from our IO
             // Hack to initialize transcoder but do no transcoding
-            writeTranscoder = new CharsetTranscoder(context, ascii8bit, ascii8bit, null);
+            writeTranscoder = new CharsetTranscoder(context, ascii8bit, ascii8bit, transcodingActions);
         } else {
             Encoding fromEncoding = readEncoding;
             Encoding toEncoding;
@@ -4729,7 +4731,7 @@ public class RubyIO extends RubyObject {
             // If no write then default -> readEncoding
             // If write then writeEncoding -> readEncoding
             // If no read (see if above)
-            writeTranscoder = new CharsetTranscoder(context, toEncoding, fromEncoding, null);
+            writeTranscoder = new CharsetTranscoder(context, toEncoding, fromEncoding, transcodingActions);
         }
     }
     
@@ -4788,6 +4790,7 @@ public class RubyIO extends RubyObject {
      */
     protected Encoding readEncoding; // MRI:enc
     protected Encoding writeEncoding; // MRI:enc2
+    protected CharsetTranscoder.CodingErrorActions transcodingActions;
     
     /**
      * If the stream is being used for popen, we don't want to destroy the process
