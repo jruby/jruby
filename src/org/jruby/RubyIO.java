@@ -4356,6 +4356,28 @@ public class RubyIO extends RubyObject {
             ioOptions = newIOOptions(runtime, ioOptions, ModeFlags.TEXT);
         }
         
+        // TODO: Waaaay different than MRI.  They uniformly have all opening logic
+        // do a scan of args before anything opens.  We do this logic in a less
+        // consistent way.  We should consider re-impling all IO/File construction
+        // logic.
+        if (options.containsKey(runtime.newSymbol("open_args"))) {
+            IRubyObject args = options.fastARef(runtime.newSymbol("open_args"));
+            
+            RubyArray openArgs = args.convertToArray();
+            
+            for (int i = 0; i < openArgs.size(); i++) {
+                IRubyObject arg = openArgs.eltInternal(i);
+                
+                if (arg instanceof RubyString) { // Overrides all?
+                    ioOptions = newIOOptions(runtime, arg.asJavaString());
+                } else if (arg instanceof RubyFixnum) {
+                    ioOptions = newIOOptions(runtime, ((RubyFixnum) arg).getLongValue());
+                } else if (arg instanceof RubyHash) {
+                    ioOptions = updateIOOptionsFromOptions(context, (RubyHash) arg, ioOptions);
+                }
+            }
+        }
+
         EncodingOption encodingOption = EncodingOption.getEncodingOptionFromObject(options);
         if (encodingOption != null) {
             ioOptions.setEncodingOption(encodingOption);
