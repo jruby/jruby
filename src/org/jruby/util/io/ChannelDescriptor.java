@@ -880,8 +880,8 @@ public class ChannelDescriptor {
             // because otherwise, the file could be read-only
             if (fileCreated) {
                 // attempt to set the permissions, if we have been passed a POSIX instance,
-                // and only if the file was created in this call.
-                if (posix != null && perm != -1) {
+                // perm is > 0, and only if the file was created in this call.
+                if (posix != null && perm > 0) {
                     posix.chmod(theFile.getPath(), perm);
                 }
             }
