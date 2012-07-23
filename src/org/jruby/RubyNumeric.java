@@ -805,14 +805,35 @@ public class RubyNumeric extends RubyObject {
 
     private static void fixnumStep(ThreadContext context, Ruby runtime, long value, long end, long diff, Block block) {
         if (diff == 0) throw runtime.newArgumentError("step cannot be 0");
+      // tempID: Patch by colinb2r on Github to deal with possible integer overflows;
+        // Now we must check for possible integer overflow in "i += diff".
+        // We can do that by checking for integer overflow in every "i += diff".
+        // We can do that by adapting code from RubyFixnum.java (or elsewhere),
+        // or by using "long iPrevious", and (for example) for "diff > 0"
+        // checking that if "iPrevious >= 0" then new value of i is also > 0.
+        // (Or possibly we could use a boolean iPreviousGTzero.)
+        // But we don't want to slow down the "for" statement.
+        // So instead run the "for" statement to an adjusted end value "endvv"
+        // which is sufficiently far from Long.MAX_VALUE or Long.MIN_VALUE
+        // that the last "i += diff" in the "for" statement won't overflow,
+        // and after the "for" statement check if we should yield another value,
+        // which will be ready and waiting in "i".
+        long endvv, i;
         if (diff > 0) {
-            for (long i = value; i <= end; i += diff) {
+            endvv = Long.MAX_VALUE - diff;
+            if (endvv > end) endvv = end;
+            for (i = value; i <= endvv; i += diff) {
                 block.yield(context, RubyFixnum.newFixnum(runtime, i));
             }
         } else {
-            for (long i = value; i >= end; i += diff) {
+            endvv = Long.MIN_VALUE - diff;
+            if (endvv < end) endvv = end;
+            for (i = value; i >= endvv; i += diff) {
                 block.yield(context, RubyFixnum.newFixnum(runtime, i));
             }
+        }
+        if (endvv != end) {
+            block.yield(context, RubyFixnum.newFixnum(runtime, i));
         }
     }
 
