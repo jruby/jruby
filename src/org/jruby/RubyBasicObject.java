@@ -203,11 +203,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         return objectClass;
     }
 
-    @Deprecated
-    public IRubyObject initialize() {
-        return getRuntime().getNil();
-    }
-
     @JRubyMethod(name = "initialize", visibility = PRIVATE, compat = RUBY1_9)
     public IRubyObject initialize19(ThreadContext context) {
         return context.nil;
@@ -232,11 +227,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         assert metaClass != null: "NULL Metaclass!!?!?!";
 
         this.metaClass = metaClass;
-    }
-
-    @Deprecated
-    protected RubyBasicObject(Ruby runtime, RubyClass metaClass, boolean useObjectSpace, boolean canBeTainted) {
-        this(runtime, metaClass, useObjectSpace);
     }
 
     /**
@@ -342,14 +332,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     /**
-     * See org.jruby.javasupport.util.RuntimeHelpers#invokeSuper
-     */
-    @Deprecated
-    public IRubyObject callSuper(ThreadContext context, IRubyObject[] args, Block block) {
-        return RuntimeHelpers.invokeSuper(context, this, args, block);
-    }
-
-    /**
      * Will invoke a named method with no arguments and no block if that method or a custom
      * method missing exists. Otherwise returns null. 1.9: rb_check_funcall
      */
@@ -395,25 +377,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public final IRubyObject callMethod(ThreadContext context, String name, IRubyObject[] args, Block block) {
         return RuntimeHelpers.invoke(context, this, name, args, block);
     }
-
-    /**
-     * Will invoke an indexed method with the no arguments and no
-     * block.
-     */
-    @Deprecated
-    public final IRubyObject callMethod(ThreadContext context, int methodIndex, String name) {
-        return RuntimeHelpers.invoke(context, this, name);
-    }
-
-    /**
-     * Will invoke an indexed method with the one argument and no
-     * block with a functional invocation.
-     */
-    @Deprecated
-    public final IRubyObject callMethod(ThreadContext context, int methodIndex, String name, IRubyObject arg) {
-        return RuntimeHelpers.invoke(context, this, name, arg, Block.NULL_BLOCK);
-    }
-
 
     /**
      * Does this object represent nil? See the docs for the {@link
@@ -733,11 +696,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     public RubyInteger convertToInteger() {
         return convertToInteger("to_int");
-    }
-
-    @Deprecated
-    public RubyInteger convertToInteger(int methodIndex, String convertMethod) {
-        return convertToInteger(convertMethod);
     }
 
     /**
@@ -1371,16 +1329,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     /**
-     * Returns the amount of instance variables, class variables,
-     * constants and internal variables this object has.
-     */
-    @Deprecated
-    public int getVariableCount() {
-        // we use min to exclude object_id
-        return varTable == null ? 0 : Math.min(varTable.length, getMetaClass().getRealClass().getVariableTableSize());
-    }
-
-    /**
      * Gets a list of all variables in this object.
      */
     // TODO: must override in RubyModule to pick up constants
@@ -1419,16 +1367,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     /**
-     * Checks if the variable table contains the the variable of the
-     * specified name, where the precondition is that the name must be
-     * an interned Java String.
-     */
-    @Deprecated
-    protected boolean variableTableFastContains(String internedName) {
-        return variableTableContains(internedName);
-    }
-
-    /**
      * Fetch an object from the variable table based on the name.
      *
      * @return the object or null if not found
@@ -1438,31 +1376,11 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     /**
-     * Fetch an object from the variable table based on the name,
-     * where the name must be an interned Java String.
-     *
-     * @return the object or null if not found
-     */
-    @Deprecated
-    protected Object variableTableFastFetch(String internedName) {
-        return variableTableFetch(internedName);
-    }
-
-    /**
      * Store a value in the variable store under the specific name.
      */
     protected Object variableTableStore(String name, Object value) {
         getMetaClass().getRealClass().getVariableAccessorForWrite(name).set(this, value);
         return value;
-    }
-
-    /**
-     * Will store the value under the specified name, where the name
-     * needs to be an interned Java String.
-     */
-    @Deprecated
-    protected Object variableTableFastStore(String internedName, Object value) {
-        return variableTableStore(internedName, value);
     }
 
     /**
@@ -1517,27 +1435,11 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     /**
-     * @see org.jruby.runtime.builtin.InternalVariables#fastHasInternalVariable
-     */
-    @Deprecated
-    public boolean fastHasInternalVariable(String internedName) {
-        return hasInternalVariable(internedName);
-    }
-
-    /**
      * @see org.jruby.runtime.builtin.InternalVariables#getInternalVariable
      */
     public Object getInternalVariable(String name) {
         assert !IdUtil.isRubyVariable(name);
         return variableTableFetch(name);
-    }
-
-    /**
-     * @see org.jruby.runtime.builtin.InternalVariables#fastGetInternalVariable
-     */
-    @Deprecated
-    public Object fastGetInternalVariable(String internedName) {
-        return getInternalVariable(internedName);
     }
 
     /**
@@ -1549,28 +1451,11 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     /**
-     * @see org.jruby.runtime.builtin.InternalVariables#fastSetInternalVariable
-     */
-    @Deprecated
-    public void fastSetInternalVariable(String internedName, Object value) {
-        setInternalVariable(internedName, value);
-    }
-
-    /**
      * @see org.jruby.runtime.builtin.InternalVariables#removeInternalVariable
      */
     public Object removeInternalVariable(String name) {
         assert !IdUtil.isRubyVariable(name);
         return variableTableRemove(name);
-    }
-
-    /**
-     * Sync one variable table with another - this is used to make
-     * rbClone work correctly.
-     */
-    @Deprecated
-    public void syncVariables(List<Variable<Object>> variables) {
-        variableTableSync(variables);
     }
 
     /**
@@ -1626,27 +1511,11 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     /**
-     * @see org.jruby.runtime.builtin.InstanceVariables#fastHasInstanceVariable
-     */
-    @Deprecated
-    public boolean fastHasInstanceVariable(String internedName) {
-        return hasInstanceVariable(internedName);
-    }
-
-    /**
      * @see org.jruby.runtime.builtin.InstanceVariables#getInstanceVariable
      */
     public IRubyObject getInstanceVariable(String name) {
         assert IdUtil.isInstanceVariable(name);
         return (IRubyObject)variableTableFetch(name);
-    }
-
-    /**
-     * @see org.jruby.runtime.builtin.InstanceVariables#fastGetInstanceVariable
-     */
-    @Deprecated
-    public IRubyObject fastGetInstanceVariable(String internedName) {
-        return getInstanceVariable(internedName);
     }
 
     /** rb_iv_set / rb_ivar_set
@@ -1658,14 +1527,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         ensureInstanceVariablesSettable();
         return (IRubyObject)variableTableStore(name, value);
     }
-
-    /**
-     * @see org.jruby.runtime.builtin.InstanceVariables#fastSetInstanceVariable
-     */
-    @Deprecated
-    public IRubyObject fastSetInstanceVariable(String internedName, IRubyObject value) {
-        return setInstanceVariable(internedName, value);
-     }
 
     /**
      * @see org.jruby.runtime.builtin.InstanceVariables#removeInstanceVariable
@@ -3165,5 +3026,93 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             Object value = ois.readObject();
             metaClass.getVariableAccessorForWrite(name).set(this, value);
         }
+    }
+
+    // Deprecated methods below this line
+
+    @Deprecated
+    public IRubyObject initialize() {
+        return getRuntime().getNil();
+    }
+
+    @Deprecated
+    protected RubyBasicObject(Ruby runtime, RubyClass metaClass, boolean useObjectSpace, boolean canBeTainted) {
+        this(runtime, metaClass, useObjectSpace);
+    }
+
+    @Deprecated
+    public IRubyObject callSuper(ThreadContext context, IRubyObject[] args, Block block) {
+        return RuntimeHelpers.invokeSuper(context, this, args, block);
+    }
+
+    @Deprecated
+    public final IRubyObject callMethod(ThreadContext context, int methodIndex, String name) {
+        return RuntimeHelpers.invoke(context, this, name);
+    }
+
+    @Deprecated
+    public final IRubyObject callMethod(ThreadContext context, int methodIndex, String name, IRubyObject arg) {
+        return RuntimeHelpers.invoke(context, this, name, arg, Block.NULL_BLOCK);
+    }
+
+    @Deprecated
+    public RubyInteger convertToInteger(int methodIndex, String convertMethod) {
+        return convertToInteger(convertMethod);
+    }
+
+    @Deprecated
+    public int getVariableCount() {
+        // we use min to exclude object_id
+        return varTable == null ? 0 : Math.min(varTable.length, getMetaClass().getRealClass().getVariableTableSize());
+    }
+
+    @Deprecated
+    protected boolean variableTableFastContains(String internedName) {
+        return variableTableContains(internedName);
+    }
+
+    @Deprecated
+    protected Object variableTableFastFetch(String internedName) {
+        return variableTableFetch(internedName);
+    }
+
+    @Deprecated
+    protected Object variableTableFastStore(String internedName, Object value) {
+        return variableTableStore(internedName, value);
+    }
+
+    @Deprecated
+    public boolean fastHasInternalVariable(String internedName) {
+        return hasInternalVariable(internedName);
+    }
+
+    @Deprecated
+    public Object fastGetInternalVariable(String internedName) {
+        return getInternalVariable(internedName);
+    }
+
+    @Deprecated
+    public void fastSetInternalVariable(String internedName, Object value) {
+        setInternalVariable(internedName, value);
+    }
+
+    @Deprecated
+    public void syncVariables(List<Variable<Object>> variables) {
+        variableTableSync(variables);
+    }
+
+    @Deprecated
+    public boolean fastHasInstanceVariable(String internedName) {
+        return hasInstanceVariable(internedName);
+    }
+
+    @Deprecated
+    public IRubyObject fastGetInstanceVariable(String internedName) {
+        return getInstanceVariable(internedName);
+    }
+
+    @Deprecated
+    public IRubyObject fastSetInstanceVariable(String internedName, IRubyObject value) {
+        return setInstanceVariable(internedName, value);
     }
 }
