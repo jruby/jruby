@@ -444,6 +444,7 @@ public class RubyClass extends RubyModule {
     protected RubyClass(Ruby runtime, RubyClass superClass, boolean objectSpace) {
         super(runtime, runtime.getClassClass(), objectSpace);
         this.runtime = runtime;
+        this.realClass = superClass == null ? null : superClass.getRealClass();
         setSuperClass(superClass); // this is the only case it might be null here (in MetaClass construction)
     }
     
@@ -453,6 +454,7 @@ public class RubyClass extends RubyModule {
     protected RubyClass(Ruby runtime) {
         super(runtime, runtime.getClassClass());
         this.runtime = runtime;
+        this.realClass = this;
         index = ClassIndex.CLASS;
     }
     
@@ -1076,8 +1078,8 @@ public class RubyClass extends RubyModule {
         return runtime;
     }
 
-    public RubyClass getRealClass() {
-        return this;
+    public final RubyClass getRealClass() {
+        return realClass;
     }    
 
     @JRubyMethod(name = "inherited", required = 1, visibility = PRIVATE)
@@ -1898,4 +1900,7 @@ public class RubyClass extends RubyModule {
 
     /** A cached tuple of method and generation for marshal loading */
     private CacheEntry cachedLoad = CacheEntry.NULL_CACHE;
+
+    /** The "real" class, used by includes and singletons to locate the actual type of the object */
+    private final RubyClass realClass;
 }
