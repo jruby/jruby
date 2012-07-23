@@ -39,6 +39,7 @@
     <target name="test-extended" depends="
     copy-test-files,
     install-gems,
+    run-junit-interpreted,
     run-junit-compiled,
     run-junit-embed,
     test-rake-targets"
