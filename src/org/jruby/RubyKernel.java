@@ -69,6 +69,7 @@ import static org.jruby.runtime.Visibility.*;
 import static org.jruby.CompatVersion.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.IAutoloadMethod;
+import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.IdUtil;
 import org.jruby.util.ShellLauncher;
@@ -1513,8 +1514,11 @@ public class RubyKernel {
             // trim the length
             length = newPos;
         }
-
-        return RubyString.newStringNoCopy(runtime, out, 0, length);
+        ByteList buf = runtime.is1_9() ? new ByteList(out, 0, length, runtime.getDefaultExternalEncoding(), false) :
+                new ByteList(out, 0, length, false);
+        RubyString newString = RubyString.newString(runtime, buf);
+        
+        return newString;
     }
 
     @JRubyMethod(name = "srand", module = true, visibility = PRIVATE)
