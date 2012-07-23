@@ -62,6 +62,7 @@
       install-gems,
       test-security-manager,
       run-junit-interpreted,
+      run-junit-embed,
       run-junit-compiled,
       run-junit-precompiled,
       run-junit-reflected-precompiled,
