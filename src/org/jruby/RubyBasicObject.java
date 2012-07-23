@@ -1188,7 +1188,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * Adds the specified object as a finalizer for this object.
      */
     public void addFinalizer(IRubyObject f) {
-        Finalizer finalizer = (Finalizer)fastGetInternalVariable("__finalizer__");
+        Finalizer finalizer = (Finalizer)getInternalVariable("__finalizer__");
         if (finalizer == null) {
             // since this is the first time we're registering a finalizer, we
             // must also register this object in ObjectSpace, so that future
@@ -1210,7 +1210,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * Remove all the finalizers for this object.
      */
     public void removeFinalizers() {
-        Finalizer finalizer = (Finalizer)fastGetInternalVariable("__finalizer__");
+        Finalizer finalizer = (Finalizer)getInternalVariable("__finalizer__");
         if (finalizer != null) {
             finalizer.removeFinalizers();
             removeInternalVariable("__finalizer__");
@@ -1581,16 +1581,23 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         RubyClass realClass = metaClass.getRealClass();
         RubyClass otherRealClass = other.getMetaClass().getRealClass();
         boolean sameTable = otherRealClass == realClass;
-        
-        for (Map.Entry<String, RubyClass.VariableAccessor> entry : otherRealClass.getVariableAccessorsForRead().entrySet()) {
-            RubyClass.VariableAccessor accessor = entry.getValue();
-            Object value = accessor.get(other);
-            
-            if (value != null) {
-                if (sameTable) {
-                    accessor.set(this, value);
-                } else {
-                    realClass.getVariableAccessorForWrite(accessor.getName()).set(this, value);
+
+        if (sameTable) {
+            Object[] otherVars = ((RubyBasicObject) other).varTable;
+            int otherLength = otherVars.length;
+            Object[] myVars = getVariableTableForWrite(otherLength - 1);
+            System.arraycopy(otherVars, 0, myVars, 0, otherLength);
+        } else {
+            for (Map.Entry<String, RubyClass.VariableAccessor> entry : otherRealClass.getVariableAccessorsForRead().entrySet()) {
+                RubyClass.VariableAccessor accessor = entry.getValue();
+                Object value = accessor.get(other);
+
+                if (value != null) {
+                    if (sameTable) {
+                        accessor.set(this, value);
+                    } else {
+                        realClass.getVariableAccessorForWrite(accessor.getName()).set(this, value);
+                    }
                 }
             }
         }
