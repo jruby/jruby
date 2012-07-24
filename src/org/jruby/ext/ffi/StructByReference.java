@@ -101,6 +101,11 @@ public final class StructByReference extends RubyObject {
         }
     }
 
+    @JRubyMethod(name = "reference_required?")
+    public IRubyObject reference_required_p(ThreadContext context) {
+        return context.getRuntime().getFalse();
+    }
+
     public final StructLayout getStructLayout() {
         return structLayout;
     }

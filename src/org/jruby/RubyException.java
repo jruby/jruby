@@ -65,13 +65,6 @@ import org.jruby.runtime.marshal.UnmarshalStream;
  */
 @JRubyClass(name="Exception")
 public class RubyException extends RubyObject {
-    private BacktraceData backtraceData;
-    private IRubyObject backtrace;
-    public IRubyObject message;
-    public static final int TRACE_HEAD = 8;
-    public static final int TRACE_TAIL = 4;
-    public static final int TRACE_MAX = TRACE_HEAD + TRACE_TAIL + 6;
-
     protected RubyException(Ruby runtime, RubyClass rubyClass) {
         this(runtime, rubyClass, null);
     }
@@ -81,62 +74,118 @@ public class RubyException extends RubyObject {
         
         this.message = message == null ? runtime.getNil() : runtime.newString(message);
     }
-    
-    public static ObjectAllocator EXCEPTION_ALLOCATOR = new ObjectAllocator() {
-        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            RubyException instance = new RubyException(runtime, klass);
-            
-            // for future compatibility as constructors move toward not accepting metaclass?
-            instance.setMetaClass(klass);
-            
-            return instance;
-        }
-    };
-    
-    private static final ObjectMarshal EXCEPTION_MARSHAL = new ObjectMarshal() {
-        public void marshalTo(Ruby runtime, Object obj, RubyClass type,
-                              MarshalStream marshalStream) throws IOException {
-            RubyException exc = (RubyException)obj;
-            
-            marshalStream.registerLinkTarget(exc);
-            List<Variable<Object>> attrs = exc.getVariableList();
-            attrs.add(new VariableEntry<Object>(
-                    "mesg", exc.message == null ? runtime.getNil() : exc.message));
-            attrs.add(new VariableEntry<Object>("bt", exc.getBacktrace()));
-            marshalStream.dumpVariables(attrs);
-        }
 
-        public Object unmarshalFrom(Ruby runtime, RubyClass type,
-                                    UnmarshalStream unmarshalStream) throws IOException {
-            RubyException exc = (RubyException)type.allocate();
-            
-            unmarshalStream.registerLinkTarget(exc);
-            // FIXME: Can't just pull these off the wire directly? Or maybe we should
-            // just use real vars all the time for these?
-            unmarshalStream.defaultVariablesUnmarshal(exc);
-            
-            exc.message = (IRubyObject)exc.removeInternalVariable("mesg");
-            exc.set_backtrace((IRubyObject)exc.removeInternalVariable("bt"));
-            
-            return exc;
-        }
-    };
-
-    public static RubyClass createExceptionClass(Ruby runtime) {
-        RubyClass exceptionClass = runtime.defineClass("Exception", runtime.getObject(), EXCEPTION_ALLOCATOR);
-        runtime.setException(exceptionClass);
-
-        exceptionClass.index = ClassIndex.EXCEPTION;
-        exceptionClass.setReifiedClass(RubyException.class);
-
-        exceptionClass.setMarshal(EXCEPTION_MARSHAL);
-        exceptionClass.defineAnnotatedMethods(RubyException.class);
-
-        return exceptionClass;
+    @JRubyMethod(optional = 2, visibility = PRIVATE)
+    public IRubyObject initialize(IRubyObject[] args, Block block) {
+        if (args.length == 1) message = args[0];
+        return this;
     }
 
-    public static RubyException newException(Ruby runtime, RubyClass excptnClass, String msg) {
-        return new RubyException(runtime, excptnClass, msg);
+    @JRubyMethod
+    public IRubyObject backtrace() {
+        IRubyObject bt = getBacktrace();
+        return bt;
+    }
+
+    @JRubyMethod(required = 1)
+    public IRubyObject set_backtrace(IRubyObject obj) {
+        if (obj.isNil()) {
+            backtrace = null;
+        } else if (!isArrayOfStrings(obj)) {
+            throw getRuntime().newTypeError("backtrace must be Array of String");
+        } else {
+            backtrace = obj;
+        }
+        return backtrace();
+    }
+
+    @JRubyMethod(name = "exception", optional = 1, rest = true, meta = true)
+    public static IRubyObject exception(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        return ((RubyClass) recv).newInstance(context, args, block);
+    }
+
+    @JRubyMethod(optional = 1)
+    public RubyException exception(IRubyObject[] args) {
+        switch (args.length) {
+            case 0 :
+                return this;
+            case 1 :
+                if(args[0] == this) {
+                    return this;
+                }
+                RubyException ret = (RubyException)rbClone();
+                ret.initialize(args, Block.NULL_BLOCK); // This looks wrong, but it's the way MRI does it.
+                return ret;
+            default :
+                throw getRuntime().newArgumentError("Wrong argument count");
+        }
+    }
+
+    @JRubyMethod(name = "to_s", compat = CompatVersion.RUBY1_8)
+    public IRubyObject to_s(ThreadContext context) {
+        if (message.isNil()) return context.getRuntime().newString(getMetaClass().getRealClass().getName());
+        message.setTaint(isTaint());
+        return message;
+    }
+
+    @JRubyMethod(name = "to_s", compat = CompatVersion.RUBY1_9)
+    public IRubyObject to_s19(ThreadContext context) {
+        if (message.isNil()) return context.getRuntime().newString(getMetaClass().getRealClass().getName());
+        message.setTaint(isTaint());
+        return message.asString();
+    }
+
+    @JRubyMethod(name = "to_str", compat = CompatVersion.RUBY1_8)
+    public IRubyObject to_str(ThreadContext context) {
+        return callMethod(context, "to_s");
+    }
+
+    @JRubyMethod(name = "message")
+    public IRubyObject message(ThreadContext context) {
+        return callMethod(context, "to_s");
+    }
+
+    /** inspects an object and return a kind of debug information
+     *
+     *@return A RubyString containing the debug information.
+     */
+    @JRubyMethod(name = "inspect")
+    public IRubyObject inspect(ThreadContext context) {
+        // rb_class_name skips intermediate classes (JRUBY-6786)
+        RubyModule rubyClass = getMetaClass().getRealClass();
+        RubyString exception = RubyString.objAsString(context, this);
+
+        if (exception.size() == 0) return getRuntime().newString(rubyClass.getName());
+        StringBuilder sb = new StringBuilder("#<");
+        sb.append(rubyClass.getName()).append(": ").append(exception.getByteList()).append(">");
+        return getRuntime().newString(sb.toString());
+    }
+
+    @JRubyMethod(name = "==", compat = CompatVersion.RUBY1_9)
+    @Override
+    public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
+        if (this == other) return context.runtime.getTrue();
+
+        boolean equal =
+                getMetaClass().getRealClass() == other.getMetaClass().getRealClass() &&
+                        context.getRuntime().getException().isInstance(other) &&
+                        callMethod(context, "message").equals(other.callMethod(context, "message")) &&
+                        callMethod(context, "backtrace").equals(other.callMethod(context, "backtrace"));
+        return context.getRuntime().newBoolean(equal);
+    }
+
+    @JRubyMethod(name = "===", meta = true)
+    public static IRubyObject op_eqq(ThreadContext context, IRubyObject recv, IRubyObject other) {
+        Ruby runtime = context.getRuntime();
+        // special case non-FlowControlException Java exceptions so they'll be caught by rescue Exception
+        if (recv == runtime.getException() && other instanceof ConcreteJavaProxy) {
+            Object object = ((ConcreteJavaProxy)other).getObject();
+            if (object instanceof Throwable && !(object instanceof FlowControlException)) {
+                return context.getRuntime().getTrue();
+            }
+        }
+        // fall back on default logic
+        return ((RubyClass)recv).op_eqq(context, other);
     }
 
     public void setBacktraceData(BacktraceData backtraceData) {
@@ -196,116 +245,6 @@ public class RubyException extends RubyObject {
         }
     }
 
-    @JRubyMethod(optional = 2, visibility = PRIVATE)
-    public IRubyObject initialize(IRubyObject[] args, Block block) {
-        if (args.length == 1) message = args[0];
-        return this;
-    }
-
-    @JRubyMethod
-    public IRubyObject backtrace() {
-        IRubyObject bt = getBacktrace();
-        return bt;
-    }
-
-    @JRubyMethod(required = 1)
-    public IRubyObject set_backtrace(IRubyObject obj) {
-        if (obj.isNil()) {
-            backtrace = null;
-        } else if (!isArrayOfStrings(obj)) {
-            throw getRuntime().newTypeError("backtrace must be Array of String");
-        } else {
-            backtrace = obj;
-        }
-        return backtrace();
-    }
-    
-    @JRubyMethod(name = "exception", optional = 1, rest = true, meta = true)
-    public static IRubyObject exception(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        return ((RubyClass) recv).newInstance(context, args, block);
-    }
-
-    @JRubyMethod(optional = 1)
-    public RubyException exception(IRubyObject[] args) {
-        switch (args.length) {
-            case 0 :
-                return this;
-            case 1 :
-                if(args[0] == this) {
-                    return this;
-                }
-                RubyException ret = (RubyException)rbClone();
-                ret.initialize(args, Block.NULL_BLOCK); // This looks wrong, but it's the way MRI does it.
-                return ret;
-            default :
-                throw getRuntime().newArgumentError("Wrong argument count");
-        }
-    }
-
-    @JRubyMethod(name = "to_s", compat = CompatVersion.RUBY1_8)
-    public IRubyObject to_s(ThreadContext context) {
-        if (message.isNil()) return context.getRuntime().newString(getMetaClass().getRealClass().getName());
-        message.setTaint(isTaint());
-        return message;
-    }
-    
-    @JRubyMethod(name = "to_s", compat = CompatVersion.RUBY1_9)
-    public IRubyObject to_s19(ThreadContext context) {
-        if (message.isNil()) return context.getRuntime().newString(getMetaClass().getRealClass().getName());
-        message.setTaint(isTaint());
-        return message.asString();
-    }
-    
-    @JRubyMethod(name = "to_str", compat = CompatVersion.RUBY1_8)
-    public IRubyObject to_str(ThreadContext context) {
-        return callMethod(context, "to_s");
-    }
-
-    @JRubyMethod(name = "message")
-    public IRubyObject message(ThreadContext context) {
-        return callMethod(context, "to_s");
-    }
-
-    /** inspects an object and return a kind of debug information
-     * 
-     *@return A RubyString containing the debug information.
-     */
-    @JRubyMethod(name = "inspect")
-    public IRubyObject inspect(ThreadContext context) {
-        RubyModule rubyClass = getMetaClass();
-        RubyString exception = RubyString.objAsString(context, this);
-
-        if (exception.getByteList().getRealSize() == 0) return getRuntime().newString(rubyClass.getName());
-        StringBuilder sb = new StringBuilder("#<");
-        sb.append(rubyClass.getName()).append(": ").append(exception.getByteList()).append(">");
-        return getRuntime().newString(sb.toString());
-    }
-
-    @JRubyMethod(name = "==", compat = CompatVersion.RUBY1_9)
-    @Override
-    public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
-        boolean equal =
-                getMetaClass() == other.getMetaClass() &&
-                context.getRuntime().getException().isInstance(other) &&
-                callMethod(context, "message").equals(other.callMethod(context, "message")) &&
-                callMethod(context, "backtrace").equals(other.callMethod(context, "backtrace"));
-        return context.getRuntime().newBoolean(equal);
-    }
-
-    @JRubyMethod(name = "===", meta = true)
-    public static IRubyObject op_eqq(ThreadContext context, IRubyObject recv, IRubyObject other) {
-        Ruby runtime = context.getRuntime();
-        // special case non-FlowControlException Java exceptions so they'll be caught by rescue Exception
-        if (recv == runtime.getException() && other instanceof ConcreteJavaProxy) {
-            Object object = ((ConcreteJavaProxy)other).getObject();
-            if (object instanceof Throwable && !(object instanceof FlowControlException)) {
-                return context.getRuntime().getTrue();
-            }
-        }
-        // fall back on default logic
-        return ((RubyClass)recv).op_eqq(context, other);
-    }
-
     @Override
     public void copySpecialInstanceVariables(IRubyObject clone) {
         RubyException exception = (RubyException)clone;
@@ -360,8 +299,74 @@ public class RubyException extends RubyObject {
         return true;
     }
 
+    public static ObjectAllocator EXCEPTION_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            RubyException instance = new RubyException(runtime, klass);
+
+            // for future compatibility as constructors move toward not accepting metaclass?
+            instance.setMetaClass(klass);
+
+            return instance;
+        }
+    };
+
+    private static final ObjectMarshal EXCEPTION_MARSHAL = new ObjectMarshal() {
+        public void marshalTo(Ruby runtime, Object obj, RubyClass type,
+                              MarshalStream marshalStream) throws IOException {
+            RubyException exc = (RubyException)obj;
+
+            marshalStream.registerLinkTarget(exc);
+            List<Variable<Object>> attrs = exc.getVariableList();
+            attrs.add(new VariableEntry<Object>(
+                    "mesg", exc.message == null ? runtime.getNil() : exc.message));
+            attrs.add(new VariableEntry<Object>("bt", exc.getBacktrace()));
+            marshalStream.dumpVariables(attrs);
+        }
+
+        public Object unmarshalFrom(Ruby runtime, RubyClass type,
+                                    UnmarshalStream unmarshalStream) throws IOException {
+            RubyException exc = (RubyException)type.allocate();
+
+            unmarshalStream.registerLinkTarget(exc);
+            // FIXME: Can't just pull these off the wire directly? Or maybe we should
+            // just use real vars all the time for these?
+            unmarshalStream.defaultVariablesUnmarshal(exc);
+
+            exc.message = (IRubyObject)exc.removeInternalVariable("mesg");
+            exc.set_backtrace((IRubyObject)exc.removeInternalVariable("bt"));
+
+            return exc;
+        }
+    };
+
+    public static RubyClass createExceptionClass(Ruby runtime) {
+        RubyClass exceptionClass = runtime.defineClass("Exception", runtime.getObject(), EXCEPTION_ALLOCATOR);
+        runtime.setException(exceptionClass);
+
+        exceptionClass.index = ClassIndex.EXCEPTION;
+        exceptionClass.setReifiedClass(RubyException.class);
+
+        exceptionClass.setMarshal(EXCEPTION_MARSHAL);
+        exceptionClass.defineAnnotatedMethods(RubyException.class);
+
+        return exceptionClass;
+    }
+
+    public static RubyException newException(Ruby runtime, RubyClass excptnClass, String msg) {
+        return new RubyException(runtime, excptnClass, msg);
+    }
+
     // rb_exc_new3
     public static IRubyObject newException(ThreadContext context, RubyClass exceptionClass, IRubyObject message) {
         return exceptionClass.callMethod(context, "new", message.convertToString());
     }
+
+    private BacktraceData backtraceData;
+    private IRubyObject backtrace;
+    public IRubyObject message;
+
+    public static final int TRACE_HEAD = 8;
+    public static final int TRACE_TAIL = 4;
+    public static final int TRACE_MAX = TRACE_HEAD + TRACE_TAIL + 6;
+
 }

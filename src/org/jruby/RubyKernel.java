@@ -69,10 +69,12 @@ import static org.jruby.runtime.Visibility.*;
 import static org.jruby.CompatVersion.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.IAutoloadMethod;
+import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.IdUtil;
 import org.jruby.util.ShellLauncher;
 import org.jruby.util.TypeConverter;
+import org.jruby.util.cli.Options;
 
 /**
  * Note: For CVS history, see KernelModule.java.
@@ -1513,8 +1515,11 @@ public class RubyKernel {
             // trim the length
             length = newPos;
         }
-
-        return RubyString.newStringNoCopy(runtime, out, 0, length);
+        ByteList buf = runtime.is1_9() ? new ByteList(out, 0, length, runtime.getDefaultExternalEncoding(), false) :
+                new ByteList(out, 0, length, false);
+        RubyString newString = RubyString.newString(runtime, buf);
+        
+        return newString;
     }
 
     @JRubyMethod(name = "srand", module = true, visibility = PRIVATE)
@@ -1603,7 +1608,7 @@ public class RubyKernel {
     public static IRubyObject exec(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = context.getRuntime();
         
-        return execCommon(runtime, null, null, null, args);
+        return execCommon(runtime, null, args[0], null, args);
     }
     
     @JRubyMethod(required = 4, module = true, compat = RUBY1_9, visibility = PRIVATE)
@@ -1634,35 +1639,51 @@ public class RubyKernel {
             }
         }
         
-        if (prog != null && prog.isNil()) prog = null;
-        
-        int resultCode;
+        int resultCode = -1;
         boolean nativeFailed = false;
-        try {
+        boolean execInProcess = !Options.NATIVE_EXEC.load();
+
+        if (!execInProcess) {
             try {
-                // args to strings
-                String[] argv = new String[args.length];
-                for (int i = 0; i < args.length; i++) {
-                    argv[i] = args[i].asJavaString();
+                String progStr = prog.asJavaString();
+
+                ShellLauncher.LaunchConfig cfg = new ShellLauncher.LaunchConfig(runtime, args, true);
+
+                // Duplicated in part from ShellLauncher.runExternalAndWait
+                if (cfg.shouldRunInShell()) {
+                    // execute command with sh -c
+                    // this does shell expansion of wildcards
+                    cfg.verifyExecutableForShell();
+                    progStr = cfg.getExecArgs()[0];
+                } else {
+                    cfg.verifyExecutableForDirect();
                 }
-                
-                resultCode = runtime.getPosix().exec(prog == null ? null : prog.asJavaString(), argv);
-                
+
+                String[] argv = cfg.getExecArgs();
+
+                if (Platform.IS_WINDOWS) {
+                    // Windows exec logic is much more elaborate; exec() in jnr-posix attempts to duplicate it
+                    resultCode = runtime.getPosix().exec(progStr, argv);
+                } else {
+                    // TODO: other logic surrounding this call? In jnr-posix?
+                    resultCode = runtime.getPosix().execv(progStr, argv);
+                }
+
                 // Only here because native exec could not exec (always -1)
                 nativeFailed = true;
-            } catch (RaiseException e) {  // Not implemented error
-                // Fall back onto our existing code if native not available
-                // FIXME: Make jnr-posix Pure-Java backend do this as well
-                resultCode = ShellLauncher.execAndWait(runtime, args);
+            } catch (RaiseException e) {
+            } catch (Exception e) {
+                throw runtime.newErrnoENOENTError("cannot execute");
             }
-        } catch (RaiseException e) {
-            throw e; // no need to wrap this exception
-        } catch (Exception e) {
-            throw runtime.newErrnoENOENTError("cannot execute");
         }
 
+        // if we get here, either native exec failed or we should try an in-process exec
         if (nativeFailed) {
             throw runtime.newErrnoFromLastPOSIXErrno();
+        } else {
+            // Fall back onto our existing code if native not available
+            // FIXME: Make jnr-posix Pure-Java backend do this as well
+            resultCode = ShellLauncher.execAndWait(runtime, args);
         }
 
         exit(runtime, new IRubyObject[] {runtime.newFixnum(resultCode)}, true);

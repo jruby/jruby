@@ -80,7 +80,7 @@ def mspec(mspec_options = {}, java_options = {}, &code)
   mspec_options[:objectspace_enabled] ||= true
   mspec_options[:thread_pooling] ||= false
   mspec_options[:reflection] ||= false
-  mspec_options[:compat] ||= "RUBY1_8"
+  mspec_options[:compat] ||= "1.8"
   ms = mspec_options
 
   # We can check this property to see whether we failed the run or not
@@ -96,7 +96,12 @@ def mspec(mspec_options = {}, java_options = {}, &code)
 
     env :key => "JAVA_OPTS", :value => "-Demma.verbosity.level=silent"
     env :key => "JRUBY_OPTS", :value => ""
-    arg :line => "--1.8" # we launch mspec in 1.8 mode due to oddities in loading .mspec files
+    # launch in the same mode we're testing, since config is loaded by top process
+    arg :line => "--#{ms[:compat]}"
+
+    # if 1.9 mode, add . to load path so mspec config is found
+    arg :line => "-I ." if ms[:compat] == '1.9'
+
     arg :line => "#{MSPEC_BIN} ci"
     arg :line => "-T -J-ea"
     arg :line => "-T -J-Djruby.launch.inproc=false"
@@ -106,7 +111,7 @@ def mspec(mspec_options = {}, java_options = {}, &code)
     arg :line => "-T -J-Djruby.objectspace.enabled=#{ms[:objectspace_enabled]}"
     arg :line => "-T -J-Djruby.thread.pool.enabled=#{ms[:thread_pooling]}"
     arg :line => "-T -J-Djruby.reflection=#{ms[:reflection]}"
-    arg :line => "-T -J-Djruby.compat.version=#{ms[:compat]}"
+    arg :line => "-T --#{ms[:compat]}"
     arg :line => "-T -J-Demma.coverage.out.file=#{TEST_RESULTS_DIR}/coverage.emma"
     arg :line => "-T -J-Demma.coverage.out.merge=true"
     arg :line => "-T -J-Demma.verbosity.level=silent"

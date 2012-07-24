@@ -34,11 +34,6 @@ import java.lang.ref.SoftReference;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public final class MetaClass extends RubyClass {
-    
-    private static final SoftReference<IRubyObject> NULL_SOFT_REF = new SoftReference<IRubyObject>(null);
-
-    private SoftReference<IRubyObject> attached = NULL_SOFT_REF; 
-    
     /** rb_class_boot (for MetaClasses) (in makeMetaClass(RubyClass))
      * 
      */
@@ -53,14 +48,6 @@ public final class MetaClass extends RubyClass {
         return true;
     }
 
-    /**
-     * If an object uses an anonymous class 'class << obj', then this grabs the original 
-     * metaclass and not the one that get injected as a result of 'class << obj'.
-     */
-    public RubyClass getRealClass() {
-        return superClass.getRealClass();
-    }
-
     public final IRubyObject allocate(){
         throw runtime.newTypeError("can't create instance of virtual class");
     }
@@ -73,4 +60,7 @@ public final class MetaClass extends RubyClass {
         this.attached = new SoftReference<IRubyObject>(attached);
     }
 
+    private static final SoftReference<IRubyObject> NULL_SOFT_REF = new SoftReference<IRubyObject>(null);
+
+    private SoftReference<IRubyObject> attached = NULL_SOFT_REF;
 }

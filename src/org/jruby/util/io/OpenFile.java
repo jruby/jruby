@@ -6,6 +6,7 @@ import org.jruby.util.ShellLauncher;
 
 public class OpenFile {
 
+    // IO Mode flags
     public static final int READABLE           = 0x00000001;
     public static final int WRITABLE           = 0x00000002;
     public static final int READWRITE          = READABLE | WRITABLE;
@@ -76,7 +77,7 @@ public class OpenFile {
     public int getMode() {
         return mode;
     }
-
+    
     public String getModeAsString(Ruby runtime) {
         String modeString = getStringFromMode(mode);
 
@@ -187,7 +188,16 @@ public class OpenFile {
     public boolean isBinmode() {
         return (mode & BINMODE) != 0;
     }
-
+    
+    public boolean isTextMode() {
+        return (mode & TEXTMODE) != 0;
+    }
+    
+    public void setTextMode() {
+        mode |= TEXTMODE;
+        // FIXME: Make stream(s) know about text mode.
+    }
+ 
     public void setBinmode() {
         mode |= BINMODE;
         if (mainStream != null) {
@@ -245,7 +255,7 @@ public class OpenFile {
     public void setMode(int modes) {
         this.mode = modes;
     }
-
+    
     public Process getProcess() {
         return process;
     }
@@ -306,7 +316,6 @@ public class OpenFile {
 
     public void finalize(Ruby runtime, boolean raise) {
         try {
-            ChannelDescriptor main = null;
             ChannelDescriptor pipe = null;
             
             // Recent JDKs shut down streams in the parent when child
@@ -338,7 +347,7 @@ public class OpenFile {
                 Stream ms = mainStream;
                 if (ms != null) {
                     // TODO: Ruby logic is somewhat more complicated here, see comments after
-                    main = ms.getDescriptor();
+                    ChannelDescriptor main = ms.getDescriptor();
                     runtime.removeFilenoIntMap(main.getFileno());
                     try {
                         // Newer JDKs actively close the process streams when
@@ -373,10 +382,7 @@ public class OpenFile {
                             ms.fclose();
                         }
                     } catch (BadDescriptorException bde) {
-                        if (main == pipe) {
-                        } else {
-                            throw bde;
-                        }
+                        if (main != pipe) throw bde;
                     } finally {
                         // make sure the main stream is set to null
                         mainStream = null;

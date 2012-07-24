@@ -1084,12 +1084,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 options = (RubyHash)args[1];
             } else {
                 modes = parseIOOptions19(args[1]);
-
-                if (args[1] instanceof RubyFixnum) {
-                    perm = RubyNumeric.num2int(args[1]);
-                } else {
-                    modeString = args[1].convertToString().toString();
-                }
             }
         } else {
             modes = parseIOOptions19(RubyString.newString(runtime, modeString));
@@ -1106,7 +1100,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         if (perm > 0) {
             sysopenInternal19(context, path, options, modes, perm);
         } else {
-            openInternal19(context, path, options, modeString, modes);
+            openInternal19(context, path, options, modes);
         }
 
         return this;
@@ -1157,7 +1151,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         openFile.setPath(path);
         openFile.setMode(modes.getOpenFileFlags());
-        if (modes.isBinary()) externalEncoding = ASCIIEncoding.INSTANCE;
+        if (modes.isBinary()) readEncoding = ASCIIEncoding.INSTANCE;
 
         int umask = getUmaskSafe( getRuntime() );
         perm = perm - (perm & umask);
@@ -1166,24 +1160,24 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         openFile.setMainStream(fdopen(descriptor, modes));
     }
 
-    protected void openInternal19(ThreadContext context, String path, RubyHash options, String modeString, IOOptions ioOptions) {
+    protected void openInternal19(ThreadContext context, String path, RubyHash options, IOOptions ioOptions) {
         ioOptions = updateIOOptionsFromOptions(context, options, ioOptions);
 
-        openInternal(path, modeString, ioOptions.getModeFlags());
+        openInternal(path, ioOptions.getModeFlags());
 
         setEncodingFromOptions(ioOptions.getEncodingOption());
     }
 
-    protected void openInternal(String path, String modeString, ModeFlags modes) {
+    protected void openInternal(String path, ModeFlags modes) {
         if (path.startsWith("jar:")) {
             path = path.substring(4);
         }
         openFile = new OpenFile();
 
         openFile.setMode(modes.getOpenFileFlags());
-        if (modes.isBinary()) externalEncoding = ASCIIEncoding.INSTANCE;
+        if (modes.isBinary()) readEncoding = ASCIIEncoding.INSTANCE;
         openFile.setPath(path);
-        openFile.setMainStream(fopen(path, modeString));
+        openFile.setMainStream(fopen(path, modes));
     }
 
     protected void openInternal(String path, String modeString) {
@@ -1194,9 +1188,9 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         IOOptions modes = newIOOptions(getRuntime(), modeString);
         openFile.setMode(modes.getModeFlags().getOpenFileFlags());
-        if (modes.getModeFlags().isBinary()) externalEncoding = ASCIIEncoding.INSTANCE;
+        if (modes.getModeFlags().isBinary()) readEncoding = ASCIIEncoding.INSTANCE;
         openFile.setPath(path);
-        openFile.setMainStream(fopen(path, modeString));
+        openFile.setMainStream(fopen(path, modes.getModeFlags()));
     }
 
     private ChannelDescriptor sysopen(String path, ModeFlags modes, int perm) {
@@ -1232,33 +1226,12 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
     }
 
-    private Stream fopen(String path, String modeString) {
+    private Stream fopen(String path, ModeFlags flags) {
         try {
-            Stream stream = ChannelStream.fopen(
+            return ChannelStream.fopen(
                     getRuntime(),
                     path,
-                    newModeFlags(getRuntime(), modeString));
-
-            if (stream == null) {
-                // TODO
-                //            if (errno == EMFILE || errno == ENFILE) {
-                //                rb_gc();
-                //                file = fopen(fname, mode);
-                //            }
-                //            if (!file) {
-                //                rb_sys_fail(fname);
-                //            }
-            }
-
-            // Do we need to be in SETVBUF mode for buffering to make sense? This comes up elsewhere.
-            //    #ifdef USE_SETVBUF
-            //        if (setvbuf(file, NULL, _IOFBF, 0) != 0)
-            //            rb_warn("setvbuf() can't be honoured for %s", fname);
-            //    #endif
-            //    #ifdef __human68k__
-            //        fmode(file, _IOTEXT);
-            //    #endif
-            return stream;
+                    flags);
         } catch (BadDescriptorException e) {
             throw getRuntime().newErrnoEBADFError();
         } catch (PermissionDeniedException pde) {

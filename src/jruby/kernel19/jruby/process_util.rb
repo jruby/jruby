@@ -48,6 +48,8 @@ module JRuby
         args[i] = String(args[i].to_str)
       end
 
+      prog = args[0] unless prog
+
       return env, prog, opts, args
     end
   end

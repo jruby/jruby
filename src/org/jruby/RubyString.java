@@ -62,15 +62,8 @@ import static org.jruby.util.StringSupport.unpackArg;
 import static org.jruby.util.StringSupport.unpackResult;
 
 import java.io.UnsupportedEncodingException;
-import java.nio.ByteBuffer;
-import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
-import java.nio.charset.CharsetDecoder;
-import java.nio.charset.CharsetEncoder;
-import java.nio.charset.CodingErrorAction;
-import java.util.HashSet;
 import java.util.Locale;
-import java.util.Set;
 
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
@@ -97,6 +90,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.encoding.EncodingCapable;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
+import org.jruby.util.CharsetTranscoder;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.MurmurHash;
 import org.jruby.util.Numeric;
@@ -385,11 +379,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
     public RubyString(Ruby runtime, RubyClass rubyClass, CharSequence value) {
         super(runtime, rubyClass);
         assert value != null;
-        Charset charset = null;
+
         Encoding defaultEncoding = runtime.getEncodingService().getLocaleEncoding();
         if (defaultEncoding == null) defaultEncoding = UTF8;
 
-        charset = defaultEncoding.getCharset();
+        Charset charset = defaultEncoding.getCharset();
 
         // if null charset, fall back on Java default charset
         if (charset == null) charset = Charset.defaultCharset();
@@ -4683,14 +4677,13 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 }
             } else {
                 final Regex pattern, prepared;
-                final RubyRegexp regexp;
+                
                 Ruby runtime = context.getRuntime();
                 if (spat instanceof RubyRegexp) {
-                    regexp = (RubyRegexp)spat;
+                    RubyRegexp regexp = (RubyRegexp)spat;
                     pattern = regexp.getPattern();
                     prepared = regexp.preparePattern(this);
                 } else {
-                    regexp = null;
                     pattern = getStringPattern19(runtime, spat);
                     prepared = RubyRegexp.preparePattern(runtime, pattern, this);
                 }
@@ -7375,7 +7368,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
         if (defaultInternal == null) return dup();
 
-        value = transcode(context, value, null, defaultInternal, runtime.getNil());
+        value = CharsetTranscoder.transcode(context, value, null, defaultInternal, runtime.getNil());
 
         return this;
     }
@@ -7385,7 +7378,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         Ruby runtime = context.getRuntime();
         modify19();
 
-        value = transcode(context, value, null, getEncoding(runtime, enc), runtime.getNil());
+        value = CharsetTranscoder.transcode(context, value, null, getEncoding(runtime, enc), runtime.getNil());
 
         return this;
     }
@@ -7405,7 +7398,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             options = runtime.getNil();
         }
 
-        value = transcode(context, value, forceEncoding, getEncoding(runtime, toEncoding), options);
+        value = CharsetTranscoder.transcode(context, value, forceEncoding, getEncoding(runtime, toEncoding), options);
 
         return this;
     }
@@ -7415,7 +7408,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         Ruby runtime = context.getRuntime();
         modify19();
 
-        value = transcode(context, value, getEncoding(runtime, forceEncoding),
+        value = CharsetTranscoder.transcode(context, value, getEncoding(runtime, forceEncoding),
                 getEncoding(runtime, toEncoding), opts);
 
         return this;
@@ -7428,7 +7421,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
         if (defaultInternal == null) return dup();
 
-        return runtime.newString(transcode(context, value, null, defaultInternal, runtime.getNil()));
+        return runtime.newString(CharsetTranscoder.transcode(context, value, null, defaultInternal, runtime.getNil()));
     }
 
     @JRubyMethod(name = "encode", compat = RUBY1_9)
@@ -7447,7 +7440,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             options = runtime.getNil();
         }
 
-        return runtime.newString(transcode(context, value, null, forceEncoding, options));
+        return runtime.newString(CharsetTranscoder.transcode(context, value, null, forceEncoding, options));
     }
 
     @JRubyMethod(name = "encode", compat = RUBY1_9)
@@ -7464,7 +7457,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             options = runtime.getNil();
         }
 
-        return runtime.newString(transcode(context, value, forceEncoding,
+        return runtime.newString(CharsetTranscoder.transcode(context, value, forceEncoding,
                 getEncoding(runtime, toEncoding), options));
     }
 
@@ -7473,206 +7466,14 @@ public class RubyString extends RubyObject implements EncodingCapable {
             IRubyObject forcedEncoding, IRubyObject opts) {
         Ruby runtime = context.getRuntime();
 
-        return runtime.newString(transcode(context, value, getEncoding(runtime, forcedEncoding),
+        return runtime.newString(CharsetTranscoder.transcode(context, value, getEncoding(runtime, forcedEncoding),
                 getEncoding(runtime, toEncoding), opts));
     }
 
-    // Java seems to find these specific Java charsets but they seem to trancode
-    // some strings a little differently than MRI.  Since Java Charset transcoding
-    // is a temporary implementation for us, having this gruesome hack is ok
-    // for the time being.
-    private static Set<String> BAD_TRANSCODINGS_HACK = new HashSet<String>() {{
-        add("ISO-2022-JP-2");
-        add("CP50220");
-        add("CP50221");
-    }};
-
-    private static Charset transcodeCharsetFor(Ruby runtime, Encoding encoding, String fromName, String toName) {
-        Charset from = null;
-        String realEncodingName = new String(encoding.getName());
-        
-        // Doing a manual forName over and over sucks, but this is only meant
-        // to be a transitional impl.  The reason for this extra mechanism is 
-        // that jcodings is representing these encodings with an alias.  So,
-        // for example, IBM866 ends up being associated with ISO-8859-1 which
-        // will not know how to trancsode higher than ascii values properly.
-        if (!realEncodingName.equals(encoding.getCharsetName()) && !BAD_TRANSCODINGS_HACK.contains(realEncodingName)) {
-            try {
-                from = Charset.forName(realEncodingName);
-                if (from != null) {
-                    return from;
-                }
-            } catch (Exception e) {}
-        }
-        try {
-            from = encoding.getCharset();
-            if (from != null) return from;
-        } catch (Exception e) {}
-
-        try { // We try looking up based on Java's supported charsets...likely missing charset entry in jcodings
-            from = Charset.forName(encoding.toString());
-        } catch (Exception e) {}
-        
-        if (from == null) throw runtime.newConverterNotFoundError("code converter not found (" +
-                fromName + " to " + toName + ")");
-
-        return from;
-    }
-
-    /*
-     * This will try and transcode the supplied ByteList to the supplied toEncoding.  It will use
-     * forceEncoding as its encoding if it is supplied; otherwise it will use the encoding it has
-     * tucked away in the bytelist.  This will return a new copy of a ByteList in the request
-     * encoding or die trying (ConverterNotFound).
-     * 
-     * c: rb_str_conv_enc_opts
-     */
+    @Deprecated
     public static ByteList transcode(ThreadContext context, ByteList value, Encoding forceEncoding,
             Encoding toEncoding, IRubyObject opts) {
-        if (toEncoding == null) return value;
-        Ruby runtime = context.getRuntime();
-        Encoding fromEncoding = forceEncoding != null ? forceEncoding : value.getEncoding();
-
-        String fromName = fromEncoding.toString();
-        String toName = toEncoding.toString();
-
-        Charset from = transcodeCharsetFor(runtime, fromEncoding, fromEncoding.toString(), toEncoding.toString());
-        Charset to = transcodeCharsetFor(runtime, toEncoding, fromEncoding.toString(), toEncoding.toString());
-
-        CharsetEncoder encoder = getCharsetEncoder(context, to, opts);
-        CharsetDecoder decoder = getCharsetDecoder(context, from, opts);
-
-        ByteBuffer fromBytes = ByteBuffer.wrap(value.getUnsafeBytes(), value.begin(), value.length());
-
-        // MRI does not allow ASCII-8BIT chars > 127 to transcode to multibyte encodings
-        if (fromName.equals("ASCII-8BIT") && encoder.maxBytesPerChar() > 1.0) {
-            for (byte b : fromBytes.array()) {
-                if ((b & 0xFF) > 0x7F) {
-                    throw runtime.newUndefinedConversionError(
-                            "\"\\x" + Integer.toHexString(b & 0xFF).toUpperCase() +
-                                    "\" from " + fromName +
-                                    " to " + toName);
-                }
-            }
-        }
-        
-        try {
-            ByteBuffer toBytes = encoder.encode(decoder.decode(fromBytes));
-
-            // CharsetEncoder#encode guarantees a newly-allocated buffer, so no need to copy.
-            return new ByteList(toBytes.array(), toBytes.arrayOffset(),
-                    toBytes.limit() - toBytes.arrayOffset(), toEncoding, false);
-        } catch (CharacterCodingException e) {
-            throw runtime.newUndefinedConversionError(e.getLocalizedMessage());
-        }
-    }
-
-    private static CharsetDecoder getCharsetDecoder(ThreadContext context, Charset charset, IRubyObject opts) {
-        CharsetDecoder decoder = charset.newDecoder();
-
-        CodingErrorActions actions = getCodingErrorActions(context, opts);
-        decoder.onUnmappableCharacter(actions.onUnmappableCharacter);
-        decoder.onMalformedInput(actions.onMalformedInput);
-        if (actions.replaceWith != null) {
-            decoder.replaceWith(actions.replaceWith.toString());
-        }
-
-        return decoder;
-    }
-
-    private static CharsetEncoder getCharsetEncoder(ThreadContext context, Charset charset, IRubyObject opts) {
-        CharsetEncoder encoder = charset.newEncoder();
-
-        CodingErrorActions actions = getCodingErrorActions(context, opts);
-        encoder.onUnmappableCharacter(actions.onUnmappableCharacter);
-        encoder.onMalformedInput(actions.onMalformedInput);
-        if (actions.replaceWith != null) {
-            encoder.replaceWith(actions.replaceWith.getBytes());
-        }
-
-        return encoder;
-    }
-
-    private static class CodingErrorActions {
-        final CodingErrorAction onUnmappableCharacter;
-        final CodingErrorAction onMalformedInput;
-        final RubyString replaceWith;
-
-        CodingErrorActions(
-                CodingErrorAction onUnmappableCharacter,
-                CodingErrorAction onMalformedInput,
-                RubyString replaceWith) {
-            this.onUnmappableCharacter = onUnmappableCharacter;
-            this.onMalformedInput = onMalformedInput;
-            this.replaceWith = replaceWith;
-        }
-    }
-
-    private static CodingErrorActions getCodingErrorActions(ThreadContext context, IRubyObject opts) {
-        if (opts.isNil()) {
-            return new CodingErrorActions(
-                    CodingErrorAction.REPORT,
-                    CodingErrorAction.REPORT,
-                    null);
-        } else {
-            Ruby runtime = context.runtime;
-            RubyHash hash = (RubyHash) opts;
-            CodingErrorAction onMalformedInput = CodingErrorAction.REPORT;
-            CodingErrorAction onUnmappableCharacter = CodingErrorAction.REPORT;
-            RubyString replaceWith = null;
-            
-            IRubyObject replace = hash.fastARef(runtime.newSymbol("replace"));
-            if (replace != null && !replace.isNil()) {
-                RubyString replaceWithStr = replace.convertToString();
-                if (replaceWithStr.size() == 1) { // we can only replaceWith a single char
-                    replaceWith = replaceWithStr;
-                }
-            }
-            
-            IRubyObject invalid = hash.fastARef(runtime.newSymbol("invalid"));
-            if (invalid != null && invalid.op_equal(context, runtime.newSymbol("replace")).isTrue()) {
-                onMalformedInput = CodingErrorAction.REPLACE;
-            }
-
-            IRubyObject undef = hash.fastARef(runtime.newSymbol("undef"));
-            if (undef != null && undef.op_equal(context, runtime.newSymbol("replace")).isTrue()) {
-                onUnmappableCharacter = CodingErrorAction.REPLACE;
-            }
-
-            return new CodingErrorActions(
-                    onUnmappableCharacter,
-                    onMalformedInput,
-                    replaceWith);
-
-            /*
-            Missing options from MRI 1.9.3 source:
-
- *  :replace ::
- *    Sets the replacement string to the given value. The default replacement
- *    string is "\uFFFD" for Unicode encoding forms, and "?" otherwise.
- *  :fallback ::
- *    Sets the replacement string by the given object for undefined
- *    character.  The object should be a Hash, a Proc, a Method, or an
- *    object which has [] method.
- *    Its key is an undefined character encoded in the source encoding
- *    of current transcoder. Its value can be any encoding until it
- *    can be converted into the destination encoding of the transcoder.
- *  :xml ::
- *    The value must be +:text+ or +:attr+.
- *    If the value is +:text+ #encode replaces undefined characters with their
- *    (upper-case hexadecimal) numeric character references. '&', '<', and '>'
- *    are converted to "&amp;", "&lt;", and "&gt;", respectively.
- *    If the value is +:attr+, #encode also quotes the replacement result
- *    (using '"'), and replaces '"' with "&quot;".
- *  :cr_newline ::
- *    Replaces LF ("\n") with CR ("\r") if value is true.
- *  :crlf_newline ::
- *    Replaces LF ("\n") with CRLF ("\r\n") if value is true.
- *  :universal_newline ::
- *    Replaces CRLF ("\r\n") and CR ("\r") with LF ("\n") if value is true.
- *    
-             */
-        }
+        return CharsetTranscoder.transcode(context, value, forceEncoding, toEncoding, opts);
     }
 
     private static Encoding getEncoding(Ruby runtime, IRubyObject toEnc) {

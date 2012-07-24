@@ -136,9 +136,11 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
     @JRubyMethod(optional = 2, visibility = PRIVATE)
     public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
         Object modeArgument = null;
+        Ruby runtime = getRuntime();
+        
         switch (args.length) {
             case 0:
-                data.internal = RubyString.newEmptyString(getRuntime());
+                data.internal = runtime.is1_9() ? RubyString.newEmptyString(runtime, runtime.getDefaultExternalEncoding()) : RubyString.newEmptyString(getRuntime());
                 modeArgument = "r+";
                 break;
             case 1:

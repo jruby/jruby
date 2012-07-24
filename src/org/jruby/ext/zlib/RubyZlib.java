@@ -45,7 +45,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
-import org.jruby.RubyIO;
 import org.jruby.RubyKernel;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
@@ -86,6 +85,7 @@ import org.jruby.util.io.Stream;
 import com.jcraft.jzlib.JZlib;
 
 import static org.jruby.CompatVersion.*;
+import org.jruby.util.CharsetTranscoder;
 
 @JRubyModule(name="Zlib")
 public class RubyZlib {
@@ -1165,7 +1165,7 @@ public class RubyZlib {
                 if (writeEncoding == null) {
                     return RubyString.newString(runtime, value, readEncoding);
                 }
-                return RubyString.newStringNoCopy(runtime, RubyString.transcode(
+                return RubyString.newStringNoCopy(runtime, CharsetTranscoder.transcode(
                         runtime.getCurrentContext(), value, readEncoding, writeEncoding,
                         runtime.getNil()));
             } else {
@@ -1573,9 +1573,8 @@ public class RubyZlib {
             byte[] buffer = new byte[len];
             int toRead = len;
             int offset = 0;
-            int read = 0;
             while (toRead > 0) {
-                read = bufferedStream.read(buffer, offset, toRead);
+                int read = bufferedStream.read(buffer, offset, toRead);
                 if (read == -1) {
                     if (offset == 0) {
                         // we're at EOF right away
@@ -2097,7 +2096,7 @@ public class RubyZlib {
             if (runtime.is1_9()) {
                 if (writeEncoding != null
                         && writeEncoding != runtime.getEncodingService().getAscii8bitEncoding()) {
-                    bytes = RubyString.transcode(runtime.getCurrentContext(), bytes, null,
+                    bytes = CharsetTranscoder.transcode(runtime.getCurrentContext(), bytes, null,
                             writeEncoding, runtime.getNil());
                 }
             }
