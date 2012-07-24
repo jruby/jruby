@@ -1719,6 +1719,8 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         final Ruby runtime = context.getRuntime();
         if (realLength == 0) return RubyString.newEmptyString(runtime);
 
+        if (sep.isNil()) sep = runtime.getGlobalVariables().get("$,");
+
         boolean taint = isTaint() || sep.isTaint();
         boolean untrusted = isUntrusted() || sep.isUntrusted();
 
@@ -1850,17 +1852,15 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
      *
      */
     @JRubyMethod(name = "join", compat = RUBY1_9)
-    public IRubyObject join19(final ThreadContext context, final IRubyObject sep) {
+    public IRubyObject join19(final ThreadContext context, IRubyObject sep) {
         final Ruby runtime = context.getRuntime();
 
         if (realLength == 0) return RubyString.newEmptyString(runtime, USASCIIEncoding.INSTANCE);
+
+        if (sep.isNil()) sep = runtime.getGlobalVariables().get("$,");
         
-        int len = 1;
-        RubyString sepString = null;
-        if (!sep.isNil()) {
-            sepString = sep.convertToString();
-            len += sepString.size() * (realLength - 1);
-        }
+        RubyString sepString = sep.convertToString();
+        int len = 1 + sepString.size() * (realLength - 1);
         
         for (int i = begin; i < begin + realLength; i++) {
             IRubyObject val = safeArrayRef(values, i);

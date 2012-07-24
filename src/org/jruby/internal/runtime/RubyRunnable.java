@@ -30,10 +30,8 @@ package org.jruby.internal.runtime;
 import org.jruby.Ruby;
 import org.jruby.RubyProc;
 import org.jruby.RubyThread;
-import org.jruby.RubyThreadGroup;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.MainExitException;
-import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Frame;
@@ -106,11 +104,11 @@ public class RubyRunnable implements Runnable {
                 } else {
                     rubyThread.exceptionRaised(runtime.newThreadError("return can't jump across threads"));
                 }
-            } catch (RaiseException e) {
-                rubyThread.exceptionRaised(e);
             } catch (MainExitException mee) {
                 // Someone called exit!, so we need to kill the main thread
                 runtime.getThreadService().getMainThread().kill();
+            } catch (Throwable t) {
+                rubyThread.exceptionRaised(t);
             } finally {
                 runtime.getThreadService().setCritical(false);
                 rubyThread.dispose();
