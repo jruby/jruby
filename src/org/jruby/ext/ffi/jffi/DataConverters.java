@@ -147,6 +147,7 @@ public class DataConverters {
         private final MappedType converter;
 
         public MappedDataConverter(MappedType converter) {
+            super(converter.isReferenceRequired(), converter.isPostInvokeRequired());
             this.converter = converter;
         }
         
@@ -209,6 +210,7 @@ public class DataConverters {
         private final NativeDataConverter lower;
 
         public ChainedDataConverter(NativeDataConverter first, NativeDataConverter second) {
+            super(first.isReferenceRequired() || second.isReferenceRequired(), first.isPostInvokeRequired() || second.isPostInvokeRequired());
             this.upper = first;
             this.lower = second;
         }
