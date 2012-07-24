@@ -1,6 +1,37 @@
-  0	%self = recv_self
-  1	%current_scope = scope<->
-  2	%current_module = module<->
-  3	line_num(0)
-  4	def_inst_meth("--unused--", fib_ruby, -)
-  5	return(nil)
+Scope(SCRIPT_BODY):<->:0
+LocalScope: []
+Scope(INSTANCE_METHOD):<fib_ruby>:0
+LexicalParent:<->
+LocalScope: [n]
+
+Scope:<->
+%self = recv_self
+%current_scope = scope<->
+%current_module = module<->
+line_num(0)
+def_inst_meth("--unused--", fib_ruby, 0)
+return(nil)
+
+Scope:<fib_ruby>
+%self = recv_self
+%current_scope = scope<->
+%current_module = module<->
+check_arity(1, 0, -1)
+n(0:0) = recv_pre_reqd_arg(0)
+%block(0:1) = recv_closure
+thread_poll
+line_num(1)
+%v_2 = call(NORMAL, '<', n(0:0), [Fixnum:2], null)
+b_false(%v_2, LBL_0)
+%v_3 = copy(n(0:0))
+jump LBL_1
+LBL_0:
+%v_4 = call(NORMAL, '-', n(0:0), [Fixnum:2], null)
+%v_5 = call(FUNCTIONAL, 'fib_ruby', %self, [%v_4], null)
+%v_6 = call(NORMAL, '-', n(0:0), [Fixnum:1], null)
+%v_7 = call(FUNCTIONAL, 'fib_ruby', %self, [%v_6], null)
+%v_8 = call(NORMAL, '+', %v_5, [%v_7], null)
+%v_3 = copy(%v_8)
+LBL_1:
+return(%v_3)
+

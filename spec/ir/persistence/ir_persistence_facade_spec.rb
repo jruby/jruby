@@ -9,6 +9,7 @@ java_import org.jruby.ir.IRBuilder
 java_import org.jruby.ir.IRManager
 java_import org.jruby.ir.IRScope
 java_import org.jruby.ir.persistence.IRPersistenceFacade
+java_import org.jruby.ir.persistence.IRReadingContext
 
 # Fibbonacci example from http://www.engineyard.com/blog/2012/oss-grant-roundup-jruby-runtime/ is used here
 describe IRPersistenceFacade do
@@ -47,6 +48,7 @@ describe IRPersistenceFacade do
 
   describe '.persist' do    
     before :all do
+      IRReadingContext::INSTANCE.setFileName(RB_FILE_NAME)
       IRPersistenceFacade.persist(@scope, @runtime)
     end
     
