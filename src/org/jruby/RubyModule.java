@@ -3011,7 +3011,7 @@ public class RubyModule extends RubyObject {
         if (constant == null && !isClass() && includeObject) {
             constant = iterateConstantNoConstMissing(name, getRuntime().getObject(), inherit);
         }
-        
+
         if (constant == null) constant = tryGetConstantIfPossible(getRuntime(), name);
 
         return constant;
@@ -3479,17 +3479,7 @@ public class RubyModule extends RubyObject {
         if (method != null) {
             try {
                 Object obj = method.invoke(runtime);
-                if (obj instanceof IRubyObject) {
-                    if (getSuperClass() != null) {
-                        getSuperClass().storeConstant(name, (IRubyObject)obj);
-                        getSuperClass().invalidateConstantCache();
-                    }
-                    else {
-                        storeConstant(name, (IRubyObject)obj);
-                        invalidateConstantCache();
-                    }
-                    return (IRubyObject)obj;
-                }
+                if (obj instanceof IRubyObject) return (IRubyObject)obj;
             } catch (IllegalAccessException ex) {
                 return null;
             } catch (IllegalArgumentException ex) {

@@ -1281,6 +1281,7 @@ public final class Ruby {
     }
 
     private void initCore() {
+        // this is a hack to avoid NoClassDefFoundError.
         org.jruby.runtime.backtrace.FrameType frameType = org.jruby.runtime.backtrace.FrameType.METHOD;
         if (profile.allowClass("Data")) {
             defineClass("Data", objectClass, ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
