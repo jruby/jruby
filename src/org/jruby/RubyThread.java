@@ -73,6 +73,7 @@ import org.jruby.util.io.BlockingIO;
 import org.jruby.util.io.SelectorFactory;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
+import org.jruby.util.unsafe.UnsafeFactory;
 
 import static org.jruby.CompatVersion.*;
 
@@ -1003,6 +1004,29 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             runtime.printError(exception.getException());
         }
         exitingException = exception;
+    }
+
+    /**
+     * For handling all non-Ruby exceptions bubbling out of threads
+     * @param exception
+     */
+    @SuppressWarnings("deprecation")
+    public void exceptionRaised(Throwable exception) {
+        if (exception instanceof RaiseException) {
+            exceptionRaised((RaiseException)exception);
+            return;
+        }
+
+        assert isCurrent();
+
+        Ruby runtime = getRuntime();
+        if (abortOnException(runtime) && exception instanceof Error) {
+            // re-propagate on main thread
+            runtime.getThreadService().getMainThread().getNativeThread().stop(exception);
+        } else {
+            // just rethrow on this thread, let system handlers report it
+            UnsafeFactory.getUnsafe().throwException(exception);
+        }
     }
 
     private boolean abortOnException(Ruby runtime) {
