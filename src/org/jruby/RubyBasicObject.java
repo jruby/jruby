@@ -1468,10 +1468,17 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         boolean sameTable = otherRealClass == realClass;
 
         if (sameTable) {
+            RubyClass.VariableAccessor objIdAccessor = otherRealClass.getObjectIdAccessorForRead();
             Object[] otherVars = ((RubyBasicObject) other).varTable;
             int otherLength = otherVars.length;
             Object[] myVars = getVariableTableForWrite(otherLength - 1);
             System.arraycopy(otherVars, 0, myVars, 0, otherLength);
+
+            // null out object ID so we don't share it
+            int objIdIndex = objIdAccessor.getIndex();
+            if (objIdIndex > 0 && objIdIndex < myVars.length) {
+                myVars[objIdIndex] = null;
+            }
         } else {
             for (Map.Entry<String, RubyClass.VariableAccessor> entry : otherRealClass.getVariableAccessorsForRead().entrySet()) {
                 RubyClass.VariableAccessor accessor = entry.getValue();
