@@ -176,4 +176,17 @@ public abstract class DelegatingDynamicMethod extends DynamicMethod {
     public Arity getArity() {
         return delegate.getArity();
     }
+
+    @Override
+    /**
+     * We override equals so that for method identity checks we treat delegating wrappers the same as the original
+     * methods. See e.g. RubyClass.finvokeChecked and its method_missing comparison.
+     */
+    public boolean equals(Object other) {
+        if (other instanceof DelegatingDynamicMethod) {
+            return delegate.equals(((DelegatingDynamicMethod)other).getDelegate());
+        }
+
+        return delegate.equals(other);
+    }
 }

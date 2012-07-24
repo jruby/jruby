@@ -107,8 +107,6 @@ public class RubyKernel {
 
         module.defineAnnotatedMethods(RubyKernel.class);
         
-        runtime.setRespondToMethod(module.searchMethod("respond_to?"));
-        
         module.setFlag(RubyObject.USER7_F, false); //Kernel is the only Module that doesn't need an implementor
 
         runtime.setPrivateMethodMissing(new MethodMissingMethod(module) {
@@ -146,11 +144,25 @@ public class RubyKernel {
             }
         });
 
+        recacheBuiltinMethods(runtime);
+
+        return module;
+    }
+
+    /**
+     * Cache built-in versions of several core methods, to improve performance by using identity comparison (==) rather
+     * than going ahead with dynamic dispatch.
+     *
+     * @param runtime
+     */
+    static void recacheBuiltinMethods(Ruby runtime) {
+        RubyModule module = runtime.getKernel();
+
+        runtime.setRespondToMethod(module.searchMethod("respond_to?"));
+
         if (!runtime.is1_9()) { // method_missing is in BasicObject in 1.9
             runtime.setDefaultMethodMissing(module.searchMethod("method_missing"));
         }
-
-        return module;
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE)
