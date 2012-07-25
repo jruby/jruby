@@ -127,6 +127,10 @@ public class Struct extends RubyObject implements StructLayout.Storage {
     public IRubyObject initialize(ThreadContext context, IRubyObject ptr) {
         
         if (!(ptr instanceof AbstractMemory)) {
+            if (ptr.isNil()) {
+                return initialize(context);
+            }
+
             throw context.getRuntime().newTypeError("wrong argument type "
                     + ptr.getMetaClass().getName() + " (expected Pointer or Buffer)");
         }
