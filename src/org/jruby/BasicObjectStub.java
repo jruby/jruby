@@ -124,7 +124,7 @@ public final class BasicObjectStub {
     }
 
     public static boolean respondsTo(IRubyObject self, String name) {
-        if(getMetaClass(self).searchMethod("respond_to?") == getRuntime(self).getRespondToMethod()) {
+        if(getMetaClass(self).searchMethod("respond_to?").equals(getRuntime(self).getRespondToMethod())) {
             return getMetaClass(self).isMethodBound(name, false);
         } else {
             return callMethod(self, getRuntime(self).getCurrentContext(), "respond_to?", getRuntime(self).newSymbol(name)).isTrue();

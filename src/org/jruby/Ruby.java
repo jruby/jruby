@@ -1185,7 +1185,13 @@ public final class Ruby {
         initRubyKernel();
         
         if(config.isProfiling()) {
+            // additional twiddling for profiled mode
             getLoadService().require("jruby/profiler/shutdown_hook");
+
+            // recache core methods, since they'll have profiling wrappers now
+            kernelModule.invalidateCacheDescendants(); // to avoid already-cached methods
+            RubyKernel.recacheBuiltinMethods(this);
+            RubyBasicObject.recacheBuiltinMethods(this);
         }
 
         if (config.getLoadGemfile()) {
@@ -1646,14 +1652,6 @@ public final class Ruby {
             loadService.addBuiltinLibrary(name,lib);
         }
     }
-
-    public Object getRespondToMethod() {
-        return respondToMethod;
-    }
-
-    public void setRespondToMethod(Object rtm) {
-        this.respondToMethod = rtm;
-    }
     
     public IRManager getIRManager() {
         return irManager;
@@ -1729,41 +1727,65 @@ public final class Ruby {
         this.kernelModule = kernelModule;
     }
 
+    ///////////////////////////////////////////////////////////////////////////
+    // Cached DynamicMethod objects, used for direct dispatch or for short
+    // circuiting dynamic invocation logic.
+    ///////////////////////////////////////////////////////////////////////////
+
     public DynamicMethod getPrivateMethodMissing() {
         return privateMethodMissing;
     }
+
     public void setPrivateMethodMissing(DynamicMethod method) {
         privateMethodMissing = method;
     }
+
     public DynamicMethod getProtectedMethodMissing() {
         return protectedMethodMissing;
     }
+
     public void setProtectedMethodMissing(DynamicMethod method) {
         protectedMethodMissing = method;
     }
+
     public DynamicMethod getVariableMethodMissing() {
         return variableMethodMissing;
     }
+
     public void setVariableMethodMissing(DynamicMethod method) {
         variableMethodMissing = method;
     }
+
     public DynamicMethod getSuperMethodMissing() {
         return superMethodMissing;
     }
+
     public void setSuperMethodMissing(DynamicMethod method) {
         superMethodMissing = method;
     }
+
     public DynamicMethod getNormalMethodMissing() {
         return normalMethodMissing;
     }
+
     public void setNormalMethodMissing(DynamicMethod method) {
         normalMethodMissing = method;
     }
+
     public DynamicMethod getDefaultMethodMissing() {
         return defaultMethodMissing;
     }
+
     public void setDefaultMethodMissing(DynamicMethod method) {
         defaultMethodMissing = method;
+    }
+
+    public DynamicMethod getRespondToMethod() {
+        return respondTo;
+    }
+
+    public void setRespondToMethod(DynamicMethod rtm) {
+        this.respondTo = rtm;
     }
     
     public RubyClass getDummy() {
@@ -4307,7 +4329,7 @@ public final class Ruby {
             procSysModule, precisionModule, errnoModule;
 
     private DynamicMethod privateMethodMissing, protectedMethodMissing, variableMethodMissing,
-            superMethodMissing, normalMethodMissing, defaultMethodMissing;
+            superMethodMissing, normalMethodMissing, defaultMethodMissing, respondTo;
     
     // record separator var, to speed up io ops that use it
     private GlobalVariable recordSeparatorVar;
@@ -4387,8 +4409,6 @@ public final class Ruby {
 
     // Weak map of all Modules in the system (and by extension, all Classes
     private final Set<RubyModule> allModules = new WeakHashSet<RubyModule>();
-
-    private Object respondToMethod;
 
     private final Map<String, DateTimeZone> timeZoneCache = new HashMap<String,DateTimeZone>();
     /**

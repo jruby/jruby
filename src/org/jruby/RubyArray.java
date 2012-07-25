@@ -1858,9 +1858,13 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         if (realLength == 0) return RubyString.newEmptyString(runtime, USASCIIEncoding.INSTANCE);
 
         if (sep.isNil()) sep = runtime.getGlobalVariables().get("$,");
-        
-        RubyString sepString = sep.convertToString();
-        int len = 1 + sepString.size() * (realLength - 1);
+
+        int len = 1;
+        RubyString sepString = null;
+        if (!sep.isNil()) {
+            sepString = sep.convertToString();
+            len += sepString.size() * (realLength - 1);
+        }
         
         for (int i = begin; i < begin + realLength; i++) {
             IRubyObject val = safeArrayRef(values, i);

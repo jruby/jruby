@@ -198,9 +198,17 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         objectClass.defineAnnotatedMethods(RubyBasicObject.class);
 
-        runtime.setDefaultMethodMissing(objectClass.searchMethod("method_missing"));
+        recacheBuiltinMethods(runtime);
 
         return objectClass;
+    }
+
+    static void recacheBuiltinMethods(Ruby runtime) {
+        RubyModule objectClass = runtime.getBasicObject();
+
+        if (runtime.is1_9()) { // method_missing is in Kernel in 1.9
+            runtime.setDefaultMethodMissing(objectClass.searchMethod("method_missing"));
+        }
     }
 
     @JRubyMethod(name = "initialize", visibility = PRIVATE, compat = RUBY1_9)
@@ -578,7 +586,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     public final boolean respondsTo(String name) {
         DynamicMethod method = getMetaClass().searchMethod("respond_to?");
-        if(method == getRuntime().getRespondToMethod()) {
+        if(method.equals(getRuntime().getRespondToMethod())) {
             // fastest path; builtin respond_to? which just does isMethodBound
             return getMetaClass().isMethodBound(name, false);
         } else if (!method.isUndefined()) {

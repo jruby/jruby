@@ -59,6 +59,7 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.internal.runtime.methods.ProfilingDynamicMethod;
 import org.jruby.java.codegen.RealClassGenerator;
 import org.jruby.java.codegen.Reified;
 import org.jruby.javasupport.Java;
@@ -685,7 +686,7 @@ public class RubyClass extends RubyModule {
         DynamicMethod method = searchMethod(name);
         if(method.isUndefined()) {
             DynamicMethod methodMissing = searchMethod("method_missing");
-            if(methodMissing.isUndefined() || methodMissing == context.getRuntime().getDefaultMethodMissing()) {
+            if(methodMissing.isUndefined() || methodMissing.equals(context.getRuntime().getDefaultMethodMissing())) {
                 return null;
             }
 
@@ -1732,7 +1733,7 @@ public class RubyClass extends RubyModule {
         } else {
             // recache
             DynamicMethod method = searchMethod("respond_to?");
-            if (method != runtime.getRespondToMethod() && !method.isUndefined()) {
+            if (!method.equals(runtime.getRespondToMethod()) && !method.isUndefined()) {
 
                 // custom respond_to?, always do slow default marshaling
                 tuple = (cachedDumpMarshal = new MarshalTuple(null, MarshalType.DEFAULT_SLOW, generation));
@@ -1783,7 +1784,7 @@ public class RubyClass extends RubyModule {
             return target;
         } else {
             DynamicMethod method = searchMethod("respond_to?");
-            if (method != runtime.getRespondToMethod() && !method.isUndefined()) {
+            if (!method.equals(runtime.getRespondToMethod()) && !method.isUndefined()) {
 
                 // custom respond_to?, cache nothing and use slow path
                 if (method.call(context, target, this, "respond_to?", runtime.newSymbol("marshal_load")).isTrue()) {
@@ -1834,7 +1835,7 @@ public class RubyClass extends RubyModule {
             return cache.method.call(context, this, getSingletonClass(), "_load", data);
         } else {
             DynamicMethod method = getSingletonClass().searchMethod("respond_to?");
-            if (method != runtime.getRespondToMethod() && !method.isUndefined()) {
+            if (!method.equals(runtime.getRespondToMethod()) && !method.isUndefined()) {
 
                 // custom respond_to?, cache nothing and use slow path
                 if (method.call(context, this, getSingletonClass(), "respond_to?", runtime.newSymbol("_load")).isTrue()) {

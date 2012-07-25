@@ -20,10 +20,11 @@ class Proc
 
     m = lambda? ? :lambda : :proc
     f = send(m) {|*x|
-      args += x
-      if args.length >= arity
-        self[*args]
+      call_args = args + x
+      if call_args.length >= arity
+        self[*call_args]
       else
+        args = call_args
         f
       end
     }

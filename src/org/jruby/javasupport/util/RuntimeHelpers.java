@@ -444,7 +444,7 @@ public class RuntimeHelpers {
         }
 
         DynamicMethod methodMissing = receiver.getMetaClass().searchMethod("method_missing");
-        if (methodMissing.isUndefined() || methodMissing == runtime.getDefaultMethodMissing()) {
+        if (methodMissing.isUndefined() || methodMissing.equals(runtime.getDefaultMethodMissing())) {
             return selectInternalMM(runtime, visibility, callType);
         }
         return new MethodMissingMethod(methodMissing, callType);
@@ -458,7 +458,7 @@ public class RuntimeHelpers {
         }
 
         DynamicMethod methodMissing = selfClass.searchMethod("method_missing");
-        if (methodMissing.isUndefined() || methodMissing == runtime.getDefaultMethodMissing()) {
+        if (methodMissing.isUndefined() || methodMissing.equals(runtime.getDefaultMethodMissing())) {
             return selectInternalMM(runtime, visibility, callType);
         }
         return new MethodMissingMethod(methodMissing, callType);
@@ -472,7 +472,7 @@ public class RuntimeHelpers {
         }
 
         DynamicMethod methodMissing = selfClass.searchMethod("method_missing");
-        if (methodMissing.isUndefined() || methodMissing == runtime.getDefaultMethodMissing()) {
+        if (methodMissing.isUndefined() || methodMissing.equals(runtime.getDefaultMethodMissing())) {
             return selectInternalMM(runtime, visibility, callType);
         }
         return new MethodMissingMethod(methodMissing, callType);
