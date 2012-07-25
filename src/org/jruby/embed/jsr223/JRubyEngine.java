@@ -256,9 +256,9 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
         try {
             Utils.preEval(container, context);
             if (args == null || args.length == 0) {
-                return container.callMethod(null, method, Object.class);
+                return container.callMethod(container.getTopSelf(), method, Object.class);
             }
-            return container.callMethod(null, method, args, Object.class);
+            return container.callMethod(container.getTopSelf(), method, args, Object.class);
         } catch (Exception e) {
             if (e.getCause().getMessage().contains("undefined method")) {
                 throw wrapMethodException(e);
