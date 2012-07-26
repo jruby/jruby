@@ -1069,7 +1069,7 @@ public class ScriptingContainerTest {
         instance.put("@text", text);
         unit = instance.parse(PathType.CLASSPATH, "org/jruby/embed/ruby/yaml_dump.rb");
         Object receiver = unit.run();
-        instance.callMethod(receiver, "dump", null, unit);
+        instance.callMethod(instance.getProvider().getRuntime().getTopSelf(), "dump", null, unit);
         Object expResult =
                 "songs: Hey Soul Sister, Who Says, Apologize\npodcasts: Java Posse, Stack Overflow\n";
         assertEquals(expResult, sw.toString());
