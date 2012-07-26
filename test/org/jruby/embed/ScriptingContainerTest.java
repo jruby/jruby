@@ -931,9 +931,9 @@ public class ScriptingContainerTest {
         receiver = instance.runScriptlet(script);
         instance.put("@r", 1.0);
         instance.put("@h", Math.sqrt(3.0));
-        double volume = instance.callMethod(instance.getTopSelf(), "volume", Double.class);
+        double volume = instance.callMethod(receiver, "volume", Double.class);
         assertEquals(1.813799, volume, 0.000001);
-        double surface_area = instance.callMethod(instance.getTopSelf(), "surface_area", Double.class);
+        double surface_area = instance.callMethod(receiver, "surface_area", Double.class);
         assertEquals(9.424778, surface_area, 0.000001);
 
         instance.getVarMap().clear();
