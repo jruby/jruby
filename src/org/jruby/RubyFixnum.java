@@ -472,11 +472,31 @@ public class RubyFixnum extends RubyInteger {
      */
     @JRubyMethod(name = "*")
     public IRubyObject op_mul(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyFixnum) {
-            return multiplyFixnum(context, other);
+      // tempID: Patch by colinb2r on Guthub to:
+      //    (a) maybe make this a little faster;
+      //    (b) maybe be a bit clearer on the special cases for which
+      //        the "result / value != otherValue" test doesn't work.
+      //    (c) Note that after the change made following JRUBY-6612
+      //        the bug reported there is fixed, and these suggested changes
+      //        might be considered a tad "cosmetic".
+        // See JRUBY-6612 for reasons for these different cases.
+        // The problem is that these Java long calculations overflow:
+        //   value == -1; otherValue == Long.MIN_VALUE;
+        //   result = value * othervalue;  #=> Long.MIN_VALUE (overflow)
+        //   result / value  #=>  Long.MIN_VALUE (overflow) == otherValue
+        Ruby runtime = context.getRuntime();
+        if (value == -1) {
+            if (otherValue != Long.MIN_VALUE) {
+                return newFixnum(runtime, -otherValue);
+            }
         } else {
-            return multiplyOther(context, other);
+            long result = value * otherValue;
+            if (value == 0 || result / value == otherValue) {
+                return newFixnum(runtime, result);
+            }
         }
+        // if here (value * otherValue) overflows long, so must return Bignum
+        return RubyBignum.newBignum(runtime, value).op_mul(context, otherValue);
     }
 
     private IRubyObject multiplyFixnum(ThreadContext context, IRubyObject other) {
@@ -569,15 +589,35 @@ public class RubyFixnum extends RubyInteger {
     }
 
     private IRubyObject idivLong(ThreadContext context, long x, long y) {
+      // tempID: Patch by colinb2r on Guthub to:
+      //    (a) deal with special case of Long.MIN_VALUE / -1;
+      //    (b) hopefully make faster by not using both "/" and "%".
+        Ruby runtime = context.getRuntime();
         if (y == 0) {
-            throw context.getRuntime().newZeroDivisionError();
+            throw runtime.newZeroDivisionError();
         }
-        long div = x / y;
-        long mod = x % y;
-        if (mod < 0 && y > 0 || mod > 0 && y < 0) {
-            div -= 1;
+        long result;
+        if (y > 0) {
+            if (x >= 0) {
+                result = x / y;          // x >= 0, y > 0;
+            } else {
+                result (x + 1) / y - 1;  // x < 0, y > 0;
+            }
+        } else if (x > 0) {
+            result = (x - 1) / y - 1;    // x > 0, y < 0;
+        } else if (y == -1) {
+            if (x == MIN) {
+  // Is the suggested code in the next line correct?
+  // Idea is change x from long to BigInteger(?), then negate it.
+  // Is there a faster way to do this than the line below?
+  // And will the line below work?
+                return RubyBignum.newBignum(runtime, BigInteger.valueOf(x).negate());
+            }
+            result = -x;
+        } else {
+            result = x / y;  // x <= 0, y < 0;
         }
-        return context.getRuntime().newFixnum(div);
+        return runtime.newFixnum(result);
     }
         
     /** fix_mod
@@ -644,15 +684,36 @@ public class RubyFixnum extends RubyInteger {
         if (y == 0) {
             throw runtime.newZeroDivisionError();
         }
-        long div = x / y;
-        long mod = x % y;
-        if (mod < 0 && y > 0 || mod > 0 && y < 0) {
-            div -= 1;
-            mod += y;
+      // tempID: Patch by colinb2r on Github to:
+      //    (a) deal with special case of Long.MIN_VALUE / -1;
+      //    (b) hopefully make faster by not using both "/" and "%".
+      // Patch only replaces the code after the "if (y ==0)" check.
+        long mod;
+        IRubyObject integerDiv;
+        if (y == -1) {
+            if (x == MIN) {
+     // Is the suggested code in the next line correct?
+     // Idea is change x from long to BigInteger(?), then negate it.
+     // Is there a faster way to do this than the line below?
+     // And will the line below work?
+                integerDiv = RubyBignum.newBignum(runtime, BigInteger.valueOf(x).negate());
+            } else {
+                integerDiv = RubyFixnum.newFixnum(runtime, -x);
+            }
+            mod = 0;
+        } else {
+            long div = x / y;
+            // Next line avoids using the slow: mod = x % y,
+            // and I believe there is no possibility of integer overflow.
+            mod = x - y * div;
+            if (mod < 0 && y > 0 || mod > 0 && y < 0) {
+                div -= 1; // horrible sudden thought: might this overflow? probably not?
+                mod += y;
+            }
+            integerDiv = RubyFixnum.newFixnum(runtime, div);
         }
-        IRubyObject fixDiv = RubyFixnum.newFixnum(runtime, div);
         IRubyObject fixMod = RubyFixnum.newFixnum(runtime, mod);
-        return RubyArray.newArray(runtime, fixDiv, fixMod);
+        return RubyArray.newArray(runtime, integerDiv, fixMod);
     }
     	
     /** fix_quo
