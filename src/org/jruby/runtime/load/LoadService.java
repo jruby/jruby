@@ -843,6 +843,10 @@ public class LoadService {
 
                     // trim extension to try other options
                     searchFile = file.substring(0, matcher.start());
+                } else if (file.endsWith(".class")) {
+                    // For JRUBY-6731, treat require 'foo.class' as no other filename than 'foo.class'.
+                    suffixType = SuffixType.Neither;
+                    searchFile = file;
                 } else {
                     // unknown extension, fall back to search with extensions
                     suffixType = SuffixType.Both;
