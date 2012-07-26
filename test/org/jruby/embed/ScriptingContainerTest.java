@@ -1069,10 +1069,7 @@ public class ScriptingContainerTest {
         instance.put("@text", text);
         unit = instance.parse(PathType.CLASSPATH, "org/jruby/embed/ruby/yaml_dump.rb");
         Object receiver = unit.run();
-        IRubyObject nil = instance.getProvider().getRuntime().getNil();
-        assertSame(nil, receiver);
-        IRubyObject topSelf = instance.getProvider().getRuntime().getTopSelf();
-        result = instance.callMethod(topSelf, "dump", null, unit);
+        instance.callMethod(receiver, "dump", null, unit);
         Object expResult =
                 "songs: Hey Soul Sister, Who Says, Apologize\npodcasts: Java Posse, Stack Overflow\n";
         assertEquals(expResult, sw.toString());
@@ -1136,9 +1133,9 @@ public class ScriptingContainerTest {
         instance.setOutput(pstream);
         instance.setWriter(writer);
         instance.setErrorWriter(writer);
-        assertEquals(true, instance.callMethod(null, "nil?"));
-        assertEquals(true, instance.callMethod(instance.getProvider().getRuntime().getNil(), "nil?"));
-        assertEquals(false, instance.callMethod("A Java String", "nil?"));
+        assertEquals(true, instance.runRubyMethod(null, "nil?"));
+        assertEquals(true, instance.runRubyMethod(instance.getProvider().getRuntime().getNil(), "nil?"));
+        assertEquals(false, instance.runRubyMethod("A Java String", "nil?"));
         String script =
                 "ScriptingContainer = Java::org.jruby.embed.ScriptingContainer\n" +
                 "class ScriptingContainer\n" +
@@ -1147,7 +1144,7 @@ public class ScriptingContainerTest {
                   "end\n" +
                 "end\n";
         instance.runScriptlet(script);
-        String something = (String)instance.callMethod(instance, "say_something");
+        String something = (String)instance.runRubyMethod(instance, "say_something");
         assertEquals("Something", something);
     }
 

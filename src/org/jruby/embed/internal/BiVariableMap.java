@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009-2011 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2012 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -192,7 +192,7 @@ public class BiVariableMap<K, V> implements Map<K, V> {
      *         {@code null} if this map contains no mapping for the key
      */
     public V get(Object key) {
-        return get(provider.getRuntime().getTopSelf(), key);
+        return get(null, key);
     }
 
     /**
@@ -292,7 +292,7 @@ public class BiVariableMap<K, V> implements Map<K, V> {
      *         <tt>null</tt> if there was no mapping for <tt>key</tt>.
      */
     public V put (K key, V value) {
-        return put(provider.getRuntime().getTopSelf(), key, value);
+        return put(null, key, value);
     }
 
     /**

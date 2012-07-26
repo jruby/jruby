@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009-2010 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2012 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -29,9 +29,6 @@
  */
 package org.jruby.embed.internal;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.Writer;
 import org.jruby.Ruby;
 import org.jruby.RubyInteger;
 import org.jruby.RubyModule;
@@ -53,7 +50,6 @@ import org.jruby.javasupport.JavaObject;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Block;
-import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
@@ -147,7 +143,8 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
 
     public <T> T callMethod(Object receiver, String methodName, Class<T> returnType) {
         try {
-            return call(MethodType.CALLMETHOD_NOARG, returnType, receiver, methodName, null, null);
+            RubyObject rubyReceiver = getReceiverObject(receiver);
+            return call(MethodType.CALLMETHOD_NOARG, returnType, rubyReceiver, methodName, null, null);
         } catch (InvokeFailedException e) {
             throw e;
         } catch (Throwable e) {
@@ -157,7 +154,8 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
 
     public <T> T callMethod(Object receiver, String methodName, Object singleArg, Class<T> returnType) {
         try {
-            return call(MethodType.CALLMETHOD, returnType, receiver, methodName, null, null, singleArg);
+            RubyObject rubyReceiver = getReceiverObject(receiver);
+            return call(MethodType.CALLMETHOD, returnType, rubyReceiver, methodName, null, null, singleArg);
         } catch (InvokeFailedException e) {
             throw e;
         } catch (Throwable e) {
@@ -167,7 +165,8 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
 
     public <T> T callMethod(Object receiver, String methodName, Object[] args, Class<T> returnType) {
         try {
-            return call(MethodType.CALLMETHOD, returnType, receiver, methodName, null, null, args);
+            RubyObject rubyReceiver = getReceiverObject(receiver);
+            return call(MethodType.CALLMETHOD, returnType, rubyReceiver, methodName, null, null, args);
         } catch (InvokeFailedException e) {
             throw e;
         } catch (Throwable e) {
@@ -177,7 +176,8 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
 
     public <T> T callMethod(Object receiver, String methodName, Object[] args, Block block, Class<T> returnType) {
         try {
-            return call(MethodType.CALLMETHOD_WITHBLOCK, returnType, receiver, methodName, block, null, args);
+            RubyObject rubyReceiver = getReceiverObject(receiver);
+            return call(MethodType.CALLMETHOD_WITHBLOCK, returnType, rubyReceiver, methodName, block, null, args);
         } catch (InvokeFailedException e) {
             throw e;
         } catch (Throwable e) {
@@ -187,7 +187,8 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
 
     public <T> T callMethod(Object receiver, String methodName, Class<T> returnType, EmbedEvalUnit unit) {
         try {
-            return call(MethodType.CALLMETHOD_NOARG, returnType, receiver, methodName, null, unit);
+            RubyObject rubyReceiver = getReceiverObject(receiver);
+            return call(MethodType.CALLMETHOD_NOARG, returnType, rubyReceiver, methodName, null, unit);
         } catch (InvokeFailedException e) {
             throw e;
         } catch (Throwable e) {
@@ -197,7 +198,8 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
     
     public <T> T callMethod(Object receiver, String methodName, Object[] args, Class<T> returnType, EmbedEvalUnit unit) {
         try {
-            return call(MethodType.CALLMETHOD, returnType, receiver, methodName, null, unit, args);
+            RubyObject rubyReceiver = getReceiverObject(receiver);
+            return call(MethodType.CALLMETHOD, returnType, rubyReceiver, methodName, null, unit, args);
         } catch (InvokeFailedException e) {
             throw e;
         } catch (Throwable e) {
@@ -207,7 +209,8 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
 
     public <T> T callMethod(Object receiver, String methodName, Object[] args, Block block, Class<T> returnType, EmbedEvalUnit unit) {
         try {
-            return call(MethodType.CALLMETHOD_WITHBLOCK, returnType, receiver, methodName, block, unit, args);
+            RubyObject rubyReceiver = getReceiverObject(receiver);
+            return call(MethodType.CALLMETHOD_WITHBLOCK, returnType, rubyReceiver, methodName, block, unit, args);
         } catch (InvokeFailedException e) {
             throw e;
         } catch (Throwable e) {
@@ -217,7 +220,8 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
 
     public <T> T callSuper(Object receiver, Object[] args, Class<T> returnType) {
         try {
-            return call(MethodType.CALLSUPER, returnType, receiver, null, null, null, args);
+            RubyObject rubyReceiver = getReceiverObject(receiver);
+            return call(MethodType.CALLSUPER, returnType, rubyReceiver, null, null, null, args);
         } catch (InvokeFailedException e) {
             throw e;
         } catch (Throwable e) {
@@ -227,7 +231,8 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
 
     public <T> T callSuper(Object receiver, Object[] args, Block block, Class<T> returnType) {
         try {
-            return call(MethodType.CALLSUPER_WITHBLOCK, returnType, receiver, null, block, null, args);
+            RubyObject rubyReceiver = getReceiverObject(receiver);
+            return call(MethodType.CALLSUPER_WITHBLOCK, returnType, rubyReceiver, null, block, null, args);
         } catch (InvokeFailedException e) {
             throw e;
         } catch (Throwable e) {
@@ -237,10 +242,11 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
 
     public Object callMethod(Object receiver, String methodName, Object... args) {
         try {
+            RubyObject rubyReceiver = getReceiverObject(receiver);
             if (args.length == 0) {
-                return call(MethodType.CALLMETHOD_NOARG, Object.class, receiver, methodName, null, null);
+                return call(MethodType.CALLMETHOD_NOARG, Object.class, rubyReceiver, methodName, null, null);
             } else {
-                return call(MethodType.CALLMETHOD, Object.class, receiver, methodName, null, null, args);
+                return call(MethodType.CALLMETHOD, Object.class, rubyReceiver, methodName, null, null, args);
             }
         } catch (InvokeFailedException e) {
             throw e;
@@ -254,7 +260,23 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
             if (args.length == 0) {
                 throw new IllegalArgumentException("needs at least one argument in a method");
             }
-            return call(MethodType.CALLMETHOD_WITHBLOCK, Object.class, receiver, methodName, block, null, args);
+            RubyObject rubyReceiver = getReceiverObject(receiver);
+            return call(MethodType.CALLMETHOD_WITHBLOCK, Object.class, rubyReceiver, methodName, block, null, args);
+        } catch (InvokeFailedException e) {
+            throw e;
+        } catch (Throwable e) {
+            throw new InvokeFailedException(e);
+        }
+    }
+    
+    public Object runRubyMethod(Object receiver, String methodName, Object... args) {
+        try {
+            RubyObject rubyReceiver = (RubyObject)JavaEmbedUtils.javaToRuby(container.getProvider().getRuntime(), receiver);
+            if (args.length == 0) {
+                return call(MethodType.CALLMETHOD_NOARG, Object.class, rubyReceiver, methodName, null, null);
+            } else {
+                return call(MethodType.CALLMETHOD, Object.class, rubyReceiver, methodName, null, null, args);
+            }
         } catch (InvokeFailedException e) {
             throw e;
         } catch (Throwable e) {
@@ -262,12 +284,11 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
         }
     }
 
-    private <T> T call(MethodType type, Class<T> returnType, Object receiver, String methodName, Block block, EmbedEvalUnit unit, Object... args) {
+    private <T> T call(MethodType type, Class<T> returnType, RubyObject rubyReceiver, String methodName, Block block, EmbedEvalUnit unit, Object... args) {
         if (methodName == null || methodName.length()==0) {
             return null;
         }
         Ruby runtime = container.getProvider().getRuntime();
-        IRubyObject rubyReceiver = JavaEmbedUtils.javaToRuby(runtime, receiver);
         
         boolean sharing_variables = true;
         Object obj = container.getAttribute(AttributeName.SHARING_VARIABLES);
@@ -301,6 +322,15 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
                 runtime.getCurrentContext().popScope();
             }
         }
+    }
+    
+    private RubyObject getReceiverObject(Object receiver) {
+        Ruby runtime = container.getProvider().getRuntime();
+        if (receiver == null || !(receiver instanceof IRubyObject)) {
+            return (RubyObject)runtime.getTopSelf();
+        }
+        else if (receiver instanceof RubyObject) return (RubyObject)receiver;
+        else return (RubyObject)((IRubyObject)receiver).getRuntime().getTopSelf();
     }
 
     private IRubyObject callEachType(MethodType type, IRubyObject rubyReceiver, String methodName, Block block, Object... args) {
