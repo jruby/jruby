@@ -24,6 +24,7 @@ public class OutputStrings {
                 .append("  -e 'command'    one line of script. Several -e's allowed. Omit [programfile]\n")
                 .append("  -Eex[:in]       specify the default external and internal character encodings\n")
                 .append("  -Fpattern       split() pattern for autosplit (-a)\n")
+                .append("  -G              load a Bundler Gemspec before executing any user code\n")
                 .append("  -i[extension]   edit ARGV files in place (make backup if extension supplied)\n")
                 .append("  -Idirectory     specify $LOAD_PATH directory (may be used more than once)\n")
                 .append("  -J[java option] pass an option on to the JVM (e.g. -J-Xmx512m)\n")
