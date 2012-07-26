@@ -1126,16 +1126,16 @@ public class ScriptingContainerTest {
     }
 
     @Test
-    public void test_CallMethod_with_non_ruby_receiver() {
+    public void test_runRubyMethod_with_non_ruby_receiver() {
         logger1.info("callMethod no returnType");
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
         instance.setError(pstream);
         instance.setOutput(pstream);
         instance.setWriter(writer);
         instance.setErrorWriter(writer);
-        assertEquals(true, instance.runRubyMethod(null, "nil?"));
-        assertEquals(true, instance.runRubyMethod(instance.getProvider().getRuntime().getNil(), "nil?"));
-        assertEquals(false, instance.runRubyMethod("A Java String", "nil?"));
+        assertEquals(true, instance.runRubyMethod(Boolean.class, null, "nil?"));
+        assertEquals(true, instance.runRubyMethod(Boolean.class, instance.getProvider().getRuntime().getNil(), "nil?"));
+        assertEquals(false, instance.runRubyMethod(Boolean.class, "A Java String", "nil?"));
         String script =
                 "ScriptingContainer = Java::org.jruby.embed.ScriptingContainer\n" +
                 "class ScriptingContainer\n" +
@@ -1144,7 +1144,7 @@ public class ScriptingContainerTest {
                   "end\n" +
                 "end\n";
         instance.runScriptlet(script);
-        String something = (String)instance.runRubyMethod(instance, "say_something");
+        String something = instance.runRubyMethod(String.class, instance, "say_something");
         assertEquals("Something", something);
     }
 

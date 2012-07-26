@@ -269,13 +269,13 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
         }
     }
     
-    public Object runRubyMethod(Object receiver, String methodName, Object... args) {
+    public <T> T runRubyMethod(Class<T> returnType, Object receiver, String methodName, Block block, Object... args) {
         try {
             RubyObject rubyReceiver = (RubyObject)JavaEmbedUtils.javaToRuby(container.getProvider().getRuntime(), receiver);
             if (args.length == 0) {
-                return call(MethodType.CALLMETHOD_NOARG, Object.class, rubyReceiver, methodName, null, null);
+                return call(MethodType.CALLMETHOD_NOARG, returnType, rubyReceiver, methodName, block, null);
             } else {
-                return call(MethodType.CALLMETHOD, Object.class, rubyReceiver, methodName, null, null, args);
+                return call(MethodType.CALLMETHOD, returnType, rubyReceiver, methodName, block, null, args);
             }
         } catch (InvokeFailedException e) {
             throw e;

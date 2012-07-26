@@ -172,15 +172,16 @@ public interface EmbedRubyObjectAdapter extends RubyObjectAdapter {
     <T> T callSuper(Object receiver, Object[] args, Block block, Class<T> returnType);
     
     /**
-     * Executes a method defined in Ruby script. This method is used when a Ruby
-     * method does not have any argument.
+     * Executes a method defined in Ruby script.
      *
+     * @param returnType is the type we want it to convert to
      * @param receiver is an instance that will receive this method call. The receiver
      *                 can be null or other Java objects. The null will be converted to
      *                 RubyNil or wrapped in RubyObject.
      * @param methodName is a method name to be called
+     * @param block is an optional Block object.  Send null for no block.
      * @param args is an array of method arguments
      * @return an instance of requested Java type
      */
-    Object runRubyMethod(Object receiver, String methodName, Object... args);
+    <T> T runRubyMethod(Class<T> returnType, Object receiver, String methodName, Block block, Object... args);
 }

@@ -1534,6 +1534,7 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * Executes a method defined in Ruby script. This method is used when a Ruby
      * method does not have any argument.
      *
+     * @param returnType is the type we want it to convert to
      * @param receiver is an instance that will receive this method call. The receiver
      *                 can be null or other Java objects as well as RubyObject.
      *                 The null will be converted to RubyNil. Java objects will be
@@ -1542,10 +1543,27 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
      * @param args is an array of method arguments
      * @return an instance of requested Java type
      */
-    public Object runRubyMethod(Object receiver, String methodName, Object... args) {
-        return objectAdapter.runRubyMethod(receiver, methodName, args);
+    public <T> T runRubyMethod(Class<T> returnType, Object receiver, String methodName, Object... args) {
+        return objectAdapter.runRubyMethod(returnType, receiver, methodName, null, args);
     }
 
+    /**
+     * Executes a method defined in Ruby script. This method is used when a Ruby
+     * method does not have any argument.
+     *
+     * @param returnType is the type we want it to convert to
+     * @param receiver is an instance that will receive this method call. The receiver
+     *                 can be null or other Java objects as well as RubyObject.
+     *                 The null will be converted to RubyNil. Java objects will be
+     *                 wrapped in RubyObject.
+     * @param methodName is a method name to be called
+     * @param block is an optional Block object.  Send null for no block.
+     * @param args is an array of method arguments
+     * @return an instance of requested Java type
+     */
+    public <T> T runRubyMethod(Class<T> returnType, Object receiver, String methodName, Block block, Object... args) {
+        return objectAdapter.runRubyMethod(returnType, receiver, methodName, block, args);
+    }
 
     /**
      * Returns an instance of a requested interface type. An implementation of
