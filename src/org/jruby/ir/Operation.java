@@ -42,9 +42,6 @@ public enum Operation {
     B_TRUE(OpFlags.f_is_jump_or_branch),
     B_FALSE(OpFlags.f_is_jump_or_branch),
 
-    /** guard instruction which also acts as a branch */
-    MODULE_GUARD(OpFlags.f_is_jump_or_branch),
-
     /** argument receive in methods and blocks **/
     RECV_SELF(0),
     RECV_PRE_REQD_ARG(OpFlags.f_is_arg_receive),
@@ -60,15 +57,13 @@ public enum Operation {
 
     /** calls **/
     CALL(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
-    LAMBDA(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
-    JRUBY_IMPL(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     SUPER(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     ZSUPER(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
     YIELD(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
+    LAMBDA(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
+    JRUBY_IMPL(OpFlags.f_has_side_effect | OpFlags.f_is_call | OpFlags.f_can_raise_exception),
 
-    /* returns unwind stack, etc. */
-
-    /** returns **/
+    /** returns -- returns unwind stack, etc. */
     RETURN(OpFlags.f_has_side_effect | OpFlags.f_is_return),
     CLOSURE_RETURN(OpFlags.f_has_side_effect | OpFlags.f_is_return),
     /* BREAK is a return because it can only be used within closures
@@ -83,10 +78,8 @@ public enum Operation {
     DEF_META_CLASS(OpFlags.f_has_side_effect | OpFlags.f_modifies_code | OpFlags.f_inline_unfriendly),
     DEF_INST_METH(OpFlags.f_has_side_effect | OpFlags.f_modifies_code | OpFlags.f_inline_unfriendly),
     DEF_CLASS_METH(OpFlags.f_has_side_effect | OpFlags.f_modifies_code | OpFlags.f_inline_unfriendly),
-	 PROCESS_MODULE_BODY(OpFlags.f_has_side_effect | OpFlags.f_modifies_code | OpFlags.f_inline_unfriendly),
+    PROCESS_MODULE_BODY(OpFlags.f_has_side_effect | OpFlags.f_modifies_code | OpFlags.f_inline_unfriendly),
     UNDEF_METHOD(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_modifies_code),
-
-    THROW(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_is_exception),
 
     /** marker instructions used to flag/mark places in the code and dont actually get executed **/
     LABEL(OpFlags.f_is_marker_op),
@@ -94,9 +87,11 @@ public enum Operation {
     EXC_REGION_END(OpFlags.f_is_marker_op),
     CASE(OpFlags.f_is_marker_op), // unused currently
 
-    /** debugging ops **/
-    LINE_NUM(OpFlags.f_is_debug_op),
-    FILE_NAME(OpFlags.f_is_debug_op),
+    /** constant operations */
+    LEXICAL_SEARCH_CONST(OpFlags.f_can_raise_exception),
+    INHERITANCE_SEARCH_CONST(OpFlags.f_can_raise_exception),
+    CONST_MISSING(OpFlags.f_can_raise_exception),
+    SEARCH_CONST(OpFlags.f_can_raise_exception),
 
     /** value loads (SSS FIXME: Do any of these have side effects?) **/
     GET_GLOBAL_VAR(OpFlags.f_is_load),
@@ -106,12 +101,6 @@ public enum Operation {
     MASGN_OPT(OpFlags.f_is_load),
     MASGN_REQD(OpFlags.f_is_load),
     MASGN_REST(OpFlags.f_is_load),
-
-    /** constant operations */
-    LEXICAL_SEARCH_CONST(OpFlags.f_can_raise_exception),
-    INHERITANCE_SEARCH_CONST(OpFlags.f_can_raise_exception),
-    CONST_MISSING(OpFlags.f_can_raise_exception),
-    SEARCH_CONST(OpFlags.f_can_raise_exception),
 
     /** value stores **/
     PUT_CONST(OpFlags.f_is_store | OpFlags.f_has_side_effect),
@@ -124,8 +113,37 @@ public enum Operation {
     PUT_CVAR(OpFlags.f_is_store | OpFlags.f_has_side_effect),
     BINDING_STORE(OpFlags.f_is_store | OpFlags.f_has_side_effect), 
     ATTR_ASSIGN(OpFlags.f_is_store | OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception),
+
+    /** debugging ops **/
+    LINE_NUM(OpFlags.f_is_debug_op),
+    FILE_NAME(OpFlags.f_is_debug_op),
     
-    /* defined */
+    /** JRuby-impl instructions **/
+    COPY(0),
+    NOT(0), // ruby NOT operator
+    BLOCK_GIVEN(0),
+    GET_OBJECT(0),
+    GET_BACKREF(0),
+    RESTORE_ERROR_INFO(OpFlags.f_has_side_effect),
+    RAISE_ARGUMENT_ERROR(OpFlags.f_can_raise_exception),
+    CHECK_ARITY(OpFlags.f_can_raise_exception),
+    CHECK_ARGS_ARRAY_ARITY(OpFlags.f_can_raise_exception),
+    RECORD_END_BLOCK(OpFlags.f_has_side_effect),
+    TO_ARY(0),
+    ENSURE_RUBY_ARRAY(0),
+    THROW(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_is_exception),
+    MATCH(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_is_call),
+    MATCH2(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_is_call),
+    MATCH3(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_is_call),
+    SET_RETADDR(0),
+    CLASS_VAR_MODULE(0),
+    IS_TRUE(0), // checks if the operand is non-null and non-false
+    EQQ(0), // (FIXME: Exceptions?) a === call used in when
+    RESCUE_EQQ(OpFlags.f_can_raise_exception), // a === call used in rescue
+    THREAD_POLL(OpFlags.f_has_side_effect),
+    GET_ENCODING(0),
+
+    /* Instructions to support defined? */
     SET_WITHIN_DEFINED(OpFlags.f_has_side_effect),
     DEFINED_CONSTANT_OR_METHOD(OpFlags.f_can_raise_exception),
     METHOD_DEFINED(OpFlags.f_can_raise_exception),
@@ -136,45 +154,18 @@ public enum Operation {
     IS_METHOD_BOUND(0),
     METHOD_IS_PUBLIC(0),
     SUPER_METHOD_BOUND(0),
-    
-    /** JRuby-impl instructions **/
-    BLOCK_GIVEN(0),
     GET_ERROR_INFO(0),
-    GET_OBJECT(0),
-    GET_BACKREF(0),
-    RESTORE_ERROR_INFO(OpFlags.f_has_side_effect),
-    RAISE_ARGUMENT_ERROR(OpFlags.f_can_raise_exception),
-    CHECK_ARITY(OpFlags.f_can_raise_exception),
-    CHECK_ARGS_ARRAY_ARITY(OpFlags.f_can_raise_exception),
-    RECORD_END_BLOCK(OpFlags.f_has_side_effect),
-    TO_ARY(0),
-
-    /** rest **/
-    MATCH(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_is_call),
-    MATCH2(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_is_call),
-    MATCH3(OpFlags.f_has_side_effect | OpFlags.f_can_raise_exception | OpFlags.f_is_call),
-    COPY(0),
-    NOT(0), // ruby NOT operator
-    SET_RETADDR(0),
     INSTANCE_OF(0), // java instanceof bytecode
-    CLASS_VAR_MODULE(0),
-    IS_TRUE(0), // checks if the operand is non-null and non-false
-    EQQ(0), // (FIXME: Exceptions?) a === call used in when
-    RESCUE_EQQ(OpFlags.f_can_raise_exception), // a === call used in rescue
+
+    /** Other JRuby internal primitives for optimizations */
+    MODULE_GUARD(OpFlags.f_is_jump_or_branch), /* a guard acts as a branch */
     PUSH_FRAME(OpFlags.f_has_side_effect),
     PUSH_BINDING(OpFlags.f_has_side_effect),
     POP_FRAME(OpFlags.f_has_side_effect),
     POP_BINDING(OpFlags.f_has_side_effect),
-    THREAD_POLL(OpFlags.f_has_side_effect),
-    ENSURE_RUBY_ARRAY(0),
-    GET_ENCODING(0),
-
-    /** for splitting calls into method-lookup and call -- unused **/
-    METHOD_LOOKUP(0),
-
-    /** primitive value boxing/unboxing -- still unused **/
-    BOX_VALUE(0),
-    UNBOX_VALUE(0);
+    METHOD_LOOKUP(0), /* for splitting calls into method-lookup and call -- unused **/
+    BOX_VALUE(0), /* primitive value boxing/unboxing -- unused */
+    UNBOX_VALUE(0); /* unused */
     
 /* ----------- unused ops ------------------
 // primitive alu operations -- unboxed primitive ops (not native ruby)
