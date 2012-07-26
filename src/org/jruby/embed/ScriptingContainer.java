@@ -1768,8 +1768,4 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
         super.finalize();
         terminate();
     }
-
-    public IRubyObject getTopSelf() {
-        return getProvider().getRuntime().getTopSelf();
-    }
 }
