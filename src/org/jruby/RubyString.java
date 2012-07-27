@@ -7364,7 +7364,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
         if (defaultInternal == null) return dup();
 
-        value = CharsetTranscoder.transcode(context, value, null, defaultInternal, runtime.getNil());
+        value = transcode(context, value, null, defaultInternal, runtime.getNil());
 
         return this;
     }
@@ -7374,7 +7374,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         Ruby runtime = context.runtime;
         modify19();
 
-        value = CharsetTranscoder.transcode(context, value, null, getEncoding(runtime, enc), runtime.getNil());
+        value = transcode(context, value, null, getEncoding(runtime, enc), runtime.getNil());
 
         return this;
     }
@@ -7394,7 +7394,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             options = runtime.getNil();
         }
 
-        value = CharsetTranscoder.transcode(context, value, forceEncoding, getEncoding(runtime, toEncoding), options);
+        value = transcode(context, value, forceEncoding, getEncoding(runtime, toEncoding), options);
 
         return this;
     }
@@ -7404,7 +7404,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         Ruby runtime = context.runtime;
         modify19();
 
-        value = CharsetTranscoder.transcode(context, value, getEncoding(runtime, forceEncoding),
+        value = transcode(context, value, getEncoding(runtime, forceEncoding),
                 getEncoding(runtime, toEncoding), opts);
 
         return this;
@@ -7417,7 +7417,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
         if (defaultInternal == null) return dup();
 
-        return runtime.newString(CharsetTranscoder.transcode(context, value, null, defaultInternal, runtime.getNil()));
+        return runtime.newString(transcode(context, value, null, defaultInternal, runtime.getNil()));
     }
 
     @JRubyMethod(name = "encode", compat = RUBY1_9)
@@ -7436,7 +7436,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             options = runtime.getNil();
         }
 
-        return runtime.newString(CharsetTranscoder.transcode(context, value, null, forceEncoding, options));
+        return runtime.newString(transcode(context, value, null, forceEncoding, options));
     }
 
     @JRubyMethod(name = "encode", compat = RUBY1_9)
@@ -7453,7 +7453,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             options = runtime.getNil();
         }
 
-        return runtime.newString(CharsetTranscoder.transcode(context, value, forceEncoding,
+        return runtime.newString(transcode(context, value, forceEncoding,
                 getEncoding(runtime, toEncoding), options));
     }
 
@@ -7462,14 +7462,32 @@ public class RubyString extends RubyObject implements EncodingCapable {
             IRubyObject forcedEncoding, IRubyObject opts) {
         Ruby runtime = context.runtime;
 
-        return runtime.newString(CharsetTranscoder.transcode(context, value, getEncoding(runtime, forcedEncoding),
+        return runtime.newString(transcode(context, value, getEncoding(runtime, forcedEncoding),
                 getEncoding(runtime, toEncoding), opts));
     }
 
-    @Deprecated
     public static ByteList transcode(ThreadContext context, ByteList value, Encoding forceEncoding,
             Encoding toEncoding, IRubyObject opts) {
-        return CharsetTranscoder.transcode(context, value, forceEncoding, toEncoding, opts);
+        Encoding fromEncoding = forceEncoding != null ? forceEncoding : value.getEncoding();
+        String toName = toEncoding.toString();
+        String fromName = fromEncoding.toString();
+        
+        // MRI does not allow ASCII-8BIT chars > 127 to transcode to multibyte encodings
+        if (fromName.equals("ASCII-8BIT") && toEncoding.maxLength() > 1) {
+            int length = value.length();
+            
+            for (int byteidx = 0; byteidx < length; byteidx++) {
+                byte b = (byte) value.get(byteidx);
+                if ((b & 0xFF) > 0x7F) {
+                    throw context.runtime.newUndefinedConversionError(
+                            "\"\\x" + Integer.toHexString(b & 0xFF).toUpperCase() +
+                                    "\" from " + fromName +
+                                    " to " + toName);
+                }
+            }
+        }
+        
+        return CharsetTranscoder.transcode(context, value, fromEncoding, toEncoding, opts);
     }
 
     private static Encoding getEncoding(Ruby runtime, IRubyObject toEnc) {

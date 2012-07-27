@@ -68,19 +68,6 @@ public class CharsetTranscoder {
         CharsetDecoder decoder = getCharsetDecoder(from);
 
         ByteBuffer fromBytes = ByteBuffer.wrap(value.getUnsafeBytes(), value.begin(), value.length());
-
-        // MRI does not allow ASCII-8BIT chars > 127 to transcode to multibyte encodings
-        if (fromName.equals("ASCII-8BIT") && encoder.maxBytesPerChar() > 1.0) {
-            for (int byteidx = value.begin(); byteidx < value.begin() + value.length(); byteidx++) {
-                byte b = fromBytes.get(byteidx);
-                if ((b & 0xFF) > 0x7F) {
-                    throw runtime.newUndefinedConversionError(
-                            "\"\\x" + Integer.toHexString(b & 0xFF).toUpperCase() +
-                                    "\" from " + fromName +
-                                    " to " + toName);
-                }
-            }
-        }
         
         try {
             ByteBuffer toBytes = encoder.encode(decoder.decode(fromBytes));
