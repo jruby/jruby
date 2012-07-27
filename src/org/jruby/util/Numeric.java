@@ -60,11 +60,11 @@ public class Numeric {
         if (x instanceof RubyFixnum && y instanceof RubyFixnum) {
             long c = ((RubyFixnum)x).getLongValue() - ((RubyFixnum)y).getLongValue();
             if (c > 0) {
-                return RubyFixnum.one(context.getRuntime());
+                return RubyFixnum.one(context.runtime);
             } else if (c < 0) {
-                return RubyFixnum.minus_one(context.getRuntime());
+                return RubyFixnum.minus_one(context.runtime);
             }
-            return RubyFixnum.zero(context.getRuntime());
+            return RubyFixnum.zero(context.runtime);
         }
         return invokedynamic(context, x, OP_CMP, y);
     }
@@ -82,7 +82,7 @@ public class Numeric {
      */
     public static IRubyObject f_gt_p(ThreadContext context, IRubyObject x, IRubyObject y) {
         if (x instanceof RubyFixnum && y instanceof RubyFixnum) {
-            return ((RubyFixnum)x).getLongValue() > ((RubyFixnum)y).getLongValue() ? context.getRuntime().getTrue() : context.getRuntime().getFalse(); 
+            return ((RubyFixnum)x).getLongValue() > ((RubyFixnum)y).getLongValue() ? context.runtime.getTrue() : context.runtime.getFalse();
         }
         return x.callMethod(context, ">", y);
     }

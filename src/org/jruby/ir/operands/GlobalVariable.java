@@ -21,7 +21,7 @@ public class GlobalVariable extends Reference {
     @Interp
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
-        return context.getRuntime().getGlobalVariables().get(getName());
+        return context.runtime.getGlobalVariables().get(getName());
     }
 
     @Override

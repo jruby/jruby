@@ -73,7 +73,7 @@ public class Hash extends Operand {
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope,
             Object[] temp) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         RubyHash hash = RubyHash.newHash(runtime);
 
         for (KeyValuePair pair : pairs) {

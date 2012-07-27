@@ -40,7 +40,7 @@ public class BlockGivenInstr extends Instr implements ResultInstr {
 
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
-        return context.getRuntime().newBoolean(block.isGiven());
+        return context.runtime.newBoolean(block.isGiven());
     }
 
     @Override

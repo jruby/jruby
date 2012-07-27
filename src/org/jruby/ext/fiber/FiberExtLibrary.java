@@ -27,7 +27,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.fiber;
 
-import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -47,7 +46,7 @@ public class FiberExtLibrary implements Library {
     public static class FiberExtMeta {
         @JRubyMethod(meta = true)
         public static IRubyObject current(ThreadContext context, IRubyObject recv) {
-            return context.getRuntime().getCurrentContext().getFiber();
+            return context.runtime.getCurrentContext().getFiber();
         }
         
         @JRubyMethod(name = "alive?")

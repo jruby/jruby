@@ -58,8 +58,8 @@ public class ReflectedCompiledMethod extends CompiledMethod {
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name,
             IRubyObject[] args, Block block) {
         callConfig.pre(context, self, getImplementationClass(), name, block, staticScope);
-        
-        Ruby runtime = context.getRuntime();
+
+        Ruby runtime = context.runtime;
         int callNumber = context.callNumber;
         try {
             boolean isTrace = runtime.hasEventHooks();

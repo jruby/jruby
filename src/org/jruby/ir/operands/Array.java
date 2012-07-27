@@ -118,7 +118,7 @@ public class Array extends Operand {
             elements[i] = (IRubyObject) elts[i].retrieve(context, self, currDynScope, temp);
         }
 
-        return context.getRuntime().newArray(elements);
+        return context.runtime.newArray(elements);
     }
 
     @Override

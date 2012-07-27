@@ -84,7 +84,7 @@ public class YieldInstr extends Instr implements ResultInstr {
         if (blk instanceof RubyNil) blk = Block.NULL_BLOCK;
         Block b = (Block)blk;
         // Ruby 1.8 mode: yields are always to normal blocks
-        if (!context.getRuntime().is1_9()) b.type = Block.Type.NORMAL;
+        if (!context.runtime.is1_9()) b.type = Block.Type.NORMAL;
         if (yieldArg == UndefinedValue.UNDEFINED) {
             return b.yieldSpecific(context);
         } else {

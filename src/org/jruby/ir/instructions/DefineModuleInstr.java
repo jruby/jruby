@@ -64,7 +64,7 @@ public class DefineModuleInstr extends Instr implements ResultInstr {
         Object rubyContainer = container.retrieve(context, self, currDynScope, temp);
         
         if (!(rubyContainer instanceof RubyModule)) {
-            throw context.getRuntime().newTypeError("no outer class/module");
+            throw context.runtime.newTypeError("no outer class/module");
         }
 
         RubyModule newRubyModule = ((RubyModule) rubyContainer).defineOrGetModuleUnder(newIRModuleBody.getName());

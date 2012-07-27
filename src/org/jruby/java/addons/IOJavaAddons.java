@@ -12,7 +12,6 @@ import org.jruby.util.IOInputStream;
 import org.jruby.util.IOOutputStream;
 import org.jruby.util.io.BadDescriptorException;
 import org.jruby.util.io.InvalidValueException;
-import org.jruby.util.io.PipeException;
 
 public class IOJavaAddons {
     // FIXME This whole thing could probably be implemented as a module and
@@ -23,10 +22,10 @@ public class IOJavaAddons {
     @JRubyMethod
     public static IRubyObject to_inputstream(ThreadContext context, IRubyObject self) {
         RubyIO io = (RubyIO)self;
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
 
         try {
-            io.getOpenFile().checkReadable(context.getRuntime());
+            io.getOpenFile().checkReadable(context.runtime);
         } catch (IOException ex) {
             throw runtime.newIOErrorFromException(ex);
         } catch (BadDescriptorException ex) {
@@ -34,17 +33,17 @@ public class IOJavaAddons {
         } catch (InvalidValueException e) {
             throw runtime.newErrnoEINVALError();
         }
-        
-        return JavaUtil.convertJavaToUsableRubyObject(context.getRuntime(), io.getInStream());
+
+        return JavaUtil.convertJavaToUsableRubyObject(context.runtime, io.getInStream());
     }
     
     @JRubyMethod
     public static IRubyObject to_outputstream(ThreadContext context, IRubyObject self) {
         RubyIO io = (RubyIO)self;
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
 
         try {
-            io.getOpenFile().checkWritable(context.getRuntime());
+            io.getOpenFile().checkWritable(context.runtime);
         } catch (IOException ex) {
             throw runtime.newIOErrorFromException(ex);
         } catch (BadDescriptorException ex) {
@@ -52,28 +51,28 @@ public class IOJavaAddons {
         } catch (InvalidValueException e) {
             throw runtime.newErrnoEINVALError();
         }
-        
-        return JavaUtil.convertJavaToUsableRubyObject(context.getRuntime(), io.getOutStream());
+
+        return JavaUtil.convertJavaToUsableRubyObject(context.runtime, io.getOutStream());
     }
 
     @JRubyMethod
     public static IRubyObject to_channel(ThreadContext context, IRubyObject self) {
         RubyIO io = (RubyIO)self;
 
-        return JavaUtil.convertJavaToUsableRubyObject(context.getRuntime(), io.getChannel());
+        return JavaUtil.convertJavaToUsableRubyObject(context.runtime, io.getChannel());
     }
 
     public static class AnyIO {
         @JRubyMethod(name = "to_inputstream")
         public static IRubyObject any_to_inputstream(ThreadContext context, IRubyObject self) {
             // using IOInputStream may not be the most performance way, but it's easy.
-            return JavaUtil.convertJavaToUsableRubyObject(context.getRuntime(), new IOInputStream(self));
+            return JavaUtil.convertJavaToUsableRubyObject(context.runtime, new IOInputStream(self));
         }
 
         @JRubyMethod(name = "to_outputstream")
         public static IRubyObject any_to_outputstream(ThreadContext context, IRubyObject self) {
             // using IOOutputStream may not be the most performance way, but it's easy.
-            return JavaUtil.convertJavaToUsableRubyObject(context.getRuntime(), new IOOutputStream(self));
+            return JavaUtil.convertJavaToUsableRubyObject(context.runtime, new IOOutputStream(self));
         }
 
         @JRubyMethod(name = "to_channel")

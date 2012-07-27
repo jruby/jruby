@@ -1,6 +1,7 @@
 package org.jruby.java.invokers;
 
 import java.lang.reflect.Field;
+
 import org.jruby.RubyModule;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.javasupport.JavaUtil;
@@ -17,9 +18,9 @@ public class InstanceFieldGetter extends FieldMethodZero {
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
         try {
             JavaProxy proxy = InstanceMethodInvoker.castJavaProxy(self);
-            return JavaUtil.convertJavaToUsableRubyObject(context.getRuntime(), field.get(proxy.getObject()));
+            return JavaUtil.convertJavaToUsableRubyObject(context.runtime, field.get(proxy.getObject()));
         } catch (IllegalAccessException iae) {
-            throw context.getRuntime().newTypeError("illegal access getting variable: " + iae.getMessage());
+            throw context.runtime.newTypeError("illegal access getting variable: " + iae.getMessage());
         }
     }
 }

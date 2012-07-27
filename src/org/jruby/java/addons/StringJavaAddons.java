@@ -18,6 +18,6 @@ public class StringJavaAddons {
 
     @JRubyMethod
     public static IRubyObject to_java_string(ThreadContext context, IRubyObject self) {
-        return Java.getInstance(context.getRuntime(), self.convertToString().asJavaString());
+        return Java.getInstance(context.runtime, self.convertToString().asJavaString());
     }
 }

@@ -25,7 +25,7 @@ public class InterfaceJavaProxy extends JavaProxy {
     }
 
     public static RubyClass createInterfaceJavaProxy(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         
         RubyClass ifcJavaProxy = runtime.defineClass(
                 "InterfaceJavaProxy",
@@ -45,7 +45,7 @@ public class InterfaceJavaProxy extends JavaProxy {
     public static class JavaInterfaceExtender {
         @JRubyMethod
         public static IRubyObject initialize(ThreadContext context, IRubyObject self, IRubyObject javaClassName, Block block) {
-            Ruby runtime = context.getRuntime();
+            Ruby runtime = context.runtime;
             
             self.getInstanceVariables().setInstanceVariable("@java_class", JavaClass.forNameVerbose(runtime, javaClassName.asJavaString()));
             self.getInstanceVariables().setInstanceVariable("@block", RubyProc.newProc(runtime, block, Block.Type.PROC));

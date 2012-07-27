@@ -52,7 +52,7 @@ public class UnresolvedSuperInstr extends CallInstr {
     }
 
     protected Object interpretSuper(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-        RubyBasicObject objClass = context.getRuntime().getObject();
+        RubyBasicObject objClass = context.runtime.getObject();
 		  // We have to rely on the frame stack to find the implementation class
         RubyModule klazz = context.getFrameKlazz();
         String methodName = context.getCurrentFrame().getName();
@@ -71,9 +71,9 @@ public class UnresolvedSuperInstr extends CallInstr {
         // FIXME: super/zsuper in top-level script still seems to have a frameClass so it will not make it into this if
         if (frameClass == null) {
             if (methodName == null || methodName != "") {
-                throw context.getRuntime().newNameError("superclass method '" + methodName + "' disabled", methodName);
+                throw context.runtime.newNameError("superclass method '" + methodName + "' disabled", methodName);
             } else {
-                throw context.getRuntime().newNoMethodError("super called outside of method", null, context.getRuntime().getNil());
+                throw context.runtime.newNoMethodError("super called outside of method", null, context.runtime.getNil());
             }
         }
     }

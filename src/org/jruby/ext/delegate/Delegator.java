@@ -25,7 +25,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.delegate;
 
-import org.jruby.Ruby;
 import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
@@ -45,7 +44,7 @@ public class Delegator {
 
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public static IRubyObject initialize(ThreadContext context, IRubyObject self, IRubyObject obj) {
-        return context.getRuntime().getNil();
+        return context.runtime.getNil();
     }
 
     @JRubyMethod(rest = true)
@@ -61,7 +60,7 @@ public class Delegator {
         IRubyObject object = self.callMethod(context, "__getobj__");
         DynamicMethod method = ((RubyObject) object).getMetaClass().searchMethod(methodName);
         if (method.getVisibility().isPrivate()) {
-            throw context.getRuntime().newNoMethodError("method `" + methodName + "' is private", methodName, context.getRuntime().getNil());
+            throw context.runtime.newNoMethodError("method `" + methodName + "' is private", methodName, context.runtime.getNil());
         }
         return method.call(context, object, object.getMetaClass(), methodName, newArgs, block);
     }

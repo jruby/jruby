@@ -42,7 +42,6 @@ import org.jruby.util.io.BadDescriptorException;
 import org.jruby.util.io.ChannelStream;
 import org.jruby.util.io.InvalidValueException;
 import org.jruby.util.io.OpenFile;
-import org.jruby.util.io.PipeException;
 
 /**
 * FFI specific I/O routines
@@ -58,14 +57,14 @@ public class IOModule {
     public static final IRubyObject native_read(ThreadContext context, IRubyObject self,
             IRubyObject src, IRubyObject dst, IRubyObject rbLength) {
         if (!(src instanceof RubyIO)) {
-            throw context.getRuntime().newTypeError("wrong argument (expected IO)");
+            throw context.runtime.newTypeError("wrong argument (expected IO)");
         }
 
         if (!(dst instanceof AbstractMemory)) {
-            throw context.getRuntime().newTypeError("wrong argument (expected FFI memory)");
+            throw context.runtime.newTypeError("wrong argument (expected FFI memory)");
         }
 
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         try {
             OpenFile openFile = ((RubyIO) src).getOpenFile();
             openFile.checkClosed(runtime);

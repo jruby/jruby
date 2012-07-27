@@ -45,17 +45,17 @@ public class RestArgMultipleAsgnInstr extends MultipleAsgnBase {
         if (preArgsCount == -1) {
             // Masgn for 1.8 and 1.9 pre-reqd. args always comes down this path!
             if (index >= n) {
-                return RubyArray.newEmptyArray(context.getRuntime());
+                return RubyArray.newEmptyArray(context.runtime);
             } else {
-                return RubyArray.newArrayNoCopy(context.getRuntime(), rubyArray.toJavaArray(), index, (n - index));
+                return RubyArray.newArrayNoCopy(context.runtime, rubyArray.toJavaArray(), index, (n - index));
             }
         } else {
             // Masgn for 1.9 post-reqd args always come down this path
             if ((preArgsCount >= n) || (preArgsCount + postArgsCount >= n)) {
-                return RubyArray.newEmptyArray(context.getRuntime());
+                return RubyArray.newEmptyArray(context.runtime);
             } else {
                 // FIXME: Perf win to use COW between source Array and this new one (remove toJavaArray)
-                return RubyArray.newArrayNoCopy(context.getRuntime(), rubyArray.toJavaArray(), preArgsCount, (n - preArgsCount - postArgsCount));
+                return RubyArray.newArrayNoCopy(context.runtime, rubyArray.toJavaArray(), preArgsCount, (n - preArgsCount - postArgsCount));
             }
         }
     }

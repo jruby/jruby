@@ -17,7 +17,7 @@ public class Float extends ImmutableLiteral {
 
     @Override
     public Object createCacheObject(ThreadContext context) {
-        return context.getRuntime().newFloat(value);
+        return context.runtime.newFloat(value);
     }
 
     @Override

@@ -2,7 +2,7 @@ package org.jruby.ext.fiber;
 
 import java.util.Map;
 import java.util.WeakHashMap;
-import org.jruby.CompatVersion;
+
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyObject;
@@ -26,7 +26,7 @@ public abstract class Fiber extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public IRubyObject initialize(ThreadContext context, Block block) {
-        final Ruby runtime = context.getRuntime();
+        final Ruby runtime = context.runtime;
         if (!root && (block == null || !block.isGiven())) {
             throw runtime.newArgumentError("tried to create Proc object without a block");
         }
@@ -71,7 +71,7 @@ public abstract class Fiber extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(rest = true)
     public IRubyObject resume(ThreadContext context, IRubyObject[] args) {
-        return resumeOrTransfer(context, context.getRuntime().newArrayNoCopyLight(args), false);
+        return resumeOrTransfer(context, context.runtime.newArrayNoCopyLight(args), false);
     }
 
     // This should only be defined after require 'fiber'
@@ -89,7 +89,7 @@ public abstract class Fiber extends RubyObject implements ExecutionContext {
     // This should only be defined after require 'fiber'
     @JRubyMethod(rest = true)
     public IRubyObject transfer(ThreadContext context, IRubyObject[] args) {
-        return resumeOrTransfer(context, context.getRuntime().newArrayNoCopyLight(args), true);
+        return resumeOrTransfer(context, context.runtime.newArrayNoCopyLight(args), true);
     }
 
     public Map<Object, IRubyObject> getContextVariables() {

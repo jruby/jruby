@@ -1,6 +1,5 @@
 package org.jruby.runtime.callsite;
 
-import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
@@ -56,11 +55,11 @@ public abstract class CachingCallSite extends CallSite {
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, long fixnum) {
-        return call(context, caller, self, RubyFixnum.newFixnum(context.getRuntime(), fixnum));
+        return call(context, caller, self, RubyFixnum.newFixnum(context.runtime, fixnum));
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, double flote) {
-        return call(context, caller, self, RubyFloat.newFloat(context.getRuntime(), flote));
+        return call(context, caller, self, RubyFloat.newFloat(context.runtime, flote));
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject... args) {

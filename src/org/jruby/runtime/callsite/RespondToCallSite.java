@@ -1,6 +1,5 @@
 package org.jruby.runtime.callsite;
 
-import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -71,7 +70,7 @@ public class RespondToCallSite extends NormalCachingCallSite {
         // alternate logic to cache the result of respond_to if it's the standard one
         // FIXME: 1.9's respond_to_missing breaks this, so we have to bail out
         if (!context.runtime.is1_9() &&
-                entry.method.equals(context.getRuntime().getRespondToMethod())) {
+                entry.method.equals(context.runtime.getRespondToMethod())) {
             String name = arg.asJavaString();
             RespondToTuple tuple = recacheRespondsTo(entry, name, selfType, true, context);
             respondToTuple = tuple;

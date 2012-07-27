@@ -53,7 +53,7 @@ public class CheckArgsArrayArityInstr extends Instr {
         RubyArray args = (RubyArray) argsArray.retrieve(context, self, currDynScope, temp);
         int numArgs = args.size();
         if ((numArgs < required) || ((rest == -1) && (numArgs > (required + opt)))) {
-            Arity.raiseArgumentError(context.getRuntime(), numArgs, required, required + opt);
+            Arity.raiseArgumentError(context.runtime, numArgs, required, required + opt);
         }
         return null;
     }

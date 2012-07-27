@@ -24,7 +24,7 @@ public class PutGlobalVarInstr extends PutInstr {
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         GlobalVariable target = (GlobalVariable)getTarget();
         IRubyObject    value  = (IRubyObject) getValue().retrieve(context, self, currDynScope, temp);
-        context.getRuntime().getGlobalVariables().set(target.getName(), value);
+        context.runtime.getGlobalVariables().set(target.getName(), value);
         return null;
     }
 

@@ -50,12 +50,12 @@ public final class MemoryPointer extends Pointer {
         typeSize = calculateTypeSize(context, rbTypeSize);
         size = typeSize * count;
         if (size < 0) {
-            throw context.getRuntime().newArgumentError(String.format("Negative size (%d objects of %d size)", count, typeSize));
+            throw context.runtime.newArgumentError(String.format("Negative size (%d objects of %d size)", count, typeSize));
         }
-        setMemoryIO(Factory.getInstance().allocateDirectMemory(context.getRuntime(),
+        setMemoryIO(Factory.getInstance().allocateDirectMemory(context.runtime,
                 size > 0 ? (int) size : 1, align, clear));
         if (getMemoryIO() == null) {
-            Ruby runtime = context.getRuntime();
+            Ruby runtime = context.runtime;
             throw new RaiseException(runtime, runtime.getNoMemoryError(),
                     String.format("Failed to allocate %d objects of %d bytes", typeSize, count), true);
         }
@@ -65,7 +65,7 @@ public final class MemoryPointer extends Pointer {
                 return block.yield(context, this);
             } finally {
                 ((AllocatedDirectMemoryIO) getMemoryIO()).free();
-                setMemoryIO(new FreedMemoryIO(context.getRuntime()));
+                setMemoryIO(new FreedMemoryIO(context.runtime));
             }
         } else {
             return this;
@@ -91,7 +91,7 @@ public final class MemoryPointer extends Pointer {
     @JRubyMethod(name = "new", meta = true)
     public static IRubyObject newInstance(ThreadContext context, IRubyObject klass, IRubyObject sizeArg) {
         if (klass == context.runtime.getFFI().memptrClass) {
-            return newInstance(context.getRuntime(), klass, calculateTypeSize(context, sizeArg), 1, true);
+            return newInstance(context.runtime, klass, calculateTypeSize(context, sizeArg), 1, true);
 
         } else {
             return ((RubyClass) klass).newInstance(context, sizeArg, Block.NULL_BLOCK);

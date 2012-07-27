@@ -62,9 +62,9 @@ public class SValue extends Operand {
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         Object val = array.retrieve(context, self, currDynScope, temp);
-        
-        if (context.getRuntime().is1_9()) {
-            return (val instanceof RubyArray) ? val : context.getRuntime().getNil();
+
+        if (context.runtime.is1_9()) {
+            return (val instanceof RubyArray) ? val : context.runtime.getNil();
         } else {
             if (val instanceof RubyArray) {
                 int n = ((RubyArray) val).getLength();

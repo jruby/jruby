@@ -71,17 +71,17 @@ public class JFFIInvoker extends org.jruby.ext.ffi.AbstractInvoker {
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
 
         if (!(args[0] instanceof Pointer)) {
-            throw context.getRuntime().newTypeError("Invalid function address "
+            throw context.runtime.newTypeError("Invalid function address "
                     + args[0].getMetaClass().getName() + " (expected FFI::Pointer)");
         }
         
         if (!(args[1] instanceof RubyArray)) {
-            throw context.getRuntime().newTypeError("Invalid parameter array "
+            throw context.runtime.newTypeError("Invalid parameter array "
                     + args[1].getMetaClass().getName() + " (expected Array)");
         }
 
         if (!(args[2] instanceof Type)) {
-            throw context.getRuntime().newTypeError("Invalid return type " + args[2]);
+            throw context.runtime.newTypeError("Invalid return type " + args[2]);
         }
         Pointer ptr = (Pointer) args[0];
         RubyArray paramTypes = (RubyArray) args[1];

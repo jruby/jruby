@@ -87,7 +87,7 @@ public class RubyUnboundMethod extends RubyMethod {
     @JRubyMethod(name = {"call", "[]"}, rest = true)
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
-        throw context.getRuntime().newTypeError("you cannot call unbound method; bind first");
+        throw context.runtime.newTypeError("you cannot call unbound method; bind first");
     }
 
     /**

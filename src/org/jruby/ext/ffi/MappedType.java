@@ -49,32 +49,32 @@ public final class MappedType extends Type {
     @JRubyMethod(name = "new", meta = true)
     public static final IRubyObject newMappedType(ThreadContext context, IRubyObject klass, IRubyObject converter) {
         if (!converter.respondsTo("native_type")) {
-            throw context.getRuntime().newNoMethodError("converter needs a native_type method", "native_type", converter.getMetaClass());
+            throw context.runtime.newNoMethodError("converter needs a native_type method", "native_type", converter.getMetaClass());
         }
         
         DynamicMethod toNativeMethod = converter.getMetaClass().searchMethod("to_native");
         if (toNativeMethod.isUndefined()) {
-            throw context.getRuntime().newNoMethodError("converter needs a to_native method", "to_native", converter.getMetaClass());
+            throw context.runtime.newNoMethodError("converter needs a to_native method", "to_native", converter.getMetaClass());
         }
 
         if (!Arity.TWO_ARGUMENTS.equals(toNativeMethod.getArity())) {
-            throw context.getRuntime().newArgumentError("to_native should accept two arguments");
+            throw context.runtime.newArgumentError("to_native should accept two arguments");
         }
 
         DynamicMethod fromNativeMethod = converter.getMetaClass().searchMethod("from_native");
         if (fromNativeMethod.isUndefined()) {
-            throw context.getRuntime().newNoMethodError("converter needs a from_native method", "from_native", converter.getMetaClass());
+            throw context.runtime.newNoMethodError("converter needs a from_native method", "from_native", converter.getMetaClass());
         }
 
         if (!Arity.TWO_ARGUMENTS.equals(fromNativeMethod.getArity())) {
-            throw context.getRuntime().newArgumentError("from_native should accept two arguments");
+            throw context.runtime.newArgumentError("from_native should accept two arguments");
         }
 
         Type nativeType;
         try {
             nativeType = (Type) converter.callMethod(context, "native_type");
         } catch (ClassCastException ex) {
-            throw context.getRuntime().newTypeError("native_type did not return instance of FFI::Type");
+            throw context.runtime.newTypeError("native_type did not return instance of FFI::Type");
         }
 
         boolean isReferenceRequired;

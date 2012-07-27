@@ -1,12 +1,9 @@
 package org.jruby.runtime;
 
-import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
 import org.jruby.javasupport.util.RuntimeHelpers;
-import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.ir.IRClosure;
-import org.jruby.ir.interpreter.Interpreter;
 import org.jruby.runtime.Block.Type;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -32,7 +29,7 @@ public class InterpretedIRBlockBody19 extends InterpretedIRBlockBody {
                if (argIsArray) {
                    RubyArray valArray = ((RubyArray)value);
                    if (valArray.size() == 0) {
-                       value = passArrayArg ? RubyArray.newEmptyArray(context.getRuntime()) : context.nil;
+                       value = passArrayArg ? RubyArray.newEmptyArray(context.runtime) : context.nil;
                    }
                    else if (!passArrayArg) value = valArray.eltInternal(0);
                }
@@ -47,7 +44,7 @@ public class InterpretedIRBlockBody19 extends InterpretedIRBlockBody {
                 } else {
                     value = RuntimeHelpers.aryToAry(value);
                     if (!(value instanceof RubyArray)) {
-                        throw context.getRuntime().newTypeError(value.getType().getName() + "#to_ary should return Array");
+                        throw context.runtime.newTypeError(value.getType().getName() + "#to_ary should return Array");
                     }
                     return ((RubyArray)value).toJavaArray();
                 }
@@ -56,7 +53,7 @@ public class InterpretedIRBlockBody19 extends InterpretedIRBlockBody {
 
     private IRubyObject[] getLambdaArgs(ThreadContext context, IRubyObject value, boolean passArrayArg, boolean argIsArray) {
         IRubyObject[] args = (value == null) ? IRubyObject.NULL_ARRAY : (argIsArray ? ((RubyArray)value).toJavaArray() : new IRubyObject[] { value });
-        arity().checkArity(context.getRuntime(), args);
+        arity().checkArity(context.runtime, args);
         return args;
     }
 

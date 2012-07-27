@@ -96,7 +96,7 @@ public class ArrayJavaAddons {
     
     @JRubyMethod
     public static IRubyObject dimensions(ThreadContext context, IRubyObject maybeArray) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (!(maybeArray instanceof RubyArray)) {
             return runtime.newEmptyArray();
         }

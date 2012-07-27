@@ -62,13 +62,13 @@ public class VariadicInvoker extends RubyObject {
     public static VariadicInvoker newInvoker(ThreadContext context, IRubyObject klass, IRubyObject[] args) {
 
         if (!(args[0] instanceof Pointer)) {
-            throw context.getRuntime().newTypeError(args[0], context.getRuntime().getFFI().pointerClass);
+            throw context.runtime.newTypeError(args[0], context.runtime.getFFI().pointerClass);
         }
 
         final Pointer address = (Pointer) args[0];
         
         if (!(args[1] instanceof Type)) {
-            throw context.getRuntime().newTypeError("invalid return type");
+            throw context.runtime.newTypeError("invalid return type");
         }
         
         final Type returnType = (Type) args[1];
@@ -76,7 +76,7 @@ public class VariadicInvoker extends RubyObject {
                 ? CallingConvention.STDCALL : CallingConvention.DEFAULT;
 
         FunctionInvoker functionInvoker = DefaultMethodFactory.getFunctionInvoker(returnType);
-        return new VariadicInvoker(context.getRuntime(), klass, address,
+        return new VariadicInvoker(context.runtime, klass, address,
                 functionInvoker, FFIUtil.getFFIType(returnType), conv);
     }
 

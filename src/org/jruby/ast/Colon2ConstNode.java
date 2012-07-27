@@ -61,12 +61,12 @@ public class Colon2ConstNode extends Colon2Node {
         // We could probably also detect if LHS value came out of cache and avoid some of this
         return
                 value != null &&
-                generation == context.getRuntime().getConstantInvalidator().getData() &&
+                generation == context.runtime.getConstantInvalidator().getData() &&
                 hash == target.hashCode();
     }
 
     public IRubyObject reCache(ThreadContext context, RubyModule target) {
-        Object newGeneration = context.getRuntime().getConstantInvalidator().getData();
+        Object newGeneration = context.runtime.getConstantInvalidator().getData();
         IRubyObject value = target.getConstantFromNoConstMissing(name, false);
 
         cachedValue = value;

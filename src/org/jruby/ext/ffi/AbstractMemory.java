@@ -85,14 +85,14 @@ abstract public class AbstractMemory extends RubyObject {
             return ((Type) sizeArg).getNativeSize();
 
         } else {
-            if (sizeArg instanceof RubyClass && Struct.isStruct(context.getRuntime(), (RubyClass) sizeArg)) {
-                return Struct.getStructSize(context.getRuntime(), sizeArg);
+            if (sizeArg instanceof RubyClass && Struct.isStruct(context.runtime, (RubyClass) sizeArg)) {
+                return Struct.getStructSize(context.runtime, sizeArg);
 
             } else if (sizeArg.respondsTo("size")) {
                 return (int) RubyFixnum.num2long(sizeArg.callMethod(context, "size"));
 
             } else {
-                throw context.getRuntime().newArgumentError("Invalid size argument");
+                throw context.runtime.newArgumentError("Invalid size argument");
             }
         }
     }

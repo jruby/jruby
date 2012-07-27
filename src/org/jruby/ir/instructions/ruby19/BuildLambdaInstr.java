@@ -70,8 +70,8 @@ public class BuildLambdaInstr extends Instr implements ResultInstr {
 
         IRClosure body = getLambdaBody();
         // ENEBO: Now can live nil be passed as block reference?
-        return RubyProc.newProc(context.getRuntime(),
-                (Block) (body == null ? context.getRuntime().getIRManager().getNil() : operands[0]).retrieve(context, self, currDynScope, temp),
+        return RubyProc.newProc(context.runtime,
+                (Block) (body == null ? context.runtime.getIRManager().getNil() : operands[0]).retrieve(context, self, currDynScope, temp),
                 Block.Type.LAMBDA, position);
     }
 

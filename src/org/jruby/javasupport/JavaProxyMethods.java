@@ -13,7 +13,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class JavaProxyMethods {
     public static RubyModule createJavaProxyMethods(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         RubyModule javaProxyMethods = runtime.defineModule("JavaProxyMethods");
         
         javaProxyMethods.defineAnnotatedMethods(JavaProxyMethods.class);

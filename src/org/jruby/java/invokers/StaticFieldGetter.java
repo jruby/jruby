@@ -1,6 +1,7 @@
 package org.jruby.java.invokers;
 
 import java.lang.reflect.Field;
+
 import org.jruby.RubyModule;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.ThreadContext;
@@ -15,9 +16,9 @@ public class StaticFieldGetter extends FieldMethodZero {
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
         try {
-            return JavaUtil.convertJavaToUsableRubyObject(context.getRuntime(), field.get(null));
+            return JavaUtil.convertJavaToUsableRubyObject(context.runtime, field.get(null));
         } catch (IllegalAccessException iae) {
-            throw context.getRuntime().newTypeError("illegal access getting variable: " + iae.getMessage());
+            throw context.runtime.newTypeError("illegal access getting variable: " + iae.getMessage());
         }
     }
 }

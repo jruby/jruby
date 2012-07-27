@@ -31,7 +31,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
-import org.jruby.Ruby;
 import org.jruby.runtime.backtrace.BacktraceElement;
 import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
@@ -80,7 +79,7 @@ public abstract class MethodBlock extends ContextAwareBlockBody {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
-        return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true, binding, type, Block.NULL_BLOCK);
+        return yield(context, context.runtime.newArrayNoCopy(args), null, null, true, binding, type, Block.NULL_BLOCK);
     }
 
     @Override

@@ -89,7 +89,7 @@ public class InheritanceSearchConstInstr extends Instr implements ResultInstr {
 
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         Object cmVal = currentModule.retrieve(context, self, currDynScope, temp);
         RubyModule module;
         if (cmVal instanceof RubyModule) {

@@ -82,7 +82,7 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
         Type returnType = FFIUtil.resolveType(context, args[0]);
 
         if (!(args[1] instanceof RubyArray)) {
-            throw context.getRuntime().newTypeError("Invalid parameter array "
+            throw context.runtime.newTypeError("Invalid parameter array "
                     + args[1].getMetaClass().getName() + " (expected Array)");
         }
 

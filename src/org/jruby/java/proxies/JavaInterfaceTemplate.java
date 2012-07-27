@@ -29,7 +29,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 
 public class JavaInterfaceTemplate {
     public static RubyModule createJavaInterfaceTemplateModule(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         RubyModule javaInterfaceTemplate = runtime.defineModule("JavaInterfaceTemplate");
 
         RubyClass singleton = javaInterfaceTemplate.getSingletonClass();
@@ -45,7 +45,7 @@ public class JavaInterfaceTemplate {
     // check for reserved Ruby names, conflicting methods, etc.
     @JRubyMethod(visibility = Visibility.PRIVATE)
     public static IRubyObject implement(ThreadContext context, IRubyObject self, IRubyObject clazz) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
 
         if (!(clazz instanceof RubyModule)) {
             throw runtime.newTypeError(clazz, runtime.getModule());
@@ -59,7 +59,7 @@ public class JavaInterfaceTemplate {
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
                 // dummy bodies for default impls
-                return context.getRuntime().getNil();
+                return context.runtime.getNil();
             }
         };
         
@@ -82,7 +82,7 @@ public class JavaInterfaceTemplate {
         } else if (clazz instanceof RubyModule) {
             appendFeaturesToModule(context, self, (RubyModule)clazz);
         } else {
-            throw context.getRuntime().newTypeError("received " + clazz + ", expected Class/Module");
+            throw context.runtime.newTypeError("received " + clazz + ", expected Class/Module");
         }
 
         return RuntimeHelpers.invokeSuper(context, self, clazz, block);

@@ -90,7 +90,7 @@ public class LexicalSearchConstInstr extends Instr implements ResultInstr {
     
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         Object constant = cachedConstant; // Store to temp so it does null out on us mid-stream
         if (!isCached(runtime, constant)) constant = cache(context, currDynScope, self, temp, runtime, constant);
 

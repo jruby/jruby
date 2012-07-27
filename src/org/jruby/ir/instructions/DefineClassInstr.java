@@ -68,13 +68,13 @@ public class DefineClassInstr extends Instr implements ResultInstr {
         if (newIRClassBody instanceof IRMetaClassBody) return classContainer.getMetaClass();
 
         RubyClass sc;
-        if (superClass == context.getRuntime().getIRManager().getNil()) {
+        if (superClass == context.runtime.getIRManager().getNil()) {
             sc = null;
         } else {
             Object o = superClass.retrieve(context, self, currDynScope, temp);
 
             if (!(o instanceof RubyClass)) {
-                throw context.getRuntime().newTypeError("superclass must be Class (" + o + " given)");
+                throw context.runtime.newTypeError("superclass must be Class (" + o + " given)");
             }
             
             sc = (RubyClass) o;
@@ -88,7 +88,7 @@ public class DefineClassInstr extends Instr implements ResultInstr {
         Object rubyContainer = container.retrieve(context, self, currDynScope, temp);
         
         if (!(rubyContainer instanceof RubyModule)) {
-            throw context.getRuntime().newTypeError("no outer class/module");
+            throw context.runtime.newTypeError("no outer class/module");
         }
 
         RubyModule newRubyClass = newClass(context, self, (RubyModule) rubyContainer, currDynScope, temp);

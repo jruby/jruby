@@ -38,7 +38,7 @@ public class DynamicSymbol extends Operand {
 
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
-        return context.getRuntime().newSymbol(((IRubyObject) symbolName.retrieve(context, self, currDynScope, temp)).asJavaString());
+        return context.runtime.newSymbol(((IRubyObject) symbolName.retrieve(context, self, currDynScope, temp)).asJavaString());
     }
 
     @Override

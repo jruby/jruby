@@ -28,17 +28,9 @@
 package org.jruby.java.proxies;
 
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
-import java.util.TreeMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
 import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -73,7 +65,7 @@ public class MapJavaProxy extends ConcreteJavaProxy {
     }
 
     public static RubyClass createMapJavaProxy(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
 
         RubyClass mapJavaProxy = runtime.defineClass("MapJavaProxy",
                 runtime.getJavaSupport().getConcreteProxyClass(),

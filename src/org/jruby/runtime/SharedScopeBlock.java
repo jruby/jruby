@@ -56,7 +56,7 @@ public class SharedScopeBlock extends InterpretedBlock {
     }
     
     public IRubyObject call(ThreadContext context, IRubyObject[] args, IRubyObject replacementSelf, Binding binding, Block.Type type) {
-        return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true, binding, type);
+        return yield(context, context.runtime.newArrayNoCopy(args), null, null, true, binding, type);
     }
     
     @Override

@@ -40,7 +40,6 @@ import java.nio.CharBuffer;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
-import java.nio.charset.CodingErrorAction;
 
 import static org.jruby.CompatVersion.*;
 import static org.jruby.runtime.Visibility.*;
@@ -86,7 +85,7 @@ public class RubyConverter extends RubyObject {
 
     @JRubyMethod(visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject convpath) {
-        return context.getRuntime().getNil();
+        return context.runtime.getNil();
     }
 
     @JRubyMethod(visibility = PRIVATE)

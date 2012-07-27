@@ -10,7 +10,7 @@ public class FiberMeta {
     public static IRubyObject yield(ThreadContext context, IRubyObject recv) {
         Fiber fiber = context.getFiber();
         if (fiber.isRoot()) {
-            throw context.getRuntime().newFiberError("can't yield from root fiber");
+            throw context.runtime.newFiberError("can't yield from root fiber");
         }
         return fiber.yield(context, context.nil);
     }
@@ -19,7 +19,7 @@ public class FiberMeta {
     public static IRubyObject yield(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         Fiber fiber = context.getFiber();
         if (fiber.isRoot()) {
-            throw context.getRuntime().newFiberError("can't yield from root fiber");
+            throw context.runtime.newFiberError("can't yield from root fiber");
         }
         return fiber.yield(context, arg);
     }
@@ -28,9 +28,9 @@ public class FiberMeta {
     public static IRubyObject yield(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         Fiber fiber = context.getFiber();
         if (fiber.isRoot()) {
-            throw context.getRuntime().newFiberError("can't yield from root fiber");
+            throw context.runtime.newFiberError("can't yield from root fiber");
         }
-        return fiber.yield(context, context.getRuntime().newArrayNoCopyLight(args));
+        return fiber.yield(context, context.runtime.newArrayNoCopyLight(args));
     }
     
 }

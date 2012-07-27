@@ -57,7 +57,7 @@ public class FullFunctionCallbackMethod extends DynamicMethod {
             callConfig.pre(context, self, clazz, name, block, null);
             
             assert args != null;
-            Ruby runtime = context.getRuntime();
+            Ruby runtime = context.runtime;
             boolean isTrace = runtime.hasEventHooks();
 
             if (isTrace) {

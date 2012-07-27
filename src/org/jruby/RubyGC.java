@@ -67,17 +67,17 @@ public class RubyGC {
 
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject start(ThreadContext context, IRubyObject recv) {
-        return context.getRuntime().getNil();
+        return context.runtime.getNil();
     }
 
     @JRubyMethod
     public static IRubyObject garbage_collect(ThreadContext context, IRubyObject recv) {
-        return context.getRuntime().getNil();
+        return context.runtime.getNil();
     }
 
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject enable(ThreadContext context, IRubyObject recv) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         emptyImplementationWarning(runtime, "GC.enable");
         boolean old = gcDisabled;
         gcDisabled = false;
@@ -86,7 +86,7 @@ public class RubyGC {
 
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject disable(ThreadContext context, IRubyObject recv) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         emptyImplementationWarning(runtime, "GC.disable");
         boolean old = gcDisabled;
         gcDisabled = true;

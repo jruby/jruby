@@ -35,7 +35,7 @@ public class Bignum extends ImmutableLiteral {
     
     @Override
     public Object createCacheObject(ThreadContext context) {
-        return RubyBignum.newBignum(context.getRuntime(), value);
+        return RubyBignum.newBignum(context.runtime, value);
     }
 
     @Override

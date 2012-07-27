@@ -60,7 +60,7 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
             if (arity().getValue() > 1) {
                 args = value == null ? IRubyObject.NULL_ARRAY : prepareArgumentsForYield(context, ((RubyArray)value).toJavaArray(), type);
             } else {
-                args = assignArrayToBlockArgs(context.getRuntime(), value);
+                args = assignArrayToBlockArgs(context.runtime, value);
             }
         } else {
             args = prepareArgumentsForYield(context, value == null ? IRubyObject.NULL_ARRAY : new IRubyObject[] { value }, type);

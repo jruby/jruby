@@ -92,7 +92,7 @@ public class NthRefNode extends Node {
         IRubyObject backref = context.getCurrentScope().getBackRef(runtime);
         if (backref instanceof RubyMatchData) {
             if (!((RubyMatchData) backref).group(matchNumber).isNil()) {
-                if (!context.getRuntime().is1_9()) {
+                if (!context.runtime.is1_9()) {
                     return nameByteList;
                 } else {
                     return GLOBAL_VARIABLE_BYTELIST;

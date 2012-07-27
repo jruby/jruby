@@ -79,7 +79,7 @@ public class JRubyEngine extends BSFEngineImpl {
 
             return JavaEmbedUtils.rubyToJava(evaler.parse(runtime, funcBody.toString(), file, line).run());
         } catch (StackOverflowError soe) {
-            throw context.getRuntime().newSystemStackError("stack level too deep", soe);
+            throw context.runtime.newSystemStackError("stack level too deep", soe);
         } finally {
             context.postBsfApply();
         }

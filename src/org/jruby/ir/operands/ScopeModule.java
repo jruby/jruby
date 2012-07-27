@@ -47,7 +47,7 @@ public class ScopeModule extends Operand {
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         StaticScope staticScope = scope.getStaticScope();
-        return staticScope != null ? staticScope.getModule() : context.getRuntime().getClass(scope.getName());
+        return staticScope != null ? staticScope.getModule() : context.runtime.getClass(scope.getName());
     }
 
     @Override

@@ -70,7 +70,7 @@ public class BacktickString extends Operand {
 
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
-        RubyString newString = context.getRuntime().newString();
+        RubyString newString = context.runtime.newString();
 
         for (Operand p: pieces) {
             RubyBasicObject piece = (RubyBasicObject) p.retrieve(context, self, currDynScope, temp);

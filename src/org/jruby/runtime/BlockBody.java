@@ -33,7 +33,6 @@
 
 package org.jruby.runtime;
 
-import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
 import org.jruby.ast.IterNode;
@@ -64,14 +63,14 @@ public abstract class BlockBody {
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
         args = prepareArgumentsForCall(context, args, type);
 
-        return yield(context, RubyArray.newArrayNoCopy(context.getRuntime(), args), null, null, true, binding, type);
+        return yield(context, RubyArray.newArrayNoCopy(context.runtime, args), null, null, true, binding, type);
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding,
             Block.Type type, Block block) {
         args = prepareArgumentsForCall(context, args, type);
 
-        return yield(context, RubyArray.newArrayNoCopy(context.getRuntime(), args), null, null, true, binding, type, block);
+        return yield(context, RubyArray.newArrayNoCopy(context.runtime, args), null, null, true, binding, type, block);
     }
 
     public abstract IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type);

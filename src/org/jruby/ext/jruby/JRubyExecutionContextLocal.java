@@ -51,20 +51,20 @@ public abstract class JRubyExecutionContextLocal extends RubyObject {
     public IRubyObject rubyInitialize(ThreadContext context, IRubyObject[] args, Block block) {
         if (block.isGiven()) {
             if (args.length != 0) {
-                throw context.getRuntime().newArgumentError("wrong number of arguments");
+                throw context.runtime.newArgumentError("wrong number of arguments");
             }
             default_proc = block.getProcObject();
             if (default_proc == null) {
-                default_proc = RubyProc.newProc(context.getRuntime(), block, block.type);
+                default_proc = RubyProc.newProc(context.runtime, block, block.type);
             }
         } else {
             if (args.length == 1) {
                 default_value = args[0];
             } else if (args.length != 0) {
-                throw context.getRuntime().newArgumentError("wrong number of arguments");
+                throw context.runtime.newArgumentError("wrong number of arguments");
             }
         }
-        return context.getRuntime().getNil();
+        return context.runtime.getNil();
     }
 
     @JRubyMethod(name = "default", required = 0)
@@ -77,7 +77,7 @@ public abstract class JRubyExecutionContextLocal extends RubyObject {
         if (default_proc != null) {
             return default_proc;
         } else {
-            return context.getRuntime().getNil();
+            return context.runtime.getNil();
         }
     }
     private static final IRubyObject[] EMPTY_ARGS = new IRubyObject[]{};

@@ -13,7 +13,7 @@ import java.util.HashSet;
 public class RecursiveComparator
 {
     public static IRubyObject compare(ThreadContext context, final int method, IRubyObject a, IRubyObject b) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
 
         if (a == b) {
             return runtime.getTrue();

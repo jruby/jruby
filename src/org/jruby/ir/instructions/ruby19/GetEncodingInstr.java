@@ -49,7 +49,7 @@ public class GetEncodingInstr extends Instr implements ResultInstr {
 
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
-        return context.getRuntime().getEncodingService().getEncoding(encoding);
+        return context.runtime.getEncodingService().getEncoding(encoding);
     }
 
     @Override

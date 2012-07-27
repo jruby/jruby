@@ -97,7 +97,7 @@ public class AndNode extends Node implements BinaryOperatorNode {
 
     @Override
     public ByteList definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        if (!context.getRuntime().is1_9()) {
+        if (!context.runtime.is1_9()) {
             return super.definition(runtime, context, self, aBlock);
         } else {
             return EXPRESSION_BYTELIST;

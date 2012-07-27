@@ -62,7 +62,7 @@ public class RubyClassPathVariable extends RubyObject {
         if (obj.respondsTo("to_a")) {
             paths = ((RubyArray) obj.callMethod(context, "to_a")).toJavaArray();
         } else {
-            paths = context.getRuntime().newArray(obj).toJavaArray();
+            paths = context.runtime.newArray(obj).toJavaArray();
         }
         
         for (IRubyObject path: paths) {

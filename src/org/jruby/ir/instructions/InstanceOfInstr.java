@@ -68,7 +68,7 @@ public class InstanceOfInstr extends Instr implements ResultInstr {
             // for user ruby code, this may no longer be true and we have to appropriately fix this code then.
             throw new RuntimeException(e);
         }
-        return context.getRuntime().newBoolean(type.isInstance(object.retrieve(context, self, currDynScope, temp))); 
+        return context.runtime.newBoolean(type.isInstance(object.retrieve(context, self, currDynScope, temp)));
     }
 
     @Override

@@ -12,7 +12,7 @@ public class AsetCallSite extends NormalCachingCallSite {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg0, IRubyObject arg1) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (self.getMetaClass() == runtime.getArray()) {
             RubyArray array = (RubyArray)self;
             return array.aset(arg0, arg1);

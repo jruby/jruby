@@ -63,7 +63,7 @@ public class DefineMetaClassInstr extends Instr implements ResultInstr {
 
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         IRubyObject obj = (IRubyObject)object.retrieve(context, self, currDynScope, temp);
         
         RubyClass singletonClass = RuntimeHelpers.getSingletonClass(runtime, obj);

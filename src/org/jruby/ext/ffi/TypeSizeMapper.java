@@ -1,6 +1,5 @@
 package org.jruby.ext.ffi;
 
-import org.jruby.RubyModule;
 import org.jruby.RubySymbol;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -52,10 +51,10 @@ final class TypeSizeMapper {
             return (Type) type;
         }
 
-        throw context.getRuntime().newTypeError("cannot resolve type " + name);
+        throw context.runtime.newTypeError("cannot resolve type " + name);
     }
 
     public static final int getTypeSize(ThreadContext context, RubySymbol sizeArg) {
-        return context.getRuntime().getFFI().getSizeMapper().sizeof(context, sizeArg);
+        return context.runtime.getFFI().getSizeMapper().sizeof(context, sizeArg);
     }
 }

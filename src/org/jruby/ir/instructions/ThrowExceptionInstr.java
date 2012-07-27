@@ -46,13 +46,13 @@ public class ThrowExceptionInstr extends Instr {
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         if (exceptionArg instanceof IRException) {
-            throw ((IRException) exceptionArg).getException(context.getRuntime());
+            throw ((IRException) exceptionArg).getException(context.runtime);
         }
 
         Object excObj = exceptionArg.retrieve(context, self, currDynScope, temp);
 
         if (excObj instanceof IRubyObject) {
-            RubyKernel.raise(context, context.getRuntime().getKernel(), new IRubyObject[] {(IRubyObject)excObj}, Block.NULL_BLOCK);
+            RubyKernel.raise(context, context.runtime.getKernel(), new IRubyObject[] {(IRubyObject)excObj}, Block.NULL_BLOCK);
         } else if (excObj instanceof Throwable) { // java exception -- avoid having to add 'throws' clause everywhere!
             // SSS FIXME: Can avoid this workaround by adding a case for this instruction in the interpreter loop
             UnsafeFactory.getUnsafe().throwException((Throwable)excObj);

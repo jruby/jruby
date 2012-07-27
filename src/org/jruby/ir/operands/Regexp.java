@@ -58,20 +58,20 @@ public class Regexp extends Operand {
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         // FIXME (from RegexpNode.java): 1.9 should care about internal or external encoding and not kcode.
         // If we have a constant regexp string or if the regexp patterns asks for caching, cache the regexp
-        if ((!regexp.hasKnownValue() && !options.isOnce()) || (rubyRegexp == null) || context.getRuntime().getKCode() != rubyRegexp.getKCode()) {
+        if ((!regexp.hasKnownValue() && !options.isOnce()) || (rubyRegexp == null) || context.runtime.getKCode() != rubyRegexp.getKCode()) {
             RubyRegexp re;
             if (regexp instanceof CompoundString) {
                 if (context.runtime.is1_9()) {
                     RubyString[] pieces  = ((CompoundString)regexp).retrievePieces(context, self, currDynScope, temp);
-                    RubyString   pattern = RubyRegexp.preprocessDRegexp(context.getRuntime(), pieces, options);
-                    re = RubyRegexp.newDRegexp(context.getRuntime(), pattern, options);
+                    RubyString   pattern = RubyRegexp.preprocessDRegexp(context.runtime, pieces, options);
+                    re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
                 } else {
                     RubyString pattern = (RubyString) regexp.retrieve(context, self, currDynScope, temp);
-                    re = RubyRegexp.newDRegexp(context.getRuntime(), pattern, options);
+                    re = RubyRegexp.newDRegexp(context.runtime, pattern, options);
                 }
             } else {
                 RubyString pattern = (RubyString) regexp.retrieve(context, self, currDynScope, temp);
-                re = RubyRegexp.newRegexp(context.getRuntime(), pattern.getByteList(), options);
+                re = RubyRegexp.newRegexp(context.runtime, pattern.getByteList(), options);
             }
             re.setLiteral();
             rubyRegexp = re;

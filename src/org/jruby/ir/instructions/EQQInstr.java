@@ -72,7 +72,7 @@ public class EQQInstr extends Instr implements ResultInstr {
                 IRubyObject eqqVal = isUndefValue ? v : v.callMethod(context, "===", value);
                 if (eqqVal.isTrue()) return eqqVal;
             }
-            return context.getRuntime().newBoolean(false);
+            return context.runtime.newBoolean(false);
         } else {
             return isUndefValue ? receiver : receiver.callMethod(context, "===", value);
         }

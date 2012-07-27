@@ -49,7 +49,7 @@ public class NativeProcMethod extends NativeMethod {
             String name, IRubyObject[] args) {
         pre(context, recv, clazz, name);
         try {
-            return getNativeInstance().callProcMethod(function, Handle.nativeHandle(RubyArray.newArray(context.getRuntime(), args)));
+            return getNativeInstance().callProcMethod(function, Handle.nativeHandle(RubyArray.newArray(context.runtime, args)));
         } finally {
             post(context);
         }
@@ -61,7 +61,7 @@ public class NativeProcMethod extends NativeMethod {
 
         pre(context, recv, clazz, name, block);
         try {
-            return getNativeInstance().callProcMethod(function, Handle.nativeHandle(RubyArray.newArray(context.getRuntime(), args)));
+            return getNativeInstance().callProcMethod(function, Handle.nativeHandle(RubyArray.newArray(context.runtime, args)));
         } finally {
             post(context);
         }

@@ -82,7 +82,7 @@ public class SearchConstInstr extends Instr implements ResultInstr {
 
         // Call const_missing or cache
         if (constant == null) {
-            constant = module.callMethod(context, "const_missing", context.getRuntime().fastNewSymbol(constName));
+            constant = module.callMethod(context, "const_missing", context.runtime.fastNewSymbol(constName));
         } else {
             // recache
             generation = runtime.getConstantInvalidator().getData();
@@ -98,7 +98,7 @@ public class SearchConstInstr extends Instr implements ResultInstr {
     
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         Object constant = cachedConstant; // Store to temp so it does null out on us mid-stream
         if (!isCached(runtime, constant)) constant = cache(context, currDynScope, self, temp, runtime);
 

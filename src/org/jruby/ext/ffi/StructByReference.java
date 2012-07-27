@@ -35,17 +35,17 @@ public final class StructByReference extends RubyObject {
     @JRubyMethod(name = "new", meta = true)
     public static final IRubyObject newStructByReference(ThreadContext context, IRubyObject klass, IRubyObject structClass) {
         if (!(structClass instanceof RubyClass)) {
-            throw context.getRuntime().newTypeError("wrong argument type " 
+            throw context.runtime.newTypeError("wrong argument type "
                     + structClass.getMetaClass().getName() + " (expected Class)");
         }
 
-        if (!((RubyClass) structClass).isKindOfModule(context.getRuntime().getFFI().structClass)) {
-            throw context.getRuntime().newTypeError("wrong argument type " 
+        if (!((RubyClass) structClass).isKindOfModule(context.runtime.getFFI().structClass)) {
+            throw context.runtime.newTypeError("wrong argument type "
                     + structClass.getMetaClass().getName() + " (expected subclass of FFI::Struct)");
         }
 
-        return new StructByReference(context.getRuntime(), (RubyClass) klass, 
-                (RubyClass) structClass, Struct.getStructLayout(context.getRuntime(), structClass));
+        return new StructByReference(context.runtime, (RubyClass) klass,
+                (RubyClass) structClass, Struct.getStructLayout(context.runtime, structClass));
     }
 
     private StructByReference(Ruby runtime, RubyClass klass, RubyClass structClass, StructLayout layout) {
@@ -56,7 +56,7 @@ public final class StructByReference extends RubyObject {
 
     @JRubyMethod(name = "to_s")
     public final IRubyObject to_s(ThreadContext context) {
-        return RubyString.newString(context.getRuntime(), String.format("#<FFI::StructByReference:%s>", structClass.getName()));
+        return RubyString.newString(context.runtime, String.format("#<FFI::StructByReference:%s>", structClass.getName()));
     }
 
     @JRubyMethod(name = "layout")
@@ -71,7 +71,7 @@ public final class StructByReference extends RubyObject {
 
     @JRubyMethod(name = "native_type")
     public IRubyObject native_type(ThreadContext context) {
-        return context.getRuntime().getFFI().typeClass.getConstant("POINTER");
+        return context.runtime.getFFI().typeClass.getConstant("POINTER");
     }
 
 
@@ -81,10 +81,10 @@ public final class StructByReference extends RubyObject {
             return ((Struct) value).getMemory();
 
         } else if (value.isNil()) {
-            return Pointer.getNull(context.getRuntime());
+            return Pointer.getNull(context.runtime);
 
         } else {
-            throw context.getRuntime().newTypeError(value, context.getRuntime().getFFI().structClass);
+            throw context.runtime.newTypeError(value, context.runtime.getFFI().structClass);
         }
     }
 
@@ -94,10 +94,10 @@ public final class StructByReference extends RubyObject {
             return getStructClass().newInstance(context, value, Block.NULL_BLOCK);
 
         } else if (value.isNil()) {
-            return getStructClass().newInstance(context, Pointer.getNull(context.getRuntime()), Block.NULL_BLOCK);
+            return getStructClass().newInstance(context, Pointer.getNull(context.runtime), Block.NULL_BLOCK);
 
         } else {
-            throw context.getRuntime().newTypeError(value, context.getRuntime().getFFI().pointerClass);
+            throw context.runtime.newTypeError(value, context.runtime.getFFI().pointerClass);
         }
     }
 

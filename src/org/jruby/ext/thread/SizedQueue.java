@@ -46,7 +46,7 @@ public class SizedQueue extends Queue {
 
     @JRubyMethod(name = "new", rest = true, meta = true)
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        SizedQueue result = new SizedQueue(context.getRuntime(), (RubyClass) recv);
+        SizedQueue result = new SizedQueue(context.runtime, (RubyClass) recv);
         result.callInit(args, block);
         return result;
     }
@@ -72,19 +72,19 @@ public class SizedQueue extends Queue {
     public synchronized IRubyObject clear(ThreadContext context) {
         super.clear(context);
         notifyAll();
-        return context.getRuntime().getNil();
+        return context.runtime.getNil();
     }
 
     @JRubyMethod
     public synchronized RubyNumeric max(ThreadContext context) {
-        return RubyNumeric.int2fix(context.getRuntime(), capacity);
+        return RubyNumeric.int2fix(context.runtime, capacity);
     }
 
     @JRubyMethod(name = {"max=", "initialize"})
     public synchronized IRubyObject max_set(ThreadContext context, IRubyObject arg) {
         int new_capacity = RubyNumeric.fix2int(arg);
         if (new_capacity <= 0) {
-            context.getRuntime().newArgumentError("queue size must be positive");
+            context.runtime.newArgumentError("queue size must be positive");
         }
         int difference;
         if (new_capacity > capacity) {
@@ -96,7 +96,7 @@ public class SizedQueue extends Queue {
         if (difference > 0) {
             notifyAll();
         }
-        return context.getRuntime().getNil();
+        return context.runtime.getNil();
     }
 
     @JRubyMethod(name = {"pop", "deq", "shift"})

@@ -31,7 +31,7 @@ public class ArrayJavaProxyCreator extends RubyObject {
     int[] dimensions = EMPTY;
 
     public static RubyClass createArrayJavaProxyCreator(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         RubyClass arrayJavaProxyCreator = runtime.defineClass("ArrayJavaProxyCreator", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         arrayJavaProxyCreator.defineAnnotatedMethods(ArrayJavaProxyCreator.class);
         return arrayJavaProxyCreator;
@@ -48,7 +48,7 @@ public class ArrayJavaProxyCreator extends RubyObject {
 
     @JRubyMethod(required = 1, rest = true)
     public IRubyObject op_aref(ThreadContext context, IRubyObject[] sizes) {
-        Arity.checkArgumentCount(context.getRuntime(), sizes, 1, -1);
+        Arity.checkArgumentCount(context.runtime, sizes, 1, -1);
         aggregateDimensions(sizes);
         return this;
     }

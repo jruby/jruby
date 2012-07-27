@@ -84,7 +84,7 @@ public final class Enum extends RubyObject {
     @JRubyMethod(name = "initialize")
     public final IRubyObject initialize(ThreadContext context, IRubyObject values) {
         if (!(values instanceof RubyArray)) {
-            throw context.getRuntime().newTypeError(values, context.getRuntime().getArray());
+            throw context.runtime.newTypeError(values, context.runtime.getArray());
         }
         RubyArray ary = (RubyArray) values;
 

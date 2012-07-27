@@ -68,7 +68,7 @@ public class Splat extends Operand {
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
         IRubyObject arrayVal = (IRubyObject) array.retrieve(context, self, currDynScope, temp);
         // SSS FIXME: Some way to specialize this code?
-        return (context.getRuntime().is1_9()) ? RuntimeHelpers.splatValue19(arrayVal) : RuntimeHelpers.splatValue(arrayVal);
+        return (context.runtime.is1_9()) ? RuntimeHelpers.splatValue19(arrayVal) : RuntimeHelpers.splatValue(arrayVal);
     }
 
     @Override

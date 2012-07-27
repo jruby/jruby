@@ -45,7 +45,7 @@ public class ConditionVariable extends RubyObject {
 
     @JRubyMethod(name = "new", rest = true, meta = true)
     public static ConditionVariable newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        ConditionVariable result = new ConditionVariable(context.getRuntime(), (RubyClass) recv);
+        ConditionVariable result = new ConditionVariable(context.runtime, (RubyClass) recv);
         result.callInit(args, block);
         return result;
     }
@@ -67,7 +67,7 @@ public class ConditionVariable extends RubyObject {
 
     @JRubyMethod(name = "wait", required = 1, optional = 1)
     public IRubyObject wait_ruby(ThreadContext context, IRubyObject[] args) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (args.length < 1) {
             throw runtime.newArgumentError(args.length, 1);
         }
@@ -75,7 +75,7 @@ public class ConditionVariable extends RubyObject {
             throw runtime.newArgumentError(args.length, 2);
         }
         if (!(args[0] instanceof Mutex)) {
-            throw context.getRuntime().newTypeError(args[0], runtime.getClass("Mutex"));
+            throw context.runtime.newTypeError(args[0], runtime.getClass("Mutex"));
         }
         Mutex mutex = (Mutex) args[0];
         Double timeout = null;

@@ -67,7 +67,7 @@ public class Range extends Operand {
 
     @Override
     public Object retrieve(ThreadContext context, IRubyObject self, DynamicScope currDynScope, Object[] temp) {
-        return RubyRange.newRange(context.getRuntime(), context,
+        return RubyRange.newRange(context.runtime, context,
                 (IRubyObject) begin.retrieve(context, self, currDynScope, temp), 
                 (IRubyObject) end.retrieve(context, self, currDynScope, temp), exclusive);
     }

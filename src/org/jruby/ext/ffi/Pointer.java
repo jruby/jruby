@@ -13,7 +13,6 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
-import static org.jruby.CompatVersion.RUBY1_9;
 import static org.jruby.runtime.Visibility.*;
 
 /**
@@ -88,7 +87,7 @@ public class Pointer extends AbstractMemory {
     public IRubyObject initialize(ThreadContext context, IRubyObject address) {
         io = address instanceof Pointer
                 ? ((Pointer) address).getMemoryIO()
-                : Factory.getInstance().wrapDirectMemory(context.getRuntime(), RubyFixnum.num2long(address));
+                : Factory.getInstance().wrapDirectMemory(context.runtime, RubyFixnum.num2long(address));
         size = Long.MAX_VALUE;
         typeSize = 1;
 
@@ -99,7 +98,7 @@ public class Pointer extends AbstractMemory {
     public IRubyObject initialize(ThreadContext context, IRubyObject type, IRubyObject address) {
         io = address instanceof Pointer
                 ? ((Pointer) address).getMemoryIO()
-                : Factory.getInstance().wrapDirectMemory(context.getRuntime(), RubyFixnum.num2long(address));
+                : Factory.getInstance().wrapDirectMemory(context.runtime, RubyFixnum.num2long(address));
         size = Long.MAX_VALUE;
         typeSize = calculateTypeSize(context, type);
 

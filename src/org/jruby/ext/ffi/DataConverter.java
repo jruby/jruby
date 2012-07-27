@@ -22,14 +22,14 @@ public class DataConverter {
     @JRubyMethod(name = "native_type", module=true, optional = 1)
     public static IRubyObject native_type(ThreadContext context, IRubyObject self, IRubyObject[] args) {
         if (!(self instanceof RubyModule)) {
-            throw context.getRuntime().newRuntimeError("not a module");
+            throw context.runtime.newRuntimeError("not a module");
         }
 
         RubyModule m = (RubyModule) self;
 
         if (args.length == 0) {
             if (!m.hasInternalVariable("native_type")) {
-                throw context.getRuntime().newNotImplementedError("native_type method not overridden and no native_type set");
+                throw context.runtime.newNotImplementedError("native_type method not overridden and no native_type set");
             }
 
             return (Type) m.getInternalVariable("native_type");
@@ -42,7 +42,7 @@ public class DataConverter {
             return type;
 
         } else {
-            throw context.getRuntime().newArgumentError("incorrect arguments");
+            throw context.runtime.newArgumentError("incorrect arguments");
         }
     }
 

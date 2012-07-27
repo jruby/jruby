@@ -4,7 +4,6 @@ import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.ir.IRVisitor;
-import org.jruby.ir.IRMethod;
 import org.jruby.ir.Operation;
 import org.jruby.ir.operands.Operand;
 import org.jruby.ir.operands.Variable;
@@ -67,7 +66,7 @@ public class GetClassVarContainerModuleInstr extends Instr implements ResultInst
 
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
-        Ruby        runtime   = context.getRuntime();
+        Ruby        runtime   = context.runtime;
         StaticScope scope     = (StaticScope) startingScope.retrieve(context, self, currDynScope, temp);
         RubyModule  rubyClass = scope.getModule();
 
@@ -87,7 +86,7 @@ public class GetClassVarContainerModuleInstr extends Instr implements ResultInst
         }
 
         if (rubyClass == null) {
-            throw context.getRuntime().newTypeError("no class/module to define class variable");
+            throw context.runtime.newTypeError("no class/module to define class variable");
         }
 
         return rubyClass;

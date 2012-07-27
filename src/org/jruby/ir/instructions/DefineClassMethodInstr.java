@@ -50,7 +50,7 @@ public class DefineClassMethodInstr extends Instr {
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         String name = method.getName();
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         RubyObject obj = (RubyObject) container.retrieve(context, self, currDynScope, temp);
 
         if (obj instanceof RubyFixnum || obj instanceof RubySymbol) {

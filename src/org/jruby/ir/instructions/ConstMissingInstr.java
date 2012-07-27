@@ -56,7 +56,7 @@ public class ConstMissingInstr extends CallInstr implements ResultInstr {
     @Override
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         RubyModule module = (RubyModule) receiver.retrieve(context, self, currDynScope, temp);
-        return module.callMethod(context, "const_missing", context.getRuntime().fastNewSymbol(missingConst));
+        return module.callMethod(context, "const_missing", context.runtime.fastNewSymbol(missingConst));
     }
 
     @Override

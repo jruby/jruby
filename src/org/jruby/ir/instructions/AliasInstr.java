@@ -63,7 +63,7 @@ public class AliasInstr extends Instr {
         IRubyObject object = (IRubyObject) receiver.retrieve(context, self, currDynScope, temp);
                 
         if (object == null || object instanceof RubyFixnum || object instanceof RubySymbol) {
-            throw context.getRuntime().newTypeError("no class to make alias");
+            throw context.runtime.newTypeError("no class to make alias");
         }
 
         String newNameString = getNewName().retrieve(context, self, currDynScope, temp).toString();

@@ -20,7 +20,7 @@ import org.jruby.util.unsafe.UnsafeFactory;
 public class KernelJavaAddons {
     @JRubyMethod(name = "raise", optional = 3, frame = true, module = true, visibility = Visibility.PRIVATE, omit = true)
     public static IRubyObject rbRaise(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
 
         // Check for a Java exception
         ConcreteJavaProxy exception = null;
@@ -49,9 +49,9 @@ public class KernelJavaAddons {
     @JRubyMethod
     public static IRubyObject to_java(ThreadContext context, IRubyObject fromObject) {
         if (fromObject instanceof RubyArray) {
-            return context.getRuntime().getJavaSupport().getObjectJavaClass().javaArrayFromRubyArray(context, fromObject);
+            return context.runtime.getJavaSupport().getObjectJavaClass().javaArrayFromRubyArray(context, fromObject);
         } else {
-            return Java.getInstance(context.getRuntime(), fromObject.toJava(Object.class));
+            return Java.getInstance(context.runtime, fromObject.toJava(Object.class));
         }
     }
     
@@ -61,7 +61,7 @@ public class KernelJavaAddons {
             return to_java(context, fromObject);
         }
 
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         JavaClass targetType = getTargetType(context, runtime, type);
 
         if (fromObject instanceof RubyArray) {

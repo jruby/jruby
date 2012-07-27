@@ -1,6 +1,7 @@
 package org.jruby.java.invokers;
 
 import java.lang.reflect.Field;
+
 import org.jruby.RubyModule;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.runtime.ThreadContext;
@@ -19,9 +20,9 @@ public class InstanceFieldSetter extends FieldMethodOne {
             Object newValue = arg.toJava(field.getType());
             field.set(proxy.getObject(), newValue);
         } catch (IllegalAccessException iae) {
-            throw context.getRuntime().newSecurityError(iae.getMessage());
+            throw context.runtime.newSecurityError(iae.getMessage());
         } catch (IllegalArgumentException iae) {
-            throw context.getRuntime().newTypeError(iae.getMessage());
+            throw context.runtime.newTypeError(iae.getMessage());
         }
         return arg;
     }

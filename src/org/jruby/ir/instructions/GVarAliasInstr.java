@@ -48,7 +48,7 @@ public class GVarAliasInstr extends Instr {
         String newNameString = newName.retrieve(context, self, currDynScope, temp).toString();
         String oldNameString = oldName.retrieve(context, self, currDynScope, temp).toString();
 
-        context.getRuntime().getGlobalVariables().alias(newNameString, oldNameString);
+        context.runtime.getGlobalVariables().alias(newNameString, oldNameString);
         return null;
     }
 

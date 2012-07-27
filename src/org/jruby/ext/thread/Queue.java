@@ -36,7 +36,6 @@ import org.jruby.RubyObject;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -52,7 +51,7 @@ public class Queue extends RubyObject {
 
     @JRubyMethod(name = "new", rest = true, meta = true)
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        Queue result = new Queue(context.getRuntime(), (RubyClass) recv);
+        Queue result = new Queue(context.runtime, (RubyClass) recv);
         result.callInit(args, block);
         return result;
     }
@@ -77,12 +76,12 @@ public class Queue extends RubyObject {
     public synchronized IRubyObject shutdown(ThreadContext context) {
         entries = null;
         notifyAll();
-        return context.getRuntime().getNil();
+        return context.runtime.getNil();
     }
 
     public synchronized void checkShutdown(ThreadContext context) {
         if (entries == null) {
-            throw new RaiseException(context.getRuntime(), context.getRuntime().getThreadError(), "queue shut down", false);
+            throw new RaiseException(context.runtime, context.runtime.getThreadError(), "queue shut down", false);
         }
     }
 
@@ -90,13 +89,13 @@ public class Queue extends RubyObject {
     public synchronized IRubyObject clear(ThreadContext context) {
         checkShutdown(context);
         entries.clear();
-        return context.getRuntime().getNil();
+        return context.runtime.getNil();
     }
 
     @JRubyMethod(name = "empty?")
     public synchronized RubyBoolean empty_p(ThreadContext context) {
         checkShutdown(context);
-        return context.getRuntime().newBoolean(entries.size() == 0);
+        return context.runtime.newBoolean(entries.size() == 0);
     }
 
     @JRubyMethod(name = {"length", "size"})

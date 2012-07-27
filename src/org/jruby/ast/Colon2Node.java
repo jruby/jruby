@@ -84,7 +84,7 @@ public abstract class Colon2Node extends Colon3Node implements INameNode {
     @Override
     public RubyModule getEnclosingModule(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
     	if (leftNode != null && leftNode instanceof NilNode) {
-            throw context.getRuntime().newTypeError("no outer class/module");
+            throw context.runtime.newTypeError("no outer class/module");
         }
         return RuntimeHelpers.prepareClassNamespace(context, leftNode.interpret(runtime, context, self, aBlock));
     }

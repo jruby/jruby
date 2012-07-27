@@ -81,7 +81,7 @@ public class ToAryInstr extends Instr implements ResultInstr {
                 return ary;
             } else {
                 String receiverType = rcvr.getType().getName();
-                throw context.getRuntime().newTypeError("can't convert " + receiverType + " to Array (" + receiverType + "#to_ary gives " + ary.getType().getName() + ")");
+                throw context.runtime.newTypeError("can't convert " + receiverType + " to Array (" + receiverType + "#to_ary gives " + ary.getType().getName() + ")");
             }
         }
     }

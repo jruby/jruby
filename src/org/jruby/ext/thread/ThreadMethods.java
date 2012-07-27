@@ -40,7 +40,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class ThreadMethods {
     @JRubyMethod(name = "exclusive", meta = true, compat = CompatVersion.RUBY1_8)
     public static IRubyObject exclusive(ThreadContext context, IRubyObject receiver, Block block) {
-        ThreadService service = context.getRuntime().getThreadService();
+        ThreadService service = context.runtime.getThreadService();
         boolean old = service.getCritical();
         try {
             service.setCritical(true);

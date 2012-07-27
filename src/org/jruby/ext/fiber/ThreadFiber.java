@@ -1,8 +1,7 @@
 package org.jruby.ext.fiber;
 
 import java.util.concurrent.Exchanger;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.LockSupport;
+
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyLocalJumpError.Reason;
@@ -80,7 +79,7 @@ public class ThreadFiber extends Fiber {
                     throw context.runtime.newRuntimeError("BUG: resume before fiber is started");
                 case YIELDED:
                     if (!transfer && transferredTo != null) {
-                        throw context.getRuntime().newFiberError("double resume");
+                        throw context.runtime.newFiberError("double resume");
                     }
 
                     // update transfer fibers

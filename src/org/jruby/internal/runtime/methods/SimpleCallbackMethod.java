@@ -53,7 +53,7 @@ public class SimpleCallbackMethod extends DynamicMethod {
 
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name, IRubyObject[] args, Block block) {
     	assert args != null;
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         
         if (runtime.hasEventHooks()) {
             runtime.callEventHooks(context, RubyEvent.C_CALL, context.getFile(), context.getLine(), name, getImplementationClass());
