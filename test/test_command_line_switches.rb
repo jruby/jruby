@@ -134,7 +134,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
 
     assert_match /ruby \d+\.\d+\.\d+/, lines[0]
     assert_match /true$/, lines[1]
-    assert_equal "3", lines[2]
+    assert_equal "0", lines[2]
     assert_equal "true", lines[3]
     assert_equal "UTF8", lines[4]
     assert_equal "1;2;3", lines[5].rstrip
@@ -161,7 +161,7 @@ class TestCommandLineSwitches < Test::Unit::TestCase
 
     assert_match /ruby \d+\.\d+\.\d+/, lines[0]
     assert_match /true$/, lines[1]
-    assert_equal "3", lines[2]
+    assert_equal "0", lines[2]
     assert_equal "true", lines[3]
     assert_equal "UTF-8", lines[4]
     assert_equal "1;2;3", lines[5].rstrip
