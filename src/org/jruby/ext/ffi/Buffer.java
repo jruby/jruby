@@ -152,15 +152,15 @@ public final class Buffer extends AbstractMemory {
             IRubyObject sizeArg, int count, int flags) {
         final int typeSize = calculateTypeSize(context, sizeArg);
         final int total = typeSize * count;
-        return new Buffer(context.getRuntime(), recv,
-                allocateMemoryIO(context.getRuntime(), total), total, typeSize, flags);
+        return new Buffer(context.runtime, recv,
+                allocateMemoryIO(context.runtime, total), total, typeSize, flags);
     }
 
     private IRubyObject init(ThreadContext context, IRubyObject rbTypeSize, int count, int flags) {
         this.typeSize = calculateTypeSize(context, rbTypeSize);
         this.size = this.typeSize * count;
         this.inout = flags;
-        setMemoryIO(allocateMemoryIO(context.getRuntime(), (int) this.size));
+        setMemoryIO(allocateMemoryIO(context.runtime, (int) this.size));
 
         return this;
     }
@@ -220,7 +220,7 @@ public final class Buffer extends AbstractMemory {
     @JRubyMethod(name = "initialize", visibility = PRIVATE)
     public IRubyObject initialize(ThreadContext context, IRubyObject sizeArg) {
         return sizeArg instanceof RubyFixnum
-                ? init(context, RubyFixnum.one(context.getRuntime()), 
+                ? init(context, RubyFixnum.one(context.runtime),
                     RubyFixnum.fix2int(sizeArg), IN | OUT)
                 : init(context, sizeArg, 1, IN | OUT);
     }
@@ -304,7 +304,7 @@ public final class Buffer extends AbstractMemory {
 
     @JRubyMethod(name = "inspect")
     public IRubyObject inspect(ThreadContext context) {
-        return RubyString.newString(context.getRuntime(),
+        return RubyString.newString(context.runtime,
                 String.format("#<Buffer size=%d>", size));
     }
 

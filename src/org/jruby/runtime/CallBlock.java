@@ -27,6 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
+import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
 import org.jruby.parser.StaticScope;
@@ -84,7 +85,7 @@ public class CallBlock extends BlockBody {
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Block.Type type) {
-        return callback.call(context, new IRubyObject[] {RubyArray.newArrayLight(context.getRuntime(), arg0, arg1, arg2)}, Block.NULL_BLOCK);
+        return callback.call(context, new IRubyObject[] {RubyArray.newArrayLight(context.runtime, arg0, arg1, arg2)}, Block.NULL_BLOCK);
     }
     
     public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {

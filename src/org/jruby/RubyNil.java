@@ -187,7 +187,7 @@ public class RubyNil extends RubyObject {
      */
     @JRubyMethod(name = "to_c", compat = CompatVersion.RUBY1_9)
     public static IRubyObject to_c(ThreadContext context, IRubyObject recv) {
-        return RubyComplex.newComplexCanonicalize(context, RubyFixnum.zero(context.getRuntime()));
+        return RubyComplex.newComplexCanonicalize(context, RubyFixnum.zero(context.runtime));
     }
     
     /** nilclass_to_r
@@ -195,7 +195,7 @@ public class RubyNil extends RubyObject {
      */
     @JRubyMethod(name = "to_r", compat = CompatVersion.RUBY1_9)
     public static IRubyObject to_r(ThreadContext context, IRubyObject recv) {
-        return RubyRational.newRationalCanonicalize(context, RubyFixnum.zero(context.getRuntime()));
+        return RubyRational.newRationalCanonicalize(context, RubyFixnum.zero(context.runtime));
     }
 
     /** nilclass_rationalize

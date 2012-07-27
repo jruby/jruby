@@ -104,10 +104,10 @@ abstract class MemoryOp {
         abstract void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value);
     
         IRubyObject get(ThreadContext context, MemoryIO io, long offset) {
-            return get(context.getRuntime(), io, offset);
+            return get(context.runtime, io, offset);
         }
         void put(ThreadContext context, MemoryIO io, long offset, IRubyObject value) {
-            put(context.getRuntime(), io, offset, value);
+            put(context.runtime, io, offset, value);
         }
     }
     static final class BooleanOp extends PrimitiveOp {
@@ -300,17 +300,17 @@ abstract class MemoryOp {
         @Override
         IRubyObject get(ThreadContext context, AbstractMemory ptr, long offset) {
             return structClass.newInstance(context,
-                        new IRubyObject[] { ptr.slice(context.getRuntime(), offset) },
+                        new IRubyObject[] { ptr.slice(context.runtime, offset) },
                         Block.NULL_BLOCK);
         }
 
         @Override
         void put(ThreadContext context, AbstractMemory ptr, long offset, IRubyObject value) {
             if (!(value instanceof Struct)) {
-                throw context.getRuntime().newTypeError("expected a struct");
+                throw context.runtime.newTypeError("expected a struct");
             }
             Struct s = (Struct) value;
-            byte[] tmp = new byte[Struct.getStructSize(context.getRuntime(), s)];
+            byte[] tmp = new byte[Struct.getStructSize(context.runtime, s)];
             s.getMemoryIO().get(0, tmp, 0, tmp.length);
             ptr.getMemoryIO().put(offset, tmp, 0, tmp.length);
         }

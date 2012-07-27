@@ -92,7 +92,7 @@ public class JittedMethod extends DynamicMethod implements MethodArgs, PositionA
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         int callNumber = context.callNumber;
         
         try {
@@ -112,7 +112,7 @@ public class JittedMethod extends DynamicMethod implements MethodArgs, PositionA
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         int callNumber = context.callNumber;
 
         try {
@@ -132,7 +132,7 @@ public class JittedMethod extends DynamicMethod implements MethodArgs, PositionA
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         int callNumber = context.callNumber;
 
         try {
@@ -152,7 +152,7 @@ public class JittedMethod extends DynamicMethod implements MethodArgs, PositionA
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         int callNumber = context.callNumber;
 
         try {
@@ -172,7 +172,7 @@ public class JittedMethod extends DynamicMethod implements MethodArgs, PositionA
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         int callNumber = context.callNumber;
 
         try {
@@ -192,7 +192,7 @@ public class JittedMethod extends DynamicMethod implements MethodArgs, PositionA
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         int callNumber = context.callNumber;
 
         try {
@@ -212,7 +212,7 @@ public class JittedMethod extends DynamicMethod implements MethodArgs, PositionA
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         int callNumber = context.callNumber;
 
         try {
@@ -232,7 +232,7 @@ public class JittedMethod extends DynamicMethod implements MethodArgs, PositionA
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         int callNumber = context.callNumber;
 
         try {
@@ -252,7 +252,7 @@ public class JittedMethod extends DynamicMethod implements MethodArgs, PositionA
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         int callNumber = context.callNumber;
 
         try {
@@ -272,7 +272,7 @@ public class JittedMethod extends DynamicMethod implements MethodArgs, PositionA
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         int callNumber = context.callNumber;
 
         try {
@@ -293,7 +293,7 @@ public class JittedMethod extends DynamicMethod implements MethodArgs, PositionA
     protected void pre(ThreadContext context, IRubyObject self, String name, Block block, int argsLength) {
         callConfig.pre(context, self, getImplementationClass(), name, block, staticScope);
 
-        getArity().checkArity(context.getRuntime(), argsLength);
+        getArity().checkArity(context.runtime, argsLength);
     }
 
     protected void post(Ruby runtime, ThreadContext context, String name) {

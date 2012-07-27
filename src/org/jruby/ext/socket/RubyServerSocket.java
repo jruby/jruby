@@ -99,7 +99,7 @@ public class RubyServerSocket extends RubySocket {
 
         doBind(context, getChannel(), iaddr, 0);
 
-        return RubyFixnum.zero(context.getRuntime());
+        return RubyFixnum.zero(context.runtime);
     }
 
     @JRubyMethod()
@@ -108,7 +108,7 @@ public class RubyServerSocket extends RubySocket {
 
         doBind(context, getChannel(), iaddr, RubyFixnum.fix2int(backlog));
 
-        return RubyFixnum.zero(context.getRuntime());
+        return RubyFixnum.zero(context.runtime);
     }
 
     @JRubyMethod()
@@ -171,7 +171,7 @@ public class RubyServerSocket extends RubySocket {
             }
 
         } catch(IOException e) {
-            throw SocketUtils.sockerr(context.getRuntime(), e.getLocalizedMessage());
+            throw SocketUtils.sockerr(context.runtime, e.getLocalizedMessage());
 
         }
     }

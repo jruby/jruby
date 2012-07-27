@@ -104,7 +104,7 @@ public class SocketUtils {
     }
 
     public static IRubyObject getservbyname(ThreadContext context, IRubyObject[] args) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         String name = args[0].convertToString().toString();
         String proto = args.length ==  1 ? "tcp" : args[1].convertToString().toString();
         Service service = Service.getServiceByName(name, proto);
@@ -415,9 +415,9 @@ public class SocketUtils {
 
     public static IRubyObject getaddress(ThreadContext context, IRubyObject hostname) {
         try {
-            return context.getRuntime().newString(InetAddress.getByName(hostname.convertToString().toString()).getHostAddress());
+            return context.runtime.newString(InetAddress.getByName(hostname.convertToString().toString()).getHostAddress());
         } catch(UnknownHostException e) {
-            throw sockerr(context.getRuntime(), "getaddress: name or service not known");
+            throw sockerr(context.runtime, "getaddress: name or service not known");
         }
     }
 

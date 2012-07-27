@@ -104,11 +104,11 @@ public class ConstNode extends Node implements INameNode {
     }
     
     private boolean isCached(ThreadContext context, IRubyObject value) {
-        return value != null && generation == context.getRuntime().getConstantInvalidator().getData();
+        return value != null && generation == context.runtime.getConstantInvalidator().getData();
     }
     
     public IRubyObject reCache(ThreadContext context, String name) {
-        Object newGeneration = context.getRuntime().getConstantInvalidator().getData();
+        Object newGeneration = context.runtime.getConstantInvalidator().getData();
         IRubyObject value = context.getConstant(name);
             
         cachedValue = value;

@@ -114,7 +114,7 @@ public class BackRefNode extends Node {
         IRubyObject backref = context.getCurrentScope().getBackRef(runtime);
 
         if (backref instanceof RubyMatchData) {
-            return context.getRuntime().is1_9() ? GLOBAL_VARIABLE_BYTELIST : nameByteList;
+            return context.runtime.is1_9() ? GLOBAL_VARIABLE_BYTELIST : nameByteList;
         }
         return null;
     }

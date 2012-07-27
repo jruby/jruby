@@ -371,7 +371,7 @@ public class RbConfigLibrary implements Library {
 
     @JRubyMethod(name = "ruby", module = true, compat = CompatVersion.RUBY1_9)
     public static IRubyObject ruby(ThreadContext context, IRubyObject recv) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         RubyHash configHash = (RubyHash) runtime.getModule("RbConfig").getConstant("CONFIG");
 
         IRubyObject bindir            = configHash.op_aref(context, runtime.newString("bindir"));

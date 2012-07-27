@@ -130,11 +130,11 @@ public class Colon3Node extends Node implements INameNode {
     }
 
     private boolean isCached(ThreadContext context, IRubyObject value) {
-        return value != null && generation == context.getRuntime().getConstantInvalidator().getData();
+        return value != null && generation == context.runtime.getConstantInvalidator().getData();
     }
 
     public IRubyObject reCache(ThreadContext context, String name) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         Object newGeneration = runtime.getConstantInvalidator().getData();
         IRubyObject value = runtime.getObject().getConstantFromNoConstMissing(name, false);
 

@@ -193,7 +193,7 @@ public class RubyBasicSocket extends RubyIO {
 
     @JRubyMethod
     public IRubyObject getsockopt(ThreadContext context, IRubyObject _level, IRubyObject _opt) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
 
         SocketLevel level = levelFromArg(_level);
         SocketOption opt = optionFromArg(_opt);
@@ -374,7 +374,7 @@ public class RubyBasicSocket extends RubyIO {
     @Override
     @JRubyMethod
     public IRubyObject close_write(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
 
         if (!openFile.isWritable()) {
             return runtime.getNil();
@@ -403,10 +403,10 @@ public class RubyBasicSocket extends RubyIO {
     @Override
     @JRubyMethod
     public IRubyObject close_read(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
 
         if (!openFile.isOpen()) {
-            throw context.getRuntime().newIOError("not opened for reading");
+            throw context.runtime.newIOError("not opened for reading");
         }
 
         if (!openFile.isWritable()) {
@@ -685,7 +685,7 @@ public class RubyBasicSocket extends RubyIO {
     }
 
     protected IRubyObject addrFor(ThreadContext context, InetSocketAddress addr, boolean reverse) {
-        Ruby r = context.getRuntime();
+        Ruby r = context.runtime;
         IRubyObject[] ret = new IRubyObject[4];
         ret[0] = r.newString("AF_INET");
         ret[1] = r.newFixnum(addr.getPort());

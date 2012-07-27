@@ -686,14 +686,14 @@ public class RubyClass extends RubyModule {
         DynamicMethod method = searchMethod(name);
         if(method.isUndefined()) {
             DynamicMethod methodMissing = searchMethod("method_missing");
-            if(methodMissing.isUndefined() || methodMissing.equals(context.getRuntime().getDefaultMethodMissing())) {
+            if(methodMissing.isUndefined() || methodMissing.equals(context.runtime.getDefaultMethodMissing())) {
                 return null;
             }
 
             try {
                 return RuntimeHelpers.callMethodMissing(context, self, method.getVisibility(), name, CallType.FUNCTIONAL, Block.NULL_BLOCK);
             } catch(RaiseException e) {
-                if(context.getRuntime().getNoMethodError().isInstance(e.getException())) {
+                if(context.runtime.getNoMethodError().isInstance(e.getException())) {
                     if(self.respondsTo(name)) {
                         throw e;
                     } else {

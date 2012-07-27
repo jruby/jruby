@@ -420,7 +420,7 @@ public class SelectBlob {
     private Selector getSelector(ThreadContext context, SelectableChannel channel) throws IOException {
         Selector selector = selectors.get(channel.provider());
         if (selector == null) {
-            selector = SelectorFactory.openWithRetryFrom(context.getRuntime(), channel.provider());
+            selector = SelectorFactory.openWithRetryFrom(context.runtime, channel.provider());
             if (selectors.isEmpty()) {
                 selectors = new HashMap<SelectorProvider, Selector>();
             }

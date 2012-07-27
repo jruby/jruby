@@ -453,7 +453,7 @@ public class RubyStruct extends RubyObject {
     
     @JRubyMethod
     public RubyArray select(ThreadContext context, Block block) {
-        RubyArray array = RubyArray.newArray(context.getRuntime());
+        RubyArray array = RubyArray.newArray(context.runtime);
         
         for (int i = 0; i < values.length; i++) {
             if (block.yield(context, values[i]).isTrue()) {
@@ -593,7 +593,7 @@ public class RubyStruct extends RubyObject {
 
     @JRubyMethod
     public IRubyObject each(final ThreadContext context, final Block block) {
-        return block.isGiven() ? eachInternal(context, block) : enumeratorize(context.getRuntime(), this, "each");
+        return block.isGiven() ? eachInternal(context, block) : enumeratorize(context.runtime, this, "each");
     }
 
     public IRubyObject each_pairInternal(ThreadContext context, Block block) {
@@ -610,7 +610,7 @@ public class RubyStruct extends RubyObject {
 
     @JRubyMethod
     public IRubyObject each_pair(final ThreadContext context, final Block block) {
-        return block.isGiven() ? each_pairInternal(context, block) : enumeratorize(context.getRuntime(), this, "each_pair");
+        return block.isGiven() ? each_pairInternal(context, block) : enumeratorize(context.runtime, this, "each_pair");
     }
 
     @JRubyMethod(name = "[]", required = 1)

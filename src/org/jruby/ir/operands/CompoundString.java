@@ -1,6 +1,7 @@
 package org.jruby.ir.operands;
 
 import org.jcodings.Encoding;
+import org.jruby.Ruby;
 import org.jruby.RubyString;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.transformations.inlining.InlinerInfo;
@@ -115,7 +116,7 @@ public class CompoundString extends Operand {
         boolean is1_9 = context.runtime.is1_9();
         ByteList bytes = new ByteList();
         if (is1_9) bytes.setEncoding(encoding);
-        RubyString str = RubyString.newStringShared(context.getRuntime(), bytes, StringSupport.CR_7BIT);
+        RubyString str = RubyString.newStringShared(context.runtime, bytes, StringSupport.CR_7BIT);
         for (Operand p : pieces) {
             if ((p instanceof StringLiteral) && (!is1_9 || isSameEncoding((StringLiteral)p))) {
                 str.getByteList().append(((StringLiteral)p).bytelist);

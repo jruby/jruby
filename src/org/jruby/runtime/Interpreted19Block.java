@@ -118,14 +118,14 @@ public class Interpreted19Block  extends ContextAwareBlockBody {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
-        IRubyObject value = args.length == 1 ? args[0] : context.getRuntime().newArrayNoCopy(args);
+        IRubyObject value = args.length == 1 ? args[0] : context.runtime.newArrayNoCopy(args);
 
         return yield(context, value, null, null, ALREADY_ARRAY, binding, type, Block.NULL_BLOCK);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type, Block block) {
-        return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, ALREADY_ARRAY, binding, type, block);
+        return yield(context, context.runtime.newArrayNoCopy(args), null, null, ALREADY_ARRAY, binding, type, block);
     }
 
     @Override
@@ -140,12 +140,12 @@ public class Interpreted19Block  extends ContextAwareBlockBody {
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding, Block.Type type) {
-        return yield(context, context.getRuntime().newArrayNoCopyLight(arg0, arg1), null, null, ALREADY_ARRAY, binding, type);
+        return yield(context, context.runtime.newArrayNoCopyLight(arg0, arg1), null, null, ALREADY_ARRAY, binding, type);
     }
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Block.Type type) {
-        return yield(context, context.getRuntime().newArrayNoCopyLight(arg0, arg1, arg2), null, null, ALREADY_ARRAY, binding, type);
+        return yield(context, context.runtime.newArrayNoCopyLight(arg0, arg1, arg2), null, null, ALREADY_ARRAY, binding, type);
     }
 
     public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type) {
@@ -206,12 +206,12 @@ public class Interpreted19Block  extends ContextAwareBlockBody {
         // This while loop is for restarting the block call in case a 'redo' fires.
         while (true) {
             try {
-                return ASTInterpreter.INTERPRET_BLOCK(context.getRuntime(), context, file, line, body, binding.getMethod(), self, Block.NULL_BLOCK);
+                return ASTInterpreter.INTERPRET_BLOCK(context.runtime, context, file, line, body, binding.getMethod(), self, Block.NULL_BLOCK);
             } catch (JumpException.RedoJump rj) {
                 context.pollThreadEvents();
                 // do nothing, allow loop to redo
             } catch (StackOverflowError soe) {
-                throw context.getRuntime().newSystemStackError("stack level too deep", soe);
+                throw context.runtime.newSystemStackError("stack level too deep", soe);
             }
         }
     }
@@ -224,7 +224,7 @@ public class Interpreted19Block  extends ContextAwareBlockBody {
     }
 
     private IRubyObject handleNextJump(ThreadContext context, JumpException.NextJump nj, Block.Type type) {
-        return nj.getValue() == null ? context.getRuntime().getNil() : (IRubyObject)nj.getValue();
+        return nj.getValue() == null ? context.runtime.getNil() : (IRubyObject)nj.getValue();
     }
 
     private void setupBlockArg(ThreadContext context, IRubyObject value, IRubyObject self, Block block, Block.Type type) {
@@ -237,7 +237,7 @@ public class Interpreted19Block  extends ContextAwareBlockBody {
     private void setupBlockArgs(ThreadContext context, IRubyObject value, IRubyObject self, Block block, Block.Type type, boolean alreadyArray) {
         IRubyObject[] parameters = RuntimeHelpers.restructureBlockArgs19(value, needsSplat, alreadyArray);
 
-        Ruby runtime = context.getRuntime();        
+        Ruby runtime = context.runtime;
         if (type == Block.Type.LAMBDA) args.checkArgCount(runtime, parameters.length);        
         if (!(args instanceof ArgsNoArgNode)) args.prepare(context, runtime, self, parameters, block);
     }

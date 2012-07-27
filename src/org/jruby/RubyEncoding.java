@@ -284,13 +284,13 @@ public class RubyEncoding extends RubyObject {
 
     @JRubyMethod(name = "list", meta = true)
     public static IRubyObject list(ThreadContext context, IRubyObject recv) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         return RubyArray.newArrayNoCopy(runtime, runtime.getEncodingService().getEncodingList(), 0);
     }
 
     @JRubyMethod(name = "locale_charmap", meta = true)
     public static IRubyObject locale_charmap(ThreadContext context, IRubyObject recv) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         EncodingService service = runtime.getEncodingService();
         ByteList name = new ByteList(service.getLocaleEncoding().getName());
         
@@ -300,7 +300,7 @@ public class RubyEncoding extends RubyObject {
     @SuppressWarnings("unchecked")
     @JRubyMethod(name = "name_list", meta = true)
     public static IRubyObject name_list(ThreadContext context, IRubyObject recv) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         EncodingService service = runtime.getEncodingService();
         
         RubyArray result = runtime.newArray(service.getEncodings().size() + service.getAliases().size());
@@ -327,7 +327,7 @@ public class RubyEncoding extends RubyObject {
     @SuppressWarnings("unchecked")
     @JRubyMethod(name = "aliases", meta = true)
     public static IRubyObject aliases(ThreadContext context, IRubyObject recv) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         EncodingService service = runtime.getEncodingService();
 
         IRubyObject list[] = service.getEncodingList();
@@ -353,7 +353,7 @@ public class RubyEncoding extends RubyObject {
 
     @JRubyMethod(name = "find", meta = true)
     public static IRubyObject find(ThreadContext context, IRubyObject recv, IRubyObject str) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
 
         // Wacky but true...return arg if it is an encoding looking for itself
         if (str instanceof RubyEncoding) return str;
@@ -373,13 +373,13 @@ public class RubyEncoding extends RubyObject {
 
     @JRubyMethod(name = "ascii_compatible?")
     public IRubyObject asciiCompatible_p(ThreadContext context) {
-        return context.getRuntime().newBoolean(getEncoding().isAsciiCompatible());
+        return context.runtime.newBoolean(getEncoding().isAsciiCompatible());
     }
 
     @JRubyMethod(name = {"to_s", "name"})
     public IRubyObject to_s(ThreadContext context) {
         // TODO: rb_usascii_str_new2
-        return RubyString.newUsAsciiStringShared(context.getRuntime(), name);
+        return RubyString.newUsAsciiStringShared(context.runtime, name);
     }
 
     @JRubyMethod(name = "inspect")
@@ -389,13 +389,13 @@ public class RubyEncoding extends RubyObject {
         bytes.append(name);
         if (isDummy) bytes.append(" (dummy)".getBytes());
         bytes.append('>');
-        return RubyString.newUsAsciiStringNoCopy(context.getRuntime(), bytes);
+        return RubyString.newUsAsciiStringNoCopy(context.runtime, bytes);
     }
 
     @SuppressWarnings("unchecked")
     @JRubyMethod(name = "names")
     public IRubyObject names(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         EncodingService service = runtime.getEncodingService();
         Entry entry = service.findEncodingOrAliasEntry(name);
 
@@ -425,12 +425,12 @@ public class RubyEncoding extends RubyObject {
 
     @JRubyMethod(name = "dummy?")
     public IRubyObject dummy_p(ThreadContext context) {
-        return context.getRuntime().newBoolean(isDummy);
+        return context.runtime.newBoolean(isDummy);
     }
 
     @JRubyMethod(name = "compatible?", meta = true)
     public static IRubyObject compatible_p(ThreadContext context, IRubyObject self, IRubyObject first, IRubyObject second) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         Encoding enc = areCompatible(first, second);
 
         return enc == null ? runtime.getNil() : runtime.getEncodingService().getEncoding(enc);

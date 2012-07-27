@@ -82,12 +82,12 @@ public class CompiledBlock extends ContextAwareBlockBody {
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding, Block.Type type) {
-        return yield(context, context.getRuntime().newArrayNoCopyLight(arg0, arg1), null, null, true, binding, type);
+        return yield(context, context.runtime.newArrayNoCopyLight(arg0, arg1), null, null, true, binding, type);
     }
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Block.Type type) {
-        return yield(context, context.getRuntime().newArrayNoCopyLight(arg0, arg1, arg2), null, null, true, binding, type);
+        return yield(context, context.runtime.newArrayNoCopyLight(arg0, arg1, arg2), null, null, true, binding, type);
     }
 
     @Override
@@ -104,7 +104,7 @@ public class CompiledBlock extends ContextAwareBlockBody {
     public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Block.Type type, Block block) {
         IRubyObject self = prepareSelf(binding);
 
-        IRubyObject realArg = setupBlockArg(context.getRuntime(), value, self);
+        IRubyObject realArg = setupBlockArg(context.runtime, value, self);
         Visibility oldVis = binding.getFrame().getVisibility();
         Frame lastFrame = pre(context, null, binding);
 
@@ -125,7 +125,7 @@ public class CompiledBlock extends ContextAwareBlockBody {
         }
 
         IRubyObject realArg = aValue ?
-                setupBlockArgs(context, args, self) : setupBlockArg(context.getRuntime(), args, self);
+                setupBlockArgs(context, args, self) : setupBlockArg(context.runtime, args, self);
         Visibility oldVis = binding.getFrame().getVisibility();
         Frame lastFrame = pre(context, klass, binding);
 
@@ -147,7 +147,7 @@ public class CompiledBlock extends ContextAwareBlockBody {
     }
 
     private IRubyObject handleNextJump(ThreadContext context, JumpException.NextJump nj, Block.Type type) {
-        return nj.getValue() == null ? context.getRuntime().getNil() : (IRubyObject)nj.getValue();
+        return nj.getValue() == null ? context.runtime.getNil() : (IRubyObject)nj.getValue();
     }
 
     protected IRubyObject setupBlockArgs(ThreadContext context, IRubyObject value, IRubyObject self) {
@@ -158,7 +158,7 @@ public class CompiledBlock extends ContextAwareBlockBody {
         case SINGLE_RESTARG:
             return value;
         default:
-            return defaultArgsLogic(context.getRuntime(), value);
+            return defaultArgsLogic(context.runtime, value);
         }
     }
     

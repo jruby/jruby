@@ -373,7 +373,7 @@ public class RubyMatchData extends RubyObject {
 
     @JRubyMethod(compat = CompatVersion.RUBY1_8)
     public IRubyObject select(ThreadContext context, Block block) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         final RubyArray result;
         if (regs == null) {
             if (begin < 0) return runtime.newEmptyArray();
@@ -397,7 +397,7 @@ public class RubyMatchData extends RubyObject {
      */
     @JRubyMethod(name = "captures")
     public IRubyObject captures(ThreadContext context) {
-        return match_array(context.getRuntime(), 1);
+        return match_array(context.runtime, 1);
     }
 
     private int nameToBackrefNumber(RubyString str) {
@@ -498,7 +498,7 @@ public class RubyMatchData extends RubyObject {
     @JRubyMethod(name = {"size", "length"})
     public IRubyObject size(ThreadContext context) {
         check();
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         return regs == null ? RubyFixnum.one(runtime) : RubyFixnum.newFixnum(runtime, regs.numRegs);
     }
 
@@ -508,7 +508,7 @@ public class RubyMatchData extends RubyObject {
     @JRubyMethod(name = "begin", compat = CompatVersion.RUBY1_8)
     public IRubyObject begin(ThreadContext context, IRubyObject index) {
         int i = RubyNumeric.num2int(index);
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         int b = beginCommon(runtime, i);
         return b < 0 ? runtime.getNil() : RubyFixnum.newFixnum(runtime, b);
     }
@@ -516,7 +516,7 @@ public class RubyMatchData extends RubyObject {
     @JRubyMethod(name = "begin", compat = CompatVersion.RUBY1_9)
     public IRubyObject begin19(ThreadContext context, IRubyObject index) {
         int i = backrefNumber(index);
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         int b = beginCommon(runtime, i);
         if (b < 0) return runtime.getNil();
         if (!str.singleByteOptimizable()) {
@@ -538,7 +538,7 @@ public class RubyMatchData extends RubyObject {
     @JRubyMethod(name = "end", compat = CompatVersion.RUBY1_8)
     public IRubyObject end(ThreadContext context, IRubyObject index) {
         int i = RubyNumeric.num2int(index);
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         int e = endCommon(runtime, i);
         return e < 0 ? runtime.getNil() : RubyFixnum.newFixnum(runtime, e);
     }
@@ -546,7 +546,7 @@ public class RubyMatchData extends RubyObject {
     @JRubyMethod(name = "end", compat = CompatVersion.RUBY1_9)
     public IRubyObject end19(ThreadContext context, IRubyObject index) {
         int i = backrefNumber(index);
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         int e = endCommon(runtime, i);
         if (e < 0) return runtime.getNil();
         if (!str.singleByteOptimizable()) {
@@ -578,7 +578,7 @@ public class RubyMatchData extends RubyObject {
 
     private IRubyObject offsetCommon(ThreadContext context, int i, boolean is_19) {
         check();
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (i < 0 || (regs == null ? 1 : regs.numRegs) <= i) throw runtime.newIndexError("index " + i + " out of matches");
         int b, e;
         if (regs == null) {
@@ -603,8 +603,10 @@ public class RubyMatchData extends RubyObject {
     @JRubyMethod(name = "pre_match")
     public IRubyObject pre_match(ThreadContext context) {
         check();
-        if (begin == -1) return context.getRuntime().getNil();
-        return makeShared(context.getRuntime(), str, 0, begin).infectBy(this);
+        if (begin == -1) {
+            return context.runtime.getNil();
+        }
+        return makeShared(context.runtime, str, 0, begin).infectBy(this);
     }
 
     /** match_post_match
@@ -613,8 +615,10 @@ public class RubyMatchData extends RubyObject {
     @JRubyMethod(name = "post_match")
     public IRubyObject post_match(ThreadContext context) {
         check();
-        if (begin == -1) return context.getRuntime().getNil();
-        return makeShared(context.getRuntime(), str, end, str.getByteList().length() - end).infectBy(this);
+        if (begin == -1) {
+            return context.runtime.getNil();
+        }
+        return makeShared(context.runtime, str, end, str.getByteList().length() - end).infectBy(this);
     }
 
     /** match_to_s

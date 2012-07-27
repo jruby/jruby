@@ -104,7 +104,7 @@ public final class MappedType extends Type {
                     break;
             }
         }
-        return new MappedType(context.getRuntime(), (RubyClass) klass, nativeType, converter,
+        return new MappedType(context.runtime, (RubyClass) klass, nativeType, converter,
                 toNativeMethod, fromNativeMethod, isReferenceRequired);
     }
     
@@ -138,11 +138,11 @@ public final class MappedType extends Type {
 
     public final IRubyObject fromNative(ThreadContext context, IRubyObject value) {
         return fromNativeMethod.call(context, converter, converter.getMetaClass(),
-                "from_native", value, context.getRuntime().getNil());
+                "from_native", value, context.runtime.getNil());
     }
 
     public final IRubyObject toNative(ThreadContext context, IRubyObject value) {
         return toNativeMethod.call(context, converter, converter.getMetaClass(),
-                "to_native", value, context.getRuntime().getNil());
+                "to_native", value, context.runtime.getNil());
     }
 }

@@ -135,7 +135,7 @@ public class SizedQueue extends Queue {
         }
         super.push(context, value);
         notifyAll();
-        return context.getRuntime().getNil();
+        return context.runtime.getNil();
     }
     
 }

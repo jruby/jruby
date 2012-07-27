@@ -96,20 +96,20 @@ public final class Enum extends RubyObject {
             IRubyObject v = ary.entry(i);
 
             if (v instanceof RubySymbol) {
-                s2v.put((RubySymbol) v, RubyFixnum.newFixnum(context.getRuntime(), nextValue));
+                s2v.put((RubySymbol) v, RubyFixnum.newFixnum(context.runtime, nextValue));
                 prevConstant = v;
                 nextValue++;
 
             } else if (v instanceof RubyFixnum) {
                 if (prevConstant == null) {
-                    throw context.getRuntime().newArgumentError("invalid enum sequence - no symbol for value "
+                    throw context.runtime.newArgumentError("invalid enum sequence - no symbol for value "
                             + v);
                 }
                 s2v.put((RubySymbol) prevConstant, (RubyFixnum) v);
                 nextValue = (int) ((RubyInteger) v).getLongValue() + 1;
 
             } else {
-                throw context.getRuntime().newTypeError(v, context.getRuntime().getSymbol());
+                throw context.runtime.newTypeError(v, context.runtime.getSymbol());
             }
         }
 
@@ -127,14 +127,14 @@ public final class Enum extends RubyObject {
     public final IRubyObject find(ThreadContext context, IRubyObject query) {
         if (query instanceof RubySymbol) {
             IRubyObject value = kv_map.fastARef(query);
-            return value != null ? value : context.getRuntime().getNil();
+            return value != null ? value : context.runtime.getNil();
 
         } else if (query instanceof RubyInteger) {
             RubySymbol symbol = valueToSymbol.get((int) ((RubyInteger) query).getLongValue());
-            return symbol != null ? symbol : context.getRuntime().getNil();
+            return symbol != null ? symbol : context.runtime.getNil();
 
         } else {
-            return context.getRuntime().getNil();
+            return context.runtime.getNil();
         }
     }
 
@@ -194,6 +194,6 @@ public final class Enum extends RubyObject {
 
     @JRubyMethod(name = "reference_required?")
     public IRubyObject reference_required_p(ThreadContext context) {
-        return context.getRuntime().getFalse();
+        return context.runtime.getFalse();
     }
 }

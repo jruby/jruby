@@ -320,7 +320,7 @@ public class RubyTime extends RubyObject {
 
         Matcher offsetMatcher = TIME_OFFSET_PATTERN.matcher(offset);
         if (! offsetMatcher.matches()) {
-            throw context.getRuntime().newArgumentError("\"+HH:MM\" or \"-HH:MM\" expected for utc_offset");
+            throw context.runtime.newArgumentError("\"+HH:MM\" or \"-HH:MM\" expected for utc_offset");
         }
 
         String sign = offsetMatcher.group(1);
@@ -336,8 +336,8 @@ public class RubyTime extends RubyObject {
             zone = "GMT" + sgn + hours + minutes;
         }
 
-        DateTimeZone dtz = getTimeZone(context.getRuntime(), zone);
-        return newTime(context.getRuntime(), dt.withZone(dtz), nsec);
+        DateTimeZone dtz = getTimeZone(context.runtime, zone);
+        return newTime(context.runtime, dt.withZone(dtz), nsec);
     }
     
     @JRubyMethod(name = {"gmt?", "utc?", "gmtime?"})
@@ -484,11 +484,11 @@ public class RubyTime extends RubyObject {
 
     private void checkOpCoercion(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyString) {
-            throw context.getRuntime().newTypeError("no implicit conversion to rational from string");
+            throw context.runtime.newTypeError("no implicit conversion to rational from string");
         } else if (other.isNil()) {
-            throw context.getRuntime().newTypeError("no implicit conversion to rational from nil");
+            throw context.runtime.newTypeError("no implicit conversion to rational from nil");
         } else if (!other.respondsTo("to_r")){
-            throw context.getRuntime().newTypeError("can't convert " + other.getMetaClass().getBaseName() + " into Rational");
+            throw context.runtime.newTypeError("can't convert " + other.getMetaClass().getBaseName() + " into Rational");
         }
     }
 
@@ -544,10 +544,10 @@ public class RubyTime extends RubyObject {
     @JRubyMethod(name = "<=>", required = 1)
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyTime) {
-            return context.getRuntime().newFixnum(cmp((RubyTime) other));
+            return context.runtime.newFixnum(cmp((RubyTime) other));
         }
 
-        return context.getRuntime().getNil();
+        return context.runtime.getNil();
     }
     
     @JRubyMethod(name = "eql?", required = 1)
@@ -865,7 +865,7 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(name = "times", meta = true, compat = CompatVersion.RUBY1_8)
     public static IRubyObject times(ThreadContext context, IRubyObject recv) {
-        context.getRuntime().getWarnings().warn("obsolete method Time::times; use Process::times");
+        context.runtime.getWarnings().warn("obsolete method Time::times; use Process::times");
         return RubyProcess.times(context, recv, Block.NULL_BLOCK);
     }
 
@@ -878,7 +878,7 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(name = "at",  meta = true)
     public static IRubyObject at(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         final RubyTime time;
 
         if (arg instanceof RubyTime) {
@@ -925,7 +925,7 @@ public class RubyTime extends RubyObject {
 
     @JRubyMethod(name = "at", meta = true)
     public static IRubyObject at(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
 
         RubyTime time = new RubyTime(runtime, (RubyClass) recv,
                 new DateTime(0L, getLocalTimeZone(runtime)));

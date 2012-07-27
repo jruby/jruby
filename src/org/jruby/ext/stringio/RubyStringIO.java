@@ -265,22 +265,22 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
 
     @JRubyMethod(name = "each", optional = 1, writes = FrameField.LASTLINE)
     public IRubyObject each(ThreadContext context, IRubyObject[] args, Block block) {
-        return block.isGiven() ? eachInternal(context, args, block) : enumeratorize(context.getRuntime(), this, "each", args);
+        return block.isGiven() ? eachInternal(context, args, block) : enumeratorize(context.runtime, this, "each", args);
     }
 
     @JRubyMethod(optional = 1)
     public IRubyObject each_line(ThreadContext context, IRubyObject[] args, Block block) {
-        return block.isGiven() ? eachInternal(context, args, block) : enumeratorize(context.getRuntime(), this, "each_line", args);
+        return block.isGiven() ? eachInternal(context, args, block) : enumeratorize(context.runtime, this, "each_line", args);
     }
 
     @JRubyMethod(optional = 1)
     public IRubyObject lines(ThreadContext context, IRubyObject[] args, Block block) {
-        return block.isGiven() ? each(context, args, block) : enumeratorize(context.getRuntime(), this, "lines", args);
+        return block.isGiven() ? each(context, args, block) : enumeratorize(context.runtime, this, "lines", args);
     }
 
     public IRubyObject each_byte(ThreadContext context, Block block) {
         checkReadable();
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         ByteList bytes = data.internal.getByteList();
 
         // Check the length every iteration, since
@@ -293,18 +293,18 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
 
     @JRubyMethod(name = "each_byte")
     public IRubyObject each_byte19(ThreadContext context, Block block) {
-        return block.isGiven() ? each_byte(context, block) : enumeratorize(context.getRuntime(), this, "each_byte");
+        return block.isGiven() ? each_byte(context, block) : enumeratorize(context.runtime, this, "each_byte");
     }
 
     @JRubyMethod
     public IRubyObject bytes(ThreadContext context, Block block) {
-        return block.isGiven() ? each_byte(context, block) : enumeratorize(context.getRuntime(), this, "bytes");
+        return block.isGiven() ? each_byte(context, block) : enumeratorize(context.runtime, this, "bytes");
     }
 
     public IRubyObject each_charInternal(final ThreadContext context, final Block block) {
         checkReadable();
 
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         ByteList bytes = data.internal.getByteList();
         int len = bytes.getRealSize();
         int end = bytes.getBegin() + len;
@@ -325,12 +325,12 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
 
     @JRubyMethod
     public IRubyObject each_char(final ThreadContext context, final Block block) {
-        return block.isGiven() ? each_charInternal(context, block) : enumeratorize(context.getRuntime(), this, "each_char");
+        return block.isGiven() ? each_charInternal(context, block) : enumeratorize(context.runtime, this, "each_char");
     }
 
     @JRubyMethod
     public IRubyObject chars(final ThreadContext context, final Block block) {
-        return block.isGiven() ? each_charInternal(context, block) : enumeratorize(context.getRuntime(), this, "chars");
+        return block.isGiven() ? each_charInternal(context, block) : enumeratorize(context.runtime, this, "chars");
     }
 
     @JRubyMethod(name = {"eof", "eof?"})
@@ -375,13 +375,13 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
     public IRubyObject getc19(ThreadContext context) {
         checkReadable();
         if (data.pos >= data.internal.getByteList().length()) {
-            return context.getRuntime().getNil();
+            return context.runtime.getNil();
         }
-        return context.getRuntime().newString("" + (char)(data.internal.getByteList().get((int)data.pos++) & 0xFF));
+        return context.runtime.newString("" + (char) (data.internal.getByteList().get((int) data.pos++) & 0xFF));
     }
 
     private IRubyObject internalGets(ThreadContext context, IRubyObject[] args) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
 
         if (data.pos < data.internal.getByteList().getRealSize() && !data.eof) {
             boolean isParagraph = false;
@@ -547,7 +547,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
 
     @JRubyMethod(name = "print", rest = true)
     public IRubyObject print(ThreadContext context, IRubyObject[] args) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (args.length != 0) {
             for (int i=0,j=args.length;i<j;i++) {
                 append(context, args[i]);
@@ -564,7 +564,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
 
     @JRubyMethod(name = "print", rest = true, compat = CompatVersion.RUBY1_9)
     public IRubyObject print19(ThreadContext context, IRubyObject[] args) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (args.length != 0) {
             for (int i=0,j=args.length;i<j;i++) {
                 append(context, args[i]);
@@ -988,7 +988,7 @@ public class RubyStringIO extends org.jruby.RubyStringIO {
 
     @JRubyMethod(name = {"write", "syswrite"}, required = 1)
     public IRubyObject write(ThreadContext context, IRubyObject arg) {
-        return context.getRuntime().newFixnum(writeInternal(context, arg));
+        return context.runtime.newFixnum(writeInternal(context, arg));
     }
 
     private int writeInternal(ThreadContext context, IRubyObject arg) {

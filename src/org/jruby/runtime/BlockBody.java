@@ -33,6 +33,7 @@
 
 package org.jruby.runtime;
 
+import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
 import org.jruby.ast.IterNode;
@@ -100,7 +101,7 @@ public abstract class BlockBody {
         IRubyObject[] args = IRubyObject.NULL_ARRAY;
         args = prepareArgumentsForCall(context, args, type);
 
-        return yield(context, RubyArray.newArrayNoCopy(context.getRuntime(), args), null, null, true, binding, type);
+        return yield(context, RubyArray.newArrayNoCopy(context.runtime, args), null, null, true, binding, type);
     }
     public IRubyObject call(ThreadContext context, Binding binding,
             Block.Type type, Block unusedBlock) {
@@ -114,7 +115,7 @@ public abstract class BlockBody {
         IRubyObject[] args = new IRubyObject[] {arg0};
         args = prepareArgumentsForCall(context, args, type);
 
-        return yield(context, RubyArray.newArrayNoCopy(context.getRuntime(), args), null, null, true, binding, type);
+        return yield(context, RubyArray.newArrayNoCopy(context.runtime, args), null, null, true, binding, type);
     }
     public IRubyObject call(ThreadContext context, IRubyObject arg0, Binding binding,
             Block.Type type, Block unusedBlock) {
@@ -128,7 +129,7 @@ public abstract class BlockBody {
         IRubyObject[] args = new IRubyObject[] {arg0, arg1};
         args = prepareArgumentsForCall(context, args, type);
 
-        return yield(context, RubyArray.newArrayNoCopy(context.getRuntime(), args), null, null, true, binding, type);
+        return yield(context, RubyArray.newArrayNoCopy(context.runtime, args), null, null, true, binding, type);
     }
     public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding,
             Block.Type type, Block unusedBlock) {
@@ -136,13 +137,13 @@ public abstract class BlockBody {
     }
 
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding, Block.Type type) {
-        return yield(context, context.getRuntime().newArrayNoCopyLight(arg0, arg1), null, null, true, binding, type);
+        return yield(context, context.runtime.newArrayNoCopyLight(arg0, arg1), null, null, true, binding, type);
     }
     public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Block.Type type) {
         IRubyObject[] args = new IRubyObject[] {arg0, arg1, arg2};
         args = prepareArgumentsForCall(context, args, type);
 
-        return yield(context, RubyArray.newArrayNoCopy(context.getRuntime(), args), null, null, true, binding, type);
+        return yield(context, RubyArray.newArrayNoCopy(context.runtime, args), null, null, true, binding, type);
     }
     public IRubyObject call(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding,
             Block.Type type, Block unusedBlock) {
@@ -150,7 +151,7 @@ public abstract class BlockBody {
     }
 
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Block.Type type) {
-        return yield(context, context.getRuntime().newArrayNoCopyLight(arg0, arg1, arg2), null, null, true, binding, type);
+        return yield(context, context.runtime.newArrayNoCopyLight(arg0, arg1, arg2), null, null, true, binding, type);
     }
 
 
@@ -223,14 +224,14 @@ public abstract class BlockBody {
         }
         case LAMBDA:
             if (argumentType == ARRAY && args.length != 1) {
-                context.getRuntime().getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (" + args.length + " for " + arity().getValue() + ")");
+                context.runtime.getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (" + args.length + " for " + arity().getValue() + ")");
                 if (args.length == 0) {
-                    args = context.getRuntime().getSingleNilArray();
+                    args = context.runtime.getSingleNilArray();
                 } else {
-                    args = new IRubyObject[] {context.getRuntime().newArrayNoCopy(args)};
+                    args = new IRubyObject[] {context.runtime.newArrayNoCopy(args)};
                 }
             } else {
-                arity().checkArity(context.getRuntime(), args);
+                arity().checkArity(context.runtime, args);
             }
             break;
         }

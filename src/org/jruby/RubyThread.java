@@ -476,7 +476,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         if (!group.isNil()) {
             ((RubyThreadGroup) group).addDirectly(this);
         } else {
-            context.getRuntime().getDefaultThreadGroup().addDirectly(this);
+            context.runtime.getDefaultThreadGroup().addDirectly(this);
         }
     }
     
@@ -970,7 +970,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
     @JRubyMethod(compat = CompatVersion.RUBY1_9)
     public IRubyObject backtrace(ThreadContext context) {
-        return getContext().createCallerBacktrace(context.getRuntime(), 0);
+        return getContext().createCallerBacktrace(context.runtime, 0);
     }
 
     public StackTraceElement[] javaBacktrace() {
@@ -1177,10 +1177,10 @@ public class RubyThread extends RubyObject implements ExecutionContext {
             pollThreadEvents();
             return ready;
         } catch (IOException ioe) {
-            throw context.getRuntime().newRuntimeError("Error with selector: " + ioe);
+            throw context.runtime.newRuntimeError("Error with selector: " + ioe);
         } catch (InterruptedException ex) {
             // FIXME: not correct exception
-            throw context.getRuntime().newRuntimeError("Interrupted");
+            throw context.runtime.newRuntimeError("Interrupted");
         } finally {
             blockingIO = null;
             io.removeBlockingThread(this);

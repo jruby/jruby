@@ -126,8 +126,8 @@ public class RubyIPSocket extends RubyBasicSocket {
                 hostAddress = sender.getAddress().getHostAddress();
             }
 
-            IRubyObject addressArray = context.getRuntime().newArray(
-                    new IRubyObject[] {
+            IRubyObject addressArray = context.runtime.newArray(
+                    new IRubyObject[]{
                             runtime.newString("AF_INET"),
                             runtime.newFixnum(port),
                             runtime.newString(hostName),
@@ -181,7 +181,7 @@ public class RubyIPSocket extends RubyBasicSocket {
             InetSocketAddress address = getSocketAddress();
 
             if (address == null) {
-                throw context.getRuntime().newErrnoENOTSOCKError("Not socket or not connected");
+                throw context.runtime.newErrnoENOTSOCKError("Not socket or not connected");
             }
 
             return addrFor(context, address, reverse);
@@ -196,7 +196,7 @@ public class RubyIPSocket extends RubyBasicSocket {
             InetSocketAddress address = getRemoteSocket();
 
             if (address == null) {
-                throw context.getRuntime().newErrnoENOTSOCKError("Not socket or not connected");
+                throw context.runtime.newErrnoENOTSOCKError("Not socket or not connected");
             }
 
             return addrFor(context, address, reverse);

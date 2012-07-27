@@ -122,7 +122,7 @@ public class RubyNKF {
     @JRubyMethod(name = "guess", required = 1, module = true)
     public static IRubyObject guess(ThreadContext context, IRubyObject recv, IRubyObject s) {
         // TODO: Fix charset usage for JRUBY-4553
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (!s.respondsTo("to_str")) {
             throw runtime.newTypeError("can't convert " + s.getMetaClass() + " into String");
         }
@@ -170,7 +170,7 @@ public class RubyNKF {
 
     @JRubyMethod(name = "nkf", required = 2, module = true)
     public static IRubyObject nkf(ThreadContext context, IRubyObject recv, IRubyObject opt, IRubyObject str) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
 
         if (!opt.respondsTo("to_str")) {
             throw runtime.newTypeError("can't convert " + opt.getMetaClass() + " into String");
@@ -442,7 +442,7 @@ public class RubyNKF {
                 decoder = Charset.forName(inputCharset).newDecoder();
                 encoder = Charset.forName(outputCharset).newEncoder();
             } catch (UnsupportedCharsetException e) {
-                throw context.getRuntime().newArgumentError("invalid charset");
+                throw context.runtime.newArgumentError("invalid charset");
             }
 
             ByteBuffer buf = ByteBuffer.wrap(str.getUnsafeBytes(), str.begin(), str.length());
@@ -452,13 +452,13 @@ public class RubyNKF {
                 encoder.onUnmappableCharacter(java.nio.charset.CodingErrorAction.IGNORE);
                 buf = encoder.encode(cbuf);
             } catch (CharacterCodingException e) {
-                throw context.getRuntime().newArgumentError("invalid encoding");
+                throw context.runtime.newArgumentError("invalid encoding");
             }
             byte[] arr = buf.array();
             ByteList r = new ByteList(arr, 0, buf.limit());
             if (outputCharset.equalsIgnoreCase("Windows-31J")) outputCharset = "Shift_JIS";
             if (outputCharset.equalsIgnoreCase("UTF-16")) outputCharset = "UTF-16BE";
-            Ruby ruby = context.getRuntime();
+            Ruby ruby = context.runtime;
             Encoding enc = ruby.getEncodingService().findEncoding(ruby.newString(outputCharset));
             if (enc != null) {
                 r.setEncoding(enc);
@@ -480,7 +480,7 @@ public class RubyNKF {
             ByteList b = convert_byte(str,
                     input.getCharset(),
                     output);
-            return context.getRuntime().newString(b);
+            return context.runtime.newString(b);
         }
     }
 
@@ -510,9 +510,9 @@ public class RubyNKF {
 
             RubyArray array = null;
             if ('B' == encode || 'b' == encode) { // BASE64
-                array = Pack.unpack(context.getRuntime(), body, PACK_BASE64);
+                array = Pack.unpack(context.runtime, body, PACK_BASE64);
             } else { // Qencode
-                array = Pack.unpack(context.getRuntime(), body, PACK_QENCODE);
+                array = Pack.unpack(context.runtime, body, PACK_QENCODE);
             }
             RubyString s = (RubyString) array.entry(0);
             ByteList decodeStr = s.asString().getByteList();
@@ -525,7 +525,7 @@ public class RubyNKF {
             for (ByteList l : list) {
                 r.append(l);
             }
-            return context.getRuntime().newString(r);
+            return context.runtime.newString(r);
         }
 
         RubyString convert(ByteList str) {

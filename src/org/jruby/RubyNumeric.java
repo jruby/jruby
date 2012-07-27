@@ -562,7 +562,7 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "i", compat = CompatVersion.RUBY1_9)
     public IRubyObject num_imaginary(ThreadContext context) {
-        return RubyComplex.newComplexRaw(context.getRuntime(), RubyFixnum.zero(context.getRuntime()), this);
+        return RubyComplex.newComplexRaw(context.runtime, RubyFixnum.zero(context.runtime), this);
     }
 
     /** num_uminus
@@ -570,7 +570,7 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "-@")
     public IRubyObject op_uminus(ThreadContext context) {
-        RubyArray ary = RubyFixnum.zero(context.getRuntime()).doCoerce(context, this, true);
+        RubyArray ary = RubyFixnum.zero(context.runtime).doCoerce(context, this, true);
         return ary.eltInternal(0).callMethod(context, "-", ary.eltInternal(1));
     }
     
@@ -607,7 +607,7 @@ public class RubyNumeric extends RubyObject {
     */
     @JRubyMethod(name = "quo", compat = CompatVersion.RUBY1_9)
     public IRubyObject quo_19(ThreadContext context, IRubyObject other) {
-        return RubyRational.newRationalRaw(context.getRuntime(), this).callMethod(context, "/", other);
+        return RubyRational.newRationalRaw(context.runtime, this).callMethod(context, "/", other);
     }
 
     /** num_div
@@ -780,16 +780,16 @@ public class RubyNumeric extends RubyObject {
 
     @JRubyMethod
     public IRubyObject step(ThreadContext context, IRubyObject arg0, Block block) {
-        return block.isGiven() ? stepCommon(context, arg0, RubyFixnum.one(context.getRuntime()), block) : enumeratorize(context.getRuntime(), this, "step", arg0);
+        return block.isGiven() ? stepCommon(context, arg0, RubyFixnum.one(context.runtime), block) : enumeratorize(context.runtime, this, "step", arg0);
     }
 
     @JRubyMethod
     public IRubyObject step(ThreadContext context, IRubyObject to, IRubyObject step, Block block) {
-        return block.isGiven() ? stepCommon(context, to, step, block) : enumeratorize(context.getRuntime(), this, "step", new IRubyObject[] {to, step});
+        return block.isGiven() ? stepCommon(context, to, step, block) : enumeratorize(context.runtime, this, "step", new IRubyObject[] {to, step});
     }
 
     private IRubyObject stepCommon(ThreadContext context, IRubyObject to, IRubyObject step, Block block) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (this instanceof RubyFixnum && to instanceof RubyFixnum && step instanceof RubyFixnum) {
             fixnumStep(context, runtime, ((RubyFixnum)this).getLongValue(),
                                          ((RubyFixnum)to).getLongValue(),
@@ -915,7 +915,7 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = {"imaginary", "imag"}, compat = CompatVersion.RUBY1_9)
     public IRubyObject image(ThreadContext context) {
-        return RubyFixnum.zero(context.getRuntime());
+        return RubyFixnum.zero(context.runtime);
     }
 
     /** numeric_abs2
@@ -937,9 +937,9 @@ public class RubyNumeric extends RubyObject {
         }
         if (f_negative_p(context, this) || (value == 0.0 && 1/value == Double.NEGATIVE_INFINITY)) {
             // negative or -0.0
-            return context.getRuntime().getMath().getConstant("PI");
+            return context.runtime.getMath().getConstant("PI");
         }
-        return RubyFixnum.zero(context.getRuntime());
+        return RubyFixnum.zero(context.runtime);
     }    
 
     /** numeric_rect
@@ -947,7 +947,7 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = {"rectangular", "rect"}, compat = CompatVersion.RUBY1_9)
     public IRubyObject rect(ThreadContext context) {
-        return context.getRuntime().newArray(this, RubyFixnum.zero(context.getRuntime()));
+        return context.runtime.newArray(this, RubyFixnum.zero(context.runtime));
     }    
 
     /** numeric_polar
@@ -955,7 +955,7 @@ public class RubyNumeric extends RubyObject {
      */
     @JRubyMethod(name = "polar", compat = CompatVersion.RUBY1_9)
     public IRubyObject polar(ThreadContext context) {
-        return context.getRuntime().newArray(f_abs(context, this), f_arg(context, this));
+        return context.runtime.newArray(f_abs(context, this), f_arg(context, this));
     }    
 
     /** numeric_real

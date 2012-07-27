@@ -25,6 +25,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.delegate;
 
+import org.jruby.Ruby;
 import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
@@ -85,7 +86,7 @@ public class Delegator {
             @Override
             public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
                 if (self.callMethod(context, "__getobj__") != object) {
-                    throw context.getRuntime().newNameError("object changed", "object changed");
+                    throw context.runtime.newNameError("object changed", "object changed");
                 }
                 return method.call(context, args, block);
             }
@@ -95,14 +96,14 @@ public class Delegator {
     @JRubyMethod(name = "respond_to?")
     public static IRubyObject repond_to_p(ThreadContext context, IRubyObject self, IRubyObject name) {
         if (self.getMetaClass().isMethodBound(name.asJavaString(), false)) {
-            return context.getRuntime().getTrue();
+            return context.runtime.getTrue();
         }
         return ((RubyObject) self.callMethod(context, "__getobj__")).callMethod(context, "respond_to?", name);
     }
 
     @JRubyMethod
     public static IRubyObject __getobj__(ThreadContext context, IRubyObject self) {
-        throw context.getRuntime().newNotImplementedError("need to define `__getobj__'");
+        throw context.runtime.newNotImplementedError("need to define `__getobj__'");
     }
 
     @JRubyMethod

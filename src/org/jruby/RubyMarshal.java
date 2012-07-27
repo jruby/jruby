@@ -122,7 +122,7 @@ public class RubyMarshal {
 
     @JRubyMethod(name = {"load", "restore"}, required = 1, optional = 1, module = true)
     public static IRubyObject load(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block unusedBlock) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         IRubyObject in = args[0];
         IRubyObject proc = args.length == 2 ? args[1] : null;
         

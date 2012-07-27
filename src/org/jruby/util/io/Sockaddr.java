@@ -114,15 +114,15 @@ public class Sockaddr {
                     ds.write(addr, 0, addr.length);
                 }
             } catch (UnknownHostException e) {
-                throw sockerr(context.getRuntime(), "getaddrinfo: No address associated with nodename");
+                throw sockerr(context.runtime, "getaddrinfo: No address associated with nodename");
             }
 
             writeSockaddrFooter(ds);
         } catch (IOException e) {
-            throw sockerr(context.getRuntime(), "pack_sockaddr_in: internal error");
+            throw sockerr(context.runtime, "pack_sockaddr_in: internal error");
         }
 
-        return context.getRuntime().newString(new ByteList(bufS.toByteArray(),
+        return context.runtime.newString(new ByteList(bufS.toByteArray(),
                 false));
     }
 
@@ -149,11 +149,11 @@ public class Sockaddr {
             writeSockaddrFooter(ds);
 
         } catch (IOException e) {
-            throw sockerr(context.getRuntime(), "pack_sockaddr_in: internal error");
+            throw sockerr(context.runtime, "pack_sockaddr_in: internal error");
 
         }
 
-        return context.getRuntime().newString(new ByteList(bufS.toByteArray(),
+        return context.runtime.newString(new ByteList(bufS.toByteArray(),
                 false));
     }
 

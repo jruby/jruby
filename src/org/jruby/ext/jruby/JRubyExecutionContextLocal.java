@@ -92,7 +92,7 @@ public abstract class JRubyExecutionContextLocal extends RubyObject {
             return value;
         } else if (default_proc != null) {
             // pre-set for the sake of terminating recursive calls
-            contextVariables.put(this, context.getRuntime().getNil());
+            contextVariables.put(this, context.runtime.getNil());
             final IRubyObject new_value;
             new_value = default_proc.call(context, EMPTY_ARGS, null, Block.NULL_BLOCK);
             contextVariables.put(this, new_value);

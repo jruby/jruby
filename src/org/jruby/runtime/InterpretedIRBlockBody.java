@@ -129,8 +129,8 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
     }
 
     protected IRubyObject[] convertToRubyArray(ThreadContext context, IRubyObject[] args) {
-        return (args.length == 0) ? context.getRuntime().getSingleNilArray()
-                                  : new IRubyObject[] {context.getRuntime().newArrayNoCopy(args)};
+        return (args.length == 0) ? context.runtime.getSingleNilArray()
+                                  : new IRubyObject[] {context.runtime.newArrayNoCopy(args)};
     }
 
     protected IRubyObject[] prepareArgumentsForYield(ThreadContext context, IRubyObject[] args, Block.Type type) {
@@ -144,7 +144,9 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
             } else if (blockArity > 1) {
                 IRubyObject toAryArg = RuntimeHelpers.aryToAry(soleArg);
                 if (toAryArg instanceof RubyArray) args = ((RubyArray)toAryArg).toJavaArray();
-                else throw context.getRuntime().newTypeError(soleArg.getType().getName() + "#to_ary should return Array");
+                else {
+                    throw context.runtime.newTypeError(soleArg.getType().getName() + "#to_ary should return Array");
+                }
             }
         } else if (argumentType == ARRAY) {
             args = convertToRubyArray(context, args);
@@ -170,7 +172,9 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
                 } else if (blockArity > 1) {
                     IRubyObject toAryArg = RuntimeHelpers.aryToAry(soleArg);
                     if (toAryArg instanceof RubyArray) args = ((RubyArray)toAryArg).toJavaArray();
-                    else throw context.getRuntime().newTypeError(soleArg.getType().getName() + "#to_ary should return Array");
+                    else {
+                        throw context.runtime.newTypeError(soleArg.getType().getName() + "#to_ary should return Array");
+                    }
                 }
             } else if (argumentType == ARRAY) {
                 args = convertToRubyArray(context, args);
@@ -180,11 +184,11 @@ public class InterpretedIRBlockBody extends ContextAwareBlockBody {
         case LAMBDA:
             if (argumentType == ARRAY && args.length != 1) {
                 if (blockArity != args.length) {
-                    context.getRuntime().getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (" + args.length + " for " + blockArity + ")");
+                    context.runtime.getWarnings().warn(ID.MULTIPLE_VALUES_FOR_BLOCK, "multiple values for a block parameter (" + args.length + " for " + blockArity + ")");
                 }
                 args = convertToRubyArray(context, args);
             } else {
-                arity().checkArity(context.getRuntime(), args);
+                arity().checkArity(context.runtime, args);
             }
             break;
         }

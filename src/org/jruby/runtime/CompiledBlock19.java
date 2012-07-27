@@ -81,14 +81,14 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type) {
-        IRubyObject value = args.length == 1 ? args[0] : context.getRuntime().newArrayNoCopy(args);
+        IRubyObject value = args.length == 1 ? args[0] : context.runtime.newArrayNoCopy(args);
 
         return yield(context, value, null, null, true, binding, type, Block.NULL_BLOCK);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type, Block block) {
-        return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true, binding, type, block);
+        return yield(context, context.runtime.newArrayNoCopy(args), null, null, true, binding, type, block);
     }
 
     @Override
@@ -135,7 +135,7 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
         Frame lastFrame = pre(context, null, binding);
         
         try {
-            IRubyObject[] realArgs = setupBlockArg(context.getRuntime(), value, self);
+            IRubyObject[] realArgs = setupBlockArg(context.runtime, value, self);
             return callback.call(context, self, realArgs, Block.NULL_BLOCK);
         } catch (JumpException.NextJump nj) {
             // A 'next' is like a local return from the block, ending this call or yield.
@@ -177,7 +177,7 @@ public class CompiledBlock19 extends ContextAwareBlockBody {
     }
 
     private IRubyObject handleNextJump(ThreadContext context, JumpException.NextJump nj, Block.Type type) {
-        return nj.getValue() == null ? context.getRuntime().getNil() : (IRubyObject)nj.getValue();
+        return nj.getValue() == null ? context.runtime.getNil() : (IRubyObject)nj.getValue();
     }
 
     private IRubyObject[] setupBlockArg(Ruby ruby, IRubyObject value, IRubyObject self) {

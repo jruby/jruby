@@ -164,7 +164,7 @@ public class SSLSocket extends RubyObject {
     }
 
     private IRubyObject connectCommon(ThreadContext context, boolean blocking) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (!rubyCtx.isProtocolForClient()) {
             throw newSSLError(runtime, "called a function you should not call");
         }
@@ -208,7 +208,7 @@ public class SSLSocket extends RubyObject {
     }
 
     public IRubyObject acceptCommon(ThreadContext context, boolean blocking) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (!rubyCtx.isProtocolForServer()) {
             throw newSSLError(runtime, "called a function you should not call");
         }
@@ -522,7 +522,7 @@ public class SSLSocket extends RubyObject {
     }
 
     private IRubyObject do_sysread(ThreadContext context, IRubyObject[] args, boolean nonBlock) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         int len = RubyNumeric.fix2int(args[0]);
         RubyString str = null;
         
@@ -586,7 +586,7 @@ public class SSLSocket extends RubyObject {
     }
 
     private IRubyObject do_syswrite(ThreadContext context, IRubyObject arg, boolean nonBlock)  {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         try {
             checkClosed();
             if (nonBlock) {

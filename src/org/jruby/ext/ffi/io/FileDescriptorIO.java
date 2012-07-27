@@ -83,10 +83,10 @@ public class FileDescriptorIO extends RubyIO {
     }
     @JRubyMethod(name = "new", meta = true)
     public static FileDescriptorIO newInstance(ThreadContext context, IRubyObject recv, IRubyObject fd) {
-        return new FileDescriptorIO(context.getRuntime(), fd);
+        return new FileDescriptorIO(context.runtime, fd);
     }
     @JRubyMethod(name = "wrap", required = 1, meta = true)
     public static RubyIO wrap(ThreadContext context, IRubyObject recv, IRubyObject fd) {
-        return new FileDescriptorIO(context.getRuntime(), fd);
+        return new FileDescriptorIO(context.runtime, fd);
     }
 }

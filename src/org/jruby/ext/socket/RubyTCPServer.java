@@ -196,13 +196,13 @@ public class RubyTCPServer extends RubyTCPSocket {
 
                 } else {
                     // otherwise one key has been selected (ours) so we get the channel and hand it off
-                    socket.initSocket(context.getRuntime(), new ChannelDescriptor(ssc.accept(), newModeFlags(runtime, ModeFlags.RDWR)));
+                    socket.initSocket(context.runtime, new ChannelDescriptor(ssc.accept(), newModeFlags(runtime, ModeFlags.RDWR)));
 
                     return socket;
                 }
 
             } catch(IOException e) {
-                throw SocketUtils.sockerr(context.getRuntime(), "problem when accepting");
+                throw SocketUtils.sockerr(context.runtime, "problem when accepting");
 
             } finally {
                 try {
@@ -217,17 +217,17 @@ public class RubyTCPServer extends RubyTCPSocket {
 
     @JRubyMethod(name = "listen", required = 1)
     public IRubyObject listen(ThreadContext context, IRubyObject backlog) {
-        return RubyFixnum.zero(context.getRuntime());
+        return RubyFixnum.zero(context.runtime);
     }
 
     @JRubyMethod(name = "peeraddr", rest = true)
     public IRubyObject peeraddr(ThreadContext context, IRubyObject[] args) {
-        throw context.getRuntime().newNotImplementedError("not supported");
+        throw context.runtime.newNotImplementedError("not supported");
     }
 
     @JRubyMethod(name = "getpeername", rest = true)
     public IRubyObject getpeername(ThreadContext context, IRubyObject[] args) {
-        throw context.getRuntime().newNotImplementedError("not supported");
+        throw context.runtime.newNotImplementedError("not supported");
     }
 
     @JRubyMethod(rest = true, meta = true)
@@ -245,27 +245,27 @@ public class RubyTCPServer extends RubyTCPSocket {
 
     @Override
     public IRubyObject gets(ThreadContext context) {
-        throw context.getRuntime().newErrnoENOTCONNError();
+        throw context.runtime.newErrnoENOTCONNError();
     }
 
     @Override
     public IRubyObject gets(ThreadContext context, IRubyObject sep) {
-        throw context.getRuntime().newErrnoENOTCONNError();
+        throw context.runtime.newErrnoENOTCONNError();
     }
 
     @Override
     public IRubyObject gets19(ThreadContext context) {
-        throw context.getRuntime().newErrnoENOTCONNError();
+        throw context.runtime.newErrnoENOTCONNError();
     }
 
     @Override
     public IRubyObject gets19(ThreadContext context, IRubyObject sep) {
-        throw context.getRuntime().newErrnoENOTCONNError();
+        throw context.runtime.newErrnoENOTCONNError();
     }
 
     @Override
     public IRubyObject gets19(ThreadContext context, IRubyObject sep, IRubyObject limit) {
-        throw context.getRuntime().newErrnoENOTCONNError();
+        throw context.runtime.newErrnoENOTCONNError();
     }
 
     @Deprecated

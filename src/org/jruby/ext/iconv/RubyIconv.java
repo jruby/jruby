@@ -185,7 +185,7 @@ public class RubyIconv extends RubyObject {
 
     @JRubyMethod(required = 2, meta = true)
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject to, IRubyObject from, Block block) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
 
         RubyIconv iconv = newIconv(context, recv, to, from);
 
@@ -419,7 +419,7 @@ public class RubyIconv extends RubyObject {
     public static RubyArray convertWithArgs(ThreadContext context, IRubyObject recv, IRubyObject[] args, String function) {
         assert args.length >= 2;
 
-        RubyArray array = context.getRuntime().newArray(args.length - 2);
+        RubyArray array = context.runtime.newArray(args.length - 2);
         RubyIconv iconv = newIconv(context, recv, args[0], args[1]);
 
         try {

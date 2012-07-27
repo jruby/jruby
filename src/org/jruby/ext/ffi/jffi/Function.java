@@ -93,7 +93,7 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
         }
 
         if (args.length > 2 && args[2] instanceof Pointer) {
-            fptr = new CodeMemoryIO(context.getRuntime(), (Pointer) args[2]);
+            fptr = new CodeMemoryIO(context.runtime, (Pointer) args[2]);
             optionsIndex = 3;
         } else if (args.length > 2 && (args[2] instanceof RubyProc || args[2].respondsTo("call"))) {
             proc = args[2];
@@ -102,7 +102,7 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
             proc = block;
             optionsIndex = 2;
         } else {
-            throw context.getRuntime().newTypeError("Invalid function address "
+            throw context.runtime.newTypeError("Invalid function address "
                     + args[0].getMetaClass().getName() + " (expected FFI::Pointer)");
         }    
 
@@ -113,19 +113,19 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
         if (args.length > optionsIndex && args[optionsIndex] instanceof RubyHash) {
             options = (RubyHash) args[optionsIndex];
 
-            IRubyObject rbConvention = options.fastARef(context.getRuntime().newSymbol("convention"));
+            IRubyObject rbConvention = options.fastARef(context.runtime.newSymbol("convention"));
             if (rbConvention != null && !rbConvention.isNil()) {
                 convention = rbConvention.asJavaString();
             }
 
-            IRubyObject rbSaveErrno = options.fastARef(context.getRuntime().newSymbol("save_errno"));
+            IRubyObject rbSaveErrno = options.fastARef(context.runtime.newSymbol("save_errno"));
             if (rbSaveErrno != null && !rbSaveErrno.isNil()) {
                 saveError = rbSaveErrno.isTrue();
             }
 
-            enums = options.fastARef(context.getRuntime().newSymbol("enums"));
+            enums = options.fastARef(context.runtime.newSymbol("enums"));
             if (enums != null && !enums.isNil() && !(enums instanceof RubyHash)) {
-                throw context.getRuntime().newTypeError("wrong type for options[:enum] "
+                throw context.runtime.newTypeError("wrong type for options[:enum] "
                         + enums.getMetaClass().getName() + " (expected Hash)");
 
             }
@@ -134,10 +134,10 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
         CallingConvention callConvention = "stdcall".equals(convention)
                         ? CallingConvention.STDCALL : CallingConvention.DEFAULT;
         if (fptr == null && proc != null) {
-            fptr = CallbackManager.getInstance().newClosure(context.getRuntime(),
+            fptr = CallbackManager.getInstance().newClosure(context.runtime,
                     returnType, parameterTypes, proc, callConvention);
         }
-        return new Function(context.getRuntime(), (RubyClass) recv, fptr,
+        return new Function(context.runtime, (RubyClass) recv, fptr,
                     returnType, parameterTypes, callConvention, enums, saveError);
     }
 
@@ -146,12 +146,12 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
         if (getMemoryIO() instanceof AllocatedDirectMemoryIO) {
             ((AllocatedDirectMemoryIO) getMemoryIO()).free();
         } else {
-            throw context.getRuntime().newRuntimeError("cannot free non-allocated function");
+            throw context.runtime.newRuntimeError("cannot free non-allocated function");
         }
         
         // Replace memory object with one that throws an exception on any access
-        setMemoryIO(new FreedMemoryIO(context.getRuntime()));
-        return context.getRuntime().getNil();
+        setMemoryIO(new FreedMemoryIO(context.runtime));
+        return context.runtime.getNil();
     }
 
     @JRubyMethod(name = "autorelease=", required = 1)
@@ -159,13 +159,13 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
         if (autorelease != release.isTrue() && getMemoryIO() instanceof AllocatedDirectMemoryIO) {
             ((AllocatedDirectMemoryIO) getMemoryIO()).setAutoRelease(autorelease = release.isTrue());
         }
-        
-        return context.getRuntime().getNil();
+
+        return context.runtime.getNil();
     }
 
     @JRubyMethod(name = { "autorelease?", "autorelease" })
     public final IRubyObject autorelease_p(ThreadContext context) {
-        return context.getRuntime().newBoolean(autorelease);
+        return context.runtime.newBoolean(autorelease);
     }
 
     @Override

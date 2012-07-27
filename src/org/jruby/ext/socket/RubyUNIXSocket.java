@@ -156,7 +156,7 @@ public class RubyUNIXSocket extends RubyBasicSocket {
 
     @JRubyMethod(name = {"socketpair", "pair"}, optional = 2, meta = true)
     public static IRubyObject socketpair(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
 
         // TODO: type and protocol
 
@@ -212,14 +212,14 @@ public class RubyUNIXSocket extends RubyBasicSocket {
                     }
                     break;
                     default:
-                        throw context.getRuntime().newErrnoENOPROTOOPTError();
+                        throw context.runtime.newErrnoENOPROTOOPTError();
                 }
                 break;
             default:
-                throw context.getRuntime().newErrnoENOPROTOOPTError();
+                throw context.runtime.newErrnoENOPROTOOPTError();
         }
 
-        return context.getRuntime().newFixnum(0);
+        return context.runtime.newFixnum(0);
     }
 
     protected static void rb_sys_fail(Ruby runtime, String message) {

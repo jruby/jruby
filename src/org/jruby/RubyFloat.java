@@ -388,7 +388,7 @@ public class RubyFloat extends RubyNumeric {
     public IRubyObject op_mod19(ThreadContext context, IRubyObject other) {
         if (!other.isNil() && other instanceof RubyNumeric
             && ((RubyNumeric)other).getDoubleValue() == 0) {
-            throw context.getRuntime().newZeroDivisionError(); 
+            throw context.runtime.newZeroDivisionError();
         }
         return op_mod(context, other);
     }
@@ -432,7 +432,7 @@ public class RubyFloat extends RubyNumeric {
     public IRubyObject divmod19(ThreadContext context, IRubyObject other) {
         if (!other.isNil() && other instanceof RubyNumeric
             && ((RubyNumeric)other).getDoubleValue() == 0) {
-            throw context.getRuntime().newZeroDivisionError(); 
+            throw context.runtime.newZeroDivisionError();
         }
         return divmod(context, other);
     }
@@ -665,7 +665,7 @@ public class RubyFloat extends RubyNumeric {
     @Override
     public IRubyObject abs(ThreadContext context) {
         if (Double.doubleToLongBits(value) < 0) {
-            return RubyFloat.newFloat(context.getRuntime(), Math.abs(value));
+            return RubyFloat.newFloat(context.runtime, Math.abs(value));
         }
         return this;
     }
@@ -716,7 +716,9 @@ public class RubyFloat extends RubyNumeric {
     @JRubyMethod(name = "denominator", compat = CompatVersion.RUBY1_9)
     @Override
     public IRubyObject denominator(ThreadContext context) {
-        if (Double.isInfinite(value) || Double.isNaN(value)) return RubyFixnum.one(context.getRuntime());
+        if (Double.isInfinite(value) || Double.isNaN(value)) {
+            return RubyFixnum.one(context.runtime);
+        }
         return super.denominator(context);
     }
 
@@ -732,7 +734,7 @@ public class RubyFloat extends RubyNumeric {
         f = ldexp(f, DBL_MANT_DIG);
         long n = exp[0] - DBL_MANT_DIG;
 
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
 
         IRubyObject rf = RubyNumeric.dbl2num(runtime, f);
         IRubyObject rn = RubyFixnum.newFixnum(runtime, n);
@@ -747,7 +749,7 @@ public class RubyFloat extends RubyNumeric {
         if (f_negative_p(context, this))
             return f_negate(context, ((RubyFloat) f_abs(context, this)).rationalize(context, args));
 
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         RubyFixnum one = RubyFixnum.one(runtime);
         RubyFixnum two = RubyFixnum.two(runtime);
 
@@ -839,9 +841,9 @@ public class RubyFloat extends RubyNumeric {
         }
         
         if (digits > 0) {
-            return RubyFloat.newFloat(context.getRuntime(), number);
+            return RubyFloat.newFloat(context.runtime, number);
         } else {
-            return dbl2num(context.getRuntime(), (long)number);
+            return dbl2num(context.runtime, (long)number);
         }
     }
     

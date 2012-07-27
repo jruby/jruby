@@ -88,7 +88,7 @@ public class RubyFileTest {
     }
 
     public static IRubyObject directory_p(ThreadContext context, IRubyObject filename) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (!(filename instanceof RubyFile)) {
             filename = get_path(context, filename);
         }
@@ -124,7 +124,7 @@ public class RubyFileTest {
 
     @JRubyMethod(name = {"exist?", "exists?"}, required = 1, module = true)
     public static IRubyObject exist_p(ThreadContext context, IRubyObject recv, IRubyObject filename) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (!(filename instanceof RubyFile)) {
             filename = get_path(context, filename);
         }
@@ -151,7 +151,7 @@ public class RubyFileTest {
 
     @JRubyMethod(name = "file?", required = 1, module = true)
     public static RubyBoolean file_p(ThreadContext context, IRubyObject recv, IRubyObject filename) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (!(filename instanceof RubyFile)) {
             filename = get_path(context, filename);
         }
@@ -226,7 +226,7 @@ public class RubyFileTest {
     // We use file test since it is faster than a stat; also euid == uid in Java always
     @JRubyMethod(name = {"readable?", "readable_real?"}, required = 1, module = true)
     public static IRubyObject readable_p(ThreadContext context, IRubyObject recv, IRubyObject filename) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (!(filename instanceof RubyFile)) {
             filename = get_path(context, filename);
         }
@@ -298,7 +298,7 @@ public class RubyFileTest {
     
     @JRubyMethod(name = "size?", required = 1, module = true)
     public static IRubyObject size_p(ThreadContext context, IRubyObject recv, IRubyObject filename) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (!(filename instanceof RubyFile)) {
             filename = get_path(context, filename);
         }
@@ -375,7 +375,7 @@ public class RubyFileTest {
 
     @JRubyMethod(name = "zero?", required = 1, module = true)
     public static RubyBoolean zero_p(ThreadContext context, IRubyObject recv, IRubyObject filename) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (!(filename instanceof RubyFile)) {
             filename = get_path(context, filename);
         }
@@ -402,7 +402,9 @@ public class RubyFileTest {
     @JRubyMethod(name = "world_readable?", required = 1, module = true, compat = CompatVersion.RUBY1_9)
     public static IRubyObject worldReadable(ThreadContext context, IRubyObject recv, IRubyObject filename) {
         RubyFileStat stat = getFileStat(context, filename);
-        if (stat == null) return context.getRuntime().getNil();
+        if (stat == null) {
+            return context.runtime.getNil();
+        }
 
         return stat.worldReadable(context);
     }
@@ -410,7 +412,9 @@ public class RubyFileTest {
     @JRubyMethod(name = "world_writable?", required = 1, module = true, compat = CompatVersion.RUBY1_9)
     public static IRubyObject worldWritable(ThreadContext context, IRubyObject recv, IRubyObject filename) {
         RubyFileStat stat = getFileStat(context, filename);
-        if (stat == null) return context.getRuntime().getNil();
+        if (stat == null) {
+            return context.runtime.getNil();
+        }
 
         return stat.worldWritable(context);
     }
@@ -542,7 +546,7 @@ public class RubyFileTest {
     }
 
     private static RubyFileStat getFileStat(ThreadContext context, IRubyObject filename) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
 
         RubyFileStat stat = null;
         if (!(filename instanceof RubyFile)) {

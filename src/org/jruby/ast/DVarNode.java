@@ -122,7 +122,7 @@ public class DVarNode extends Node implements INameNode {
     @Override
     public ByteList definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         ByteList definition = LOCAL_VARIABLE_BYTELIST;
-        if (!context.getRuntime().is1_9()) {
+        if (!context.runtime.is1_9()) {
             definition = LOCAL_VARIABLE_IN_BLOCK_BYTELIST;
         }
         return definition;

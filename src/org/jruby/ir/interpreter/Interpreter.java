@@ -166,7 +166,7 @@ public class Interpreter {
             if (isDebug() || inProfileMode()) LOG.info("-- Interpreted instructions: {}", interpInstrsCount);
             return rv;
         } catch (IRBreakJump bj) {
-            throw IRException.BREAK_LocalJumpError.getException(context.getRuntime());
+            throw IRException.BREAK_LocalJumpError.getException(context.runtime);
         }
     }
 
@@ -362,7 +362,7 @@ public class Interpreter {
         Instr lastInstr = null;
         IRubyObject rv = null;
         Object exception = null;
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         DynamicScope currDynScope = context.getCurrentScope();
 
         // Set up thread-poll counter for this scope
@@ -676,17 +676,17 @@ public class Interpreter {
                 // The right fix would involve checking the closure to see who it is associated with.
                 // If it is a thread-body, it would be a ThreadError.  If not, it would be a local-jump-error
                 // This requires having access to the block -- same requirement as in handleBreakJump.
-                if (context.getThread() == context.getRuntime().getThreadService().getMainThread()) {
-                    throw IRException.RETURN_LocalJumpError.getException(context.getRuntime());
+                if (context.getThread() == context.runtime.getThreadService().getMainThread()) {
+                    throw IRException.RETURN_LocalJumpError.getException(context.runtime);
                 } else {
-                    throw context.getRuntime().newThreadError("return can't jump across threads");
+                    throw context.runtime.newThreadError("return can't jump across threads");
                 }
             }
 
             // Cannot return to the call that we have long since exited.
             if (!context.scopeExistsOnCallStack(methodToReturnFrom.getStaticScope())) {
                 if (isDebug()) LOG.info("in scope: " + scope + ", raising unexpected return local jump error");
-                throw IRException.RETURN_LocalJumpError.getException(context.getRuntime());
+                throw IRException.RETURN_LocalJumpError.getException(context.runtime);
             }
 
             throw IRReturnJump.create(methodToReturnFrom, returnValue);
@@ -708,7 +708,9 @@ public class Interpreter {
         bj.breakInEval = false;  // Clear eval flag
 
         // Error
-        if (!inClosure) throw IRException.BREAK_LocalJumpError.getException(context.getRuntime());
+        if (!inClosure) {
+            throw IRException.BREAK_LocalJumpError.getException(context.runtime);
+        }
 
         if (inProc(blockType)) {
             // SSS FIXME: Here we need to check if the current executing block has escaped
@@ -746,7 +748,7 @@ public class Interpreter {
 
     public static IRubyObject INTERPRET_METHOD(ThreadContext context, InterpretedIRMethod irMethod, 
         IRubyObject self, String name, IRubyObject[] args, Block block, Block.Type blockType, boolean isTraceable) {
-        Ruby       runtime   = context.getRuntime();
+        Ruby       runtime   = context.runtime;
         IRScope    scope     = irMethod.getIRMethod();
         RubyModule implClass = irMethod.getImplementationClass();
 		  Visibility viz       = irMethod.getVisibility();

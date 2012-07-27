@@ -86,7 +86,9 @@ public class GetClassVarContainerModuleInstr extends Instr implements ResultInst
             rubyClass = arg.getMetaClass();
         }
 
-        if (rubyClass == null) throw context.getRuntime().newTypeError("no class/module to define class variable");
+        if (rubyClass == null) {
+            throw context.getRuntime().newTypeError("no class/module to define class variable");
+        }
 
         return rubyClass;
     }

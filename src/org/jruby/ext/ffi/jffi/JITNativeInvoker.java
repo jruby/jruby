@@ -1,6 +1,7 @@
 package org.jruby.ext.ffi.jffi;
 
 import com.kenai.jffi.*;
+import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.ext.ffi.*;
 import org.jruby.ext.ffi.NativeType;
@@ -113,49 +114,49 @@ abstract public class JITNativeInvoker extends NativeInvoker {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name) {
-        throw context.getRuntime().newArgumentError(0, arity);
+        throw context.runtime.newArgumentError(0, arity);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name,
                             IRubyObject arg1) {
-        throw context.getRuntime().newArgumentError(1, arity);
+        throw context.runtime.newArgumentError(1, arity);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name,
                             IRubyObject arg1, IRubyObject arg2) {
 
-        throw context.getRuntime().newArgumentError(2, arity);
+        throw context.runtime.newArgumentError(2, arity);
     }
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name,
                             IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
-        throw context.getRuntime().newArgumentError(3, arity);
+        throw context.runtime.newArgumentError(3, arity);
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name,
                             IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4) {
-        throw context.getRuntime().newArgumentError(4, arity);
+        throw context.runtime.newArgumentError(4, arity);
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name,
                             IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4, IRubyObject arg5) {
-        throw context.getRuntime().newArgumentError(5, arity);
+        throw context.runtime.newArgumentError(5, arity);
     }
 
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule klazz, String name,
                             IRubyObject arg1, IRubyObject arg2, IRubyObject arg3, IRubyObject arg4,
                             IRubyObject arg5, IRubyObject arg6) {
-        throw context.getRuntime().newArgumentError(6, arity);
+        throw context.runtime.newArgumentError(6, arity);
     }
 
     @Override
     public final IRubyObject call(ThreadContext context, IRubyObject self,
                                     RubyModule clazz, String name, IRubyObject[] args) {
         if (args.length != arity) {
-            throw context.getRuntime().newArgumentError(args.length, arity);
+            throw context.runtime.newArgumentError(args.length, arity);
         }
 
         switch (args.length) {
@@ -181,7 +182,7 @@ abstract public class JITNativeInvoker extends NativeInvoker {
                 return call(context, self, clazz, name, args[0], args[1], args[2], args[3], args[4], args[5]);
 
             default:
-                throw context.getRuntime().newArgumentError("too many arguments: " + args.length);
+                throw context.runtime.newArgumentError("too many arguments: " + args.length);
         }
     }
 }

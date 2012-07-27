@@ -639,7 +639,7 @@ public class RubyRandom extends RubyObject {
     public IRubyObject marshal_dump(ThreadContext context) {
         RubyBignum state = random.getState();
         RubyInteger left = (RubyInteger) RubyNumeric.int2fix(context.runtime, random.getLeft());
-        RubyArray dump = context.getRuntime().newArray(state, left, random.getSeed());
+        RubyArray dump = context.runtime.newArray(state, left, random.getSeed());
         if (hasVariables()) {
             dump.syncVariables(this);
         }
@@ -686,7 +686,7 @@ public class RubyRandom extends RubyObject {
                 r >>>= 8;
             }
         }
-        return context.getRuntime().newString(new ByteList(bytes));
+        return context.runtime.newString(new ByteList(bytes));
     }
     
     // c: rb_random_real

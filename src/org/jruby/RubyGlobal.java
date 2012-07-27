@@ -419,7 +419,7 @@ public class RubyGlobal {
         private RubyString getCorrectKey(IRubyObject key, ThreadContext context) {
             RubyString originalKey = key.convertToString();
             RubyString actualKey = originalKey;
-            Ruby runtime = context.getRuntime();
+            Ruby runtime = context.runtime;
             if (Platform.IS_WINDOWS) {
                 // this is a rather ugly hack, but similar to MRI. See hash.c:ruby_setenv and similar in MRI
                 // we search all keys for a case-insensitive match, and use that

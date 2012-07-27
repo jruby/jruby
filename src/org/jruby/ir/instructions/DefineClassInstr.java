@@ -73,7 +73,9 @@ public class DefineClassInstr extends Instr implements ResultInstr {
         } else {
             Object o = superClass.retrieve(context, self, currDynScope, temp);
 
-            if (!(o instanceof RubyClass)) throw context.getRuntime().newTypeError("superclass must be Class (" + o + " given)");
+            if (!(o instanceof RubyClass)) {
+                throw context.getRuntime().newTypeError("superclass must be Class (" + o + " given)");
+            }
             
             sc = (RubyClass) o;
         }
@@ -85,7 +87,9 @@ public class DefineClassInstr extends Instr implements ResultInstr {
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         Object rubyContainer = container.retrieve(context, self, currDynScope, temp);
         
-        if (!(rubyContainer instanceof RubyModule)) throw context.getRuntime().newTypeError("no outer class/module");
+        if (!(rubyContainer instanceof RubyModule)) {
+            throw context.getRuntime().newTypeError("no outer class/module");
+        }
 
         RubyModule newRubyClass = newClass(context, self, (RubyModule) rubyContainer, currDynScope, temp);
         newIRClassBody.getStaticScope().setModule(newRubyClass);

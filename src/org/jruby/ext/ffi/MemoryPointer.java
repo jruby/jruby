@@ -103,7 +103,7 @@ public final class MemoryPointer extends Pointer {
                                           IRubyObject countArg) {
 
         if (klass == context.runtime.getFFI().memptrClass) {
-            return newInstance(context.getRuntime(), klass,
+            return newInstance(context.runtime, klass,
                     calculateTypeSize(context, sizeArg), RubyFixnum.fix2int(countArg), true);
 
         } else {
@@ -115,7 +115,7 @@ public final class MemoryPointer extends Pointer {
     public static IRubyObject newInstance(ThreadContext context, IRubyObject klass, IRubyObject sizeArg,
                                           IRubyObject countArg, IRubyObject clear) {
         if (klass == context.runtime.getFFI().memptrClass) {
-            return newInstance(context.getRuntime(), klass,
+            return newInstance(context.runtime, klass,
                     calculateTypeSize(context, sizeArg), RubyFixnum.fix2int(countArg), clear.isTrue());
 
         } else {
@@ -149,7 +149,7 @@ public final class MemoryPointer extends Pointer {
     @JRubyMethod(name = { "initialize" }, visibility = PRIVATE)
     public final IRubyObject initialize(ThreadContext context, IRubyObject sizeArg, Block block) {
         return sizeArg instanceof RubyFixnum
-                ? init(context, RubyFixnum.one(context.getRuntime()), 
+                ? init(context, RubyFixnum.one(context.runtime),
                     RubyFixnum.fix2int(sizeArg), 1, true, block)
                 : init(context, sizeArg, 1, 1, true, block);
     }
@@ -172,24 +172,24 @@ public final class MemoryPointer extends Pointer {
 
     @JRubyMethod(name = "==", required = 1)
     public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
-        return context.getRuntime().newBoolean(this == obj
+        return context.runtime.newBoolean(this == obj
                 || getAddress() == 0L && obj.isNil()
                 || (obj instanceof MemoryPointer
-                    && ((MemoryPointer) obj).getAddress() == getAddress())
-                    && ((MemoryPointer) obj).getSize() == getSize());
+                && ((MemoryPointer) obj).getAddress() == getAddress())
+                && ((MemoryPointer) obj).getSize() == getSize());
     }
     
     @JRubyMethod(name = "free")
     public final IRubyObject free(ThreadContext context) {
         ((AllocatedDirectMemoryIO) getMemoryIO()).free();
         // Replace memory object with one that throws an exception on any access
-        setMemoryIO(new FreedMemoryIO(context.getRuntime()));
-        return context.getRuntime().getNil();
+        setMemoryIO(new FreedMemoryIO(context.runtime));
+        return context.runtime.getNil();
     }
 
     @JRubyMethod(name = "autorelease=", required = 1)
     public final IRubyObject autorelease(ThreadContext context, IRubyObject release) {
         ((AllocatedDirectMemoryIO) getMemoryIO()).setAutoRelease(release.isTrue());
-        return context.getRuntime().getNil();
+        return context.runtime.getNil();
     }
 }

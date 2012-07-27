@@ -515,7 +515,7 @@ public class SSLContext extends RubyObject {
             public IRubyObject call(ThreadContext context, IRubyObject[] args, Block block) {
                 Utils.checkKind(getRuntime(), args[0], "OpenSSL::X509::Certificate");
                 result.add((X509Cert) args[0]);
-                return context.getRuntime().getNil();
+                return context.runtime.getNil();
             }
         }, ctx));
         return result.toArray(new X509Cert[0]);

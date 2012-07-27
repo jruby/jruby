@@ -84,14 +84,16 @@ abstract public class AbstractMemory extends RubyObject {
         } else if (sizeArg instanceof Type) {
             return ((Type) sizeArg).getNativeSize();
 
-        } else if (sizeArg instanceof RubyClass && Struct.isStruct(context.getRuntime(), (RubyClass) sizeArg)) {
-            return Struct.getStructSize(context.getRuntime(), sizeArg);
-
-        } else if (sizeArg.respondsTo("size")) {
-            return (int) RubyFixnum.num2long(sizeArg.callMethod(context, "size"));
-
         } else {
-            throw context.getRuntime().newArgumentError("Invalid size argument");
+            if (sizeArg instanceof RubyClass && Struct.isStruct(context.getRuntime(), (RubyClass) sizeArg)) {
+                return Struct.getStructSize(context.getRuntime(), sizeArg);
+
+            } else if (sizeArg.respondsTo("size")) {
+                return (int) RubyFixnum.num2long(sizeArg.callMethod(context, "size"));
+
+            } else {
+                throw context.getRuntime().newArgumentError("Invalid size argument");
+            }
         }
     }
 
@@ -161,12 +163,12 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = "hash")
     public RubyFixnum hash(ThreadContext context) {
-        return context.getRuntime().newFixnum(hashCode());
+        return context.runtime.newFixnum(hashCode());
     }
 
     @JRubyMethod(name = "to_s", optional = 1)
     public IRubyObject to_s(ThreadContext context, IRubyObject[] args) {
-        return RubyString.newString(context.getRuntime(), ABSTRACT_MEMORY_RUBY_CLASS + "[size=" + size + "]");
+        return RubyString.newString(context.runtime, ABSTRACT_MEMORY_RUBY_CLASS + "[size=" + size + "]");
     }
 
     @JRubyMethod(name = "[]")
@@ -174,9 +176,9 @@ abstract public class AbstractMemory extends RubyObject {
         final int index = RubyNumeric.num2int(indexArg);
         final int offset = index * typeSize;
         if (offset >= size) {
-            throw context.getRuntime().newIndexError(String.format("Index %d out of range", index));
+            throw context.runtime.newIndexError(String.format("Index %d out of range", index));
         }
-        return slice(context.getRuntime(), offset);
+        return slice(context.runtime, offset);
     }
 
     /**
@@ -198,7 +200,7 @@ abstract public class AbstractMemory extends RubyObject {
     @JRubyMethod(name = "==", required = 1)
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
-        return context.getRuntime().newBoolean(this.equals(obj));
+        return context.runtime.newBoolean(this.equals(obj));
     }
     @Override
     public final boolean eql(IRubyObject other) {
@@ -230,7 +232,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "total", "size", "length" })
     public IRubyObject total(ThreadContext context) {
-        return RubyFixnum.newFixnum(context.getRuntime(), size);
+        return RubyFixnum.newFixnum(context.runtime, size);
     }
     
     /**
@@ -241,7 +243,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = "type_size")
     public final IRubyObject type_size(ThreadContext context) {
-        return context.getRuntime().newFixnum(typeSize);
+        return context.runtime.newFixnum(typeSize);
     }
 
     /**
@@ -291,7 +293,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "read_char" })
     public IRubyObject read_char(ThreadContext context) {
-        return Util.newSigned8(context.getRuntime(), getMemoryIO().getByte(0));
+        return Util.newSigned8(context.runtime, getMemoryIO().getByte(0));
     }
 
     /**
@@ -301,7 +303,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "get_int8", "get_char" })
     public IRubyObject get_int8(ThreadContext context) {
-        return Util.newSigned8(context.getRuntime(), getMemoryIO().getByte(0));
+        return Util.newSigned8(context.runtime, getMemoryIO().getByte(0));
     }
 
     /**
@@ -312,7 +314,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "get_int8", "get_char" }, required = 1)
     public IRubyObject get_int8(ThreadContext context, IRubyObject offset) {
-        return Util.newSigned8(context.getRuntime(), getMemoryIO().getByte(getOffset(offset)));
+        return Util.newSigned8(context.runtime, getMemoryIO().getByte(getOffset(offset)));
     }
 
     /**
@@ -359,7 +361,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "read_uchar" })
     public IRubyObject read_uchar(ThreadContext context) {
-        return Util.newUnsigned8(context.getRuntime(), getMemoryIO().getByte(0));
+        return Util.newUnsigned8(context.runtime, getMemoryIO().getByte(0));
     }
 
     /**
@@ -369,7 +371,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "get_uint8", "get_uchar" })
     public IRubyObject get_uint8(ThreadContext context) {
-        return Util.newUnsigned8(context.getRuntime(), getMemoryIO().getByte(0));
+        return Util.newUnsigned8(context.runtime, getMemoryIO().getByte(0));
     }
 
     /**
@@ -380,7 +382,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "get_uint8", "get_uchar" }, required = 1)
     public IRubyObject get_uint8(ThreadContext context, IRubyObject offset) {
-        return Util.newUnsigned8(context.getRuntime(), getMemoryIO().getByte(getOffset(offset)));
+        return Util.newUnsigned8(context.runtime, getMemoryIO().getByte(getOffset(offset)));
     }
 
     /**
@@ -430,7 +432,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "read_short" })
     public IRubyObject read_short(ThreadContext context) {
-        return Util.newSigned16(context.getRuntime(), getMemoryIO().getShort(0));
+        return Util.newSigned16(context.runtime, getMemoryIO().getShort(0));
     }
 
     /**
@@ -440,7 +442,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "get_int16", "get_short" })
     public IRubyObject get_int16(ThreadContext context) {
-        return Util.newSigned16(context.getRuntime(), getMemoryIO().getShort(0));
+        return Util.newSigned16(context.runtime, getMemoryIO().getShort(0));
     }
 
     /**
@@ -451,7 +453,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "get_int16", "get_short" }, required = 1)
     public IRubyObject get_int16(ThreadContext context, IRubyObject offset) {
-        return Util.newSigned16(context.getRuntime(), getMemoryIO().getShort(getOffset(offset)));
+        return Util.newSigned16(context.runtime, getMemoryIO().getShort(getOffset(offset)));
     }
     
     /**
@@ -501,7 +503,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "read_ushort" })
     public IRubyObject read_ushort(ThreadContext context) {
-        return Util.newUnsigned16(context.getRuntime(), getMemoryIO().getShort(0));
+        return Util.newUnsigned16(context.runtime, getMemoryIO().getShort(0));
     }
 
     /**
@@ -511,7 +513,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "get_uint16", "get_ushort" })
     public IRubyObject get_uint16(ThreadContext context) {
-        return Util.newUnsigned16(context.getRuntime(), getMemoryIO().getShort(0));
+        return Util.newUnsigned16(context.runtime, getMemoryIO().getShort(0));
     }
 
     /**
@@ -522,7 +524,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "get_uint16", "get_ushort" }, required = 1)
     public IRubyObject get_uint16(ThreadContext context, IRubyObject offset) {
-        return Util.newUnsigned16(context.getRuntime(), getMemoryIO().getShort(getOffset(offset)));
+        return Util.newUnsigned16(context.runtime, getMemoryIO().getShort(getOffset(offset)));
     }
 
     /**
@@ -572,7 +574,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "read_int" })
     public IRubyObject read_int(ThreadContext context) {
-        return Util.newSigned32(context.getRuntime(), getMemoryIO().getInt(0));
+        return Util.newSigned32(context.runtime, getMemoryIO().getInt(0));
     }
 
     /**
@@ -582,7 +584,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "get_int32", "get_int" })
     public IRubyObject get_int32(ThreadContext context) {
-        return Util.newSigned32(context.getRuntime(), getMemoryIO().getInt(0));
+        return Util.newSigned32(context.runtime, getMemoryIO().getInt(0));
     }
 
     /**
@@ -593,7 +595,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "get_int32", "get_int" }, required = 1)
     public IRubyObject get_int32(ThreadContext context, IRubyObject offset) {
-        return Util.newSigned32(context.getRuntime(), getMemoryIO().getInt(getOffset(offset)));
+        return Util.newSigned32(context.runtime, getMemoryIO().getInt(getOffset(offset)));
     }
 
     /**
@@ -643,7 +645,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "read_uint" })
     public IRubyObject read_uint(ThreadContext context) {
-        return Util.newUnsigned32(context.getRuntime(), getMemoryIO().getInt(0));
+        return Util.newUnsigned32(context.runtime, getMemoryIO().getInt(0));
     }
 
     /**
@@ -653,7 +655,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "get_uint32", "get_uint" })
     public IRubyObject get_uint32(ThreadContext context) {
-        return Util.newUnsigned32(context.getRuntime(), getMemoryIO().getInt(0));
+        return Util.newUnsigned32(context.runtime, getMemoryIO().getInt(0));
     }
 
     /**
@@ -664,7 +666,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "get_uint32", "get_uint" }, required = 1)
     public IRubyObject get_uint32(ThreadContext context, IRubyObject offset) {
-        return Util.newUnsigned32(context.getRuntime(), getMemoryIO().getInt(getOffset(offset)));
+        return Util.newUnsigned32(context.runtime, getMemoryIO().getInt(getOffset(offset)));
     }
     
     /**
@@ -714,7 +716,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "read_long_long" })
     public IRubyObject read_long_long(ThreadContext context) {
-        return Util.newSigned64(context.getRuntime(), getMemoryIO().getLong(0));
+        return Util.newSigned64(context.runtime, getMemoryIO().getLong(0));
     }
 
     /**
@@ -724,7 +726,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "get_int64", "get_long_long" })
     public IRubyObject get_int64(ThreadContext context) {
-        return Util.newSigned64(context.getRuntime(), getMemoryIO().getLong(0));
+        return Util.newSigned64(context.runtime, getMemoryIO().getLong(0));
     }
 
     /**
@@ -735,7 +737,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "get_int64", "get_long_long" }, required = 1)
     public IRubyObject get_int64(ThreadContext context, IRubyObject offset) {
-        return Util.newSigned64(context.getRuntime(), getMemoryIO().getLong(getOffset(offset)));
+        return Util.newSigned64(context.runtime, getMemoryIO().getLong(getOffset(offset)));
     }
 
     /**
@@ -785,7 +787,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "read_ulong_long" })
     public IRubyObject read_ulong_long(ThreadContext context) {
-        return Util.newUnsigned64(context.getRuntime(), getMemoryIO().getLong(0));
+        return Util.newUnsigned64(context.runtime, getMemoryIO().getLong(0));
     }
 
     /**
@@ -795,7 +797,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "get_uint64", "get_ulong_long" })
     public IRubyObject get_uint64(ThreadContext context) {
-        return Util.newUnsigned64(context.getRuntime(), getMemoryIO().getLong(0));
+        return Util.newUnsigned64(context.runtime, getMemoryIO().getLong(0));
     }
 
     /**
@@ -806,7 +808,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "get_uint64", "get_ulong_long" }, required = 1)
     public IRubyObject get_uint64(ThreadContext context, IRubyObject offset) {
-        return Util.newUnsigned64(context.getRuntime(), getMemoryIO().getLong(getOffset(offset)));
+        return Util.newUnsigned64(context.runtime, getMemoryIO().getLong(getOffset(offset)));
     }
 
     /**
@@ -991,7 +993,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "read_float" })
     public IRubyObject read_float(ThreadContext context) {
-        return RubyFloat.newFloat(context.getRuntime(), getMemoryIO().getFloat(0));
+        return RubyFloat.newFloat(context.runtime, getMemoryIO().getFloat(0));
     }
 
     /**
@@ -1001,7 +1003,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "get_float32", "get_float" })
     public IRubyObject get_float32(ThreadContext context) {
-        return RubyFloat.newFloat(context.getRuntime(), getMemoryIO().getFloat(0));
+        return RubyFloat.newFloat(context.runtime, getMemoryIO().getFloat(0));
     }
 
     /**
@@ -1012,7 +1014,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "get_float32", "get_float" }, required = 1)
     public IRubyObject get_float32(ThreadContext context, IRubyObject offset) {
-        return RubyFloat.newFloat(context.getRuntime(), getMemoryIO().getFloat(getOffset(offset)));
+        return RubyFloat.newFloat(context.runtime, getMemoryIO().getFloat(getOffset(offset)));
     }
     
     /**
@@ -1062,7 +1064,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "read_double" })
     public IRubyObject read_double(ThreadContext context) {
-        return RubyFloat.newFloat(context.getRuntime(), getMemoryIO().getDouble(0));
+        return RubyFloat.newFloat(context.runtime, getMemoryIO().getDouble(0));
     }
 
     /**
@@ -1072,7 +1074,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "get_float64", "get_double" })
     public IRubyObject get_float64(ThreadContext context) {
-        return RubyFloat.newFloat(context.getRuntime(), getMemoryIO().getDouble(0));
+        return RubyFloat.newFloat(context.runtime, getMemoryIO().getDouble(0));
     }
 
     /**
@@ -1083,7 +1085,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "get_float64", "get_double" }, required = 1)
     public IRubyObject get_float64(ThreadContext context, IRubyObject offset) {
-        return RubyFloat.newFloat(context.getRuntime(), getMemoryIO().getDouble(getOffset(offset)));
+        return RubyFloat.newFloat(context.runtime, getMemoryIO().getDouble(getOffset(offset)));
     }
 
     /**
@@ -1095,7 +1097,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "get_array_of_int8", "get_array_of_char" }, required = 2)
     public IRubyObject get_array_of_int8(ThreadContext context, IRubyObject offset, IRubyObject length) {
-        return MemoryUtil.getArrayOfSigned8(context.getRuntime(), io, getOffset(offset), Util.int32Value(length));
+        return MemoryUtil.getArrayOfSigned8(context.runtime, io, getOffset(offset), Util.int32Value(length));
     }
 
     /**
@@ -1107,8 +1109,8 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "put_array_of_int8", "put_array_of_char" }, required = 2)
     public IRubyObject put_array_of_int8(ThreadContext context, IRubyObject offset, IRubyObject arrParam) {
-        
-        MemoryUtil.putArrayOfSigned8(context.getRuntime(), getMemoryIO(), getOffset(offset), checkArray(arrParam));
+
+        MemoryUtil.putArrayOfSigned8(context.runtime, getMemoryIO(), getOffset(offset), checkArray(arrParam));
 
         return this;
     }
@@ -1122,7 +1124,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "get_array_of_uint8", "get_array_of_uchar" }, required = 2)
     public IRubyObject get_array_of_uint8(ThreadContext context, IRubyObject offset, IRubyObject length) {
-        return MemoryUtil.getArrayOfUnsigned8(context.getRuntime(), io, getOffset(offset), Util.int32Value(length));
+        return MemoryUtil.getArrayOfUnsigned8(context.runtime, io, getOffset(offset), Util.int32Value(length));
     }
 
     /**
@@ -1135,7 +1137,7 @@ abstract public class AbstractMemory extends RubyObject {
     @JRubyMethod(name = { "put_array_of_uint8", "put_array_of_uchar" }, required = 2)
     public IRubyObject put_array_of_uint8(ThreadContext context, IRubyObject offset, IRubyObject arrParam) {
 
-        MemoryUtil.putArrayOfUnsigned8(context.getRuntime(), getMemoryIO(), getOffset(offset), checkArray(arrParam));
+        MemoryUtil.putArrayOfUnsigned8(context.runtime, getMemoryIO(), getOffset(offset), checkArray(arrParam));
 
         return this;
     }
@@ -1149,7 +1151,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "get_array_of_int16", "get_array_of_short" }, required = 2)
     public IRubyObject get_array_of_int16(ThreadContext context, IRubyObject offset, IRubyObject length) {
-        return MemoryUtil.getArrayOfSigned16(context.getRuntime(), getMemoryIO(), getOffset(offset), Util.int32Value(length));
+        return MemoryUtil.getArrayOfSigned16(context.runtime, getMemoryIO(), getOffset(offset), Util.int32Value(length));
     }
 
     /**
@@ -1161,8 +1163,8 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "put_array_of_int16", "put_array_of_short" }, required = 2)
     public IRubyObject put_array_of_int16(ThreadContext context, IRubyObject offset, IRubyObject arrParam) {
-        
-        MemoryUtil.putArrayOfSigned16(context.getRuntime(), getMemoryIO(), getOffset(offset), checkArray(arrParam));
+
+        MemoryUtil.putArrayOfSigned16(context.runtime, getMemoryIO(), getOffset(offset), checkArray(arrParam));
         
         return this;
     }
@@ -1176,7 +1178,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "get_array_of_uint16", "get_array_of_ushort" }, required = 2)
     public IRubyObject get_array_of_uint16(ThreadContext context, IRubyObject offset, IRubyObject length) {
-        return MemoryUtil.getArrayOfUnsigned16(context.getRuntime(), getMemoryIO(), getOffset(offset), Util.int32Value(length));
+        return MemoryUtil.getArrayOfUnsigned16(context.runtime, getMemoryIO(), getOffset(offset), Util.int32Value(length));
     }
 
     /**
@@ -1189,7 +1191,7 @@ abstract public class AbstractMemory extends RubyObject {
     @JRubyMethod(name = { "put_array_of_uint16", "put_array_of_ushort" }, required = 2)
     public IRubyObject put_array_of_uint16(ThreadContext context, IRubyObject offset, IRubyObject arrParam) {
 
-        MemoryUtil.putArrayOfUnsigned16(context.getRuntime(), getMemoryIO(), getOffset(offset), checkArray(arrParam));
+        MemoryUtil.putArrayOfUnsigned16(context.runtime, getMemoryIO(), getOffset(offset), checkArray(arrParam));
 
         return this;
     }
@@ -1203,7 +1205,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "get_array_of_int32", "get_array_of_int" }, required = 2)
     public IRubyObject get_array_of_int32(ThreadContext context, IRubyObject offset, IRubyObject length) {
-        return MemoryUtil.getArrayOfSigned32(context.getRuntime(), getMemoryIO(), getOffset(offset), Util.int32Value(length));
+        return MemoryUtil.getArrayOfSigned32(context.runtime, getMemoryIO(), getOffset(offset), Util.int32Value(length));
     }
 
     /**
@@ -1215,7 +1217,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "put_array_of_int32", "put_array_of_int" }, required = 2)
     public IRubyObject put_array_of_int32(ThreadContext context, IRubyObject offset, IRubyObject arrParam) {
-        MemoryUtil.putArrayOfSigned32(context.getRuntime(), getMemoryIO(), getOffset(offset), checkArray(arrParam));
+        MemoryUtil.putArrayOfSigned32(context.runtime, getMemoryIO(), getOffset(offset), checkArray(arrParam));
 
         return this;
     }
@@ -1229,7 +1231,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "get_array_of_uint32", "get_array_of_uint" }, required = 2)
     public IRubyObject get_array_of_uint32(ThreadContext context, IRubyObject offset, IRubyObject length) {
-        return MemoryUtil.getArrayOfUnsigned32(context.getRuntime(), getMemoryIO(), getOffset(offset), Util.int32Value(length));
+        return MemoryUtil.getArrayOfUnsigned32(context.runtime, getMemoryIO(), getOffset(offset), Util.int32Value(length));
     }
 
     /**
@@ -1241,7 +1243,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "put_array_of_uint32", "put_array_of_uint" }, required = 2)
     public IRubyObject put_array_of_uint32(ThreadContext context, IRubyObject offset, IRubyObject arrParam) {
-        MemoryUtil.putArrayOfUnsigned32(context.getRuntime(), getMemoryIO(), getOffset(offset), checkArray(arrParam));
+        MemoryUtil.putArrayOfUnsigned32(context.runtime, getMemoryIO(), getOffset(offset), checkArray(arrParam));
 
         return this;
     }
@@ -1311,7 +1313,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "get_array_of_int64", "get_array_of_long_long" }, required = 2)
     public IRubyObject get_array_of_int64(ThreadContext context, IRubyObject offset, IRubyObject length) {
-        return MemoryUtil.getArrayOfSigned64(context.getRuntime(), io, getOffset(offset), Util.int32Value(length));
+        return MemoryUtil.getArrayOfSigned64(context.runtime, io, getOffset(offset), Util.int32Value(length));
     }
 
     /**
@@ -1323,8 +1325,8 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "put_array_of_int64", "put_array_of_long_long" }, required = 2)
     public IRubyObject put_array_of_int64(ThreadContext context, IRubyObject offset, IRubyObject arrParam) {
-        
-        MemoryUtil.putArrayOfSigned64(context.getRuntime(), getMemoryIO(), getOffset(offset), checkArray(arrParam));
+
+        MemoryUtil.putArrayOfSigned64(context.runtime, getMemoryIO(), getOffset(offset), checkArray(arrParam));
 
         return this;
     }
@@ -1338,7 +1340,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "get_array_of_uint64", "get_array_of_ulong_long" }, required = 2)
     public IRubyObject get_array_of_uint64(ThreadContext context, IRubyObject offset, IRubyObject length) {
-        return MemoryUtil.getArrayOfUnsigned64(context.getRuntime(), io, getOffset(offset), Util.int32Value(length));
+        return MemoryUtil.getArrayOfUnsigned64(context.runtime, io, getOffset(offset), Util.int32Value(length));
     }
 
     /**
@@ -1351,7 +1353,7 @@ abstract public class AbstractMemory extends RubyObject {
     @JRubyMethod(name = { "put_array_of_uint64", "put_array_of_ulong_long" }, required = 2)
     public IRubyObject put_array_of_uint64(ThreadContext context, IRubyObject offset, IRubyObject arrParam) {
 
-        MemoryUtil.putArrayOfUnsigned64(context.getRuntime(), getMemoryIO(), getOffset(offset), checkArray(arrParam));
+        MemoryUtil.putArrayOfUnsigned64(context.runtime, getMemoryIO(), getOffset(offset), checkArray(arrParam));
 
         return this;
     }
@@ -1365,7 +1367,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "get_array_of_float32", "get_array_of_float" }, required = 2)
     public IRubyObject get_array_of_float(ThreadContext context, IRubyObject offset, IRubyObject length) {
-        return MemoryUtil.getArrayOfFloat32(context.getRuntime(), io, getOffset(offset), Util.int32Value(length));
+        return MemoryUtil.getArrayOfFloat32(context.runtime, io, getOffset(offset), Util.int32Value(length));
     }
 
     /**
@@ -1378,7 +1380,7 @@ abstract public class AbstractMemory extends RubyObject {
     @JRubyMethod(name = { "put_array_of_float32", "put_array_of_float" }, required = 2)
     public IRubyObject put_array_of_float(ThreadContext context, IRubyObject offset, IRubyObject arrParam) {
 
-        MemoryUtil.putArrayOfFloat32(context.getRuntime(), io, getOffset(offset), checkArray(arrParam));
+        MemoryUtil.putArrayOfFloat32(context.runtime, io, getOffset(offset), checkArray(arrParam));
 
         return this;
     }
@@ -1392,7 +1394,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "get_array_of_float64", "get_array_of_double" }, required = 2)
     public IRubyObject get_array_of_float64(ThreadContext context, IRubyObject offset, IRubyObject length) {
-        return MemoryUtil.getArrayOfFloat64(context.getRuntime(), io, getOffset(offset), Util.int32Value(length));
+        return MemoryUtil.getArrayOfFloat64(context.runtime, io, getOffset(offset), Util.int32Value(length));
     }
 
     /**
@@ -1404,7 +1406,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "put_array_of_float64", "put_array_of_double" }, required = 2)
     public IRubyObject put_array_of_float64(ThreadContext context, IRubyObject offset, IRubyObject arrParam) {
-        MemoryUtil.putArrayOfFloat64(context.getRuntime(), getMemoryIO(), getOffset(offset), checkArray(arrParam));
+        MemoryUtil.putArrayOfFloat64(context.runtime, getMemoryIO(), getOffset(offset), checkArray(arrParam));
 
         return this;
     }
@@ -1417,7 +1419,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "read_array_of_int8", "read_array_of_char" }, required = 1)
     public IRubyObject read_array_of_int8(ThreadContext context, IRubyObject length) {
-        return MemoryUtil.getArrayOfSigned8(context.getRuntime(), io, 0, Util.int32Value(length));
+        return MemoryUtil.getArrayOfSigned8(context.runtime, io, 0, Util.int32Value(length));
     }
 
     /**
@@ -1428,8 +1430,8 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "write_array_of_int8", "write_array_of_char" }, required = 1)
     public IRubyObject write_array_of_int8(ThreadContext context, IRubyObject ary) {
-        
-        MemoryUtil.putArrayOfSigned8(context.getRuntime(), getMemoryIO(), 0, checkArray(ary));
+
+        MemoryUtil.putArrayOfSigned8(context.runtime, getMemoryIO(), 0, checkArray(ary));
 
         return this;
     }
@@ -1442,7 +1444,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "read_array_of_uint8", "read_array_of_uchar" }, required = 1)
     public IRubyObject read_array_of_uint8(ThreadContext context, IRubyObject length) {
-        return MemoryUtil.getArrayOfUnsigned8(context.getRuntime(), io, 0, Util.int32Value(length));
+        return MemoryUtil.getArrayOfUnsigned8(context.runtime, io, 0, Util.int32Value(length));
     }
 
     /**
@@ -1454,8 +1456,8 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "write_array_of_uint8", "write_array_of_uchar" }, required = 1)
     public IRubyObject write_array_of_uint8(ThreadContext context, IRubyObject ary) {
-        
-        MemoryUtil.putArrayOfUnsigned8(context.getRuntime(), getMemoryIO(), 0, checkArray(ary));
+
+        MemoryUtil.putArrayOfUnsigned8(context.runtime, getMemoryIO(), 0, checkArray(ary));
 
         return this;
     }
@@ -1468,7 +1470,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "read_array_of_int16", "read_array_of_short" }, required = 1)
     public IRubyObject read_array_of_int16(ThreadContext context, IRubyObject length) {
-        return MemoryUtil.getArrayOfSigned16(context.getRuntime(), io, 0, Util.int32Value(length));
+        return MemoryUtil.getArrayOfSigned16(context.runtime, io, 0, Util.int32Value(length));
     }
 
     /**
@@ -1479,8 +1481,8 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "write_array_of_int16", "write_array_of_short" }, required = 1)
     public IRubyObject write_array_of_int16(ThreadContext context, IRubyObject ary) {
-        
-        MemoryUtil.putArrayOfSigned16(context.getRuntime(), getMemoryIO(), 0, checkArray(ary));
+
+        MemoryUtil.putArrayOfSigned16(context.runtime, getMemoryIO(), 0, checkArray(ary));
 
         return this;
     }
@@ -1493,7 +1495,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "read_array_of_uint16", "read_array_of_ushort" }, required = 1)
     public IRubyObject read_array_of_uint16(ThreadContext context, IRubyObject length) {
-        return MemoryUtil.getArrayOfUnsigned16(context.getRuntime(), io, 0, Util.int32Value(length));
+        return MemoryUtil.getArrayOfUnsigned16(context.runtime, io, 0, Util.int32Value(length));
     }
 
     /**
@@ -1504,8 +1506,8 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "write_array_of_uint16", "write_array_of_ushort" }, required = 1)
     public IRubyObject write_array_of_uint16(ThreadContext context, IRubyObject ary) {
-        
-        MemoryUtil.putArrayOfUnsigned16(context.getRuntime(), getMemoryIO(), 0, checkArray(ary));
+
+        MemoryUtil.putArrayOfUnsigned16(context.runtime, getMemoryIO(), 0, checkArray(ary));
 
         return this;
     }
@@ -1519,7 +1521,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "read_array_of_int32", "read_array_of_int" }, required = 1)
     public IRubyObject read_array_of_int32(ThreadContext context, IRubyObject length) {
-        return MemoryUtil.getArrayOfSigned32(context.getRuntime(), io, 0, Util.int32Value(length));
+        return MemoryUtil.getArrayOfSigned32(context.runtime, io, 0, Util.int32Value(length));
     }
 
     /**
@@ -1530,8 +1532,8 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "write_array_of_int32", "write_array_of_int" }, required = 1)
     public IRubyObject write_array_of_int32(ThreadContext context, IRubyObject ary) {
-        
-        MemoryUtil.putArrayOfSigned32(context.getRuntime(), getMemoryIO(), 0, checkArray(ary));
+
+        MemoryUtil.putArrayOfSigned32(context.runtime, getMemoryIO(), 0, checkArray(ary));
 
         return this;
     }
@@ -1544,7 +1546,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "read_array_of_uint32", "read_array_of_uint" }, required = 1)
     public IRubyObject read_array_of_uint32(ThreadContext context, IRubyObject length) {
-        return MemoryUtil.getArrayOfUnsigned32(context.getRuntime(), io, 0, Util.int32Value(length));
+        return MemoryUtil.getArrayOfUnsigned32(context.runtime, io, 0, Util.int32Value(length));
     }
 
     /**
@@ -1555,8 +1557,8 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "write_array_of_uint32", "write_array_of_uint" }, required = 1)
     public IRubyObject write_array_of_uint32(ThreadContext context, IRubyObject ary) {
-        
-        MemoryUtil.putArrayOfUnsigned32(context.getRuntime(), getMemoryIO(), 0, checkArray(ary));
+
+        MemoryUtil.putArrayOfUnsigned32(context.runtime, getMemoryIO(), 0, checkArray(ary));
 
         return this;
     }
@@ -1569,7 +1571,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "read_array_of_int64", "read_array_of_long_long" }, required = 1)
     public IRubyObject read_array_of_int64(ThreadContext context, IRubyObject length) {
-        return MemoryUtil.getArrayOfSigned64(context.getRuntime(), io, 0, Util.int32Value(length));
+        return MemoryUtil.getArrayOfSigned64(context.runtime, io, 0, Util.int32Value(length));
     }
 
     /**
@@ -1580,8 +1582,8 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "write_array_of_int64", "write_array_of_long_long" }, required = 1)
     public IRubyObject write_array_of_int64(ThreadContext context, IRubyObject ary) {
-        
-        MemoryUtil.putArrayOfSigned64(context.getRuntime(), getMemoryIO(), 0, checkArray(ary));
+
+        MemoryUtil.putArrayOfSigned64(context.runtime, getMemoryIO(), 0, checkArray(ary));
 
         return this;
     }
@@ -1594,7 +1596,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "read_array_of_uint64", "read_array_of_ulong_long" }, required = 1)
     public IRubyObject read_array_of_uint64(ThreadContext context, IRubyObject length) {
-        return MemoryUtil.getArrayOfUnsigned64(context.getRuntime(), io, 0, Util.int32Value(length));
+        return MemoryUtil.getArrayOfUnsigned64(context.runtime, io, 0, Util.int32Value(length));
     }
 
     /**
@@ -1605,8 +1607,8 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "write_array_of_uint64", "write_array_of_ulong_long" }, required = 1)
     public IRubyObject write_array_of_uint64(ThreadContext context, IRubyObject ary) {
-        
-        MemoryUtil.putArrayOfUnsigned64(context.getRuntime(), getMemoryIO(), 0, checkArray(ary));
+
+        MemoryUtil.putArrayOfUnsigned64(context.runtime, getMemoryIO(), 0, checkArray(ary));
 
         return this;
     }
@@ -1671,7 +1673,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "read_array_of_float32", "read_array_of_float" }, required = 1)
     public IRubyObject read_array_of_float(ThreadContext context, IRubyObject length) {
-        return MemoryUtil.getArrayOfFloat32(context.getRuntime(), io, 0, Util.int32Value(length));
+        return MemoryUtil.getArrayOfFloat32(context.runtime, io, 0, Util.int32Value(length));
     }
 
     /**
@@ -1683,7 +1685,7 @@ abstract public class AbstractMemory extends RubyObject {
     @JRubyMethod(name = { "write_array_of_float32", "write_array_of_float" }, required = 1)
     public IRubyObject write_array_of_float(ThreadContext context, IRubyObject ary) {
 
-        MemoryUtil.putArrayOfFloat32(context.getRuntime(), io, 0, checkArray(ary));
+        MemoryUtil.putArrayOfFloat32(context.runtime, io, 0, checkArray(ary));
 
         return this;
     }
@@ -1696,7 +1698,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "read_array_of_float64", "read_array_of_double" }, required = 1)
     public IRubyObject read_array_of_float64(ThreadContext context, IRubyObject length) {
-        return MemoryUtil.getArrayOfFloat64(context.getRuntime(), io, 0, Util.int32Value(length));
+        return MemoryUtil.getArrayOfFloat64(context.runtime, io, 0, Util.int32Value(length));
     }
 
     /**
@@ -1707,7 +1709,7 @@ abstract public class AbstractMemory extends RubyObject {
      */
     @JRubyMethod(name = { "write_array_of_float64", "write_array_of_double" }, required = 1)
     public IRubyObject write_array_of_float64(ThreadContext context, IRubyObject ary) {
-        MemoryUtil.putArrayOfFloat64(context.getRuntime(), getMemoryIO(), 0, checkArray(ary));
+        MemoryUtil.putArrayOfFloat64(context.runtime, getMemoryIO(), 0, checkArray(ary));
 
         return this;
     }
@@ -1715,38 +1717,38 @@ abstract public class AbstractMemory extends RubyObject {
 
     @JRubyMethod(name = "read_string")
     public IRubyObject read_string(ThreadContext context) {
-        return MemoryUtil.getTaintedString(context.getRuntime(), getMemoryIO(), 0);
+        return MemoryUtil.getTaintedString(context.runtime, getMemoryIO(), 0);
     }
 
     @JRubyMethod(name = "read_string")
     public IRubyObject read_string(ThreadContext context, IRubyObject rbLength) {
         /* When a length is given, read_string acts like get_bytes */
         return !rbLength.isNil()
-                ? MemoryUtil.getTaintedByteString(context.getRuntime(), getMemoryIO(), 0, Util.int32Value(rbLength))
-                : MemoryUtil.getTaintedString(context.getRuntime(), getMemoryIO(), 0);
+                ? MemoryUtil.getTaintedByteString(context.runtime, getMemoryIO(), 0, Util.int32Value(rbLength))
+                : MemoryUtil.getTaintedString(context.runtime, getMemoryIO(), 0);
     }
 
     @JRubyMethod(name = "get_string")
     public IRubyObject get_string(ThreadContext context) {
-        return MemoryUtil.getTaintedString(context.getRuntime(), getMemoryIO(), 0);
+        return MemoryUtil.getTaintedString(context.runtime, getMemoryIO(), 0);
     }
 
     @JRubyMethod(name = "get_string")
     public IRubyObject get_string(ThreadContext context, IRubyObject offArg) {
-        return MemoryUtil.getTaintedString(context.getRuntime(), getMemoryIO(), getOffset(offArg));
+        return MemoryUtil.getTaintedString(context.runtime, getMemoryIO(), getOffset(offArg));
     }
 
     @JRubyMethod(name = "get_string")
     public IRubyObject get_string(ThreadContext context, IRubyObject offArg, IRubyObject lenArg) {
-        return MemoryUtil.getTaintedString(context.getRuntime(), getMemoryIO(),
+        return MemoryUtil.getTaintedString(context.runtime, getMemoryIO(),
                 getOffset(offArg), Util.int32Value(lenArg));
     }
 
     @JRubyMethod(name = { "get_array_of_string" }, required = 1)
     public IRubyObject get_array_of_string(ThreadContext context, IRubyObject rbOffset) {
         final int POINTER_SIZE = (Platform.getPlatform().addressSize() / 8);
-        
-        final Ruby runtime = context.getRuntime();
+
+        final Ruby runtime = context.runtime;
         final RubyArray arr = RubyArray.newArray(runtime);
 
         for (long off = getOffset(rbOffset); off <= size - POINTER_SIZE; off += POINTER_SIZE) {
@@ -1766,7 +1768,7 @@ abstract public class AbstractMemory extends RubyObject {
         final long off = getOffset(rbOffset);
         final int count = Util.int32Value(rbCount);
 
-        final Ruby runtime = context.getRuntime();
+        final Ruby runtime = context.runtime;
         final RubyArray arr = RubyArray.newArray(runtime, count);
 
         for (int i = 0; i < count; ++i) {
@@ -1781,12 +1783,12 @@ abstract public class AbstractMemory extends RubyObject {
     
     @JRubyMethod(name = { "read_array_of_string" })
     public IRubyObject read_array_of_string(ThreadContext context) {
-        return get_array_of_string(context, RubyFixnum.zero(context.getRuntime()));
+        return get_array_of_string(context, RubyFixnum.zero(context.runtime));
     }
     
     @JRubyMethod(name = { "read_array_of_string" }, required = 1)
     public IRubyObject read_array_of_string(ThreadContext context, IRubyObject rbLength) {
-        return get_array_of_string(context, RubyFixnum.zero(context.getRuntime()), rbLength);
+        return get_array_of_string(context, RubyFixnum.zero(context.runtime), rbLength);
     }
     
 
@@ -1801,7 +1803,7 @@ abstract public class AbstractMemory extends RubyObject {
 
     @JRubyMethod(name = "get_bytes")
     public IRubyObject get_bytes(ThreadContext context, IRubyObject offArg, IRubyObject lenArg) {
-        return MemoryUtil.getTaintedByteString(context.getRuntime(), getMemoryIO(),
+        return MemoryUtil.getTaintedByteString(context.runtime, getMemoryIO(),
                 getOffset(offArg), Util.int32Value(lenArg));
     }
 
@@ -1811,11 +1813,11 @@ abstract public class AbstractMemory extends RubyObject {
         ByteList bl = args[1].convertToString().getByteList();
         int idx = args.length > 2 ? Util.int32Value(args[2]) : 0;
         if (idx < 0 || idx > bl.length()) {
-            throw context.getRuntime().newRangeError("Invalid string index");
+            throw context.runtime.newRangeError("Invalid string index");
         }
         int len = args.length > 3 ? Util.int32Value(args[3]) : (bl.length() - idx);
         if (len < 0 || len > (bl.length() - idx)) {
-            throw context.getRuntime().newRangeError("Invalid length");
+            throw context.runtime.newRangeError("Invalid length");
         }
         getMemoryIO().put(off, bl.getUnsafeBytes(), bl.begin() + idx, len);
         return this;
@@ -1824,17 +1826,17 @@ abstract public class AbstractMemory extends RubyObject {
 
     @JRubyMethod(name = { "read_pointer" })
     public IRubyObject read_pointer(ThreadContext context) {
-        return getPointer(context.getRuntime(), 0);
+        return getPointer(context.runtime, 0);
     }
 
     @JRubyMethod(name = { "get_pointer" })
     public IRubyObject get_pointer(ThreadContext context) {
-        return getPointer(context.getRuntime(), 0);
+        return getPointer(context.runtime, 0);
     }
 
     @JRubyMethod(name = "get_pointer", required = 1)
     public IRubyObject get_pointer(ThreadContext context, IRubyObject offset) {
-        return getPointer(context.getRuntime(), getOffset(offset));
+        return getPointer(context.runtime, getOffset(offset));
     }
 
     private void putPointer(ThreadContext context, long offset, IRubyObject value) {
@@ -1845,7 +1847,7 @@ abstract public class AbstractMemory extends RubyObject {
         } else if (value.respondsTo("to_ptr")) {
             putPointer(context, offset, value.callMethod(context, "to_ptr"));
         } else {
-            throw context.getRuntime().newTypeError(value, context.getRuntime().getFFI().pointerClass);
+            throw context.runtime.newTypeError(value, context.runtime.getFFI().pointerClass);
         }
     }
 
@@ -1856,7 +1858,7 @@ abstract public class AbstractMemory extends RubyObject {
         } else if (ptr.isNull()) {
             getMemoryIO().putAddress(offset, 0L);
         } else {
-            throw context.getRuntime().newArgumentError("Cannot convert argument to pointer");
+            throw context.runtime.newArgumentError("Cannot convert argument to pointer");
         }
     }
 
@@ -1882,7 +1884,7 @@ abstract public class AbstractMemory extends RubyObject {
     public IRubyObject get_array_of_pointer(ThreadContext context, IRubyObject offset, IRubyObject length) {
         final int POINTER_SIZE = (Platform.getPlatform().addressSize / 8);
         int count = Util.int32Value(length);
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         RubyArray arr = RubyArray.newArray(runtime, count);
         long off = getOffset(offset);
 
@@ -1908,12 +1910,12 @@ abstract public class AbstractMemory extends RubyObject {
     
     @JRubyMethod(name = { "read_array_of_pointer" }, required = 1)
     public IRubyObject read_array_of_pointer(ThreadContext context, IRubyObject length) {
-        return get_array_of_pointer(context, RubyFixnum.zero(context.getRuntime()), length);
+        return get_array_of_pointer(context, RubyFixnum.zero(context.runtime), length);
     }
     
     @JRubyMethod(name = { "write_array_of_pointer" }, required = 1)
     public IRubyObject write_array_of_pointer(ThreadContext context, IRubyObject arrParam) {
-        return put_array_of_pointer(context, RubyFixnum.zero(context.getRuntime()), arrParam);
+        return put_array_of_pointer(context, RubyFixnum.zero(context.runtime), arrParam);
     }
     
     
@@ -1921,26 +1923,26 @@ abstract public class AbstractMemory extends RubyObject {
     @JRubyMethod(name = "put_callback", required = 3)
     public IRubyObject put_callback(ThreadContext context, IRubyObject offset, IRubyObject proc, IRubyObject cbInfo) {
         if (!(cbInfo instanceof CallbackInfo)) {
-            throw context.getRuntime().newArgumentError("invalid CallbackInfo");
+            throw context.runtime.newArgumentError("invalid CallbackInfo");
         }
-        Pointer ptr = Factory.getInstance().getCallbackManager().getCallback(context.getRuntime(), (CallbackInfo) cbInfo, proc);
+        Pointer ptr = Factory.getInstance().getCallbackManager().getCallback(context.runtime, (CallbackInfo) cbInfo, proc);
         getMemoryIO().putMemoryIO(getOffset(offset), ((AbstractMemory) ptr).getMemoryIO());
         return this;
     }
     
     @JRubyMethod(name = "+", required = 1)
     public IRubyObject op_plus(ThreadContext context, IRubyObject value) {
-        return slice(context.getRuntime(), RubyNumeric.fix2long(value));
+        return slice(context.runtime, RubyNumeric.fix2long(value));
     }
 
     @JRubyMethod(name = "order", required = 0)
     public final IRubyObject order(ThreadContext context) {
-        return context.getRuntime().newSymbol(getMemoryIO().order().equals(ByteOrder.LITTLE_ENDIAN) ? "little" : "big");
+        return context.runtime.newSymbol(getMemoryIO().order().equals(ByteOrder.LITTLE_ENDIAN) ? "little" : "big");
     }
 
     @JRubyMethod(name = "order", required = 1)
     public final IRubyObject order(ThreadContext context, IRubyObject byte_order) {
-        return order(context.getRuntime(), Util.parseByteOrder(context.getRuntime(), byte_order));
+        return order(context.runtime, Util.parseByteOrder(context.runtime, byte_order));
     }
 
     abstract public AbstractMemory order(Ruby runtime, ByteOrder order);

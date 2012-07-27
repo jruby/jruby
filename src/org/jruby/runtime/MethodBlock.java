@@ -31,6 +31,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
+import org.jruby.Ruby;
 import org.jruby.runtime.backtrace.BacktraceElement;
 import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
@@ -84,7 +85,7 @@ public abstract class MethodBlock extends ContextAwareBlockBody {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject[] args, Binding binding, Block.Type type, Block block) {
-        return yield(context, context.getRuntime().newArrayNoCopy(args), null, null, true, binding, type, block);
+        return yield(context, context.runtime.newArrayNoCopy(args), null, null, true, binding, type, block);
     }
     
     @Override
@@ -109,12 +110,12 @@ public abstract class MethodBlock extends ContextAwareBlockBody {
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding, Block.Type type) {
-        return yield(context, context.getRuntime().newArrayNoCopyLight(arg0, arg1), null, null, true, binding, type);
+        return yield(context, context.runtime.newArrayNoCopyLight(arg0, arg1), null, null, true, binding, type);
     }
 
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Block.Type type) {
-        return yield(context, context.getRuntime().newArrayNoCopyLight(arg0, arg1, arg2), null, null, true, binding, type);
+        return yield(context, context.runtime.newArrayNoCopyLight(arg0, arg1, arg2), null, null, true, binding, type);
     }
     
     @Override

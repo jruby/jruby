@@ -389,7 +389,7 @@ public class RuntimeCache {
     public final IRubyObject getConstant(ThreadContext context, String name, int index) {
         IRubyObject value = getValue(context, name, index);
         // We can callsite cache const_missing if we want
-        return value != null ? value : context.getCurrentScope().getStaticScope().getModule().callMethod(context, "const_missing", context.getRuntime().fastNewSymbol(name));
+        return value != null ? value : context.getCurrentScope().getStaticScope().getModule().callMethod(context, "const_missing", context.runtime.fastNewSymbol(name));
     }
 
     public IRubyObject getValue(ThreadContext context, String name, int index) {
@@ -398,11 +398,11 @@ public class RuntimeCache {
     }
 
     private boolean isCached(ThreadContext context, IRubyObject value, int index) {
-        return value != null && constantGenerations[index] == context.getRuntime().getConstantInvalidator().getData();
+        return value != null && constantGenerations[index] == context.runtime.getConstantInvalidator().getData();
     }
 
     public IRubyObject reCache(ThreadContext context, String name, int index) {
-        Object newGeneration = context.getRuntime().getConstantInvalidator().getData();
+        Object newGeneration = context.runtime.getConstantInvalidator().getData();
         IRubyObject value = context.getConstant(name);
         constants[index] = value;
         if (value != null) {
@@ -423,11 +423,11 @@ public class RuntimeCache {
     }
 
     private boolean isCachedFrom(RubyModule target, ThreadContext context, IRubyObject value, int index) {
-        return value != null && constantGenerations[index] == context.getRuntime().getConstantInvalidator().getData() && constantTargetHashes[index] == target.hashCode();
+        return value != null && constantGenerations[index] == context.runtime.getConstantInvalidator().getData() && constantTargetHashes[index] == target.hashCode();
     }
 
     public IRubyObject reCacheFrom(RubyModule target, ThreadContext context, String name, int index) {
-        Object newGeneration = context.getRuntime().getConstantInvalidator().getData();
+        Object newGeneration = context.runtime.getConstantInvalidator().getData();
         IRubyObject value = target.getConstantFromNoConstMissing(name, false);
         constants[index] = value;
         if (value != null) {

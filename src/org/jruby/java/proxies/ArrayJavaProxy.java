@@ -107,7 +107,7 @@ public class ArrayJavaProxy extends JavaProxy {
     
     @JRubyMethod(name = "+")
     public IRubyObject op_plus(ThreadContext context, IRubyObject other) {
-        JavaClass arrayClass = JavaClass.get(context.getRuntime(), getJavaArray().getComponentType());
+        JavaClass arrayClass = JavaClass.get(context.runtime, getJavaArray().getComponentType());
         if (other instanceof ArrayJavaProxy) {
             JavaArray otherArray = ((ArrayJavaProxy)other).getJavaArray();
             
@@ -180,13 +180,13 @@ public class ArrayJavaProxy extends JavaProxy {
         } else if (args.length == 2) {
             return getRange(context, args[0], args[1]);
         } else {
-            throw context.getRuntime().newArgumentError(args.length, 1);
+            throw context.runtime.newArgumentError(args.length, 1);
         }
     }
     
     public IRubyObject getRange(ThreadContext context, IRubyObject arg0) {
         int length = (int)getJavaArray().length().getLongValue();
-        JavaClass arrayClass = JavaClass.get(context.getRuntime(), getJavaArray().getComponentType());
+        JavaClass arrayClass = JavaClass.get(context.runtime, getJavaArray().getComponentType());
         
         if (arg0 instanceof RubyRange) {
             RubyRange range = (RubyRange)arg0;
@@ -205,22 +205,22 @@ public class ArrayJavaProxy extends JavaProxy {
         
                 return arrayClass.javaArraySubarray(context, getJavaArray(), first, newLength);
             } else {
-                throw context.getRuntime().newTypeError("only Fixnum ranges supported");
+                throw context.runtime.newTypeError("only Fixnum ranges supported");
             }
         } else {
-            throw context.getRuntime().newTypeError(arg0, context.getRuntime().getRange());
+            throw context.runtime.newTypeError(arg0, context.runtime.getRange());
         }
     }
     
     public IRubyObject getRange(ThreadContext context, IRubyObject firstObj, IRubyObject lengthObj) {
-        JavaClass arrayClass = JavaClass.get(context.getRuntime(), getJavaArray().getComponentType());
+        JavaClass arrayClass = JavaClass.get(context.runtime, getJavaArray().getComponentType());
         
         if (firstObj instanceof RubyFixnum && lengthObj instanceof RubyFixnum) {
             int first = (int)((RubyFixnum)firstObj).getLongValue();
             int length = (int)((RubyFixnum)lengthObj).getLongValue();
 
             if (length > getJavaArray().length().getLongValue()) {
-                throw context.getRuntime().newIndexError("length specifed is longer than array");
+                throw context.runtime.newIndexError("length specifed is longer than array");
             }
 
             first = first >= 0 ? first : (int)getJavaArray().length().getLongValue() + first;
@@ -231,7 +231,7 @@ public class ArrayJavaProxy extends JavaProxy {
 
             return arrayClass.javaArraySubarray(context, getJavaArray(), first, length);
         } else {
-            throw context.getRuntime().newTypeError("only Fixnum ranges supported");
+            throw context.runtime.newTypeError("only Fixnum ranges supported");
         }
     }
     
@@ -245,7 +245,7 @@ public class ArrayJavaProxy extends JavaProxy {
         
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
-            Ruby runtime = context.getRuntime();
+            Ruby runtime = context.runtime;
             IRubyObject proxy = oldNew.call(context, self, clazz, "new_proxy");
             
             if (arg0 instanceof JavaArray) {

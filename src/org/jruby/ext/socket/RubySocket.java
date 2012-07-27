@@ -126,7 +126,7 @@ public class RubySocket extends RubyBasicSocket {
 
     @JRubyMethod(meta = true)
     public static IRubyObject for_fd(ThreadContext context, IRubyObject socketClass, IRubyObject fd) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
 
         if (fd instanceof RubyFixnum) {
             int intFD = (int)((RubyFixnum)fd).getLongValue();
@@ -145,7 +145,7 @@ public class RubySocket extends RubyBasicSocket {
 
             return socket;
         } else {
-            throw runtime.newTypeError(fd, context.getRuntime().getFixnum());
+            throw runtime.newTypeError(fd, context.runtime.getFixnum());
         }
     }
 
@@ -212,7 +212,7 @@ public class RubySocket extends RubyBasicSocket {
 
         doBind(context, getChannel(), iaddr);
 
-        return RubyFixnum.zero(context.getRuntime());
+        return RubyFixnum.zero(context.runtime);
     }
 
     @JRubyMethod
@@ -438,10 +438,10 @@ public class RubySocket extends RubyBasicSocket {
                 }
 
             } catch(ClosedChannelException e) {
-                throw context.getRuntime().newErrnoECONNREFUSEDError();
+                throw context.runtime.newErrnoECONNREFUSEDError();
 
             } catch(IOException e) {
-                throw SocketUtils.sockerr(context.getRuntime(), "connect(2): name or service not known");
+                throw SocketUtils.sockerr(context.runtime, "connect(2): name or service not known");
             }
         }
     }

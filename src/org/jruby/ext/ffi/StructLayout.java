@@ -215,12 +215,12 @@ public final class StructLayout extends Type {
         IRubyObject rbFields = args[0], size = args[1], alignment = args[2];
 
         if (!(rbFields instanceof RubyArray)) {
-            throw context.getRuntime().newTypeError(rbFields, context.getRuntime().getArray());
+            throw context.runtime.newTypeError(rbFields, context.runtime.getArray());
         }
 
         List<IRubyObject> fields = Arrays.asList(((RubyArray) rbFields).toJavaArrayMaybeUnsafe());
 
-        return new StructLayout(context.getRuntime(), (RubyClass) klass, fields,
+        return new StructLayout(context.runtime, (RubyClass) klass, fields,
                 RubyNumeric.num2int(size), RubyNumeric.num2int(alignment));
     }
 
@@ -257,7 +257,7 @@ public final class StructLayout extends Type {
      */
     @JRubyMethod(name = "members")
     public IRubyObject members(ThreadContext context) {
-        RubyArray mbrs = RubyArray.newArray(context.getRuntime(), fieldNames.size());
+        RubyArray mbrs = RubyArray.newArray(context.runtime, fieldNames.size());
         for (IRubyObject name : fieldNames) {
             mbrs.append(name);
         }
@@ -271,7 +271,7 @@ public final class StructLayout extends Type {
      */
     @JRubyMethod(name = "offsets")
     public IRubyObject offsets(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         RubyArray offsets = RubyArray.newArray(runtime);
 
         for (IRubyObject name : fieldNames) {
@@ -287,33 +287,33 @@ public final class StructLayout extends Type {
 
     @JRubyMethod(name = "offset_of")
     public IRubyObject offset_of(ThreadContext context, IRubyObject fieldName) {
-        return getField(context.getRuntime(), fieldName).offset(context);
+        return getField(context.runtime, fieldName).offset(context);
     }
     
     @JRubyMethod(name = "[]")
     public IRubyObject aref(ThreadContext context, IRubyObject fieldName) {
-        return getField(context.getRuntime(), fieldName);
+        return getField(context.runtime, fieldName);
     }
 
     @JRubyMethod
     public IRubyObject fields(ThreadContext context) {
-        return RubyArray.newArray(context.getRuntime(), fields);
+        return RubyArray.newArray(context.runtime, fields);
     }
 
     final IRubyObject getValue(ThreadContext context, IRubyObject name, Storage cache, IRubyObject ptr) {
         if (!(ptr instanceof AbstractMemory)) {
-            throw context.getRuntime().newTypeError(ptr, context.getRuntime().getFFI().memoryClass);
+            throw context.runtime.newTypeError(ptr, context.runtime.getFFI().memoryClass);
         }
-        
-        return getMember(context.getRuntime(), name).get(context, cache, (AbstractMemory) ptr);
+
+        return getMember(context.runtime, name).get(context, cache, (AbstractMemory) ptr);
     }
 
     final void putValue(ThreadContext context, IRubyObject name, Storage cache, IRubyObject ptr, IRubyObject value) {
         if (!(ptr instanceof AbstractMemory)) {
-            throw context.getRuntime().newTypeError(ptr, context.getRuntime().getFFI().memoryClass);
+            throw context.runtime.newTypeError(ptr, context.runtime.getFFI().memoryClass);
         }
-        
-        getMember(context.getRuntime(), name).put(context, cache, (AbstractMemory) ptr, value);
+
+        getMember(context.runtime, name).put(context, cache, (AbstractMemory) ptr, value);
     }
 
     @Override
@@ -660,7 +660,7 @@ public final class StructLayout extends Type {
 
             if (args.length > 3 && args[3] instanceof RubyHash) {
                 RubyHash options = (RubyHash) args[3];
-                IRubyObject byte_order = options.fastARef(RubySymbol.newSymbol(context.getRuntime(), "byte_order"));
+                IRubyObject byte_order = options.fastARef(RubySymbol.newSymbol(context.runtime, "byte_order"));
                 if (byte_order instanceof RubySymbol || byte_order instanceof RubyString) {
                     String orderName = byte_order.asJavaString();
                     if ("network".equals(orderName) || "big".equals(orderName)) {
@@ -677,17 +677,17 @@ public final class StructLayout extends Type {
 
         @JRubyMethod
         public final IRubyObject size(ThreadContext context) {
-            return context.getRuntime().newFixnum(type.getNativeSize());
+            return context.runtime.newFixnum(type.getNativeSize());
         }
 
         @JRubyMethod
         public final IRubyObject alignment(ThreadContext context) {
-            return context.getRuntime().newFixnum(type.getNativeAlignment());
+            return context.runtime.newFixnum(type.getNativeAlignment());
         }
 
         @JRubyMethod
         public final IRubyObject offset(ThreadContext context) {
-            return context.getRuntime().newFixnum(offset);
+            return context.runtime.newFixnum(offset);
         }
 
         @JRubyMethod(name = { "type", "ffi_type" })
@@ -795,7 +795,7 @@ public final class StructLayout extends Type {
             IRubyObject type = args[2];
 
             if (!(type instanceof CallbackInfo)) {
-                throw context.getRuntime().newTypeError(type, context.getRuntime().getModule("FFI").getClass("Type").getClass("Function"));
+                throw context.runtime.newTypeError(type, context.runtime.getModule("FFI").getClass("Type").getClass("Function"));
             }
             init(args, FunctionFieldIO.INSTANCE);
 
@@ -824,8 +824,8 @@ public final class StructLayout extends Type {
             IRubyObject type = args[2];
 
             if (!(type instanceof StructByValue)) {
-                throw context.getRuntime().newTypeError(type,
-                        context.getRuntime().getModule("FFI").getClass("Type").getClass("Struct"));
+                throw context.runtime.newTypeError(type,
+                        context.runtime.getModule("FFI").getClass("Type").getClass("Struct"));
             }
             init(args, new InnerStructFieldIO((StructByValue) type));
 
@@ -853,8 +853,8 @@ public final class StructLayout extends Type {
 
             IRubyObject type = args[2];
             if (!(type instanceof Type.Array)) {
-                throw context.getRuntime().newTypeError(type,
-                        context.getRuntime().getModule("FFI").getClass("Type").getClass("Array"));
+                throw context.runtime.newTypeError(type,
+                        context.runtime.getModule("FFI").getClass("Type").getClass("Array"));
             }
             init(args, new ArrayFieldIO((Type.Array) type));
 
@@ -879,13 +879,13 @@ public final class StructLayout extends Type {
         @JRubyMethod(required = 4)
         public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
             if (!(args[2] instanceof MappedType)) {
-                throw context.getRuntime().newTypeError(args[2],
-                        context.getRuntime().getModule("FFI").getClass("Type").getClass("Mapped"));
+                throw context.runtime.newTypeError(args[2],
+                        context.runtime.getModule("FFI").getClass("Type").getClass("Mapped"));
             }
 
             if (!(args[3] instanceof Field)) {
-                throw context.getRuntime().newTypeError(args[3],
-                        context.getRuntime().getModule("FFI").getClass("StructLayout").getClass("Field"));
+                throw context.runtime.newTypeError(args[3],
+                        context.runtime.getModule("FFI").getClass("StructLayout").getClass("Field"));
             }
 
             init(args[0], args[2], args[1], new MappedFieldIO((MappedType) args[2], ((Field) args[3]).getFieldIO()));
@@ -985,7 +985,7 @@ public final class StructLayout extends Type {
                 elems[i] = get(context, i);
             }
 
-            return RubyArray.newArrayNoCopy(context.getRuntime(), elems);
+            return RubyArray.newArrayNoCopy(context.runtime, elems);
         }
 
         @JRubyMethod(name = { "to_ptr" })
@@ -1004,7 +1004,7 @@ public final class StructLayout extends Type {
         @JRubyMethod(name = "each")
         public IRubyObject each(ThreadContext context, Block block) {
             if (!block.isGiven()) {
-                throw context.getRuntime().newLocalJumpErrorNoBlock();
+                throw context.runtime.newLocalJumpErrorNoBlock();
             }
             for (int i = 0; i < arrayType.length(); ++i) {
                 block.yield(context, get(context, i));
@@ -1024,7 +1024,7 @@ public final class StructLayout extends Type {
 
         @JRubyMethod(name = { "to_s" })
         public IRubyObject to_s(ThreadContext context) {
-            return MemoryUtil.getTaintedString(context.getRuntime(), ptr.getMemoryIO(), 0, arrayType.length());
+            return MemoryUtil.getTaintedString(context.runtime, ptr.getMemoryIO(), 0, arrayType.length());
         }
     }
 
@@ -1103,7 +1103,7 @@ public final class StructLayout extends Type {
                 MemoryIO mem = ((Struct) value).getMemoryIO();
 
                 if (!(mem instanceof DirectMemoryIO)) {
-                    throw context.getRuntime().newArgumentError("Struct memory not backed by a native pointer");
+                    throw context.runtime.newArgumentError("Struct memory not backed by a native pointer");
                 }
                 ptr.getMemoryIO().putMemoryIO(m.offset, mem);
 
@@ -1114,12 +1114,12 @@ public final class StructLayout extends Type {
                 if (addr instanceof Pointer) {
                     ptr.getMemoryIO().putMemoryIO(m.offset, ((Pointer) addr).getMemoryIO());
                 } else {
-                    throw context.getRuntime().newArgumentError("Invalid pointer value");
+                    throw context.runtime.newArgumentError("Invalid pointer value");
                 }
             } else if (value.isNil()) {
                 ptr.getMemoryIO().putAddress(m.offset, 0L);
             } else {
-                throw context.getRuntime().newArgumentError("Invalid pointer value");
+                throw context.runtime.newArgumentError("Invalid pointer value");
             }
             cache.putReference(m, value);
         }
@@ -1133,7 +1133,7 @@ public final class StructLayout extends Type {
                     return old;
                 }
             }
-            Pointer retval = new Pointer(context.getRuntime(), memory);
+            Pointer retval = new Pointer(context.runtime, memory);
             cache.putCachedValue(m, retval);
 
             return retval;
@@ -1154,16 +1154,16 @@ public final class StructLayout extends Type {
         public IRubyObject get(ThreadContext context, StructLayout.Storage cache, Member m, AbstractMemory ptr) {
             MemoryIO io = ptr.getMemoryIO().getMemoryIO(m.getOffset(ptr));
             if (io == null || io.isNull()) {
-                return context.getRuntime().getNil();
+                return context.runtime.getNil();
             }
 
-            return RubyString.newStringNoCopy(context.getRuntime(), io.getZeroTerminatedByteArray(0));
+            return RubyString.newStringNoCopy(context.runtime, io.getZeroTerminatedByteArray(0));
         }
 
         public void put(ThreadContext context, StructLayout.Storage cache, Member m, AbstractMemory ptr, IRubyObject value) {
             ByteList bl = value.convertToString().getByteList();
 
-            MemoryPointer mem = MemoryPointer.allocate(context.getRuntime(), 1, bl.length() + 1, false);
+            MemoryPointer mem = MemoryPointer.allocate(context.runtime, 1, bl.length() + 1, false);
             //
             // Keep a reference to the temporary memory in the cache so it does
             // not get freed by the GC until the struct is freed
@@ -1195,7 +1195,7 @@ public final class StructLayout extends Type {
                 ptr.getMemoryIO().putAddress(m.getOffset(ptr), 0L);
                 cache.putReference(m, value);
             } else {
-                Pointer cb = Factory.getInstance().getCallbackManager().getCallback(context.getRuntime(), (CallbackInfo) m.type, value);
+                Pointer cb = Factory.getInstance().getCallbackManager().getCallback(context.runtime, (CallbackInfo) m.type, value);
                 ptr.getMemoryIO().putMemoryIO(m.getOffset(ptr), cb.getMemoryIO());
                 cache.putReference(m, cb);
             }
@@ -1208,9 +1208,9 @@ public final class StructLayout extends Type {
             if (fptr != null && fptr.getAddress() == address) {
                 return fptr;
             }
-            
-            fptr = Factory.getInstance().newFunction(context.getRuntime(), 
-                    ((Pointer) ptr).getPointer(context.getRuntime(), m.getOffset(ptr)), (CallbackInfo) m.type);
+
+            fptr = Factory.getInstance().newFunction(context.runtime,
+                    ((Pointer) ptr).getPointer(context.runtime, m.getOffset(ptr)), (CallbackInfo) m.type);
             cache.putCachedValue(m, fptr);
 
             return fptr;
@@ -1236,17 +1236,17 @@ public final class StructLayout extends Type {
 
         public void put(ThreadContext context, StructLayout.Storage cache, Member m, AbstractMemory ptr, IRubyObject value) {
             if (!(value instanceof Struct)) {
-                throw context.getRuntime().newTypeError(value, context.getRuntime().getFFI().structClass);
+                throw context.runtime.newTypeError(value, context.runtime.getFFI().structClass);
             }
 
             Struct s = (Struct) value;
             if (!s.getLayout(context).equals(sbv.getStructLayout())) {
-                throw context.getRuntime().newTypeError("incompatible struct layout");
+                throw context.runtime.newTypeError("incompatible struct layout");
             }
 
             ByteBuffer src = s.getMemoryIO().asByteBuffer();
             if (src.remaining() != sbv.size) {
-                throw context.getRuntime().newRuntimeError("bad size in " + value.getMetaClass().toString());
+                throw context.runtime.newRuntimeError("bad size in " + value.getMetaClass().toString());
             }
 
             ptr.getMemoryIO().slice(m.offset(), sbv.size).asByteBuffer().put(src);
@@ -1255,7 +1255,7 @@ public final class StructLayout extends Type {
         public IRubyObject get(ThreadContext context, StructLayout.Storage cache, Member m, AbstractMemory ptr) {
             IRubyObject s = cache.getCachedValue(m);
             if (s == null) {
-                s = sbv.getStructClass().newInstance(context, ptr.slice(context.getRuntime(), m.getOffset(ptr)), Block.NULL_BLOCK);
+                s = sbv.getStructClass().newInstance(context, ptr.slice(context.runtime, m.getOffset(ptr)), Block.NULL_BLOCK);
                 cache.putCachedValue(m, s);
             }
 
@@ -1295,7 +1295,7 @@ public final class StructLayout extends Type {
         
         @Override
         IRubyObject get(ThreadContext context, MemoryIO io, long offset) {
-            throw context.getRuntime().newNotImplementedError("cannot get multi deminesional array field");
+            throw context.runtime.newNotImplementedError("cannot get multi deminesional array field");
         }
 
         @Override
@@ -1305,15 +1305,15 @@ public final class StructLayout extends Type {
                 io.putZeroTerminatedByteArray(offset, bl.getUnsafeBytes(), bl.begin(),
                     Math.min(bl.length(), arrayType.length() - 1));
             } else {
-                throw context.getRuntime().newNotImplementedError("cannot set multi deminesional array field");
+                throw context.runtime.newNotImplementedError("cannot set multi deminesional array field");
             }
         }
 
         @Override
         IRubyObject get(ThreadContext context, AbstractMemory ptr, long offset) {
             return isCharArray()
-                    ? new StructLayout.CharArrayProxy(context.getRuntime(), ptr, offset, arrayType, op)
-                    : new StructLayout.ArrayProxy(context.getRuntime(), ptr, offset, arrayType, op);
+                    ? new StructLayout.CharArrayProxy(context.runtime, ptr, offset, arrayType, op)
+                    : new StructLayout.ArrayProxy(context.runtime, ptr, offset, arrayType, op);
         }
         
         private boolean isCharArray() {
@@ -1343,7 +1343,7 @@ public final class StructLayout extends Type {
                 RubyArray ary = value.convertToArray();
                 int count = ary.size();
                 if (count > arrayType.length()) {
-                    throw context.getRuntime().newIndexError("array too big");
+                    throw context.runtime.newIndexError("array too big");
                 }
                 AbstractMemory memory = (AbstractMemory) ptr;
 
@@ -1359,7 +1359,7 @@ public final class StructLayout extends Type {
                             ary.entry(i));
                 }
             } else {
-                throw context.getRuntime().newNotImplementedError("cannot set array field");
+                throw context.runtime.newNotImplementedError("cannot set array field");
             }
         }
 
@@ -1367,8 +1367,8 @@ public final class StructLayout extends Type {
             IRubyObject s = cache.getCachedValue(m);
             if (s == null) {
                 s = isCharArray()
-                        ? new StructLayout.CharArrayProxy(context.getRuntime(), ptr, m.offset, arrayType, op)
-                        : new StructLayout.ArrayProxy(context.getRuntime(), ptr, m.offset, arrayType, op);
+                        ? new StructLayout.CharArrayProxy(context.runtime, ptr, m.offset, arrayType, op)
+                        : new StructLayout.ArrayProxy(context.runtime, ptr, m.offset, arrayType, op);
                 cache.putCachedValue(m, s);
             }
 

@@ -105,13 +105,13 @@ public class RubyUnboundMethod extends RubyMethod {
         
         if (!originModule.isInstance(aReceiver)) {
             if (originModule instanceof MetaClass) {
-                throw context.getRuntime().newTypeError("singleton method called for a different object");
+                throw context.runtime.newTypeError("singleton method called for a different object");
             } else if (receiverClass instanceof MetaClass && receiverClass.getMethods().containsKey(originName)) {
-                throw context.getRuntime().newTypeError("method `" + originName + "' overridden");
+                throw context.runtime.newTypeError("method `" + originName + "' overridden");
             } else if (
                 !(originModule.isModule() ? originModule.isInstance(aReceiver) : aReceiver.getType() == originModule)) {
                 // FIX replace type() == ... with isInstanceOf(...)
-                throw context.getRuntime().newTypeError("bind argument must be an instance of " + originModule.getName());
+                throw context.runtime.newTypeError("bind argument must be an instance of " + originModule.getName());
             }
         }
         return RubyMethod.newMethod(implementationModule, methodName, receiverClass, originName, method, aReceiver);
@@ -131,12 +131,12 @@ public class RubyUnboundMethod extends RubyMethod {
 
     @JRubyMethod(compat = RUBY1_8)
     public IRubyObject name(ThreadContext context) {
-        return context.getRuntime().newString(methodName);
+        return context.runtime.newString(methodName);
     }
 
     @JRubyMethod(name = "name", compat = RUBY1_9)
     public IRubyObject name19(ThreadContext context) {
-        return context.getRuntime().newSymbol(methodName);
+        return context.runtime.newSymbol(methodName);
     }
 
     @JRubyMethod(name = "owner")

@@ -101,7 +101,7 @@ public class JITCompiler implements JITCompilerMBean {
     }
 
     public void tryJIT(DefaultMethod method, ThreadContext context, String className, String methodName) {
-        if (context.getRuntime().getInstanceConfig().getCompileMode().shouldJIT()) {
+        if (context.runtime.getInstanceConfig().getCompileMode().shouldJIT()) {
             jitIsEnabled(method, context, className, methodName);
         }
     }
@@ -117,7 +117,7 @@ public class JITCompiler implements JITCompilerMBean {
     }
 
     private void jitIsEnabled(DefaultMethod method, ThreadContext context, String className, String methodName) {
-        RubyInstanceConfig instanceConfig = context.getRuntime().getInstanceConfig();
+        RubyInstanceConfig instanceConfig = context.runtime.getInstanceConfig();
         
         if (method.incrementCallCount() >= instanceConfig.getJitThreshold()) {
             jitThresholdReached(method, instanceConfig, context, className, methodName);

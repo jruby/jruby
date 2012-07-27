@@ -156,7 +156,7 @@ public class Readline {
 
     @JRubyMethod(name = "readline", module = true, visibility = PRIVATE)
     public static IRubyObject s_readline(ThreadContext context, IRubyObject recv, IRubyObject prompt, IRubyObject add_to_hist) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         ConsoleHolder holder = getHolder(runtime);
         if (holder.readline == null) {
             initReadline(runtime, holder); // not overridden, let's go
@@ -203,13 +203,13 @@ public class Readline {
     @JRubyMethod(name = "input=", module = true, visibility = PRIVATE, compat = RUBY1_9)
     public static IRubyObject setInput(ThreadContext context, IRubyObject recv, IRubyObject input) {
         // FIXME: JRUBY-3604
-        return context.getRuntime().getNil();
+        return context.runtime.getNil();
     }
 
     @JRubyMethod(name = "output=", module = true, visibility = PRIVATE, compat = RUBY1_9)
     public static IRubyObject setOutput(ThreadContext context, IRubyObject recv, IRubyObject output) {
         // FIXME: JRUBY-3604
-        return context.getRuntime().getNil();
+        return context.runtime.getNil();
     }
 
     @JRubyMethod(name = "readline", module = true, visibility = PRIVATE)
@@ -261,7 +261,7 @@ public class Readline {
         "filename_quote_characters", "filename_quote_characters=",
         "vi_editing_mode"}, frame = true, module = true, visibility = PRIVATE)
     public static IRubyObject unimplemented(ThreadContext context, IRubyObject recv) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         String err = context.getFrameName() + "() function is unimplemented on this machine";
         throw runtime.newNotImplementedError(err);
     }
@@ -277,14 +277,14 @@ public class Readline {
         "vi_editing_mode", "vi_editing_mode?",
         "set_screen_size"}, frame = true, module = true, visibility = PRIVATE, compat = RUBY1_9)
     public static IRubyObject unimplemented19(ThreadContext context, IRubyObject recv) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         String err = context.getFrameName() + "() function is unimplemented on this machine";
         throw runtime.newNotImplementedError(err);
     }
 
     @JRubyMethod(name = "completion_case_fold", module = true, visibility = PRIVATE)
     public static IRubyObject s_get_completion_case_fold(ThreadContext context, IRubyObject recv) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         return COMPLETION_CASE_FOLD;
     }
 
@@ -292,13 +292,13 @@ public class Readline {
     // FIXME: this is really a noop
     public static IRubyObject s_set_completion_case_fold(ThreadContext context, IRubyObject recv,
             IRubyObject other) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         return COMPLETION_CASE_FOLD = other;
     }
 
     @JRubyMethod(name = "get_screen_size", module = true, visibility = PRIVATE, compat = RUBY1_9)
     public static IRubyObject s_get_screen_size(ThreadContext context, IRubyObject recv) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         ConsoleHolder holder = getHolder(runtime);
         IRubyObject[] ary = new IRubyObject[2];
         ary[0] = runtime.newFixnum(holder.readline.getTerminal().getHeight());
@@ -309,7 +309,7 @@ public class Readline {
 
     @JRubyMethod(name = "line_buffer", module = true, visibility = PRIVATE, compat = RUBY1_9)
     public static IRubyObject s_get_line_buffer(ThreadContext context, IRubyObject recv) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         ConsoleHolder holder = getHolder(runtime);
         if (holder.readline == null) {
             initReadline(runtime, holder);
@@ -320,7 +320,7 @@ public class Readline {
 
     @JRubyMethod(name = "point", module = true, visibility = PRIVATE, compat = RUBY1_9)
     public static IRubyObject s_get_point(ThreadContext context, IRubyObject recv) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         ConsoleHolder holder = getHolder(runtime);
         if (holder.readline == null) {
             initReadline(runtime, holder);
@@ -331,7 +331,7 @@ public class Readline {
 
     @JRubyMethod(name = "refresh_line", module = true, visibility = PRIVATE, compat = RUBY1_9)
     public static IRubyObject s_refresh_line(ThreadContext context, IRubyObject recv) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         ConsoleHolder holder = getHolder(runtime);
         try {
             holder.readline.redrawLine(); // not quite the same as rl_refresh_line()

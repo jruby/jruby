@@ -101,7 +101,7 @@ public class JRubyLibrary implements Library {
      */
     @JRubyMethod(module = true)
     public static IRubyObject reference(ThreadContext context, IRubyObject recv, IRubyObject obj) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
 
         return Java.getInstance(runtime, obj, false);
     }
@@ -112,7 +112,7 @@ public class JRubyLibrary implements Library {
      */
     @JRubyMethod(module = true)
     public static IRubyObject reference0(ThreadContext context, IRubyObject recv, IRubyObject obj) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
 
         return Java.getInstance(runtime, obj);
     }
@@ -130,11 +130,11 @@ public class JRubyLibrary implements Library {
         } else if (obj.dataGetStruct() instanceof JavaObject) {
             unwrapped = JavaUtil.unwrapJavaObject(obj);
         } else {
-            throw context.getRuntime().newTypeError("got " + obj + ", expected wrapped Java object");
+            throw context.runtime.newTypeError("got " + obj + ", expected wrapped Java object");
         }
 
         if (!(unwrapped instanceof IRubyObject)) {
-            throw context.getRuntime().newTypeError("got " + obj + ", expected Java-wrapped Ruby object");
+            throw context.runtime.newTypeError("got " + obj + ", expected Java-wrapped Ruby object");
         }
 
         return (IRubyObject)unwrapped;

@@ -238,7 +238,7 @@ public class RubyProc extends RubyObject implements DataType {
             int required = arity.required();
             if (required > args.length) {
                 for (int i = args.length; i < required; i++) {
-                    list.add(context.getRuntime().getNil());
+                    list.add(context.runtime.getNil());
                 }
                 args = list.toArray(args);
             } else if (required < args.length) {
@@ -251,7 +251,9 @@ public class RubyProc extends RubyObject implements DataType {
 
     @JRubyMethod(name = {"call", "[]", "yield", "==="}, rest = true, compat = RUBY1_9)
     public IRubyObject call19(ThreadContext context, IRubyObject[] args, Block blockCallArg) {
-        if (isLambda()) block.arity().checkArity(context.getRuntime(), args.length);
+        if (isLambda()) {
+            block.arity().checkArity(context.runtime, args.length);
+        }
         if (isProc()) args = prepareProcArgs(context, args);
 
         return call(context, args, null, blockCallArg);
@@ -302,7 +304,7 @@ public class RubyProc extends RubyObject implements DataType {
         // enclosing frame is no longer on the stack, it's a bad return.
         // FIXME: this is not very efficient for cases where it won't error
         if (target == jumpTarget && !context.isJumpTargetAlive(target, 0)) {
-            throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.RETURN,
+            throw context.runtime.newLocalJumpError(RubyLocalJumpError.Reason.RETURN,
                     (IRubyObject) rj.getValue(), "unexpected return");
         }
 
@@ -326,7 +328,7 @@ public class RubyProc extends RubyObject implements DataType {
 
     @JRubyMethod(name = "source_location", compat = RUBY1_9)
     public IRubyObject source_location(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (sourcePosition != null) {
             return runtime.newArray(runtime.newString(sourcePosition.getFile()),
                     runtime.newFixnum(sourcePosition.getLine() + 1 /*zero-based*/));
@@ -345,13 +347,13 @@ public class RubyProc extends RubyObject implements DataType {
 
         if (body instanceof MethodBlock) return ((MethodBlock) body).getMethod().parameters(context);
 
-        return RuntimeHelpers.parameterListToParameters(context.getRuntime(),
+        return RuntimeHelpers.parameterListToParameters(context.runtime,
                 body.getParameterList(), isLambda());
     }
 
     @JRubyMethod(name = "lambda?", compat = RUBY1_9)
     public IRubyObject lambda_p(ThreadContext context) {
-        return context.getRuntime().newBoolean(isLambda());
+        return context.runtime.newBoolean(isLambda());
     }
 
     private boolean isLambda() {

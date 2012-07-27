@@ -95,7 +95,7 @@ public class TraceableJittedMethod extends DynamicMethod {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         int callNumber = context.callNumber;
 
         try {
@@ -113,7 +113,7 @@ public class TraceableJittedMethod extends DynamicMethod {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         int callNumber = context.callNumber;
 
         try {
@@ -131,7 +131,7 @@ public class TraceableJittedMethod extends DynamicMethod {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         int callNumber = context.callNumber;
 
         try {
@@ -149,7 +149,7 @@ public class TraceableJittedMethod extends DynamicMethod {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         int callNumber = context.callNumber;
 
         try {
@@ -167,7 +167,7 @@ public class TraceableJittedMethod extends DynamicMethod {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         int callNumber = context.callNumber;
 
         try {
@@ -185,7 +185,7 @@ public class TraceableJittedMethod extends DynamicMethod {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         int callNumber = context.callNumber;
 
         try {
@@ -203,7 +203,7 @@ public class TraceableJittedMethod extends DynamicMethod {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         int callNumber = context.callNumber;
 
         try {
@@ -221,7 +221,7 @@ public class TraceableJittedMethod extends DynamicMethod {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         int callNumber = context.callNumber;
 
         try {
@@ -239,7 +239,7 @@ public class TraceableJittedMethod extends DynamicMethod {
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         int callNumber = context.callNumber;
 
         try {
@@ -256,7 +256,7 @@ public class TraceableJittedMethod extends DynamicMethod {
     }
 
     protected void pre(ThreadContext context, IRubyObject self, String name, Block block, int argsLength) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
 
         callConfig.pre(context, self, getImplementationClass(), name, block, staticScope);
 

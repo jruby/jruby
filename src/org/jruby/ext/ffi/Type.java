@@ -158,7 +158,7 @@ public abstract class Type extends RubyObject {
      */
     @JRubyMethod(name = "size")
     public IRubyObject size(ThreadContext context) {
-        return context.getRuntime().newFixnum(getNativeSize());
+        return context.runtime.newFixnum(getNativeSize());
     }
 
     /**
@@ -169,7 +169,7 @@ public abstract class Type extends RubyObject {
      */
     @JRubyMethod(name = "alignment")
     public IRubyObject alignment(ThreadContext context) {
-        return context.getRuntime().newFixnum(getNativeAlignment());
+        return context.runtime.newFixnum(getNativeAlignment());
     }
 
     @JRubyClass(name = "FFI::Type::Builtin", parent = "FFI::Type")
@@ -186,7 +186,7 @@ public abstract class Type extends RubyObject {
 
         @JRubyMethod(name = "to_s")
         public final IRubyObject to_s(ThreadContext context) {
-            return RubyString.newString(context.getRuntime(),
+            return RubyString.newString(context.runtime,
                     String.format("#<FFI::Type::Builtin:%s size=%d alignment=%d>",
                     nativeType.name(), size, alignment));
         }
@@ -216,18 +216,18 @@ public abstract class Type extends RubyObject {
         @Override
         @JRubyMethod(name = "==", required = 1)
         public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
-            return context.getRuntime().newBoolean(this.equals(obj));
+            return context.runtime.newBoolean(this.equals(obj));
         }
 
         @Override
         @JRubyMethod(name = "equal?", required = 1)
         public IRubyObject equal_p(ThreadContext context, IRubyObject obj) {
-            return context.getRuntime().newBoolean(this.equals(obj));
+            return context.runtime.newBoolean(this.equals(obj));
         }
         
         @JRubyMethod(name = "eql?", required = 1)
         public IRubyObject eql_p(ThreadContext context, IRubyObject obj) {
-            return context.getRuntime().newBoolean(this.equals(obj));
+            return context.runtime.newBoolean(this.equals(obj));
         }
 
     }
@@ -265,15 +265,15 @@ public abstract class Type extends RubyObject {
         @JRubyMethod(name = "new", required = 2, meta = true)
         public static final IRubyObject newInstance(ThreadContext context, IRubyObject klass, IRubyObject componentType, IRubyObject length) {
             if (!(componentType instanceof Type)) {
-                throw context.getRuntime().newTypeError(componentType, getTypeClass(context.getRuntime()));
+                throw context.runtime.newTypeError(componentType, getTypeClass(context.runtime));
             }
 
-            return new Array(context.getRuntime(), (RubyClass) klass, (Type) componentType, RubyNumeric.fix2int(length));
+            return new Array(context.runtime, (RubyClass) klass, (Type) componentType, RubyNumeric.fix2int(length));
         }
 
         @JRubyMethod
         public final IRubyObject length(ThreadContext context) {
-            return context.getRuntime().newFixnum(length);
+            return context.runtime.newFixnum(length);
         }
 
         @JRubyMethod

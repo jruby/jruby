@@ -95,12 +95,12 @@ public class RubyGC {
 
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject stress(ThreadContext context, IRubyObject recv) {
-        return context.getRuntime().newBoolean(stress);
+        return context.runtime.newBoolean(stress);
     }
 
     @JRubyMethod(name = "stress=", module = true, visibility = PRIVATE)
     public static IRubyObject stress_set(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         emptyImplementationWarning(runtime, "GC.stress=");
         stress = arg.isTrue();
         return runtime.newBoolean(stress);

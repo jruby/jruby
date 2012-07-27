@@ -106,14 +106,14 @@ public final class AutoPointer extends Pointer {
         Reaper r = reaper;
 
         if (r == null || r.released) {
-            throw context.getRuntime().newRuntimeError("pointer already freed");
+            throw context.runtime.newRuntimeError("pointer already freed");
         }
 
         r.release(context);
         reaper = null;
         referent = null;
-        
-        return context.getRuntime().getNil();
+
+        return context.runtime.getNil();
     }
 
     @JRubyMethod(name = "autorelease=")
@@ -121,12 +121,12 @@ public final class AutoPointer extends Pointer {
         Reaper r = reaper;
 
         if (r == null || r.released) {
-            throw context.getRuntime().newRuntimeError("pointer already freed");
+            throw context.runtime.newRuntimeError("pointer already freed");
         }
 
         r.autorelease(autorelease.isTrue());
-        
-        return context.getRuntime().getNil();
+
+        return context.runtime.getNil();
     }
 
     private void setReaper(Reaper reaper) {

@@ -306,27 +306,27 @@ public class Platform {
     }
     @JRubyMethod(name = "windows?", module=true)
     public static IRubyObject windows_p(ThreadContext context, IRubyObject recv) {
-        return context.getRuntime().newBoolean(OS == OS.WINDOWS);
+        return context.runtime.newBoolean(OS == OS.WINDOWS);
     }
     @JRubyMethod(name = "mac?", module=true)
     public static IRubyObject mac_p(ThreadContext context, IRubyObject recv) {
-        return context.getRuntime().newBoolean(OS == OS.DARWIN);
+        return context.runtime.newBoolean(OS == OS.DARWIN);
     }
     @JRubyMethod(name = "unix?", module=true)
     public static IRubyObject unix_p(ThreadContext context, IRubyObject recv) {
-        return context.getRuntime().newBoolean(Platform.getPlatform().isUnix());
+        return context.runtime.newBoolean(Platform.getPlatform().isUnix());
     }
     @JRubyMethod(name = "bsd?", module=true)
     public static IRubyObject bsd_p(ThreadContext context, IRubyObject recv) {
-        return context.getRuntime().newBoolean(Platform.getPlatform().isBSD());
+        return context.runtime.newBoolean(Platform.getPlatform().isBSD());
     }
     @JRubyMethod(name = "linux?", module=true)
     public static IRubyObject linux_p(ThreadContext context, IRubyObject recv) {
-        return context.getRuntime().newBoolean(OS == OS.LINUX);
+        return context.runtime.newBoolean(OS == OS.LINUX);
     }
     @JRubyMethod(name = "solaris?", module=true)
     public static IRubyObject solaris_p(ThreadContext context, IRubyObject recv) {
-        return context.getRuntime().newBoolean(OS == OS.SOLARIS);
+        return context.runtime.newBoolean(OS == OS.SOLARIS);
     }
     /**
      * An extension over <code>System.getProperty</code> method.

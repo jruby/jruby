@@ -101,7 +101,7 @@ public class Mutex extends RubyObject {
 
     @JRubyMethod
     public synchronized IRubyObject unlock(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (!lock.isLocked()) {
             throw runtime.newThreadError("Mutex is not locked");
         }
@@ -154,7 +154,7 @@ public class Mutex extends RubyObject {
 
     private void checkRelocking(ThreadContext context) {
         if (lock.isHeldByCurrentThread()) {
-            throw context.getRuntime().newThreadError("Mutex relocking by same thread");
+            throw context.runtime.newThreadError("Mutex relocking by same thread");
         }
     }
     

@@ -82,7 +82,7 @@ public class Timeout implements Library {
     public static class TimeoutToplevel {
         @JRubyMethod(required = 1, optional = 1, visibility = PRIVATE)
         public static IRubyObject timeout(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block) {
-            RubyModule timeout = context.getRuntime().getModule("Timeout");
+            RubyModule timeout = context.runtime.getModule("Timeout");
             
             switch (args.length) {
             case 1:
@@ -90,8 +90,8 @@ public class Timeout implements Library {
             case 2:
                 return Timeout.timeout(context, timeout, args[0], args[1], block);
             default:
-                Arity.raiseArgumentError(context.getRuntime(), args.length, 1, 2);
-                return context.getRuntime().getNil();
+                Arity.raiseArgumentError(context.runtime, args.length, 1, 2);
+                return context.runtime.getNil();
             }
         }
     }
@@ -103,7 +103,7 @@ public class Timeout implements Library {
             return block.yieldSpecific(context);
         }
 
-        final Ruby runtime = context.getRuntime();
+        final Ruby runtime = context.runtime;
 
         // No timeout in critical section
         if (runtime.getThreadService().getCritical()) {
@@ -141,7 +141,7 @@ public class Timeout implements Library {
             return block.yieldSpecific(context);
         }
 
-        final Ruby runtime = context.getRuntime();
+        final Ruby runtime = context.runtime;
 
         // No timeout in critical section
         if (runtime.getThreadService().getCritical()) {
@@ -227,13 +227,13 @@ public class Timeout implements Library {
     }
 
     private static IRubyObject raiseBecauseCritical(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
 
         return RubyKernel.raise(context, runtime.getKernel(), new IRubyObject[]{runtime.getThreadError(), runtime.newString("timeout within critical section")}, Block.NULL_BLOCK);
     }
 
     private static IRubyObject raiseTimeoutError(ThreadContext context, RaiseException re) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
 
         return RubyKernel.raise(
                 context,

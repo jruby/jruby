@@ -123,14 +123,18 @@ public class RubyException extends RubyObject {
 
     @JRubyMethod(name = "to_s", compat = CompatVersion.RUBY1_8)
     public IRubyObject to_s(ThreadContext context) {
-        if (message.isNil()) return context.getRuntime().newString(getMetaClass().getRealClass().getName());
+        if (message.isNil()) {
+            return context.runtime.newString(getMetaClass().getRealClass().getName());
+        }
         message.setTaint(isTaint());
         return message;
     }
 
     @JRubyMethod(name = "to_s", compat = CompatVersion.RUBY1_9)
     public IRubyObject to_s19(ThreadContext context) {
-        if (message.isNil()) return context.getRuntime().newString(getMetaClass().getRealClass().getName());
+        if (message.isNil()) {
+            return context.runtime.newString(getMetaClass().getRealClass().getName());
+        }
         message.setTaint(isTaint());
         return message.asString();
     }
@@ -168,20 +172,20 @@ public class RubyException extends RubyObject {
 
         boolean equal =
                 getMetaClass().getRealClass() == other.getMetaClass().getRealClass() &&
-                        context.getRuntime().getException().isInstance(other) &&
+                        context.runtime.getException().isInstance(other) &&
                         callMethod(context, "message").equals(other.callMethod(context, "message")) &&
                         callMethod(context, "backtrace").equals(other.callMethod(context, "backtrace"));
-        return context.getRuntime().newBoolean(equal);
+        return context.runtime.newBoolean(equal);
     }
 
     @JRubyMethod(name = "===", meta = true)
     public static IRubyObject op_eqq(ThreadContext context, IRubyObject recv, IRubyObject other) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         // special case non-FlowControlException Java exceptions so they'll be caught by rescue Exception
         if (recv == runtime.getException() && other instanceof ConcreteJavaProxy) {
             Object object = ((ConcreteJavaProxy)other).getObject();
             if (object instanceof Throwable && !(object instanceof FlowControlException)) {
-                return context.getRuntime().getTrue();
+                return context.runtime.getTrue();
             }
         }
         // fall back on default logic

@@ -210,7 +210,7 @@ public class Tempfile extends org.jruby.RubyTempfile {
      */
     @JRubyMethod(visibility = PRIVATE)
     public IRubyObject make_tmpname(ThreadContext context, IRubyObject basename, IRubyObject n, Block block) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         IRubyObject[] newargs = new IRubyObject[5];
 
         IRubyObject base, suffix;
@@ -244,7 +244,7 @@ public class Tempfile extends org.jruby.RubyTempfile {
 
     @JRubyMethod(visibility = PROTECTED)
     public IRubyObject _close(ThreadContext context) {
-        return !isClosed() ? super.close() : context.getRuntime().getNil();
+        return !isClosed() ? super.close() : context.runtime.getNil();
     }
 
     @JRubyMethod(optional = 1, visibility = PUBLIC)
@@ -259,7 +259,7 @@ public class Tempfile extends org.jruby.RubyTempfile {
          reaper.released = true;
         _close(context);
         tmpFile.delete();
-        return context.getRuntime().getNil();
+        return context.runtime.getNil();
     }
 
     @JRubyMethod(name = {"unlink", "delete"})
@@ -276,22 +276,22 @@ public class Tempfile extends org.jruby.RubyTempfile {
             // else, no-op, since we can't unlink the file without breaking stat et al
             context.runtime.getWarnings().warn("Tempfile#unlink or delete called on open file; ignoring");
         }
-        return context.getRuntime().getNil();
+        return context.runtime.getNil();
     }
 
     @JRubyMethod(name = {"size", "length"})
     public IRubyObject size(ThreadContext context) {
         if (!isClosed()) {
             flush();
-            return context.getRuntime().newFileStat(path, false).size();
+            return context.runtime.newFileStat(path, false).size();
         }
 
-        return RubyFixnum.zero(context.getRuntime());
+        return RubyFixnum.zero(context.runtime);
     }
 
     @JRubyMethod(required = 1, optional = 1, meta = true, compat = CompatVersion.RUBY1_8)
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         RubyClass klass = (RubyClass) recv;
         Tempfile tempfile = (Tempfile) klass.newInstance(context, args, block);
 
@@ -309,7 +309,7 @@ public class Tempfile extends org.jruby.RubyTempfile {
 
     @JRubyMethod(required = 1, optional = 1, meta = true, compat = CompatVersion.RUBY1_9)
     public static IRubyObject open19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         RubyClass klass = (RubyClass) recv;
         Tempfile tempfile = (Tempfile) klass.newInstance(context, args, block);
 

@@ -100,8 +100,8 @@ public class InterpretedMethod extends DynamicMethod implements MethodArgs, Posi
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
         assert args != null;
-        
-        Ruby runtime = context.getRuntime();
+
+        Ruby runtime = context.runtime;
         int callNumber = context.callNumber;
 
         try {
@@ -128,7 +128,7 @@ public class InterpretedMethod extends DynamicMethod implements MethodArgs, Posi
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         int callNumber = context.callNumber;
 
         try {
@@ -150,7 +150,7 @@ public class InterpretedMethod extends DynamicMethod implements MethodArgs, Posi
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         int callNumber = context.callNumber;
 
         try {
@@ -171,7 +171,7 @@ public class InterpretedMethod extends DynamicMethod implements MethodArgs, Posi
     }
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         int callNumber = context.callNumber;
 
         try {
@@ -193,7 +193,7 @@ public class InterpretedMethod extends DynamicMethod implements MethodArgs, Posi
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         int callNumber = context.callNumber;
 
         try {
@@ -214,7 +214,7 @@ public class InterpretedMethod extends DynamicMethod implements MethodArgs, Posi
     }
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         int callNumber = context.callNumber;
 
         try {
@@ -236,7 +236,7 @@ public class InterpretedMethod extends DynamicMethod implements MethodArgs, Posi
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         int callNumber = context.callNumber;
 
         try {
@@ -257,7 +257,7 @@ public class InterpretedMethod extends DynamicMethod implements MethodArgs, Posi
     }
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         int callNumber = context.callNumber;
 
         try {
@@ -279,7 +279,7 @@ public class InterpretedMethod extends DynamicMethod implements MethodArgs, Posi
 
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         int callNumber = context.callNumber;
 
         try {

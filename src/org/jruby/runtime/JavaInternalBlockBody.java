@@ -40,8 +40,9 @@ public abstract class JavaInternalBlockBody extends BlockBody {
     
     // Make sure we are still on the same thread as originator if we care
     private void threadCheck(ThreadContext yieldingContext) {
-        if (originalContext != null && yieldingContext != originalContext) 
-            throw yieldingContext.getRuntime().newThreadError("" + methodName + " cannot be parallelized");        
+        if (originalContext != null && yieldingContext != originalContext) {
+            throw yieldingContext.getRuntime().newThreadError("" + methodName + " cannot be parallelized");
+        }
     }
 
     @Override

@@ -92,7 +92,7 @@ public class Numeric {
      */
     public static IRubyObject f_lt_p(ThreadContext context, IRubyObject x, IRubyObject y) {
         if (x instanceof RubyFixnum && y instanceof RubyFixnum) {
-            return ((RubyFixnum)x).getLongValue() < ((RubyFixnum)y).getLongValue() ? context.getRuntime().getTrue() : context.getRuntime().getFalse(); 
+            return ((RubyFixnum)x).getLongValue() < ((RubyFixnum)y).getLongValue() ? context.runtime.getTrue() : context.runtime.getFalse();
         }
         return x.callMethod(context, "<", y);
     }
@@ -108,7 +108,7 @@ public class Numeric {
      * 
      */
     public static IRubyObject f_mul(ThreadContext context, IRubyObject x, IRubyObject y) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (y instanceof RubyFixnum) {
             long iy = ((RubyFixnum)y).getLongValue();
             if (iy == 0) {
@@ -283,7 +283,7 @@ public class Numeric {
      */
     public static IRubyObject f_equal(ThreadContext context, IRubyObject x, IRubyObject y) {
         if (x instanceof RubyFixnum && y instanceof RubyFixnum) {
-            return context.getRuntime().newBoolean(((RubyFixnum)x).getLongValue() == ((RubyFixnum)y).getLongValue());
+            return context.runtime.newBoolean(((RubyFixnum) x).getLongValue() == ((RubyFixnum) y).getLongValue());
         }
 
         return x.callMethod(context, "==", y);
@@ -329,7 +329,7 @@ public class Numeric {
      */
     public static boolean f_negative_p(ThreadContext context, IRubyObject x) {
         if (x instanceof RubyFixnum) return ((RubyFixnum)x).getLongValue() < 0;
-        return x.callMethod(context, "<", RubyFixnum.zero(context.getRuntime())).isTrue();
+        return x.callMethod(context, "<", RubyFixnum.zero(context.runtime)).isTrue();
     }
     
     /** f_zero_p
@@ -337,7 +337,7 @@ public class Numeric {
      */
     public static boolean f_zero_p(ThreadContext context, IRubyObject x) {
         if (x instanceof RubyFixnum) return ((RubyFixnum)x).getLongValue() == 0;
-        return x.callMethod(context, "==", RubyFixnum.zero(context.getRuntime())).isTrue();
+        return x.callMethod(context, "==", RubyFixnum.zero(context.runtime)).isTrue();
     }
     
     /** f_one_p
@@ -345,7 +345,7 @@ public class Numeric {
      */
     public static boolean f_one_p(ThreadContext context, IRubyObject x) {
         if (x instanceof RubyFixnum) return ((RubyFixnum)x).getLongValue() == 1;
-        return x.callMethod(context, "==", RubyFixnum.one(context.getRuntime())).isTrue();
+        return x.callMethod(context, "==", RubyFixnum.one(context.runtime)).isTrue();
     }
     
     /** i_gcd
@@ -372,7 +372,7 @@ public class Numeric {
      */
     public static IRubyObject f_gcd(ThreadContext context, IRubyObject x, IRubyObject y) {
         if (x instanceof RubyFixnum && y instanceof RubyFixnum) {
-            return RubyFixnum.newFixnum(context.getRuntime(), i_gcd(((RubyFixnum)x).getLongValue(), ((RubyFixnum)y).getLongValue()));
+            return RubyFixnum.newFixnum(context.runtime, i_gcd(((RubyFixnum)x).getLongValue(), ((RubyFixnum)y).getLongValue()));
         }
         
         if (f_negative_p(context, x)) x = f_negate(context, x);
@@ -385,7 +385,7 @@ public class Numeric {
             if (x instanceof RubyFixnum) {
                 if (((RubyFixnum)x).getLongValue() == 0) return y;
                 if (y instanceof RubyFixnum) {
-                    return RubyFixnum.newFixnum(context.getRuntime(), i_gcd(((RubyFixnum)x).getLongValue(), ((RubyFixnum)y).getLongValue()));
+                    return RubyFixnum.newFixnum(context.runtime, i_gcd(((RubyFixnum)x).getLongValue(), ((RubyFixnum)y).getLongValue()));
                 }
             }
             IRubyObject z = x;
@@ -398,14 +398,18 @@ public class Numeric {
      * 
      */
     public static IRubyObject f_lcm(ThreadContext context, IRubyObject x, IRubyObject y) {
-        if (f_zero_p(context, x) || f_zero_p(context, y)) return RubyFixnum.zero(context.getRuntime());
+        if (f_zero_p(context, x) || f_zero_p(context, y)) {
+            return RubyFixnum.zero(context.runtime);
+        }
         return f_abs(context, f_mul(context, f_div(context, x, f_gcd(context, x, y)), y));
     }
     
     public static long i_ilog2(ThreadContext context, IRubyObject x) {
         long q = (x.callMethod(context, "size").convertToInteger().getLongValue() - 8) * 8 + 1;
 
-        if (q > 0) x = f_rshift(context, x, RubyFixnum.newFixnum(context.getRuntime(), q));
+        if (q > 0) {
+            x = f_rshift(context, x, RubyFixnum.newFixnum(context.runtime, q));
+        }
 
         long fx = x.convertToInteger().getLongValue();
         long r = -1;
@@ -460,7 +464,7 @@ public class Numeric {
         }
         
         y &= ~1;
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         
         do {
             while (y % 2 == 0) {
@@ -591,8 +595,8 @@ public class Numeric {
         b = ary[1];
         IRubyObject c, k, t, p0, p1, p2, q0, q1, q2;
 
-        RubyFixnum zero = RubyFixnum.zero(context.getRuntime());
-        RubyFixnum one = RubyFixnum.one(context.getRuntime());
+        RubyFixnum zero = RubyFixnum.zero(context.runtime);
+        RubyFixnum one = RubyFixnum.one(context.runtime);
 
         p0 = q1 = zero;
         p1 = q0 = one;
@@ -623,7 +627,7 @@ public class Numeric {
 
     public static void checkInteger(ThreadContext context, IRubyObject obj) {
         if (!(obj instanceof RubyInteger)) {
-            throw context.getRuntime().newTypeError("not an integer");
+            throw context.runtime.newTypeError("not an integer");
         }
     }
 }

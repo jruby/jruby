@@ -167,7 +167,17 @@ public final class ThreadContext {
             thread.dispose();
         }
     }
-    
+
+    /**
+     * Retrieve the runtime associated with this context.
+     *
+     * Note that there's no reason to call this method rather than accessing the
+     * runtime field directly.
+     *
+     * @see ThreadContext#runtime
+     *
+     * @return the runtime associated with this context
+     */
     public final Ruby getRuntime() {
         return runtime;
     }
@@ -922,7 +932,7 @@ public final class ThreadContext {
     
     public void preBsfApply(String[] names) {
         // FIXME: I think we need these pushed somewhere?
-        StaticScope staticScope = getRuntime().getStaticScopeFactory().newLocalScope(null);
+        StaticScope staticScope = runtime.getStaticScopeFactory().newLocalScope(null);
         staticScope.setVariables(names);
         pushFrame();
     }
@@ -1066,7 +1076,7 @@ public final class ThreadContext {
         
         pushRubyClass(executeUnderClass);
         DynamicScope scope = getCurrentScope();
-        StaticScope sScope = getRuntime().getStaticScopeFactory().newBlockScope(scope.getStaticScope());
+        StaticScope sScope = runtime.getStaticScopeFactory().newBlockScope(scope.getStaticScope());
         sScope.setModule(executeUnderClass);
         pushScope(DynamicScope.newDynamicScope(sScope, scope));
         pushCallFrame(frame.getKlazz(), frame.getName(), frame.getSelf(), block);

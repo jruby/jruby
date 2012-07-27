@@ -29,6 +29,7 @@
  */
 package org.jruby.embed.variable;
 
+import org.jruby.Ruby;
 import org.jruby.RubyObject;
 import org.jruby.embed.internal.BiVariableMap;
 import org.jruby.runtime.DynamicScope;
@@ -145,7 +146,7 @@ public class PersistentLocalVariable extends AbstractVariable {
         try {
             DynamicScope currentScope = context.getCurrentScope();
             ManyVarsDynamicScope scope = (ManyVarsDynamicScope) context.getCurrentScope();
-            scope = new ManyVarsDynamicScope(context.getRuntime().getStaticScopeFactory().newEvalScope(currentScope.getStaticScope()), currentScope);
+            scope = new ManyVarsDynamicScope(context.runtime.getStaticScopeFactory().newEvalScope(currentScope.getStaticScope()), currentScope);
         } catch (ArrayIndexOutOfBoundsException e) {
             //no context is left.
             //no operation is needed.

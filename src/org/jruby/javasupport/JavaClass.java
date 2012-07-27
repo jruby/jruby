@@ -406,7 +406,7 @@ public class JavaClass extends JavaObject {
                 proxy.addMethod(name, new org.jruby.internal.runtime.methods.JavaMethod(proxy, PUBLIC) {
                     @Override
                     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-                        throw context.getRuntime().newTypeError("no public constructors for " + clazz);
+                        throw context.runtime.newTypeError("no public constructors for " + clazz);
                     }
                 });
             }
@@ -1765,8 +1765,8 @@ public class JavaClass extends JavaObject {
     public IRubyObject emptyJavaArray(ThreadContext context) {
         JavaArray javaArray = new JavaArray(getRuntime(), Array.newInstance(javaClass(), 0));
         RubyClass newProxyClass = (RubyClass)Java.get_proxy_class(javaArray, array_class());
-        
-        ArrayJavaProxy proxy = new ArrayJavaProxy(context.getRuntime(), newProxyClass);
+
+        ArrayJavaProxy proxy = new ArrayJavaProxy(context.runtime, newProxyClass);
         proxy.dataWrapStruct(javaArray);
         
         return proxy;
@@ -1775,7 +1775,7 @@ public class JavaClass extends JavaObject {
     public IRubyObject javaArraySubarray(ThreadContext context, JavaArray fromArray, int index, int size) {
         int actualLength = Array.getLength(fromArray.getValue());
         if (index >= actualLength) {
-            return context.getRuntime().getNil();
+            return context.runtime.getNil();
         } else {
             if (index + size > actualLength) {
                 size = actualLength - index;
@@ -1786,7 +1786,7 @@ public class JavaClass extends JavaObject {
             System.arraycopy(fromArray.getValue(), index, newArray, 0, size);
             RubyClass newProxyClass = (RubyClass)Java.get_proxy_class(javaArray, array_class());
 
-            ArrayJavaProxy proxy = new ArrayJavaProxy(context.getRuntime(), newProxyClass);
+            ArrayJavaProxy proxy = new ArrayJavaProxy(context.runtime, newProxyClass);
             proxy.dataWrapStruct(javaArray);
 
             return proxy;
@@ -1812,7 +1812,7 @@ public class JavaClass extends JavaObject {
         System.arraycopy(additional.getValue(), 0, newArray, oldLength, addLength);
         RubyClass newProxyClass = (RubyClass)Java.get_proxy_class(javaArray, array_class());
 
-        ArrayJavaProxy proxy = new ArrayJavaProxy(context.getRuntime(), newProxyClass);
+        ArrayJavaProxy proxy = new ArrayJavaProxy(context.runtime, newProxyClass);
         proxy.dataWrapStruct(javaArray);
 
         return proxy;
@@ -1833,10 +1833,10 @@ public class JavaClass extends JavaObject {
         JavaArray javaArray = new JavaArray(getRuntime(), newArray);
         System.arraycopy(original.getValue(), 0, newArray, 0, oldLength);
         RubyClass newProxyClass = (RubyClass)Java.get_proxy_class(javaArray, array_class());
-        ArrayJavaProxy proxy = new ArrayJavaProxy(context.getRuntime(), newProxyClass);
+        ArrayJavaProxy proxy = new ArrayJavaProxy(context.runtime, newProxyClass);
         proxy.dataWrapStruct(javaArray);
-        
-        Ruby runtime = context.getRuntime();
+
+        Ruby runtime = context.runtime;
         for (int i = 0; i < addLength; i++) {
             RuntimeHelpers.invoke(context, proxy, "[]=", runtime.newFixnum(oldLength + i), 
                     RuntimeHelpers.invoke(context, additional, "[]", runtime.newFixnum(i)));
@@ -1846,7 +1846,7 @@ public class JavaClass extends JavaObject {
     }
 
     public IRubyObject javaArrayFromRubyArray(ThreadContext context, IRubyObject fromArray) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (!(fromArray instanceof RubyArray)) {
             throw runtime.newTypeError(fromArray, runtime.getArray());
         }
@@ -1893,7 +1893,7 @@ public class JavaClass extends JavaObject {
     @JRubyMethod(required = 1)
     public JavaField field(ThreadContext context, IRubyObject name) {
         Class<?> javaClass = javaClass();
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         String stringName = name.asJavaString();
 
         try {
@@ -1912,7 +1912,7 @@ public class JavaClass extends JavaObject {
     @JRubyMethod(required = 1)
     public JavaField declared_field(ThreadContext context, IRubyObject name) {
         Class<?> javaClass = javaClass();
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         String stringName = name.asJavaString();
         
         try {

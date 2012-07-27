@@ -170,7 +170,7 @@ public class RubyObjectSpace {
 
     @JRubyMethod(name = "each_object", optional = 1, module = true, visibility = PRIVATE)
     public static IRubyObject each_object(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        return block.isGiven() ? each_objectInternal(context, recv, args, block) : enumeratorize(context.getRuntime(), recv, "each_object", args);
+        return block.isGiven() ? each_objectInternal(context, recv, args, block) : enumeratorize(context.runtime, recv, "each_object", args);
     }
 
     @JRubyMethod(name = "garbage_collect", module = true, visibility = PRIVATE)

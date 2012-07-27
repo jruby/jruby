@@ -629,9 +629,9 @@ public class RubyFileStat extends RubyObject {
 
     private IRubyObject getWorldMode(ThreadContext context, int mode) {
         if ((stat.mode() & mode) == mode) {
-            return RubyNumeric.int2fix(context.getRuntime(),
+            return RubyNumeric.int2fix(context.runtime,
                     (stat.mode() & (S_IRUGO | S_IWUGO | S_IXUGO) ));
         }
-        return context.getRuntime().getNil();
+        return context.runtime.getNil();
     }
 }

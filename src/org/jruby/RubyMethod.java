@@ -146,10 +146,14 @@ public class RubyMethod extends RubyObject implements DataType {
     @JRubyMethod(name = "==", required = 1)
     @Override
     public RubyBoolean op_equal(ThreadContext context, IRubyObject other) {
-        if (!(other instanceof RubyMethod)) return context.getRuntime().getFalse();
-        if (method instanceof ProcMethod) return context.getRuntime().newBoolean(((ProcMethod) method).isSame(((RubyMethod) other).getMethod()));
+        if (!(other instanceof RubyMethod)) {
+            return context.runtime.getFalse();
+        }
+        if (method instanceof ProcMethod) {
+            return context.runtime.newBoolean(((ProcMethod) method).isSame(((RubyMethod) other).getMethod()));
+        }
         RubyMethod otherMethod = (RubyMethod)other;
-        return context.getRuntime().newBoolean(receiver == otherMethod.receiver &&
+        return context.runtime.newBoolean(receiver == otherMethod.receiver &&
                 originModule == otherMethod.originModule &&
                 method.getRealMethod().getSerialNumber() == otherMethod.method.getRealMethod().getSerialNumber());
     }
@@ -170,7 +174,7 @@ public class RubyMethod extends RubyObject implements DataType {
      */
     @JRubyMethod
     public IRubyObject to_proc(ThreadContext context, Block unusedBlock) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         DynamicScope currentScope = context.getCurrentScope();
         MethodBlock mb = new MethodBlock(this, currentScope.getStaticScope()) {
             @Override
@@ -202,8 +206,8 @@ public class RubyMethod extends RubyObject implements DataType {
     private IRubyObject mproc(ThreadContext context, Block block) {
         try {
             context.preMproc();
-            
-            return RubyKernel.proc(context, context.getRuntime().getNil(), block);
+
+            return RubyKernel.proc(context, context.runtime.getNil(), block);
         } finally {
             context.postMproc();
         }
@@ -274,12 +278,12 @@ public class RubyMethod extends RubyObject implements DataType {
 
     @JRubyMethod(name = "name", compat = CompatVersion.RUBY1_8)
     public IRubyObject name(ThreadContext context) {
-        return context.getRuntime().newString(methodName);
+        return context.runtime.newString(methodName);
     }
 
     @JRubyMethod(name = "name", compat = CompatVersion.RUBY1_9)
     public IRubyObject name19(ThreadContext context) {
-        return context.getRuntime().newSymbol(methodName);
+        return context.runtime.newSymbol(methodName);
     }
 
     public String getMethodName() {
@@ -298,14 +302,14 @@ public class RubyMethod extends RubyObject implements DataType {
 
     @JRubyMethod(name = "source_location", compat = CompatVersion.RUBY1_9)
     public IRubyObject source_location(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
 
         String filename = getFilename();
         if (filename != null) {
             return runtime.newArray(runtime.newString(filename), runtime.newFixnum(getLine()));
         }
 
-        return context.getRuntime().getNil();
+        return context.runtime.getNil();
     }
 
     public String getFilename() {

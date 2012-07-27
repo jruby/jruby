@@ -108,7 +108,7 @@ public class ArrayJavaAddons {
     
     @JRubyMethod
     public static IRubyObject dimensions(ThreadContext context, IRubyObject maybeArray, IRubyObject dims) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (!(maybeArray instanceof RubyArray)) {
             return runtime.newEmptyArray();
         }
@@ -121,7 +121,7 @@ public class ArrayJavaAddons {
     
     @JRubyMethod
     public static IRubyObject dimensions(ThreadContext context, IRubyObject maybeArray, IRubyObject dims, IRubyObject index) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (!(maybeArray instanceof RubyArray)) {
             return runtime.newEmptyArray();
         }
@@ -134,7 +134,7 @@ public class ArrayJavaAddons {
     }
     
     private static RubyArray dimsRecurse(ThreadContext context, RubyArray rubyArray, RubyArray dims, int index) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
 
         while (dims.size() <= index) {
             dims.append(RubyFixnum.zero(runtime));

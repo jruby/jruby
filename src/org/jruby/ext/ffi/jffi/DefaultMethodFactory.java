@@ -7,6 +7,7 @@ import com.kenai.jffi.HeapInvocationBuffer;
 import com.kenai.jffi.InvocationBuffer;
 import com.kenai.jffi.Invoker;
 import com.kenai.jffi.ArrayFlags;
+import org.jruby.Ruby;
 import org.jruby.RubyHash;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
@@ -246,7 +247,7 @@ public final class DefaultMethodFactory extends MethodFactory {
         public static final FunctionInvoker INSTANCE = new VoidInvoker();
         public final IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args) {
             invoker.invokeInt(function, args);
-            return context.getRuntime().getNil();
+            return context.runtime.getNil();
         }
     }
 
@@ -355,7 +356,7 @@ public final class DefaultMethodFactory extends MethodFactory {
     private static final class Float32Invoker extends BaseInvoker {
         public static final FunctionInvoker INSTANCE = new Float32Invoker();
         public final IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args) {
-            return context.getRuntime().newFloat(invoker.invokeFloat(function, args));
+            return context.runtime.newFloat(invoker.invokeFloat(function, args));
         }
     }
 
@@ -366,7 +367,7 @@ public final class DefaultMethodFactory extends MethodFactory {
     private static final class Float64Invoker extends BaseInvoker {
         public static final FunctionInvoker INSTANCE = new Float64Invoker();
         public final IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args) {
-            return context.getRuntime().newFloat(invoker.invokeDouble(function, args));
+            return context.runtime.newFloat(invoker.invokeDouble(function, args));
         }
     }
 
@@ -416,7 +417,7 @@ public final class DefaultMethodFactory extends MethodFactory {
 
         public final IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args) {
             int size = info.getStructLayout().getSize();
-            Buffer buf = new Buffer(context.getRuntime(), size);
+            Buffer buf = new Buffer(context.runtime, size);
             MemoryIO mem = buf.getMemoryIO();
             byte[] array;
             int arrayOffset;
@@ -646,19 +647,19 @@ public final class DefaultMethodFactory extends MethodFactory {
 
         public final void marshal(ThreadContext context, InvocationBuffer buffer, IRubyObject parameter) {
             if (!(parameter instanceof Struct)) {
-                throw context.getRuntime().newTypeError("wrong argument type "
+                throw context.runtime.newTypeError("wrong argument type "
                         + parameter.getMetaClass().getName() + " (expected instance of FFI::Struct)");
             }
 
             final AbstractMemory memory = ((Struct) parameter).getMemory();
             if (memory.getSize() < layout.getSize()) {
-                throw context.getRuntime().newArgumentError("struct memory too small for parameter");
+                throw context.runtime.newArgumentError("struct memory too small for parameter");
             }
 
             final MemoryIO io = memory.getMemoryIO();
             if (io instanceof DirectMemoryIO) {
                 if (io.isNull()) {
-                    throw context.getRuntime().newRuntimeError("Cannot use a NULL pointer as a struct by value argument");
+                    throw context.runtime.newRuntimeError("Cannot use a NULL pointer as a struct by value argument");
                 }
                 buffer.putStruct(((DirectMemoryIO) io).getAddress());
 
@@ -667,7 +668,7 @@ public final class DefaultMethodFactory extends MethodFactory {
                 buffer.putStruct(aio.array(), aio.arrayOffset());
 
             } else {
-                throw context.getRuntime().newRuntimeError("invalid struct memory");
+                throw context.runtime.newRuntimeError("invalid struct memory");
             }
         }
     }

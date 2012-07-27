@@ -181,15 +181,15 @@ public class DataConverters {
 
         public IRubyObject fromNative(ThreadContext context, IRubyObject obj) {
             if (!(obj instanceof Pointer)) {
-                throw context.getRuntime().newTypeError("internal error: non-pointer");
+                throw context.runtime.newTypeError("internal error: non-pointer");
             }
             Pointer ptr = (Pointer) obj;
             if (ptr.getAddress() == 0) {
-                return context.getRuntime().getNil();
+                return context.runtime.getNil();
             }
-            return new org.jruby.ext.ffi.jffi.Function(context.getRuntime(),
-                    context.getRuntime().getModule("FFI").getClass("Function"),
-                    new CodeMemoryIO(context.getRuntime(), ptr), functionInfo, null);
+            return new org.jruby.ext.ffi.jffi.Function(context.runtime,
+                    context.runtime.getModule("FFI").getClass("Function"),
+                    new CodeMemoryIO(context.runtime, ptr), functionInfo, null);
         }
 
         public IRubyObject toNative(ThreadContext context, IRubyObject obj) {
@@ -200,7 +200,7 @@ public class DataConverters {
                 return callbackFactory.getCallback((RubyObject) obj);
 
             } else {
-                throw context.getRuntime().newTypeError("wrong argument type.  Expected callable object");
+                throw context.runtime.newTypeError("wrong argument type.  Expected callable object");
             }
         }
     }

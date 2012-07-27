@@ -108,11 +108,11 @@ public class RubyContinuation extends RubyObject {
         } catch (Continuation c) {
             if (c == continuation) {
                 if (continuation.args.length == 0) {
-                    return context.getRuntime().getNil();
+                    return context.runtime.getNil();
                 } else if (continuation.args.length == 1) {
                     return continuation.args[0];
                 } else {
-                    return context.getRuntime().newArrayNoCopy(continuation.args);
+                    return context.runtime.newArrayNoCopy(continuation.args);
                 }
             } else {
                 throw c;

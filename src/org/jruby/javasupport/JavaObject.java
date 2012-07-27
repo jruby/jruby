@@ -98,7 +98,7 @@ public class JavaObject extends RubyObject {
 
     @JRubyMethod(meta = true)
     public static IRubyObject wrap(ThreadContext context, IRubyObject self, IRubyObject object) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         Object obj = getWrappedObject(object, NEVER);
 
         if (obj == NEVER) return runtime.getNil();
@@ -311,15 +311,15 @@ public class JavaObject extends RubyObject {
         try {
             ByteList byteList = str.convertToString().getByteList();
             ByteArrayInputStream bais = new ByteArrayInputStream(byteList.getUnsafeBytes(), byteList.getBegin(), byteList.getRealSize());
-            ObjectInputStream ois = new JRubyObjectInputStream(context.getRuntime(), bais);
+            ObjectInputStream ois = new JRubyObjectInputStream(context.runtime, bais);
 
             dataWrapStruct(ois.readObject());
 
             return this;
         } catch (IOException ioe) {
-            throw context.getRuntime().newIOErrorFromException(ioe);
+            throw context.runtime.newIOErrorFromException(ioe);
         } catch (ClassNotFoundException cnfe) {
-            throw context.getRuntime().newTypeError("Class not found unmarshaling Java type: " + cnfe.getLocalizedMessage());
+            throw context.runtime.newTypeError("Class not found unmarshaling Java type: " + cnfe.getLocalizedMessage());
         }
     }
 

@@ -36,15 +36,7 @@ import java.lang.invoke.SwitchPoint;
 import java.math.BigInteger;
 import org.jcodings.Encoding;
 import org.jcodings.EncodingDB;
-import org.jruby.RubyClass;
-import org.jruby.RubyEncoding;
-import org.jruby.RubyFixnum;
-import org.jruby.RubyFloat;
-import org.jruby.RubyInstanceConfig;
-import org.jruby.RubyLocalJumpError;
-import org.jruby.RubyRegexp;
-import org.jruby.RubyString;
-import org.jruby.RubySymbol;
+import org.jruby.*;
 import org.jruby.ast.executable.AbstractScript;
 import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -518,7 +510,7 @@ public class InvokeDynamicSupport {
             site.setTarget(gwt);
         } else {
             value = context.getCurrentScope().getStaticScope().getModule()
-                    .callMethod(context, "const_missing", context.getRuntime().newSymbol(site.name()));
+                    .callMethod(context, "const_missing", context.runtime.newSymbol(site.name()));
         }
         
         return value;
@@ -664,7 +656,7 @@ public class InvokeDynamicSupport {
     }
 
     public static IRubyObject retryJumpError(ThreadContext context) {
-        throw context.getRuntime().newLocalJumpError(RubyLocalJumpError.Reason.RETRY, context.getRuntime().getNil(), "retry outside of rescue not supported");
+        throw context.runtime.newLocalJumpError(RubyLocalJumpError.Reason.RETRY, context.runtime.getNil(), "retry outside of rescue not supported");
     }
     
     ////////////////////////////////////////////////////////////////////////////

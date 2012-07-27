@@ -142,12 +142,12 @@ public abstract class RubyInteger extends RubyNumeric {
             }
             return this;
         } else {
-            return enumeratorize(context.getRuntime(), this, "upto", to);
+            return enumeratorize(context.runtime, this, "upto", to);
         }
     }
 
     private static void fixnumUpto(ThreadContext context, long from, long to, Block block) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (block.getBody().getArgumentType() == BlockBody.ZERO_ARGS) {
             IRubyObject nil = runtime.getNil();
             for (long i = from; i <= to; i++) {
@@ -161,7 +161,7 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     private static void duckUpto(ThreadContext context, IRubyObject from, IRubyObject to, Block block) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         IRubyObject i = from;
         RubyFixnum one = RubyFixnum.one(runtime);
         while (true) {
@@ -187,12 +187,12 @@ public abstract class RubyInteger extends RubyNumeric {
             }
             return this;
         } else {
-            return enumeratorize(context.getRuntime(), this, "downto", to);
+            return enumeratorize(context.runtime, this, "downto", to);
         }
     }
 
     private static void fixnumDownto(ThreadContext context, long from, long to, Block block) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (block.getBody().getArgumentType() == BlockBody.ZERO_ARGS) {
             final IRubyObject nil = runtime.getNil();
             for (long i = from; i >= to; i--) {
@@ -206,7 +206,7 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     private static void duckDownto(ThreadContext context, IRubyObject from, IRubyObject to, Block block) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         IRubyObject i = from;
         RubyFixnum one = RubyFixnum.one(runtime);
         while (true) {
@@ -221,7 +221,7 @@ public abstract class RubyInteger extends RubyNumeric {
     @JRubyMethod
     public IRubyObject times(ThreadContext context, Block block) {
         if (block.isGiven()) {
-            Ruby runtime = context.getRuntime();
+            Ruby runtime = context.runtime;
             IRubyObject i = RubyFixnum.zero(runtime);
             RubyFixnum one = RubyFixnum.one(runtime);
             while (true) {
@@ -233,7 +233,7 @@ public abstract class RubyInteger extends RubyNumeric {
             }
             return this;
         } else {
-            return enumeratorize(context.getRuntime(), this, "times");
+            return enumeratorize(context.runtime, this, "times");
         }
     }
 
@@ -245,7 +245,7 @@ public abstract class RubyInteger extends RubyNumeric {
         if (this instanceof RubyFixnum) {
             return ((RubyFixnum)this).op_plus_one(context);
         } else {
-            return callMethod(context, "+", RubyFixnum.one(context.getRuntime()));
+            return callMethod(context, "+", RubyFixnum.one(context.runtime));
         }
     }
 
@@ -271,7 +271,7 @@ public abstract class RubyInteger extends RubyNumeric {
      */
     @JRubyMethod(name = "chr", compat = CompatVersion.RUBY1_8)
     public RubyString chr(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         long value = getLongValue();
         if (value < 0 || value > 0xff) throw runtime.newRangeError(this.toString() + " out of char range");
         return RubyString.newStringShared(runtime, SINGLE_CHAR_BYTELISTS[(int)value]);
@@ -279,7 +279,7 @@ public abstract class RubyInteger extends RubyNumeric {
 
     @JRubyMethod(name = "chr", compat = CompatVersion.RUBY1_9)
     public RubyString chr19(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         int value = (int)getLongValue();
         if (value >= 0 && value <= 0xFF) {
             ByteList bytes = SINGLE_CHAR_BYTELISTS19[value];
@@ -297,7 +297,7 @@ public abstract class RubyInteger extends RubyNumeric {
 
     @JRubyMethod(name = "chr", compat = CompatVersion.RUBY1_9)
     public RubyString chr19(ThreadContext context, IRubyObject arg) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         long value = getLongValue();
         Encoding enc;
         if (arg instanceof RubyEncoding) {
@@ -359,7 +359,7 @@ public abstract class RubyInteger extends RubyNumeric {
         int ndigits = RubyNumeric.num2int(arg);
         if (ndigits > 0) return RubyKernel.new_float(this, this);
         if (ndigits == 0) return this;
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         
         long bytes = (this instanceof RubyFixnum) ? 8 : RubyFixnum.fix2long(callMethod("size"));
         /* If 10**N/2 > this, return 0 */
@@ -409,7 +409,7 @@ public abstract class RubyInteger extends RubyNumeric {
 
     @JRubyMethod(name = "odd?")
     public RubyBoolean odd_p(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (callMethod(context, "%", RubyFixnum.two(runtime)) != RubyFixnum.zero(runtime)) {
             return runtime.getTrue();
         }
@@ -418,7 +418,7 @@ public abstract class RubyInteger extends RubyNumeric {
 
     @JRubyMethod(name = "even?")
     public RubyBoolean even_p(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (callMethod(context, "%", RubyFixnum.two(runtime)) == RubyFixnum.zero(runtime)) {
             return runtime.getTrue();
         }
@@ -427,7 +427,7 @@ public abstract class RubyInteger extends RubyNumeric {
 
     @JRubyMethod(name = "pred")
     public IRubyObject pred(ThreadContext context) {
-        return callMethod(context, "-", RubyFixnum.one(context.getRuntime()));
+        return callMethod(context, "-", RubyFixnum.one(context.runtime));
     }
 
     /** rb_gcd
@@ -455,7 +455,7 @@ public abstract class RubyInteger extends RubyNumeric {
     public IRubyObject gcdlcm(ThreadContext context, IRubyObject other) {
         checkInteger(context, other);
         other = RubyRational.intValue(context, other);
-        return context.getRuntime().newArray(f_gcd(context, this, other), f_lcm(context, this, other));
+        return context.runtime.newArray(f_gcd(context, this, other), f_lcm(context, this, other));
     }
 
     @Override
@@ -467,7 +467,7 @@ public abstract class RubyInteger extends RubyNumeric {
     @Override
     @JRubyMethod(name = "denominator", compat = CompatVersion.RUBY1_9)
     public IRubyObject denominator(ThreadContext context) {
-        return RubyFixnum.one(context.getRuntime());
+        return RubyFixnum.one(context.runtime);
     }
 
     /*  ================

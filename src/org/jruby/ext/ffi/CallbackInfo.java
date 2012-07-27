@@ -107,12 +107,12 @@ public class CallbackInfo extends Type {
         IRubyObject returnType = args[0], paramTypes = args[1];
 
         if (!(returnType instanceof Type)) {
-            throw context.getRuntime().newTypeError("wrong argument type "
+            throw context.runtime.newTypeError("wrong argument type "
                     + returnType.getMetaClass().getName() + " (expected FFI::Type)");
         }
 
         if (!(paramTypes instanceof RubyArray)) {
-            throw context.getRuntime().newTypeError("wrong argument type "
+            throw context.runtime.newTypeError("wrong argument type "
                     + paramTypes.getMetaClass().getName() + " (expected Array)");
         }
 
@@ -120,7 +120,7 @@ public class CallbackInfo extends Type {
         for (int i = 0; i < nativeParamTypes.length; ++i) {
             IRubyObject obj = ((RubyArray) paramTypes).entry(i);
             if (!(obj instanceof Type)) {
-                throw context.getRuntime().newTypeError("wrong argument type "
+                throw context.runtime.newTypeError("wrong argument type "
                         + obj.getMetaClass().getName() + " (expected array of FFI::Type)");
             }
             nativeParamTypes[i] = (Type) obj;
@@ -129,18 +129,18 @@ public class CallbackInfo extends Type {
         boolean stdcall = false;
         if (args.length > 2) {
             if (!(args[2] instanceof RubyHash)) {
-                throw context.getRuntime().newTypeError("wrong argument type "
+                throw context.runtime.newTypeError("wrong argument type "
                         + args[3].getMetaClass().getName() + " (expected Hash)");
             }
             RubyHash hash = (RubyHash) args[2];
-            stdcall = "stdcall".equals(hash.get(context.getRuntime().newSymbol("convention")));
+            stdcall = "stdcall".equals(hash.get(context.runtime.newSymbol("convention")));
         }
         
         try {
-            return new CallbackInfo(context.getRuntime(), (RubyClass) klass,
+            return new CallbackInfo(context.runtime, (RubyClass) klass,
                     (Type) returnType, nativeParamTypes, stdcall);
         } catch (UnsatisfiedLinkError ex) {
-            return context.getRuntime().getNil();
+            return context.runtime.getNil();
         }
     }
     
@@ -186,7 +186,7 @@ public class CallbackInfo extends Type {
             }
         }
         sb.append(" ], " + returnType.toString().toLowerCase() + ">");
-        return context.getRuntime().newString(sb.toString());
+        return context.runtime.newString(sb.toString());
     }
     @Override
     public final String toString() {
@@ -209,6 +209,6 @@ public class CallbackInfo extends Type {
 
     @JRubyMethod
     public final IRubyObject param_types(ThreadContext context) {
-        return RubyArray.newArray(context.getRuntime(), parameterTypes);
+        return RubyArray.newArray(context.runtime, parameterTypes);
     }
 }

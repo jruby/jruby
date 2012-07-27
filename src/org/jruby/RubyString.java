@@ -1022,7 +1022,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @Override
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyString) {
-            return context.getRuntime().newFixnum(op_cmp((RubyString)other));
+            return context.runtime.newFixnum(op_cmp((RubyString)other));
         }
         return op_cmpCommon(context, other);
     }
@@ -1030,13 +1030,13 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "<=>", compat = RUBY1_9)
     public IRubyObject op_cmp19(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyString) {
-            return context.getRuntime().newFixnum(op_cmp19((RubyString)other));
+            return context.runtime.newFixnum(op_cmp19((RubyString)other));
         }
         return op_cmpCommon(context, other);
     }
 
     private IRubyObject op_cmpCommon(ThreadContext context, IRubyObject other) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         // deal with case when "other" is not a string
         if (other.respondsTo("to_str") && other.respondsTo("<=>")) {
             IRubyObject result = invokedynamic(context, other, OP_CMP, this);
@@ -1056,7 +1056,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "==", compat = RUBY1_8)
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject other) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (this == other) return runtime.getTrue();
         if (other instanceof RubyString) {
             return value.equal(((RubyString)other).value) ? runtime.getTrue() : runtime.getFalse();
@@ -1066,7 +1066,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = {"==", "==="}, compat = RUBY1_9)
     public IRubyObject op_equal19(ThreadContext context, IRubyObject other) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (this == other) return runtime.getTrue();
         if (other instanceof RubyString) {
             RubyString otherString = (RubyString)other;
@@ -1076,7 +1076,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     private IRubyObject op_equalCommon(ThreadContext context, IRubyObject other) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (!other.respondsTo("to_str")) return runtime.getFalse();
         return invokedynamic(context, other, OP_EQUAL, this).isTrue() ? runtime.getTrue() : runtime.getFalse();
     }
@@ -1084,7 +1084,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "+", required = 1, compat = RUBY1_8)
     public IRubyObject op_plus(ThreadContext context, IRubyObject _str) {
         RubyString str = _str.convertToString();
-        RubyString resultStr = newString(context.getRuntime(), addByteLists(value, str.value));
+        RubyString resultStr = newString(context.runtime, addByteLists(value, str.value));
         resultStr.infectBy(flags | str.flags);
         return resultStr;
     }
@@ -1093,7 +1093,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     public IRubyObject op_plus19(ThreadContext context, IRubyObject _str) {
         RubyString str = _str.convertToString();
         Encoding enc = checkEncoding(str);
-        RubyString resultStr = newStringNoCopy(context.getRuntime(), addByteLists(value, str.value),
+        RubyString resultStr = newStringNoCopy(context.runtime, addByteLists(value, str.value),
                                     enc, codeRangeAnd(getCodeRange(), str.getCodeRange()));
         resultStr.infectBy(flags | str.flags);
         return resultStr;
@@ -1122,11 +1122,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     private RubyString multiplyByteList(ThreadContext context, IRubyObject arg) {
         int len = RubyNumeric.num2int(arg);
-        if (len < 0) throw context.getRuntime().newArgumentError("negative argument");
+        if (len < 0) throw context.runtime.newArgumentError("negative argument");
 
         // we limit to int because ByteBuffer can only allocate int sizes
         if (len > 0 && Integer.MAX_VALUE / len < value.getRealSize()) {
-            throw context.getRuntime().newArgumentError("argument too big");
+            throw context.runtime.newArgumentError("argument too big");
         }
 
         ByteList bytes = new ByteList(len *= value.getRealSize());
@@ -1140,14 +1140,14 @@ public class RubyString extends RubyObject implements EncodingCapable {
             }
             System.arraycopy(bytes.getUnsafeBytes(), 0, bytes.getUnsafeBytes(), n, len - n);
         }
-        RubyString result = new RubyString(context.getRuntime(), getMetaClass(), bytes);
+        RubyString result = new RubyString(context.runtime, getMetaClass(), bytes);
         result.infectBy(this);
         return result;
     }
 
     @JRubyMethod(name = "%", required = 1)
     public IRubyObject op_format(ThreadContext context, IRubyObject arg) {
-        return opFormatCommon(context, arg, context.getRuntime().getInstanceConfig().getCompatVersion());
+        return opFormatCommon(context, arg, context.runtime.getInstanceConfig().getCompatVersion());
     }
 
     private IRubyObject opFormatCommon(ThreadContext context, IRubyObject arg, CompatVersion compat) {
@@ -1177,7 +1177,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         default:
             throw new RuntimeException("invalid compat version for sprintf: " + compat);
         }
-        RubyString str = newString(context.getRuntime(), out);
+        RubyString str = newString(context.runtime, out);
 
         str.setTaint(tainted || isTaint());
         return str;
@@ -1457,8 +1457,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "reverse", compat = RUBY1_8)
     public IRubyObject reverse(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
-        if (value.getRealSize() <= 1) return strDup(context.getRuntime());
+        Ruby runtime = context.runtime;
+        if (value.getRealSize() <= 1) return strDup(context.runtime);
 
         byte[]bytes = value.getUnsafeBytes();
         int p = value.getBegin();
@@ -1475,8 +1475,8 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "reverse", compat = RUBY1_9)
     public IRubyObject reverse19(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
-        if (value.getRealSize() <= 1) return strDup(context.getRuntime());
+        Ruby runtime = context.runtime;
+        if (value.getRealSize() <= 1) return strDup(context.runtime);
 
         byte[]bytes = value.getUnsafeBytes();
         int p = value.getBegin();
@@ -1609,12 +1609,12 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(compat = RUBY1_8)
     public IRubyObject casecmp(ThreadContext context, IRubyObject other) {
-        return RubyFixnum.newFixnum(context.getRuntime(), value.caseInsensitiveCmp(other.convertToString().value));
+        return RubyFixnum.newFixnum(context.runtime, value.caseInsensitiveCmp(other.convertToString().value));
     }
 
     @JRubyMethod(name = "casecmp", compat = RUBY1_9)
     public IRubyObject casecmp19(ThreadContext context, IRubyObject other) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         RubyString otherStr = other.convertToString();
         Encoding enc = isCompatibleWith(otherStr);
         if (enc == null) return runtime.getNil();
@@ -1676,7 +1676,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @Override
     public IRubyObject op_match(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyRegexp) return ((RubyRegexp) other).op_match(context, this);
-        if (other instanceof RubyString) throw context.getRuntime().newTypeError("type mismatch: String given");
+        if (other instanceof RubyString) throw context.runtime.newTypeError("type mismatch: String given");
         return other.callMethod(context, "=~", this);
     }
 
@@ -1684,7 +1684,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @Override
     public IRubyObject op_match19(ThreadContext context, IRubyObject other) {
         if (other instanceof RubyRegexp) return ((RubyRegexp) other).op_match19(context, this);
-        if (other instanceof RubyString) throw context.getRuntime().newTypeError("type mismatch: String given");
+        if (other instanceof RubyString) throw context.runtime.newTypeError("type mismatch: String given");
         return other.callMethod(context, "=~", this);
     }
     /**
@@ -1718,14 +1718,14 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     @JRubyMethod(name = "capitalize", compat = RUBY1_8)
     public IRubyObject capitalize(ThreadContext context) {
-        RubyString str = strDup(context.getRuntime());
+        RubyString str = strDup(context.runtime);
         str.capitalize_bang(context);
         return str;
     }
 
     @JRubyMethod(name = "capitalize!", compat = RUBY1_8)
     public IRubyObject capitalize_bang(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (value.getRealSize() == 0) {
             modifyCheck();
             return runtime.getNil();
@@ -1757,14 +1757,14 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "capitalize", compat = RUBY1_9)
     public IRubyObject capitalize19(ThreadContext context) {
-        RubyString str = strDup(context.getRuntime());
+        RubyString str = strDup(context.runtime);
         str.capitalize_bang19(context);
         return str;
     }
 
     @JRubyMethod(name = "capitalize!", compat = RUBY1_9)
     public IRubyObject capitalize_bang19(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         Encoding enc = checkDummyEncoding();
 
         if (value.getRealSize() == 0) {
@@ -1800,62 +1800,62 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = ">=", compat = RUBY1_8)
     public IRubyObject op_ge(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyString) return context.getRuntime().newBoolean(op_cmp((RubyString) other) >= 0);
+        if (other instanceof RubyString) return context.runtime.newBoolean(op_cmp((RubyString) other) >= 0);
         return RubyComparable.op_ge(context, this, other);
     }
 
     @JRubyMethod(name = ">=", compat = RUBY1_9)
     public IRubyObject op_ge19(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyString) return context.getRuntime().newBoolean(op_cmp19((RubyString) other) >= 0);
+        if (other instanceof RubyString) return context.runtime.newBoolean(op_cmp19((RubyString) other) >= 0);
         return RubyComparable.op_ge(context, this, other);
     }
 
     @JRubyMethod(name = ">", compat = RUBY1_8)
     public IRubyObject op_gt(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyString) return context.getRuntime().newBoolean(op_cmp((RubyString) other) > 0);
+        if (other instanceof RubyString) return context.runtime.newBoolean(op_cmp((RubyString) other) > 0);
         return RubyComparable.op_gt(context, this, other);
     }
 
     @JRubyMethod(name = ">", compat = RUBY1_9)
     public IRubyObject op_gt19(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyString) return context.getRuntime().newBoolean(op_cmp19((RubyString) other) > 0);
+        if (other instanceof RubyString) return context.runtime.newBoolean(op_cmp19((RubyString) other) > 0);
         return RubyComparable.op_gt(context, this, other);
     }
 
     @JRubyMethod(name = "<=", compat = RUBY1_8)
     public IRubyObject op_le(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyString) return context.getRuntime().newBoolean(op_cmp((RubyString) other) <= 0);
+        if (other instanceof RubyString) return context.runtime.newBoolean(op_cmp((RubyString) other) <= 0);
         return RubyComparable.op_le(context, this, other);
     }
 
     @JRubyMethod(name = "<=", compat = RUBY1_9)
     public IRubyObject op_le19(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyString) return context.getRuntime().newBoolean(op_cmp19((RubyString) other) <= 0);
+        if (other instanceof RubyString) return context.runtime.newBoolean(op_cmp19((RubyString) other) <= 0);
         return RubyComparable.op_le(context, this, other);
     }
 
     @JRubyMethod(name = "<", compat = RUBY1_8)
     public IRubyObject op_lt(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyString) return context.getRuntime().newBoolean(op_cmp((RubyString) other) < 0);
+        if (other instanceof RubyString) return context.runtime.newBoolean(op_cmp((RubyString) other) < 0);
         return RubyComparable.op_lt(context, this, other);
     }
 
     @JRubyMethod(name = "<", compat = RUBY1_9)
     public IRubyObject op_lt19(ThreadContext context, IRubyObject other) {
-        if (other instanceof RubyString) return context.getRuntime().newBoolean(op_cmp19((RubyString) other) < 0);
+        if (other instanceof RubyString) return context.runtime.newBoolean(op_cmp19((RubyString) other) < 0);
         return RubyComparable.op_lt(context, this, other);
     }
 
     @JRubyMethod(name = "eql?", compat = RUBY1_8)
     public IRubyObject str_eql_p(ThreadContext context, IRubyObject other) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (other instanceof RubyString && value.equal(((RubyString)other).value)) return runtime.getTrue();
         return runtime.getFalse();
     }
 
     @JRubyMethod(name = "eql?", compat = RUBY1_9)
     public IRubyObject str_eql_p19(ThreadContext context, IRubyObject other) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (other instanceof RubyString) {
             RubyString otherString = (RubyString)other;
             if (isComparableWith(otherString) && value.equal(otherString.value)) return runtime.getTrue();
@@ -1868,14 +1868,14 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     @JRubyMethod(name = "upcase", compat = RUBY1_8)
     public RubyString upcase(ThreadContext context) {
-        RubyString str = strDup(context.getRuntime());
+        RubyString str = strDup(context.runtime);
         str.upcase_bang(context);
         return str;
     }
 
     @JRubyMethod(name = "upcase!", compat = RUBY1_8)
     public IRubyObject upcase_bang(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (value.getRealSize() == 0) {
             modifyCheck();
             return runtime.getNil();
@@ -1886,14 +1886,14 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "upcase", compat = RUBY1_9)
     public RubyString upcase19(ThreadContext context) {
-        RubyString str = strDup(context.getRuntime());
+        RubyString str = strDup(context.runtime);
         str.upcase_bang19(context);
         return str;
     }
 
     @JRubyMethod(name = "upcase!", compat = RUBY1_9)
     public IRubyObject upcase_bang19(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         Encoding enc = checkDummyEncoding();
 
         if (value.getRealSize() == 0) {
@@ -1954,14 +1954,14 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     @JRubyMethod(name = "downcase", compat = RUBY1_8)
     public RubyString downcase(ThreadContext context) {
-        RubyString str = strDup(context.getRuntime());
+        RubyString str = strDup(context.runtime);
         str.downcase_bang(context);
         return str;
     }
 
     @JRubyMethod(name = "downcase!", compat = RUBY1_8)
     public IRubyObject downcase_bang(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (value.getRealSize() == 0) {
             modifyCheck();
             return runtime.getNil();
@@ -1973,14 +1973,14 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "downcase", compat = RUBY1_9)
     public RubyString downcase19(ThreadContext context) {
-        RubyString str = strDup(context.getRuntime());
+        RubyString str = strDup(context.runtime);
         str.downcase_bang19(context);
         return str;
     }
 
     @JRubyMethod(name = "downcase!", compat = RUBY1_9)
     public IRubyObject downcase_bang19(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         Encoding enc = checkDummyEncoding();
 
         if (value.getRealSize() == 0) {
@@ -2042,14 +2042,14 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     @JRubyMethod(name = "swapcase", compat = RUBY1_8)
     public RubyString swapcase(ThreadContext context) {
-        RubyString str = strDup(context.getRuntime());
+        RubyString str = strDup(context.runtime);
         str.swapcase_bang(context);
         return str;
     }
 
     @JRubyMethod(name = "swapcase!", compat = RUBY1_8)
     public IRubyObject swapcase_bang(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (value.getRealSize() == 0) {
             modifyCheck();
             return runtime.getNil();
@@ -2060,14 +2060,14 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "swapcase", compat = RUBY1_9)
     public RubyString swapcase19(ThreadContext context) {
-        RubyString str = strDup(context.getRuntime());
+        RubyString str = strDup(context.runtime);
         str.swapcase_bang19(context);
         return str;
     }
 
     @JRubyMethod(name = "swapcase!", compat = RUBY1_9)
     public IRubyObject swapcase_bang19(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         Encoding enc = checkDummyEncoding();
         if (value.getRealSize() == 0) {
             modifyCheck();
@@ -2267,7 +2267,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "insert", compat = RUBY1_8)
     public IRubyObject insert(ThreadContext context, IRubyObject indexArg, IRubyObject stringArg) {
-        assert !context.getRuntime().is1_9();
+        assert !context.runtime.is1_9();
         RubyString str = stringArg.convertToString();
         int index = RubyNumeric.num2int(indexArg);
         if (index == -1) return append(stringArg);
@@ -2513,7 +2513,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     @JRubyMethod(name = "empty?")
     public RubyBoolean empty_p(ThreadContext context) {
-        return isEmpty() ? context.getRuntime().getTrue() : context.getRuntime().getFalse();
+        return isEmpty() ? context.runtime.getTrue() : context.runtime.getFalse();
     }
 
     public boolean isEmpty() {
@@ -2547,7 +2547,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = {"concat", "<<"}, compat = RUBY1_9)
     public RubyString concat19(ThreadContext context, IRubyObject other) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (other instanceof RubyFixnum) {
             int c = RubyNumeric.num2int(other);
             if (c < 0) {
@@ -2589,11 +2589,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
         RubyString otherStr = other.convertToString();
         ByteList salt = otherStr.getByteList();
         if (salt.getRealSize() < 2) {
-            throw context.getRuntime().newArgumentError("salt too short(need >=2 bytes)");
+            throw context.runtime.newArgumentError("salt too short(need >=2 bytes)");
         }
 
         salt = salt.makeShared(0, 2);
-        RubyString result = RubyString.newStringShared(context.getRuntime(), JavaCrypt.crypt(salt, this.getByteList()));
+        RubyString result = RubyString.newStringShared(context.runtime, JavaCrypt.crypt(salt, this.getByteList()));
         result.infectBy(this);
         result.infectBy(otherStr);
         return result;
@@ -2610,14 +2610,14 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     @JRubyMethod(reads = BACKREF, writes = BACKREF, compat = RUBY1_8)
     public IRubyObject sub(ThreadContext context, IRubyObject arg0, Block block) {
-        RubyString str = strDup(context.getRuntime());
+        RubyString str = strDup(context.runtime);
         str.sub_bang(context, arg0, block);
         return str;
     }
 
     @JRubyMethod(reads = BACKREF, writes = BACKREF, compat = RUBY1_8)
     public IRubyObject sub(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
-        RubyString str = strDup(context.getRuntime());
+        RubyString str = strDup(context.runtime);
         str.sub_bang(context, arg0, arg1, block);
         return str;
     }
@@ -2625,7 +2625,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "sub!", reads = BACKREF, writes = BACKREF, compat = RUBY1_8)
     public IRubyObject sub_bang(ThreadContext context, IRubyObject arg0, Block block) {
         if (block.isGiven()) return subBangIter(context, getQuotedPattern(arg0), block);
-        throw context.getRuntime().newArgumentError(1, 2);
+        throw context.runtime.newArgumentError(1, 2);
     }
 
     @JRubyMethod(name = "sub!", reads = BACKREF, writes = BACKREF, compat = RUBY1_8)
@@ -2644,13 +2644,13 @@ public class RubyString extends RubyObject implements EncodingCapable {
             int size = value.getRealSize();
             RubyMatchData match = RubyRegexp.updateBackRef(context, this, scope, matcher, pattern);
             RubyString repl = objAsString(context, block.yield(context,
-                    makeShared(context.getRuntime(), matcher.getBegin(), matcher.getEnd() - matcher.getBegin())));
+                    makeShared(context.runtime, matcher.getBegin(), matcher.getEnd() - matcher.getBegin())));
             modifyCheck(bytes, size);
             frozenCheck(true);
             scope.setBackRef(match);
             return subBangCommon(context, pattern, matcher, repl, repl.flags);
         } else {
-            return scope.setBackRef(context.getRuntime().getNil());
+            return scope.setBackRef(context.runtime.getNil());
         }
     }
 
@@ -2661,11 +2661,11 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
         DynamicScope scope = context.getCurrentScope();
         if (matcher.search(value.getBegin(), range, Option.NONE) >= 0) {
-            repl = RubyRegexp.regsub(repl, this, matcher, context.getRuntime().getKCode().getEncoding());
+            repl = RubyRegexp.regsub(repl, this, matcher, context.runtime.getKCode().getEncoding());
             RubyRegexp.updateBackRef(context, this, scope, matcher, pattern);
             return subBangCommon(context, pattern, matcher, repl, tuFlags);
         } else {
-            return scope.setBackRef(context.getRuntime().getNil());
+            return scope.setBackRef(context.runtime.getNil());
         }
     }
 
@@ -2694,21 +2694,21 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "sub", reads = BACKREF, writes = BACKREF, compat = RUBY1_9)
     public IRubyObject sub19(ThreadContext context, IRubyObject arg0, Block block) {
-        RubyString str = strDup(context.getRuntime());
+        RubyString str = strDup(context.runtime);
         str.sub_bang19(context, arg0, block);
         return str;
     }
 
     @JRubyMethod(name = "sub", reads = BACKREF, writes = BACKREF, compat = RUBY1_9)
     public IRubyObject sub19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
-        RubyString str = strDup(context.getRuntime());
+        RubyString str = strDup(context.runtime);
         str.sub_bang19(context, arg0, arg1, block);
         return str;
     }
 
     @JRubyMethod(name = "sub!", reads = BACKREF, writes = BACKREF, compat = RUBY1_9)
     public IRubyObject sub_bang19(ThreadContext context, IRubyObject arg0, Block block) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         frozenCheck();
 
         final Regex pattern, prepared;
@@ -2724,12 +2724,12 @@ public class RubyString extends RubyObject implements EncodingCapable {
         }
 
         if (block.isGiven()) return subBangIter19(runtime, context, pattern, prepared, null, block, regexp);
-        throw context.getRuntime().newArgumentError(1, 2);
+        throw context.runtime.newArgumentError(1, 2);
     }
 
     @JRubyMethod(name = "sub!", reads = BACKREF, writes = BACKREF, compat = RUBY1_9)
     public IRubyObject sub_bang19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         IRubyObject hash = TypeConverter.convertToTypeWithCheck(arg1, runtime.getHash(), "to_hash");
         frozenCheck();
 
@@ -2846,7 +2846,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         Encoding strEnc = value.getEncoding();
         if (codeRangeScan(strEnc, bytes, p, beg) != CR_7BIT ||
             codeRangeScan(strEnc, bytes, p + end, len - end) != CR_7BIT) {
-            throw context.getRuntime().newArgumentError(
+            throw context.runtime.newArgumentError(
                     "incompatible character encodings " + strEnc + " and " + repl.value.getEncoding());
         }
         return repl.value.getEncoding();
@@ -2879,7 +2879,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (block.isGiven()) {
             return gsubCommon(context, bang, arg0, block, null, 0);
         } else {
-            return enumeratorize(context.getRuntime(), this, bang ? "gsub!" : "gsub", arg0);
+            return enumeratorize(context.runtime, this, bang ? "gsub!" : "gsub", arg0);
         }
     }
 
@@ -2889,7 +2889,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     private IRubyObject gsubCommon(ThreadContext context, final boolean bang, IRubyObject arg, Block block, RubyString repl, int tuFlags) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         DynamicScope scope = context.getCurrentScope();
         Regex pattern = getQuotedPattern(arg);
 
@@ -2987,7 +2987,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "gsub", reads = BACKREF, writes = BACKREF, compat = RUBY1_9)
     public IRubyObject gsub19(ThreadContext context, IRubyObject arg0, Block block) {
-        return block.isGiven() ? gsubCommon19(context, block, null, null, arg0, false, 0) : enumeratorize(context.getRuntime(), this, "gsub", arg0);
+        return block.isGiven() ? gsubCommon19(context, block, null, null, arg0, false, 0) : enumeratorize(context.runtime, this, "gsub", arg0);
     }
 
     @JRubyMethod(name = "gsub", reads = BACKREF, writes = BACKREF, compat = RUBY1_9)
@@ -2998,7 +2998,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "gsub!", reads = BACKREF, writes = BACKREF, compat = RUBY1_9)
     public IRubyObject gsub_bang19(ThreadContext context, IRubyObject arg0, Block block) {
         checkFrozen();
-        return block.isGiven() ? gsubCommon19(context, block, null, null, arg0, true, 0) : enumeratorize(context.getRuntime(), this, "gsub!", arg0);
+        return block.isGiven() ? gsubCommon19(context, block, null, null, arg0, true, 0) : enumeratorize(context.runtime, this, "gsub!", arg0);
     }
 
     @JRubyMethod(name = "gsub!", reads = BACKREF, writes = BACKREF, compat = RUBY1_9)
@@ -3008,7 +3008,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     private IRubyObject gsub19(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block, final boolean bang) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         IRubyObject tryHash = TypeConverter.convertToTypeWithCheck(arg1, runtime.getHash(), "to_hash");
 
         final RubyHash hash;
@@ -3029,7 +3029,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     private IRubyObject gsubCommon19(ThreadContext context, Block block, RubyString repl,
             RubyHash hash, IRubyObject arg0, final boolean bang, int tuFlags) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
 
         final Regex pattern, prepared;
         final RubyRegexp regexp;
@@ -3123,13 +3123,13 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     @JRubyMethod(name = "index", reads = BACKREF, writes = BACKREF, compat = RUBY1_8)
     public IRubyObject index(ThreadContext context, IRubyObject arg0) {
-        return indexCommon(context.getRuntime(), context, arg0, 0);
+        return indexCommon(context.runtime, context, arg0, 0);
     }
 
     @JRubyMethod(name = "index", reads = BACKREF, writes = BACKREF, compat = RUBY1_8)
     public IRubyObject index(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         int pos = RubyNumeric.num2int(arg1);
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (pos < 0) {
             pos += value.getRealSize();
             if (pos < 0) {
@@ -3194,13 +3194,13 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "index", reads = BACKREF, writes = BACKREF, compat = RUBY1_9)
     public IRubyObject index19(ThreadContext context, IRubyObject arg0) {
-        return indexCommon19(context.getRuntime(), context, arg0, 0);
+        return indexCommon19(context.runtime, context, arg0, 0);
     }
     
     @JRubyMethod(name = "index", reads = BACKREF, writes = BACKREF, compat = RUBY1_9)
     public IRubyObject index19(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         int pos = RubyNumeric.num2int(arg1);
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (pos < 0) {
             pos += strLength();
             if (pos < 0) {
@@ -3271,13 +3271,13 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     @JRubyMethod(name = "rindex", reads = BACKREF, writes = BACKREF, compat = RUBY1_8)
     public IRubyObject rindex(ThreadContext context, IRubyObject arg0) {
-        return rindexCommon(context.getRuntime(), context, arg0, value.getRealSize());
+        return rindexCommon(context.runtime, context, arg0, value.getRealSize());
     }
 
     @JRubyMethod(name = "rindex", reads = BACKREF, writes = BACKREF, compat = RUBY1_8)
     public IRubyObject rindex(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         int pos = RubyNumeric.num2int(arg1);
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (pos < 0) {
             pos += value.getRealSize();
             if (pos < 0) {
@@ -3341,13 +3341,13 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "rindex", reads = BACKREF, writes = BACKREF, compat = RUBY1_9)
     public IRubyObject rindex19(ThreadContext context, IRubyObject arg0) {
-        return rindexCommon19(context.getRuntime(), context, arg0, strLength());
+        return rindexCommon19(context.runtime, context, arg0, strLength());
     }
 
     @JRubyMethod(name = "rindex", reads = BACKREF, writes = BACKREF, compat = RUBY1_9)
     public IRubyObject rindex19(ThreadContext context, IRubyObject arg0, IRubyObject arg1) {
         int pos = RubyNumeric.num2int(arg1);
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         int length = strLength();
         if (pos < 0) {
             pos += length;
@@ -3591,14 +3591,14 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     @JRubyMethod(name = {"[]", "slice"}, reads = BACKREF, writes = BACKREF, compat = RUBY1_8)
     public IRubyObject op_aref(ThreadContext context, IRubyObject arg1, IRubyObject arg2) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (arg1 instanceof RubyRegexp) return subpat(runtime, context, (RubyRegexp)arg1, RubyNumeric.num2int(arg2));
         return substr(runtime, RubyNumeric.num2int(arg1), RubyNumeric.num2int(arg2));
     }
 
     @JRubyMethod(name = {"[]", "slice"}, reads = BACKREF, writes = BACKREF, compat = RUBY1_8)
     public IRubyObject op_aref(ThreadContext context, IRubyObject arg) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (arg instanceof RubyFixnum) {
             return op_aref(runtime, RubyFixnum.fix2int((RubyFixnum)arg));
         } if (arg instanceof RubyRegexp) {
@@ -3620,14 +3620,14 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = {"[]", "slice"}, reads = BACKREF, writes = BACKREF, compat = RUBY1_9)
     public IRubyObject op_aref19(ThreadContext context, IRubyObject arg1, IRubyObject arg2) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (arg1 instanceof RubyRegexp) return subpat19(runtime, context, (RubyRegexp)arg1, arg2);
         return substr19(runtime, RubyNumeric.num2int(arg1), RubyNumeric.num2int(arg2));
     }
 
     @JRubyMethod(name = {"[]", "slice"}, reads = BACKREF, writes = BACKREF, compat = RUBY1_9)
     public IRubyObject op_aref19(ThreadContext context, IRubyObject arg) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (arg instanceof RubyFixnum) {
             return op_aref19(runtime, RubyNumeric.fix2int((RubyFixnum)arg));
         } else if (arg instanceof RubyRegexp) {
@@ -3663,7 +3663,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
      *
      */
     private void subpatSet(ThreadContext context, RubyRegexp regexp, int nth, IRubyObject repl) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (regexp.search(context, this, 0, false) < 0) throw runtime.newIndexError("regexp not matched");
         RubyMatchData match = (RubyMatchData)context.getCurrentScope().getBackRef(runtime);
 
@@ -3701,7 +3701,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     private void subpatSet19(ThreadContext context, RubyRegexp regexp, IRubyObject backref, IRubyObject repl) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (regexp.search19(context, this, 0, false) < 0) throw runtime.newIndexError("regexp not matched");
         RubyMatchData match = (RubyMatchData)context.getCurrentScope().getBackRef(runtime);
 
@@ -3751,7 +3751,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         } else if (arg0 instanceof RubyString) {
             RubyString orig = (RubyString)arg0;
             int beg = value.indexOf(orig.value);
-            if (beg < 0) throw context.getRuntime().newIndexError("string not matched");
+            if (beg < 0) throw context.runtime.newIndexError("string not matched");
             replaceInternal(beg, orig.value.getRealSize(), arg1.convertToString());
             return arg1;
         } else if (arg0 instanceof RubyRange) {
@@ -3797,7 +3797,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         } else if (arg0 instanceof RubyString) {
             RubyString orig = (RubyString)arg0;
             int beg = strIndex19(orig, 0);
-            if (beg < 0) throw context.getRuntime().newIndexError("string not matched");
+            if (beg < 0) throw context.runtime.newIndexError("string not matched");
             beg = subLength(beg);
             replaceInternal19(beg, orig.strLength(), arg1.convertToString());
             return arg1;
@@ -3883,7 +3883,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 exciseTail(len);
 
             } else {
-                op_aset(context, arg0, RubyString.newEmptyString(context.getRuntime()));
+                op_aset(context, arg0, RubyString.newEmptyString(context.runtime));
             }
         }
         return result;
@@ -3908,7 +3908,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 exciseTail(len);
 
             } else {
-                op_aset(context, arg0, arg1, RubyString.newEmptyString(context.getRuntime()));
+                op_aset(context, arg0, arg1, RubyString.newEmptyString(context.runtime));
             }
         }
         return result;
@@ -3920,7 +3920,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (result.isNil()) {
             modifyCheck(); // keep cr ?
         } else {
-            op_aset19(context, arg0, RubyString.newEmptyString(context.getRuntime()));
+            op_aset19(context, arg0, RubyString.newEmptyString(context.runtime));
         }
         return result;
     }
@@ -3931,14 +3931,14 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (result.isNil()) {
             modifyCheck(); // keep cr ?
         } else {
-            op_aset19(context, arg0, arg1, RubyString.newEmptyString(context.getRuntime()));
+            op_aset19(context, arg0, arg1, RubyString.newEmptyString(context.runtime));
         }
         return result;
     }
 
     @JRubyMethod(name = {"succ", "next"}, compat = RUBY1_8)
     public IRubyObject succ(ThreadContext context) {
-        RubyString str = strDup(context.getRuntime());
+        RubyString str = strDup(context.runtime);
         str.succ_bang();
         return str;
     }
@@ -4098,7 +4098,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = {"succ", "next"}, compat = RUBY1_9)
     public IRubyObject succ19(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         final RubyString str;
         if (value.getRealSize() > 0) {
             str = new RubyString(runtime, getMetaClass(), succCommon19(value));
@@ -4219,14 +4219,14 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "upto", compat = RUBY1_9)
     public IRubyObject upto19(ThreadContext context, IRubyObject end, Block block) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         return block.isGiven() ? uptoCommon19(context, end, false, block) : enumeratorize(runtime, this, "upto", end);
     }
 
     @JRubyMethod(name = "upto", compat = RUBY1_9)
     public IRubyObject upto19(ThreadContext context, IRubyObject end, IRubyObject excl, Block block) {
         return block.isGiven() ? uptoCommon19(context, end, excl.isTrue(), block) : 
-            enumeratorize(context.getRuntime(), this, "upto", new IRubyObject[]{end, excl});
+            enumeratorize(context.runtime, this, "upto", new IRubyObject[]{end, excl});
     }
 
     final IRubyObject uptoCommon19(ThreadContext context, IRubyObject arg, boolean excl, Block block) {
@@ -4234,7 +4234,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     final IRubyObject uptoCommon19(ThreadContext context, IRubyObject arg, boolean excl, Block block, boolean asSymbol) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (arg instanceof RubySymbol) throw runtime.newTypeError("can't convert Symbol into String");
 
         RubyString end = arg.convertToString();
@@ -4335,7 +4335,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     @JRubyMethod(name = "include?", compat = RUBY1_8)
     public RubyBoolean include_p(ThreadContext context, IRubyObject obj) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (obj instanceof RubyFixnum) {
             int c = RubyNumeric.fix2int((RubyFixnum)obj);
             for (int i = 0; i < value.getRealSize(); i++) {
@@ -4348,18 +4348,18 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "include?", compat = RUBY1_9)
     public RubyBoolean include_p19(ThreadContext context, IRubyObject obj) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         return strIndex19(obj.convertToString(), 0) == -1 ? runtime.getFalse() : runtime.getTrue();
     }
 
     @JRubyMethod(name = "chr", compat = RUBY1_9)
     public IRubyObject chr(ThreadContext context) {
-        return substr19(context.getRuntime(), 0, 1);
+        return substr19(context.runtime, 0, 1);
     }
 
     @JRubyMethod(name = "getbyte", compat = RUBY1_9)
     public IRubyObject getbyte(ThreadContext context, IRubyObject index) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         int i = RubyNumeric.num2int(index);
         if (i < 0) i += value.getRealSize();
         if (i < 0 || i >= value.getRealSize()) return runtime.getNil();
@@ -4435,7 +4435,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "oct", compat = RUBY1_9)
     public IRubyObject oct19(ThreadContext context) {
         if (!value.getEncoding().isAsciiCompatible()) {
-            throw context.getRuntime().newEncodingCompatibilityError("ASCII incompatible encoding: " + value.getEncoding());
+            throw context.runtime.newEncodingCompatibilityError("ASCII incompatible encoding: " + value.getEncoding());
         }
         return oct(context);
     }
@@ -4451,7 +4451,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "hex", compat = RUBY1_9)
     public IRubyObject hex19(ThreadContext context) {
         if (!value.getEncoding().isAsciiCompatible()) {
-            throw context.getRuntime().newEncodingCompatibilityError("ASCII incompatible encoding: " + value.getEncoding());
+            throw context.runtime.newEncodingCompatibilityError("ASCII incompatible encoding: " + value.getEncoding());
         }
         return stringToInum19(16, false);
     }
@@ -4474,7 +4474,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     @JRubyMethod(name = "split", writes = BACKREF, compat = RUBY1_8)
     public RubyArray split(ThreadContext context) {
-        return split(context, context.getRuntime().getNil());
+        return split(context, context.runtime.getNil());
     }
 
     @JRubyMethod(name = "split", writes = BACKREF, compat = RUBY1_8)
@@ -4488,14 +4488,14 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (lim <= 0) {
             return splitCommon(arg0, false, lim, 1, context);
         } else {
-            if (lim == 1) return value.getRealSize() == 0 ? context.getRuntime().newArray() : context.getRuntime().newArray(this);
+            if (lim == 1) return value.getRealSize() == 0 ? context.runtime.newArray() : context.runtime.newArray(this);
             return splitCommon(arg0, true, lim, 1, context);
         }
     }
 
     private RubyArray splitCommon(IRubyObject spat, final boolean limit, final int lim, final int i, ThreadContext context) {
         final RubyArray result;
-        if (spat.isNil() && (spat = context.getRuntime().getGlobalVariables().get("$;")).isNil()) {
+        if (spat.isNil() && (spat = context.runtime.getGlobalVariables().get("$;")).isNil()) {
             result = awkSplit(limit, lim, i);
         } else {
             if (spat instanceof RubyString && ((RubyString) spat).value.getRealSize() == 1) {
@@ -4520,7 +4520,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     private RubyArray regexSplit(ThreadContext context, IRubyObject pat, boolean limit, int lim, int i) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         final Regex pattern = getQuotedPattern(pat);
 
         int begin = value.getBegin();
@@ -4629,7 +4629,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "split", writes = BACKREF, compat = RUBY1_9)
     public RubyArray split19(ThreadContext context) {
-        return split19(context, context.getRuntime().getNil());
+        return split19(context, context.runtime.getNil());
     }
 
     @JRubyMethod(name = "split", writes = BACKREF, compat = RUBY1_9)
@@ -4643,14 +4643,14 @@ public class RubyString extends RubyObject implements EncodingCapable {
         if (lim <= 0) {
             return splitCommon19(arg0, false, lim, 1, context);
         } else {
-            if (lim == 1) return value.getRealSize() == 0 ? context.getRuntime().newArray() : context.getRuntime().newArray(this);
+            if (lim == 1) return value.getRealSize() == 0 ? context.runtime.newArray() : context.runtime.newArray(this);
             return splitCommon19(arg0, true, lim, 1, context);
         }
     }
 
     private RubyArray splitCommon19(IRubyObject spat, final boolean limit, final int lim, final int i, ThreadContext context) {
         final RubyArray result;
-        if (spat.isNil() && (spat = context.getRuntime().getGlobalVariables().get("$;")).isNil()) {
+        if (spat.isNil() && (spat = context.runtime.getGlobalVariables().get("$;")).isNil()) {
             result = awkSplit19(limit, lim, i);
         } else {
             if (spat instanceof RubyString) {
@@ -4658,7 +4658,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
                 int len = spatValue.getRealSize();
                 Encoding spatEnc = spatValue.getEncoding();
                 if (len == 0) {
-                    Regex pattern = RubyRegexp.getRegexpFromCache(context.getRuntime(), spatValue, spatEnc, new RegexpOptions());
+                    Regex pattern = RubyRegexp.getRegexpFromCache(context.runtime, spatValue, spatEnc, new RegexpOptions());
                     result = regexSplit19(context, pattern, pattern, limit, lim, i);
                 } else {
                     final int c;
@@ -4674,7 +4674,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             } else {
                 final Regex pattern, prepared;
                 
-                Ruby runtime = context.getRuntime();
+                Ruby runtime = context.runtime;
                 if (spat instanceof RubyRegexp) {
                     RubyRegexp regexp = (RubyRegexp)spat;
                     pattern = regexp.getPattern();
@@ -4697,7 +4697,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     private RubyArray regexSplit19(ThreadContext context, Regex pattern, Regex prepared, boolean limit, int lim, int i) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
 
         int begin = value.getBegin();
         int len = value.getRealSize();
@@ -4792,7 +4792,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     private RubyArray stringSplit19(ThreadContext context, RubyString spat, boolean limit, int lim, int i) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (scanForCodeRange() == CR_BROKEN) throw runtime.newArgumentError("invalid byte sequence in " + value.getEncoding());
         if (spat.scanForCodeRange() == CR_BROKEN) throw runtime.newArgumentError("invalid byte sequence in " + spat.value.getEncoding());
 
@@ -4863,7 +4863,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     @JRubyMethod(reads = BACKREF, writes = BACKREF, compat = RUBY1_8)
     public IRubyObject scan(ThreadContext context, IRubyObject arg, Block block) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         Encoding enc = runtime.getKCode().getEncoding();
         final Regex pattern;
         final int tuFlags;
@@ -4893,7 +4893,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     private IRubyObject scanIter(ThreadContext context, Regex pattern, Matcher matcher, Encoding enc, Block block, int begin, int range, int tuFlags) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         byte[]bytes = value.getUnsafeBytes();
         int size = value.getRealSize();
         RubyMatchData match = null;
@@ -4924,7 +4924,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     private IRubyObject scanNoIter(ThreadContext context, Regex pattern, Matcher matcher, Encoding enc, int begin, int range, int tuFlags) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         RubyArray ary = runtime.newArray();
 
         int end = 0;
@@ -4983,7 +4983,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "scan", reads = BACKREF, writes = BACKREF, compat = RUBY1_9)
     public IRubyObject scan19(ThreadContext context, IRubyObject arg, Block block) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         Encoding enc = value.getEncoding();
         final Regex pattern, prepared;
         final RubyRegexp regexp;
@@ -5008,7 +5008,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     private IRubyObject scanIter19(ThreadContext context, Regex pattern, Regex prepared, Encoding enc, Block block, RubyRegexp regexp, int tuFlags) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         byte[]bytes = value.getUnsafeBytes();
         int begin = value.getBegin();
         int len = value.getRealSize();
@@ -5045,7 +5045,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     private IRubyObject scanNoIter19(ThreadContext context, Regex pattern, Regex prepared, Encoding enc, RubyRegexp regexp, int tuFlags) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         byte[]bytes = value.getUnsafeBytes();
         int begin = value.getBegin();
         int range = begin + value.getRealSize();
@@ -5081,20 +5081,20 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "start_with?")
     public IRubyObject start_with_p(ThreadContext context) {
-        return context.getRuntime().getFalse();
+        return context.runtime.getFalse();
     }
 
     @JRubyMethod(name = "start_with?")
     public IRubyObject start_with_p(ThreadContext context, IRubyObject arg) {
-        return start_with_pCommon(arg) ? context.getRuntime().getTrue() : context.getRuntime().getFalse();
+        return start_with_pCommon(arg) ? context.runtime.getTrue() : context.runtime.getFalse();
     }
 
     @JRubyMethod(name = "start_with?", rest = true)
     public IRubyObject start_with_p(ThreadContext context, IRubyObject[]args) {
         for (int i = 0; i < args.length; i++) {
-            if (start_with_pCommon(args[i])) return context.getRuntime().getTrue();
+            if (start_with_pCommon(args[i])) return context.runtime.getTrue();
         }
-        return context.getRuntime().getFalse();
+        return context.runtime.getFalse();
     }
 
     private boolean start_with_pCommon(IRubyObject arg) {
@@ -5108,20 +5108,20 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "end_with?")
     public IRubyObject end_with_p(ThreadContext context) {
-        return context.getRuntime().getFalse();
+        return context.runtime.getFalse();
     }
 
     @JRubyMethod(name = "end_with?")
     public IRubyObject end_with_p(ThreadContext context, IRubyObject arg) {
-        return end_with_pCommon(arg) ? context.getRuntime().getTrue() : context.getRuntime().getFalse();
+        return end_with_pCommon(arg) ? context.runtime.getTrue() : context.runtime.getFalse();
     }
 
     @JRubyMethod(name = "end_with?", rest = true)
     public IRubyObject end_with_p(ThreadContext context, IRubyObject[]args) {
         for (int i = 0; i < args.length; i++) {
-            if (end_with_pCommon(args[i])) return context.getRuntime().getTrue();
+            if (end_with_pCommon(args[i])) return context.runtime.getTrue();
         }
-        return context.getRuntime().getFalse();
+        return context.runtime.getFalse();
     }
 
     private boolean end_with_pCommon(IRubyObject arg) {
@@ -5383,7 +5383,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod
     public IRubyObject partition(ThreadContext context, IRubyObject arg, Block block) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         final int pos;
         final RubyString sep;
         if (arg instanceof RubyRegexp) {
@@ -5412,7 +5412,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     
     @JRubyMethod(name = "rpartition")
     public IRubyObject rpartition(ThreadContext context, IRubyObject arg) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         final int pos;
         final RubyString sep;
         if (arg instanceof RubyRegexp) {
@@ -5443,13 +5443,13 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     @JRubyMethod(name = "chop", compat = RUBY1_8)
     public IRubyObject chop(ThreadContext context) {
-        if (value.getRealSize() == 0) return newEmptyString(context.getRuntime(), getMetaClass()).infectBy(this);
-        return makeShared(context.getRuntime(), 0, choppedLength());
+        if (value.getRealSize() == 0) return newEmptyString(context.runtime, getMetaClass()).infectBy(this);
+        return makeShared(context.runtime, 0, choppedLength());
     }
 
     @JRubyMethod(name = "chop!", compat = RUBY1_8)
     public IRubyObject chop_bang(ThreadContext context) {
-        if (value.getRealSize() == 0) return context.getRuntime().getNil();
+        if (value.getRealSize() == 0) return context.runtime.getNil();
         view(0, choppedLength());
         return this;
     }
@@ -5464,7 +5464,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "chop", compat = RUBY1_9)
     public IRubyObject chop19(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (value.getRealSize() == 0) return newEmptyString(runtime, getMetaClass(), value.getEncoding()).infectBy(this);
         return makeShared19(runtime, 0, choppedLength19(runtime));
     }
@@ -5472,7 +5472,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "chop!", compat = RUBY1_9)
     public IRubyObject chop_bang19(ThreadContext context) {
         modifyCheck();
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (value.getRealSize() == 0) return runtime.getNil();
         view(0, choppedLength19(runtime));
         if (getCodeRange() != CR_7BIT) clearCodeRange();
@@ -5501,14 +5501,14 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     @JRubyMethod(name = "chomp", compat = RUBY1_8)
     public RubyString chomp(ThreadContext context) {
-        RubyString str = strDup(context.getRuntime());
+        RubyString str = strDup(context.runtime);
         str.chomp_bang(context);
         return str;
     }
 
     @JRubyMethod(name = "chomp", compat = RUBY1_8)
     public RubyString chomp(ThreadContext context, IRubyObject arg0) {
-        RubyString str = strDup(context.getRuntime());
+        RubyString str = strDup(context.runtime);
         str.chomp_bang(context, arg0);
         return str;
     }
@@ -5525,7 +5525,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     @JRubyMethod(name = "chomp!", compat = RUBY1_8)
     public IRubyObject chomp_bang(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (value.getRealSize() == 0) return runtime.getNil();
 
         IRubyObject rsObj = runtime.getGlobalVariables().get("$/");
@@ -5536,7 +5536,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "chomp!", compat = RUBY1_8)
     public IRubyObject chomp_bang(ThreadContext context, IRubyObject arg0) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (value.getRealSize() == 0) return runtime.getNil();
         return chompBangCommon(runtime, arg0);
     }
@@ -5595,21 +5595,21 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "chomp", compat = RUBY1_9)
     public RubyString chomp19(ThreadContext context) {
-        RubyString str = strDup(context.getRuntime());
+        RubyString str = strDup(context.runtime);
         str.chomp_bang19(context);
         return str;
     }
 
     @JRubyMethod(name = "chomp", compat = RUBY1_9)
     public RubyString chomp19(ThreadContext context, IRubyObject arg0) {
-        RubyString str = strDup(context.getRuntime());
+        RubyString str = strDup(context.runtime);
         str.chomp_bang19(context, arg0);
         return str;
     }
 
     @JRubyMethod(name = "chomp!", compat = RUBY1_9)
     public IRubyObject chomp_bang19(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (value.getRealSize() == 0) return runtime.getNil();
 
         IRubyObject rsObj = runtime.getGlobalVariables().get("$/");
@@ -5621,7 +5621,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "chomp!", compat = RUBY1_9)
     public IRubyObject chomp_bang19(ThreadContext context, IRubyObject arg0) {
         modifyCheck();
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (value.getRealSize() == 0) return runtime.getNil();
         return chompBangCommon19(runtime, arg0);
     }
@@ -5710,21 +5710,21 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     @JRubyMethod(name = "lstrip", compat = RUBY1_8)
     public IRubyObject lstrip(ThreadContext context) {
-        RubyString str = strDup(context.getRuntime());
+        RubyString str = strDup(context.runtime);
         str.lstrip_bang(context);
         return str;
     }
 
     @JRubyMethod(name = "lstrip!", compat = RUBY1_8)
     public IRubyObject lstrip_bang(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (value.getRealSize() == 0) return runtime.getNil();
         return singleByteLStrip(runtime, value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize());
     }
 
     @JRubyMethod(name = "lstrip", compat = RUBY1_9)
     public IRubyObject lstrip19(ThreadContext context) {
-        RubyString str = strDup(context.getRuntime());
+        RubyString str = strDup(context.runtime);
         str.lstrip_bang19(context);
         return str;
     }
@@ -5732,7 +5732,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "lstrip!", compat = RUBY1_9)
     public IRubyObject lstrip_bang19(ThreadContext context) {
         modifyCheck();
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (value.getRealSize() == 0) {
             return runtime.getNil();
         }
@@ -5784,21 +5784,21 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     @JRubyMethod(name = "rstrip", compat = RUBY1_8)
     public IRubyObject rstrip(ThreadContext context) {
-        RubyString str = strDup(context.getRuntime());
+        RubyString str = strDup(context.runtime);
         str.rstrip_bang(context);
         return str;
     }
 
     @JRubyMethod(name = "rstrip!", compat = RUBY1_8)
     public IRubyObject rstrip_bang(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (value.getRealSize() == 0) return runtime.getNil();
         return singleByteRStrip(runtime, value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize());
     }
 
     @JRubyMethod(name = "rstrip", compat = RUBY1_9)
     public IRubyObject rstrip19(ThreadContext context) {
-        RubyString str = strDup(context.getRuntime());
+        RubyString str = strDup(context.runtime);
         str.rstrip_bang19(context);
         return str;
     }
@@ -5806,7 +5806,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "rstrip!", compat = RUBY1_9)
     public IRubyObject rstrip_bang19(ThreadContext context) {
         modifyCheck();
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (value.getRealSize() == 0) {
             return runtime.getNil();
         }
@@ -5874,21 +5874,21 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     @JRubyMethod(name = "strip", compat = RUBY1_8)
     public IRubyObject strip(ThreadContext context) {
-        RubyString str = strDup(context.getRuntime());
+        RubyString str = strDup(context.runtime);
         str.strip_bang(context);
         return str;
     }
 
     @JRubyMethod(name = "strip!", compat = RUBY1_8)
     public IRubyObject strip_bang(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (value.getRealSize() == 0) return runtime.getNil();
         return singleByteStrip(runtime, value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize());
     }
 
     @JRubyMethod(name = "strip", compat = RUBY1_9)
     public IRubyObject strip19(ThreadContext context) {
-        RubyString str = strDup(context.getRuntime());
+        RubyString str = strDup(context.runtime);
         str.strip_bang19(context);
         return str;
     }
@@ -5900,7 +5900,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         IRubyObject left = lstrip_bang19(context);
         IRubyObject right = rstrip_bang19(context);
         
-        return left.isNil() && right.isNil() ? context.getRuntime().getNil() : this;
+        return left.isNil() && right.isNil() ? context.runtime.getNil() : this;
     }
 
     private IRubyObject singleByteStrip(Ruby runtime, byte[]bytes, int s, int end) {
@@ -5922,19 +5922,19 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     @JRubyMethod(name = "count", compat = RUBY1_8)
     public IRubyObject count(ThreadContext context) {
-        throw context.getRuntime().newArgumentError("wrong number of arguments");
+        throw context.runtime.newArgumentError("wrong number of arguments");
     }
 
     @JRubyMethod(name = "count", compat = RUBY1_8)
     public IRubyObject count(ThreadContext context, IRubyObject arg) {
         final boolean[]table = new boolean[TRANS_SIZE];
         arg.convertToString().trSetupTable(table, true);
-        return countCommon(context.getRuntime(), table);
+        return countCommon(context.runtime, table);
     }
 
     @JRubyMethod(name = "count", required = 1, rest = true, compat = RUBY1_8)
     public IRubyObject count(ThreadContext context, IRubyObject[] args) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (value.getRealSize() == 0) return RubyFixnum.zero(runtime);
 
         final boolean[]table = new boolean[TRANS_SIZE];
@@ -5958,12 +5958,12 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "count", compat = RUBY1_9)
     public IRubyObject count19(ThreadContext context) {
-        throw context.getRuntime().newArgumentError("wrong number of arguments");
+        throw context.runtime.newArgumentError("wrong number of arguments");
     }
 
     @JRubyMethod(name = "count", compat = RUBY1_9)
     public IRubyObject count19(ThreadContext context, IRubyObject arg) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (value.getRealSize() == 0) return RubyFixnum.zero(runtime);
 
         RubyString otherStr = arg.convertToString();
@@ -5985,13 +5985,13 @@ public class RubyString extends RubyObject implements EncodingCapable {
         }
         
         final boolean[]table = new boolean[TRANS_SIZE + 1];
-        TrTables tables = otherStr.trSetupTable(context.getRuntime(), table, null, true, enc);
+        TrTables tables = otherStr.trSetupTable(context.runtime, table, null, true, enc);
         return countCommon19(runtime, table, tables, enc);
     }
 
     @JRubyMethod(name = "count", required = 1, rest = true, compat = RUBY1_9)
     public IRubyObject count19(ThreadContext context, IRubyObject[] args) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (value.getRealSize() == 0) return RubyFixnum.zero(runtime);
 
         RubyString otherStr = args[0].convertToString();
@@ -6034,31 +6034,31 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     @JRubyMethod(name = "delete", compat = RUBY1_8)
     public IRubyObject delete(ThreadContext context) {
-        throw context.getRuntime().newArgumentError("wrong number of arguments");
+        throw context.runtime.newArgumentError("wrong number of arguments");
     }
 
     @JRubyMethod(name = "delete", compat = RUBY1_8)
     public IRubyObject delete(ThreadContext context, IRubyObject arg) {
-        RubyString str = strDup(context.getRuntime());
+        RubyString str = strDup(context.runtime);
         str.delete_bang(context, arg);
         return str;
     }
 
     @JRubyMethod(name = "delete", required = 1, rest = true, compat = RUBY1_8)
     public IRubyObject delete(ThreadContext context, IRubyObject[] args) {
-        RubyString str = strDup(context.getRuntime());
+        RubyString str = strDup(context.runtime);
         str.delete_bang(context, args);
         return str;
     }
 
     @JRubyMethod(name = "delete!", compat = RUBY1_8)
     public IRubyObject delete_bang(ThreadContext context) {
-        throw context.getRuntime().newArgumentError("wrong number of arguments");
+        throw context.runtime.newArgumentError("wrong number of arguments");
     }
 
     @JRubyMethod(name = "delete!", compat = RUBY1_8)
     public IRubyObject delete_bang(ThreadContext context, IRubyObject arg) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (value.getRealSize() == 0) return runtime.getNil();
         final boolean[]squeeze = new boolean[TRANS_SIZE];
         arg.convertToString().trSetupTable(squeeze, true);
@@ -6067,7 +6067,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "delete!", required = 1, rest = true, compat = RUBY1_8)
     public IRubyObject delete_bang(ThreadContext context, IRubyObject[] args) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (value.getRealSize() == 0) return runtime.getNil();
         boolean[]squeeze = new boolean[TRANS_SIZE];
 
@@ -6103,31 +6103,31 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "delete", compat = RUBY1_9)
     public IRubyObject delete19(ThreadContext context) {
-        throw context.getRuntime().newArgumentError("wrong number of arguments");
+        throw context.runtime.newArgumentError("wrong number of arguments");
     }
 
     @JRubyMethod(name = "delete", compat = RUBY1_9)
     public IRubyObject delete19(ThreadContext context, IRubyObject arg) {
-        RubyString str = strDup(context.getRuntime());
+        RubyString str = strDup(context.runtime);
         str.delete_bang19(context, arg);
         return str;
     }
 
     @JRubyMethod(name = "delete", required = 1, rest = true, compat = RUBY1_9)
     public IRubyObject delete19(ThreadContext context, IRubyObject[] args) {
-        RubyString str = strDup(context.getRuntime());
+        RubyString str = strDup(context.runtime);
         str.delete_bang19(context, args);
         return str;
     }
 
     @JRubyMethod(name = "delete!", compat = RUBY1_9)
     public IRubyObject delete_bang19(ThreadContext context) {
-        throw context.getRuntime().newArgumentError("wrong number of arguments");
+        throw context.runtime.newArgumentError("wrong number of arguments");
     }
 
     @JRubyMethod(name = "delete!", compat = RUBY1_9)
     public IRubyObject delete_bang19(ThreadContext context, IRubyObject arg) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (value.getRealSize() == 0) return runtime.getNil();
 
         RubyString otherStr = arg.convertToString();
@@ -6139,7 +6139,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "delete!", required = 1, rest = true, compat = RUBY1_9)
     public IRubyObject delete_bang19(ThreadContext context, IRubyObject[] args) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (value.getRealSize() == 0) return runtime.getNil();
 
         RubyString otherStr = args[0].convertToString();
@@ -6199,28 +6199,28 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     @JRubyMethod(name = "squeeze", compat = RUBY1_8)
     public IRubyObject squeeze(ThreadContext context) {
-        RubyString str = strDup(context.getRuntime());
+        RubyString str = strDup(context.runtime);
         str.squeeze_bang(context);
         return str;
     }
 
     @JRubyMethod(name = "squeeze", compat = RUBY1_8)
     public IRubyObject squeeze(ThreadContext context, IRubyObject arg) {
-        RubyString str = strDup(context.getRuntime());
+        RubyString str = strDup(context.runtime);
         str.squeeze_bang(context, arg);
         return str;
     }
 
     @JRubyMethod(name = "squeeze", rest = true, compat = RUBY1_8)
     public IRubyObject squeeze(ThreadContext context, IRubyObject[] args) {
-        RubyString str = strDup(context.getRuntime());
+        RubyString str = strDup(context.runtime);
         str.squeeze_bang(context, args);
         return str;
     }
 
     @JRubyMethod(name = "squeeze!", compat = RUBY1_8)
     public IRubyObject squeeze_bang(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (value.getRealSize() == 0) {
             modifyCheck();
             return runtime.getNil();
@@ -6233,7 +6233,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "squeeze!", compat = RUBY1_8)
     public IRubyObject squeeze_bang(ThreadContext context, IRubyObject arg) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (value.getRealSize() == 0) {
             modifyCheck();
             return runtime.getNil();
@@ -6248,7 +6248,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     public IRubyObject squeeze_bang(ThreadContext context, IRubyObject[] args) {
         if (args.length == 0) return squeeze_bang(context);
         
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (value.getRealSize() == 0) {
             modifyCheck();
             return runtime.getNil();
@@ -6286,28 +6286,28 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "squeeze", compat = RUBY1_9)
     public IRubyObject squeeze19(ThreadContext context) {
-        RubyString str = strDup(context.getRuntime());
+        RubyString str = strDup(context.runtime);
         str.squeeze_bang19(context);
         return str;
     }
 
     @JRubyMethod(name = "squeeze", compat = RUBY1_9)
     public IRubyObject squeeze19(ThreadContext context, IRubyObject arg) {
-        RubyString str = strDup(context.getRuntime());
+        RubyString str = strDup(context.runtime);
         str.squeeze_bang19(context, arg);
         return str;
     }
 
     @JRubyMethod(name = "squeeze", rest = true, compat = RUBY1_9)
     public IRubyObject squeeze19(ThreadContext context, IRubyObject[] args) {
-        RubyString str = strDup(context.getRuntime());
+        RubyString str = strDup(context.runtime);
         str.squeeze_bang19(context, args);
         return str;
     }
 
     @JRubyMethod(name = "squeeze!", compat = RUBY1_9)
     public IRubyObject squeeze_bang19(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (value.getRealSize() == 0) {
             modifyCheck();
             return runtime.getNil();
@@ -6325,7 +6325,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "squeeze!", compat = RUBY1_9)
     public IRubyObject squeeze_bang19(ThreadContext context, IRubyObject arg) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (value.getRealSize() == 0) {
             modifyCheck();
             return runtime.getNil();
@@ -6346,7 +6346,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "squeeze!", rest = true, compat = RUBY1_9)
     public IRubyObject squeeze_bang19(ThreadContext context, IRubyObject[] args) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (value.getRealSize() == 0) {
             modifyCheck();
             return runtime.getNil();
@@ -6410,7 +6410,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     @JRubyMethod(name = "tr", compat = RUBY1_8)
     public IRubyObject tr(ThreadContext context, IRubyObject src, IRubyObject repl) {
-        RubyString str = strDup(context.getRuntime());
+        RubyString str = strDup(context.runtime);
         str.trTrans(context, src, repl, false);
         return str;
     }
@@ -6422,7 +6422,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "tr", compat = RUBY1_9)
     public IRubyObject tr19(ThreadContext context, IRubyObject src, IRubyObject repl) {
-        RubyString str = strDup(context.getRuntime());
+        RubyString str = strDup(context.runtime);
         str.trTrans19(context, src, repl, false);
         return str;
     }
@@ -6543,7 +6543,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     *
     */    
     private IRubyObject trTrans(ThreadContext context, IRubyObject src, IRubyObject repl, boolean sflag) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (value.getRealSize() == 0) return runtime.getNil();
 
         ByteList replList = repl.convertToString().value;
@@ -6616,7 +6616,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     private IRubyObject trTrans19(ThreadContext context, IRubyObject src, IRubyObject repl, boolean sflag) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (value.getRealSize() == 0) return runtime.getNil();
 
         RubyString replStr = repl.convertToString();
@@ -6885,7 +6885,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     @JRubyMethod(name ="tr_s", compat = RUBY1_8)
     public IRubyObject tr_s(ThreadContext context, IRubyObject src, IRubyObject repl) {
-        RubyString str = strDup(context.getRuntime());
+        RubyString str = strDup(context.runtime);
         str.trTrans(context, src, repl, true);
         return str;
     }
@@ -6897,7 +6897,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name ="tr_s", compat = RUBY1_9)
     public IRubyObject tr_s19(ThreadContext context, IRubyObject src, IRubyObject repl) {
-        RubyString str = strDup(context.getRuntime());
+        RubyString str = strDup(context.runtime);
         str.trTrans19(context, src, repl, true);
         return str;
     }
@@ -6911,7 +6911,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
      *
      */
     public IRubyObject each_line(ThreadContext context, Block block) {
-        return each_lineCommon(context, context.getRuntime().getGlobalVariables().get("$/"), block);
+        return each_lineCommon(context, context.runtime.getGlobalVariables().get("$/"), block);
     }
 
     public IRubyObject each_line(ThreadContext context, IRubyObject arg, Block block) {
@@ -6919,7 +6919,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     public IRubyObject each_lineCommon(ThreadContext context, IRubyObject sep, Block block) {        
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (sep.isNil()) {
             block.yield(context, this);
             return this;
@@ -6969,69 +6969,69 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "each", compat = RUBY1_8)
     public IRubyObject each18(ThreadContext context, Block block) {
         return block.isGiven() ? each_line(context, block) : 
-            enumeratorize(context.getRuntime(), this, "each");
+            enumeratorize(context.runtime, this, "each");
     }
 
     @JRubyMethod(name = "each", compat = RUBY1_8)
     public IRubyObject each18(ThreadContext context, IRubyObject arg, Block block) {
         return block.isGiven() ? each_lineCommon(context, arg, block) : 
-            enumeratorize(context.getRuntime(), this, "each", arg);
+            enumeratorize(context.runtime, this, "each", arg);
     }
 
     @JRubyMethod(name = "each_line", compat = RUBY1_8)
     public IRubyObject each_line18(ThreadContext context, Block block) {
         return block.isGiven() ? each_line(context, block) : 
-            enumeratorize(context.getRuntime(), this, "each_line");
+            enumeratorize(context.runtime, this, "each_line");
     }
 
     @JRubyMethod(name = "each_line", compat = RUBY1_8)
     public IRubyObject each_line18(ThreadContext context, IRubyObject arg, Block block) {
         return block.isGiven() ? each_lineCommon(context, arg, block) : 
-            enumeratorize(context.getRuntime(), this, "each_line", arg);
+            enumeratorize(context.runtime, this, "each_line", arg);
     }
 
     @JRubyMethod(name = "lines", compat = RUBY1_8)
     public IRubyObject lines18(ThreadContext context, Block block) {
         return block.isGiven() ? each_line(context, block) : 
-            enumeratorize(context.getRuntime(), this, "lines");
+            enumeratorize(context.runtime, this, "lines");
     }
 
     @JRubyMethod(name = "lines", compat = RUBY1_8)
     public IRubyObject lines18(ThreadContext context, IRubyObject arg, Block block) {
         return block.isGiven() ? each_lineCommon(context, arg, block) : 
-            enumeratorize(context.getRuntime(), this, "lines", arg);
+            enumeratorize(context.runtime, this, "lines", arg);
     }
 
     @JRubyMethod(name = "each_line", compat = RUBY1_9)
     public IRubyObject each_line19(ThreadContext context, Block block) {
         return block.isGiven() ? each_lineCommon19(context, block) : 
-            enumeratorize(context.getRuntime(), this, "each_line");
+            enumeratorize(context.runtime, this, "each_line");
     }
 
     @JRubyMethod(name = "each_line", compat = RUBY1_9)
     public IRubyObject each_line19(ThreadContext context, IRubyObject arg, Block block) {
         return block.isGiven() ? each_lineCommon19(context, arg, block) : 
-            enumeratorize(context.getRuntime(), this, "each_line", arg);
+            enumeratorize(context.runtime, this, "each_line", arg);
     }
 
     @JRubyMethod(compat = RUBY1_9)
     public IRubyObject lines(ThreadContext context, Block block) {
         return block.isGiven() ? each_lineCommon19(context, block) : 
-            enumeratorize(context.getRuntime(), this, "lines");
+            enumeratorize(context.runtime, this, "lines");
     }
 
     @JRubyMethod(compat = RUBY1_9)
     public IRubyObject lines(ThreadContext context, IRubyObject arg, Block block) {
         return block.isGiven() ? each_lineCommon19(context, arg, block) : 
-            enumeratorize(context.getRuntime(), this, "lines", arg);
+            enumeratorize(context.runtime, this, "lines", arg);
     }
 
     private IRubyObject each_lineCommon19(ThreadContext context, Block block) {
-        return each_lineCommon19(context, context.getRuntime().getGlobalVariables().get("$/"), block);
+        return each_lineCommon19(context, context.runtime.getGlobalVariables().get("$/"), block);
     }
 
     private IRubyObject each_lineCommon19(ThreadContext context, IRubyObject sep, Block block) {        
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         if (sep.isNil()) {
             block.yield(context, this);
             return this;
@@ -7105,7 +7105,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
      * rb_str_each_byte
      */
     public RubyString each_byte(ThreadContext context, Block block) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         // Check the length every iteration, since
         // the block can modify this string.
         for (int i = 0; i < value.length(); i++) {
@@ -7116,12 +7116,12 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "each_byte")
     public IRubyObject each_byte19(ThreadContext context, Block block) {
-        return block.isGiven() ? each_byte(context, block) : enumeratorize(context.getRuntime(), this, "each_byte");
+        return block.isGiven() ? each_byte(context, block) : enumeratorize(context.runtime, this, "each_byte");
     }
 
     @JRubyMethod
     public IRubyObject bytes(ThreadContext context, Block block) {
-        return block.isGiven() ? each_byte(context, block) : enumeratorize(context.getRuntime(), this, "bytes");
+        return block.isGiven() ? each_byte(context, block) : enumeratorize(context.runtime, this, "bytes");
     }
 
     /** rb_str_each_char
@@ -7129,12 +7129,12 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     @JRubyMethod(name = "each_char", compat = RUBY1_8)
     public IRubyObject each_char18(ThreadContext context, Block block) {
-        return block.isGiven() ? each_charCommon18(context, block) : enumeratorize(context.getRuntime(), this, "each_char");
+        return block.isGiven() ? each_charCommon18(context, block) : enumeratorize(context.runtime, this, "each_char");
     }
 
     @JRubyMethod(name = "chars", compat = RUBY1_8)
     public IRubyObject chars18(ThreadContext context, Block block) {
-        return block.isGiven() ? each_charCommon18(context, block) : enumeratorize(context.getRuntime(), this, "chars");
+        return block.isGiven() ? each_charCommon18(context, block) : enumeratorize(context.runtime, this, "chars");
     }
 
     private IRubyObject each_charCommon18(ThreadContext context, Block block) {
@@ -7142,7 +7142,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         int p = value.getBegin();
         int end = p + value.getRealSize();
 
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         Encoding enc = runtime.getKCode().getEncoding();
         ByteList val = value.shallowDup();
         while (p < end) {
@@ -7155,12 +7155,12 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "each_char", compat = RUBY1_9)
     public IRubyObject each_char19(ThreadContext context, Block block) {
-        return block.isGiven() ? each_charCommon19(context, block) : enumeratorize(context.getRuntime(), this, "each_char");
+        return block.isGiven() ? each_charCommon19(context, block) : enumeratorize(context.runtime, this, "each_char");
     }
 
     @JRubyMethod(name = "chars", compat = RUBY1_9)
     public IRubyObject chars19(ThreadContext context, Block block) {
-        return block.isGiven() ? each_charCommon19(context, block) : enumeratorize(context.getRuntime(), this, "chars");
+        return block.isGiven() ? each_charCommon19(context, block) : enumeratorize(context.runtime, this, "chars");
     }
 
     private IRubyObject each_charCommon19(ThreadContext context, Block block) {
@@ -7169,7 +7169,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         int end = p + value.getRealSize();
         Encoding enc = value.getEncoding();
 
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         ByteList val = value.shallowDup();
         while (p < end) {
             int n = StringSupport.length(enc, bytes, p, end);
@@ -7184,18 +7184,18 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     @JRubyMethod(compat = RUBY1_9)
     public IRubyObject each_codepoint(ThreadContext context, Block block) {
-        if (!block.isGiven()) return enumeratorize(context.getRuntime(), this, "each_codepoint");
+        if (!block.isGiven()) return enumeratorize(context.runtime, this, "each_codepoint");
         return singleByteOptimizable() ? each_byte(context, block) : each_codepointCommon(context, block);
     }
 
     @JRubyMethod(compat = RUBY1_9)
     public IRubyObject codepoints(ThreadContext context, Block block) {
-        if (!block.isGiven()) return enumeratorize(context.getRuntime(), this, "codepoints");
+        if (!block.isGiven()) return enumeratorize(context.runtime, this, "codepoints");
         return singleByteOptimizable() ? each_byte(context, block) : each_codepointCommon(context, block);
     }
 
     private IRubyObject each_codepointCommon(ThreadContext context, Block block) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         byte bytes[] = value.getUnsafeBytes();
         int p = value.getBegin();
         int end = p + value.getRealSize();
@@ -7235,7 +7235,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "ord", compat = RUBY1_9)
     public IRubyObject ord(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         return RubyFixnum.newFixnum(runtime, codePoint(runtime, value.getEncoding(), value.getUnsafeBytes(), value.getBegin(),
                                                                 value.getBegin() + value.getRealSize()));
     }
@@ -7251,7 +7251,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     public IRubyObject sumCommon(ThreadContext context, long bits) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
 
         byte[]bytes = value.getUnsafeBytes();
         int p = value.getBegin();
@@ -7285,7 +7285,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     @JRubyMethod(name = "to_c", reads = BACKREF, writes = BACKREF, compat = RUBY1_9)
     public IRubyObject to_c(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         DynamicScope scope = context.getCurrentScope();
         IRubyObject backref = scope.getBackRef(runtime);
         if (backref instanceof RubyMatchData) ((RubyMatchData)backref).use();
@@ -7311,7 +7311,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     @JRubyMethod(name = "to_r", reads = BACKREF, writes = BACKREF, compat = RUBY1_9)
     public IRubyObject to_r(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         DynamicScope scope = context.getCurrentScope();
         IRubyObject backref = scope.getBackRef(runtime);
         if (backref instanceof RubyMatchData) ((RubyMatchData)backref).use();
@@ -7353,13 +7353,13 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "encoding", compat = RUBY1_9)
     public IRubyObject encoding(ThreadContext context) {
-        return context.getRuntime().getEncodingService().getEncoding(value.getEncoding());
+        return context.runtime.getEncodingService().getEncoding(value.getEncoding());
     }
 
     @JRubyMethod(name = "encode!", compat = RUBY1_9)
     public IRubyObject encode_bang(ThreadContext context) {
         modify19();
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         Encoding defaultInternal = runtime.getDefaultInternalEncoding();
 
         if (defaultInternal == null) return dup();
@@ -7371,7 +7371,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "encode!", compat = RUBY1_9)
     public IRubyObject encode_bang(ThreadContext context, IRubyObject enc) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         modify19();
 
         value = CharsetTranscoder.transcode(context, value, null, getEncoding(runtime, enc), runtime.getNil());
@@ -7381,7 +7381,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "encode!", compat = RUBY1_9)
     public IRubyObject encode_bang(ThreadContext context, IRubyObject toEncoding, IRubyObject arg) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         modify19();
         Encoding forceEncoding;
         IRubyObject options;
@@ -7401,7 +7401,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "encode!", compat = RUBY1_9)
     public IRubyObject encode_bang(ThreadContext context, IRubyObject toEncoding, IRubyObject forceEncoding, IRubyObject opts) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         modify19();
 
         value = CharsetTranscoder.transcode(context, value, getEncoding(runtime, forceEncoding),
@@ -7412,7 +7412,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "encode", compat = RUBY1_9)
     public IRubyObject encode(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         Encoding defaultInternal = runtime.getDefaultInternalEncoding();
 
         if (defaultInternal == null) return dup();
@@ -7422,7 +7422,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "encode", compat = RUBY1_9)
     public IRubyObject encode(ThreadContext context, IRubyObject arg) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         Encoding forceEncoding;
         IRubyObject options;
 
@@ -7441,7 +7441,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "encode", compat = RUBY1_9)
     public IRubyObject encode(ThreadContext context, IRubyObject toEncoding, IRubyObject arg) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         Encoding forceEncoding;
         IRubyObject options;
 
@@ -7460,7 +7460,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "encode", compat = RUBY1_9)
     public IRubyObject encode(ThreadContext context, IRubyObject toEncoding,
             IRubyObject forcedEncoding, IRubyObject opts) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
 
         return runtime.newString(CharsetTranscoder.transcode(context, value, getEncoding(runtime, forcedEncoding),
                 getEncoding(runtime, toEncoding), opts));
@@ -7491,13 +7491,13 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     @JRubyMethod(name = "valid_encoding?", compat = RUBY1_9)
     public IRubyObject valid_encoding_p(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         return scanForCodeRange() == CR_BROKEN ? runtime.getFalse() : runtime.getTrue();
     }
 
     @JRubyMethod(name = "ascii_only?", compat = RUBY1_9)
     public IRubyObject ascii_only_p(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         return scanForCodeRange() == CR_7BIT ? runtime.getTrue() : runtime.getFalse();
     }
 

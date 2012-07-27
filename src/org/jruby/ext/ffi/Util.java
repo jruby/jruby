@@ -176,7 +176,7 @@ public final class Util {
         if (name instanceof Type) {
             return (Type) name;
         }
-        final RubyModule ffi = context.getRuntime().getModule("FFI");
+        final RubyModule ffi = context.runtime.getModule("FFI");
         final IRubyObject typeDefs = ffi.fetchConstant("TypeDefs");
         final IRubyObject type = ((RubyHash) typeDefs).fastARef(name);
         return type instanceof Type ? (Type) type : (Type) ffi.callMethod(context, "find_type", name);

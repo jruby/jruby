@@ -183,7 +183,7 @@ public class RubySymbol extends RubyObject {
 
     @JRubyMethod(name = "to_i", compat = CompatVersion.RUBY1_8)
     public RubyFixnum to_i(ThreadContext context) {
-        return to_i(context.getRuntime());
+        return to_i(context.runtime);
     }
 
     private final RubyFixnum to_i(Ruby runtime) {
@@ -197,7 +197,7 @@ public class RubySymbol extends RubyObject {
 
     @JRubyMethod(name = "to_int", compat = CompatVersion.RUBY1_8)
     public RubyFixnum to_int(ThreadContext context) {
-        return to_int(context.getRuntime());
+        return to_int(context.runtime);
     }
 
     private final RubyFixnum to_int(Ruby runtime) {
@@ -213,7 +213,7 @@ public class RubySymbol extends RubyObject {
     }
     @JRubyMethod(name = "inspect", compat = CompatVersion.RUBY1_8)
     public IRubyObject inspect(ThreadContext context) {
-        return inspect(context.getRuntime());
+        return inspect(context.runtime);
     }
     private final IRubyObject inspect(Ruby runtime) {
         final ByteList bytes = isSymbolName(symbol) ? symbolBytes : 
@@ -232,7 +232,7 @@ public class RubySymbol extends RubyObject {
 
     @JRubyMethod(name = "inspect", compat = CompatVersion.RUBY1_9)
     public IRubyObject inspect19(ThreadContext context) {
-        return inspect19(context.getRuntime());
+        return inspect19(context.runtime);
     }
 
     private final IRubyObject inspect19(Ruby runtime) {
@@ -260,7 +260,7 @@ public class RubySymbol extends RubyObject {
     
     @JRubyMethod(name = "to_s")
     public IRubyObject to_s(ThreadContext context) {
-        return to_s(context.getRuntime());
+        return to_s(context.runtime);
     }
     
     private final IRubyObject to_s(Ruby runtime) {
@@ -290,7 +290,7 @@ public class RubySymbol extends RubyObject {
 
     @JRubyMethod(name = "hash")
     public RubyFixnum hash(ThreadContext context) {
-        return context.getRuntime().newFixnum(hashCode());
+        return context.runtime.newFixnum(hashCode());
     }
     
     @Override
@@ -332,14 +332,14 @@ public class RubySymbol extends RubyObject {
 
     @JRubyMethod(name = {"succ", "next"}, compat = CompatVersion.RUBY1_9)
     public IRubyObject succ(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         return newSymbol(runtime, newShared(runtime).succ19(context).toString());
     }
 
     @JRubyMethod(name = "<=>", compat = CompatVersion.RUBY1_9)
     @Override
     public IRubyObject op_cmp(ThreadContext context, IRubyObject other) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         
         return !(other instanceof RubySymbol) ? runtime.getNil() :
                 newShared(runtime).op_cmp19(context, ((RubySymbol)other).newShared(runtime));
@@ -347,7 +347,7 @@ public class RubySymbol extends RubyObject {
 
     @JRubyMethod(name = "casecmp", compat = CompatVersion.RUBY1_9)
     public IRubyObject casecmp(ThreadContext context, IRubyObject other) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         
         return !(other instanceof RubySymbol) ? runtime.getNil() :
                 newShared(runtime).casecmp19(context, ((RubySymbol) other).newShared(runtime));
@@ -356,17 +356,17 @@ public class RubySymbol extends RubyObject {
     @JRubyMethod(name = {"=~", "match"}, compat = CompatVersion.RUBY1_9)
     @Override
     public IRubyObject op_match19(ThreadContext context, IRubyObject other) {
-        return newShared(context.getRuntime()).op_match19(context, other);
+        return newShared(context.runtime).op_match19(context, other);
     }
 
     @JRubyMethod(name = {"[]", "slice"}, compat = CompatVersion.RUBY1_9)
     public IRubyObject op_aref(ThreadContext context, IRubyObject arg) {
-        return newShared(context.getRuntime()).op_aref19(context, arg);
+        return newShared(context.runtime).op_aref19(context, arg);
     }
 
     @JRubyMethod(name = {"[]", "slice"}, compat = CompatVersion.RUBY1_9)
     public IRubyObject op_aref(ThreadContext context, IRubyObject arg1, IRubyObject arg2) {
-        return newShared(context.getRuntime()).op_aref19(context, arg1, arg2);
+        return newShared(context.runtime).op_aref19(context, arg1, arg2);
     }
 
     @JRubyMethod(name = {"length", "size"}, compat = CompatVersion.RUBY1_9)
@@ -376,49 +376,51 @@ public class RubySymbol extends RubyObject {
 
     @JRubyMethod(name = "empty?", compat = CompatVersion.RUBY1_9)
     public IRubyObject empty_p(ThreadContext context) {
-        return newShared(context.getRuntime()).empty_p(context);
+        return newShared(context.runtime).empty_p(context);
     }
 
     @JRubyMethod(name = "upcase", compat = CompatVersion.RUBY1_9)
     public IRubyObject upcase(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         
         return newSymbol(runtime, rubyStringFromString(runtime).upcase19(context).toString());
     }
 
     @JRubyMethod(name = "downcase", compat = CompatVersion.RUBY1_9)
     public IRubyObject downcase(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         
         return newSymbol(runtime, rubyStringFromString(runtime).downcase19(context).toString());
     }
 
     @JRubyMethod(name = "capitalize", compat = CompatVersion.RUBY1_9)
     public IRubyObject capitalize(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         
         return newSymbol(runtime, rubyStringFromString(runtime).capitalize19(context).toString());
     }
 
     @JRubyMethod(name = "swapcase", compat = CompatVersion.RUBY1_9)
     public IRubyObject swapcase(ThreadContext context) {
-        Ruby runtime = context.getRuntime();
+        Ruby runtime = context.runtime;
         
         return newSymbol(runtime, rubyStringFromString(runtime).swapcase19(context).toString());
     }
 
     @JRubyMethod(name = "encoding", compat = CompatVersion.RUBY1_9)
     public IRubyObject encoding(ThreadContext context) {
-        return context.getRuntime().getEncodingService().getEncoding(symbolBytes.getEncoding());
+        return context.runtime.getEncodingService().getEncoding(symbolBytes.getEncoding());
     }
     
     @JRubyMethod
     public IRubyObject to_proc(ThreadContext context) {
-        StaticScope scope = context.getRuntime().getStaticScopeFactory().getDummyScope();
+        StaticScope scope = context.runtime.getStaticScopeFactory().getDummyScope();
         final CallSite site = new FunctionalCachingCallSite(symbol);
         BlockBody body = new ContextAwareBlockBody(scope, Arity.OPTIONAL, BlockBody.SINGLE_RESTARG) {
             private IRubyObject yieldInner(ThreadContext context, RubyArray array) {
-                if (array.isEmpty()) throw context.getRuntime().newArgumentError("no receiver given");
+                if (array.isEmpty()) {
+                    throw context.runtime.newArgumentError("no receiver given");
+                }
 
                 IRubyObject self = array.shift(context);
 
@@ -427,13 +429,13 @@ public class RubySymbol extends RubyObject {
             
             @Override
             public IRubyObject yield(ThreadContext context, IRubyObject value, Binding binding, Type type) {
-                return yieldInner(context, ArgsUtil.convertToRubyArray(context.getRuntime(), value, false));
+                return yieldInner(context, ArgsUtil.convertToRubyArray(context.runtime, value, false));
             }
 
             @Override
             public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Type type) {
-                RubyArray array = aValue && value instanceof RubyArray ? 
-                        (RubyArray) value : ArgsUtil.convertToRubyArray(context.getRuntime(), value, false);
+                RubyArray array = aValue && value instanceof RubyArray ?
+                        (RubyArray) value : ArgsUtil.convertToRubyArray(context.runtime, value, false);
                 
                 return yieldInner(context, array);
             }
@@ -452,7 +454,7 @@ public class RubySymbol extends RubyObject {
             }
         };
 
-        return RubyProc.newProc(context.getRuntime(),
+        return RubyProc.newProc(context.runtime,
                                 new Block(body, context.currentBinding()),
                                 Block.Type.PROC);
     }
@@ -598,7 +600,7 @@ public class RubySymbol extends RubyObject {
     
     @JRubyMethod(name = "all_symbols", meta = true)
     public static IRubyObject all_symbols(ThreadContext context, IRubyObject recv) {
-        return context.getRuntime().getSymbolTable().all_symbols();
+        return context.runtime.getSymbolTable().all_symbols();
     }
     @Deprecated
     public static IRubyObject all_symbols(IRubyObject recv) {

@@ -317,12 +317,12 @@ public class RubyDigest {
 
         @JRubyMethod(optional = 1)
         public static IRubyObject hexdigest(ThreadContext ctx, IRubyObject self, IRubyObject[] args) {
-            return toHexString(ctx.getRuntime(), digest(ctx, self, args).convertToString().getBytes());
+            return toHexString(ctx.runtime, digest(ctx, self, args).convertToString().getBytes());
         }
 
         @JRubyMethod(name = "hexdigest!")
         public static IRubyObject hexdigest_bang(ThreadContext ctx, IRubyObject self) {
-            return toHexString(ctx.getRuntime(), digest_bang(ctx, self).convertToString().getBytes());
+            return toHexString(ctx.runtime, digest_bang(ctx, self).convertToString().getBytes());
         }
 
         @JRubyMethod()

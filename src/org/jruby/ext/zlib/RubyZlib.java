@@ -343,7 +343,7 @@ public class RubyZlib {
 
         @JRubyMethod
         public IRubyObject flush_next_out(ThreadContext context) {
-            return RubyString.newEmptyString(context.getRuntime());
+            return RubyString.newEmptyString(context.runtime);
         }
 
         @JRubyMethod
@@ -406,7 +406,7 @@ public class RubyZlib {
 
         @JRubyMethod(name = "flush_next_in")
         public IRubyObject flush_next_in(ThreadContext context) {
-            return RubyString.newEmptyString(context.getRuntime());
+            return RubyString.newEmptyString(context.runtime);
         }
 
         @JRubyMethod(name = "total_in")
@@ -418,7 +418,7 @@ public class RubyZlib {
         @JRubyMethod(name = "finished?")
         public IRubyObject finished_p(ThreadContext context) {
             checkClosed();
-            Ruby runtime = context.getRuntime();
+            Ruby runtime = context.runtime;
             return internalFinished() ? runtime.getTrue() : runtime.getFalse();
         }
 
@@ -541,7 +541,7 @@ public class RubyZlib {
         @Override
         @JRubyMethod(name = "flush_next_out")
         public IRubyObject flush_next_out(ThreadContext context) {
-            return flushOutput(context.getRuntime());
+            return flushOutput(context.runtime);
         }
 
         private RubyString flushOutput(Ruby runtime) {
@@ -596,7 +596,7 @@ public class RubyZlib {
             try {
                 return set_dictionary(arg);
             } catch (IllegalArgumentException iae) {
-                throw newStreamError(context.getRuntime(), "stream error: " + iae.getMessage());
+                throw newStreamError(context.runtime, "stream error: " + iae.getMessage());
             }
         }
 
@@ -628,7 +628,7 @@ public class RubyZlib {
                 return internalFinish();
             } else {
                 append(str);
-                return flushOutput(context.getRuntime());
+                return flushOutput(context.runtime);
             }
         }
 
@@ -938,12 +938,12 @@ public class RubyZlib {
                 byte [] tmp = arg.convertToString().getBytes();
                 int err = flater.setDictionary(tmp, tmp.length);
                 if(err == com.jcraft.jzlib.JZlib.Z_STREAM_ERROR){
-                    throw newStreamError(context.getRuntime(), "stream error: ");
+                    throw newStreamError(context.runtime, "stream error: ");
 		} 
                 run();
                 return arg;
             } catch (IllegalArgumentException iae) {
-                throw newStreamError(context.getRuntime(), "stream error: " + iae.getMessage());
+                throw newStreamError(context.runtime, "stream error: " + iae.getMessage());
             }
         }
 
@@ -1947,7 +1947,7 @@ public class RubyZlib {
         @JRubyMethod(name = "printf", required = 1, rest = true)
         public IRubyObject printf(ThreadContext context, IRubyObject[] args) {
             write(RubyKernel.sprintf(context, this, args));
-            return context.getRuntime().getNil();
+            return context.runtime.getNil();
         }
 
         @JRubyMethod(name = "print", rest = true)

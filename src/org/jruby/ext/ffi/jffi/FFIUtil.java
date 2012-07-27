@@ -221,11 +221,11 @@ public final class FFIUtil {
             return (Type) obj;
         }
 
-        final RubyModule ffi = context.getRuntime().getModule("FFI");
+        final RubyModule ffi = context.runtime.getModule("FFI");
         final IRubyObject typeDefs = ffi.fetchConstant("TypeDefs");
 
         if (!(typeDefs instanceof RubyHash)) {
-            throw context.getRuntime().newRuntimeError("invalid or corrupted FFI::TypeDefs");
+            throw context.runtime.newRuntimeError("invalid or corrupted FFI::TypeDefs");
         }
 
         IRubyObject type = ((RubyHash) typeDefs).fastARef(obj);
@@ -234,7 +234,7 @@ public final class FFIUtil {
         }
 
         if (!(type instanceof Type)) {
-            throw context.getRuntime().newTypeError("Could not resolve type: " + obj);
+            throw context.runtime.newTypeError("Could not resolve type: " + obj);
         }
 
         return (Type) type;

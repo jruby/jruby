@@ -2,6 +2,8 @@ package org.jruby.java.invokers;
 
 import java.lang.reflect.Method;
 import java.util.List;
+
+import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyProc;
@@ -90,7 +92,7 @@ public class SingletonMethodInvoker extends MethodInvoker {
             Object[] convertedArgs = new Object[len + 1];
             IRubyObject[] intermediate = new IRubyObject[len + 1];
             System.arraycopy(args, 0, intermediate, 0, len);
-            intermediate[len] = RubyProc.newProc(context.getRuntime(), block, Block.Type.LAMBDA);
+            intermediate[len] = RubyProc.newProc(context.runtime, block, Block.Type.LAMBDA);
             JavaMethod method = (JavaMethod)findCallable(self, name, intermediate, len + 1);
             for (int i = 0; i < len + 1; i++) {
                 convertedArgs[i] = convertArg(intermediate[i], method, i);
@@ -105,7 +107,7 @@ public class SingletonMethodInvoker extends MethodInvoker {
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, Block block) {
         if (block.isGiven()) {
-            RubyProc proc = RubyProc.newProc(context.getRuntime(), block, Block.Type.LAMBDA);
+            RubyProc proc = RubyProc.newProc(context.runtime, block, Block.Type.LAMBDA);
             JavaMethod method = (JavaMethod)findCallableArityOne(self, name, proc);
             Object cArg0 = convertArg(proc, method, 0);
 
@@ -118,7 +120,7 @@ public class SingletonMethodInvoker extends MethodInvoker {
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, Block block) {
         if (block.isGiven()) {
-            RubyProc proc = RubyProc.newProc(context.getRuntime(), block, Block.Type.LAMBDA);
+            RubyProc proc = RubyProc.newProc(context.runtime, block, Block.Type.LAMBDA);
             JavaMethod method = (JavaMethod)findCallableArityTwo(self, name, arg0, proc);
             Object cArg0 = convertArg(arg0, method, 0);
             Object cArg1 = convertArg(proc, method, 1);
@@ -132,7 +134,7 @@ public class SingletonMethodInvoker extends MethodInvoker {
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, Block block) {
         if (block.isGiven()) {
-            RubyProc proc = RubyProc.newProc(context.getRuntime(), block, Block.Type.LAMBDA);
+            RubyProc proc = RubyProc.newProc(context.runtime, block, Block.Type.LAMBDA);
             JavaMethod method = (JavaMethod)findCallableArityThree(self, name, arg0, arg1, proc);
             Object cArg0 = convertArg(arg0, method, 0);
             Object cArg1 = convertArg(arg1, method, 1);
@@ -147,7 +149,7 @@ public class SingletonMethodInvoker extends MethodInvoker {
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
         if (block.isGiven()) {
-            RubyProc proc = RubyProc.newProc(context.getRuntime(), block, Block.Type.LAMBDA);
+            RubyProc proc = RubyProc.newProc(context.runtime, block, Block.Type.LAMBDA);
             JavaMethod method = (JavaMethod)findCallableArityFour(self, name, arg0, arg1, arg2, proc);
             Object cArg0 = convertArg(arg0, method, 0);
             Object cArg1 = convertArg(arg1, method, 1);

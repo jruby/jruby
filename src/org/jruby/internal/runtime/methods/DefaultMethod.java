@@ -29,6 +29,7 @@
 package org.jruby.internal.runtime.methods;
 
 import org.jruby.MetaClass;
+import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyModule;
@@ -147,7 +148,7 @@ public class DefaultMethod extends DynamicMethod implements MethodArgs, Position
         }
         // replace double-colons with dots, to match Java
         className.replaceAll("::", ".");
-        context.getRuntime().getJITCompiler().tryJIT(this, context, className, name);
+        context.runtime.getJITCompiler().tryJIT(this, context, className, name);
         return box.actualMethod;
     }
 

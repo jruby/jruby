@@ -31,7 +31,9 @@ public class InterpretedIRBlockBody19 extends InterpretedIRBlockBody {
             case 1  : {
                if (argIsArray) {
                    RubyArray valArray = ((RubyArray)value);
-                   if (valArray.size() == 0) value = passArrayArg ? RubyArray.newEmptyArray(context.getRuntime()) : context.nil;
+                   if (valArray.size() == 0) {
+                       value = passArrayArg ? RubyArray.newEmptyArray(context.getRuntime()) : context.nil;
+                   }
                    else if (!passArrayArg) value = valArray.eltInternal(0);
                }
                return new IRubyObject[] { value };
@@ -81,11 +83,11 @@ public class InterpretedIRBlockBody19 extends InterpretedIRBlockBody {
     }
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding, Block.Type type) {
-        return yieldSpecificInternal(context, context.getRuntime().newArrayNoCopyLight(arg0, arg1), null, null, true, binding, type);
+        return yieldSpecificInternal(context, context.runtime.newArrayNoCopyLight(arg0, arg1), null, null, true, binding, type);
     }
     @Override
     public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Block.Type type) {
-        return yieldSpecificInternal(context, context.getRuntime().newArrayNoCopyLight(arg0, arg1, arg2), null, null, true, binding, type);
+        return yieldSpecificInternal(context, context.runtime.newArrayNoCopyLight(arg0, arg1, arg2), null, null, true, binding, type);
     }
 
     private IRubyObject yieldSpecificInternal(ThreadContext context, IRubyObject value, IRubyObject self, RubyModule klass, boolean argIsArray, Binding binding, Type type) {
@@ -103,8 +105,8 @@ public class InterpretedIRBlockBody19 extends InterpretedIRBlockBody {
 
     @Override
     public IRubyObject[] prepareArgumentsForCall(ThreadContext context, IRubyObject[] args, Block.Type type) {
-        if (type == Block.Type.LAMBDA) { 
-            arity().checkArity(context.getRuntime(), args);
+        if (type == Block.Type.LAMBDA) {
+            arity().checkArity(context.runtime, args);
         } else {
             // SSS FIXME: How is it even possible to "call" a NORMAL block?  
             // I thought only procs & lambdas can be called, and blocks are yielded to.
@@ -113,7 +115,7 @@ public class InterpretedIRBlockBody19 extends InterpretedIRBlockBody {
                 args = convertValueIntoArgArray(context, args[0], true, (type == Block.Type.NORMAL) && (args[0] instanceof RubyArray));
             } else if (arity().getValue() == 1) {
                // discard excess arguments
-                args = (args.length == 0) ? context.getRuntime().getSingleNilArray() : new IRubyObject[] { args[0] };
+                args = (args.length == 0) ? context.runtime.getSingleNilArray() : new IRubyObject[] { args[0] };
             }
         }
 

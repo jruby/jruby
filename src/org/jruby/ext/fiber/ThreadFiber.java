@@ -111,11 +111,11 @@ public class ThreadFiber extends Fiber {
                     if (transfer && context.getFiber() == this) {
                         return arg;
                     }
-                    throw context.getRuntime().newFiberError("double resume");
+                    throw context.runtime.newFiberError("double resume");
                 case FINISHED:
-                    throw context.getRuntime().newFiberError("dead fiber called");
+                    throw context.runtime.newFiberError("dead fiber called");
                 default:
-                    throw context.getRuntime().newFiberError("fiber in an unknown state");
+                    throw context.runtime.newFiberError("fiber in an unknown state");
             }
         } catch (OutOfMemoryError oome) {
             if (oome.getMessage().equals("unable to create new native thread")) {

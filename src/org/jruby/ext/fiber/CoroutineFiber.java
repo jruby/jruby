@@ -122,14 +122,14 @@ public class CoroutineFiber extends Fiber {
         assert !root;
         if (lastFiber.state != CoroutineFiberState.SUSPENDED_RESUME) {
             if (lastFiber.state == CoroutineFiberState.SUSPENDED_TRANSFER) {
-                throw context.getRuntime().newFiberError("a Fiber that was transferred to cannot yield");
+                throw context.runtime.newFiberError("a Fiber that was transferred to cannot yield");
             }
-            throw context.getRuntime().newFiberError("invalid state of last Fiber at yield: " + lastFiber.state);
+            throw context.runtime.newFiberError("invalid state of last Fiber at yield: " + lastFiber.state);
         }
         slot = arg;
         state = CoroutineFiberState.SUSPENDED_YIELD;
         lastFiber.state = CoroutineFiberState.RUNNING;
-        context.getRuntime().getThreadService().setCurrentContext(lastFiber.context);
+        context.runtime.getThreadService().setCurrentContext(lastFiber.context);
         Object o = lastFiber.context;
         lastFiber.context.setThread(context.getThread());
         Coroutine.yieldTo(lastFiber.coro);
