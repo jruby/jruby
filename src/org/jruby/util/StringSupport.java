@@ -483,9 +483,6 @@ public final class StringSupport {
      */
     public static final void checkStringSafety(Ruby runtime, IRubyObject value) {
         RubyString s = value.asString();
-        if (runtime.getSafeLevel() > 0 && s.isTaint()) {
-            throw runtime.newSecurityError("Unsafe string parameter");
-        }
         ByteList bl = s.getByteList();
         final byte[] array = bl.getUnsafeBytes();
         final int end = bl.length();

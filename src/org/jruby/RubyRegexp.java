@@ -1253,7 +1253,6 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     private RubyRegexp initializeCommon(ByteList bytes, RegexpOptions newOptions) {
         Ruby runtime = getRuntime();
         // Options needs a little more set up.
-        if (!isTaint() && runtime.getSafeLevel() >= 4) throw runtime.newSecurityError("Insecure: can't modify regexp");
         checkFrozen();
         if (isLiteral()) throw runtime.newSecurityError("can't modify literal regexp");
         options = newOptions;
@@ -1330,10 +1329,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     private RubyRegexp initializeCommon19(ByteList bytes, Encoding enc, RegexpOptions options) {
         Ruby runtime = getRuntime();
         this.options = options;
-        
-//        System.out.println("OPTIONS: " + options + ", STR.enc = " + enc);
-        
-        if (!isTaint() && runtime.getSafeLevel() >= 4) throw runtime.newSecurityError("Insecure: can't modify regexp");
+
         checkFrozen();
         // FIXME: Something unsets this bit, but we aren't...be more permissive until we figure this out
         //if (isLiteral()) throw runtime.newSecurityError("can't modify literal regexp");
@@ -1582,7 +1578,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
             setBackRef = true;
         } else {
             match = (RubyMatchData)backref;
-            match.setTaint(runtime.getSafeLevel() >= 3);
+            match.setTaint(false);
         }
 
         // FIXME: This is pretty gross; we should have a cleaner initialization

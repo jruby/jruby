@@ -460,9 +460,6 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             if ((flags & FROZEN_F) != 0) throw getRuntime().newFrozenError("array");           
             if ((flags & TMPLOCK_ARR_F) != 0) throw getRuntime().newTypeError("can't modify array during iteration");
         }
-        if (!isTaint() && getRuntime().getSafeLevel() >= 4) {
-            throw getRuntime().newSecurityError("Insecure: can't modify array");
-        }
     }
 
     /** rb_ary_modify

@@ -99,10 +99,6 @@ public class DefsNode extends MethodDefNode implements INameNode {
         IRubyObject receiver = receiverNode.interpret(runtime,context, self, aBlock);
         String name = getName();
 
-        if (runtime.getSafeLevel() >= 4 && !receiver.isTaint()) {
-            throw runtime.newSecurityError("Insecure; can't define singleton method.");
-        }
-
         if (receiver instanceof RubyFixnum || receiver instanceof RubySymbol) {
           throw runtime.newTypeError("can't define singleton method \"" + name
           + "\" for " + receiver.getMetaClass().getBaseName());
@@ -111,10 +107,6 @@ public class DefsNode extends MethodDefNode implements INameNode {
         if (receiver.isFrozen()) throw runtime.newFrozenError("object");
 
         RubyClass rubyClass = receiver.getSingletonClass();
-
-        if (runtime.getSafeLevel() >= 4 && rubyClass.getMethods().get(name) != null) {
-            throw runtime.newSecurityError("redefining method prohibited.");
-        }
 
         scope.determineModule();
       

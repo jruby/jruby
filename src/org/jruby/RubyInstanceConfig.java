@@ -904,13 +904,9 @@ public class RubyInstanceConfig {
     public String getRecordSeparator() {
         return recordSeparator;
     }
-    
-    public void setSafeLevel(int safeLevel) {
-        this.safeLevel = safeLevel;
-    }
 
     public int getSafeLevel() {
-        return safeLevel;
+        return 0;
     }
 
     public ClassCache getClassCache() {
@@ -922,11 +918,6 @@ public class RubyInstanceConfig {
     }
 
     public String getInPlaceBackupExtension() {
-        return inPlaceBackupExtension;
-    }
-
-    @Deprecated
-    public String getInPlaceBackupExtention() {
         return inPlaceBackupExtension;
     }
 
@@ -1224,8 +1215,6 @@ public class RubyInstanceConfig {
     private boolean hardExit = false;
     private boolean disableGems = false;
     private boolean updateNativeENVEnabled = true;
-    
-    private int safeLevel = 0;
 
     private String jrubyHome;
     
@@ -1632,5 +1621,14 @@ public class RubyInstanceConfig {
         } else {
             throw new RuntimeException("unsupported Java version: " + specVersion);
         }
+    }
+
+    @Deprecated
+    public void setSafeLevel(int safeLevel) {
+    }
+
+    @Deprecated
+    public String getInPlaceBackupExtention() {
+        return inPlaceBackupExtension;
     }
 }

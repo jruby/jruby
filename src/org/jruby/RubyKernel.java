@@ -804,8 +804,6 @@ public class RubyKernel {
     }
 
     private static void exit(Ruby runtime, IRubyObject[] args, boolean hard) {
-        runtime.secure(4);
-
         int status = hard ? 1 : 0;
 
         if (args.length > 0) {
@@ -1063,7 +1061,6 @@ public class RubyKernel {
         Ruby runtime = context.getRuntime();
         // string to eval
         RubyString src = args[0].convertToString();
-        runtime.checkSafeString(src);
 
         boolean bindingGiven = args.length > 1 && !args[1].isNil();
         Binding binding = bindingGiven ? evalBinding.convertToBinding(args[1]) : context.currentBinding();

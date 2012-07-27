@@ -74,7 +74,6 @@ public final class TopSelfFactory {
              * @see org.jruby.runtime.callback.Callback#execute(IRubyObject, IRubyObject[])
              */
             public IRubyObject execute(IRubyObject recv, IRubyObject[] args, Block block) {
-                runtime.secure(4);
                 return runtime.getObject().include(args);
             }
 

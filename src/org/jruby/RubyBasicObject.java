@@ -254,7 +254,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     protected void taint(Ruby runtime) {
-        runtime.secure(4);
         if (!isTaint()) {
         	testFrozen();
             setTaint(true);
@@ -1599,13 +1598,10 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * tainted. Will throw a suitable exception in that case.
      */
     protected final void ensureInstanceVariablesSettable() {
-        if (!isFrozen() && (getRuntime().getSafeLevel() < 4 || isTaint())) {
+        if (!isFrozen()) {
             return;
         }
 
-        if (getRuntime().getSafeLevel() >= 4 && !isTaint()) {
-            throw getRuntime().newSecurityError(ERR_INSECURE_SET_INST_VAR);
-        }
         if (isFrozen()) {
             if (this instanceof RubyModule) {
                 throw getRuntime().newFrozenError("class/module ");
@@ -2200,8 +2196,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      *  Only callable in if more secure than 3.
      */
     public IRubyObject untaint(ThreadContext context) {
-        context.getRuntime().secure(3);
-
         if (isTaint()) {
             testFrozen();
             setTaint(false);
@@ -2232,7 +2226,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     public IRubyObject freeze(ThreadContext context) {
         Ruby runtime = context.getRuntime();
         if ((flags & FROZEN_F) == 0 && (runtime.is1_9() || !isImmediate())) {
-            if (runtime.getSafeLevel() >= 4 && !isTaint()) throw runtime.newSecurityError("Insecure: can't freeze object");
             flags |= FROZEN_F;
         }
         return this;

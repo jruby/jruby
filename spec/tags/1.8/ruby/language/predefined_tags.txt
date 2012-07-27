@@ -20,3 +20,4 @@ fails(JRUBY-5661):Processing RUBYOPT raises a RuntimeError for '-0'
 fails(JRUBY-5661):Processing RUBYOPT raises a RuntimeError for '--copyright'
 fails(JRUBY-5661):Processing RUBYOPT raises a RuntimeError for '--version'
 fails(JRUBY-5661):Processing RUBYOPT raises a RuntimeError for '--yydebug'
+fails(unsupported):Execution variable $: does not include '.' when the taint check level > 1

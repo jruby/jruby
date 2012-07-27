@@ -89,10 +89,6 @@ public class GlobalVariables {
         assert name.startsWith("$");
         assert oldName.startsWith("$");
 
-        if (runtime.getSafeLevel() >= 4) {
-            throw runtime.newSecurityError("Insecure: can't alias global variable");
-        }
-
         GlobalVariable oldVariable = createIfNotDefined(oldName);
         GlobalVariable variable = (GlobalVariable)globalVariables.get(name);
 
@@ -119,10 +115,6 @@ public class GlobalVariables {
     public IRubyObject set(String name, IRubyObject value) {
         assert name != null;
         assert name.startsWith("$");
-
-        if (runtime.getSafeLevel() >= 4) {
-            throw runtime.newSecurityError("Insecure: can't change global variable value");
-        }
 
         GlobalVariable variable = createIfNotDefined(name);
         IRubyObject result = variable.getAccessor().setValue(value);

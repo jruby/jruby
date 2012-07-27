@@ -140,7 +140,7 @@ public class Config implements ConfigMBean {
     }
 
     public int getSafeLevel() {
-        return ruby.get().getInstanceConfig().getSafeLevel();
+        return 0;
     }
 
     public String getOptionGlobals() {

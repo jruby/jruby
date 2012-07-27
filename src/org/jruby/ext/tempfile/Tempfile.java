@@ -193,9 +193,7 @@ public class Tempfile extends org.jruby.RubyTempfile {
             runtime.getLoadService().require("tmpdir");
             dir = runtime.getDir().callMethod(runtime.getCurrentContext(), "tmpdir");
         }
-        if (runtime.getSafeLevel() > 0 && dir.isTaint()) {
-            dir = runtime.newString(DEFAULT_TMP_DIR);
-        }
+
         return dir;
     }
 

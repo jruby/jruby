@@ -859,8 +859,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         Ruby runtime = context.getRuntime();
         RubyString oldNameString = RubyString.stringValue(oldName);
         RubyString newNameString = RubyString.stringValue(newName);
-        runtime.checkSafeString(oldNameString);
-        runtime.checkSafeString(newNameString);
 
         String newNameJavaString = newNameString.getUnicodeValue();
         String oldNameJavaString = oldNameString.getUnicodeValue();
@@ -990,7 +988,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         for (int i = 2, j = args.length; i < j; i++) {
             RubyString filename = get_path(context, args[i]);
-            runtime.checkSafeString(filename);
             
             JRubyFile fileToTouch = JRubyFile.create(runtime.getCurrentDirectory(),filename.getUnicodeValue());
             
@@ -1013,7 +1010,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
          
         for (int i = 0; i < args.length; i++) {
             RubyString filename = get_path(context, args[i]);
-            runtime.checkSafeString(filename);
             JRubyFile lToDelete = JRubyFile.create(runtime.getCurrentDirectory(), filename.getUnicodeValue());
             
             boolean isSymlink = RubyFileTest.symlink_p(recv, filename).isTrue();
@@ -1070,7 +1066,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     private IRubyObject openFile19(ThreadContext context, IRubyObject args[]) {
         Ruby runtime = context.getRuntime();
         RubyString filename = get_path(context, args[0]);
-        runtime.checkSafeString(filename);
 
         path = adjustRootPathOnWindows(runtime, filename.asJavaString(), runtime.getCurrentDirectory());
 
@@ -1109,7 +1104,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     private IRubyObject openFile(IRubyObject args[]) {
         Ruby runtime = getRuntime();
         RubyString filename = get_path(runtime.getCurrentContext(), args[0]);
-        runtime.checkSafeString(filename);
 
         path = adjustRootPathOnWindows(runtime, filename.asJavaString(), runtime.getCurrentDirectory());
 

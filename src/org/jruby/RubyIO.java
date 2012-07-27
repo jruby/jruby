@@ -1217,7 +1217,6 @@ public class RubyIO extends RubyObject {
 
     private static IRubyObject sysopenCommon(IRubyObject recv, IRubyObject[] args, Block block, IRubyObject pathString) {
         Ruby runtime = recv.getRuntime();
-        runtime.checkSafeString(pathString);
         String path = pathString.toString();
 
         IOOptions modes;
@@ -1383,8 +1382,6 @@ public class RubyIO extends RubyObject {
     @JRubyMethod(name = "write", required = 1)
     public IRubyObject write(ThreadContext context, IRubyObject obj) {
         Ruby runtime = context.getRuntime();
-        
-        runtime.secure(4);
         
         RubyString str = obj.asString();
 
@@ -2052,10 +2049,6 @@ public class RubyIO extends RubyObject {
     public IRubyObject close() {
         Ruby runtime = getRuntime();
         
-        if (runtime.getSafeLevel() >= 4 && isTaint()) {
-            throw runtime.newSecurityError("Insecure: can't close");
-        }
-        
         openFile.checkClosed(runtime);
         return close2(runtime);
     }
@@ -2096,10 +2089,6 @@ public class RubyIO extends RubyObject {
     @JRubyMethod(name = "close_write")
     public IRubyObject close_write(ThreadContext context) {
         try {
-            if (context.getRuntime().getSafeLevel() >= 4 && isTaint()) {
-                throw context.getRuntime().newSecurityError("Insecure: can't close");
-            }
-            
             OpenFile myOpenFile = getOpenFileChecked();
             
             if (myOpenFile.getPipeStream() == null && myOpenFile.isReadable()) {
@@ -2129,10 +2118,6 @@ public class RubyIO extends RubyObject {
         Ruby runtime = context.getRuntime();
         
         try {
-            if (runtime.getSafeLevel() >= 4 && isTaint()) {
-                throw runtime.newSecurityError("Insecure: can't close");
-            }
-            
             OpenFile myOpenFile = getOpenFileChecked();
             
             if (myOpenFile.getPipeStream() == null && myOpenFile.isWritable()) {
@@ -3401,7 +3386,6 @@ public class RubyIO extends RubyObject {
     public static IRubyObject foreachInternal(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = context.getRuntime();
         IRubyObject filename = args[0].convertToString();
-        runtime.checkSafeString(filename);
 
         RubyIO io = (RubyIO)RubyFile.open(context, runtime.getFile(), new IRubyObject[] { filename }, Block.NULL_BLOCK);
 
@@ -3428,7 +3412,6 @@ public class RubyIO extends RubyObject {
     public static IRubyObject foreachInternal19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = context.getRuntime();
         IRubyObject filename = args[0].convertToString();
-        runtime.checkSafeString(filename);
 
         RubyIO io;
         // FIXME: This is gross; centralize options logic somewhere.
@@ -3782,7 +3765,6 @@ public class RubyIO extends RubyObject {
         } else {
             cmdObj = args[0].convertToString();
         }
-        runtime.checkSafeString(cmdObj);
 
         if ("-".equals(cmdObj.toString())) {
             throw runtime.newNotImplementedError("popen(\"-\") is unimplemented");
@@ -3890,8 +3872,6 @@ public class RubyIO extends RubyObject {
                     _cmd = args[0].convertToString();
                 }
             }
-
-            runtime.checkSafeString(_cmd);
 
             this.cmd = (RubyString)_cmd;
             this.cmdPlusArgs = _cmdPlusArgs;

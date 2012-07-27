@@ -704,9 +704,6 @@ public class RubyHash extends RubyObject implements Map {
      */
     public void modify() {
     	testFrozen("hash");
-        if (isTaint() && getRuntime().getSafeLevel() >= 4) {
-            throw getRuntime().newSecurityError("Insecure: can't modify hash");
-        }
     }
 
     /** inspect_hash

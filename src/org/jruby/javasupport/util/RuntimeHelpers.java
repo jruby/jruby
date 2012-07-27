@@ -392,10 +392,6 @@ public class RuntimeHelpers {
         if (receiver instanceof RubyFixnum || receiver instanceof RubySymbol) {
             throw runtime.newTypeError(runtime.is1_9() ? "can't define singleton" : ("no virtual class for " + receiver.getMetaClass().getBaseName()));
         } else {
-            if (runtime.getSafeLevel() >= 4 && !receiver.isTaint()) {
-                throw runtime.newSecurityError("Insecure: can't extend object.");
-            }
-
             return receiver.getSingletonClass();
         }
     }
@@ -2102,11 +2098,6 @@ public class RuntimeHelpers {
     }
 
     private static RubyClass performSingletonMethodChecks(Ruby runtime, IRubyObject receiver, String name) throws RaiseException {
-
-        if (runtime.getSafeLevel() >= 4 && !receiver.isTaint()) {
-            throw runtime.newSecurityError("Insecure; can't define singleton method.");
-        }
-
         if (receiver instanceof RubyFixnum || receiver instanceof RubySymbol) {
             throw runtime.newTypeError("can't define singleton method \"" + name + "\" for " + receiver.getMetaClass().getBaseName());
         }
@@ -2116,10 +2107,6 @@ public class RuntimeHelpers {
         }
         
         RubyClass rubyClass = receiver.getSingletonClass();
-
-        if (runtime.getSafeLevel() >= 4 && rubyClass.getMethods().get(name) != null) {
-            throw runtime.newSecurityError("redefining method prohibited.");
-        }
         
         return rubyClass;
     }

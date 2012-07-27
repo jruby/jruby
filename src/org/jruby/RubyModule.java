@@ -529,9 +529,6 @@ public class RubyModule extends RubyObject {
         assert arg != null;
 
         testFrozen("module");
-        if (!isTaint()) {
-            getRuntime().secure(4);
-        }
 
         if (!(arg instanceof RubyModule)) {
             throw getRuntime().newTypeError("Wrong argument type " + arg.getMetaClass().getName() +
@@ -816,12 +813,7 @@ public class RubyModule extends RubyObject {
      */
     public void undef(ThreadContext context, String name) {
         Ruby runtime = context.getRuntime();
-        
-        if (this == runtime.getObject()) runtime.secure(4);
 
-        if (runtime.getSafeLevel() >= 4 && !isTaint()) {
-            throw new SecurityException("Insecure: can't undef");
-        }
         testFrozen("module");
         if (name.equals("__id__") || name.equals("__send__")) {
             runtime.getWarnings().warn(ID.UNDEFINING_BAD, "undefining `"+ name +"' may cause serious problem");
@@ -870,12 +862,7 @@ public class RubyModule extends RubyObject {
     // TODO: Consider a better way of synchronizing 
     public void addMethod(String name, DynamicMethod method) {
         Ruby runtime = getRuntime();
-        
-        if (this == runtime.getObject()) runtime.secure(4);
 
-        if (runtime.getSafeLevel() >= 4 && !isTaint()) {
-            throw runtime.newSecurityError("Insecure: can't define method");
-        }
         testFrozen("class/module");
 
         addMethodInternal(name, method);
@@ -905,12 +892,7 @@ public class RubyModule extends RubyObject {
 
     public void removeMethod(ThreadContext context, String name) {
         Ruby runtime = context.getRuntime();
-        
-        if (this == runtime.getObject()) runtime.secure(4);
 
-        if (runtime.getSafeLevel() >= 4 && !isTaint()) {
-            throw runtime.newSecurityError("Insecure: can't remove method");
-        }
         testFrozen("class/module");
 
         // We can safely reference methods here instead of doing getMethods() since if we
@@ -1223,9 +1205,6 @@ public class RubyModule extends RubyObject {
             return;
         }
         Ruby runtime = getRuntime();
-        if (this == runtime.getObject()) {
-            runtime.secure(4);
-        }
 
         // JRUBY-2435: Aliasing eval and other "special" methods should display a warning
         // We warn because we treat certain method names as "special" for purposes of
@@ -1255,9 +1234,7 @@ public class RubyModule extends RubyObject {
     public synchronized void defineAliases(List<String> aliases, String oldName) {
         testFrozen("module");
         Ruby runtime = getRuntime();
-        if (this == runtime.getObject()) {
-            runtime.secure(4);
-        }
+
         DynamicMethod method = searchMethod(oldName);
         if (method.isUndefined()) {
             if (isModule()) {
@@ -1302,8 +1279,6 @@ public class RubyModule extends RubyObject {
                 if (tmp != superClazz) throw runtime.newTypeError("superclass mismatch for class " + name);
                 // superClazz = null;
             }
-
-            if (runtime.getSafeLevel() >= 4) throw runtime.newTypeError("extending class prohibited");
         } else if (classProviders != null && (clazz = searchProvidersForClass(name, superClazz)) != null) {
             // reopen a java class
         } else {
@@ -1328,7 +1303,6 @@ public class RubyModule extends RubyObject {
         RubyModule module;
         if (moduleObj != null) {
             if (!moduleObj.isModule()) throw runtime.newTypeError(name + " is not a module");
-            if (runtime.getSafeLevel() >= 4) throw runtime.newSecurityError("extending module prohibited");
             module = (RubyModule)moduleObj;
         } else if (classProviders != null && (module = searchProvidersForModule(name)) != null) {
             // reopen a java module
@@ -1379,10 +1353,6 @@ public class RubyModule extends RubyObject {
      *
      */
     public void setMethodVisibility(IRubyObject[] methods, Visibility visibility) {
-        if (getRuntime().getSafeLevel() >= 4 && !isTaint()) {
-            throw getRuntime().newSecurityError("Insecure: can't change method visibility");
-        }
-
         for (int i = 0; i < methods.length; i++) {
             exportMethod(methods[i].asJavaString(), visibility);
         }
@@ -1393,9 +1363,6 @@ public class RubyModule extends RubyObject {
      */
     public void exportMethod(String name, Visibility visibility) {
         Ruby runtime = getRuntime();
-        if (this == runtime.getObject()) {
-            getRuntime().secure(4);
-        }
 
         DynamicMethod method = deepMethodSearch(name, runtime);
 
@@ -2208,10 +2175,6 @@ public class RubyModule extends RubyObject {
     }
 
     private void setVisibility(ThreadContext context, IRubyObject[] args, Visibility visibility) {
-        if (context.getRuntime().getSafeLevel() >= 4 && !isTaint()) {
-            throw context.getRuntime().newSecurityError("Insecure: can't change method visibility");
-        }
-
         if (args.length == 0) {
             // Note: we change current frames visibility here because the methods which call
             // this method are all "fast" (e.g. they do not created their own frame).
@@ -2254,9 +2217,6 @@ public class RubyModule extends RubyObject {
     @JRubyMethod(name = "module_function", rest = true, visibility = PRIVATE, writes = VISIBILITY)
     public RubyModule module_function(ThreadContext context, IRubyObject[] args) {
         Ruby runtime = context.getRuntime();
-        if (runtime.getSafeLevel() >= 4 && !isTaint()) {
-            throw runtime.newSecurityError("Insecure: can't change method visibility");
-        }
 
         if (args.length == 0) {
             context.setCurrentVisibility(MODULE_FUNCTION);
@@ -3159,10 +3119,6 @@ public class RubyModule extends RubyObject {
     public void defineConstant(String name, IRubyObject value) {
         assert value != null;
 
-        if (this == getRuntime().getClassClass()) {
-            getRuntime().secure(4);
-        }
-
         if (!IdUtil.isValidConstantName(name)) {
             throw getRuntime().newNameError("bad constant name " + name, name);
         }
@@ -3421,19 +3377,14 @@ public class RubyModule extends RubyObject {
     protected final void ensureClassVariablesSettable() {
         Ruby runtime = getRuntime();
         
-        if (!isFrozen() && (runtime.getSafeLevel() < 4 || isTaint())) {
+        if (!isFrozen()) {
             return;
         }
-        
-        if (runtime.getSafeLevel() >= 4 && !isTaint()) {
-            throw runtime.newSecurityError(ERR_INSECURE_SET_CONSTANT);
-        }
-        if (isFrozen()) {
-            if (this instanceof RubyModule) {
-                throw runtime.newFrozenError(ERR_FROZEN_CONST_TYPE);
-            } else {
-                throw runtime.newFrozenError("");
-            }
+
+        if (this instanceof RubyModule) {
+            throw runtime.newFrozenError(ERR_FROZEN_CONST_TYPE);
+        } else {
+            throw runtime.newFrozenError("");
         }
     }
 
@@ -3537,9 +3488,6 @@ public class RubyModule extends RubyObject {
     }
 
     protected final void ensureConstantsSettable() {
-        boolean isSecure = getRuntime().getSafeLevel() >= 4 && !isTaint();
-
-        if (isSecure) throw getRuntime().newSecurityError(ERR_INSECURE_SET_CONSTANT);
         if (isFrozen()) throw getRuntime().newFrozenError(ERR_FROZEN_CONST_TYPE);
     }
 

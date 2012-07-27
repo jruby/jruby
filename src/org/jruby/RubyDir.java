@@ -99,8 +99,6 @@ public class RubyDir extends RubyObject {
     }
 
     private final void checkDir() {
-        if (!isTaint() && getRuntime().getSafeLevel() >= 4)throw getRuntime().newSecurityError("Insecure: operation on untainted Dir");
-
         testFrozen("Dir");
         update();
         
@@ -130,8 +128,6 @@ public class RubyDir extends RubyObject {
         RubyString newPath = arg.convertToString();
         path = newPath;
         pos = 0;
-
-        getRuntime().checkSafeString(newPath);
 
         String adjustedPath = RubyFile.adjustRootPathOnWindows(getRuntime(), newPath.toString(), null);
         checkDirIsTwoSlashesOnWindows(getRuntime(), adjustedPath);
@@ -530,8 +526,6 @@ public class RubyDir extends RubyObject {
 
     private static IRubyObject foreachCommon(ThreadContext context, IRubyObject recv, Ruby runtime, RubyString _path, Block block) {
         if (block.isGiven()) {
-            runtime.checkSafeString(_path);
-
             RubyClass dirClass = runtime.getDir();
             RubyDir dir = (RubyDir) dirClass.newInstance(context, new IRubyObject[]{_path}, block);
 
@@ -571,7 +565,6 @@ public class RubyDir extends RubyObject {
     public static IRubyObject mkdir(IRubyObject recv, IRubyObject[] args) {
         Ruby runtime = recv.getRuntime();
         RubyString stringArg = args[0].convertToString();
-        runtime.checkSafeString(stringArg);
 
         return mkdirCommon(runtime, stringArg.getUnicodeValue(), args);
     }
@@ -714,7 +707,6 @@ public class RubyDir extends RubyObject {
     /** Moves position in this directory to the first entry. */
     @JRubyMethod(name = "rewind")
     public IRubyObject rewind() {
-        if (!isTaint() && getRuntime().getSafeLevel() >= 4) throw getRuntime().newSecurityError("Insecure: can't close");
         checkDir();
 
         pos = 0;

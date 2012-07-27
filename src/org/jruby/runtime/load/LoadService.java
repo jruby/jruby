@@ -270,7 +270,7 @@ public class LoadService {
         } catch(SecurityException ignore) {}
 
         // "." dir is used for relative path loads from a given file, as in require '../foo/bar'
-        if (!runtime.is1_9() && runtime.getSafeLevel() == 0) {
+        if (!runtime.is1_9()) {
             addPath(".");
         }
     }

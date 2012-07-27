@@ -842,10 +842,6 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     public final void modifyCheck() {
         frozenCheck();
-
-        if (!isTaint() && getRuntime().getSafeLevel() >= 4) {
-            throw getRuntime().newSecurityError("Insecure: can't modify string");
-        }
     }
 
     private void modifyCheck(byte[] b, int len) {
