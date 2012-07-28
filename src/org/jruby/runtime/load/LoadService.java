@@ -249,16 +249,12 @@ public class LoadService {
                 String rubyDir = jrubyHome + sep + "lib" + sep + "ruby" + sep;
 
                 if (runtime.is1_9()) {
-                    addPath(rubyDir + "site_ruby" + sep + Constants.RUBY1_9_MAJOR_VERSION);
-
                     // shared lib
                     addPath(rubyDir + "shared");
 
                     // MRI standard lib
                     addPath(rubyDir + Constants.RUBY1_9_MAJOR_VERSION);
                 } else {
-                    addPath(rubyDir + "site_ruby" + sep + Constants.RUBY_MAJOR_VERSION);
-
                     // shared lib
                     addPath(rubyDir + "shared");
 
