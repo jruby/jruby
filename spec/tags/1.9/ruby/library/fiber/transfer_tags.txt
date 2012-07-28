@@ -1,7 +1,6 @@
 fails:Fiber#transfer can be invoked from the root Fiber
 fails:Fiber#transfer passes control to the beginning of the block on first invocation
 fails:Fiber#transfer returns the last value encountered on first invocation
-fails:Fiber#transfer runs until the end of the block or Fiber.yield on first invocation
 fails:Fiber#transfer resumes from the last call to Fiber.yield on subsequent invocations
 fails:Fiber#transfer sets the block parameters to its arguments on the first invocation
 critical(hangs):Fiber#transfer can be invoked from the same Fiber it transfers control to

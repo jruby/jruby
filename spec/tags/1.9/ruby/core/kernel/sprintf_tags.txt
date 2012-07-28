@@ -1,2 +1,1 @@
-fails(JRUBY-5664):Kernel#sprintf with negative values with format %u precedes the number with '-'
 fails(compiler):Kernel#sprintf passes some tests for negative %u

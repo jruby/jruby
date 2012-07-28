@@ -1,2 +1,1 @@
 fails:ConditionVariable#signal returns self if something is waiting for a signal
-fails:ConditionVariable#wait returns self
