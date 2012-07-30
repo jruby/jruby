@@ -39,6 +39,12 @@ public class BooleanOption extends Option<Boolean> {
     }
 
     public Boolean load() {
-        return SafePropertyAccessor.getBoolean("jruby." + name, defval);
+        String value = super.loadProperty();
+
+        if (value == null) {
+            return defval;
+        }
+
+        return Boolean.valueOf(value);
     }
 }

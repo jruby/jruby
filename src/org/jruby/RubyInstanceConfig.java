@@ -1546,8 +1546,16 @@ public class RubyInstanceConfig {
     public static final boolean UPPER_CASE_PACKAGE_NAME_ALLOWED = Options.JI_UPPER_CASE_PACKAGE_NAME_ALLOWED.load();
     
     
-    public static final boolean USE_INVOKEDYNAMIC =
-            JAVA_VERSION == Opcodes.V1_7 && Options.COMPILE_INVOKEDYNAMIC.load();
+    public static final boolean USE_INVOKEDYNAMIC;
+    static {
+        if (JAVA_VERSION == Opcodes.V1_7) {
+            // if on Java 7, on by default unless turned off
+            USE_INVOKEDYNAMIC = Options.COMPILE_INVOKEDYNAMIC.load();
+        } else {
+            // if not on Java 7, on only if explicitly turned on
+            USE_INVOKEDYNAMIC = Options.COMPILE_INVOKEDYNAMIC.load() && Options.COMPILE_INVOKEDYNAMIC.isSpecified();
+        }
+    }
     
     // max times an indy call site can fail before it goes to simple IC
     public static final int MAX_FAIL_COUNT = Options.INVOKEDYNAMIC_MAXFAIL.load();

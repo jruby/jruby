@@ -688,8 +688,8 @@ public final class Ruby {
 
     private void handeCompileError(Node node, Throwable t) {
         if (config.isJitLoggingVerbose() || config.isDebug()) {
-            LOG.debug("warning: could not compile: {}; full trace follows", node.getPosition().getFile());
-            LOG.debug(t.getMessage(), t);
+            LOG.error("warning: could not compile: {}; full trace follows", node.getPosition().getFile());
+            LOG.error(t.getMessage(), t);
         }
     }
 

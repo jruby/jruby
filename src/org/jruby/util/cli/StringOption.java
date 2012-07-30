@@ -39,6 +39,12 @@ public class StringOption extends Option<String> {
     }
 
     public String load() {
-        return SafePropertyAccessor.getProperty("jruby." + name, defval);
+        String value = super.loadProperty();
+
+        if (value == null) {
+            return defval;
+        }
+
+        return value;
     }
 }

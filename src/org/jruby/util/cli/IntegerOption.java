@@ -39,6 +39,12 @@ public class IntegerOption extends Option<Integer> {
     }
 
     public Integer load() {
-        return SafePropertyAccessor.getInt("jruby." + name, defval);
+        String value = super.loadProperty();
+
+        if (value == null) {
+            return defval;
+        }
+
+        return Integer.parseInt(value);
     }
 }

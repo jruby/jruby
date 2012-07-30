@@ -28,6 +28,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util.cli;
 
+import org.jruby.util.SafePropertyAccessor;
+
 /**
  * Represents a single option to JRuby, with a category, name, value type,
  * options, default value, and description.
@@ -40,22 +42,39 @@ public abstract class Option<T> {
     public Option(Category category, String name, Class<T> type, T[] options, T defval, String description) {
         this.category = category;
         this.name = name;
+        this.longName = "jruby." + name;
         this.type = type;
         this.options = options == null ? new String[]{type.getSimpleName()} : options;
         this.defval = defval;
         this.description = description;
+        this.specified = false;
     }
 
     @Override
     public String toString() {
-        return "jruby." + name;
+        return longName;
+    }
+
+    public String loadProperty() {
+        String value = SafePropertyAccessor.getProperty(longName);
+
+        if (value != null) specified = true;
+
+        return value;
+    }
+
+    public boolean isSpecified() {
+        return specified;
     }
 
     public abstract T load();
+
     public final Category category;
     public final String name;
+    public final String longName;
     public final Class type;
     public final Object[] options;
     public final T defval;
     public final String description;
+    private boolean specified;
 }
