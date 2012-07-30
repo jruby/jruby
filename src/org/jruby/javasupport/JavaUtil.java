@@ -33,6 +33,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.javasupport;
 
+import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
@@ -875,6 +876,8 @@ public class JavaUtil {
         NUMERIC_CONVERTERS.put(Double.class, NUMERIC_TO_DOUBLE);
         NUMERIC_CONVERTERS.put(BigInteger.class, NUMERIC_TO_BIGINTEGER);
         NUMERIC_CONVERTERS.put(Object.class, NUMERIC_TO_OBJECT);
+        NUMERIC_CONVERTERS.put(Number.class, NUMERIC_TO_OBJECT);
+        NUMERIC_CONVERTERS.put(Serializable.class, NUMERIC_TO_OBJECT);
         NUMERIC_CONVERTERS.put(void.class, NUMERIC_TO_VOID);
     }
 

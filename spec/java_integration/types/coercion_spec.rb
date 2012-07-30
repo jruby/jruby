@@ -92,6 +92,8 @@ describe "Java String and primitive-typed methods" do
 
     CoreTypeMethods.setFloatObj(1).should == "1.0"
     CoreTypeMethods.setDoubleObj(1).should == "1.0"
+    CoreTypeMethods.setNumber(1).should == "java.lang.Long"
+    CoreTypeMethods.setSerializable(1).should == "java.lang.Long"
 
     CoreTypeMethods.setByteObj(1.5).should == "1"
     CoreTypeMethods.setShortObj(1.5).should == "1"
@@ -101,6 +103,8 @@ describe "Java String and primitive-typed methods" do
 
     CoreTypeMethods.setFloatObj(1.5).should == "1.5"
     CoreTypeMethods.setDoubleObj(1.5).should == "1.5"
+    CoreTypeMethods.setNumber(1.5).should == "java.lang.Double"
+    CoreTypeMethods.setSerializable(1.5).should == "java.lang.Double"
 
     CoreTypeMethods.setBooleanTrueObj(true).should == "true"
     CoreTypeMethods.setBooleanFalseObj(false).should == "false"
