@@ -9,6 +9,8 @@ import java.nio.charset.CodingErrorAction;
 import java.util.HashSet;
 import java.util.Set;
 import org.jcodings.Encoding;
+import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.ISO8859_1Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyHash;
 import org.jruby.RubyString;
@@ -203,6 +205,10 @@ public class CharsetTranscoder {
     } 
 
     private static Charset transcodeCharsetFor(Ruby runtime, Encoding encoding, String fromName, String toName) {
+        if (encoding == ASCIIEncoding.INSTANCE) {
+            return ISO8859_1Encoding.INSTANCE.getCharset();
+        }
+        
         Charset from = null;
         String realEncodingName = new String(encoding.getName());
         
