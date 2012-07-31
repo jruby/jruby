@@ -1531,6 +1531,7 @@ public class RubyInstanceConfig {
     static {
         if (JAVA_VERSION == Opcodes.V1_7) {
             // if on Java 7, on by default unless turned off
+            // TODO: turned off temporarily due to the lack of 100% working OpenJDK indy support
             USE_INVOKEDYNAMIC = Options.COMPILE_INVOKEDYNAMIC.load();
         } else {
             // if not on Java 7, on only if explicitly turned on
