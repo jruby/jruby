@@ -109,22 +109,21 @@ public class RubyGzipFile extends RubyObject {
     public RubyGzipFile(Ruby runtime, RubyClass type) {
         super(runtime, type);
         mtime = RubyTime.newTime(runtime, new DateTime());
-        readEncoding = runtime.getDefaultExternalEncoding();
+        readEncoding = null;
         writeEncoding = null;
     }
 
     // c: gzfile_newstr
     protected RubyString newStr(Ruby runtime, ByteList value) {
         if (runtime.is1_9()) {
-            if (writeEncoding == null) {
-                return RubyString.newString(runtime, value, readEncoding);
-            }
+            if (writeEncoding == null) return RubyString.newString(runtime, value, readEncoding);
+
             return RubyString.newStringNoCopy(runtime, CharsetTranscoder.transcode(
                     runtime.getCurrentContext(), value, readEncoding, writeEncoding,
                     runtime.getNil()));
-        } else {
-            return RubyString.newString(runtime, value);
-        }
+        } 
+
+        return RubyString.newString(runtime, value);
     }
 
     @JRubyMethod(name = "os_code")

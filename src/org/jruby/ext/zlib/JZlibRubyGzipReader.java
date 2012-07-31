@@ -285,7 +285,13 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
             int len = RubyNumeric.fix2int(args[0]);
             
             if (len < 0) throw getRuntime().newArgumentError("negative length " + len + " given");
-            if (len > 0) return readSize(len);
+            if (len > 0) {
+                ByteList buf = readSize(len);
+                
+                if (buf == null) return getRuntime().getNil();
+                
+                return newStr(getRuntime(), buf);
+            }
 
             return RubyString.newEmptyString(getRuntime());
         } catch (IOException ioe) {
@@ -361,15 +367,19 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
         return newStr(getRuntime(), val);
     }
 
-    private IRubyObject readSize(int len) throws IOException {
-        byte[] buffer = new byte[len];
-        int toRead = len;
+
+    // FIXME: I think offset == 0 should return empty bytelist and not null
+    // mri: gzfile_read
+    // This returns a bucket of bytes trying to read length bytes.
+    private ByteList readSize(int length) throws IOException {
+        byte[] buffer = new byte[length];
+        int toRead = length;
         int offset = 0;
         while (toRead > 0) {
             int read = bufferedStream.read(buffer, offset, toRead);
             
             if (read == -1) {
-                if (offset == 0) return getRuntime().getNil(); // we're at EOF right away
+                if (offset == 0) return null; // we're at EOF right away
                 break;
             }
             
@@ -377,8 +387,10 @@ public class JZlibRubyGzipReader extends RubyGzipFile {
             offset += read;
         } // hmm...
         this.position += buffer.length;
-        // CRuby GzReader#read sets Encoding but GzReader#read(size) does not.
-        return RubyString.newString(getRuntime(), new ByteList(buffer, 0, len - toRead, false));
+
+        // Like MRI we do not set encoding here.  All callers are responsible
+        // for that.  We are still just working on blobs of bytes here.
+        return new ByteList(buffer, 0, length - toRead, false);
     }
 
     @JRubyMethod(name = "lineno=", required = 1)
