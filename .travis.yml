@@ -2,6 +2,7 @@ language: java
 before_script:
   - unset GEM_PATH GEM_HOME IRBRC
   - "export PATH=`pwd`/bin:$PATH"
+  - "export JRUBY_OPTS=-Xcompile.invokedynamic=false"
 script: "ant test-extended && rake test19"
 install: /bin/true
 notifications:
