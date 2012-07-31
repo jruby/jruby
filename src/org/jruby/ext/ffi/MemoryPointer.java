@@ -7,6 +7,7 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
+import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
@@ -81,7 +82,7 @@ public final class MemoryPointer extends Pointer {
         AllocatedDirectMemoryIO io = Factory.getInstance().allocateDirectMemory(runtime, total > 0 ? total : 1, clear);
         if (io == null) {
             throw new RaiseException(runtime, runtime.getNoMemoryError(),
-                    String.format("Failed to allocate %d objects of %d bytes", typeSize, count), true);
+                    String.format("Failed to allocate %d objects of %d bytes", count, typeSize), true);
         }
 
         return new MemoryPointer(runtime, klass, io, total, typeSize);
@@ -144,7 +145,16 @@ public final class MemoryPointer extends Pointer {
         }
     }
 
+    @JRubyMethod(name = "from_string", meta = true)
+    public static IRubyObject from_string(ThreadContext context, IRubyObject klass, IRubyObject s) {
+        org.jruby.util.ByteList bl = s.convertToString().getByteList();
+        MemoryPointer ptr = klass == context.runtime.getFFI().memptrClass
+            ? newInstance(context.runtime, klass, 1, bl.length() + 1, false)
+            : (MemoryPointer) newInstance(context, klass, context.runtime.newFixnum(bl.length() + 1));
+        ptr.getMemoryIO().putZeroTerminatedByteArray(0, bl.unsafeBytes(), bl.begin(), bl.length());
 
+        return ptr;
+    }
 
     @JRubyMethod(name = { "initialize" }, visibility = PRIVATE)
     public final IRubyObject initialize(ThreadContext context, IRubyObject sizeArg, Block block) {
