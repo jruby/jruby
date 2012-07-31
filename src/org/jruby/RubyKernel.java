@@ -42,14 +42,8 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import java.io.ByteArrayOutputStream;
-import java.util.ArrayList;
-
-import static org.jruby.RubyEnumerator.enumeratorize;
-import static org.jruby.anno.FrameField.*;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
-
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.evaluator.ASTInterpreter;
@@ -65,8 +59,6 @@ import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.backtrace.RubyStackTraceElement;
-import static org.jruby.runtime.Visibility.*;
-import static org.jruby.CompatVersion.*;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.load.IAutoloadMethod;
 import org.jruby.util.ByteList;
@@ -75,6 +67,20 @@ import org.jruby.util.IdUtil;
 import org.jruby.util.ShellLauncher;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.cli.Options;
+
+import java.io.ByteArrayOutputStream;
+import java.util.ArrayList;
+import java.util.Map;
+
+import static org.jruby.CompatVersion.RUBY1_8;
+import static org.jruby.CompatVersion.RUBY1_9;
+import static org.jruby.RubyEnumerator.enumeratorize;
+import static org.jruby.anno.FrameField.BACKREF;
+import static org.jruby.anno.FrameField.LASTLINE;
+import static org.jruby.anno.FrameField.METHODNAME;
+import static org.jruby.runtime.Visibility.PRIVATE;
+import static org.jruby.runtime.Visibility.PROTECTED;
+import static org.jruby.runtime.Visibility.PUBLIC;
 
 /**
  * Note: For CVS history, see KernelModule.java.
@@ -1662,20 +1668,17 @@ public class RubyKernel {
 
         ThreadContext context = runtime.getCurrentContext();
         if (env != null && !env.isNil()) {
-            RubyHash envMap = (RubyHash) env.convertToHash();
+            RubyHash envMap = env.convertToHash();
             if (envMap != null) {
                 runtime.getENV().merge_bang(context, envMap, Block.NULL_BLOCK);
             }
         }
         
-        int resultCode = -1;
         boolean nativeFailed = false;
-        boolean execInProcess = !Options.NATIVE_EXEC.load();
+        boolean nativeExec = Options.NATIVE_EXEC.load();
 
-        if (!execInProcess) {
+        if (nativeExec) {
             try {
-                String progStr = prog.asJavaString();
-
                 ShellLauncher.LaunchConfig cfg = new ShellLauncher.LaunchConfig(runtime, args, true);
 
                 // Duplicated in part from ShellLauncher.runExternalAndWait
@@ -1683,37 +1686,43 @@ public class RubyKernel {
                     // execute command with sh -c
                     // this does shell expansion of wildcards
                     cfg.verifyExecutableForShell();
-                    progStr = cfg.getExecArgs()[0];
                 } else {
                     cfg.verifyExecutableForDirect();
                 }
+                String progStr = cfg.getExecArgs()[0];
 
                 String[] argv = cfg.getExecArgs();
 
                 if (Platform.IS_WINDOWS) {
                     // Windows exec logic is much more elaborate; exec() in jnr-posix attempts to duplicate it
-                    resultCode = runtime.getPosix().exec(progStr, argv);
+                    runtime.getPosix().exec(progStr, argv);
                 } else {
                     // TODO: other logic surrounding this call? In jnr-posix?
-                    resultCode = runtime.getPosix().execv(progStr, argv);
+                    ArrayList envStrings = new ArrayList();
+                    for (Map.Entry<String, String> envEntry : ((Map<String, String>)runtime.getENV()).entrySet()) {
+                        envStrings.add(envEntry.getKey() + "=" + envEntry.getValue());
+                    }
+                    envStrings.add(null);
+
+                    runtime.getPosix().execve(progStr, argv, (String[]) envStrings.toArray(new String[0]));
                 }
 
                 // Only here because native exec could not exec (always -1)
                 nativeFailed = true;
             } catch (RaiseException e) {
             } catch (Exception e) {
-                throw runtime.newErrnoENOENTError("cannot execute");
+                throw runtime.newErrnoENOENTError("cannot execute: " + e.getLocalizedMessage());
             }
         }
 
         // if we get here, either native exec failed or we should try an in-process exec
         if (nativeFailed) {
             throw runtime.newErrnoFromLastPOSIXErrno();
-        } else {
-            // Fall back onto our existing code if native not available
-            // FIXME: Make jnr-posix Pure-Java backend do this as well
-            resultCode = ShellLauncher.execAndWait(runtime, args);
         }
+        
+        // Fall back onto our existing code if native not available
+        // FIXME: Make jnr-posix Pure-Java backend do this as well
+        int resultCode = ShellLauncher.execAndWait(runtime, args);
 
         exit(runtime, new IRubyObject[] {runtime.newFixnum(resultCode)}, true);
 
