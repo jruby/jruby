@@ -69,6 +69,7 @@ import org.yaml.snakeyaml.reader.ReaderException;
 import org.yaml.snakeyaml.reader.StreamReader;
 import org.yaml.snakeyaml.scanner.ScannerException;
 import static org.jruby.javasupport.util.RuntimeHelpers.invoke;
+import org.jruby.util.ByteList;
 
 public class PsychParser extends RubyObject {
 
@@ -102,28 +103,40 @@ public class PsychParser extends RubyObject {
 
     @JRubyMethod
     public IRubyObject parse(ThreadContext context, IRubyObject yaml) {
-        Ruby runtime = context.runtime;
+        return parse(context, yaml, RubyString.newString(context.runtime, "<unknown>"));
+    }
 
-        return parse(context, yaml, RubyString.newString(runtime, "<unknown>"));
+    private IRubyObject stringOrNilFor(Ruby runtime, String value, boolean tainted) {
+        if (value == null) return runtime.getNil(); // No need to taint nil
+
+        return stringFor(runtime, value, tainted);
+    }
+    
+    private RubyString stringFor(Ruby runtime, String value, boolean tainted) {
+        ByteList bytes = new ByteList(value.getBytes(RubyEncoding.UTF8), UTF8Encoding.INSTANCE);
+        RubyString string = RubyString.newString(runtime, bytes);
+        
+        string.setTaint(tainted);
+        
+        return string;
+    }
+    
+    private StreamReader readerFor(IRubyObject yaml) {
+        if (yaml.respondsTo("read")) {
+            return new StreamReader(new InputStreamReader(new IOInputStream(yaml), RubyEncoding.UTF8));
+        }
+
+        return new StreamReader(new StringReader(yaml.convertToString().asJavaString()));
     }
 
     @JRubyMethod
     public IRubyObject parse(ThreadContext context, IRubyObject yaml, IRubyObject path) {
         Ruby runtime = context.runtime;
-        boolean tainted = yaml.isTaint();
+        boolean tainted = yaml.isTaint() || yaml instanceof RubyIO;
         
         // FIXME? only supports Unicode, since we have to produces strings...
         try {
-            StreamReader reader;
-            if (yaml.respondsTo("read")) {
-                reader = new StreamReader(new InputStreamReader(new IOInputStream(yaml), RubyEncoding.UTF8));
-                if (yaml instanceof RubyIO) {
-                    tainted = true;
-                }
-            } else {
-                reader = new StreamReader(new StringReader(yaml.convertToString().asJavaString()));
-            }
-            parser = new ParserImpl(reader);
+            parser = new ParserImpl(readerFor(yaml));
             IRubyObject handler = getInstanceVariable("@handler");
 
             while (true) {
@@ -131,148 +144,30 @@ public class PsychParser extends RubyObject {
 
                 // FIXME: Event should expose a getID, so it can be switched
                 if (event.is(ID.StreamStart)) {
-                    invoke(
-                            context,
-                            handler,
-                            "start_stream",
-                            runtime.newFixnum(YAML_ANY_ENCODING));
+                    invoke(context, handler, "start_stream", runtime.newFixnum(YAML_ANY_ENCODING));
                 } else if (event.is(ID.DocumentStart)) {
-                    DocumentStartEvent dse = (DocumentStartEvent)event;
-
-                    Integer[] versionInts = dse.getVersion();
-                    IRubyObject version = versionInts == null ?
-                        RubyArray.newArray(runtime) :
-                        RubyArray.newArray(runtime, runtime.newFixnum(versionInts[0]), runtime.newFixnum(versionInts[1]));
-                    
-                    Map<String, String> tagsMap = dse.getTags();
-                    RubyArray tags = RubyArray.newArray(runtime);
-                    if (tagsMap != null && tagsMap.size() > 0) {
-                        for (Map.Entry<String, String> tag : tagsMap.entrySet()) {
-                            RubyString key   = RubyString.newString(runtime, tag.getKey());
-                            RubyString value = RubyString.newString(runtime, tag.getValue());
-                            key.setTaint(tainted);
-                            value.setTaint(tainted);
-
-                            tags.append(RubyArray.newArray(
-                                    runtime,
-                                    key,
-                                    value));
-                        }
-                    }
-
-                    invoke(
-                            context,
-                            handler,
-                            "start_document",
-                            version,
-                            tags,
-                            runtime.newBoolean(!dse.getExplicit()));
+                    handleDocumentStart(context, (DocumentStartEvent) event, tainted, handler);
                 } else if (event.is(ID.DocumentEnd)) {
-                    DocumentEndEvent dee = (DocumentEndEvent)event;
-                    invoke(
-                            context,
-                            handler,
-                            "end_document",
-                            runtime.newBoolean(!dee.getExplicit()));
+                    IRubyObject notExplicit = runtime.newBoolean(!((DocumentEndEvent) event).getExplicit());
+                    
+                    invoke(context, handler, "end_document", notExplicit);
                 } else if (event.is(ID.Alias)) {
-                    AliasEvent ae = (AliasEvent)event;
-                    IRubyObject alias = runtime.getNil();
-                    if (ae.getAnchor() != null) {
-                        alias = RubyString.newString(runtime, ae.getAnchor());
-                        alias.setTaint(tainted);
-                    }
+                    IRubyObject alias = stringOrNilFor(runtime, ((AliasEvent)event).getAnchor(), tainted);
 
-                    invoke(
-                            context,
-                            handler,
-                            "alias",
-                            alias);
+                    invoke(context, handler, "alias", alias);
                 } else if (event.is(ID.Scalar)) {
-                    ScalarEvent se = (ScalarEvent)event;
-                    IRubyObject anchor = se.getAnchor() == null ?
-                        runtime.getNil() :
-                        RubyString.newString(runtime, se.getAnchor());
-                    IRubyObject tag = se.getTag() == null ?
-                        runtime.getNil() :
-                        RubyString.newString(runtime, se.getTag());
-                    IRubyObject plain_implicit = runtime.newBoolean(se.getImplicit().canOmitTagInPlainScalar());
-                    IRubyObject quoted_implicit = runtime.newBoolean(se.getImplicit().canOmitTagInNonPlainScalar());
-                    IRubyObject style = runtime.newFixnum(translateStyle(se.getStyle()));
-                    IRubyObject val = RubyString.newString(runtime, se.getValue());
-
-                    val.setTaint(tainted);
-                    anchor.setTaint(tainted);
-                    tag.setTaint(tainted);
-
-                    invoke(
-                            context,
-                            handler,
-                            "scalar",
-                            val,
-                            anchor,
-                            tag,
-                            plain_implicit,
-                            quoted_implicit,
-                            style);
+                    handleScalar(context, (ScalarEvent) event, tainted, handler);
                 } else if (event.is(ID.SequenceStart)) {
-                    SequenceStartEvent sse = (SequenceStartEvent)event;
-                    IRubyObject anchor = sse.getAnchor() == null ?
-                        runtime.getNil() :
-                        RubyString.newString(runtime, sse.getAnchor());
-                    IRubyObject tag = sse.getTag() == null ?
-                        runtime.getNil() :
-                        RubyString.newString(runtime, sse.getTag());
-                    IRubyObject implicit = runtime.newBoolean(sse.getImplicit());
-                    IRubyObject style = runtime.newFixnum(translateFlowStyle(sse.getFlowStyle()));
-
-                    anchor.setTaint(tainted);
-                    tag.setTaint(tainted);
-
-                    invoke(
-                            context,
-                            handler,
-                            "start_sequence",
-                            anchor,
-                            tag,
-                            implicit,
-                            style);
+                    handleSequenceStart(context,(SequenceStartEvent) event, tainted, handler);
                 } else if (event.is(ID.SequenceEnd)) {
-                    invoke(
-                            context,
-                            handler,
-                            "end_sequence");
+                    invoke(context, handler, "end_sequence");
                 } else if (event.is(ID.MappingStart)) {
-                    MappingStartEvent mse = (MappingStartEvent)event;
-                    IRubyObject anchor = mse.getAnchor() == null ?
-                        runtime.getNil() :
-                        RubyString.newString(runtime, mse.getAnchor());
-                    IRubyObject tag = mse.getTag() == null ?
-                        runtime.getNil() :
-                        RubyString.newString(runtime, mse.getTag());
-                    IRubyObject implicit = runtime.newBoolean(mse.getImplicit());
-                    IRubyObject style = runtime.newFixnum(translateFlowStyle(mse.getFlowStyle()));
-
-                    anchor.setTaint(tainted);
-                    tag.setTaint(tainted);
-
-                    invoke(
-                            context,
-                            handler,
-                            "start_mapping",
-                            anchor,
-                            tag,
-                            implicit,
-                            style);
+                    handleMappingStart(context, (MappingStartEvent) event, tainted, handler);
                 } else if (event.is(ID.MappingEnd)) {
-                    invoke(
-                            context,
-                            handler,
-                            "end_mapping");
+                    invoke(context, handler, "end_mapping");
                 } else if (event.is(ID.StreamEnd)) {
-                    invoke(
-                            context,
-                            handler,
-                            "end_stream");
+                    invoke(context, handler, "end_stream");
+                    
                     break;
                 }
             }
@@ -299,6 +194,61 @@ public class PsychParser extends RubyObject {
         }
 
         return this;
+    }
+    
+    private void handleDocumentStart(ThreadContext context, DocumentStartEvent dse, boolean tainted, IRubyObject handler) {
+        Ruby runtime = context.runtime;
+        Integer[] versionInts = dse.getVersion();
+        IRubyObject version = versionInts == null ?
+            RubyArray.newArray(runtime) :
+            RubyArray.newArray(runtime, runtime.newFixnum(versionInts[0]), runtime.newFixnum(versionInts[1]));
+        
+        Map<String, String> tagsMap = dse.getTags();
+        RubyArray tags = RubyArray.newArray(runtime);
+        if (tagsMap != null && tagsMap.size() > 0) {
+            for (Map.Entry<String, String> tag : tagsMap.entrySet()) {
+                IRubyObject key   = stringFor(runtime, tag.getKey(), tainted);
+                IRubyObject value = stringFor(runtime, tag.getValue(), tainted);
+
+                tags.append(RubyArray.newArray(runtime, key, value));
+            }
+        }
+        IRubyObject notExplicit = runtime.newBoolean(!dse.getExplicit());
+
+        invoke(context, handler, "start_document", version, tags, notExplicit);
+    }
+    
+    private void handleMappingStart(ThreadContext context, MappingStartEvent mse, boolean tainted, IRubyObject handler) {
+        Ruby runtime = context.runtime;
+        IRubyObject anchor = stringOrNilFor(runtime, mse.getAnchor(), tainted);
+        IRubyObject tag = stringOrNilFor(runtime, mse.getTag(), tainted);
+        IRubyObject implicit = runtime.newBoolean(mse.getImplicit());
+        IRubyObject style = runtime.newFixnum(translateFlowStyle(mse.getFlowStyle()));
+
+        invoke(context, handler, "start_mapping", anchor, tag, implicit, style);
+    }
+        
+    private void handleScalar(ThreadContext context, ScalarEvent se, boolean tainted, IRubyObject handler) {
+        Ruby runtime = context.runtime;
+        IRubyObject anchor = stringOrNilFor(runtime, se.getAnchor(), tainted);
+        IRubyObject tag = stringOrNilFor(runtime, se.getTag(), tainted);
+        IRubyObject plain_implicit = runtime.newBoolean(se.getImplicit().canOmitTagInPlainScalar());
+        IRubyObject quoted_implicit = runtime.newBoolean(se.getImplicit().canOmitTagInNonPlainScalar());
+        IRubyObject style = runtime.newFixnum(translateStyle(se.getStyle()));
+        IRubyObject val = stringFor(runtime, se.getValue(), tainted);
+
+        invoke(context, handler, "scalar", val, anchor, tag, plain_implicit,
+                quoted_implicit, style);
+    }
+    
+    private void handleSequenceStart(ThreadContext context, SequenceStartEvent sse, boolean tainted, IRubyObject handler) {
+        Ruby runtime = context.runtime;
+        IRubyObject anchor = stringOrNilFor(runtime, sse.getAnchor(), tainted);
+        IRubyObject tag = stringOrNilFor(runtime, sse.getTag(), tainted);
+        IRubyObject implicit = runtime.newBoolean(sse.getImplicit());
+        IRubyObject style = runtime.newFixnum(translateFlowStyle(sse.getFlowStyle()));
+
+        invoke(context, handler, "start_sequence", anchor, tag, implicit, style);
     }
 
     private static String syntaxError(ThreadContext context, IRubyObject yaml, MarkedYAMLException mye) {
@@ -339,9 +289,8 @@ public class PsychParser extends RubyObject {
 
         if (parser != null) {
             event = parser.peekEvent();
-            if (event == null) {
-                event = this.event;
-            }
+
+            if (event == null) event = this.event;
         }
 
         if (event == null) {
