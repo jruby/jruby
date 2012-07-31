@@ -2,7 +2,13 @@ language: java
 before_script:
   - unset GEM_PATH GEM_HOME IRBRC
   - "export PATH=`pwd`/bin:$PATH"
-  - "export JRUBY_OPTS=-Xcompile.invokedynamic=false"
+jdk: oraclejdk7
+matrix:
+  include:
+    - jdk: openjdk6
+      env: JRUBY_OPTS="--server -Xcext.enabled=false -Xcompile.invokedynamic=false"
+    - jdk: openjdk7
+      env: JRUBY_OPTS="--server -Xcext.enabled=false -Xcompile.invokedynamic=false"
 script: "ant test-extended && rake test19"
 install: /bin/true
 notifications:
