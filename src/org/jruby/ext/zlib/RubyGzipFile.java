@@ -116,7 +116,13 @@ public class RubyGzipFile extends RubyObject {
     // c: gzfile_newstr
     protected RubyString newStr(Ruby runtime, ByteList value) {
         if (runtime.is1_9()) {
-            if (writeEncoding == null) return RubyString.newString(runtime, value, readEncoding);
+            if (writeEncoding == null) {
+                // FIXME: MRI does initialize readEncoding to def external, but we are missing something in some
+                // initialization cases where that would make this go bad.  Bandage until then.
+                Encoding encoding = readEncoding == null ? runtime.getEncodingService().getAscii8bitEncoding() : readEncoding;
+
+                return RubyString.newString(runtime, value, encoding);
+            }
 
             return RubyString.newStringNoCopy(runtime, CharsetTranscoder.transcode(
                     runtime.getCurrentContext(), value, readEncoding, writeEncoding,
