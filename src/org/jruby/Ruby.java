@@ -3295,7 +3295,10 @@ public final class Ruby {
     }
 
     public RaiseException newErrnoFromLastPOSIXErrno() {
-        return newRaiseException(getErrno(getPosix().errno()), null);
+        RubyClass errnoClass = getErrno(getPosix().errno());
+        if (errnoClass == null) errnoClass = systemCallError;
+
+        return newRaiseException(errnoClass, null);
     }
 
     public RaiseException newErrnoFromInt(int errno, String message) {
