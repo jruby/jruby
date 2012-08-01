@@ -137,8 +137,6 @@ public class EmbedEvalUnitImpl implements EmbedEvalUnit {
         } finally {
             if (sharing_variables) {
                 runtime.getCurrentContext().popScope();
-                // FIXME(uwe): Temporary debug output to track JRUBY-6792
-                System.out.println("Pop scope: " + Thread.currentThread() + ", " + scope);
             }
             vars.terminate();
             /* Below lines doesn't work. Neither does classCache.flush(). How to clear cache?
