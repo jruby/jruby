@@ -235,7 +235,7 @@ public class RubyModule extends RubyObject {
         runtime.addModule(this);
         // if (parent == null) parent = runtime.getObject();
         setFlag(USER7_F, !isClass());
-        generation = runtime.getNextModuleGeneration();
+        generationObject = generation = runtime.getNextModuleGeneration();
         if (runtime.getInstanceConfig().isProfiling()) {
             cacheEntryFactory = new ProfilingCacheEntryFactory(NormalCacheEntryFactory);
         } else {
@@ -961,6 +961,10 @@ public class RubyModule extends RubyObject {
         return generation;
     }
 
+    public final Integer getGenerationObject() {
+        return generationObject;
+    }
+
     private final Map<String, CacheEntry> getCachedMethods() {
         return this.cachedMethods;
     }
@@ -1127,7 +1131,7 @@ public class RubyModule extends RubyObject {
     }
     
     public void updateGeneration() {
-        generation = getRuntime().getNextModuleGeneration();
+        generationObject = generation = getRuntime().getNextModuleGeneration();
     }
 
     @Deprecated
@@ -3826,6 +3830,7 @@ public class RubyModule extends RubyObject {
     private volatile Map<String, DynamicMethod> methods = Collections.EMPTY_MAP;
     protected Map<String, CacheEntry> cachedMethods = Collections.EMPTY_MAP;
     protected int generation;
+    protected Integer generationObject;
 
     protected volatile Set<RubyClass> includingHierarchies = Collections.EMPTY_SET;
 

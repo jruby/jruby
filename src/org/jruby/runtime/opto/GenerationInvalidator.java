@@ -20,7 +20,7 @@ public class GenerationInvalidator implements Invalidator {
     }
 
     public Object getData() {
-        return module.getGeneration();
+        return module.getGenerationObject();
     }
     
 }
