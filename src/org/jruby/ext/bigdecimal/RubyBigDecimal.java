@@ -440,6 +440,16 @@ public class RubyBigDecimal extends RubyNumeric {
         if (args.length == 0) { 
             decimal = new BigDecimal(0);
         } else {
+            MathContext context = MathContext.UNLIMITED;
+
+            if (args.length == 2) {
+                context = new MathContext((int)args[1].convertToInteger().getLongValue());
+            }
+
+            if (args[0] instanceof RubyFloat && runtime.is1_9()) {
+                return new RubyBigDecimal(runtime, new BigDecimal(((RubyFloat)args[0]).getDoubleValue(), context));
+            }
+
             String strValue = args[0].convertToString().toString();
             strValue = strValue.trim();
             if ("NaN".equals(strValue)) {
@@ -466,7 +476,7 @@ public class RubyBigDecimal extends RubyNumeric {
             strValue = NUMBER_PATTERN.matcher(strValue).replaceFirst("$1");
 
             try {
-                decimal = new BigDecimal(strValue);
+                decimal = new BigDecimal(strValue, context);
             } catch(NumberFormatException e) {
                 if (isOverflowExceptionMode(runtime)) {
                     throw runtime.newFloatDomainError("exponent overflow");

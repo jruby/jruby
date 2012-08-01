@@ -29,9 +29,11 @@ class TestBigDecimal < Test::Unit::TestCase
 
   def test_reject_arguments_not_responding_to_to_str
     assert_raise(TypeError) { BigDecimal.new(4) }
-    assert_raise(TypeError) { BigDecimal.new(3.14159) }
     assert_raise(TypeError) { BigDecimal(4) }
-    assert_raise(TypeError) { BigDecimal(3.14159) }
+    if RUBY_VERSION =~ /1\.8/
+      assert_raise(TypeError) { BigDecimal.new(3.14159) }
+      assert_raise(TypeError) { BigDecimal(3.14159) }
+    end
   end
 
   def test_alphabetic_args_return_zero
