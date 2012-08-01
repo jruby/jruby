@@ -110,8 +110,6 @@ public class EmbedEvalUnitImpl implements EmbedEvalUnit {
         try {
             if (sharing_variables) {
                 vars.inject(scope, 0, null);
-                // FIXME(uwe): Temporary debug output to track JRUBY-6792
-                System.out.println("Push scope: " + Thread.currentThread() + ", " + scope);
                 runtime.getCurrentContext().pushScope(scope);
             }
             IRubyObject ret;
