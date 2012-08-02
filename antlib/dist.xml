@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project basedir="..">
+    <import file="../build.xml"/>
 
     <patternset id="dist.bindir.files">
         <exclude name="bin/jruby"/>

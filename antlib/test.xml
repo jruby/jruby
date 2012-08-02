@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project basedir="..">
-    <target name="compile-test" depends="jar" description="Compile the unit tests">
+    <import file="../build.xml"/>
+
+	<target name="compile-test" depends="jar" description="Compile the unit tests">
         <javac destdir="${test.classes.dir}" deprecation="true" encoding="UTF-8" debug="true"
                source="${javac.version}" target="${javac.version}" includeantruntime="false">
             <classpath>
