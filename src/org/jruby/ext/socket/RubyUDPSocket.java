@@ -302,6 +302,7 @@ public class RubyUDPSocket extends RubyIPSocket {
 
             } else {
                 sendDP = new DatagramPacket(buf2, buf2.length, address, port);
+                multicastStateManager.rebindToPort(port);
                 MulticastSocket ms = this.multicastStateManager.getMulticastSocket();
 
                 ms.send(sendDP);
