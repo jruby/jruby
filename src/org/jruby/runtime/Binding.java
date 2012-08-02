@@ -32,10 +32,12 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
+import org.jruby.Ruby;
 import org.jruby.runtime.backtrace.BacktraceElement;
 import org.jruby.RubyModule;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.scope.ManyVarsDynamicScope;
 
 /**
  *  Internal live representation of a block ({...} or do ... end).
@@ -59,6 +61,14 @@ public class Binding {
      * A reference to all variable values (and names) that are in-scope for this block.
      */
     private final DynamicScope dynamicScope;
+
+    /**
+     * Binding-local scope for 1.9 mode.
+     *
+     * Because bindings are usually cloned before used for eval, we make this an array,
+     * so it can be shared between both the original binding and the cloned copy.
+     */
+    private DynamicScope[] evalScope = new DynamicScope[1];
     
     public Binding(IRubyObject self, Frame frame,
             Visibility visibility, RubyModule klass, DynamicScope dynamicScope, BacktraceElement backtrace) {
@@ -67,6 +77,17 @@ public class Binding {
         this.visibility = visibility;
         this.klass = klass;
         this.dynamicScope = dynamicScope;
+        this.backtrace = backtrace;
+    }
+
+    private Binding(IRubyObject self, Frame frame,
+                   Visibility visibility, RubyModule klass, DynamicScope dynamicScope, DynamicScope[] evalScope, BacktraceElement backtrace) {
+        this.self = self;
+        this.frame = frame.duplicate();
+        this.visibility = visibility;
+        this.klass = klass;
+        this.dynamicScope = dynamicScope;
+        this.evalScope = evalScope;
         this.backtrace = backtrace;
     }
     
@@ -80,11 +101,11 @@ public class Binding {
     }
 
     public Binding clone() {
-        return new Binding(self, frame, visibility, klass, dynamicScope, backtrace);
+        return new Binding(self, frame, visibility, klass, dynamicScope, evalScope, backtrace);
     }
 
     public Binding clone(Visibility visibility) {
-        return new Binding(self, frame, visibility, klass, dynamicScope, backtrace);
+        return new Binding(self, frame, visibility, klass, dynamicScope, evalScope, backtrace);
     }
 
     public Visibility getVisibility() {
@@ -176,5 +197,37 @@ public class Binding {
 
         return this.self == bOther.self &&
             this.dynamicScope == bOther.dynamicScope;
+    }
+
+    public final DynamicScope getEvalScope(Ruby runtime) {
+        // We create one extra dynamicScope on a binding so that when we 'eval "b=1", binding' the
+        // 'b' will get put into this new dynamic scope.  The original scope does not see the new
+        // 'b' and successive evals with this binding will.  I take it having the ability to have
+        // succesive binding evals be able to share same scope makes sense from a programmers
+        // perspective.   One crappy outcome of this design is it requires Dynamic and Static
+        // scopes to be mutable for this one case.
+
+        // Note: In Ruby 1.9 all of this logic can go away since they will require explicit
+        // bindings for evals.
+
+        // We only define one special dynamic scope per 'logical' binding.  So all bindings for
+        // the same scope should share the same dynamic scope.  This allows multiple evals with
+        // different different bindings in the same scope to see the same stuff.
+
+        // No binding scope so we should create one
+        if (evalScope[0] == null) {
+            // If the next scope out has the same binding scope as this scope it means
+            // we are evaling within an eval and in that case we should be sharing the same
+            // binding scope.
+            DynamicScope parent = dynamicScope.getNextCapturedScope();
+            if (parent != null && parent.getEvalScope(runtime) == dynamicScope) {
+                evalScope[0] = dynamicScope;
+            } else {
+                // bindings scopes must always be ManyVars scopes since evals can grow them
+                evalScope[0] = new ManyVarsDynamicScope(runtime.getStaticScopeFactory().newEvalScope(dynamicScope.getStaticScope()), dynamicScope);
+            }
+        }
+
+        return evalScope[0];
     }
 }

@@ -147,7 +147,15 @@ public class ASTInterpreter {
      */
     public static IRubyObject evalWithBinding(ThreadContext context, IRubyObject self, IRubyObject src, Binding binding) {
         Ruby runtime = src.getRuntime();
-        DynamicScope evalScope = binding.getDynamicScope().getEvalScope(runtime);
+        DynamicScope evalScope;
+
+        if (runtime.is1_9()) {
+            // in 1.9, eval scopes are local to the binding
+            evalScope = binding.getEvalScope(runtime);
+        } else {
+            // in 1.8, eval scopes are local to the parent scope
+            evalScope = binding.getDynamicScope().getEvalScope(runtime);
+        }
 
         // FIXME:  This determine module is in a strange location and should somehow be in block
         evalScope.getStaticScope().determineModule();
