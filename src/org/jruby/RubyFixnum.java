@@ -365,7 +365,8 @@ public class RubyFixnum extends RubyInteger {
     
     public IRubyObject op_plus_two(ThreadContext context) {
         long result = value + 2;
-        if (result == Long.MIN_VALUE + 1) {
+    //- if (result == Long.MIN_VALUE + 1) {     //-code
+        if (result < value) {                   //+code+patch; maybe use  if (result <= value) {
             return addAsBignum(context, 2);
         }
         return newFixnum(context.runtime, result);
@@ -435,7 +436,8 @@ public class RubyFixnum extends RubyInteger {
 
     public IRubyObject op_minus_two(ThreadContext context) {
         long result = value - 2;
-        if (result == Long.MAX_VALUE - 1) {
+    //- if (result == Long.MAX_VALUE - 1) {     //-code
+        if (value < result) {                   //+code+patch; maybe use  if (value <= result) {
             return subtractAsBignum(context, 2);
         }
         return newFixnum(context.runtime, result);
@@ -494,14 +496,27 @@ public class RubyFixnum extends RubyInteger {
     }
 
     public IRubyObject op_mul(ThreadContext context, long otherValue) {
+        // See JRUBY-6612 for reasons for these different cases.
+        // The problem is that these Java long calculations overflow:
+        //   value == -1; otherValue == Long.MIN_VALUE;
+        //   result = value * othervalue;  #=> Long.MIN_VALUE (overflow)
+        //   result / value  #=>  Long.MIN_VALUE (overflow) == otherValue
         Ruby runtime = context.runtime;
-        long result = value * otherValue;
-        // Long.MIN_VALUE is a special case where the result can be incorrect
-        // See JRUBY-6612
-        if ((value != 0 && result / value != otherValue) || otherValue == Long.MIN_VALUE) {
-            return RubyBignum.newBignum(runtime, value).op_mul(context, otherValue);
+        if (value == 0) {
+            return RubyFixnum.zero(runtime);
         }
-        return newFixnum(runtime, result);
+        if (value == -1) {
+            if (otherValue != Long.MIN_VALUE) {
+                return newFixnum(runtime, -otherValue);
+            }
+        } else {
+            long result = value * otherValue;
+            if (result / value == otherValue) {
+                return newFixnum(runtime, result);
+            }
+        }
+        // if here (value * otherValue) overflows long, so must return Bignum
+        return RubyBignum.newBignum(runtime, value).op_mul(context, otherValue);
     }
 
     /** fix_div
@@ -569,15 +584,28 @@ public class RubyFixnum extends RubyInteger {
     }
 
     private IRubyObject idivLong(ThreadContext context, long x, long y) {
+        Ruby runtime = context.runtime;
         if (y == 0) {
-            throw context.runtime.newZeroDivisionError();
+            throw runtime.newZeroDivisionError();
         }
-        long div = x / y;
-        long mod = x % y;
-        if (mod < 0 && y > 0 || mod > 0 && y < 0) {
-            div -= 1;
+        long result;
+        if (y > 0) {
+            if (x >= 0) {
+                result = x / y;          // x >= 0, y > 0;
+            } else {
+                result = (x + 1) / y - 1;  // x < 0, y > 0;  // OOPS "=" was omitted
+            }
+        } else if (x > 0) {
+            result = (x - 1) / y - 1;    // x > 0, y < 0;
+        } else if (y == -1) {
+            if (x == MIN) {
+                return RubyBignum.newBignum(runtime, BigInteger.valueOf(x).negate());
+            }
+            result = -x;
+        } else {
+            result = x / y;  // x <= 0, y < 0;
         }
-        return context.runtime.newFixnum(div);
+        return runtime.newFixnum(result);
     }
         
     /** fix_mod
@@ -644,15 +672,29 @@ public class RubyFixnum extends RubyInteger {
         if (y == 0) {
             throw runtime.newZeroDivisionError();
         }
-        long div = x / y;
-        long mod = x % y;
-        if (mod < 0 && y > 0 || mod > 0 && y < 0) {
-            div -= 1;
-            mod += y;
+
+        long mod;
+        IRubyObject integerDiv;
+        if (y == -1) {
+            if (x == MIN) {
+                integerDiv = RubyBignum.newBignum(runtime, BigInteger.valueOf(x).negate());
+            } else {
+                integerDiv = RubyFixnum.newFixnum(runtime, -x);
+            }
+            mod = 0;
+        } else {
+            long div = x / y;
+            // Next line avoids using the slow: mod = x % y,
+            // and I believe there is no possibility of integer overflow.
+            mod = x - y * div;
+            if (mod < 0 && y > 0 || mod > 0 && y < 0) {
+                div -= 1; // horrible sudden thought: might this overflow? probably not?
+                mod += y;
+            }
+            integerDiv = RubyFixnum.newFixnum(runtime, div);
         }
-        IRubyObject fixDiv = RubyFixnum.newFixnum(runtime, div);
         IRubyObject fixMod = RubyFixnum.newFixnum(runtime, mod);
-        return RubyArray.newArray(runtime, fixDiv, fixMod);
+        return RubyArray.newArray(runtime, integerDiv, fixMod);
     }
     	
     /** fix_quo
