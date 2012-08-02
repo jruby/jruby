@@ -90,6 +90,13 @@ public class ChannelStream implements Stream, Finalizable {
     private final static int BULK_READ_SIZE = 16 * 1024;
     private final static ByteBuffer EMPTY_BUFFER = ByteBuffer.allocate(0);
 
+    /**
+     * A cached EOFException. Since EOFException is only used by us internally,
+     * we create a single instance to avoid stack trace generation. Comment out
+     * the initialization of this field to cause a new one each time.
+     */
+    private static EOFException eofException = new EOFException();
+
     private volatile Ruby runtime;
     protected ModeFlags modes;
     protected boolean sync = false;
@@ -933,11 +940,19 @@ public class ChannelStream implements Stream, Finalizable {
 
         if (bytesRead == 0 && number != 0) {
             if (eof) {
-                throw new EOFException();
+                throw newEOFException();
             }
         }
 
         return bytesRead;
+    }
+
+    private EOFException newEOFException() {
+        if (eofException != null) {
+            return eofException;
+        } else {
+            return new EOFException();
+        }
     }
 
     private int bufferedRead(ByteBuffer dst, boolean partial) throws IOException, BadDescriptorException {
@@ -1003,7 +1018,7 @@ public class ChannelStream implements Stream, Finalizable {
         }
 
         if (eof && bytesRead == 0 && dst.remaining() != 0) {
-            throw new EOFException();
+            throw newEOFException();
         }
 
         return bytesRead;
