@@ -47,7 +47,6 @@ lib/ruby/cext/
 dev_null
 .redcar
 /.externalToolBuilders/
-/.settings/
 .metadata
 .idea/workspace.xml
 shared.iml
