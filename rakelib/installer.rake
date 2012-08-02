@@ -20,13 +20,17 @@ task :installer => [:macos_installer, :windows_installer]
 task :macos_installer do
   next unless RbConfig::CONFIG['target_os'] =~ /darwin/
 
-  pkgmaker = `mdfind "kMDItemDisplayName=='PackageMaker*'"`.chomp
-  if pkgmaker == ""
+  pkgmaker_dirs = `mdfind "kMDItemDisplayName=='PackageMaker*'"`.chomp.split
+  pkgmaker_apps = pkgmaker_dirs.map{|d| File.join(d, 'Contents', 'MacOS', 'PackageMaker')}.select{|f| File.exists? f}
+  if pkgmaker_apps.empty?
     warn 'PackageMaker not found, skipping OS X Installer'
     next
-  else
-    pkgmaker=File.join(pkgmaker, 'Contents', 'MacOS', 'PackageMaker')
+  elsif pkgmaker_apps.size > 1
+    warn "\nMultiple PackageMaker apps found, skipping OS X Installer:\n#{pkgmaker_apps.join("\n")}\n"
+    next
   end
+
+  pkgmaker=pkgmaker_apps[0]
 
   puts "\nBuilding OS X Installer"
 
