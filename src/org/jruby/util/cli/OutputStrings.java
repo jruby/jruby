@@ -138,11 +138,11 @@ public class OutputStrings {
                 versionString,
                 Constants.COMPILE_DATE,
                 Constants.REVISION,
-                System.getProperty("java.vm.name"),
-                System.getProperty("java.runtime.version"),
+                SafePropertyAccessor.getProperty("java.vm.name", "Unknown JVM"),
+                SafePropertyAccessor.getProperty("java.runtime.version", SafePropertyAccessor.getProperty("java.version", "Unknown version")),
                 RubyInstanceConfig.USE_INVOKEDYNAMIC ? " +indy" : "",
                 Platform.getOSName(),
-                SafePropertyAccessor.getProperty("os.arch", "unknown")
+                SafePropertyAccessor.getProperty("os.arch", "Unknown arch")
                 );
 
         return fullVersion;
