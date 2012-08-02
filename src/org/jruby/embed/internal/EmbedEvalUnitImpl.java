@@ -44,6 +44,8 @@ import org.jruby.embed.ScriptingContainer;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 
 /**
  * Implementation of org.jruby.javasupport.JavaEmbedUtils.EvalUnit for embeddiing.
@@ -110,6 +112,12 @@ public class EmbedEvalUnitImpl implements EmbedEvalUnit {
         try {
             if (sharing_variables) {
                 vars.inject(scope, 0, null);
+                // FIXME(donV): Temporary logging to track JRUBY-6792
+                org.jruby.util.log.LoggerFactory.getLogger(getClass().getSimpleName()).debug(
+                        "pushScope:\nThread: " + Thread.currentThread()
+                        + "\nContext: " + runtime.getCurrentContext()
+                        + "\nScope: " + scope
+                );
                 runtime.getCurrentContext().pushScope(scope);
             }
             IRubyObject ret;
@@ -136,6 +144,12 @@ public class EmbedEvalUnitImpl implements EmbedEvalUnit {
             throw new EvalFailedException(e);
         } finally {
             if (sharing_variables) {
+                // FIXME(donV): Temporary logging to track JRUBY-6792
+                org.jruby.util.log.LoggerFactory.getLogger(getClass().getSimpleName()).debug(
+                        "popScope:\nThread: " + Thread.currentThread()
+                         + "\nContext: " + runtime.getCurrentContext()
+                         + "\nScope: " + scope
+                );
                 runtime.getCurrentContext().popScope();
             }
             vars.terminate();
