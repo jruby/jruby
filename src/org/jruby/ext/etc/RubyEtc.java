@@ -321,31 +321,45 @@ public class RubyEtc {
     public static IRubyObject group(IRubyObject recv, Block block) {
         Ruby runtime = recv.getRuntime();
         POSIX posix = runtime.getPosix();
+
         try {
             // try to read grent to fail fast
             posix.getgrent();
-            if(block.isGiven()) {
+        } catch (Exception e) {
+            if (runtime.getDebug().isTrue()) {
+                runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.group is not supported by JRuby on this platform");
+            }
+        }
+
+        if (block.isGiven()) {
+            Boolean blocking = (Boolean)recv.getInternalVariables().getInternalVariable("group_blocking");
+            if (blocking != null && blocking) {
+                throw runtime.newRuntimeError("parallel group iteration");
+            }
+            try {
+                recv.getInternalVariables().setInternalVariable("group_blocking", true);
+
                 ThreadContext context = runtime.getCurrentContext();
+
                 posix.setgrent();
                 Group gr;
                 while((gr = posix.getgrent()) != null) {
                     block.yield(context, setupGroup(runtime, gr));
                 }
+            } finally {
                 posix.endgrent();
+                recv.getInternalVariables().setInternalVariable("group_blocking", false);
             }
-
+        } else {
             Group gr = posix.getgrent();
             if (gr != null) {
                 return setupGroup(runtime, gr);
             } else {
                 return runtime.getNil();
             }
-        } catch (Exception e) {
-            if (runtime.getDebug().isTrue()) {
-                runtime.getWarnings().warn(ID.NOT_IMPLEMENTED, "Etc.group is not supported by JRuby on this platform");
-            }
-            return runtime.getNil();
         }
+
+        return runtime.getNil();
     }
 
     @JRubyMethod(name = "getgrent", module = true)
