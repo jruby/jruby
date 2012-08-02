@@ -91,7 +91,7 @@ Handle::makeStrong_(JNIEnv* env)
         if (unlikely(env->IsSameObject(tmp, NULL))) {
             rb_raise(rb_eRuntimeError, "weak handle is null");
         }
-        env->DeleteWeakGlobalRef(obj);
+        env->DeleteWeakGlobalRef((jweak) obj);
         obj = env->NewGlobalRef(tmp);
         env->DeleteLocalRef(tmp);
         flags &= ~FL_WEAK;
@@ -202,7 +202,7 @@ JNICALL Java_org_jruby_cext_Native_freeHandle(JNIEnv* env, jclass self, jlong ad
     TAILQ_REMOVE(&liveHandles, h, all);
 
     if (h->isWeak()) {
-        env->DeleteWeakGlobalRef(h->obj);
+        env->DeleteWeakGlobalRef((jweak) h->obj);
     } else {
         env->DeleteGlobalRef(h->obj);
     }
