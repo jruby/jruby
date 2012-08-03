@@ -84,10 +84,10 @@ public class BacktraceData implements Serializable {
                         // pull out and demangle the method name
                         String tmpClassName = className;
                         int start = JITCompiler.RUBY_JIT_PREFIX.length() + 1;
-                        int hash = tmpClassName.indexOf("#", start);
+                        int hash = tmpClassName.indexOf(JITCompiler.CLASS_METHOD_DELIMITER, start);
                         int end = tmpClassName.lastIndexOf("_");
                         className = tmpClassName.substring(start, hash);
-                        methodName = tmpClassName.substring(hash + 1, end);
+                        methodName = tmpClassName.substring(hash + JITCompiler.CLASS_METHOD_DELIMITER.length(), end);
 
                     } else if ((index = methodName.indexOf("$RUBY$")) >= 0) {
 

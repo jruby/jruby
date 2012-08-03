@@ -75,6 +75,8 @@ public class JITCompiler implements JITCompilerMBean {
     public static final boolean USE_CACHE = true;
     public static final String RUBY_JIT_PREFIX = "rubyjit";
 
+    public static final String CLASS_METHOD_DELIMITER = "$$";
+
     public static class JITCounts {
         private final AtomicLong compiledCount = new AtomicLong(0);
         private final AtomicLong successCount = new AtomicLong(0);
@@ -285,7 +287,7 @@ public class JITCompiler implements JITCompilerMBean {
             } else {
                 digestString = getHashForString(key);
             }
-            this.className = packageName + "/" + className.replace('.', '/') + "#" + JavaNameMangler.mangleMethodName(methodName) + "_" + digestString;
+            this.className = packageName + "/" + className.replace('.', '/') + CLASS_METHOD_DELIMITER + JavaNameMangler.mangleMethodName(methodName) + "_" + digestString;
             this.name = this.className.replaceAll("/", ".");
             this.bodyNode = method.getBodyNode();
             this.argsNode = method.getArgsNode();
