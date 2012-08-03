@@ -1089,9 +1089,9 @@ public class RubyTime extends RubyObject {
         }
  
         if (args.length == 10) {
-	    if(args[8] instanceof RubyBoolean) {
-	        isDst = ((RubyBoolean)args[8]).isTrue();
-	    }
+            if (args[8] instanceof RubyBoolean) {
+                isDst = ((RubyBoolean) args[8]).isTrue();
+            }
             args = new IRubyObject[] { args[5], args[4], args[3], args[2], args[1], args[0], runtime.getNil() };
         } else {
             // MRI accepts additional wday argument which appears to be ignored.
