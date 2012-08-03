@@ -1220,7 +1220,7 @@ public class RubyTime extends RubyObject {
             if (runtime.is1_9() && fractionalUSecGiven) {
                 double micros = RubyNumeric.num2dbl(args[6]);
                 double nanos = micros * 1000;
-                time.dt = dt.withMillis(dt.getMillis() + Math.round(micros / 1000));
+                time.dt = dt.withMillis(dt.getMillis() + (long) (micros / 1000));
                 time.setNSec((long)(nanos % 1000000));
             } else {
                 int usec = int_args[4] % 1000;
