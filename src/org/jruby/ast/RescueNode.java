@@ -201,7 +201,7 @@ public class RescueNode extends Node {
                     ((NativeException)exceptionObj).prepareIntegratedBacktrace(context, throwable.getStackTrace());
                 } else {
                     // wrap as normal JI object
-                    exceptionObj = Java.getInstance(runtime, throwable);
+                    exceptionObj = JavaUtil.convertJavaToUsableRubyObject(runtime, throwable);
                 }
 
                 runtime.getGlobalVariables().set("$!", exceptionObj);

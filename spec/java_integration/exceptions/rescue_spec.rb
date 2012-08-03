@@ -45,3 +45,46 @@ describe "A native exception wrapped by another" do
     }.should raise_error(NativeException)
   end
 end
+
+describe "A Ruby subclass of a Java exception" do
+  before :all do
+    @ex_class = Class.new(java.lang.RuntimeException)
+  end
+
+  it "is rescuable with all Java superclasses" do
+    exception = @ex_class.new
+
+    begin
+      raise exception
+      fail
+    rescue java.lang.Throwable
+      $!.should == exception
+    end
+
+    begin
+      raise exception
+      fail
+    rescue java.lang.Exception
+      $!.should == exception
+    end
+
+    begin
+      raise exception
+      fail
+    rescue java.lang.RuntimeException
+      $!.should == exception
+    end
+  end
+
+  it "presents its Ruby nature when rescued" do
+    exception = @ex_class.new
+
+    begin
+      raise exception
+      fail
+    rescue java.lang.Throwable => t
+      t.class.should == @ex_class
+      t.should equal(exception)
+    end
+  end
+end
