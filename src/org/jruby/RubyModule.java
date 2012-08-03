@@ -1234,9 +1234,10 @@ public class RubyModule extends RubyObject {
             }
         }
 
+        putMethod(name, new AliasMethod(this, method, oldName));
+
         invalidateCoreClasses();
         invalidateCacheDescendants();
-        putMethod(name, new AliasMethod(this, method, oldName));
     }
 
     public synchronized void defineAliases(List<String> aliases, String oldName) {
