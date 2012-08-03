@@ -1529,9 +1529,18 @@ public class RubyInstanceConfig {
     
     public static final boolean USE_INVOKEDYNAMIC;
     static {
-        if (JAVA_VERSION == Opcodes.V1_7) {
-            // if on Java 7, on by default unless turned off
-            // TODO: turned off temporarily due to the lack of 100% working OpenJDK indy support
+        boolean isHotspot =
+                SafePropertyAccessor.getProperty("java.vm.name", "").contains("Hotspot") ||
+                        SafePropertyAccessor.getProperty("java.vm.name", "").contains("OpenJDK");
+
+        String version = SafePropertyAccessor.getProperty("java.specification.version", "1.6");
+        
+        if (isHotspot && version.equals("1.7")) {
+            // if on OpenJDK 7, on by default unless turned off
+            // TODO: turned off temporarily due to the lack of 100% working OpenJDK7 indy support
+            USE_INVOKEDYNAMIC = Options.COMPILE_INVOKEDYNAMIC.load() && Options.COMPILE_INVOKEDYNAMIC.isSpecified();
+        } else if (isHotspot && version.equals("1.8")) {
+            // OpenJDK 8 will have the new 100% working logic soon, so we enable by default
             USE_INVOKEDYNAMIC = Options.COMPILE_INVOKEDYNAMIC.load();
         } else {
             // if not on Java 7, on only if explicitly turned on
