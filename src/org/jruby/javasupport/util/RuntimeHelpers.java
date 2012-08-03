@@ -1054,7 +1054,7 @@ public class RuntimeHelpers {
             return isExceptionHandled(((RaiseException)currentThrowable).getException(), throwables, context);
         } else {
             for (int i = 0; i < throwables.length; i++) {
-                if (checkJavaException(currentThrowable, throwables[0], context)) {
+                if (checkJavaException(currentThrowable, throwables[i], context)) {
                     return context.getRuntime().getTrue();
                 }
             }
@@ -1768,7 +1768,8 @@ public class RuntimeHelpers {
                     
             if (array.size() == 1) {
                 IRubyObject newResult = array.eltInternal(0);
-                if (!((newResult instanceof RubyArray) && ((RubyArray) newResult).size() == 0)) {
+                // JRUBY-6729. It seems RubyArray should be returned as it is from here.
+                if (!(newResult instanceof RubyArray)) {
                     argsResult = newResult;
                 }
             }
@@ -2430,14 +2431,14 @@ public class RuntimeHelpers {
     public static IRubyObject match2AndUpdateScope(IRubyObject receiver, ThreadContext context, IRubyObject value, String scopeOffsets) {
         DynamicScope scope = context.getCurrentScope();
         IRubyObject match = ((RubyRegexp)receiver).op_match(context, value);
-        updateScopeWithCaptures(context, scope, decodeCaptureOffsets(scopeOffsets), value);
+        updateScopeWithCaptures(context, scope, decodeCaptureOffsets(scopeOffsets), match);
         return match;
     }
 
     public static IRubyObject match2AndUpdateScope19(IRubyObject receiver, ThreadContext context, IRubyObject value, String scopeOffsets) {
         DynamicScope scope = context.getCurrentScope();
         IRubyObject match = ((RubyRegexp)receiver).op_match19(context, value);
-        updateScopeWithCaptures(context, scope, decodeCaptureOffsets(scopeOffsets), value);
+        updateScopeWithCaptures(context, scope, decodeCaptureOffsets(scopeOffsets), match);
         return match;
     }
 

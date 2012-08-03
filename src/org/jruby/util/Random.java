@@ -146,10 +146,14 @@ public class Random {
     }
 
     public int genrandInt32() {
-        if (--left <= 0)
-            nextState();
+        int y;
 
-        int y = state[N - left];
+        synchronized (this) {
+            if (--left <= 0)
+                nextState();
+
+            y = state[N - left];
+        }
 
         /* Tempering */
         y ^= (y >>> 11);

@@ -47,7 +47,7 @@ public interface Profile {
         };
     Profile NO_FILE_CLASS = new Profile() {
             public boolean allowBuiltin(String name) { return true; }
-            public boolean allowClass(String name) { return !name.equals("File"); }
+            public boolean allowClass(String name) { return !(name.equals("File") || name.equals("FileStat")); }
             public boolean allowModule(String name) { return true; }
             public boolean allowLoad(String name) { return true; }
             public boolean allowRequire(String name) { return true; }

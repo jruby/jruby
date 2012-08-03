@@ -1764,14 +1764,4 @@ public class RubyEnumerable {
             return runtime.getNil();
         }
     }
-
-    @JRubyMethod(name = "join", compat = CompatVersion.RUBY1_9)
-    public static IRubyObject join(ThreadContext context, IRubyObject self) {
-        return join(context, self, context.getRuntime().getGlobalVariables().get("$,"));
-    }
-
-    @JRubyMethod(name = "join", compat = CompatVersion.RUBY1_9)
-    public static IRubyObject join(ThreadContext context, IRubyObject self, final IRubyObject sep) {
-        return ((RubyArray)to_a19(context, self)).join19(context, sep);
-    }
 }

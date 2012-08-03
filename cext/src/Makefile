@@ -185,7 +185,7 @@ ifeq ($(OS), solaris)
   CC = gcc
   CFLAGS += -D__EXTENSIONS__ 
   LD = /usr/ccs/bin/ld
-  SOFLAGS = -shared -static-libgcc -mimpure-text
+  SOFLAGS = -shared -static-libgcc
   LIBS += -ldl
 endif
 

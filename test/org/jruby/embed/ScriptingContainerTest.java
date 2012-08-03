@@ -926,9 +926,9 @@ public class ScriptingContainerTest {
         receiver = instance.runScriptlet(script);
         instance.put("@r", 1.0);
         instance.put("@h", Math.sqrt(3.0));
-        double volume = instance.callMethod(receiver, "volume", Double.class);
+        double volume = instance.callMethod(instance.getTopSelf(), "volume", Double.class);
         assertEquals(1.813799, volume, 0.000001);
-        double surface_area = instance.callMethod(receiver, "surface_area", Double.class);
+        double surface_area = instance.callMethod(instance.getTopSelf(), "surface_area", Double.class);
         assertEquals(9.424778, surface_area, 0.000001);
 
         instance.getVarMap().clear();
@@ -1037,8 +1037,6 @@ public class ScriptingContainerTest {
         // Sharing local variables over method call doesn't work.
         // Should delete methods with unit argument?
         logger1.info("callMethod(receiver, methodName, returnType, unit)");
-        Object receiver = null;
-        String methodName = "";
         Class<Object> returnType = null;
         EmbedEvalUnit unit = null;
         ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE, LocalVariableBehavior.PERSISTENT);
@@ -1048,9 +1046,9 @@ public class ScriptingContainerTest {
         instance.setWriter(writer);
         instance.setErrorWriter(writer);
         
-        Object expResult = null;
-        Object result = instance.callMethod(receiver, methodName, returnType, unit);
-        assertEquals(expResult, result);
+        // Verify that empty message name returns null
+        Object result = instance.callMethod(null, "", returnType, unit);
+        assertEquals(null, result);
 
         String text = 
             "songs:\n"+
@@ -1060,17 +1058,18 @@ public class ScriptingContainerTest {
             "podcasts:\n" +
             "- Java Posse\n" +
             "- Stack Overflow";
-        String filename = "org/jruby/embed/ruby/yaml_dump.rb";
         StringWriter sw = new StringWriter();
         instance.setWriter(sw);
         // local variable doesn't work in this case, so instance variable is used.
         instance.put("@text", text);
-        unit = instance.parse(PathType.CLASSPATH, filename);
-        receiver = unit.run();
-        methodName = "dump";
-        result = instance.callMethod(receiver, methodName, null, unit);
-        expResult =
-            "songs: Hey Soul Sister, Who Says, Apologize\npodcasts: Java Posse, Stack Overflow\n";
+        unit = instance.parse(PathType.CLASSPATH, "org/jruby/embed/ruby/yaml_dump.rb");
+        Object receiver = unit.run();
+        IRubyObject nil = instance.getProvider().getRuntime().getNil();
+        assertSame(nil, receiver);
+        IRubyObject topSelf = instance.getProvider().getRuntime().getTopSelf();
+        result = instance.callMethod(topSelf, "dump", null, unit);
+        Object expResult =
+                "songs: Hey Soul Sister, Who Says, Apologize\npodcasts: Java Posse, Stack Overflow\n";
         assertEquals(expResult, sw.toString());
 
         instance.getVarMap().clear();
@@ -1122,6 +1121,29 @@ public class ScriptingContainerTest {
         Double[] a = {3.1415, 2.7182, 1.4142};
         List expList = Arrays.asList(a);
         assertEquals(expList, list);
+    }
+
+    @Test
+    public void test_CallMethod_with_non_ruby_receiver() {
+        logger1.info("callMethod no returnType");
+        ScriptingContainer instance = new ScriptingContainer(LocalContextScope.THREADSAFE);
+        instance.setError(pstream);
+        instance.setOutput(pstream);
+        instance.setWriter(writer);
+        instance.setErrorWriter(writer);
+        assertEquals(true, instance.callMethod(null, "nil?"));
+        assertEquals(true, instance.callMethod(instance.getProvider().getRuntime().getNil(), "nil?"));
+        assertEquals(false, instance.callMethod("A Java String", "nil?"));
+        String script =
+                "ScriptingContainer = Java::org.jruby.embed.ScriptingContainer\n" +
+                "class ScriptingContainer\n" +
+                  "def say_something\n" +
+                    "'Something'\n" +
+                  "end\n" +
+                "end\n";
+        instance.runScriptlet(script);
+        String something = (String)instance.callMethod(instance, "say_something");
+        assertEquals("Something", something);
     }
 
     /**

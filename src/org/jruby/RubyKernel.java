@@ -208,7 +208,7 @@ public class RubyKernel {
     }
 
     private static RubyModule getModuleForAutoload(Ruby runtime, IRubyObject recv) {
-        RubyModule module = recv instanceof RubyModule ? (RubyModule) recv : runtime.getObject();
+        RubyModule module = recv instanceof RubyModule ? (RubyModule) recv : recv.getMetaClass().getRealClass();
         if (module == runtime.getKernel()) {
             // special behavior if calling Kernel.autoload directly
             if (runtime.is1_9()) {
@@ -282,9 +282,17 @@ public class RubyKernel {
         Ruby runtime = context.getRuntime();
 
         if (arg.startsWith("|")) {
-            String command = arg.substring(1);
+            IRubyObject command = runtime.newString(arg.substring(1));
+
+            final IRubyObject[] popenArgs;
+            if (args.length >= 2) {
+                popenArgs = new IRubyObject[] { command, args[1] };
+            } else {
+                popenArgs = new IRubyObject[] { command };
+            }
+
             // exec process, create IO with process
-            return RubyIO.popen(context, runtime.getIO(), new IRubyObject[] {runtime.newString(command)}, block);
+            return RubyIO.popen(context, runtime.getIO(), popenArgs, block);
         } 
 
         return RubyFile.open(context, runtime.getFile(), args, block);
@@ -402,6 +410,21 @@ public class RubyKernel {
             return (RubyFloat)TypeConverter.convertToType19(object, runtime.getFloat(), "to_f");
         }
     }
+    
+    @JRubyMethod(name = "Hash", required = 1, module = true, visibility = PRIVATE, compat = RUBY1_9)
+    public static IRubyObject new_hash(ThreadContext context, IRubyObject recv, IRubyObject arg) {
+        IRubyObject tmp;
+        Ruby runtime = recv.getRuntime();
+        if (arg.isNil()) return RubyHash.newHash(runtime);
+        tmp = TypeConverter.checkHashType(runtime, arg);
+        if (tmp.isNil()) {
+            if (arg instanceof RubyArray && ((RubyArray) arg).isEmpty()) {
+                return RubyHash.newHash(runtime);
+            }
+            throw runtime.newTypeError("can't convert " + arg.getMetaClass() + " into Hash");
+        }
+        return tmp;
+    } 
 
     @JRubyMethod(name = "Integer", required = 1, module = true, visibility = PRIVATE, compat = RUBY1_8)
     public static IRubyObject new_integer(ThreadContext context, IRubyObject recv, IRubyObject object) {

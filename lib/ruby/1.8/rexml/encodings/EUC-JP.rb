@@ -3,14 +3,12 @@ module REXML
     begin
       require 'uconv'
 
-      class EUC_JP
-        def decode(str)
-          Uconv::euctou8(str)
-        end
-        
-        def encode content
-          Uconv::u8toeuc(content)
-        end
+      def decode_eucjp(str)
+        Uconv::euctou8(str)
+      end
+
+      def encode_eucjp content
+        Uconv::u8toeuc(content)
       end
     rescue LoadError
       require 'nkf'
@@ -18,20 +16,20 @@ module REXML
       EUCTOU8 = '-Ewm0'
       U8TOEUC = '-Wem0'
 
-      class EUC_JPEncoder
-        def decode(str)
-          NKF.nkf(EUCTOU8, str)
-        end
-      
-        def encode content
-          NKF.nkf(U8TOEUC, content)
-        end
+      def decode_eucjp(str)
+        NKF.nkf(EUCTOU8, str)
+      end
+
+      def encode_eucjp content
+        NKF.nkf(U8TOEUC, content)
       end
     end
 
-    euc_jp = EUC_JPEncoder.new
     register("EUC-JP") do |obj|
-      obj.encoder = euc_jp
+      class << obj
+        alias decode decode_eucjp
+        alias encode encode_eucjp
+      end
     end
   end
 end

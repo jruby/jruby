@@ -377,7 +377,7 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
             return null;
         }
         Ruby runtime = container.getProvider().getRuntime();
-        RubyObject rubyReceiver = getReceiverObject(runtime, receiver);
+        IRubyObject rubyReceiver = JavaEmbedUtils.javaToRuby(runtime, receiver);
         
         boolean sharing_variables = true;
         Object obj = container.getAttribute(AttributeName.SHARING_VARIABLES);
@@ -421,14 +421,6 @@ public class EmbedRubyObjectAdapterImpl implements EmbedRubyObjectAdapter {
                 runtime.getCurrentContext().popScope();
             }
         }
-    }
-
-    private RubyObject getReceiverObject(Ruby runtime, Object receiver) {
-        if (receiver == null || !(receiver instanceof IRubyObject) || receiver instanceof RubyNil) {
-            return (RubyObject)runtime.getTopSelf();
-        }
-        else if (receiver instanceof RubyObject) return (RubyObject)receiver;
-        else return (RubyObject)((IRubyObject)receiver).getRuntime().getTopSelf();
     }
 
     private IRubyObject callEachType(MethodType type, IRubyObject rubyReceiver, String methodName, Block block, Object... args) {

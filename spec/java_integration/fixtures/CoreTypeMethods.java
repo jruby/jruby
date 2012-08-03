@@ -1,6 +1,7 @@
 package java_integration.fixtures;
 
 import java.math.BigInteger;
+import java.io.Serializable;
 
 public class CoreTypeMethods {
     public static String getString() {
@@ -137,6 +138,14 @@ public class CoreTypeMethods {
 
     public static String setBooleanFalseObj(Boolean f) {
         return String.valueOf(f);
+    }
+
+    public static String setNumber(Number n) {
+        return n.getClass().getName();
+    }
+
+    public static String setSerializable(Serializable n) {
+        return n.getClass().getName();
     }
     
     public static String getType(byte b) {

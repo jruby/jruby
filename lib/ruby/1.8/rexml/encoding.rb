@@ -17,8 +17,6 @@ module REXML
     UTF_8 = 'UTF-8'
     UTF_16 = 'UTF-16'
     UNILE = 'UNILE'
-    
-    attr_accessor :encoder
 
     # ID ---> Encoding name
     attr_reader :encoding
