@@ -20,7 +20,7 @@ import org.jruby.runtime.builtin.IRubyObject;
  */
 @JRubyClass(name = "FFI::Type", parent = "Object")
 public abstract class Type extends RubyObject {
-
+    private static final java.util.Locale LOCALE = java.util.Locale.ENGLISH;
     protected final NativeType nativeType;
 
     /** Size of this type in bytes */
@@ -58,8 +58,8 @@ public abstract class Type extends RubyObject {
         for (NativeType t : NativeType.values()) {
             if (!builtinClass.hasConstant(t.name())) {
                 try {
-                    Type b = new Builtin(runtime, builtinClass, t, t.name().toLowerCase());
-                    builtinClass.defineConstant(t.name().toUpperCase(), b);
+                    Type b = new Builtin(runtime, builtinClass, t, t.name().toLowerCase(LOCALE));
+                    builtinClass.defineConstant(t.name().toUpperCase(LOCALE), b);
                 } catch (UnsupportedOperationException ex) {
                 }
 
@@ -88,12 +88,12 @@ public abstract class Type extends RubyObject {
         try {
             if (names.length > 0) {
                 for (String n : names) {
-                    builtinClass.setConstant(n.toUpperCase(),
-                            new Builtin(runtime, builtinClass, nativeType, n.toLowerCase()));
+                    builtinClass.setConstant(n.toUpperCase(LOCALE),
+                            new Builtin(runtime, builtinClass, nativeType, n.toLowerCase(LOCALE)));
                 }
             } else {
                 builtinClass.setConstant(nativeType.name(),
-                        new Builtin(runtime, builtinClass, nativeType, nativeType.name().toLowerCase()));
+                        new Builtin(runtime, builtinClass, nativeType, nativeType.name().toLowerCase(LOCALE)));
             }
         } catch (UnsupportedOperationException ex) {
         }
