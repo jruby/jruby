@@ -390,13 +390,6 @@
             <fileset dir="${jruby.classes.dir}"/>
             <zipgroupfileset dir="${build.lib.dir}" includes="${jruby.jar.zip.includes}"/>
 
-            <zipfileset src="${build.lib.dir}/bcmail-jdk15-146.jar">
-                <exclude name="META-INF/BCKEY.*"/>
-            </zipfileset>
-            <zipfileset src="${build.lib.dir}/bcprov-jdk15-146.jar">
-                <exclude name="META-INF/BCKEY.*"/>
-            </zipfileset>
-
             <metainf dir="spi">
                 <include name="services/**"/>
             </metainf>
@@ -452,13 +445,6 @@ other than ASM, which is rewritten to avoid conflicts. -->
         <jarjar destfile="${lib.dir}/jruby.jar" compress="true">
             <fileset dir="${jruby.classes.dir}"/>
             <zipgroupfileset dir="${build.lib.dir}" includes="${jruby.jar.zip.includes}"/>
-
-            <zipfileset src="${build.lib.dir}/bcmail-jdk15-146.jar">
-                <exclude name="META-INF/BCKEY.*"/>
-            </zipfileset>
-            <zipfileset src="${build.lib.dir}/bcprov-jdk15-146.jar">
-                <exclude name="META-INF/BCKEY.*"/>
-            </zipfileset>
 
             <metainf dir="spi">
                 <include name="services/**"/>
@@ -580,13 +566,6 @@ other than ASM, which is rewritten to avoid conflicts. -->
             <fileset dir="${jruby.classes.dir}"/>
             <fileset dir="${build.dir}/jar-complete"/>
             <zipgroupfileset dir="${build.lib.dir}" includes="${jruby.jar.zip.includes}"/>
-
-            <zipfileset src="${build.lib.dir}/bcmail-jdk15-146.jar">
-                <exclude name="META-INF/BCKEY.*"/>
-            </zipfileset>
-            <zipfileset src="${build.lib.dir}/bcprov-jdk15-146.jar">
-                <exclude name="META-INF/BCKEY.*"/>
-            </zipfileset>
 
             <metainf dir="spi">
                 <include name="services/**"/>
