@@ -39,6 +39,7 @@ import org.jruby.embed.EmbedEvalUnit;
 import org.jruby.embed.EvalFailedException;
 import org.jruby.embed.ScriptingContainer;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 
@@ -104,10 +105,11 @@ public class EmbedEvalUnitImpl implements EmbedEvalUnit {
         if (obj != null && obj instanceof Boolean && ((Boolean) obj) == false) {
             sharing_variables = false;
         }
+        ThreadContext threadContext = runtime.getCurrentContext();
         try {
             if (sharing_variables) {
                 vars.inject(scope, 0, null);
-                runtime.getCurrentContext().pushScope(scope);
+                threadContext.pushScope(scope);
             }
             IRubyObject ret;
             CompileMode mode = runtime.getInstanceConfig().getCompileMode();
@@ -133,7 +135,7 @@ public class EmbedEvalUnitImpl implements EmbedEvalUnit {
             throw new EvalFailedException(e);
         } finally {
             if (sharing_variables) {
-                runtime.getCurrentContext().popScope();
+                threadContext.popScope();
             }
             vars.terminate();
             /* Below lines doesn't work. Neither does classCache.flush(). How to clear cache?
