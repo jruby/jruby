@@ -105,6 +105,8 @@ public class EmbedEvalUnitImpl implements EmbedEvalUnit {
         if (obj != null && obj instanceof Boolean && ((Boolean) obj) == false) {
             sharing_variables = false;
         }
+
+        // Keep reference to current context to prevent it being collected.
         ThreadContext threadContext = runtime.getCurrentContext();
         try {
             if (sharing_variables) {
