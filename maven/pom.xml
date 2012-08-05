@@ -106,7 +106,7 @@
     <dependency>
       <groupId>com.github.jnr</groupId>
       <artifactId>jnr-ffi</artifactId>
-      <version>0.7.5</version>
+      <version>0.7.6</version>
       <scope>${jar.scope}</scope>
     </dependency>
     <dependency>
