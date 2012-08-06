@@ -6,7 +6,7 @@ before_script:
 env: JAVA_OPTS="-server -Djruby.cext.enabled=false -Djruby.compile.invokedynamic=false"
 jdk:
   - oraclejdk7
-  - openjdk6
+#  - openjdk6
 script: "ant test-extended && rake test19"
 install: /bin/true
 notifications:
