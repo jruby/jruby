@@ -949,7 +949,7 @@ public class Java implements Library {
                     // we'll try as a package
                     return getJavaPackageModule(runtime, fullName);
                 } else {
-                    throw runtime.newNameError("uppercase package names not accessible this way (`" + fullName + "')", fullName);
+                    throw runtime.newNameError("missing class or uppercase package name (`" + fullName + "')", fullName);
                 }
             }
 
