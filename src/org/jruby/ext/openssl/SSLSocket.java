@@ -330,13 +330,16 @@ public class SSLSocket extends RubyObject {
             SSLEngineResult res;
             boolean ready = waitSelect(SelectionKey.OP_READ | SelectionKey.OP_WRITE, blocking);
 
-            if (!ready) {
+            // if not blocking, raise EAGAIN
+            if (!blocking && !ready) {
                 Ruby runtime = getRuntime();
 
                 throw runtime.is1_9() ?
-                        getRuntime().newErrnoEAGAINWritableError("Resource temporarily unavailable") :
-                        getRuntime().newErrnoEAGAINError("Resource temporarily unavailable");
+                        runtime.newErrnoEAGAINWritableError("Resource temporarily unavailable") :
+                        runtime.newErrnoEAGAINError("Resource temporarily unavailable");
             }
+
+            // otherwise, proceed as before
 
             switch (hsStatus) {
             case FINISHED:
