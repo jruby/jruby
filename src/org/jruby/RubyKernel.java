@@ -275,25 +275,23 @@ public class RubyKernel {
 
         throw new RaiseException((RubyException)exc.newInstance(context, exArgs, Block.NULL_BLOCK));
     }
+    
 
+    private static IRubyObject[] popenArgs(Ruby runtime, String pipedArg, IRubyObject[] args) {
+            IRubyObject command = runtime.newString(pipedArg.substring(1));
+
+            if (args.length >= 2) return new IRubyObject[] { command, args[1] };
+
+            return new IRubyObject[] { command };
+    }
+    
     @JRubyMethod(required = 1, optional = 2, module = true, visibility = PRIVATE, compat = RUBY1_8)
     public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         String arg = args[0].convertToString().toString();
         Ruby runtime = context.getRuntime();
 
-        if (arg.startsWith("|")) {
-            IRubyObject command = runtime.newString(arg.substring(1));
-
-            final IRubyObject[] popenArgs;
-            if (args.length >= 2) {
-                popenArgs = new IRubyObject[] { command, args[1] };
-            } else {
-                popenArgs = new IRubyObject[] { command };
-            }
-
-            // exec process, create IO with process
-            return RubyIO.popen(context, runtime.getIO(), popenArgs, block);
-        } 
+        // exec process, create IO with process
+        if (arg.startsWith("|")) return RubyIO.popen(context, runtime.getIO(), popenArgs(runtime, arg, args), block);
 
         return RubyFile.open(context, runtime.getFile(), args, block);
     }
@@ -304,9 +302,14 @@ public class RubyKernel {
         if (args[0].respondsTo("to_open")) {
             args[0] = args[0].callMethod(context, "to_open");
             return RubyFile.open(context, runtime.getFile(), args, block);
-        } else {
-            return open(context, recv, args, block);
-        }
+        } 
+
+        String arg = args[0].convertToString().toString();
+
+        // exec process, create IO with process
+        if (arg.startsWith("|")) return RubyIO.popen19(context, runtime.getIO(), popenArgs(runtime, arg, args), block);
+        
+        return RubyFile.open(context, runtime.getFile(), args, block);
     }
 
     @JRubyMethod(name = "getc", module = true, visibility = PRIVATE)
