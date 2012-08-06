@@ -109,7 +109,7 @@ public class RubyProcess {
         }
         
         // Bunch of methods still not implemented
-        @JRubyMethod(name = {"to_int", "stopped?", "stopsig", "signaled?", "termsig?", "exited?"}, frame = true)
+        @JRubyMethod(name = {"to_int", "stopped?"}, frame = true)
         public IRubyObject not_implemented() {
             String error = "Process::Status#" + getRuntime().getCurrentContext().getFrameName() + " not implemented";
             throw getRuntime().newNotImplementedError(error);
@@ -125,7 +125,27 @@ public class RubyProcess {
         public IRubyObject exitstatus() {
             return getRuntime().newFixnum(status);
         }
-        
+
+        @JRubyMethod(name = {"exited?"})
+        public IRubyObject exited() {
+            return RubyBoolean.newBoolean(getRuntime(), (status == 0));
+        }
+
+        @JRubyMethod(name = {"signaled?"})
+        public IRubyObject signaled() {
+            return RubyBoolean.newBoolean(getRuntime(), (status > 0));
+        }
+
+        @JRubyMethod(name = {"termsig"})
+        public IRubyObject termsig() {
+            return RubyFixnum.newFixnum(getRuntime(), status & 0x7f);
+        }
+
+        @JRubyMethod(name = {"stopsig"})
+        public IRubyObject stopsig() {
+            return RubyFixnum.newFixnum(getRuntime(), status);
+        }
+
         @Deprecated
         public IRubyObject op_rshift(IRubyObject other) {
             return op_rshift(getRuntime(), other);
@@ -839,14 +859,14 @@ public class RubyProcess {
     }
     
     private static int parseSignalString(Ruby runtime, String value) {
-        int startIndex = 0;
         boolean negative = value.startsWith("-");
-        
-        if (value.startsWith("-")) startIndex++;
-        String signalName = value.startsWith("SIG", startIndex)
-                ? value 
-                : "SIG" + value.substring(startIndex);
-        
+
+        // Gets rid of the - if there is one present.
+        if (negative) value = value.substring(1);
+
+        // We need the SIG for sure.
+        String signalName = value.startsWith("SIG") ? value : "SIG" + value;
+
         try {
             int signalValue = Signal.valueOf(signalName).value();
             return negative ? -signalValue : signalValue;
@@ -854,7 +874,6 @@ public class RubyProcess {
         } catch (IllegalArgumentException ex) {
             throw runtime.newArgumentError("unsupported name `SIG" + signalName + "'");
         }
-        
     }
 
     @Deprecated
