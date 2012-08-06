@@ -6890,7 +6890,9 @@ public class RubyString extends RubyObject implements EncodingCapable {
                         while (p < end && codePoint(runtime, enc, bytes, p, end) == newLine) p += n;
                         p -= n;
                     }
-                    if (c == newLine && (rslen <= 1 ||
+                    if (c == newLine &&
+                            rslen <= end - p &&
+                            (rslen <= 1 ||
                             ByteList.memcmp(sepValue.getUnsafeBytes(), sepValue.getBegin(), rslen, bytes, p, rslen) == 0)) {
                         block.yield(context, makeShared19(runtime, val, s - offset, p - s + (rslen != 0 ? rslen : n)).infectBy(this));
                         s = p + (rslen != 0 ? rslen : n);
