@@ -70,6 +70,7 @@ require 'ffi-internal.so' # Load the JRuby implementation class
 require 'ffi/platform'
 require 'ffi/types'
 require 'ffi/library'
+require 'ffi/pointer'
 require 'ffi/memorypointer'
 require 'ffi/autopointer'
 require 'ffi/struct'
