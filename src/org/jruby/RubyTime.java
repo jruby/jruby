@@ -782,7 +782,27 @@ public class RubyTime extends RubyObject {
         return this;
     }
     
-    /* Time class methods */
+    @JRubyMethod(name = "round", optional = 1, compat = RUBY1_9)
+    public RubyTime round(ThreadContext context, IRubyObject[] args) {
+        int ndigits = args.length == 0 ? 0 : RubyNumeric.num2int(args[0]);
+        // There are only 1_000_000_000 nanoseconds in 1 second,
+        // so there is no need to keep more than 9 digits
+        if (ndigits > 9) {
+            ndigits = 9;
+        } else if (ndigits < 0) {
+            throw context.getRuntime().newArgumentError("negative ndigits given");
+        }
+        
+        RubyTime newTime = new RubyTime(getRuntime(), getMetaClass(), this.dt);
+        long millis = newTime.dt.getMillis();
+        double rounded = Math.round(millis * 1000000 / Math.pow(10, 9 - ndigits))
+                * Math.pow(10, 9 - ndigits);
+        newTime.dt = newTime.dt.withMillis((long) rounded / 1000000);
+        
+        return newTime;
+    }
+
+   /* Time class methods */
     
     public static IRubyObject s_new(IRubyObject recv, IRubyObject[] args, Block block) {
         Ruby runtime = recv.getRuntime();
