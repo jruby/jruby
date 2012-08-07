@@ -398,9 +398,6 @@ public class ArgumentProcessor {
                         break FOR;
                     } else if (argument.equals("--fast")) {
                         config.setCompileMode(RubyInstanceConfig.CompileMode.FORCE);
-                        RubyInstanceConfig.FASTOPS_COMPILE_ENABLED = true;
-                        RubyInstanceConfig.FASTSEND_COMPILE_ENABLED = true;
-                        RubyInstanceConfig.INLINE_DYNCALL_ENABLED = true;
                         break FOR;
                     } else if (argument.equals("--profile.api")) {
                         config.setProfilingMode(RubyInstanceConfig.ProfilingMode.API);
