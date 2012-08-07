@@ -152,6 +152,11 @@ public class RubyBigDecimal extends RubyNumeric {
         super(runtime, klass);
     }
 
+    public RubyBigDecimal(Ruby runtime, RubyClass klass, BigDecimal value) {
+        super(runtime, klass);
+        this.value = value;
+    }
+
     public RubyBigDecimal(Ruby runtime, BigDecimal value) {
         super(runtime, runtime.getClass("BigDecimal"));
         this.value = value;
@@ -492,7 +497,7 @@ public class RubyBigDecimal extends RubyNumeric {
                 }
             }
         }
-        return new RubyBigDecimal(runtime, decimal);
+        return new RubyBigDecimal(runtime, (RubyClass)recv, decimal);
     }
 
     private static RubyBigDecimal newZero(Ruby runtime, int sign) {
