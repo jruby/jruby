@@ -3383,7 +3383,7 @@ public final class Ruby {
     }
 
     public RaiseException newNameError(String message, String name, Throwable origException) {
-        return newNameError(message, name, origException, true);
+        return newNameError(message, name, origException, false);
     }
 
     public RaiseException newNameError(String message, String name, Throwable origException, boolean printWhenVerbose) {
