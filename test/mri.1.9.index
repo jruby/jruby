@@ -31,6 +31,39 @@ externals/ruby1.9/monitor/test_monitor
 externals/ruby1.9/nkf/test_kconv
 externals/ruby1.9/nkf/test_nkf
 
+externals/ruby1.9/openssl/test_asn1
+externals/ruby1.9/openssl/test_bn
+externals/ruby1.9/openssl/test_buffering
+externals/ruby1.9/openssl/test_cipher
+externals/ruby1.9/openssl/test_config
+externals/ruby1.9/openssl/test_digest
+# doesn't seem to run any tests
+#externals/ruby1.9/openssl/test_ec.rb
+# OpenSSL::Engine not defined
+#externals/ruby1.9/openssl/test_engine.rb
+externals/ruby1.9/openssl/test_hmac
+externals/ruby1.9/openssl/test_ns_spki
+# all fail
+#externals/ruby1.9/openssl/test_ocsp
+externals/ruby1.9/openssl/test_pair
+# OpenSSL::PKCS12 not implemented
+#externals/ruby1.9/openssl/test_pkcs12
+externals/ruby1.9/openssl/test_pkcs7
+externals/ruby1.9/openssl/test_pkey_dh
+externals/ruby1.9/openssl/test_pkey_dsa
+# doesn't seem to run any tests
+#externals/ruby1.9/openssl/test_pkey_ec
+externals/ruby1.9/openssl/test_pkey_rsa
+externals/ruby1.9/openssl/test_ssl
+# OpenSSL::SSL::Session not implemented
+#externals/ruby1.9/openssl/test_ssl_session
+externals/ruby1.9/openssl/test_x509cert
+externals/ruby1.9/openssl/test_x509crl
+externals/ruby1.9/openssl/test_x509ext
+externals/ruby1.9/openssl/test_x509name
+externals/ruby1.9/openssl/test_x509req
+externals/ruby1.9/openssl/test_x509store
+
 externals/ruby1.9/psych/test_alias_and_anchor
 externals/ruby1.9/psych/test_array
 externals/ruby1.9/psych/test_boolean
