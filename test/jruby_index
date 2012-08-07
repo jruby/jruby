@@ -119,3 +119,4 @@ test_jar_file
 #test_thread_service
 test_jruby_synchronized
 test_instantiating_interfaces
+test_openssl
