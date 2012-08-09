@@ -64,6 +64,7 @@
         <include name="build.xml"/>
         <include name="ivy/**"/>
         <include name="rakelib/**"/>
+        <include name="antlib/**"/>
         <include name="nbproject/*"/>
         <include name=".project"/>
         <include name=".classpath"/>
