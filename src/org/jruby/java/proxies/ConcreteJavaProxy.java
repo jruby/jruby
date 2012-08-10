@@ -194,6 +194,8 @@ public class ConcreteJavaProxy extends JavaProxy {
         Class cls = obj.getClass();
 
         if (type.isPrimitive()) {
+            if (type == Void.TYPE) return null;
+            
             if (obj instanceof Number && type != Boolean.TYPE ||
                     obj instanceof Character && type == Character.TYPE ||
                     obj instanceof Boolean && type == Boolean.TYPE) {
