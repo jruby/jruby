@@ -249,9 +249,12 @@
         </antcall>
     </target>
 
-    <target name="dist" depends="install-dev-gems,dist-bin,dist-src,dist-jar-complete">
-        <rake task="gem"/>
+    <target name="dist" depends="install-dev-gems,dist-bin,dist-src,dist-jar-complete,dist-gem">
         <rake task="installer"/>
+    </target>
+
+    <target name="dist-gem" depends="install-dev-gems,dist-jar-complete">
+        <rake task="gem"/>
     </target>
 
     <target name="dist-clean">
