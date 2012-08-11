@@ -318,7 +318,7 @@ public class RubyFixnum extends RubyInteger {
     /** fix_to_sym
      * 
      */
-    @JRubyMethod
+    @JRubyMethod(compat = RUBY1_8)
     public IRubyObject to_sym() {
         RubySymbol symbol = RubySymbol.getSymbolLong(getRuntime(), value);
         
