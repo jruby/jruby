@@ -18,7 +18,6 @@ public class FFI {
     public final RubyClass typeClass;
     public final RubyHash typedefs;
     private final NullMemoryIO nullMemoryIO;
-    private final TypeSizeMapper sizeMapper;
     private final TypeResolver typeResolver;
     
     /**
@@ -40,13 +39,8 @@ public class FFI {
         this.callbackClass = ffiModule.getClass("Callback");
         this.typeClass = ffiModule.getClass("Type");
         this.typedefs = (RubyHash) ffiModule.getConstant("TypeDefs");
-        this.sizeMapper = new TypeSizeMapper(this);
         this.typeResolver = new TypeResolver(this);
         this.nullMemoryIO = new NullMemoryIO(ffiModule.getRuntime());
-    }
-
-    public TypeSizeMapper getSizeMapper() {
-        return sizeMapper;
     }
 
     public final TypeResolver getTypeResolver() {

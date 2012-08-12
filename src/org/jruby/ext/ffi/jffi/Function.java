@@ -79,7 +79,7 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
         Object proc = null;
         int optionsIndex = 2;
 
-        Type returnType = FFIUtil.resolveType(context, args[0]);
+        Type returnType = org.jruby.ext.ffi.Util.findType(context, args[0]);
 
         if (!(args[1] instanceof RubyArray)) {
             throw context.runtime.newTypeError("Invalid parameter array "
@@ -89,7 +89,7 @@ public final class Function extends org.jruby.ext.ffi.AbstractInvoker {
         RubyArray paramTypes = (RubyArray) args[1];
         Type[] parameterTypes = new Type[paramTypes.size()];
         for (int i = 0; i < parameterTypes.length; ++i) {
-            parameterTypes[i] = FFIUtil.resolveType(context, paramTypes.entry(i));
+            parameterTypes[i] = org.jruby.ext.ffi.Util.findType(context, paramTypes.entry(i));
         }
 
         if (args.length > 2 && args[2] instanceof Pointer) {

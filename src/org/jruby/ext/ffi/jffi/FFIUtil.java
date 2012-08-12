@@ -215,28 +215,4 @@ public final class FFIUtil {
         IO.putByteArray(address, bytes, off, len);
         IO.putByte(address + len, (byte) 0);
     }
-
-    static final Type resolveType(ThreadContext context, IRubyObject obj) {
-        if (obj instanceof Type) {
-            return (Type) obj;
-        }
-
-        final RubyModule ffi = context.runtime.getModule("FFI");
-        final IRubyObject typeDefs = ffi.fetchConstant("TypeDefs");
-
-        if (!(typeDefs instanceof RubyHash)) {
-            throw context.runtime.newRuntimeError("invalid or corrupted FFI::TypeDefs");
-        }
-
-        IRubyObject type = ((RubyHash) typeDefs).fastARef(obj);
-        if (type == null || type.isNil()) {
-            type = ffi.callMethod(context, "find_type", obj);
-        }
-
-        if (!(type instanceof Type)) {
-            throw context.runtime.newTypeError("Could not resolve type: " + obj);
-        }
-
-        return (Type) type;
-    }
 }
