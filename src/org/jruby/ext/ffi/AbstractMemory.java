@@ -104,6 +104,15 @@ abstract public class AbstractMemory extends RubyObject {
         return (RubyArray) obj;
     }
 
+    private static int checkArrayLength(IRubyObject val) {
+        int i = RubyNumeric.num2int(val);
+        if (i < 0) {
+            throw val.getRuntime().newArgumentError("negative array length");
+        }
+
+        return i;
+    }
+
     protected AbstractMemory(Ruby runtime, RubyClass klass, MemoryIO io, long size) {
         this(runtime, klass, io, size, 1);
     }
@@ -1401,7 +1410,7 @@ abstract public class AbstractMemory extends RubyObject {
      * Writes an array of 64 bit floating point values to the memory area.
      *
      * @param offset The offset from the start of the memory area to write the values.
-     * @param length The number of values to be written to memory.
+     * @param arrParam Array of values to write to memory.
      * @return <tt>this</tt> object.
      */
     @JRubyMethod(name = { "put_array_of_float64", "put_array_of_double" }, required = 2)
@@ -1451,7 +1460,7 @@ abstract public class AbstractMemory extends RubyObject {
      * Writes an array of unsigned 8 bit integer values to the memory area.
      *
      * @param ary The array of values to write to the memory area.
-     * @param length The number of values to be written to memory.
+     * @param ary Array of values to write to memory.
      * @return <tt>this</tt> object.
      */
     @JRubyMethod(name = { "write_array_of_uint8", "write_array_of_uchar" }, required = 1)
@@ -1713,6 +1722,43 @@ abstract public class AbstractMemory extends RubyObject {
 
         return this;
     }
+
+    @JRubyMethod(name = { "read_array_of_type" }, required = 2)
+    public IRubyObject read_array_of_type(ThreadContext context, IRubyObject typeArg, IRubyObject lenArg) {
+        Type type = context.runtime.getFFI().getTypeResolver().findType(context.runtime, typeArg);
+        MemoryOp op = MemoryOp.getMemoryOp(type);
+        if (op == null) {
+            throw context.runtime.newTypeError("cannot get memory reader for type " + type);
+        }
+
+        int len = checkArrayLength(lenArg);
+        RubyArray arr = RubyArray.newArray(context.runtime, len);
+
+        for (int i = 0, off = 0; i < len; i++, off += type.size) {
+            arr.add(op.get(context, getMemoryIO(), off));
+        }
+
+        return arr;
+    }
+
+    @JRubyMethod(name = { "write_array_of_type" }, required = 2)
+    public IRubyObject write_array_of_type(ThreadContext context, IRubyObject typeArg, IRubyObject aryArg) {
+        Type type = context.runtime.getFFI().getTypeResolver().findType(context.runtime, typeArg);
+        MemoryOp op = MemoryOp.getMemoryOp(type);
+        if (op == null) {
+            throw context.runtime.newTypeError("cannot get memory writer for type " + type);
+        }
+
+        RubyArray arr = aryArg.convertToArray();
+        int len = arr.size();
+
+        for (int i = 0, off = 0; i < len; i++, off += type.size) {
+            op.put(context, getMemoryIO(), off, arr.entry(i));
+        }
+
+        return this;
+    }
+
     
 
     @JRubyMethod(name = "read_string")
@@ -1798,6 +1844,21 @@ abstract public class AbstractMemory extends RubyObject {
         long off = getOffset(offArg);
         ByteList bl = strArg.convertToString().getByteList();
         getMemoryIO().putZeroTerminatedByteArray(off, bl.getUnsafeBytes(), bl.begin(), bl.length());
+        return this;
+    }
+
+    @JRubyMethod(name = "write_string")
+    public IRubyObject write_string(ThreadContext context, IRubyObject strArg) {
+        ByteList bl = strArg.convertToString().getByteList();
+        getMemoryIO().putZeroTerminatedByteArray(0, bl.getUnsafeBytes(), bl.begin(), bl.length());
+        return this;
+    }
+
+    @JRubyMethod(name = "write_string")
+    public IRubyObject write_string(ThreadContext context, IRubyObject strArg, IRubyObject lenArg) {
+        ByteList bl = strArg.convertToString().getByteList();
+        getMemoryIO().putZeroTerminatedByteArray(0, bl.getUnsafeBytes(), bl.begin(),
+                Math.min(bl.length(), (int) org.jruby.RubyInteger.num2long(lenArg)));
         return this;
     }
 
