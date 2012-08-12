@@ -699,7 +699,7 @@ public final class DefaultMethodFactory extends MethodFactory {
         }
 
         public boolean requiresPostInvoke() {
-            return converter.isReferenceRequired();
+            return converter.isPostInvokeRequired();
         }
 
         public boolean requiresReference() {

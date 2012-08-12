@@ -47,9 +47,7 @@ public class DataConverters {
             return null;
         
         } else if (type instanceof MappedType) {
-            MappedType mappedType = (MappedType) type;
-            return !mappedType.isPostInvokeRequired() && !mappedType.isReferenceRequired()
-                    ? new MappedDataConverter(mappedType) : null;
+            return new MappedDataConverter((MappedType) type);
         
         } else if (type instanceof CallbackInfo) {
             return new CallbackDataConverter((CallbackInfo) type);
@@ -61,9 +59,7 @@ public class DataConverters {
 
     static NativeDataConverter getParameterConverter(Type type) {
         if (type instanceof MappedType) {
-            MappedType mappedType = (MappedType) type;
-            return !mappedType.isPostInvokeRequired() && !mappedType.isReferenceRequired()
-                    ? new MappedDataConverter(mappedType) : null;
+            return new MappedDataConverter((MappedType) type);
 
         } else if (type instanceof CallbackInfo) {
             return new CallbackDataConverter((CallbackInfo) type);

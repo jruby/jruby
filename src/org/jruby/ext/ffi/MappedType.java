@@ -113,7 +113,7 @@ public final class MappedType extends Type {
     }
 
     public final boolean isReferenceRequired() {
-        return false;
+        return isReferenceRequired;
     }
 
     public final boolean isPostInvokeRequired() {
