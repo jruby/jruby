@@ -19,6 +19,7 @@ public class FFI {
     public final RubyHash typedefs;
     private final NullMemoryIO nullMemoryIO;
     private final TypeSizeMapper sizeMapper;
+    private final TypeResolver typeResolver;
     
     /**
      * Reference map to keep libraries open for as long as there is a method mapped
@@ -40,11 +41,16 @@ public class FFI {
         this.typeClass = ffiModule.getClass("Type");
         this.typedefs = (RubyHash) ffiModule.getConstant("TypeDefs");
         this.sizeMapper = new TypeSizeMapper(this);
+        this.typeResolver = new TypeResolver(this);
         this.nullMemoryIO = new NullMemoryIO(ffiModule.getRuntime());
     }
 
     public TypeSizeMapper getSizeMapper() {
         return sizeMapper;
+    }
+
+    public final TypeResolver getTypeResolver() {
+        return typeResolver;
     }
 
     public NullMemoryIO getNullMemoryIO() {

@@ -54,7 +54,7 @@ final class TypeSizeMapper {
         throw context.runtime.newTypeError("cannot resolve type " + name);
     }
 
-    public static final int getTypeSize(ThreadContext context, RubySymbol sizeArg) {
+    public static int getTypeSize(ThreadContext context, RubySymbol sizeArg) {
         return context.runtime.getFFI().getSizeMapper().sizeof(context, sizeArg);
     }
 }
