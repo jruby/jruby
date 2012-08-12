@@ -316,7 +316,7 @@ public final class ArrayMemoryIO implements MemoryIO {
     public final byte[] getZeroTerminatedByteArray(long offset, int maxlen) {
         checkBounds(offset, 1);
         int len = indexOf(offset, (byte) 0, maxlen);
-        byte[] bytes = new byte[len != -1 ? len : length - (int) offset];
+        byte[] bytes = new byte[len != -1 ? len : Math.min(length - (int) offset, maxlen)];
         System.arraycopy(buffer, index(offset), bytes, 0, bytes.length);
         return bytes;
     }
