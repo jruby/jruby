@@ -194,7 +194,7 @@ public final class FFIUtil {
         if (address == 0) {
             return runtime.getNil();
         }
-        byte[] bytes = getZeroTerminatedByteArray(address);
+        byte[] bytes = IO.getZeroTerminatedByteArray(address);
         if (bytes.length == 0) {
             return RubyString.newEmptyString(runtime);
         }
@@ -202,17 +202,5 @@ public final class FFIUtil {
         RubyString s = RubyString.newStringNoCopy(runtime, bytes);
         s.setTaint(true);
         return s;
-    }
-    
-    static final byte[] getZeroTerminatedByteArray(long address) {
-        return IO.getZeroTerminatedByteArray(address);
-    }
-
-    static final byte[] getZeroTerminatedByteArray(long address, int maxlen) {
-        return IO.getZeroTerminatedByteArray(address, maxlen);
-    }
-    static final void putZeroTerminatedByteArray(long address, byte[] bytes, int off, int len) {
-        IO.putByteArray(address, bytes, off, len);
-        IO.putByte(address + len, (byte) 0);
     }
 }
