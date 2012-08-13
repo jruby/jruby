@@ -88,7 +88,7 @@ public final class DefaultMethodFactory {
                     ? ((MappedType) parameterTypes[i]).getRealType()
                     : parameterTypes[i];
 
-            if (!(t instanceof Type.Builtin) || marshallers[i].requiresPostInvoke()) {
+            if (!(t instanceof Type.Builtin) || marshallers[i].requiresPostInvoke() || marshallers[i].requiresReference()) {
                 canBeFastInt = false;
             } else {
                 switch (t.getNativeType()) {
@@ -878,7 +878,7 @@ public final class DefaultMethodFactory {
         }
 
         public boolean requiresPostInvoke() {
-            return mappedType.isReferenceRequired();
+            return mappedType.isPostInvokeRequired();
         }
 
         public boolean requiresReference() {

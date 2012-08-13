@@ -188,4 +188,9 @@ public final class Enum extends RubyObject {
 
         return value;
     }
+
+    @JRubyMethod(name = "reference_required?")
+    public IRubyObject reference_required_p(ThreadContext context) {
+        return context.getRuntime().getFalse();
+    }
 }

@@ -24,6 +24,7 @@ public final class MappedType extends Type {
     private final Type realType;
     private final IRubyObject converter;
     private final DynamicMethod toNativeMethod, fromNativeMethod;
+    private final boolean isReferenceRequired;
 
     public static RubyClass createConverterTypeClass(Ruby runtime, RubyModule ffiModule) {
         RubyClass convClass = ffiModule.fastGetClass("Type").defineClassUnder("Mapped", ffiModule.fastGetClass("Type"),
@@ -36,12 +37,13 @@ public final class MappedType extends Type {
     }
 
     private MappedType(Ruby runtime, RubyClass klass, Type nativeType, IRubyObject converter,
-            DynamicMethod toNativeMethod, DynamicMethod fromNativeMethod) {
+            DynamicMethod toNativeMethod, DynamicMethod fromNativeMethod, boolean isRefererenceRequired) {
         super(runtime, klass, NativeType.MAPPED, nativeType.getNativeSize(), nativeType.getNativeAlignment());
         this.realType = nativeType;
         this.converter = converter;
         this.toNativeMethod = toNativeMethod;
         this.fromNativeMethod = fromNativeMethod;
+        this.isReferenceRequired = isRefererenceRequired;
     }
 
     @JRubyMethod(name = "new", meta = true)
@@ -49,7 +51,6 @@ public final class MappedType extends Type {
         if (!converter.respondsTo("native_type")) {
             throw context.getRuntime().newNoMethodError("converter needs a native_type method", "native_type", converter.getMetaClass());
         }
-
         
         DynamicMethod toNativeMethod = converter.getMetaClass().searchMethod("to_native");
         if (toNativeMethod.isUndefined()) {
@@ -76,7 +77,35 @@ public final class MappedType extends Type {
             throw context.getRuntime().newTypeError("native_type did not return instance of FFI::Type");
         }
 
-        return new MappedType(context.getRuntime(), (RubyClass) klass, nativeType, converter, toNativeMethod, fromNativeMethod);
+        boolean isReferenceRequired;
+        if (converter.respondsTo("reference_required?")) {
+            isReferenceRequired = converter.callMethod(context, "reference_required?").isTrue();
+
+        } else {
+            switch (nativeType.nativeType) {
+                case BOOL:
+                case CHAR:
+                case UCHAR:
+                case SHORT:
+                case USHORT:
+                case INT:
+                case UINT:
+                case LONG:
+                case ULONG:
+                case LONG_LONG:
+                case ULONG_LONG:
+                case FLOAT:
+                case DOUBLE:
+                    isReferenceRequired = false;
+                    break;
+
+                default:
+                    isReferenceRequired = true;
+                    break;
+            }
+        }
+        return new MappedType(context.getRuntime(), (RubyClass) klass, nativeType, converter,
+                toNativeMethod, fromNativeMethod, isReferenceRequired);
     }
     
     public final Type getRealType() {
@@ -84,7 +113,7 @@ public final class MappedType extends Type {
     }
 
     public final boolean isReferenceRequired() {
-        return false;
+        return isReferenceRequired;
     }
 
     public final boolean isPostInvokeRequired() {
