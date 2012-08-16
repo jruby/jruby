@@ -83,9 +83,7 @@ module Syslog
       @options = opt
       @facility = fac
       @ident_memory = if ident
-        ptr = FFI::MemoryPointer.new ident.length + 1
-        ptr.write_string(ident + "\0")
-        ptr
+        FFI::MemoryPointer.from_string(ident)
       else
         nil
       end
