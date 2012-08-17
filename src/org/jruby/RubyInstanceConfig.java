@@ -1522,8 +1522,8 @@ public class RubyInstanceConfig {
     public static final boolean USE_INVOKEDYNAMIC;
     static {
         boolean isHotspot =
-                SafePropertyAccessor.getProperty("java.vm.name", "").contains("Hotspot") ||
-                        SafePropertyAccessor.getProperty("java.vm.name", "").contains("OpenJDK");
+                SafePropertyAccessor.getProperty("java.vm.name", "").toLowerCase().contains("hotspot") ||
+                        SafePropertyAccessor.getProperty("java.vm.name", "").toLowerCase().contains("openjdk");
 
         String version = SafePropertyAccessor.getProperty("java.specification.version", "1.6");
         
