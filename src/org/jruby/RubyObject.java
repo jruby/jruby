@@ -247,6 +247,26 @@ public class RubyObject extends RubyBasicObject {
         RuntimeHelpers.invoke(getRuntime().getCurrentContext(), this, "initialize", arg0, arg1, arg2, block);
     }
 
+    public final void callInit(ThreadContext context, IRubyObject[] args, Block block) {
+        RuntimeHelpers.invoke(context, this, "initialize", args, block);
+    }
+
+    public final void callInit(ThreadContext context, Block block) {
+        RuntimeHelpers.invoke(context, this, "initialize", block);
+    }
+
+    public final void callInit(ThreadContext context, IRubyObject arg0, Block block) {
+        RuntimeHelpers.invoke(context, this, "initialize", arg0, block);
+    }
+
+    public final void callInit(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
+        RuntimeHelpers.invoke(context, this, "initialize", arg0, arg1, block);
+    }
+
+    public final void callInit(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
+        RuntimeHelpers.invoke(context, this, "initialize", arg0, arg1, arg2, block);
+    }
+
     /**
      * Tries to convert this object to the specified Ruby type, using
      * a specific conversion method.
