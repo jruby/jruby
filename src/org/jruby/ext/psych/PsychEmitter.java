@@ -85,6 +85,23 @@ public class PsychEmitter extends RubyObject {
         return context.nil;
     }
 
+    @JRubyMethod(visibility = PRIVATE)
+    public IRubyObject initialize(ThreadContext context, IRubyObject io, IRubyObject rbOptions) {
+        IRubyObject width     = rbOptions.callMethod(context, "line_width");
+        IRubyObject canonical = rbOptions.callMethod(context, "canonical");
+        IRubyObject level     = rbOptions.callMethod(context, "indentation");
+
+        options = new DumperOptions();
+
+        options.setCanonical(canonical.isTrue());
+        options.setIndent((int)level.convertToInteger().getLongValue());
+        options.setWidth((int)width.convertToInteger().getLongValue());
+
+        emitter = new Emitter(new OutputStreamWriter(new IOOutputStream(io)), options);
+
+        return context.nil;
+    }
+
     @JRubyMethod
     public IRubyObject start_stream(ThreadContext context, IRubyObject encoding) {
         if (!(encoding instanceof RubyFixnum)) {

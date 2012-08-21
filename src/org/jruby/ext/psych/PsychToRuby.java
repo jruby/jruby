@@ -31,6 +31,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
+import org.jruby.RubyException;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ThreadContext;
@@ -50,7 +51,7 @@ public class PsychToRuby {
     public static IRubyObject build_exception(ThreadContext context, IRubyObject self, IRubyObject klass, IRubyObject message) {
         if (klass instanceof RubyClass) {
             IRubyObject exception = ((RubyClass)klass).allocate();
-            exception.getInternalVariables().setInternalVariable("mesg", message);
+            ((RubyException)exception).message = message;
             return exception;
         } else {
             throw context.runtime.newTypeError(klass, context.runtime.getClassClass());

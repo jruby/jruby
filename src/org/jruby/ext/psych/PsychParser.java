@@ -87,6 +87,8 @@ public class PsychParser extends RubyObject {
             }
         }, psych);
 
+        RubyKernel.require(runtime.getNil(),
+                runtime.newString("psych/syntax_error"), Block.NULL_BLOCK);
         psychParser.defineConstant("ANY", runtime.newFixnum(YAML_ANY_ENCODING));
         psychParser.defineConstant("UTF8", runtime.newFixnum(YAML_UTF8_ENCODING));
         psychParser.defineConstant("UTF16LE", runtime.newFixnum(YAML_UTF16LE_ENCODING));
@@ -103,7 +105,9 @@ public class PsychParser extends RubyObject {
 
     @JRubyMethod
     public IRubyObject parse(ThreadContext context, IRubyObject yaml) {
-        return parse(context, yaml, RubyString.newString(context.runtime, "<unknown>"));
+        Ruby runtime = context.runtime;
+
+        return parse(context, yaml, runtime.getNil());
     }
 
     private IRubyObject stringOrNilFor(Ruby runtime, String value, boolean tainted) {
@@ -137,6 +141,11 @@ public class PsychParser extends RubyObject {
         // FIXME? only supports Unicode, since we have to produces strings...
         try {
             parser = new ParserImpl(readerFor(yaml));
+
+            if (path.isNil() && yaml.respondsTo("path")) {
+                path = yaml.callMethod(context, "path");
+            }
+
             IRubyObject handler = getInstanceVariable("@handler");
 
             while (true) {
@@ -173,21 +182,20 @@ public class PsychParser extends RubyObject {
             }
         } catch (ParserException pe) {
             parser = null;
-            RubyKernel.raise(context, runtime.getKernel(),
-                    new IRubyObject[] {runtime.getModule("Psych").getConstant("SyntaxError"), runtime.newString(syntaxError(context, yaml, pe))},
-                    Block.NULL_BLOCK);
+            raiseParserException(context, yaml, pe, path);
+
         } catch (ScannerException se) {
             parser = null;
             StringBuilder message = new StringBuilder("syntax error");
             if (se.getProblemMark() != null) {
                 message.append(se.getProblemMark().toString());
             }
-            throw runtime.newArgumentError(message.toString());
+            raiseParserException(context, yaml, se, path);
+
         } catch (ReaderException re) {
             parser = null;
-            RubyKernel.raise(context, runtime.getKernel(),
-                    new IRubyObject[] {runtime.getModule("Psych").getConstant("SyntaxError"), runtime.newString(re.getLocalizedMessage())},
-                    Block.NULL_BLOCK);
+            raiseParserException(context, yaml, re, path);
+
         } catch (Throwable t) {
             UnsafeFactory.getUnsafe().throwException(t);
             return this;
@@ -251,14 +259,51 @@ public class PsychParser extends RubyObject {
         invoke(context, handler, "start_sequence", anchor, tag, implicit, style);
     }
 
-    private static String syntaxError(ThreadContext context, IRubyObject yaml, MarkedYAMLException mye) {
-        String path;
-        if (yaml.respondsTo("path")) {
-            path = yaml.callMethod(context, "path").toString();
-        } else {
-            path = "<unknown>";
-        }
-        return path + ": couldn't parse YAML at line " + mye.getProblemMark().getLine() + " column " + mye.getProblemMark().getColumn();
+    private static void raiseParserException(ThreadContext context, IRubyObject yaml, ReaderException re, IRubyObject rbPath) {
+        Ruby runtime;
+        RubyClass se;
+        IRubyObject exception;
+
+        runtime = context.runtime;
+        se = (RubyClass)runtime.getModule("Psych").getConstant("SyntaxError");
+
+        exception = se.newInstance(context,
+                new IRubyObject[] {
+                    rbPath,
+                    runtime.newFixnum(0),
+                    runtime.newFixnum(0),
+                    runtime.newFixnum(re.getPosition()),
+                    (null == re.getName() ? runtime.getNil() : runtime.newString(re.getName())),
+                    (null == re.toString() ? runtime.getNil() : runtime.newString(re.toString()))
+                },
+                Block.NULL_BLOCK);
+
+        RubyKernel.raise(context, runtime.getKernel(), new IRubyObject[] { exception }, Block.NULL_BLOCK);
+    }
+
+    private static void raiseParserException(ThreadContext context, IRubyObject yaml, MarkedYAMLException mye, IRubyObject rbPath) {
+        Ruby runtime;
+        Mark mark;
+        RubyClass se;
+        IRubyObject exception;
+
+        runtime = context.runtime;
+        se = (RubyClass)runtime.getModule("Psych").getConstant("SyntaxError");
+
+        mark = mye.getProblemMark();
+
+        exception = se.newInstance(context,
+                new IRubyObject[] {
+                    rbPath,
+                    runtime.newFixnum(mark.getLine() + 1),
+                    runtime.newFixnum(mark.getColumn() + 1),
+                    runtime.newFixnum(mark.getIndex()),
+                    (null == mye.getProblem() ? runtime.getNil() : runtime.newString(mye.getProblem())),
+                    (null == mye.getContext() ? runtime.getNil() : runtime.newString(mye.getContext()))
+                },
+                Block.NULL_BLOCK);
+
+        RubyKernel.raise(context, runtime.getKernel(), new IRubyObject[] { exception }, Block.NULL_BLOCK);
     }
 
     private static int translateStyle(Character style) {
