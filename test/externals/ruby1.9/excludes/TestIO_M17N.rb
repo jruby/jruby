@@ -31,7 +31,6 @@ exclude :test_read_newline_conversion_with_encoding_conversion, "needs investiga
 exclude :test_s_pipe_invalid, "needs investigation"
 exclude :test_s_pipe_undef, "needs investigation"
 exclude :test_s_pipe_undef_replace_string, "needs investigation"
-exclude :test_set_encoding_enc, "needs investigation"
 exclude :test_set_encoding_undef_replace, "charset transcoding only supports single char replacements"
 exclude :test_stdin_external_encoding_with_reopen, "needs investigation"
 exclude :test_terminator_conversion2, "needs investigation"

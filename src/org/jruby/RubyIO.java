@@ -1121,7 +1121,7 @@ public class RubyIO extends RubyObject {
                     setEncodingFromOptions(EncodingOption.getEncodingOptionFromString(context.runtime, externalAsString.asJavaString()));
                 } else {
                     Encoding enc = getEncodingCommon(context, external);
-                    setupReadWriteEncodings(context, enc, null);
+                    setupReadWriteEncodings(context, null, enc);
                 }
                 transcodingActions = CharsetTranscoder.getCodingErrorActions(context, options);
             }
