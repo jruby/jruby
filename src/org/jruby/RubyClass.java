@@ -229,6 +229,10 @@ public class RubyClass extends RubyModule {
         return obj;
     }
 
+    public CallSite getBaseCallSite(int idx) {
+        return baseCallSites[idx];
+    }
+
     public CallSite[] getBaseCallSites() {
         return baseCallSites;
     }
