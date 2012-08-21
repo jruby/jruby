@@ -1078,7 +1078,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         ThreadContext context = getRuntime().getCurrentContext();
         String sep = "";
 
-        for (Map.Entry<String, RubyClass.VariableAccessor> entry : getMetaClass().getVariableAccessorsForRead().entrySet()) {
+        for (Map.Entry<String, RubyClass.VariableAccessor> entry : getMetaClass().getRealClass().getVariableAccessorsForRead().entrySet()) {
             Object value = entry.getValue().get(this);
             if (value == null || !(value instanceof IRubyObject) || !IdUtil.isInstanceVariable(entry.getKey())) continue;
             
