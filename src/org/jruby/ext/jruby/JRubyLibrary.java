@@ -140,6 +140,18 @@ public class JRubyLibrary implements Library {
         return (IRubyObject)unwrapped;
     }
 
+    /**
+     * Provide the "identity" hash code that System.identityHashCode would produce.
+     *
+     * Added here as an extension because calling System.identityHashCode (and other
+     * Java-integration-related mechanisms) will cause some core types to coerce to
+     * Java types, losing their proper identity.
+     */
+    @JRubyMethod(module = true)
+    public static IRubyObject identity_hash(ThreadContext context, IRubyObject recv, IRubyObject obj) {
+        return context.runtime.newFixnum(System.identityHashCode(obj));
+    }
+
     @JRubyMethod(module = true, compat = CompatVersion.RUBY2_0)
     public static IRubyObject ruby2_0(ThreadContext context, IRubyObject recv) {
         return context.runtime.newString("Welcome to the future of Ruby!");

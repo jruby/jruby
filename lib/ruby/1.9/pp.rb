@@ -174,7 +174,7 @@ class PP < PrettyPrint
     end
 
     def object_address_group(obj, &block)
-      id = PointerFormat % (obj.object_id * 2 & PointerMask)
+      id = PointerFormat % JRuby.identity_hash(obj)
       group(1, "\#<#{obj.class}:0x#{id}", '>', &block)
     end
 
