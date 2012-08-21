@@ -254,7 +254,6 @@ public class ScriptingContainer implements EmbedRubyInstanceConfigAdapter {
         if (home != null) {
         	provider.getRubyInstanceConfig().setJRubyHome(home);
         }
-        provider.getRubyInstanceConfig().setCompileMode(CompileMode.OFF);
         provider.getRubyInstanceConfig().setScriptFileName("<script>");
     }
 
