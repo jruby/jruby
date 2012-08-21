@@ -46,7 +46,7 @@ public class ConditionVariable extends RubyObject {
     @JRubyMethod(name = "new", rest = true, meta = true)
     public static ConditionVariable newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         ConditionVariable result = new ConditionVariable(context.runtime, (RubyClass) recv);
-        result.callInit(args, block);
+        result.callInit(context, args, block);
         return result;
     }
 

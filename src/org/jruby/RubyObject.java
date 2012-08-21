@@ -248,23 +248,23 @@ public class RubyObject extends RubyBasicObject {
     }
 
     public final void callInit(ThreadContext context, IRubyObject[] args, Block block) {
-        RuntimeHelpers.invoke(context, this, "initialize", args, block);
+        getMetaClass().getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, this, this, args, block);
     }
 
     public final void callInit(ThreadContext context, Block block) {
-        RuntimeHelpers.invoke(context, this, "initialize", block);
+        getMetaClass().getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, this, this, block);
     }
 
     public final void callInit(ThreadContext context, IRubyObject arg0, Block block) {
-        RuntimeHelpers.invoke(context, this, "initialize", arg0, block);
+        getMetaClass().getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, this, this, arg0, block);
     }
 
     public final void callInit(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Block block) {
-        RuntimeHelpers.invoke(context, this, "initialize", arg0, arg1, block);
+        getMetaClass().getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, this, this, arg0, arg1, block);
     }
 
     public final void callInit(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Block block) {
-        RuntimeHelpers.invoke(context, this, "initialize", arg0, arg1, arg2, block);
+        getMetaClass().getBaseCallSite(RubyClass.CS_IDX_INITIALIZE).call(context, this, this, arg0, arg1, arg2, block);
     }
 
     /**

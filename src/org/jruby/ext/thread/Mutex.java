@@ -50,7 +50,7 @@ public class Mutex extends RubyObject {
     @JRubyMethod(name = "new", rest = true, meta = true)
     public static Mutex newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Mutex result = new Mutex(context.runtime, (RubyClass) recv);
-        result.callInit(args, block);
+        result.callInit(context, args, block);
         return result;
     }
 

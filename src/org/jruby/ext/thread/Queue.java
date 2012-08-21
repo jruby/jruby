@@ -52,7 +52,7 @@ public class Queue extends RubyObject {
     @JRubyMethod(name = "new", rest = true, meta = true)
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         Queue result = new Queue(context.runtime, (RubyClass) recv);
-        result.callInit(args, block);
+        result.callInit(context, args, block);
         return result;
     }
 

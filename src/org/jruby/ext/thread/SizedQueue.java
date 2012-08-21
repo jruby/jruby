@@ -47,7 +47,7 @@ public class SizedQueue extends Queue {
     @JRubyMethod(name = "new", rest = true, meta = true)
     public static IRubyObject newInstance(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         SizedQueue result = new SizedQueue(context.runtime, (RubyClass) recv);
-        result.callInit(args, block);
+        result.callInit(context, args, block);
         return result;
     }
 
