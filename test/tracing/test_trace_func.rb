@@ -227,5 +227,26 @@ class TestTraceFunc < Test::Unit::TestCase
     assert_equal expected, output
   end
 
+  # JRUBY-6832
+  def test_trace_over_nameerror
+    output = nil
+    set_trace_func(proc{ |event, file, line, method, binding, klass|
+      output = binding.eval("[self, s]") if event == "raise"
+    })
+
+    def hello
+      s = "snorkle"
+      s.desnrok
+    end
+
+    begin
+      hello
+    rescue NameError
+    end
+    set_trace_func nil
+
+    assert_equal output, [self, "snorkle"]
+  end
+
 end
 

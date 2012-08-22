@@ -96,12 +96,7 @@ public class RubyKernel {
 
         @Override
         public IRubyObject call(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block) {
-            try {
-                preFrameOnly(context, self, name, block);
-                return methodMissing(context, self, clazz, name, args, block);
-            } finally {
-                postFrameOnly(context);
-            }
+            return methodMissing(context, self, clazz, name, args, block);
         }
 
         public abstract IRubyObject methodMissing(ThreadContext context, IRubyObject self, RubyModule clazz, String name, IRubyObject[] args, Block block);
@@ -271,7 +266,6 @@ public class RubyKernel {
 
     private static IRubyObject methodMissing(ThreadContext context, IRubyObject recv, String name, Visibility lastVis, CallType lastCallType, IRubyObject[] args, Block block) {
         Ruby runtime = context.runtime;
-        // TODO: pass this in?
         RubySymbol symbol = runtime.newSymbol(name);
 
         // create a lightweight thunk
