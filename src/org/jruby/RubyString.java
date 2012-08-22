@@ -5376,12 +5376,12 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return justify19(arg0, arg1, 'c');
     }
 
-    @JRubyMethod
+    @JRubyMethod(reads = BACKREF, writes = BACKREF)
     public IRubyObject partition(ThreadContext context, Block block) {
         return RubyEnumerable.partition(context, this, block);
     }
 
-    @JRubyMethod
+    @JRubyMethod(reads = BACKREF, writes = BACKREF)
     public IRubyObject partition(ThreadContext context, IRubyObject arg, Block block) {
         Ruby runtime = context.runtime;
         final int pos;
@@ -5410,7 +5410,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return RubyArray.newArray(runtime, new IRubyObject[]{this, newEmptyString(runtime), newEmptyString(runtime)});
     }
     
-    @JRubyMethod(name = "rpartition")
+    @JRubyMethod(name = "rpartition", reads = BACKREF, writes = BACKREF)
     public IRubyObject rpartition(ThreadContext context, IRubyObject arg) {
         Ruby runtime = context.runtime;
         final int pos;

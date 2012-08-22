@@ -438,6 +438,20 @@ describe "JRuby's compiler" do
 
     result.should == [1,2,3]
   end
+
+  if is19
+    it "prepares a proper caller scope for partition/rpartition (JRUBY-6827)" do
+      result = compile_and_run %q[
+        def foo
+          Object
+          "/Users/headius/projects/jruby/tmp/perfer/examples/file_stat.rb:4:in `(root)'".rpartition(/:\d+(?:$|:in )/).first
+        end
+
+        foo]
+
+      result.should == '/Users/headius/projects/jruby/tmp/perfer/examples/file_stat.rb'
+    end
+  end
   
   it "does a bunch of other stuff" do
     silence_warnings {
