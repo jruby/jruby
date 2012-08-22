@@ -31,6 +31,16 @@ public class CoverageData {
         
         return coverage;
     }
+
+    public synchronized Map<String, Integer[]> prepareCoverage(String filename, Integer[] lines) {
+        Map<String, Integer[]> coverage = this.coverage;
+
+        if (coverage != null) {
+            coverage.put(filename, lines);
+        }
+
+        return coverage;
+    }
     
     private final EventHook COVERAGE_HOOK = new EventHook() {
         @Override
@@ -42,9 +52,10 @@ public class CoverageData {
             // make sure we have a lines array of acceptable length for the given file
             Integer[] lines = coverage.get(file);
             if (lines == null) {
-                lines = new Integer[line];
-                coverage.put(file, lines);
+                // loaded before coverage; skip
+                return;
             } else if (lines.length <= line) {
+                // can this happen? shouldn't all coverable lines be here already (from parse time)?
                 Integer[] newLines = new Integer[line];
                 System.arraycopy(lines, 0, newLines, 0, lines.length);
                 lines = newLines;

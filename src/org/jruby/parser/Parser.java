@@ -40,6 +40,7 @@ import org.jruby.RubyFile;
 import org.jruby.RubyHash;
 import org.jruby.RubyString;
 import org.jruby.ast.Node;
+import org.jruby.ext.coverage.CoverageData;
 import org.jruby.lexer.yacc.LexerSource;
 import org.jruby.lexer.yacc.SyntaxException;
 import org.jruby.runtime.DynamicScope;
@@ -104,6 +105,7 @@ public class Parser {
         if (blockScope != null) {
             configuration.parseAsBlock(blockScope);
         }
+
         long startTime = System.nanoTime();
         RubyParser parser = RubyParserPool.getInstance().borrowParser(configuration.getVersion());
         RubyParserResult result = null;
@@ -155,6 +157,11 @@ public class Parser {
         
         totalTime += System.nanoTime() - startTime;
         totalBytes += lexerSource.getOffset();
+
+        // set coverage baseline into coverage data
+        if (runtime.getCoverageData().isCoverageEnabled()) {
+            runtime.getCoverageData().prepareCoverage(file, configuration.getCoverage());
+        }
 
         return ast;
     }

@@ -61,6 +61,8 @@ public class ParserConfiguration {
 
     private Encoding defaultEncoding;
     private Ruby runtime;
+
+    private Integer[] coverage;
     
     public ParserConfiguration(Ruby runtime, int lineNumber, boolean inlineSource,
             CompatVersion version) {
@@ -213,5 +215,30 @@ public class ParserConfiguration {
      */
     public boolean isInlineSource() {
         return inlineSource;
+    }
+
+    /**
+     * Zero out coverable lines as they're encountered
+     */
+    public void coverLine(int i) {
+        if (runtime.getCoverageData().isCoverageEnabled()) {
+            if (coverage == null) {
+                coverage = new Integer[i + 1];
+            } else if (coverage.length <= i) {
+                Integer[] newCoverage = new Integer[i + 1];
+                System.arraycopy(coverage, 0, newCoverage, 0, coverage.length);
+                coverage = newCoverage;
+            }
+
+            // zero means coverable, but not yet covered
+            coverage[i] = 0;
+        }
+    }
+
+    /**
+     * Get the coverage array, indicating all coverable lines
+     */
+    public Integer[] getCoverage() {
+        return coverage;
     }
 }
