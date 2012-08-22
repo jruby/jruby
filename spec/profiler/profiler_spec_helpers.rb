@@ -1,5 +1,5 @@
-
 require 'jruby/profiler'
+require 'json'
 
 module JRuby::Profiler::SpecHelpers
   
@@ -28,6 +28,11 @@ module JRuby::Profiler::SpecHelpers
 
   def graph_output
     data_output JRuby::Profiler::GraphProfilePrinter
+  end
+
+  def json_output
+    raw_output = data_output(JRuby::Profiler::JsonProfilePrinter)
+    JSON.parse(raw_output)
   end
 
   def flat_output
