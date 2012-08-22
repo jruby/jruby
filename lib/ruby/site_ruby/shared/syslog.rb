@@ -30,7 +30,7 @@ module Syslog
     # methods
     attach_function :open, "openlog", [:pointer, :int, :int], :void
     attach_function :close, "closelog", [], :void
-    attach_function :write, "syslog", [:int, :string, :string], :void
+    attach_function :write, "syslog", [:int, :string, :varargs], :void
     attach_function :set_mask, "setlogmask", [:int], :int
   end
   
@@ -210,11 +210,12 @@ module Syslog
       self
     end
 
+    FORMAT_STRING = '%s'
     def write(pri, format, *args)
       raise "Syslog must be opened before write" unless @opened
 
       message = format % args
-      Foreign.write(pri, "%s", message)
+      Foreign.write(pri, FORMAT_STRING, :string, message, :pointer, nil)
     end
     private :write
   end
