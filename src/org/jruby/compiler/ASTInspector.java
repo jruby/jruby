@@ -213,7 +213,7 @@ public class ASTInspector {
     public void inspect(Node node) {
         if (RubyInstanceConfig.FULL_TRACE_ENABLED) {
             disable();
-            return;
+            // we still inspect since some nodes change state as a result (JRUBY-6836)
         }
 
         if (node == null) return;
@@ -382,6 +382,8 @@ public class ASTInspector {
                 break;
             default:
                 // long, slow way causes disabling
+                // we still inspect because some nodes may change state (JRUBY-6836)
+                inspect(((DefinedNode)node).getExpressionNode());
                 disable();
             }
             break;
@@ -396,6 +398,8 @@ public class ASTInspector {
         case DVARNODE:
             break;
         case ENSURENODE:
+            inspect(((EnsureNode)node).getBodyNode());
+            inspect(((EnsureNode)node).getEnsureNode());
             disable();
             break;
         case ENCODINGNODE:
@@ -568,6 +572,8 @@ public class ASTInspector {
                 break;
             default:
                 // long, slow way causes disabling for defined
+                inspect(((OpAsgnOrNode)node).getFirstNode());
+                inspect(((OpAsgnOrNode)node).getSecondNode());
                 disable();
             }
             break;
@@ -706,6 +712,7 @@ public class ASTInspector {
             // * a closure within the loop
             // * an eval within the loop
             // * a block-arg-based proc called within the loop
+            // * any case that disables optimization, like rescues and ensures
             if (whileInspector.getFlag(CLOSURE) || whileInspector.getFlag(EVAL) || getFlag(BLOCK_ARG)) {
                 whileNode.containsNonlocalFlow = true;
                 

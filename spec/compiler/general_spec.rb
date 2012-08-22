@@ -416,6 +416,28 @@ describe "JRuby's compiler" do
       compile_and_run('m = Object; class m::FOOCLASS1234; end; module m::FOOMOD1234; end')
     end.should_not raise_error
   end
+
+  it "properly handles non-local flow for a loop inside an ensure (JRUBY-6836)" do
+    ary = []
+    result = compile_and_run '
+      def main
+        ary = []
+        while true
+          begin
+            break
+          ensure
+            ary << 1
+          end
+        end
+        ary << 2
+      ensure
+        ary << 3
+      end
+
+      main'
+
+    result.should == [1,2,3]
+  end
   
   it "does a bunch of other stuff" do
     silence_warnings {
