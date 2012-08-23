@@ -28,11 +28,13 @@ package org.jruby.runtime.profile;
 
 import java.io.PrintStream;
 import java.util.Iterator;
+import java.util.Locale;
 
 import org.jruby.util.collections.IntHashMap;
 
 
 public class JsonProfilePrinter extends ProfilePrinter {
+    private static Locale JSON_LOCALE = Locale.ROOT;
 
     public JsonProfilePrinter(ProfileData profileData) {
         super(profileData);
@@ -68,9 +70,9 @@ public class JsonProfilePrinter extends ProfilePrinter {
             "id", quote(method.serialNumber),
             "name", quote(methodName(method.serialNumber)),
             "total_calls", String.valueOf(method.totalCalls()),
-            "total_time", String.valueOf(method.totalTime()),
-            "self_time", String.valueOf(method.selfTime()),
-            "child_time", String.valueOf(method.childTime()),
+            "total_time", nanosToSecondsString(method.totalTime()),
+            "self_time", nanosToSecondsString(method.selfTime()),
+            "child_time", nanosToSecondsString(method.childTime()),
             "parents", parentCallsToJson(method),
             "children", childCallsToJson(method)
         );
@@ -110,10 +112,14 @@ public class JsonProfilePrinter extends ProfilePrinter {
         return toJsonObject(
             "id", quote(serial),
             "total_calls", String.valueOf(calls),
-            "total_time", String.valueOf(invocations.totalTime()),
-            "self_time", String.valueOf(invocations.selfTime()),
-            "child_time", String.valueOf(invocations.childTime())
+            "total_time", nanosToSecondsString(invocations.totalTime()),
+            "self_time", nanosToSecondsString(invocations.selfTime()),
+            "child_time", nanosToSecondsString(invocations.childTime())
         );
+    }
+
+    private String nanosToSecondsString(long nanos) {
+        return String.format(JSON_LOCALE, "%f", nanos/1.0e9);
     }
 
     private String quote(String str) {
