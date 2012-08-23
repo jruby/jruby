@@ -18,7 +18,6 @@ describe JRuby::Profiler, "::JsonProfilePrinter" do
     end
 
     it 'outputs the name of the thread' do
-      puts json_output
       json_output['thread_name'].should == 'main'
     end
   end
@@ -55,17 +54,17 @@ describe JRuby::Profiler, "::JsonProfilePrinter" do
 
       it 'contains data on the calls from parents, including calls, total, self and child time' do
         method_invocation['parents'].should have(1).item
-        call_data = method_invocation['parents'][top_invocation['id']]
-        call_data.should include('calls' => 1, 'total_time' => anything, 'self_time' => anything, 'child_time' => anything)
+        call_data = method_invocation['parents'].find { |c| c['id'] == top_invocation['id'] }
+        call_data.should include('total_calls' => 1, 'total_time' => anything, 'self_time' => anything, 'child_time' => anything)
       end
 
       it 'contains data on the calls to children' do
         method1_invocation = json_output['methods'].find { |m| m['name'] == 'ProfilerTest#wait' }
         method2_invocation = json_output['methods'].find { |m| m['name'] == 'ProfilerTest#test_instance_method' }
-        call1_data = top_invocation['children'][method1_invocation['id']]
-        call1_data.should include('calls' => 1, 'total_time' => anything, 'self_time' => anything, 'child_time' => anything)
-        call2_data = top_invocation['children'][method2_invocation['id']]
-        call2_data.should include('calls' => 1, 'total_time' => anything, 'self_time' => anything, 'child_time' => anything)
+        call1_data = top_invocation['children'].find { |c| c['id'] == method1_invocation['id'] }
+        call1_data.should include('total_calls' => 1, 'total_time' => anything, 'self_time' => anything, 'child_time' => anything)
+        call2_data = top_invocation['children'].find { |c| c['id'] == method2_invocation['id'] }
+        call2_data.should include('total_calls' => 1, 'total_time' => anything, 'self_time' => anything, 'child_time' => anything)
       end
     end
   end

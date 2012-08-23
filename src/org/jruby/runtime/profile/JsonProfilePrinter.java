@@ -78,37 +78,38 @@ public class JsonProfilePrinter extends ProfilePrinter {
 
     private String parentCallsToJson(MethodData method) {
         if (method.serialNumber == 0) {
-            return toJsonObject(new String[] { });
+            return toJsonArray(new String[] { });
         } else {
             int[] parentSerials = method.parents();
-            String[] parentCalls = new String[parentSerials.length * 2];
+            String[] parentCalls = new String[parentSerials.length];
             for (int i = 0; i < parentSerials.length; i++) {
-                parentCalls[i * 2] = String.valueOf(parentSerials[i]);
-                parentCalls[i * 2 + 1] = callToJson(
+                parentCalls[i] = callToJson(
+                    parentSerials[i],
                     method.invocationsFromParent(parentSerials[i]).totalCalls(),
                     method.rootInvocationsFromParent(parentSerials[i])
                 );
             }
-            return toJsonObject(parentCalls);
+            return toJsonArray(parentCalls);
         }
     }
 
     private String childCallsToJson(MethodData method) {
         int[] childSerials = method.children();
-        String[] childCalls = new String[childSerials.length * 2];
+        String[] childCalls = new String[childSerials.length];
         for (int i = 0; i < childSerials.length; i++) {
-            childCalls[i * 2] = String.valueOf(childSerials[i]);
-            childCalls[i * 2 + 1] = callToJson(
+            childCalls[i] = callToJson(
+                childSerials[i],
                 method.invocationsOfChild(childSerials[i]).totalCalls(),
                 method.rootInvocationsOfChild(childSerials[i])
             );
         }
-        return toJsonObject(childCalls);
+        return toJsonArray(childCalls);
     }
 
-    private String callToJson(int calls, InvocationSet invocations) {
+    private String callToJson(int serial, int calls, InvocationSet invocations) {
         return toJsonObject(
-            "calls", String.valueOf(calls),
+            "id", quote(serial),
+            "total_calls", String.valueOf(calls),
             "total_time", String.valueOf(invocations.totalTime()),
             "self_time", String.valueOf(invocations.selfTime()),
             "child_time", String.valueOf(invocations.childTime())
@@ -117,6 +118,10 @@ public class JsonProfilePrinter extends ProfilePrinter {
 
     private String quote(String str) {
         return String.format("\"%s\"", str);
+    }
+
+    private String quote(int num) {
+        return String.format("\"%d\"", num);
     }
 
     private String quote(long num) {
