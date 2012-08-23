@@ -16,6 +16,11 @@ describe JRuby::Profiler, "::JsonProfilePrinter" do
     it 'contains the total duration' do
       json_output['total_time'].should == 0.0
     end
+
+    it 'outputs the name of the thread' do
+      puts json_output
+      json_output['thread_name'].should == 'main'
+    end
   end
 
   context 'when printing a profile' do
@@ -29,6 +34,10 @@ describe JRuby::Profiler, "::JsonProfilePrinter" do
 
     it 'outputs the total duration' do
       json_output['total_time'].should > 0.0
+    end
+
+    it 'outputs the name of the thread' do
+      json_output['thread_name'].should == 'main'
     end
 
     context 'outputs method data which' do
