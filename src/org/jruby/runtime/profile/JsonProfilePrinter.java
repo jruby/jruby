@@ -47,9 +47,18 @@ public class JsonProfilePrinter extends ProfilePrinter {
     public void printProfile(PrintStream out) {
         Invocation topInvocation = getTopInvocation();
         IntHashMap<MethodData> methods = methodData(topInvocation);
-        String threadName = getProfileData().getThreadContext().getThread().getNativeThread().getName();
+        String threadName = null;
 
-        out.printf("{\n\t\"total_time\":%d,\n\t\"thread_name\":\"%s\",\n\t\"methods\":[\n", topInvocation.getDuration(), threadName);
+        if (getProfileData().getThreadContext().getThread() == null) {
+            threadName = Thread.currentThread().getName();
+        } else {
+            threadName = getProfileData().getThreadContext().getThread().getNativeThread().getName();
+        }
+
+        out.println("{");
+        out.printf("\t\"total_time\":%s,\n", nanosToSecondsString(topInvocation.getDuration()));
+        out.printf("\t\"thread_name\":\"%s\",\n", threadName);
+        out.println("\t\"methods\":[");
 
         Iterator<MethodData> i = methods.values().iterator();
         while (i.hasNext()) {
