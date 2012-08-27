@@ -57,12 +57,16 @@ public final class IdUtil {
     public static boolean isGlobal(String id) {
         return id.length()>0 && id.charAt(0) == '$';
     }
+
+    public static boolean isPredicate(String id) {
+        return id.endsWith("?");
+    }
     
     /**
      * rb_is_local_id and is_local_id
      */    
 	public static boolean isLocal(String id) {
-	    return !isGlobal(id) && !isClassVariable(id) && !isInstanceVariable(id) && !isConstant(id);
+	    return !isGlobal(id) && !isClassVariable(id) && !isInstanceVariable(id) && !isConstant(id) && !isPredicate(id);
     }
 
 	public static boolean isAttrSet(String id) {
