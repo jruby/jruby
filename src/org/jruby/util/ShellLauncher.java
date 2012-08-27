@@ -667,7 +667,7 @@ public class ShellLauncher {
     }
 
     public static POpenProcess popen(Ruby runtime, IRubyObject string, ModeFlags modes) throws IOException {
-        return new POpenProcess(popenShared(runtime, new IRubyObject[] {string}), runtime, modes);
+        return new POpenProcess(popenShared(runtime, new IRubyObject[] {string}, null, true), runtime, modes);
     }
 
     public static POpenProcess popen(Ruby runtime, IRubyObject[] strings, Map env, ModeFlags modes) throws IOException {
@@ -687,7 +687,7 @@ public class ShellLauncher {
     }
 
     private static Process popenShared(Ruby runtime, IRubyObject[] strings, Map env) throws IOException {
-        return popenShared(runtime, strings, env, true);
+        return popenShared(runtime, strings, env, false);
     }
 
     private static Process popenShared(Ruby runtime, IRubyObject[] strings, Map env, boolean addShell) throws IOException {
