@@ -3489,6 +3489,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             if (len <= 0) len = beg = 0;
             return makeShared19(runtime, beg, len);
         } else {
+            if (beg + len > length) len = length - beg;
             return multibyteSubstr19(runtime, enc, len, beg, length);
         }
     }
