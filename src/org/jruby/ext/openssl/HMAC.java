@@ -156,6 +156,12 @@ public class HMAC extends RubyObject {
         return RubyString.newString(getRuntime(), mac.doFinal(ByteList.plain(data)));
     }
 
+    @JRubyMethod
+    public IRubyObject reset() {
+        data.setLength(0);
+        return this;
+    }
+
     @JRubyMethod(name={"hexdigest","inspect","to_s"})
     public IRubyObject hexdigest() {
         mac.reset();
