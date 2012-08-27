@@ -4066,12 +4066,17 @@ public final class Ruby {
     void addProfiledMethod(final String name, final DynamicMethod method) {
         if (!config.isProfiling()) return;
         if (method.isUndefined()) return;
-        if (method.getSerialNumber() > MAX_PROFILE_METHODS) return;
 
         final int index = (int) method.getSerialNumber();
+
+        if (index >= config.getProfileMaxMethods()) {
+            warnings.warnOnce(ID.PROFILE_MAX_METHODS_EXCEEDED, "method count exceeds max of " + config.getProfileMaxMethods() + "; no new methods will be profiled");
+            return;
+        }
+
         synchronized(this) {
             if (profiledMethods.length <= index) {
-                int newSize = Math.min((int) index * 2 + 1, MAX_PROFILE_METHODS);
+                int newSize = Math.min((int) index * 2 + 1, config.getProfileMaxMethods());
                 ProfiledMethod[] newProfiledMethods = new ProfiledMethod[newSize];
                 System.arraycopy(profiledMethods, 0, newProfiledMethods, 0, profiledMethods.length);
                 profiledMethods = newProfiledMethods;
@@ -4409,9 +4414,6 @@ public final class Ruby {
 
     // A global cache for Java-to-Ruby calls
     private final RuntimeCache runtimeCache;
-
-    // The maximum number of methods we will track for profiling purposes
-    private static final int MAX_PROFILE_METHODS = 100000;
     
     // The method objects for serial numbers
     private ProfiledMethod[] profiledMethods = new ProfiledMethod[0];

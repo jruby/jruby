@@ -41,7 +41,8 @@ public enum Category {
     THREADPOOL("thread pooling"),
     MISCELLANEOUS("miscellaneous"),
     DEBUG("debugging and logging"),
-    JAVA_INTEGRATION("java integration");
+    JAVA_INTEGRATION("java integration"),
+    PROFILING("profiling");
 
     Category(String desc) {
         this.desc = desc;

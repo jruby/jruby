@@ -1114,6 +1114,20 @@ public class RubyInstanceConfig {
     public boolean getLoadGemfile() {
         return loadGemfile;
     }
+
+    /**
+     * Set the maximum number of methods to consider when profiling.
+     */
+    public void setProfileMaxMethods(int profileMaxMethods) {
+        this.profileMaxMethods = profileMaxMethods;
+    }
+
+    /**
+     * Get the maximum number of methods to consider when profiling.
+     */
+    public int getProfileMaxMethods() {
+        return profileMaxMethods;
+    }
     
     ////////////////////////////////////////////////////////////////////////////
     // Configuration fields.
@@ -1223,6 +1237,8 @@ public class RubyInstanceConfig {
     private boolean jitBackground = Options.JIT_BACKGROUND.load();
 
     private boolean loadGemfile = false;
+
+    private int profileMaxMethods = Options.PROFILE_MAX_METHODS.load();
     
     ////////////////////////////////////////////////////////////////////////////
     // Support classes, etc.
