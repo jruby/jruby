@@ -3217,7 +3217,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             pos = singleByteOptimizable() ? pos : 
                     StringSupport.nth(checkEncoding(regSub), value.getUnsafeBytes(), value.getBegin(),
                             value.getBegin() + value.getRealSize(),
-                            pos);
+                                      pos) - value.getBegin();
             pos = regSub.adjustStartPos19(this, pos, false);
             pos = regSub.search19(context, this, pos, false);
             pos = subLength(pos);
@@ -3294,7 +3294,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             RubyRegexp regSub = (RubyRegexp) sub;
             if (regSub.length() > 0) {
                 pos = regSub.adjustStartPos(this, pos, true);
-                pos = regSub.search(context, this, pos, true);
+                pos = regSub.search(context, this, pos, true) - value.getBegin();
             }
         } else if (sub instanceof RubyString) {
             pos = strRindex((RubyString) sub, pos);
@@ -3366,7 +3366,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
             pos = singleByteOptimizable() ? pos :
                     StringSupport.nth(value.getEncoding(), value.getUnsafeBytes(), value.getBegin(),
                             value.getBegin() + value.getRealSize(),
-                            pos);
+                                      pos) - value.getBegin();
             if (regSub.length() > 0) {
                 pos = regSub.adjustStartPos19(this, pos, true);
                 pos = regSub.search19(context, this, pos, true);
