@@ -877,6 +877,10 @@ module Net   #:nodoc:
     # If you want to use a proxy, you must set it explicitly.
     #
     def HTTP.Proxy(p_addr, p_port = nil, p_user = nil, p_pass = nil)
+      j_addr = java.lang.System.get_property('http.proxyHost')
+      j_port = java.lang.System.get_property('http.proxyPort')
+      p_addr = p_addr || j_addr
+      p_port = p_port || j_port
       return self unless p_addr
       delta = ProxyDelta
       proxyclass = Class.new(self)
