@@ -488,10 +488,10 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
         modifyCheck();
         if (isShared) {
             IRubyObject[] vals = new IRubyObject[realLength];
-            isShared = false;
             safeArrayCopy(values, begin, vals, 0, realLength);
             begin = 0;            
             values = vals;
+            isShared = false;
         }
     }
 
