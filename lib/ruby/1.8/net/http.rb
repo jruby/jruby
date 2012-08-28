@@ -637,8 +637,16 @@ module Net   #:nodoc:
     #       # connecting proxy.foo.org:8080
     #                     :
     #     }
+    #
+    # In JRuby, this will default to the JSE proxy settings provided in the
+    # 'http.proxyHost' and 'http.proxyPort' Java system properties, if they
+    # are set and no alternative proxy has been provided.
     # 
     def HTTP.Proxy(p_addr, p_port = nil, p_user = nil, p_pass = nil)
+      j_addr = ENV_JAVA['http.proxyHost']
+      j_port = ENV_JAVA['http.proxyPort']
+      p_addr = p_addr || j_addr
+      p_port = p_port || j_port
       return self unless p_addr
       delta = ProxyDelta
       proxyclass = Class.new(self)

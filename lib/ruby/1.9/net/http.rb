@@ -876,9 +876,13 @@ module Net   #:nodoc:
     # Note that net/http does not use the HTTP_PROXY environment variable.
     # If you want to use a proxy, you must set it explicitly.
     #
+    # In JRuby, this will default to the JSE proxy settings provided in the
+    # 'http.proxyHost' and 'http.proxyPort' Java system properties, if they
+    # are set and no alternative proxy has been provided.
+    #
     def HTTP.Proxy(p_addr, p_port = nil, p_user = nil, p_pass = nil)
-      j_addr = java.lang.System.get_property('http.proxyHost')
-      j_port = java.lang.System.get_property('http.proxyPort')
+      j_addr = ENV_JAVA['http.proxyHost']
+      j_port = ENV_JAVA['http.proxyPort']
       p_addr = p_addr || j_addr
       p_port = p_port || j_port
       return self unless p_addr
