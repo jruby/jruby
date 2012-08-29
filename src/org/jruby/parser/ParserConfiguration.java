@@ -62,7 +62,9 @@ public class ParserConfiguration {
     private Encoding defaultEncoding;
     private Ruby runtime;
 
-    private Integer[] coverage;
+    private Integer[] coverage = EMPTY_COVERAGE;
+
+    private static final Integer[] EMPTY_COVERAGE = new Integer[0];
     
     public ParserConfiguration(Ruby runtime, int lineNumber, boolean inlineSource,
             CompatVersion version) {
@@ -221,6 +223,8 @@ public class ParserConfiguration {
      * Zero out coverable lines as they're encountered
      */
     public void coverLine(int i) {
+        if (i < 0) return; // JRUBY-6868: why would there be negative line numbers?
+
         if (runtime.getCoverageData().isCoverageEnabled()) {
             if (coverage == null) {
                 coverage = new Integer[i + 1];

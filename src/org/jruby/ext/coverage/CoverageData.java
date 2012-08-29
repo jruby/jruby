@@ -33,6 +33,8 @@ public class CoverageData {
     }
 
     public synchronized Map<String, Integer[]> prepareCoverage(String filename, Integer[] lines) {
+        assert lines != null;
+
         Map<String, Integer[]> coverage = this.coverage;
 
         if (coverage != null) {
