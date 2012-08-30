@@ -1278,12 +1278,13 @@ public class RubyIO extends RubyObject {
     public IRubyObject binmode() {
         if (isClosed()) throw getRuntime().newIOError("closed stream");
 
-        // rb_econv_binmode({read/write}_conv) stuff missing
-/*        Ruby runtime = getRuntime();
-        if (getExternalEncoding(runtime) == USASCIIEncoding.INSTANCE) {
-            externalEncoding = ASCIIEncoding.INSTANCE;
-        }*/
-        openFile.setBinmode();
+        setAscii8bitBinmode();
+
+        // missing logic:
+        // write_io = GetWriteIO(io);
+        // if (write_io != io)
+        //     rb_io_ascii8bit_binmode(write_io);
+
         return this;
     }
 
