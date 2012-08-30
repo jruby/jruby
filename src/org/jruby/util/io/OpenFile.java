@@ -197,6 +197,11 @@ public class OpenFile {
         mode |= TEXTMODE;
         // FIXME: Make stream(s) know about text mode.
     }
+
+    public void clearTextMode() {
+        mode &= ~TEXTMODE;
+        // FIXME: Make stream(s) know about text mode.
+    }
  
     public void setBinmode() {
         mode |= BINMODE;

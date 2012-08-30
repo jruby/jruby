@@ -4780,6 +4780,16 @@ public class RubyIO extends RubyObject {
             writeEncoding = external;
         }
     }
+
+    // MRI: rb_io_ascii8bit_binmode
+    protected void setAscii8bitBinmode() {
+        Encoding ascii8bit = getRuntime().getEncodingService().getAscii8bitEncoding();
+
+        openFile.setBinmode();
+        openFile.clearTextMode();
+        readEncoding = ascii8bit;
+        writeEncoding = null;
+    }
     
     protected CharsetTranscoder readTranscoder = null;
     protected CharsetTranscoder writeTranscoder = null;

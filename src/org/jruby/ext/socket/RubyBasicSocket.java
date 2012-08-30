@@ -625,8 +625,7 @@ public class RubyBasicSocket extends RubyIO {
         openFile.setMode(OpenFile.READWRITE | OpenFile.SYNC);
 
         // see rsock_init_sock in MRI; sockets are initialized to binary
-        setEncodingFromOptions(EncodingOption.getEncodingOptionFromString(runtime, "binary"));
-        openFile.setBinmode();
+        setAscii8bitBinmode();
     }
     
     private Channel getOpenChannel() throws BadDescriptorException {
