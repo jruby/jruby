@@ -73,6 +73,7 @@ import org.jruby.util.Pack;
 import org.jruby.util.io.BadDescriptorException;
 import org.jruby.util.io.ChannelDescriptor;
 import org.jruby.util.io.ChannelStream;
+import org.jruby.util.io.EncodingOption;
 import org.jruby.util.io.ModeFlags;
 import org.jruby.util.io.OpenFile;
 
@@ -622,6 +623,10 @@ public class RubyBasicSocket extends RubyIO {
         }
 
         openFile.setMode(OpenFile.READWRITE | OpenFile.SYNC);
+
+        // see rsock_init_sock in MRI; sockets are initialized to binary
+        setEncodingFromOptions(EncodingOption.getEncodingOptionFromString(runtime, "binary"));
+        openFile.setBinmode();
     }
     
     private Channel getOpenChannel() throws BadDescriptorException {

@@ -116,7 +116,7 @@ externals/ruby1.9/psych/socket/test_socket
 # No Socket::Option
 #externals/ruby1.9/psych/socket/test_sockopt
 # 100% fail
-#externals/ruby1.9/psych/socket/test_tcp
+externals/ruby1.9/psych/socket/test_tcp
 externals/ruby1.9/psych/socket/test_udp
 externals/ruby1.9/psych/socket/test_unix
 
