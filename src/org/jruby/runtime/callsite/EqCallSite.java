@@ -30,7 +30,7 @@ public class EqCallSite extends NormalCachingCallSite {
     @Override
     public IRubyObject call(ThreadContext context, IRubyObject caller, IRubyObject self, IRubyObject arg) {
         if (self instanceof RubyFixnum && !context.runtime.isFixnumReopened()) {
-            return ((RubyFixnum) self).op_equal19(context, arg);
+            return ((RubyFixnum) self).op_equal(context, arg);
         } else if (self instanceof RubyFloat && !context.runtime.isFloatReopened()) {
             return ((RubyFloat) self).op_equal(context, arg);
         }

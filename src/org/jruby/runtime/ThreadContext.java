@@ -87,6 +87,7 @@ public final class ThreadContext {
     public final Ruby runtime;
     public final IRubyObject nil;
     public final RuntimeCache runtimeCache;
+    public final boolean is19;
     
     // Is this thread currently with in a function trace?
     private boolean isWithinTrace;
@@ -138,6 +139,7 @@ public final class ThreadContext {
     private ThreadContext(Ruby runtime) {
         this.runtime = runtime;
         this.nil = runtime.getNil();
+        this.is19 = runtime.is1_9();
         if (runtime.getInstanceConfig().isProfilingEntireRun())
             startProfiling();
 
