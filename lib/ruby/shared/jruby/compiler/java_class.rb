@@ -443,9 +443,6 @@ JAVA
      * Default constructor. Invokes this(Ruby, RubyClass) with the classloader-static
      * Ruby and RubyClass instances assocated with this class, and then invokes the
      * no-argument 'initialize' method in Ruby.
-     *
-     * @param ruby The JRuby instance this object will belong to
-     * @param metaclass The RubyClass representing the Ruby class of this object
      */
     public #{name}() {
         this(__ruby__, __metaclass__);
