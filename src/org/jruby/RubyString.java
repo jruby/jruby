@@ -151,7 +151,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     private static ObjectAllocator STRING_ALLOCATOR = new ObjectAllocator() {
         public IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return RubyString.newEmptyString(runtime, klass);
+            return RubyString.newAllocatedString(runtime, klass);
         }
     };
 
@@ -383,14 +383,14 @@ public class RubyString extends RubyObject implements EncodingCapable {
         Encoding defaultEncoding = runtime.getEncodingService().getLocaleEncoding();
         if (defaultEncoding == null) defaultEncoding = UTF8;
 
-        Charset charset = defaultEncoding.getCharset();
+        this.value = encodeBytelist(value, defaultEncoding);
+    }
 
-        // if null charset, fall back on Java default charset
-        if (charset == null) charset = Charset.defaultCharset();
-        
-        byte[] bytes = RubyEncoding.encode(value, charset);
+    public RubyString(Ruby runtime, RubyClass rubyClass, CharSequence value, Encoding defaultEncoding) {
+        super(runtime, rubyClass);
+        assert value != null;
 
-        this.value = new ByteList(bytes, defaultEncoding, false);
+        this.value = encodeBytelist(value, defaultEncoding);
     }
 
     public RubyString(Ruby runtime, RubyClass rubyClass, byte[] value) {
@@ -478,6 +478,10 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
     public static RubyString newString(Ruby runtime, String str) {
         return new RubyString(runtime, runtime.getString(), str);
+    }
+
+    public static RubyString newUSASCIIString(Ruby runtime, String str) {
+        return new RubyString(runtime, runtime.getString(), str, USASCIIEncoding.INSTANCE);
     }
     
     public static RubyString newString(Ruby runtime, byte[] bytes) {
@@ -586,8 +590,17 @@ public class RubyString extends RubyObject implements EncodingCapable {
         return newEmptyString(runtime, runtime.getString());
     }
 
+    private static final ByteList EMPTY_ASCII8BIT_BYTELIST = new ByteList(new byte[0], ASCIIEncoding.INSTANCE);
+    private static final ByteList EMPTY_USASCII_BYTELIST = new ByteList(new byte[0], USASCIIEncoding.INSTANCE);
+
+    public static RubyString newAllocatedString(Ruby runtime, RubyClass metaClass) {
+        RubyString empty = new RubyString(runtime, metaClass, EMPTY_ASCII8BIT_BYTELIST);
+        empty.shareLevel = SHARE_LEVEL_BYTELIST;
+        return empty;
+    }
+
     public static RubyString newEmptyString(Ruby runtime, RubyClass metaClass) {
-        RubyString empty = new RubyString(runtime, metaClass, ByteList.EMPTY_BYTELIST);
+        RubyString empty = new RubyString(runtime, metaClass, runtime.is1_9() ? EMPTY_USASCII_BYTELIST : EMPTY_ASCII8BIT_BYTELIST);
         empty.shareLevel = SHARE_LEVEL_BYTELIST;
         return empty;
     }
@@ -7553,6 +7566,18 @@ public class RubyString extends RubyObject implements EncodingCapable {
      */
     public String getUnicodeValue() {
         return RubyEncoding.decodeUTF8(value.getUnsafeBytes(), value.getBegin(), value.getRealSize());
+    }
+
+    private static ByteList encodeBytelist(CharSequence value, Encoding encoding) {
+
+        Charset charset = encoding.getCharset();
+
+        // if null charset, fall back on Java default charset
+        if (charset == null) charset = Charset.defaultCharset();
+
+        byte[] bytes = RubyEncoding.encode(value, charset);
+
+        return new ByteList(bytes, encoding, false);
     }
 
     @Override

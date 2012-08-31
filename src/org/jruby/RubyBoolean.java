@@ -123,7 +123,7 @@ public class RubyBoolean extends RubyObject {
 
         @JRubyMethod(name = "to_s")
         public static IRubyObject false_to_s(IRubyObject f) {
-            return f.getRuntime().newString("false");
+            return RubyString.newUSASCIIString(f.getRuntime(), "false");
         }
     }
     
@@ -145,7 +145,7 @@ public class RubyBoolean extends RubyObject {
 
         @JRubyMethod(name = "to_s")
         public static IRubyObject true_to_s(IRubyObject t) {
-            return t.getRuntime().newString("true");
+            return RubyString.newUSASCIIString(t.getRuntime(), "true");
         }
     }
     

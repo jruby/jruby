@@ -57,6 +57,7 @@ import java.text.DecimalFormatSymbols;
 import java.util.Locale;
 
 import org.jcodings.specific.ASCIIEncoding;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.runtime.ClassIndex;
@@ -66,6 +67,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.ByteList;
+import org.jruby.util.ConvertBytes;
 import org.jruby.util.ConvertDouble;
 import org.jruby.util.Sprintf;
 
@@ -247,6 +249,9 @@ public class RubyFloat extends RubyNumeric {
         while (buf.get(p - 1) == '0' && ascii.isDigit(buf.get(p - 2))) p--;
         System.arraycopy(buf.getUnsafeBytes(), e, buf.getUnsafeBytes(), p, buf.getRealSize() - e);
         buf.setRealSize(p + buf.getRealSize() - e);
+
+        if (getRuntime().is1_9()) buf.setEncoding(USASCIIEncoding.INSTANCE);
+
         return runtime.newString(buf);
     }
 

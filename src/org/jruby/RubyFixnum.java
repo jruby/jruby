@@ -39,6 +39,8 @@ package org.jruby;
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
@@ -49,6 +51,7 @@ import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.UnmarshalStream;
+import org.jruby.util.ByteList;
 import org.jruby.util.ConvertBytes;
 import org.jruby.util.Numeric;
 import org.jruby.util.TypeCoercer;
@@ -291,7 +294,9 @@ public class RubyFixnum extends RubyInteger {
     @Override
     public RubyString to_s() {
         int base = 10;
-        return getRuntime().newString(ConvertBytes.longToByteList(value, base));
+        ByteList bl = ConvertBytes.longToByteList(value, base);
+        if (getRuntime().is1_9()) bl.setEncoding(USASCIIEncoding.INSTANCE);
+        return getRuntime().newString(bl);
     }
     
     @JRubyMethod
@@ -300,7 +305,9 @@ public class RubyFixnum extends RubyInteger {
         if (base < 2 || base > 36) {
             throw getRuntime().newArgumentError("illegal radix " + base);
         }
-        return getRuntime().newString(ConvertBytes.longToByteList(value, base));
+        ByteList bl = ConvertBytes.longToByteList(value, base);
+        if (getRuntime().is1_9()) bl.setEncoding(USASCIIEncoding.INSTANCE);
+        return getRuntime().newString(bl);
     }
 
     /** fix_id2name

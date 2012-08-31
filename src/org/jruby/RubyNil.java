@@ -132,7 +132,12 @@ public class RubyNil extends RubyObject {
      */
     @JRubyMethod(name = "inspect")
     public static RubyString inspect(IRubyObject recv) {
-        return recv.getRuntime().newString("nil");
+        Ruby runtime = recv.getRuntime();
+        if (runtime.is1_9()) {
+            return RubyString.newUSASCIIString(runtime, "nil");
+        } else {
+            return RubyString.newString(runtime, "nil");
+        }
     }
     
     /** nil_type
