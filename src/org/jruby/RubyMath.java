@@ -489,15 +489,13 @@ public class RubyMath {
         double result;
 
         if (value < 0) {
-            result = Double.NaN;
+            throw recv.getRuntime().newMathDomainError("sqrt");
         } else if (value == 0.0) {
-            // MRI returns 0.0 (not -0.0) for sqrt(-0.0)
             result = 0.0;
-        } else{
+        } else {
             result = Math.sqrt(value);
         }
 
-        domainCheck19(recv, result, "sqrt");
         return RubyFloat.newFloat(recv.getRuntime(), result);
     }
     
