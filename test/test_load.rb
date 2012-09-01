@@ -185,6 +185,10 @@ OUT
     $:.shift
   end
 
+  def test_load_rb_if_jar_doesnt_exist
+    require 'test/fake.jar' # test/fake.jar does not exist, but test/fake.jar.rb does.
+  end
+
   def test_overriding_require_shouldnt_cause_problems
     eval(<<DEPS, binding, "deps")
 class ::Object

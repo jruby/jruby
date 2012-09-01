@@ -167,7 +167,7 @@ public class LoadService {
         private static final String[] allSuffixes;
 
         static {                // compute based on platform
-            extensionSuffixes = new String[2];
+            extensionSuffixes = new String[3];
             extensionSuffixes[0] = ".jar";
             if (Platform.IS_WINDOWS) {
                 extensionSuffixes[1] = ".dll";
@@ -176,6 +176,7 @@ public class LoadService {
             } else {
                 extensionSuffixes[1] = ".so";
             }
+            extensionSuffixes[2] = ".jar.rb";
             allSuffixes = new String[sourceSuffixes.length + extensionSuffixes.length];
             System.arraycopy(sourceSuffixes, 0, allSuffixes, 0, sourceSuffixes.length);
             System.arraycopy(extensionSuffixes, 0, allSuffixes, sourceSuffixes.length, extensionSuffixes.length);
