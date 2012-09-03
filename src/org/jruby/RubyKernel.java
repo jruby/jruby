@@ -189,14 +189,16 @@ public class RubyKernel {
         IRubyObject existingValue = module.fastFetchConstant(baseName); 
         if (existingValue != null && existingValue != RubyObject.UNDEF) return runtime.getNil();
 
+        final ThreadContext context = runtime.getCurrentContext();
+
         module.defineAutoload(baseName, new IAutoloadMethod() {
             public String file() {
                 return file.toString();
             }
 
             public void load(Ruby runtime) {
-                if (runtime.getLoadService().lockAndRequire(file())) {
-                    // Do not finish autoloading by cyclic autoload 
+                if (runtime.getKernel().callMethod(context, "require", file).isTrue()) {
+                    // Do not finish autoloading by cyclic autoload
                     module.finishAutoload(baseName);
                 }
             }
