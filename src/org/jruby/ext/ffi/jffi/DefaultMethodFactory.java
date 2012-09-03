@@ -477,7 +477,9 @@ public final class DefaultMethodFactory {
         }
 
         public final IRubyObject invoke(ThreadContext context, Function function, HeapInvocationBuffer args) {
-            Buffer buf = new Buffer(context.getRuntime(), invoker.invokeStruct(function, args), 0, info.getStructLayout().getSize());
+            byte[] returnBuffer = new byte[info.getStructLayout().getSize()];
+            invoker.invokeStruct(function, args, returnBuffer, 0);
+            Buffer buf = new Buffer(context.getRuntime(), returnBuffer, 0, returnBuffer.length);
             return info.getStructClass().newInstance(context, new IRubyObject[] { buf }, Block.NULL_BLOCK);
         }
     }
@@ -836,7 +838,9 @@ public final class DefaultMethodFactory {
                 if (io.isNull()) {
                     throw context.getRuntime().newRuntimeError("Cannot use a NULL pointer as a struct by value argument");
                 }
-                buffer.putStruct(((DirectMemoryIO) io).getAddress());
+                byte[] tmp = new byte[layout.getSize()];
+                io.get(0, tmp, 0, tmp.length);
+                buffer.putStruct(tmp, 0);
 
             } else if (io instanceof ArrayMemoryIO) {
                 ArrayMemoryIO aio = (ArrayMemoryIO) io;
