@@ -4,11 +4,10 @@
   <parent>
     <groupId>org.jruby</groupId>
     <artifactId>shared</artifactId>
-    <version>1.7.0.preview2</version>
+    <version>1.7.0.preview3</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
-  <groupId>org.jruby</groupId>
   <artifactId>jruby-dist</artifactId>
   <packaging>pom</packaging>
   <name>JRuby Distribution</name>
