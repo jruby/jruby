@@ -1182,6 +1182,8 @@ public final class Ruby {
         encodingService = new EncodingService(this);
 
         RubySymbol.createSymbolClass(this);
+        
+        recursiveKey = newSymbol("__recursive_key__");
 
         if (profile.allowClass("ThreadGroup")) {
             RubyThreadGroup.createThreadGroupClass(this);
@@ -1377,7 +1379,7 @@ public final class Ruby {
             keyError = defineClassIfAllowed("KeyError", indexError);
 
             mathDomainError = defineClassUnder("DomainError", argumentError, argumentError.getAllocator(), mathModule);
-            recursiveKey = newSymbol("__recursive_key__");
+            inRecursiveListOperation.set(false);
         }
 
         initErrno();
@@ -2774,6 +2776,9 @@ public final class Ruby {
     public void tearDown(boolean systemExit) {
         int status = 0;
 
+        // clear out threadlocals so they don't leak
+        recursive = new ThreadLocal<Map<String, RubyHash>>();
+
         while (!atExitBlocks.empty()) {
             RubyProc proc = atExitBlocks.pop();
             try {
@@ -3712,7 +3717,7 @@ public final class Ruby {
      * @return
      */
     public IRubyObject execRecursive(RecursiveFunction func, IRubyObject obj) {
-        if (!inRecursiveListOperation) {
+        if (!inRecursiveListOperation.get()) {
             throw newThreadError("BUG: execRecursive called outside recursiveListOperation");
         }
         return execRecursiveInternal(func, obj, null, false);
@@ -3751,14 +3756,14 @@ public final class Ruby {
      */
     public <T extends IRubyObject> T recursiveListOperation(Callable<T> body) {
         try {
-            inRecursiveListOperation = true;
+            inRecursiveListOperation.set(true);
             return body.call();
         } catch (Exception e) {
             UnsafeFactory.getUnsafe().throwException(e);
             return null; // not reached
         } finally {
             recursiveListClear();
-            inRecursiveListOperation = false;
+            inRecursiveListOperation.set(false);
         }
     }
 
@@ -4281,5 +4286,5 @@ public final class Ruby {
     // structures and such for recursive operations
     private ThreadLocal<Map<String, RubyHash>> recursive = new ThreadLocal<Map<String, RubyHash>>();
     private RubySymbol recursiveKey;
-    private boolean inRecursiveListOperation;
+    private ThreadLocal<Boolean> inRecursiveListOperation = new ThreadLocal<Boolean>();
 }
