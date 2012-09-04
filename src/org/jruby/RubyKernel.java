@@ -208,8 +208,9 @@ public class RubyKernel {
             }
 
             public void load(Ruby runtime) {
-                if (runtime.getLoadService().autoloadRequire(file())) {
-                    // Do not finish autoloading by cyclic autoload 
+                final ThreadContext context = runtime.getCurrentContext();
+                if (runtime.getKernel().callMethod(context, "require", file).isTrue()) {
+                    // Do not finish autoloading by cyclic autoload
                     module.finishAutoload(baseName);
                 }
             }
