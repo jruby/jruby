@@ -21,6 +21,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef __sun
+  #include <alloca.h>
+#endif
 #include "jruby.h"
 #include "ruby.h"
 #include "JLocalEnv.h"
