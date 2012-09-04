@@ -110,6 +110,9 @@ public class RubyMath {
     public static RubyFloat atan219(IRubyObject recv, IRubyObject x, IRubyObject y) {
         double valuea = needFloat(x).getDoubleValue();
         double valueb = needFloat(y).getDoubleValue();
+        if (Double.isInfinite(valuea) && Double.isInfinite(valueb)) {
+            throw recv.getRuntime().newMathDomainError("atan2");
+        }
         return RubyFloat.newFloat(recv.getRuntime(), Math.atan2(valuea, valueb));
     }
 
@@ -161,7 +164,7 @@ public class RubyMath {
     public static RubyFloat asin19(IRubyObject recv, IRubyObject x) {
         double value = needFloat(x).getDoubleValue();
         double result = Math.asin(value);
-        domainCheck(recv, result, "asin");        
+        domainCheck19(recv, result, "asin");
         return RubyFloat.newFloat(recv.getRuntime(),result);
     }
 
@@ -177,7 +180,7 @@ public class RubyMath {
     public static RubyFloat acos19(IRubyObject recv, IRubyObject x) {
         double value = needFloat(x).getDoubleValue();
         double result = Math.acos(value);  
-        domainCheck(recv, result, "acos");
+        domainCheck19(recv, result, "acos");
         return RubyFloat.newFloat(recv.getRuntime(), result);
     }
     
@@ -190,6 +193,7 @@ public class RubyMath {
     @JRubyMethod(name = "atan", required = 1, module = true, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
     public static RubyFloat atan19(IRubyObject recv, IRubyObject x) {
         double value = needFloat(x).getDoubleValue();
+        domainCheck19(recv, value, "atan");
         return RubyFloat.newFloat(recv.getRuntime(),Math.atan(value));
     }
 
@@ -258,7 +262,7 @@ public class RubyMath {
             result = 0.69314718055994530941723212145818 + Math.log(value);
         }
         
-        domainCheck(recv, result, "acosh");
+        domainCheck19(recv, result, "acosh");
         
         return RubyFloat.newFloat(recv.getRuntime(),result);
     }
@@ -361,11 +365,10 @@ public class RubyMath {
     public static RubyFloat atanh_19(IRubyObject recv, IRubyObject x) {
         double value = needFloat(x).getDoubleValue();
         double  y = Math.abs(value);
-        if (y==1.0) {
-            throw recv.getRuntime().newErrnoEDOMError("atanh");
+        if (value < -1.0 || value > 1.0) {
+            throw recv.getRuntime().newMathDomainError("atanh");
         }
         double result = atanh_common(recv, x);
-        domainCheck19(recv, result, "atanh");
         return RubyFloat.newFloat(recv.getRuntime(), result);
     }
 
@@ -486,12 +489,13 @@ public class RubyMath {
         double result;
 
         if (value < 0) {
-            result = Double.NaN;
-        } else{
+            throw recv.getRuntime().newMathDomainError("sqrt");
+        } else if (value == 0.0) {
+            result = 0.0;
+        } else {
             result = Math.sqrt(value);
         }
-        
-        domainCheck19(recv, result, "sqrt");
+
         return RubyFloat.newFloat(recv.getRuntime(), result);
     }
     
