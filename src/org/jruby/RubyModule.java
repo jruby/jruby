@@ -1307,6 +1307,11 @@ public class RubyModule extends RubyObject {
             visibility = PRIVATE;
             // FIXME warning
         }
+
+        if (!(IdUtil.isLocal(internedName) || IdUtil.isConstant(internedName))) {
+            throw runtime.newNameError("invalid attribute name", internedName);
+        }
+
         final String variableName = ("@" + internedName).intern();
         if (readable) {
             addMethod(internedName, new JavaMethodZero(this, visibility, CallConfiguration.FrameNoneScopeNone) {
