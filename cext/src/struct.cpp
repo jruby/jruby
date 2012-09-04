@@ -16,6 +16,9 @@
  * version 3 along with this work.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifdef __sun
+  #include <alloca.h>
+#endif
 #include "ruby.h"
 #include "jruby.h"
 #include "JLocalEnv.h"
