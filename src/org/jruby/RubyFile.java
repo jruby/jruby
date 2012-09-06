@@ -35,7 +35,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import com.kenai.constantine.platform.OpenFlags;
+import jnr.constants.platform.OpenFlags;
 import org.jcodings.Encoding;
 import org.jruby.util.io.OpenFile;
 import org.jruby.util.io.ChannelDescriptor;
@@ -59,8 +59,8 @@ import org.jcodings.specific.ASCIIEncoding;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
-import org.jruby.ext.posix.FileStat;
-import org.jruby.ext.posix.util.Platform;
+import jnr.posix.FileStat;
+import jnr.posix.util.Platform;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
@@ -265,7 +265,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
                 // an invalid value if it is not defined by the platform.
                 final RubyFixnum cvalue = f == OpenFlags.O_ACCMODE
                         ? runtime.newFixnum(ModeFlags.ACCMODE)
-                        : runtime.newFixnum(f.value());
+                        : runtime.newFixnum(f.intValue());
                 fileClass.fastSetConstant(cname, cvalue);
                 constants.fastSetConstant(cname, cvalue);
             }

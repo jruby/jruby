@@ -11,7 +11,6 @@ rescue # jarjar renames things, so we try the renamed version
 end
 
 class MockMethodVisitor
-  include MethodVisitor
   attr_accessor :calls
 
   def initialize

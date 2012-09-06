@@ -47,7 +47,7 @@ import org.jruby.RubyIO;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyString;
 import org.jruby.exceptions.RaiseException;
-import org.jruby.ext.posix.util.Platform;
+import jnr.posix.util.Platform;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.builtin.IRubyObject;

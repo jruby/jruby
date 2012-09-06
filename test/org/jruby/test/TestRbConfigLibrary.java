@@ -1,7 +1,7 @@
 package org.jruby.test;
 
 import org.jruby.Ruby;
-import org.jruby.ext.posix.util.Platform;
+import jnr.posix.util.Platform;
 
 public class TestRbConfigLibrary extends TestRubyBase {
 

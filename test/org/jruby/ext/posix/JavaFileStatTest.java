@@ -5,9 +5,10 @@
 
 package org.jruby.ext.posix;
 
+import jnr.posix.JavaFileStat;
 import junit.framework.TestCase;
 
-import org.jruby.ext.posix.util.Platform;
+import jnr.posix.util.Platform;
 
 /**
  *

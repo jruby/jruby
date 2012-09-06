@@ -29,7 +29,7 @@
 package org.jruby.ext.ffi.io;
 
 import org.jruby.Ruby;
-import org.jruby.ext.posix.LibC;
+import jnr.posix.LibC;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ByteChannel;

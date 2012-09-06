@@ -38,7 +38,7 @@ import java.util.zip.ZipEntry;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyFile;
 
-import org.jruby.ext.posix.JavaSecuredFile;
+import jnr.posix.JavaSecuredFile;
 import org.jruby.platform.Platform;
 
 /**

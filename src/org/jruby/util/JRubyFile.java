@@ -37,7 +37,7 @@ import java.io.IOException;
 
 import org.jruby.Ruby;
 
-import org.jruby.ext.posix.JavaSecuredFile;
+import jnr.posix.JavaSecuredFile;
 import org.jruby.platform.Platform;
 
 /**
