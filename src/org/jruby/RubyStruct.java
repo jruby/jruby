@@ -66,7 +66,7 @@ import static org.jruby.runtime.MethodIndex.HASH;
  */
 @JRubyClass(name="Struct")
 public class RubyStruct extends RubyObject {
-    private IRubyObject[] values;
+    private final IRubyObject[] values;
 
     /**
      * Constructor for RubyStruct.
@@ -481,7 +481,6 @@ public class RubyStruct extends RubyObject {
     @Override
     public void copySpecialInstanceVariables(IRubyObject clone) {
         RubyStruct struct = (RubyStruct)clone;
-        struct.values = new IRubyObject[values.length];
         System.arraycopy(values, 0, struct.values, 0, values.length);
     }
 
@@ -761,7 +760,6 @@ public class RubyStruct extends RubyObject {
         if (this == arg) return this;
         RubyStruct original = (RubyStruct) arg;
         
-        values = new IRubyObject[original.values.length];
         System.arraycopy(original.values, 0, values, 0, original.values.length);
 
         return this;
