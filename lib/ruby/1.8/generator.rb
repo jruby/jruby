@@ -1,4 +1,4 @@
-# Because generator is needed by Enumerator in 1.8.7 mode, we moved generator
-# logic to src/bultin/generator_internal.rb and require that here and from
-# within JRuby, so that Enumerator works even without stdlib present.
-require 'generator_internal'
+# Generator logic is always loaded because we need it for Enumerator#next.
+# However, we namespace it under JRuby normally so it does not show up at
+# toplevel until actually required. See JRUBY-5675.
+Generator = JRuby::Generator

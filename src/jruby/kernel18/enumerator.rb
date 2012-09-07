@@ -9,7 +9,7 @@ class Enumerable::Enumerator
         @__object__.respond_to?(iter_for_method)
       @__object__.send iter_for_method
     else
-      Generator::Threaded.new(self)
+      JRuby::Generator::Threaded.new(self)
     end
   end
   private :__generator, :__choose_generator
