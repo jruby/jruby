@@ -45,7 +45,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jruby.Ruby;
-import org.jruby.javasupport.JavaSupport;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.FieldVisitor;
