@@ -101,7 +101,7 @@
   </dependencies>
 
   <properties>
-    <asm.version>3.3.1</asm.version>
+    <asm.version>4.0</asm.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
 
