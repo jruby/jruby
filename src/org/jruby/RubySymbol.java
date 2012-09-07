@@ -436,8 +436,23 @@ public class RubySymbol extends RubyObject {
             public IRubyObject yield(ThreadContext context, IRubyObject value, IRubyObject self, RubyModule klass, boolean aValue, Binding binding, Type type) {
                 RubyArray array = aValue && value instanceof RubyArray ?
                         (RubyArray) value : ArgsUtil.convertToRubyArray(context.runtime, value, false);
-                
+
                 return yieldInner(context, array);
+            }
+
+            @Override
+            public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, Binding binding, Block.Type type) {
+                return site.call(context, arg0, arg0);
+            }
+
+            @Override
+            public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, Binding binding, Block.Type type) {
+                return site.call(context, arg0, arg0, arg1);
+            }
+
+            @Override
+            public IRubyObject yieldSpecific(ThreadContext context, IRubyObject arg0, IRubyObject arg1, IRubyObject arg2, Binding binding, Block.Type type) {
+                return site.call(context, arg0, arg0, arg1, arg2);
             }
 
             @Override
