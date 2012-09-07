@@ -114,7 +114,8 @@ public class RubyEnumerator extends RubyObject {
             throw context.runtime.newArgumentError(0, 1);
         }
 
-        IRubyObject obj = context.runtime.getClass("Generator").callMethod(context, "new", new IRubyObject[0], block);
+        // TODO: avoid double lookup
+        IRubyObject obj = context.runtime.getModule("JRuby").getClass("Generator").callMethod(context, "new", new IRubyObject[0], block);
         return initialize19(context, obj, block);
     }
 

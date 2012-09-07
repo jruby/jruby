@@ -1,4 +1,6 @@
 class Enumerator
+  Generator = JRuby::Generator
+
   def __generator
     @generator ||= __choose_generator
   end
