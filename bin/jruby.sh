@@ -248,16 +248,13 @@ if [[ -z "$JAVA_ENCODING" ]]; then
   java_args="${java_args} -Dfile.encoding=UTF-8"
 fi
 
-# Add a property to report memory max
-JAVA_OPTS="$JAVA_OPTS $JAVA_VM -Djruby.memory.max=${JAVA_MEM} -Djruby.stack.max=${JAVA_STACK}"
-
 # Append the rest of the arguments
 ruby_args="${ruby_args} $@"
 
 # Put the ruby_args back into the position arguments $1, $2 etc
 set -- "${ruby_args}"
 
-JAVA_OPTS="$JAVA_OPTS $JAVA_MEM $JAVA_STACK"
+JAVA_OPTS="$JAVA_OPTS $JAVA_VM $JAVA_MEM $JAVA_STACK"
 
 JFFI_BOOT=""
 if [ -d "$JRUBY_HOME/lib/native/" ]; then
