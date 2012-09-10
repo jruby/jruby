@@ -75,9 +75,19 @@ public class RubyProc extends RubyObject implements DataType {
         this(runtime, rubyClass, type);
         this.sourcePosition = sourcePosition;
     }
+    
+    private static ObjectAllocator PROC_ALLOCATOR = new ObjectAllocator() {
+        public IRubyObject allocate(Ruby runtime, RubyClass klass) {
+            RubyProc instance = new RubyProc(runtime, runtime.getProc(), Block.Type.PROC);
+
+            instance.setMetaClass(klass);
+
+            return instance;
+        }
+    };
 
     public static RubyClass createProcClass(Ruby runtime) {
-        RubyClass procClass = runtime.defineClass("Proc", runtime.getObject(), ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
+        RubyClass procClass = runtime.defineClass("Proc", runtime.getObject(), PROC_ALLOCATOR);
         runtime.setProc(procClass);
 
         procClass.index = ClassIndex.PROC;
@@ -126,7 +136,7 @@ public class RubyProc extends RubyObject implements DataType {
             return block.getProcObject();
         }
         
-        RubyProc obj = new RubyProc(context.runtime, (RubyClass)recv, Block.Type.PROC);
+        RubyProc obj = (RubyProc)((RubyClass) recv).allocate();
         obj.setup(block);
         
         obj.callMethod(context, "initialize", args, block);
