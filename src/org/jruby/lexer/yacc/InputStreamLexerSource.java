@@ -263,7 +263,7 @@ public class InputStreamLexerSource extends LexerSource {
                 }
                 buffer.append(c);
             }
-            for (; i >= 0; i++) {
+            for (; i >= 0; i--) {
                 unread(buffer.charAt(i));
             }
             buffer.append(new byte[] {' ', '.', '.', '.'});
