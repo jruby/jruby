@@ -15,15 +15,15 @@ module Gem::LocalRemoteOptions
   ##
   # Allows OptionParser to handle HTTP URIs.
 
-  def accept_uri http = nil
-    OptionParser.accept(http ? URI::HTTP : URI::Generic) do |value|
+  def accept_uri_http
+    OptionParser.accept URI::HTTP do |value|
       begin
         uri = URI.parse value
       rescue URI::InvalidURIError
         raise OptionParser::InvalidArgument, value
       end
 
-      if http && !['http', 'https', 'file'].include?(uri.scheme)
+      unless ['http', 'https', 'file'].include?(uri.scheme)
          raise OptionParser::InvalidArgument, value
       end
 
@@ -85,7 +85,7 @@ module Gem::LocalRemoteOptions
   # Add the --http-proxy option
 
   def add_proxy_option
-    accept_uri :http
+    accept_uri_http
 
     add_option(:"Local/Remote", '-p', '--[no-]http-proxy [URL]', URI::HTTP,
                'Use HTTP proxy for remote operations') do |value, options|
@@ -98,9 +98,9 @@ module Gem::LocalRemoteOptions
   # Add the --source option
 
   def add_source_option
-    accept_uri
+    accept_uri_http
 
-    add_option(:"Local/Remote", '--source URL', URI::Generic,
+    add_option(:"Local/Remote", '--source URL', URI::HTTP,
                'Add URL as a remote source for gems') do |source, options|
 
       source << '/' if source !~ /\/\z/

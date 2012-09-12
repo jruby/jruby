@@ -118,11 +118,6 @@ class Gem::RemoteFetcher
                              URI.escape(source_uri.to_s))
     end
 
-    # if it's a maven artifact, use maven to fetch it
-    if maven_spec? spec.name, source_uri
-      return download_maven(spec, local_gem_path)
-    end
-
     scheme = source_uri.scheme
 
     # URI.parse gets confused by MS Windows paths with forward slashes.
