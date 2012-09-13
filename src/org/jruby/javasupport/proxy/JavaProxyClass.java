@@ -118,8 +118,8 @@ public class JavaProxyClass extends JavaProxyReflectionObject {
         runtimeTLS.set(runtime);
         try {
             ClassLoader loader = runtime.getJRubyClassLoader();
-
-            return JavaProxyClassFactory.newProxyClass(runtime, loader, null, superClass, interfaces, names);
+            
+            return runtime.getJavaProxyClassFactory().newProxyClass(runtime, loader, null, superClass, interfaces, names);
         } finally {
             runtimeTLS.set(save);
         }

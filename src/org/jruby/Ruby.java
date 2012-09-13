@@ -164,6 +164,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
+import org.jruby.javasupport.proxy.JavaProxyClassFactory;
 
 /**
  * The Ruby object represents the top-level of a JRuby "instance" in a given VM.
@@ -2695,6 +2696,15 @@ public final class Ruby {
         return boundMethods;
     }
 
+    public void setJavaProxyClassFactory(JavaProxyClassFactory factory) {
+        this.javaProxyClassFactory = factory;
+    }
+    
+    public JavaProxyClassFactory getJavaProxyClassFactory() {
+        return javaProxyClassFactory;
+    }
+            
+
     public class CallTraceFuncHook extends EventHook {
         private RubyProc traceFunc;
         
@@ -4463,4 +4473,6 @@ public final class Ruby {
     private ThreadLocal<Boolean> inRecursiveListOperation = new ThreadLocal<Boolean>();
 
     private FFI ffi;
+    
+    private JavaProxyClassFactory javaProxyClassFactory;
 }
