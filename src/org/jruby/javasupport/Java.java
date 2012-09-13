@@ -54,6 +54,8 @@ import java.math.BigInteger;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.jruby.MetaClass;
 import org.jruby.Ruby;
@@ -98,6 +100,7 @@ import org.jruby.java.proxies.MapJavaProxy;
 import org.jruby.java.proxies.InterfaceJavaProxy;
 import org.jruby.java.proxies.JavaProxy;
 import org.jruby.java.proxies.RubyObjectHolderProxy;
+import org.jruby.javasupport.proxy.JavaProxyClassFactory;
 import org.jruby.util.ClassCache.OneShotClassLoader;
 import org.jruby.util.cli.Options;
 
@@ -120,6 +123,8 @@ public class Java implements Library {
         ajp.includeModule(runtime.getEnumerable());
         
         RubyClassPathVariable.createClassPathVariable(runtime);
+        
+        runtime.setJavaProxyClassFactory(JavaProxyClassFactory.createFactory());
 
         // modify ENV_JAVA to be a read/write version
         Map systemProps = new SystemPropertiesMap();
