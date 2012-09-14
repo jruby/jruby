@@ -23,6 +23,7 @@ src_gen
 docs/api
 test/rails
 test/prawn
+gem/Manifest.txt
 gem/lib/*.jar
 gem/lib/jruby-jars/version.rb
 gem/pkg
