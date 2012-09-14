@@ -3,9 +3,9 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <parent>
     <groupId>org.jruby</groupId>
-    <artifactId>jruby-common</artifactId>
-    <version>1.7.0.preview2</version>
-    <relativePath>../pom.xml</relativePath>
+    <artifactId>shared</artifactId>
+    <version>1.7.0.preview3</version>
+    <relativePath>../../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>jruby</artifactId>
@@ -13,75 +13,8 @@
   <name>JRuby</name>
 
   <properties>
-    <jar.scope>provided</jar.scope>
     <ant.target>jar-dist</ant.target>
   </properties>
-
-  <dependencies>
-    <!-- JRuby dependencies included in the jar and *not* rewritten. -->
-    <dependency>
-      <groupId>org.jruby.joni</groupId>
-      <artifactId>joni</artifactId>
-      <scope>${jar.scope}</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.github.jnr</groupId>
-      <artifactId>jnr-netdb</artifactId>
-      <scope>${jar.scope}</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.github.jnr</groupId>
-      <artifactId>jnr-posix</artifactId>
-      <scope>${jar.scope}</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.jruby.extras</groupId>
-      <artifactId>bytelist</artifactId>
-      <scope>${jar.scope}</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.github.jnr</groupId>
-      <artifactId>jnr-constants</artifactId>
-      <scope>${jar.scope}</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.jruby.jcodings</groupId>
-      <artifactId>jcodings</artifactId>
-      <scope>${jar.scope}</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.github.jnr</groupId>
-      <artifactId>jffi</artifactId>
-      <scope>${jar.scope}</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.yaml</groupId>
-      <artifactId>snakeyaml</artifactId>
-      <scope>${jar.scope}</scope>
-    </dependency>
-    <dependency>
-      <groupId>jline</groupId>
-      <artifactId>jline</artifactId>
-      <scope>${jar.scope}</scope>
-    </dependency>
-    <dependency>
-      <groupId>joda-time</groupId>
-      <artifactId>joda-time</artifactId>
-      <scope>${jar.scope}</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
-      <version>1.6.1</version>
-      <scope>${jar.scope}</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-simple</artifactId>
-      <version>1.6.1</version>
-      <scope>${jar.scope}</scope>
-    </dependency>
-  </dependencies>
 
   <build>
     <plugins>
