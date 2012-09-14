@@ -426,7 +426,13 @@ other than ASM, which is rewritten to avoid conflicts. -->
             <fileset dir="${jruby.classes.dir}"/>
             <zipfileset src="${build.lib.dir}/${asm.jar}"/>
             <zipfileset src="${build.lib.dir}/${asm.util.jar}"/>
+            <zipfileset src="${build.lib.dir}/${asm.tree.jar}"/>
+            <zipfileset src="${build.lib.dir}/${asm.commons.jar}"/>
+            <zipfileset src="${build.lib.dir}/${asm.analysis.jar}"/>
             <zipfileset src="${build.lib.dir}/yecht.jar"/>
+            <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
+            <zipfileset src="${build.lib.dir}/invokebinder.jar"/>
+            <zipfileset src="${build.lib.dir}/yydebug.jar"/>
             <metainf dir="spi">
                 <include name="services/**"/>
             </metainf>
