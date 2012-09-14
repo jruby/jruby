@@ -45,7 +45,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jruby.Ruby;
-import org.jruby.javasupport.Java;
 import org.jruby.util.cli.Options;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
@@ -117,10 +116,16 @@ public class JavaProxyClassFactory {
                 Object instance = clazz.newInstance();
                 if (instance instanceof JavaProxyClassFactory) {
                     factory = (JavaProxyClassFactory) instance;
+                    System.out.println("Created proxy class factory: " + factory);
+                } else {
+                    System.err.println("Invalid proxy class factory: " + instance);
                 }
             } catch (ClassNotFoundException e) {
+                System.err.println("ClassNotFoundException creating proxy class factory: " + e);
             } catch (InstantiationException e) {
+                System.err.println("InstantiationException creating proxy class factory: " + e);
             } catch (IllegalAccessException e) {
+                System.err.println("IllegalAccessException creating proxy class factory: " + e);
             }
         }
         
@@ -228,7 +233,7 @@ public class JavaProxyClassFactory {
         });
     }
 
-    private Class invokeDefineClass(ClassLoader loader, String className, byte[] data) {
+    protected Class invokeDefineClass(ClassLoader loader, String className, byte[] data) {
         try {
             /* DEBUGGING
              * try { FileOutputStream o = new
