@@ -46,6 +46,8 @@ import java.util.Set;
 
 import org.jruby.Ruby;
 import org.jruby.util.cli.Options;
+import org.jruby.util.log.Logger;
+import org.jruby.util.log.LoggerFactory;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.FieldVisitor;
@@ -55,6 +57,7 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.commons.GeneratorAdapter;
 
 public class JavaProxyClassFactory {
+    private static final Logger LOG = LoggerFactory.getLogger("JavaProxyClassFactory");
 
     private static final Type JAVA_LANG_CLASS_TYPE = Type.getType(Class.class);
 
@@ -116,16 +119,16 @@ public class JavaProxyClassFactory {
                 Object instance = clazz.newInstance();
                 if (instance instanceof JavaProxyClassFactory) {
                     factory = (JavaProxyClassFactory) instance;
-                    System.out.println("Created proxy class factory: " + factory);
+                    LOG.info("Created proxy class factory: " + factory);
                 } else {
-                    System.err.println("Invalid proxy class factory: " + instance);
+                    LOG.error("Invalid proxy class factory: " + instance);
                 }
             } catch (ClassNotFoundException e) {
-                System.err.println("ClassNotFoundException creating proxy class factory: " + e);
+                LOG.error("ClassNotFoundException creating proxy class factory: " + e);
             } catch (InstantiationException e) {
-                System.err.println("InstantiationException creating proxy class factory: " + e);
+                LOG.error("InstantiationException creating proxy class factory: " + e);
             } catch (IllegalAccessException e) {
-                System.err.println("IllegalAccessException creating proxy class factory: " + e);
+                LOG.error("IllegalAccessException creating proxy class factory: " + e);
             }
         }
         
