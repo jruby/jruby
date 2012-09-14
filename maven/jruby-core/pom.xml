@@ -78,23 +78,46 @@
       <artifactId>joda-time</artifactId>
       <version>2.1</version>
     </dependency>
-<!--
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-api</artifactId>
-      <version>1.6.1</version>
-    </dependency>
--->
     <dependency>
       <groupId>com.jcraft</groupId>
       <artifactId>jzlib</artifactId>
       <version>1.1.1</version>
     </dependency>
+    <!-- newer version of BC does not work - yet! -->
     <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcmail-jdk15on</artifactId>
-      <version>1.47</version>
+      <version>1.46</version>
     </dependency>
+    <!-- to use this explicitly allows to exclude the asm deps
+    which are repacked inside jruby-core itself -->
+    <dependency>
+      <groupId>com.github.jnr</groupId>
+      <artifactId>jnr-ffi</artifactId>
+      <version>0.7.6</version>
+      <exclusions>
+	<exclusion>
+	  <groupId>org.ow2.asm</groupId>
+	  <artifactId>asm-util</artifactId>
+	</exclusion>
+	<exclusion>
+	  <groupId>org.ow2.asm</groupId>
+	  <artifactId>asm-analysis</artifactId>
+	</exclusion>
+	<exclusion>
+	  <groupId>org.ow2.asm</groupId>
+	  <artifactId>asm-commons</artifactId>
+	</exclusion>
+	<exclusion>
+	  <groupId>org.ow2.asm</groupId>
+	  <artifactId>asm-tree</artifactId>
+	</exclusion>
+	<exclusion>
+	  <groupId>org.ow2.asm</groupId>
+	  <artifactId>asm</artifactId>
+	</exclusion>
+      </exclusions>
+    </dependency>       
   </dependencies>
 
   <build>

@@ -27,7 +27,11 @@
 	    <classpath/>
 	    <argument>org.jruby.Main</argument>
             <argument>-e</argument>
-            <argument>puts 'hello world'</argument>
+            <!-- make sure openssl loads -->
+            <argument>
+              puts 'hello world'
+              puts 'openssl loaded' if require 'openssl'
+            </argument>
           </arguments>
         </configuration>
       </plugin>
