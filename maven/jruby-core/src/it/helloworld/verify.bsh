@@ -8,3 +8,8 @@ if ( !log.contains( expected ) )
 {
     throw new RuntimeException( "log file does not contain '" + expected + "'" );
 }
+expected = "openssl loaded";
+if ( !log.contains( expected ) )
+{
+    throw new RuntimeException( "log file does not contain '" + expected + "'" );
+}
