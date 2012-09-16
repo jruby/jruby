@@ -281,7 +281,10 @@ public class RubyEnumerable {
                 public IRubyObject yield(ThreadContext context, IRubyObject arg) {
                     synchronized (result) {
                         if (i == 0) {
-                            result.append(arg);
+                            // While iterating over an RubyEnumerator, "arg"
+                            // gets overwritten by the new value, leading to JRUBY-6892.
+                            // So call .dup() whenever appropriate.
+                            result.append(arg.isImmediate() ? arg : arg.dup());
                         } else {
                             --i;
                         }
