@@ -1,5 +1,6 @@
 package org.jruby.runtime.callsite;
 
+import org.jruby.RubyBasicObject;
 import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
@@ -261,6 +262,19 @@ public abstract class CachingCallSite extends CallSite {
             block.escape();
         }
     }
+
+    public CacheEntry retrieveCache(RubyClass selfType, String methodName) {
+        CacheEntry myCache = cache;
+        if (CacheEntry.typeOk(myCache, selfType)) {
+            return myCache;
+        }
+        return cacheAndGet(selfType, methodName);
+    }
+
+    private CacheEntry cacheAndGet(RubyClass selfType, String methodName) {
+        CacheEntry entry = selfType.searchWithCache(methodName);
+        return cache = entry;
+    }
     
     protected IRubyObject cacheAndCall(IRubyObject caller, RubyClass selfType, Block block, IRubyObject[] args, ThreadContext context, IRubyObject self) {
         CacheEntry entry = selfType.searchWithCache(methodName);
@@ -415,7 +429,8 @@ public abstract class CachingCallSite extends CallSite {
 
     private static RubyClass pollAndGetClass(ThreadContext context, IRubyObject self) {
         ThreadContext.callThreadPoll(context);
-        RubyClass selfType = self.getMetaClass();
+        // the cast in the following line is necessary due to lacking optimizations in Hotspot
+        RubyClass selfType = ((RubyBasicObject)self).getMetaClass();
         return selfType;
     }
 

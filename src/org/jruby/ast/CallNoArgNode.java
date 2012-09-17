@@ -34,6 +34,7 @@ package org.jruby.ast;
 
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
+import org.jruby.RubyString;
 import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
@@ -69,8 +70,7 @@ public final class CallNoArgNode extends CallNode {
     }
     
     @Override
-    public ByteList definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        ByteList definition = null;
+    public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         if (getReceiverNode().definition(runtime, context, self, aBlock) != null) {
             try {
                 IRubyObject receiver = getReceiverNode().interpret(runtime, context, self, aBlock);
@@ -79,6 +79,6 @@ public final class CallNoArgNode extends CallNode {
             }
         }
 
-        return definition;
+        return null;
     }
 }

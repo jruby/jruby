@@ -35,6 +35,7 @@ import java.util.List;
 
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
+import org.jruby.RubyString;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.javasupport.util.RuntimeHelpers;
@@ -45,6 +46,7 @@ import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.DefinedMessage;
 
 /**
  * A call to super(...) with arguments to a method.
@@ -115,14 +117,14 @@ public class SuperNode extends Node implements BlockAcceptingNode {
     }
     
     @Override
-    public ByteList definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+    public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         String name = context.getFrameName();
         RubyModule klazz = context.getFrameKlazz();
 
         if (name != null &&
                 klazz != null &&
                 RuntimeHelpers.findImplementerIfNecessary(self.getMetaClass(), klazz).getSuperClass().isMethodBound(name, false)) {
-            return ASTInterpreter.getArgumentDefinition(runtime, context, argsNode, SUPER_BYTELIST, self, aBlock);
+            return ASTInterpreter.getArgumentDefinition(runtime, context, argsNode, runtime.getDefinedMessage(DefinedMessage.SUPER), self, aBlock);
         }
             
         return null;

@@ -36,12 +36,14 @@ import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.RubyMatchData;
 import org.jruby.RubyRegexp;
+import org.jruby.RubyString;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.DefinedMessage;
 
 /** 
  * Represents a $number ($0..$9) variable.
@@ -50,12 +52,12 @@ public class NthRefNode extends Node {
     private final int matchNumber;
     
     /** ByteList representing the name of this numbered nth ref */
-    private final ByteList nameByteList;
+    private final DefinedMessage definedMessage;
 
     public NthRefNode(ISourcePosition position, int matchNumber) {
         super(position);
         this.matchNumber = matchNumber;
-        this.nameByteList = ByteList.create("$" + matchNumber);
+        this.definedMessage = DefinedMessage.byText("$" + matchNumber);
     }
 
     public NodeType getNodeType() {
@@ -88,14 +90,14 @@ public class NthRefNode extends Node {
     }
     
     @Override
-    public ByteList definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+    public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         IRubyObject backref = context.getCurrentScope().getBackRef(runtime);
         if (backref instanceof RubyMatchData) {
             if (!((RubyMatchData) backref).group(matchNumber).isNil()) {
                 if (!context.runtime.is1_9()) {
-                    return nameByteList;
+                    return runtime.getDefinedMessage(definedMessage);
                 } else {
-                    return GLOBAL_VARIABLE_BYTELIST;
+                    return runtime.getDefinedMessage(DefinedMessage.GLOBAL_VARIABLE);
                 }
             }
         }

@@ -31,6 +31,7 @@
 package org.jruby.ast;
 
 import org.jruby.Ruby;
+import org.jruby.RubyString;
 import org.jruby.ast.types.IArityNode;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Arity;
@@ -38,6 +39,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.DefinedMessage;
 
 /**
  * Base class of any node which can be assigned to.
@@ -81,7 +83,7 @@ public abstract class AssignableNode extends Node implements IArityNode {
     }
     
     @Override
-    public ByteList definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return ASSIGNMENT_BYTELIST;
+    public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        return runtime.getDefinedMessage(DefinedMessage.ASSIGNMENT);
     }
 }

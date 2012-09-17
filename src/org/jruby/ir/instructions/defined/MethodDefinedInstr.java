@@ -39,9 +39,9 @@ public class MethodDefinedInstr extends DefinedObjectNameInstr {
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         Ruby runtime = context.runtime;
         IRubyObject receiver = (IRubyObject) getObject().retrieve(context, self, currDynScope, temp);
-        ByteList boundValue = RuntimeHelpers.getDefinedCall(context, self, receiver, getName().string);
+        RubyString boundValue = RuntimeHelpers.getDefinedCall(context, self, receiver, getName().string);
         
-        return boundValue == null ? context.nil : RubyString.newStringShared(runtime, boundValue);        
+        return boundValue == null ? context.nil : boundValue;
     }
 
     @Override

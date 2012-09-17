@@ -118,6 +118,7 @@ import org.jruby.runtime.profile.ProfiledMethod;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.threading.DaemonThreadFactory;
 import org.jruby.util.ByteList;
+import org.jruby.util.DefinedMessage;
 import org.jruby.util.IOInputStream;
 import org.jruby.util.IOOutputStream;
 import org.jruby.util.JRubyClassLoader;
@@ -143,19 +144,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.BindException;
 import java.nio.channels.ClosedChannelException;
 import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.IdentityHashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-import java.util.Stack;
-import java.util.Vector;
-import java.util.WeakHashMap;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.SynchronousQueue;
@@ -1112,6 +1101,9 @@ public final class Ruby {
 
         // Initialize all the core classes
         bootstrap();
+
+        // set up defined messages
+        initDefinedMessages();
         
         irManager = new IRManager();
         
@@ -1160,6 +1152,14 @@ public final class Ruby {
     private void bootstrap() {
         initCore();
         initExceptions();
+    }
+
+    private void initDefinedMessages() {
+        for (DefinedMessage definedMessage : DefinedMessage.values()) {
+            RubyString str = RubyString.newString(this, ByteList.create(definedMessage.getText()));
+            str.setFrozen(true);
+            definedMessages.put(definedMessage, str);
+        }
     }
 
     private void initRoot() {
@@ -4219,6 +4219,10 @@ public final class Ruby {
         this.ffi = ffi;
     }
 
+    public RubyString getDefinedMessage(DefinedMessage definedMessage) {
+        return definedMessages.get(definedMessage);
+    }
+
     @Deprecated
     public int getSafeLevel() {
         return 0;
@@ -4475,4 +4479,6 @@ public final class Ruby {
     private FFI ffi;
     
     private JavaProxyClassFactory javaProxyClassFactory;
+
+    private EnumMap<DefinedMessage, RubyString> definedMessages = new EnumMap<DefinedMessage, RubyString>(DefinedMessage.class);
 }

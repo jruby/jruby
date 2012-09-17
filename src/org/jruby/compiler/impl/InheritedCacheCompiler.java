@@ -445,6 +445,22 @@ public class InheritedCacheCompiler implements CacheCompiler {
         }
     }
 
+    public void cachedGetVariableDefined(BaseBodyCompiler method, String name) {
+        method.loadThis();
+        method.loadThreadContext();
+        int index = inheritedVariableReaderCount++;
+        if (index < AbstractScript.NUMBERED_VARIABLEREADER_COUNT) {
+            method.method.ldc(name);
+            method.loadSelf();
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getVariableDefined" + index, sig(IRubyObject.class, ThreadContext.class, String.class, IRubyObject.class));
+        } else {
+            method.method.pushInt(index);
+            method.method.ldc(name);
+            method.loadSelf();
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getVariableDefined", sig(IRubyObject.class, ThreadContext.class, int.class, String.class, IRubyObject.class));
+        }
+    }
+
     public void cachedSetVariable(BaseBodyCompiler method, String name, CompilerCallback valueCallback) {
         method.loadThis();
         int index = inheritedVariableWriterCount++;

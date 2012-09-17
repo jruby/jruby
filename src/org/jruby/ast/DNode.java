@@ -8,6 +8,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.DefinedMessage;
 import org.jruby.util.StringSupport;
 
 /**
@@ -74,8 +75,8 @@ public abstract class DNode extends ListNode {
     }
 
     @Override
-    public ByteList definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        ByteList definition = super.definition(runtime, context, self, aBlock);
-        return is19() && definition == null ? EXPRESSION_BYTELIST : definition;
+    public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        RubyString definition = super.definition(runtime, context, self, aBlock);
+        return is19() && definition == null ? runtime.getDefinedMessage(DefinedMessage.EXPRESSION) : definition;
     }
 }

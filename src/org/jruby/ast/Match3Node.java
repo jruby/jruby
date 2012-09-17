@@ -44,6 +44,7 @@ import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.DefinedMessage;
 
 public class Match3Node extends Node {
     private final Node receiverNode;
@@ -107,7 +108,7 @@ public class Match3Node extends Node {
     }
     
     @Override
-    public ByteList definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return METHOD_BYTELIST;
+    public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        return runtime.getDefinedMessage(DefinedMessage.METHOD);
     }
 }

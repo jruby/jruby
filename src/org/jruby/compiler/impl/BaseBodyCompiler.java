@@ -65,6 +65,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.InstanceVariables;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
+import org.jruby.util.DefinedMessage;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.SafePropertyAccessor;
 import org.objectweb.asm.Label;
@@ -1869,6 +1870,12 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         script.getCacheCompiler().cacheByteList(this, byteList);
     }
 
+    public void pushDefinedMessage(DefinedMessage definedMessage) {
+        loadRuntime();
+        method.getstatic(p(DefinedMessage.class), definedMessage.name(), ci(DefinedMessage.class));
+        method.invokevirtual(p(Ruby.class), "getDefinedMessage", sig(RubyString.class, DefinedMessage.class));
+    }
+
     public void isMethodBound(String name, BranchCallback trueBranch, BranchCallback falseBranch) {
         metaclass();
         method.ldc(name);
@@ -1927,15 +1934,11 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     }
 
     public void isInstanceVariableDefined(String name, BranchCallback trueBranch, BranchCallback falseBranch) {
-        loadSelf();
-        invokeIRubyObject("getInstanceVariables", sig(InstanceVariables.class));
-        method.ldc(name);
-        //method.invokeinterface(p(IRubyObject.class), "getInstanceVariable", sig(IRubyObject.class, params(String.class)));
-        method.invokeinterface(p(InstanceVariables.class), "fastHasInstanceVariable", sig(boolean.class, params(String.class)));
+        script.getCacheCompiler().cachedGetVariableDefined(this, name);
+        method.invokeinterface(p(IRubyObject.class), "isNil", sig(boolean.class));
         Label trueLabel = new Label();
         Label exitLabel = new Label();
-        //method.ifnonnull(trueLabel);
-        method.ifne(trueLabel);
+        method.iffalse(trueLabel);
         falseBranch.branch(this);
         method.go_to(exitLabel);
         method.label(trueLabel);
@@ -2015,7 +2018,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
             public void branch(BodyCompiler context) {
                 setup.branch(BaseBodyCompiler.this);
                 method.ldc(name); //[C, C, String]
-                invokeUtilityMethod("getDefinedConstantOrBoundMethod", sig(ByteList.class, IRubyObject.class, String.class));
+                invokeUtilityMethod("getDefinedConstantOrBoundMethod", sig(RubyString.class, IRubyObject.class, String.class));
             }
         };
         String mname = getNewRescueName();
@@ -2023,7 +2026,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
                 script.getClassVisitor(),
                     ACC_PUBLIC | ACC_SYNTHETIC | ACC_STATIC,
                     mname,
-                    sig(ByteList.class, "L" + script.getClassname() + ";", ThreadContext.class, IRubyObject.class, Block.class),
+                    sig(RubyString.class, "L" + script.getClassname() + ";", ThreadContext.class, IRubyObject.class, Block.class),
                     null,
                     null);
         SkinnyMethodAdapter old_method = null;
@@ -2101,7 +2104,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         method.invokestatic(
                 script.getClassname(),
                 mname,
-                sig(ByteList.class, "L" + script.getClassname() + ";", ThreadContext.class, IRubyObject.class, Block.class));
+                sig(RubyString.class, "L" + script.getClassname() + ";", ThreadContext.class, IRubyObject.class, Block.class));
     }
 
     public void metaclass() {
@@ -2860,12 +2863,12 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         method.dup2_x1();
         method.pop2();
         method.ldc(name);
-        invokeUtilityMethod("getDefinedCall", sig(ByteList.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class));
+        invokeUtilityMethod("getDefinedCall", sig(RubyString.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class));
     }
 
     public void definedNot() {
         loadRuntime();
         method.swap();
-        invokeUtilityMethod("getDefinedNot", sig(ByteList.class, Ruby.class, ByteList.class));
+        invokeUtilityMethod("getDefinedNot", sig(RubyString.class, Ruby.class, RubyString.class));
     }
 }

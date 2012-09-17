@@ -280,7 +280,7 @@ public class ASTInterpreter {
         }
     }
 
-    public static ByteList getArgumentDefinition(Ruby runtime, ThreadContext context, Node node, ByteList type, IRubyObject self, Block block) {
+    public static RubyString getArgumentDefinition(Ruby runtime, ThreadContext context, Node node, RubyString type, IRubyObject self, Block block) {
         if (node == null) return type;
             
         if (node instanceof ArrayNode) {
