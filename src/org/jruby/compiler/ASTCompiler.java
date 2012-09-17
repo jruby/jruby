@@ -41,6 +41,7 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyMatchData;
+import org.jruby.RubyString;
 import org.jruby.ast.AliasNode;
 import org.jruby.ast.AndNode;
 import org.jruby.ast.ArgsCatNode;
@@ -154,6 +155,7 @@ import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.callsite.CachingCallSite;
 import org.jruby.util.ByteList;
+import org.jruby.util.DefinedMessage;
 import org.jruby.util.StringSupport;
 
 /**
@@ -1496,13 +1498,13 @@ public class ASTCompiler {
     public void compileDefined(final Node node, BodyCompiler context, boolean expr) {
         if (expr) {
             compileGetDefinitionBase(((DefinedNode) node).getExpressionNode(), context);
-            context.stringOrNil();
+            context.nullToNil();
         }
     }
 
     public void compileGetArgumentDefinition(final Node node, BodyCompiler context, String type) {
         if (node == null) {
-            context.pushByteList(ByteList.create(type));
+            context.pushDefinedMessage(DefinedMessage.byText(type));
         } else if (node instanceof ArrayNode) {
             Object endToken = context.getNewEnding();
             for (int i = 0; i < ((ArrayNode) node).size(); i++) {
@@ -1510,7 +1512,7 @@ public class ASTCompiler {
                 compileGetDefinition(iterNode, context);
                 context.ifNull(endToken);
             }
-            context.pushByteList(ByteList.create(type));
+            context.pushDefinedMessage(DefinedMessage.byText(type));
             Object realToken = context.getNewEnding();
             context.go(realToken);
             context.setEnding(endToken);
@@ -1520,7 +1522,7 @@ public class ASTCompiler {
             compileGetDefinition(node, context);
             Object endToken = context.getNewEnding();
             context.ifNull(endToken);
-            context.pushByteList(ByteList.create(type));
+            context.pushDefinedMessage(DefinedMessage.byText(type));
             Object realToken = context.getNewEnding();
             context.go(realToken);
             context.setEnding(endToken);
@@ -1544,7 +1546,7 @@ public class ASTCompiler {
             case OPASGNORNODE:
             case OPELEMENTASGNNODE:
             case INSTASGNNODE: // simple assignment cases
-                context.pushByteList(Node.ASSIGNMENT_BYTELIST);
+                context.pushDefinedMessage(DefinedMessage.ASSIGNMENT);
                 break;
             case ANDNODE: // all these just evaluate and then do expression if there's no error
             case ORNODE:
@@ -1558,7 +1560,7 @@ public class ASTCompiler {
 
                                 public void branch(BodyCompiler context) {
                                     compile(node, context, false);
-                                    context.pushByteList(Node.EXPRESSION_BYTELIST);
+                                    context.pushDefinedMessage(DefinedMessage.EXPRESSION);
                                 }
                             }, JumpException.class,
                             new BranchCallback() {
@@ -1566,7 +1568,7 @@ public class ASTCompiler {
                                 public void branch(BodyCompiler context) {
                                     context.pushNull();
                                 }
-                            }, ByteList.class);
+                            }, RubyString.class);
                     context.definedNot();
                     break;
                 }
@@ -1577,26 +1579,26 @@ public class ASTCompiler {
                 compileDefinedDVar(node, context);
                 break;
             case FALSENODE:
-                context.pushByteList(Node.FALSE_BYTELIST);
+                context.pushDefinedMessage(DefinedMessage.FALSE);
                 break;
             case TRUENODE:
-                context.pushByteList(Node.TRUE_BYTELIST);
+                context.pushDefinedMessage(DefinedMessage.TRUE);
                 break;
             case LOCALVARNODE:
-                context.pushByteList(Node.LOCAL_VARIABLE_BYTELIST);
+                context.pushDefinedMessage(DefinedMessage.LOCAL_VARIABLE);
                 break;
             case MATCH2NODE:
             case MATCH3NODE:
-                context.pushByteList(Node.METHOD_BYTELIST);
+                context.pushDefinedMessage(DefinedMessage.METHOD);
                 break;
             case NILNODE:
-                context.pushByteList(Node.NIL_BYTELIST);
+                context.pushDefinedMessage(DefinedMessage.NIL);
                 break;
             case NTHREFNODE:
                 compileDefinedNthref(node, context);
                 break;
             case SELFNODE:
-                context.pushByteList(Node.SELF_BYTELIST);
+                context.pushDefinedMessage(DefinedMessage.SELF);
                 break;
             case VCALLNODE:
                 context.loadSelf();
@@ -1604,7 +1606,7 @@ public class ASTCompiler {
                         new BranchCallback() {
 
                             public void branch(BodyCompiler context) {
-                                context.pushByteList(Node.METHOD_BYTELIST);
+                                context.pushDefinedMessage(DefinedMessage.METHOD);
                             }
                         },
                         new BranchCallback() {
@@ -1618,7 +1620,7 @@ public class ASTCompiler {
                 context.hasBlock(new BranchCallback() {
 
                             public void branch(BodyCompiler context) {
-                                context.pushByteList(Node.YIELD_BYTELIST);
+                                context.pushDefinedMessage(DefinedMessage.YIELD);
                             }
                         },
                         new BranchCallback() {
@@ -1633,7 +1635,7 @@ public class ASTCompiler {
                         new BranchCallback() {
 
                             public void branch(BodyCompiler context) {
-                                context.pushByteList(Node.GLOBAL_VARIABLE_BYTELIST);
+                                context.pushDefinedMessage(DefinedMessage.GLOBAL_VARIABLE);
                             }
                         },
                         new BranchCallback() {
@@ -1648,7 +1650,7 @@ public class ASTCompiler {
                         new BranchCallback() {
 
                             public void branch(BodyCompiler context) {
-                                context.pushByteList(Node.INSTANCE_VARIABLE_BYTELIST);
+                                context.pushDefinedMessage(DefinedMessage.INSTANCE_VARIABLE);
                             }
                         },
                         new BranchCallback() {
@@ -1663,7 +1665,7 @@ public class ASTCompiler {
                         new BranchCallback() {
 
                             public void branch(BodyCompiler context) {
-                                context.pushByteList(Node.CONSTANT_BYTELIST);
+                                context.pushDefinedMessage(DefinedMessage.CONSTANT);
                             }
                         },
                         new BranchCallback() {
@@ -1734,7 +1736,7 @@ public class ASTCompiler {
 
                                 public void branch(BodyCompiler context) {
                                     context.consumeCurrentValue();
-                                    context.pushByteList(Node.CLASS_VARIABLE_BYTELIST);
+                                    context.pushDefinedMessage(DefinedMessage.CLASS_VARIABLE);
                                     context.go(ending);
                                 }
                             },
@@ -1750,7 +1752,7 @@ public class ASTCompiler {
 
                                 public void branch(BodyCompiler context) {
                                     context.consumeCurrentValue();
-                                    context.pushByteList(Node.CLASS_VARIABLE_BYTELIST);
+                                    context.pushDefinedMessage(DefinedMessage.CLASS_VARIABLE);
                                     context.go(ending);
                                 }
                             },
@@ -1767,7 +1769,7 @@ public class ASTCompiler {
                     context.setEnding(singleton);
                     context.attached();//[RubyClass]
                     context.notIsModuleAndClassVarDefined(iVisited.getName(), failure); //[]
-                    context.pushByteList(Node.CLASS_VARIABLE_BYTELIST);
+                    context.pushDefinedMessage(DefinedMessage.CLASS_VARIABLE);
                     context.go(ending);
                     context.setEnding(failure);
                     context.pushNull();
@@ -1790,7 +1792,7 @@ public class ASTCompiler {
                     context.superClass();
                     context.ifNotSuperMethodBound(fail_easy);
 
-                    context.pushByteList(Node.SUPER_BYTELIST);
+                    context.pushDefinedMessage(DefinedMessage.SUPER);
                     context.go(ending);
 
                     context.setEnding(fail2);
@@ -1880,7 +1882,7 @@ public class ASTCompiler {
                                 public void branch(BodyCompiler context) {
                                     context.pushNull();
                                 }
-                            }, ByteList.class);
+                            }, RubyString.class);
 
                     context.go(ending);
                     context.setEnding(isnull);
@@ -1902,9 +1904,9 @@ public class ASTCompiler {
                             public void branch(BodyCompiler context) {
                                 context.pushNull();
                             }
-                        }, ByteList.class);
+                        }, RubyString.class);
                 context.consumeCurrentValue();
-                context.pushByteList(Node.EXPRESSION_BYTELIST);
+                context.pushDefinedMessage(DefinedMessage.EXPRESSION);
         }
     }
 
@@ -1913,7 +1915,7 @@ public class ASTCompiler {
 
                     public void branch(BodyCompiler context) {
                         compile(node, context, false);
-                        context.pushByteList(Node.EXPRESSION_BYTELIST);
+                        context.pushDefinedMessage(DefinedMessage.EXPRESSION);
                     }
                 }, JumpException.class,
                 new BranchCallback() {
@@ -1921,7 +1923,7 @@ public class ASTCompiler {
                     public void branch(BodyCompiler context) {
                         context.pushNull();
                     }
-                }, ByteList.class);
+                }, RubyString.class);
     }
 
     protected void compileDefinedCall(final Node node, BodyCompiler context) {
@@ -1943,7 +1945,7 @@ public class ASTCompiler {
                         public void branch(BodyCompiler context) {
                             context.pushNull();
                         }
-                    }, ByteList.class);
+                    }, RubyString.class);
 
             //          context.swapValues();
     //context.consumeCurrentValue();
@@ -1954,7 +1956,7 @@ public class ASTCompiler {
     }
 
     protected void compileDefinedDVar(final Node node, BodyCompiler context) {
-        context.pushByteList(Node.LOCAL_VARIABLE_IN_BLOCK_BYTELIST);
+        context.pushDefinedMessage(DefinedMessage.LOCAL_VARIABLE_IN_BLOCK);
     }
 
     protected void compileDefinedBackref(final Node node, BodyCompiler context) {
@@ -1963,7 +1965,7 @@ public class ASTCompiler {
                 new BranchCallback() {
 
                     public void branch(BodyCompiler context) {
-                        context.pushByteList(ByteList.create("$" + ((BackRefNode) node).getType()));
+                        context.pushDefinedMessage(DefinedMessage.byText("$" + ((BackRefNode) node).getType()));
                     }
                 },
                 new BranchCallback() {
@@ -1979,7 +1981,7 @@ public class ASTCompiler {
                 new BranchCallback() {
 
                     public void branch(BodyCompiler context) {
-                        context.pushByteList(ByteList.create("$" + ((NthRefNode) node).getMatchNumber()));
+                        context.pushDefinedMessage(DefinedMessage.byText("$" + ((NthRefNode) node).getMatchNumber()));
                     }
                 },
                 new BranchCallback() {

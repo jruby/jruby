@@ -37,6 +37,7 @@ import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyClass.VariableAccessor;
+import org.jruby.RubyString;
 import org.jruby.ast.types.IArityNode;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
@@ -47,6 +48,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.DefinedMessage;
 
 /** 
  * Represents an instance variable accessor.
@@ -97,6 +99,10 @@ public class InstVarNode extends Node implements IArityNode, INameNode {
     
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        return getVariable(runtime, self, true);
+    }
+
+    private IRubyObject getVariable(Ruby runtime, IRubyObject self, boolean warn) {
         RubyClass cls = self.getMetaClass().getRealClass();
         VariableAccessor localAccessor = accessor;
         IRubyObject value;
@@ -109,17 +115,17 @@ public class InstVarNode extends Node implements IArityNode, INameNode {
             value = (IRubyObject)localAccessor.get(self);
         }
         if (value != null) return value;
-        if (runtime.isVerbose()) warnAboutUninitializedIvar(runtime);
-        return runtime.getNil();        
+        if (warn && runtime.isVerbose()) warnAboutUninitializedIvar(runtime);
+        return runtime.getNil();
     }
-    
+
     private void warnAboutUninitializedIvar(Ruby runtime) {
         runtime.getWarnings().warning(ID.IVAR_NOT_INITIALIZED, getPosition(), 
                 "instance variable " + name + " not initialized");
     }
     
     @Override
-    public ByteList definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return self.getInstanceVariables().hasInstanceVariable(name) ? INSTANCE_VARIABLE_BYTELIST : null;
+    public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        return getVariable(runtime, self, false).isNil() ? null : runtime.getDefinedMessage(DefinedMessage.INSTANCE_VARIABLE);
     }
 }

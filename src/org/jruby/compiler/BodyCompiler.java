@@ -34,6 +34,7 @@ import org.jruby.ast.NodeType;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.parser.StaticScope;
 import org.jruby.util.ByteList;
+import org.jruby.util.DefinedMessage;
 
 /**
  *
@@ -539,6 +540,7 @@ public interface BodyCompiler {
     public void pushNull();
     public void pushString(String strVal);
     public void pushByteList(ByteList bl);
+    public void pushDefinedMessage(DefinedMessage definedMessage);
     public void isMethodBound(String name, BranchCallback trueBranch, BranchCallback falseBranch);
     public void hasBlock(BranchCallback trueBranch, BranchCallback falseBranch);
     public void isGlobalDefined(String name, BranchCallback trueBranch, BranchCallback falseBranch);

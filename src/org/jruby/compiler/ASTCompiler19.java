@@ -56,6 +56,7 @@ import org.jruby.ast.Yield19Node;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.BlockBody;
+import org.jruby.util.DefinedMessage;
 
 /**
  *
@@ -113,7 +114,7 @@ public class ASTCompiler19 extends ASTCompiler {
 
     @Override
     protected void compileDefinedAndOrDStrDRegexp(final Node node, BodyCompiler context) {
-        context.pushByteList(Node.EXPRESSION_BYTELIST);
+        context.pushDefinedMessage(DefinedMessage.EXPRESSION);
     }
 
     @Override
@@ -123,7 +124,7 @@ public class ASTCompiler19 extends ASTCompiler {
                 new BranchCallback() {
 
                     public void branch(BodyCompiler context) {
-                        context.pushByteList(Node.GLOBAL_VARIABLE_BYTELIST);
+                        context.pushDefinedMessage(DefinedMessage.GLOBAL_VARIABLE);
                     }
                 },
                 new BranchCallback() {
@@ -136,7 +137,7 @@ public class ASTCompiler19 extends ASTCompiler {
 
     @Override
     protected void compileDefinedDVar(final Node node, BodyCompiler context) {
-        context.pushByteList(Node.LOCAL_VARIABLE_BYTELIST);
+        context.pushDefinedMessage(DefinedMessage.LOCAL_VARIABLE);
     }
 
     @Override
@@ -145,7 +146,7 @@ public class ASTCompiler19 extends ASTCompiler {
                 new BranchCallback() {
 
                     public void branch(BodyCompiler context) {
-                        context.pushByteList(Node.GLOBAL_VARIABLE_BYTELIST);
+                        context.pushDefinedMessage(DefinedMessage.GLOBAL_VARIABLE);
                     }
                 },
                 new BranchCallback() {

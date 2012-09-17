@@ -34,6 +34,7 @@ package org.jruby.ast;
 
 import java.util.List;
 import org.jruby.Ruby;
+import org.jruby.RubyString;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.ASTInterpreter;
@@ -44,6 +45,7 @@ import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.DefinedMessage;
 
 /** 
  * Represents a method call with self as an implicit receiver.
@@ -134,9 +136,15 @@ public class FCallNode extends Node implements INameNode, IArgumentNode, BlockAc
     }
     
     @Override
-    public ByteList definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+    public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         if (self.getMetaClass().isMethodBound(getName(), false)) {
-            return ASTInterpreter.getArgumentDefinition(runtime, context, getArgsNode(), METHOD_BYTELIST, self, aBlock);
+            return ASTInterpreter.getArgumentDefinition(
+                    runtime,
+                    context,
+                    getArgsNode(),
+                    runtime.getDefinedMessage(DefinedMessage.METHOD),
+                    self,
+                    aBlock);
         }
             
         return null;

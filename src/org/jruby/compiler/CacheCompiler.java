@@ -38,6 +38,8 @@ public interface CacheCompiler {
 
     public void cachedGetVariable(BaseBodyCompiler method, String name);
 
+    public void cachedGetVariableDefined(BaseBodyCompiler method, String name);
+
     public void cachedSetVariable(BaseBodyCompiler method, String name, CompilerCallback value);
 
     public void cacheRegexp(BaseBodyCompiler method, ByteList pattern, int options);

@@ -34,6 +34,7 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.Ruby;
+import org.jruby.RubyString;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -41,6 +42,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.DefinedMessage;
 
 /**
  *	access to a global variable.
@@ -83,7 +85,7 @@ public class GlobalVarNode extends Node implements INameNode {
     }
     
     @Override
-    public ByteList definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return runtime.getGlobalVariables().isDefined(name) ? GLOBAL_VARIABLE_BYTELIST : null;
+    public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        return runtime.getGlobalVariables().isDefined(name) ? runtime.getDefinedMessage(DefinedMessage.GLOBAL_VARIABLE) : null;
     }
 }

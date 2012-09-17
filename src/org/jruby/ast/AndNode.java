@@ -34,12 +34,14 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.Ruby;
+import org.jruby.RubyString;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.DefinedMessage;
 
 /** 
  * Represents a && (and) operator.
@@ -96,11 +98,11 @@ public class AndNode extends Node implements BinaryOperatorNode {
     }
 
     @Override
-    public ByteList definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+    public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         if (!context.runtime.is1_9()) {
             return super.definition(runtime, context, self, aBlock);
         } else {
-            return EXPRESSION_BYTELIST;
+            return runtime.getDefinedMessage(DefinedMessage.EXPRESSION);
         }
     }
 }

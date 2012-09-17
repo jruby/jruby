@@ -35,6 +35,7 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.Ruby;
+import org.jruby.RubyString;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -104,7 +105,7 @@ public class NewlineNode extends Node {
         return nextNode.interpret(runtime, context, self, aBlock);
     }
 
-    public ByteList definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+    public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         return nextNode.definition(runtime, context, self, aBlock);
     }
 }

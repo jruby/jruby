@@ -34,6 +34,7 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.Ruby;
+import org.jruby.RubyString;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.JumpException;
@@ -42,6 +43,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.DefinedMessage;
 
 public class OpAsgnAndNode extends Node implements BinaryOperatorNode {
     private final Node firstNode;
@@ -100,10 +102,10 @@ public class OpAsgnAndNode extends Node implements BinaryOperatorNode {
     }
 
     @Override
-    public ByteList definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+    public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         try {
             interpret(runtime, context, self, aBlock);
-            return ASSIGNMENT_BYTELIST;
+            return runtime.getDefinedMessage(DefinedMessage.ASSIGNMENT);
         } catch (JumpException jumpExcptn) {
         }
 

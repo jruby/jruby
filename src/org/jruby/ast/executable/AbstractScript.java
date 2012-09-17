@@ -270,6 +270,18 @@ public abstract class AbstractScript implements Script {
     public final IRubyObject getVariable8(ThreadContext context, String name, IRubyObject object) {return runtimeCache.getVariable(context, 8, name, object);}
     public final IRubyObject getVariable9(ThreadContext context, String name, IRubyObject object) {return runtimeCache.getVariable(context, 9, name, object);}
 
+    public final IRubyObject getVariableDefined(ThreadContext context, int i, String name, IRubyObject object) {return runtimeCache.getVariableDefined(context, i, name, object);}
+    public final IRubyObject getVariableDefined0(ThreadContext context, String name, IRubyObject object) {return runtimeCache.getVariableDefined(context, 0, name, object);}
+    public final IRubyObject getVariableDefined1(ThreadContext context, String name, IRubyObject object) {return runtimeCache.getVariableDefined(context, 1, name, object);}
+    public final IRubyObject getVariableDefined2(ThreadContext context, String name, IRubyObject object) {return runtimeCache.getVariableDefined(context, 2, name, object);}
+    public final IRubyObject getVariableDefined3(ThreadContext context, String name, IRubyObject object) {return runtimeCache.getVariableDefined(context, 3, name, object);}
+    public final IRubyObject getVariableDefined4(ThreadContext context, String name, IRubyObject object) {return runtimeCache.getVariableDefined(context, 4, name, object);}
+    public final IRubyObject getVariableDefined5(ThreadContext context, String name, IRubyObject object) {return runtimeCache.getVariableDefined(context, 5, name, object);}
+    public final IRubyObject getVariableDefined6(ThreadContext context, String name, IRubyObject object) {return runtimeCache.getVariableDefined(context, 6, name, object);}
+    public final IRubyObject getVariableDefined7(ThreadContext context, String name, IRubyObject object) {return runtimeCache.getVariableDefined(context, 7, name, object);}
+    public final IRubyObject getVariableDefined8(ThreadContext context, String name, IRubyObject object) {return runtimeCache.getVariableDefined(context, 8, name, object);}
+    public final IRubyObject getVariableDefined9(ThreadContext context, String name, IRubyObject object) {return runtimeCache.getVariableDefined(context, 9, name, object);}
+
     public static final int NUMBERED_VARIABLEWRITER_COUNT = 10;
 
     public final IRubyObject setVariable(int i, String name, IRubyObject object, IRubyObject value) {return runtimeCache.setVariable(i, name, object, value);}

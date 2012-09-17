@@ -37,6 +37,7 @@ import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
+import org.jruby.RubyString;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.ASTInterpreter;
@@ -52,6 +53,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.DefinedMessage;
 
 /**
  * A method or operator call.
@@ -171,7 +173,7 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
     }
 
     @Override
-    public ByteList definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+    public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         if (receiverNode.definition(runtime, context, self, aBlock) != null) {
             try {
                 IRubyObject receiver = receiverNode.interpret(runtime, context, self, aBlock);
@@ -182,7 +184,7 @@ public class CallNode extends Node implements INameNode, IArgumentNode, BlockAcc
                 if (visibility != Visibility.PRIVATE &&
                         (visibility != Visibility.PROTECTED || metaClass.getRealClass().isInstance(self))) {
                     if (!method.isUndefined()) {
-                        return ASTInterpreter.getArgumentDefinition(runtime, context, getArgsNode(), METHOD_BYTELIST, self, aBlock);
+                        return ASTInterpreter.getArgumentDefinition(runtime, context, getArgsNode(), context.runtime.getDefinedMessage(DefinedMessage.METHOD), self, aBlock);
                     }
                 }
             } catch (JumpException excptn) {

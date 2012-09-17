@@ -36,12 +36,14 @@ import java.util.List;
 import org.jruby.Ruby;
 import org.jruby.RubyMatchData;
 import org.jruby.RubyRegexp;
+import org.jruby.RubyString;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.DefinedMessage;
 
 /**
  *	Regexp back reference:
@@ -57,12 +59,12 @@ public class BackRefNode extends Node {
     private final char type;
     
     /** ByteList for the name of this backref global */
-    private final ByteList nameByteList;
+    private final DefinedMessage definedMessage;
 
     public BackRefNode(ISourcePosition position, int type) {
         super(position);
         this.type = (char) type;
-        this.nameByteList = ByteList.create("$" + (char)type);
+        this.definedMessage = DefinedMessage.byText("$" + (char)type);
     }
 
     public NodeType getNodeType() {
@@ -110,11 +112,11 @@ public class BackRefNode extends Node {
     }
     
     @Override
-    public ByteList definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+    public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         IRubyObject backref = context.getCurrentScope().getBackRef(runtime);
 
         if (backref instanceof RubyMatchData) {
-            return context.runtime.is1_9() ? GLOBAL_VARIABLE_BYTELIST : nameByteList;
+            return runtime.getDefinedMessage(runtime.is1_9() ? DefinedMessage.GLOBAL_VARIABLE : definedMessage);
         }
         return null;
     }

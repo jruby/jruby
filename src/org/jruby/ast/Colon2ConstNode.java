@@ -7,6 +7,7 @@ package org.jruby.ast;
 
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
+import org.jruby.RubyString;
 import org.jruby.exceptions.JumpException;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -14,6 +15,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.DefinedMessage;
 
 /**
  *
@@ -39,10 +41,13 @@ public class Colon2ConstNode extends Colon2Node {
     }
 
     @Override
-    public ByteList definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+    public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         IRubyObject lastError = context.getErrorInfo();
         try {
-            if (RuntimeHelpers.isModuleAndHasConstant(leftNode.interpret(runtime, context, self, aBlock), name)) return CONSTANT_BYTELIST;
+            if (RuntimeHelpers.isModuleAndHasConstant(
+                    leftNode.interpret(runtime, context, self, aBlock), name)) {
+                return runtime.getDefinedMessage(DefinedMessage.CONSTANT);
+            }
         } catch (JumpException e) {
             // replace lastError
             context.setErrorInfo(lastError);

@@ -175,6 +175,14 @@ public class RuntimeCache {
     }
 
     public final IRubyObject getVariable(ThreadContext context, int index, String name, IRubyObject object) {
+        return getVariable(context, index, name, object, true);
+    }
+
+    public final IRubyObject getVariableDefined(ThreadContext context, int index, String name, IRubyObject object) {
+        return getVariable(context, index, name, object, false);
+    }
+
+    private final IRubyObject getVariable(ThreadContext context, int index, String name, IRubyObject object, boolean warn) {
         VariableAccessor variableAccessor = variableReaders[index];
         RubyClass cls = object.getMetaClass().getRealClass();
         if (variableAccessor.getClassId() != cls.hashCode()) {
@@ -185,7 +193,7 @@ public class RuntimeCache {
             return value;
         }
         Ruby runtime = context.runtime;
-        if (runtime.isVerbose()) {
+        if (warn && runtime.isVerbose()) {
             warnAboutUninitializedIvar(runtime, name);
         }
         return runtime.getNil();

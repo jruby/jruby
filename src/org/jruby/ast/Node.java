@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jruby.Ruby;
+import org.jruby.RubyString;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.exceptions.JumpException;
@@ -46,6 +47,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.DefinedMessage;
 
 /**
  * Base class for all Nodes in the AST
@@ -147,10 +149,10 @@ public abstract class Node implements ISourcePositionHolder {
         throw new RuntimeException("Invalid node encountered in interpreter: \"" + getClass().getName() + "\", please report this at www.jruby.org");
     }
     
-    public ByteList definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+    public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         try {
             interpret(runtime, context, self, aBlock);
-            return EXPRESSION_BYTELIST;
+            return runtime.getDefinedMessage(DefinedMessage.EXPRESSION);
         } catch (JumpException jumpExcptn) {
         }
         

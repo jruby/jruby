@@ -34,6 +34,7 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.Ruby;
+import org.jruby.RubyString;
 import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.evaluator.ASTInterpreter;
@@ -42,6 +43,7 @@ import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.DefinedMessage;
 
 /**
  * Represents 'self' keyword
@@ -80,7 +82,7 @@ public class SelfNode extends Node implements INameNode {
     }
     
     @Override
-    public ByteList definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return SELF_BYTELIST;
+    public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        return runtime.getDefinedMessage(DefinedMessage.SELF);
     }
 }

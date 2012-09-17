@@ -34,6 +34,7 @@ package org.jruby.ast;
 import java.util.List;
 
 import org.jruby.Ruby;
+import org.jruby.RubyString;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -86,8 +87,8 @@ public class NotNode extends Node {
     }
 
     @Override
-    public ByteList definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        ByteList definition = super.definition(runtime, context, self, aBlock);
+    public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
+        RubyString definition = super.definition(runtime, context, self, aBlock);
         return RuntimeHelpers.getDefinedNot(runtime, definition);
     }
 }

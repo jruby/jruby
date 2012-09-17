@@ -72,6 +72,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
+import org.jruby.util.DefinedMessage;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.unsafe.UnsafeFactory;
 
@@ -797,7 +798,7 @@ public class RuntimeHelpers {
     /**
      * If it's Redo, Next, or Break, rethrow it as a normal exception for while to handle
      * @param re
-     * @param runtime
+     * @param context
      */
     public static Throwable unwrapRedoNextBreakOrJustLocalJump(RaiseException re, ThreadContext context) {
         RubyException exception = re.getException();
@@ -2390,9 +2391,9 @@ public class RuntimeHelpers {
         return left instanceof RubyModule && ((RubyModule) left).getConstantFromNoConstMissing(name, false) != null;
     }
 
-    public static ByteList getDefinedConstantOrBoundMethod(IRubyObject left, String name) {
-        if (isModuleAndHasConstant(left, name)) return Node.CONSTANT_BYTELIST;
-        if (left.getMetaClass().isMethodBound(name, true)) return Node.METHOD_BYTELIST;
+    public static RubyString getDefinedConstantOrBoundMethod(IRubyObject left, String name) {
+        if (isModuleAndHasConstant(left, name)) return left.getRuntime().getDefinedMessage(DefinedMessage.CONSTANT);
+        if (left.getMetaClass().isMethodBound(name, true)) left.getRuntime().getDefinedMessage(DefinedMessage.METHOD);
         return null;
     }
 
@@ -2636,26 +2637,26 @@ public class RuntimeHelpers {
         return parms;
     }
 
-    public static ByteList getDefinedCall(ThreadContext context, IRubyObject self, IRubyObject receiver, String name) {
+    public static RubyString getDefinedCall(ThreadContext context, IRubyObject self, IRubyObject receiver, String name) {
         RubyClass metaClass = receiver.getMetaClass();
         DynamicMethod method = metaClass.searchMethod(name);
         Visibility visibility = method.getVisibility();
 
         if (visibility != Visibility.PRIVATE &&
                 (visibility != Visibility.PROTECTED || metaClass.getRealClass().isInstance(self)) && !method.isUndefined()) {
-            return Node.METHOD_BYTELIST;
+            return context.runtime.getDefinedMessage(DefinedMessage.METHOD);
         }
 
         if (context.runtime.is1_9() && receiver.callMethod(context, "respond_to_missing?",
             new IRubyObject[]{context.runtime.newSymbol(name), context.runtime.getFalse()}).isTrue()) {
-            return Node.METHOD_BYTELIST;
+            return context.runtime.getDefinedMessage(DefinedMessage.METHOD);
         }
         return null;
     }
 
-    public static ByteList getDefinedNot(Ruby runtime, ByteList definition) {
+    public static RubyString getDefinedNot(Ruby runtime, RubyString definition) {
         if (definition != null && runtime.is1_9()) {
-            definition = Node.METHOD_BYTELIST;
+            definition = runtime.getDefinedMessage(DefinedMessage.METHOD);
         }
 
         return definition;
