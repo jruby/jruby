@@ -30,6 +30,7 @@
  package org.jruby.ast;
 
 import org.jruby.Ruby;
+import org.jruby.RubyString;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
@@ -69,6 +70,9 @@ public class DSymbolNode extends DNode {
     
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return runtime.newSymbol(super.interpret(runtime, context, self, aBlock).toString());
+        RubyString str = (RubyString)super.interpret(runtime, context, self, aBlock);
+        return runtime.is1_9() ?
+                str.intern19() :
+                str.intern();
     }
 }

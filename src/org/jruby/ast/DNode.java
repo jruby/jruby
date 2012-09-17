@@ -2,7 +2,10 @@ package org.jruby.ast;
 
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
+import org.jruby.RubyFixnum;
+import org.jruby.RubyFloat;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -46,11 +49,11 @@ public abstract class DNode extends ListNode {
     }
 
     protected RubyString allocateString(Ruby runtime) {
-        ByteList bytes = new ByteList();
-        
-        if (is19()) bytes.setEncoding(encoding);
+        RubyString string = RubyString.newString(runtime, new ByteList());
 
-        return RubyString.newStringShared(runtime, bytes, StringSupport.CR_7BIT);
+        if (is19()) string.setEncoding(encoding);
+
+        return string;
     }
 
     public void appendToString(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock, RubyString string, Node node) {
@@ -60,6 +63,18 @@ public abstract class DNode extends ListNode {
                 string.getByteList().append(strNode.getValue());
             } else {
                 string.cat19(strNode.getValue(), strNode.getCodeRange());
+            }
+        } else if (node instanceof EvStrNode) {
+            EvStrNode evStrNode = (EvStrNode)node;
+
+            Node bodyNode = evStrNode.getBody();
+            if (bodyNode == null) return;
+
+            IRubyObject body = bodyNode.interpret(runtime, context, self, aBlock);
+            if (body instanceof RubyFixnum || body instanceof RubyFloat || body instanceof RubySymbol) {
+                string.append19(body);
+            } else {
+                string.append19(body.asString());
             }
         } else if (is19()) {
             string.append19(node.interpret(runtime, context, self, aBlock));
