@@ -448,12 +448,45 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
         for (int i = 0; i < count; i++) {
             callback.nextValue(this, null, i);
-            if (encoding != null) {
-                method.invokevirtual(p(RubyString.class), "append19", sig(RubyString.class, params(IRubyObject.class)));
-            } else {
-                method.invokevirtual(p(RubyString.class), "append", sig(RubyString.class, params(IRubyObject.class)));
-            }
+            appendObject(encoding != null);
         }
+    }
+
+    public void buildNewString(ArrayCallback callback, int count, Encoding encoding) {
+        loadRuntime();
+        method.ldc(StandardASMCompiler.STARTING_DSTR_FACTOR * count);
+        if (encoding == null) {
+            method.invokestatic(p(RubyString.class), "newStringLight", sig(RubyString.class, Ruby.class, int.class));
+        } else {
+            script.getCacheCompiler().cacheEncoding(this, encoding);
+            method.invokestatic(p(RubyString.class), "newStringLight", sig(RubyString.class, Ruby.class, int.class, Encoding.class));
+        }
+
+        for (int i = 0; i < count; i++) {
+            callback.nextValue(this, null, i);
+        }
+    }
+
+    public void appendByteList(ByteList value, int codeRange, boolean is19) {
+        script.getCacheCompiler().cacheByteList(this, value);
+        if (is19) {
+            method.ldc(codeRange);
+            invokeUtilityMethod("appendByteList19", sig(RubyString.class, RubyString.class, ByteList.class, int.class));
+        } else {
+            invokeUtilityMethod("appendByteList", sig(RubyString.class, RubyString.class, ByteList.class));
+        }
+    }
+
+    public void appendObject(boolean is19) {
+        if (is19) {
+            method.invokevirtual(p(RubyString.class), "append19", sig(RubyString.class, params(IRubyObject.class)));
+        } else {
+            method.invokevirtual(p(RubyString.class), "append", sig(RubyString.class, params(IRubyObject.class)));
+        }
+    }
+
+    public void shortcutAppend() {
+        invokeUtilityMethod("shortcutAppend", sig(RubyString.class, RubyString.class, IRubyObject.class));
     }
 
     public void createNewSymbol(ArrayCallback callback, int count, Encoding encoding) {
