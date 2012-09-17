@@ -2250,10 +2250,22 @@ public class ASTCompiler {
         final DStrNode dstrNode = (DStrNode) node;
 
         ArrayCallback dstrCallback = new ArrayCallback() {
-
                     public void nextValue(BodyCompiler context, Object sourceArray,
                             int index) {
-                        compile(dstrNode.get(index), context, true);
+                        Node nextNode = dstrNode.get(index);
+
+                        switch (nextNode.getNodeType()) {
+                            case STRNODE:
+                                context.appendByteList(((StrNode)nextNode).getValue(), ((StrNode)nextNode).getCodeRange(), dstrNode.is19());
+                                break;
+                            case EVSTRNODE:
+                                compile(((EvStrNode)nextNode).getBody(), context, true);
+                                context.shortcutAppend();
+                                break;
+                            default:
+                                compile(nextNode, context, true);
+                                context.appendObject(dstrNode.is19());
+                        }
                     }
                 };
 
@@ -2263,7 +2275,7 @@ public class ASTCompiler {
                 enc = dstrNode.getEncoding();
             }
 
-            context.createNewString(dstrCallback, dstrNode.size(), enc);
+            context.buildNewString(dstrCallback, dstrNode.size(), enc);
         } else {
             // not an expression, only compile the elements
             for (Node nextNode : dstrNode.childNodes()) {

@@ -6,6 +6,7 @@ import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
+import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
@@ -71,11 +72,7 @@ public abstract class DNode extends ListNode {
             if (bodyNode == null) return;
 
             IRubyObject body = bodyNode.interpret(runtime, context, self, aBlock);
-            if (body instanceof RubyFixnum || body instanceof RubyFloat || body instanceof RubySymbol) {
-                string.append19(body);
-            } else {
-                string.append19(body.asString());
-            }
+            RuntimeHelpers.shortcutAppend(string, body);
         } else if (is19()) {
             string.append19(node.interpret(runtime, context, self, aBlock));
         } else {

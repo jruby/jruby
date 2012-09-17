@@ -1,24 +1,6 @@
 package org.jruby.javasupport.util;
 
-import org.jruby.MetaClass;
-import org.jruby.NativeException;
-import org.jruby.Ruby;
-import org.jruby.RubyArray;
-import org.jruby.RubyBasicObject;
-import org.jruby.RubyBoolean;
-import org.jruby.RubyClass;
-import org.jruby.RubyException;
-import org.jruby.RubyFixnum;
-import org.jruby.RubyHash;
-import org.jruby.RubyInstanceConfig;
-import org.jruby.RubyKernel;
-import org.jruby.RubyLocalJumpError;
-import org.jruby.RubyMatchData;
-import org.jruby.RubyModule;
-import org.jruby.RubyProc;
-import org.jruby.RubyRegexp;
-import org.jruby.RubyString;
-import org.jruby.RubySymbol;
+import org.jruby.*;
 import org.jruby.ast.ArgsNode;
 import org.jruby.ast.ArgumentNode;
 import org.jruby.ast.DAsgnNode;
@@ -2760,5 +2742,23 @@ public class RuntimeHelpers {
 
 
         return classContainer.defineOrGetClassUnder(name, sc);
+    }
+
+    public static RubyString appendByteList(RubyString target, ByteList source) {
+        target.getByteList().append(source);
+        return target;
+    }
+
+    public static RubyString appendByteList19(RubyString target, ByteList source, int codeRange) {
+        target.cat19(source, codeRange);
+        return target;
+    }
+
+    public static RubyString shortcutAppend(RubyString string, IRubyObject object) {
+        if (object instanceof RubyFixnum || object instanceof RubyFloat || object instanceof RubySymbol) {
+            return string.append19(object);
+        } else {
+            return string.append19(object.asString());
+        }
     }
 }

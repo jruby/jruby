@@ -139,6 +139,28 @@ public interface BodyCompiler {
     public void createNewSymbol(ArrayCallback callback, int count, Encoding encoding);
 
     /**
+     * Build a string using the given callback. A String will be create at the start,
+     * and each iteration is expected to leave a String on the stack.
+     */
+    public void buildNewString(ArrayCallback callback, int count, Encoding encoding);
+
+    /**
+     * Append the given bytelist + coderange to the string currently on the stack.
+     */
+    public void appendByteList(ByteList value, int codeRange, boolean is19);
+
+    /**
+     * Append the object on stack to the string below it.
+     */
+    public void appendObject(boolean is19);
+
+    /**
+     * A "shortcut" append that skips conversions to String where possible.
+     * Same stack requirements as appendObject.
+     */
+    public void shortcutAppend();
+
+    /**
      * Generate a new "Symbol" value (or fetch the existing one).
      */
     public void createNewSymbol(String name);
