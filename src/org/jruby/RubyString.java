@@ -1302,11 +1302,15 @@ public class RubyString extends RubyObject implements EncodingCapable {
     // // rb_str_buf_append
     public final RubyString cat19(RubyString str) {
         ByteList other = str.value;
-        int otherCr = cat(other.getUnsafeBytes(), other.getBegin(), other.getRealSize(),
-                other.getEncoding(), str.getCodeRange());
+        int otherCr = cat19(other, str.getCodeRange());
         infectBy(str);
         str.setCodeRange(otherCr);
         return this;
+    }
+
+    public final int cat19(ByteList other, int codeRange) {
+        return cat(other.getUnsafeBytes(), other.getBegin(), other.getRealSize(),
+                other.getEncoding(), codeRange);
     }
 
     public final RubyString cat(RubyString str) {
