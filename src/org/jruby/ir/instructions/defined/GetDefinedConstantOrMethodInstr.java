@@ -4,6 +4,7 @@
  */
 package org.jruby.ir.instructions.defined;
 
+import org.jruby.RubyString;
 import org.jruby.ir.IRVisitor;
 import org.jruby.ir.Operation;
 import org.jruby.ir.instructions.Instr;
@@ -38,9 +39,9 @@ public class GetDefinedConstantOrMethodInstr extends DefinedObjectNameInstr {
     public Object interpret(ThreadContext context, DynamicScope currDynScope, IRubyObject self, Object[] temp, Block block) {
         IRubyObject value = (IRubyObject) getObject().retrieve(context, self, currDynScope, temp);
         String name = getName().string;
-        ByteList definedType = RuntimeHelpers.getDefinedConstantOrBoundMethod(value, name);
+        RubyString definedType = RuntimeHelpers.getDefinedConstantOrBoundMethod(value, name);
         
-        return definedType == null ? context.nil : new StringLiteral(definedType).retrieve(context, self, currDynScope, temp);
+        return definedType == null ? context.nil : new StringLiteral(definedType.getByteList()).retrieve(context, self, currDynScope, temp);
     }
 
     @Override
