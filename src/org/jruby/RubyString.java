@@ -2547,6 +2547,15 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     public RubyString append19(IRubyObject other) {
+        if (other instanceof RubyFixnum) {
+            cat19(ConvertBytes.longToByteList(((RubyFixnum)other).getLongValue()), StringSupport.CR_7BIT);
+            return this;
+        } else if (other instanceof RubyFloat) {
+            return cat19((RubyString)((RubyFloat)other).to_s());
+        } else if (other instanceof RubySymbol) {
+            cat19(((RubySymbol)other).getBytes(), 0);
+            return this;
+        }
         return cat19(other.convertToString());
     }
 
