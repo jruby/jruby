@@ -54,8 +54,13 @@ public abstract class DNode extends ListNode {
     }
 
     public void appendToString(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock, RubyString string, Node node) {
-        if (node instanceof StrNode && (!is19() || isSameEncoding((StrNode) node))) {
-            string.getByteList().append(((StrNode) node).getValue());
+        if (node instanceof StrNode) {
+            StrNode strNode = (StrNode)node;
+            if (!is19() || isSameEncoding(strNode)) {
+                string.getByteList().append(strNode.getValue());
+            } else {
+                string.cat19(strNode.getValue(), strNode.getCodeRange());
+            }
         } else if (is19()) {
             string.append19(node.interpret(runtime, context, self, aBlock));
         } else {
