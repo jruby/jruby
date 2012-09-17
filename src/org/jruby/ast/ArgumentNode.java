@@ -60,7 +60,7 @@ public class ArgumentNode extends Node implements INameNode {
     }
     
     public Object accept(NodeVisitor visitor) {
-        throw new RuntimeException("ArgumentNode should never be evaluated");
+        return null;
     }
 
     /**
