@@ -32,4 +32,12 @@ describe "Directed Graph Utility" do
     @graph.edges.size.should == 4
   end
 
+  it "should remove a vertex and its associated edges" do
+    @graph.removeVertexFor(3)
+    @graph.edges.size.should == 2
+    @graph.vertices.size.should == 3
+    @graph.removeVertexFor(2)
+    @graph.vertices.size.should == 2
+  end
+
 end
