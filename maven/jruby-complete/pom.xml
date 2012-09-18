@@ -25,12 +25,12 @@
       <scope>${jar.scope}</scope>
     </dependency>
     <dependency>
-      <groupId>com.github.jnr</groupId>
+      <groupId>org.jruby.extras</groupId>
       <artifactId>jnr-netdb</artifactId>
       <scope>${jar.scope}</scope>
     </dependency>
     <dependency>
-      <groupId>com.github.jnr</groupId>
+      <groupId>org.jruby.ext.posix</groupId>
       <artifactId>jnr-posix</artifactId>
       <scope>${jar.scope}</scope>
     </dependency>
@@ -40,8 +40,8 @@
       <scope>${jar.scope}</scope>
     </dependency>
     <dependency>
-      <groupId>com.github.jnr</groupId>
-      <artifactId>jnr-constants</artifactId>
+      <groupId>org.jruby.extras</groupId>
+      <artifactId>constantine</artifactId>
       <scope>${jar.scope}</scope>
     </dependency>
     <dependency>
@@ -50,8 +50,13 @@
       <scope>${jar.scope}</scope>
     </dependency>
     <dependency>
-      <groupId>com.github.jnr</groupId>
+      <groupId>org.jruby.extras</groupId>
       <artifactId>jffi</artifactId>
+      <scope>${jar.scope}</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.jruby.extras</groupId>
+      <artifactId>jaffl</artifactId>
       <scope>${jar.scope}</scope>
     </dependency>
     <dependency>

@@ -21,31 +21,31 @@
     <!-- ASM comes with our source, and is included in the jar, but is rewritten to
          a jruby-specific package to avoid conflicts. -->
     <dependency>
-      <groupId>org.ow2.asm</groupId>
+      <groupId>asm</groupId>
       <artifactId>asm</artifactId>
       <version>${asm.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>org.ow2.asm</groupId>
+      <groupId>asm</groupId>
       <artifactId>asm-commons</artifactId>
       <version>${asm.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>org.ow2.asm</groupId>
+      <groupId>asm</groupId>
       <artifactId>asm-util</artifactId>
       <version>${asm.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>org.ow2.asm</groupId>
+      <groupId>asm</groupId>
       <artifactId>asm-analysis</artifactId>
       <version>${asm.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>org.ow2.asm</groupId>
+      <groupId>asm</groupId>
       <artifactId>asm-tree</artifactId>
       <version>${asm.version}</version>
       <scope>provided</scope>
