@@ -161,6 +161,11 @@ public interface BodyCompiler {
     public void shortcutAppend();
 
     /**
+     * Convert a String on stack to a Symbol
+     */
+    public void stringToSymbol(boolean is19);
+
+    /**
      * Generate a new "Symbol" value (or fetch the existing one).
      */
     public void createNewSymbol(String name);
