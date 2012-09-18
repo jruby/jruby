@@ -1448,12 +1448,8 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     }
 
     public void nullToNil() {
-        Label notNull = new Label();
-        method.dup();
-        method.ifnonnull(notNull);
-        method.pop();
-        loadNil();
-        method.label(notNull);
+        loadThreadContext();
+        invokeUtilityMethod("nullToNil", sig(IRubyObject.class, IRubyObject.class, ThreadContext.class));
     }
 
     public void isInstanceOf(Class clazz, BranchCallback trueBranch, BranchCallback falseBranch) {
@@ -1960,30 +1956,12 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         method.label(exitLabel);
     }
 
-    public void isConstantDefined(String name, BranchCallback trueBranch, BranchCallback falseBranch) {
-        loadThreadContext();
-        method.ldc(name);
-        invokeThreadContext("getConstantDefined", sig(boolean.class, params(String.class)));
-        Label falseLabel = new Label();
-        Label exitLabel = new Label();
-        method.ifeq(falseLabel); // EQ == 0 (i.e. false)
-        trueBranch.branch(this);
-        method.go_to(exitLabel);
-        method.label(falseLabel);
-        falseBranch.branch(this);
-        method.label(exitLabel);
+    public void isConstantDefined(String name) {
+        script.getCacheCompiler().cacheConstantDefined(this, name);
     }
 
-    public void isInstanceVariableDefined(String name, BranchCallback trueBranch, BranchCallback falseBranch) {
+    public void isInstanceVariableDefined(String name) {
         script.getCacheCompiler().cachedGetVariableDefined(this, name);
-        Label trueLabel = new Label();
-        Label exitLabel = new Label();
-        method.ifnonnull(trueLabel);
-        falseBranch.branch(this);
-        method.go_to(exitLabel);
-        method.label(trueLabel);
-        trueBranch.branch(this);
-        method.label(exitLabel);
     }
 
     public void isClassVarDefined(String name, BranchCallback trueBranch, BranchCallback falseBranch) {
