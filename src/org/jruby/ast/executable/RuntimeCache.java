@@ -175,28 +175,27 @@ public class RuntimeCache {
     }
 
     public final IRubyObject getVariable(ThreadContext context, int index, String name, IRubyObject object) {
-        return getVariable(context, index, name, object, true);
+        IRubyObject value = getValue(context, index, name, object);
+        if (value != null) return value;
+
+        Ruby runtime = context.runtime;
+        if (runtime.isVerbose()) {
+            warnAboutUninitializedIvar(runtime, name);
+        }
+        return runtime.getNil();
     }
 
     public final IRubyObject getVariableDefined(ThreadContext context, int index, String name, IRubyObject object) {
-        return getVariable(context, index, name, object, false);
+        return getValue(context, index, name, object);
     }
 
-    private final IRubyObject getVariable(ThreadContext context, int index, String name, IRubyObject object, boolean warn) {
+    private final IRubyObject getValue(ThreadContext context, int index, String name, IRubyObject object) {
         VariableAccessor variableAccessor = variableReaders[index];
         RubyClass cls = object.getMetaClass().getRealClass();
         if (variableAccessor.getClassId() != cls.hashCode()) {
             variableReaders[index] = variableAccessor = cls.getVariableAccessorForRead(name);
         }
-        IRubyObject value = (IRubyObject) variableAccessor.get(object);
-        if (value != null) {
-            return value;
-        }
-        Ruby runtime = context.runtime;
-        if (warn && runtime.isVerbose()) {
-            warnAboutUninitializedIvar(runtime, name);
-        }
-        return runtime.getNil();
+        return (IRubyObject)variableAccessor.get(object);
     }
 
     private void warnAboutUninitializedIvar(Ruby runtime, String name) {

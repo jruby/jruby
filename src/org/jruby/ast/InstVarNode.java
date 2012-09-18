@@ -103,6 +103,13 @@ public class InstVarNode extends Node implements IArityNode, INameNode {
     }
 
     private IRubyObject getVariable(Ruby runtime, IRubyObject self, boolean warn) {
+        IRubyObject value = getValue(runtime, self);
+        if (value != null) return value;
+        if (warn && runtime.isVerbose()) warnAboutUninitializedIvar(runtime);
+        return runtime.getNil();
+    }
+
+    private IRubyObject getValue(Ruby runtime, IRubyObject self) {
         RubyClass cls = self.getMetaClass().getRealClass();
         VariableAccessor localAccessor = accessor;
         IRubyObject value;
@@ -114,9 +121,7 @@ public class InstVarNode extends Node implements IArityNode, INameNode {
         } else {
             value = (IRubyObject)localAccessor.get(self);
         }
-        if (value != null) return value;
-        if (warn && runtime.isVerbose()) warnAboutUninitializedIvar(runtime);
-        return runtime.getNil();
+        return value;
     }
 
     private void warnAboutUninitializedIvar(Ruby runtime) {
@@ -126,6 +131,6 @@ public class InstVarNode extends Node implements IArityNode, INameNode {
     
     @Override
     public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return getVariable(runtime, self, false).isNil() ? null : runtime.getDefinedMessage(DefinedMessage.INSTANCE_VARIABLE);
+        return getValue(runtime, self) == null ? null : runtime.getDefinedMessage(DefinedMessage.INSTANCE_VARIABLE);
     }
 }

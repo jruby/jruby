@@ -1976,10 +1976,9 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
     public void isInstanceVariableDefined(String name, BranchCallback trueBranch, BranchCallback falseBranch) {
         script.getCacheCompiler().cachedGetVariableDefined(this, name);
-        method.invokeinterface(p(IRubyObject.class), "isNil", sig(boolean.class));
         Label trueLabel = new Label();
         Label exitLabel = new Label();
-        method.iffalse(trueLabel);
+        method.ifnonnull(trueLabel);
         falseBranch.branch(this);
         method.go_to(exitLabel);
         method.label(trueLabel);
