@@ -24,12 +24,13 @@ public class Yield19Node extends YieldNode {
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         Node args = getArgsNode();
         IRubyObject argsResult = args.interpret(runtime, context, self, aBlock);
+        Block yieldToBlock = context.getCurrentFrame().getBlock();
 
         switch (args.getNodeType()) {
             case ARGSPUSHNODE:
             case ARGSCATNODE:
             case SPLATNODE: 
-                argsResult = RuntimeHelpers.unsplatValue19(argsResult);
+                if (yieldToBlock.arity().getValue() > 1) argsResult = RuntimeHelpers.unsplatValue19(argsResult);
                 break;
             case ARRAYNODE:
                 // Pass-thru
@@ -38,6 +39,6 @@ public class Yield19Node extends YieldNode {
                assert false: "Invalid node found in yield";
         }
 
-        return context.getCurrentFrame().getBlock().yieldArray(context, argsResult, null, null);
+        return yieldToBlock.yieldArray(context, argsResult, null, null);
     }
 }

@@ -1803,8 +1803,7 @@ public class RuntimeHelpers {
                     
             if (array.size() == 1) {
                 IRubyObject newResult = array.eltInternal(0);
-                // JRUBY-6729. It seems RubyArray should be returned as it is from here.
-                if (!(newResult instanceof RubyArray)) {
+                if (!((newResult instanceof RubyArray) && ((RubyArray) newResult).size() == 0)) {
                     argsResult = newResult;
                 }
             }
