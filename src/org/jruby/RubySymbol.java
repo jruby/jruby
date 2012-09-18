@@ -42,6 +42,7 @@ import org.jruby.runtime.Block.Type;
 import static org.jruby.util.StringSupport.codeLength;
 import static org.jruby.util.StringSupport.codePoint;
 
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.jcodings.Encoding;
@@ -652,6 +653,7 @@ public class RubySymbol extends RubyObject {
         
         private final ReentrantLock tableLock = new ReentrantLock();
         private volatile SymbolEntry[] symbolTable;
+        private final ConcurrentHashMap<ByteList, RubySymbol> bytelistTable = new ConcurrentHashMap<ByteList, RubySymbol>(100, 0.75f, Runtime.getRuntime().availableProcessors());
         private int size;
         private int threshold;
         private final float loadFactor;
@@ -693,15 +695,27 @@ public class RubySymbol extends RubyObject {
         }
 
         public RubySymbol getSymbol(ByteList bytes) {
+            RubySymbol symbol = bytelistTable.get(bytes);
+            if (symbol != null) return symbol;
+
             String name = bytes.toString();
             int hash = name.hashCode();
             SymbolEntry[] table = symbolTable;
             
             for (SymbolEntry e = getEntryFromTable(table, hash); e != null; e = e.next) {
-                if (isSymbolMatch(name, hash, e)) return e.symbol;
+                if (isSymbolMatch(name, hash, e)) {
+                    symbol = e.symbol;
+                    break;
+                }
+            }
+
+            if (symbol == null) {
+                symbol = createSymbol(name, bytes, hash, table);
             }
             
-            return createSymbol(name, bytes, hash, table);
+            bytelistTable.put(bytes, symbol);
+
+            return symbol;
         }
 
         public RubySymbol fastGetSymbol(String internedName) {
