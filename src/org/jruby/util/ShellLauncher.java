@@ -861,6 +861,7 @@ public class ShellLauncher {
 
         @Override
         public int waitFor() throws InterruptedException {
+            shutdownStreams();
             return child.waitFor();
         }
 
@@ -894,6 +895,24 @@ public class ShellLauncher {
                 }
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
+            }
+        }
+
+        private void shutdownStreams() {
+            // We try to safely close all streams and channels to the greatest
+            // extent possible.
+            try {if (input != null) input.close();} catch (Exception e) {}
+            try {if (inerr != null) inerr.close();} catch (Exception e) {}
+            try {if (output != null) output.close();} catch (Exception e) {}
+            try {if (inputChannel != null) inputChannel.close();} catch (Exception e) {}
+            try {if (inerrChannel != null) inerrChannel.close();} catch (Exception e) {}
+            try {if (outputChannel != null) outputChannel.close();} catch (Exception e) {}
+
+            // processes seem to have some peculiar locking sequences, so we
+            // need to ensure nobody is trying to close/destroy while we are
+            synchronized (this) {
+                if (inputPumper != null) synchronized(inputPumper) {inputPumper.quit();}
+                if (inerrPumper != null) synchronized(inerrPumper) {inerrPumper.quit();}
             }
         }
 
