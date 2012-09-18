@@ -14,10 +14,6 @@ describe "Directed Graph Utility" do
     @graph.addEdge(4,1,'simple')
   end
 
-  it "should create object of DirectedGraph" do
-    @graph.class.should == Java::OrgJrubyIrUtil::DirectedGraph
-  end
-
   it "should add an edge to newly created graph" do
     @graph.edges.size.should == 4
     @graph.addEdge(4,5,'simple')
