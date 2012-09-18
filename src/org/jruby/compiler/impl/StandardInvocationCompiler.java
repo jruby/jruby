@@ -1011,11 +1011,12 @@ public class StandardInvocationCompiler implements InvocationCompiler {
         if (argsCallback != null) {
             argsCallback.call(methodCompiler);
         } else {
-            method.aconst_null();
+            methodCompiler.loadNil();
         }
 
         if (unsplat) {
-            methodCompiler.invokeUtilityMethod("unsplatValue19", sig(IRubyObject.class, IRubyObject.class));
+            methodCompiler.loadBlock();
+            methodCompiler.invokeUtilityMethod("unsplatValue19IfArityOne", sig(IRubyObject.class, IRubyObject.class, Block.class));
         }
 
         method.aconst_null();
