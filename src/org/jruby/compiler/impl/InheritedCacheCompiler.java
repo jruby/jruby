@@ -315,6 +315,20 @@ public class InheritedCacheCompiler implements CacheCompiler {
         inheritedConstantCount++;
     }
 
+    public void cacheConstantDefined(BaseBodyCompiler method, String constantName) {
+        method.loadThis();
+        method.loadThreadContext();
+        method.method.ldc(constantName);
+        if (inheritedConstantCount < AbstractScript.NUMBERED_CONSTANT_COUNT) {
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getConstantDefined" + inheritedConstantCount, sig(IRubyObject.class, ThreadContext.class, String.class));
+        } else {
+            method.method.pushInt(inheritedConstantCount);
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getConstantDefined", sig(IRubyObject.class, ThreadContext.class, String.class, int.class));
+        }
+
+        inheritedConstantCount++;
+    }
+
     public void cacheConstantFrom(BaseBodyCompiler method, String constantName) {
         // module is on top of stack
         method.loadThis();

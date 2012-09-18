@@ -1549,34 +1549,10 @@ public class ASTCompiler {
                         });
                 break;
             case INSTVARNODE:
-                context.isInstanceVariableDefined(((InstVarNode) node).getName(),
-                        new BranchCallback() {
-
-                            public void branch(BodyCompiler context) {
-                                context.pushDefinedMessage(DefinedMessage.INSTANCE_VARIABLE);
-                            }
-                        },
-                        new BranchCallback() {
-
-                            public void branch(BodyCompiler context) {
-                                context.pushNull();
-                            }
-                        });
+                context.isInstanceVariableDefined(((InstVarNode) node).getName());
                 break;
             case CONSTNODE:
-                context.isConstantDefined(((ConstNode) node).getName(),
-                        new BranchCallback() {
-
-                            public void branch(BodyCompiler context) {
-                                context.pushDefinedMessage(DefinedMessage.CONSTANT);
-                            }
-                        },
-                        new BranchCallback() {
-
-                            public void branch(BodyCompiler context) {
-                                context.pushNull();
-                            }
-                        });
+                context.isConstantDefined(((ConstNode) node).getName());
                 break;
             case FCALLNODE:
                 context.loadSelf();

@@ -571,8 +571,8 @@ public interface BodyCompiler {
     public void isMethodBound(String name, BranchCallback trueBranch, BranchCallback falseBranch);
     public void hasBlock(BranchCallback trueBranch, BranchCallback falseBranch);
     public void isGlobalDefined(String name, BranchCallback trueBranch, BranchCallback falseBranch);
-    public void isConstantDefined(String name, BranchCallback trueBranch, BranchCallback falseBranch);
-    public void isInstanceVariableDefined(String name, BranchCallback trueBranch, BranchCallback falseBranch);
+    public void isConstantDefined(String name);
+    public void isInstanceVariableDefined(String name);
     public void isClassVarDefined(String name, BranchCallback trueBranch, BranchCallback falseBranch);
     public Object getNewEnding();
     public void ifNull(Object gotoToken);
