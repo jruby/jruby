@@ -489,9 +489,17 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         invokeUtilityMethod("shortcutAppend", sig(RubyString.class, RubyString.class, IRubyObject.class));
     }
 
+    public void stringToSymbol(boolean is19) {
+        if (is19) {
+            method.invokevirtual(p(RubyString.class), "intern19", sig(RubySymbol.class));
+        } else {
+            method.invokevirtual(p(RubyString.class), "intern", sig(RubySymbol.class));
+        }
+    }
+
     public void createNewSymbol(ArrayCallback callback, int count, Encoding encoding) {
         loadRuntime();
-        createNewString(callback, count, encoding);
+        buildNewString(callback, count, encoding);
         toJavaString();
         invokeRuby("newSymbol", sig(RubySymbol.class, params(String.class)));
     }

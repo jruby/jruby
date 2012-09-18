@@ -42,104 +42,7 @@ import org.jruby.RubyFloat;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.RubyMatchData;
 import org.jruby.RubyString;
-import org.jruby.ast.AliasNode;
-import org.jruby.ast.AndNode;
-import org.jruby.ast.ArgsCatNode;
-import org.jruby.ast.ArgsNode;
-import org.jruby.ast.ArgsPushNode;
-import org.jruby.ast.ArrayNode;
-import org.jruby.ast.AttrAssignNode;
-import org.jruby.ast.BackRefNode;
-import org.jruby.ast.BeginNode;
-import org.jruby.ast.BignumNode;
-import org.jruby.ast.BinaryOperatorNode;
-import org.jruby.ast.BlockNode;
-import org.jruby.ast.BlockPassNode;
-import org.jruby.ast.BreakNode;
-import org.jruby.ast.CallNode;
-import org.jruby.ast.CaseNode;
-import org.jruby.ast.ClassNode;
-import org.jruby.ast.ClassVarAsgnNode;
-import org.jruby.ast.ClassVarDeclNode;
-import org.jruby.ast.ClassVarNode;
-import org.jruby.ast.Colon2ConstNode;
-import org.jruby.ast.Colon2MethodNode;
-import org.jruby.ast.Colon2Node;
-import org.jruby.ast.Colon3Node;
-import org.jruby.ast.ConstDeclNode;
-import org.jruby.ast.ConstNode;
-import org.jruby.ast.DAsgnNode;
-import org.jruby.ast.DRegexpNode;
-import org.jruby.ast.DStrNode;
-import org.jruby.ast.DSymbolNode;
-import org.jruby.ast.DVarNode;
-import org.jruby.ast.DXStrNode;
-import org.jruby.ast.DefinedNode;
-import org.jruby.ast.DefnNode;
-import org.jruby.ast.DefsNode;
-import org.jruby.ast.DotNode;
-import org.jruby.ast.EnsureNode;
-import org.jruby.ast.EvStrNode;
-import org.jruby.ast.FCallNode;
-import org.jruby.ast.FileNode;
-import org.jruby.ast.FixnumNode;
-import org.jruby.ast.FlipNode;
-import org.jruby.ast.FloatNode;
-import org.jruby.ast.ForNode;
-import org.jruby.ast.GlobalAsgnNode;
-import org.jruby.ast.GlobalVarNode;
-import org.jruby.ast.HashNode;
-import org.jruby.ast.IfNode;
-import org.jruby.ast.InstAsgnNode;
-import org.jruby.ast.InstVarNode;
-import org.jruby.ast.IterNode;
-import org.jruby.ast.ListNode;
-import org.jruby.ast.LiteralNode;
-import org.jruby.ast.LocalAsgnNode;
-import org.jruby.ast.LocalVarNode;
-import org.jruby.ast.Match2Node;
-import org.jruby.ast.Match3Node;
-import org.jruby.ast.MatchNode;
-import org.jruby.ast.ModuleNode;
-import org.jruby.ast.MultipleAsgnNode;
-import org.jruby.ast.NewlineNode;
-import org.jruby.ast.NextNode;
-import org.jruby.ast.NilNode;
-import org.jruby.ast.Node;
-import org.jruby.ast.NodeType;
-import org.jruby.ast.NotNode;
-import org.jruby.ast.NthRefNode;
-import org.jruby.ast.OpAsgnNode;
-import org.jruby.ast.OpAsgnOrNode;
-import org.jruby.ast.OpElementAsgnNode;
-import org.jruby.ast.OrNode;
-import org.jruby.ast.PostExeNode;
-import org.jruby.ast.PreExeNode;
-import org.jruby.ast.RegexpNode;
-import org.jruby.ast.RescueBodyNode;
-import org.jruby.ast.RescueNode;
-import org.jruby.ast.ReturnNode;
-import org.jruby.ast.RootNode;
-import org.jruby.ast.SClassNode;
-import org.jruby.ast.SValueNode;
-import org.jruby.ast.SelfNode;
-import org.jruby.ast.SpecialArgs;
-import org.jruby.ast.SplatNode;
-import org.jruby.ast.StarNode;
-import org.jruby.ast.StrNode;
-import org.jruby.ast.SuperNode;
-import org.jruby.ast.SymbolNode;
-import org.jruby.ast.ToAryNode;
-import org.jruby.ast.UndefNode;
-import org.jruby.ast.UntilNode;
-import org.jruby.ast.VAliasNode;
-import org.jruby.ast.VCallNode;
-import org.jruby.ast.WhenNode;
-import org.jruby.ast.WhenOneArgNode;
-import org.jruby.ast.WhileNode;
-import org.jruby.ast.XStrNode;
-import org.jruby.ast.YieldNode;
-import org.jruby.ast.ZSuperNode;
+import org.jruby.ast.*;
 import org.jruby.exceptions.JumpException;
 import org.jruby.internal.runtime.methods.DefaultMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
@@ -2246,66 +2149,55 @@ public class ASTCompiler {
         }
     }
 
-    public void compileDStr(Node node, BodyCompiler context, boolean expr) {
-        final DStrNode dstrNode = (DStrNode) node;
+    public void compileDNode(Node node, BodyCompiler context, boolean expr) {
+        final DNode dNode = (DNode) node;
 
         ArrayCallback dstrCallback = new ArrayCallback() {
-                    public void nextValue(BodyCompiler context, Object sourceArray,
-                            int index) {
-                        Node nextNode = dstrNode.get(index);
+            public void nextValue(BodyCompiler context, Object sourceArray,
+                                  int index) {
+                Node nextNode = dNode.get(index);
 
-                        switch (nextNode.getNodeType()) {
-                            case STRNODE:
-                                context.appendByteList(((StrNode)nextNode).getValue(), ((StrNode)nextNode).getCodeRange(), dstrNode.is19());
-                                break;
-                            case EVSTRNODE:
-                                compile(((EvStrNode)nextNode).getBody(), context, true);
-                                context.shortcutAppend();
-                                break;
-                            default:
-                                compile(nextNode, context, true);
-                                context.appendObject(dstrNode.is19());
-                        }
-                    }
-                };
+                switch (nextNode.getNodeType()) {
+                    case STRNODE:
+                        context.appendByteList(((StrNode) nextNode).getValue(), ((StrNode) nextNode).getCodeRange(), dNode.is19());
+                        break;
+                    case EVSTRNODE:
+                        compile(((EvStrNode)nextNode).getBody(), context, true);
+                        context.shortcutAppend();
+                        break;
+                    default:
+                        compile(nextNode, context, true);
+                        context.appendObject(dNode.is19());
+                }
+            }
+        };
 
         if (expr) {
             Encoding enc = null;
-            if (dstrNode.is19()) {
-                enc = dstrNode.getEncoding();
+            if (dNode.is19()) {
+                enc = dNode.getEncoding();
             }
 
-            context.buildNewString(dstrCallback, dstrNode.size(), enc);
+            context.buildNewString(dstrCallback, dNode.size(), enc);
         } else {
             // not an expression, only compile the elements
-            for (Node nextNode : dstrNode.childNodes()) {
+            for (Node nextNode : dNode.childNodes()) {
                 compile(nextNode, context, false);
             }
         }
     }
 
+    public void compileDStr(Node node, BodyCompiler context, boolean expr) {
+        compileDNode(node, context, expr);
+    }
+
     public void compileDSymbol(Node node, BodyCompiler context, boolean expr) {
         final DSymbolNode dsymbolNode = (DSymbolNode) node;
 
-        ArrayCallback dstrCallback = new ArrayCallback() {
-
-                    public void nextValue(BodyCompiler context, Object sourceArray,
-                            int index) {
-                        compile(dsymbolNode.get(index), context, true);
-                    }
-                };
+        compileDNode(dsymbolNode, context, expr);
 
         if (expr) {
-            Encoding enc = null;
-            if (dsymbolNode.is19()) {
-                enc = dsymbolNode.getEncoding();
-            }
-            context.createNewSymbol(dstrCallback, dsymbolNode.size(), enc);
-        } else {
-            // not an expression, only compile the elements
-            for (Node nextNode : dsymbolNode.childNodes()) {
-                compile(nextNode, context, false);
-            }
+            context.stringToSymbol(dsymbolNode.is19());
         }
     }
 
@@ -2318,25 +2210,13 @@ public class ASTCompiler {
     public void compileDXStr(Node node, BodyCompiler context, boolean expr) {
         final DXStrNode dxstrNode = (DXStrNode) node;
 
-        final ArrayCallback dstrCallback = new ArrayCallback() {
-
-                    public void nextValue(BodyCompiler context, Object sourceArray,
-                            int index) {
-                        compile(dxstrNode.get(index), context,true);
-                    }
-                };
-
         ArgumentsCallback argsCallback = new ArgumentsCallback() {
                     public int getArity() {
                         return 1;
                     }
 
                     public void call(BodyCompiler context) {
-                        Encoding enc = null;
-                        if (dxstrNode.is19()) {
-                            enc = dxstrNode.getEncoding();
-                        }
-                        context.createNewString(dstrCallback, dxstrNode.size(), enc);
+                        compileDNode(dxstrNode, context, true);
                     }
                 };
 
