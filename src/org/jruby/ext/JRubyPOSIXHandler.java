@@ -10,9 +10,9 @@ import java.util.Map.Entry;
 import org.jruby.Ruby;
 import org.jruby.RubyHash;
 import org.jruby.common.IRubyWarnings.ID;
-import jnr.posix.POSIXHandler;
+import org.jruby.ext.posix.POSIXHandler;
 
-import jnr.constants.platform.Errno;
+import com.kenai.constantine.platform.Errno;
 
 public class JRubyPOSIXHandler implements POSIXHandler {
     private final Ruby runtime;
@@ -30,7 +30,7 @@ public class JRubyPOSIXHandler implements POSIXHandler {
     }
 
     public void error(Errno error, String extraData) {
-        throw runtime.newErrnoFromInt(error.intValue(), extraData);
+        throw runtime.newErrnoFromInt(error.value(), extraData);
     }
 
     public void unimplementedError(String method) {

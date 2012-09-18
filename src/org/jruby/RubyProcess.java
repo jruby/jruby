@@ -29,12 +29,12 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
-import jnr.constants.platform.Signal;
+import com.kenai.constantine.platform.Signal;
 import java.util.EnumSet;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyModule;
-import jnr.posix.POSIX;
+import org.jruby.ext.posix.POSIX;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -82,9 +82,9 @@ public class RubyProcess {
         process_gid.defineAnnotatedMethods(GroupID.class);
         process_sys.defineAnnotatedMethods(Sys.class);
 
-        runtime.loadConstantSet(process, jnr.constants.platform.PRIO.class);
-        runtime.loadConstantSet(process, jnr.constants.platform.RLIM.class);
-        runtime.loadConstantSet(process, jnr.constants.platform.RLIMIT.class);
+        runtime.loadConstantSet(process, com.kenai.constantine.platform.PRIO.class);
+        runtime.loadConstantSet(process, com.kenai.constantine.platform.RLIM.class);
+        runtime.loadConstantSet(process, com.kenai.constantine.platform.RLIMIT.class);
         
         process.defineConstant("WNOHANG", runtime.newFixnum(1));
         process.defineConstant("WUNTRACED", runtime.newFixnum(2));
@@ -868,7 +868,7 @@ public class RubyProcess {
         String signalName = value.startsWith("SIG") ? value : "SIG" + value;
 
         try {
-            int signalValue = Signal.valueOf(signalName).intValue();
+            int signalValue = Signal.valueOf(signalName).value();
             return negative ? -signalValue : signalValue;
 
         } catch (IllegalArgumentException ex) {

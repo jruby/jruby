@@ -38,7 +38,7 @@ package org.jruby;
 import org.jruby.util.StringSupport;
 import org.jruby.util.io.SelectBlob;
 import org.jcodings.exception.EncodingException;
-import jnr.constants.platform.Fcntl;
+import com.kenai.constantine.platform.Fcntl;
 import java.io.EOFException;
 import java.io.FileDescriptor;
 import java.io.IOException;
@@ -2259,7 +2259,7 @@ public class RubyIO extends RubyObject {
             if (realCmd == FcntlLibrary.FD_CLOEXEC) {
                 // Do nothing.  FD_CLOEXEC has no meaning in JVM since we cannot really exec.
                 // And why the hell does webrick pass this in as a first argument!!!!!
-            } else if (realCmd == Fcntl.F_SETFL.intValue() || realCmd == Fcntl.F_SETFD.intValue()) {
+            } else if (realCmd == Fcntl.F_SETFL.value() || realCmd == Fcntl.F_SETFD.value()) {
                 if ((nArg & FcntlLibrary.FD_CLOEXEC) == FcntlLibrary.FD_CLOEXEC) {
                     // Do nothing.  FD_CLOEXEC has no meaning in JVM since we cannot really exec.
                 } else {
@@ -2267,7 +2267,7 @@ public class RubyIO extends RubyObject {
 
                     myOpenFile.getMainStreamSafe().setBlocking(block);
                 }
-            } else if (realCmd == Fcntl.F_GETFL.intValue()) {
+            } else if (realCmd == Fcntl.F_GETFL.value()) {
                 return myOpenFile.getMainStreamSafe().isBlocking() ? RubyFixnum.zero(runtime) : RubyFixnum.newFixnum(runtime, ModeFlags.NONBLOCK);
             } else {
                 throw runtime.newNotImplementedError("JRuby only supports F_SETFL and F_GETFL with NONBLOCK for fcntl/ioctl");

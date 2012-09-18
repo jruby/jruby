@@ -30,7 +30,7 @@ package org.jruby.util;
 
 import org.jcodings.Encoding;
 import org.jruby.Ruby;
-import jnr.posix.util.Platform;
+import org.jruby.ext.posix.util.Platform;
 
 import java.util.HashMap;
 import java.util.Map;

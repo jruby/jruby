@@ -33,7 +33,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.net.URI;
 
-import jnr.posix.JavaSecuredFile;
+import org.jruby.ext.posix.JavaSecuredFile;
 
 /**
  * This class provides a File implementation that normalizes all path separators to forward slashes.

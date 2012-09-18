@@ -10,7 +10,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyHash;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.RubyString;
-import jnr.posix.util.Platform;
+import org.jruby.ext.posix.util.Platform;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 

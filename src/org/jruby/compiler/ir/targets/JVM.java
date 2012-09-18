@@ -1,6 +1,6 @@
 package org.jruby.compiler.ir.targets;
 
-import jnr.constants.Constant;
+import com.kenai.constantine.Constant;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -36,12 +36,12 @@ import org.jruby.compiler.ir.operands.Variable;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Type;
+import org.objectweb.asm.commons.GeneratorAdapter;
+import org.objectweb.asm.commons.Method;
 import org.objectweb.asm.util.TraceClassVisitor;
 import static org.objectweb.asm.Opcodes.*;
 import static org.jruby.util.CodegenUtils.*;
-import org.objectweb.asm.commons.GeneratorAdapter;
 import static org.objectweb.asm.commons.GeneratorAdapter.*;
-import org.objectweb.asm.commons.Method;
 
 // This class represents JVM as the target of compilation
 // and outputs bytecode

@@ -1,6 +1,6 @@
 package org.jruby.ext;
 
-import jnr.constants.platform.Errno;
+import com.kenai.constantine.platform.Errno;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.exceptions.RaiseException;

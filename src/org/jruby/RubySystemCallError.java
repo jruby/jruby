@@ -19,7 +19,7 @@ import org.jruby.runtime.component.VariableEntry;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 
-import jnr.constants.platform.Errno;
+import com.kenai.constantine.platform.Errno;
 
 @JRubyClass(name="SystemCallError", parent="StandardError")
 public class RubySystemCallError extends RubyException {

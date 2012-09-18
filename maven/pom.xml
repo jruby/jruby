@@ -14,7 +14,7 @@
 
   <properties>
     <jar.scope>provided</jar.scope>
-    <asm.version>4.0</asm.version>
+    <asm.version>3.3.1</asm.version>
   </properties>
 
   <dependencies>
@@ -57,19 +57,19 @@
     <dependency>
       <groupId>org.jruby.joni</groupId>
       <artifactId>joni</artifactId>
-      <version>1.1.8</version>
+      <version>1.1.7</version>
       <scope>${jar.scope}</scope>
     </dependency>
     <dependency>
-      <groupId>com.github.jnr</groupId>
+      <groupId>org.jruby.extras</groupId>
       <artifactId>jnr-netdb</artifactId>
-      <version>1.1.0</version>
+      <version>1.0.7</version>
       <scope>${jar.scope}</scope>
     </dependency>
     <dependency>
-      <groupId>com.github.jnr</groupId>
+      <groupId>org.jruby.ext.posix</groupId>
       <artifactId>jnr-posix</artifactId>
-      <version>2.2</version>
+      <version>1.1.9</version>
       <scope>${jar.scope}</scope>
     </dependency>
     <dependency>
@@ -79,40 +79,40 @@
       <scope>${jar.scope}</scope>
     </dependency>
     <dependency>
-      <groupId>com.github.jnr</groupId>
-      <artifactId>jnr-constants</artifactId>
-      <version>0.8.3</version>
+      <groupId>org.jruby.extras</groupId>
+      <artifactId>constantine</artifactId>
+      <version>0.6</version>
       <scope>${jar.scope}</scope>
     </dependency>
     <dependency>
       <groupId>org.jruby.jcodings</groupId>
       <artifactId>jcodings</artifactId>
-      <version>1.0.9</version>
+      <version>1.0.7</version>
       <scope>${jar.scope}</scope>
     </dependency>
     <dependency>
-      <groupId>com.github.jnr</groupId>
+      <groupId>org.jruby.extras</groupId>
       <artifactId>jffi</artifactId>
-      <version>1.2.4</version>
+      <version>1.0.8</version>
       <scope>${jar.scope}</scope>
     </dependency>
     <dependency>
-      <groupId>com.github.jnr</groupId>
+      <groupId>org.jruby.extras</groupId>
       <artifactId>jffi</artifactId>
-      <version>1.2.4</version>
+      <version>1.0.7</version>
       <scope>runtime</scope>
       <classifier>native</classifier>
     </dependency>
     <dependency>
-      <groupId>com.github.jnr</groupId>
-      <artifactId>jnr-ffi</artifactId>
-      <version>0.7.6</version>
+      <groupId>org.jruby.extras</groupId>
+      <artifactId>jaffl</artifactId>
+      <version>0.5.11</version>
       <scope>${jar.scope}</scope>
     </dependency>
     <dependency>
       <groupId>org.yaml</groupId>
       <artifactId>snakeyaml</artifactId>
-      <version>1.10</version>
+      <version>1.9</version>
       <scope>${jar.scope}</scope>
     </dependency>
     <dependency>
@@ -124,7 +124,7 @@
     <dependency>
       <groupId>joda-time</groupId>
       <artifactId>joda-time</artifactId>
-      <version>2.1</version>
+      <version>1.6</version>
       <scope>${jar.scope}</scope>
     </dependency>
   </dependencies>

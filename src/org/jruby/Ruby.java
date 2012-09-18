@@ -79,6 +79,8 @@ import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.JRubyPOSIXHandler;
 import org.jruby.ext.LateLoadingLibrary;
+import org.jruby.ext.posix.POSIX;
+import org.jruby.ext.posix.POSIXFactory;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.internal.runtime.ThreadService;
 import org.jruby.internal.runtime.ValueAccessor;
@@ -119,16 +121,14 @@ import org.jruby.util.SafePropertyAccessor;
 import org.jruby.util.collections.WeakHashSet;
 import org.jruby.util.io.ChannelDescriptor;
 
-import jnr.constants.Constant;
-import jnr.constants.ConstantSet;
-import jnr.constants.platform.Errno;
+import com.kenai.constantine.Constant;
+import com.kenai.constantine.ConstantSet;
+import com.kenai.constantine.platform.Errno;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.nio.channels.ClosedChannelException;
 import java.util.EnumSet;
 import java.util.concurrent.atomic.AtomicLong;
-import jnr.posix.POSIX;
-import jnr.posix.POSIXFactory;
 import org.jruby.RubyInstanceConfig.CompileMode;
 import org.jruby.ast.RootNode;
 import org.jruby.ast.executable.RuntimeCache;
@@ -1410,12 +1410,12 @@ public final class Ruby {
             try {
                 // define EAGAIN now, so that future EWOULDBLOCK will alias to it
                 // see MRI's error.c and its explicit ordering of Errno definitions.
-                createSysErr(Errno.EAGAIN.intValue(), Errno.EAGAIN.name());
+                createSysErr(Errno.EAGAIN.value(), Errno.EAGAIN.name());
                 
                 for (Errno e : Errno.values()) {
                     Constant c = (Constant) e;
                     if (Character.isUpperCase(c.name().charAt(0))) {
-                        createSysErr(c.intValue(), c.name());
+                        createSysErr(c.value(), c.name());
                     }
                 }
             } catch (Exception e) {
@@ -2920,7 +2920,7 @@ public final class Ruby {
     }
 
     public RubyFixnum newFixnum(Constant value) {
-        return RubyFixnum.newFixnum(this, value.intValue());
+        return RubyFixnum.newFixnum(this, value.value());
     }
 
     public RubyFloat newFloat(double value) {
@@ -3857,14 +3857,14 @@ public final class Ruby {
         for (E e : EnumSet.allOf(enumClass)) {
             Constant c = (Constant) e;
             if (Character.isUpperCase(c.name().charAt(0))) {
-                module.fastSetConstant(c.name(), newFixnum(c.intValue()));
+                module.fastSetConstant(c.name(), newFixnum(c.value()));
             }
         }
     }
     public void loadConstantSet(RubyModule module, String constantSetName) {
         for (Constant c : ConstantSet.getConstantSet(constantSetName)) {
             if (Character.isUpperCase(c.name().charAt(0))) {
-                module.fastSetConstant(c.name(), newFixnum(c.intValue()));
+                module.fastSetConstant(c.name(), newFixnum(c.value()));
             }
         }
     }
