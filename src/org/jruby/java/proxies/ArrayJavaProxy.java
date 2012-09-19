@@ -1,5 +1,6 @@
 package org.jruby.java.proxies;
 
+import java.lang.reflect.Array;
 import java.util.Arrays;
 import org.jruby.Ruby;
 import org.jruby.RubyClass;
@@ -51,13 +52,13 @@ public class ArrayJavaProxy extends JavaProxy {
     }
     
     @JRubyMethod(name = {"length","size"})
-    public IRubyObject length() {
-        return getJavaArray().length();
+    public IRubyObject length(ThreadContext context) {
+        return context.runtime.newFixnum(Array.getLength(this.getObject()));
     }
 
     @JRubyMethod(name = "empty?")
     public IRubyObject empty(ThreadContext context) {
-        return RubyFixnum.zero(context.runtime).eql_p(getJavaArray().length());
+        return context.runtime.newBoolean(Array.getLength(this.getObject()) == 0);
     }
     
     @JRubyMethod(name = "[]")
