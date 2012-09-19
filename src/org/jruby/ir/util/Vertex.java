@@ -57,6 +57,7 @@ public class Vertex<T> implements Comparable<Vertex<T>> {
     public void removeAllIncomingEdges() {
         for (Edge edge: getIncomingEdges()) {
             edge.getSource().getOutgoingEdges().remove(edge);
+            graph.edges().remove(edge);
         }
         incoming = null;
     }
@@ -64,6 +65,7 @@ public class Vertex<T> implements Comparable<Vertex<T>> {
     public void removeAllOutgoingEdges() {
         for (Edge edge: getOutgoingEdges()) {
             edge.getDestination().getIncomingEdges().remove(edge);
+            graph.edges().remove(edge);
         }
         outgoing = null;
     }
