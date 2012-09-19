@@ -27,6 +27,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl;
 
+import java.net.Socket;
 import java.security.GeneralSecurityException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -379,8 +380,18 @@ public class SSLContext extends RubyObject {
     }
 
     // should keep SSLContext as a member for introducin SSLSession. later...
-    SSLEngine createSSLEngine(String peerHost, int peerPort) throws NoSuchAlgorithmException, KeyManagementException {
-        SSLEngine engine = internalCtx.getSSLContext().createSSLEngine(peerHost, peerPort);
+    SSLEngine createSSLEngine(Socket socket) throws NoSuchAlgorithmException, KeyManagementException {
+        // Try to initialize first without host and port, since most algorithms don't need them.
+        // See JRUBY-6891
+        SSLEngine engine;
+        try {
+            engine = internalCtx.getSSLContext().createSSLEngine();
+        } catch (Exception e) {
+            // failed to initialize; attempt to initialize with host and port
+            String peerHost = socket.getInetAddress().getHostName();
+            int peerPort = socket.getPort();
+            engine = internalCtx.getSSLContext().createSSLEngine(peerHost, peerPort);
+        }
         engine.setEnabledCipherSuites(getCipherSuites(engine));
         engine.setEnabledProtocols(getEnabledProtocols(engine));
         return engine;
