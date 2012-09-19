@@ -61,6 +61,7 @@ import org.jruby.RubyString;
 import org.jruby.ast.executable.Script;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.Constants;
@@ -246,22 +247,22 @@ public class LoadService {
         // wrap in try/catch for security exceptions in an applet
         try {
             if (jrubyHome != null) {
-                char sep = '/';
-                String rubyDir = jrubyHome + sep + "lib" + sep + "ruby" + sep;
-
-                if (runtime.is1_9()) {
-                    // shared lib
-                    addPath(rubyDir + "shared");
-
-                    // MRI standard lib
-                    addPath(rubyDir + Constants.RUBY1_9_MAJOR_VERSION);
-                } else {
-                    // shared lib
-                    addPath(rubyDir + "shared");
-
-                    // MRI standard lib
-                    addPath(rubyDir + Constants.RUBY_MAJOR_VERSION);
+                // siteDir has to come first, because rubygems insert paths after it
+                // and we must to prefer Gems to rubyLibDir/rubySharedLibDir (same as MRI)
+                addPath(RbConfigLibrary.getSiteDir(runtime));
+                // if vendorDirGeneral is different than siteDirGeneral,
+                // add vendorDir, too
+                // adding {vendor,site}{Lib,Arch}Dir dirs is not necessary,
+                // since they should be the same as {vendor,site}Dir
+                if (!RbConfigLibrary.isSiteVendorSame(runtime)) {
+                    addPath(RbConfigLibrary.getVendorDir(runtime));
                 }
+                String rubygemsDir = RbConfigLibrary.getRubygemsDir(runtime);
+                if (rubygemsDir != null) {
+                    addPath(rubygemsDir);
+                }
+                addPath(RbConfigLibrary.getRubySharedLibDir(runtime));
+                addPath(RbConfigLibrary.getRubyLibDir(runtime));
             }
 
         } catch(SecurityException ignore) {}

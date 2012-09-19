@@ -107,6 +107,95 @@ public class RbConfigLibrary implements Library {
         
         return architecture;
     }
+
+    public static String getRuntimeVerStr(Ruby runtime) {
+        if (runtime.is1_9()) {
+	    return "1.9";
+        }
+        return "1.8";
+    }
+
+    public static String getNormalizedHome(Ruby runtime) {
+        normalizedHome = runtime.getJRubyHome();
+        if ((normalizedHome == null) && Ruby.isSecurityRestricted()) {
+            normalizedHome = "SECURITY RESTRICTED";
+        }
+        return normalizedHome;
+    }
+
+    public static String getLibDir(Ruby runtime) {
+        String libdir = SafePropertyAccessor.getProperty("jruby.lib");
+        if (libdir == null) {
+            libdir = new NormalizedFile(getNormalizedHome(runtime), "lib").getPath();
+        } else {
+            try {
+            // Our shell scripts pass in non-canonicalized paths, but even if we didn't
+            // anyone who did would become unhappy because Ruby apps expect no relative
+            // operators in the pathname (rubygems, for example).
+                libdir = new NormalizedFile(libdir).getCanonicalPath();
+            } catch (IOException e) {
+                libdir = new NormalizedFile(libdir).getAbsolutePath();
+            }
+        }
+
+        return libdir;
+    }
+
+    public static String getVendorDirGeneral(Ruby runtime) {
+        // vendorDirGeneral example: /usr/share/jruby/lib/ - commonly the same as libdir
+        return new NormalizedFile(SafePropertyAccessor.getProperty("vendor.dir.general", getLibDir(runtime))).getPath();
+    }
+
+    public static String getSiteDirGeneral(Ruby runtime) {
+        // siteDirGeneral example: /usr/local/share/jruby/lib/
+        return new NormalizedFile(SafePropertyAccessor.getProperty("site.dir.general", getLibDir(runtime))).getPath();
+    }
+
+    public static Boolean isSiteVendorSame(Ruby runtime) {
+        return getVendorDirGeneral(runtime).equals(getSiteDirGeneral(runtime));
+    }
+
+    public static String getRubygemsDir(Ruby runtime) {
+        // used when integrating JRuby with system RubyGems - example: /usr/share/rubygems
+        return SafePropertyAccessor.getProperty("vendor.dir.rubygems", null);
+    }
+
+    public static String getRubySharedLibDir(Ruby runtime) {
+        return new NormalizedFile(getVendorDirGeneral(runtime), "ruby/shared").getPath();
+    }
+
+    public static String getRubyLibDir(Ruby runtime) {
+        return new NormalizedFile(getVendorDirGeneral(runtime), String.format("ruby/%s", getRuntimeVerStr(runtime))).getPath();
+    }
+
+    public static String getArchDir(Ruby runtime) {
+        return getRubyLibDir(runtime);
+    }
+
+    public static String getVendorDir(Ruby runtime) {
+        return new NormalizedFile(getRubyLibDir(runtime), "vendor_ruby").getPath();
+    }
+
+    public static String getVendorLibDir(Ruby runtime) {
+        return getVendorDir(runtime);
+    }
+
+    public static String getVendorArchDir(Ruby runtime) {
+        return getVendorDir(runtime);
+    }
+
+    public static String getSiteDir(Ruby runtime) {
+        return new NormalizedFile(getSiteDirGeneral(runtime), "ruby/site_ruby").getPath();
+    }
+
+    public static String getSiteLibDir(Ruby runtime) {
+        return getSiteDir(runtime);
+    }
+
+    public static String getSiteArchDir(Ruby runtime) {
+        return getSiteDir(runtime);
+    }
+
     /**
      * Just enough configuration settings (most don't make sense in Java) to run the rubytests
      * unit tests. The tests use <code>bindir</code>, <code>RUBY_INSTALL_NAME</code> and
@@ -143,10 +232,7 @@ public class RbConfigLibrary implements Library {
         //setConfig(configHash, "arch", System.getProperty("os.arch") + "-java" + System.getProperty("java.specification.version"));
         setConfig(configHash, "arch", "universal-java" + System.getProperty("java.specification.version"));
 
-        normalizedHome = runtime.getJRubyHome();
-        if ((normalizedHome == null) && Ruby.isSecurityRestricted()) {
-            normalizedHome = "SECURITY RESTRICTED";
-        }
+        normalizedHome = getNormalizedHome(runtime);
 
         // Use property for binDir if available, otherwise fall back to common bin default
         String binDir = SafePropertyAccessor.getProperty("jruby.bindir");
@@ -186,35 +272,36 @@ public class RbConfigLibrary implements Library {
         
         setConfig(configHash, "build", Constants.BUILD);
         setConfig(configHash, "target", Constants.TARGET);
-        
-        String libdir = SafePropertyAccessor.getProperty("jruby.lib");
-        if (libdir == null) {
-            libdir = new NormalizedFile(normalizedHome, "lib").getPath();
-        } else {
-            try {
-            // Our shell scripts pass in non-canonicalized paths, but even if we didn't
-            // anyone who did would become unhappy because Ruby apps expect no relative
-            // operators in the pathname (rubygems, for example).
-                libdir = new NormalizedFile(libdir).getCanonicalPath();
-            } catch (IOException e) {
-                libdir = new NormalizedFile(libdir).getAbsolutePath();
-            }
-        }
-        String rubyLibDir = new NormalizedFile(libdir, "ruby/1.8").getPath();
-        String siteDir = new NormalizedFile(libdir, "ruby/site_ruby").getPath();
-        String siteLibDir = new NormalizedFile(libdir, "ruby/site_ruby/1.8").getPath();
-        String siteArchDir = new NormalizedFile(libdir, "ruby/site_ruby/1.8/java").getPath();
-        String archDir = new NormalizedFile(libdir, "ruby/1.8/java").getPath();
+
+
         String shareDir = new NormalizedFile(normalizedHome, "share").getPath();
         String includeDir = new NormalizedFile(normalizedHome, "lib/native/" + getOSName()).getPath();
 
-        setConfig(configHash, "libdir", libdir);
-        if (runtime.is1_9()) setConfig(configHash, "rubylibprefix",     libdir + "/ruby");
+        String vendorDirGeneral = getVendorDirGeneral(runtime);
+        String siteDirGeneral = getSiteDirGeneral(runtime);
+        String rubySharedLibDir = getRubySharedLibDir(runtime);
+        String rubyLibDir = getRubyLibDir(runtime);
+        String archDir = getArchDir(runtime);
+        String vendorDir = getVendorDir(runtime);
+        String vendorLibDir = getVendorLibDir(runtime);
+        String vendorArchDir = getVendorArchDir(runtime);
+        String siteDir = getSiteDir(runtime);
+        String siteLibDir = getSiteLibDir(runtime);
+        String siteArchDir = getSiteArchDir(runtime);
+
+        setConfig(configHash, "libdir", vendorDirGeneral);
+        if (runtime.is1_9()) setConfig(configHash, "rubylibprefix", vendorDirGeneral + "/ruby");
         setConfig(configHash, "rubylibdir",     rubyLibDir);
+        setConfig(configHash, "rubysharedlibdir", rubySharedLibDir);
+        if (!isSiteVendorSame(runtime)) {
+        setConfig(configHash, "vendordir",      vendorDir);
+        setConfig(configHash, "vendorlibdir",   vendorLibDir);
+        setConfig(configHash, "vendorarchdir",    vendorArchDir);
+        }
         setConfig(configHash, "sitedir",        siteDir);
         setConfig(configHash, "sitelibdir",     siteLibDir);
-        setConfig(configHash, "sitearch", "java");
         setConfig(configHash, "sitearchdir",    siteArchDir);
+        setConfig(configHash, "sitearch", "java");
         setConfig(configHash, "archdir",   archDir);
         setConfig(configHash, "topdir",   archDir);
         setConfig(configHash, "includedir",   includeDir);
@@ -224,6 +311,9 @@ public class RbConfigLibrary implements Library {
         setConfig(configHash, "sysconfdir", new NormalizedFile(normalizedHome, "etc").getPath());
         setConfig(configHash, "localstatedir", new NormalizedFile(normalizedHome, "var").getPath());
         setConfig(configHash, "DLEXT", "jar");
+        if (getRubygemsDir(runtime) != null) {
+            setConfig(configHash, "rubygemsdir", new NormalizedFile(getRubygemsDir(runtime)).getPath());
+        }
 
         if (Platform.IS_WINDOWS) {
             setConfig(configHash, "EXEEXT", ".exe");
@@ -247,13 +337,19 @@ public class RbConfigLibrary implements Library {
         RubyHash mkmfHash = RubyHash.newHash(runtime);
         
 
-        setConfig(mkmfHash, "libdir", libdir);
+        setConfig(mkmfHash, "libdir", vendorDirGeneral);
         setConfig(mkmfHash, "arch", "java");
         setConfig(mkmfHash, "rubylibdir",     rubyLibDir);
+        setConfig(mkmfHash, "rubysharedlibdir", rubySharedLibDir);
+        if (!isSiteVendorSame(runtime)) {
+        setConfig(mkmfHash, "vendordir",      vendorDir);
+        setConfig(mkmfHash, "vendorlibdir",   vendorLibDir);
+        setConfig(mkmfHash, "vendorarchdir",  vendorArchDir);
+        }
         setConfig(mkmfHash, "sitedir",        siteDir);
         setConfig(mkmfHash, "sitelibdir",     siteLibDir);
-        setConfig(mkmfHash, "sitearch", "java");
         setConfig(mkmfHash, "sitearchdir",    siteArchDir);
+        setConfig(mkmfHash, "sitearch", "java");
         setConfig(mkmfHash, "archdir",    archDir);
         setConfig(mkmfHash, "topdir",    archDir);
         setConfig(mkmfHash, "configure_args", "");
@@ -261,7 +357,10 @@ public class RbConfigLibrary implements Library {
         setConfig(mkmfHash, "mandir", new NormalizedFile(normalizedHome, "man").getPath());
         setConfig(mkmfHash, "sysconfdir", new NormalizedFile(normalizedHome, "etc").getPath());
         setConfig(mkmfHash, "localstatedir", new NormalizedFile(normalizedHome, "var").getPath());
-        
+        if (getRubygemsDir(runtime) != null) {
+            setConfig(mkmfHash, "rubygemsdir", new NormalizedFile(getRubygemsDir(runtime)).getPath());
+        }
+
         setupMakefileConfig(configModule, mkmfHash);
     }
     
