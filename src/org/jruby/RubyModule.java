@@ -1154,9 +1154,9 @@ public class RubyModule extends RubyObject {
     }
 
     /**
-     * Search through this module and supermodules for method definitions. Cache superclass definitions in this class.
+     * Find the given class in this hierarchy, considering modules along the way.
      * 
-     * @param name The name of the method to search for
+     * @param clazz the class to find
      * @return The method, or UndefinedMethod if not found
      */
     public RubyModule findImplementer(RubyModule clazz) {
@@ -1426,22 +1426,6 @@ public class RubyModule extends RubyObject {
             return !(checkVisibility && method.getVisibility() == PRIVATE);
         }
         return false;
-    }
-
-    public void checkMethodBound(ThreadContext context, IRubyObject[] args, Visibility visibility) {
-        if (args.length == 0) {
-            throw context.runtime.newArgumentError("no method name given");
-        }
-        String name = args[0].asJavaString();
-
-        DynamicMethod method = searchMethod(name);
-        if (!method.isUndefined() && method.getVisibility() != visibility) {
-            Ruby runtime = context.runtime;
-            RubyNameError.RubyNameErrorMessage message = new RubyNameError.RubyNameErrorMessage(runtime, this,
-                    runtime.newString(name), method.getVisibility(), CallType.NORMAL);
-
-            throw runtime.newNoMethodError(message.to_str(context).asJavaString(), name, NEVER);
-        }
     }
 
     public IRubyObject newMethod(IRubyObject receiver, String methodName, boolean bound, Visibility visibility) {
@@ -2677,7 +2661,7 @@ public class RubyModule extends RubyObject {
     /**
      * Base implementation of Module#const_missing, throws NameError for specific missing constant.
      * 
-     * @param name The constant name which was found to be missing
+     * @param rubyName The constant name which was found to be missing
      * @return Nothing! Absolutely nothing! (though subclasses might choose to return something)
      */
     @JRubyMethod(name = "const_missing", required = 1, frame = true)
@@ -3833,6 +3817,10 @@ public class RubyModule extends RubyObject {
      */
     public void setCacheProxy(boolean cacheProxy) {
         setFlag(USER0_F, cacheProxy);
+    }
+
+    @Deprecated
+    public void checkMethodBound(ThreadContext context, IRubyObject[] args, Visibility visibility) {
     }
     
     private volatile Map<String, Autoload> autoloads = Collections.EMPTY_MAP;

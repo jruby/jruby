@@ -50,6 +50,7 @@ import org.jruby.evaluator.ASTInterpreter;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.CallConfiguration;
+import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.internal.runtime.methods.JavaMethod.JavaMethodNBlock;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.platform.Platform;
@@ -1774,9 +1775,29 @@ public class RubyKernel {
     }
 
     @JRubyMethod(rest = true, compat = RUBY1_9)
-    public static IRubyObject public_send(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        recv.getMetaClass().checkMethodBound(context, args, PUBLIC);
-        return ((RubyObject)recv).send19(context, args, Block.NULL_BLOCK);
+    public static IRubyObject public_send(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
+        if (args.length == 0) {
+            throw context.runtime.newArgumentError("no method name given");
+        }
+
+        String name = args[0].asJavaString();
+        int newArgsLength = args.length - 1;
+
+        IRubyObject[] newArgs;
+        if (newArgsLength == 0) {
+            newArgs = IRubyObject.NULL_ARRAY;
+        } else {
+            newArgs = new IRubyObject[newArgsLength];
+            System.arraycopy(args, 1, newArgs, 0, newArgs.length);
+        }
+
+        DynamicMethod method = recv.getMetaClass().searchMethod(name);
+
+        if (method.isUndefined() || method.getVisibility() != PUBLIC) {
+            return RuntimeHelpers.callMethodMissing(context, recv, method.getVisibility(), name, CallType.NORMAL, newArgs, block);
+        }
+
+        return method.call(context, recv, recv.getMetaClass(), name, newArgs, block);
     }
 
     // Moved binding of these methods here, since Kernel can be included into
