@@ -280,10 +280,7 @@ public class RubyEnumerable {
                     IRubyObject larg = checkArgs(runtime, largs);
                     synchronized (result) {
                         if (i == 0) {
-                            // While iterating over an RubyEnumerator, "arg"
-                            // gets overwritten by the new value, leading to JRUBY-6892.
-                            // So call .dup() whenever appropriate.
-                            result.append(larg.isImmediate() ? larg : larg.dup());
+                            result.append(larg);
                         } else {
                             --i;
                         }
