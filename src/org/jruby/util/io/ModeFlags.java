@@ -33,6 +33,7 @@
 package org.jruby.util.io;
 
 import jnr.constants.platform.OpenFlags;
+import jnr.constants.platform.Fcntl;
 
 /**
  * This file represents the POSIX-like mode flags an open channel (as in a
@@ -304,5 +305,26 @@ public class ModeFlags implements Cloneable {
         }
         
         return openFileFlags;
+    }
+
+    /**
+     * Convert the flags in this object to a set of flags appropriate for the
+     * fcntl.
+     *
+     * @return an int of flags appropriate for fcntl
+     */
+    public int getFcntlFileFlags() {
+        int fcntlFlags;
+
+        int readWrite = flags & 3;
+        if (readWrite == RDONLY) {
+            fcntlFlags = 0;
+        } else if (readWrite == WRONLY) {
+            fcntlFlags = 1;
+        } else {
+            fcntlFlags = 2;
+        }
+
+        return fcntlFlags;
     }
 }

@@ -2270,6 +2270,11 @@ public class RubyIO extends RubyObject {
     public IRubyObject ctl(Ruby runtime, IRubyObject cmd, IRubyObject arg) {
         long realCmd = cmd.convertToInteger().getLongValue();
         long nArg = 0;
+
+        if (realCmd == Fcntl.F_GETFL.intValue()) {
+            OpenFile myOpenFile = getOpenFileChecked();
+            return runtime.newFixnum(myOpenFile.getMainStream().getModes().getFcntlFileFlags());
+        }
         
         // FIXME: Arg may also be true, false, and nil and still be valid.  Strangely enough, 
         // protocol conversion is not happening in Ruby on this arg?
