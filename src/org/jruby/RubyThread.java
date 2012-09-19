@@ -550,7 +550,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         Ruby runtime = getRuntime();
         long timeoutMillis = Long.MAX_VALUE;
 
-        if (args.length > 0) {
+        if (args.length > 0 && !args[0].isNil()) {
             if (args.length > 1) {
                 throw getRuntime().newArgumentError(args.length,1);
             }
