@@ -251,7 +251,7 @@ class TestLoopStuff < Test::Unit::TestCase
     IterTest.new([[4]]).each4 { |x2| x = x2 }
     assert_equal([4], x)
     IterTest.new([[5]]).each5 { |x2| x = x2 }
-    assert_equal([5], x) unless defined?(JRUBY_VERSION) #
+    assert_equal([5], x)
     IterTest.new([[6]]).each6 { |x2| x = x2 }
     assert_equal([[6]], x)
     IterTest.new([[7]]).each7 { |x2| x = x2 }
