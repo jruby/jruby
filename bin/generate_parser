@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Run from your JRuby home directory....More smarts needed here.
 #
