@@ -1116,11 +1116,15 @@ public final class Ruby {
 
         // Prepare LoadService and load path
         getLoadService().init(config.getLoadPaths());
-        
-        booting = false;
 
         // initialize builtin libraries
         initBuiltins();
+
+        // load JRuby internals, which loads Java support
+        loadService.require("jruby");
+
+        // out of base boot mode
+        booting = false;
         
         // init Ruby-based kernel
         initRubyKernel();
