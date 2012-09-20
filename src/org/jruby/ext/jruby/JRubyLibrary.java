@@ -74,7 +74,7 @@ import org.jruby.runtime.load.Library;
 public class JRubyLibrary implements Library {
     public void load(Ruby runtime, boolean wrap) {
         ThreadContext context = runtime.getCurrentContext();
-        runtime.getKernel().callMethod(context, "require", runtime.newString("java"));
+        runtime.getLoadService().require("java");
 
         // load Ruby parts of the 'jruby' library
         runtime.getLoadService().loadFromClassLoader(runtime.getJRubyClassLoader(), "jruby/jruby.rb", false);
