@@ -324,6 +324,18 @@ public class Tempfile extends org.jruby.RubyTempfile {
         }
     }
 
+    @JRubyMethod
+    @Override
+    public IRubyObject inspect() {
+        StringBuilder val = new StringBuilder();
+        val.append("#<Tempfile:").append(path);
+        if(!openFile.isOpen()) {
+            val.append(" (closed)");
+        }
+        val.append(">");
+        return getRuntime().newString(val.toString());
+    }
+
     // FIXME This reaper never actually runs; delete it or implement it properly
     // For JRUBY-6477, I add the finalize above to do basically what this was
     // intended to do.
