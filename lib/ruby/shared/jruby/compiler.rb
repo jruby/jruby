@@ -172,14 +172,14 @@ module JRuby::Compiler
           FileUtils.mkdir_p(target_dir)
           
           # write class
-          File.open(File.join(options[:target], class_filename), 'wb') do |f|
+          File.open(target_file, 'wb') do |f|
             f.write(class_bytes)
           end
 
           if options[:handles]
-            puts "Generating direct handles for #{filename}" if options[:verbose]
+            puts "Generating direct handles for #{filename}"# if options[:verbose]
 
-            asmCompiler.write_invokers(target_file)
+            asmCompiler.write_invokers(options[:target])
           end
         end
 

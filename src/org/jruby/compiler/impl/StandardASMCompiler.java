@@ -49,6 +49,7 @@ import org.jruby.compiler.CompilerCallback;
 import org.jruby.compiler.BodyCompiler;
 import org.jruby.compiler.ScriptCompiler;
 import org.jruby.internal.runtime.methods.CallConfiguration;
+import org.jruby.internal.runtime.methods.InvocationMethodFactory;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Arity;
@@ -75,7 +76,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     public static final String THREADCONTEXT = p(ThreadContext.class);
     public static final String RUBY = p(Ruby.class);
     public static final String IRUBYOBJECT = p(IRubyObject.class);
-    public static final boolean VERIFY_CLASSFILES = true;
+    public static final boolean VERIFY_CLASSFILES = false;
 
     public static Class[] getStaticMethodArgs(Class target, int args) {
         switch (args) {
@@ -229,6 +230,10 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         writeClass(getClassname(), destination, classWriter);
     }
 
+    public void writeInvokers(String destination) throws IOException {
+        writeInvokers(new File(destination));
+    }
+
     public void writeInvokers(File destination) throws IOException {
         for (InvokerDescriptor descriptor : invokerDescriptors) {
             byte[] invokerBytes = RuntimeHelpers.defOffline(
@@ -314,10 +319,10 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         private final String file;
         private final int line;
         
-        public InvokerDescriptor(String name, String classname, String invokerName, Arity arity, StaticScope scope, CallConfiguration callConfig, String file, int line) {
+        public InvokerDescriptor(String name, String classname, Arity arity, StaticScope scope, CallConfiguration callConfig, String file, int line) {
             this.name = name;
             this.classname = classname;
-            this.invokerName = invokerName;
+            this.invokerName = InvocationMethodFactory.getCompiledCallbackName(classname, name);
             this.arity = arity;
             this.scope = scope;
             this.callConfig = callConfig;
@@ -368,7 +373,7 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         public BlockCallbackDescriptor(String method, String classname, String file, int line) {
             this.method = method;
             this.classname = classname;
-            this.callbackName = classname + "BlockCallback$" + method + "xx1";
+            this.callbackName = InvocationMethodFactory.getBlockCallbackName(classname, method);
             this.file = file;
             this.line = line;
         }
@@ -395,10 +400,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     }
 
     public void addInvokerDescriptor(String newMethodName, int methodArity, StaticScope scope, CallConfiguration callConfig, String filename, int line) {
-        String classPath = classname.replaceAll("/", "_");
         Arity arity = Arity.createArity(methodArity);
-        String invokerName = classPath + "Invoker" + newMethodName + arity;
-        InvokerDescriptor descriptor = new InvokerDescriptor(newMethodName, classname, invokerName, arity, scope, callConfig, filename, line);
+        InvokerDescriptor descriptor = new InvokerDescriptor(newMethodName, classname, arity, scope, callConfig, filename, line);
 
         invokerDescriptors.add(descriptor);
     }

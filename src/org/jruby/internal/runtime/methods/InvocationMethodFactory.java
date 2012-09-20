@@ -224,7 +224,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
                 new InvocationMethodFactory(classLoader));
     }
 
-    private static String getCompiledCallbackName(String typePath, String method) {
+    public static String getCompiledCallbackName(String typePath, String method) {
         return (typePath + "$" + method).replaceAll("/", "\\$");
     }
 
@@ -840,7 +840,7 @@ public class InvocationMethodFactory extends MethodFactory implements Opcodes {
         }
     }
 
-    private static String getBlockCallbackName(String typePathString, String method) {
+    public static String getBlockCallbackName(String typePathString, String method) {
         return (typePathString + "$" + method).replaceAll("/", "\\$");
     }
 
