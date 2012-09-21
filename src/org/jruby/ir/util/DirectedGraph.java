@@ -81,6 +81,9 @@ public class DirectedGraph<T> {
         vertex.removeAllEdges();
     }
     
+    /**
+     * @return the number of vertices in the graph.
+     */
     public int size() {
         return allData().size();
     }

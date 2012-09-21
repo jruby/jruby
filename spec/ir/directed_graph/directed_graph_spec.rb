@@ -2,6 +2,7 @@ require 'jruby'
 require 'java'
 require 'rspec'
 import 'org.jruby.ir.util.DirectedGraph'
+
 # This is spec for Directed Graph Library
 
 describe "Directed Graph Utility" do
@@ -38,6 +39,26 @@ describe "Directed Graph Utility" do
     @graph.vertices.size.should == 3
     @graph.removeVertexFor(2)
     @graph.vertices.size.should == 2
+  end
+
+  it "should give vertex for given data" do
+    @graph.vertexFor(2).getData().should == 2
+  end
+
+  it "should create a new vertex if it is not present" do
+    @graph.vertexFor(100).getData().should == 100
+  end
+
+  it "should find already existing vertex" do
+    @graph.findVertexFor(2).getData().should == 2
+    @graph.findVertexFor(100).should == nil
+  end
+
+  it "should give correct size of graph" do
+    @graph.removeEdge(1,2)
+    @graph.size.should == 4
+    @graph.addEdge(5,6,'simple')
+    @graph.size.should == 6
   end
 
 end
