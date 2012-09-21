@@ -25,23 +25,21 @@ if [ -z "$JAVA_VM" ]; then
   JAVA_VM=-client
 fi
 
-## resolve links - $0 may be a link to  home
-PRG=$0
-progname=`basename "$0"`
+# get the absolute path of the executable
+SELF_PATH=$(cd -P -- "$(dirname -- "$0")" && pwd -P) && SELF_PATH=$SELF_PATH/$(basename -- "$0")
 
-while [ -h "$PRG" ] ; do
-  ls=`ls -ld "$PRG"`
-  link=`expr "$ls" : '.*-> \(.*\)$'`
-  if expr "$link" : '.*/.*' > /dev/null; then
-    if expr "$link" : '/' > /dev/null; then
-      PRG="$link"
-    else
-      PRG="`dirname ${PRG}`/${link}"
-    fi
-  else
-    PRG="`dirname $PRG`/$link"
-  fi
+# resolve symlinks
+while [ -h $SELF_PATH ]; do
+    # 1) cd to directory of the symlink
+    # 2) cd to the directory of where the symlink points
+    # 3) get the pwd
+    # 4) append the basename
+    DIR=$(dirname -- "$SELF_PATH")
+    SYM=$(readlink $SELF_PATH)
+    SELF_PATH=$(cd $DIR && cd $(dirname -- "$SYM") && pwd)/$(basename -- "$SYM")
 done
+
+PRG=$SELF_PATH
 
 JRUBY_HOME_1=`dirname "$PRG"`           # the ./bin dir
 if [ "$JRUBY_HOME_1" = '.' ] ; then
