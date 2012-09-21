@@ -56,9 +56,9 @@ describe "Directed Graph Utility" do
 
   it "should give correct size of graph" do
     @graph.removeEdge(1,2)
-    @graph.size.should == 4         # Passes ?
+    @graph.size.should == 4
     @graph.addEdge(5,6,'simple')
-    @graph.size.should == 4         # Fails; Because size of graph is actually number of vertices according to implementation
+    @graph.size.should == 6
   end
 
 end
