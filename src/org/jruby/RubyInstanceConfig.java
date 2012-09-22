@@ -63,6 +63,7 @@ import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.runtime.load.LoadService19;
 import org.jruby.util.ClassCache;
+import org.jruby.util.InputStreamMarkCursor;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.KCode;
 import org.jruby.util.NormalizedFile;
@@ -220,16 +221,56 @@ public class RubyInstanceConfig {
             // ignore and do nothing
         }
     }
+    
+    // This method does not work like previous version in verifying it is
+    // a Ruby shebang line.  Looking for ruby before \n is possible to add,
+    // but I wanted to keep this short.
+    private boolean isShebang(InputStreamMarkCursor cursor) throws IOException {
+        if (cursor.read() == '#') {
+            int c = cursor.read();
+            if (c == '!') {
+                cursor.endPoint(-2);
+                return true;
+            } else if (c == '\n') {
+                cursor.rewind();
+            }
+        } else {
+            cursor.rewind();
+        }
+        
+        return false;
+    }
+    
+    private boolean skipToNextLine(InputStreamMarkCursor cursor) throws IOException {
+        int c = cursor.read();
+        do {
+            if (c == '\n') return true;
+        } while ((c = cursor.read()) != -1);
+        
+        return false;
+    }
 
+    private void eatToShebang(InputStream in) {
+        InputStreamMarkCursor cursor = new InputStreamMarkCursor(in, 8192);
+        try {
+            do {
+                if (isShebang(cursor)) break;
+            } while (skipToNextLine(cursor));
+        } catch (IOException e) {
+        } finally {
+            try { cursor.finish(); } catch (IOException e) {}
+        }
+    }
+    
     /**
      * The intent here is to gather up any options that might have
      * been specified in the shebang line and return them so they can
-     * be merged into the ones specified on the commandline.  This is
+     * be merged into the ones specified on the command-line.  This is
      * kind of a hopeless task because it's impossible to figure out
      * where the command invocation stops and the parameters start.
      * We try to work with the common scenarios where /usr/bin/env is
-     * used to invoke the jruby shell script, and skip any parameters
-     * it might have.  Then we look for the interpreter invokation and
+     * used to invoke the JRuby shell script, and skip any parameters
+     * it might have.  Then we look for the interpreter invocation and
      * assume that the binary will have the word "ruby" in the name.
      * This is error prone but should cover more cases than the
      * previous code.
@@ -238,19 +279,20 @@ public class RubyInstanceConfig {
         BufferedReader reader = null;
         String[] result = new String[0];
         if (in == null) return result;
+        
+        if (isXFlag()) eatToShebang(in);
+        
         try {
-            in.mark(1024);
+            InputStreamMarkCursor cursor = new InputStreamMarkCursor(in, 8192);
+            try {
+                if (!isShebang(cursor)) return result;
+            } finally {
+                cursor.finish();
+            }
+
+            in.mark(8192);
             reader = new BufferedReader(new InputStreamReader(in, "iso-8859-1"), 8192);
             String firstLine = reader.readLine();
-
-            // Search for the shebang line in the given stream
-            // if it wasn't found on the first line and the -x option
-            // was specified
-            if (isXFlag()) {
-                while (firstLine != null && !isRubyShebangLine(firstLine)) {
-                    firstLine = reader.readLine();
-                }
-            }
 
             boolean usesEnv = false;
             if (firstLine.length() > 2 && firstLine.charAt(0) == '#' && firstLine.charAt(1) == '!') {
@@ -263,17 +305,13 @@ public class RubyInstanceConfig {
                         continue;
                     }
                     // Skip any assignments if /usr/bin/env is in play
-                    if (usesEnv && options[i].indexOf('=') > 0) {
-                        continue;
-                    }
+                    if (usesEnv && options[i].indexOf('=') > 0) continue;
+
                     // Skip any commandline args if /usr/bin/env is in play
-                    if (usesEnv && options[i].startsWith("-")) {
-                        continue;
-                    }
+                    if (usesEnv && options[i].startsWith("-")) continue;
+
                     String basename = (new File(options[i])).getName();
-                    if (basename.indexOf("ruby") > 0) {
-                        break;
-                    }
+                    if (basename.indexOf("ruby") > 0) break;
                 }
                 setHasShebangLine(true);
                 System.arraycopy(options, i, result, 0, options.length - i);
