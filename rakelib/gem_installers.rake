@@ -13,8 +13,9 @@ task :install_dev_gems do
 end
 
 task :install_dist_gems, :temp_jruby_home do |t, args|
-  gem_install(COMPLETE_JAR_GEMS, "--ignore-dependencies --env-shebang") do
-    sysproperty :key => "jruby.home", :value => (args[:temp_jruby_home] || DIST_STAGE_BIN_DIR)
+  location = (args[:temp_jruby_home] || DIST_STAGE_BIN_DIR)
+  gem_install(COMPLETE_JAR_GEMS, "--ignore-dependencies --env-shebang --install-dir=#{location}/lib/ruby/gems") do
+    sysproperty :key => "jruby.home", :value => location
   end
 end
 

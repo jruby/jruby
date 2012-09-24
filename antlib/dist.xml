@@ -118,7 +118,7 @@
         </copy>
         <unzip-native-libs destination.dir="${dist.stage.bin.dir}/lib/native"/>
         <fixEOLs dist-stage-dir="${dist.stage.bin.dir}"/>
-        <rake task="install_dist_gems"/>
+        <rake task="install_dist_gems['${dist.stage.bin.dir}']"/>
 
         <!-- wipe out jar and run jar-dist here to ensure it's the last thing before tarring
       see JRUBY-5429. -->
