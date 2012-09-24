@@ -2077,17 +2077,11 @@ public class RubyIO extends RubyObject {
         
         // TODO: notify threads waiting on descriptors/IO? probably not...
 
-        // If this is not a popen3/popen4 stream and it has a process, wait for result
+        // If this is not a popen3/popen4 stream and it has a process, attempt to shut down that process
         if (!popenSpecial && openFile.getProcess() != null) {
-            ThreadContext context = runtime.getCurrentContext();
-            try {
-                int result = openFile.getProcess().waitFor();
-                IRubyObject processResult = RubyProcess.RubyStatus.newProcessStatus(runtime, result, openFile.getPid());
-                openFile.setProcess(null);
-                context.setLastExitStatus(processResult);
-            } catch (InterruptedException ie) {
-                context.pollThreadEvents();
-            }
+            obliterateProcess(openFile.getProcess());
+            IRubyObject processResult = RubyProcess.RubyStatus.newProcessStatus(runtime, openFile.getProcess().exitValue(), openFile.getPid());
+            runtime.getCurrentContext().setLastExitStatus(processResult);
         }
         
         return runtime.getNil();
@@ -3836,7 +3830,7 @@ public class RubyIO extends RubyObject {
                     return block.yield(context, io);
                 } finally {
                     if (io.openFile.isOpen()) {
-                        io.callMethod(context, "close");
+                        io.close();
                     }
                 }
             }
@@ -3970,7 +3964,7 @@ public class RubyIO extends RubyObject {
                     return block.yield(context, io);
                 } finally {
                     if (io.openFile.isOpen()) {
-                        io.callMethod(context, "close");
+                        io.close();
                     }
                     context.setLastExitStatus(RubyProcess.RubyStatus.newProcessStatus(runtime, process.waitFor(), ShellLauncher.getPidFromProcess(process)));
                 }
