@@ -888,12 +888,6 @@ public class RubyProcess {
             throw runtime.newArgumentError("wrong number of arguments -- kill(sig, pid...)");
         }
 
-        // Windows does not support these functions, so we won't even try
-        // This also matches Ruby behavior for JRUBY-2353.
-        if (Platform.IS_WINDOWS) {
-            return runtime.getNil();
-        }
-        
         int signal;
         if (args[0] instanceof RubyFixnum) {
             signal = (int) ((RubyFixnum) args[0]).getLongValue();
@@ -907,17 +901,26 @@ public class RubyProcess {
 
         boolean processGroupKill = signal < 0;
         
-        if (processGroupKill) signal = -signal;
-        
-        POSIX posix = runtime.getPosix();
-        for (int i = 1; i < args.length; i++) {
-            int pid = RubyNumeric.num2int(args[i]);
-
-            // FIXME: It may be possible to killpg on systems which support it.  POSIX library
-            // needs to tell whether a particular method works or not
-            if (pid == 0) pid = runtime.getPosix().getpid();
-            checkErrno(runtime, posix.kill(processGroupKill ? -pid : pid, signal));
+        if (processGroupKill) {
+		    if (Platform.IS_WINDOWS) {
+                throw runtime.newNotImplementedError("group signals not implemented in windows");
+            }
+		    signal = -signal;
         }
+        
+		if (Platform.IS_WINDOWS) {
+		    throw runtime.newNotImplementedError("this signal not yet implemented in windows");
+		} else {		
+			POSIX posix = runtime.getPosix();
+			for (int i = 1; i < args.length; i++) {
+				int pid = RubyNumeric.num2int(args[i]);
+
+				// FIXME: It may be possible to killpg on systems which support it.  POSIX library
+				// needs to tell whether a particular method works or not
+				if (pid == 0) pid = runtime.getPosix().getpid();
+				checkErrno(runtime, posix.kill(processGroupKill ? -pid : pid, signal));
+			}
+		}
         
         return runtime.newFixnum(args.length - 1);
 
