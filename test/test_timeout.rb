@@ -86,7 +86,7 @@ class TestTimeout < Test::Unit::TestCase
     end
 
     assert ok, "Timeout::Error was not eventually delivered to caller"
-    unless RUBY_VERSION =~ /1\.9/ # FIXME is this ok?
+    if RUBY_VERSION =~ /1\.8/ # FIXME is this ok?
       assert @in_foo.class.name == "", "Non-anonymous exception type raised in intervening stack"
     end
   end
