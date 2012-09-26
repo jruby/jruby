@@ -29,6 +29,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby;
 
+import jnr.ffi.*;
 import jnr.constants.platform.Signal;
 import jnr.constants.platform.Sysconf;
 import jnr.posix.Times;
@@ -874,7 +875,13 @@ public class RubyProcess {
             throw runtime.newArgumentError("unsupported name `SIG" + signalName + "'");
         }
     }
-
+	
+    public static interface Kernel32  {
+        jnr.ffi.Pointer OpenProcess(int dwDesiredAccess, int bInheritHandle, int dwProcessId);
+		int CloseHandle(jnr.ffi.Pointer handle);
+		int GetLastError();
+    }
+	
     @Deprecated
     public static IRubyObject kill(IRubyObject recv, IRubyObject[] args) {
         return kill(recv.getRuntime(), args);
@@ -903,13 +910,33 @@ public class RubyProcess {
         
         if (processGroupKill) {
 		    if (Platform.IS_WINDOWS) {
-                throw runtime.newNotImplementedError("group signals not implemented in windows");
+                throw  runtime.newErrnoEINVALError("group signals not implemented in windows");
             }
 		    signal = -signal;
         }
         
 		if (Platform.IS_WINDOWS) {
-		    throw runtime.newNotImplementedError("this signal not yet implemented in windows");
+		    if (signal == 0) {
+	            Kernel32 libc = Library.loadLibrary("kernel32", Kernel32.class);
+				int PROCESS_QUERY_INFORMATION  = 0x0400;
+				int ERROR_INVALID_PARAMETER = 0x57;
+			    for (int i = 1; i < args.length; i++) {
+				    int pid = RubyNumeric.num2int(args[i]);
+				    jnr.ffi.Pointer ptr = libc.OpenProcess(PROCESS_QUERY_INFORMATION, 0, pid);
+					if(ptr != null && ptr.address() != -1) {
+					  libc.CloseHandle(ptr); // success
+					} else {
+					  if (libc.GetLastError() == ERROR_INVALID_PARAMETER) {
+					    throw runtime.newErrnoESRCHError();
+					  } else {
+					    throw runtime.newErrnoEPERMError("Process does not exist " + pid);
+					  }
+					}
+				}
+				
+			} else {
+		        throw runtime.newNotImplementedError("this signal not yet implemented in windows");
+		    }
 		} else {		
 			POSIX posix = runtime.getPosix();
 			for (int i = 1; i < args.length; i++) {
