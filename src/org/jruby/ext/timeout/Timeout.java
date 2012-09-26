@@ -38,10 +38,12 @@ import org.jruby.RubyClass;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyKernel;
 import org.jruby.RubyModule;
+import org.jruby.RubyObject;
 import org.jruby.RubyRegexp;
 import org.jruby.RubyThread;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.internal.runtime.methods.JavaMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -112,8 +114,9 @@ public class Timeout implements Library {
 
         final RubyThread currentThread = context.getThread();
         final AtomicBoolean latch = new AtomicBoolean(false);
-        
-        TimeoutRunnable timeoutRunnable = prepareRunnable(currentThread, runtime, latch);
+
+        IRubyObject id = new RubyObject(runtime, runtime.getObject());
+        Runnable timeoutRunnable = prepareRunnable(currentThread, runtime, latch, id);
         Future timeoutFuture = null;
 
         try {
@@ -126,7 +129,7 @@ public class Timeout implements Library {
                 killTimeoutThread(context, timeoutFuture, latch);
             }
         } catch (RaiseException re) {
-            if (re.getException().getMetaClass() == timeoutRunnable.exception) {
+            if (re.getException().getInternalVariable("__identifier__") == id) {
                 return raiseTimeoutError(context, re);
             } else {
                 throw re;
@@ -150,9 +153,11 @@ public class Timeout implements Library {
 
         final RubyThread currentThread = context.getThread();
         final AtomicBoolean latch = new AtomicBoolean(false);
-        
-        TimeoutRunnable timeoutRunnable = exceptionType.isNil() ?
-                prepareRunnable(currentThread, runtime, latch) :
+
+        IRubyObject id = new RubyObject(runtime, runtime.getObject());
+        RubyClass anonException = (RubyClass)runtime.getClassFromPath("Timeout::AnonymousException");
+        Runnable timeoutRunnable = exceptionType.isNil() ?
+                prepareRunnable(currentThread, runtime, latch, id) :
                 prepareRunnableWithException(currentThread, exceptionType, runtime, latch);
         Future timeoutFuture = null;
 
@@ -167,10 +172,13 @@ public class Timeout implements Library {
             }
         } catch (RaiseException re) {
             // if it's the exception we're expecting
-            if (re.getException().getMetaClass() == timeoutRunnable.exception) {
+            if (re.getException().getMetaClass() == anonException) {
                 // and we were not given a specific exception
                 if (exceptionType.isNil()) {
-                    return raiseTimeoutError(context, re);
+                    // and it's the exception intended for us
+                    if (re.getException().getInternalVariable("__identifier__") == id) {
+                        return raiseTimeoutError(context, re);
+                    }
                 }
             }
 
@@ -179,35 +187,29 @@ public class Timeout implements Library {
         }
     }
 
-    private static abstract class TimeoutRunnable implements Runnable {
-        // exceptionClass is null until raised, deferring creation of an anonymous exception class
-        volatile IRubyObject exception;
-
-        TimeoutRunnable(IRubyObject exception) {
-            this.exception = exception;
-        }
-
-        TimeoutRunnable() {}
-    }
-
-    private static TimeoutRunnable prepareRunnable(final RubyThread currentThread, final Ruby runtime, final AtomicBoolean latch) {
-        TimeoutRunnable timeoutRunnable = new TimeoutRunnable() {
+    private static Runnable prepareRunnable(final RubyThread currentThread, final Ruby runtime, final AtomicBoolean latch, final IRubyObject id) {
+        Runnable timeoutRunnable = new Runnable() {
             public void run() {
                 if (latch.compareAndSet(false, true)) {
-                    RubyClass anonException = (RubyClass)runtime.getClassFromPath("Timeout::AnonymousException");
-                    exception = runtime.getClassClass().newInstance(runtime.getCurrentContext(), anonException, Block.NULL_BLOCK);
-                    raiseInThread(runtime, currentThread, exception);
+                    if (currentThread.alive_p().isTrue()) {
+                        RubyClass anonException = (RubyClass)runtime.getClassFromPath("Timeout::AnonymousException");
+                        IRubyObject anonExceptionObj = anonException.newInstance(runtime.getCurrentContext(), runtime.newString("execution expired"), Block.NULL_BLOCK);
+                        anonExceptionObj.getInternalVariables().setInternalVariable("__identifier__", id);
+                        currentThread.internalRaise(new IRubyObject[] {anonExceptionObj});
+                    }
                 }
             }
         };
         return timeoutRunnable;
     }
 
-    private static TimeoutRunnable prepareRunnableWithException(final RubyThread currentThread, final IRubyObject exception, final Ruby runtime, final AtomicBoolean latch) {
-        TimeoutRunnable timeoutRunnable = new TimeoutRunnable(exception) {
+    private static Runnable prepareRunnableWithException(final RubyThread currentThread, final IRubyObject exception, final Ruby runtime, final AtomicBoolean latch) {
+        Runnable timeoutRunnable = new Runnable() {
             public void run() {
                 if (latch.compareAndSet(false, true)) {
-                    raiseInThread(runtime, currentThread, exception);
+                    if (currentThread.alive_p().isTrue()) {
+                        currentThread.internalRaise(new IRubyObject[]{exception, runtime.newString("execution expired")});
+                    }
                 }
             }
         };
@@ -231,12 +233,6 @@ public class Timeout implements Library {
 
             // poll to propagate exception from child thread
             context.pollThreadEvents();
-        }
-    }
-    
-    private static void raiseInThread(Ruby runtime, RubyThread currentThread, IRubyObject exception) {
-        if (currentThread.alive_p().isTrue()) {
-            currentThread.internalRaise(new IRubyObject[]{exception, runtime.newString("execution expired")});
         }
     }
 
