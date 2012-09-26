@@ -113,7 +113,7 @@ public class Timeout implements Library {
         final RubyThread currentThread = context.getThread();
         final AtomicBoolean latch = new AtomicBoolean(false);
         
-        Runnable timeoutRunnable = prepareRunnable(currentThread, runtime, latch);
+        TimeoutRunnable timeoutRunnable = prepareRunnable(currentThread, runtime, latch);
         Future timeoutFuture = null;
 
         try {
@@ -126,7 +126,7 @@ public class Timeout implements Library {
                 killTimeoutThread(context, timeoutFuture, latch);
             }
         } catch (RaiseException re) {
-            if (re.getException().getMetaClass() == runtime.getClassFromPath("Timeout::AnonymousException")) {
+            if (re.getException().getMetaClass() == timeoutRunnable.exception) {
                 return raiseTimeoutError(context, re);
             } else {
                 throw re;
@@ -148,11 +148,12 @@ public class Timeout implements Library {
             return raiseBecauseCritical(context);
         }
 
-        final IRubyObject exception = exceptionType.isNil() ? runtime.getClassFromPath("Timeout::AnonymousException") : exceptionType;
         final RubyThread currentThread = context.getThread();
         final AtomicBoolean latch = new AtomicBoolean(false);
         
-        Runnable timeoutRunnable = prepareRunnableWithException(currentThread, exception, runtime, latch);
+        TimeoutRunnable timeoutRunnable = exceptionType.isNil() ?
+                prepareRunnable(currentThread, runtime, latch) :
+                prepareRunnableWithException(currentThread, exceptionType, runtime, latch);
         Future timeoutFuture = null;
 
         try {
@@ -166,8 +167,8 @@ public class Timeout implements Library {
             }
         } catch (RaiseException re) {
             // if it's the exception we're expecting
-            if (re.getException().getMetaClass() == exception) {
-                // and we were given a specific exception
+            if (re.getException().getMetaClass() == timeoutRunnable.exception) {
+                // and we were not given a specific exception
                 if (exceptionType.isNil()) {
                     return raiseTimeoutError(context, re);
                 }
@@ -178,19 +179,32 @@ public class Timeout implements Library {
         }
     }
 
-    private static Runnable prepareRunnable(final RubyThread currentThread, final Ruby runtime, final AtomicBoolean latch) {
-        Runnable timeoutRunnable = new Runnable() {
+    private static abstract class TimeoutRunnable implements Runnable {
+        // exceptionClass is null until raised, deferring creation of an anonymous exception class
+        volatile IRubyObject exception;
+
+        TimeoutRunnable(IRubyObject exception) {
+            this.exception = exception;
+        }
+
+        TimeoutRunnable() {}
+    }
+
+    private static TimeoutRunnable prepareRunnable(final RubyThread currentThread, final Ruby runtime, final AtomicBoolean latch) {
+        TimeoutRunnable timeoutRunnable = new TimeoutRunnable() {
             public void run() {
                 if (latch.compareAndSet(false, true)) {
-                    raiseInThread(runtime, currentThread, runtime.getClassFromPath("Timeout::AnonymousException"));
+                    RubyClass anonException = (RubyClass)runtime.getClassFromPath("Timeout::AnonymousException");
+                    exception = runtime.getClassClass().newInstance(runtime.getCurrentContext(), anonException, Block.NULL_BLOCK);
+                    raiseInThread(runtime, currentThread, exception);
                 }
             }
         };
         return timeoutRunnable;
     }
 
-    private static Runnable prepareRunnableWithException(final RubyThread currentThread, final IRubyObject exception, final Ruby runtime, final AtomicBoolean latch) {
-        Runnable timeoutRunnable = new Runnable() {
+    private static TimeoutRunnable prepareRunnableWithException(final RubyThread currentThread, final IRubyObject exception, final Ruby runtime, final AtomicBoolean latch) {
+        TimeoutRunnable timeoutRunnable = new TimeoutRunnable(exception) {
             public void run() {
                 if (latch.compareAndSet(false, true)) {
                     raiseInThread(runtime, currentThread, exception);
