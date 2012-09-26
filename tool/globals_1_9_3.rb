@@ -67,7 +67,6 @@ STDLIB_FILES = %w[
   singleton.rb
   sync.rb
   test
-  thread.rb
   thwait.rb
   time.rb
   tmpdir.rb
