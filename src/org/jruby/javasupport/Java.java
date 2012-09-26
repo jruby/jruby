@@ -919,12 +919,13 @@ public class Java implements Library {
             // this covers the rare case of lower-case class names (and thus will
             // fail 99.999% of the time). fortunately, we'll only do this once per
             // package name. (and seriously, folks, look into best practices...)
+            IRubyObject previousErrorInfo = RuntimeHelpers.getErrorInfo(runtime);
             try {
                 return getProxyClass(runtime, JavaClass.forNameQuiet(runtime, fullName));
             } catch (RaiseException re) { /* expected */
                 RubyException rubyEx = re.getException();
                 if (rubyEx.kind_of_p(context, runtime.getStandardError()).isTrue()) {
-                    RuntimeHelpers.setErrorInfo(runtime, runtime.getNil());
+                    RuntimeHelpers.setErrorInfo(runtime, previousErrorInfo);
                 }
             } catch (Exception e) { /* expected */ }
 
