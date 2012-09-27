@@ -871,7 +871,7 @@ public class RubyProcess {
             return negative ? -signalValue : signalValue;
 
         } catch (IllegalArgumentException ex) {
-            throw runtime.newArgumentError("unsupported name `SIG" + signalName + "'");
+            throw runtime.newArgumentError("unsupported name `" + signalName + "'");
         }
     }
 
