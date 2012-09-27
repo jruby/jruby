@@ -939,13 +939,13 @@ public class RubyProcess {
 			    } else if (signal == 9) { //SIGKILL
 				    jnr.ffi.Pointer ptr = libc.OpenProcess(PROCESS_TERMINATE | PROCESS_QUERY_INFORMATION, 0, pid);			      
                     if(ptr != null && ptr.address() != -1) {
-					   jnr.ffi.Pointer outPtr = Memory.allocate(Library.getRuntime(libc), 4);
-					   if(libc.GetExitCodeProcess(ptr, outPtr) == 0) {
+					   jnr.ffi.Pointer status = Memory.allocate(Library.getRuntime(libc), 4);
+					   if(libc.GetExitCodeProcess(ptr, status) == 0) {
 					       libc.CloseHandle(ptr);
 						   throw runtime.newErrnoEPERMError("unable to call GetExitCodeProcess " + pid); // todo better error messages
 					   } else {
-					       if (outPtr.readInt() == STILL_ACTIVE) {
-						       if (!libc.TerminateProcess(ptr, 0)) {
+					       if (status.getInt(0) == STILL_ACTIVE) {
+						       if (libc.TerminateProcess(ptr, 0) == 0) {
 						          libc.CloseHandle(ptr);
 						          throw runtime.newErrnoEPERMError("unable to call TerminateProcess " + pid);
 						        }
