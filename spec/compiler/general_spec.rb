@@ -452,6 +452,22 @@ describe "JRuby's compiler" do
       result.should == '/Users/headius/projects/jruby/tmp/perfer/examples/file_stat.rb'
     end
   end
+
+  it "handles attr accessors for unassigned vars properly" do
+    # under invokedynamic, we were caching the "dummy" accessor that never saw any value
+    result = compile_and_run <<-EOC
+class AttrAccessorUnassigned
+  attr_accessor :foo
+end
+
+obj = AttrAccessorUnassigned.new
+ary = []
+2.times { ary << obj.foo; obj.foo = 1}
+ary
+    EOC
+
+    result.should == [nil, 1]
+  end
   
   it "does a bunch of other stuff" do
     silence_warnings {

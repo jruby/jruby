@@ -1353,11 +1353,12 @@ public class InvocationLinker {
     private static MethodHandle createAttrReaderHandle(JRubyCallSite site, RubyClass cls, DynamicMethod method) {
         MethodHandle nativeTarget = (MethodHandle)method.getHandle();
         if (nativeTarget != null) return nativeTarget;
-        
+
         AttrReaderMethod attrReader = (AttrReaderMethod)method;
         String varName = attrReader.getVariableName();
-        
-        RubyClass.VariableAccessor accessor = cls.getRealClass().getVariableAccessorForRead(varName);
+
+        // we getVariableAccessorForWrite here so it is eagerly created and we don't cache the DUMMY
+        RubyClass.VariableAccessor accessor = cls.getRealClass().getVariableAccessorForWrite(varName);
 
         MethodHandle filter = Binder
                 .from(IRubyObject.class, IRubyObject.class)
@@ -1385,7 +1386,7 @@ public class InvocationLinker {
     private static MethodHandle createAttrWriterHandle(JRubyCallSite site, RubyClass cls, DynamicMethod method) {
         MethodHandle nativeTarget = (MethodHandle)method.getHandle();
         if (nativeTarget != null) return nativeTarget;
-        
+
         AttrWriterMethod attrWriter = (AttrWriterMethod)method;
         String varName = attrWriter.getVariableName();
         
