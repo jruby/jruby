@@ -951,18 +951,20 @@ public class RubyProcess {
 			    } else if (signal == 9) { //SIGKILL
 				    jnr.ffi.Pointer ptr = libc.OpenProcess(PROCESS_TERMINATE | PROCESS_QUERY_INFORMATION, 0, pid);			      
                     if(ptr != null && ptr.address() != -1) {
-					   if(libc.GetExitCodeProcess(ptr, status) == 0) {
-					       libc.CloseHandle(ptr);
-						   throw runtime.newErrnoEPERMError("unable to call GetExitCodeProcess " + pid); // todo better error messages
-					   } else {
-					       if (status.getInt(0) == STILL_ACTIVE) {
-						       if (libc.TerminateProcess(ptr, 0) == 0) {
-						          libc.CloseHandle(ptr);
-						          throw runtime.newErrnoEPERMError("unable to call TerminateProcess " + pid);
+					    try {
+					        if(libc.GetExitCodeProcess(ptr, status) == 0) {
+					            throw runtime.newErrnoEPERMError("unable to call GetExitCodeProcess " + pid); // todo better error messages
+					        } else {
+					            if (status.getInt(0) == STILL_ACTIVE) {
+						            if (libc.TerminateProcess(ptr, 0) == 0) {
+						               throw runtime.newErrnoEPERMError("unable to call TerminateProcess " + pid);
+						             }
+                                     // success									 
 						        }
-						    }
-					   }					  
-					   libc.CloseHandle(ptr);
+					        }
+						} finally {						   
+					       libc.CloseHandle(ptr);
+					    }
 					} else {
 					    if (libc.GetLastError() == ERROR_INVALID_PARAMETER) {
 					        throw runtime.newErrnoESRCHError();
