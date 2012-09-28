@@ -53,6 +53,10 @@ module Gem
     @@win_platform
   end
 
+  # We do not want prefixes on installed binaries.
+  def self.default_exec_format
+    "%s"
+  end
 end
 
 ## JAR FILES: Allow gem path entries to contain jar files
