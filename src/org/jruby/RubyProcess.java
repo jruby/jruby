@@ -934,7 +934,7 @@ public class RubyProcess {
 					          throw runtime.newErrnoEPERMError("unable to call GetExitCodeProcess " + pid);
 					       } else {
 					           if(status.getInt(0) != STILL_ACTIVE) {
-							       throw runtime.newErrnoEPERMError("Process does not exist " + pid);
+							       throw runtime.newErrnoEPERMError("Process exists but is not alive anymore " + pid);
                                }
 					       }
 					   } finally {
