@@ -1657,10 +1657,6 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     @JRubyMethod(name = "__send__", compat = RUBY1_9)
-    public IRubyObject send19(ThreadContext context, Block block) {
-        throw context.runtime.newArgumentError(0, 1);
-    }
-    @JRubyMethod(name = "__send__", compat = RUBY1_9)
     public IRubyObject send19(ThreadContext context, IRubyObject arg0, Block block) {
         String name = arg0.asJavaString();
 
@@ -1678,7 +1674,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
 
         return getMetaClass().finvoke(context, this, name, arg1, arg2, block);
     }
-    @JRubyMethod(name = "__send__", rest = true, compat = RUBY1_9)
+    @JRubyMethod(name = "__send__", required = 1, rest = true, compat = RUBY1_9)
     public IRubyObject send19(ThreadContext context, IRubyObject[] args, Block block) {
         String name = args[0].asJavaString();
         int newArgsLength = args.length - 1;
