@@ -923,12 +923,24 @@ public class RubyProcess {
 			int PROCESS_TERMINATE  = 0x0001;
 			int STILL_ACTIVE = 259;
 			Kernel32 libc = Library.loadLibrary("kernel32", Kernel32.class);
+ 		    jnr.ffi.Pointer status = Memory.allocate(Library.getRuntime(libc), 4);
 		    for (int i = 1; i < args.length; i++) {
 			    int pid = RubyNumeric.num2int(args[i]);
 		        if (signal == 0) {	                
 				    jnr.ffi.Pointer ptr = libc.OpenProcess(PROCESS_QUERY_INFORMATION, 0, pid);
 				    if(ptr != null && ptr.address() != -1) {
-					    libc.CloseHandle(ptr); // success
+					   try {
+					       if(libc.GetExitCodeProcess(ptr, status) == 0) {
+					          throw runtime.newErrnoEPERMError("unable to call GetExitCodeProcess " + pid);
+					       } else {
+					           if(status.getInt(0) != STILL_ACTIVE) {
+							       throw runtime.newErrnoEPERMError("Process does not exist " + pid);
+                               }
+					       }
+					   } finally {
+					     libc.CloseHandle(ptr);
+					   }
+					   
 					} else {
 					    if (libc.GetLastError() == ERROR_INVALID_PARAMETER) {
 					        throw runtime.newErrnoESRCHError();
@@ -939,7 +951,6 @@ public class RubyProcess {
 			    } else if (signal == 9) { //SIGKILL
 				    jnr.ffi.Pointer ptr = libc.OpenProcess(PROCESS_TERMINATE | PROCESS_QUERY_INFORMATION, 0, pid);			      
                     if(ptr != null && ptr.address() != -1) {
-					   jnr.ffi.Pointer status = Memory.allocate(Library.getRuntime(libc), 4);
 					   if(libc.GetExitCodeProcess(ptr, status) == 0) {
 					       libc.CloseHandle(ptr);
 						   throw runtime.newErrnoEPERMError("unable to call GetExitCodeProcess " + pid); // todo better error messages
