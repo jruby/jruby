@@ -298,6 +298,17 @@ public class ASTInspector {
                 // Proc.new needs the caller's block to instantiate a proc
                 setFlag(node, FRAME_BLOCK);
             }
+            if (callNode.getArgsNode() == null && callNode.getIterNode() == null) {
+                switch (callNode.getReceiverNode().getNodeType()) {
+                    // no unary methods on literal numbers, symbols, or strings have frame/scope effects
+                    case FIXNUMNODE:
+                    case FLOATNODE:
+                    case BIGNUMNODE:
+                    case STRNODE:
+                    case SYMBOLNODE:
+                        return;
+                }
+            }
         case FCALLNODE:
             inspect(((IArgumentNode)node).getArgsNode());
             inspect(((BlockAcceptingNode)node).getIterNode());
