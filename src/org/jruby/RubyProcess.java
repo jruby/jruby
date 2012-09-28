@@ -108,15 +108,21 @@ public class RubyProcess {
         }
         
         // Bunch of methods still not implemented
-        @JRubyMethod(name = {"to_int", "stopped?"}, frame = true)
+        @JRubyMethod(name = "to_int")
         public IRubyObject not_implemented() {
-            String error = "Process::Status#" + getRuntime().getCurrentContext().getFrameName() + " not implemented";
+            String error = "Process::Status#to_int not implemented";
+            throw getRuntime().newNotImplementedError(error);
+        }
+
+        @JRubyMethod(name = "stopped?")
+        public IRubyObject not_implemented0() {
+            String error = "Process::Status#stopped? not implemented";
             throw getRuntime().newNotImplementedError(error);
         }
         
-        @JRubyMethod(name = {"&"}, frame = true)
+        @JRubyMethod(name = {"&"})
         public IRubyObject not_implemented1(IRubyObject arg) {
-            String error = "Process::Status#" + getRuntime().getCurrentContext().getFrameName() + " not implemented";
+            String error = "Process::Status#& not implemented";
             throw getRuntime().newNotImplementedError(error);
         }
         
