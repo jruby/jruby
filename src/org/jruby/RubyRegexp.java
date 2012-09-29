@@ -2307,7 +2307,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
     private static RubyString operandCheck(Ruby runtime, IRubyObject str) {
         if (str instanceof RubySymbol) return (RubyString)((RubySymbol)str).to_s();
         IRubyObject tmp = str.checkStringType();
-        if (tmp.isNil()) throw runtime.newTypeError("can't convert " + str.getMetaClass() + "to String");
+        if (tmp.isNil()) throw runtime.newTypeError("can't convert " + str.getMetaClass() + " into String");
         return (RubyString)tmp;
     }
 
