@@ -30,7 +30,7 @@ public class Yield19Node extends YieldNode {
             case ARGSPUSHNODE:
             case ARGSCATNODE:
             case SPLATNODE: 
-                RuntimeHelpers.unsplatValue19IfArityOne(argsResult, yieldToBlock);
+                argsResult = RuntimeHelpers.unsplatValue19IfArityOne(argsResult, yieldToBlock);
                 break;
             case ARRAYNODE:
                 // Pass-thru
