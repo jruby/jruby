@@ -471,7 +471,7 @@ public class RubyStruct extends RubyObject {
     }
 
     private RaiseException notStructMemberError(String name) {
-        return getRuntime().newNameError(name + " is not struct member", name);
+        return getRuntime().newNameError("no member '" + name + "' in struct", name);
     }
 
     public IRubyObject get(int index) {
@@ -623,9 +623,9 @@ public class RubyStruct extends RubyObject {
         idx = idx < 0 ? values.length + idx : idx;
 
         if (idx < 0) {
-            throw getRuntime().newIndexError("offset " + idx + " too large for struct (size:" + values.length + ")");
+            throw getRuntime().newIndexError("offset " + idx + " too small for struct(size:" + values.length + ")");
         } else if (idx >= values.length) {
-            throw getRuntime().newIndexError("offset " + idx + " too large for struct (size:" + values.length + ")");
+            throw getRuntime().newIndexError("offset " + idx + " too large for struct(size:" + values.length + ")");
         }
 
         return values[idx];
@@ -642,9 +642,9 @@ public class RubyStruct extends RubyObject {
         idx = idx < 0 ? values.length + idx : idx;
 
         if (idx < 0) {
-            throw getRuntime().newIndexError("offset " + idx + " too large for struct (size:" + values.length + ")");
+            throw getRuntime().newIndexError("offset " + idx + " too small for struct(size:" + values.length + ")");
         } else if (idx >= values.length) {
-            throw getRuntime().newIndexError("offset " + idx + " too large for struct (size:" + values.length + ")");
+            throw getRuntime().newIndexError("offset " + idx + " too large for struct(size:" + values.length + ")");
         }
 
         modify();
