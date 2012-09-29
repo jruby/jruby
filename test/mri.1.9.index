@@ -1,5 +1,32 @@
 # MRI 1.9.3 tests
 
+externals/ruby1.9/test_pp
+externals/ruby1.9/test_cmath
+externals/ruby1.9/test_delegate
+externals/ruby1.9/test_find
+externals/ruby1.9/test_ipaddr
+# sole test fails
+#externals/ruby1.9/test_mathn
+# sole test fails
+#externals/ruby1.9/test_mutex_m
+externals/ruby1.9/test_open3
+externals/ruby1.9/test_pp
+externals/ruby1.9/test_prettyprint
+externals/ruby1.9/test_prime
+externals/ruby1.9/test_pstore
+externals/ruby1.9/test_pty
+externals/ruby1.9/test_securerandom
+externals/ruby1.9/test_set
+externals/ruby1.9/test_shellwords
+externals/ruby1.9/test_singleton
+externals/ruby1.9/test_syslog
+externals/ruby1.9/test_tempfile
+externals/ruby1.9/test_time
+externals/ruby1.9/test_timeout
+# all tests fail
+#externals/ruby1.9/test_tracer
+externals/ruby1.9/test_tsort
+
 externals/ruby1.9/bigdecimal/test_bigdecimal
 externals/ruby1.9/bigdecimal/test_bigdecimal_util
 externals/ruby1.9/bigdecimal/test_bigmath

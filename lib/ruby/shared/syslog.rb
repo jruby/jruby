@@ -194,10 +194,10 @@ module Syslog
 
     def inspect
       if @opened
-        "#<%s: opened=true, ident=\"%s\", options=%d, facility=%d, mask=%d>" %
+        "<#%s: opened=true, ident=\"%s\", options=%d, facility=%d, mask=%d>" %
         [self.name, @ident, @options, @facility, @mask]
       else
-        "#<#{self.name}: opened=false>"
+        "<##{self.name}: opened=false>"
       end
     end
 
