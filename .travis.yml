@@ -10,4 +10,10 @@ jdk:
 script: "ant test-extended && rake test19"
 install: /bin/true
 notifications:
-  irc: "irc.freenode.org#jruby"
+  irc:
+    channels:
+      - "irc.freenode.org#jruby"
+    on_success: change
+    on_failure: always
+    template:
+      - "Build details: %{build_url}"
