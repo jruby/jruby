@@ -325,9 +325,7 @@ public class Store implements X509TrustManager {
 
     /**
      * c: X509_STORE_set_default_paths
-     * not used for now: invoking this method causes refering System.getenv("SSL_CERT_DIR") etc.
-     * We need to get the dir via evaluating "ENV['SSL_CERT_DIR']" instead of it.
-     */
+     */     
     public int setDefaultPaths() throws Exception { 
         Lookup lookup;
 
