@@ -272,7 +272,11 @@ public class RubyRandom extends RubyObject {
         if (arg.isNil()) {
             return randFloat(context, random);
         }
-        // 1.9 calls rb_to_int
+
+        if (arg instanceof RubyRange) {
+            return randomRand(context, arg, random);
+        }
+
         RubyInteger max = arg.convertToInteger();
         return randCommon(context, random, max);
     }
