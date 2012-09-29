@@ -88,4 +88,14 @@ public class TimeOutputFormatterTest extends TestCase {
         TimeOutputFormatter formatter = TimeOutputFormatter.getFormatter("%^5H");
         assertEquals("   UP", formatter.format("up"));
     }
+
+    public void testFormatNoPaddingForBlankPaddedValues() {
+       TimeOutputFormatter formatter = TimeOutputFormatter.getFormatter("%-3H");
+        assertEquals("up", formatter.format(" up"));
+    }
+
+   public void testFormatNoPaddingForZeroPaddedValues() {
+       TimeOutputFormatter formatter = TimeOutputFormatter.getFormatter("%-3H");
+        assertEquals("up", formatter.format("0up"));
+    }
 }
