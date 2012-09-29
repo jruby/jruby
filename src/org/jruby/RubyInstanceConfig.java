@@ -1298,7 +1298,7 @@ public class RubyInstanceConfig {
     }
 
     public enum ProfilingMode {
-		OFF, API, FLAT, GRAPH, HTML
+		OFF, API, FLAT, GRAPH, HTML, JSON
 	}
 
     public enum CompileMode {

@@ -65,6 +65,9 @@ public abstract class ProfilePrinter {
         else if (mode == ProfilingMode.HTML) {
             printer = new HtmlProfilePrinter(profileData, topInvocation);
         }
+        else if (mode == ProfilingMode.JSON) {
+            printer = new JsonProfilePrinter(profileData, topInvocation);
+        }
         else {
             printer = null;
         }
