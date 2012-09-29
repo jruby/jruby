@@ -7399,11 +7399,22 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     @JRubyMethod(name = "encode!", compat = RUBY1_9)
-    public IRubyObject encode_bang(ThreadContext context, IRubyObject enc) {
+    public IRubyObject encode_bang(ThreadContext context, IRubyObject arg) {
         Ruby runtime = context.runtime;
         modify19();
+        Encoding toEncoding;
+        IRubyObject options;
 
-        value = transcode(context, value, null, getEncoding(runtime, enc), runtime.getNil());
+        if (arg instanceof RubyHash) {
+            toEncoding = runtime.getDefaultInternalEncoding();
+            if (toEncoding == null) toEncoding = runtime.getEncodingService().getLocaleEncoding();
+            options = arg;
+        } else {
+            toEncoding = getEncoding(runtime, arg);
+            options = runtime.getNil();
+        }
+
+        value = transcode(context, value, null, toEncoding, options);
 
         return this;
     }
@@ -7452,20 +7463,20 @@ public class RubyString extends RubyObject implements EncodingCapable {
     @JRubyMethod(name = "encode", compat = RUBY1_9)
     public IRubyObject encode(ThreadContext context, IRubyObject arg) {
         Ruby runtime = context.runtime;
-        Encoding forceEncoding;
+        Encoding toEncoding;
         IRubyObject options;
 
         if (arg instanceof RubyHash) {
-            forceEncoding = runtime.getDefaultInternalEncoding();
-            if (forceEncoding == null) forceEncoding = runtime.getEncodingService().getLocaleEncoding();
-            if (forceEncoding == null) return dup();
+            toEncoding = runtime.getDefaultInternalEncoding();
+            if (toEncoding == null) toEncoding = runtime.getEncodingService().getLocaleEncoding();
+            if (toEncoding == null) return dup();
             options = arg;
         } else {
-            forceEncoding = getEncoding(runtime, arg);
+            toEncoding = getEncoding(runtime, arg);
             options = runtime.getNil();
         }
 
-        return runtime.newString(transcode(context, value, null, forceEncoding, options));
+        return runtime.newString(transcode(context, value, null, toEncoding, options));
     }
 
     @JRubyMethod(name = "encode", compat = RUBY1_9)
