@@ -7,6 +7,7 @@ module JRuby
     java_import org.jruby.runtime.profile.FlatProfilePrinter
     java_import org.jruby.runtime.profile.GraphProfilePrinter
     java_import org.jruby.runtime.profile.HtmlProfilePrinter
+    java_import org.jruby.runtime.profile.JsonProfilePrinter
     
     def self.profile(&block)
       start
