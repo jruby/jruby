@@ -121,7 +121,7 @@ public class TimeOutputFormatter {
                         paddedWith = '0';
                         break;
                     case '-':
-                        sequence = sequence.replaceAll("^[0]", "");
+                        sequence = sequence.replaceAll("^[0 ]", "");
                         break;
                 }
             }
