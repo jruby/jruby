@@ -418,15 +418,6 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/build_lib/snakeyaml-1.10.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library>
-        <CLASSES>
           <root url="jar://$MODULE_DIR$/build_lib/asm-tree-4.0.jar!/" />
         </CLASSES>
         <JAVADOC />
@@ -527,6 +518,15 @@
       <library>
         <CLASSES>
           <root url="jar://$MODULE_DIR$/build_lib/bcprov-jdk15-146.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/build_lib/snakeyaml-1.11.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />

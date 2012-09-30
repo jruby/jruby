@@ -378,7 +378,7 @@
           jffi-x86_64-Windows.jar
           jffi-s390x-Linux.jar
           joda-time-${joda.time.version}.jar
-          snakeyaml-1.10.jar
+          snakeyaml-1.11.jar
           yecht.jar
           yydebug.jar
           nailgun-0.7.1.jar

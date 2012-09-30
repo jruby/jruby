@@ -59,6 +59,7 @@ import org.yaml.snakeyaml.events.SequenceEndEvent;
 import org.yaml.snakeyaml.events.SequenceStartEvent;
 import org.yaml.snakeyaml.events.StreamEndEvent;
 import org.yaml.snakeyaml.events.StreamStartEvent;
+
 import static org.jruby.runtime.Visibility.*;
 
 public class PsychEmitter extends RubyObject {
@@ -122,16 +123,26 @@ public class PsychEmitter extends RubyObject {
     }
 
     @JRubyMethod
-    public IRubyObject start_document(ThreadContext context, IRubyObject version, IRubyObject tags, IRubyObject implicit) {
-        Integer[] versionInts = null;
+    public IRubyObject start_document(ThreadContext context, IRubyObject _version, IRubyObject tags, IRubyObject implicit) {
+        DumperOptions.Version version = null;
         boolean implicitBool = implicit.isTrue();
         Map<String, String> tagsMap = null;
 
-        RubyArray versionAry = version.convertToArray();
+        RubyArray versionAry = _version.convertToArray();
         if (versionAry.size() == 2) {
-            versionInts = new Integer[] {1, 1};
-            versionInts[0] = (int)versionAry.eltInternal(0).convertToInteger().getLongValue();
-            versionInts[1] = (int)versionAry.eltInternal(1).convertToInteger().getLongValue();
+            int versionInt0 = (int)versionAry.eltInternal(0).convertToInteger().getLongValue();
+            int versionInt1 = (int)versionAry.eltInternal(1).convertToInteger().getLongValue();
+
+            if (versionInt0 == 1) {
+                if (versionInt1 == 0) {
+                    version = DumperOptions.Version.V1_0;
+                } else if (versionInt1 == 1) {
+                    version = DumperOptions.Version.V1_1;
+                }
+            }
+            if (version == null) {
+                throw context.runtime.newArgumentError("invalid YAML version: " + versionAry);
+            }
         }
 
         RubyArray tagsAry = tags.convertToArray();
@@ -150,7 +161,7 @@ public class PsychEmitter extends RubyObject {
             }
         }
 
-        DocumentStartEvent event = new DocumentStartEvent(NULL_MARK, NULL_MARK, !implicitBool, versionInts, tagsMap);
+        DocumentStartEvent event = new DocumentStartEvent(NULL_MARK, NULL_MARK, !implicitBool, version, tagsMap);
         emit(context, event);
         return this;
     }
