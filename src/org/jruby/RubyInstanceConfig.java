@@ -62,6 +62,7 @@ import org.jruby.runtime.Constants;
 import org.jruby.runtime.backtrace.TraceType;
 import org.jruby.runtime.load.LoadService;
 import org.jruby.runtime.load.LoadService19;
+import org.jruby.runtime.profile.ProfileOutput;
 import org.jruby.util.ClassCache;
 import org.jruby.util.InputStreamMarkCursor;
 import org.jruby.util.JRubyFile;
@@ -1000,6 +1001,14 @@ public class RubyInstanceConfig {
         return profilingMode;
     }
 
+    public void setProfileOutput(ProfileOutput output) {
+        this.profileOutput = output;
+    }
+
+    public ProfileOutput getProfileOutput() {
+        return profileOutput;
+    }
+
     public boolean hasShebangLine() {
         return hasShebangLine;
     }
@@ -1208,6 +1217,7 @@ public class RubyInstanceConfig {
     private String externalEncoding = null;
 		
     private ProfilingMode profilingMode = ProfilingMode.OFF;
+    private ProfileOutput profileOutput = new ProfileOutput(System.err);
     
     private ClassLoader contextLoader = Thread.currentThread().getContextClassLoader();
     private ClassLoader loader = contextLoader == null ? RubyInstanceConfig.class.getClassLoader() : contextLoader;

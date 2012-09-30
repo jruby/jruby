@@ -124,7 +124,7 @@ public class RubyRunnable implements Runnable {
 
                 // dump profile, if any
                 if (runtime.getInstanceConfig().isProfilingEntireRun()) {
-                    runtime.printProfileData(context.getProfileData(), System.err);
+                    runtime.printProfileData(context.getProfileData());
                 }
             }
         } catch (ThreadKill tk) {

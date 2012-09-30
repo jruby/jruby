@@ -32,12 +32,14 @@ import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyInstanceConfig;
 import org.jruby.exceptions.MainExitException;
+import org.jruby.runtime.profile.ProfileOutput;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.KCode;
 import org.jruby.util.SafePropertyAccessor;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -399,20 +401,29 @@ public class ArgumentProcessor {
                     } else if (argument.equals("--fast")) {
                         config.setCompileMode(RubyInstanceConfig.CompileMode.FORCE);
                         break FOR;
-                    } else if (argument.equals("--profile.api")) {
-                        config.setProfilingMode(RubyInstanceConfig.ProfilingMode.API);
-                        break FOR;
-                    } else if (argument.equals("--profile") || argument.equals("--profile.flat")) {
-                        config.setProfilingMode(RubyInstanceConfig.ProfilingMode.FLAT);
-                        break FOR;
-                    } else if (argument.equals("--profile.graph")) {
-                        config.setProfilingMode(RubyInstanceConfig.ProfilingMode.GRAPH);
-                        break FOR;
-                    } else if (argument.equals("--profile.html")) {
-                        config.setProfilingMode(RubyInstanceConfig.ProfilingMode.HTML);
-                        break FOR;
-                    } else if (argument.equals("--profile.json")) {
-                        config.setProfilingMode(RubyInstanceConfig.ProfilingMode.JSON);
+                    } else if (argument.startsWith("--profile")) {
+                        int dotIndex = argument.indexOf(".");
+                        if (dotIndex == -1) {
+                            config.setProfilingMode(RubyInstanceConfig.ProfilingMode.FLAT);
+                        } else {
+                            String profilingMode = argument.substring(dotIndex + 1, argument.length());
+                            try {
+                                config.setProfilingMode(RubyInstanceConfig.ProfilingMode.valueOf(profilingMode.toUpperCase()));
+                            } catch (IllegalArgumentException e) {
+                                throw new MainExitException(1, String.format("jruby: unknown profiler mode \"%s\"", profilingMode));
+                            }
+                        }
+                        if (config.getProfilingMode() != RubyInstanceConfig.ProfilingMode.API) {
+                            characterIndex = argument.length();
+                            if (argumentIndex < arguments.size() && !arguments.get(argumentIndex + 1).originalValue.startsWith("-")) {
+                                String outputFile = grabValue(""); // no error message, since we already checked that the arg exists
+                                try {
+                                    config.setProfileOutput(new ProfileOutput(new File(outputFile)));
+                                } catch (FileNotFoundException e) {
+                                    throw new MainExitException(1, String.format("jruby: %s", e.getMessage()));
+                                }
+                            }
+                        }
                         break FOR;
                     } else if (argument.equals("--1.9")) {
                         config.setCompatVersion(CompatVersion.RUBY1_9);

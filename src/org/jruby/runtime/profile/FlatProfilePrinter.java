@@ -46,8 +46,12 @@ public class FlatProfilePrinter extends ProfilePrinter {
     FlatProfilePrinter(ProfileData profileData, Invocation topInvocation) {
         super(profileData, topInvocation);
     }
+
+    public void printHeader(PrintStream out) {
+        out.printf("\n%s profile results:\n", getThreadName());
+    }
     
-    public void printProfile(PrintStream out) {
+    public void printProfile(PrintStream out, boolean first) {
         final Invocation topInvocation = getTopInvocation();
         out.printf("Total time: %s\n\n", nanoString(topInvocation.getDuration()));
 
