@@ -890,12 +890,11 @@ public class RubyProcess {
 		int TerminateProcess(jnr.ffi.Pointer hProcess, int uExitCode);
     }
 	
-	static Kernel32 kernel32Instance;
-	static Kernel32 getKernel32() {
-		if (kernel32Instance == null) {
-			kernel32Instance = Library.loadLibrary("kernel32", Kernel32.class);
+	private static class Kernel32Holder {
+		static Kernel32 kernel32Instance = Library.loadLibrary("kernel32", Kernel32.class); // instantiated lazily
+		static Kernel32 getInstance() {
+		  return kernel32Instance;
 		}
-		return kernel32Instance;
 	}
 
     @Deprecated
@@ -936,14 +935,15 @@ public class RubyProcess {
 			int ERROR_INVALID_PARAMETER = 0x57;
 			int PROCESS_TERMINATE  = 0x0001;
 			int STILL_ACTIVE = 259;
-			jnr.ffi.Pointer status = Memory.allocate(Library.getRuntime(getKernel32()), 4);
+			Kernel32 kernel32 = Kernel32Holder.getInstance();
+			jnr.ffi.Pointer status = Memory.allocate(Library.getRuntime(kernel32), 4);
 		    for (int i = 1; i < args.length; i++) {
 			    int pid = RubyNumeric.num2int(args[i]);
 		        if (signal == 0) {	                
-				    jnr.ffi.Pointer ptr = getKernel32().OpenProcess(PROCESS_QUERY_INFORMATION, 0, pid);
+				    jnr.ffi.Pointer ptr = kernel32.OpenProcess(PROCESS_QUERY_INFORMATION, 0, pid);
 				    if(ptr != null && ptr.address() != -1) {
 					   try {
-					       if(getKernel32().GetExitCodeProcess(ptr, status) == 0) {
+					       if(kernel32.GetExitCodeProcess(ptr, status) == 0) {
 					          throw runtime.newErrnoEPERMError("unable to call GetExitCodeProcess " + pid);
 					       } else {
 					           if(status.getInt(0) != STILL_ACTIVE) {
@@ -951,35 +951,35 @@ public class RubyProcess {
                                }
 					       }
 					   } finally {
-					     getKernel32().CloseHandle(ptr);
+					     kernel32.CloseHandle(ptr);
 					   }
 					   
 					} else {
-					    if (getKernel32().GetLastError() == ERROR_INVALID_PARAMETER) {
+					    if (kernel32.GetLastError() == ERROR_INVALID_PARAMETER) {
 					        throw runtime.newErrnoESRCHError();
 					    } else {
 					        throw runtime.newErrnoEPERMError("Process does not exist " + pid);
 					    }
 					}
 			    } else if (signal == 9) { //SIGKILL
-				    jnr.ffi.Pointer ptr = getKernel32().OpenProcess(PROCESS_TERMINATE | PROCESS_QUERY_INFORMATION, 0, pid);			      
+				    jnr.ffi.Pointer ptr = kernel32.OpenProcess(PROCESS_TERMINATE | PROCESS_QUERY_INFORMATION, 0, pid);
                     if(ptr != null && ptr.address() != -1) {
 					    try {
-					        if(getKernel32().GetExitCodeProcess(ptr, status) == 0) {
+					        if(kernel32.GetExitCodeProcess(ptr, status) == 0) {
 					            throw runtime.newErrnoEPERMError("unable to call GetExitCodeProcess " + pid); // todo better error messages
 					        } else {
 					            if (status.getInt(0) == STILL_ACTIVE) {
-						            if (getKernel32().TerminateProcess(ptr, 0) == 0) {
+						            if (kernel32.TerminateProcess(ptr, 0) == 0) {
 						               throw runtime.newErrnoEPERMError("unable to call TerminateProcess " + pid);
 						             }
                                      // success									 
 						        }
 					        }
 						} finally {						   
-					       getKernel32().CloseHandle(ptr);
+					       kernel32.CloseHandle(ptr);
 					    }
 					} else {
-					    if (getKernel32().GetLastError() == ERROR_INVALID_PARAMETER) {
+					    if (kernel32.GetLastError() == ERROR_INVALID_PARAMETER) {
 					        throw runtime.newErrnoESRCHError();
 					    } else {
 					        throw runtime.newErrnoEPERMError("Process does not exist " + pid);
