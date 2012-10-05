@@ -2300,7 +2300,7 @@ public class RubyModule extends RubyObject {
         return this;
     }
 
-    @JRubyMethod(name = "undef_method", required = 1, rest = true, visibility = PRIVATE)
+    @JRubyMethod(name = "undef_method", rest = true, visibility = PRIVATE)
     public RubyModule undef_method(ThreadContext context, IRubyObject[] args) {
         for (int i=0; i<args.length; i++) {
             undef(context, args[i].asJavaString());
@@ -2347,7 +2347,7 @@ public class RubyModule extends RubyObject {
         }
     }
 
-    @JRubyMethod(name = "remove_method", required = 1, rest = true, visibility = PRIVATE)
+    @JRubyMethod(name = "remove_method", rest = true, visibility = PRIVATE)
     public RubyModule remove_method(ThreadContext context, IRubyObject[] args) {
         for(int i=0;i<args.length;i++) {
             removeMethod(context, args[i].asJavaString());
