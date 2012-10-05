@@ -86,13 +86,12 @@ public abstract class PKey extends RubyObject {
 
     public static class PKeyModule {
 
-        @JRubyMethod(name = "read", meta = true, optional = 1)
+        @JRubyMethod(name = "read", meta = true, required = 1, optional = 1)
         public static IRubyObject read(ThreadContext ctx, IRubyObject recv, IRubyObject[] args) {
             Ruby runtime = ctx.runtime;
             IRubyObject data;
             char[] pass;
-            int argc = Arity.checkArgumentCount(runtime, args, 1, 2);
-            switch (argc) {
+            switch (args.length) {
             case 1:
                 data = args[0];
                 pass = null;
