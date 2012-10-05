@@ -38,7 +38,7 @@ module JRuby
       status = RubyProcess::RubyStatus.newProcessStatus(JRuby.runtime, exit_value, pid)
       JRuby.runtime.current_context.last_exit_status = status
 
-      result
+      result.gsub(/\r\n/, "\n")
     end
   end
 end
