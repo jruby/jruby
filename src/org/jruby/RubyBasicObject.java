@@ -805,13 +805,15 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     public IRubyObject dup() {
-        if (isImmediate()) throw getRuntime().newTypeError("can't dup " + getMetaClass().getName());
+        Ruby runtime = getRuntime();
+
+        if (isImmediate()) throw runtime.newTypeError("can't dup " + getMetaClass().getName());
 
         IRubyObject dup = getMetaClass().getRealClass().allocate();
         if (isTaint()) dup.setTaint(true);
         if (isUntrusted()) dup.setUntrusted(true);
 
-        initCopy(dup, this);
+        initCopy(dup, this, runtime.is1_9() ? "initialize_dup" : "initialize_copy");
 
         return dup;
     }
@@ -821,7 +823,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * Initializes a copy with variable and special instance variable
      * information, and then call the initialize_copy Ruby method.
      */
-    private static void initCopy(IRubyObject clone, IRubyObject original) {
+    private static void initCopy(IRubyObject clone, IRubyObject original, String method) {
         assert !clone.isFrozen() : "frozen object (" + clone.getMetaClass().getName() + ") allocated";
 
         original.copySpecialInstanceVariables(clone);
@@ -834,7 +836,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         }
 
         /* FIXME: finalizer should be dupped here */
-        clone.callMethod(clone.getRuntime().getCurrentContext(), "initialize_copy", original);
+        clone.callMethod(clone.getRuntime().getCurrentContext(), method, original);
     }
 
     /**
@@ -856,14 +858,16 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
 
     public IRubyObject rbClone() {
-        if (isImmediate()) throw getRuntime().newTypeError("can't clone " + getMetaClass().getName());
+        Ruby runtime = getRuntime();
+
+        if (isImmediate()) throw runtime.newTypeError("can't clone " + getMetaClass().getName());
 
         // We're cloning ourselves, so we know the result should be a RubyObject
         RubyBasicObject clone = (RubyBasicObject)getMetaClass().getRealClass().allocate();
         clone.setMetaClass(getSingletonClassClone());
         if (isTaint()) clone.setTaint(true);
 
-        initCopy(clone, this);
+        initCopy(clone, this, runtime.is1_9() ? "initialize_clone" : "initialize_copy");
 
         if (isFrozen()) clone.setFrozen(true);
         if (isUntrusted()) clone.setUntrusted(true);

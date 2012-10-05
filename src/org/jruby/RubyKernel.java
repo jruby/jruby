@@ -1829,9 +1829,19 @@ public class RubyKernel {
         return ((RubyBasicObject)self).op_cmp(context, other);
     }
 
-    @JRubyMethod(name = "initialize_copy", required = 1, visibility = PRIVATE)
+    @JRubyMethod(name = "initialize_copy", required = 1)
     public static IRubyObject initialize_copy(IRubyObject self, IRubyObject original) {
         return ((RubyBasicObject)self).initialize_copy(original);
+    }
+
+    @JRubyMethod(name = "initialize_clone", required = 1, compat = RUBY1_9)
+    public static IRubyObject initialize_clone(ThreadContext context, IRubyObject self, IRubyObject original) {
+        return self.callMethod(context, "initialize_copy", original);
+    }
+
+    @JRubyMethod(name = "initialize_dup", required = 1, compat = RUBY1_9)
+    public static IRubyObject initialize_dup(ThreadContext context, IRubyObject self, IRubyObject original) {
+        return self.callMethod(context, "initialize_copy", original);
     }
 
     @JRubyMethod(name = "respond_to?", compat = RUBY1_8)
