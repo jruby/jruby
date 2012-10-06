@@ -1829,7 +1829,7 @@ public class RubyKernel {
         return ((RubyBasicObject)self).op_cmp(context, other);
     }
 
-    @JRubyMethod(name = "initialize_copy", required = 1)
+    @JRubyMethod(name = "initialize_copy", required = 1, visibility = PRIVATE)
     public static IRubyObject initialize_copy(IRubyObject self, IRubyObject original) {
         return ((RubyBasicObject)self).initialize_copy(original);
     }
