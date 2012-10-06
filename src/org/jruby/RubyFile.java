@@ -1243,9 +1243,13 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             // FNFException can be thrown in both cases, when the file
             // is not found, or when permission is denied.
             // FIXME: yes, this is indeed gross.
-            if (ex.getMessage().contains(/*P*/"ermission denied")) {
+            String message = ex.getMessage();
+            
+            if (message.contains(/*P*/"ermission denied") ||
+                message.contains(/*A*/"ccess is denied")) {
                 throw getRuntime().newErrnoEACCESError(path);
             }
+            
             throw getRuntime().newErrnoENOENTError(path);
         } catch (DirectoryAsFileException ex) {
             throw getRuntime().newErrnoEISDirError();
