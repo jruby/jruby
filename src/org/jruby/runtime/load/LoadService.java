@@ -1489,6 +1489,13 @@ public class LoadService {
                     (loc.getProtocol().equals("jar") || loc.getProtocol().equals("file"))
                     && isRequireable(loc)) {
                 path = getPath(loc);
+                // On windows file: urls converted to names will return /C:/foo from
+                // getPath versus C:/foo.  Since getPath is used in a million places
+                // putting the newFile.getPath broke some file with-in Jar loading. 
+                // So I moved it to only this site.
+                if (Platform.IS_WINDOWS && loc.getProtocol().equals("file")) {
+                    path = new File(path).getPath();
+                }
             }
             LoadServiceResource foundResource = new LoadServiceResource(loc, path);
             debugLogFound(foundResource);
