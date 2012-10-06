@@ -3463,7 +3463,7 @@ public final class Ruby {
 
     public RaiseException newIOErrorFromException(IOException ioe) {
         if (ioe instanceof ClosedChannelException) {
-            throw newIOError("closed stream");
+            throw newErrnoEBADFError();
         }
 
         // TODO: this is kinda gross

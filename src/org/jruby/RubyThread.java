@@ -1099,7 +1099,7 @@ public class RubyThread extends RubyObject implements ExecutionContext {
 
                     return false;
                 } catch (IOException ioe) {
-                    throw getRuntime().newRuntimeError("Error with selector: " + ioe);
+                    throw getRuntime().newIOErrorFromException(ioe);
                 } finally {
                     // Note: I don't like ignoring these exceptions, but it's
                     // unclear how likely they are to happen or what damage we
