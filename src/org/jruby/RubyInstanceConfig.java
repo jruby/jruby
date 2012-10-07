@@ -1307,10 +1307,6 @@ public class RubyInstanceConfig {
         public boolean shouldPrecompileCLI() {
             switch (this) {
             case JIT: case FORCE: case FORCEIR:
-                if (DYNOPT_COMPILE_ENABLED) {
-                    // don't precompile the CLI script in dynopt mode
-                    return false;
-                }
                 return true;
             }
             return false;
@@ -1374,12 +1370,6 @@ public class RubyInstanceConfig {
      * Set with the <tt>jruby.compile.peephole</tt> system property.
      */
     public static final boolean PEEPHOLE_OPTZ = Options.COMPILE_PEEPHOLE.load();
-    /**
-     * Enable "dynopt" optimizations.
-     *
-     * Set with the <tt>jruby.compile.dynopt</tt> system property.
-     */
-    public static boolean DYNOPT_COMPILE_ENABLED = Options.COMPILE_DYNOPT.load();
 
     /**
      * Enable compiler "noguards" optimizations.

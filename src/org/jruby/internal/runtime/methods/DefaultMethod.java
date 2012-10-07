@@ -108,11 +108,9 @@ public class DefaultMethod extends DynamicMethod implements MethodArgs, Position
     }
 
     public DynamicMethod getMethodForCaching() {
-        if (!RubyInstanceConfig.DYNOPT_COMPILE_ENABLED) {
-            DynamicMethod method = box.actualMethod;
-            if (method instanceof JittedMethod) {
-                return method;
-            }
+        DynamicMethod method = box.actualMethod;
+        if (method instanceof JittedMethod) {
+            return method;
         }
         return this;
     }
@@ -124,9 +122,7 @@ public class DefaultMethod extends DynamicMethod implements MethodArgs, Position
                 this);
         this.box.actualMethod.serialNumber = this.serialNumber;
         this.box.callCount = -1;
-        if (!RubyInstanceConfig.DYNOPT_COMPILE_ENABLED) {
-            getImplementationClass().invalidateCacheDescendants();
-        }
+        getImplementationClass().invalidateCacheDescendants();
     }
 
     private DynamicMethod tryJitReturnMethod(ThreadContext context) {

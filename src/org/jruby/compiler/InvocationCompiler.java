@@ -107,13 +107,4 @@ public interface InvocationCompiler {
     public void invokeBinaryFixnumRHS(String name, CompilerCallback receiverCallback, long fixnum);
     public void invokeBinaryBooleanFixnumRHS(String name, CompilerCallback receiverCallback, long fixnum);
     public void invokeBinaryFloatRHS(String name, CompilerCallback receiverCallback, double flote);
-
-    public void invokeFixnumLong(String rubyName, int moduleGeneration, CompilerCallback receiverCallback, String methodName, long fixnum);
-    public void invokeFloatDouble(String rubyName, int moduleGeneration, CompilerCallback receiverCallback, String methodName, double flote);
-
-    public void invokeRecursive(String name, int moduleGeneration, ArgumentsCallback argsCallback, CompilerCallback closure, CallType callType, boolean iterator);
-
-    public void invokeNative(String name, NativeCall nativeCall, int generation, CompilerCallback receiver, ArgumentsCallback args, CompilerCallback closure, CallType callType, boolean iterator);
-
-    public void invokeTrivial(String name, int generation, CompilerCallback body);
 }
