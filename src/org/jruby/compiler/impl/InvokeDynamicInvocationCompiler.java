@@ -39,6 +39,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
 import org.jruby.util.JavaNameMangler;
+import org.objectweb.asm.Label;
+
 import static org.jruby.util.CodegenUtils.*;
 
 /**
@@ -387,5 +389,85 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
                 flote,
                 methodCompiler.getScriptCompiler().getSourcename(),
                 methodCompiler.getLastLine());
+    }
+
+    @Override
+    public void invokeOpAsgnWithMethod(final String operatorName, final String attrName, final String attrAsgnName, final CompilerCallback receiverCallback, final ArgumentsCallback argsCallback) {
+        final int temp = methodCompiler.variableCompiler.grabTempLocal();
+        receiverCallback.call(methodCompiler);
+        methodCompiler.method.astore(temp);
+        final CompilerCallback receiver = new CompilerCallback() {
+            public void call(BodyCompiler context) {
+                methodCompiler.method.aload(temp);
+            }
+        };
+
+        ArgumentsCallback result = new ArgumentsCallback() {
+            public void call(BodyCompiler context) {
+                CompilerCallback value = new CompilerCallback() {
+                    public void call(BodyCompiler context) {
+                        invokeDynamic(attrName, receiver, null, CallType.FUNCTIONAL, null, false);
+                    }
+                };
+
+                invokeDynamic(operatorName, value, argsCallback, CallType.FUNCTIONAL, null, false);
+            }
+
+            public int getArity() {
+                return 1;
+            }
+        };
+        invokeAttrAssign(attrAsgnName, receiver, result, false, true);
+        methodCompiler.variableCompiler.releaseTempLocal();
+    }
+
+    public void invokeOpAsgnWithOr(String attrName, String attrAsgnName, CompilerCallback receiverCallback, ArgumentsCallback argsCallback) {
+        final int temp = methodCompiler.variableCompiler.grabTempLocal();
+        receiverCallback.call(methodCompiler);
+        methodCompiler.method.astore(temp);
+        final CompilerCallback receiver = new CompilerCallback() {
+            public void call(BodyCompiler context) {
+                methodCompiler.method.aload(temp);
+            }
+        };
+
+        invokeDynamic(attrName, receiver, null, CallType.FUNCTIONAL, null, false);
+
+        Label done = new Label();
+        Label isTrue = new Label();
+
+        method.dup();
+        methodCompiler.invokeIRubyObject("isTrue", sig(boolean.class));
+        method.iftrue(done);
+
+        method.pop(); // pop extra attr value
+        invokeAttrAssign(attrAsgnName, receiver, argsCallback, false, true);
+
+        method.label(done);
+        methodCompiler.variableCompiler.releaseTempLocal();
+    }
+
+    public void invokeOpAsgnWithAnd(String attrName, String attrAsgnName, CompilerCallback receiverCallback, ArgumentsCallback argsCallback) {
+        final int temp = methodCompiler.variableCompiler.grabTempLocal();
+        receiverCallback.call(methodCompiler);
+        methodCompiler.method.astore(temp);
+        final CompilerCallback receiver = new CompilerCallback() {
+            public void call(BodyCompiler context) {
+                methodCompiler.method.aload(temp);
+            }
+        };
+
+        invokeDynamic(attrName, receiver, null, CallType.FUNCTIONAL, null, false);
+
+        Label done = new Label();
+
+        method.dup();
+        methodCompiler.invokeIRubyObject("isTrue", sig(boolean.class));
+        method.iffalse(done);
+
+        method.pop(); // pop extra attr value
+        invokeAttrAssign(attrAsgnName, receiver, argsCallback, false, true);
+
+        method.label(done);
     }
 }
