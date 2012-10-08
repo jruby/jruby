@@ -1537,7 +1537,7 @@ public class RubyRegexp extends RubyObject implements ReOptions, EncodingCapable
                 pos += str.strLength();
                 if (pos < 0) return pos;
             }
-            pos = adjustStartPos19(str, pos, false);
+            pos = StringSupport.offset(str, pos);
         }
         return search19(context, str, pos, false);
     }
