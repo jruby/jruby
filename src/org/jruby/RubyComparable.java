@@ -116,10 +116,10 @@ public class RubyComparable {
         try {
             IRubyObject result = invokedynamic(context, recv, OP_CMP, other);
 
-			// This is only to prevent throwing exceptions by cmperr - it has poor performance
-			if (result.isNil()) {
-				return returnValueOnError;
-			}
+            // This is only to prevent throwing exceptions by cmperr - it has poor performance
+            if (result.isNil()) {
+                return returnValueOnError;
+            }
 
             return RubyBoolean.newBoolean(runtime, cmpint(context, result, recv, other) == 0);
         } catch (RaiseException e) {
