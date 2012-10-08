@@ -413,6 +413,11 @@ public final class StringSupport {
         return pp == -1 ? end - p : pp - p; 
     }
 
+    public static int offset(RubyString str, int pos) {
+        ByteList value = str.getByteList();
+        return offset(str.getEncoding(), value.getUnsafeBytes(), value.getBegin(), value.getBegin() + value.getRealSize(), pos);
+    }
+
     public static int toLower(Encoding enc, int c) {
         return Encoding.isAscii(c) ? AsciiTables.ToLowerCaseTable[c] : c;
     }
