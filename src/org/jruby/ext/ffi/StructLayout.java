@@ -35,7 +35,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import org.jruby.Ruby;
@@ -67,11 +66,10 @@ public final class StructLayout extends Type {
     /** The name to use to register this class in the JRuby runtime */
     static final String CLASS_NAME = "StructLayout";
 
-    /** The name:offset map for this struct */
-    private final Map<IRubyObject, Member> fieldSymbolMap;
+    private final Member[] identityLookupTable;
 
     /** The name:offset map for this struct */
-    private final Map<IRubyObject, Member> fieldStringMap;
+    private final Map<IRubyObject, Member> memberMap;
     
     /** The ordered list of field names (as symbols) */
     private final List<IRubyObject> fieldNames;
@@ -167,7 +165,7 @@ public final class StructLayout extends Type {
         List<IRubyObject> names = new ArrayList<IRubyObject>(fields.size());
         List<Member> memberList = new ArrayList<Member>(fields.size());
         Map<IRubyObject, Member> memberStringMap = new HashMap<IRubyObject, Member>(fields.size());
-        Map<IRubyObject, Member> memberSymbolMap = new IdentityHashMap<IRubyObject, Member>(fields.size() * 2);
+        Member[] memberSymbolLookupTable = new Member[Util.roundUpToPowerOfTwo(fields.size() * 8)];
         int offset = 0;
         
         int index = 0;
@@ -186,7 +184,12 @@ public final class StructLayout extends Type {
             fieldList.add(f);
 
             Member m = new Member(f, index, f.isCacheable() ? cfCount++ : -1, f.isValueReferenceNeeded() ? refCount++ : -1);
-            memberSymbolMap.put(f.name, m);
+            for (int idx = symbolIndex(f.name, memberSymbolLookupTable.length); ; idx = nextIndex(idx, memberSymbolLookupTable.length)) {
+                if (memberSymbolLookupTable[idx] == null) {
+                    memberSymbolLookupTable[idx] = m;
+                    break;
+                }
+            }
 
             // Allow fields to be accessed as ['name'] as well as [:name] for legacy code
             memberStringMap.put(f.name, m);
@@ -202,8 +205,8 @@ public final class StructLayout extends Type {
         // Create the ordered list of field names from the map
         this.fieldNames = Collections.unmodifiableList(new ArrayList<IRubyObject>(names));
         this.fields = Collections.unmodifiableList(fieldList);
-        this.fieldStringMap = Collections.unmodifiableMap(memberStringMap);
-        this.fieldSymbolMap = Collections.unmodifiableMap(memberSymbolMap);
+        this.memberMap = Collections.unmodifiableMap(memberStringMap);
+        this.identityLookupTable = memberSymbolLookupTable;
         this.members = Collections.unmodifiableList(memberList);
         this.isUnion = offset == 0 && memberList.size() > 1;
     }
@@ -336,6 +339,14 @@ public final class StructLayout extends Type {
         return result;
     }
 
+    private static int symbolIndex(IRubyObject name, int length) {
+        return System.identityHashCode(name) & (length - 1);
+    }
+
+    private static int nextIndex(int idx, int length) {
+        return (idx + 1) & (length - 1);
+    }
+
     /**
      * Returns a {@link Member} descriptor for a struct field.
      * 
@@ -343,12 +354,16 @@ public final class StructLayout extends Type {
      * @return A <tt>Member</tt> descriptor.
      */
     final Member getMember(Ruby runtime, IRubyObject name) {
-        Member f = fieldSymbolMap.get(name);
-        if (f != null) {
-            return f;
+        Member m;
+        int idx = symbolIndex(name, identityLookupTable.length);
+        while ((m = identityLookupTable[idx]) != null) {
+            if (m.name == name) {
+                return m;
+            }
+            idx = nextIndex(idx, identityLookupTable.length);
         }
-        
-        f = fieldStringMap.get(name);
+
+        Member f = memberMap.get(name);
         if (f != null) {
             return f;
         }
@@ -427,6 +442,8 @@ public final class StructLayout extends Type {
         /** The index of this member within the struct */
         final int index;
 
+        final IRubyObject name;
+
         /** Initializes a new Member instance */
         protected Member(Field f, int index, int cacheIndex, int referenceIndex) {
             this.field = f;
@@ -436,6 +453,7 @@ public final class StructLayout extends Type {
             this.index = index;
             this.cacheIndex = cacheIndex;
             this.referenceIndex = referenceIndex;
+            this.name = f.name;
         }
 
         final long getOffset(IRubyObject ptr) {

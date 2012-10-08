@@ -35,14 +35,12 @@ import org.jruby.Ruby;
 import org.jruby.RubyBignum;
 import org.jruby.RubyHash;
 import org.jruby.RubyInteger;
-import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.javasupport.JavaObject;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
-import org.jruby.util.ByteList;
 
 /**
  *
@@ -192,5 +190,17 @@ public final class Util {
         } else {
             throw runtime.newTypeError(byte_order, runtime.getSymbol());
         }
+    }
+
+    public static int roundUpToPowerOfTwo(int v) {
+        if (v < 1) return 1;
+        v--;
+        v |= v >> 1;
+        v |= v >> 2;
+        v |= v >> 4;
+        v |= v >> 8;
+        v |= v >> 16;
+
+        return v + 1;
     }
 }
