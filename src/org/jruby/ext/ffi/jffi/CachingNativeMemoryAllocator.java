@@ -93,6 +93,9 @@ final class CachingNativeMemoryAllocator {
             allocation.setAutoRelease(autorelease);
         }
 
+        public boolean isAutoRelease() {
+            return !allocation.isUnmanaged();
+        }
     }
 
 

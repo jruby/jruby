@@ -128,6 +128,11 @@ public final class AutoPointer extends Pointer {
         return context.runtime.getNil();
     }
 
+    @JRubyMethod(name = "autorelease?")
+    public final IRubyObject autorelease_p(ThreadContext context) {
+        return context.runtime.newBoolean(!reaper.unmanaged);
+    }
+
     private void setReaper(Reaper reaper) {
         Reference<ReaperGroup> reaperGroupReference = currentReaper.get();
         ReaperGroup reaperGroup = reaperGroupReference != null ? reaperGroupReference.get() : null;

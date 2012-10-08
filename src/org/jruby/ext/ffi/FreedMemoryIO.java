@@ -24,6 +24,10 @@ public final class FreedMemoryIO extends InvalidMemoryIO implements AllocatedDir
         throw ex();
     }
 
+    public boolean isAutoRelease() {
+        throw ex();
+    }
+
     public long getAddress() {
         throw ex();
     }

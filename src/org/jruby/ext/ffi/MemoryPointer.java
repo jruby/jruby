@@ -202,4 +202,9 @@ public final class MemoryPointer extends Pointer {
         ((AllocatedDirectMemoryIO) getMemoryIO()).setAutoRelease(release.isTrue());
         return context.runtime.getNil();
     }
+
+    @JRubyMethod(name = "autorelease?")
+    public final IRubyObject autorelease_p(ThreadContext context) {
+        return context.runtime.newBoolean(((AllocatedDirectMemoryIO) getMemoryIO()).isAutoRelease());
+    }
 }

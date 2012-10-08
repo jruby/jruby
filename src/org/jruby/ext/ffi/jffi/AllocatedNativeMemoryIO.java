@@ -99,6 +99,9 @@ final class AllocatedNativeMemoryIO extends BoundedNativeMemoryIO implements All
         }
     }
 
+    public boolean isAutoRelease() {
+        return !allocation.unmanaged;
+    }
 
     /**
      * Holder for a group of memory allocations.
