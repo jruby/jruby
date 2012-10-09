@@ -154,14 +154,10 @@ public class EncodingOption {
     // c: parse_mode_enc
     public static EncodingOption getEncodingNoOption(Ruby runtime, ModeFlags modeFlags) {
         if (modeFlags.isBinary()) {
-            return new EncodingOption(
-                    ASCIIEncoding.INSTANCE,
-                    null, false);
-        } else {
-            return new EncodingOption(
-                    runtime.getDefaultExternalEncoding(),
-                    runtime.getDefaultInternalEncoding(), false);
+            return new EncodingOption(ASCIIEncoding.INSTANCE, null, false);
         }
+
+        return new EncodingOption(null, null, false);
     }
 
     public String toString() {
