@@ -116,14 +116,6 @@ public abstract class Node implements ISourcePositionHolder {
         return nodeType;
     }
 
-    /**
-     * Is the current node something that is syntactically visible in the AST.  IDE consumers
-     * should ignore these elements.
-     */
-    public boolean isInvisible() {
-        return this instanceof InvisibleNode;
-    }
-
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         throw new RuntimeException(this.getClass().getSimpleName() + " should not be directly interpreted");
     }
