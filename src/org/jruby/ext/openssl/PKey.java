@@ -164,7 +164,7 @@ public abstract class PKey extends RubyObject {
 
     @Override
     @JRubyMethod
-    public IRubyObject initialize() {
+    public IRubyObject initialize(ThreadContext context) {
         return this;
     }
 

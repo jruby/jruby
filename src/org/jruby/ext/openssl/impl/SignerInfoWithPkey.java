@@ -61,6 +61,7 @@ import org.jruby.ext.openssl.x509store.X509AuxCertificate;
  *
  * @author <a href="mailto:ola.bini@gmail.com">Ola Bini</a>
  */
+@SuppressWarnings("deprecation")
 public class SignerInfoWithPkey extends ASN1Encodable {
     private DERInteger              version;
     private IssuerAndSerialNumber   issuerAndSerialNumber;

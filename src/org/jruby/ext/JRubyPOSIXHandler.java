@@ -7,12 +7,12 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import jnr.constants.platform.Errno;
 import org.jruby.Ruby;
 import org.jruby.RubyHash;
 import org.jruby.common.IRubyWarnings.ID;
 import jnr.posix.POSIXHandler;
 
-import jnr.constants.platform.Errno;
 import org.jruby.util.cli.Options;
 
 public class JRubyPOSIXHandler implements POSIXHandler {
@@ -32,10 +32,6 @@ public class JRubyPOSIXHandler implements POSIXHandler {
 
     public void error(Errno error, String extraData) {
         throw runtime.newErrnoFromInt(error.intValue(), extraData);
-    }
-    
-    public void error(com.kenai.constantine.platform.Errno error, String extraData) {
-        throw runtime.newErrnoFromInt(error.value(), extraData);
     }
 
     public void unimplementedError(String method) {

@@ -76,6 +76,7 @@ import org.jruby.util.ByteList;
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
+@SuppressWarnings("deprecation")
 public class X509Cert extends RubyObject {
     private static final long serialVersionUID = 5626619026058595493L;
 

@@ -125,7 +125,6 @@ public class VariadicInvoker extends RubyObject {
             return functionInvoker.invoke(context, function, args);
         } finally {
             invocation.finish();
-            function.dispose();
         }
     }
 }

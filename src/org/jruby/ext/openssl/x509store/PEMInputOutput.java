@@ -126,6 +126,7 @@ import org.jruby.ext.openssl.impl.CipherSpec;
  *
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
+@SuppressWarnings("deprecation")
 public class PEMInputOutput {
     public static final String BEF = "-----";
     public static final String AFT = "-----";

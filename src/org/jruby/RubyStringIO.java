@@ -43,7 +43,6 @@ import org.jruby.util.ByteList;
  * Deprecated shim for what's now in org.jruby.ext.stringio.RubyStringIO
  */
 @JRubyClass(name="StringIO")
-@Deprecated
 public abstract class RubyStringIO extends RubyObject {
     protected RubyStringIO(Ruby runtime, RubyClass klass) {
         super(runtime, klass);

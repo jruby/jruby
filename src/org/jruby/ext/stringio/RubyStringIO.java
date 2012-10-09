@@ -63,6 +63,7 @@ import org.jruby.util.io.Stream;
 import static org.jruby.RubyEnumerator.enumeratorize;
 
 @JRubyClass(name="StringIO")
+@SuppressWarnings("deprecation")
 public class RubyStringIO extends org.jruby.RubyStringIO {
     static class StringIOData {
         long pos = 0L;

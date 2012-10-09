@@ -60,6 +60,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
+@SuppressWarnings("deprecation")
 public class Request extends RubyObject {
     private static final long serialVersionUID = -5551557929791764918L;
 

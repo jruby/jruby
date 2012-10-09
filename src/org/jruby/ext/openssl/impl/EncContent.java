@@ -41,6 +41,7 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
  *
  * @author <a href="mailto:ola.bini@gmail.com">Ola Bini</a>
  */
+@SuppressWarnings("deprecation")
 public class EncContent {
     /**
      * Describe contentType here.

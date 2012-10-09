@@ -40,6 +40,7 @@ import org.bouncycastle.asn1.x509.X509Name;
  *
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
+@SuppressWarnings("deprecation")
 public class Name {
     public X509Name name;
 

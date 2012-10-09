@@ -39,7 +39,6 @@ import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
-import org.bouncycastle.asn1.x509.X509Name;
 
 /**
  * Contains most of the functionality that beings with X509 in
@@ -47,6 +46,7 @@ import org.bouncycastle.asn1.x509.X509Name;
  *
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
+@SuppressWarnings("deprecation")
 public abstract class X509Utils {
     private X509Utils() {}
 
@@ -240,14 +240,14 @@ public abstract class X509Utils {
             }
             if(sakid.getAuthorityCertIssuer() != null) {
                 GeneralName[] gens = sakid.getAuthorityCertIssuer().getNames();
-                X509Name nm = null;
+                org.bouncycastle.asn1.x509.X509Name nm = null;
                 for(int i=0;i<gens.length;i++) {
                     if(gens[i].getTagNo() == GeneralName.directoryName) {
                         DEREncodable nameTmp = gens[i].getName();
-                        if (nameTmp instanceof X509Name) {
-                            nm = (X509Name)nameTmp;
+                        if (nameTmp instanceof org.bouncycastle.asn1.x509.X509Name) {
+                            nm = (org.bouncycastle.asn1.x509.X509Name)nameTmp;
                         } else if (nameTmp instanceof DERSequence) {
-                            nm = new X509Name((DERSequence)nameTmp);
+                            nm = new org.bouncycastle.asn1.x509.X509Name((DERSequence)nameTmp);
                         } else {
                             throw new RuntimeException("unknown name type in X509Utils: " + nameTmp);
                         }

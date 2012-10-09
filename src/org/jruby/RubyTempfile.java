@@ -40,7 +40,6 @@ import org.jruby.runtime.builtin.IRubyObject;
  * "RubyTempfile" directly.
  */
 @JRubyClass(name="Tempfile", parent="File")
-@Deprecated
 public abstract class RubyTempfile extends RubyFile {
     public static RubyClass createTempfileClass(Ruby runtime) {
         return Tempfile.createTempfileClass(runtime);

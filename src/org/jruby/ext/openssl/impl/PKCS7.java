@@ -76,6 +76,7 @@ import org.jruby.ext.openssl.x509store.X509Utils;
  *
  * @author <a href="mailto:ola.bini@gmail.com">Ola Bini</a>
  */
+@SuppressWarnings("deprecation")
 public class PKCS7 {
     // OpenSSL behavior: PKCS#7 ObjectId for "ITU-T" + "0"
     private static final String EMPTY_PKCS7_OID = "0.0";

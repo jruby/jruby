@@ -34,6 +34,7 @@ import java.util.List;
  *
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
+@SuppressWarnings("deprecation")
 public abstract class X509Object implements Comparable<X509Object> {
     /**
      * c: X509_OBJECT_idx_by_subject

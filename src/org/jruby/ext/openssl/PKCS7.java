@@ -27,7 +27,6 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl;
 
-
 import java.io.IOException;
 import java.io.StringWriter;
 import java.security.GeneralSecurityException;
@@ -38,9 +37,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 
-import org.bouncycastle.asn1.ASN1EncodableVector;
-import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DERSequence;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyBignum;
@@ -117,7 +113,7 @@ public class PKCS7 extends RubyObject {
         } else {
             RubyString str = obj.convertToString();
             ByteList bl = str.getByteList();
-            return BIO.memBuf(bl.bytes, bl.begin, bl.realSize);
+            return BIO.memBuf(bl.getUnsafeBytes(), bl.getBegin(), bl.getRealSize());
         }
     }
 

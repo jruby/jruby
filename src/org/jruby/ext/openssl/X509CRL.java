@@ -50,7 +50,6 @@ import org.bouncycastle.asn1.DERObject;
 import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
-import org.bouncycastle.x509.X509V2CRLGenerator;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
@@ -69,6 +68,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
+@SuppressWarnings("deprecation")
 public class X509CRL extends RubyObject {
     private static final long serialVersionUID = -2463300006179688577L;
 
@@ -97,7 +97,7 @@ public class X509CRL extends RubyObject {
 
     private boolean changed = true;
 
-    private X509V2CRLGenerator generator = new X509V2CRLGenerator();
+    private org.bouncycastle.x509.X509V2CRLGenerator generator = new org.bouncycastle.x509.X509V2CRLGenerator();
     private java.security.cert.X509CRL crl;
 
     private DERObject crl_v;

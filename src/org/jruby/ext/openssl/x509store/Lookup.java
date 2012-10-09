@@ -428,7 +428,7 @@ public class Lookup {
             case X509Utils.X509_L_FILE_LOAD:
                 if (argl == X509Utils.X509_FILETYPE_DEFAULT) {
                     try {
-                        RubyHash env = (RubyHash)Ruby.getGlobalRuntime().getObject().fastGetConstant("ENV");
+                        RubyHash env = (RubyHash)Ruby.getGlobalRuntime().getObject().getConstant("ENV");
                         file = (String)env.get(Ruby.getGlobalRuntime().newString(X509Utils.getDefaultCertificateFileEnvironment()));
                     } catch (Error error) {
                     }
@@ -506,7 +506,7 @@ public class Lookup {
             case X509Utils.X509_L_ADD_DIR:
                 if(argl == X509Utils.X509_FILETYPE_DEFAULT) {
                     try {
-                        RubyHash env = (RubyHash)Ruby.getGlobalRuntime().getObject().fastGetConstant("ENV");
+                        RubyHash env = (RubyHash)Ruby.getGlobalRuntime().getObject().getConstant("ENV");
                         dir = (String)env.get(Ruby.getGlobalRuntime().newString(X509Utils.getDefaultCertificateDirectoryEnvironment()));
                     } catch (Error error) {
                     }

@@ -52,6 +52,7 @@ import org.bouncycastle.jce.PKCS10CertificationRequest;
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
  */
+@SuppressWarnings("deprecation")
 public class PKCS10CertificationRequestExt extends PKCS10CertificationRequest {
     public PKCS10CertificationRequestExt(byte[] bytes) {
         super(bytes);

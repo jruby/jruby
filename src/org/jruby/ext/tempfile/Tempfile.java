@@ -62,7 +62,6 @@ import org.jruby.util.io.OpenFile;
  * An implementation of tempfile.rb in Java.
  */
 @JRubyClass(name="Tempfile", parent="File")
-@SuppressWarnings("deprecation")
 public class Tempfile extends org.jruby.RubyTempfile {
 
     /** Keep strong references to the Reaper until cleanup */
