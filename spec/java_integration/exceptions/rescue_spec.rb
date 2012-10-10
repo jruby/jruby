@@ -2,6 +2,7 @@ require File.dirname(__FILE__) + "/../spec_helper"
 
 java_import java.lang.OutOfMemoryError
 java_import "java_integration.fixtures.ThrowExceptionInInitializer"
+java_import "java_integration.fixtures.ExceptionRunner"
 
 describe "Non-wrapped Java throwables" do
   it "can be rescued" do
@@ -88,3 +89,31 @@ describe "A Ruby subclass of a Java exception" do
     end
   end
 end
+
+describe "A ruby exception raised through java and back to ruby" do
+  it "its class and message is preserved" do
+    begin
+      ExceptionRunner.new.do_it_now do
+        raise "it comes from ruby"
+      end
+      fail
+    rescue RuntimeError => e
+      e.message.should == "it comes from ruby"
+    end
+  end
+end
+
+describe "A ruby exception raised through java and back " +
+         "to ruby via a different thread" do
+  it "its class and message is preserved" do
+    begin
+      ExceptionRunner.new.do_it_threaded do
+        raise "it comes from ruby"
+      end
+      fail
+    rescue RuntimeError => e
+      e.message.should == "it comes from ruby"
+    end
+  end
+end
+
