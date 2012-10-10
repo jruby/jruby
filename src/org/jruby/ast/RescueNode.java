@@ -176,6 +176,8 @@ public class RescueNode extends Node {
             IRubyObject[] exceptions = getExceptions(cRescueNode, runtime, context, self, aBlock);
 
             if (RuntimeHelpers.isExceptionHandled(raisedException, exceptions, context).isTrue()) {
+                runtime.getGlobalVariables().set("$!", raisedException);
+
                 return cRescueNode.interpret(runtime,context, self, aBlock);
             }
 
