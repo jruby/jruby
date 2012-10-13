@@ -65,11 +65,29 @@ class OpenSSL::TestSSL < OpenSSL::SSLTestCase
       ssl.sync_close = true
       ssl.connect
 
+      # syswrite and sysread
+      ITERATIONS.times{|i|
+        str = "x" * 100 + "\n"
+        ssl.syswrite(str)
+        assert_equal(str, ssl.sysread(str.size))
+
+        str = "x" * i * 100 + "\n"
+        buf = ""
+        ssl.syswrite(str)
+        assert_equal(buf.object_id, ssl.sysread(str.size, buf).object_id)
+        assert_equal(str, buf)
+      }
+
       # puts and gets
       ITERATIONS.times{
         str = "x" * 100 + "\n"
         ssl.puts(str)
         assert_equal(str, ssl.gets)
+
+        str = "x" * 100
+        ssl.puts(str)
+        assert_equal(str, ssl.gets("\n", 100))
+        assert_equal("\n", ssl.gets)
       }
 
       # read and write
@@ -85,75 +103,6 @@ class OpenSSL::TestSSL < OpenSSL::SSLTestCase
         assert_equal(str, buf)
       }
 
-      ssl.close
-    }
-  end
-
-  def sysread_size(ssl, size)
-    buf = ''
-    while buf.bytesize < size
-      buf += ssl.sysread(size - buf.bytesize)
-    end
-    buf
-  end
-
-  def test_sysread_chunks
-    args = {}
-    args[:server_proc] = proc { |ctx, ssl|
-      while line = ssl.gets
-        if line =~ /^STARTTLS$/
-          ssl.accept
-          next
-        end
-        ssl.write("0" * 800)
-        ssl.write("1" * 200)
-        ssl.close
-        break
-      end
-    }
-    start_server(PORT, OpenSSL::SSL::VERIFY_NONE, true, args){|server, port|
-      sock = TCPSocket.new("127.0.0.1", port)
-      ssl = OpenSSL::SSL::SSLSocket.new(sock)
-      ssl.sync_close = true
-      ssl.connect
-      ssl.syswrite("hello\n")
-      assert_equal("0" * 200, sysread_size(ssl, 200))
-      assert_equal("0" * 200, sysread_size(ssl, 200))
-      assert_equal("0" * 200, sysread_size(ssl, 200))
-      assert_equal("0" * 200, sysread_size(ssl, 200))
-      assert_equal("1" * 200, sysread_size(ssl, 200))
-      ssl.close
-    }
-  end
-
-  def test_sysread_buffer
-    start_server(PORT, OpenSSL::SSL::VERIFY_NONE, true){|server, port|
-      sock = TCPSocket.new("127.0.0.1", port)
-      ssl = OpenSSL::SSL::SSLSocket.new(sock)
-      ssl.sync_close = true
-      ssl.connect
-      ITERATIONS.times{|i|
-        # the given buffer is cleared before concatenating.
-        # NB: SSLSocket#readpartial depends sysread.
-        str = "x" * i * 100 + "\n"
-        ssl.syswrite(str)
-        buf = "asdf"
-        assert_equal(buf.object_id, ssl.sysread(0, buf).object_id)
-        assert_equal("", buf)
-
-        buf = "asdf"
-        read = ssl.sysread(str.size, buf)
-        assert(!read.empty?)
-        assert_equal(buf.object_id, read.object_id)
-        assert_equal(str[0, buf.bytesize], buf)
-        sysread_size(ssl, str.bytesize - buf.bytesize) # drop unread bytes
-
-        ssl.syswrite(str)
-        read = ssl.sysread(str.size, nil)
-        assert(!read.empty?)
-        assert_equal(str[0, read.bytesize], read)
-        sysread_size(ssl, str.bytesize - read.bytesize) # drop unread bytes
-      }
       ssl.close
     }
   end

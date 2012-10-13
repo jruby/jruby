@@ -1,3 +1,4 @@
+exclude :test_bug6406, "needs investigation"
 exclude :test_exception_overflow, "runs forever"
 exclude :test_limit, "needs investigation"
 exclude :test_marshal, "needs investigation"

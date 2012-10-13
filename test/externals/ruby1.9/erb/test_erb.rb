@@ -37,6 +37,14 @@ class TestERB < Test::Unit::TestCase
     }
     assert_match(/\Atest filename:1\b/, e.backtrace[0])
   end
+
+  def test_concurrent_default_binding
+    template1 = 'one <%= ERB.new(template2).result %>'
+
+    eval 'template2 = "two"', TOPLEVEL_BINDING
+
+    assert_equal("one two", ERB.new(template1).result)
+  end
 end
 
 class TestERBCore < Test::Unit::TestCase

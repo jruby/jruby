@@ -37,6 +37,57 @@ class TestFile < Test::Unit::TestCase
 
   include TestEOF::Seek
 
+  def test_empty_file_bom
+    bug6487 = '[ruby-core:45203]'
+    f = Tempfile.new(__method__.to_s)
+    f.close
+    assert File.exist? f.path
+    assert_nothing_raised(bug6487) {File.read(f.path, mode: 'r:utf-8')}
+    assert_nothing_raised(bug6487) {File.read(f.path, mode: 'r:bom|utf-8')}
+    f.close(true)
+  end
+
+  def assert_bom(bytes, name)
+    bug6487 = '[ruby-core:45203]'
+
+    f = Tempfile.new(name.to_s)
+    f.sync = true
+    expected = ""
+    result = nil
+    bytes[0...-1].each do |x|
+      f.write x
+      f.write ' '
+      f.pos -= 1
+      expected << x
+      assert_nothing_raised(bug6487) {result = File.read(f.path, mode: 'rb:bom|utf-8')}
+      assert_equal("#{expected} ".force_encoding("utf-8"), result)
+    end
+    f.write bytes[-1]
+    assert_nothing_raised(bug6487) {result = File.read(f.path, mode: 'rb:bom|utf-8')}
+    assert_equal '', result, "valid bom"
+    f.close(true)
+  end
+
+  def test_bom_8
+    assert_bom(["\xEF", "\xBB", "\xBF"], __method__)
+  end
+
+  def test_bom_16be
+    assert_bom(["\xFE", "\xFF"], __method__)
+  end
+
+  def test_bom_16le
+    assert_bom(["\xFF", "\xFE"], __method__)
+  end
+
+  def test_bom_32be
+    assert_bom(["\0", "\0", "\xFE", "\xFF"], __method__)
+  end
+
+  def test_bom_32le
+    assert_bom(["\xFF\xFE\0", "\0"], __method__)
+  end
+
   def test_truncate_wbuf
     f = Tempfile.new("test-truncate")
     f.print "abc"
@@ -181,12 +232,42 @@ class TestFile < Test::Unit::TestCase
     }
   end
 
+  def test_utime
+    bug6385 = '[ruby-core:44776]'
+
+    mod_time_contents = Time.at 1306527039
+
+    file = Tempfile.new("utime")
+    file.close
+    path = file.path
+
+    File.utime(File.atime(path), mod_time_contents, path)
+    stats = File.stat(path)
+
+    file.open
+    file_mtime = file.mtime
+    file.close(true)
+
+    assert_equal(mod_time_contents, file_mtime, bug6385)
+    assert_equal(mod_time_contents, stats.mtime, bug6385)
+  end
+
   def test_chmod_m17n
     bug5671 = '[ruby-dev:44898]'
     Dir.mktmpdir('test-file-chmod-m17n-') do |tmpdir|
       file = File.join(tmpdir, "\u3042")
       File.open(file, 'w'){}
       assert_equal(File.chmod(0666, file), 1, bug5671)
+    end
+  end
+
+  def test_open_nul
+    Dir.mktmpdir(__method__.to_s) do |tmpdir|
+      path = File.join(tmpdir, "foo")
+      assert_raise(ArgumentError) do
+        open(path + "\0bar", "w") {}
+      end
+      refute File.exist?(path)
     end
   end
 end

@@ -1,4 +1,6 @@
 exclude :test_errat, "needs investigation"
+exclude :test_exception_to_s_should_not_propagate_untrustedness, "needs investigation"
 exclude :test_nomethoderror, "needs investigation"
 exclude :test_set_backtrace, "needs investigation"
 exclude :test_thread_signal_location, "needs investigation"
+exclude :test_to_s_taintness_propagation, "needs investigation"

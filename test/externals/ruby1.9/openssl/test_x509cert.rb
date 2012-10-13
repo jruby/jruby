@@ -124,65 +124,51 @@ class OpenSSL::TestX509Certificate < Test::Unit::TestCase
 
   end
 
-  def test_sign_and_verify_wrong_key_type
-    cert_rsa = issue_cert(@ca, @rsa2048, 1, Time.now, Time.now+3600, [],
-                      nil, nil, OpenSSL::Digest::SHA1.new)
-    cert_dsa = issue_cert(@ca, @dsa512, 1, Time.now, Time.now+3600, [],
-                      nil, nil, OpenSSL::Digest::DSS1.new)
-    begin
-      assert_equal(false, cert_rsa.verify(@dsa256))
-    rescue OpenSSL::X509::CertificateError => e
-      # OpenSSL 1.0.0 added checks for pkey OID
-      assert_equal('wrong public key type', e.message)
-    end
-
-    begin
-      assert_equal(false, cert_dsa.verify(@rsa1024))
-    rescue OpenSSL::X509::CertificateError => e
-      # OpenSSL 1.0.0 added checks for pkey OID
-      assert_equal('wrong public key type', e.message)
-    end
-  end
-
-  def test_sign_and_verify_wrong_hash_type
-    assert_raise(OpenSSL::X509::CertificateError){
-      cert = issue_cert(@ca, @dsa512, 1, Time.now, Time.now+3600, [],
-                        nil, nil, OpenSSL::Digest::MD5.new)
-    }
-
-    begin
-      cert = issue_cert(@ca, @rsa2048, 1, Time.now, Time.now+3600, [],
-                        nil, nil, OpenSSL::Digest::DSS1.new) 
-      cert.verify(@rsa2048)
-      assert(false) # verify must not succeeded
-    rescue OpenSSL::X509::CertificateError => e
-      # OpenSSL <1.0.0 checkes it at signing (signature_algorithm not supported)
-      # OpenSSL >=1.0.0 checkes it at verification (wrong public key type)
-      assert(['wrong public key type', 'signature_algorithm not supported'].include?(e.message))
-    end
-  end
-
   def test_sign_and_verify
     cert = issue_cert(@ca, @rsa2048, 1, Time.now, Time.now+3600, [],
                       nil, nil, OpenSSL::Digest::SHA1.new)
     assert_equal(false, cert.verify(@rsa1024))
     assert_equal(true,  cert.verify(@rsa2048))
+    assert_equal(false, certificate_error_returns_false { cert.verify(@dsa256) })
+    assert_equal(false, certificate_error_returns_false { cert.verify(@dsa512) })
     cert.serial = 2
     assert_equal(false, cert.verify(@rsa2048))
 
     cert = issue_cert(@ca, @rsa2048, 1, Time.now, Time.now+3600, [],
                       nil, nil, OpenSSL::Digest::MD5.new)
     assert_equal(false, cert.verify(@rsa1024))
-    assert_equal(true,  cert.verify(@rsa2048))
+    assert_equal(true, cert.verify(@rsa2048))
+
+    assert_equal(false, certificate_error_returns_false { cert.verify(@dsa256) })
+    assert_equal(false, certificate_error_returns_false { cert.verify(@dsa512) })
     cert.subject = @ee1
     assert_equal(false, cert.verify(@rsa2048))
 
     cert = issue_cert(@ca, @dsa512, 1, Time.now, Time.now+3600, [],
                       nil, nil, OpenSSL::Digest::DSS1.new)
+    assert_equal(false, certificate_error_returns_false { cert.verify(@rsa1024) })
+    assert_equal(false, certificate_error_returns_false { cert.verify(@rsa2048) })
     assert_equal(false, cert.verify(@dsa256))
     assert_equal(true,  cert.verify(@dsa512))
     cert.not_after = Time.now
     assert_equal(false, cert.verify(@dsa512))
+
+    begin
+      cert = issue_cert(@ca, @rsa2048, 1, Time.now, Time.now+3600, [],
+                        nil, nil, OpenSSL::Digest::DSS1.new)
+      assert_equal(false, cert.verify(@rsa1024))
+      assert_equal(true, cert.verify(@rsa2048))
+      assert_equal(false, certificate_error_returns_false { cert.verify(@dsa256) })
+      assert_equal(false, certificate_error_returns_false { cert.verify(@dsa512) })
+      cert.subject = @ee1
+      assert_equal(false, cert.verify(@rsa2048))
+    rescue OpenSSL::X509::CertificateError
+    end
+
+    assert_raise(OpenSSL::X509::CertificateError){
+      cert = issue_cert(@ca, @dsa512, 1, Time.now, Time.now+3600, [],
+                        nil, nil, OpenSSL::Digest::MD5.new)
+    }
   end
 
   def test_dsig_algorithm_mismatch

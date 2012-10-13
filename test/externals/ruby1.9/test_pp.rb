@@ -137,12 +137,6 @@ class PPCycleTest < Test::Unit::TestCase
     assert_equal("#{a.inspect}\n", PP.pp(a, ''))
   end
 
-  def test_hash_with_boolean_value
-    a = {}
-    a[:b] = true
-    assert_equal("{:b=>true}\n", PP.pp(a,''))
-  end
-
   S = Struct.new("S", :a, :b)
   def test_struct
     a = S.new(1,2)
