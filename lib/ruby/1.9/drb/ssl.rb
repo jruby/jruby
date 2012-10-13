@@ -54,7 +54,7 @@ module DRb
           return
         end
 
-        rsa = OpenSSL::PKey::RSA.new(512){|p, n|
+        rsa = OpenSSL::PKey::RSA.new(1024){|p, n|
           next unless self[:verbose]
           case p
           when 0; $stderr.putc "."  # BN_generate_prime
@@ -177,7 +177,11 @@ module DRb
         break if (@acl ? @acl.allow_socket?(soc) : true)
         soc.close
       end
-      ssl = @config.accept(soc)
+      begin
+	ssl = @config.accept(soc)
+      ensure
+        soc.close if $!
+      end
       self.class.new(uri, ssl, @config, true)
       rescue OpenSSL::SSL::SSLError
         warn("#{__FILE__}:#{__LINE__}: warning: #{$!.message} (#{$!.class})") if @config[:verbose]
