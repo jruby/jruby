@@ -57,6 +57,7 @@ namespace :test do
       t.ruby_opts << '--debug'
       t.ruby_opts << '--1.9'
       t.ruby_opts << '-I test/externals/ruby1.9'
+      t.ruby_opts << '-I test/externals/ruby1.9/ruby'
       t.ruby_opts << '-r minitest/excludes'
       t.ruby_opts << '-X-C'
     end
