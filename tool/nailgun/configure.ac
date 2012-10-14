@@ -11,11 +11,8 @@ AC_PROG_CC
 AC_PROG_CC_C99
 
 # Checks for libraries.
-# FIXME: Replace `main' with a function in `-lnsl':
 AC_CHECK_LIB([nsl], [gethostbyname])
-# FIXME: Replace `main' with a function in `-lsocket':
 AC_CHECK_LIB([socket], [send])
-# FIXME: Replace `main' with a function in `-lwsock32':
 AC_CHECK_LIB([wsock32], [WriteFile])
 
 # Checks for header files.
