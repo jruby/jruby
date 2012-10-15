@@ -382,7 +382,7 @@ public final class EncodingService {
         Charset charset = encoding.getCharset();
 
         if (encoding.toString().equals("ASCII-8BIT")) {
-            return Charset.forName("ASCII");
+            return Charset.forName("ISO-8859-1");
         }
 
         try {
