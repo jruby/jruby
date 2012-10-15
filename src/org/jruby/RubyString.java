@@ -4827,10 +4827,18 @@ public class RubyString extends RubyObject implements EncodingCapable {
         Encoding enc = checkEncoding(spat);
         ByteList pattern = spat.value;
 
+        byte[] patternBytes = pattern.getUnsafeBytes();
+        int patternBegin = pattern.getBegin();
+        int patternRealSize = pattern.getRealSize();
+
+        byte[] bytes = value.getUnsafeBytes();
+        int begin = value.getBegin();
+        int realSize = value.getRealSize();
+
         int e, p = 0;
         
-        while (p < value.getRealSize() && (e = value.indexOf(pattern, p)) >= 0) {
-            int t = enc.rightAdjustCharHead(value.getUnsafeBytes(), p + value.getBegin(), e, p + value.getRealSize());
+        while (p < realSize && (e = indexOf(bytes, begin, realSize, patternBytes, patternBegin, patternRealSize, p)) >= 0) {
+            int t = enc.rightAdjustCharHead(bytes, p + begin, e + begin, begin + realSize) - begin;
             if (t != e) {
                 p = t;
                 continue;
@@ -4845,6 +4853,29 @@ public class RubyString extends RubyObject implements EncodingCapable {
         }
 
         return result;
+    }
+
+    // TODO: make the ByteList version public and use it, rather than copying here
+    static int indexOf(byte[] source, int sourceOffset, int sourceCount, byte[] target, int targetOffset, int targetCount, int fromIndex) {
+        if (fromIndex >= sourceCount) return (targetCount == 0 ? sourceCount : -1);
+        if (fromIndex < 0) fromIndex = 0;
+        if (targetCount == 0) return fromIndex;
+
+        byte first  = target[targetOffset];
+        int max = sourceOffset + (sourceCount - targetCount);
+
+        for (int i = sourceOffset + fromIndex; i <= max; i++) {
+            if (source[i] != first) while (++i <= max && source[i] != first);
+
+            if (i <= max) {
+                int j = i + 1;
+                int end = j + targetCount - 1;
+                for (int k = targetOffset + 1; j < end && source[j] == target[k]; j++, k++);
+
+                if (j == end) return i - sourceOffset;
+            }
+        }
+        return -1;
     }
 
     private RubyString getStringForPattern(IRubyObject obj) {
