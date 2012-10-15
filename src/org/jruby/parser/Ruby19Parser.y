@@ -772,23 +772,21 @@ arg             : lhs '=' arg {
                     support.checkExpression($3);
                     ISourcePosition pos = $4.getPosition();
                     Node body = $5 == null ? NilImplicitNode.NIL : $5;
-                    Node rest;
+                    Node rescue = new RescueNode($4.getPosition(), $3, new RescueBodyNode($4.getPosition(), null, body, null), null);
 
                     pos = $1.getPosition();
                     String asgnOp = (String) $2.getValue();
                     if (asgnOp.equals("||")) {
-                        $1.setValueNode($3);
-                        rest = new OpAsgnOrNode(pos, support.gettable2($1), $1);
+                        $1.setValueNode(rescue);
+                        $$ = new OpAsgnOrNode(pos, support.gettable2($1), $1);
                     } else if (asgnOp.equals("&&")) {
-                        $1.setValueNode($3);
-                        rest = new OpAsgnAndNode(pos, support.gettable2($1), $1);
+                        $1.setValueNode(rescue);
+                        $$ = new OpAsgnAndNode(pos, support.gettable2($1), $1);
                     } else {
                         $1.setValueNode(support.getOperatorCallNode(support.gettable2($1), asgnOp, $3));
                         $1.setPosition(pos);
-                        rest = $1;
+                        $$ = $1;
                     }
-
-                    $$ = new RescueNode($4.getPosition(), rest, new RescueBodyNode($4.getPosition(), null, body, null), null);
                 }
                 | primary_value '[' opt_call_args rbracket tOP_ASGN arg {
   // FIXME: arg_concat missing for opt_call_args
