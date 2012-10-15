@@ -48,7 +48,7 @@ public class InterfaceJavaProxy extends JavaProxy {
             Ruby runtime = context.runtime;
             
             self.getInstanceVariables().setInstanceVariable("@java_class", JavaClass.forNameVerbose(runtime, javaClassName.asJavaString()));
-            self.getInstanceVariables().setInstanceVariable("@block", RubyProc.newProc(runtime, block, Block.Type.PROC));
+            self.getInstanceVariables().setInstanceVariable("@block", RubyProc.newProc(runtime, block, block.type));
 
             return runtime.getNil();
         }

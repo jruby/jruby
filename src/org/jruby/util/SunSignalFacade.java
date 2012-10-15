@@ -173,6 +173,6 @@ public class SunSignalFacade implements SignalFacade {
         final RubyModule signalModule = runtime.getModule("Signal");
         Block block = CallBlock.newCallClosure(signalModule, signalModule, Arity.noArguments(),
                 callback, runtime.getCurrentContext());
-        return RubyProc.newProc(runtime, block, Block.Type.NORMAL);
+        return RubyProc.newProc(runtime, block, block.type);
     }
 }// SunSignalFacade
