@@ -2290,7 +2290,7 @@ states[195] = new ParserState() {
                         ((AssignableNode)yyVals[-4+yyTop]).setValueNode(rescue);
                         yyVal = new OpAsgnAndNode(pos, support.gettable2(((AssignableNode)yyVals[-4+yyTop])), ((AssignableNode)yyVals[-4+yyTop]));
                     } else {
-                        ((AssignableNode)yyVals[-4+yyTop]).setValueNode(support.getOperatorCallNode(support.gettable2(((AssignableNode)yyVals[-4+yyTop])), asgnOp, ((Node)yyVals[-2+yyTop])));
+                        ((AssignableNode)yyVals[-4+yyTop]).setValueNode(support.getOperatorCallNode(support.gettable2(((AssignableNode)yyVals[-4+yyTop])), asgnOp, rescue));
                         ((AssignableNode)yyVals[-4+yyTop]).setPosition(pos);
                         yyVal = ((AssignableNode)yyVals[-4+yyTop]);
                     }

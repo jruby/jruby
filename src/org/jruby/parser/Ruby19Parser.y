@@ -783,7 +783,7 @@ arg             : lhs '=' arg {
                         $1.setValueNode(rescue);
                         $$ = new OpAsgnAndNode(pos, support.gettable2($1), $1);
                     } else {
-                        $1.setValueNode(support.getOperatorCallNode(support.gettable2($1), asgnOp, $3));
+                        $1.setValueNode(support.getOperatorCallNode(support.gettable2($1), asgnOp, rescue));
                         $1.setPosition(pos);
                         $$ = $1;
                     }
