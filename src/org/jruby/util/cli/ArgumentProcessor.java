@@ -266,7 +266,6 @@ public class ArgumentProcessor {
                                 value = 1;
                             }
                         }
-                        config.setSafeLevel(value);
                         break FOR;
                     }
                 case 'U':
