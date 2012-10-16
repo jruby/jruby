@@ -19,8 +19,6 @@
 # we don't actually disable echo and the password is shown...we will try to
 # do a better version of this in 1.7.1.
 
-warn "io/console on JRuby shells out to stty for most operations"
-
 # attempt to call stty; if failure, fall back on stubbed version
 result = begin
   old_stderr = $stderr.dup
@@ -33,6 +31,8 @@ ensure
 end
 
 if !result || $?.exitstatus != 0 || RbConfig::CONFIG['host_os'] =~ /(mswin)|(win32)|(ming)/
+  warn "io/console not supported; tty will not be manipulated"
+
   # Windows version is always stubbed for now
   class IO
     def raw(*)
@@ -81,6 +81,8 @@ if !result || $?.exitstatus != 0 || RbConfig::CONFIG['host_os'] =~ /(mswin)|(win
     end
   end
 else
+  warn "io/console on JRuby shells out to stty for most operations"
+
   # Non-Windows assumes stty command is available
   class IO
     def raw(*)
