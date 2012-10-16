@@ -429,6 +429,35 @@ public class ArgumentProcessor {
                     } else if (argument.equals("--gemfile")) {
                         config.setLoadGemfile(true);
                         break FOR;
+                    } else if (argument.equals("--dump")) {
+                        characterIndex = argument.length();
+                        String error = "--dump only supports [version, copyright, usage, yydebug, syntax, insns] on JRuby";
+                        String dumpArg = grabValue(getArgumentError(error));
+                        if (dumpArg.equals("version")) {
+                            config.setShowVersion(true);
+                            config.setShouldRunInterpreter(false);
+                            break FOR;
+                        } else if (dumpArg.equals("copyright")) {
+                            config.setShowCopyright(true);
+                            config.setShouldRunInterpreter(false);
+                            break FOR;
+                        } else if (dumpArg.equals("usage")) {
+                            config.setShouldPrintUsage(true);
+                            config.setShouldRunInterpreter(false);
+                            break FOR;
+                        } else if (dumpArg.equals("yydebug")) {
+                            config.setParserDebug(true);
+                            break FOR;
+                        } else if (dumpArg.equals("syntax")) {
+                            config.setShouldCheckSyntax(true);
+                        } else if (dumpArg.equals("insns")) {
+                            config.setShowBytecode(true);
+                        } else {
+                            MainExitException mee = new MainExitException(1, error);
+                            mee.setUsageError(true);
+                            throw mee;
+                        }
+                        break;
                     } else {
                         if (argument.equals("--")) {
                             // ruby interpreter compatibilty
