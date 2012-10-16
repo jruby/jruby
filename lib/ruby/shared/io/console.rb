@@ -23,9 +23,13 @@ warn "io/console on JRuby shells out to stty for most operations"
 
 # attempt to call stty; if failure, fall back on stubbed version
 result = begin
+  old_stderr = $stderr.dup
+  $stderr.reopen('/dev/null')
   `stty -a`
 rescue Exception
   nil
+ensure
+  $stderr.reopen(old_stderr)
 end
 
 if !result || $?.exitstatus != 0 || RbConfig::CONFIG['host_os'] =~ /(mswin)|(win32)|(ming)/
