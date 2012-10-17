@@ -29,6 +29,7 @@ package org.jruby.ext.psych;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
 import org.jruby.Ruby;
@@ -81,7 +82,12 @@ public class PsychEmitter extends RubyObject {
     public IRubyObject initialize(ThreadContext context, IRubyObject io) {
         options = new DumperOptions();
         options.setIndent(2);
-        emitter = new Emitter(new OutputStreamWriter(new IOOutputStream(io)), options);
+        try {
+            emitter = new Emitter(new OutputStreamWriter(new IOOutputStream(io), "UTF-8"), options);
+        } catch (UnsupportedEncodingException uee) {
+            // should never happen on a compliant JVM
+            emitter = new Emitter(new OutputStreamWriter(new IOOutputStream(io)), options);
+        }
 
         return context.nil;
     }
