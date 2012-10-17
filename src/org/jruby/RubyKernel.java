@@ -71,6 +71,7 @@ import org.jruby.util.cli.Options;
 
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Map;
 
 import static org.jruby.CompatVersion.RUBY1_8;
@@ -1623,6 +1624,11 @@ public class RubyKernel {
         long[] tuple;
 
         try {
+            IRubyObject lastArg = args[args.length - 1];
+            if (lastArg instanceof RubyHash) {
+                runtime.getWarnings().warn(ID.UNSUPPORTED_SUBPROCESS_OPTION, "system does not support options in JRuby yet: " + lastArg.inspect());
+                args = Arrays.copyOf(args, args.length - 1);
+            }
             if (! Platform.IS_WINDOWS && args[args.length -1].asJavaString().matches(".*[^&]&\\s*")) {
                 // looks like we need to send process to the background
                 ShellLauncher.runWithoutWait(runtime, args);
