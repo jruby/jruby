@@ -230,6 +230,12 @@ public final class Ruby {
         runtimeCache.initMethodCache(ClassIndex.MAX_CLASSES * MethodNames.values().length - 1);
         
         constantInvalidator = OptoFactory.newConstantInvalidator();
+
+        if (config.isObjectSpaceEnabled()) {
+            objectSpacer = ENABLED_OBJECTSPACE;
+        } else {
+            objectSpacer = DISABLED_OBJECTSPACE;
+        }
     }
     
     /**
@@ -4485,4 +4491,25 @@ public final class Ruby {
     private JavaProxyClassFactory javaProxyClassFactory;
 
     private EnumMap<DefinedMessage, RubyString> definedMessages = new EnumMap<DefinedMessage, RubyString>(DefinedMessage.class);
+
+    private interface ObjectSpacer {
+        public void addToObjectSpace(Ruby runtime, boolean useObjectSpace, IRubyObject object);
+    }
+
+    private static final ObjectSpacer DISABLED_OBJECTSPACE = new ObjectSpacer() {
+        public void addToObjectSpace(Ruby runtime, boolean useObjectSpace, IRubyObject object) {
+        }
+    };
+
+    private static final ObjectSpacer ENABLED_OBJECTSPACE = new ObjectSpacer() {
+        public void addToObjectSpace(Ruby runtime, boolean useObjectSpace, IRubyObject object) {
+            if (useObjectSpace) runtime.objectSpace.add(object);
+        }
+    };
+
+    private final ObjectSpacer objectSpacer;
+
+    public void addToObjectSpace(boolean useObjectSpace, IRubyObject object) {
+        objectSpacer.addToObjectSpace(this, useObjectSpace, object);
+    }
 }

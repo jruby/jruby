@@ -222,19 +222,15 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * only if ObjectSpace is enabled.
      */
     public RubyBasicObject(Ruby runtime, RubyClass metaClass) {
-        assert metaClass != null: "NULL Metaclass!!?!?!";
-
         this.metaClass = metaClass;
 
-        if (runtime.isObjectSpaceEnabled()) addToObjectSpace(runtime);
+        runtime.addToObjectSpace(true, this);
     }
 
     /**
      * Path for objects that don't taint and don't enter objectspace.
      */
     public RubyBasicObject(RubyClass metaClass) {
-        assert metaClass != null: "NULL Metaclass!!?!?!";
-
         this.metaClass = metaClass;
     }
 
@@ -246,12 +242,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     protected RubyBasicObject(Ruby runtime, RubyClass metaClass, boolean useObjectSpace) {
         this.metaClass = metaClass;
 
-        if (useObjectSpace) addToObjectSpace(runtime);
-    }
-
-    private void addToObjectSpace(Ruby runtime) {
-        assert runtime.isObjectSpaceEnabled();
-        runtime.getObjectSpace().add(this);
+        runtime.addToObjectSpace(useObjectSpace, this);
     }
 
     protected void taint(Ruby runtime) {
