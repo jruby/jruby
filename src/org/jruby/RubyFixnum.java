@@ -1217,7 +1217,6 @@ public class RubyFixnum extends RubyInteger {
         return RubyBoolean.newBoolean(getRuntime(), value == 0);
     }
 
-    @JRubyMethod
     @Override
     public IRubyObject id() {
         if (value <= Long.MAX_VALUE / 2 && value >= Long.MIN_VALUE / 2) {
