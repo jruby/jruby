@@ -1850,14 +1850,14 @@ abstract public class AbstractMemory extends RubyObject {
     @JRubyMethod(name = "write_string")
     public IRubyObject write_string(ThreadContext context, IRubyObject strArg) {
         ByteList bl = strArg.convertToString().getByteList();
-        getMemoryIO().putZeroTerminatedByteArray(0, bl.getUnsafeBytes(), bl.begin(), bl.length());
+        getMemoryIO().put(0, bl.getUnsafeBytes(), bl.begin(), bl.length());
         return this;
     }
 
     @JRubyMethod(name = "write_string")
     public IRubyObject write_string(ThreadContext context, IRubyObject strArg, IRubyObject lenArg) {
         ByteList bl = strArg.convertToString().getByteList();
-        getMemoryIO().putZeroTerminatedByteArray(0, bl.getUnsafeBytes(), bl.begin(),
+        getMemoryIO().put(0, bl.getUnsafeBytes(), bl.begin(),
                 Math.min(bl.length(), (int) org.jruby.RubyInteger.num2long(lenArg)));
         return this;
     }
