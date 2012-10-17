@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006 Ola Bini <ola@ologix.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -80,7 +80,7 @@ public class SSLContext extends RubyObject {
     private final static Map<String, String> SSL_VERSION_OSSL2JSSE;
     // Mapping table for JSEE's enabled protocols for the algorithm.
     private final static Map<String, String[]> ENABLED_PROTOCOLS;
-    
+
     static {
         SSL_VERSION_OSSL2JSSE = new HashMap<String, String>();
         ENABLED_PROTOCOLS = new HashMap<String, String[]>();
@@ -106,7 +106,7 @@ public class SSLContext extends RubyObject {
         ENABLED_PROTOCOLS.put("SSL", new String[] { "SSLv2", "SSLv3", "TLSv1" });
 
         // Followings(TLS, TLSv1.1) are JSSE only methods at present. Let's allow user to use it.
-        
+
         SSL_VERSION_OSSL2JSSE.put("TLS", "TLS");
         ENABLED_PROTOCOLS.put("TLS", new String[] { "TLSv1", "TLSv1.1" });
 
@@ -119,7 +119,7 @@ public class SSLContext extends RubyObject {
             return new SSLContext(runtime, klass);
         }
     };
-    
+
     public static void createSSLContext(Ruby runtime, RubyModule mSSL) {
         RubyClass cSSLContext = mSSL.defineClassUnder("SSLContext",runtime.getObject(),SSLCONTEXT_ALLOCATOR);
         for(int i=0;i<ctx_attrs.length;i++) {
@@ -159,7 +159,7 @@ public class SSLContext extends RubyObject {
             return getRuntime().getNil();
         }
         this.freeze(getRuntime().getCurrentContext());
-        
+
         internalCtx = new InternalContext();
         internalCtx.protocol = protocol;
         internalCtx.protocolForServer = protocolForServer;
@@ -245,7 +245,7 @@ public class SSLContext extends RubyObject {
         if (value != null && !value.isNil()) {
             internalCtx.timeout = RubyNumeric.fix2int(value);
         }
-        
+
         value = getInstanceVariable("@verify_depth");
         if (value != null && !value.isNil()) {
             internalCtx.store.setDepth(RubyNumeric.fix2int(value));
@@ -380,7 +380,16 @@ public class SSLContext extends RubyObject {
 
     // should keep SSLContext as a member for introducin SSLSession. later...
     SSLEngine createSSLEngine(String peerHost, int peerPort) throws NoSuchAlgorithmException, KeyManagementException {
-        SSLEngine engine = internalCtx.getSSLContext().createSSLEngine(peerHost, peerPort);
+        SSLEngine engine;
+        // an empty peerHost implies no SNI (RFC 3546) support requested
+        if (peerHost == null || peerHost.length() == 0) {
+            engine = internalCtx.getSSLContext().createSSLEngine();
+        }
+        // SNI is attempted for valid peerHost hostname on Java >= 7
+        // if peerHost is set to an IP address Java does not use SNI
+        else {
+            engine = internalCtx.getSSLContext().createSSLEngine(peerHost, peerPort);
+        }
         engine.setEnabledCipherSuites(getCipherSuites(engine));
         engine.setEnabledProtocols(getEnabledProtocols(engine));
         return engine;
@@ -438,7 +447,7 @@ public class SSLContext extends RubyObject {
         }
         return sb.toString();
     }
-    
+
     private PKey getCallbackKey() {
         if (t_key != null) {
             return t_key;
@@ -505,7 +514,7 @@ public class SSLContext extends RubyObject {
             return 0;
         }
     }
-    
+
     private X509Cert[] convertToX509Certs(IRubyObject value) {
         final ArrayList<X509Cert> result = new ArrayList<X509Cert>();
         ThreadContext ctx = getRuntime().getCurrentContext();
@@ -582,7 +591,7 @@ public class SSLContext extends RubyObject {
     private static class KM extends javax.net.ssl.X509ExtendedKeyManager {
 
         private final InternalContext ctx;
-        
+
         public KM(InternalContext ctx) {
             super();
             this.ctx = ctx;
