@@ -87,6 +87,7 @@ public class SSLSocket extends RubyObject {
         cSSLSocket.addReadWriteAttribute(runtime.getCurrentContext(), "io");
         cSSLSocket.addReadWriteAttribute(runtime.getCurrentContext(), "context");
         cSSLSocket.addReadWriteAttribute(runtime.getCurrentContext(), "sync_close");
+        cSSLSocket.addReadWriteAttribute(runtime.getCurrentContext(), "hostname");
         cSSLSocket.defineAlias("to_io","io");
         cSSLSocket.defineAnnotatedMethods(SSLSocket.class);
     }
@@ -127,6 +128,7 @@ public class SSLSocket extends RubyObject {
         Utils.checkKind(getRuntime(), args[0], "IO");
         io = (RubyIO) args[0];
         api.callMethod(this, "io=", io);
+        api.callMethod(this, "hostname=", getRuntime().newString(""));
         // This is a bit of a hack: SSLSocket should share code with RubyBasicSocket, which always sets sync to true.
         // Instead we set it here for now.
         api.callMethod(io, "sync=", getRuntime().getTrue());
@@ -139,7 +141,9 @@ public class SSLSocket extends RubyObject {
     private void ossl_ssl_setup() throws NoSuchAlgorithmException, KeyManagementException, IOException {
         if(null == engine) {
             Socket socket = getSocketChannel().socket();
-            String peerHost = socket.getInetAddress().getHostName();
+            // Server Name Indication (SNI) RFC 3546
+            // SNI support will not be attempted unless hostname is explicitly set by the caller
+            String peerHost = api.callMethod(this,"hostname").convertToString().toString();
             int peerPort = socket.getPort();
             engine = rubyCtx.createSSLEngine(peerHost, peerPort);
             SSLSession session = engine.getSession();
