@@ -140,6 +140,8 @@ public class Platform {
             return CPU.SPARCV9;
         } else if ("s390x".equals(archString)) {
             return CPU.S390X;
+        } else if ("arm".equals(archString)) {
+            return CPU.ARM;
         } else if ("universal".equals(archString)) {
             // OS X OpenJDK7 builds report "universal" right now
             String bits = SafePropertyAccessor.getProperty("sun.arch.data.model");
