@@ -4,11 +4,11 @@ module JRuby
   StringWriter = java.io.StringWriter
   
   begin
-    ClassReader = org.objectweb.asm.ClassReader
-    TraceClassVisitor = org.objectweb.asm.util.TraceClassVisitor
-  rescue
     ClassReader = org.jruby.org.objectweb.asm.ClassReader
     TraceClassVisitor = org.jruby.org.objectweb.asm.util.TraceClassVisitor
+  rescue
+    ClassReader = org.objectweb.asm.ClassReader
+    TraceClassVisitor = org.objectweb.asm.util.TraceClassVisitor
   end
     
   PrintWriter = java.io.PrintWriter
