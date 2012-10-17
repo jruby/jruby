@@ -1933,17 +1933,12 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     @JRubyMethod(name = "==", required = 1)
     @Override
     public IRubyObject op_equal(ThreadContext context, IRubyObject obj) {
-        Ruby runtime = context.runtime;
-
         if (this == obj) {
-            return runtime.getTrue();
+            return context.runtime.getTrue();
         }
-
         if (!(obj instanceof RubyArray)) {
-            if (obj == context.nil) return runtime.getFalse();
-
             if (!obj.respondsTo("to_ary")) {
-                return runtime.getFalse();
+                return context.runtime.getFalse();
             }
             return RuntimeHelpers.rbEqual(context, obj, this);
         }
