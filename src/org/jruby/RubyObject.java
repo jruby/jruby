@@ -57,9 +57,9 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.marshal.DataType;
 
 import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
-import static org.jruby.runtime.MethodIndex.EQL;
-import static org.jruby.runtime.MethodIndex.OP_EQUAL;
-import static org.jruby.runtime.MethodIndex.HASH;
+import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
+import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
+import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 
 /**
  * RubyObject represents the implementation of the Object class in Ruby. As such,

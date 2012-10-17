@@ -37,6 +37,9 @@ import org.jruby.runtime.builtin.InstanceVariables;
 import org.jruby.runtime.builtin.InternalVariables;
 import org.jruby.runtime.builtin.RubyJavaObject;
 import org.jruby.runtime.builtin.Variable;
+import org.jruby.runtime.invokedynamic.MethodNames;
+import static org.jruby.runtime.invokedynamic.MethodNames.INSPECT;
+import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
 import org.jruby.util.TypeConverter;
 
 public final class BasicObjectStub {
@@ -252,7 +255,7 @@ public final class BasicObjectStub {
 
         for (Variable<IRubyObject> ivar : getInstanceVariables(self).getInstanceVariableList()) {
             part.append(sep).append(" ").append(ivar.getName()).append("=");
-            part.append(ivar.getValue().callMethod(context, "inspect"));
+            part.append(invokedynamic(context, ivar.getValue(), INSPECT));
             sep = ",";
         }
         part.append(">");

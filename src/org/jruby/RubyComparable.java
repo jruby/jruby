@@ -39,7 +39,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
-import static org.jruby.runtime.MethodIndex.OP_CMP;
+import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
 
 /** Implementation of the Comparable module.
  *

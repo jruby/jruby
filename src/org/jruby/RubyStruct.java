@@ -54,12 +54,10 @@ import org.jruby.internal.runtime.methods.DynamicMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.ClassIndex;
 
-import java.util.concurrent.Callable;
-
 import static org.jruby.runtime.Visibility.*;
 
 import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
-import static org.jruby.runtime.MethodIndex.HASH;
+import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 
 /**
  * @author  jpetersen

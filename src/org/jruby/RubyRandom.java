@@ -26,7 +26,6 @@
 package org.jruby;
 
 import java.math.BigInteger;
-import java.security.SecureRandom;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
@@ -39,9 +38,6 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.ByteList;
 import org.jruby.util.Random;
 import org.jruby.util.TypeConverter;
-
-import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
-import static org.jruby.runtime.MethodIndex.OP_EQUAL;
 
 /**
  * Implementation of the Random class.

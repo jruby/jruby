@@ -69,9 +69,10 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 
 import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
-import static org.jruby.runtime.MethodIndex.OP_EQUAL;
-import static org.jruby.runtime.MethodIndex.OP_CMP;
-import static org.jruby.runtime.MethodIndex.EQL;
+import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
+import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
+import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
+import static org.jruby.runtime.invokedynamic.MethodNames.INSPECT;
 
 /**
  * RubyBasicObject is the only implementation of the
@@ -854,7 +855,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      * Prefered over callMethod(context, "inspect")
      */
     static RubyString inspect(ThreadContext context, IRubyObject object) {
-        return RubyString.objAsString(context, object.callMethod(context, "inspect"));
+        return RubyString.objAsString(context, invokedynamic(context, object, INSPECT));
     }
 
     public IRubyObject rbClone() {
@@ -1087,7 +1088,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
             if (value == null || !(value instanceof IRubyObject) || !IdUtil.isInstanceVariable(entry.getKey())) continue;
             
             part.append(sep).append(" ").append(entry.getKey()).append("=");
-            part.append(((IRubyObject)value).callMethod(context, "inspect"));
+            part.append(invokedynamic(context, (IRubyObject)value, INSPECT));
             sep = ",";
         }
         part.append(">");

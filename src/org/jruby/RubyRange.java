@@ -68,8 +68,8 @@ import org.jruby.util.ByteList;
 import org.jruby.util.TypeConverter;
 
 import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
-import static org.jruby.runtime.MethodIndex.HASH;
-import static org.jruby.runtime.MethodIndex.OP_CMP;
+import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
+import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
 
 /**
  * @author jpetersen

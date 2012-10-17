@@ -5,6 +5,8 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.RubyHash;
 import org.jruby.RubyArray;
 import org.jruby.Ruby;
+import org.jruby.runtime.invokedynamic.MethodNames;
+
 import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
 
 import java.util.Set;
@@ -12,7 +14,7 @@ import java.util.HashSet;
 
 public class RecursiveComparator
 {
-    public static IRubyObject compare(ThreadContext context, final int method, IRubyObject a, IRubyObject b) {
+    public static IRubyObject compare(ThreadContext context, final MethodNames method, IRubyObject a, IRubyObject b) {
         Ruby runtime = context.runtime;
 
         if (a == b) {

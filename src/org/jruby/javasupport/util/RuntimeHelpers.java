@@ -48,11 +48,11 @@ import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.Interpreted19Block;
 import org.jruby.runtime.InterpretedBlock;
 import org.jruby.runtime.MethodFactory;
-import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.RubyEvent;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.util.ByteList;
 import org.jruby.util.DefinedMessage;
 import org.jruby.util.TypeConverter;
@@ -61,7 +61,7 @@ import org.jruby.util.unsafe.UnsafeFactory;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
 
-import static org.jruby.runtime.MethodIndex.OP_EQUAL;
+import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
 
 /**
  * Helper methods which are called by the compiler.  Note: These will show no consumers, but
@@ -2652,17 +2652,17 @@ public class RuntimeHelpers {
 
         return definition;
     }
-    
-    public static IRubyObject invokedynamic(ThreadContext context, IRubyObject self, int index) {
+
+    public static IRubyObject invokedynamic(ThreadContext context, IRubyObject self, MethodNames method) {
         RubyClass metaclass = self.getMetaClass();
-        String name = MethodIndex.METHOD_NAMES[index];
-        return getMethodCached(context, metaclass, index, name).call(context, self, metaclass, name);
+        String name = method.realName();
+        return getMethodCached(context, metaclass, method.ordinal(), name).call(context, self, metaclass, name);
     }
-    
-    public static IRubyObject invokedynamic(ThreadContext context, IRubyObject self, int index, IRubyObject arg0) {
+
+    public static IRubyObject invokedynamic(ThreadContext context, IRubyObject self, MethodNames method, IRubyObject arg0) {
         RubyClass metaclass = self.getMetaClass();
-        String name = MethodIndex.METHOD_NAMES[index];
-        return getMethodCached(context, metaclass, index, name).call(context, self, metaclass, name, arg0);
+        String name = method.realName();
+        return getMethodCached(context, metaclass, method.ordinal(), name).call(context, self, metaclass, name, arg0);
     }
     
     private static DynamicMethod getMethodCached(ThreadContext context, RubyClass metaclass, int index, String name) {
@@ -2768,5 +2768,15 @@ public class RuntimeHelpers {
         } else {
             return string.append19(object.asString());
         }
+    }
+
+    @Deprecated
+    public static IRubyObject invokedynamic(ThreadContext context, IRubyObject self, int index) {
+        return invokedynamic(context, self, MethodNames.values()[index]);
+    }
+
+    @Deprecated
+    public static IRubyObject invokedynamic(ThreadContext context, IRubyObject self, int index, IRubyObject arg0) {
+        return invokedynamic(context, self, MethodNames.values()[index], arg0);
     }
 }

@@ -50,7 +50,7 @@ import org.jruby.util.ShellLauncher;
 import static org.jruby.CompatVersion.*;
 
 import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
-import static org.jruby.runtime.MethodIndex.OP_EQUAL;
+import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
 
 
 /**

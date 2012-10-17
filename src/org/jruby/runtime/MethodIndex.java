@@ -51,19 +51,27 @@ import org.jruby.runtime.callsite.ShiftRightCallSite;
 import org.jruby.runtime.callsite.SuperCallSite;
 import org.jruby.runtime.callsite.VariableCachingCallSite;
 import org.jruby.runtime.callsite.XorCallSite;
+import org.jruby.runtime.invokedynamic.MethodNames;
 
 /**
  *
  * @author headius
  */
 public class MethodIndex {
-    public static final int NO_METHOD = 0;
-    public static final int OP_EQUAL = 1;
-    public static final int EQL = 2;
-    public static final int HASH = 3;
-    public static final int OP_CMP = 4;
-    public static final int MAX_METHODS = 5;
-    
+    @Deprecated
+    public static final int NO_METHOD = MethodNames.DUMMY.ordinal();
+    @Deprecated
+    public static final int OP_EQUAL = MethodNames.OP_EQUAL.ordinal();
+    @Deprecated
+    public static final int EQL = MethodNames.EQL.ordinal();
+    @Deprecated
+    public static final int HASH = MethodNames.HASH.ordinal();
+    @Deprecated
+    public static final int OP_CMP = MethodNames.OP_CMP.ordinal();
+    @Deprecated
+    public static final int MAX_METHODS = MethodNames.values().length;
+
+    @Deprecated
     public static final String[] METHOD_NAMES = {
         "",
         "==",

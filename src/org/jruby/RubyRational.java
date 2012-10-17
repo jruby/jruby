@@ -72,7 +72,7 @@ import org.jruby.util.ByteList;
 import org.jruby.util.Numeric;
 
 import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
-import static org.jruby.runtime.MethodIndex.HASH;
+import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 
 /**
  *  1.9 rational.c as of revision: 20011

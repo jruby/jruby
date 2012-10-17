@@ -58,11 +58,11 @@ import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
-import org.jruby.runtime.MethodIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import static org.jruby.runtime.Visibility.*;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.runtime.marshal.MarshalStream;
 import org.jruby.runtime.marshal.UnmarshalStream;
 import org.jruby.util.TypeConverter;
@@ -70,7 +70,7 @@ import org.jruby.util.RecursiveComparator;
 
 import static org.jruby.CompatVersion.*;
 import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
-import static org.jruby.runtime.MethodIndex.HASH;
+import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
 
 // Design overview:
 //
@@ -940,7 +940,7 @@ public class RubyHash extends RubyObject implements Map {
         return internalGet(key);
     }
 
-    public RubyBoolean compare(final ThreadContext context, final int method, IRubyObject other) {
+    public RubyBoolean compare(final ThreadContext context, final MethodNames method, IRubyObject other) {
 
         Ruby runtime = context.runtime;
 
@@ -985,7 +985,7 @@ public class RubyHash extends RubyObject implements Map {
      */
     @JRubyMethod(name = "==")
     public IRubyObject op_equal(final ThreadContext context, IRubyObject other) {
-        return RecursiveComparator.compare(context, MethodIndex.OP_EQUAL, this, other);
+        return RecursiveComparator.compare(context, MethodNames.OP_EQUAL, this, other);
     }
 
     /** rb_hash_eql
@@ -993,7 +993,7 @@ public class RubyHash extends RubyObject implements Map {
      */
     @JRubyMethod(name = "eql?")
     public IRubyObject op_eql19(final ThreadContext context, IRubyObject other) {
-        return RecursiveComparator.compare(context, MethodIndex.EQL, this, other);
+        return RecursiveComparator.compare(context, MethodNames.EQL, this, other);
     }
 
     /** rb_hash_aref
