@@ -44,6 +44,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
 import org.jruby.anno.JRubyMethod;
+import static org.jruby.ext.psych.PsychLibrary.YAML_ENCODING.*;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
@@ -75,11 +76,6 @@ import org.jruby.util.ByteList;
 public class PsychParser extends RubyObject {
 
     private static final Logger LOG = LoggerFactory.getLogger("PsychParser");
-
-    public static final int YAML_ANY_ENCODING = 0;
-    public static final int YAML_UTF8_ENCODING = UTF8Encoding.INSTANCE.getIndex();
-    public static final int YAML_UTF16LE_ENCODING = UTF16LEEncoding.INSTANCE.getIndex();
-    public static final int YAML_UTF16BE_ENCODING = UTF16BEEncoding.INSTANCE.getIndex();
     
     public static void initPsychParser(Ruby runtime, RubyModule psych) {
         RubyClass psychParser = runtime.defineClassUnder("Parser", runtime.getObject(), new ObjectAllocator() {
@@ -90,10 +86,10 @@ public class PsychParser extends RubyObject {
 
         RubyKernel.require(runtime.getNil(),
                 runtime.newString("psych/syntax_error"), Block.NULL_BLOCK);
-        psychParser.defineConstant("ANY", runtime.newFixnum(YAML_ANY_ENCODING));
-        psychParser.defineConstant("UTF8", runtime.newFixnum(YAML_UTF8_ENCODING));
-        psychParser.defineConstant("UTF16LE", runtime.newFixnum(YAML_UTF16LE_ENCODING));
-        psychParser.defineConstant("UTF16BE", runtime.newFixnum(YAML_UTF16BE_ENCODING));
+        psychParser.defineConstant("ANY", runtime.newFixnum(YAML_ANY_ENCODING.ordinal()));
+        psychParser.defineConstant("UTF8", runtime.newFixnum(YAML_UTF8_ENCODING.ordinal()));
+        psychParser.defineConstant("UTF16LE", runtime.newFixnum(YAML_UTF16LE_ENCODING.ordinal()));
+        psychParser.defineConstant("UTF16BE", runtime.newFixnum(YAML_UTF16BE_ENCODING.ordinal()));
 
         psychParser.defineAnnotatedMethods(PsychParser.class);
 
@@ -154,7 +150,7 @@ public class PsychParser extends RubyObject {
 
                 // FIXME: Event should expose a getID, so it can be switched
                 if (event.is(ID.StreamStart)) {
-                    invoke(context, handler, "start_stream", runtime.newFixnum(YAML_ANY_ENCODING));
+                    invoke(context, handler, "start_stream", runtime.newFixnum(YAML_ANY_ENCODING.ordinal()));
                 } else if (event.is(ID.DocumentStart)) {
                     handleDocumentStart(context, (DocumentStartEvent) event, tainted, handler);
                 } else if (event.is(ID.DocumentEnd)) {

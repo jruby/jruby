@@ -27,6 +27,10 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.psych;
 
+import org.jcodings.Encoding;
+import org.jcodings.specific.UTF16BEEncoding;
+import org.jcodings.specific.UTF16LEEncoding;
+import org.jcodings.specific.UTF8Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyModule;
@@ -59,5 +63,18 @@ public class PsychLibrary implements Library {
         PsychEmitter.initPsychEmitter(runtime, psych);
         PsychToRuby.initPsychToRuby(runtime, psych);
         PsychYamlTree.initPsychYamlTree(runtime, psych);
+    }
+
+    public enum YAML_ENCODING {
+        YAML_ANY_ENCODING(UTF8Encoding.INSTANCE),
+        YAML_UTF8_ENCODING(UTF8Encoding.INSTANCE),
+        YAML_UTF16LE_ENCODING(UTF16LEEncoding.INSTANCE),
+        YAML_UTF16BE_ENCODING(UTF16BEEncoding.INSTANCE);
+
+        YAML_ENCODING(Encoding encoding) {
+            this.encoding = encoding;
+        }
+
+        public final Encoding encoding;
     }
 }
