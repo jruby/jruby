@@ -128,6 +128,7 @@ public class SSLSocket extends RubyObject {
         Utils.checkKind(getRuntime(), args[0], "IO");
         io = (RubyIO) args[0];
         api.callMethod(this, "io=", io);
+        api.callMethod(this, "hostname=", getRuntime().newString(""));
         // This is a bit of a hack: SSLSocket should share code with RubyBasicSocket, which always sets sync to true.
         // Instead we set it here for now.
         api.callMethod(io, "sync=", getRuntime().getTrue());
