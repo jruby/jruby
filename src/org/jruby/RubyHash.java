@@ -61,8 +61,6 @@ import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import static org.jruby.runtime.Visibility.*;
-
-import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.invokedynamic.MethodNames;
 import org.jruby.runtime.marshal.MarshalStream;
@@ -131,9 +129,6 @@ public class RubyHash extends RubyObject implements Map {
         hashc.includeModule(runtime.getEnumerable());
 
         hashc.defineAnnotatedMethods(RubyHash.class);
-
-        // initialize_copy is aliased to replace, but needs to be private
-        hashc.exportMethod("initialize_copy", PRIVATE);
 
         return hashc;
     }
