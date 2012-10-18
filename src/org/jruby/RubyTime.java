@@ -347,12 +347,12 @@ public class RubyTime extends RubyObject {
     
     @JRubyMethod(name = {"getgm", "getutc"})
     public RubyTime getgm() {
-        return newTime(getRuntime(), dt.withZone(DateTimeZone.UTC), getUSec());
+        return newTime(getRuntime(), dt.withZone(DateTimeZone.UTC), nsec);
     }
 
     @JRubyMethod(name = "getlocal")
     public RubyTime getlocal() {
-        return newTime(getRuntime(), dt.withZone(getLocalTimeZone(getRuntime())), getUSec());
+        return newTime(getRuntime(), dt.withZone(getLocalTimeZone(getRuntime())), nsec);
     }
 
     @JRubyMethod(name = "strftime", required = 1)
