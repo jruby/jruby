@@ -595,15 +595,28 @@ public class MapJavaProxy extends ConcreteJavaProxy {
         return getOrCreateRubyHashMap().merge(context, other, block);
     }
 
+    /** rb_hash_initialize_copy
+     *
+     */
+    @JRubyMethod(name = "initialize_copy", visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_8)
+    public RubyHash initialize_copy(ThreadContext context, IRubyObject other) {
+        return getOrCreateRubyHashMap().initialize_copy(context, other);
+    }
+
+    @JRubyMethod(name = "initialize_copy", required = 1, visibility = Visibility.PRIVATE, compat = CompatVersion.RUBY1_9)
+    public RubyHash initialize_copy19(ThreadContext context, IRubyObject other) {
+        return getOrCreateRubyHashMap().initialize_copy19(context, other);
+    }
+
     /** rb_hash_replace
      *
      */
-    @JRubyMethod(name = {"replace", "initialize_copy"}, compat = CompatVersion.RUBY1_8)
+    @JRubyMethod(name = "replace", required = 1, compat = CompatVersion.RUBY1_8)
     public RubyHash replace(final ThreadContext context, IRubyObject other) {
         return getOrCreateRubyHashMap().replace(context, other);
     }
 
-    @JRubyMethod(name = {"replace", "initialize_copy"}, compat = CompatVersion.RUBY1_9)
+    @JRubyMethod(name = "replace", required = 1, compat = CompatVersion.RUBY1_9)
     public RubyHash replace19(final ThreadContext context, IRubyObject other) {
         return getOrCreateRubyHashMap().replace19(context, other);
     }

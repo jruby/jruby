@@ -1618,7 +1618,23 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_replace
      *
      */
-    @JRubyMethod(name = {"replace", "initialize_copy"}, compat = RUBY1_8)
+    @JRubyMethod(visibility = PRIVATE, compat = RUBY1_8)
+    public RubyHash initialize_copy(ThreadContext context, IRubyObject other) {
+        return replace(context, other);
+    }
+
+    /** rb_hash_replace
+     *
+     */
+    @JRubyMethod(name = "initialize_copy", required = 1, visibility = PRIVATE, compat = RUBY1_9)
+    public RubyHash initialize_copy19(ThreadContext context, IRubyObject other) {
+        return replace19(context, other);
+    }
+
+    /** rb_hash_replace
+     *
+     */
+    @JRubyMethod(name = "replace", required = 1, compat = RUBY1_8)
     public RubyHash replace(final ThreadContext context, IRubyObject other) {
         final RubyHash self = this;
         return replaceCommon(context, other, new Visitor() {
@@ -1628,7 +1644,7 @@ public class RubyHash extends RubyObject implements Map {
         });
     }
 
-    @JRubyMethod(name = {"replace", "initialize_copy"}, compat = RUBY1_9)
+    @JRubyMethod(name = "replace", required = 1, compat = RUBY1_9)
     public RubyHash replace19(final ThreadContext context, IRubyObject other) {
         final RubyHash self = this;
         return replaceCommon19(context, other, new Visitor() {
