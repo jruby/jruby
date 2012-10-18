@@ -345,7 +345,7 @@ public class SSLContext extends RubyObject {
         if (val instanceof RubyString) {
             RubyString str = val.convertToString();
             given = str.toString();
-        } else if (val instanceof RubySymbol) {
+        } else {
             given = val.toString();
         }
         String mapped = SSL_VERSION_OSSL2JSSE.get(given);
@@ -360,7 +360,7 @@ public class SSLContext extends RubyObject {
         if (given.endsWith("_server")) {
             protocolForClient = false;
         }
-        return str;
+        return val;
     }
 
     boolean isProtocolForServer() {
