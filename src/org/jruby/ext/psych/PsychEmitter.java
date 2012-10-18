@@ -29,8 +29,12 @@ package org.jruby.ext.psych;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.jcodings.Encoding;
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
 import org.jruby.RubyClass;
@@ -81,7 +85,8 @@ public class PsychEmitter extends RubyObject {
     public IRubyObject initialize(ThreadContext context, IRubyObject io) {
         options = new DumperOptions();
         options.setIndent(2);
-        emitter = new Emitter(new OutputStreamWriter(new IOOutputStream(io)), options);
+
+        this.io = io;
 
         return context.nil;
     }
@@ -98,7 +103,7 @@ public class PsychEmitter extends RubyObject {
         options.setIndent((int)level.convertToInteger().getLongValue());
         options.setWidth((int)width.convertToInteger().getLongValue());
 
-        emitter = new Emitter(new OutputStreamWriter(new IOOutputStream(io)), options);
+        this.io = io;
 
         return context.nil;
     }
@@ -108,10 +113,13 @@ public class PsychEmitter extends RubyObject {
         if (!(encoding instanceof RubyFixnum)) {
             throw context.runtime.newTypeError(encoding, context.runtime.getFixnum());
         }
-        
-        // TODO: do something with encoding? perhaps at the stream level?
+
+        initEmitter(context, encoding);
+
         StreamStartEvent event = new StreamStartEvent(NULL_MARK, NULL_MARK);
+
         emit(context, event);
+
         return this;
     }
 
@@ -299,6 +307,8 @@ public class PsychEmitter extends RubyObject {
 
     private void emit(ThreadContext context, Event event) {
         try {
+            if (emitter == null) throw context.runtime.newRuntimeError("uninitialized emitter");
+
             emitter.emit(event);
         } catch (IOException ioe) {
             throw context.runtime.newIOErrorFromException(ioe);
@@ -307,8 +317,18 @@ public class PsychEmitter extends RubyObject {
         }
     }
 
+    private void initEmitter(ThreadContext context, IRubyObject _encoding) {
+        if (emitter != null) throw context.runtime.newRuntimeError("already initialized emitter");
+
+        Encoding encoding = PsychLibrary.YAML_ENCODING.values()[(int)_encoding.convertToInteger().getLongValue()].encoding;
+        Charset charset = context.runtime.getEncodingService().charsetForEncoding(encoding);
+
+        emitter = new Emitter(new OutputStreamWriter(new IOOutputStream(io), charset), options);
+    }
+
     Emitter emitter;
     DumperOptions options = new DumperOptions();
+    IRubyObject io;
 
     private static final Mark NULL_MARK = new Mark(null, 0, 0, 0, null, 0);
 
