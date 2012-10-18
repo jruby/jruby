@@ -45,6 +45,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
 import org.jruby.RubyObject;
 import org.jruby.RubyString;
+import org.jruby.RubySymbol;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.exceptions.RaiseException;
@@ -339,8 +340,14 @@ public class SSLContext extends RubyObject {
 
     @JRubyMethod(name = "ssl_version=")
     public IRubyObject set_ssl_version(IRubyObject val) {
-        RubyString str = val.convertToString();
-        String given = str.toString();
+        String given;
+
+        if (val instanceof RubyString) {
+            RubyString str = val.convertToString();
+            given = str.toString();
+        } else if (val instanceof RubySymbol) {
+            given = val.toString();
+        }
         String mapped = SSL_VERSION_OSSL2JSSE.get(given);
         if (mapped == null) {
             throw newSSLError(getRuntime(), String.format("unknown SSL method `%s'.", given));
