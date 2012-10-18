@@ -475,7 +475,7 @@ public class RubyTime extends RubyObject {
         double currentNanos = currentMillis * 1000000 + nsec;
 
         double newNanos = currentNanos + adjustNanos;
-        long newMillisPart = currentMillis + adjustMillis;
+        long newMillisPart = currentMillis + adjustMillis + (nsec / 1000000);
         double newNanosPart = newNanos % 1000000;
 
         RubyTime newTime = new RubyTime(getRuntime(), getMetaClass());
