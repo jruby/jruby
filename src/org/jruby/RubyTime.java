@@ -469,15 +469,15 @@ public class RubyTime extends RubyObject {
     }
 
     private IRubyObject opPlusNanos(long adjustNanos) {
-        double currentNanos = getTimeInMillis() * 1000000 + nsec;
+        long currentNanos = getTimeInMillis() * 1000000 + nsec;
 
-        double newNanos = currentNanos + adjustNanos;
-        double newMillisPart = newNanos / 1000000;
-        double newNanosPart = newNanos % 1000000;
+        long newNanos = currentNanos + adjustNanos;
+        long newMillisPart = newNanos / 1000000;
+        long newNanosPart = newNanos % 1000000;
 
         RubyTime newTime = new RubyTime(getRuntime(), getMetaClass());
         newTime.dt = new DateTime((long)newMillisPart).withZone(dt.getZone());
-        newTime.setNSec((long)newNanosPart);
+        newTime.setNSec(newNanosPart);
 
         return newTime;
     }
