@@ -85,17 +85,8 @@ public class PsychEmitter extends RubyObject {
     public IRubyObject initialize(ThreadContext context, IRubyObject io) {
         options = new DumperOptions();
         options.setIndent(2);
-<<<<<<< HEAD
 
         this.io = io;
-=======
-        try {
-            emitter = new Emitter(new OutputStreamWriter(new IOOutputStream(io), "UTF-8"), options);
-        } catch (UnsupportedEncodingException uee) {
-            // should never happen on a compliant JVM
-            emitter = new Emitter(new OutputStreamWriter(new IOOutputStream(io)), options);
-        }
->>>>>>> Probable fix for JRUBY-6930
 
         return context.nil;
     }
