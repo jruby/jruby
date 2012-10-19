@@ -979,10 +979,24 @@ public class RubyTime extends RubyObject {
         return createTime(recv, args, false);
     }
 
-    @JRubyMethod(name = "new", optional = 10, meta = true, compat = RUBY1_9)
+    @JRubyMethod(name = "new", optional = 7, meta = true, compat = RUBY1_9)
     public static IRubyObject new19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         if (args.length == 0) {
             return newInstance(context, recv);
+        }
+        if (args.length == 7) {
+          Ruby runtime = recv.getRuntime();
+          // Convert the 7-argument form of Time.new into the 10-argument form of Time.local:
+          args = new IRubyObject[] { args[5],          // seconds
+                                     args[4],          // minutes
+                                     args[3],          // hours
+                                     args[2],          // day
+                                     args[1],          // month
+                                     args[0],          // year
+                                     runtime.getNil(), // weekday
+                                     runtime.getNil(), // day of year
+                                     runtime.getNil(), // is DST?
+                                     args[6] };        // UTC offset
         }
         return createTime(recv, args, false);
     }
