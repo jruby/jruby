@@ -63,8 +63,8 @@ module GC
 
     # class exists, proceed with GC notification version
     module Profiler
-      HEADER = "   ID  Type                      Timestamp(sec)    Before(kB)     After(kB)    Delta(kB)        Heap(kB)          GC Time(ms) "
-      FORMAT = "%5d  %-20s %19.4f %13i %13i %12i %15i %20.10f"
+      HEADER = "   ID  Type                      Timestamp(sec)    Before(kB)     After(kB)    Delta(kB)        Heap(kB)          GC Time(ms) \n"
+      FORMAT = "%5d  %-20s %19.4f %13i %13i %12i %15i %20.10f\n"
 
       class GCListener
         include javax.management.NotificationListener
@@ -108,17 +108,17 @@ module GC
       end
 
       def self.report
-        puts result
+        result($stderr)
       end
 
-      def self.result
+      def self.result(out = "")
         lines = @gc_listener.lines.dup
 
         counts = Hash.new(0)
         report_lines = []
 
         lines.each_with_index do |line, i|
-          report_lines << HEADER if i % 20 == 0
+          out << HEADER if i % 20 == 0
 
           gc_notification = com.sun.management.GarbageCollectionNotificationInfo.from(line.user_data)
           gc_info = gc_notification.gc_info
@@ -144,7 +144,7 @@ module GC
 
           counts[gc_notification.gc_name] += 1
 
-          report_lines << sprintf(
+          out << sprintf(
                    FORMAT,
                    gc_info.id,
                    gc_notification.gc_name,
@@ -156,7 +156,9 @@ module GC
                    gc_info.duration/1000.0)
         end
 
-        "GC: #{counts.map{|k,v| "#{v} #{k}"}.join(', ')}\n" + report_lines.join("\n")
+        out << "GC: #{counts.map{|k,v| "#{v} #{k}"}.join(', ')}\n" + report_lines.join("\n")
+
+        out
       end
 
       def self.total_time
