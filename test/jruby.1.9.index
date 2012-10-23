@@ -60,6 +60,8 @@ test_string_java_bytes
 test_string_printf
 test_string_to_number
 test_super_call_site_caching
+test_system
+test_system_error
 test_timeout
 test_thread
 # FIXME probably should figure this one out
@@ -70,7 +72,6 @@ test_unmarshal
 test_vietnamese_charset
 test_win32
 test_zlib
-test_system_error
 
 # these tests are last because they pull in libraries that can affect others
 test_loading_builtin_libraries

@@ -77,6 +77,8 @@ test_string_printf
 test_string_sub
 test_string_to_number
 test_super_call_site_caching
+test_system
+test_system_error
 test_tb_yaml
 test_timeout
 test_thread
@@ -91,7 +93,6 @@ test_vietnamese_charset
 test_win32
 test_zlib
 test_yaml
-test_system_error
 
 # these tests are last because they pull in libraries that can affect others
 test_base64_strangeness

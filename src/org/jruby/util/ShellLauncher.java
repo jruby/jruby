@@ -336,9 +336,13 @@ public class ShellLauncher {
             }
         } else {
             validFile = tryFile(runtime, fdir, fname);
-            if (validFile != null && isExec &&
-                (validFile.isDirectory() || !runtime.getPosix().stat(validFile.getAbsolutePath()).isExecutable())) {
-                throw runtime.newErrnoEACCESError(validFile.getAbsolutePath());
+            if (validFile != null) {
+                if (validFile.isDirectory()) {
+                    return null;
+                }
+                if (isExec && !runtime.getPosix().stat(validFile.getAbsolutePath()).isExecutable()) {
+                    throw runtime.newErrnoEACCESError(validFile.getAbsolutePath());
+                }
             }
         }
         return validFile;
