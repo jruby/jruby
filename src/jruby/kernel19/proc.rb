@@ -18,25 +18,30 @@ class Proc
 
     args = []
 
+    my_self = self
     m = lambda? ? :lambda : :proc
-    f = send(m) {|*x|
+    f = __send__(m) {|*x|
       call_args = args + x
-      if call_args.length >= arity
-        self[*call_args]
+      if call_args.length >= my_self.arity
+        my_self[*call_args]
       else
         args = call_args
         f
       end
     }
+
     f.singleton_class.send(:define_method, :binding) {
       raise ArgumentError, "cannot create binding from f proc"
     }
+
     f.singleton_class.send(:define_method, :parameters) {
       [[:rest]]
     }
+
     f.singleton_class.send(:define_method, :source_location) {
       nil
     }
+
     f
   end
 end
