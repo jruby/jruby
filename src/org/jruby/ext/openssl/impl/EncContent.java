@@ -27,15 +27,18 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.ext.openssl.impl;
 
+import java.util.Enumeration;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEREncodable;
 import org.bouncycastle.asn1.DERObjectIdentifier;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.jruby.util.ByteList;
 
 /** PKCS7_ENC_CONTENT
  *
@@ -157,7 +160,14 @@ public class EncContent {
         ec.setAlgorithm(AlgorithmIdentifier.getInstance(sequence.getObjectAt(1)));
         if(sequence.size() > 2 && sequence.getObjectAt(2) instanceof DERTaggedObject && ((DERTaggedObject)(sequence.getObjectAt(2))).getTagNo() == 0) {
             DEREncodable ee = ((DERTaggedObject)(sequence.getObjectAt(2))).getObject();
-            if(ee instanceof ASN1Sequence) {
+            if(ee instanceof ASN1Sequence && ((ASN1Sequence)ee).size() > 0) {
+                ByteList combinedOctets = new ByteList();
+                Enumeration enm = ((ASN1Sequence)ee).getObjects();
+                while (enm.hasMoreElements()) {
+                    byte[] octets = ((ASN1OctetString)enm.nextElement()).getOctets();
+                    combinedOctets.append(octets);
+                }
+                ec.setEncData(new DEROctetString(combinedOctets.bytes()));
             } else {
                 ec.setEncData((ASN1OctetString)ee);
             }
