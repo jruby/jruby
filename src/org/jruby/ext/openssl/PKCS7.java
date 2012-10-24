@@ -300,8 +300,29 @@ public class PKCS7 extends RubyObject {
 
     @JRubyMethod(name="type=")
     public IRubyObject set_type(IRubyObject obj) {
-        System.err.println("WARNING: unimplemented method called PKCS7#type=");
-        return getRuntime().getNil();
+        int typeId = ASN1Registry.NID_undef;
+        
+        String type = obj.convertToString().asJavaString();
+        
+        if ("signed".equals(type)) {
+            typeId = ASN1Registry.NID_pkcs7_signed;
+        } else if ("data".equals(type)) {
+            typeId = ASN1Registry.NID_pkcs7_data;
+        } else if ("signedAndEnveloped".equals(type)) {
+            typeId = ASN1Registry.NID_pkcs7_signedAndEnveloped;
+        } else if ("enveloped".equals(type)) {
+            typeId = ASN1Registry.NID_pkcs7_enveloped;
+        } else if ("encrypted".equals(type)) {
+            typeId = ASN1Registry.NID_pkcs7_encrypted;
+        }
+        
+        try {
+            p7.setType(typeId);
+        } catch (PKCS7Exception pkcs7e) {
+            throw newPKCS7Exception(getRuntime(), pkcs7e);
+        }
+
+        return obj;
     }
 
     @JRubyMethod(name="type")
@@ -479,8 +500,44 @@ public class PKCS7 extends RubyObject {
 
     @JRubyMethod(name={"add_data", "data="})
     public IRubyObject add_data(IRubyObject obj) {
-        System.err.println("WARNING: unimplemented method called PKCS7#add_data");
-        return getRuntime().getNil();
+        if (p7.isSigned()) {
+            try {
+                p7.contentNew(ASN1Registry.NID_pkcs7_data);
+            } catch (PKCS7Exception pkcs7e) {
+                throw newPKCS7Exception(getRuntime(), pkcs7e);
+            }
+        }
+        
+        BIO in = obj2bio(obj);
+        BIO out = null;
+        try {
+            out = p7.dataInit(null);
+        } catch (PKCS7Exception pkcs7e) {
+            throw newPKCS7Exception(getRuntime(), pkcs7e);
+        }
+        byte[] buf = new byte[4096];
+        for(;;) {
+            try {
+                int i = in.read(buf, 0, buf.length);
+                if(i <= 0) {
+                    break;
+                }
+                if(out != null) {
+                    out.write(buf, 0, i);
+                }
+            } catch(IOException e) {
+                throw getRuntime().newIOErrorFromException(e);
+            }
+        }
+        
+        try {
+            p7.dataFinal(out);
+        } catch (PKCS7Exception pkcs7e) {
+            throw newPKCS7Exception(getRuntime(), pkcs7e);
+        }
+        setData(getRuntime().getNil());
+    
+        return obj;
     }
 
     @JRubyMethod(rest=true)
