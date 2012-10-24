@@ -69,12 +69,16 @@ class OpenSSL::TestSSL < OpenSSL::SSLTestCase
       ITERATIONS.times{|i|
         str = "x" * 100 + "\n"
         ssl.syswrite(str)
-        assert_equal(str, ssl.sysread(str.size))
+        newstr = ''
+        newstr << ssl.sysread(str.size - newstr.size) until newstr.size == str.size
+        assert_equal(str, newstr)
 
         str = "x" * i * 100 + "\n"
         buf = ""
         ssl.syswrite(str)
         assert_equal(buf.object_id, ssl.sysread(str.size, buf).object_id)
+        newstr = buf
+        newstr << ssl.sysread(str.size - newstr.size) until newstr.size == str.size
         assert_equal(str, buf)
       }
 
