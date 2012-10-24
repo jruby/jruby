@@ -590,14 +590,9 @@ public class SSLSocket extends RubyObject {
         Ruby runtime = context.runtime;
         try {
             checkClosed();
-            if (nonBlock) {
-                RaiseException re = newSSLError(runtime, "write would raise");
-                IRubyObject waitWritable = runtime.getIO().getConstant("WaitWritable");
-                re.getException().extend(new IRubyObject[] {waitWritable});
-                throw re;
-            } else {
-                waitSelect(SelectionKey.OP_WRITE, true);
-            }
+
+            waitSelect(SelectionKey.OP_WRITE, !nonBlock);
+
             ByteList bls = arg.convertToString().getByteList();
             ByteBuffer b1 = ByteBuffer.wrap(bls.getUnsafeBytes(), bls.getBegin(), bls.getRealSize());
             int written;
