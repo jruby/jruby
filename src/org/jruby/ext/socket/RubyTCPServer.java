@@ -244,6 +244,12 @@ public class RubyTCPServer extends RubyTCPSocket {
     }
 
     @Override
+    public IRubyObject shutdown(ThreadContext context, IRubyObject[] args) {
+        // act like a platform that does not support shutdown for server sockets
+        throw context.runtime.newErrnoENOTCONNError();
+    }
+
+    @Override
     public IRubyObject gets(ThreadContext context) {
         throw context.runtime.newErrnoENOTCONNError();
     }
