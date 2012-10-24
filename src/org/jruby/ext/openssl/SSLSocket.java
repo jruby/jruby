@@ -282,12 +282,17 @@ public class SSLSocket extends RubyObject {
             // check for thread events, in case we've been woken up to die
             thread.pollThreadEvents();
 
-            if (result == 1) {
+            if (result >= 1) {
                 Set<SelectionKey> keySet = selector.selectedKeys();
 
                 if (keySet.iterator().next() == key) {
                     return true;
                 }
+            } else if (!blocking) {
+                RaiseException re = newSSLError(runtime, "read would raise");
+                IRubyObject waitReadable = runtime.getIO().getConstant("WaitReadable");
+                re.getException().extend(new IRubyObject[] {waitReadable});
+                throw re;
             }
 
             return false;
@@ -545,14 +550,7 @@ public class SSLSocket extends RubyObject {
         try {
             // So we need to make sure to only block when there is no data left to process
             if (engine == null || !(peerAppData.hasRemaining() || peerNetData.position() > 0)) {
-                if (nonBlock) {
-                    RaiseException re = newSSLError(runtime, "read would raise");
-                    IRubyObject waitReadable = runtime.getIO().getConstant("WaitReadable");
-                    re.getException().extend(new IRubyObject[] {waitReadable});
-                    throw re;
-                } else {
-                    waitSelect(SelectionKey.OP_READ, true);
-                }
+                waitSelect(SelectionKey.OP_READ, !nonBlock);
             }
 
             ByteBuffer dst = ByteBuffer.allocate(len);
