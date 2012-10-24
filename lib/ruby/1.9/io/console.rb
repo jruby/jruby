@@ -131,6 +131,23 @@ if RbConfig::CONFIG['host_os'].downcase =~ /darwin/
       TCIOFF          = 3
       TCION           = 4
 
+      IOCPARM_MASK = 0x1fff
+      IOC_OUT = 0x40000000
+      IOC_IN  = 0x80000000
+
+      def self._IOC(inout,group,num,len)
+        (inout | ((len & IOCPARM_MASK) << 16) | ((group.ord << 8) | num)
+      end
+
+      def self._IOR(g,n,t)
+        self._IOC(IOC_OUT, g, n, find_type(t).size)
+      end
+
+      def self._IOW(g,n,t)
+        self._IOC(IOC_IN, g, n, find_type(t).size)
+      end
+
+
       class Termios < FFI::Struct
         layout \
           :c_iflag, :tcflag_t,
@@ -142,6 +159,16 @@ if RbConfig::CONFIG['host_os'].downcase =~ /darwin/
           :c_ospeed, :speed_t
       end
 
+      class Winsize < FFI::Struct
+        layout \
+          :ws_row, :ushort,
+          :ws_col, :ushort,
+          :ws_xpixel, :ushort,
+          :ws_ypixel, :ushort
+      end
+
+      TIOCGWINSZ = _IOR('t', 104, Winsize)  # get window size
+      TIOCSWINSZ = _IOW('t', 103, Winsize)  # set window size
 
       attach_function :tcsetattr, [ :int, :int, Termios ], :int
       attach_function :tcgetattr, [ :int, Termios ], :int
@@ -151,6 +178,7 @@ if RbConfig::CONFIG['host_os'].downcase =~ /darwin/
       attach_function :cfsetospeed, [ Termios, :speed_t ], :int
       attach_function :cfmakeraw, [ Termios ], :int
       attach_function :tcflush, [ :int, :int ], :int
+      attach_function :_ioctl, :ioctl, [ :int, :ulong, :varargs ], :int
     end
 
     class IO
@@ -158,10 +186,15 @@ if RbConfig::CONFIG['host_os'].downcase =~ /darwin/
 
       def ttymode
         termios = Termios.new
-        tcgetattr(fileno, termios)
+        if tcgetattr(fileno, termios) != 0
+          raise SystemCallError.new("tcgetattr", FFI.errno)
+        end
+
         if block_given?
           yield tmp = termios.dup
-          tcsetattr(fileno, TCSADRAIN, tmp)
+          if tcsetattr(fileno, TCSADRAIN, tmp) != 0
+            raise SystemCallError.new("tcsetattr", FFI.errno)
+          end
         end
         termios
       end
@@ -171,7 +204,9 @@ if RbConfig::CONFIG['host_os'].downcase =~ /darwin/
           orig_termios = ttymode &setup
           block.call(self)
         ensure
-          tcsetattr(fileno, TCSADRAIN, orig_termios)
+          if tcsetattr(fileno, TCSADRAIN, orig_termios) != 0
+            raise SystemCallError.new("tcsetattr", FFI.errno)
+          end
         end
       end
 
@@ -227,26 +262,33 @@ if RbConfig::CONFIG['host_os'].downcase =~ /darwin/
         getc
       end
 
-      # Not all systems return same format of stty -a output
-      IEEE_STD_1003_2 = '(?<rows>\d+) rows; (?<columns>\d+) columns'
-      UBUNTU = 'rows (?<rows>\d+); columns (?<columns>\d+)'
-
       def winsize
-        match = `stty -a`.match(/#{IEEE_STD_1003_2}|#{UBUNTU}/)
-        [match[:rows].to_i, match[:columns].to_i]
+        ws = Winsize.new
+        if _ioctl(fileno, TIOCGWINSZ, :pointer, ws.pointer) != 0
+          raise SystemCallError.new("ioctl(TOCGWINSZ)", FFI.errno)
+        end
+        [ ws[:ws_row], ws[:ws_col] ]
       end
 
       def winsize=(size)
-        `stty rows #{size[0]} cols #{size[1]}`
+        ws = Winsize.new
+        ws[:ws_row] = size[0]
+        ws[:ws_col] = size[1]
+        if _ioctl(fileno, TIOCSWINSZ, :pointer, ws.pointer) != 0
+          raise SystemCallError.new("ioctl(TOCSWINSZ)", FFI.errno)
+        end
       end
 
       def iflush
+        raise SystemCallError.new("tcflush(TCIFLUSH)", FFI.errno) unless tcflush(fileno, TCIFLUSH) == 0
       end
 
       def oflush
+        raise SystemCallError.new("tcflush(TCOFLUSH)", FFI.errno) unless tcflush(fileno, TCOFLUSH) == 0
       end
 
       def ioflush
+        raise SystemCallError.new("tcflush(TCIOFLUSH)", FFI.errno) unless tcflush(fileno, TCIOFLUSH) == 0
       end
     end
     true
