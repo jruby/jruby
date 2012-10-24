@@ -924,7 +924,12 @@ public class PKCS7 {
                 bio.setMemEofReturn(0);
             }
         }
-        out.push(bio);
+
+        if (out != null) {
+            out.push(bio);
+        } else {
+            out = bio;
+        }
         bio = null;
         return out;
     }
