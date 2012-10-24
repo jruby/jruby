@@ -598,8 +598,8 @@ public class SSLSocket extends RubyObject {
             } else {
                 waitSelect(SelectionKey.OP_WRITE, true);
             }
-            byte[] bls = arg.convertToString().getBytes();
-            ByteBuffer b1 = ByteBuffer.wrap(bls);
+            ByteList bls = arg.convertToString().getByteList();
+            ByteBuffer b1 = ByteBuffer.wrap(bls.getUnsafeBytes(), bls.getBegin(), bls.getRealSize());
             int written;
             if(engine == null) {
                 written = writeToChannel(b1);

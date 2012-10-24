@@ -109,6 +109,7 @@ module OpenSSL
           ary = []
           while true
             if md = TypeAndValue.match(str)
+              matched = md.to_s
               remain = md.post_match
               type = md[1]
               value, tag = expand_value(md[2], md[3], md[4]) rescue nil
@@ -134,7 +135,7 @@ module OpenSSL
         end
       end
 
-      class << self
+      class <<self
         def parse_rfc2253(str, template=OBJECT_TYPE_TEMPLATE)
           ary = OpenSSL::X509::Name::RFC2253DN.scan(str)
           self.new(ary, template)
@@ -146,12 +147,6 @@ module OpenSSL
         end
 
         alias parse parse_openssl
-      end
-    end
-
-    class StoreContext
-      def cleanup
-        warn "(#{caller.first}) OpenSSL::X509::StoreContext#cleanup is deprecated with no replacement" if $VERBOSE
       end
     end
   end

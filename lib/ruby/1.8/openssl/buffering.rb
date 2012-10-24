@@ -11,9 +11,10 @@
   (See the file 'LICENCE'.)
 
 = Version
-  $Id: buffering.rb 13706 2007-10-15 08:29:08Z usa $
+  $Id$
 =end
 
+module OpenSSL
 module Buffering
   include Enumerable
   attr_accessor :sync
@@ -236,4 +237,5 @@ module Buffering
     flush rescue nil
     sysclose
   end
+end
 end

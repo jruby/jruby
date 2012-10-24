@@ -11,7 +11,7 @@
   (See the file 'LICENCE'.)
 
 = Version
-  $Id: cipher.rb 12496 2007-06-08 15:02:04Z technorama $
+  $Id$
 =end
 
 ##

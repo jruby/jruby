@@ -30,7 +30,7 @@ class Dir
       for dir in dirs
         if dir and stat = File.stat(dir) and stat.directory? and stat.writable? and !stat.world_writable?
           return File.expand_path(dir)
-        end rescue nil
+        end
       end
       for dir in dirs
         if dir and stat = File.stat(dir) and stat.directory? and stat.writable?
