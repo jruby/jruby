@@ -138,7 +138,7 @@ module IO::LibC
       :c_oflag, :tcflag_t,
       :c_cflag, :tcflag_t,
       :c_lflag, :tcflag_t,
-      :cc_t, [ :uchar, NCCS ],
+      :cc_c, [ :uchar, NCCS ],
       :c_ispeed, :speed_t,
       :c_ospeed, :speed_t
   end

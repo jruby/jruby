@@ -21,9 +21,14 @@
 
 # attempt to call stty; if failure, fall back on stubbed version
 
-if RbConfig::CONFIG['host_os'].downcase =~ /darwin|openbsd|freebsd|netbsd/
+if RbConfig::CONFIG['host_os'].downcase =~ /darwin|openbsd|freebsd|netbsd|linux/
   result = begin
-    require File.join(File.dirname(__FILE__), 'bsd_console')
+    if RbConfig::CONFIG['host_os'].downcase =~ /darwin|openbsd|freebsd|netbsd/
+      require File.join(File.dirname(__FILE__), 'bsd_console')
+
+    elsif RbConfig::CONFIG['host_os'].downcase =~ /linux/
+      require File.join(File.dirname(__FILE__), 'linux_console')
+    end
 
     class IO
 
