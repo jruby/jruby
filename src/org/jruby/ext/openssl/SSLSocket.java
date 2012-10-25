@@ -277,10 +277,29 @@ public class SSLSocket extends RubyObject {
             key = selectable.register(selector, operations);
 
             thread.beforeBlockingCall();
-            int result = blocking ? selector.select() : selector.selectNow();
-
-            // check for thread events, in case we've been woken up to die
-            thread.pollThreadEvents();
+            int result;
+            if (!blocking) {
+                result = selector.selectNow();
+                if (result == 0) {
+                    if ((operations & SelectionKey.OP_READ) != 0 && (operations & SelectionKey.OP_WRITE) != 0) {
+                        if (key.isReadable()) {
+                            writeWouldBlock();
+                        } else if (key.isWritable()) {
+                            readWouldBlock();
+                        } else { //neither, pick one
+                            readWouldBlock();
+                        }
+                    } else if ((operations & SelectionKey.OP_READ) != 0) {
+                        readWouldBlock();
+                    } else if ((operations & SelectionKey.OP_WRITE) != 0) {
+                        writeWouldBlock();
+                    }
+                }
+            } else {
+                result = selector.select();
+                // check for thread events, in case we've been woken up to die
+                thread.pollThreadEvents();
+            }
 
             if (result >= 1) {
                 Set<SelectionKey> keySet = selector.selectedKeys();
@@ -288,11 +307,6 @@ public class SSLSocket extends RubyObject {
                 if (keySet.iterator().next() == key) {
                     return true;
                 }
-            } else if (!blocking) {
-                RaiseException re = newSSLError(runtime, "read would raise");
-                IRubyObject waitReadable = runtime.getIO().getConstant("WaitReadable");
-                re.getException().extend(new IRubyObject[] {waitReadable});
-                throw re;
             }
 
             return false;
@@ -328,6 +342,20 @@ public class SSLSocket extends RubyObject {
             // clear thread state from blocking call
             thread.afterBlockingCall();
         }
+    }
+
+    private void readWouldBlock() {
+        Ruby runtime = getRuntime();
+        RaiseException eagain = newSSLError(runtime, "read would block");
+        eagain.getException().extend(new IRubyObject[]{runtime.getIO().getConstant("WaitReadable")});
+        throw eagain;
+    }
+
+    private void writeWouldBlock() {
+        Ruby runtime = getRuntime();
+        RaiseException eagain = newSSLError(runtime, "write would block");
+        eagain.getException().extend(new IRubyObject[]{runtime.getIO().getConstant("WaitWritable")});
+        throw eagain;
     }
 
     private void doHandshake(boolean blocking) throws IOException {
