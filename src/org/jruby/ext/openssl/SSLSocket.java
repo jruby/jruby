@@ -259,49 +259,57 @@ public class SSLSocket extends RubyObject {
     // SelectableChannel.configureBlocking(false) permanently instead of setting
     // temporarily. SSLSocket requires wrapping IO to be selectable so it should
     // be OK to set configureBlocking(false) permanently.
-    private boolean waitSelect(int operations, boolean blocking) throws IOException {
+    private boolean waitSelect(final int operations, final boolean blocking) throws IOException {
         if (!(io.getChannel() instanceof SelectableChannel)) {
             return true;
         }
-        Ruby runtime = getRuntime();
+        final Ruby runtime = getRuntime();
         RubyThread thread = runtime.getCurrentContext().getThread();
 
         SelectableChannel selectable = (SelectableChannel)io.getChannel();
         selectable.configureBlocking(false);
-        SelectionKey key = null;
-        Selector selector = null;
+        final Selector selector = runtime.getSelectorPool().get();
+        final SelectionKey key = selectable.register(selector, operations);
+
         try {
             io.addBlockingThread(thread);
-            selector = runtime.getSelectorPool().get();
 
-            key = selectable.register(selector, operations);
+            final int[] result = new int[1];
 
-            thread.beforeBlockingCall();
-            int result;
-            if (!blocking) {
-                result = selector.selectNow();
-                if (result == 0) {
-                    if ((operations & SelectionKey.OP_READ) != 0 && (operations & SelectionKey.OP_WRITE) != 0) {
-                        if (key.isReadable()) {
-                            writeWouldBlock();
-                        } else if (key.isWritable()) {
-                            readWouldBlock();
-                        } else { //neither, pick one
-                            readWouldBlock();
+            thread.executeBlockingTask(new RubyThread.BlockingTask() {
+                public void run() throws InterruptedException {
+                    try {
+                        if (!blocking) {
+                            result[0] = selector.selectNow();
+                            if (result[0] == 0) {
+                                if ((operations & SelectionKey.OP_READ) != 0 && (operations & SelectionKey.OP_WRITE) != 0) {
+                                    if (key.isReadable()) {
+                                        writeWouldBlock();
+                                    } else if (key.isWritable()) {
+                                        readWouldBlock();
+                                    } else { //neither, pick one
+                                        readWouldBlock();
+                                    }
+                                } else if ((operations & SelectionKey.OP_READ) != 0) {
+                                    readWouldBlock();
+                                } else if ((operations & SelectionKey.OP_WRITE) != 0) {
+                                    writeWouldBlock();
+                                }
+                            }
+                        } else {
+                            result[0] = selector.select();
                         }
-                    } else if ((operations & SelectionKey.OP_READ) != 0) {
-                        readWouldBlock();
-                    } else if ((operations & SelectionKey.OP_WRITE) != 0) {
-                        writeWouldBlock();
+                    } catch (IOException ioe) {
+                        throw runtime.newRuntimeError("Error with selector: " + ioe.getMessage());
                     }
                 }
-            } else {
-                result = selector.select();
-                // check for thread events, in case we've been woken up to die
-                thread.pollThreadEvents();
-            }
 
-            if (result >= 1) {
+                public void wakeup() {
+                    selector.wakeup();
+                }
+            });
+
+            if (result[0] >= 1) {
                 Set<SelectionKey> keySet = selector.selectedKeys();
 
                 if (keySet.iterator().next() == key) {
@@ -310,8 +318,8 @@ public class SSLSocket extends RubyObject {
             }
 
             return false;
-        } catch (IOException ioe) {
-            throw runtime.newRuntimeError("Error with selector: " + ioe.getMessage());
+        } catch (InterruptedException ie) {
+            return false;
         } finally {
             // Note: I don't like ignoring these exceptions, but it's
             // unclear how likely they are to happen or what damage we
