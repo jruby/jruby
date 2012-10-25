@@ -40,12 +40,22 @@ public class Addrinfo extends RubyObject {
     public Addrinfo(Ruby runtime, RubyClass cls, InetAddress inetAddress) {
         super(runtime, cls);
         this.inetAddress = inetAddress;
+
+        this.sock = Sock.SOCK_STREAM;
+        this.pfamily = inetAddress instanceof Inet4Address ? ProtocolFamily.PF_INET : ProtocolFamily.PF_INET6;
+        this.afamily = inetAddress instanceof Inet4Address ? AddressFamily.AF_INET : AddressFamily.AF_INET6;
+        this.socketType = SocketType.SOCKET;
     }
 
     public Addrinfo(Ruby runtime, RubyClass cls, InetAddress inetAddress, int port) {
         super(runtime, cls);
         this.inetAddress = inetAddress;
         this.port = port;
+
+        this.sock = Sock.SOCK_STREAM;
+        this.pfamily = inetAddress instanceof Inet4Address ? ProtocolFamily.PF_INET : ProtocolFamily.PF_INET6;
+        this.afamily = inetAddress instanceof Inet4Address ? AddressFamily.AF_INET : AddressFamily.AF_INET6;
+        this.socketType = SocketType.SOCKET;
     }
 
     public Addrinfo(Ruby runtime, RubyClass cls, InetAddress inetAddress, int port, SocketType socketType) {
@@ -53,6 +63,11 @@ public class Addrinfo extends RubyObject {
         this.inetAddress = inetAddress;
         this.port = port;
         this.socketType = socketType;
+
+        this.sock = Sock.SOCK_STREAM;
+        this.pfamily = inetAddress instanceof Inet4Address ? ProtocolFamily.PF_INET : ProtocolFamily.PF_INET6;
+        this.afamily = inetAddress instanceof Inet4Address ? AddressFamily.AF_INET : AddressFamily.AF_INET6;
+        this.socketType = SocketType.SOCKET;
     }
 
     @JRubyMethod
@@ -117,7 +132,7 @@ public class Addrinfo extends RubyObject {
 
                 this.socketType = SocketType.SOCKET;
             }
-            
+
             if (sock == null) {
                 this.sock = Sock.SOCK_STREAM;
             } else {
