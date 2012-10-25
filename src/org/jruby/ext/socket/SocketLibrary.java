@@ -2,6 +2,7 @@ package org.jruby.ext.socket;
 
 import java.io.IOException;
 import org.jruby.Ruby;
+import org.jruby.platform.Platform;
 import org.jruby.runtime.load.Library;
 
 /**
@@ -15,10 +16,10 @@ public class SocketLibrary implements Library {
         RubySocket.createSocket(runtime);
         RubyServerSocket.createServerSocket(runtime);
 
-//        if (runtime.getInstanceConfig().isNativeEnabled() && RubyUNIXSocket.tryUnixDomainSocket()) {
+        if (runtime.getInstanceConfig().isNativeEnabled() && !Platform.IS_WINDOWS) {
             RubyUNIXSocket.createUNIXSocket(runtime);
             RubyUNIXServer.createUNIXServer(runtime);
-//        }
+        }
 
         RubyIPSocket.createIPSocket(runtime);
         RubyTCPSocket.createTCPSocket(runtime);
