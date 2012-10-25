@@ -81,6 +81,8 @@ import org.joni.Region;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
+import org.jruby.parser.LocalStaticScope;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.DynamicScope;
@@ -125,6 +127,9 @@ public class RubyString extends RubyObject implements EncodingCapable {
     private static final int SHARE_LEVEL_BUFFER = 1;
     // string doesn't have it's own ByteList (values)
     private static final int SHARE_LEVEL_BYTELIST = 2;
+
+    // FIXME: Using a cached StaticScope for to_r and to_c that call backref-sensitive methods
+    private static final StaticScope INTERNAL_STATIC_SCOPE = new LocalStaticScope(null);
 
     private volatile int shareLevel = SHARE_LEVEL_NONE;
 
@@ -7341,52 +7346,68 @@ public class RubyString extends RubyObject implements EncodingCapable {
     /** string_to_c
      * 
      */
-    @JRubyMethod(name = "to_c", reads = BACKREF, writes = BACKREF, compat = RUBY1_9)
+    @JRubyMethod(name = "to_c", compat = RUBY1_9)
     public IRubyObject to_c(ThreadContext context) {
         Ruby runtime = context.runtime;
-        DynamicScope scope = context.getCurrentScope();
-        IRubyObject backref = scope.getBackRef(runtime);
-        if (backref instanceof RubyMatchData) ((RubyMatchData)backref).use();
 
-        IRubyObject s = RuntimeHelpers.invoke(
-                context, this, "gsub",
-                RubyRegexp.newDummyRegexp(runtime, Numeric.ComplexPatterns.underscores_pat),
-                runtime.newString(new ByteList(new byte[]{'_'})));
+        // FIXME: Ideally we would not need to call backref-sensitive methods here
+        context.pushScope(DynamicScope.newDynamicScope(INTERNAL_STATIC_SCOPE));
 
-        RubyArray a = RubyComplex.str_to_c_internal(context, s);
+        try {
+            DynamicScope scope = context.getCurrentScope();
+            IRubyObject backref = scope.getBackRef(runtime);
+            if (backref instanceof RubyMatchData) ((RubyMatchData)backref).use();
 
-        scope.setBackRef(backref);
+            IRubyObject s = RuntimeHelpers.invoke(
+                    context, this, "gsub",
+                    RubyRegexp.newDummyRegexp(runtime, Numeric.ComplexPatterns.underscores_pat),
+                    runtime.newString(new ByteList(new byte[]{'_'})));
 
-        if (!a.eltInternal(0).isNil()) {
-            return a.eltInternal(0);
-        } else {
-            return RubyComplex.newComplexCanonicalize(context, RubyFixnum.zero(runtime));
+            RubyArray a = RubyComplex.str_to_c_internal(context, s);
+
+            scope.setBackRef(backref);
+
+            if (!a.eltInternal(0).isNil()) {
+                return a.eltInternal(0);
+            } else {
+                return RubyComplex.newComplexCanonicalize(context, RubyFixnum.zero(runtime));
+            }
+        } finally {
+            context.popScope();
         }
     }
 
     /** string_to_r
      * 
      */
-    @JRubyMethod(name = "to_r", reads = BACKREF, writes = BACKREF, compat = RUBY1_9)
+    @JRubyMethod(name = "to_r", compat = RUBY1_9)
     public IRubyObject to_r(ThreadContext context) {
         Ruby runtime = context.runtime;
-        DynamicScope scope = context.getCurrentScope();
-        IRubyObject backref = scope.getBackRef(runtime);
-        if (backref instanceof RubyMatchData) ((RubyMatchData)backref).use();
 
-        IRubyObject s = RuntimeHelpers.invoke(
-                context, this, "gsub",
-                RubyRegexp.newDummyRegexp(runtime, Numeric.ComplexPatterns.underscores_pat),
-                runtime.newString(new ByteList(new byte[]{'_'})));
+        // FIXME: Ideally we would not need to call backref-sensitive methods here
+        context.pushScope(DynamicScope.newDynamicScope(INTERNAL_STATIC_SCOPE));
 
-        RubyArray a = RubyRational.str_to_r_internal(context, s);
+        try {
+            DynamicScope scope = context.getCurrentScope();
+            IRubyObject backref = scope.getBackRef(runtime);
+            if (backref instanceof RubyMatchData) ((RubyMatchData)backref).use();
 
-        scope.setBackRef(backref);
+            IRubyObject s = RuntimeHelpers.invoke(
+                    context, this, "gsub",
+                    RubyRegexp.newDummyRegexp(runtime, Numeric.ComplexPatterns.underscores_pat),
+                    runtime.newString(new ByteList(new byte[]{'_'})));
 
-        if (!a.eltInternal(0).isNil()) {
-            return a.eltInternal(0);
-        } else {
-            return RubyRational.newRationalCanonicalize(context, RubyFixnum.zero(runtime));
+            RubyArray a = RubyRational.str_to_r_internal(context, s);
+
+            scope.setBackRef(backref);
+
+            if (!a.eltInternal(0).isNil()) {
+                return a.eltInternal(0);
+            } else {
+                return RubyRational.newRationalCanonicalize(context, RubyFixnum.zero(runtime));
+            }
+        } finally {
+            context.popScope();
         }
     }    
 

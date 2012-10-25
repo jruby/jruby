@@ -39,7 +39,7 @@ public class LocalStaticScope extends StaticScope {
     private static final long serialVersionUID = 2204064248888411628L;
     private static final String[] NO_NAMES = new String[0];
 
-    protected LocalStaticScope(StaticScope enclosingScope) {
+    public LocalStaticScope(StaticScope enclosingScope) {
         this(enclosingScope, NO_NAMES);
     }
 

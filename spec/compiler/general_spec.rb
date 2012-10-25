@@ -468,6 +468,21 @@ ary
 
     result.should == [nil, 1]
   end
+
+  if is19
+    it "does not break String#to_r and to_c" do
+      # This is structured to cause a "dummy" scope because of the String constant
+      # This caused to_r and to_c to fail since that scope always returns nil
+      result = compile_and_run <<-EOC
+      def foo
+        [String.new("0.1".to_c.to_s), String.new("0.1".to_r.to_s)]
+      end
+      foo
+      EOC
+
+      result.should
+    end
+  end
   
   it "does a bunch of other stuff" do
     silence_warnings {
