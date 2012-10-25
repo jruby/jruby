@@ -1,6 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project basedir="..">
     <import file="../build.xml"/>
+    
+    <condition property="maxpermgen.arg" value="-XX:MaxPermSize=${jruby.test.memory.permgen}">
+      <not>
+        <matches string="${java.version}" pattern="^1\.8"/>
+      </not>
+    </condition>
 
 	<target name="compile-test" depends="jar" description="Compile the unit tests">
         <javac destdir="${test.classes.dir}" deprecation="true" encoding="UTF-8" debug="true"
@@ -176,7 +182,7 @@
 
                 <!-- force client VM to improve test run times AND -->
                 <!-- set a larger max permgen, since the tests load a lot of bytecode -->
-                <jvmarg line="-ea ${java.opts} -client -XX:MaxPermSize=${jruby.test.memory.permgen}"/>
+                <jvmarg line="-ea ${java.opts} -client ${maxpermgen.arg}"/>
 
                 <!-- additional flags -->
                 <jvmarg line="@{jvm.flags}"/>
