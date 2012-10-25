@@ -21,15 +21,21 @@
 
 # attempt to call stty; if failure, fall back on stubbed version
 
-if RbConfig::CONFIG['host_os'].downcase =~ /darwin/
+if RbConfig::CONFIG['host_os'].downcase =~ /darwin|openbsd|freebsd|netbsd/
   result = begin
     require 'ffi'
-    module DarwinConsole
+
+    module IO::LibC
       extend FFI::Library
       ffi_lib FFI::Library::LIBC
-      typedef :ulong, :tcflag_t
-      typedef :ulong, :speed_t
 
+      if RbConfig::CONFIG['host_os'].downcase =~ /darwin/
+        typedef :ulong, :tcflag_t
+        typedef :ulong, :speed_t
+      else
+        typedef :uint, :tcflag_t
+        typedef :uint, :speed_t
+      end
 
       # Special Control Characters
       VEOF     = 0 #  ICANON
@@ -73,6 +79,9 @@ if RbConfig::CONFIG['host_os'].downcase =~ /darwin/
       ONLCR           = 0x00000002 #  map NL to CR-NL (ala CRMOD)
       OXTABS          = 0x00000004 #  expand tabs to spaces
       ONOEOT          = 0x00000008 #  discard EOT's (^D) on output)
+      OCRNL           = 0x00000010 #  map CR to NL on output
+      ONOCR           = 0x00000020 #  no CR output at column 0
+      ONLRET          = 0x00000040 #  NL performs CR function
 
       # Control flags - hardware control of terminal
       CIGNORE         = 0x00000001 #  ignore control flags
@@ -136,7 +145,7 @@ if RbConfig::CONFIG['host_os'].downcase =~ /darwin/
       IOC_IN  = 0x80000000
 
       def self._IOC(inout,group,num,len)
-        (inout | ((len & IOCPARM_MASK) << 16) | ((group.ord << 8) | num)
+        inout | ((len & IOCPARM_MASK) << 16) | ((group.ord << 8) | num)
       end
 
       def self._IOR(g,n,t)
@@ -178,21 +187,20 @@ if RbConfig::CONFIG['host_os'].downcase =~ /darwin/
       attach_function :cfsetospeed, [ Termios, :speed_t ], :int
       attach_function :cfmakeraw, [ Termios ], :int
       attach_function :tcflush, [ :int, :int ], :int
-      attach_function :_ioctl, :ioctl, [ :int, :ulong, :varargs ], :int
+      attach_function :ioctl, [ :int, :ulong, :varargs ], :int
     end
 
     class IO
-      include DarwinConsole
 
       def ttymode
-        termios = Termios.new
-        if tcgetattr(fileno, termios) != 0
+        termios = LibC::Termios.new
+        if LibC.tcgetattr(fileno, termios) != 0
           raise SystemCallError.new("tcgetattr", FFI.errno)
         end
 
         if block_given?
           yield tmp = termios.dup
-          if tcsetattr(fileno, TCSADRAIN, tmp) != 0
+          if LibC.tcsetattr(fileno, LibC::TCSADRAIN, tmp) != 0
             raise SystemCallError.new("tcsetattr", FFI.errno)
           end
         end
@@ -204,7 +212,7 @@ if RbConfig::CONFIG['host_os'].downcase =~ /darwin/
           orig_termios = ttymode &setup
           block.call(self)
         ensure
-          if tcsetattr(fileno, TCSADRAIN, orig_termios) != 0
+          if orig_termios && LibC.tcsetattr(fileno, LibC::TCSADRAIN, orig_termios) != 0
             raise SystemCallError.new("tcsetattr", FFI.errno)
           end
         end
@@ -212,50 +220,50 @@ if RbConfig::CONFIG['host_os'].downcase =~ /darwin/
 
       def raw(*, &block)
         ttymode_yield(block) do |t|
-          cfmakeraw(t)
-          t[:c_lflag] &= ~(ECHOE|ECHOK)
+          LibC.cfmakeraw(t)
+          t[:c_lflag] &= ~(LibC::ECHOE|LibC::ECHOK)
         end
       end
 
       def raw!(*)
         ttymode do |t|
-          cfmakeraw(t)
-          t[:c_lflag] &= ~(ECHOE|ECHOK)
+          LibC.cfmakeraw(t)
+          t[:c_lflag] &= ~(LibC::ECHOE|LibC::ECHOK)
         end
       end
 
       def cooked(*, &block)
         ttymode_yield(block) do |t|
-          t[:c_iflag] |= (BRKINT|ISTRIP|ICRNL|IXON)
-          t[:c_oflag] |= OPOST
-          t[:c_lflag] |= (ECHO|ECHOE|ECHOK|ECHONL|ICANON|ISIG|IEXTEN)
+          t[:c_iflag] |= (LibC::BRKINT|LibC::ISTRIP|LibC::ICRNL|LibC::IXON)
+          t[:c_oflag] |= LibC::OPOST
+          t[:c_lflag] |= (LibC::ECHO|LibC::ECHOE|LibC::ECHOK|LibC::ECHONL|LibC::ICANON|LibC::ISIG|LibC::IEXTEN)
         end
       end
 
       def cooked!(*)
         ttymode do |t|
-          t[:c_iflag] |= (BRKINT|ISTRIP|ICRNL|IXON)
-          t[:c_oflag] |= OPOST
-          t[:c_lflag] |= (ECHO|ECHOE|ECHOK|ECHONL|ICANON|ISIG|IEXTEN)
+          t[:c_iflag] |= (LibC::BRKINT|LibC::ISTRIP|LibC::ICRNL|LibC::IXON)
+          t[:c_oflag] |= LibC::OPOST
+          t[:c_lflag] |= (LibC::ECHO|LibC::ECHOE|LibC::ECHOK|LibC::ECHONL|LibC::ICANON|LibC::ISIG|LibC::IEXTEN)
         end
       end
 
       def echo=(echo)
         ttymode do |t|
           if echo
-            t[:c_lflag] |= (ECHO | ECHOE | ECHOK | ECHONL)
+            t[:c_lflag] |= (LibC::ECHO | LibC::ECHOE | LibC::ECHOK | LibC::ECHONL)
           else
-            t[:c_lflag] &= ~(ECHO | ECHOE | ECHOK | ECHONL)
+            t[:c_lflag] &= ~(LibC::ECHO | LibC::ECHOE | LibC::ECHOK | LibC::ECHONL)
           end
         end
       end
 
       def echo?
-        (ttymode[:c_lflag] & (ECHO | ECHONL)) != 0
+        (ttymode[:c_lflag] & (LibC::ECHO | LibC::ECHONL)) != 0
       end
 
       def noecho(&block)
-        ttymode_yield(block) { |t| t[:c_lflag] &= ~(ECHO | ECHOE | ECHOK | ECHONL) }
+        ttymode_yield(block) { |t| t[:c_lflag] &= ~(LibC::ECHO | LibC::ECHOE | LibC::ECHOK | LibC::ECHONL) }
       end
 
       def getch(*)
@@ -263,32 +271,36 @@ if RbConfig::CONFIG['host_os'].downcase =~ /darwin/
       end
 
       def winsize
-        ws = Winsize.new
-        if _ioctl(fileno, TIOCGWINSZ, :pointer, ws.pointer) != 0
+        ws = LibC::Winsize.new
+        if LibC.ioctl(fileno, LibC::TIOCGWINSZ, :pointer, ws.pointer) != 0
           raise SystemCallError.new("ioctl(TOCGWINSZ)", FFI.errno)
         end
         [ ws[:ws_row], ws[:ws_col] ]
       end
 
       def winsize=(size)
-        ws = Winsize.new
+        ws = LibC::Winsize.new
+        if LibC.ioctl(fileno, LibC::TIOCGWINSZ, :pointer, ws.pointer) != 0
+          raise SystemCallError.new("ioctl(TOCGWINSZ)", FFI.errno)
+        end
+
         ws[:ws_row] = size[0]
         ws[:ws_col] = size[1]
-        if _ioctl(fileno, TIOCSWINSZ, :pointer, ws.pointer) != 0
+        if LibC.ioctl(fileno, LibC::TIOCSWINSZ, :pointer, ws.pointer) != 0
           raise SystemCallError.new("ioctl(TOCSWINSZ)", FFI.errno)
         end
       end
 
       def iflush
-        raise SystemCallError.new("tcflush(TCIFLUSH)", FFI.errno) unless tcflush(fileno, TCIFLUSH) == 0
+        raise SystemCallError.new("tcflush(TCIFLUSH)", FFI.errno) unless LibC.tcflush(fileno, LibC::TCIFLUSH) == 0
       end
 
       def oflush
-        raise SystemCallError.new("tcflush(TCOFLUSH)", FFI.errno) unless tcflush(fileno, TCOFLUSH) == 0
+        raise SystemCallError.new("tcflush(TCOFLUSH)", FFI.errno) unless LibC.tcflush(fileno, LibC::TCOFLUSH) == 0
       end
 
       def ioflush
-        raise SystemCallError.new("tcflush(TCIOFLUSH)", FFI.errno) unless tcflush(fileno, TCIOFLUSH) == 0
+        raise SystemCallError.new("tcflush(TCIOFLUSH)", FFI.errno) unless LibC.tcflush(fileno, LibC::TCIOFLUSH) == 0
       end
     end
     true
