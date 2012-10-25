@@ -169,11 +169,13 @@ public class SSLSocket extends RubyObject {
             throw newSSLError(runtime, "called a function you should not call");
         }
         try {
-            ossl_ssl_setup();
-            engine.setUseClientMode(true);
-            engine.beginHandshake();
-            hsStatus = engine.getHandshakeStatus();
-            initialHandshake = true;
+            if (!initialHandshake) {
+                ossl_ssl_setup();
+                engine.setUseClientMode(true);
+                engine.beginHandshake();
+                hsStatus = engine.getHandshakeStatus();
+                initialHandshake = true;
+            }
             doHandshake(blocking);
         } catch(SSLHandshakeException e) {
             // unlike server side, client should close outbound channel even if
@@ -214,24 +216,26 @@ public class SSLSocket extends RubyObject {
         }
         try {
             int vfy = 0;
-            ossl_ssl_setup();
-            engine.setUseClientMode(false);
-            if(!rubyCtx.isNil() && !rubyCtx.callMethod(context,"verify_mode").isNil()) {
-                vfy = RubyNumeric.fix2int(rubyCtx.callMethod(context,"verify_mode"));
-                if(vfy == 0) { //VERIFY_NONE
-                    engine.setNeedClientAuth(false);
-                    engine.setWantClientAuth(false);
+            if (!initialHandshake) {
+                ossl_ssl_setup();
+                engine.setUseClientMode(false);
+                if(!rubyCtx.isNil() && !rubyCtx.callMethod(context,"verify_mode").isNil()) {
+                    vfy = RubyNumeric.fix2int(rubyCtx.callMethod(context,"verify_mode"));
+                    if(vfy == 0) { //VERIFY_NONE
+                        engine.setNeedClientAuth(false);
+                        engine.setWantClientAuth(false);
+                    }
+                    if((vfy & 1) != 0) { //VERIFY_PEER
+                        engine.setWantClientAuth(true);
+                    }
+                    if((vfy & 2) != 0) { //VERIFY_FAIL_IF_NO_PEER_CERT
+                        engine.setNeedClientAuth(true);
+                    }
                 }
-                if((vfy & 1) != 0) { //VERIFY_PEER
-                    engine.setWantClientAuth(true);
-                }
-                if((vfy & 2) != 0) { //VERIFY_FAIL_IF_NO_PEER_CERT
-                    engine.setNeedClientAuth(true);
-                }
+                engine.beginHandshake();
+                hsStatus = engine.getHandshakeStatus();
+                initialHandshake = true;
             }
-            engine.beginHandshake();
-            hsStatus = engine.getHandshakeStatus();
-            initialHandshake = true;
             doHandshake(blocking);
         } catch(SSLHandshakeException e) {
             throw SSL.newSSLError(runtime, e);
@@ -367,7 +371,7 @@ public class SSLSocket extends RubyObject {
     }
 
     private void doHandshake(boolean blocking) throws IOException {
-        while (blocking && true) {
+        while (true) {
             SSLEngineResult res;
             boolean ready = waitSelect(SelectionKey.OP_READ | SelectionKey.OP_WRITE, blocking);
 
