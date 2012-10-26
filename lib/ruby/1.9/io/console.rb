@@ -28,6 +28,9 @@ if RbConfig::CONFIG['host_os'].downcase =~ /darwin|openbsd|freebsd|netbsd|linux/
 
     elsif RbConfig::CONFIG['host_os'].downcase =~ /linux/
       require File.join(File.dirname(__FILE__), 'linux_console')
+
+    else
+      raise LoadError.new("no native io/console support")
     end
 
     class IO
@@ -49,7 +52,7 @@ if RbConfig::CONFIG['host_os'].downcase =~ /darwin|openbsd|freebsd|netbsd|linux/
 
       def ttymode_yield(block, &setup)
         begin
-          orig_termios = ttymode &setup
+          orig_termios = ttymode { |t| setup.call(t) }
           block.call(self)
         ensure
           if orig_termios && LibC.tcsetattr(fileno, LibC::TCSADRAIN, orig_termios) != 0
@@ -145,8 +148,13 @@ if RbConfig::CONFIG['host_os'].downcase =~ /darwin|openbsd|freebsd|netbsd|linux/
     end
     true
   rescue Exception => ex
-    $stderr.puts "failed to load native termios support: #{ex}"
-    false
+    warn "failed to load native console support: #{ex}" if $VERBOSE
+    begin
+      `stty 2> /dev/null`
+      $?.exitstatus != 0
+    rescue Exception
+      nil
+    end
   end
 else
   result = begin
@@ -216,28 +224,38 @@ elsif !IO.method_defined?:ttymode
 
   # Non-Windows assumes stty command is available
   class IO
+    if RbConfig::CONFIG['host_os'].downcase =~ /linux/ && File.exists?("/proc/#{Process.pid}/fd")
+      def stty(*args)
+        `stty #{args.join(' ')} < /proc/#{Process.pid}/fd/#{fileno}`
+      end
+    else
+      def stty(*args)
+        `stty #{args.join(' ')}`
+      end
+    end
+
     def raw(*)
-      saved = `stty -g`
-      `stty raw`
+      saved = stty('-g')
+      stty('raw')
       yield self
     ensure
-      `stty #{saved}`
+      stty(saved)
     end
 
     def raw!(*)
-      `stty raw`
+      stty('raw')
     end
 
     def cooked(*)
-      saved = `stty -g`
-      `stty cooked`
+      saved = stty('-g')
+      stty('-raw')
       yield self
     ensure
-      `stty #{saved}`
+      stty(saved)
     end
 
     def cooked!(*)
-      `stty -raw`
+      stty('-raw')
     end
 
     def getch(*)
@@ -245,19 +263,19 @@ elsif !IO.method_defined?:ttymode
     end
 
     def echo=(echo)
-      `stty #{echo ? 'echo' : '-echo'}`
+      stty(echo ? 'echo' : '-echo')
     end
 
     def echo?
-      (`stty -a` =~ (/ -echo /)) ? false : true
+      (stty('-a') =~ / -echo /) ? false : true
     end
 
     def noecho
-      saved = `stty -g`
-      `stty -echo`
+      saved = stty('-g')
+      stty('-echo')
       yield self
     ensure
-      `stty #{saved}`
+      stty(saved)
     end
 
     # Not all systems return same format of stty -a output
@@ -265,12 +283,12 @@ elsif !IO.method_defined?:ttymode
     UBUNTU = 'rows (?<rows>\d+); columns (?<columns>\d+)'
 
     def winsize
-      match = `stty -a`.match(/#{IEEE_STD_1003_2}|#{UBUNTU}/)
+      match = stty('-a').match(/#{IEEE_STD_1003_2}|#{UBUNTU}/)
       [match[:rows].to_i, match[:columns].to_i]
     end
 
     def winsize=(size)
-      `stty rows #{size[0]} cols #{size[1]}`
+      stty("rows #{size[0]} cols #{size[1]}")
     end
 
     def iflush
