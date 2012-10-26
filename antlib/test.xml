@@ -2,7 +2,6 @@
 <project basedir="..">
     <import file="../build.xml"/>
     
-    <property name="maxpermgen.arg" value=""/>
     <condition property="maxpermgen.arg" value="-XX:MaxPermSize=${jruby.test.memory.permgen}">
       <not>
         <matches string="${java.version}" pattern="^1\.8"/>
