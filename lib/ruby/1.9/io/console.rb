@@ -61,42 +61,40 @@ if RbConfig::CONFIG['host_os'].downcase =~ /darwin|openbsd|freebsd|netbsd|linux/
         end
       end
 
+      TTY_RAW = Proc.new do |t|
+        LibC.cfmakeraw(t)
+        t[:c_lflag] &= ~(LibC::ECHOE|LibC::ECHOK)
+      end
+
       def raw(*, &block)
-        ttymode_yield(block) do |t|
-          LibC.cfmakeraw(t)
-          t[:c_lflag] &= ~(LibC::ECHOE|LibC::ECHOK)
-        end
+        ttymode_yield(block, &TTY_RAW)
       end
 
       def raw!(*)
-        ttymode do |t|
-          LibC.cfmakeraw(t)
-          t[:c_lflag] &= ~(LibC::ECHOE|LibC::ECHOK)
-        end
+        ttymode(&TTY_RAW)
+      end
+
+      TTY_COOKED = Proc.new do |t|
+        t[:c_iflag] |= (LibC::BRKINT|LibC::ISTRIP|LibC::ICRNL|LibC::IXON)
+        t[:c_oflag] |= LibC::OPOST
+        t[:c_lflag] |= (LibC::ECHO|LibC::ECHOE|LibC::ECHOK|LibC::ECHONL|LibC::ICANON|LibC::ISIG|LibC::IEXTEN)
       end
 
       def cooked(*, &block)
-        ttymode_yield(block) do |t|
-          t[:c_iflag] |= (LibC::BRKINT|LibC::ISTRIP|LibC::ICRNL|LibC::IXON)
-          t[:c_oflag] |= LibC::OPOST
-          t[:c_lflag] |= (LibC::ECHO|LibC::ECHOE|LibC::ECHOK|LibC::ECHONL|LibC::ICANON|LibC::ISIG|LibC::IEXTEN)
-        end
+        ttymode_yield(block, &TTY_COOKED)
       end
 
       def cooked!(*)
-        ttymode do |t|
-          t[:c_iflag] |= (LibC::BRKINT|LibC::ISTRIP|LibC::ICRNL|LibC::IXON)
-          t[:c_oflag] |= LibC::OPOST
-          t[:c_lflag] |= (LibC::ECHO|LibC::ECHOE|LibC::ECHOK|LibC::ECHONL|LibC::ICANON|LibC::ISIG|LibC::IEXTEN)
-        end
+        ttymode(&TTY_COOKED)
       end
 
+      TTY_ECHO = LibC::ECHO | LibC::ECHOE | LibC::ECHOK | LibC::ECHONL
       def echo=(echo)
         ttymode do |t|
           if echo
-            t[:c_lflag] |= (LibC::ECHO | LibC::ECHOE | LibC::ECHOK | LibC::ECHONL)
+            t[:c_lflag] |= TTY_ECHO
           else
-            t[:c_lflag] &= ~(LibC::ECHO | LibC::ECHOE | LibC::ECHOK | LibC::ECHONL)
+            t[:c_lflag] &= ~TTY_ECHO
           end
         end
       end
@@ -106,7 +104,7 @@ if RbConfig::CONFIG['host_os'].downcase =~ /darwin|openbsd|freebsd|netbsd|linux/
       end
 
       def noecho(&block)
-        ttymode_yield(block) { |t| t[:c_lflag] &= ~(LibC::ECHO | LibC::ECHOE | LibC::ECHOK | LibC::ECHONL) }
+        ttymode_yield(block) { |t| t[:c_lflag] &= ~(TTY_ECHO) }
       end
 
       def getch(*)
