@@ -14,12 +14,17 @@
   $Id$
 =end
 
-require 'openssl.jar'
+# Attempt to load the gem first
+begin
+  require 'jruby-openssl'
+rescue LoadError
+  # Not available, use built-in
+  require 'openssl.jar'
 
-require 'openssl/bn'
-require 'openssl/cipher'
-require 'openssl/config'
-require 'openssl/digest'
-require 'openssl/ssl-internal'
-require 'openssl/x509-internal'
-
+  require 'openssl/bn'
+  require 'openssl/cipher'
+  require 'openssl/config'
+  require 'openssl/digest'
+  require 'openssl/ssl-internal'
+  require 'openssl/x509-internal'
+end
