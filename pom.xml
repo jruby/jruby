@@ -5,7 +5,7 @@
   <groupId>org.jruby</groupId>
   <artifactId>shared</artifactId>
   <packaging>pom</packaging>
-  <version>1.7.0</version>
+  <version>1.7.1.dev</version>
   <name>JRuby Shared</name>
   <url>http://www.jruby.org/</url>
   <description>A 1.9.3 compatible Ruby interpreter for the JVM</description>
@@ -95,7 +95,7 @@
     <dependency>
       <groupId>org.apache.ant</groupId>
       <artifactId>ant</artifactId>
-      <version>1.7.0</version>
+      <version>1.7.1.dev</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>
