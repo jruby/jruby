@@ -2,7 +2,7 @@ require 'openssl'
 require "test/unit"
 
 class TestParseCertificate < Test::Unit::TestCase
-  CERT = File.dirname(__FILE__) + '/cert_with_ec_pk.cer'
+  CERT = File.join(File.dirname(__FILE__), 'fixture/cert_with_ec_pk.cer')
 
   def test_certificate_parse_works_with_ec_pk_cert
     cer = OpenSSL::X509::Certificate.new(File.read(CERT))

@@ -33,7 +33,7 @@ class TestCertificate < Test::Unit::TestCase
   end
 
   # JRUBY-3468
-  def test_jruby3468
+  def test_cert_extensions
     pem_cert = <<END
 -----BEGIN CERTIFICATE-----
 MIIC/jCCAmegAwIBAgIBATANBgkqhkiG9w0BAQUFADBNMQswCQYDVQQGEwJKUDER
@@ -63,7 +63,7 @@ END
       case ext.oid
       when "keyUsage"
         assert_equal true, crit
-        assert_equal "Key Cert Sign, cRLSign", value
+        assert_equal "Certificate Sign, CRL Sign", value
       when "basicConstraints"
         assert_equal true, crit
         assert_equal "CA:TRUE", value

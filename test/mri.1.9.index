@@ -61,17 +61,21 @@ externals/ruby1.9/nkf/test_nkf
 externals/ruby1.9/openssl/test_asn1
 externals/ruby1.9/openssl/test_bn
 externals/ruby1.9/openssl/test_buffering
+externals/ruby1.9/openssl/test_certificate
 externals/ruby1.9/openssl/test_cipher
 externals/ruby1.9/openssl/test_config
 externals/ruby1.9/openssl/test_digest
 # OpenSSL::PKey::EC not defined
-#externals/ruby1.9/openssl/test_ec.rb
+#externals/ruby1.9/openssl/test_ec
 # OpenSSL::Engine not defined
-#externals/ruby1.9/openssl/test_engine.rb
+#externals/ruby1.9/openssl/test_engine
 externals/ruby1.9/openssl/test_hmac
+externals/ruby1.9/openssl/test_imaps
+externals/ruby1.9/openssl/test_integration
 externals/ruby1.9/openssl/test_ns_spki
 # OpenSSL::OCSP not defined
 #externals/ruby1.9/openssl/test_ocsp
+externals/ruby1.9/openssl/test_parse_certificate
 externals/ruby1.9/openssl/test_pair
 # OpenSSL::PKCS12 not implemented
 #externals/ruby1.9/openssl/test_pkcs12
