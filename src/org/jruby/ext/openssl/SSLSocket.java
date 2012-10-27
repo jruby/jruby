@@ -12,7 +12,7 @@
  * rights and limitations under the License.
  *
  * Copyright (C) 2006, 2007 Ola Bini <ola@ologix.com>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -81,7 +81,7 @@ public class SSLSocket extends RubyObject {
     };
 
     private static RubyObjectAdapter api = JavaEmbedUtils.newObjectAdapter();
-    
+
     public static void createSSLSocket(Ruby runtime, RubyModule mSSL) {
         RubyClass cSSLSocket = mSSL.defineClassUnder("SSLSocket",runtime.getObject(),SSLSOCKET_ALLOCATOR);
         cSSLSocket.addReadWriteAttribute(runtime.getCurrentContext(), "io");
@@ -96,7 +96,7 @@ public class SSLSocket extends RubyObject {
         super(runtime,type);
         verifyResult = X509Utils.V_OK;
     }
-    
+
     public static RaiseException newSSLError(Ruby runtime, String message) {
         return Utils.newError(runtime, "OpenSSL::SSL::SSLError", message, false);
     }
@@ -109,14 +109,14 @@ public class SSLSocket extends RubyObject {
     private ByteBuffer peerNetData;
     private ByteBuffer netData;
     private ByteBuffer dummy;
-    
+
     private boolean initialHandshake = false;
-	
+
     private SSLEngineResult.HandshakeStatus hsStatus;
     private SSLEngineResult.Status status = null;
 
     int verifyResult;
-    
+
     @JRubyMethod(name = "initialize", rest = true, frame = true)
     public IRubyObject _initialize(IRubyObject[] args, Block unused) {
         if (Arity.checkArgumentCount(getRuntime(), args, 1, 2) == 1) {
@@ -148,7 +148,7 @@ public class SSLSocket extends RubyObject {
             engine = rubyCtx.createSSLEngine(peerHost, peerPort);
             SSLSession session = engine.getSession();
             peerNetData = ByteBuffer.allocate(session.getPacketBufferSize());
-            peerAppData = ByteBuffer.allocate(session.getApplicationBufferSize());		
+            peerAppData = ByteBuffer.allocate(session.getApplicationBufferSize());
             netData = ByteBuffer.allocate(session.getPacketBufferSize());
             peerNetData.limit(0);
             peerAppData.limit(0);
@@ -439,7 +439,7 @@ public class SSLSocket extends RubyObject {
         verifyResult = rubyCtx.getLastVerifyResult();
     }
 
-    private boolean flushData() throws IOException {		
+    private boolean flushData() throws IOException {
         try {
             writeToChannel(netData);
         } catch (IOException ioe) {
@@ -452,7 +452,7 @@ public class SSLSocket extends RubyObject {
             return true;
         }
     }
-    
+
     private int writeToChannel(ByteBuffer buffer) throws IOException {
         int totalWritten = 0;
         while (buffer.hasRemaining()) {
@@ -525,7 +525,7 @@ public class SSLSocket extends RubyObject {
         if(res.getHandshakeStatus() == SSLEngineResult.HandshakeStatus.FINISHED) {
             finishInitialHandshake();
         }
-        if(peerAppData.position() == 0 && 
+        if(peerAppData.position() == 0 &&
             res.getStatus() == SSLEngineResult.Status.OK &&
             peerNetData.hasRemaining()) {
             res = engine.unwrap(peerNetData, peerAppData);
@@ -577,7 +577,7 @@ public class SSLSocket extends RubyObject {
         Ruby runtime = context.runtime;
         int len = RubyNumeric.fix2int(args[0]);
         RubyString str = null;
-        
+
         if (args.length == 2 && !args[1].isNil()) {
             str = args[1].convertToString();
         } else {
@@ -624,7 +624,7 @@ public class SSLSocket extends RubyObject {
     public IRubyObject sysread(ThreadContext context, IRubyObject[] args) {
         return do_sysread(context, args, false);
     }
-    
+
     @JRubyMethod(rest = true, required = 1, optional = 1)
     public IRubyObject sysread_nonblock(ThreadContext context, IRubyObject[] args) {
         return do_sysread(context, args, true);
@@ -784,7 +784,7 @@ public class SSLSocket extends RubyObject {
     public synchronized IRubyObject session_set(IRubyObject aSession) {
         throw new UnsupportedOperationException();
     }
-    
+
     private SocketChannel getSocketChannel() {
         return (SocketChannel) io.getChannel();
     }
