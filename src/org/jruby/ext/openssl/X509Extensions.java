@@ -623,11 +623,11 @@ public class X509Extensions {
                         sep = ", ";
                     }
                     if ((b1 & (byte) 4) != 0) {
-                        sbe.append(sep).append("Key Cert Sign");
+                        sbe.append(sep).append("Certificate Sign");
                         sep = ", ";
                     }
                     if ((b1 & (byte) 2) != 0) {
-                        sbe.append(sep).append("cRLSign");
+                        sbe.append(sep).append("CRL Sign");
                         sep = ", ";
                     }
                     if ((b1 & (byte) 1) != 0) {
