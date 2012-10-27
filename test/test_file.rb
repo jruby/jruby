@@ -108,6 +108,15 @@ class TestFile < Test::Unit::TestCase
       assert_equal "C:/temp", File.dirname("C:/temp/foobar.txt")
     end
 
+	def test_windows_network_path
+	
+		assert_equal("\\\\network\\share", File.dirname("\\\\network\\share\\file.bat"))
+		assert_equal("\\\\network\\share", File.dirname("\\\\network\\share"))
+		assert_equal("\\\\localhost\\c$", File.dirname("\\\\localhost\\c$\\boot.bat"))
+		assert_equal("\\\\localhost\\c$", File.dirname("\\\\localhost\\c$"))
+	
+	end
+
     def test_expand_path_windows
       assert_equal("C:/", File.expand_path("C:/"))
       assert_equal("C:/dir", File.expand_path("C:/dir"))

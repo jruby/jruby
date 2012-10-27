@@ -43,12 +43,21 @@ public class HtmlProfilePrinter extends ProfilePrinter {
       super(profileData, topInvocation);
   }
 
-  @Override
-  public void printProfile(PrintStream out) {
-    final Invocation topInvocation = getTopInvocation();
+  public void printHeader(PrintStream out) {
     out.println(head);
     out.println("<body>");
-    out.println("<h1>Profile Report</h1>");
+  }
+
+  public void printFooter(PrintStream out) {
+    out.println("</body>");
+    out.println("</html>");
+  }
+
+  @Override
+  public void printProfile(PrintStream out, boolean first) {
+    final Invocation topInvocation = getTopInvocation();
+    
+    out.printf("<h1>Profile Report: %s</h1>\n", getThreadName());
     out.println("<h3>Total time: " + nanoString(topInvocation.getDuration()) + "</h3>");
 
     out.println("<table>\n" +
@@ -131,9 +140,6 @@ public class HtmlProfilePrinter extends ProfilePrinter {
       }
     }
     out.println("</table>");
-
-    out.println("</body>");
-    out.println("</html>");
   }
 
   private void printInvocationOfChild(PrintStream out, IntHashMap<MethodData> methods, MethodData data, int childSerial, String callerName, InvocationSet invs) {
