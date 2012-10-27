@@ -115,6 +115,7 @@ import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.runtime.profile.ProfileData;
 import org.jruby.runtime.profile.ProfilePrinter;
 import org.jruby.runtime.profile.ProfiledMethod;
+import org.jruby.runtime.profile.ProfileOutput;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.threading.DaemonThreadFactory;
 import org.jruby.util.ByteList;
@@ -2944,9 +2945,8 @@ public final class Ruby {
 
         if (config.isProfilingEntireRun()) {
             // not using logging because it's formatted
-            System.err.println("\nmain thread profile results:");
             ProfileData profileData = threadService.getMainThread().getContext().getProfileData();
-            printProfileData(profileData, System.err);
+            printProfileData(profileData);
         }
 
         if (systemExit && status != 0) {
@@ -2959,13 +2959,25 @@ public final class Ruby {
      * @param profileData
      * @param out
      * @see RubyInstanceConfig#getProfilingMode()
+     * @deprecated use printProfileData(ProfileData) or printProfileData(ProfileData,ProfileOutput)
      */
     public void printProfileData(ProfileData profileData, PrintStream out) {
-        ProfilePrinter profilePrinter = ProfilePrinter.newPrinter(config.getProfilingMode(), profileData);
-        if (profilePrinter != null) profilePrinter.printProfile(out);
-        else out.println("\nno printer for profile mode: " + config.getProfilingMode() + " !");
+        printProfileData(profileData, new ProfileOutput(out));
     }
-    
+
+    public void printProfileData(ProfileData profileData) {
+        printProfileData(profileData, config.getProfileOutput());
+    }
+
+    public void printProfileData(ProfileData profileData, ProfileOutput output) {
+        ProfilePrinter profilePrinter = ProfilePrinter.newPrinter(config.getProfilingMode(), profileData);
+        if (profilePrinter != null) {
+            output.printProfile(profilePrinter);
+        } else {
+            out.println("\nno printer for profile mode: " + config.getProfilingMode() + " !");
+        }
+    }
+
     // new factory methods ------------------------------------------------------------------------
 
     public RubyArray newEmptyArray() {
