@@ -78,7 +78,7 @@ public class RubyGC {
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject enable(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.runtime;
-        emptyImplementationWarning(runtime, "GC.enable");
+        emptyImplementationWarning(runtime, ID.GC_ENABLE_UNIMPLEMENTED, "GC.enable");
         boolean old = gcDisabled;
         gcDisabled = false;
         return runtime.newBoolean(old);
@@ -87,7 +87,7 @@ public class RubyGC {
     @JRubyMethod(module = true, visibility = PRIVATE)
     public static IRubyObject disable(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.runtime;
-        emptyImplementationWarning(runtime, "GC.disable");
+        emptyImplementationWarning(runtime, ID.GC_DISABLE_UNIMPLEMENTED, "GC.disable");
         boolean old = gcDisabled;
         gcDisabled = true;
         return runtime.newBoolean(old);
@@ -101,7 +101,7 @@ public class RubyGC {
     @JRubyMethod(name = "stress=", module = true, visibility = PRIVATE)
     public static IRubyObject stress_set(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         Ruby runtime = context.runtime;
-        emptyImplementationWarning(runtime, "GC.stress=");
+        emptyImplementationWarning(runtime, ID.GC_STRESS_UNIMPLEMENTED, "GC.stress=");
         stress = arg.isTrue();
         return runtime.newBoolean(stress);
     }
@@ -119,8 +119,8 @@ public class RubyGC {
         }
     }
 
-    private static void emptyImplementationWarning(Ruby runtime, String name) {
-        runtime.getWarnings().warn(ID.EMPTY_IMPLEMENTATION,
+    private static void emptyImplementationWarning(Ruby runtime, ID id, String name) {
+        runtime.getWarnings().warnOnce(id,
                 name + " does nothing on JRuby");
     }
 }

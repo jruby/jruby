@@ -93,7 +93,10 @@ public interface IRubyWarnings {
         NON_PERSISTENT_JAVA_PROXY,
         LISTEN_SERVER_SOCKET,
         PROFILE_MAX_METHODS_EXCEEDED,
-        UNSUPPORTED_SUBPROCESS_OPTION;
+        UNSUPPORTED_SUBPROCESS_OPTION,
+        GC_STRESS_UNIMPLEMENTED,
+        GC_ENABLE_UNIMPLEMENTED,
+        GC_DISABLE_UNIMPLEMENTED;
         
         public String getID() {
             return name();
