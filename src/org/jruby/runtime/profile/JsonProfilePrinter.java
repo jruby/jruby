@@ -44,26 +44,32 @@ public class JsonProfilePrinter extends ProfilePrinter {
         super(profileData, topInvocation);
     }
 
-    public void printProfile(PrintStream out) {
+    public void printHeader(PrintStream out) {
+        out.println("{\n\thread_profiles:[");
+    }
+
+    public void printFooter(PrintStream out) {
+        out.println("\n\t]\n}");
+    }
+
+    public void printProfile(PrintStream out, boolean first) {
         Invocation topInvocation = getTopInvocation();
         IntHashMap<MethodData> methods = methodData(topInvocation);
-        String threadName = null;
+        String threadName = getThreadName();
 
-        if (getProfileData().getThreadContext().getThread() == null) {
-            threadName = Thread.currentThread().getName();
-        } else {
-            threadName = getProfileData().getThreadContext().getThread().getNativeThread().getName();
+        if (!first) {
+            out.println(",");
         }
 
-        out.println("{");
-        out.printf("\t\"total_time\":%s,\n", nanosToSecondsString(topInvocation.getDuration()));
-        out.printf("\t\"thread_name\":\"%s\",\n", threadName);
-        out.println("\t\"methods\":[");
+        out.println("\t\t{");
+        out.printf("\t\t\t\"total_time\":%s,\n", nanosToSecondsString(topInvocation.getDuration()));
+        out.printf("\t\t\t\"thread_name\":\"%s\",\n", threadName);
+        out.println("\t\t\t\"methods\":[");
 
         Iterator<MethodData> i = methods.values().iterator();
         while (i.hasNext()) {
             MethodData method = i.next();
-            out.print("\t\t");
+            out.print("\t\t\t\t");
             out.print(methodToJson(method));
             if (i.hasNext()) {
                 out.print(",");
@@ -71,7 +77,7 @@ public class JsonProfilePrinter extends ProfilePrinter {
             out.println();
         }
 
-        out.print("\t]\n}\n");
+        out.print("\t\t\t]\n\t\t}");
     }
 
     private String methodToJson(MethodData method) {

@@ -40,10 +40,19 @@ public class GraphProfilePrinter extends ProfilePrinter {
     GraphProfilePrinter(ProfileData profileData, Invocation topInvocation) {
         super(profileData, topInvocation);
     }
+
+    public void printHeader(PrintStream out) {
+        out.printf("\n%s profile results:\n", getThreadName());
+    }
     
-    public void printProfile(PrintStream out) {
+    public void printProfile(PrintStream out, boolean first) {
         final Invocation topInvocation = getTopInvocation();
-        out.printf("\nTotal time: %s\n\n", nanoString(topInvocation.getDuration()));
+        
+        if (!first) {
+            out.println();
+        }
+        
+        out.printf("Total time: %s\n\n", nanoString(topInvocation.getDuration()));
 
         out.println(" %total   %self       total        self    children                 calls  name");
 

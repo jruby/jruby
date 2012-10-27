@@ -47,7 +47,7 @@ public abstract class ProfilePrinter {
      * @param mode the profiling mode
      * @param profileData
      * @param runtime
-     * @see Ruby#printProfileData(org.jruby.runtime.profile.ProfileData, java.io.PrintStream)  
+     * @see Ruby#printProfileData(org.jruby.runtime.profile.ProfileData)  
      */
     public static ProfilePrinter newPrinter(ProfilingMode mode, ProfileData profileData) {
         return newPrinter(mode, profileData, null);
@@ -93,8 +93,15 @@ public abstract class ProfilePrinter {
     protected Invocation getTopInvocation() {
         return topInvocation;
     }
+
+    public void printHeader(PrintStream out) { }
+    public void printFooter(PrintStream out) { }
     
-    public abstract void printProfile(PrintStream out) ;
+    public void printProfile(PrintStream out) {
+        printProfile(out, false);
+    }
+
+    public abstract void printProfile(PrintStream out, boolean first) ;
 
     public void printProfile(RubyIO out) {
         printProfile(new PrintStream(out.getOutStream()));
@@ -112,6 +119,14 @@ public abstract class ProfilePrinter {
         final String name = methodName(serial);
         return ( name.hashCode() == start.hashCode() && name.equals(start) ) ||
                ( name.hashCode() == stop.hashCode() && name.equals(stop) );
+    }
+
+    public String getThreadName() {
+        if (getProfileData().getThreadContext().getThread() == null) {
+            return Thread.currentThread().getName();
+        } else {
+            return getProfileData().getThreadContext().getThread().getNativeThread().getName();
+        }
     }
 
     public String methodName(int serial) {
