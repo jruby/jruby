@@ -1139,23 +1139,36 @@ public class IRBuilder {
         m.addInstr(new JumpInstr(rEndLabel));
         m.addInstr(new ExceptionRegionEndMarkerInstr());
 
-        // Rescue code
-        Label uncaughtLabel = m.getNewLabel();
-        Variable exc = m.getNewTemporaryVariable();
-        Variable eqqResult = m.getNewTemporaryVariable();
+        // SSS FIXME: Create an 'Exception' operand type to eliminate the constant lookup below
+        // We could preload a set of constant objects that are preloaded at boot time and use them
+        // directly in IR when we know there is no lookup involved.
+        //
+        // new Operand type: CachedClass(String name)?
+        //
+        // Some candidates: Exception, StandardError, Fixnum, Object, Boolean, etc.
+        // So, when they are referenced, they are fetched directly from the runtime object
+        // which probably already has cached references to these constants.
+        //
+        // But, unsure if this caching is safe ... so, just an idea here for now.
 
+        // Rescue code
+        Label caughtLabel = m.getNewLabel();
+        Variable exc = m.getNewTemporaryVariable();
+        Variable excType = m.getNewTemporaryVariable();
+
+        // Receive 'exc' and verify that 'exc' is of ruby-type 'Exception'
         m.addInstr(new LabelInstr(rescueLabel));
         m.addInstr(new ReceiveExceptionInstr(exc));
-        // Verify that the exception is of type 'RubyException'.
-        // Since this is JRuby implementation Java code, we dont need EQQ here.
-        // SSS FIXME: Hardcoded exception class name!
-        m.addInstr(new InstanceOfInstr(eqqResult, exc, "org.jruby.RubyException")); 
-        m.addInstr(BEQInstr.create(eqqResult, manager.getFalse(), uncaughtLabel));
+        m.addInstr(new InheritanceSearchConstInstr(excType, new ObjectClass(), "Exception", false));
+        outputExceptionCheck(m, excType, exc, caughtLabel);
+
+        // Fall-through when the exc !== Exception; rethrow 'exc'
+        m.addInstr(new ThrowExceptionInstr(exc));
+
+        // exc === Exception; Run the rescue block
+        m.addInstr(new LabelInstr(caughtLabel));
         Object v2 = rescueBlock.run(rescueBlockArgs); // YIELD: Run the protected code block
         if (v2 != null) m.addInstr(new CopyInstr(rv, manager.getNil()));
-        m.addInstr(new JumpInstr(rEndLabel));
-        m.addInstr(new LabelInstr(uncaughtLabel));
-        m.addInstr(new ThrowExceptionInstr(exc));
 
         // End
         m.addInstr(new LabelInstr(rEndLabel));

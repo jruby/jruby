@@ -606,11 +606,6 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
-    public void InstanceOfInstr(InstanceOfInstr instanceofinstr) {
-        super.InstanceOfInstr(instanceofinstr);    //To change body of overridden methods use File | Settings | File Templates.
-    }
-
-    @Override
     public void InstanceSuperInstr(InstanceSuperInstr instancesuperinstr) {
         super.InstanceSuperInstr(instancesuperinstr);    //To change body of overridden methods use File | Settings | File Templates.
     }

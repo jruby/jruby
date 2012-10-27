@@ -107,7 +107,6 @@ public abstract class IRVisitor {
     public void GetGlobalVariableInstr(GetGlobalVariableInstr getglobalvariableinstr) { error(getglobalvariableinstr); }
     public void GVarAliasInstr(GVarAliasInstr gvaraliasinstr) { error(gvaraliasinstr); }
     public void InheritanceSearchConstInstr(InheritanceSearchConstInstr inheritancesearchconstinstr) { error(inheritancesearchconstinstr); }
-    public void InstanceOfInstr(InstanceOfInstr instanceofinstr) { error(instanceofinstr); }
     public void InstanceSuperInstr(InstanceSuperInstr instancesuperinstr) { error(instancesuperinstr); }
     public void Instr(Instr instr) { error(instr); }
     public void JumpIndirectInstr(JumpIndirectInstr jumpindirectinstr) { error(jumpindirectinstr); }
