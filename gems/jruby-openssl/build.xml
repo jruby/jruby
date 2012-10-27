@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project basedir="." default="build" name="jopenssl">
+  <property environment="env"/>
+  <property file="build.properties"/>
+
+  <property name="src.java" value="src/java"/>
+  <property name="target" value="target"/>
+  <property name="target.classes" value="${target}/classes"/>
+  <property name="target.classes.test" value="${target}/test-classes"/>
+  <property name="lib.dir" value="lib"/>
+  <property name="build_lib.dir" value="build_lib"/>
+  <property name="jruby.jar" value="${jruby.home}/lib/jruby.jar"/>
+  <property name="version.source" value="1.5"/>
+  <property name="version.target" value="1.5"/>
+
+  <path id="build.classpath">
+    <fileset dir="${lib.dir}" includes="*.jar" excludes="jopenssl.jar,jruby.jar"/>
+    <fileset dir="${build_lib.dir}" includes="*.jar"/>
+    <pathelement location="${jruby.jar}"/>
+  </path>
+
+  <target name="init">
+    <mkdir dir="${target}"/>
+    <mkdir dir="${target.classes}"/>
+  </target>
+
+  <target name="clean">
+    <delete dir="target"/>
+  </target>
+
+  <target depends="init" name="build" description="Compiles Java source files">
+    <javac debug="true" includeAntRuntime="false" destdir="${target.classes}" source="${version.source}" target="${version.target}">
+      <classpath refid="build.classpath"/>
+      <src path="${src.java}"/>
+    </javac>
+  </target>
+
+  <target depends="build" name="jar" description="Build a JAR file with the generated Java class files">
+    <path id="bcpath">
+      <fileset dir="${build_lib.dir}" includes="bc*.jar"/>
+    </path>
+    <pathconvert property="bcjars" pathsep=" " refid="bcpath">
+      <map from="${basedir}/${build_lib.dir}/" to=""/>
+    </pathconvert>
+    <jar destfile="${lib.dir}/shared/jopenssl.jar" basedir="${target.classes}">
+      <manifest>
+        <attribute name="Built-By" value="${user.name}"/>
+        <attribute name="Class-Path" value="${bcjars}"/>
+      </manifest>
+    </jar>
+  </target>
+
+  <target name="load-rake-task">
+    <taskdef name="rake" classname="org.jruby.ant.Rake" classpath="${jruby.jar}" />
+  </target>
+
+  <target name="test" depends="jar,load-rake-task">
+    <rake task="test"/>
+  </target>
+</project>

@@ -72,10 +72,10 @@
         <include name="jruby.bnd.template"/>
         <include name="pom.xml"/>
         <include name="maven/**"/>
-        <include name="gem/**"/>
-        <exclude name="gem/pkg/**"/>
-        <exclude name="gem/lib/jruby*.jar"/>
-        <exclude name="gem/lib/jruby-jars/**"/>
+        <include name="gems/jruby-jars/**"/>
+        <exclude name="gems/jruby-jars/pkg/**"/>
+        <exclude name="gems/jruby-jars/lib/jruby*.jar"/>
+        <exclude name="gems/jruby-jars/lib/jruby-jars/**"/>
         <exclude name="lib/jruby*.jar"/>
     </patternset>
 
@@ -112,7 +112,7 @@
                 <!-- So repeated ant dists won't include extra cext copies -->
                 <exclude name="dist/**"/>
                 <exclude name="build/**"/>
-                <exclude name="gem/**"/>
+                <exclude name="gems/jruby-jars/**"/>
                 <patternset refid="dist.jruby-cext-native.files"/>
             </fileset>
         </copy>
@@ -255,11 +255,12 @@
     </target>
 
     <target name="dist-gem" depends="install-dev-gems,dist-jar-complete">
-        <rake task="gem"/>
+        <rake task="gem:jruby-jars"/>
+        <rake task="gem:jruby-openssl"/>
     </target>
 
     <target name="dist-clean">
         <delete dir="${dist.dir}"/>
-        <delete dir="gem/pkg"/>
+        <delete dir="gem/jruby-jars/pkg"/>
     </target>
 </project>

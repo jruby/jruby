@@ -5,12 +5,12 @@ require 'hoe'
 
 task :default => :package
 
-JRUBY_SRC_VERSION = IO.readlines("../default.build.properties").detect {|l| l =~ /^version\.jruby=(.*)/} && $1
+JRUBY_SRC_VERSION = IO.readlines("../../default.build.properties").detect {|l| l =~ /^version\.jruby=(.*)/} && $1
 
 file 'pkg/jruby-complete-#{JRUBY_SRC_VERSION}.jar' => "pkg" do
   pkg_dir = File.expand_path('pkg')
   fail "Run `ant dist' first to create complete jar" unless File.exist?("../dist/jruby-complete-#{JRUBY_SRC_VERSION}.jar")
-  cp "../dist/jruby-complete-#{JRUBY_SRC_VERSION}.jar", pkg_dir
+  cp "../../dist/jruby-complete-#{JRUBY_SRC_VERSION}.jar", pkg_dir
 end
 
 desc "Run to update jars and versions"
@@ -18,7 +18,7 @@ task :update => 'pkg/jruby-complete-#{JRUBY_SRC_VERSION}.jar' do
   rm_f 'lib/*.jar'
   %w(pkg/jruby-core pkg/jruby-stdlib/META-INF).each {|d| rm_rf d; mkdir_p d }
   Dir.chdir("pkg/jruby-core") do
-    sh "jar xf ../jruby-complete-#{JRUBY_SRC_VERSION}.jar"
+    sh "jar xf ../../jruby-complete-#{JRUBY_SRC_VERSION}.jar"
     mv "META-INF/jruby.home", "../jruby-stdlib/META-INF"
     rm_rf "cext"
   end
