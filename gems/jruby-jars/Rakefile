@@ -9,7 +9,7 @@ JRUBY_SRC_VERSION = IO.readlines("../../default.build.properties").detect {|l| l
 
 file 'pkg/jruby-complete-#{JRUBY_SRC_VERSION}.jar' => "pkg" do
   pkg_dir = File.expand_path('pkg')
-  fail "Run `ant dist' first to create complete jar" unless File.exist?("../dist/jruby-complete-#{JRUBY_SRC_VERSION}.jar")
+  fail "Run `ant dist' first to create complete jar" unless File.exist?("../../dist/jruby-complete-#{JRUBY_SRC_VERSION}.jar")
   cp "../../dist/jruby-complete-#{JRUBY_SRC_VERSION}.jar", pkg_dir
 end
 
@@ -18,7 +18,8 @@ task :update => 'pkg/jruby-complete-#{JRUBY_SRC_VERSION}.jar' do
   rm_f 'lib/*.jar'
   %w(pkg/jruby-core pkg/jruby-stdlib/META-INF).each {|d| rm_rf d; mkdir_p d }
   Dir.chdir("pkg/jruby-core") do
-    sh "jar xf ../../jruby-complete-#{JRUBY_SRC_VERSION}.jar"
+    puts Dir.pwd
+    sh "jar xf ../../../../dist/jruby-complete-#{JRUBY_SRC_VERSION}.jar"
     mv "META-INF/jruby.home", "../jruby-stdlib/META-INF"
     rm_rf "cext"
   end
@@ -58,6 +59,6 @@ Hoe.plugin :gemcutter
 Hoe.spec('jruby-jars') do |p|
   p.version = JRUBY_SRC_VERSION.downcase
   p.rubyforge_name = 'jruby-extras'
-  p.url = 'http://github.com/jruby/jruby/tree/master/gem/'
+  p.urls = ['http://github.com/jruby/jruby/tree/master/gem/']
   p.developer('Charles Oliver Nutter', 'headius@headius.com')
 end
