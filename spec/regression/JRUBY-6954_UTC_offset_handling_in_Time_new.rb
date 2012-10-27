@@ -4,7 +4,7 @@ if RUBY_VERSION >= "1.9"
       t1 = Time.new(2012, 10, 19, nil, nil, nil, "-05:00")
       t2 = Time.new(2012, 10, 19, nil, nil, nil, "+03:00")
 
-      t1.utc_offset.should == -14400
+      t1.utc_offset.should == -18000
       t2.utc_offset.should == 10800
     end
   end
