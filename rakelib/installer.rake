@@ -19,6 +19,10 @@ task :installer => [:macos_installer, :windows_installer]
 
 task :macos_installer do
   next unless RbConfig::CONFIG['target_os'] =~ /darwin/
+  if `uname -r`.to_f >= 12 # Darwin 12 = "Mountain Lion"
+    warn "Mountain Lion is not supported yet."
+    next
+  end
 
   pkgmaker_dirs = `mdfind "kMDItemDisplayName=='PackageMaker*'"`.chomp.split
   pkgmaker_apps = pkgmaker_dirs.map{|d| File.join(d, 'Contents', 'MacOS', 'PackageMaker')}.select{|f| File.exists? f}
