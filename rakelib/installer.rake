@@ -21,9 +21,12 @@ task :macos_installer do
   next unless RbConfig::CONFIG['target_os'] =~ /darwin/
   if `uname -r`.to_f >= 12 # Darwin 12 = "Mountain Lion"
     Dir.chdir "#{BASE_DIR}/dist" do
+      pkg_file = "jruby-#{VERSION_JRUBY}.pkg"
       puts "Building Mountain Lion package"
       sh "pkgbuild --identifier org.jruby.pkg --install-location /Applications/jruby \\
-        --version #{VERSION_JRUBY} --root jruby-bin-#{VERSION_JRUBY} jruby-#{VERSION_JRUBY}.pkg"
+        --version #{VERSION_JRUBY} --root jruby-bin-#{VERSION_JRUBY} #{pkg_file}"
+      sh "md5 -q #{pkg_file} > #{pkg_file}.md5"
+      sh "openssl sha1 #{pkg_file} | cut -f2 -d' ' > #{pkg_file}.sha1"
     end
     next
   end
