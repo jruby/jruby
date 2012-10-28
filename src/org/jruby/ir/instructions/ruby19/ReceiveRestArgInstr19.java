@@ -56,12 +56,12 @@ public class ReceiveRestArgInstr19 extends ReceiveRestArgBase {
     private IRubyObject[] NO_PARAMS = new IRubyObject[0];    
     public IRubyObject receiveRestArg(Ruby runtime, IRubyObject[] parameters) {
         IRubyObject[] args;
-        int numAvalableArgs = parameters.length - (totalRequiredArgs + totalOptArgs);
-        if (numAvalableArgs <= 0) {
+        int numAvailableArgs = parameters.length - (totalRequiredArgs + totalOptArgs);
+        if (numAvailableArgs <= 0) {
             args = NO_PARAMS;
         } else {
-            args = new IRubyObject[numAvalableArgs];
-            System.arraycopy(parameters, argIndex, args, 0, numAvalableArgs);
+            args = new IRubyObject[numAvailableArgs];
+            System.arraycopy(parameters, argIndex, args, 0, numAvailableArgs);
         }
 
         return runtime.newArray(args);

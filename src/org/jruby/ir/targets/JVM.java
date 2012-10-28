@@ -27,7 +27,6 @@ public class JVM {
     private static final Logger LOG = LoggerFactory.getLogger("IRBuilder");
     
     Stack<ClassData> clsStack = new Stack();
-    List<ClassData> clsAccum = new ArrayList();
     ClassWriter writer;
 
     public JVM() {

@@ -26,9 +26,9 @@ import java.math.BigInteger;
  * </pre>
  */      
 public class Fixnum extends ImmutableLiteral {
-    final public Long value;
+    final public long value;
 
-    public Fixnum(Long val) {
+    public Fixnum(long val) {
         value = val;
     }
 
@@ -75,7 +75,7 @@ public class Fixnum extends ImmutableLiteral {
         visitor.Fixnum(this);
     }
 
-    public Long getValue() {
+    public long getValue() {
         return value;
     }
 }

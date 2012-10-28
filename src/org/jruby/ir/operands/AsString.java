@@ -43,6 +43,10 @@ public class AsString extends Operand {
         return "#{" + source + "}";
     }
 
+    public Operand getSource() {
+        return source;
+    }
+
     @Override
     public void visit(IRVisitor visitor) {
         visitor.AsString(this);

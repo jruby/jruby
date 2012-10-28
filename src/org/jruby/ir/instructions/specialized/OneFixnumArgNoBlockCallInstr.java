@@ -18,7 +18,7 @@ public class OneFixnumArgNoBlockCallInstr extends CallInstr {
         
         assert getCallArgs().length == 1;
         
-        this.arg1 = ((Fixnum) getCallArgs()[0]).value.longValue();        
+        this.arg1 = ((Fixnum) getCallArgs()[0]).value;
     }
     
     @Override

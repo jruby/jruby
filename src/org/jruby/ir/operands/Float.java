@@ -4,9 +4,9 @@ import org.jruby.ir.IRVisitor;
 import org.jruby.runtime.ThreadContext;
 
 public class Float extends ImmutableLiteral {
-    final public Double value;
+    final public double value;
 
-    public Float(Double value) {
+    public Float(double value) {
         this.value = value;
     }
 
@@ -26,8 +26,8 @@ public class Float extends ImmutableLiteral {
     }
 
     public Operand computeValue(String methodName, Operand arg) {
-        Double v1 = value;
-        Double v2 = (arg instanceof Fixnum) ? 1.0 * ((Fixnum)arg).value : (Double)((Float)arg).value;
+        double v1 = value;
+        double v2 = (arg instanceof Fixnum) ? 1.0 * ((Fixnum)arg).value : (double)((Float)arg).value;
 
         if (methodName.equals("+")) {
             return new Float(v1 + v2);
@@ -45,5 +45,9 @@ public class Float extends ImmutableLiteral {
     @Override
     public void visit(IRVisitor visitor) {
         visitor.Float(this);
+    }
+
+    public double getValue() {
+        return value;
     }
 }
