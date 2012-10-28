@@ -20,7 +20,11 @@ task :installer => [:macos_installer, :windows_installer]
 task :macos_installer do
   next unless RbConfig::CONFIG['target_os'] =~ /darwin/
   if `uname -r`.to_f >= 12 # Darwin 12 = "Mountain Lion"
-    warn "Mountain Lion is not supported yet."
+    Dir.chdir "#{BASE_DIR}/dist" do
+      puts "Building Mountain Lion package"
+      sh "pkgbuild --identifier org.jruby.pkg --install-location /Applications/jruby \\
+        --version #{VERSION_JRUBY} --root jruby-bin-#{VERSION_JRUBY} jruby-#{VERSION_JRUBY}.pkg"
+    end
     next
   end
 
