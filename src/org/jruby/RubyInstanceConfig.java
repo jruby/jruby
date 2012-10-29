@@ -39,6 +39,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.lang.NumberFormatException;
+import java.math.BigDecimal;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1575,21 +1577,34 @@ public class RubyInstanceConfig {
     
     public static final boolean USE_INVOKEDYNAMIC;
     static {
+        String vmName = SafePropertyAccessor.getProperty("java.vm.name", "").toLowerCase();
         boolean isHotspot =
-                SafePropertyAccessor.getProperty("java.vm.name", "").toLowerCase().contains("hotspot") ||
-                        SafePropertyAccessor.getProperty("java.vm.name", "").toLowerCase().contains("openjdk");
+                vmName.contains("hotspot") ||
+                        vmName.toLowerCase().contains("openjdk");
 
-        String version = SafePropertyAccessor.getProperty("java.specification.version", "1.6");
-        
-        if (isHotspot && version.equals("1.7")) {
-            // if on OpenJDK 7, on by default unless turned off
-            // TODO: turned off temporarily due to the lack of 100% working OpenJDK7 indy support
-            USE_INVOKEDYNAMIC = Options.COMPILE_INVOKEDYNAMIC.load() && Options.COMPILE_INVOKEDYNAMIC.isSpecified();
-        } else if (isHotspot && version.equals("1.8")) {
-            // OpenJDK 8 will have the new 100% working logic soon, so we enable by default
+        String vmVersionString = SafePropertyAccessor.getProperty("java.vm.version", "");
+        String javaVersion = SafePropertyAccessor.getProperty("java.specification.version", "");
+        int version;
+        try {
+            version = Integer.parseInt(vmVersionString.substring(0, 2));
+        } catch (NumberFormatException nfe) {
+            version = -1;
+        }
+
+        if (isHotspot) {
+            if (version < 24) {
+                // if on HotSpot version prior to 24, off by default unless turned on
+                // TODO: turned off temporarily due to the lack of 100% working OpenJDK7 indy support
+                USE_INVOKEDYNAMIC = Options.COMPILE_INVOKEDYNAMIC.load() && Options.COMPILE_INVOKEDYNAMIC.isSpecified();
+            } else {
+                // Hotspot >= 24 will has the new working indy logic, so we enable by default
+                USE_INVOKEDYNAMIC = Options.COMPILE_INVOKEDYNAMIC.load();
+            }
+        } else if (new BigDecimal(javaVersion).compareTo(new BigDecimal("1.7")) >= 0){
+            // if not on HotSpot, on if specification version supports indy
             USE_INVOKEDYNAMIC = Options.COMPILE_INVOKEDYNAMIC.load();
         } else {
-            // if not on Java 7, on only if explicitly turned on
+            // on only if forced
             USE_INVOKEDYNAMIC = Options.COMPILE_INVOKEDYNAMIC.load() && Options.COMPILE_INVOKEDYNAMIC.isSpecified();
         }
     }
