@@ -368,10 +368,13 @@ public class JavaClass extends JavaObject {
             }
         }
 
-        // modified only by addMethod; no synchronization required
         @Override
         boolean hasLocalMethod () {
             return haveLocalMethod;
+        }
+
+        void setLocalMethod(boolean b) {
+            haveLocalMethod = b;
         }
     }
 
@@ -1026,11 +1029,23 @@ public class JavaClass extends JavaObject {
             }
         }
         for (Map.Entry<String, NamedInstaller> entry : state.instanceCallbacks.entrySet()) {
-            // no aliases for __method methods
-            if (entry.getKey().endsWith("__method")) continue;
-            
-            if (entry.getValue().type == NamedInstaller.INSTANCE_METHOD && entry.getValue().hasLocalMethod()) {
-                assignAliases((MethodInstaller) entry.getValue(), state.instanceNames);
+            if (entry.getValue().type == NamedInstaller.INSTANCE_METHOD) {
+                MethodInstaller methodInstaller = (MethodInstaller)entry.getValue();
+
+                // no aliases for __method methods
+                if (entry.getKey().endsWith("__method")) continue;
+
+                if (methodInstaller.hasLocalMethod()) {
+                    assignAliases(methodInstaller, state.instanceNames);
+                }
+
+                // JRUBY-6967: Types with java.lang.Comparable were using Ruby Comparable#== instead of dispatching directly to
+                // java.lang.Object.equals. We force an alias here to ensure we always use equals.
+                if (entry.getKey().equals("equals")) {
+                    // we only install "local" methods, but need to force this so it will bind
+                    methodInstaller.setLocalMethod(true);
+                    methodInstaller.addAlias("==");
+                }
             }
         }
     }
