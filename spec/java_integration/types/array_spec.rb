@@ -155,6 +155,10 @@ describe "A Java primitive Array of type" do
       arr = [1, 2, 3].to_java :byte
       arr.inspect.should =~ /^byte\[1, 2, 3\]@[0-9a-f]+$/
     end
+
+    it "makes an ascii 8 bit string on to_s" do
+      [86, 87].to_java(:byte).to_s.should == "VW"
+    end
   end
 
   describe "char" do 
