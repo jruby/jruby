@@ -147,9 +147,9 @@ public class RubyBigDecimal extends RubyNumeric {
         return bigDecimal;
     }
 
-    private boolean isNaN = false;
-    private int infinitySign = 0;
-    private int zeroSign = 0;
+    private final boolean isNaN;
+    private final int infinitySign;
+    private final int zeroSign;
     private BigDecimal value;
 
     public BigDecimal getValue() {
@@ -158,15 +158,57 @@ public class RubyBigDecimal extends RubyNumeric {
 
     public RubyBigDecimal(Ruby runtime, RubyClass klass) {
         super(runtime, klass);
+        this.isNaN = false;
+        this.infinitySign = 0;
+        this.zeroSign = 0;
     }
 
     public RubyBigDecimal(Ruby runtime, BigDecimal value) {
         super(runtime, runtime.getClass("BigDecimal"));
+        this.isNaN = false;
+        this.infinitySign = 0;
+        this.zeroSign = 0;
+        this.value = value;
+    }
+
+    public RubyBigDecimal(Ruby runtime, RubyClass klass, BigDecimal value) {
+        super(runtime, klass);
+        this.isNaN = false;
+        this.infinitySign = 0;
+        this.zeroSign = 0;
+        this.value = value;
+    }
+
+    public RubyBigDecimal(Ruby runtime, BigDecimal value, int infinitySign) {
+        super(runtime, runtime.getClass("BigDecimal"));
+        this.isNaN = false;
+        this.infinitySign = infinitySign;
+        this.zeroSign = 0;
+        this.value = value;
+    }
+
+    public RubyBigDecimal(Ruby runtime, BigDecimal value, int infinitySign, int zeroSign) {
+        super(runtime, runtime.getClass("BigDecimal"));
+        this.isNaN = false;
+        this.infinitySign = infinitySign;
+        this.zeroSign = zeroSign;
+        this.value = value;
+    }
+
+    public RubyBigDecimal(Ruby runtime, BigDecimal value, boolean isNan) {
+        super(runtime, runtime.getClass("BigDecimal"));
+        this.isNaN = isNan;
+        this.infinitySign = 0;
+        this.zeroSign = 0;
         this.value = value;
     }
 
     public RubyBigDecimal(Ruby runtime, RubyBigDecimal rbd) {
-        super(runtime, runtime.getClass("BigDecimal"));
+        this(runtime, runtime.getClass("BigDecimal"), rbd);
+    }
+
+    public RubyBigDecimal(Ruby runtime, RubyClass klass, RubyBigDecimal rbd) {
+        super(runtime, klass);
         this.isNaN = rbd.isNaN;
         this.infinitySign = rbd.infinitySign;
         this.zeroSign = rbd.zeroSign;
@@ -515,7 +557,7 @@ public class RubyBigDecimal extends RubyNumeric {
 
             if (runtime.is1_9()) {
                 if (args[0] instanceof RubyBigDecimal) {
-                    return new RubyBigDecimal(runtime, ((RubyBigDecimal)args[0]));
+                    return new RubyBigDecimal(runtime, (RubyClass)recv, ((RubyBigDecimal)args[0]));
                 } else if (args[0] instanceof RubyFloat || args[0] instanceof RubyRational) {
                     if (args.length != 2) {
                         // float input must be accompanied by precision
@@ -527,7 +569,7 @@ public class RubyBigDecimal extends RubyNumeric {
                         if (context.getPrecision() > RubyFloat.DIG + 1) {
                             throw runtime.newArgumentError("precision too large");
                         }
-                        return new RubyBigDecimal(runtime, new BigDecimal(((RubyFloat)args[0]).getDoubleValue(), context));
+                        return new RubyBigDecimal(runtime, (RubyClass)recv, new BigDecimal(((RubyFloat)args[0]).getDoubleValue(), context));
                     } else {
                         RubyRational rat = (RubyRational)args[0];
 
@@ -539,9 +581,9 @@ public class RubyBigDecimal extends RubyNumeric {
                         return new RubyBigDecimal(runtime, value);
                     }
                 } else if (args[0] instanceof RubyFixnum) {
-                    return new RubyBigDecimal(runtime, new BigDecimal(((RubyFixnum)args[0]).getLongValue(), context));
+                    return new RubyBigDecimal(runtime, (RubyClass)recv, new BigDecimal(((RubyFixnum)args[0]).getLongValue(), context));
                 } else if (args[0] instanceof RubyBignum) {
-                    return new RubyBigDecimal(runtime, new BigDecimal(((RubyBignum)args[0]).getBigIntegerValue(), context));
+                    return new RubyBigDecimal(runtime, (RubyClass)recv, new BigDecimal(((RubyBignum)args[0]).getBigIntegerValue(), context));
                 }
                 // fall through to String coercion below
             }
@@ -588,16 +630,17 @@ public class RubyBigDecimal extends RubyNumeric {
                 }
             }
         }
-        return new RubyBigDecimal(runtime, decimal);
+        return new RubyBigDecimal(runtime, (RubyClass)recv, decimal);
     }
 
     private static RubyBigDecimal newZero(Ruby runtime, int sign) {
-        RubyBigDecimal rbd =  new RubyBigDecimal(runtime, BigDecimal.ZERO);
+        int zeroSign;
         if (sign < 0) {
-            rbd.zeroSign = -1;
+            zeroSign = -1;
         } else {
-            rbd.zeroSign = 1;
+            zeroSign = 1;
         }
+        RubyBigDecimal rbd =  new RubyBigDecimal(runtime, BigDecimal.ZERO, 0, zeroSign);
         return rbd;
     }
 
@@ -605,20 +648,20 @@ public class RubyBigDecimal extends RubyNumeric {
         if (isNaNExceptionMode(runtime)) {
             throw runtime.newFloatDomainError("Computation results to 'NaN'(Not a Number)");
         }
-        RubyBigDecimal rbd =  new RubyBigDecimal(runtime, BigDecimal.ZERO);
-        rbd.isNaN = true;
+        RubyBigDecimal rbd =  new RubyBigDecimal(runtime, BigDecimal.ZERO, true);
         return rbd;
     }
     
     private static RubyBigDecimal newInfinity(Ruby runtime, int sign) {
-        RubyBigDecimal rbd =  new RubyBigDecimal(runtime, BigDecimal.ZERO);
+        int infinitySign;
+        if (sign < 0) {
+            infinitySign = -1;
+        } else {
+            infinitySign = 1;
+        }
+        RubyBigDecimal rbd =  new RubyBigDecimal(runtime, BigDecimal.ZERO, infinitySign);
         if (isInfinityExceptionMode(runtime)) {
             throw runtime.newFloatDomainError("Computation results to 'Infinity'");
-        }
-        if (sign < 0) {
-            rbd.infinitySign = -1;
-        } else {
-            rbd.infinitySign = 1;
         }
         return rbd;
     }
