@@ -1421,7 +1421,7 @@ public class RubyIO extends RubyObject {
         }
     }
     
-    protected boolean waitWritable(Stream stream) {
+    private boolean waitWritable(Stream stream) {
         Channel ch = stream.getChannel();
         if (ch instanceof SelectableChannel) {
             getRuntime().getCurrentContext().getThread().select(ch, this, SelectionKey.OP_WRITE);
@@ -1430,7 +1430,7 @@ public class RubyIO extends RubyObject {
         return false;
     }
 
-    protected boolean waitReadable(Stream stream) {
+    private boolean waitReadable(Stream stream) {
         if (stream.readDataBuffered()) {
             return true;
         }

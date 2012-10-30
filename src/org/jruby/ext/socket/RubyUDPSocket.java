@@ -235,8 +235,6 @@ public class RubyUDPSocket extends RubyIPSocket {
             RubyString data = _mesg.convertToString();
             ByteBuffer buf = ByteBuffer.wrap(data.getBytes());
 
-            waitWritable(openFile.getMainStream());
-
             written = ((DatagramChannel) this.getChannel()).write(buf);
 
             return runtime.newFixnum(written);
@@ -298,8 +296,6 @@ public class RubyUDPSocket extends RubyIPSocket {
 
             InetAddress address = SocketUtils.getRubyInetAddress(nameStr.getByteList());
             InetSocketAddress addr = new InetSocketAddress(address, port);
-
-            waitWritable(openFile.getMainStream());
 
             if (this.multicastStateManager == null) {
                 written = ((DatagramChannel) this.getChannel()).send(buf, addr);
@@ -451,8 +447,6 @@ public class RubyUDPSocket extends RubyIPSocket {
 
         ByteBuffer buf = ByteBuffer.allocate(length);
 
-        waitReadable(openFile.getMainStream());
-
         InetSocketAddress sender = (InetSocketAddress)channel.receive(buf);
 
         if (sender == null) {
@@ -484,8 +478,6 @@ public class RubyUDPSocket extends RubyIPSocket {
         DatagramPacket recv = new DatagramPacket(buf2, buf2.length);
 
         MulticastSocket ms = this.multicastStateManager.getMulticastSocket();
-
-        waitReadable(openFile.getMainStream());
 
         try {
             ms.receive(recv);
