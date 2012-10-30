@@ -1,0 +1,17 @@
+fails:Time.new creates a time based on given values, interpreted in the local time zone
+fails:Time.new respects rare old timezones
+fails:Time.new coerces the day with #to_int
+fails:Time.new coerces the hour with #to_int
+fails:Time.new coerces the minute with #to_int
+fails:Time.new coerces the second with #to_int
+fails:Time.new with a utc_offset argument returns a Time with a UTC offset of the specified number of Integer seconds
+fails:Time.new with a utc_offset argument returns a Time with a UTC offset of the specified number of Rational seconds
+fails:Time.new with a utc_offset argument returns a Time with a UTC offset specified as +HH:MM
+fails:Time.new with a utc_offset argument returns a local Time if the argument is nil
+fails:Time.new with a utc_offset argument raises ArgumentError if the String argument is not of the form (+|-)HH:MM
+fails:Time.new with a utc_offset argument raises ArgumentError if the String argument is not in an ASCII-compatible encoding
+fails:Time.new with a utc_offset argument raises ArgumentError if the argument represents a value less than or equal to -86400 seconds
+fails:Time.new with a utc_offset argument raises ArgumentError if the argument represents a value greater than or equal to 86400 seconds
+fails:Time.new with a utc_offset argument with an argument that responds to #to_int coerces using #to_int
+fails:Time.new with a utc_offset argument with an argument that responds to #to_r coerces using #to_r
+fails:Time.new with a utc_offset argument with an argument that responds to #to_str coerces using #to_str

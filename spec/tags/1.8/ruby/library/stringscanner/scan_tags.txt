@@ -1,0 +1,2 @@
+fails:StringScanner#scan returns the matched string for a multi byte string with KCODE
+fails:StringScanner#scan returns the matched string for a multi byte string with unicode regexp

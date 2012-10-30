@@ -1,0 +1,9 @@
+fails:Time#getlocal returns a Time with UTC offset specified as an Integer number of seconds
+fails:Time#getlocal returns a Time with a UTC offset of the specified number of Rational seconds
+fails:Time#getlocal returns a Time with a UTC offset specified as +HH:MM
+fails:Time#getlocal returns a Time with a UTC offset specified as -HH:MM
+fails:Time#getlocal raises ArgumentError if the argument represents a value less than or equal to -86400 seconds
+fails:Time#getlocal raises ArgumentError if the argument represents a value greater than or equal to 86400 seconds
+fails:Time#getlocal with an argument that responds to #to_int coerces using #to_int
+fails:Time#getlocal with an argument that responds to #to_r coerces using #to_r
+fails:Time#getlocal with an argument that responds to #to_str coerces using #to_str

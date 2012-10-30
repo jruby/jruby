@@ -21,3 +21,5 @@ fails(JRUBY-5661):Processing RUBYOPT raises a RuntimeError for '--copyright'
 fails(JRUBY-5661):Processing RUBYOPT raises a RuntimeError for '--version'
 fails(JRUBY-5661):Processing RUBYOPT raises a RuntimeError for '--yydebug'
 fails(unsupported):Execution variable $: does not include '.' when the taint check level > 1
+fails:Global variable $? is shared across threads
+fails:Global variable $0 raises a TypeError when not given an object that can be coerced to a String

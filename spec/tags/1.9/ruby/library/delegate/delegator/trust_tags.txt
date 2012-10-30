@@ -1,2 +1,4 @@
 fails(JRUBY-5671):Delegator#trust trusts the delegator
 fails(JRUBY-5671):Delegator#trust trusts the delegated object
+fails:Delegator#trust raises a SecurityError when modifying a trusted delegator
+fails:Delegator#trust raises a SecurityError when modifying a trusted delegate

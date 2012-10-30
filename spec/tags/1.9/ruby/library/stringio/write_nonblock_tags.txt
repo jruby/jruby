@@ -1,0 +1,10 @@
+fails:StringIO#write_nonblock when passed [Object] tries to convert the passed Object to a String using #to_s
+fails:StringIO#write_nonblock when passed [String] writes the passed String at the current buffer position
+fails:StringIO#write_nonblock when passed [String] pads self with \000 when the current position is after the end
+fails:StringIO#write_nonblock when passed [String] returns the number of bytes written
+fails:StringIO#write_nonblock when passed [String] updates self's position
+fails:StringIO#write_nonblock when passed [String] taints self's String when the passed argument is tainted
+fails:StringIO#write_nonblock when passed [String] does not taint self when the passed argument is tainted
+fails:StringIO#write_nonblock when self is not writable raises an IOError
+fails:StringIO#write_nonblock when in append mode appends the passed argument to the end of self
+fails:StringIO#write_nonblock when in append mode correctly updates self's position

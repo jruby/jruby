@@ -1,0 +1,3 @@
+fails:Array#shuffle attempts coercion via #to_hash
+fails:Array#shuffle uses default random generator
+fails:Array#shuffle uses given random generator

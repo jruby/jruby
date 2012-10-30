@@ -1,0 +1,3 @@
+fails:Regexp#options includes Regexp::FIXEDENCODING for a Regexp literal with the 'u' option
+fails:Regexp#options includes Regexp::FIXEDENCODING for a Regexp literal with the 'e' option
+fails:Regexp#options includes Regexp::NOENCODING for a Regexp literal with the 'n' option

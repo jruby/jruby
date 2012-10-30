@@ -3,3 +3,5 @@ fails:Float#to_s uses non-e format for a negative value with whole part having 1
 fails:Float#to_s outputs the minimal, unique form necessary to recreate the value
 fails:Float#to_s uses e format for a positive value with whole part having 16 decimal places
 fails:Float#to_s uses e format for a negative value with whole part having 16 decimal places
+fails:Float#to_s uses e format for a positive value with whole part having 18 significant figures
+fails:Float#to_s uses e format for a negative value with whole part having 18 significant figures

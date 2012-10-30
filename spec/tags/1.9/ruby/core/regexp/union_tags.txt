@@ -1,1 +1,5 @@
 fails(compiler):Regexp.union raises ArgumentError if the kcodes conflict
+fails:Regexp.union returns a Regexp with the encoding of multiple non-conflicting ASCII-incompatible String arguments
+fails:Regexp.union raises ArgumentError if the arguments include conflicting fixed encoding Regexps
+fails:Regexp.union raises ArgumentError if the arguments include a fixed encoding Regexp and a String containing non-ASCII-compatible characters in a different encoding
+fails:Regexp.union raises ArgumentError if the arguments include a String containing non-ASCII-compatible characters and a fixed encoding Regexp in a different encoding

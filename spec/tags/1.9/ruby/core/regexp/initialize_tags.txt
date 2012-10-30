@@ -1,0 +1,1 @@
+fails:Regexp#initialize raises a SecurityError on a Regexp literal

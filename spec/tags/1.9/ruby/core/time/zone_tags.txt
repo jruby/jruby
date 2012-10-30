@@ -1,0 +1,1 @@
+fails:Time#zone returns nil for a Time with a fixed offset

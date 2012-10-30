@@ -1,0 +1,1 @@
+fails:ENV.assoc returns the key element coerced with #to_str

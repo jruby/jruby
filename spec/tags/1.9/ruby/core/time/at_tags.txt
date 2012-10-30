@@ -1,0 +1,3 @@
+fails:Time.at passed non-Time, non-Numeric with an argument that responds to #to_r coerces using #to_r
+fails:Time.at with a second argument that responds to #to_r coerces using #to_r
+fails:Time.at passed [Time, Integer] returns a Time object equal to the specified time plus the number of microseconds

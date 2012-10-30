@@ -1,0 +1,1 @@
+fails:GC::Profiler.total_time returns an float

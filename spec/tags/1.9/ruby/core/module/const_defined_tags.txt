@@ -1,0 +1,1 @@
+fails:Module#const_defined? returns true if the constant is defined in Object and the receiver is a module

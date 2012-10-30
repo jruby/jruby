@@ -1,0 +1,7 @@
+fails:Time.mktime creates a time based on given values, interpreted in the local time zone
+fails:Time.mktime respects rare old timezones
+fails:Time.mktime creates a time based on given C-style gmtime arguments, interpreted in the local time zone
+fails:Time.mktime coerces the day with #to_int
+fails:Time.mktime coerces the hour with #to_int
+fails:Time.mktime coerces the minute with #to_int
+fails:Time.mktime coerces the second with #to_int

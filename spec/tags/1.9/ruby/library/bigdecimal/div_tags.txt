@@ -1,0 +1,4 @@
+fails:BigDecimal#div raises FloatDomainError if NaN is involved
+fails:BigDecimal#div returns 0 if divided by Infinity and no precision given
+fails:BigDecimal#div raises ZeroDivisionError if divided by zero and no precision given
+fails:BigDecimal#div raises FloatDomainError if (+|-) Infinity divided by 1 and no precision given

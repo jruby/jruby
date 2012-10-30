@@ -1,0 +1,1 @@
+fails:Method#to_proc should correct handle arguments (unwrap)

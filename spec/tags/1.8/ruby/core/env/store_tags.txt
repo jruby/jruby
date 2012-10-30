@@ -1,0 +1,3 @@
+fails:ENV.store returns the value
+fails:ENV.store fails silently when the key contains the '=' character
+fails:ENV.store fails silently when the key is an empty string

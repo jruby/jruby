@@ -3,3 +3,4 @@ fails:IO.write accepts a :mode option
 fails:IO.write raises an error if readonly mode is specified
 fails:IO.write uses encoding from given options, if provided
 fails:IO.write uses an :open_args option
+fails:IO.write doesn't truncate and writes at the given offset after passing empty opts

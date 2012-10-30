@@ -1,0 +1,1 @@
+fails:ENV.key returns the index associated with the passed value

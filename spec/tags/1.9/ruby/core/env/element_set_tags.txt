@@ -1,0 +1,3 @@
+fails:ENV.[]= returns the value
+fails:ENV.[]= raises Errno::EINVAL when the key contains the '=' character
+fails:ENV.[]= raises Errno::EINVAL when the key is an empty string

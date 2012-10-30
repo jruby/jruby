@@ -1,0 +1,1 @@
+fails:Regexp#fixed_encoding? returns true if the Regexp was created with the Regexp::FIXEDENCODING option

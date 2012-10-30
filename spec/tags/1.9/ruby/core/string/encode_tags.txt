@@ -12,3 +12,25 @@ fails:String#encode raises an Encoding::InvalidByteSequenceError for invalid byt
 fails:String#encode replaces undefined characters
 fails:String#encode! raises an Encoding::InvalidByteSequenceError for invalid byte sequences
 fails:String#encode! replaces undefined characters
+fails:String#encode raises ArgumentError if the value of the :xml option is not :text or :attr
+fails:String#encode given the :xml => :text option replaces all instances of '&' with '&amp;'
+fails:String#encode given the :xml => :text option replaces all instances of '<' with '&lt;'
+fails:String#encode given the :xml => :text option replaces all instances of '>' with '&gt;'
+fails:String#encode given the :xml => :text option replaces undefined characters with their upper-case hexadecimal numeric character references
+fails:String#encode given the :xml => :attr option surrounds the encoded text with double-quotes
+fails:String#encode given the :xml => :attr option replaces all instances of '&' with '&amp;'
+fails:String#encode given the :xml => :attr option replaces all instances of '<' with '&lt;'
+fails:String#encode given the :xml => :attr option replaces all instances of '>' with '&gt;'
+fails:String#encode given the :xml => :attr option replaces all instances of '"' with '&quot;'
+fails:String#encode given the :xml => :attr option replaces undefined characters with their upper-case hexadecimal numeric character references
+fails:String#encode! raises ArgumentError if the value of the :xml option is not :text or :attr
+fails:String#encode! given the :xml => :text option replaces all instances of '&' with '&amp;'
+fails:String#encode! given the :xml => :text option replaces all instances of '<' with '&lt;'
+fails:String#encode! given the :xml => :text option replaces all instances of '>' with '&gt;'
+fails:String#encode! given the :xml => :text option replaces undefined characters with their upper-case hexadecimal numeric character references
+fails:String#encode! given the :xml => :attr option surrounds the encoded text with double-quotes
+fails:String#encode! given the :xml => :attr option replaces all instances of '&' with '&amp;'
+fails:String#encode! given the :xml => :attr option replaces all instances of '<' with '&lt;'
+fails:String#encode! given the :xml => :attr option replaces all instances of '>' with '&gt;'
+fails:String#encode! given the :xml => :attr option replaces all instances of '"' with '&quot;'
+fails:String#encode! given the :xml => :attr option replaces undefined characters with their upper-case hexadecimal numeric character references

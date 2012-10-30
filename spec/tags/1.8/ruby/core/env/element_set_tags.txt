@@ -1,0 +1,3 @@
+fails:ENV.[]= returns the value
+fails:ENV.[]= fails silently when the key contains the '=' character
+fails:ENV.[]= fails silently when the key is an empty string

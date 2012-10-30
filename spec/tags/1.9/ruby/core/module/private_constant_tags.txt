@@ -1,0 +1,4 @@
+fails:Module#private_constant marked constants in a module cannot be reopened as a module
+fails:Module#private_constant marked constants in a module cannot be reopened as a class
+fails:Module#private_constant marked constants in a class cannot be reopened as a module
+fails:Module#private_constant marked constants in a class cannot be reopened as a class

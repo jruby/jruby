@@ -1,2 +1,3 @@
 fails:Process.detach returns a thread
 fails:Process.detach reaps the child process's status automatically
+fails:Process.detach produces the exit Process::Status as the thread value

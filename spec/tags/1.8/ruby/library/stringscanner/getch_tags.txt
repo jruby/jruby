@@ -1,0 +1,2 @@
+fails:StringScanner#getch scans one character and returns it
+fails:StringScanner#getch is multi-byte character sensitive

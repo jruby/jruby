@@ -1,0 +1,4 @@
+fails:Time.gm coerces the day with #to_int
+fails:Time.gm coerces the hour with #to_int
+fails:Time.gm coerces the minute with #to_int
+fails:Time.gm coerces the second with #to_int

@@ -1,0 +1,6 @@
+fails:StringIO#each_line when passed a separator returns at most limit characters when limit is positive
+fails:StringIO#each_line when passed a separator calls #to_int to convert a single argument if #to_str does not return a String
+fails:StringIO#each_line when passed a separator calls #to_int to convert the limit
+fails:StringIO#each_line when passed a separator calls #to_int to convert the limit when passed separator and limit
+fails:StringIO#each_line when passed a separator raises an ArgumentError if length is 0 and #each is called on the Enumerator
+fails:StringIO#each_line when passed a separator raises an ArgumentError if length is 0

@@ -1,0 +1,1 @@
+fails:The unpacking splat operator (*) returns a new array containing the same values when applied to an array inside an empty array

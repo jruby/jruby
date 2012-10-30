@@ -1,2 +1,4 @@
 fails:Process.abort terminates execution immediately
 fails:Process.abort raises a SystemExit with the given message
+fails:Process.abort sets the exception message to the given message
+fails:Process.abort coerces the argument with #to_str

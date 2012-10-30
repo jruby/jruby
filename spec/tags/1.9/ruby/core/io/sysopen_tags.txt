@@ -1,1 +1,2 @@
 fails:IO.sysopen works on directories
+fails:IO.sysopen accepts mode & permission that are nil

@@ -1,0 +1,12 @@
+fails:StringIO#ungetbyte returns nil
+fails:StringIO#ungetbyte returns nil and does not modify data if passed nil
+fails:StringIO#ungetbyte prepends the byte to the data before data is read
+fails:StringIO#ungetbyte preserves the prepended bytes when #rewind is called
+fails:StringIO#ungetbyte prepends byte to the data at the current position
+fails:StringIO#ungetbyte overwrites bytes in the data
+fails:StringIO#ungetbyte prepends a string to data before data is read
+fails:StringIO#ungetbyte prepends a string at the current position
+fails:StringIO#ungetbyte calls #to_str to convert an object to a String
+fails:StringIO#ungetbyte raises an IOError when the mode is not readable
+fails:StringIO#ungetbyte raises an IOError when read is closed
+fails:StringIO#ungetbyte does not change the encoding of the data

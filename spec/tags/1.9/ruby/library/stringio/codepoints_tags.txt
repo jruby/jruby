@@ -1,0 +1,7 @@
+fails:StringIO#codepoints returns an Enumerator
+fails:StringIO#codepoints yields each codepoint code in turn
+fails:StringIO#codepoints yields each codepoint starting from the current position
+fails:StringIO#codepoints raises an error if reading invalid sequence
+fails:StringIO#codepoints raises an IOError if not readable
+fails:StringIO#codepoints calls the given block
+fails:StringIO#codepoints returns self

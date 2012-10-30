@@ -1,0 +1,4 @@
+fails:Time.utc coerces the day with #to_int
+fails:Time.utc coerces the hour with #to_int
+fails:Time.utc coerces the minute with #to_int
+fails:Time.utc coerces the second with #to_int

@@ -1,0 +1,1 @@
+fails:IPAddr#new initializes IPAddr ipv4 mapped address with subnet mask

@@ -1,0 +1,3 @@
+fails:StringIO#readlines calls #to_int to convert the limit
+fails:StringIO#readlines calls #to_int to convert the limit when passed separator and limit
+fails:StringIO#readlines raises an ArgumentError when limit is 0

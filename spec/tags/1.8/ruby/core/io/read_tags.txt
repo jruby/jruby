@@ -1,2 +1,3 @@
 fails:IO.read from a pipe opens a pipe to a fork if the rest is -
 fails:IO.read from a pipe raises Errno::ESPIPE if passed an offset
+fails:IO#read trucates the buffer to the limit when no data remains

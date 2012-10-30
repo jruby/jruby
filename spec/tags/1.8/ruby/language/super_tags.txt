@@ -1,0 +1,1 @@
+fails:The super keyword passes empty args instead of modified rest args when they were originally empty

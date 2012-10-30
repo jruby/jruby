@@ -1,0 +1,50 @@
+* Decide a way to test methods that are only visible given a specific
+  command-line option. For example, Kernel#gsub with -n/-p on 1.9.
+* Decide how to guard bugs that are regressions. IOW, if a bug appears in 1.9
+  but not in 1.8, we should be able to guard it from 1.9 while still yielding
+  to 1.8.
+* Look at automating discovery of guarded bugs which have been fixed.  Use
+  mocks for all Math functions that coerce with #to_f; currently a fixture
+  is used.
+* Consider filing ticket about 1.8.6's ARGF#readlines returning nil at the end
+  of a stream. 1.8.7+ returns an empty Array, as the rdoc since 1.8.6 implies.
+* File ticket: $ ruby86 -e 'p ARGF.skip'
+  -e:1:in `skip': undefined method `close' for false:FalseClass (NoMethodError)
+  from -e:1 (Reported as bug #1653; update spec based on outcome).
+* Use the variable matchers which take into consideration the difference of the
+  returned type of variable name. Which is String on 1.8 and Symbol on 1.9.
+  Examples include: have_constant, have_instance_variable, etc.
+* Ascertain backport policy for 1.9.2 -> 1.9.1 -> 1.8.7. Are bug fixes merged
+  backwards by default, or is it all case by case? The answer will inform how
+  we handle ruby_bug guards that pass on HEAD, but fail on earlier versions.
+* Replace Infinity/NaN hacks with the new helpers.
+* Think about how we can support exhaustive tests of certain features.
+* Specify 'public' and 'protected' keywords.
+
+# Windows
+==========
+* Run core/kernel/require_spec.rb on Windows, check all tests pass; fix as
+  necessary.
+* Confirm that core/dir/home_spec.rb passes on Windows under 1.9.
+
+# 1.8
+=========
+* File ticket about Rational(1, 2) != Rational.new!(4, 8) on 1.8...
+
+# 1.9
+=========
+* Methods that could modify a frozen receiver should raise RuntimeError, even
+  if the method's arguments are such that no modification would occur.
+* The inclusion of 'rational' by default has resulted in ZeroDivisionErrors
+  being raised where they previously weren't. What is the rule of thumb in
+  determining whether this outcome is intentional?
+* Unify treatment of bugs after conversation with brixen. Bugs that occur only
+  in 1.9 shouldn't be guarded; we just tag them with the bug number, e.g. " mspec
+  tag --add 'fails(#555)' -e 'the failing stuff' path/to/spec".
+* Spec Ripper.
+* 1.9 defines methods such as instance_eval on BasicObject; not Kernel as in
+  1.8. Do we need to share these specs so that the methods are specified in
+  the correct place?
+* Determine how we're going to specify the vast Gem module...
+* Specify require_relative
+* Share Enumerable#join with Hash#join once Enumerable#join is more stable.
