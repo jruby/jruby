@@ -994,10 +994,18 @@ public class RubyThread extends RubyObject implements ExecutionContext {
         if (runtime.getSystemExit().isInstance(rubyException)) {
             runtime.getThreadService().getMainThread().raise(new IRubyObject[] {rubyException}, Block.NULL_BLOCK);
         } else if (abortOnException(runtime)) {
-            runtime.printError(rubyException);
-            RubyException systemExit = RubySystemExit.newInstance(runtime, 1);
-            systemExit.message = rubyException.message;
-            systemExit.set_backtrace(rubyException.backtrace());
+            RubyException systemExit;
+
+            if (!runtime.is1_9()) {
+                runtime.printError(rubyException);
+
+                systemExit = RubySystemExit.newInstance(runtime, 1);
+                systemExit.message = rubyException.message;
+                systemExit.set_backtrace(rubyException.backtrace());
+            } else {
+                systemExit = rubyException;
+            }
+
             runtime.getThreadService().getMainThread().raise(new IRubyObject[] {systemExit}, Block.NULL_BLOCK);
             return;
         } else if (runtime.getDebug().isTrue()) {
