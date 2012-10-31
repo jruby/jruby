@@ -485,8 +485,12 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         }
     }
 
-    public void shortcutAppend() {
-        invokeUtilityMethod("shortcutAppend", sig(RubyString.class, RubyString.class, IRubyObject.class));
+    public void shortcutAppend(boolean is19) {
+        if (is19) {
+            invokeUtilityMethod("shortcutAppend", sig(RubyString.class, RubyString.class, IRubyObject.class));
+        } else {
+            invokeUtilityMethod("shortcutAppend18", sig(RubyString.class, RubyString.class, IRubyObject.class));
+        }
     }
 
     public void stringToSymbol(boolean is19) {

@@ -72,7 +72,11 @@ public abstract class DNode extends ListNode {
             if (bodyNode == null) return;
 
             IRubyObject body = bodyNode.interpret(runtime, context, self, aBlock);
-            RuntimeHelpers.shortcutAppend(string, body);
+            if (is19()) {
+                RuntimeHelpers.shortcutAppend(string, body);
+            } else {
+                RuntimeHelpers.shortcutAppend18(string, body);
+            }
         } else if (is19()) {
             string.append19(node.interpret(runtime, context, self, aBlock));
         } else {

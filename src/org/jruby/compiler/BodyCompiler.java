@@ -158,7 +158,7 @@ public interface BodyCompiler {
      * A "shortcut" append that skips conversions to String where possible.
      * Same stack requirements as appendObject.
      */
-    public void shortcutAppend();
+    public void shortcutAppend(boolean is19);
 
     /**
      * Convert a String on stack to a Symbol

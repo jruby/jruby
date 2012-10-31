@@ -2762,6 +2762,14 @@ public class RuntimeHelpers {
         return target;
     }
 
+    public static RubyString shortcutAppend18(RubyString string, IRubyObject object) {
+        if (object instanceof RubyFixnum || object instanceof RubyFloat || object instanceof RubySymbol) {
+            return string.append(object);
+        } else {
+            return string.append(object.asString());
+        }
+    }
+
     public static RubyString shortcutAppend(RubyString string, IRubyObject object) {
         if (object instanceof RubyFixnum || object instanceof RubyFloat || object instanceof RubySymbol) {
             return string.append19(object);

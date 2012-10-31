@@ -1999,7 +1999,7 @@ public class ASTCompiler {
                         break;
                     case EVSTRNODE:
                         compile(((EvStrNode)nextNode).getBody(), context, true);
-                        context.shortcutAppend();
+                        context.shortcutAppend(dNode.is19());
                         break;
                     default:
                         compile(nextNode, context, true);
