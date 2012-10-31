@@ -31,6 +31,7 @@ import java.io.StringReader;
 import java.security.MessageDigest;
 
 import org.jruby.Ruby;
+import org.jruby.RubyIO;
 import org.jruby.RubyString;
 import org.jruby.ext.openssl.x509store.PEMInputOutput;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -61,8 +62,19 @@ public class OpenSSLImpl {
 
     public static byte[] readX509PEM(IRubyObject arg) {
         arg = to_der_if_possible(arg);
-        // TODO: should handle RubyFile
-        RubyString str = arg.convertToString();
+
+        RubyString str;
+        if (arg instanceof RubyIO) {
+            IRubyObject result = ((RubyIO)arg).read(arg.getRuntime().getCurrentContext());
+            if (result instanceof RubyString) {
+                str = (RubyString)result;
+            } else {
+                throw arg.getRuntime().newArgumentError("IO stream `" + arg.inspect() + "' contained no data");
+            }
+        } else {
+            str = arg.convertToString();
+        }
+        
         StringReader in = null;
         try {
             in = new StringReader(str.getUnicodeValue());
