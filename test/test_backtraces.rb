@@ -6,6 +6,8 @@ require 'test/unit'
 # Behavior of MRI 1.9 is different:
 # http://blade.nagaokaut.ac.jp/cgi-bin/scat.rb/ruby/ruby-core/15589
 class TestBacktraces < Test::Unit::TestCase
+  IS19 = RUBY_VERSION >= '1.9'
+
   def setup
     @offset = nil
   end
@@ -284,11 +286,15 @@ class TestBacktraces < Test::Unit::TestCase
       t.join
     }
 
-    assert_match /RuntimeError/, $stderr.string
-    assert_match /DUMMY_MSG/, $stderr.string
-    assert_match /test_backtraces.rb:#{@offset + 2}/m, $stderr.string
+    if IS19
+      assert_equal(RuntimeError, ex.class)
+    else
+      assert_match /RuntimeError/, $stderr.string
+      assert_match /DUMMY_MSG/, $stderr.string
+      assert_match /test_backtraces.rb:#{@offset + 2}/m, $stderr.string
 
-    assert_equal(SystemExit, ex.class)
+      assert_equal(SystemExit, ex.class)
+    end
 
     # This check is not fully MRI-compatible (MRI reports more frames),
     # but at list this is something.
