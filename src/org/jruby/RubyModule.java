@@ -2606,12 +2606,33 @@ public class RubyModule extends RubyObject {
     }
 
     @JRubyMethod(name = "const_get", required = 1, optional = 1, compat = CompatVersion.RUBY1_9)
-    public IRubyObject const_get(ThreadContext context, IRubyObject[] args) {
+    public IRubyObject const_get_1_9(ThreadContext context, IRubyObject[] args) {
         IRubyObject symbol = args[0];
         boolean inherit = args.length == 1 || (!args[1].isNil() && args[1].isTrue());
 
         // 1.9 only includes Object when inherit = true or unspecified (JRUBY-6224)
         return getConstant(validateConstant(symbol.asJavaString()), inherit, inherit);
+    }
+
+    @JRubyMethod(name = "const_get", required = 1, optional = 1, compat = CompatVersion.RUBY2_0)
+    public IRubyObject const_get_2_0(ThreadContext context, IRubyObject[] args) {
+        String symbol = args[0].asJavaString();
+        boolean inherit = args.length == 1 || (!args[1].isNil() && args[1].isTrue());
+
+        RubyModule mod = this;
+        int sep;
+        while((sep = symbol.indexOf("::")) != -1) {
+            String segment = symbol.substring(0, sep);
+            symbol = symbol.substring(sep + 2);
+            IRubyObject obj = mod.getConstant(validateConstant(segment), inherit, inherit);
+            if(obj instanceof RubyModule) {
+                mod = (RubyModule)obj;
+            } else {
+                throw getRuntime().newTypeError(segment + " does not refer to class/module");
+            }
+        }
+
+        return mod.getConstant(validateConstant(symbol), inherit, inherit);
     }
 
     /** rb_mod_const_set
