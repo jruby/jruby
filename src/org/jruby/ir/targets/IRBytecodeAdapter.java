@@ -105,6 +105,10 @@ public class IRBytecodeAdapter {
         adapter.invokedynamic("invokeSelf:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, arity)), Bootstrap.invokeSelf());
     }
 
+    public void invokeFixnumOp(String name, long value) {
+        adapter.invokedynamic("fixnumOperator:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT)), Bootstrap.invokeFixnumOp(), value, "--dummy--", -1);
+    }
+
     public void invokeSuper(String name, int arity) {
         adapter.invokedynamic("invokeSuper:" + JavaNameMangler.mangleMethodName(name), sig(JVM.OBJECT, params(ThreadContext.class, JVM.OBJECT, JVM.OBJECT, arity)), new Handle(Opcodes.H_INVOKESTATIC, "dummy", "dummy", "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;J)Ljava/lang/invoke/CallSite;"));
     }

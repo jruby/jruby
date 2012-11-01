@@ -23,6 +23,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.callsite.CacheEntry;
 import org.jruby.runtime.invokedynamic.InvocationLinker;
 import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
+import org.jruby.runtime.invokedynamic.MathLinker;
 import org.jruby.runtime.invokedynamic.VariableSite;
 import org.jruby.util.JavaNameMangler;
 import org.objectweb.asm.Handle;
@@ -174,6 +175,10 @@ public class Bootstrap {
 
     public static Handle invokeSelf() {
         return new Handle(Opcodes.H_INVOKESTATIC, p(Bootstrap.class), "invokeSelf", sig(CallSite.class, Lookup.class, String.class, MethodType.class));
+    }
+
+    public static Handle invokeFixnumOp() {
+        return new Handle(Opcodes.H_INVOKESTATIC, p(MathLinker.class), "fixnumOperatorBootstrap", sig(CallSite.class, Lookup.class, String.class, MethodType.class, long.class, String.class, int.class));
     }
 
     public static Handle attrAssign() {

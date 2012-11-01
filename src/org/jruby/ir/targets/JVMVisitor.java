@@ -76,6 +76,7 @@ import org.jruby.ir.operands.WrappedIRClosure;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
+import org.jruby.runtime.CallType;
 import org.jruby.runtime.DynamicScope;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -322,27 +323,42 @@ public class JVMVisitor extends IRVisitor {
     }
 
     @Override
-    public void CallInstr(CallInstr callinstr) {
-        jvm.method().loadLocal(0);
-        visit(callinstr.getReceiver());
-        for (Operand operand : callinstr.getCallArgs()) {
-            visit(operand);
+    public void CallInstr(CallInstr callInstr) {
+        IRBytecodeAdapter m = jvm.method();
+        String name = callInstr.getMethodAddr().getName();
+        Operand[] args = callInstr.getCallArgs();
+        int numArgs = args.length;
+
+        if (   (name.equals("+") || name.equals("-") || name.equals("*") || name.equals("/"))
+            && numArgs == 1
+            && args[0] instanceof Fixnum
+            && callInstr.getCallType() == CallType.NORMAL)
+        {
+            m.loadLocal(0);
+            m.loadLocal(2); // dummy to satisfy signature of existing target linker (MathLinker)
+            visit(callInstr.getReceiver());
+            m.invokeFixnumOp(name, ((Fixnum)args[0]).value);
+        } else {
+            m.loadLocal(0);
+            visit(callInstr.getReceiver());
+            for (Operand operand : args) {
+                visit(operand);
+            }
+            switch (callInstr.getCallType()) {
+                case FUNCTIONAL:
+                case VARIABLE:
+                    m.invokeSelf(name, numArgs);
+                    break;
+                case NORMAL:
+                    m.invokeOther(name, numArgs);
+                    break;
+                case SUPER:
+                    m.invokeSuper(name, numArgs);
+                    break;
+            }
         }
 
-        switch (callinstr.getCallType()) {
-            case FUNCTIONAL:
-            case VARIABLE:
-                jvm.method().invokeSelf(callinstr.getMethodAddr().getName(), callinstr.getCallArgs().length);
-                break;
-            case NORMAL:
-                jvm.method().invokeOther(callinstr.getMethodAddr().getName(), callinstr.getCallArgs().length);
-                break;
-            case SUPER:
-                jvm.method().invokeSuper(callinstr.getMethodAddr().getName(), callinstr.getCallArgs().length);
-                break;
-        }
-
-        jvmStoreLocal(callinstr.getResult());
+        jvmStoreLocal(callInstr.getResult());
     }
 
     @Override
