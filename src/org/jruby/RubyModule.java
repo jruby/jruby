@@ -1670,6 +1670,33 @@ public class RubyModule extends RubyObject {
         return ary;
     }
 
+    /** rb_mod_refine
+     * 
+     */
+    @JRubyMethod(name = "refine")
+    public RubyModule refine(ThreadContext context, IRubyObject clazz, Block block) {
+         if (!block.isGiven()) {
+             throw context.runtime.newArgumentError("no block given");
+         }
+         if (clazz == null || !(clazz instanceof RubyClass)) {
+             throw context.runtime.newTypeError("can only refine Classes");
+         }
+         RubyHash refinements = (RubyHash) this.getInstanceVariable("__refinements__");
+         if (refinements == null) {
+             refinements = RubyHash.newHash(context.runtime);
+             refinements.setComparedByIdentity(true);
+             this.setInstanceVariable("__refinements__", refinements);
+         }
+         RubyModule refinementModule = (RubyModule) refinements.get(clazz);
+         if (refinementModule == null) {
+             refinementModule = new RubyModule(context.runtime);
+             refinementModule.setInstanceVariable("__refined_class__", clazz);
+             refinements.put(clazz, refinementModule);
+         }
+         refinementModule.module_eval(context, block);
+         return refinementModule;
+    }
+
     /** rb_mod_ancestors
      *
      */
