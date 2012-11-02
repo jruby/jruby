@@ -210,6 +210,13 @@ public class RubyHash extends RubyObject implements Map {
     /** rb_hash_new
      *
      */
+    public static final RubyHash newSmallHash(Ruby runtime) {
+        return new RubyHash(runtime, 1);
+    }
+
+    /** rb_hash_new
+     *
+     */
     public static final RubyHash newHash(Ruby runtime, Map valueMap, IRubyObject defaultValue) {
         assert defaultValue != null;
 
@@ -238,6 +245,10 @@ public class RubyHash extends RubyObject implements Map {
         alloc();
     }
 
+    public RubyHash(Ruby runtime, int buckets) {
+        this(runtime, runtime.getNil(), buckets);
+    }
+
     public RubyHash(Ruby runtime) {
         this(runtime, runtime.getNil());
     }
@@ -246,6 +257,12 @@ public class RubyHash extends RubyObject implements Map {
         super(runtime, runtime.getHash());
         this.ifNone = defaultValue;
         alloc();
+    }
+
+    public RubyHash(Ruby runtime, IRubyObject defaultValue, int buckets) {
+        super(runtime, runtime.getHash());
+        this.ifNone = defaultValue;
+        alloc(buckets);
     }
 
     /*
@@ -274,6 +291,13 @@ public class RubyHash extends RubyObject implements Map {
         generation++;
         head.nextAdded = head.prevAdded = head;
         table = new RubyHashEntry[MRI_HASH_RESIZE ? MRI_INITIAL_CAPACITY : JAVASOFT_INITIAL_CAPACITY];
+    }
+
+    private final void alloc(int buckets) {
+        threshold = INITIAL_THRESHOLD;
+        generation++;
+        head.nextAdded = head.prevAdded = head;
+        table = new RubyHashEntry[buckets];
     }
 
     /* ============================
@@ -474,8 +498,17 @@ public class RubyHash extends RubyObject implements Map {
         internalPut(key, value, true);
     }
 
+    private final void internalPutSmall(final IRubyObject key, final IRubyObject value) {
+        internalPutSmall(key, value, true);
+    }
+
     protected void internalPut(final IRubyObject key, final IRubyObject value, final boolean checkForExisting) {
         checkResize();
+
+        internalPutSmall(key, value, checkForExisting);
+    }
+
+    protected void internalPutSmall(final IRubyObject key, final IRubyObject value, final boolean checkForExisting) {
         final int hash = hashValue(key.hashCode());
         final int i = bucketIndex(hash, table.length);
 
@@ -874,12 +907,28 @@ public class RubyHash extends RubyObject implements Map {
       }
     }
 
+    public final void fastASetSmallCheckString(Ruby runtime, IRubyObject key, IRubyObject value) {
+        if (key instanceof RubyString) {
+            op_asetSmallForString(runtime, (RubyString) key, value);
+        } else {
+            internalPutSmall(key, value);
+        }
+    }
+
     public final void fastASetCheckString19(Ruby runtime, IRubyObject key, IRubyObject value) {
       if (key.getMetaClass().getRealClass() == runtime.getString()) {
           op_asetForString(runtime, (RubyString) key, value);
       } else {
           internalPut(key, value);
       }
+    }
+
+    public final void fastASetSmallCheckString19(Ruby runtime, IRubyObject key, IRubyObject value) {
+        if (key.getMetaClass().getRealClass() == runtime.getString()) {
+            op_asetSmallForString(runtime, (RubyString) key, value);
+        } else {
+            internalPutSmall(key, value);
+        }
     }
 
     @Deprecated
@@ -917,6 +966,20 @@ public class RubyHash extends RubyObject implements Map {
                 key.setFrozen(true);
             }
             internalPut(key, value, false);
+        }
+    }
+
+    protected void op_asetSmallForString(Ruby runtime, RubyString key, IRubyObject value) {
+        final RubyHashEntry entry = internalGetEntry(key);
+        if (entry != NO_ENTRY) {
+            entry.value = value;
+        } else {
+            checkIterating();
+            if (!key.isFrozen()) {
+                key = key.strDup(runtime, key.getMetaClass().getRealClass());
+                key.setFrozen(true);
+            }
+            internalPutSmall(key, value, false);
         }
     }
 

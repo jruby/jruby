@@ -50,4 +50,9 @@ public class Hash19Node extends HashNode {
     protected void aset(Ruby runtime, RubyHash hash, IRubyObject key, IRubyObject value) {
         hash.fastASetCheckString19(runtime, key, value);
     }
+
+    @Override
+    protected void asetSmall(Ruby runtime, RubyHash hash, IRubyObject key, IRubyObject value) {
+        hash.fastASetSmallCheckString19(runtime, key, value);
+    }
 }

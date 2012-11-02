@@ -699,15 +699,27 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     }
 
     public void createNewHash(Object elements, ArrayCallback callback, int keyCount) {
-        createNewHashCommon(elements, callback, keyCount, "constructHash", "fastASetCheckString");
+        if (keyCount <= 10) {
+            createNewHashCommon(elements, callback, keyCount, "constructSmallHash", "fastASetSmallCheckString");
+        } else {
+            createNewHashCommon(elements, callback, keyCount, "constructHash", "fastASetCheckString");
+        }
     }
 
     public void createNewLiteralHash(Object elements, ArrayCallback callback, int keyCount) {
-        createNewLiteralHashCommon(elements, callback, keyCount, "constructHash", "fastASetCheckString");
+        if (keyCount <= 10) {
+            createNewLiteralHashCommon(elements, callback, keyCount, "constructSmallHash", "fastASetSmallCheckString");
+        } else {
+            createNewLiteralHashCommon(elements, callback, keyCount, "constructHash", "fastASetCheckString");
+        }
     }
     
     public void createNewHash19(Object elements, ArrayCallback callback, int keyCount) {
-        createNewHashCommon(elements, callback, keyCount, "constructHash19", "fastASetCheckString19");
+        if (keyCount <= 10) {
+            createNewHashCommon(elements, callback, keyCount, "constructSmallHash19", "fastASetSmallCheckString19");
+        } else {
+            createNewHashCommon(elements, callback, keyCount, "constructHash19", "fastASetCheckString19");
+        }
     }
     
     private void createNewHashCommon(Object elements, ArrayCallback callback, int keyCount,
