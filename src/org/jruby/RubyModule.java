@@ -1682,9 +1682,7 @@ public class RubyModule extends RubyObject {
          if (clazz == null || !(clazz instanceof RubyModule)) {
              throw context.runtime.newTypeError("can only refine Classes");
          }
-         if (refinements == null) {
-             refinements = new IdentityHashMap<RubyModule, RubyModule>();
-         }
+         Map<RubyModule, RubyModule> refinements = getRefinements();
          RubyModule moduleBeingRefined = (RubyModule)clazz;
          RubyModule refinementModule = refinements.get(moduleBeingRefined);
          if (refinementModule == null) {
@@ -1706,6 +1704,32 @@ public class RubyModule extends RubyObject {
             }
         }
         return retVal;
+    }
+
+    @JRubyMethod(name = "used", compat = CompatVersion.RUBY2_0)
+    public void used(IRubyObject module) {
+    }
+
+    public synchronized void using(ThreadContext context, RubyModule usedModule) {
+        Map<RubyModule, RubyModule> refinements = getRefinements();
+        for (Map.Entry<RubyModule, RubyModule> e : usedModule.getRefinements().entrySet()) {
+            RubyModule usedRefinementModule = e.getValue();
+            RubyModule refinementModule = refinements.get(e.getKey()); 
+            if (refinementModule == null) {
+                refinements.put(e.getKey(), usedRefinementModule);
+                usedModule.callMethod("used", this);
+            } else {
+                // FIXME: Need to copy the instance methods from usedModule into
+                // existing refinementModule
+            }
+        }
+    }
+
+    private synchronized Map<RubyModule, RubyModule> getRefinements() {
+        if (refinements == null) {
+            refinements = new IdentityHashMap<RubyModule, RubyModule>();
+        }
+        return refinements;
     }
 
     /** rb_mod_ancestors
