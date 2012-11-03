@@ -1678,7 +1678,7 @@ public class RubyModule extends RubyObject {
          if (!block.isGiven()) {
              throw context.runtime.newArgumentError("no block given");
          }
-         if (clazz == null || !(clazz instanceof RubyClass)) {
+         if (clazz == null || !(clazz instanceof RubyModule)) {
              throw context.runtime.newTypeError("can only refine Classes");
          }
          RubyHash refinements = (RubyHash) this.getInstanceVariable("__refinements__");
@@ -1695,6 +1695,20 @@ public class RubyModule extends RubyObject {
          }
          refinementModule.module_eval(context, block);
          return refinementModule;
+    }
+
+    @JRubyMethod(name = "refinements")
+    public RubyHash refinements(ThreadContext context) {
+        RubyHash refinements = (RubyHash) this.getInstanceVariable("__refinements__");
+        RubyHash retVal = RubyHash.newHash(context.runtime);
+        retVal.setComparedByIdentity(true);
+        if (refinements != null) {
+            for(Object e : refinements.entrySet()) {
+                Map.Entry<?, ?> entry = (Map.Entry<?, ?>)e;
+                retVal.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return retVal;
     }
 
     /** rb_mod_ancestors
