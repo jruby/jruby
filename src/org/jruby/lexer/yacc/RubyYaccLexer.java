@@ -957,7 +957,7 @@ public class RubyYaccLexer {
 
     // DEBUGGING HELP 
     private int yylex2() throws IOException {
-        int currentToken = yylex();
+        int currentToken = yylex2();
         
         printToken(currentToken);
         
