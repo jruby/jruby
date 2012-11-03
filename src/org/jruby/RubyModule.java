@@ -53,6 +53,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1673,39 +1674,35 @@ public class RubyModule extends RubyObject {
     /** rb_mod_refine
      * 
      */
-    @JRubyMethod(name = "refine")
-    public RubyModule refine(ThreadContext context, IRubyObject clazz, Block block) {
+    @JRubyMethod(name = "refine", compat = CompatVersion.RUBY2_0)
+    public synchronized RubyModule refine(ThreadContext context, IRubyObject clazz, Block block) {
          if (!block.isGiven()) {
              throw context.runtime.newArgumentError("no block given");
          }
          if (clazz == null || !(clazz instanceof RubyModule)) {
              throw context.runtime.newTypeError("can only refine Classes");
          }
-         RubyHash refinements = (RubyHash) this.getInstanceVariable("__refinements__");
          if (refinements == null) {
-             refinements = RubyHash.newHash(context.runtime);
-             refinements.setComparedByIdentity(true);
-             this.setInstanceVariable("__refinements__", refinements);
+             refinements = new IdentityHashMap<RubyModule, RubyModule>();
          }
-         RubyModule refinementModule = (RubyModule) refinements.get(clazz);
+         RubyModule moduleBeingRefined = (RubyModule)clazz;
+         RubyModule refinementModule = refinements.get(moduleBeingRefined);
          if (refinementModule == null) {
              refinementModule = new RubyModule(context.runtime);
-             refinementModule.setInstanceVariable("__refined_class__", clazz);
-             refinements.put(clazz, refinementModule);
+             refinementModule.refinedModule = moduleBeingRefined;
+             refinements.put(moduleBeingRefined, refinementModule);
          }
          refinementModule.module_eval(context, block);
          return refinementModule;
     }
 
-    @JRubyMethod(name = "refinements")
+    @JRubyMethod(name = "refinements", compat = CompatVersion.RUBY2_0)
     public RubyHash refinements(ThreadContext context) {
-        RubyHash refinements = (RubyHash) this.getInstanceVariable("__refinements__");
         RubyHash retVal = RubyHash.newHash(context.runtime);
         retVal.setComparedByIdentity(true);
         if (refinements != null) {
-            for(Object e : refinements.entrySet()) {
-                Map.Entry<?, ?> entry = (Map.Entry<?, ?>)e;
-                retVal.put(entry.getKey(), entry.getValue());
+            for(Map.Entry<RubyModule, RubyModule> e : refinements.entrySet()) {
+                retVal.put(e.getKey(), e.getValue());
             }
         }
         return retVal;
@@ -3903,6 +3900,10 @@ public class RubyModule extends RubyObject {
     public int index;
 
     private volatile Map<String, IRubyObject> classVariables = Collections.EMPTY_MAP;
+
+    private volatile Map<RubyModule, RubyModule> refinements = null;
+
+    private volatile RubyModule refinedModule = null;
 
     private static final AtomicReferenceFieldUpdater CLASSVARS_UPDATER;
 
