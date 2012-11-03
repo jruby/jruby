@@ -146,7 +146,6 @@ public class Ruby19Parser implements RubyParser {
   k__ENCODING__ kDO_LAMBDA 
 
 %token <Token> tIDENTIFIER tFID tGVAR tIVAR tCONSTANT tCVAR tLABEL tCHAR
-%type <Token> variable
 %type <Token> sym symbol operation operation2 operation3 cname fname op 
 %type <Token> f_norm_arg dot_or_colon restarg_mark blkarg_mark
 %token <Token> tUPLUS         /* unary+ */
@@ -233,6 +232,7 @@ public class Ruby19Parser implements RubyParser {
 %type <Node> mlhs_inner f_block_opt for_var
 %type <Node> opt_call_args f_marg f_margs
 %type <Token> bvar
+%type <Token> user_variable, keyword_variable
    // ENEBO: end all new types
 
 %type <Token> rparen rbracket reswords f_bad_arg
@@ -428,6 +428,11 @@ stmt            : kALIAS fitem {
                 | primary_value tDOT tCONSTANT tOP_ASGN command_call {
                     $$ = new OpAsgnNode(support.getPosition($1), $1, $5, (String) $3.getValue(), (String) $4.getValue());
                 }
+                | primary_value tCOLON2 tCONSTANT tOP_ASGN command_call {
+                    support.yyerror("can't make alias for the number variables");
+                    $$ = null;
+                }
+
                 | primary_value tCOLON2 tIDENTIFIER tOP_ASGN command_call {
                     $$ = new OpAsgnNode(support.getPosition($1), $1, $5, (String) $3.getValue(), (String) $4.getValue());
                 }
@@ -480,15 +485,6 @@ expr_value      : expr {
 // Node:command - call with or with block on end [!null]
 command_call    : command
                 | block_command
-                | kRETURN call_args {
-                    $$ = new ReturnNode($1.getPosition(), support.ret_args($2, $1.getPosition()));
-                }
-                | kBREAK call_args {
-                    $$ = new BreakNode($1.getPosition(), support.ret_args($2, $1.getPosition()));
-                }
-                | kNEXT call_args {
-                    $$ = new NextNode($1.getPosition(), support.ret_args($2, $1.getPosition()));
-                }
 
 // Node:block_command - A call with a block (foo.bar {...}, foo::bar {...}, bar {...}) [!null]
 block_command   : block_call
@@ -531,6 +527,15 @@ command        : operation command_args %prec tLOWEST {
                 }
                 | kYIELD command_args {
                     $$ = support.new_yield($1.getPosition(), $2);
+                }
+                | kRETURN call_args {
+                    $$ = new ReturnNode($1.getPosition(), support.ret_args($2, $1.getPosition()));
+                }
+                | kBREAK call_args {
+                    $$ = new BreakNode($1.getPosition(), support.ret_args($2, $1.getPosition()));
+                }
+                | kNEXT call_args {
+                    $$ = new NextNode($1.getPosition(), support.ret_args($2, $1.getPosition()));
                 }
 
 // MultipleAssig19Node:mlhs - [!null]
@@ -600,7 +605,10 @@ mlhs_post       : mlhs_item {
                     $$ = $1.add($3);
                 }
 
-mlhs_node       : variable {
+mlhs_node       : user_variable {
+                    $$ = support.assignable($1, NilImplicitNode.NIL);
+                }
+                | keyword_variable {
                     $$ = support.assignable($1, NilImplicitNode.NIL);
                 }
                 | primary_value '[' opt_call_args rbracket {
@@ -637,8 +645,10 @@ mlhs_node       : variable {
                     support.backrefAssignError($1);
                 }
 
-lhs             : variable {
-                      // if (!($$ = assignable($1, 0))) $$ = NEW_BEGIN(0);
+lhs             : user_variable {
+                    $$ = support.assignable($1, NilImplicitNode.NIL);
+                }
+                | keyword_variable {
                     $$ = support.assignable($1, NilImplicitNode.NIL);
                 }
                 | primary_value '[' opt_call_args rbracket {
@@ -951,7 +961,18 @@ paren_args      : tLPAREN2 opt_call_args rparen {
 
 opt_paren_args  : none | paren_args
 
-opt_call_args   : none | call_args
+opt_call_args   : none 
+                | call_args
+                | args ',' {
+                    $$ = $1;
+                }
+                | args ',' assocs ',' {
+                    $$ = support.arg_append($1, new Hash19Node(lexer.getPosition(), $3));
+                }
+                | assocs ',' {
+                    $$ = support.newArrayNode($1.getPosition(), new Hash19Node(lexer.getPosition(), $1));
+                }
+   
 
 // [!null]
 call_args       : command {
@@ -984,9 +1005,6 @@ block_arg       : tAMPER arg_value {
 
 opt_block_arg   : ',' block_arg {
                     $$ = $2;
-                }
-                | ',' {
-                    $$ = null;
                 }
                 | none_block_pass
 
@@ -1731,8 +1749,9 @@ numeric         : tINTEGER {
                 }
 
 // [!null]
-variable        : tIDENTIFIER | tIVAR | tGVAR | tCONSTANT | tCVAR
-                | kNIL { 
+user_variable   : tIDENTIFIER | tIVAR | tGVAR | tCONSTANT | tCVAR
+
+keyword_variable : kNIL { 
                     $$ = new Token("nil", Tokens.kNIL, $1.getPosition());
                 }
                 | kSELF {
@@ -1755,12 +1774,18 @@ variable        : tIDENTIFIER | tIVAR | tGVAR | tCONSTANT | tCVAR
                 }
 
 // [!null]
-var_ref         : variable {
+var_ref         : user_variable {
+                    $$ = support.gettable($1);
+                }
+                | keyword_variable {
                     $$ = support.gettable($1);
                 }
 
 // [!null]
-var_lhs         : variable {
+var_lhs         : user_variable {
+                    $$ = support.assignable($1, NilImplicitNode.NIL);
+                }
+                | keyword_variable {
                     $$ = support.assignable($1, NilImplicitNode.NIL);
                 }
 
