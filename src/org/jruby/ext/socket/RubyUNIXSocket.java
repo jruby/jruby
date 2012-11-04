@@ -43,7 +43,6 @@ import org.jruby.RubyString;
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.javasupport.util.RuntimeHelpers;
-import org.jruby.runtime.Arity;
 import org.jruby.runtime.ObjectAllocator;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
@@ -147,11 +146,6 @@ public class RubyUNIXSocket extends RubyBasicSocket {
     public IRubyObject recv_io(IRubyObject[] args) {
         //TODO: implement, won't do this now
         return  getRuntime().getNil();
-    }
-
-    @JRubyMethod(meta = true)
-    public static IRubyObject open(ThreadContext context, IRubyObject recv, IRubyObject path) {
-        return RuntimeHelpers.invoke(context, recv, "new", path);
     }
 
     @JRubyMethod(name = {"socketpair", "pair"}, optional = 2, meta = true)
