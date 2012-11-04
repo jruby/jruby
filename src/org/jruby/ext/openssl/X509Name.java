@@ -60,6 +60,7 @@ import org.jruby.exceptions.RaiseException;
 import org.jruby.ext.openssl.x509store.Name;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ObjectAllocator;
+import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
 
 /**
@@ -147,45 +148,56 @@ public class X509Name extends RubyObject {
         }
     }
 
-    @JRubyMethod(rest=true, frame=true)
-    public IRubyObject initialize(IRubyObject[] args, Block unusedBlock) {
-        if(org.jruby.runtime.Arity.checkArgumentCount(getRuntime(),args,0,2) == 0) {
-            return this;
-        }
-        IRubyObject arg = args[0];
-        IRubyObject template = getRuntime().getNil();
-        if(args.length > 1) {
-            template = args[1];
-        }
-        IRubyObject tmp = (arg instanceof RubyArray) ? arg : getRuntime().getNil();
-        if(!tmp.isNil()) {
+    @JRubyMethod
+    public IRubyObject initialize(ThreadContext context) {
+        return this;
+    }
+
+    @JRubyMethod
+    public IRubyObject initialize(ThreadContext context, IRubyObject str_or_dn) {
+        return initialize(
+                context,
+                str_or_dn,
+                context.nil);
+    }
+
+    @JRubyMethod
+    public IRubyObject initialize(ThreadContext context, IRubyObject dn, IRubyObject template) {
+        Ruby runtime = context.runtime;
+
+        if(dn instanceof RubyArray) {
+            RubyArray ary = (RubyArray)dn;
+
             if(template.isNil()) {
-                template = getRuntime().getClassFromPath("OpenSSL::X509::Name").getConstant("OBJECT_TYPE_TEMPLATE");
+                template = runtime.getClassFromPath("OpenSSL::X509::Name").getConstant("OBJECT_TYPE_TEMPLATE");
             }
-            for (IRubyObject obj : ((RubyArray)tmp).toJavaArray()) {
-                RubyArray arr = (RubyArray) obj;
-                IRubyObject[] ele = arr.toJavaArray();
-                IRubyObject[] entry = new IRubyObject[3];
-                if (ele.length > 1) {
-                    entry[0] = ele[0];
-                    entry[1] = ele[1];
+
+            for (int i = 0; i < ary.size(); i++) {
+                IRubyObject obj = ary.eltOk(i);
+
+                if (!(obj instanceof RubyArray)) {
+                    throw runtime.newTypeError(obj, runtime.getArray());
                 }
-                if (ele.length > 2) {
-                    entry[2] = ele[2];
-                }
-                if (entry[2] == null || entry[2].isNil()) {
-                    entry[2] = template.callMethod(getRuntime().getCurrentContext(),"[]",entry[0]);
-                }
-                if (entry[2] == null || entry[2].isNil()) {
-                    entry[2] = getRuntime().getClassFromPath("OpenSSL::X509::Name").getConstant("DEFAULT_OBJECT_TYPE");
-                }
-                add_entry(entry);
+
+                RubyArray arr = (RubyArray)obj;
+
+                IRubyObject entry0, entry1, entry2;
+                entry0 = arr.size() > 0 ? arr.eltOk(0) : context.nil;
+                entry1 = arr.size() > 1 ? arr.eltOk(1) : context.nil;
+                entry2 = arr.size() > 2 ? arr.eltOk(2) : context.nil;
+
+                if (entry2.isNil()) entry2 = template.callMethod(context, "[]", entry0);
+                if (entry2.isNil()) entry2 = runtime.getClassFromPath("OpenSSL::X509::Name").getConstant("DEFAULT_OBJECT_TYPE");
+
+                add_entry(context, entry0, entry1, entry2);
             }
         } else {
             try {
-                fromASN1Sequence((ASN1Sequence)new ASN1InputStream(OpenSSLImpl.to_der_if_possible(arg).convertToString().getBytes()).readObject());
+                byte[] bytes = OpenSSLImpl.to_der_if_possible(dn).convertToString().getBytes();
+                ASN1InputStream asn1IS = new ASN1InputStream(bytes);
+                fromASN1Sequence((ASN1Sequence)asn1IS.readObject());
             } catch(Exception e) {
-                System.err.println("exception in init for X509Name: " + e);
+                throw newX509NameError(runtime, e.getLocalizedMessage());
             }
         }
         return this;
@@ -234,28 +246,34 @@ public class X509Name extends RubyObject {
         return val2;
     }
 
-    @JRubyMethod(rest = true)
-    public IRubyObject add_entry(IRubyObject[] args) {
-        org.jruby.runtime.Arity.checkArgumentCount(getRuntime(), args, 2, 3);
-        String oid = args[0].toString();
-        String value = args[1].toString();
-        IRubyObject type = getRuntime().getClassFromPath("OpenSSL::X509::Name").getConstant("OBJECT_TYPE_TEMPLATE")
-                .callMethod(getRuntime().getCurrentContext(), "[]", args[0]);
-        if (args.length > 2 && !args[2].isNil()) {
-            type = args[2];
-        }
+    @JRubyMethod
+    public IRubyObject add_entry(ThreadContext context, IRubyObject oid, IRubyObject value) {
+        return add_entry(context, oid, value, context.nil);
+    }
+
+    @JRubyMethod
+    public IRubyObject add_entry(ThreadContext context, IRubyObject _oid, IRubyObject _value, IRubyObject _type) {
+        Ruby runtime = context.runtime;
+
+        String oid = _oid.convertToString().toString();
+        String value = _value.convertToString().toString();
+        IRubyObject type = !_type.isNil() ? _type : runtime.getClassFromPath("OpenSSL::X509::Name").getConstant("OBJECT_TYPE_TEMPLATE").callMethod(context, "[]", _oid);
+
         DERObjectIdentifier oid_v;
         try {
             oid_v = getObjectIdentifier(oid);
         } catch (IllegalArgumentException e) {
             throw newX509NameError(getRuntime(), "invalid field name: " + e.getMessage());
         }
+
         if (null == oid_v) {
             throw newX509NameError(getRuntime(), null);
         }
+
         oids.add(oid_v);
         values.add(value);
         types.add(type);
+
         return this;
     }
 
