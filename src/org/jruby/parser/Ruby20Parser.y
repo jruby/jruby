@@ -755,8 +755,9 @@ undef_list      : fitem {
 // Token:op
 op              : tPIPE | tCARET | tAMPER2 | tCMP | tEQ | tEQQ | tMATCH
                 | tNMATCH | tGT | tGEQ | tLT | tLEQ | tNEQ | tLSHFT | tRSHFT
-                | tPLUS | tMINUS | tSTAR2 | tSTAR | tDIVIDE | tPERCENT | tPOW
-                | tBANG | tTILDE | tUPLUS | tUMINUS | tAREF | tASET | tBACK_REF2
+                | tDSTAR | tPLUS | tMINUS | tSTAR2 | tSTAR | tDIVIDE | tPERCENT 
+                | tPOW | tBANG | tTILDE | tUPLUS | tUMINUS | tAREF | tASET 
+                | tBACK_REF2
 
 // Token:op
 reswords        : k__LINE__ | k__FILE__ | k__ENCODING__ | klBEGIN | klEND
