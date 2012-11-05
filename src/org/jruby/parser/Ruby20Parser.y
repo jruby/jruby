@@ -1094,7 +1094,7 @@ primary         : literal
                     $$ = new BeginNode(support.getPosition($1), $2 == null ? NilImplicitNode.NIL : $2);
                 }
                 | tLPAREN_ARG {
-                    lex_state = EXPR_ENDARG;
+                    lex_state = LexState.EXPR_ENDARG;
                 } rparen {
                     $$ = null; //FIXME: Should be implicit nil?
                 }
@@ -1772,7 +1772,7 @@ string_content  : tSTRING_CONTENT {
                    lexer.getCmdArgumentState().stop();
                    lexer.setStrTerm(null);
                    lexer.setState(LexState.EXPR_BEG);
-                } compstmt tRCURLY {
+                } compstmt tSTRING_DEND {
                    lexer.getConditionState().restart();
                    lexer.getCmdArgumentState().restart();
                    lexer.setStrTerm($<StrTerm>2);
@@ -1927,43 +1927,43 @@ opt_args_tail   : ',' args_tail {
                 }
 
 // [!null]
-f_args          : f_arg ',' f_optarg ',' f_rest_arg opt_block_args_tail {
+f_args          : f_arg ',' f_optarg ',' f_rest_arg opt_args_tail {
                     $$ = support.new_args($1.getPosition(), $1, $3, $5, null, $6);
                 }
-                | f_arg ',' f_optarg ',' f_rest_arg ',' f_arg opt_block_args_tail {
+                | f_arg ',' f_optarg ',' f_rest_arg ',' f_arg opt_args_tail {
                     $$ = support.new_args($1.getPosition(), $1, $3, $5, $7, $8);
                 }
-                | f_arg ',' f_optarg opt_block_args_tail {
+                | f_arg ',' f_optarg opt_args_tail {
                     $$ = support.new_args($1.getPosition(), $1, $3, null, null, $4);
                 }
-                | f_arg ',' f_optarg ',' f_arg opt_block_args_tail {
+                | f_arg ',' f_optarg ',' f_arg opt_args_tail {
                     $$ = support.new_args($1.getPosition(), $1, $3, null, $5, $6);
                 }
-                | f_arg ',' f_rest_arg opt_block_args_tail {
+                | f_arg ',' f_rest_arg opt_args_tail {
                     $$ = support.new_args($1.getPosition(), $1, null, $3, null, $4);
                 }
-                | f_arg ',' f_rest_arg ',' f_arg opt_block_args_tail {
+                | f_arg ',' f_rest_arg ',' f_arg opt_args_tail {
                     $$ = support.new_args($1.getPosition(), $1, null, $3, $5, $6);
                 }
-                | f_arg opt_block_args_tail {
+                | f_arg opt_args_tail {
                     $$ = support.new_args($1.getPosition(), $1, null, null, null, $2);
                 }
-                | f_optarg ',' f_rest_arg opt_block_args_tail {
+                | f_optarg ',' f_rest_arg opt_args_tail {
                     $$ = support.new_args($1.getPosition(), null, $1, $3, null, $4);
                 }
-                | f_optarg ',' f_rest_arg ',' f_arg opt_block_args_tail {
+                | f_optarg ',' f_rest_arg ',' f_arg opt_args_tail {
                     $$ = support.new_args($1.getPosition(), null, $1, $3, $5, $6);
                 }
-                | f_optarg opt_block_args_tail {
+                | f_optarg opt_args_tail {
                     $$ = support.new_args($1.getPosition(), null, $1, null, null, $2);
                 }
-                | f_optarg ',' f_arg opt_block_args_tail {
+                | f_optarg ',' f_arg opt_args_tail {
                     $$ = support.new_args($1.getPosition(), null, $1, null, $3, $4);
                 }
-                | f_rest_arg opt_block_args_tail {
+                | f_rest_arg opt_args_tail {
                     $$ = support.new_args($1.getPosition(), null, null, $1, null, $2);
                 }
-                | f_rest_arg ',' f_arg opt_block_args_tail {
+                | f_rest_arg ',' f_arg opt_args_tail {
                     $$ = support.new_args($1.getPosition(), null, null, $1, $3, $4);
                 }
                 | args_tail {
