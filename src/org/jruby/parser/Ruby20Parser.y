@@ -217,7 +217,7 @@ public class Ruby20Parser implements RubyParser {
    // ENEBO: missing block_var == for_var, opt_block_var
 %type <Node> lhs none args
 %type <ListNode> qword_list word_list f_arg f_optarg f_marg_list, symbol_list
-%type <ListNode> qsym_list, symbols
+%type <ListNode> qsym_list, symbols, qsymbols
    // FIXME: These are node until a better understanding of underlying type
 %type <Node> opt_args_tail, opt_block_args_tail, block_args_tail, args_tail
 %type <Node> f_kw, f_block_kw, f_block_kwarg, f_kwarg
@@ -245,6 +245,7 @@ public class Ruby20Parser implements RubyParser {
 %type <Token> rparen rbracket reswords f_bad_arg
 %type <Node> top_compstmt top_stmts top_stmt
 %token <Token> tSYMBOLS_BEG
+%token <Token> tQSYMBOLS_BEG
 %token <Token> tDSTAR
 
 /*
@@ -945,7 +946,6 @@ arg             : lhs '=' arg {
                     $$ = support.newOrNode($2.getPosition(), $1, $3);
                 }
                 | kDEFINED opt_nl arg {
-                    // ENEBO: arg surrounded by in_defined set/unset
                     $$ = new DefinedNode($1.getPosition(), $3);
                 }
                 | arg '?' arg opt_nl ':' arg {
@@ -1083,6 +1083,8 @@ primary         : literal
                 | regexp
                 | words
                 | qwords
+                | symbols
+                | qsymbols
                 | var_ref
                 | backref
                 | tFID {
@@ -1700,6 +1702,15 @@ qwords          : tQWORDS_BEG ' ' tSTRING_END {
                     $$ = $2;
                     $<ISourcePositionHolder>$.setPosition($1.getPosition());
                 }
+
+qsymbols        : tQSYMBOLS_BEG ' ' tSTRING_END {
+                    $$ = new ZArrayNode($1.getPosition());
+                }
+                | tQSYMBOLS_BEG qsym_list tSTRING_END {
+                    $$ = $2;
+                    $<ISourcePositionHolder>$.setPosition($1.getPosition());
+                }
+
 
 qword_list      : /* none */ {
                     $$ = new ArrayNode(lexer.getPosition());
