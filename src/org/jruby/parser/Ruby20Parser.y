@@ -360,9 +360,11 @@ stmts           : none
 stmt_or_begin   : stmt {
                     $$ = $1;
                 }
+// FIXME: How can this new begin ever work?  is yyerror conditional in MRI?
                 | kBEGIN {
                    support.yyerror("BEGIN is permitted only at toplevel");
-                   $$ = null;
+                } tLCURLY top_compstmt tRCURLY {
+                    $$ = new BeginNode(support.getPosition($1), $2 == null ? NilImplicitNode.NIL : $2);
                 }
 
 stmt            : kALIAS fitem {
