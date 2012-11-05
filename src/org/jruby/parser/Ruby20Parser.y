@@ -247,6 +247,7 @@ public class Ruby20Parser implements RubyParser {
 %token <Token> tSYMBOLS_BEG
 %token <Token> tQSYMBOLS_BEG
 %token <Token> tDSTAR
+%token <Token> tSTRING_DEND
 
 /*
  *    precedence table
@@ -1083,8 +1084,12 @@ primary         : literal
                 | regexp
                 | words
                 | qwords
-                | symbols
-                | qsymbols
+                | symbols { 
+                     $$ = $1; // FIXME: Why complaining without $$ = $1;
+                }
+                | qsymbols {
+                     $$ = $1; // FIXME: Why complaining without $$ = $1;
+                }
                 | var_ref
                 | backref
                 | tFID {
