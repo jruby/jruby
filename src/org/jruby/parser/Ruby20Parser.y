@@ -148,6 +148,7 @@ public class Ruby20Parser implements RubyParser {
 %token <Token> tIDENTIFIER tFID tGVAR tIVAR tCONSTANT tCVAR tLABEL tCHAR
 %type <Token> sym symbol operation operation2 operation3 cname fname op 
 %type <Token> f_norm_arg dot_or_colon restarg_mark blkarg_mark
+%type <Token> kwrest_mark, f_kwrest
 %token <Token> tUPLUS         /* unary+ */
 %token <Token> tUMINUS        /* unary- */
 %token <Token> tUMINUS_NUM    /* unary- */
@@ -202,8 +203,10 @@ public class Ruby20Parser implements RubyParser {
 %type <RestArgNode> f_rest_arg 
 %type <Node> singleton strings string string1 xstring regexp
 %type <Node> string_contents xstring_contents string_content method_call
+%type <Node> regexp_contents
 %type <Node> words qwords word literal numeric dsym cpath command_asgn command_call
 %type <Node> compstmt bodystmt stmts stmt expr arg primary command 
+%type <Node> stmt_or_begin
 %type <Node> expr_value primary_value opt_else cases if_tail exc_var
    // ENEBO: missing call_args2, open_args
 %type <Node> call_args opt_ensure paren_args superclass
@@ -213,7 +216,11 @@ public class Ruby20Parser implements RubyParser {
 %type <Node> mrhs mlhs_item mlhs_node arg_value case_body exc_list aref_args
    // ENEBO: missing block_var == for_var, opt_block_var
 %type <Node> lhs none args
-%type <ListNode> qword_list word_list f_arg f_optarg f_marg_list
+%type <ListNode> qword_list word_list f_arg f_optarg f_marg_list, symbol_list
+%type <ListNode> qsym_list, symbols
+   // FIXME: These are node until a better understanding of underlying type
+%type <Node> opt_args_tail, opt_block_args_tail, block_args_tail, args_tail
+%type <Node> f_kw, f_block_kw, f_block_kwarg, f_kwarg
    // ENEBO: missing when_args
 %type <ListNode> mlhs_head assocs assoc assoc_list mlhs_post f_block_optarg
 %type <BlockPassNode> opt_block_arg block_arg none_block_pass
@@ -237,6 +244,8 @@ public class Ruby20Parser implements RubyParser {
 
 %type <Token> rparen rbracket reswords f_bad_arg
 %type <Node> top_compstmt top_stmts top_stmt
+%token <Token> tSYMBOLS_BEG
+%token <Token> tDSTAR
 
 /*
  *    precedence table
@@ -353,6 +362,7 @@ stmt_or_begin   : stmt {
                 }
                 | kBEGIN {
                    support.yyerror("BEGIN is permitted only at toplevel");
+                   $$ = null;
                 }
 
 stmt            : kALIAS fitem {
@@ -2017,7 +2027,12 @@ f_kwarg         : f_kw {
                     $$ = support.add_keyword($1, $3);
                 }
 
-kwrest_mark     : tPOW | tDSTAR
+kwrest_mark     : tPOW {
+                    $$ = $1;
+                }
+                | tDSTAR {
+                    $$ = $1;
+                }
 
 f_kwrest        : kwrest_mark tIDENTIFIER {
                     $$ = $2;
