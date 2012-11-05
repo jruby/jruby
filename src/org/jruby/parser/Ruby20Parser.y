@@ -1093,6 +1093,11 @@ primary         : literal
                 | kBEGIN bodystmt kEND {
                     $$ = new BeginNode(support.getPosition($1), $2 == null ? NilImplicitNode.NIL : $2);
                 }
+                | tLPAREN_ARG {
+                    lex_state = EXPR_ENDARG;
+                } rparen {
+                    $$ = null; //FIXME: Should be implicit nil?
+                }
                 | tLPAREN_ARG expr {
                     lexer.setState(LexState.EXPR_ENDARG); 
                 } rparen {
