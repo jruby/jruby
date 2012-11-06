@@ -187,9 +187,10 @@ public class RubyFileTest {
         JRubyFile file1 = file(filename1);
         JRubyFile file2 = file(filename2);
 
-        if (Platform.IS_WINDOWS) {
+        if (Platform.IS_WINDOWS || !runtime.getPosix().isNative()) {
             // posix stat uses inodes to determine indentity, and windows has no inodes
             // (they are always zero), so we use canonical paths instead. (JRUBY-5726)
+            // If we can't load a native POSIX, use this same logic. (JRUBY-6982)
             try {
                 return runtime.newBoolean(file1.exists() && file2.exists() &&
                                           file1.getCanonicalPath().equals(file2.getCanonicalPath()));
