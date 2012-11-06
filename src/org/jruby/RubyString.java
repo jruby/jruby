@@ -7570,6 +7570,10 @@ public class RubyString extends RubyObject implements EncodingCapable {
         Encoding fromEncoding = forceEncoding != null ? forceEncoding : value.getEncoding();
         String toName = toEncoding.toString();
         String fromName = fromEncoding.toString();
+
+        if (opts.isNil() && toEncoding == fromEncoding) {
+            return new ByteList(value.bytes(), toEncoding);
+        }
         
         // MRI does not allow ASCII-8BIT chars > 127 to transcode to multibyte encodings
         if (fromName.equals("ASCII-8BIT") && toEncoding.maxLength() > 1) {
