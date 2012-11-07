@@ -220,7 +220,8 @@ public class Ruby20Parser implements RubyParser {
 %type <ListNode> qsym_list, symbols, qsymbols
    // FIXME: These are node until a better understanding of underlying type
 %type <ArgsTailHolder> opt_args_tail, opt_block_args_tail, block_args_tail, args_tail
-%type <Node> f_kw, f_block_kw, f_block_kwarg, f_kwarg
+%type <Node> f_kw, f_block_kw
+%type <ListNode> f_block_kwarg, f_kwarg
    // ENEBO: missing when_args
 %type <ListNode> mlhs_head assocs assoc assoc_list mlhs_post f_block_optarg
 %type <BlockPassNode> opt_block_arg block_arg none_block_pass
@@ -2038,17 +2039,17 @@ f_block_kw      : tLABEL primary_value {
                 }
 
 f_block_kwarg   : f_block_kw {
-                    $$ = $1;
+                    $$ = new ArrayNode($1.getPosition(), $1);
                 }
                 | f_block_kwarg ',' f_block_kw {
-                    $$ = support.add_keyword($1, $3);
+                    $$ = $1.add($1, $3);
                 }
 
 f_kwarg         : f_kw {
-                    $$ = $1;
+                    $$ = new ArrayNode($1.getPosition(), $1);
                 }
                 | f_kwarg ',' f_kw {
-                    $$ = support.add_keyword($1, $3);
+                    $$ = $1.add($1, $3);
                 }
 
 kwrest_mark     : tPOW {
@@ -2167,7 +2168,7 @@ assoc           : arg_value tASSOC arg_value {
                     $$ = support.newArrayNode(pos, new SymbolNode(pos, (String) $1.getValue())).add($2);
                 }
                 | tDSTAR arg_value {
-                    $$ = support.newArrayNode(pos, $2);
+                    $$ = support.newArrayNode($1.getPosition(), $2);
                 }
 
 operation       : tIDENTIFIER | tCONSTANT | tFID
