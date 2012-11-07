@@ -413,7 +413,7 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
                 sig(IRubyObject.class, IRubyObject.class),
                 InvokeDynamicSupport.getVariableHandle(),
                 method.getScriptCompiler().getSourcename(),
-                method.getLastLine()
+                method.getLastLine() + 1
                 );
     }
 
@@ -431,7 +431,7 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
                 sig(IRubyObject.class, IRubyObject.class, IRubyObject.class),
                 InvokeDynamicSupport.getVariableHandle(),
                 method.getScriptCompiler().getSourcename(),
-                method.getLastLine()
+                method.getLastLine() + 1
         );
     }
 }

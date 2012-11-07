@@ -90,7 +90,7 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
                 signature,
                 InvokeDynamicSupport.getInvocationHandle(),
                 methodCompiler.getScriptCompiler().getSourcename(),
-                methodCompiler.getLastLine());
+                methodCompiler.getLastLine() + 1);
         
         // TODO: void invokedynamic to avoid pop
         if (!expr) method.pop();
@@ -188,7 +188,7 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
                 signature,
                 InvokeDynamicSupport.getInvocationHandle(),
                 methodCompiler.getScriptCompiler().getSourcename(),
-                methodCompiler.getLastLine());
+                methodCompiler.getLastLine() + 1);
     }
 
     public void invokeDynamicVarargs(String name, CompilerCallback receiverCallback, ArgumentsCallback argsCallback, CallType callType, CompilerCallback closureArg, boolean iterator) {
@@ -244,7 +244,7 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
                 signature,
                 InvokeDynamicSupport.getInvocationHandle(),
                 methodCompiler.getScriptCompiler().getSourcename(),
-                methodCompiler.getLastLine());
+                methodCompiler.getLastLine() + 1);
     }
 
     @Override
@@ -299,7 +299,7 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
                 signature,
                 InvokeDynamicSupport.getInvocationHandle(),
                 methodCompiler.getScriptCompiler().getSourcename(),
-                methodCompiler.getLastLine());
+                methodCompiler.getLastLine() + 1);
     }
 
     @Override
@@ -329,7 +329,7 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
                 InvokeDynamicSupport.getFixnumOperatorHandle(),
                 fixnum,
                 methodCompiler.getScriptCompiler().getSourcename(),
-                methodCompiler.getLastLine());
+                methodCompiler.getLastLine() + 1);
     }
 
     @Override
@@ -359,7 +359,7 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
                 InvokeDynamicSupport.getFixnumBooleanHandle(),
                 fixnum,
                 methodCompiler.getScriptCompiler().getSourcename(),
-                methodCompiler.getLastLine());
+                methodCompiler.getLastLine() + 1);
     }
     
     public void invokeBinaryFloatRHS(String name, CompilerCallback receiverCallback, double flote) {
@@ -388,7 +388,7 @@ public class InvokeDynamicInvocationCompiler extends StandardInvocationCompiler 
                 InvokeDynamicSupport.getFloatOperatorHandle(),
                 flote,
                 methodCompiler.getScriptCompiler().getSourcename(),
-                methodCompiler.getLastLine());
+                methodCompiler.getLastLine() + 1);
     }
 
     @Override
