@@ -1099,7 +1099,7 @@ primary         : literal
                     $$ = new BeginNode(support.getPosition($1), $2 == null ? NilImplicitNode.NIL : $2);
                 }
                 | tLPAREN_ARG {
-                    lex_state = LexState.EXPR_ENDARG;
+                    lexer.setState(LexState.EXPR_ENDARG);
                 } rparen {
                     $$ = null; //FIXME: Should be implicit nil?
                 }
@@ -1352,23 +1352,23 @@ f_margs         : f_marg_list {
                 }
 
 block_args_tail : f_block_kwarg ',' f_kwrest opt_f_block_arg {
-                    $$ = support.new_args_tail($1, $3, $4);
+                    $$ = support.new_args_tail($1.getPosition(), $1, $3, $4);
                 }
                 | f_block_kwarg opt_f_block_arg {
-                    $$ = support.new_args_tail($1, null, $2);
+                    $$ = support.new_args_tail($1.getPosition(), $1, null, $2);
                 }
                 | f_kwrest opt_f_block_arg {
-                    $$ = support.new_args_tail(null, $1, $2);
+                    $$ = support.new_args_tail($1.getPosition(), null, $1, $2);
                 }
                 | f_block_arg {
-                    $$ = support.new_args_tail(null, null, $1);
+                    $$ = support.new_args_tail($1.getPosition(), null, null, $1);
                 }
 
 opt_block_args_tail : ',' block_args_tail {
                     $$ = $2;
                 }
                 | /* none */ {
-                    $$ = support.new_args_tail(null, null, null);
+                    $$ = support.new_args_tail(lexer.getPosition(), null, null, null);
                 }
 
 // [!null]
@@ -1912,23 +1912,23 @@ f_arglist       : tLPAREN2 f_args rparen {
 
 
 args_tail       : f_kwarg ',' f_kwrest opt_f_block_arg {
-                    $$ = support.new_args_tail($1, $3, $4);
+                    $$ = support.new_args_tail($1.getPosition(), $1, $3, $4);
                 }
                 | f_kwarg opt_f_block_arg {
-                    $$ = support.new_args_tail($1, null, $2);
+                    $$ = support.new_args_tail($1.getPosition(), $1, null, $2);
                 }
                 | f_kwrest opt_f_block_arg {
-                    $$ = support.new_args_tail(null, $1, $2);
+                    $$ = support.new_args_tail($1.getPosition(), null, $1, $2);
                 }
                 | f_block_arg {
-                    $$ = support.new_args_tail(null, null, $1);
+                    $$ = support.new_args_tail($1.getPosition(), null, null, $1);
                 }
 
 opt_args_tail   : ',' args_tail {
                     $$ = $2;
                 }
                 | /* none */ {
-                    $$ = support.new_args_tail(null, null, null);
+                    $$ = support.new_args_tail(lexer.getPosition(), null, null, null);
                 }
 
 // [!null]

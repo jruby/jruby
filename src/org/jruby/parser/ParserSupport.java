@@ -1678,5 +1678,10 @@ public class ParserSupport {
         }
         
         return codeRange;
-    }    
+    }
+    
+    public Node new_args_tail(ISourcePosition position, Node keywordArg, 
+            Token restIdentifier, BlockArgNode blockArg) {
+        return null;
+    }
 }
