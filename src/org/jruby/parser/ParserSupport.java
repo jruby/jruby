@@ -1420,6 +1420,22 @@ public class ParserSupport {
         }
         return new ArgsNode(position, pre, optional, rest, post, block);
     }
+    
+    public Node new_args(ISourcePosition position, ListNode pre, ListNode optional, RestArgNode rest,
+            ListNode post, ArgsTailHolder tail) {
+        // Zero-Argument declaration
+        if (optional == null && rest == null && post == null && tail.getBlockArg() == null) {
+            if (pre == null || pre.size() == 0) return new ArgsNoArgNode(position);
+            if (pre.size() == 1 && !hasAssignableArgs(pre)) return new ArgsPreOneArgNode(position, pre);
+            if (pre.size() == 2 && !hasAssignableArgs(pre)) return new ArgsPreTwoArgNode(position, pre);
+        }
+        return new ArgsNode(position, pre, optional, rest, post, tail.getBlockArg());
+    }    
+    
+    public Node new_args_tail(ISourcePosition position, Node keywordArg, 
+            Token keywordRestArg, BlockArgNode blockArg) {
+        return null;
+    }    
 
     private boolean hasAssignableArgs(ListNode list) {
         for (Node node : list.childNodes()) {
@@ -1678,10 +1694,5 @@ public class ParserSupport {
         }
         
         return codeRange;
-    }
-    
-    public Node new_args_tail(ISourcePosition position, Node keywordArg, 
-            Token restIdentifier, BlockArgNode blockArg) {
-        return null;
     }
 }

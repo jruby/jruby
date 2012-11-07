@@ -219,7 +219,7 @@ public class Ruby20Parser implements RubyParser {
 %type <ListNode> qword_list word_list f_arg f_optarg f_marg_list, symbol_list
 %type <ListNode> qsym_list, symbols, qsymbols
    // FIXME: These are node until a better understanding of underlying type
-%type <Node> opt_args_tail, opt_block_args_tail, block_args_tail, args_tail
+%type <ArgsTailHolder> opt_args_tail, opt_block_args_tail, block_args_tail, args_tail
 %type <Node> f_kw, f_block_kw, f_block_kwarg, f_kwarg
    // ENEBO: missing when_args
 %type <ListNode> mlhs_head assocs assoc assoc_list mlhs_post f_block_optarg
@@ -1389,7 +1389,7 @@ block_param     : f_arg ',' f_block_optarg ',' f_rest_arg opt_block_args_tail {
                 }
                 | f_arg ',' {
                     RestArgNode rest = new UnnamedRestArgNode($1.getPosition(), null, support.getCurrentScope().addVariable("*"));
-                    $$ = support.new_args($1.getPosition(), $1, null, rest, null, null);
+                    $$ = support.new_args($1.getPosition(), $1, null, rest, null, (ArgsTailHolder) null);
                 }
                 | f_arg ',' f_rest_arg ',' f_arg opt_block_args_tail {
                     $$ = support.new_args($1.getPosition(), $1, null, $3, $5, $6);
@@ -1421,7 +1421,7 @@ block_param     : f_arg ',' f_block_optarg ',' f_rest_arg opt_block_args_tail {
 
 opt_block_param : none {
     // was $$ = null;
-                   $$ = support.new_args(lexer.getPosition(), null, null, null, null, null);
+                    $$ = support.new_args(lexer.getPosition(), null, null, null, null, (ArgsTailHolder) null);
                 }
                 | block_param_def {
                     lexer.commandStart = true;
@@ -1429,10 +1429,10 @@ opt_block_param : none {
                 }
 
 block_param_def : tPIPE opt_bv_decl tPIPE {
-                    $$ = support.new_args($1.getPosition(), null, null, null, null, null);
+                    $$ = support.new_args($1.getPosition(), null, null, null, null, (ArgsTailHolder) null);
                 }
                 | tOROP {
-                    $$ = support.new_args($1.getPosition(), null, null, null, null, null);
+                    $$ = support.new_args($1.getPosition(), null, null, null, null, (ArgsTailHolder) null);
                 }
                 | tPIPE block_param opt_bv_decl tPIPE {
                     $$ = $2;
@@ -1975,7 +1975,7 @@ f_args          : f_arg ',' f_optarg ',' f_rest_arg opt_args_tail {
                     $$ = support.new_args($1.getPosition(), null, null, null, null, $1);
                 }
                 | /* none */ {
-                    $$ = support.new_args(lexer.getPosition(), null, null, null, null, null);
+                    $$ = support.new_args(lexer.getPosition(), null, null, null, null, (ArgsTailHolder) null);
                 }
 
 f_bad_arg       : tCONSTANT {
