@@ -133,6 +133,7 @@ import org.jruby.ast.IfNode;
 import org.jruby.ast.InstAsgnNode;
 import org.jruby.ast.InstVarNode;
 import org.jruby.ast.IterNode;
+import org.jruby.ast.KeywordArgNode;
 import org.jruby.ast.ListNode;
 import org.jruby.ast.LocalAsgnNode;
 import org.jruby.ast.Match2Node;
@@ -1694,5 +1695,9 @@ public class ParserSupport {
         }
         
         return codeRange;
+    }
+    
+    public KeywordArgNode keyword_arg(ISourcePosition position, AssignableNode assignable) {
+        return new KeywordArgNode(position, assignable);
     }
 }

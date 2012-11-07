@@ -2030,12 +2030,12 @@ f_arg           : f_arg_item {
 
 f_kw            : tLABEL arg_value {
                     support.arg_var(support.formal_argument($1));
-                    $$ = support.keyword_arg(support.assignable($1, $2));
+                    $$ = support.keyword_arg($1.getPosition(), support.assignable($1, $2));
                 }
 
 f_block_kw      : tLABEL primary_value {
                     support.arg_var(support.formal_argument($1));
-                    $$ = support.keyword_arg(support.assignable($1, $2));
+                    $$ = support.keyword_arg($1.getPosition(), support.assignable($1, $2));
                 }
 
 f_block_kwarg   : f_block_kw {
