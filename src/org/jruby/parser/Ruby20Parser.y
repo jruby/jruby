@@ -1703,7 +1703,7 @@ symbol_list     : /* none */ {
                     $$ = new ArrayNode(lexer.getPosition());
                 }
                 | symbol_list word ' ' {
-                    $$ = $1.add($2 instanceof EvStrNode ? new DSymbolNode($1.getPosition(), lexer.getEncoding()).add($2) : $2);
+                    $$ = $1.add($2 instanceof EvStrNode ? new DSymbolNode($1.getPosition()).add($2) : $2);
                 }
 
 qwords          : tQWORDS_BEG ' ' tSTRING_END {
@@ -2042,14 +2042,14 @@ f_block_kwarg   : f_block_kw {
                     $$ = new ArrayNode($1.getPosition(), $1);
                 }
                 | f_block_kwarg ',' f_block_kw {
-                    $$ = $1.add($1, $3);
+                    $$ = $1.add($3);
                 }
 
 f_kwarg         : f_kw {
                     $$ = new ArrayNode($1.getPosition(), $1);
                 }
                 | f_kwarg ',' f_kw {
-                    $$ = $1.add($1, $3);
+                    $$ = $1.add($3);
                 }
 
 kwrest_mark     : tPOW {
