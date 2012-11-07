@@ -1437,8 +1437,8 @@ public class ParserSupport {
     
     public ArgsTailHolder new_args_tail(ISourcePosition position, ListNode keywordArg, 
             Token keywordRestArgName, BlockArgNode blockArg) {
-        KeywordRestArgNode keywordRestArg = new KeywordRestArgNode(keywordRestArgName.getPosition(),
-                currentScope.declare(keywordRestArgName.getPosition(), (String) keywordRestArgName.getValue()));
+        KeywordRestArgNode keywordRestArg = keywordRestArgName != null ? new KeywordRestArgNode(position,
+                currentScope.declare(position, (String) keywordRestArgName.getValue())) : null;
         
         return new ArgsTailHolder(position, keywordArg, keywordRestArg, blockArg);
     }    
