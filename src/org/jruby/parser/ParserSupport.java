@@ -134,6 +134,7 @@ import org.jruby.ast.InstAsgnNode;
 import org.jruby.ast.InstVarNode;
 import org.jruby.ast.IterNode;
 import org.jruby.ast.KeywordArgNode;
+import org.jruby.ast.KeywordRestArgNode;
 import org.jruby.ast.ListNode;
 import org.jruby.ast.LocalAsgnNode;
 import org.jruby.ast.Match2Node;
@@ -1430,12 +1431,16 @@ public class ParserSupport {
             if (pre.size() == 1 && !hasAssignableArgs(pre)) return new ArgsPreOneArgNode(position, pre);
             if (pre.size() == 2 && !hasAssignableArgs(pre)) return new ArgsPreTwoArgNode(position, pre);
         }
-        return new ArgsNode(position, pre, optional, rest, post, tail.getBlockArg());
+        return new ArgsNode(position, pre, optional, rest, post, 
+                tail.getKeywordArgs(), tail.getKeywordRestArgNode(), tail.getBlockArg());
     }    
     
-    public Node new_args_tail(ISourcePosition position, Node keywordArg, 
-            Token keywordRestArg, BlockArgNode blockArg) {
-        return null;
+    public ArgsTailHolder new_args_tail(ISourcePosition position, ListNode keywordArg, 
+            Token keywordRestArgName, BlockArgNode blockArg) {
+        KeywordRestArgNode keywordRestArg = new KeywordRestArgNode(keywordRestArgName.getPosition(),
+                currentScope.declare(keywordRestArgName.getPosition(), (String) keywordRestArgName.getValue()));
+        
+        return new ArgsTailHolder(position, keywordArg, keywordRestArg, blockArg);
     }    
 
     private boolean hasAssignableArgs(ListNode list) {

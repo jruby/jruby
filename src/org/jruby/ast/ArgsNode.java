@@ -117,6 +117,12 @@ public class ArgsNode extends Node {
         this.isSimple = !(hasMasgnArgs || hasOptArgs || restArg >= 0 || postCount > 0);
     }
 
+    public ArgsNode(ISourcePosition position, ListNode pre, ListNode optionalArguments,
+            RestArgNode rest, ListNode post, ListNode keywords, 
+            KeywordRestArgNode keywordRest, BlockArgNode blockArgNode) {
+        this(position, pre, optionalArguments, rest, post, blockArgNode);
+    }
+    
     private int getPostCount(int preCount, int optArgCount, RestArgNode rest) {
         // Simple-case: If we have a rest we know where it is
         if (rest != null) return rest.getIndex() + 1;
