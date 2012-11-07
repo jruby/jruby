@@ -3114,7 +3114,7 @@ states[20] = new ParserState() {
 };
 states[456] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                   yyVal = support.new_args(support.createEmptyArgsNodePosition(lexer.getPosition()), null, null, null, null, null);
+                   yyVal = support.new_args(support.createEmptyArgsNodePosition(lexer.getPosition()), null, null, null, null, (BlockArgNode) null);
     return yyVal;
   }
 };

@@ -1718,7 +1718,7 @@ f_args         : f_arg ',' f_optarg ',' f_rest_arg opt_f_block_arg {
                    $$ = support.new_args($1.getPosition(), null, null, null, null, $1);
                }
                | /* none */ {
-                   $$ = support.new_args(support.createEmptyArgsNodePosition(lexer.getPosition()), null, null, null, null, null);
+                   $$ = support.new_args(support.createEmptyArgsNodePosition(lexer.getPosition()), null, null, null, null, (BlockArgNode) null);
                }
 
 // ArgumentNode:f_norm_arg - normal argument to method declaration [!null]
