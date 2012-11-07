@@ -1128,7 +1128,9 @@ public final class Ruby {
         initBuiltins();
 
         // load JRuby internals, which loads Java support
-        loadService.require("jruby");
+        if (!RubyInstanceConfig.DEBUG_PARSER) {
+            loadService.require("jruby");
+        }
 
         // out of base boot mode
         booting = false;
@@ -1520,6 +1522,9 @@ public final class Ruby {
     }
 
     private void initBuiltins() {
+        // We cannot load any .rb and debug new parser features
+        if (RubyInstanceConfig.DEBUG_PARSER) return;
+        
         addLazyBuiltin("java.rb", "java", "org.jruby.javasupport.Java");
         addLazyBuiltin("jruby.rb", "jruby", "org.jruby.ext.jruby.JRubyLibrary");
         addLazyBuiltin("jruby/util.rb", "jruby/util", "org.jruby.ext.jruby.JRubyUtilLibrary");
@@ -1587,6 +1592,9 @@ public final class Ruby {
     }
     
     private void initRubyKernel() {
+        // We cannot load any .rb and debug new parser features
+        if (RubyInstanceConfig.DEBUG_PARSER) return;
+        
         // load Ruby parts of core
         loadService.loadFromClassLoader(getClassLoader(), "jruby/kernel.rb", false);
         

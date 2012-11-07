@@ -914,6 +914,8 @@ public class LoadService {
     }
 
     private static RaiseException newLoadErrorFromThrowable(Ruby runtime, String file, Throwable t) {
+        if (RubyInstanceConfig.DEBUG_PARSER) t.printStackTrace();
+        
         return runtime.newLoadError(String.format("load error: %s -- %s: %s", file, t.getClass().getName(), t.getMessage()));
     }
 
