@@ -433,6 +433,12 @@ other than ASM, which is rewritten to avoid conflicts. -->
             <zipfileset src="${build.lib.dir}/nailgun-0.7.1.jar"/>
             <zipfileset src="${build.lib.dir}/invokebinder.jar"/>
             <zipfileset src="${build.lib.dir}/yydebug.jar"/>
+            <zipfileset src="${build.lib.dir}/bcmail-jdk15-146.jar">
+                <exclude name="META-INF/BCKEY.*"/>
+            </zipfileset>
+            <zipfileset src="${build.lib.dir}/bcprov-jdk15-146.jar">
+                <exclude name="META-INF/BCKEY.*"/>
+            </zipfileset>
             <metainf dir="spi">
                 <include name="services/**"/>
             </metainf>
@@ -441,6 +447,7 @@ other than ASM, which is rewritten to avoid conflicts. -->
                 <attribute name="Main-Class" value="org.jruby.Main"/>
             </manifest>
             <rule pattern="org.objectweb.asm.**" result="org.jruby.org.objectweb.asm.@1"/>
+            <rule pattern="org.bouncycastle.**" result="org.jruby.org.bouncycastle.@1"/>
         </jarjar>
         <antcall target="_osgify-jar_">
             <param name="bndfile" value="jruby.bnd"/>
@@ -474,6 +481,7 @@ other than ASM, which is rewritten to avoid conflicts. -->
                 <attribute name="Main-Class" value="org.jruby.Main"/>
             </manifest>
             <rule pattern="org.objectweb.asm.**" result="org.jruby.org.objectweb.asm.@1"/>
+            <rule pattern="org.bouncycastle.**" result="org.jruby.org.bouncycastle.@1"/>
         </jarjar>
         <antcall target="_osgify-jar_">
             <param name="bndfile" value="jruby.bnd"/>
@@ -602,6 +610,7 @@ other than ASM, which is rewritten to avoid conflicts. -->
                 <attribute name="Main-Class" value="${mainclass}"/>
             </manifest>
             <rule pattern="org.objectweb.asm.**" result="org.jruby.org.objectweb.asm.@1"/>
+            <rule pattern="org.bouncycastle.**" result="org.jruby.org.bouncycastle.@1"/>
         </jarjar>
         <antcall target="_osgify-jar_">
             <param name="bndfile" value="jruby-complete.bnd"/>
