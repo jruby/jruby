@@ -2393,6 +2393,7 @@ states[479] = new ParserState() {
                     yyVal = ((ArgsNode)yyVals[-1+yyTop]);
                     ((ISourcePositionHolder)yyVal).setPosition(((Token)yyVals[-2+yyTop]).getPosition());
                     lexer.setState(LexState.EXPR_BEG);
+                    lexer.commandStart = true;
     return yyVal;
   }
 };
@@ -2472,6 +2473,8 @@ states[547] = new ParserState() {
 states[480] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
                     yyVal = ((ArgsNode)yyVals[-1+yyTop]);
+                    lexer.setState(LexState.EXPR_BEG);
+                    lexer.commandStart = true;
     return yyVal;
   }
 };
@@ -4306,7 +4309,7 @@ states[267] = new ParserState() {
   }
 };
 }
-					// line 2053 "Ruby19Parser.y"
+					// line 2056 "Ruby19Parser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -4339,4 +4342,4 @@ states[267] = new ParserState() {
         return support.getResult();
     }
 }
-					// line 8304 "-"
+					// line 8307 "-"
