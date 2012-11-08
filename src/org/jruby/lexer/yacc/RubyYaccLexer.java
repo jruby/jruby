@@ -1658,7 +1658,7 @@ public class RubyYaccLexer {
                 src.unread(c2);
                 setState(LexState.EXPR_BEG);
                 src.read();
-                yaccValue = new Token(tempVal, getPosition());
+                yaccValue = new Token(tempVal, Tokens.tLABEL, getPosition());
                 return Tokens.tLABEL;
             }
             src.unread(c2);
