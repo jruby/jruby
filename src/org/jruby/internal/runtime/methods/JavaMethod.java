@@ -214,6 +214,10 @@ public abstract class JavaMethod extends DynamicMethod implements Cloneable {
         return true;
     }
 
+    public StaticScope getStaticScope() {
+        return staticScope;
+    }
+
     protected static IRubyObject raiseArgumentError(JavaMethod method, ThreadContext context, String name, int given, int min, int max) {
         try {
             method.preBacktraceOnly(context, name);

@@ -37,32 +37,17 @@ import java.math.BigInteger;
 import java.util.Arrays;
 
 import com.headius.invokebinder.Binder;
-import org.jruby.Ruby;
-import org.jruby.RubyBasicObject;
-import org.jruby.RubyBoolean;
-import org.jruby.RubyClass;
-import org.jruby.RubyFixnum;
-import org.jruby.RubyFloat;
-import org.jruby.RubyInstanceConfig;
-import org.jruby.RubyModule;
-import org.jruby.RubyObject;
-import org.jruby.RubyString;
+import org.jruby.*;
 import org.jruby.exceptions.JumpException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
 import org.jruby.ext.ffi.jffi.JITNativeInvoker;
 import org.jruby.ext.ffi.jffi.NativeInvoker;
-import org.jruby.internal.runtime.methods.AliasMethod;
-import org.jruby.internal.runtime.methods.AttrReaderMethod;
-import org.jruby.internal.runtime.methods.AttrWriterMethod;
-import org.jruby.internal.runtime.methods.CallConfiguration;
-import org.jruby.internal.runtime.methods.CompiledMethod;
-import org.jruby.internal.runtime.methods.DefaultMethod;
-import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.internal.runtime.methods.JittedMethod;
+import org.jruby.internal.runtime.methods.*;
 import org.jruby.java.invokers.SingletonMethodInvoker;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.javasupport.proxy.InternalJavaProxy;
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.CallType;
 import org.jruby.runtime.ThreadContext;
@@ -73,7 +58,10 @@ import org.jruby.util.CodegenUtils;
 import org.jruby.util.JavaNameMangler;
 import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
+
+import static java.lang.invoke.MethodType.methodType;
 import static org.jruby.runtime.invokedynamic.InvokeDynamicSupport.*;
+import static org.jruby.util.CodegenUtils.p;
 
 /**
  * Bootstrapping logic for invokedynamic-based invocation.
@@ -502,11 +490,6 @@ public class InvocationLinker {
         } else if (nativeCall != null) {
             // has an explicit native call path
 
-            // if frame/scope required, can't dispatch direct
-            if (method.getCallConfig() != CallConfiguration.FrameNoneScopeNone) {
-                throw new IndirectBindingException("frame or scope required: " + method.getCallConfig());
-            }
-
             if (nativeCall.isJava()) {
                 if (!RubyInstanceConfig.INVOKEDYNAMIC_JAVA) {
                     throw new IndirectBindingException("direct Java dispatch not enabled");
@@ -641,16 +624,9 @@ public class InvocationLinker {
         return args[args.length - 1];
     }
     
-    private static final MethodHandle BLOCK_ESCAPE = findStatic(InvocationLinker.class, "blockEscape", methodType(IRubyObject.class, IRubyObject.class, Block.class));
-    public static IRubyObject blockEscape(IRubyObject retval, Block block) {
+    private static final MethodHandle BLOCK_ESCAPE = findStatic(InvocationLinker.class, "blockEscape", methodType(void.class, Block.class));
+    public static void blockEscape(Block block) {
         block.escape();
-        return retval;
-    }
-    
-    private static final MethodHandle BLOCK_ESCAPE_EXCEPTION = findStatic(InvocationLinker.class, "blockEscapeException", methodType(IRubyObject.class, Throwable.class, Block.class));
-    public static IRubyObject blockEscapeException(Throwable throwable, Block block) throws Throwable {
-        block.escape();
-        throw throwable;
     }
     
     private static final MethodHandle HANDLE_BREAK_JUMP = findStatic(InvokeDynamicSupport.class, "handleBreakJump", methodType(IRubyObject.class, JumpException.BreakJump.class, ThreadContext.class));
@@ -668,24 +644,13 @@ public class InvocationLinker {
                     HANDLE_BREAK_JUMP,
                     site.type().insertParameterTypes(0, JumpException.BreakJump.class),
                     new int[] {0, 1});
-//            MethodHandle retryHandler = permuteArguments(
-//                    HANDLE_RETRY_JUMP,
-//                    site.type().insertParameterTypes(0, JumpException.RetryJump.class),
-//                    new int[] {0, 1, site.type().parameterCount()});
-//            MethodHandle blockEscape = permuteArguments(
-//                    breakHandler,
-//                    site.type().insertParameterTypes(0, Throwable.class),
-//                    new int[] {0, site.type().parameterCount()});
+
             target = catchException(target, JumpException.BreakJump.class, breakHandler);
-//            target = catchException(target, JumpException.RetryJump.class, retryHandler);
-//            target = catchException(target, Throwable.class, retryHandler);
-            target = catchException(
-                    target,
-                    Throwable.class,
-                    permuteArguments(BLOCK_ESCAPE_EXCEPTION, site.type().insertParameterTypes(0, Throwable.class), new int[] {0, site.type().parameterCount()}));
-            target = foldArguments(
-                    permuteArguments(BLOCK_ESCAPE, site.type().insertParameterTypes(0, IRubyObject.class), new int[] {0, site.type().parameterCount()}),
-                    target);
+
+            target = Binder
+                    .from(target.type())
+                    .tryFinally(permuteArguments(BLOCK_ESCAPE, site.type().changeReturnType(void.class), site.type().parameterCount() - 1))
+                    .invoke(target);
         }
         
         // if it's an attr assignment as an expression, need to return n-1th argument
@@ -1265,62 +1230,60 @@ public class InvocationLinker {
     private static MethodHandle createNativeHandle(JRubyCallSite site, DynamicMethod method) {
         MethodHandle nativeTarget = (MethodHandle)method.getHandle();
         if (nativeTarget != null) return nativeTarget;
-        
-        
-        if (method.getCallConfig() == CallConfiguration.FrameNoneScopeNone) {
-            DynamicMethod.NativeCall nativeCall = method.getNativeCall();
-            Class[] nativeSig = nativeCall.getNativeSignature();
-            boolean isStatic = nativeCall.isStatic();
-            
-            try {
-                if (isStatic) {
-                    nativeTarget = site.lookup().findStatic(
-                            nativeCall.getNativeTarget(),
-                            nativeCall.getNativeName(),
-                            methodType(nativeCall.getNativeReturn(),
-                            nativeCall.getNativeSignature()));
-                } else {
-                    nativeTarget = site.lookup().findVirtual(
-                            nativeCall.getNativeTarget(),
-                            nativeCall.getNativeName(),
-                            methodType(nativeCall.getNativeReturn(),
-                            nativeCall.getNativeSignature()));
-                }
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-            
-            int argCount = getArgCount(nativeCall.getNativeSignature(), isStatic);
-            MethodType inboundType = STANDARD_NATIVE_TYPES_BLOCK[argCount];
 
-            int[] permute;
-            MethodType convert;
-            if (nativeSig.length > 0 && nativeSig[0] == ThreadContext.class) {
-                if (nativeSig[nativeSig.length - 1] == Block.class) {
-                    convert = isStatic ? TARGET_TC_SELF_ARGS_BLOCK[argCount] : TARGET_SELF_TC_ARGS_BLOCK[argCount];
-                    permute = isStatic ? TC_SELF_ARGS_BLOCK_PERMUTES[argCount] : SELF_TC_ARGS_BLOCK_PERMUTES[argCount];
-                } else {
-                    convert = isStatic ? TARGET_TC_SELF_ARGS[argCount] : TARGET_SELF_TC_ARGS[argCount];
-                    permute = isStatic ? TC_SELF_ARGS_PERMUTES[argCount] : SELF_TC_ARGS_PERMUTES[argCount];
-                }
+        DynamicMethod.NativeCall nativeCall = method.getNativeCall();
+        Class[] nativeSig = nativeCall.getNativeSignature();
+        boolean isStatic = nativeCall.isStatic();
+
+        try {
+            if (isStatic) {
+                nativeTarget = site.lookup().findStatic(
+                        nativeCall.getNativeTarget(),
+                        nativeCall.getNativeName(),
+                        methodType(nativeCall.getNativeReturn(),
+                        nativeCall.getNativeSignature()));
             } else {
-                if (nativeSig.length > 0 && nativeSig[nativeSig.length - 1] == Block.class) {
-                    convert = TARGET_SELF_ARGS_BLOCK[argCount];
-                    permute = SELF_ARGS_BLOCK_PERMUTES[argCount];
-                } else {
-                    convert = TARGET_SELF_ARGS[argCount];
-                    permute = SELF_ARGS_PERMUTES[argCount];
-                }
+                nativeTarget = site.lookup().findVirtual(
+                        nativeCall.getNativeTarget(),
+                        nativeCall.getNativeName(),
+                        methodType(nativeCall.getNativeReturn(),
+                        nativeCall.getNativeSignature()));
             }
-
-            nativeTarget = explicitCastArguments(nativeTarget, convert);
-            nativeTarget = permuteArguments(nativeTarget, inboundType, permute);
-            method.setHandle(nativeTarget);
-            return nativeTarget;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-        
-        // can't build native handle for it
-        return null;
+
+        int argCount = getArgCount(nativeCall.getNativeSignature(), isStatic);
+        MethodType inboundType = STANDARD_NATIVE_TYPES_BLOCK[argCount];
+
+        int[] permute;
+        MethodType convert;
+        if (nativeSig.length > 0 && nativeSig[0] == ThreadContext.class) {
+            if (nativeSig[nativeSig.length - 1] == Block.class) {
+                convert = isStatic ? TARGET_TC_SELF_ARGS_BLOCK[argCount] : TARGET_SELF_TC_ARGS_BLOCK[argCount];
+                permute = isStatic ? TC_SELF_ARGS_BLOCK_PERMUTES[argCount] : SELF_TC_ARGS_BLOCK_PERMUTES[argCount];
+            } else {
+                convert = isStatic ? TARGET_TC_SELF_ARGS[argCount] : TARGET_SELF_TC_ARGS[argCount];
+                permute = isStatic ? TC_SELF_ARGS_PERMUTES[argCount] : SELF_TC_ARGS_PERMUTES[argCount];
+            }
+        } else {
+            if (nativeSig.length > 0 && nativeSig[nativeSig.length - 1] == Block.class) {
+                convert = TARGET_SELF_ARGS_BLOCK[argCount];
+                permute = SELF_ARGS_BLOCK_PERMUTES[argCount];
+            } else {
+                convert = TARGET_SELF_ARGS[argCount];
+                permute = SELF_ARGS_PERMUTES[argCount];
+            }
+        }
+
+        nativeTarget = explicitCastArguments(nativeTarget, convert);
+        nativeTarget = permuteArguments(nativeTarget, inboundType, permute);
+
+        nativeTarget = wrapWithFraming(site, method, nativeTarget, null, argCount);
+
+        method.setHandle(nativeTarget);
+
+        return nativeTarget;
     }
 
     ////////////////////////////////////////////////////////////////////////////
@@ -1422,10 +1385,13 @@ public class InvocationLinker {
         
         try {
             Object scriptObject;
+            StaticScope scope = null;
             if (method instanceof CompiledMethod) {
                 scriptObject = ((CompiledMethod)method).getScriptObject();
+                scope = ((CompiledMethod)method).getStaticScope();
             } else if (method instanceof JittedMethod) {
                 scriptObject = ((JittedMethod)method).getScriptObject();
+                scope = ((JittedMethod)method).getStaticScope();
             } else {
                 throw new RuntimeException("invalid method for ruby handle: " + method);
             }
@@ -1437,6 +1403,8 @@ public class InvocationLinker {
                     .permute(TC_SELF_ARGS_BLOCK_PERMUTES[Math.abs(argCount)])
                     .insert(0, scriptObject)
                     .invokeStaticQuiet(site.lookup(), nativeCall.getNativeTarget(), nativeCall.getNativeName());
+
+            nativeTarget = wrapWithFraming(site, method, nativeTarget, scope, argCount);
             
             method.setHandle(nativeTarget);
             return nativeTarget;
@@ -1444,7 +1412,177 @@ public class InvocationLinker {
             throw new RuntimeException(e);
         }
     }
-    
+
+    private static MethodHandle wrapWithFraming(JRubyCallSite site, DynamicMethod method, MethodHandle nativeTarget, StaticScope scope, int argCount) {
+        MethodHandle framePre = getFramePre(site, method, argCount, scope);
+
+        if (framePre != null) {
+            MethodHandle framePost = getFramePost(method, argCount);
+
+            // break, return, redo handling
+            CallConfiguration callConfig = method.getCallConfig();
+            boolean heapScoped = callConfig.scoping() != Scoping.None;
+            boolean framed = callConfig.framing() != Framing.None;
+
+
+            if (framed || heapScoped) {
+                nativeTarget = catchException(
+                        nativeTarget,
+                        JumpException.ReturnJump.class,
+                        Binder
+                                .from(nativeTarget.type().insertParameterTypes(0, JumpException.ReturnJump.class))
+                            .permute(0, 1)
+                            .invokeStaticQuiet(lookup(), InvocationLinker.class, "handleReturn"));
+            }
+            if (framed) {
+                nativeTarget = catchException(
+                        nativeTarget,
+                        JumpException.RedoJump.class,
+                        Binder
+                                .from(nativeTarget.type().insertParameterTypes(0, JumpException.RedoJump.class))
+                                .permute(0, 1)
+                                .invokeStaticQuiet(lookup(), InvocationLinker.class, "handleRedo"));
+            }
+
+
+            // post logic for frame
+            nativeTarget = Binder
+                    .from(nativeTarget.type())
+                    .tryFinally(framePost)
+                    .invoke(nativeTarget);
+
+            // pre logic for frame
+            nativeTarget = foldArguments(nativeTarget, framePre);
+
+
+            // call polling and call number increment
+            nativeTarget = Binder
+                    .from(nativeTarget.type())
+                    .fold(Binder
+                            .from(nativeTarget.type().changeReturnType(void.class))
+                            .permute(0)
+                            .invokeStaticQuiet(lookup(), ThreadContext.class, "callThreadPoll"))
+                    .invoke(nativeTarget);
+        }
+
+        return nativeTarget;
+    }
+
+    public static IRubyObject handleReturn(JumpException.ReturnJump rj, ThreadContext context) {
+        if (rj.getTarget() == context.getFrameJumpTarget()) {
+            return (IRubyObject)rj.getValue();
+        }
+
+        throw rj;
+    }
+
+    public static IRubyObject handleRedo(JumpException.RedoJump rj, ThreadContext context) {
+        throw context.runtime.newLocalJumpError(RubyLocalJumpError.Reason.REDO, context.runtime.getNil(), "unexpected redo");
+    }
+
+    private static MethodHandle getFramePre(JRubyCallSite site, DynamicMethod method, int argCount, StaticScope scope) {
+        MethodHandle framePre = null;
+
+        switch (method.getCallConfig()) {
+            case FrameFullScopeFull:
+                // before logic
+                framePre = Binder
+                        .from(STANDARD_NATIVE_TYPES_BLOCK[Math.abs(argCount)].changeReturnType(void.class))
+                        .permute(TC_SELF_BLOCK_PERMUTES[Math.abs(argCount)])
+                        .insert(1, new Class[]{RubyModule.class, String.class}, method.getImplementationClass(), site.name())
+                        .insert(5, new Class[]{StaticScope.class}, scope)
+                        .invokeVirtualQuiet(lookup(), "preMethodFrameAndScope");
+
+                break;
+
+            case FrameFullScopeDummy:
+                // before logic
+                framePre = Binder
+                        .from(STANDARD_NATIVE_TYPES_BLOCK[Math.abs(argCount)].changeReturnType(void.class))
+                        .permute(TC_SELF_BLOCK_PERMUTES[Math.abs(argCount)])
+                        .insert(1, new Class[]{RubyModule.class, String.class}, method.getImplementationClass(), site.name())
+                        .insert(5, new Class[]{StaticScope.class}, scope)
+                        .invokeVirtualQuiet(lookup(), "preMethodFrameAndDummyScope");
+
+                break;
+
+            case FrameFullScopeNone:
+                // before logic
+                framePre = Binder
+                        .from(STANDARD_NATIVE_TYPES_BLOCK[Math.abs(argCount)].changeReturnType(void.class))
+                        .permute(TC_SELF_BLOCK_PERMUTES[Math.abs(argCount)])
+                        .insert(1, new Class[]{RubyModule.class, String.class}, method.getImplementationClass(), site.name())
+                        .invokeVirtualQuiet(lookup(), "preMethodFrameOnly");
+
+                break;
+
+            case FrameNoneScopeFull:
+                // before logic
+                framePre = Binder
+                        .from(STANDARD_NATIVE_TYPES_BLOCK[Math.abs(argCount)].changeReturnType(void.class))
+                        .permute(0)
+                        .insert(1, new Class[]{RubyModule.class, StaticScope.class}, method.getImplementationClass(), scope)
+                        .invokeVirtualQuiet(lookup(), "preMethodScopeOnly");
+
+                break;
+
+            case FrameNoneScopeDummy:
+                // before logic
+                framePre = Binder
+                        .from(STANDARD_NATIVE_TYPES_BLOCK[Math.abs(argCount)].changeReturnType(void.class))
+                        .permute(0)
+                        .insert(1, new Class[]{RubyModule.class, StaticScope.class}, method.getImplementationClass(), scope)
+                        .invokeVirtualQuiet(lookup(), "preMethodNoFrameAndDummyScope");
+
+                break;
+
+        }
+
+        return framePre;
+    }
+
+    private static MethodHandle getFramePost(DynamicMethod method, int argCount) {
+        switch (method.getCallConfig()) {
+            case FrameFullScopeFull:
+                // finally logic
+                return Binder
+                        .from(STANDARD_NATIVE_TYPES_BLOCK[Math.abs(argCount)].changeReturnType(void.class))
+                        .permute(0)
+                        .invokeVirtualQuiet(lookup(), "postMethodFrameAndScope");
+
+            case FrameFullScopeDummy:
+                // finally logic
+                return Binder
+                        .from(STANDARD_NATIVE_TYPES_BLOCK[Math.abs(argCount)].changeReturnType(void.class))
+                        .permute(0)
+                        .invokeVirtualQuiet(lookup(), "postMethodFrameAndScope");
+
+            case FrameFullScopeNone:
+                // finally logic
+                return Binder
+                        .from(STANDARD_NATIVE_TYPES_BLOCK[Math.abs(argCount)].changeReturnType(void.class))
+                        .permute(0)
+                        .invokeVirtualQuiet(lookup(), "postMethodFrameOnly");
+
+            case FrameNoneScopeFull:
+                // finally logic
+                return Binder
+                        .from(STANDARD_NATIVE_TYPES_BLOCK[Math.abs(argCount)].changeReturnType(void.class))
+                        .permute(0)
+                        .invokeVirtualQuiet(lookup(), "postMethodScopeOnly");
+
+            case FrameNoneScopeDummy:
+                // finally logic
+                return Binder
+                        .from(STANDARD_NATIVE_TYPES_BLOCK[Math.abs(argCount)].changeReturnType(void.class))
+                        .permute(0)
+                        .invokeVirtualQuiet(lookup(), "postMethodScopeOnly");
+
+        }
+
+        return null;
+    }
+
     ////////////////////////////////////////////////////////////////////////////
     // Additional support code
     ////////////////////////////////////////////////////////////////////////////
@@ -2043,5 +2181,16 @@ public class InvocationLinker {
         TC_SELF_2ARG_BLOCK_PERMUTE,
         TC_SELF_3ARG_BLOCK_PERMUTE,
         TC_SELF_NARG_BLOCK_PERMUTE,
+    };
+    private static final int[] TC_SELF_BLOCK_PERMUTE_1 = {0, 2, 4};
+    private static final int[] TC_SELF_BLOCK_PERMUTE_2 = {0, 2, 5};
+    private static final int[] TC_SELF_BLOCK_PERMUTE_3 = {0, 2, 6};
+    private static final int[] TC_SELF_BLOCK_PERMUTE_N = {0, 2, 4};
+    private static final int[][] TC_SELF_BLOCK_PERMUTES = {
+            TC_SELF_BLOCK_PERMUTE,
+            TC_SELF_BLOCK_PERMUTE_1,
+            TC_SELF_BLOCK_PERMUTE_2,
+            TC_SELF_BLOCK_PERMUTE_3,
+            TC_SELF_BLOCK_PERMUTE_N,
     };
 }
