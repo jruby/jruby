@@ -74,11 +74,8 @@ public class InvocationLinker {
         String operation = names[0];
 
         if (name.equals("yieldSpecific")) {
-            CallSite site = new MutableCallSite(type);
-            MethodHandle target = lookup.findStatic(InvocationLinker.class, "yieldSpecificFallback", type.insertParameterTypes(0, MutableCallSite.class));
-            target = insertArguments(target, 0, site);
-            site.setTarget(target);
-            return site;
+            MethodHandle target = lookup.findStatic(InvocationLinker.class, "yieldSpecificFallback", type);
+            return new ConstantCallSite(target);
         }
 
         JRubyCallSite site;
@@ -373,14 +370,12 @@ public class InvocationLinker {
     }
     
     public static IRubyObject yieldSpecificFallback(
-            MutableCallSite site,
             Block block,
             ThreadContext context) throws Throwable {
         return block.yieldSpecific(context);
     }
     
     public static IRubyObject yieldSpecificFallback(
-            MutableCallSite site,
             Block block,
             ThreadContext context,
             IRubyObject arg0) throws Throwable {
@@ -388,7 +383,6 @@ public class InvocationLinker {
     }
     
     public static IRubyObject yieldSpecificFallback(
-            MutableCallSite site,
             Block block,
             ThreadContext context,
             IRubyObject arg0,
@@ -397,7 +391,6 @@ public class InvocationLinker {
     }
     
     public static IRubyObject yieldSpecificFallback(
-            MutableCallSite site,
             Block block,
             ThreadContext context,
             IRubyObject arg0,
