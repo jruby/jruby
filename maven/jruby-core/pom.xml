@@ -83,12 +83,6 @@
       <artifactId>jzlib</artifactId>
       <version>1.1.1</version>
     </dependency>
-    <!-- newer version of BC does not work - yet! -->
-    <dependency>
-      <groupId>org.bouncycastle</groupId>
-      <artifactId>bcmail-jdk15on</artifactId>
-      <version>1.46</version>
-    </dependency>
     <!-- to use this explicitly allows to exclude the asm deps
     which are repacked inside jruby-core itself -->
     <dependency>
