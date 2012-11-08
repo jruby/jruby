@@ -1778,7 +1778,7 @@ string_content  : tSTRING_CONTENT {
                    lexer.getCmdArgumentState().stop();
                    lexer.setStrTerm(null);
                    lexer.setState(LexState.EXPR_BEG);
-                } compstmt tSTRING_DEND {
+                } compstmt tRCURLY {
                    lexer.getConditionState().restart();
                    lexer.getCmdArgumentState().restart();
                    lexer.setStrTerm($<StrTerm>2);
