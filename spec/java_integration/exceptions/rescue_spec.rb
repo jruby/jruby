@@ -4,8 +4,8 @@ java_import java.lang.OutOfMemoryError
 java_import "java_integration.fixtures.ThrowExceptionInInitializer"
 java_import "java_integration.fixtures.ExceptionRunner"
 
-describe "Non-wrapped Java throwables" do
-  it "can be rescued" do
+describe "A non-wrapped Java throwable" do
+  it "can be rescued using the Java type" do
     exception = OutOfMemoryError.new
     begin
       raise exception
@@ -14,6 +14,39 @@ describe "Non-wrapped Java throwables" do
     
     oome.should_not == nil
     oome.should == exception
+  end
+
+  it "can be rescued using Object" do
+    begin
+      raise java.lang.NullPointerException.new
+    rescue Object => e
+      e.should be_kind_of(java.lang.NullPointerException)
+    end
+  end
+
+  it "can be rescued using Exception" do
+    begin
+      raise java.lang.NullPointerException.new
+    rescue Exception => e
+      e.should be_kind_of(java.lang.NullPointerException)
+    end
+  end
+
+  it "can be rescued using StandardError" do
+    begin
+      raise java.lang.NullPointerException.new
+    rescue StandardError => e
+      e.should be_kind_of(java.lang.NullPointerException)
+    end
+  end
+
+  it "can be rescued inline" do
+    obj = Object.new
+    def obj.go
+      raise java.lang.NullPointerException.new
+    end
+
+    (obj.go rescue 'foo').should == 'foo'
   end
 end
 

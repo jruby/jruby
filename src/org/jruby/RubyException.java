@@ -182,7 +182,9 @@ public class RubyException extends RubyObject {
     public static IRubyObject op_eqq(ThreadContext context, IRubyObject recv, IRubyObject other) {
         Ruby runtime = context.runtime;
         // special case non-FlowControlException Java exceptions so they'll be caught by rescue Exception
-        if (recv == runtime.getException() && other instanceof ConcreteJavaProxy) {
+        if (other instanceof ConcreteJavaProxy &&
+                (recv == runtime.getException() || recv == runtime.getStandardError())) {
+
             Object object = ((ConcreteJavaProxy)other).getObject();
             if (object instanceof Throwable && !(object instanceof FlowControlException)) {
                 return context.runtime.getTrue();

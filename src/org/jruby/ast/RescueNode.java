@@ -110,10 +110,6 @@ public class RescueNode extends Node {
     
     @Override
     public IRubyObject interpret(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return interpretWithJavaExceptions(runtime, context, self, aBlock);
-    }
-
-    private IRubyObject interpretWithJavaExceptions(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
         IRubyObject result = null;
         boolean exceptionRaised = false;
         RescuedBlock : while (true) {

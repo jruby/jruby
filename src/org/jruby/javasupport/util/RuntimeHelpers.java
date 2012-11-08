@@ -1003,7 +1003,10 @@ public class RuntimeHelpers {
                 runtime.getException() == catchable ||
 
                 // rescue Object needs to catch Java exceptions
-                runtime.getObject() == catchable) {
+                runtime.getObject() == catchable ||
+
+                // rescue StandardError needs t= catch Java exceptions
+                runtime.getStandardError() == catchable) {
 
             if (throwable instanceof RaiseException) {
                 return isExceptionHandled(((RaiseException)throwable).getException(), catchable, context).isTrue();
@@ -1038,9 +1041,14 @@ public class RuntimeHelpers {
         if (currentThrowable instanceof RaiseException) {
             return isExceptionHandled(((RaiseException)currentThrowable).getException(), throwables, context);
         } else {
-            for (int i = 0; i < throwables.length; i++) {
-                if (checkJavaException(currentThrowable, throwables[i], context)) {
-                    return context.runtime.getTrue();
+            if (throwables.length == 0) {
+                // no rescue means StandardError, which rescues Java exceptions
+                return context.runtime.getTrue();
+            } else {
+                for (int i = 0; i < throwables.length; i++) {
+                    if (checkJavaException(currentThrowable, throwables[i], context)) {
+                        return context.runtime.getTrue();
+                    }
                 }
             }
 
