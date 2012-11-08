@@ -91,7 +91,8 @@ public class ParserSupport19 extends ParserSupport {
             case Tokens.k__ENCODING__:
                 throw new SyntaxException(PID.INVALID_ASSIGNMENT, lhs.getPosition(),
                         lexer.getCurrentLine(), "Can't assign to __ENCODING__", "__ENCODING__");
-            case Tokens.tIDENTIFIER:
+            case Tokens.tLABEL: // keyword args (only 2.0 grammar can ever call assignable with this token)
+            case Tokens.tIDENTIFIER: // normal locals
                 // ENEBO: 1.9 has CURR nodes for local/block variables.  We don't.  I believe we follow proper logic
                 return currentScope.assign(lhs.getPosition(), (String) lhs.getValue(), makeNullNil(value));
             case Tokens.tCONSTANT:
