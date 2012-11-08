@@ -100,6 +100,7 @@ public class RubyTCPSocket extends RubyIPSocket {
             Socket socket = channel.socket();
 
             if (localHost != null) {
+                socket.setReuseAddress(true);
                 socket.bind( new InetSocketAddress(InetAddress.getByName(localHost), localPort) );
             }
 
