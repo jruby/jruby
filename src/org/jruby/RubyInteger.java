@@ -147,14 +147,23 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     private static void fixnumUpto(ThreadContext context, long from, long to, Block block) {
+        // We must avoid "i++" integer overflow when (to == Long.MAX_VALUE).
         Ruby runtime = context.runtime;
         if (block.getBody().getArgumentType() == BlockBody.ZERO_ARGS) {
             IRubyObject nil = runtime.getNil();
-            for (long i = from; i <= to; i++) {
+            long i;
+            for (i = from; i < to; i++) {
+                block.yield(context, nil);
+            }
+            if (i <= to) {
                 block.yield(context, nil);
             }
         } else {
-            for (long i = from; i <= to; i++) {
+            long i;
+            for (i = from; i < to; i++) {
+                block.yield(context, RubyFixnum.newFixnum(runtime, i));
+            }
+            if (i <= to) {
                 block.yield(context, RubyFixnum.newFixnum(runtime, i));
             }
         }
@@ -192,14 +201,23 @@ public abstract class RubyInteger extends RubyNumeric {
     }
 
     private static void fixnumDownto(ThreadContext context, long from, long to, Block block) {
+        // We must avoid "i--" integer overflow when (to == Long.MIN_VALUE).
         Ruby runtime = context.runtime;
         if (block.getBody().getArgumentType() == BlockBody.ZERO_ARGS) {
-            final IRubyObject nil = runtime.getNil();
-            for (long i = from; i >= to; i--) {
+            IRubyObject nil = runtime.getNil();
+            long i;
+            for (i = from; i > to; i--) {
+                block.yield(context, nil);
+            }
+            if (i >= to) {
                 block.yield(context, nil);
             }
         } else {
-            for (long i = from; i >= to; i--) {
+            long i;
+            for (i = from; i > to; i--) {
+                block.yield(context, RubyFixnum.newFixnum(runtime, i));
+            }
+            if (i >= to) {
                 block.yield(context, RubyFixnum.newFixnum(runtime, i));
             }
         }
@@ -243,9 +261,7 @@ public abstract class RubyInteger extends RubyNumeric {
     @JRubyMethod(name = {"succ", "next"})
     public IRubyObject succ(ThreadContext context) {
         if (this instanceof RubyFixnum) {
-         //- return RubyFixnum.newFixnum(context.runtime, getLongValue() + 1L);  //-code
-            // suggested patch for http://jira.codehaus.org/browse/JRUBY-6778
-            return ((RubyFixnum) this).op_plus_one(context);  //+code: suggested patch
+            return ((RubyFixnum) this).op_plus_one(context);
         } else {
             return callMethod(context, "+", RubyFixnum.one(context.runtime));
         }

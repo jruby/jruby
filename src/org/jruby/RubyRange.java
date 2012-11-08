@@ -68,8 +68,8 @@ import org.jruby.util.ByteList;
 import org.jruby.util.TypeConverter;
 
 import static org.jruby.javasupport.util.RuntimeHelpers.invokedynamic;
-import static org.jruby.runtime.invokedynamic.MethodNames.HASH;
-import static org.jruby.runtime.invokedynamic.MethodNames.OP_CMP;
+import static org.jruby.runtime.MethodIndex.HASH;
+import static org.jruby.runtime.MethodIndex.OP_CMP;
 
 /**
  * @author jpetersen
@@ -421,16 +421,28 @@ public class RubyRange extends RubyObject {
     }
 
     private void fixnumEach(ThreadContext context, Ruby runtime, Block block) {
-        long lim = ((RubyFixnum) end).getLongValue();
-        if (!isExclusive) lim++;
-
+        // We must avoid integer overflows.
+        long to = ((RubyFixnum) end).getLongValue();
+        if (isExclusive) {
+            if (to == Long.MIN_VALUE) return;
+            to--;
+        }
+        long from = ((RubyFixnum) begin).getLongValue();
         if (block.getBody().getArgumentType() == BlockBody.ZERO_ARGS) {
-            final IRubyObject nil = runtime.getNil();
-            for (long i = ((RubyFixnum) begin).getLongValue(); i < lim; i++) {
+            IRubyObject nil = runtime.getNil();
+            long i;
+            for (i = from; i < to; i++) {
+                block.yield(context, nil);
+            }
+            if (i <= to) {
                 block.yield(context, nil);
             }
         } else {
-            for (long i = ((RubyFixnum) begin).getLongValue(); i < lim; i++) {
+            long i;
+            for (i = from; i < to; i++) {
+                block.yield(context, RubyFixnum.newFixnum(runtime, i));
+            }
+            if (i <= to) {
                 block.yield(context, RubyFixnum.newFixnum(runtime, i));
             }
         }
@@ -499,10 +511,21 @@ public class RubyRange extends RubyObject {
         return this;
     }
 
-    private void fixnumStep(ThreadContext context, Ruby runtime, long unit, Block block) {
-        long e = ((RubyFixnum)end).getLongValue();
-        if (!isExclusive) e++;
-        for (long i = ((RubyFixnum)begin).getLongValue(); i < e; i += unit) {
+    private void fixnumStep(ThreadContext context, Ruby runtime, long step, Block block) {
+        // We must avoid integer overflows.
+        // Any method calling this method must ensure that "step" is greater than 0.
+        long to = ((RubyFixnum) end).getLongValue();
+        if (isExclusive) {
+            if (to == Long.MIN_VALUE) return;
+            to--;
+        }
+        long tov = Long.MAX_VALUE - step;
+        if (to < tov) tov = to;
+        long i;
+        for (i = ((RubyFixnum)begin).getLongValue(); i <= tov; i += step) {
+            block.yield(context, RubyFixnum.newFixnum(runtime, i));
+        }
+        if (i <= to) {
             block.yield(context, RubyFixnum.newFixnum(runtime, i));
         }
     }
