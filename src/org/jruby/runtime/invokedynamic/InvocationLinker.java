@@ -427,6 +427,8 @@ public class InvocationLinker {
     private static MethodHandle tryDispatchDirect(JRubyCallSite site, String name, RubyClass cls, DynamicMethod method) {
         // get the "real" method in a few ways
         while (method instanceof AliasMethod) method = method.getRealMethod();
+        while (method instanceof WrapperMethod) method = method.getRealMethod();
+
         if (method instanceof DefaultMethod) {
             DefaultMethod defaultMethod = (DefaultMethod) method;
             if (defaultMethod.getMethodForCaching() instanceof JittedMethod) {
