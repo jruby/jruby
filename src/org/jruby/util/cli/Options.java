@@ -28,6 +28,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.util.cli;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import org.jruby.runtime.Constants;
@@ -59,6 +60,40 @@ public class Options {
     }
 
     private static final List<Option> _loadedOptions = new ArrayList<Option>();
+
+    private static final boolean INVOKEDYNAMIC_DEFAULT;
+    static {
+        String vmName = SafePropertyAccessor.getProperty("java.vm.name", "").toLowerCase();
+        boolean isHotspot =
+                vmName.contains("hotspot") ||
+                        vmName.toLowerCase().contains("openjdk");
+
+        String vmVersionString = SafePropertyAccessor.getProperty("java.vm.version", "");
+        String javaVersion = SafePropertyAccessor.getProperty("java.specification.version", "");
+        int version;
+        try {
+            version = Integer.parseInt(vmVersionString.substring(0, 2));
+        } catch (NumberFormatException nfe) {
+            version = -1;
+        }
+
+        if (isHotspot) {
+            if (version < 24) {
+                // if on HotSpot version prior to 24, off by default unless turned on
+                // TODO: turned off temporarily due to the lack of 100% working OpenJDK7 indy support
+                INVOKEDYNAMIC_DEFAULT = false;
+            } else {
+                // Hotspot >= 24 will has the new working indy logic, so we enable by default
+                INVOKEDYNAMIC_DEFAULT = true;
+            }
+        } else if (new BigDecimal(javaVersion).compareTo(new BigDecimal("1.7")) >= 0){
+            // if not on HotSpot, on if specification version supports indy
+            INVOKEDYNAMIC_DEFAULT = true;
+        } else {
+            // on only if forced
+            INVOKEDYNAMIC_DEFAULT = false;
+        }
+    }
     
     // This section holds all Options for JRuby. They will be listed in the
     // --properties output in the order they are constructed here.
@@ -73,7 +108,7 @@ public class Options {
     public static final Option<Boolean> COMPILE_FASTEST = bool(COMPILER, "compile.fastest", false, "Compile with all \"mostly harmless\" compiler optimizations.");
     public static final Option<Boolean> COMPILE_FASTSEND = bool(COMPILER, "compile.fastsend", false, "Compile obj.__send__(<literal>, ...) as obj.<literal>(...).");
     public static final Option<Boolean> COMPILE_FASTMASGN = bool(COMPILER, "compile.fastMasgn", false, "Return true from multiple assignment instead of a new array.");
-    public static final Option<Boolean> COMPILE_INVOKEDYNAMIC = bool(COMPILER, "compile.invokedynamic", true, "Use invokedynamic for optimizing Ruby code");
+    public static final Option<Boolean> COMPILE_INVOKEDYNAMIC = bool(COMPILER, "compile.invokedynamic", INVOKEDYNAMIC_DEFAULT, "Use invokedynamic for optimizing Ruby code");
     
     public static final Option<Integer> INVOKEDYNAMIC_MAXFAIL = integer(INVOKEDYNAMIC, "invokedynamic.maxfail", 1000, "Maximum call site failures after which to inline cache.");
     public static final Option<Integer> INVOKEDYNAMIC_MAXPOLY = integer(INVOKEDYNAMIC, "invokedynamic.maxpoly", 2, "Maximum polymorphism of PIC binding.");

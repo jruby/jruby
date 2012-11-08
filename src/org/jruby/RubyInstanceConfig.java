@@ -1577,39 +1577,7 @@ public class RubyInstanceConfig {
     public static final boolean UPPER_CASE_PACKAGE_NAME_ALLOWED = Options.JI_UPPER_CASE_PACKAGE_NAME_ALLOWED.load();
     
     
-    public static final boolean USE_INVOKEDYNAMIC;
-    static {
-        String vmName = SafePropertyAccessor.getProperty("java.vm.name", "").toLowerCase();
-        boolean isHotspot =
-                vmName.contains("hotspot") ||
-                        vmName.toLowerCase().contains("openjdk");
-
-        String vmVersionString = SafePropertyAccessor.getProperty("java.vm.version", "");
-        String javaVersion = SafePropertyAccessor.getProperty("java.specification.version", "");
-        int version;
-        try {
-            version = Integer.parseInt(vmVersionString.substring(0, 2));
-        } catch (NumberFormatException nfe) {
-            version = -1;
-        }
-
-        if (isHotspot) {
-            if (version < 24) {
-                // if on HotSpot version prior to 24, off by default unless turned on
-                // TODO: turned off temporarily due to the lack of 100% working OpenJDK7 indy support
-                USE_INVOKEDYNAMIC = Options.COMPILE_INVOKEDYNAMIC.load() && Options.COMPILE_INVOKEDYNAMIC.isSpecified();
-            } else {
-                // Hotspot >= 24 will has the new working indy logic, so we enable by default
-                USE_INVOKEDYNAMIC = Options.COMPILE_INVOKEDYNAMIC.load();
-            }
-        } else if (new BigDecimal(javaVersion).compareTo(new BigDecimal("1.7")) >= 0){
-            // if not on HotSpot, on if specification version supports indy
-            USE_INVOKEDYNAMIC = Options.COMPILE_INVOKEDYNAMIC.load();
-        } else {
-            // on only if forced
-            USE_INVOKEDYNAMIC = Options.COMPILE_INVOKEDYNAMIC.load() && Options.COMPILE_INVOKEDYNAMIC.isSpecified();
-        }
-    }
+    public static final boolean USE_INVOKEDYNAMIC = Options.COMPILE_INVOKEDYNAMIC.load();
     
     // max times an indy call site can fail before it goes to simple IC
     public static final int MAX_FAIL_COUNT = Options.INVOKEDYNAMIC_MAXFAIL.load();
