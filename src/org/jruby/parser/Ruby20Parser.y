@@ -1906,9 +1906,12 @@ f_arglist       : tLPAREN2 f_args rparen {
                     $$ = $2;
                     $<ISourcePositionHolder>$.setPosition($1.getPosition());
                     lexer.setState(LexState.EXPR_BEG);
+                    lexer.commandStart = true;
                 }
                 | f_args term {
                     $$ = $1;
+                    lexer.setState(LexState.EXPR_BEG);
+                    lexer.commandStart = true;
                 }
 
 
