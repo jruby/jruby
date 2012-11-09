@@ -57,8 +57,8 @@ public final class MappedType extends Type {
             throw context.runtime.newNoMethodError("converter needs a to_native method", "to_native", converter.getMetaClass());
         }
 
-        if (!Arity.TWO_ARGUMENTS.equals(toNativeMethod.getArity())) {
-            throw context.runtime.newArgumentError("to_native should accept two arguments");
+        if (toNativeMethod.getArity().required() < 1 || toNativeMethod.getArity().required() > 2) {
+            throw context.runtime.newArgumentError("to_native should accept one or two arguments");
         }
 
         DynamicMethod fromNativeMethod = converter.getMetaClass().searchMethod("from_native");
@@ -66,8 +66,8 @@ public final class MappedType extends Type {
             throw context.runtime.newNoMethodError("converter needs a from_native method", "from_native", converter.getMetaClass());
         }
 
-        if (!Arity.TWO_ARGUMENTS.equals(fromNativeMethod.getArity())) {
-            throw context.runtime.newArgumentError("from_native should accept two arguments");
+        if (fromNativeMethod.getArity().required() < 1 || fromNativeMethod.getArity().required() > 2) {
+            throw context.runtime.newArgumentError("from_native should accept one or two arguments");
         }
 
         Type nativeType;
@@ -135,14 +135,22 @@ public final class MappedType extends Type {
         return toNative(context, value);
     }
 
+    private static IRubyObject callConversionMethod(ThreadContext context, DynamicMethod method, IRubyObject converter,
+                                                    String methodName, IRubyObject value) {
+        if (method.getArity().required() == 2) {
+            return method.call(context, converter, converter.getMetaClass(),
+                    methodName, value, context.runtime.getNil());
+        } else {
+            return method.call(context, converter, converter.getMetaClass(),
+                    methodName, value);
+        }
+    }
 
     public final IRubyObject fromNative(ThreadContext context, IRubyObject value) {
-        return fromNativeMethod.call(context, converter, converter.getMetaClass(),
-                "from_native", value, context.runtime.getNil());
+        return callConversionMethod(context, fromNativeMethod, converter, "from_native", value);
     }
 
     public final IRubyObject toNative(ThreadContext context, IRubyObject value) {
-        return toNativeMethod.call(context, converter, converter.getMetaClass(),
-                "to_native", value, context.runtime.getNil());
+        return callConversionMethod(context, toNativeMethod, converter, "to_native", value);
     }
 }
