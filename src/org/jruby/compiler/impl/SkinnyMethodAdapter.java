@@ -46,7 +46,7 @@ public class SkinnyMethodAdapter extends MethodVisitor implements Opcodes {
     private Label end;
 
     public SkinnyMethodAdapter(ClassVisitor cv, int flags, String name, String signature, String something, String[] exceptions) {
-        super(flags);
+        super(ASM4);
         setMethodVisitor(cv.visitMethod(flags, name, signature, something, exceptions));
         this.cv = cv;
         this.name = name;
