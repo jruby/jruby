@@ -1868,20 +1868,39 @@ abstract public class AbstractMemory extends RubyObject {
                 getOffset(offArg), Util.int32Value(lenArg));
     }
 
-    @JRubyMethod(name = "put_bytes", required = 2, optional = 2)
-    public IRubyObject put_bytes(ThreadContext context, IRubyObject[] args) {
-        long off = getOffset(args[0]);
-        ByteList bl = args[1].convertToString().getByteList();
-        int idx = args.length > 2 ? Util.int32Value(args[2]) : 0;
+    private IRubyObject putBytes(ThreadContext context, long off, ByteList bl, int idx, int len) {
         if (idx < 0 || idx > bl.length()) {
-            throw context.runtime.newRangeError("Invalid string index");
+            throw context.runtime.newRangeError("invalid string index");
         }
-        int len = args.length > 3 ? Util.int32Value(args[3]) : (bl.length() - idx);
+
         if (len < 0 || len > (bl.length() - idx)) {
-            throw context.runtime.newRangeError("Invalid length");
+            throw context.runtime.newRangeError("invalid length");
         }
         getMemoryIO().put(off, bl.getUnsafeBytes(), bl.begin() + idx, len);
+
         return this;
+    }
+
+    @JRubyMethod(name = "put_bytes", required = 2, optional = 2)
+    public IRubyObject put_bytes(ThreadContext context, IRubyObject[] args) {
+        ByteList bl = args[1].convertToString().getByteList();
+        int idx = args.length > 2 ? Util.int32Value(args[2]) : 0;
+        int len = args.length > 3 ? Util.int32Value(args[3]) : (bl.length() - idx);
+
+        return putBytes(context, getOffset(args[0]), bl, idx, len);
+    }
+
+    @JRubyMethod(name = "read_bytes")
+    public IRubyObject read_bytes(ThreadContext context, IRubyObject lenArg) {
+        return MemoryUtil.getTaintedByteString(context.runtime, getMemoryIO(), 0, Util.int32Value(lenArg));
+    }
+
+    @JRubyMethod(name = "write_bytes", required = 1, optional = 2)
+    public IRubyObject write_bytes(ThreadContext context, IRubyObject[] args) {
+        ByteList bl = args[0].convertToString().getByteList();
+        int idx = args.length > 1 ? Util.int32Value(args[1]) : 0;
+        int len = args.length > 2 ? Util.int32Value(args[2]) : (bl.length() - idx);
+        return putBytes(context, 0, bl, idx, len);
     }
 
 
