@@ -15,7 +15,7 @@ import static org.jruby.runtime.Visibility.*;
 
 @JRubyClass(name="FFI::Struct", parent="Object")
 public class Struct extends RubyObject implements StructLayout.Storage {
-    private final StructLayout layout;
+    private StructLayout layout;
     private AbstractMemory memory;
     private volatile Object[] referenceCache;
     private volatile IRubyObject[] valueCache;
@@ -143,6 +143,20 @@ public class Struct extends RubyObject implements StructLayout.Storage {
         memory = (AbstractMemory) ptr;
         
         return this;
+    }
+
+    @JRubyMethod(name = "initialize", visibility = PRIVATE, required = 1, rest = true)
+    public IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
+        if (args.length > 1) {
+            IRubyObject result = getMetaClass().callMethod(context, "layout", args[1] instanceof RubyArray
+                ? ((RubyArray) args[1]).toJavaArrayUnsafe()
+                : java.util.Arrays.copyOfRange(args, 1, args.length));
+            if (!(result instanceof StructLayout)) {
+                throw context.runtime.newTypeError("Struct.layout did not return a FFI::StructLayout instance");
+            }
+            layout = (StructLayout) result;
+        }
+        return initialize(context, args[0]);
     }
 
     @JRubyMethod(name = "initialize_copy", visibility = PRIVATE)
