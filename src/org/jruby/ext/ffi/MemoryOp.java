@@ -29,6 +29,7 @@ abstract class MemoryOp {
     public static final MemoryOp UINT32SWAP = new Unsigned32Swapped();
     public static final MemoryOp INT64SWAP = new Signed64Swapped();
     public static final MemoryOp UINT64SWAP = new Unsigned64Swapped();
+    public static final MemoryOp POINTER = new PointerOp();
 
     public static MemoryOp getMemoryOp(NativeType type) {
         return getMemoryOp(type, ByteOrder.nativeOrder());
@@ -64,6 +65,8 @@ abstract class MemoryOp {
             case ULONG:
                 return Platform.getPlatform().longSize() == 32
                         ? getMemoryOp(NativeType.UINT, order) : getMemoryOp(NativeType.ULONG_LONG, order);
+            case POINTER:
+                return POINTER;
             default:
                 return null;
         }
@@ -279,6 +282,17 @@ abstract class MemoryOp {
             return runtime.newFloat(io.getDouble(offset));
         }
     }
+
+    static final class PointerOp extends PrimitiveOp {
+        public final void put(Ruby runtime, MemoryIO io, long offset, IRubyObject value) {
+            io.putMemoryIO(offset, ((AbstractMemory) value).getMemoryIO());
+        }
+
+        public final IRubyObject get(Ruby runtime, MemoryIO io, long offset) {
+            return new Pointer(runtime, io.getMemoryIO(offset));
+        }
+    }
+
     
     static final class StructOp extends MemoryOp {
         private final RubyClass structClass;

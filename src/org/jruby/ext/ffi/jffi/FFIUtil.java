@@ -150,19 +150,18 @@ public final class FFIUtil {
         } else {
 
             Collection<StructLayout.Member> structMembers = layout.getMembers();
-            com.kenai.jffi.Type[] fields = new com.kenai.jffi.Type[structMembers.size()];
+            java.util.List<com.kenai.jffi.Type> fields = new java.util.ArrayList<com.kenai.jffi.Type>();
 
-            int i = 0;
             for (StructLayout.Member m : structMembers) {
                 com.kenai.jffi.Type fieldType;
                 fieldType = FFIUtil.getFFIType(m.type());
                 if (fieldType == null) {
                     throw layout.getRuntime().newTypeError("unsupported Struct field type " + m);
                 }
-                fields[i++] = fieldType;
+                if (fieldType.size() > 0) fields.add(fieldType);
             }
 
-            return com.kenai.jffi.Struct.newStruct(fields);
+            return com.kenai.jffi.Struct.newStruct(fields.toArray(new com.kenai.jffi.Type[fields.size()]));
         }
     }
 
