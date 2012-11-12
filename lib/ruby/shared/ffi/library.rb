@@ -225,11 +225,13 @@ module FFI
         [ nil, args[0], args[1] ]
       end
 
+      native_params = params.map { |e| find_type(e) }
+      raise ArgumentError, "callbacks cannot have variadic parameters" if native_params.include?(FFI::Type::VARARGS)
       options = Hash.new
       options[:convention] = defined?(@ffi_convention) ? @ffi_convention : :default
       options[:enums] = defined?(@ffi_enum_map) ? @ffi_enum_map : nil
 
-      cb = FFI::CallbackInfo.new(find_type(ret), params.map { |e| find_type(e) }, options)
+      cb = FFI::CallbackInfo.new(find_type(ret), native_params, options)
 
       # Add to the symbol -> type map (unless there was no name)
       unless name.nil?
