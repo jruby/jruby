@@ -33,6 +33,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -105,7 +107,11 @@ public class LoadServiceResource {
         if (resource != null) {
             return resource;
         } else {
-            return new URL("file", null, path.getAbsolutePath());
+            try {
+                return new URI("file", path.getAbsolutePath(), null).toURL();
+            } catch(URISyntaxException e) {
+                throw new IOException(e.getMessage());
+            }
         }
     }
 

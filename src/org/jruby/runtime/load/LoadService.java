@@ -39,6 +39,8 @@ import java.io.FileDescriptor;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -1111,13 +1113,16 @@ public class LoadService {
             for (String suffix : suffixType.getSuffixes()) {
                 String namePlusSuffix = baseName + suffix;
                 try {
-                    URL url = new URL(namePlusSuffix);
+                    URI resourceUri = new URI("jar", namePlusSuffix.substring(4), null);
+                    URL url = resourceUri.toURL();
                     debugLogTry("resourceFromJarURL", url.toString());
                     if (url.openStream() != null) {
                         foundResource = new LoadServiceResource(url, namePlusSuffix);
                         debugLogFound(foundResource);
                     }
                 } catch (FileNotFoundException e) {
+                } catch (URISyntaxException e) {
+                    throw runtime.newIOError(e.getMessage());
                 } catch (MalformedURLException e) {
                     throw runtime.newIOErrorFromException(e);
                 } catch (IOException e) {
@@ -1138,9 +1143,14 @@ public class LoadService {
 
                     debugLogTry("resourceFromJarURL", expandedFilename.toString());
                     if(file.getJarEntry(expandedFilename) != null) {
-                        foundResource = new LoadServiceResource(new URL("jar:file:" + jarFile + "!/" + expandedFilename), namePlusSuffix);
+                        URI resourceUri = new URI("jar", "file:" + jarFile + "!/" + expandedFilename, null);
+                        foundResource = new LoadServiceResource(resourceUri.toURL(), namePlusSuffix);
                         debugLogFound(foundResource);
                     }
+                } catch (URISyntaxException e) {
+                    throw runtime.newIOError(e.getMessage());
+                } catch (MalformedURLException e) {
+                    throw runtime.newIOErrorFromException(e);
                 } catch(Exception e) {}
                 if (foundResource != null) {
                     state.loadName = resolveLoadName(foundResource, namePlusSuffix);
@@ -1257,9 +1267,11 @@ public class LoadService {
             debugLogTry("resourceFromJarURLWithLoadPath", current.getName() + "!/" + canonicalEntry);
             if (current.getJarEntry(canonicalEntry) != null) {
                 try {
-                    String resourceUrl = "jar:file:" + jarFileName + "!/" + canonicalEntry;
-                    foundResource = new LoadServiceResource(new URL(resourceUrl), resourceUrl);
+                    URI resourceUri = new URI("jar", "file:" + jarFileName + "!/" + canonicalEntry, null);
+                    foundResource = new LoadServiceResource(resourceUri.toURL(), resourceUri.toString());
                     debugLogFound(foundResource);
+                } catch (URISyntaxException e) {
+                    throw runtime.newIOError(e.getMessage());
                 } catch (MalformedURLException e) {
                     throw runtime.newIOErrorFromException(e);
                 }
