@@ -108,7 +108,7 @@ public class LoadServiceResource {
             return resource;
         } else {
             try {
-                return new URI("file", path.getAbsolutePath(), "").toURL();
+                return new URI("file", path.getAbsolutePath(), null).toURL();
             } catch(URISyntaxException e) {
                 throw new IOException(e.getMessage());
             }

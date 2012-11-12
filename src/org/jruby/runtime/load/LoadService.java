@@ -1113,7 +1113,7 @@ public class LoadService {
             for (String suffix : suffixType.getSuffixes()) {
                 String namePlusSuffix = baseName + suffix;
                 try {
-                    URI resourceUri = new URI("jar", namePlusSuffix.substring(4), "");
+                    URI resourceUri = new URI("jar", namePlusSuffix.substring(4), null);
                     URL url = resourceUri.toURL();
                     debugLogTry("resourceFromJarURL", url.toString());
                     if (url.openStream() != null) {
@@ -1143,7 +1143,7 @@ public class LoadService {
 
                     debugLogTry("resourceFromJarURL", expandedFilename.toString());
                     if(file.getJarEntry(expandedFilename) != null) {
-                        URI resourceUri = new URI("jar", "file:" + jarFile + "!/" + expandedFilename, "");
+                        URI resourceUri = new URI("jar", "file:" + jarFile + "!/" + expandedFilename, null);
                         foundResource = new LoadServiceResource(resourceUri.toURL(), namePlusSuffix);
                         debugLogFound(foundResource);
                     }
@@ -1267,7 +1267,7 @@ public class LoadService {
             debugLogTry("resourceFromJarURLWithLoadPath", current.getName() + "!/" + canonicalEntry);
             if (current.getJarEntry(canonicalEntry) != null) {
                 try {
-                    URI resourceUri = new URI("jar", "file:" + jarFileName + "!/" + canonicalEntry, "");
+                    URI resourceUri = new URI("jar", "file:" + jarFileName + "!/" + canonicalEntry, null);
                     foundResource = new LoadServiceResource(resourceUri.toURL(), resourceUri.toString());
                     debugLogFound(foundResource);
                 } catch (URISyntaxException e) {
