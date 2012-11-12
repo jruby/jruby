@@ -138,7 +138,7 @@ module FFI
 
 
       # Convert :foo to the native type
-      arg_types.map! { |e| find_type(e) }
+      arg_types = arg_types.map { |e| find_type(e) }
       options = Hash.new
       options[:convention] = defined?(@ffi_convention) ? @ffi_convention : :default
       options[:type_map] = defined?(@ffi_typedefs) ? @ffi_typedefs : nil
