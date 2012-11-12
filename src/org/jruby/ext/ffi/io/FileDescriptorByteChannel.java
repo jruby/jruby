@@ -39,21 +39,16 @@ import java.nio.channels.ByteChannel;
  * file descriptor.
  */
 public class FileDescriptorByteChannel implements ByteChannel {
-    private static LibC shared_libc;
-
-    private LibC libc;
+    private final LibC libc;
     private final int fd;
     private volatile boolean isOpen = true;
 
-    private synchronized static LibC libc(Ruby runtime) {
-        if (shared_libc != null) {
-            return shared_libc;
+    private static LibC libc(Ruby runtime) {
+        LibC libc = runtime.getPosix().libc();
+        if (libc == null) {
+            throw runtime.newNotImplementedError("native access not enabled");
         }
-        shared_libc = runtime.getPosix().libc();
-        if (shared_libc == null) {
-            throw new IllegalStateException("native not enabled");
-        }
-        return shared_libc;
+        return libc;
     }
 
     /**
@@ -81,7 +76,7 @@ public class FileDescriptorByteChannel implements ByteChannel {
         if (n > 0) {
             dst.position(dst.position() + n);
         } else if (n == 0) {
-          return -1; // EOF
+            return -1; // EOF
         }
         return n;
     }
