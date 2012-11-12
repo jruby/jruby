@@ -55,17 +55,29 @@ public class FileDescriptorIO extends RubyIO {
         }
         private static final ObjectAllocator INSTANCE = new Allocator();
     }
+
     public FileDescriptorIO(Ruby runtime, RubyClass klass) {
         super(runtime, klass);
     }
+
     public FileDescriptorIO(Ruby runtime, IRubyObject fd) {
         super(runtime, runtime.getModule("FFI").getClass(CLASS_NAME));
         ModeFlags modes;
         try {
             modes = newModeFlags(runtime, ModeFlags.RDWR);
-            openFile.setMainStream(ChannelStream.open(getRuntime(),
-                    new ChannelDescriptor(new FileDescriptorByteChannel(getRuntime(), RubyNumeric.fix2int(fd)),
-                    modes)));
+            int fileno = RubyNumeric.fix2int(fd);
+            jnr.posix.FileStat stat = runtime.getPosix().fstat(fileno);
+            java.nio.channels.ByteChannel channel;
+
+            if (stat.isSocket()) {
+                channel = new jnr.enxio.channels.NativeSocketChannel(fileno);
+            } else if (stat.isBlockDev() || stat.isCharDev()) {
+                channel = new jnr.enxio.channels.NativeDeviceChannel(fileno);
+            } else {
+                channel = new FileDescriptorByteChannel(runtime, fileno);
+            }
+
+            openFile.setMainStream(ChannelStream.open(getRuntime(), new ChannelDescriptor(channel, modes, FileDescriptorHelper.wrap(fileno))));
             openFile.setPipeStream(openFile.getMainStreamSafe());
             openFile.setMode(modes.getOpenFileFlags());
             openFile.getMainStreamSafe().setSync(true);
@@ -73,6 +85,7 @@ public class FileDescriptorIO extends RubyIO {
             throw runtime.newErrnoEBADFError();
         }
     }
+
     public static RubyClass createFileDescriptorIOClass(Ruby runtime, RubyModule module) {
         RubyClass result = runtime.defineClassUnder(CLASS_NAME, runtime.getClass("IO"),
                 Allocator.INSTANCE, module);
@@ -81,12 +94,40 @@ public class FileDescriptorIO extends RubyIO {
 
         return result;
     }
+
     @JRubyMethod(name = "new", meta = true)
     public static FileDescriptorIO newInstance(ThreadContext context, IRubyObject recv, IRubyObject fd) {
         return new FileDescriptorIO(context.runtime, fd);
     }
+
     @JRubyMethod(name = "wrap", required = 1, meta = true)
     public static RubyIO wrap(ThreadContext context, IRubyObject recv, IRubyObject fd) {
         return new FileDescriptorIO(context.runtime, fd);
+    }
+
+    static class FileDescriptorHelper {
+        static java.lang.reflect.Constructor<java.io.FileDescriptor> CONSTRUCTOR;
+        static {
+            java.lang.reflect.Constructor<java.io.FileDescriptor> constructor;
+            try {
+                constructor = java.io.FileDescriptor.class.getDeclaredConstructor(int.class);
+                constructor.setAccessible(true);
+            } catch (Throwable t) {
+                constructor = null;
+            }
+            CONSTRUCTOR = constructor;
+        }
+
+        public static java.io.FileDescriptor wrap(int fileno) {
+            try {
+                return CONSTRUCTOR != null ? CONSTRUCTOR.newInstance(fileno) : new java.io.FileDescriptor();
+            } catch (IllegalAccessException iae) {
+                return new java.io.FileDescriptor();
+            } catch (InstantiationException ie) {
+                return new java.io.FileDescriptor();
+            } catch (java.lang.reflect.InvocationTargetException ite) {
+                return new java.io.FileDescriptor();
+            }
+        }
     }
 }
