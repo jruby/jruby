@@ -140,9 +140,6 @@ public final class StructLayout extends Type {
                 ArrayFieldAllocator.INSTANCE, layoutClass);
         arrayFieldClass.defineAnnotatedMethods(ArrayField.class);
 
-        RubyClass variableLengthArrayClass = runtime.defineClassUnder("VariableLengthArray", fieldClass,
-                new VariableLengthArrayAllocator(), layoutClass);
-        variableLengthArrayClass.defineAnnotatedMethods(VariableLengthArray.class);
         RubyClass variableLengthArrayProxyClass = runtime.defineClassUnder("VariableLengthArrayProxy", runtime.getObject(),
                 ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR, layoutClass);
         variableLengthArrayProxyClass.defineAnnotatedMethods(VariableLengthArrayProxy.class);
@@ -186,8 +183,8 @@ public final class StructLayout extends Type {
             if (!(f.name instanceof RubySymbol)) {
                 throw runtime.newTypeError("fields list contains field with invalid name");
             }
-            if (index == fields.size() - 1 && f instanceof ArrayField && ((Type.Array) f.type).length() == 0) {
-                f = new VariableLengthArray(runtime, f);
+            if (f.type.getNativeSize() < 1 && index < (fields.size() - 1)) {
+                throw runtime.newTypeError("sizeof field == 0");
             }
 
             names.add(f.name);
@@ -891,39 +888,6 @@ public final class StructLayout extends Type {
         }
     }
 
-    private static final class VariableLengthArrayAllocator implements ObjectAllocator {
-        public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
-            return new VariableLengthArray(runtime, klass);
-        }
-    }
-
-    @JRubyClass(name="FFI::StructLayout::VariableLengthArray", parent="FFI::StructLayout::Field")
-    public static final class VariableLengthArray extends Field {
-
-        public VariableLengthArray(Ruby runtime, RubyClass klass) {
-            super(runtime, klass, DefaultFieldIO.INSTANCE);
-        }
-
-        public VariableLengthArray(Ruby runtime, Field f) {
-            super(runtime, f.getMetaClass(), f.type, f.offset, new VariableLengthArrayFieldIO((Type.Array) f.type));
-            init(f.name, f.type, runtime.newFixnum(f.offset));
-        }
-
-        @Override
-        @JRubyMethod(name="initialize", visibility = PRIVATE, required = 3, optional = 1)
-        public final IRubyObject initialize(ThreadContext context, IRubyObject[] args) {
-
-            IRubyObject type = args[2];
-            if (!(type instanceof Type.Array)) {
-                throw context.runtime.newTypeError(type,
-                        context.runtime.getModule("FFI").getClass("Type").getClass("Array"));
-            }
-            init(args, new VariableLengthArrayFieldIO((Type.Array) type));
-
-            return this;
-        }
-    }
-
     private static final class MappedFieldAllocator implements ObjectAllocator {
         public final IRubyObject allocate(Ruby runtime, RubyClass klass) {
             return new MappedField(runtime, klass);
@@ -1097,13 +1061,12 @@ public final class StructLayout extends Type {
         private final Type componentType;
 
         VariableLengthArrayProxy(Ruby runtime, IRubyObject ptr, long offset, Type.Array type, MemoryOp aio) {
-            this(runtime, runtime.getModule("FFI").getClass(CLASS_NAME).getClass("VariableLengthArrayProxy"),
+            this(runtime, runtime.getFFI().ffiModule.getClass(CLASS_NAME).getClass("VariableLengthArrayProxy"),
                     ptr, offset, type, aio);
         }
 
         VariableLengthArrayProxy(Ruby runtime, RubyClass klass, IRubyObject ptr, long offset, Type.Array type, MemoryOp aio) {
             super(runtime, klass);
-            System.out.println("variable length array proxy at offset=" + offset);
             this.ptr = ((AbstractMemory) ptr).slice(runtime, offset);
             this.aio = aio;
             this.componentType = type.getComponentType();
@@ -1473,9 +1436,13 @@ public final class StructLayout extends Type {
         public IRubyObject get(ThreadContext context, StructLayout.Storage cache, Member m, AbstractMemory ptr) {
             IRubyObject s = cache.getCachedValue(m);
             if (s == null) {
-                s = isCharArray()
+                if (isVariableLength()) {
+                    s = new VariableLengthArrayProxy(context.runtime, ptr, m.offset, arrayType, op);
+                } else {
+                    s = isCharArray()
                         ? new StructLayout.CharArrayProxy(context.runtime, ptr, m.offset, arrayType, op)
                         : new StructLayout.ArrayProxy(context.runtime, ptr, m.offset, arrayType, op);
+                }
                 cache.putCachedValue(m, s);
             }
 
@@ -1487,38 +1454,10 @@ public final class StructLayout extends Type {
                     || arrayType.getComponentType().nativeType == NativeType.UCHAR;
         }
 
-
-        public final boolean isCacheable() {
-            return true;
+        private boolean isVariableLength() {
+            return arrayType.length() < 1;
         }
 
-        public final boolean isValueReferenceNeeded() {
-            return false;
-        }
-    }
-
-    static final class VariableLengthArrayFieldIO implements FieldIO {
-        private final Type.Array arrayType;
-        private final MemoryOp op;
-
-        public VariableLengthArrayFieldIO(Type.Array arrayType) {
-            this.arrayType = arrayType;
-            this.op = getArrayComponentMemoryOp(arrayType);
-        }
-
-
-        public void put(ThreadContext context, StructLayout.Storage cache, Member m, AbstractMemory ptr, IRubyObject value) {
-            throw context.runtime.newNotImplementedError("cannot set variable length array fields");
-        }
-
-        public IRubyObject get(ThreadContext context, StructLayout.Storage cache, Member m, AbstractMemory ptr) {
-            IRubyObject s = cache.getCachedValue(m);
-            if (s == null) {
-                cache.putCachedValue(m, s = new VariableLengthArrayProxy(context.runtime, ptr, m.offset, arrayType, op));
-            }
-
-            return s;
-        }
 
         public final boolean isCacheable() {
             return true;
