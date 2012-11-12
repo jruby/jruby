@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009-2010 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2012 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -29,10 +29,7 @@
  */
 package org.jruby.embed.jsr223;
 
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.io.Reader;
-import java.io.Writer;
 import javax.script.Bindings;
 import javax.script.CompiledScript;
 import javax.script.ScriptContext;
@@ -95,6 +92,9 @@ public class JRubyCompiledScript extends CompiledScript {
             boolean termination = Utils.isTerminationOn(context);
             if (termination) {
                 container.terminate();
+            }
+            if (Utils.isClearVariablesOn(context)) {
+                container.clear();
             }
         }
     }

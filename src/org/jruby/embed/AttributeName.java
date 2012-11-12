@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009-2011 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2012 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -86,6 +86,16 @@ public enum AttributeName {
      */
     SHARING_VARIABLES("org.jruby.embed.sharing.variables"),
 
+    /**
+     * A key used in an attribute map to turn on/off clearing variables.
+     * This attribute is for JSR223 only.
+     *
+     * Default is false, which means JRubyEngine doesn't clear an internal
+     * variable table, which ends up in being reused. If true is set, JRubyEngine 
+     * clears the internal variable table. 
+     */
+    CLEAR_VARAIBLES("org.jruby.embed.clear.variables"),
+    
     /**
      * A key used in an attribute map to turn on/off termination. This attribute
      * is for JSR223 only.
