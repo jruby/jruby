@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009-2011 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2012 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -75,6 +75,8 @@ public class SystemPropertyCatcher {
             return LocalContextScope.SINGLETON;
         } else if ("threadsafe".equalsIgnoreCase(s)) {
             return LocalContextScope.THREADSAFE;
+        } else if ("concurrent".equalsIgnoreCase(s)) {
+            return LocalContextScope.CONCURRENT;
         }
         return scope;
     }
