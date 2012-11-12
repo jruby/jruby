@@ -842,6 +842,12 @@ public class Java implements Library {
         }
     }
 
+    public static RubyModule getJavaPackageModule(Ruby runtime, Package pkg) {
+        return pkg == null ?
+                getJavaPackageModule(runtime, "") :
+                getJavaPackageModule(runtime, pkg.getName());
+    }
+
     private static RubyModule getJavaPackageModule(Ruby runtime, String packageString) {
         String packageName;
         int length = packageString.length();

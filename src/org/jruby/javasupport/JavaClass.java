@@ -721,6 +721,10 @@ public class JavaClass extends JavaObject {
         // flag the class as a Java class proxy.
         proxy.setJavaProxy(true);
         proxy.getSingletonClass().setJavaProxy(true);
+
+        // set the Java class name and package
+        proxy.setBaseName(javaClass.getSimpleName());
+        proxy.setParent(Java.getJavaPackageModule(getRuntime(), javaClass.getPackage()));
         
         // FIXME: bit of a kludge here (non-interface classes assigned to both
         // class and module fields). simplifies proxy extender code, will go away
