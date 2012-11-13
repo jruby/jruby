@@ -220,7 +220,8 @@ public final class Ruby {
             myRandom = new Random();
         }
         this.random = myRandom;
-        this.hashSeed = this.random.nextInt();
+        this.hashSeedK0 = this.random.nextLong();
+        this.hashSeedK1 = this.random.nextLong();
         
         this.beanManager.register(new Config(this));
         this.beanManager.register(parserStats);
@@ -4232,9 +4233,13 @@ public final class Ruby {
     public Random getRandom() {
         return random;
     }
-    
-    public int getHashSeed() {
-        return hashSeed;
+
+    public long getHashSeedK0() {
+        return hashSeedK0;
+    }
+
+    public long getHashSeedK1() {
+        return hashSeedK1;
     }
     
     public StaticScopeFactory getStaticScopeFactory() {
@@ -4495,7 +4500,8 @@ public final class Ruby {
     private final Random random;
 
     /** The runtime-local seed for hash randomization */
-    private int hashSeed;
+    private long hashSeedK0;
+    private long hashSeedK1;
     
     private final StaticScopeFactory staticScopeFactory;
     
