@@ -233,8 +233,20 @@ public final class Arity implements Serializable {
         return length;
     }
 
+    public static int checkArgumentCount(Ruby runtime, int length, int min, int max, boolean hasKwargs) {
+        raiseArgumentError(runtime, length, min, max, hasKwargs);
+
+        return length;
+    }
+
     public static int checkArgumentCount(Ruby runtime, String name, int length, int min, int max) {
         raiseArgumentError(runtime, name, length, min, max);
+
+        return length;
+    }
+
+    public static int checkArgumentCount(Ruby runtime, String name, int length, int min, int max, boolean hasKwargs) {
+        raiseArgumentError(runtime, name, length, min, max, hasKwargs);
 
         return length;
     }
@@ -251,9 +263,33 @@ public final class Arity implements Serializable {
     }
 
     // FIXME: JRuby 2/next should change this name since it only sometimes raises an error
+    public static void raiseArgumentError(Ruby runtime, int length, int min, int max, boolean hasKwargs) {
+        if (length < min) throw runtime.newArgumentError(length, min);
+        if (max > -1 && length > max) {
+            if (hasKwargs  && length == max + 1) {
+                // we have an extra arg, but kwargs active; let it fall through to assignment
+                return;
+            }
+            throw runtime.newArgumentError(length, max);
+        }
+    }
+
+    // FIXME: JRuby 2/next should change this name since it only sometimes raises an error
     public static void raiseArgumentError(Ruby runtime, String name, int length, int min, int max) {
         if (length < min) throw runtime.newArgumentError(name, length, min);
         if (max > -1 && length > max) throw runtime.newArgumentError(name, length, max);
+    }
+
+    // FIXME: JRuby 2/next should change this name since it only sometimes raises an error
+    public static void raiseArgumentError(Ruby runtime, String name, int length, int min, int max, boolean hasKwargs) {
+        if (length < min) throw runtime.newArgumentError(name, length, min);
+        if (max > -1 && length > max) {
+            if (hasKwargs  && length == max + 1) {
+                // we have an extra arg, but kwargs active; let it fall through to assignment
+                return;
+            }
+            throw runtime.newArgumentError(name, length, max);
+        }
     }
 
     /**

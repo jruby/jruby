@@ -43,9 +43,14 @@
 package org.jruby.ast;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
+import org.jruby.RubyHash;
+import org.jruby.RubySymbol;
+import org.jruby.ast.types.INameNode;
 import org.jruby.ast.visitor.NodeVisitor;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -75,6 +80,7 @@ public class ArgsNode extends Node {
     private final int requiredArgsCount;
     protected final boolean hasOptArgs;
     protected final boolean hasMasgnArgs;
+    protected final boolean hasKwargs;
     protected int maxArgsCount;
     protected final boolean isSimple;
 
@@ -133,6 +139,7 @@ public class ArgsNode extends Node {
         this.requiredArgsCount = preCount + postCount;
         this.hasOptArgs = getOptArgs() != null;
         this.hasMasgnArgs = hasMasgnArgs();
+        this.hasKwargs = keywords != null || keyRest != null;
         this.maxArgsCount = getRestArg() >= 0 ? -1 : getRequiredArgsCount() + getOptionalArgsCount();
         this.arity = calculateArity();
 
@@ -278,6 +285,7 @@ public class ArgsNode extends Node {
 
         // optArgs and restArgs require more work, so isolate them and ArrayList creation here
         if (hasOptArgs || restArg != -1) prepareOptOrRestArgs(context, runtime, scope, self, args);
+        if (hasKwargs) assignKwargs(args, runtime, context, scope, self);
         if (getBlock() != null) processBlockArg(scope, runtime, block);
     }
 
@@ -428,11 +436,11 @@ public class ArgsNode extends Node {
     }
 
     public void checkArgCount(Ruby runtime, int argsLength) {
-        Arity.checkArgumentCount(runtime, argsLength, requiredArgsCount, maxArgsCount);
+        Arity.checkArgumentCount(runtime, argsLength, requiredArgsCount, maxArgsCount, hasKwargs);
     }
 
     public void checkArgCount(Ruby runtime, String name, int argsLength) {
-        Arity.checkArgumentCount(runtime, name, argsLength, requiredArgsCount, maxArgsCount);
+        Arity.checkArgumentCount(runtime, name, argsLength, requiredArgsCount, maxArgsCount, hasKwargs);
     }
 
     protected void prepareOptOrRestArgs(ThreadContext context, Ruby runtime, DynamicScope scope,
@@ -471,6 +479,54 @@ public class ArgsNode extends Node {
         }
 
         return givenArgsCount;
+    }
+
+    protected void assignKwargs(IRubyObject[] args, Ruby runtime, ThreadContext context, DynamicScope scope, IRubyObject self) {
+        if (args.length > 0) {
+            if (args[args.length - 1] instanceof RubyHash) {
+                RubyHash keyValues = (RubyHash)args[args.length - 1];
+
+                if (keywords != null) {
+                    for (Node knode : keywords.childNodes()) {
+                        KeywordArgNode kwarg = (KeywordArgNode)knode;
+                        LocalAsgnNode kasgn = (LocalAsgnNode)kwarg.getAssignable();
+                        String name = kasgn.getName();
+                        RubySymbol sym = runtime.newSymbol(name);
+
+                        if (keyValues.op_aref(context, sym).isNil()) {
+                            kasgn.interpret(runtime, context, self, Block.NULL_BLOCK);
+                        } else {
+                            IRubyObject value = keyValues.delete(context, sym, Block.NULL_BLOCK);
+                            scope.setValue(kasgn.getIndex(), value, kasgn.getDepth());
+                        }
+                    }
+                }
+
+                if (keyRest == null && !keyValues.isEmpty()) {
+                    throw runtime.newArgumentError("unknown keyword: " + keyValues.directKeySet().iterator().next());
+                }
+
+                if (keyRest != null) {
+                    LocalAsgnNode krestAsgn = (LocalAsgnNode)keyRest.getVariable();
+                    scope.setValue(krestAsgn.getIndex(), keyValues, krestAsgn.getDepth());
+                }
+                return;
+            }
+        }
+
+        if (keywords != null) {
+            for (Node knode : keywords.childNodes()) {
+                KeywordArgNode kwarg = (KeywordArgNode)knode;
+                LocalAsgnNode kasgn = (LocalAsgnNode)kwarg.getAssignable();
+
+                kasgn.interpret(runtime, context, self, Block.NULL_BLOCK);
+            }
+        }
+
+        if (keyRest != null) {
+            LocalAsgnNode krestAsgn = (LocalAsgnNode)keyRest.getVariable();
+            krestAsgn.interpret(runtime, context, self, Block.NULL_BLOCK);
+        }
     }
 
     protected void processBlockArg(DynamicScope scope, Ruby runtime, Block block) {

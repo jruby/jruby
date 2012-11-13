@@ -34,5 +34,9 @@ public class KeywordArgNode extends Node {
     public NodeType getNodeType() {
         return NodeType.KEYWORDARGNODE;
     }
+
+    public AssignableNode getAssignable() {
+        return assignable;
+    }
     
 }
