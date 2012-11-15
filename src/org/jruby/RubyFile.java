@@ -160,6 +160,11 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         constants.setConstant("LOCK_EX", runtime.newFixnum(RubyFile.LOCK_EX));
         constants.setConstant("LOCK_NB", runtime.newFixnum(RubyFile.LOCK_NB));
         constants.setConstant("LOCK_UN", runtime.newFixnum(RubyFile.LOCK_UN));
+        
+        // NULL device
+        if (runtime.is1_9() || runtime.is2_0()) {
+            constants.setConstant("NULL", runtime.newString(getNullDevice()));
+        }
 
         // File::Constants module is included in IO.
         runtime.getIO().includeModule(constants);
@@ -176,6 +181,18 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             return instance;
         }
     };
+
+    private static String getNullDevice() {
+        // FIXME: MRI defines special null device for Amiga and VMS, but currently
+        // we lack ability to detect these platforms
+        String null_device;
+        if (Platform.IS_WINDOWS) {
+            null_device = "NUL";
+        } else {
+            null_device = "/dev/null";
+        }
+        return null_device;
+    }
 
     public RubyFile(Ruby runtime, RubyClass type) {
         super(runtime, type);
