@@ -871,11 +871,15 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
         int ret = runtime.getPosix().link(fromStr.getUnicodeValue(), toStr.getUnicodeValue());
         if (ret != 0) {
-            // In most cases, when there is an error during the call,
-            // the POSIX handler throws an exception, but not in case
-            // with pure Java POSIX layer (when native support is disabled),
-            // so we deal with it like this:
-            throw runtime.newErrnoEEXISTError(fromStr + " or " + toStr);
+            if (runtime.getPosix().isNative()) {
+                throw runtime.newErrnoFromInt(runtime.getPosix().errno(), String.format("(%s, %s)", fromStr, toStr));
+            } else {
+                // In most cases, when there is an error during the call,
+                // the POSIX handler throws an exception, but not in case
+                // with pure Java POSIX layer (when native support is disabled),
+                // so we deal with it like this:
+                throw runtime.newErrnoEEXISTError(fromStr + " or " + toStr);
+            }
         }
         return runtime.newFixnum(ret);
     }
@@ -936,16 +940,18 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         String tovalue = toStr.getUnicodeValue();
         tovalue = JRubyFile.create(runtime.getCurrentDirectory(), tovalue).getAbsolutePath();
         try {
-            if (runtime.getPosix().symlink(
-                    fromStr.getUnicodeValue(), tovalue) == -1) {
-                // FIXME: When we get JNA3 we need to properly write this to errno.
-                throw runtime.newErrnoEEXISTError(fromStr + " or " + toStr);
+            if (runtime.getPosix().symlink(fromStr.getUnicodeValue(), tovalue) == -1) {
+                if (runtime.getPosix().isNative()) {
+                    throw runtime.newErrnoFromInt(runtime.getPosix().errno(), String.format("(%s, %s)", fromStr, toStr));
+                } else {
+                    throw runtime.newErrnoEEXISTError(String.format("(%s, %s)", fromStr, toStr));
+                }
             }
         } catch (java.lang.UnsatisfiedLinkError ule) {
             throw runtime.newNotImplementedError("symlink() function is unimplemented on this machine");
         }
         
-        return runtime.newFixnum(0);
+        return RubyFixnum.zero(runtime);
     }
     
     @JRubyMethod(required = 1, meta = true)
