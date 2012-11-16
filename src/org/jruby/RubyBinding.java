@@ -113,7 +113,7 @@ public class RubyBinding extends RubyObject {
     public IRubyObject initialize_copy(IRubyObject other) {
         RubyBinding otherBinding = (RubyBinding)other;
         
-        binding = otherBinding.binding;
+        binding = otherBinding.binding.clone();
         
         return this;
     }

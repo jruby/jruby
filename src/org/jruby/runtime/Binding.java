@@ -104,6 +104,10 @@ public class Binding {
         return new Binding(self, frame, visibility, klass, dynamicScope, evalScope, backtrace);
     }
 
+    public Binding deepClone() {
+        return new Binding(self, frame.duplicate(), visibility, klass, dynamicScope.cloneScope(), evalScope.clone(), backtrace);
+    }
+
     public Binding clone(Visibility visibility) {
         return new Binding(self, frame, visibility, klass, dynamicScope, evalScope, backtrace);
     }
