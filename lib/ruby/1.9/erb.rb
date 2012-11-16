@@ -841,7 +841,7 @@ class ERB
 
   def new_toplevel
     # New binding each time *near* toplevel for unspecified runs
-    eval "proc{binding}.call", TOPLEVEL_BINDING
+    TOPLEVEL_BINDING.dup
   end
   private :new_toplevel
 
