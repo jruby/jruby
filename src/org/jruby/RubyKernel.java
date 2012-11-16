@@ -1698,6 +1698,8 @@ public class RubyKernel {
 
                 String[] argv = cfg.getExecArgs();
 
+                System.setProperty("user.dir", runtime.getCurrentDirectory());
+                
                 if (Platform.IS_WINDOWS) {
                     // Windows exec logic is much more elaborate; exec() in jnr-posix attempts to duplicate it
                     runtime.getPosix().exec(progStr, argv);
@@ -1708,7 +1710,7 @@ public class RubyKernel {
                         envStrings.add(envEntry.getKey() + "=" + envEntry.getValue());
                     }
                     envStrings.add(null);
-
+                    
                     runtime.getPosix().execve(progStr, argv, (String[]) envStrings.toArray(new String[0]));
                 }
 
