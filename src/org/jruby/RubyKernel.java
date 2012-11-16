@@ -316,9 +316,7 @@ public class RubyKernel {
         if (args[0].respondsTo("to_open")) {
             args[0] = args[0].callMethod(context, "to_open");
             return RubyFile.open(context, runtime.getFile(), args, block);
-        } 
-        
-        if (args[0].respondsTo("to_path")) {
+        } else if (args[0].respondsTo("to_path")) {
             args[0] = args[0].callMethod(context, "to_path");
         }
 
