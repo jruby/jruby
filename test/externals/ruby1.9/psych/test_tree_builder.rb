@@ -22,18 +22,16 @@ module Psych
       assert_instance_of Nodes::Stream, @tree
     end
 
-    unless RUBY_ENGINE == 'jruby'
-      def test_documents
-        assert_equal 1, @tree.children.length
-        assert_instance_of Nodes::Document, @tree.children.first
-        doc = @tree.children.first
-        
-        assert_equal [1,1], doc.version
-        assert_equal [], doc.tag_directives
-        assert_equal false, doc.implicit
-      end
+    def test_documents
+      assert_equal 1, @tree.children.length
+      assert_instance_of Nodes::Document, @tree.children.first
+      doc = @tree.children.first
+
+      assert_equal [1,1], doc.version
+      assert_equal [], doc.tag_directives
+      assert_equal false, doc.implicit
     end
-      
+
     def test_sequence
       doc = @tree.children.first
       assert_equal 1, doc.children.length
