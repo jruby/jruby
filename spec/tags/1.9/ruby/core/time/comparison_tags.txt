@@ -1,4 +1,0 @@
-fails:Time#<=> given a non-Time argument returns nil if argument <=> self returns nil
-fails:Time#<=> given a non-Time argument returns -1 if argument <=> self is greater than 0
-fails:Time#<=> given a non-Time argument returns 1 if argument <=> self is not greater than 0 and is less than 0
-fails:Time#<=> given a non-Time argument returns 0 if argument <=> self is neither greater than 0 nor less than 0
