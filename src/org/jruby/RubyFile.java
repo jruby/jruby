@@ -866,8 +866,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     @JRubyMethod(required = 2, meta = true)
     public static IRubyObject link(ThreadContext context, IRubyObject recv, IRubyObject from, IRubyObject to) {
         Ruby runtime = context.runtime;
-        RubyString fromStr = RubyString.stringValue(from);
-        RubyString toStr = RubyString.stringValue(to);
+        RubyString fromStr = RubyString.stringValue(filePathCheckToString(context, from));
+        RubyString toStr = RubyString.stringValue(filePathCheckToString(context, to));
 
         int ret = runtime.getPosix().link(fromStr.getUnicodeValue(), toStr.getUnicodeValue());
         if (ret != 0) {
@@ -1946,6 +1946,16 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
 
         return lockFailedReturn(runtime, exclusive ? LOCK_EX : LOCK_SH);
+    }
+    
+    public static IRubyObject filePathCheckToString(ThreadContext context, IRubyObject obj) {
+        RubyString path;
+        IRubyObject tmp;
+        if (! obj.respondsTo("to_path")) {
+            return obj;
+        }
+        path = (RubyString) obj.callMethod(context, "to_path");
+        return path.force_encoding(context, context.runtime.getEncodingService().getDefaultExternal());
     }
 
     private static final long serialVersionUID = 1L;
