@@ -47,6 +47,7 @@ module Psych
 
       def tree
         finish unless finished?
+        @emitter.root
       end
 
       def push object
@@ -65,7 +66,7 @@ module Psych
 
         @emitter.start_document version, [], false
         accept object
-        @emitter.end_document
+        @emitter.end_document !@emitter.streaming?
       end
       alias :<< :push
 
@@ -230,15 +231,18 @@ module Psych
         plain = false
         quote = false
         style = Nodes::Scalar::ANY
+        tag   = nil
+        str   = o
 
         if binary?(o)
           str   = [o].pack('m').chomp
           tag   = '!binary' # FIXME: change to below when syck is removed
           #tag   = 'tag:yaml.org,2002:binary'
           style = Nodes::Scalar::LITERAL
+        elsif o =~ /\n/
+          quote = true
+          style = Nodes::Scalar::LITERAL
         else
-          str   = o
-          tag   = nil
           quote = !(String === @ss.tokenize(o))
           plain = !quote
         end
