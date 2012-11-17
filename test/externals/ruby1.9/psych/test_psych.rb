@@ -49,13 +49,11 @@ class TestPsych < Psych::TestCase
     end
   end
 
-  unless RUBY_ENGINE == 'jruby'
-    def test_non_existing_class_on_deserialize
-      e = assert_raises(ArgumentError) do
-        Psych.load("--- !ruby/object:NonExistent\nfoo: 1")
-      end
-      assert_equal 'undefined class/module NonExistent', e.message
+  def test_non_existing_class_on_deserialize
+    e = assert_raises(ArgumentError) do
+      Psych.load("--- !ruby/object:NonExistent\nfoo: 1")
     end
+    assert_equal 'undefined class/module NonExistent', e.message
   end
 
   def test_dump_stream
@@ -84,11 +82,9 @@ class TestPsych < Psych::TestCase
     assert_equal 'foo', Psych.load("--- foo\n")
   end
 
-  unless RUBY_ENGINE == 'jruby'
-    def test_libyaml_version
-      assert Psych.libyaml_version
-      assert_equal Psych.libyaml_version.join('.'), Psych::LIBYAML_VERSION
-    end
+  def test_libyaml_version
+    assert Psych.libyaml_version
+    assert_equal Psych.libyaml_version.join('.'), Psych::LIBYAML_VERSION
   end
 
   def test_load_documents

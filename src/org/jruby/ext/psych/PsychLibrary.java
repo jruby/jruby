@@ -65,13 +65,13 @@ public class PsychLibrary implements Library {
         PsychYamlTree.initPsychYamlTree(runtime, psych);
     }
 
-    public enum YAML_ENCODING {
+    public enum YAMLEncoding {
         YAML_ANY_ENCODING(UTF8Encoding.INSTANCE),
         YAML_UTF8_ENCODING(UTF8Encoding.INSTANCE),
         YAML_UTF16LE_ENCODING(UTF16LEEncoding.INSTANCE),
         YAML_UTF16BE_ENCODING(UTF16BEEncoding.INSTANCE);
 
-        YAML_ENCODING(Encoding encoding) {
+        YAMLEncoding(Encoding encoding) {
             this.encoding = encoding;
         }
 

@@ -1,4 +1,4 @@
-# -*- mode: ruby; ruby-indent-level: 4; tab-width: 4 -*-
+# -*- coding: us-ascii; mode: ruby; ruby-indent-level: 4; tab-width: 4 -*-
 #												vim:sw=4:ts=4
 # $Id$
 #
@@ -953,22 +953,20 @@ EOY
 		)
 	end
 
-  unless RUBY_ENGINE == 'jruby'
-    	def test_spec_builtin_time
-		  # Time
-		  assert_parse_only(
-			  { "space separated" => mktime( 2001, 12, 14, 21, 59, 43, ".10", "-05:00" ),
-			    "canonical" => mktime( 2001, 12, 15, 2, 59, 43, ".10" ),
-			    "date (noon UTC)" => Date.new( 2002, 12, 14),
-			    "valid iso8601" => mktime( 2001, 12, 14, 21, 59, 43, ".10", "-05:00" ) }, <<EOY
+	def test_spec_builtin_time
+		# Time
+		assert_parse_only(
+			{ "space separated" => mktime( 2001, 12, 14, 21, 59, 43, ".10", "-05:00" ),
+			  "canonical" => mktime( 2001, 12, 15, 2, 59, 43, ".10" ),
+			  "date (noon UTC)" => Date.new( 2002, 12, 14),
+			  "valid iso8601" => mktime( 2001, 12, 14, 21, 59, 43, ".10", "-05:00" ) }, <<EOY
 canonical: 2001-12-15T02:59:43.1Z
 valid iso8601: 2001-12-14t21:59:43.10-05:00
 space separated: 2001-12-14 21:59:43.10 -05:00
 date (noon UTC): 2002-12-14
 EOY
-		  )
-	  end
-  end
+		)
+	end
 
 	def test_spec_builtin_binary
 		arrow_gif = "GIF89a\f\000\f\000\204\000\000\377\377\367\365\365\356\351\351\345fff\000\000\000\347\347\347^^^\363\363\355\216\216\216\340\340\340\237\237\237\223\223\223\247\247\247\236\236\236iiiccc\243\243\243\204\204\204\377\376\371\377\376\371\377\376\371\377\376\371\377\376\371\377\376\371\377\376\371\377\376\371\377\376\371\377\376\371\377\376\371\377\376\371\377\376\371\377\376\371!\376\016Made with GIMP\000,\000\000\000\000\f\000\f\000\000\005,  \216\2010\236\343@\024\350i\020\304\321\212\010\034\317\200M$z\357\3770\205p\270\2601f\r\e\316\001\303\001\036\020' \202\n\001\000;"
@@ -1267,5 +1265,10 @@ EOY
     def test_normal_exit
       Psych.load("2000-01-01 00:00:00.#{"0"*1000} +00:00\n")
       # '[ruby-core:13735]'
+    end
+
+    def test_multiline_string_uses_literal_style
+      yaml = Psych.dump("multi\nline\nstring")
+      assert_match("|", yaml)
     end
 end

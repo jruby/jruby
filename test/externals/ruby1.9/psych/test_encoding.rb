@@ -190,22 +190,20 @@ module Psych
       assert_equal str, thing
     end
 
-    unless RUBY_ENGINE == 'jruby'
-      def test_default_internal
-        before = Encoding.default_internal
-        
-        Encoding.default_internal = 'EUC-JP'
-        
-        str  = "壁に耳あり、障子に目あり"
-        yaml = "--- #{str}"
-        assert_equal @utf8, str.encoding
-        
-        @parser.parse str
-        assert_encodings Encoding.find('EUC-JP'), @handler.strings
-        assert_equal str, @handler.strings.first.encode('UTF-8')
-      ensure
-        Encoding.default_internal = before
-      end
+    def test_default_internal
+      before = Encoding.default_internal
+
+      Encoding.default_internal = 'EUC-JP'
+
+      str  = "壁に耳あり、障子に目あり"
+      yaml = "--- #{str}"
+      assert_equal @utf8, str.encoding
+
+      @parser.parse str
+      assert_encodings Encoding.find('EUC-JP'), @handler.strings
+      assert_equal str, @handler.strings.first.encode('UTF-8')
+    ensure
+      Encoding.default_internal = before
     end
 
     def test_scalar

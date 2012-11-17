@@ -29,7 +29,6 @@ package org.jruby.ext.psych;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
@@ -68,7 +67,8 @@ import static org.jruby.runtime.Visibility.*;
 
 public class PsychEmitter extends RubyObject {
     public static void initPsychEmitter(Ruby runtime, RubyModule psych) {
-        RubyClass psychEmitter = runtime.defineClassUnder("Emitter", runtime.getObject(), new ObjectAllocator() {
+        RubyClass psychHandler = runtime.defineClassUnder("Handler", runtime.getObject(), runtime.getObject().getAllocator(), psych);
+        RubyClass psychEmitter = runtime.defineClassUnder("Emitter", psychHandler, new ObjectAllocator() {
             public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
                 return new PsychEmitter(runtime, klazz);
             }
@@ -320,7 +320,7 @@ public class PsychEmitter extends RubyObject {
     private void initEmitter(ThreadContext context, IRubyObject _encoding) {
         if (emitter != null) throw context.runtime.newRuntimeError("already initialized emitter");
 
-        Encoding encoding = PsychLibrary.YAML_ENCODING.values()[(int)_encoding.convertToInteger().getLongValue()].encoding;
+        Encoding encoding = PsychLibrary.YAMLEncoding.values()[(int)_encoding.convertToInteger().getLongValue()].encoding;
         Charset charset = context.runtime.getEncodingService().charsetForEncoding(encoding);
 
         emitter = new Emitter(new OutputStreamWriter(new IOOutputStream(io), charset), options);

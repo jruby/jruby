@@ -21,6 +21,17 @@ module Psych
       end
     end
 
+    def test_scan_bad_time
+      [ '2001-12-15T02:59:73.1Z',
+        '2001-12-14t90:59:43.10-05:00',
+        '2001-92-14 21:59:43.10 -5',
+        '2001-12-15 92:59:43.10',
+        '2011-02-24 81:17:06 -0800',
+      ].each do |time_str|
+        assert_equal time_str, @ss.tokenize(time_str)
+      end
+    end
+
     def test_scan_bad_dates
       x = '2000-15-01'
       assert_equal x, @ss.tokenize(x)
@@ -86,6 +97,10 @@ module Psych
 
     def test_scan_true
       assert_equal true, ss.tokenize('true')
+    end
+
+    def test_scan_strings_starting_with_underscores
+      assert_equal "_100", ss.tokenize('_100')
     end
   end
 end
