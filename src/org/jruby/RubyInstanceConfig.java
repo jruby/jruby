@@ -662,6 +662,14 @@ public class RubyInstanceConfig {
     public boolean isObjectSpaceEnabled() {
         return objectSpaceEnabled;
     }
+    
+    public void setSiphashEnabled(boolean newSiphashEnabled) {
+        siphashEnabled = newSiphashEnabled;
+    }
+    
+    public boolean isSiphashEnabled() {
+        return siphashEnabled;
+    }
 
     public void setEnvironment(Map newEnvironment) {
         if (newEnvironment == null) newEnvironment = new HashMap();
@@ -1196,6 +1204,7 @@ public class RubyInstanceConfig {
     private PrintStream error          = System.err;
     private Profile profile            = Profile.DEFAULT;
     private boolean objectSpaceEnabled = Options.OBJECTSPACE_ENABLED.load();
+    private boolean siphashEnabled     = Options.SIPHASH_ENABLED.load();
 
     private CompileMode compileMode = CompileMode.JIT;
     private boolean runRubyInProcess   = true;

@@ -205,6 +205,7 @@ public final class Ruby {
         this.out                = config.getOutput();
         this.err                = config.getError();
         this.objectSpaceEnabled = config.isObjectSpaceEnabled();
+        this.siphashEnabled     = config.isSiphashEnabled();
         this.profile            = config.getProfile();
         this.currentDirectory   = config.getCurrentDirectory();
         this.kcode              = config.getKCode();
@@ -3938,6 +3939,11 @@ public final class Ruby {
     public void setObjectSpaceEnabled(boolean objectSpaceEnabled) {
         this.objectSpaceEnabled = objectSpaceEnabled;
     }
+    
+    // You cannot set siphashEnabled property except via RubyInstanceConfig to avoid mixing hash functions.
+    public boolean isSiphashEnabled() {
+        return siphashEnabled;
+    }
 
     public long getStartTime() {
         return startTime;
@@ -4289,6 +4295,7 @@ public final class Ruby {
     private boolean globalAbortOnExceptionEnabled = false;
     private boolean doNotReverseLookupEnabled = false;
     private volatile boolean objectSpaceEnabled;
+    private boolean siphashEnabled;
     
     private final Set<Script> jittedMethods = Collections.synchronizedSet(new WeakHashSet<Script>());
     

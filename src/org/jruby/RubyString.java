@@ -97,6 +97,7 @@ import org.jruby.util.ConvertBytes;
 import org.jruby.util.MurmurHash;
 import org.jruby.util.Numeric;
 import org.jruby.util.Pack;
+import org.jruby.util.PerlHash;
 import org.jruby.util.RegexpOptions;
 import org.jruby.util.SipHashInline;
 import org.jruby.util.Sprintf;
@@ -1213,13 +1214,15 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     /**
-     * Generate a murmurhash for the String, using its associated Ruby instance's hash seed.
+     * Generate a hash for the String, using its associated Ruby instance's hash seed.
      *
      * @param runtime
      * @return
      */
     public int strHashCode(Ruby runtime) {
-        long hash = SipHashInline.hash24(runtime.getHashSeedK0(), runtime.getHashSeedK1(),
+        long hash = runtime.isSiphashEnabled() ? SipHashInline.hash24(runtime.getHashSeedK0(),
+                runtime.getHashSeedK1(), value.getUnsafeBytes(), value.getBegin(),
+                value.getRealSize()) : PerlHash.hash(runtime.getHashSeedK0(),
                 value.getUnsafeBytes(), value.getBegin(), value.getRealSize());
         if (runtime.is1_9()) {
             hash ^= (value.getEncoding().isAsciiCompatible() && scanForCodeRange() == CR_7BIT ? 0
@@ -1229,14 +1232,15 @@ public class RubyString extends RubyObject implements EncodingCapable {
     }
 
     /**
-     * Generate a murmurhash for the String, without a seed.
+     * Generate a hash for the String, without a seed.
      *
      * @param runtime
      * @return
      */
     public int unseededStrHashCode(Ruby runtime) {
-        long hash = SipHashInline.hash24(0, 0, value.getUnsafeBytes(), value.getBegin(),
-                value.getRealSize());
+        long hash = runtime.isSiphashEnabled() ? SipHashInline.hash24(0, 0, value.getUnsafeBytes(),
+                value.getBegin(), value.getRealSize()) : PerlHash.hash(0, value.getUnsafeBytes(),
+                value.getBegin(), value.getRealSize());
         if (runtime.is1_9()) {
             hash ^= (value.getEncoding().isAsciiCompatible() && scanForCodeRange() == CR_7BIT ? 0
                     : value.getEncoding().getIndex());
