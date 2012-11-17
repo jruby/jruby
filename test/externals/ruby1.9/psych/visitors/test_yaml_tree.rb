@@ -64,6 +64,7 @@ module Psych
 
       def test_exception
         ex = Exception.new 'foo'
+        puts Psych.dump(ex)
         loaded = Psych.load(Psych.dump(ex))
 
         assert_equal ex.message, loaded.message

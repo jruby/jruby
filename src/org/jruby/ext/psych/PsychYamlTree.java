@@ -47,6 +47,9 @@ public class PsychYamlTree {
 
     @JRubyMethod(visibility = PRIVATE)
     public static IRubyObject private_iv_get(ThreadContext context, IRubyObject self, IRubyObject target, IRubyObject prop) {
-        return target.getInstanceVariables().getInstanceVariable(prop.asJavaString());
+        IRubyObject obj = target.getInstanceVariables().getInstanceVariable(prop.asJavaString());
+        if (obj == null) obj = context.nil;
+
+        return obj;
     }
 }
