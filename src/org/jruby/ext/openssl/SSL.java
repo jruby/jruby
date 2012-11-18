@@ -31,6 +31,7 @@ import org.jruby.Ruby;
 import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.RaiseException;
+import org.jruby.runtime.builtin.IRubyObject;
 
 /**
  * @author <a href="mailto:ola.bini@ki.se">Ola Bini</a>
@@ -61,7 +62,13 @@ public class SSL {
     public static void createSSL(Ruby runtime, RubyModule ossl) {
         RubyModule mSSL = ossl.defineModuleUnder("SSL");
         RubyClass openSSLError = ossl.getClass("OpenSSLError");
-        mSSL.defineClassUnder("SSLError",openSSLError,openSSLError.getAllocator());
+        RubyClass sslError = mSSL.defineClassUnder("SSLError",openSSLError,openSSLError.getAllocator());
+        if (runtime.is1_9()) {
+            RubyClass sslErrorReadable = mSSL.defineClassUnder("SSLErrorReadable",sslError,openSSLError.getAllocator());
+            sslErrorReadable.include(new IRubyObject[]{runtime.getIO().getConstant("WaitReadable")});
+            RubyClass sslErrorWritable = mSSL.defineClassUnder("SSLErrorWritable",sslError,openSSLError.getAllocator());
+            sslErrorWritable.include(new IRubyObject[]{runtime.getIO().getConstant("WaitWritable")});
+        }
 
         SSLContext.createSSLContext(runtime,mSSL);
         SSLSocket.createSSLSocket(runtime,mSSL);

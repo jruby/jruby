@@ -101,6 +101,14 @@ public class SSLSocket extends RubyObject {
         return Utils.newError(runtime, "OpenSSL::SSL::SSLError", message, false);
     }
 
+    public static RaiseException newSSLErrorReadable(Ruby runtime, String message) {
+        return Utils.newError(runtime, "OpenSSL::SSL::SSLErrorReadable", message, false);
+    }
+
+    public static RaiseException newSSLErrorWritable(Ruby runtime, String message) {
+        return Utils.newError(runtime, "OpenSSL::SSL::SSLErrorWritable", message, false);
+    }
+
     private org.jruby.ext.openssl.SSLContext rubyCtx;
     private SSLEngine engine;
     private RubyIO io = null;
@@ -362,16 +370,12 @@ public class SSLSocket extends RubyObject {
 
     private void readWouldBlock() {
         Ruby runtime = getRuntime();
-        RaiseException eagain = newSSLError(runtime, "read would block");
-        eagain.getException().extend(new IRubyObject[]{runtime.getIO().getConstant("WaitReadable")});
-        throw eagain;
+        throw newSSLErrorReadable(runtime, "read would block");
     }
 
     private void writeWouldBlock() {
         Ruby runtime = getRuntime();
-        RaiseException eagain = newSSLError(runtime, "write would block");
-        eagain.getException().extend(new IRubyObject[]{runtime.getIO().getConstant("WaitWritable")});
-        throw eagain;
+        throw newSSLErrorWritable(runtime, "write would block");
     }
 
     private void doHandshake(boolean blocking) throws IOException {
