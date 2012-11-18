@@ -226,8 +226,12 @@ public class CharsetTranscoder {
         }
         try {
             from = encoding.getCharset();
-            
-            if (from != null) return from;
+
+            // if we have a from charset and the name matches any non-null charset name in the encoding...
+            if (from != null
+                    && (encoding.getCharsetName() != null && from.name().equals(encoding.getCharsetName()))) {
+                return from;
+            }
         } catch (Exception e) {}
 
         try { // We try looking up based on Java's supported charsets...likely missing charset entry in jcodings
