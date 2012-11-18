@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009-2011 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2012 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -29,10 +29,10 @@
  */
 package org.jruby.embed.variable;
 
-import org.jruby.embed.internal.BiVariableMap;
 import java.util.Set;
 import org.jruby.Ruby;
 import org.jruby.RubyObject;
+import org.jruby.embed.internal.BiVariableMap;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -155,7 +155,10 @@ public class LocalGlobalVariable extends GlobalVariable {
      */
     @Override
     public void inject() {
-        receiver.getRuntime().getGlobalVariables().set(("$"+name).intern(), irubyObject);
+        synchronized (receiver.getRuntime()) {
+            String varname = (name.startsWith("$") ? name : "$" + name);
+            receiver.getRuntime().getGlobalVariables().set(varname.intern(), irubyObject);
+        }
     }
 
     /**
@@ -165,6 +168,9 @@ public class LocalGlobalVariable extends GlobalVariable {
      */
     @Override
     public void remove() {
-        receiver.getRuntime().getGlobalVariables().clear(("$"+name).intern());
+        synchronized (receiver.getRuntime()) {
+            String varname = (name.startsWith("$") ? name : "$" + name);
+            receiver.getRuntime().getGlobalVariables().clear(varname.intern());
+        }
     }
 }

@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2012 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -232,7 +232,7 @@ public class JRubyEngineTest {
     @Test
     public void testEval_String_ScriptContext2() throws Exception {
         logger1.info("[eval String with ScriptContext 2]");       
-        ScriptEngine instance;
+        ScriptEngine instance = null;
         synchronized(this) {
             System.setProperty("org.jruby.embed.localcontext.scope", "singlethread");
             System.setProperty("org.jruby.embed.localvariable.behavior", "transient");
@@ -798,6 +798,8 @@ public class JRubyEngineTest {
         Object obj1 = engine1.eval("$Value + 2010.to_s");
         Object obj2 = engine2.eval("$Value + 2010");
         assertNotSame(obj1, obj2);
+        engine1 = null;
+        engine2 = null;
     }
 
     @Test
@@ -818,5 +820,29 @@ public class JRubyEngineTest {
         instance.eval("");
         expResult = "GVar in an at_exit block";
         assertEquals(expResult, sw.toString().trim());
+        instance.getContext().setAttribute("org.jruby.embed.termination", false, ScriptContext.ENGINE_SCOPE);
+        instance = null;
+    }
+    
+    @Test
+    public void testClearVariables() throws ScriptException {
+        logger1.info("Clear Variables Test");
+        ScriptEngine instance = null;
+        synchronized (this) {
+            System.setProperty("org.jruby.embed.localcontext.scope", "singlethread");
+            System.setProperty("org.jruby.embed.localvariable.behavior", "global");
+            ScriptEngineManager manager = new ScriptEngineManager();
+            instance = manager.getEngineByName("jruby");
+        }
+        instance.put("gvar", ":Gvar");
+        String result = (String) instance.eval("$gvar");
+        assertEquals(":Gvar", result);
+        instance.getBindings(ScriptContext.ENGINE_SCOPE).remove("gvar");
+        instance.getContext().setAttribute("org.jruby.embed.clear.variables", true, ScriptContext.ENGINE_SCOPE);
+        instance.eval("");
+        instance.getContext().setAttribute("org.jruby.embed.clear.variables", false, ScriptContext.ENGINE_SCOPE);
+        result = (String) instance.eval("$gvar");
+        assertNull(result);
+        instance = null;
     }
 }

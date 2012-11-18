@@ -82,6 +82,9 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
         }
         container.setScriptFilename(Utils.getFilename(context));
         try {
+            if (Utils.isClearVariablesOn(context)) {
+                container.clear();
+            }
             Utils.preEval(container, context);
             EmbedEvalUnit unit = container.parse(script, Utils.getLineNumber(context));
             IRubyObject ret = unit.run();
@@ -93,9 +96,6 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
             boolean termination = Utils.isTerminationOn(context);
             if (termination) {
                 container.terminate();
-            }
-            if (Utils.isClearVariablesOn(context)) {
-                container.clear();
             }
         }
     }
@@ -110,6 +110,9 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
         }
         String filename = Utils.getFilename(context);
         try {
+            if (Utils.isClearVariablesOn(context)) {
+                container.clear();
+            }
             Utils.preEval(container, context);
             EmbedEvalUnit unit = container.parse(reader, filename, Utils.getLineNumber(context));
             IRubyObject ret = unit.run();
@@ -121,9 +124,6 @@ public class JRubyEngine implements Compilable, Invocable, ScriptEngine {
             boolean termination = Utils.isTerminationOn(context);
             if (termination) {
                 container.terminate();
-            }
-            if (Utils.isClearVariablesOn(context)) {
-                container.clear();
             }
         }
     }

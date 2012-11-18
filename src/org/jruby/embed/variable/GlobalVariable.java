@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009-2011 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2012 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -31,10 +31,10 @@ package org.jruby.embed.variable;
 
 import java.util.Arrays;
 import java.util.HashSet;
-import org.jruby.embed.internal.BiVariableMap;
 import java.util.Set;
 import org.jruby.Ruby;
 import org.jruby.RubyObject;
+import org.jruby.embed.internal.BiVariableMap;
 import org.jruby.internal.runtime.GlobalVariables;
 import org.jruby.runtime.builtin.IRubyObject;
 
@@ -223,7 +223,9 @@ public class GlobalVariable extends AbstractVariable {
         // wreckages of global local vars might remain on runtime, which may cause
         // assertion error since those names doesn't start from "$"
         name = name.startsWith("$") ? name : ("$" + name).intern();
-        runtime.getGlobalVariables().set(name, irubyObject);
+        synchronized (this.getReceiver().getRuntime()) {
+            runtime.getGlobalVariables().set(name, irubyObject);
+        }
     }
 
     /**
@@ -231,7 +233,9 @@ public class GlobalVariable extends AbstractVariable {
      * 
      */
     public void remove() {
-        receiver.getRuntime().getGlobalVariables().clear(name);
+        synchronized (receiver.getRuntime()) {
+            receiver.getRuntime().getGlobalVariables().clear(name.intern());
+        }
     }
     
     /**

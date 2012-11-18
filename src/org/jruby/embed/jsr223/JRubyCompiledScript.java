@@ -79,6 +79,9 @@ public class JRubyCompiledScript extends CompiledScript {
     
     public Object eval(ScriptContext context) throws ScriptException {
         try {
+            if (Utils.isClearVariablesOn(context)) {
+                container.clear();
+            }
             Utils.preEval(container, context);
             IRubyObject ret = unit.run();
             if (!(ret instanceof RubyNil)) {
@@ -92,9 +95,6 @@ public class JRubyCompiledScript extends CompiledScript {
             boolean termination = Utils.isTerminationOn(context);
             if (termination) {
                 container.terminate();
-            }
-            if (Utils.isClearVariablesOn(context)) {
-                container.clear();
             }
         }
     }
