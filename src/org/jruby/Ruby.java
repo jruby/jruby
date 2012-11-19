@@ -2490,6 +2490,12 @@ public final class Ruby {
         return loadService;
     }
 
+    /**
+     * This is an internal encoding if actually specified via default_internal=
+     * or passed in via -E.
+     * 
+     * @return null or encoding
+     */
     public Encoding getDefaultInternalEncoding() {
         return defaultInternalEncoding;
     }
