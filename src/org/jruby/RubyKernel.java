@@ -1217,6 +1217,7 @@ public class RubyKernel {
 
     private static IRubyObject rbThrowInternal(ThreadContext context, IRubyObject tag, IRubyObject[] args, Block block, Uncaught uncaught) {
         Ruby runtime = context.runtime;
+        runtime.getGlobalVariables().set("$!", runtime.getNil());
 
         RubyContinuation.Continuation continuation = context.getActiveCatch(tag);
 
