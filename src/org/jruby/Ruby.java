@@ -3440,9 +3440,9 @@ public final class Ruby {
         } else {
             msg = "bind - " + msg;
         }
-		if (contextMessage != null) {
+        if (contextMessage != null) {
             msg = msg + contextMessage;
-		}
+        }
         // This is ugly, but what can we do, Java provides the same BindingException
         // for both EADDRNOTAVAIL and EADDRINUSE, so we differentiate the errors
         // based on BindException's message.
