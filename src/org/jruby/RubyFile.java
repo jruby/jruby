@@ -1299,9 +1299,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
     }
 
-    /**
-     * similar in spirit to rb_get_path from 1.9 source
-     */
+    // mri: FilePathValue/rb_get_path/rb_get_patch_check
     public static RubyString get_path(ThreadContext context, IRubyObject path) {
         if (context.runtime.is1_9()) {
             if (path.respondsTo("to_path")) path = path.callMethod(context, "to_path");
