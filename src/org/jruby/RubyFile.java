@@ -867,8 +867,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     @JRubyMethod(required = 2, meta = true)
     public static IRubyObject link(ThreadContext context, IRubyObject recv, IRubyObject from, IRubyObject to) {
         Ruby runtime = context.runtime;
-        RubyString fromStr = RubyString.stringValue(filePathCheckToString(context, from));
-        RubyString toStr = RubyString.stringValue(filePathCheckToString(context, to));
+        RubyString fromStr = get_path(context, from);
+        RubyString toStr = get_path(context, to);
 
         int ret = runtime.getPosix().link(fromStr.getUnicodeValue(), toStr.getUnicodeValue());
         if (ret != 0) {
@@ -993,10 +993,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     @JRubyMethod(name = "truncate", required = 2, meta = true, compat = RUBY1_9)
     public static IRubyObject truncate19(ThreadContext context, IRubyObject recv, IRubyObject arg1, IRubyObject arg2) {
-        if (!(arg1 instanceof RubyString) && arg1.respondsTo("to_path")) {
-            arg1 = arg1.callMethod(context, "to_path");
-        }
-        return truncateCommon(context, recv, arg1, arg2);
+        return truncateCommon(context, recv, get_path(context, arg1), arg2);
     }
 
     @JRubyMethod(meta = true, optional = 1)
@@ -1960,14 +1957,6 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         }
 
         return lockFailedReturn(runtime, exclusive ? LOCK_EX : LOCK_SH);
-    }
-    
-    public static IRubyObject filePathCheckToString(ThreadContext context, IRubyObject obj) {
-        if (!obj.respondsTo("to_path")) return obj;
-
-        RubyString path = obj.callMethod(context, "to_path").convertToString();
-        
-        return path.force_encoding(context, context.runtime.getEncodingService().getDefaultExternal());
     }
 
     private static final long serialVersionUID = 1L;

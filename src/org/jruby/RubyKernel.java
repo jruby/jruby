@@ -317,7 +317,7 @@ public class RubyKernel {
             args[0] = args[0].callMethod(context, "to_open");
             return RubyFile.open(context, runtime.getFile(), args, block);
         } else {
-            args[0] = RubyFile.filePathCheckToString(context, args[0]);
+            args[0] = RubyFile.get_path(context, args[0]);
         }
 
         String arg = args[0].convertToString().toString();

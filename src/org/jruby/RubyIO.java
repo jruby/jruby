@@ -3662,7 +3662,7 @@ public class RubyIO extends RubyObject {
     @JRubyMethod(meta = true, required = 1, optional = 2, compat = RUBY1_9)
     public static IRubyObject binread(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
         IRubyObject nil = context.runtime.getNil();
-        IRubyObject path = RubyFile.filePathCheckToString(context, args[0]);
+        IRubyObject path = RubyFile.get_path(context, args[0]);
         IRubyObject length = nil;
         IRubyObject offset = nil;
         Ruby runtime = context.runtime;
