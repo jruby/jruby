@@ -364,10 +364,13 @@ public class RubyIO extends RubyObject {
     }
 
     protected void reopenPath(Ruby runtime, IRubyObject[] args) {
-        if (runtime.is1_9() && !(args[0] instanceof RubyString) && args[0].respondsTo("to_path")) {
-            args[0] = args[0].callMethod(runtime.getCurrentContext(), "to_path");
+        IRubyObject pathString;
+        
+        if (runtime.is1_9()) {
+            pathString = RubyFile.get_path(runtime.getCurrentContext(), args[0]);
+        } else {
+            pathString = args[0].convertToString();
         }
-        IRubyObject pathString = args[0].convertToString();
 
         // TODO: check safe, taint on incoming string
 
@@ -1206,13 +1209,8 @@ public class RubyIO extends RubyObject {
     @JRubyMethod(name = "sysopen", required = 1, optional = 2, meta = true, compat = CompatVersion.RUBY1_9)
     public static IRubyObject sysopen19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
         StringSupport.checkStringSafety(context.runtime, args[0]);
-        IRubyObject pathString;
-        if (!(args[0] instanceof RubyString) && args[0].respondsTo("to_path")) {
-            pathString = args[0].callMethod(context, "to_path");
-        } else {
-            pathString = args[0].convertToString();
-        }
-        return sysopenCommon(recv, args, block, pathString);
+
+        return sysopenCommon(recv, args, block, RubyFile.get_path(context, args[0]));
     }
 
     private static IRubyObject sysopenCommon(IRubyObject recv, IRubyObject[] args, Block block, IRubyObject pathString) {
@@ -3481,25 +3479,17 @@ public class RubyIO extends RubyObject {
     
     @JRubyMethod(required = 1, optional = 1, meta = true, compat = RUBY1_8)
     public static IRubyObject foreach(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
-        if (!block.isGiven()) {
-            return enumeratorize(context.runtime, recv, "foreach", args);
-        }
+        if (!block.isGiven()) return enumeratorize(context.runtime, recv, "foreach", args);
 
-        if (!(args[0] instanceof RubyString) && args[0].respondsTo("to_path")) {
-            args[0] = args[0].callMethod(context, "to_path");
-        }
         return foreachInternal(context, recv, args, block);
     }
 
     @JRubyMethod(name = "foreach", required = 1, optional = 2, meta = true, compat = RUBY1_9)
     public static IRubyObject foreach19(final ThreadContext context, IRubyObject recv, IRubyObject[] args, final Block block) {
-        if (!block.isGiven()) {
-            return enumeratorize(context.runtime, recv, "foreach", args);
-        }
+        if (!block.isGiven()) return enumeratorize(context.runtime, recv, "foreach", args);
 
-        if (!(args[0] instanceof RubyString) && args[0].respondsTo("to_path")) {
-            args[0] = args[0].callMethod(context, "to_path");
-        }
+        args[0] = RubyFile.get_path(context, args[0]);
+
         return foreachInternal19(context, recv, args, block);
     }
 
