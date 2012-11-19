@@ -1017,14 +1017,11 @@ public class RubyKernel {
     @JRubyMethod(name = "require", module = true, visibility = PRIVATE, compat = RUBY1_9)
     public static IRubyObject require19(ThreadContext context, IRubyObject recv, IRubyObject name, Block block) {
         Ruby runtime = context.runtime;
-
         IRubyObject tmp = name.checkStringType();
-        if (!tmp.isNil()) {
-            return requireCommon(runtime, recv, tmp, block);
-        }
+        
+        if (!tmp.isNil()) return requireCommon(runtime, recv, tmp, block);
 
-        return requireCommon(runtime, recv,
-                name.respondsTo("to_path") ? name.callMethod(context, "to_path") : name, block);
+        return requireCommon(runtime, recv, RubyFile.get_path(context, name), block);
     }
 
     private static IRubyObject requireCommon(Ruby runtime, IRubyObject recv, IRubyObject name, Block block) {
@@ -1041,12 +1038,7 @@ public class RubyKernel {
 
     @JRubyMethod(name = "load", required = 1, optional = 1, module = true, visibility = PRIVATE, compat = RUBY1_9)
     public static IRubyObject load19(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
-        IRubyObject file = args[0];
-        if (!(file instanceof RubyString) && file.respondsTo("to_path")) {
-            file = file.callMethod(context, "to_path");
-        }
-
-        return loadCommon(file, context.runtime, args, block);
+        return loadCommon(RubyFile.get_path(context, args[0]), context.runtime, args, block);
     }
 
     private static IRubyObject loadCommon(IRubyObject fileName, Ruby runtime, IRubyObject[] args, Block block) {
