@@ -142,10 +142,7 @@ public class RubyDir extends RubyObject {
 
     @JRubyMethod(name = "initialize", compat = RUBY1_9)
     public IRubyObject initialize19(IRubyObject arg) {
-        if (arg.respondsTo("to_path")) {
-            arg = arg.callMethod(getRuntime().getCurrentContext(), "to_path");
-        }
-        return initialize(arg);
+        return initialize(RubyFile.get_path(getRuntime().getCurrentContext(), arg));
     }
 
 // ----- Ruby Class Methods ----------------------------------------------------
@@ -215,9 +212,9 @@ public class RubyDir extends RubyObject {
                 }
             }
             
-            ByteList globPattern = null;
-            if (runtime.is1_9() && args[0].respondsTo("to_path")) {
-                globPattern = args[0].callMethod(context, "to_path").convertToString().getByteList();
+            ByteList globPattern;
+            if (runtime.is1_9()) {
+                globPattern = RubyFile.get_path(context, args[0]).getByteList();
             } else {
                 globPattern = args[0].convertToString().getByteList();
             }
@@ -321,9 +318,9 @@ public class RubyDir extends RubyObject {
         List<ByteList> dirs;
         IRubyObject tmp = args[0].checkArrayType();
         if (tmp.isNil()) {
-            ByteList globPattern = null;
-            if (runtime.is1_9() && args[0].respondsTo("to_path")) {
-                globPattern = args[0].callMethod(context, "to_path").convertToString().getByteList();
+            ByteList globPattern;
+            if (runtime.is1_9()) {
+                globPattern = RubyFile.get_path(context, args[0]).getByteList();
             } else {
                 globPattern = args[0].convertToString().getByteList();
             }
@@ -520,7 +517,7 @@ public class RubyDir extends RubyObject {
 
     @JRubyMethod(name = "foreach", meta = true, compat = RUBY1_9)
     public static IRubyObject foreach19(ThreadContext context, IRubyObject recv, IRubyObject arg, Block block) {
-        RubyString pathString = arg instanceof RubyString ? (RubyString) arg : arg.callMethod(context, "to_path").convertToString();
+        RubyString pathString = RubyFile.get_path(context, arg);
 
         return foreachCommon(context, recv, context.runtime, pathString, block);
     }
@@ -611,8 +608,7 @@ public class RubyDir extends RubyObject {
 
     @JRubyMethod(name = "open", meta = true, compat = RUBY1_9)
     public static IRubyObject open19(ThreadContext context, IRubyObject recv, IRubyObject path, Block block) {
-        RubyString pathString = path instanceof RubyString ? (RubyString) path : path.callMethod(context, "to_path").convertToString();
-        return open(context, recv, pathString, block);
+        return open(context, recv, RubyFile.get_path(context, path), block);
     }
 
 // ----- Ruby Instance Methods -------------------------------------------------
