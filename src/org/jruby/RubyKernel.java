@@ -185,7 +185,7 @@ public class RubyKernel {
     }
 
     @JRubyMethod(required = 2, module = true, visibility = PRIVATE)
-    public static IRubyObject autoload(final IRubyObject recv, IRubyObject symbol, final IRubyObject file) {
+    public static IRubyObject autoload(final IRubyObject recv, IRubyObject symbol, IRubyObject file) {
         Ruby runtime = recv.getRuntime(); 
         String nonInternedName = symbol.asJavaString();
         
@@ -193,9 +193,14 @@ public class RubyKernel {
             throw runtime.newNameError("autoload must be constant name", nonInternedName);
         }
 
-        if (!runtime.is1_9() && !(file instanceof RubyString)) throw runtime.newTypeError(file, runtime.getString());
-
-        RubyString fileString = RubyFile.get_path(runtime.getCurrentContext(), file);
+        final RubyString fileString;
+        if (runtime.is1_9()) {
+            fileString = RubyFile.get_path(runtime.getCurrentContext(), file);
+        } else if (!(file instanceof RubyString)) {
+            throw runtime.newTypeError(file, runtime.getString());
+        } else {
+            fileString = (RubyString) file;
+        }
         
         if (fileString.isEmpty()) throw runtime.newArgumentError("empty file name");
         
@@ -207,7 +212,7 @@ public class RubyKernel {
 
         module.defineAutoload(baseName, new IAutoloadMethod() {
             public String file() {
-                return file.toString();
+                return fileString.asJavaString();
             }
 
             public void load(Ruby runtime) {
