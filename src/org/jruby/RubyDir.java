@@ -44,6 +44,7 @@ import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
+import jnr.posix.FileStat;
 
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
@@ -360,13 +361,13 @@ public class RubyDir extends RubyObject {
 
     @JRubyMethod(name = "entries", meta = true, compat = RUBY1_9)
     public static RubyArray entries19(ThreadContext context, IRubyObject recv, IRubyObject arg) {
-        return entriesCommon(context.runtime, getPath19(context, arg));
+        return entriesCommon(context.runtime, RubyFile.get_path(context, arg).asJavaString());
     }
 
     @JRubyMethod(name = "entries", meta = true, compat = RUBY1_9)
     public static RubyArray entries19(ThreadContext context, IRubyObject recv, IRubyObject arg, IRubyObject opts) {
         // FIXME: do something with opts
-        return entriesCommon(context.runtime, getPath19(context, arg));
+        return entriesCommon(context.runtime, RubyFile.get_path(context, arg).asJavaString());
     }
 
     private static RubyArray entriesCommon(Ruby runtime, String path) {
@@ -492,14 +493,14 @@ public class RubyDir extends RubyObject {
 
     @JRubyMethod(name = {"rmdir", "unlink", "delete"}, required = 1, meta = true, compat = RUBY1_9)
     public static IRubyObject rmdir19(ThreadContext context, IRubyObject recv, IRubyObject path) {
-        return rmdirCommon(context.runtime, getPath19(context, path));
+        return rmdirCommon(context.runtime, RubyFile.get_path(context, path).asJavaString());
     }
 
     private static IRubyObject rmdirCommon(Ruby runtime, String path) {
         JRubyFile directory = getDirForRmdir(runtime, path);
         
         // at this point, only thing preventing delete should be non-emptiness
-        if (!directory.delete()) {
+        if (runtime.getPosix().rmdir(directory.toString()) < 0) {
             throw runtime.newErrnoENOTEMPTYError(path);
         }
 
@@ -571,7 +572,7 @@ public class RubyDir extends RubyObject {
 
     @JRubyMethod(name = "mkdir", required = 1, optional = 1, meta = true, compat = RUBY1_9)
     public static IRubyObject mkdir19(ThreadContext context, IRubyObject recv, IRubyObject[] args) {
-        return mkdirCommon(context.runtime, getPath19(context, args[0]), args);
+        return mkdirCommon(context.runtime, RubyFile.get_path(context, args[0]).asJavaString(), args);
     }
 
     private static IRubyObject mkdirCommon(Ruby runtime, String path, IRubyObject[] args) {
@@ -716,18 +717,13 @@ public class RubyDir extends RubyObject {
     @JRubyMethod(name = {"exists?", "exist?"}, meta = true, compat = RUBY1_9)
     public static IRubyObject exist(ThreadContext context, IRubyObject recv, IRubyObject arg) {
         try {
-            return context.runtime.newFileStat(getPath19(context, arg), false).directory_p();
+            return context.runtime.newFileStat(RubyFile.get_path(context, arg).asJavaString(), false).directory_p();
         } catch (Exception e) {
             return context.runtime.newBoolean(false);
         }
     }
 
 // ----- Helper Methods --------------------------------------------------------
-    protected static String getPath19(ThreadContext context, IRubyObject arg) {
-        RubyString pathObject = arg instanceof RubyString ? (RubyString) arg : arg.callMethod(context, "to_path").convertToString();
-        return pathObject.asJavaString();
-    }
-
     /** Returns a Java <code>File</code> object for the specified path.  If
      * <code>path</code> is not a directory, throws <code>IOError</code>.
      *
@@ -766,7 +762,7 @@ public class RubyDir extends RubyObject {
      */
     protected static JRubyFile getDirForRmdir(final Ruby runtime, final String path) {
         String dir = dirFromPath(path, runtime);
-
+        
         JRubyFile directory = JRubyFile.create(runtime.getCurrentDirectory(), dir);
         
         // Order is important here...File.exists() will return false if the parent
@@ -778,15 +774,12 @@ public class RubyDir extends RubyObject {
             throw runtime.newErrnoEACCESError(path);
         }
 
-        // does not exist
-        if (!directory.exists()) {
-            throw runtime.newErrnoENOENTError(path);
-        }
-        
+        // Since we transcode we depend on posix to lookup stat stuff since
+        // java.io.File does not seem to cut it.  A failed stat will throw ENOENT.
+        FileStat stat = runtime.getPosix().stat(directory.toString());
+
         // is not directory
-        if (!directory.isDirectory()) {
-            throw runtime.newErrnoENOTDIRError(path);
-        }
+        if (!stat.isDirectory()) throw runtime.newErrnoENOTDIRError(path);
 
         return directory;
     }
