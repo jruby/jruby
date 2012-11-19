@@ -117,7 +117,7 @@ public class RubyTCPSocket extends RubyIPSocket {
                 initSocket(runtime, new ChannelDescriptor(channel, newModeFlags(runtime, ModeFlags.RDWR)));
                 success = true;
             } catch(BindException e) {
-                throw runtime.newErrnoEADDRFromBindException(new BindException(e.getMessage() + " to: " + remoteHost + ":" + String.valueOf(remotePort)));
+            	throw runtime.newErrnoEADDRFromBindException(e, " to: " + remoteHost + ":" + String.valueOf(remotePort));
 
             } catch (NoRouteToHostException nrthe) {
                 throw runtime.newErrnoEHOSTUNREACHError("SocketChannel.connect");
@@ -134,7 +134,7 @@ public class RubyTCPSocket extends RubyIPSocket {
             throw runtime.newErrnoECONNREFUSEDError();
 
         } catch(BindException e) {
-            throw runtime.newErrnoEADDRFromBindException(new BindException(e.getMessage() + " on: " + localHost + ":" + String.valueOf(localPort)));
+            throw runtime.newErrnoEADDRFromBindException(e, " on: " + localHost + ":" + String.valueOf(localPort));
 
         } catch(IOException e) {
             throw SocketUtils.sockerr(runtime, e.getLocalizedMessage());
