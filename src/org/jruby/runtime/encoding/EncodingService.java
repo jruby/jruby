@@ -20,6 +20,7 @@ import java.lang.reflect.Field;
 import java.nio.charset.Charset;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.Iterator;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.RubyFixnum;
 import org.jruby.ext.nkf.RubyNKF;
 
@@ -107,9 +108,20 @@ public final class EncodingService {
         }
         return consoleEncoding;
     }
+    
+    // mri: rb_usascii_encoding
+    public Encoding getUSAsciiEncoding() {
+        return USASCIIEncoding.INSTANCE;
+    }
 
+    // mri: rb_ascii8bit_encoding
     public Encoding getAscii8bitEncoding() {
         return ascii8bit;
+    }
+    
+    // mri: rb_filesystem_encoding
+    public Encoding getFileSystemEncoding(Ruby runtime) {
+        return SpecialEncoding.FILESYSTEM.toEncoding(runtime);
     }
     
     public CaseInsensitiveBytesHash<Entry> getEncodings() {
@@ -307,7 +319,7 @@ public final class EncodingService {
         }
         return null;   
     }
-
+    
     public Encoding getEncodingFromString(String string) {
         if (string == null) return null;
 
