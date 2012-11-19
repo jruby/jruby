@@ -1949,12 +1949,10 @@ public class RubyFile extends RubyIO implements EncodingCapable {
     }
     
     public static IRubyObject filePathCheckToString(ThreadContext context, IRubyObject obj) {
-        RubyString path;
-        IRubyObject tmp;
-        if (! obj.respondsTo("to_path")) {
-            return obj;
-        }
-        path = (RubyString) obj.callMethod(context, "to_path");
+        if (!obj.respondsTo("to_path")) return obj;
+
+        RubyString path = obj.callMethod(context, "to_path").convertToString();
+        
         return path.force_encoding(context, context.runtime.getEncodingService().getDefaultExternal());
     }
 
