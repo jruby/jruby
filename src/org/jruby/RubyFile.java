@@ -59,9 +59,9 @@ import org.jcodings.specific.ASCIIEncoding;
 
 import org.jruby.anno.JRubyClass;
 import org.jruby.anno.JRubyMethod;
-import org.jruby.anno.JRubyModule;
 import jnr.posix.FileStat;
 import jnr.posix.util.Platform;
+import org.jcodings.specific.USASCIIEncoding;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ClassIndex;
 import org.jruby.runtime.ObjectAllocator;
@@ -75,7 +75,6 @@ import org.jruby.util.io.PermissionDeniedException;
 import org.jruby.util.io.Stream;
 import org.jruby.util.io.ChannelStream;
 import org.jruby.util.io.IOOptions;
-import org.jruby.util.FileResource;
 import org.jruby.util.JRubyFile;
 import org.jruby.util.TypeConverter;
 import org.jruby.util.io.BadDescriptorException;
@@ -83,6 +82,8 @@ import org.jruby.util.io.FileExistsException;
 import org.jruby.util.io.InvalidValueException;
 import org.jruby.util.io.PipeException;
 import static org.jruby.CompatVersion.*;
+import org.jruby.runtime.encoding.EncodingService;
+import org.jruby.util.CharsetTranscoder;
 
 /**
  * Ruby File class equivalent in java.
@@ -1303,22 +1304,35 @@ public class RubyFile extends RubyIO implements EncodingCapable {
 
     /**
      * similar in spirit to rb_get_path from 1.9 source
-     * @param context
-     * @param obj
-     * @return
      */
-    public static RubyString get_path(ThreadContext context, IRubyObject obj) {
+    public static RubyString get_path(ThreadContext context, IRubyObject path) {
         if (context.runtime.is1_9()) {
-            if (obj instanceof RubyString) {
-                return (RubyString)obj;
-            }
+            if (path.respondsTo("to_path")) path = path.callMethod(context, "to_path");
+            
+            return filePathConvert(context, path.convertToString());
+        } 
+          
+        return path.convertToString();
+    }
+    
+    // FIXME: MRI skips this logic on windows?  Does not make sense to me why so I left it in.
+    // mri: file_path_convert
+    private static RubyString filePathConvert(ThreadContext context, RubyString path) {
+        Ruby runtime = context.getRuntime();
+        EncodingService encodingService = runtime.getEncodingService();
+        Encoding pathEncoding = path.getEncoding();
 
-            if (obj.respondsTo("to_path")) {
-                obj = obj.callMethod(context, "to_path");
-            }
-        }
+        // If we are not ascii and do not match fs encoding then transcode to fs.
+        if (runtime.getDefaultInternalEncoding() != null &&
+                pathEncoding != encodingService.getUSAsciiEncoding() &&
+                pathEncoding != encodingService.getAscii8bitEncoding() &&
+                pathEncoding != encodingService.getFileSystemEncoding(runtime) &&
+                !path.isAsciiOnly()) {
+            ByteList bytes = CharsetTranscoder.transcode(context, path.getByteList(), pathEncoding, encodingService.getFileSystemEncoding(runtime), null);
+            path = RubyString.newString(runtime, bytes);
+        }                
 
-        return obj.convertToString();
+        return path;
     }
 
     /**
