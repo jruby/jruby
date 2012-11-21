@@ -43,7 +43,7 @@ class Object
         # package can be nil if it's default or no package was defined by the classloader
         if package
           package_name = package.name
-        elsif java_class.full_name =~ /(.*)\.[^.]$/
+        elsif java_class.canonical_name =~ /(.*)\.[^.]$/
           package_name = $1
         else
           package_name = ""
