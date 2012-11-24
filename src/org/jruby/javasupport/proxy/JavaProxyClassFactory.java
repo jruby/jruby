@@ -266,7 +266,7 @@ public class JavaProxyClassFactory {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
 
         // start class
-        cw.visit(Opcodes.V1_3, Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL, 
+        cw.visit(Opcodes.V1_3, Opcodes.ACC_PUBLIC | Opcodes.ACC_FINAL | Opcodes.ACC_SUPER, 
                 toInternalClassName(className), /*signature*/ null, 
                 toInternalClassName(superClass), 
                 interfaceNamesForProxyClass(interfaces));
