@@ -32,6 +32,10 @@ class Dir
           return File.expand_path(dir)
         end
       end
+      
+      # Some OS sets the environment variables to '/tmp', which we may reject.
+      warn "Unable to find a non world-writable directory for #{__method__}. Consider setting ENV['TMPDIR'], ENV['TMP'] or ENV['TEMP'] to a non world-writable directory."
+      
       for dir in dirs
         if dir and stat = File.stat(dir) and stat.directory? and stat.writable?
           tmp = dir
