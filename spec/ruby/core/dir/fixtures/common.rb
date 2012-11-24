@@ -81,8 +81,8 @@ module DirSpecs
         special/]
         special/{
         special/}
-      
-        nonascii/äëï
+
+        special/äëï
       ]
 
       platform_is_not :windows do

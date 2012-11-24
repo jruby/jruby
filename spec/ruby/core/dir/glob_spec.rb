@@ -107,7 +107,7 @@ describe "Dir.glob" do
   end
 
   it "yields correct Unicode filename" do
-    Dir.glob("nonascii/*").each do |f|
+    Dir.glob("special/*").each do |f|
       File.exist?(f).should be_true
     end
   end
