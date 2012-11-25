@@ -8,13 +8,18 @@ import jnr.posix.Passwd;
 import jnr.posix.Group;
 import jnr.posix.POSIX;
 import jnr.posix.util.Platform;
+import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyModule;
 import org.jruby.RubyNumeric;
+import org.jruby.RubyString;
 import org.jruby.RubyStruct;
+import org.jruby.ext.rbconfig.RbConfigLibrary;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.util.ByteList;
+import org.jruby.util.NormalizedFile;
 
 @JRubyModule(name="Etc")
 public class RubyEtc {
@@ -378,5 +383,35 @@ public class RubyEtc {
             }
             return runtime.getNil();
         }
+    }
+    
+    @JRubyMethod(name = "systmpdir", module = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject systmpdir(ThreadContext context, IRubyObject recv) {
+        Ruby runtime = context.getRuntime();
+        ByteList tmp = ByteList.create("/tmp"); // default for all platforms except Windows
+        
+        if (Platform.IS_WINDOWS) {
+            
+        }
+        RubyString ret = RubyString.newString(runtime, tmp, runtime.getDefaultExternalEncoding());
+        ret.untaint(context);
+        ret.trust(context);
+        
+        return ret;
+    }
+    
+    @JRubyMethod(name = "sysconfdir", module = true, compat = CompatVersion.RUBY1_9)
+    public static IRubyObject sysconfdir(ThreadContext context, IRubyObject recv) {
+        Ruby runtime = context.getRuntime();
+        ByteList tmp = ByteList.create(RbConfigLibrary.getSysConfDir(runtime)); // default for all platforms except Windows
+        
+        if (Platform.IS_WINDOWS) {
+            
+        }
+        RubyString ret = RubyString.newString(runtime, tmp, runtime.getDefaultExternalEncoding());
+        ret.untaint(context);
+        ret.trust(context);
+        
+        return ret;
     }
 }

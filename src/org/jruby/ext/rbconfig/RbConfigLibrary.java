@@ -195,6 +195,10 @@ public class RbConfigLibrary implements Library {
     public static String getSiteArchDir(Ruby runtime) {
         return getSiteDir(runtime);
     }
+    
+    public static String getSysConfDir(Ruby runtime) {
+        return new NormalizedFile(getNormalizedHome(runtime), "etc").getPath();
+    }
 
     /**
      * Just enough configuration settings (most don't make sense in Java) to run the rubytests
