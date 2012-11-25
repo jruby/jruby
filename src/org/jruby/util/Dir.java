@@ -422,8 +422,24 @@ public class Dir {
         int lbrace = pattern.indexOf((byte) '{'); // index of left-most brace
         int rbrace = pattern.findClosingIndexOf(lbrace);// index of right-most brace
 
-        // No or mismatched braces..Move along..nothing to see here
-        if (lbrace == -1 || rbrace == -1) return push_globs(cwd, result, pattern); 
+        // No, mismatched or escaped braces..Move along..nothing to see here
+        if (lbrace == -1 || rbrace == -1 || 
+                lbrace > 0 && pattern.bytes[lbrace-1] == '\\' || 
+                rbrace > 0 && pattern.bytes[rbrace-1] == '\\') {
+            ByteList unescaped = new ByteList(pattern.bytes.length-1);
+            for (int i = pattern.begin; i < pattern.end; i++) {
+                byte b = pattern.bytes[i];
+                if (b == '\\' && i < pattern.bytes.length - 1) {
+                    byte next_b = pattern.bytes[i + 1];
+                    if (next_b != '{' && next_b != '}') {
+                        unescaped.append(b);
+                    }
+                } else {
+                    unescaped.append(b);
+                }
+            }
+            return push_globs(cwd, result, unescaped.getUnsafeBytes(), unescaped.begin(), unescaped.length(), pattern.flags);
+        }
 
         // Peel onion...make subpatterns out of outer layer of glob and recall with each subpattern 
         // Example: foo{a{c},b}bar -> fooa{c}bar, foobbar
@@ -447,9 +463,9 @@ public class Dir {
         return 0; // All braces pushed..
     }
 
-    private static int push_globs(String cwd, List<ByteList> ary, GlobPattern pattern) {
-        pattern.flags |= FNM_SYSCASE;
-        return glob_helper(cwd, pattern.bytes, pattern.begin, pattern.end, -1, pattern.flags, glob_caller, new GlobArgs(push_pattern, ary));
+    private static int push_globs(String cwd, List<ByteList> ary, byte[] pattern, int pbegin, int pend, int pflags) {
+        pflags |= FNM_SYSCASE;
+        return glob_helper(cwd, pattern, pbegin, pend, -1, pflags, glob_caller, new GlobArgs(push_pattern, ary));
     }
 
     private static boolean has_magic(byte[] bytes, int begin, int end, int flags) {
