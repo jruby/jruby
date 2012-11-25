@@ -16,7 +16,7 @@
  * Copyright (C) 2004 Thomas E Enebo <enebo@acm.org>
  * Copyright (C) 2004-2005 Charles O Nutter <headius@headius.com>
  * Copyright (C) 2004 Stefan Matthias Aust <sma@3plus4.de>
- * 
+ *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
  * or the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
@@ -49,6 +49,8 @@ import jnr.posix.FileStat;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import jnr.posix.util.Platform;
+import org.jcodings.Encoding;
+import org.jcodings.specific.UTF8Encoding;
 
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.JavaUtil;
@@ -76,6 +78,8 @@ public class RubyDir extends RubyObject {
     private int pos;               // current position in directory
     private boolean isOpen = true;
 
+    private final static Encoding UTF8 = UTF8Encoding.INSTANCE;
+
     public RubyDir(Ruby runtime, RubyClass type) {
         super(runtime, type);
     }
@@ -102,7 +106,7 @@ public class RubyDir extends RubyObject {
     private final void checkDir() {
         testFrozen("Dir");
         update();
-        
+
         if (!isOpen) throw getRuntime().newIOError("closed directory");
     }
 
@@ -116,7 +120,7 @@ public class RubyDir extends RubyObject {
             snapshot = (String[]) snapshotList.toArray(new String[snapshotList.size()]);
         }
     }
-    
+
     /**
      * Creates a new <code>Dir</code>.  This method takes a snapshot of the
      * contents of the directory at creation time, so changes to the contents
@@ -146,7 +150,7 @@ public class RubyDir extends RubyObject {
     }
 
 // ----- Ruby Class Methods ----------------------------------------------------
-    
+
     private static List<ByteList> dirGlobs(ThreadContext context, String cwd, IRubyObject[] args, int flags) {
         List<ByteList> dirs = new ArrayList<ByteList>();
 
@@ -161,7 +165,7 @@ public class RubyDir extends RubyObject {
         List<RubyString> allFiles = new ArrayList<RubyString>();
 
         for (ByteList dir : dirs) {
-            allFiles.add(RubyString.newString(runtime, dir));
+            allFiles.add(RubyString.newString(runtime, dir, UTF8));
         }
 
         IRubyObject[] tempFileList = new IRubyObject[allFiles.size()];
@@ -210,7 +214,7 @@ public class RubyDir extends RubyObject {
                     return runtime.newArrayNoCopy(new IRubyObject[0]);
                 }
             }
-            
+
             dirs = Dir.push_glob(getCWD(runtime), globArgumentAsByteList(context, args[0]), 0);
         } else {
             dirs = dirGlobs(context, getCWD(runtime), args, 0);
@@ -218,13 +222,13 @@ public class RubyDir extends RubyObject {
 
         return asRubyStringList(runtime, dirs);
     }
-    
+
     private static ByteList globArgumentAsByteList(ThreadContext context, IRubyObject arg) {
         if (context.runtime.is1_9()) return RubyFile.get_path(context, arg).getByteList();
 
         return arg.convertToString().getByteList();
     }
-    
+
     private static String convertGlobToRegEx(String line) {
         line = line.trim();
         StringBuilder sb = new StringBuilder(line.length());
@@ -302,12 +306,12 @@ public class RubyDir extends RubyObject {
         sb.append("$");
         return sb.toString().replace("[^/]*[^/]*/", ".*").replace("[^/]*[^/]*", ".*");
     }
-    
+
     /**
      * Returns an array of filenames matching the specified wildcard pattern
      * <code>pat</code>. If a block is given, the array is iterated internally
      * with each filename is passed to the block in turn. In this case, Nil is
-     * returned.  
+     * returned.
      */
     @JRubyMethod(required = 1, optional = 1, meta = true)
     public static IRubyObject glob(ThreadContext context, IRubyObject recv, IRubyObject[] args, Block block) {
@@ -404,7 +408,7 @@ public class RubyDir extends RubyObject {
         } catch (IOException e) {
             throw new RuntimeException("Valid JAR file expected", e);
         }
-        
+
         List<String> fileList = new ArrayList<String>();
         Enumeration<? extends ZipEntry> entries = jf.entries();
         while (entries.hasMoreElements()) {
@@ -488,7 +492,7 @@ public class RubyDir extends RubyObject {
 
     private static IRubyObject rmdirCommon(Ruby runtime, String path) {
         JRubyFile directory = getDirForRmdir(runtime, path);
-        
+
         // at this point, only thing preventing delete should be non-emptiness
         if (runtime.getPosix().rmdir(directory.toString()) < 0) {
             throw runtime.newErrnoENOTEMPTYError(path);
@@ -590,7 +594,7 @@ public class RubyDir extends RubyObject {
         RubyDir directory = (RubyDir) context.runtime.getDir().newInstance(context,
                 new IRubyObject[]{path}, Block.NULL_BLOCK);
 
-        if (!block.isGiven())return directory;
+        if (!block.isGiven()) return directory;
 
         try {
             return block.yield(context, directory);
@@ -661,7 +665,7 @@ public class RubyDir extends RubyObject {
      * Moves to a position <code>d</code>.  <code>pos</code> must be a value
      * returned by <code>tell</code> or 0.
      */
-    
+
     @JRubyMethod(name = "seek", required = 1)
     public IRubyObject seek(IRubyObject newPos) {
         checkDir();
@@ -741,22 +745,22 @@ public class RubyDir extends RubyObject {
 
         return result;
     }
-    
+
     /**
      * Similar to getDir, but performs different checks to match rmdir behavior.
      * @param runtime
      * @param path
      * @param mustExist
-     * @return 
+     * @return
      */
     protected static JRubyFile getDirForRmdir(final Ruby runtime, final String path) {
         String dir = dirFromPath(path, runtime);
-        
+
         JRubyFile directory = JRubyFile.create(runtime.getCurrentDirectory(), dir);
-        
+
         // Order is important here...File.exists() will return false if the parent
         // dir can't be read, so we check permissions first
-        
+
         // no permission
         if (directory.getParentFile().exists() &&
                 !directory.getParentFile().canWrite()) {

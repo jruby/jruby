@@ -1,3 +1,4 @@
+# coding: utf-8
 module DirSpecs
   def self.mock_dir(dirs = ['dir_specs_mock'])
     @mock_dir ||= tmp("")
@@ -80,6 +81,8 @@ module DirSpecs
         special/]
         special/{
         special/}
+
+        special/äëï
       ]
 
       platform_is_not :windows do

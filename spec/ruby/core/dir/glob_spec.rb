@@ -106,6 +106,12 @@ describe "Dir.glob" do
     Dir.glob("spec/**/*.rb").should == []
   end
 
+  it "yields correct Unicode filename" do
+    Dir.glob("special/*").each do |f|
+      File.exist?(f).should be_true
+    end
+  end
+
   platform_is_not(:windows) do
     it "matches the literal character '\\' with option File::FNM_NOESCAPE" do
       Dir.mkdir 'foo?bar'
