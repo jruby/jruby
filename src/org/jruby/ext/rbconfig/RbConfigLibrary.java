@@ -312,7 +312,7 @@ public class RbConfigLibrary implements Library {
         setConfig(configHash, "configure_args", "");
         setConfig(configHash, "datadir", shareDir);
         setConfig(configHash, "mandir", new NormalizedFile(normalizedHome, "man").getPath());
-        setConfig(configHash, "sysconfdir", new NormalizedFile(normalizedHome, "etc").getPath());
+        setConfig(configHash, "sysconfdir", getSysConfDir(runtime));
         setConfig(configHash, "localstatedir", new NormalizedFile(normalizedHome, "var").getPath());
         setConfig(configHash, "DLEXT", "jar");
         if (getRubygemsDir(runtime) != null) {
@@ -359,7 +359,7 @@ public class RbConfigLibrary implements Library {
         setConfig(mkmfHash, "configure_args", "");
         setConfig(mkmfHash, "datadir", new NormalizedFile(normalizedHome, "share").getPath());
         setConfig(mkmfHash, "mandir", new NormalizedFile(normalizedHome, "man").getPath());
-        setConfig(mkmfHash, "sysconfdir", new NormalizedFile(normalizedHome, "etc").getPath());
+        setConfig(mkmfHash, "sysconfdir", getSysConfDir(runtime));
         setConfig(mkmfHash, "localstatedir", new NormalizedFile(normalizedHome, "var").getPath());
         if (getRubygemsDir(runtime) != null) {
             setConfig(mkmfHash, "rubygemsdir", new NormalizedFile(getRubygemsDir(runtime)).getPath());
