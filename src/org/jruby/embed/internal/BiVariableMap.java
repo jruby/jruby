@@ -454,13 +454,22 @@ public class BiVariableMap<K, V> implements Map<K, V> {
      * names with null value.
      */
     public void clear() {
+        boolean argv_presence = false;
+        if (varNames.contains("ARGV")) argv_presence = true;
         varNames.clear();
+        if (argv_presence) varNames.add("ARGV");
+        BiVariable argv_object = null;
         for (BiVariable v : variables) {
             if (v != null) {
-                v.remove();
+                if ("ARGV".equals(v.getName())) {
+                    argv_object = v;
+                } else {
+                    v.remove();
+                }
             }
         }
         variables.clear();
+        variables.add(argv_object);
     }
 
     /**

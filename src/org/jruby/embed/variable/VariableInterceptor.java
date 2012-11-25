@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009-2011 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2012 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -218,7 +218,9 @@ public class VariableInterceptor {
         if (LocalVariableBehavior.GLOBAL == behavior) {
             for (int i = 0; i < variables.size(); i++) {
                 if (BiVariable.Type.LocalGlobalVariable == variables.get(i).getType()) {
-                    runtime.getGlobalVariables().set("$" + variables.get(i).getName(), runtime.getNil());
+                    String name = variables.get(i).getName();
+                    name = name.startsWith("$") ? name : "$" + name;
+                    runtime.getGlobalVariables().set(name, runtime.getNil());
                 }
             }
         }

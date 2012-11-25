@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2012 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -44,6 +44,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 import java.util.logging.StreamHandler;
+import javax.script.ScriptEngineManager;
 import org.jruby.embed.AttributeName;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -221,8 +222,13 @@ public class JRubyCompiledScriptTest {
     @Test
     public void testTerminate() throws ScriptException {
         logger1.info("termination");
-        JRubyEngineFactory factory = new JRubyEngineFactory();
-        JRubyEngine engine = (JRubyEngine) factory.getScriptEngine();
+        JRubyEngine engine = null;
+        synchronized (this) {
+            System.setProperty("org.jruby.embed.localcontext.scope", "singlethread");
+            System.setProperty("org.jruby.embed.localvariable.behavior", "transient");
+            JRubyEngineFactory factory = new JRubyEngineFactory();
+            engine = (JRubyEngine) factory.getScriptEngine();
+        }
         engine.eval("$x='GVar'");
         StringWriter writer = new StringWriter();
         engine.getContext().setWriter(writer);

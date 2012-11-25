@@ -735,8 +735,13 @@ public class JRubyEngineTest {
     @Test
     public void testARGV() throws ScriptException {
         logger1.info("ScriptEngine.ARGV");
-        ScriptEngineManager manager = new ScriptEngineManager();
-        ScriptEngine instance = manager.getEngineByName("jruby");
+        ScriptEngine instance;
+        synchronized(this) {
+            System.setProperty("org.jruby.embed.localcontext.scope", "singlethread");
+            System.setProperty("org.jruby.embed.localvariable.behavior", "transient");
+            ScriptEngineManager manager = new ScriptEngineManager();
+            instance = manager.getEngineByName("jruby");
+        }
         instance.getContext().setErrorWriter(writer);
         String script = "" +
 //            "ARGV << 'foo' \n" +
@@ -755,8 +760,13 @@ public class JRubyEngineTest {
     @Test
     public void testARGV_2() throws ScriptException {
         logger1.info("ScriptEngine.ARGV before initialization");
-        ScriptEngineManager manager = new ScriptEngineManager();
-        ScriptEngine instance = manager.getEngineByName("jruby");
+        ScriptEngine instance;
+        synchronized(this) {
+            System.setProperty("org.jruby.embed.localcontext.scope", "singlethread");
+            System.setProperty("org.jruby.embed.localvariable.behavior", "transient");
+            ScriptEngineManager manager = new ScriptEngineManager();
+            instance = manager.getEngineByName("jruby");
+        }
         instance.getContext().setErrorWriter(writer);
         Bindings bindings = instance.getBindings(ScriptContext.ENGINE_SCOPE);
         bindings.put(ScriptEngine.ARGV, new String[]{"init params"});

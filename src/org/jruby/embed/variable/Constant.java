@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2009-2011 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2009-2012 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -29,12 +29,12 @@
  */
 package org.jruby.embed.variable;
 
-import org.jruby.embed.internal.BiVariableMap;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
+import org.jruby.embed.internal.BiVariableMap;
 import org.jruby.javasupport.JavaUtil;
 import org.jruby.runtime.builtin.IRubyObject;
 

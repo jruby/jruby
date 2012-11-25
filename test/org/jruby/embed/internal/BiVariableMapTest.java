@@ -12,7 +12,7 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  *
- * Copyright (C) 2011 Yoko Harada <yokolet@gmail.com>
+ * Copyright (C) 2011-2012 Yoko Harada <yokolet@gmail.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -276,7 +276,6 @@ public class BiVariableMapTest {
         ScriptingContainer container =
                 new ScriptingContainer(LocalContextScope.SINGLETHREAD, LocalVariableBehavior.TRANSIENT);
         BiVariableMap instance = container.getVarMap();
-        container.put("ARGV", new String[] {"spring", "fall"});
         container.put("SEASON", new String[] {"summer", "winter"});
         container.put("$sports", new String[] {"baseball", "hiking", "soccer", "ski"});
         container.put("@weather", new String[] {"snow", "sleet", "drizzle", "rain"});
@@ -287,7 +286,6 @@ public class BiVariableMapTest {
         
         container = new ScriptingContainer(LocalContextScope.SINGLETHREAD, LocalVariableBehavior.GLOBAL);
         instance = container.getVarMap();
-        container.put("ARGV", new String[] { "spring", "fall" });
         container.put("SEASON", new String[] { "summer", "winter" });
         container.put("trees", new String[] { "cypress", "hemlock", "spruce" });
         assertFalse(instance.isEmpty());
