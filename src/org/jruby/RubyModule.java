@@ -1209,30 +1209,9 @@ public class RubyModule extends RubyObject {
      */
     public synchronized void defineAlias(String name, String oldName) {
         testFrozen("module");
-        if (oldName.equals(name)) {
-            return;
-        }
-        Ruby runtime = getRuntime();
+        if (oldName.equals(name)) return;
 
-        // JRUBY-2435: Aliasing eval and other "special" methods should display a warning
-        // We warn because we treat certain method names as "special" for purposes of
-        // optimization. Hopefully this will be enough to convince people not to alias
-        // them.
-        if (SCOPE_CAPTURING_METHODS.contains(oldName)) {
-            runtime.getWarnings().warn("`" + oldName + "' should not be aliased");
-        }
-
-        DynamicMethod method = searchMethod(oldName);
-        if (method.isUndefined()) {
-            if (isModule()) {
-                method = runtime.getObject().searchMethod(oldName);
-            }
-
-            if (method.isUndefined()) {
-                throw runtime.newNameError("undefined method `" + oldName + "' for " +
-                        (isModule() ? "module" : "class") + " `" + getName() + "'", oldName);
-            }
-        }
+        DynamicMethod method = searchForAliasMethod(getRuntime(), oldName);
 
         putMethod(name, new AliasMethod(this, method, oldName));
 
@@ -1242,27 +1221,28 @@ public class RubyModule extends RubyObject {
 
     public synchronized void defineAliases(List<String> aliases, String oldName) {
         testFrozen("module");
-        Ruby runtime = getRuntime();
-
-        DynamicMethod method = searchMethod(oldName);
-        if (method.isUndefined()) {
-            if (isModule()) {
-                method = runtime.getObject().searchMethod(oldName);
-            }
-
-            if (method.isUndefined()) {
-                throw runtime.newNameError("undefined method `" + oldName + "' for " +
-                        (isModule() ? "module" : "class") + " `" + getName() + "'", oldName);
-            }
-        }
+        DynamicMethod method = searchForAliasMethod(getRuntime(), oldName);
 
         for (String name: aliases) {
             if (oldName.equals(name)) continue;
 
             putMethod(name, new AliasMethod(this, method, oldName));
         }
+        
         invalidateCoreClasses();
         invalidateCacheDescendants();
+    }
+    
+    private DynamicMethod searchForAliasMethod(Ruby runtime, String name) {
+        // JRUBY-2435: Aliasing eval and other "special" methods should display a warning
+        // We warn because we treat certain method names as "special" for purposes of
+        // optimization. Hopefully this will be enough to convince people not to alias
+        // them.
+        if (SCOPE_CAPTURING_METHODS.contains(name)) {
+            runtime.getWarnings().warn("`" + name + "' should not be aliased");
+        }  
+      
+        return deepMethodSearch(name, runtime);
     }
 
     /** this method should be used only by interpreter or compiler 
