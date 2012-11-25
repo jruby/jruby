@@ -391,9 +391,9 @@ public class RubyEtc {
         ByteList tmp = ByteList.create("/tmp"); // default for all platforms except Windows
         
         if (Platform.IS_WINDOWS) {
-            String localAppData = System.getenv("CSIDL_COMMON_APPDATA");
+            String commonAppData = System.getenv("CSIDL_COMMON_APPDATA");
             // TODO: need fallback mechanism
-            if (localAppData != null) tmp = ByteList.create(localAppData);
+            if (commonAppData != null) tmp = ByteList.create(commonAppData);
         }
         RubyString ret = RubyString.newString(runtime, tmp, runtime.getDefaultExternalEncoding());
         ret.untaint(context);
@@ -408,9 +408,9 @@ public class RubyEtc {
         ByteList tmp = ByteList.create(RbConfigLibrary.getSysConfDir(runtime)); // default for all platforms except Windows
         
         if (Platform.IS_WINDOWS) {
-            String localAppDir = System.getenv("CSIDL_LOCAL_APPDATA");
+            String localAppData = System.getenv("CSIDL_LOCAL_APPDATA");
             // TODO: need fallback mechanism
-            if (localAppDir != null) tmp = ByteList.create(localAppDir);
+            if (localAppData != null) tmp = ByteList.create(localAppData);
         }
         RubyString ret = RubyString.newString(runtime, tmp, runtime.getDefaultExternalEncoding());
         ret.untaint(context);
