@@ -1006,10 +1006,8 @@ public class RubyModule extends RubyObject {
                 }
                 current = ((WrapperCacheEntryFactory)current).getPrevious();
             }
-            if (cacheEntryFactoryClass.isAssignableFrom(current.getClass())) {
-                return true;
-            }
-            return false;
+
+            return cacheEntryFactoryClass.isAssignableFrom(current.getClass());
         }
     }
 
@@ -3757,15 +3755,13 @@ public class RubyModule extends RubyObject {
         }
         
         // Update an object for the constant if the caller is the autoloading thread.
-        boolean setConstant(ThreadContext ctx, IRubyObject value) {
+        boolean setConstant(ThreadContext ctx, IRubyObject newValue) {
             synchronized(ctxLock) {
-                if (this.ctx == null) {
-                    return false;
-                } else if (isSelf(ctx)) {
-                    this.value = value;
-                    return true;
-                }
-                return false;
+                boolean isSelf = isSelf(ctx);
+                
+                if (isSelf) value = newValue;
+                
+                return isSelf;
             }
         }
         
