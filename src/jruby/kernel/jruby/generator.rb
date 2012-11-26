@@ -108,6 +108,8 @@ module JRuby
 
       # a queue which emulates the producer-side interface of a generator
       class ProducerQueue < SizedQueue
+        attr_accessor :error
+
         def initialize
           super(1)
         end
@@ -115,7 +117,7 @@ module JRuby
         alias yield push
 
         def _run_enum(enum)
-          _run { enum.each { |x| self.yield(x) } }
+          _run { enum.each { |x| push(x) } }
         end
 
         def _run
@@ -124,9 +126,12 @@ module JRuby
             begin
               yield self
             rescue StopIteration
+              self.error = $!
               self.clear
+            rescue Exception
+              self.error = $!
             ensure
-              self.yield(END_MARKER)
+              push(END_MARKER)
             end
           end
         end
@@ -186,15 +191,14 @@ module JRuby
         unless @got_next_element
           unless @thread
             if @enum
-              @thread = @queue._run_enum(@enum.each)
+              @thread = @queue._run_enum(@enum)
             else
               @thread = @queue._run(&@block)
             end
           end
           @next_element = @queue.pop
-          if Exception === @next_element
-            raise @next_element
-          end
+          raise @next_element if Exception === @next_element
+          raise @queue.error if @queue.error
           @got_next_element = true
         end
         @next_element
