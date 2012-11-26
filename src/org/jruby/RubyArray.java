@@ -2459,17 +2459,13 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
     @JRubyMethod(required = 1)
     public IRubyObject delete(ThreadContext context, IRubyObject item, Block block) {
         int i2 = 0;
-        IRubyObject value = item;
 
         Ruby runtime = context.runtime;
         for (int i1 = 0; i1 < realLength; i1++) {
             // Do not coarsen the "safe" check, since it will misinterpret AIOOBE from equalInternal
             // See JRUBY-5434
             IRubyObject e = safeArrayRef(values, begin + i1);
-            if (equalInternal(context, e, item)) {
-                value = e;
-                continue;
-            }
+            if (equalInternal(context, e, item)) continue;
             if (i1 != i2) store(i2, e);
             i2++;
         }
@@ -2496,7 +2492,7 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
             concurrentModification();
         }
 
-        return value;
+        return item;
     }
 
     /** rb_ary_delete_at
