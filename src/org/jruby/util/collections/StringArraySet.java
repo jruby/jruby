@@ -56,10 +56,9 @@ public class StringArraySet extends RubyArray {
     }
 
     @Override
-    public synchronized IRubyObject rb_clear() {
-        super.rb_clear();
+    public synchronized void clear() {
+        super.clear();
         set.clear();
-        return this;
     }
 
     @Override
