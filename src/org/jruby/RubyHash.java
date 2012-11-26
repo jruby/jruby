@@ -737,7 +737,7 @@ public class RubyHash extends RubyObject implements Map {
      *
      */
     public void modify() {
-    	testFrozen("hash");
+    	testFrozen("Hash");
     }
 
     /** inspect_hash
