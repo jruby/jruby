@@ -1800,6 +1800,7 @@ public class RubyFile extends RubyIO implements EncodingCapable {
         boolean isTainted = false;
         StringBuilder buffer = new StringBuilder();
         Ruby runtime = context.runtime;
+        String separator = context.getRuntime().getClass("File").getConstant("SEPARATOR").toString();
 
         for (int i = 0; i < args.length; i++) {
             if (args[i].isTaint()) {
@@ -1820,8 +1821,8 @@ public class RubyFile extends RubyIO implements EncodingCapable {
             }
 
             chomp(buffer);
-            if (i > 0 && !element.startsWith("/") && !element.startsWith("\\")) {
-                buffer.append("/");
+            if (i > 0 && !element.startsWith(separator)) {
+                buffer.append(separator);
             }
             buffer.append(element);
         }
