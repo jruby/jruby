@@ -54,6 +54,7 @@ import java.util.Properties;
 import org.jruby.exceptions.MainExitException;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.ThreadKill;
+import org.jruby.main.DripMain;
 import org.jruby.platform.Platform;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -188,7 +189,13 @@ public class Main {
     public static void main(String[] args) {
         doGCJCheck();
         
-        Main main = new Main(true);
+        Main main;
+
+        if (DripMain.DRIP_RUNTIME != null) {
+            main = new Main(DripMain.DRIP_CONFIG, true);
+        } else {
+            main = new Main(true);
+        }
         
         try {
             Status status = main.run(args);
@@ -211,7 +218,7 @@ public class Main {
     public Status run(String[] args) {
         try {
             config.processArguments(args);
-            return run();
+            return internalRun();
         } catch (MainExitException mee) {
             return handleMainExit(mee);
         } catch (OutOfMemoryError oome) {
@@ -245,7 +252,15 @@ public class Main {
         
         doProcessArguments(in);
         
-        Ruby runtime     = Ruby.newInstance(config);
+        Ruby runtime;
+
+        if (DripMain.DRIP_RUNTIME != null) {
+            // use drip's runtime, reinitializing config
+            runtime = DripMain.DRIP_RUNTIME;
+            runtime.reinitialize(true);
+        } else {
+            runtime = Ruby.newInstance(config);
+        }
 
         try {
             doSetContextClassLoader(runtime);

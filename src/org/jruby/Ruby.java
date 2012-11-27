@@ -186,9 +186,6 @@ public final class Ruby {
      */
     private Ruby(RubyInstanceConfig config) {
         this.config             = config;
-        this.is1_9              = config.getCompatVersion().is1_9();
-        this.is2_0              = config.getCompatVersion().is2_0();
-        this.doNotReverseLookupEnabled = is1_9;
         this.threadService      = new ThreadService(this);
         if(config.isSamplingEnabled()) {
             org.jruby.util.SimpleSampler.registerThreadContext(threadService.getCurrentContext());
@@ -201,14 +198,6 @@ public final class Ruby {
             this.staticScopeFactory = new StaticScopeFactory(this);
         }
 
-        this.in                 = config.getInput();
-        this.out                = config.getOutput();
-        this.err                = config.getError();
-        this.objectSpaceEnabled = config.isObjectSpaceEnabled();
-        this.siphashEnabled     = config.isSiphashEnabled();
-        this.profile            = config.getProfile();
-        this.currentDirectory   = config.getCurrentDirectory();
-        this.kcode              = config.getKCode();
         this.beanManager        = BeanManagerFactory.create(this, config.isManagementEnabled());
         this.jitCompiler        = new JITCompiler(this);
         this.parserStats        = new ParserStats(this);
@@ -238,6 +227,34 @@ public final class Ruby {
             objectSpacer = ENABLED_OBJECTSPACE;
         } else {
             objectSpacer = DISABLED_OBJECTSPACE;
+        }
+
+        reinitialize(false);
+    }
+
+    void reinitialize(boolean reinitCore) {
+        this.is1_9              = config.getCompatVersion().is1_9();
+        this.is2_0              = config.getCompatVersion().is2_0();
+        this.doNotReverseLookupEnabled = is1_9;
+
+        if (config.getCompileMode() == CompileMode.OFFIR ||
+                config.getCompileMode() == CompileMode.FORCEIR) {
+            this.staticScopeFactory = new IRStaticScopeFactory(this);
+        } else {
+            this.staticScopeFactory = new StaticScopeFactory(this);
+        }
+
+        this.in                 = config.getInput();
+        this.out                = config.getOutput();
+        this.err                = config.getError();
+        this.objectSpaceEnabled = config.isObjectSpaceEnabled();
+        this.siphashEnabled     = config.isSiphashEnabled();
+        this.profile            = config.getProfile();
+        this.currentDirectory   = config.getCurrentDirectory();
+        this.kcode              = config.getKCode();
+
+        if (reinitCore) {
+            RubyGlobal.initARGV(this);
         }
     }
     
@@ -4375,12 +4392,12 @@ public final class Ruby {
     private final long startTime = System.currentTimeMillis();
 
     private final RubyInstanceConfig config;
-    private final boolean is1_9;
-    private final boolean is2_0;
+    private boolean is1_9;
+    private boolean is2_0;
 
-    private final InputStream in;
-    private final PrintStream out;
-    private final PrintStream err;
+    private InputStream in;
+    private PrintStream out;
+    private PrintStream err;
 
     // Java support
     private JavaSupport javaSupport;
@@ -4519,7 +4536,7 @@ public final class Ruby {
     private long hashSeedK0;
     private long hashSeedK1;
     
-    private final StaticScopeFactory staticScopeFactory;
+    private StaticScopeFactory staticScopeFactory;
     
     private IRManager irManager;
 

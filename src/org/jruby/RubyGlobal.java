@@ -67,15 +67,7 @@ import java.util.Map;
  * @author jpetersen
  */
 public class RubyGlobal {
-    public static void createGlobals(ThreadContext context, Ruby runtime) {
-        GlobalVariables globals = runtime.getGlobalVariables();
-
-        runtime.defineGlobalConstant("TOPLEVEL_BINDING", runtime.newBinding());
-        
-        runtime.defineGlobalConstant("TRUE", runtime.getTrue());
-        runtime.defineGlobalConstant("FALSE", runtime.getFalse());
-        runtime.defineGlobalConstant("NIL", runtime.getNil());
-        
+    public static void initARGV(Ruby runtime) {
         // define ARGV and $* for this runtime
         RubyArray argvArray = runtime.newArray();
         String[] argv = runtime.getInstanceConfig().getArgv();
@@ -84,8 +76,24 @@ public class RubyGlobal {
             argvArray.append(RubyString.newInternalFromJavaExternal(runtime, arg));
         }
 
-        runtime.defineGlobalConstant("ARGV", argvArray);
-        globals.define("$*", new ValueAccessor(argvArray));
+        if (runtime.getObject().getConstantNoConstMissing("ARGV") != null) {
+            ((RubyArray)runtime.getObject().getConstant("ARGV")).replace(argvArray);
+        } else {
+            runtime.getObject().setConstantQuiet("ARGV", argvArray);
+            runtime.getGlobalVariables().define("$*", new ValueAccessor(argvArray));
+        }
+    }
+
+    public static void createGlobals(ThreadContext context, Ruby runtime) {
+        GlobalVariables globals = runtime.getGlobalVariables();
+
+        runtime.defineGlobalConstant("TOPLEVEL_BINDING", runtime.newBinding());
+        
+        runtime.defineGlobalConstant("TRUE", runtime.getTrue());
+        runtime.defineGlobalConstant("FALSE", runtime.getFalse());
+        runtime.defineGlobalConstant("NIL", runtime.getNil());
+
+        initARGV(runtime);
 
         IAccessor d = new ValueAccessor(runtime.newString(
                 runtime.getInstanceConfig().displayedFileName()));
