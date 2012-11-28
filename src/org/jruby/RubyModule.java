@@ -2903,7 +2903,7 @@ public class RubyModule extends RubyObject {
             value = fetchConstant(name);
         }
         
-        return value == UNDEF ? resolveUndefConstant(getRuntime(), name) : value;
+        return value == UNDEF ? resolveUndefConstant(name) : value;
     }
 
     public IRubyObject getConstantAt(String name) {
@@ -2913,7 +2913,7 @@ public class RubyModule extends RubyObject {
     public IRubyObject getConstantAt(String name, boolean includePrivate) {
         IRubyObject value = fetchConstant(name, includePrivate);
 
-        return value == UNDEF ? resolveUndefConstant(getRuntime(), name) : value;
+        return value == UNDEF ? resolveUndefConstant(name) : value;
     }
 
     @Deprecated
@@ -3011,7 +3011,7 @@ public class RubyModule extends RubyObject {
         while (p != null) {
             if ((value = p.fetchConstant(name, false)) != null) {
                 if (value == UNDEF) {
-                    return p.resolveUndefConstant(runtime, name);
+                    return p.resolveUndefConstant(name);
                 }
 
                 if (p == objectClass && this != objectClass) {
@@ -3036,14 +3036,14 @@ public class RubyModule extends RubyObject {
         return callMethod(getRuntime().getCurrentContext(),
                 "const_missing", getRuntime().fastNewSymbol(name));
     }
-    
+
     @Deprecated
     public IRubyObject fastGetConstantFromConstMissing(String internedName) {
         return getConstantFromConstMissing(internedName);
     }
-    
-    public IRubyObject resolveUndefConstant(Ruby runtime, String name) {
-        return getAutoloadConstant(runtime, name);
+
+    public IRubyObject resolveUndefConstant(String name) {
+        return getAutoloadConstant(name);
     }
 
     /**
@@ -3547,18 +3547,18 @@ public class RubyModule extends RubyObject {
         }
         return null;
     }
-    
+
     /**
      * Get autoload constant.
      * If it's first resolution for the constant, it tries to require the defined feature and returns the defined value.
      * Multi-threaded accesses are blocked and processed sequentially except if the caller is the autoloading thread.
      */
-    public IRubyObject getAutoloadConstant(Ruby runtime, String name) {
+    public IRubyObject getAutoloadConstant(String name) {
         Autoload autoload = getAutoloadMap().get(name);
         if (autoload == null) {
             return null;
         }
-        return autoload.getConstant(runtime.getCurrentContext());
+        return autoload.getConstant(getRuntime().getCurrentContext());
     }
     
     /**

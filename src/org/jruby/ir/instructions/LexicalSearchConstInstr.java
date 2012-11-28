@@ -73,7 +73,7 @@ public class LexicalSearchConstInstr extends Instr implements ResultInstr {
         RubyModule object = runtime.getObject();
         // SSS FIXME: IRManager objects dont have a static-scope yet, so this hack of looking up the module right away
         // This IR needs fixing!
-        constant = (staticScope == null) ? object.getConstant(constName) : staticScope.getConstantInner(runtime, constName, object);
+        constant = (staticScope == null) ? object.getConstant(constName) : staticScope.getConstantInner(constName);
         if (constant == null) {
             constant = UndefinedValue.UNDEFINED;
         } else {

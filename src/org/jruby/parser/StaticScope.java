@@ -166,34 +166,34 @@ public abstract class StaticScope implements Serializable {
     }
 
     /* Note: Only used by compiler until it can use getConstant again or use some other refactoring */
-    public IRubyObject getConstantWithConstMissing(Ruby runtime, String internedName, RubyModule object) {
-        IRubyObject result = getConstantInner(runtime, internedName, object);
+    public IRubyObject getConstantWithConstMissing(String internedName) {
+        IRubyObject result = getConstantInner(internedName);
 
         // If we could not find the constant from cref..then try getting from inheritence hierarchy
         return result == null ? cref.getConstant(internedName) : result;        
     }
     
-    public IRubyObject getConstant(Ruby runtime, String internedName, RubyModule object) {
-        IRubyObject result = getConstantInner(runtime, internedName, object);
+    public IRubyObject getConstant(String internedName) {
+        IRubyObject result = getConstantInner(internedName);
 
         // If we could not find the constant from cref..then try getting from inheritence hierarchy
         return result == null ? cref.getConstantNoConstMissing(internedName) : result;
     }
 
-    public IRubyObject getConstantInner(Ruby runtime, String internedName, RubyModule object) {
+    public IRubyObject getConstantInner(String internedName) {
         IRubyObject result = cref.fetchConstant(internedName);
 
         if (result != null) {
-            return result == RubyObject.UNDEF ? cref.resolveUndefConstant(runtime, internedName) : result;
+            return result == RubyObject.UNDEF ? cref.resolveUndefConstant(internedName) : result;
         }
 
-        return previousCRefScope == null ? null : previousCRefScope.getConstantInnerNoObject(runtime, internedName, object);
+        return previousCRefScope == null ? null : previousCRefScope.getConstantInnerNoObject(internedName);
     }
     
-    private IRubyObject getConstantInnerNoObject(Ruby runtime, String internedName, RubyModule object) {
+    private IRubyObject getConstantInnerNoObject(String internedName) {
         if (previousCRefScope == null) return null;
 
-        return getConstantInner(runtime, internedName, object);
+        return getConstantInner(internedName);
     }
     
     /**

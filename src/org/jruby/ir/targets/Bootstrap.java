@@ -766,7 +766,7 @@ public class Bootstrap {
     public static IRubyObject searchConst(MutableCallSite site, String constName, ThreadContext context, StaticScope staticScope) throws Throwable {
         Ruby runtime = context.runtime;
         SwitchPoint switchPoint = (SwitchPoint)runtime.getConstantInvalidator().getData();
-        IRubyObject value = staticScope.getConstant(runtime, constName, runtime.getObject());
+        IRubyObject value = staticScope.getConstant(constName);
 
         if (value == null) {
             return staticScope.getModule().callMethod(context, "const_missing", runtime.fastNewSymbol(constName));

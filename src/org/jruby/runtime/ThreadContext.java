@@ -242,6 +242,10 @@ public final class ThreadContext {
     public DynamicScope getCurrentScope() {
         return scopeStack[scopeIndex];
     }
+
+    public StaticScope getCurrentStaticScope() {
+        return scopeStack[scopeIndex].getStaticScope();
+    }
     
     public DynamicScope getPreviousScope() {
         return scopeStack[scopeIndex - 1];
@@ -667,7 +671,7 @@ public final class ThreadContext {
      * Used by the evaluator and the compiler to look up a constant by name
      */
     public IRubyObject getConstant(String internedName) {
-        return getCurrentScope().getStaticScope().getConstant(runtime, internedName, runtime.getObject());
+        return getCurrentStaticScope().getConstant(internedName);
     }
     
     /**
@@ -677,7 +681,7 @@ public final class ThreadContext {
     public IRubyObject setConstantInCurrent(String internedName, IRubyObject result) {
         RubyModule module;
 
-        if ((module = getCurrentScope().getStaticScope().getModule()) != null) {
+        if ((module = getCurrentStaticScope().getModule()) != null) {
             module.setConstant(internedName, result);
             return result;
         }

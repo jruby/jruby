@@ -70,7 +70,7 @@ public class SearchConstInstr extends Instr implements ResultInstr {
         // Lexical lookup
         RubyModule object = runtime.getObject();
         StaticScope staticScope = (StaticScope) startingScope.retrieve(context, self, currDynScope, temp);
-        Object constant = (staticScope == null) ? object.getConstant(constName) : staticScope.getConstantInner(runtime, constName, object);
+        Object constant = (staticScope == null) ? object.getConstant(constName) : staticScope.getConstantInner(constName);
 
         // Inheritance lookup 
         RubyModule module = null;

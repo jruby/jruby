@@ -683,7 +683,7 @@ public class RuntimeHelpers {
     public static IRubyObject getConstant(ThreadContext context, String internedName) {
         Ruby runtime = context.runtime;
 
-        return context.getCurrentScope().getStaticScope().getConstantWithConstMissing(runtime, internedName, runtime.getObject());
+        return context.getCurrentScope().getStaticScope().getConstantWithConstMissing(internedName);
     }
 
     public static IRubyObject nullToNil(IRubyObject value, ThreadContext context) {

@@ -416,7 +416,7 @@ public class RuntimeCache {
 
     public IRubyObject reCache(ThreadContext context, String name, int index) {
         Object newGeneration = context.runtime.getConstantInvalidator().getData();
-        IRubyObject value = context.getConstant(name);
+        IRubyObject value = context.getCurrentStaticScope().getConstant(name);
         constants[index] = value;
         if (value != null) {
             constantGenerations[index] = newGeneration;
