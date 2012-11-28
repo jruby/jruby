@@ -144,23 +144,14 @@ public class ASTInspector {
                 // The method also needs a scope, do both
                 return CallConfiguration.FrameFullScopeFull;
             } else {
-                if (hasConstant() || hasMethod() || hasClass() || hasClassVar()) {
-                    // The method doesn't need a scope, but has static scope needs; use a dummy scope
-                    return CallConfiguration.FrameFullScopeDummy;
-                } else {
-                    // The method doesn't need a scope or static scope; frame only
-                    return CallConfiguration.FrameFullScopeNone;
-                }
+                // The method doesn't need a scope or static scope; frame only
+                return CallConfiguration.FrameFullScopeNone;
             }
         } else {
             if (hasClosure() || hasScopeAwareMethods()) {
                 return CallConfiguration.FrameNoneScopeFull;
             } else {
-                if (hasConstant() || hasMethod() || hasClass() || hasClassVar()) {
-                    return CallConfiguration.FrameNoneScopeDummy;
-                } else {
-                    return CallConfiguration.FrameNoneScopeNone;
-                }
+                return CallConfiguration.FrameNoneScopeNone;
             }
         }
     }

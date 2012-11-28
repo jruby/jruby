@@ -1259,9 +1259,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     }
 
     public void loadCurrentModule() {
-        loadThreadContext();
-        invokeThreadContext("getCurrentScope", sig(DynamicScope.class));
-        method.invokevirtual(p(DynamicScope.class), "getStaticScope", sig(StaticScope.class));
+        loadStaticScope();
         method.invokevirtual(p(StaticScope.class), "getModule", sig(RubyModule.class));
     }
 
@@ -2026,7 +2024,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
     public void isClassVarDefined(String name, BranchCallback trueBranch, BranchCallback falseBranch) {
         method.ldc(name);
-        method.invokevirtual(p(RubyModule.class), "fastIsClassVarDefined", sig(boolean.class, params(String.class)));
+        method.invokevirtual(p(RubyModule.class), "isClassVarDefined", sig(boolean.class, params(String.class)));
         Label trueLabel = new Label();
         Label exitLabel = new Label();
         method.ifne(trueLabel);
