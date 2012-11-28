@@ -61,6 +61,7 @@ import org.jruby.util.unsafe.UnsafeFactory;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
 
+import static org.jruby.runtime.invokedynamic.MethodNames.EQL;
 import static org.jruby.runtime.invokedynamic.MethodNames.OP_EQUAL;
 
 /**
@@ -2352,6 +2353,21 @@ public class RuntimeHelpers {
         Ruby runtime = context.runtime;
         if (a == b) return runtime.getTrue();
         IRubyObject res = invokedynamic(context, a, OP_EQUAL, b);
+        return runtime.newBoolean(res.isTrue());
+    }
+
+    /**
+     * Equivalent to rb_eql in MRI
+     *
+     * @param context
+     * @param a
+     * @param b
+     * @return
+     */
+    public static RubyBoolean rbEql(ThreadContext context, IRubyObject a, IRubyObject b) {
+        Ruby runtime = context.runtime;
+        if (a == b) return runtime.getTrue();
+        IRubyObject res = invokedynamic(context, a, EQL, b);
         return runtime.newBoolean(res.isTrue());
     }
 

@@ -1028,11 +1028,13 @@ public class RubyHash extends RubyObject implements Map {
 
                     if (value2 == null) {
                         // other hash does not contain key
-                        throw new Mismatch();
+                        throw MISMATCH;
                     }
 
-                    if (!invokedynamic(context, value, method, value2).isTrue()) {
-                        throw new Mismatch();
+                    if (!(method == MethodNames.OP_EQUAL ?
+                            RuntimeHelpers.rbEqual(context, value, value2) :
+                            RuntimeHelpers.rbEql(context, value, value2)).isTrue()) {
+                        throw MISMATCH;
                     }
                 }
             });
@@ -1451,6 +1453,7 @@ public class RubyHash extends RubyObject implements Map {
      */
 
     private static class Mismatch extends RuntimeException {}
+    private static final Mismatch MISMATCH = new Mismatch();
 
     /** rb_hash_shift
      *
