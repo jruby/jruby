@@ -34,10 +34,10 @@ public class RuntimeCache {
     public RuntimeCache() {
     }
 
-    public final StaticScope getScope(ThreadContext context, String varNamesDescriptor, int index) {
+    public final StaticScope getScope(ThreadContext context, StaticScope parent, String varNamesDescriptor, int index) {
         StaticScope scope = scopes[index];
         if (scope == null) {
-            scopes[index] = scope = RuntimeHelpers.createScopeForClass(context, varNamesDescriptor);
+            scopes[index] = scope = RuntimeHelpers.decodeScopeAndDetermineModule(context, parent, varNamesDescriptor);
         }
         return scope;
     }

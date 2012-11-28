@@ -67,17 +67,17 @@ public abstract class AbstractScript implements Script {
 
     public static final int NUMBERED_SCOPE_COUNT = 10;
 
-    public final StaticScope getScope(ThreadContext context, String varNamesDescriptor, int i) {return runtimeCache.getScope(context, varNamesDescriptor, i);}
-    public final StaticScope getScope0(ThreadContext context, String varNamesDescriptor) {return runtimeCache.getScope(context, varNamesDescriptor, 0);}
-    public final StaticScope getScope1(ThreadContext context, String varNamesDescriptor) {return runtimeCache.getScope(context, varNamesDescriptor, 1);}
-    public final StaticScope getScope2(ThreadContext context, String varNamesDescriptor) {return runtimeCache.getScope(context, varNamesDescriptor, 2);}
-    public final StaticScope getScope3(ThreadContext context, String varNamesDescriptor) {return runtimeCache.getScope(context, varNamesDescriptor, 3);}
-    public final StaticScope getScope4(ThreadContext context, String varNamesDescriptor) {return runtimeCache.getScope(context, varNamesDescriptor, 4);}
-    public final StaticScope getScope5(ThreadContext context, String varNamesDescriptor) {return runtimeCache.getScope(context, varNamesDescriptor, 5);}
-    public final StaticScope getScope6(ThreadContext context, String varNamesDescriptor) {return runtimeCache.getScope(context, varNamesDescriptor, 6);}
-    public final StaticScope getScope7(ThreadContext context, String varNamesDescriptor) {return runtimeCache.getScope(context, varNamesDescriptor, 7);}
-    public final StaticScope getScope8(ThreadContext context, String varNamesDescriptor) {return runtimeCache.getScope(context, varNamesDescriptor, 8);}
-    public final StaticScope getScope9(ThreadContext context, String varNamesDescriptor) {return runtimeCache.getScope(context, varNamesDescriptor, 9);}
+    public final StaticScope getScope(ThreadContext context, StaticScope parent, String varNamesDescriptor, int i) {return runtimeCache.getScope(context, parent, varNamesDescriptor, i);}
+    public final StaticScope getScope0(ThreadContext context, StaticScope parent, String varNamesDescriptor) {return runtimeCache.getScope(context, parent, varNamesDescriptor, 0);}
+    public final StaticScope getScope1(ThreadContext context, StaticScope parent, String varNamesDescriptor) {return runtimeCache.getScope(context, parent, varNamesDescriptor, 1);}
+    public final StaticScope getScope2(ThreadContext context, StaticScope parent, String varNamesDescriptor) {return runtimeCache.getScope(context, parent, varNamesDescriptor, 2);}
+    public final StaticScope getScope3(ThreadContext context, StaticScope parent, String varNamesDescriptor) {return runtimeCache.getScope(context, parent, varNamesDescriptor, 3);}
+    public final StaticScope getScope4(ThreadContext context, StaticScope parent, String varNamesDescriptor) {return runtimeCache.getScope(context, parent, varNamesDescriptor, 4);}
+    public final StaticScope getScope5(ThreadContext context, StaticScope parent, String varNamesDescriptor) {return runtimeCache.getScope(context, parent, varNamesDescriptor, 5);}
+    public final StaticScope getScope6(ThreadContext context, StaticScope parent, String varNamesDescriptor) {return runtimeCache.getScope(context, parent, varNamesDescriptor, 6);}
+    public final StaticScope getScope7(ThreadContext context, StaticScope parent, String varNamesDescriptor) {return runtimeCache.getScope(context, parent, varNamesDescriptor, 7);}
+    public final StaticScope getScope8(ThreadContext context, StaticScope parent, String varNamesDescriptor) {return runtimeCache.getScope(context, parent, varNamesDescriptor, 8);}
+    public final StaticScope getScope9(ThreadContext context, StaticScope parent, String varNamesDescriptor) {return runtimeCache.getScope(context, parent, varNamesDescriptor, 9);}
 
     public final StaticScope getScope(int i) {return runtimeCache.getScope(i);}
     public final StaticScope getScope0() {return runtimeCache.getScope(0);}

@@ -107,13 +107,14 @@ public class InheritedCacheCompiler implements CacheCompiler {
         // retrieve scope from scopes array
         method.loadThis();
         method.loadThreadContext();
+        method.loadStaticScope();
         method.method.ldc(scopeString);
         if (index < AbstractScript.NUMBERED_SCOPE_COUNT) {
             // use numbered access method
-            method.method.invokevirtual(scriptCompiler.getClassname(), "getScope" + index, sig(StaticScope.class, ThreadContext.class, String.class));
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getScope" + index, sig(StaticScope.class, ThreadContext.class, StaticScope.class, String.class));
         } else {
             method.method.pushInt(index);
-            method.method.invokevirtual(scriptCompiler.getClassname(), "getScope", sig(StaticScope.class, ThreadContext.class, String.class, int.class));
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getScope", sig(StaticScope.class, ThreadContext.class, StaticScope.class, String.class, int.class));
         }
 
         return index;

@@ -273,10 +273,11 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
         
         method.loadThis();
         method.loadThreadContext();
+        method.loadStaticScope();
         
         method.method.invokedynamic(
                 "getStaticScope",
-                sig(StaticScope.class, AbstractScript.class, ThreadContext.class),
+                sig(StaticScope.class, AbstractScript.class, ThreadContext.class, StaticScope.class),
                 InvokeDynamicSupport.getStaticScopeHandle(),
                 scopeString,
                 index);

@@ -2082,13 +2082,13 @@ public class RuntimeHelpers {
         StaticScope scope = null;
         switch (StaticScope.Type.valueOf(decodedScope[0][0])) {
             case BLOCK:
-                scope = context.runtime.getStaticScopeFactory().newBlockScope(context.getCurrentStaticScope(), decodedScope[1]);
+                scope = context.runtime.getStaticScopeFactory().newBlockScope(parent, decodedScope[1]);
                 break;
             case EVAL:
-                scope = context.runtime.getStaticScopeFactory().newEvalScope(context.getCurrentStaticScope(), decodedScope[1]);
+                scope = context.runtime.getStaticScopeFactory().newEvalScope(parent, decodedScope[1]);
                 break;
             case LOCAL:
-                scope = context.runtime.getStaticScopeFactory().newLocalScope(context.getCurrentStaticScope(), decodedScope[1]);
+                scope = context.runtime.getStaticScopeFactory().newLocalScope(parent, decodedScope[1]);
                 break;
         }
         setAritiesFromDecodedScope(scope, decodedScope[0]);
@@ -2105,8 +2105,8 @@ public class RuntimeHelpers {
         scope.setArities(Integer.parseInt(scopeElements[2]), Integer.parseInt(scopeElements[3]), Integer.parseInt(scopeElements[4]));
     }
 
-    public static StaticScope createScopeForClass(ThreadContext context, String scopeString) {
-        StaticScope scope = decodeScope(context, context.getCurrentStaticScope(), scopeString);
+    public static StaticScope decodeScopeAndDetermineModule(ThreadContext context, StaticScope parent, String scopeString) {
+        StaticScope scope = decodeScope(context, parent, scopeString);
         scope.determineModule();
 
         return scope;

@@ -262,8 +262,8 @@ public class InvokeDynamicSupport {
         MethodHandle init = findStatic(
                 InvokeDynamicSupport.class,
                 "initStaticScope",
-                methodType(StaticScope.class, MutableCallSite.class, AbstractScript.class, ThreadContext.class, String.class, int.class));
-        init = insertArguments(init, 3, scopeString, index);
+                methodType(StaticScope.class, MutableCallSite.class, AbstractScript.class, ThreadContext.class, StaticScope.class, String.class, int.class));
+        init = insertArguments(init, 4, scopeString, index);
         init = insertArguments(
                 init,
                 0,
@@ -541,8 +541,8 @@ public class InvokeDynamicSupport {
         return rubyFloat;
     }
     
-    public static StaticScope initStaticScope(MutableCallSite site, AbstractScript script, ThreadContext context, String staticScope, int index) {
-        StaticScope scope = script.getScope(context, staticScope, index);
+    public static StaticScope initStaticScope(MutableCallSite site, AbstractScript script, ThreadContext context, StaticScope parent, String staticScope, int index) {
+        StaticScope scope = script.getScope(context, parent, staticScope, index);
         site.setTarget(dropArguments(constant(StaticScope.class, scope), 0, AbstractScript.class, ThreadContext.class));
         return scope;
     }
