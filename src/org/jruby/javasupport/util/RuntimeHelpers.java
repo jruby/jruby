@@ -637,19 +637,13 @@ public class RuntimeHelpers {
         return (RubyArray) value;
     }
     
-    public static IRubyObject fetchClassVariable(ThreadContext context, Ruby runtime, 
+    public static IRubyObject fetchClassVariable(Ruby runtime, StaticScope scope,
             IRubyObject self, String name) {
-        RubyModule rubyClass = ASTInterpreter.getClassVariableBase(context, runtime);
+        RubyModule rubyClass = ASTInterpreter.getClassVariableBase(runtime, scope);
    
         if (rubyClass == null) rubyClass = self.getMetaClass();
 
         return rubyClass.getClassVar(name);
-    }
-    
-    @Deprecated
-    public static IRubyObject fastFetchClassVariable(ThreadContext context, Ruby runtime, 
-            IRubyObject self, String internedName) {
-        return fetchClassVariable(context, runtime, self, internedName);
     }
     
     public static IRubyObject getConstant(ThreadContext context, String internedName) {
@@ -691,9 +685,9 @@ public class RuntimeHelpers {
         }
     }
     
-    public static IRubyObject setClassVariable(ThreadContext context, Ruby runtime, 
+    public static IRubyObject setClassVariable(Ruby runtime, StaticScope scope,
             IRubyObject self, String name, IRubyObject value) {
-        RubyModule rubyClass = ASTInterpreter.getClassVariableBase(context, runtime);
+        RubyModule rubyClass = ASTInterpreter.getClassVariableBase(runtime, scope);
    
         if (rubyClass == null) rubyClass = self.getMetaClass();
 
@@ -702,26 +696,15 @@ public class RuntimeHelpers {
         return value;
     }
     
-    @Deprecated
-    public static IRubyObject fastSetClassVariable(ThreadContext context, Ruby runtime, 
-            IRubyObject self, String internedName, IRubyObject value) {
-        return setClassVariable(context, runtime, self, internedName, value);
-    }
-    
-    public static IRubyObject declareClassVariable(ThreadContext context, Ruby runtime, IRubyObject self, String name, IRubyObject value) {
+    public static IRubyObject declareClassVariable(Ruby runtime, StaticScope scope, IRubyObject self, String name, IRubyObject value) {
         // FIXME: This isn't quite right; it shouldn't evaluate the value if it's going to throw the error
-        RubyModule rubyClass = ASTInterpreter.getClassVariableBase(context, runtime);
+        RubyModule rubyClass = ASTInterpreter.getClassVariableBase(runtime, scope);
    
         if (rubyClass == null) throw runtime.newTypeError("no class/module to define class variable");
         
         rubyClass.setClassVar(name, value);
    
         return value;
-    }
-    
-    @Deprecated
-    public static IRubyObject fastDeclareClassVariable(ThreadContext context, Ruby runtime, IRubyObject self, String internedName, IRubyObject value) {
-        return declareClassVariable(context, runtime, self, internedName, value);
     }
     
     public static void handleArgumentSizes(ThreadContext context, Ruby runtime, int given, int required, int opt, int rest) {

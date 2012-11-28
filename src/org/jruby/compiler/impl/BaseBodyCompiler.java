@@ -407,58 +407,59 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     }
 
     public void retrieveClassVariable(String name) {
-        loadThreadContext();
         loadRuntime();
+        loadStaticScope();
         loadSelf();
         method.ldc(name);
 
-        invokeUtilityMethod("fastFetchClassVariable", sig(IRubyObject.class, params(ThreadContext.class, Ruby.class, IRubyObject.class, String.class)));
+        invokeUtilityMethod("fetchClassVariable", sig(IRubyObject.class, params(Ruby.class, StaticScope.class, IRubyObject.class, String.class)));
     }
 
     public void assignClassVariable(String name) {
-        loadThreadContext();
-        method.swap();
         loadRuntime();
+        method.swap();
+        loadStaticScope();
         method.swap();
         loadSelf();
         method.swap();
         method.ldc(name);
         method.swap();
 
-        invokeUtilityMethod("fastSetClassVariable", sig(IRubyObject.class, params(ThreadContext.class, Ruby.class, IRubyObject.class, String.class, IRubyObject.class)));
+        invokeUtilityMethod("setClassVariable", sig(IRubyObject.class, params(Ruby.class, StaticScope.class, IRubyObject.class, String.class, IRubyObject.class)));
     }
 
     public void assignClassVariable(String name, CompilerCallback value) {
-        loadThreadContext();
         loadRuntime();
+        loadStaticScope();
         loadSelf();
         method.ldc(name);
         value.call(this);
 
-        invokeUtilityMethod("fastSetClassVariable", sig(IRubyObject.class, params(ThreadContext.class, Ruby.class, IRubyObject.class, String.class, IRubyObject.class)));
+        invokeUtilityMethod("setClassVariable", sig(IRubyObject.class, params(Ruby.class, StaticScope.class, IRubyObject.class, String.class, IRubyObject.class)));
     }
 
+    // inefficient, but uncommon to see class vars in masgn
     public void declareClassVariable(String name) {
-        loadThreadContext();
-        method.swap();
         loadRuntime();
+        method.swap();
+        loadStaticScope();
         method.swap();
         loadSelf();
         method.swap();
         method.ldc(name);
         method.swap();
 
-        invokeUtilityMethod("fastDeclareClassVariable", sig(IRubyObject.class, params(ThreadContext.class, Ruby.class, IRubyObject.class, String.class, IRubyObject.class)));
+        invokeUtilityMethod("declareClassVariable", sig(IRubyObject.class, params(Ruby.class, StaticScope.class, IRubyObject.class, String.class, IRubyObject.class)));
     }
 
     public void declareClassVariable(String name, CompilerCallback value) {
-        loadThreadContext();
         loadRuntime();
+        loadStaticScope();
         loadSelf();
         method.ldc(name);
         value.call(this);
 
-        invokeUtilityMethod("fastDeclareClassVariable", sig(IRubyObject.class, params(ThreadContext.class, Ruby.class, IRubyObject.class, String.class, IRubyObject.class)));
+        invokeUtilityMethod("declareClassVariable", sig(IRubyObject.class, params(Ruby.class, StaticScope.class, IRubyObject.class, String.class, IRubyObject.class)));
     }
 
     public void createNewFloat(double value) {
