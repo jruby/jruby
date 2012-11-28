@@ -370,12 +370,54 @@ public interface BodyCompiler {
      * Define an alias for a new name to an existing oldName'd method.
      */
     public void defineAlias(CompilerCallback args);
-    
-    public void assignConstantInCurrent(String name);
-    
-    public void assignConstantInModule(String name);
-    
-    public void assignConstantInObject(String name);
+
+    /**
+     * Assign a constant on the class or module currently in scope.
+     *
+     * @param name name of the constant
+     * @param value callback to load the value
+     */
+    public void assignConstantInCurrent(String name, CompilerCallback value);
+
+    /**
+     * Assign a constant on a specific class or module.
+     *
+     * @param name name of the constant
+     * @param moduleAndValue callback to load the class/module and value
+     */
+    public void assignConstantInModule(String name, CompilerCallback moduleAndValue);
+
+    /**
+     * Assign a constant on the Object class.
+     *
+     * @param name name of the constant
+     * @param value callback to load the value
+     */
+    public void assignConstantInObject(String name, CompilerCallback value);
+
+    /**
+     * Assign a constant on the class or module currently in scope. The value
+     * is expected to be on the top of the stack.
+     *
+     * @param name name of the constant
+     */
+    public void mAssignConstantInCurrent(String name);
+
+    /**
+     * Assign a constant on a specific class or module. The class/module
+     * and value are expected to be on the top of the stack.
+     *
+     * @param name name of the constant
+     */
+    public void mAssignConstantInModule(String name);
+
+    /**
+     * Assign a constant on the Object class. The value
+     * is expected to be on the top of the stack.
+     *
+     * @param name name of the constant
+     */
+    public void mAssignConstantInObject(String name);
     
     /**
      * Retrieve the constant with the specified name available at the current point in the

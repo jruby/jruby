@@ -86,6 +86,6 @@ public abstract class Colon2Node extends Colon3Node implements INameNode {
     	if (leftNode != null && leftNode instanceof NilNode) {
             throw context.runtime.newTypeError("no outer class/module");
         }
-        return RuntimeHelpers.prepareClassNamespace(context, leftNode.interpret(runtime, context, self, aBlock));
+        return RuntimeHelpers.prepareClassNamespace(context, context.getCurrentStaticScope(), leftNode.interpret(runtime, context, self, aBlock));
     }
  }

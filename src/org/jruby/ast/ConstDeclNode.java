@@ -106,9 +106,9 @@ public class ConstDeclNode extends AssignableNode implements INameNode {
             
             IRubyObject obj = leftNode.interpret(runtime, context, self, aBlock);
 
-            return RuntimeHelpers.setConstantInModule(result, obj, constNode.getName(), context);
+            return RuntimeHelpers.setConstantInModule(context, constNode.getName(), result, obj);
         } else { // colon3
-            return runtime.getObject().setConstant(constNode.getName(), result);
+            return RuntimeHelpers.setConstantInModule(context, constNode.getName(), result, runtime.getObject());
         }
     }
 

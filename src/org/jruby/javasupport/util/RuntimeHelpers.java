@@ -703,9 +703,9 @@ public class RuntimeHelpers {
         return (RubyClass)rubyClass;
     }
     
-    public static RubyModule prepareClassNamespace(ThreadContext context, IRubyObject rubyModule) {
+    public static RubyModule prepareClassNamespace(ThreadContext context, StaticScope scope, IRubyObject rubyModule) {
         if (rubyModule == null || rubyModule.isNil()) {
-            rubyModule = context.getCurrentScope().getStaticScope().getModule();
+            rubyModule = scope.getModule();
 
             if (rubyModule == null) {
                 throw context.runtime.newTypeError("no outer class/module");
@@ -1242,7 +1242,7 @@ public class RuntimeHelpers {
         return context.runtime.getFalse();
     }
     
-    public static IRubyObject setConstantInModule(IRubyObject value, IRubyObject module, String name, ThreadContext context) {
+    public static IRubyObject setConstantInModule(ThreadContext context, String name, IRubyObject value, IRubyObject module) {
         if (!(module instanceof RubyModule)) {
             throw context.runtime.newTypeError(module.toString() + " is not a class/module");
         }
@@ -1254,19 +1254,19 @@ public class RuntimeHelpers {
     public static IRubyObject setConstantInCurrent(IRubyObject value, ThreadContext context, String name) {
         return context.getCurrentStaticScope().setConstant(name, value);
     }
-    
+
     public static IRubyObject retryJump() {
         throw JumpException.RETRY_JUMP;
     }
-    
+
     public static IRubyObject redoJump() {
         throw JumpException.REDO_JUMP;
     }
-    
+
     public static IRubyObject redoLocalJumpError(Ruby runtime) {
         throw runtime.newLocalJumpError(RubyLocalJumpError.Reason.REDO, runtime.getNil(), "unexpected redo");
     }
-    
+
     public static IRubyObject nextJump(IRubyObject value) {
         throw new JumpException.NextJump(value);
     }

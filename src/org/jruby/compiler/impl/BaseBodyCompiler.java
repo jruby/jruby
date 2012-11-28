@@ -218,6 +218,11 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         return StandardASMCompiler.ARGS_INDEX + argParamCount + StandardASMCompiler.EXCEPTION_OFFSET;
     }
 
+    protected void loadStaticScope() {
+        loadThreadContext();
+        invokeThreadContext("getCurrentStaticScope", sig(StaticScope.class));
+    }
+
     public void loadThis() {
         method.aload(StandardASMCompiler.THIS);
     }
@@ -334,23 +339,55 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         return invocationCompiler;
     }
 
-    public void assignConstantInCurrent(String name) {
-        loadThreadContext();
+    public void assignConstantInCurrent(String name, CompilerCallback value) {
+        loadStaticScope();
         method.ldc(name);
-        invokeUtilityMethod("setConstantInCurrent", sig(IRubyObject.class, params(IRubyObject.class, ThreadContext.class, String.class)));
+        value.call(this);
+        method.invokevirtual(p(StaticScope.class), "setConstant", sig(IRubyObject.class, params(String.class, IRubyObject.class)));
     }
 
-    public void assignConstantInModule(String name) {
-        method.ldc(name);
+    public void assignConstantInModule(String name, CompilerCallback valueAndModule) {
         loadThreadContext();
-        invokeUtilityMethod("setConstantInModule", sig(IRubyObject.class, IRubyObject.class, IRubyObject.class, String.class, ThreadContext.class));
+        method.ldc(name);
+        valueAndModule.call(this);
+        invokeUtilityMethod("setConstantInModule", sig(IRubyObject.class, ThreadContext.class, String.class, IRubyObject.class, IRubyObject.class));
     }
 
-    public void assignConstantInObject(String name) {
-        // load Object under value
+    public void assignConstantInObject(String name, final CompilerCallback value) {
+        assignConstantInModule(name, new CompilerCallback() {
+            public void call(BodyCompiler context) {
+                value.call(context);
+                loadObject();
+            }
+        });
+    }
+
+    // TODO: Inefficient, but rarely used (constants in masgn are not common)
+    public void mAssignConstantInCurrent(String name) {
+        loadStaticScope();
+        method.ldc(name);
+        method.dup2_x1();
+        method.pop2();
+        method.invokevirtual(p(StaticScope.class), "setConstant", sig(IRubyObject.class, params(String.class, IRubyObject.class)));
+    }
+
+    // TODO: Inefficient, but rarely used (constants in masgn are not common)
+    public void mAssignConstantInModule(String name) {
+        loadThreadContext();
+        method.ldc(name);
+        method.dup2_x2();
+        method.pop2();
+        invokeUtilityMethod("setConstantInModule", sig(IRubyObject.class, ThreadContext.class, String.class, IRubyObject.class, IRubyObject.class));
+    }
+
+    // TODO: Inefficient, but rarely used (constants in masgn are not common)
+    public void mAssignConstantInObject(String name) {
         loadObject();
-
-        assignConstantInModule(name);
+        loadThreadContext();
+        method.ldc(name);
+        method.dup2_x2();
+        method.pop2();
+        invokeUtilityMethod("setConstantInModule", sig(IRubyObject.class, ThreadContext.class, String.class, IRubyObject.class, IRubyObject.class));
     }
 
     public void retrieveConstant(String name) {
@@ -2394,10 +2431,11 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
             }
 
             loadThreadContext();
+            loadStaticScope();
 
             pathCallback.call(this);
 
-            invokeUtilityMethod("prepareClassNamespace", sig(RubyModule.class, params(ThreadContext.class, IRubyObject.class)));
+            invokeUtilityMethod("prepareClassNamespace", sig(RubyModule.class, params(ThreadContext.class, StaticScope.class, IRubyObject.class)));
 
             method.swap();
 
@@ -2481,8 +2519,12 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
         // prepare module object
         loadThreadContext();
+        loadStaticScope();
+
         pathCallback.call(this);
-        invokeUtilityMethod("prepareClassNamespace", sig(RubyModule.class, params(ThreadContext.class, IRubyObject.class)));
+
+        invokeUtilityMethod("prepareClassNamespace", sig(RubyModule.class, params(ThreadContext.class, StaticScope.class, IRubyObject.class)));
+
         method.ldc(name);
         method.invokevirtual(p(RubyModule.class), "defineOrGetModuleUnder", sig(RubyModule.class, params(String.class)));
 

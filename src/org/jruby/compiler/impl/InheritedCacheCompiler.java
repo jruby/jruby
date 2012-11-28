@@ -304,8 +304,7 @@ public class InheritedCacheCompiler implements CacheCompiler {
     public void cacheConstant(BaseBodyCompiler method, String constantName) {
         method.loadThis();
         method.loadThreadContext();
-        method.method.dup();
-        method.method.invokevirtual(p(ThreadContext.class), "getCurrentStaticScope", sig(StaticScope.class));
+        method.loadStaticScope();
         method.method.ldc(constantName);
         if (inheritedConstantCount < AbstractScript.NUMBERED_CONSTANT_COUNT) {
             method.method.invokevirtual(scriptCompiler.getClassname(), "getConstant" + inheritedConstantCount, sig(IRubyObject.class, ThreadContext.class, StaticScope.class, String.class));
@@ -320,8 +319,7 @@ public class InheritedCacheCompiler implements CacheCompiler {
     public void cacheConstantDefined(BaseBodyCompiler method, String constantName) {
         method.loadThis();
         method.loadThreadContext();
-        method.method.dup();
-        method.method.invokevirtual(p(ThreadContext.class), "getCurrentStaticScope", sig(StaticScope.class));
+        method.loadStaticScope();
         method.method.ldc(constantName);
         if (inheritedConstantCount < AbstractScript.NUMBERED_CONSTANT_COUNT) {
             method.method.invokevirtual(scriptCompiler.getClassname(), "getConstantDefined" + inheritedConstantCount, sig(IRubyObject.class, ThreadContext.class, StaticScope.class, String.class));

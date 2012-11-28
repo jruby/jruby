@@ -1136,22 +1136,28 @@ public class ASTCompiler {
 
     public void compileConstDecl(Node node, BodyCompiler context, boolean expr) {
         // TODO: callback for value would be more efficient, but unlikely to be a big cost (constants are rarely assigned)
-        ConstDeclNode constDeclNode = (ConstDeclNode) node;
-        Node constNode = constDeclNode.getConstNode();
+        final ConstDeclNode constDeclNode = (ConstDeclNode) node;
+        final Node constNode = constDeclNode.getConstNode();
 
         if (constNode == null) {
-            compile(constDeclNode.getValueNode(), context,true);
-
-            context.assignConstantInCurrent(constDeclNode.getName());
+            context.assignConstantInCurrent(constDeclNode.getName(), new CompilerCallback() {
+                public void call(BodyCompiler context) {
+                    compile(constDeclNode.getValueNode(), context, true);
+                }
+            });
         } else if (constNode.getNodeType() == NodeType.COLON2NODE) {
-            compile(constDeclNode.getValueNode(), context,true);
-            compile(((Colon2Node) constNode).getLeftNode(), context,true);
-
-            context.assignConstantInModule(constDeclNode.getName());
+            context.assignConstantInModule(constDeclNode.getName(), new CompilerCallback() {
+                public void call(BodyCompiler context) {
+                    compile(constDeclNode.getValueNode(), context, true);
+                    compile(((Colon2Node) constNode).getLeftNode(), context, true);
+                }
+            });
         } else {// colon3, assign in Object
-            compile(constDeclNode.getValueNode(), context,true);
-
-            context.assignConstantInObject(constDeclNode.getName());
+            context.assignConstantInObject(constDeclNode.getName(), new CompilerCallback() {
+                public void call(BodyCompiler context) {
+                    compile(constDeclNode.getValueNode(), context, true);
+                }
+            });
         }
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
@@ -1163,12 +1169,12 @@ public class ASTCompiler {
         Node constNode = constDeclNode.getConstNode();
 
         if (constNode == null) {
-            context.assignConstantInCurrent(constDeclNode.getName());
+            context.mAssignConstantInCurrent(constDeclNode.getName());
         } else if (constNode.getNodeType() == NodeType.COLON2NODE) {
             compile(((Colon2Node) constNode).getLeftNode(), context,true);
-            context.assignConstantInModule(constDeclNode.getName());
+            context.mAssignConstantInModule(constDeclNode.getName());
         } else {// colon3, assign in Object
-            context.assignConstantInObject(constDeclNode.getName());
+            context.mAssignConstantInObject(constDeclNode.getName());
         }
         // TODO: don't require pop
         if (!expr) context.consumeCurrentValue();
