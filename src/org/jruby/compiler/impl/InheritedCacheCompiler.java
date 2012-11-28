@@ -304,12 +304,14 @@ public class InheritedCacheCompiler implements CacheCompiler {
     public void cacheConstant(BaseBodyCompiler method, String constantName) {
         method.loadThis();
         method.loadThreadContext();
+        method.method.dup();
+        method.method.invokevirtual(p(ThreadContext.class), "getCurrentStaticScope", sig(StaticScope.class));
         method.method.ldc(constantName);
         if (inheritedConstantCount < AbstractScript.NUMBERED_CONSTANT_COUNT) {
-            method.method.invokevirtual(scriptCompiler.getClassname(), "getConstant" + inheritedConstantCount, sig(IRubyObject.class, ThreadContext.class, String.class));
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getConstant" + inheritedConstantCount, sig(IRubyObject.class, ThreadContext.class, StaticScope.class, String.class));
         } else {
             method.method.pushInt(inheritedConstantCount);
-            method.method.invokevirtual(scriptCompiler.getClassname(), "getConstant", sig(IRubyObject.class, ThreadContext.class, String.class, int.class));
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getConstant", sig(IRubyObject.class, ThreadContext.class, StaticScope.class, String.class, int.class));
         }
 
         inheritedConstantCount++;
@@ -318,12 +320,14 @@ public class InheritedCacheCompiler implements CacheCompiler {
     public void cacheConstantDefined(BaseBodyCompiler method, String constantName) {
         method.loadThis();
         method.loadThreadContext();
+        method.method.dup();
+        method.method.invokevirtual(p(ThreadContext.class), "getCurrentStaticScope", sig(StaticScope.class));
         method.method.ldc(constantName);
         if (inheritedConstantCount < AbstractScript.NUMBERED_CONSTANT_COUNT) {
-            method.method.invokevirtual(scriptCompiler.getClassname(), "getConstantDefined" + inheritedConstantCount, sig(IRubyObject.class, ThreadContext.class, String.class));
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getConstantDefined" + inheritedConstantCount, sig(IRubyObject.class, ThreadContext.class, StaticScope.class, String.class));
         } else {
             method.method.pushInt(inheritedConstantCount);
-            method.method.invokevirtual(scriptCompiler.getClassname(), "getConstantDefined", sig(IRubyObject.class, ThreadContext.class, String.class, int.class));
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getConstantDefined", sig(IRubyObject.class, ThreadContext.class, StaticScope.class, String.class, int.class));
         }
 
         inheritedConstantCount++;

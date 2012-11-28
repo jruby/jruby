@@ -394,29 +394,29 @@ public class RuntimeCache {
         Arrays.fill(methodCache, CacheEntry.NULL_CACHE);
     }
 
-    public final IRubyObject getConstant(ThreadContext context, String name, int index) {
-        IRubyObject value = getValue(context, name, index);
+    public final IRubyObject getConstant(ThreadContext context, StaticScope scope, String name, int index) {
+        IRubyObject value = getValue(context, scope, name, index);
         // We can callsite cache const_missing if we want
-        return value != null ? value : context.getCurrentScope().getStaticScope().getModule().callMethod(context, "const_missing", context.runtime.fastNewSymbol(name));
+        return value != null ? value : scope.getModule().callMethod(context, "const_missing", context.runtime.fastNewSymbol(name));
     }
 
-    public final IRubyObject getConstantDefined(ThreadContext context, String name, int index) {
-        IRubyObject value = getValue(context, name, index);
+    public final IRubyObject getConstantDefined(ThreadContext context, StaticScope scope, String name, int index) {
+        IRubyObject value = getValue(context, scope, name, index);
         return value == null ? null : context.runtime.getDefinedMessage(DefinedMessage.CONSTANT);
     }
 
-    public IRubyObject getValue(ThreadContext context, String name, int index) {
+    public IRubyObject getValue(ThreadContext context, StaticScope scope, String name, int index) {
         IRubyObject value = constants[index]; // Store to temp so it does null out on us mid-stream
-        return isCached(context, value, index) ? value : reCache(context, name, index);
+        return isCached(context, value, index) ? value : reCache(context, scope, name, index);
     }
 
     private boolean isCached(ThreadContext context, IRubyObject value, int index) {
         return value != null && constantGenerations[index] == context.runtime.getConstantInvalidator().getData();
     }
 
-    public IRubyObject reCache(ThreadContext context, String name, int index) {
+    public IRubyObject reCache(ThreadContext context, StaticScope scope, String name, int index) {
         Object newGeneration = context.runtime.getConstantInvalidator().getData();
-        IRubyObject value = context.getCurrentStaticScope().getConstant(name);
+        IRubyObject value = scope.getConstant(name);
         constants[index] = value;
         if (value != null) {
             constantGenerations[index] = newGeneration;
