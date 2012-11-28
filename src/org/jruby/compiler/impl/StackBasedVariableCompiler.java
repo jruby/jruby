@@ -89,11 +89,8 @@ public class StackBasedVariableCompiler extends AbstractVariableCompiler {
         }
     }
 
-    public void beginClass(CompilerCallback bodyPrep, StaticScope scope) {
+    public void beginClass(StaticScope scope) {
         assert scope != null : "compiling a class body with no scope";
-        
-        // class bodies prepare their own dynamic scope, so let it do that
-        bodyPrep.call(methodCompiler);
         
         // fill in all vars with nil so compiler is happy about future accesses
         if (scope.getNumberOfVariables() > 0) {

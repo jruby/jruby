@@ -41,7 +41,7 @@ public interface VariableCompiler {
     public SkinnyMethodAdapter getMethodAdapter();
     public void setMethodAdapter(SkinnyMethodAdapter sma);
     public void beginMethod(CompilerCallback argsCallback, StaticScope scope);
-    public void beginClass(CompilerCallback bodyPrep, StaticScope scope);
+    public void beginClass(StaticScope scope);
     public void beginClosure(CompilerCallback argsCallback, StaticScope scope);
     public void beginFlatClosure(CompilerCallback argsCallback, StaticScope scope);
     public void assignLocalVariable(int index, boolean expr);

@@ -138,4 +138,8 @@ public class AliasMethod extends DynamicMethod {
     public CallConfiguration getCallConfig() {
         return oldMethod.getCallConfig();
     }
+
+    public String getOldName() {
+        return oldName;
+    }
 }

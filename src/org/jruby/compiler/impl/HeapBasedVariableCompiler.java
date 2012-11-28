@@ -83,7 +83,7 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
         method.visitLocalVariable("locals", ci(DynamicScope.class), null, start, end, methodCompiler.getDynamicScopeIndex());
     }
 
-    public void beginClass(CompilerCallback bodyPrep, StaticScope scope) {
+    public void beginClass(StaticScope scope) {
         assert scope != null : "compiling a class body with no scope";
         
         // store the local vars in a local variable for preparing the class (using previous scope)
@@ -93,9 +93,6 @@ public class HeapBasedVariableCompiler extends AbstractVariableCompiler {
         method.astore(methodCompiler.getDynamicScopeIndex());
         method.invokevirtual(p(DynamicScope.class), "getValues", sig(IRubyObject[].class));
         method.astore(methodCompiler.getVarsArrayIndex());
-        
-        // class bodies prepare their own dynamic scope, so let it do that
-        bodyPrep.call(methodCompiler);
         
         // store the new local vars in a local variable
         methodCompiler.loadThreadContext();

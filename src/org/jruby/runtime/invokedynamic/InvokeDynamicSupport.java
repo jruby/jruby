@@ -543,7 +543,7 @@ public class InvokeDynamicSupport {
     
     public static StaticScope initStaticScope(MutableCallSite site, AbstractScript script, ThreadContext context, StaticScope parent, String staticScope, int index) {
         StaticScope scope = script.getScope(context, parent, staticScope, index);
-        site.setTarget(dropArguments(constant(StaticScope.class, scope), 0, AbstractScript.class, ThreadContext.class));
+        site.setTarget(dropArguments(constant(StaticScope.class, scope), 0, AbstractScript.class, ThreadContext.class, StaticScope.class));
         return scope;
     }
     

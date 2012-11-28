@@ -17,7 +17,7 @@ public class ClassBodyCompiler extends RootScopedBodyCompiler {
     public void beginMethod(CompilerCallback bodyPrep, StaticScope scope) {
         method.start();
 
-        variableCompiler.beginClass(bodyPrep, scope);
+        variableCompiler.beginClass(scope);
 
         // visit a label to start scoping for local vars in this method
         method.label(scopeStart);
