@@ -76,13 +76,14 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
             super.cacheConstant(method, constantName);
             return;
         }
-        
+
+        method.loadThis();
         method.loadThreadContext();
-        method.loadStaticScope();
         method.method.invokedynamic(
                 constantName,
-                sig(IRubyObject.class, ThreadContext.class, StaticScope.class),
-                InvokeDynamicSupport.getConstantHandle());
+                sig(IRubyObject.class, AbstractScript.class, ThreadContext.class),
+                InvokeDynamicSupport.getConstantHandle(),
+                method.getScopeIndex());
     }
 
     /**

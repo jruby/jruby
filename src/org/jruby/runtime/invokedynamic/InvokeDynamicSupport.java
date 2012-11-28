@@ -96,7 +96,7 @@ public class InvokeDynamicSupport {
     }
     
     public static Handle getConstantHandle() {
-        return getBootstrapHandle("getConstantBootstrap", BOOTSTRAP_BARE_SIG);
+        return getBootstrapHandle("getConstantBootstrap", BOOTSTRAP_INT_SIG);
     }
     
     public static Handle getByteListHandle() {
@@ -171,17 +171,18 @@ public class InvokeDynamicSupport {
     // BOOTSTRAP METHODS
     ////////////////////////////////////////////////////////////////////////////
 
-    public static CallSite getConstantBootstrap(Lookup lookup, String name, MethodType type) throws NoSuchMethodException, IllegalAccessException {
+    public static CallSite getConstantBootstrap(Lookup lookup, String name, MethodType type, int scopeIndex) throws NoSuchMethodException, IllegalAccessException {
         RubyConstantCallSite site;
 
         site = new RubyConstantCallSite(type, name);
         
-        MethodType fallbackType = type.insertParameterTypes(0, RubyConstantCallSite.class);
+        MethodType fallbackType = methodType(IRubyObject.class, RubyConstantCallSite.class, AbstractScript.class, ThreadContext.class, int.class);
         MethodHandle myFallback = insertArguments(
                 lookup.findStatic(InvokeDynamicSupport.class, "constantFallback",
                 fallbackType),
                 0,
                 site);
+        myFallback = insertArguments(myFallback, 2, scopeIndex);
         site.setTarget(myFallback);
         return site;
     }
@@ -491,21 +492,23 @@ public class InvokeDynamicSupport {
     ////////////////////////////////////////////////////////////////////////////
 
     public static IRubyObject constantFallback(RubyConstantCallSite site, 
-            ThreadContext context, StaticScope scope) {
+            AbstractScript script, ThreadContext context, int scopeIndex) {
         SwitchPoint switchPoint = (SwitchPoint)context.runtime.getConstantInvalidator().getData();
+        StaticScope scope = script.getScope(scopeIndex);
         IRubyObject value = scope.getConstant(site.name());
         
         if (value != null) {
             if (RubyInstanceConfig.LOG_INDY_CONSTANTS) LOG.info("constant " + site.name() + " bound directly");
             
             MethodHandle valueHandle = constant(IRubyObject.class, value);
-            valueHandle = dropArguments(valueHandle, 0, ThreadContext.class, StaticScope.class);
+            valueHandle = dropArguments(valueHandle, 0, AbstractScript.class, ThreadContext.class);
 
             MethodHandle fallback = insertArguments(
                     findStatic(InvokeDynamicSupport.class, "constantFallback",
-                    methodType(IRubyObject.class, RubyConstantCallSite.class, ThreadContext.class, StaticScope.class)),
+                    methodType(IRubyObject.class, RubyConstantCallSite.class, AbstractScript.class, ThreadContext.class, int.class)),
                     0,
                     site);
+            fallback = insertArguments(fallback, 2, scopeIndex);
 
             MethodHandle gwt = switchPoint.guardWithTest(valueHandle, fallback);
             site.setTarget(gwt);

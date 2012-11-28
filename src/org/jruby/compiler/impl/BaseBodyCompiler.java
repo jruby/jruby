@@ -2939,4 +2939,8 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         method.swap();
         invokeUtilityMethod("getDefinedNot", sig(RubyString.class, Ruby.class, RubyString.class));
     }
+
+    public int getScopeIndex() {
+        return scopeIndex;
+    }
 }
