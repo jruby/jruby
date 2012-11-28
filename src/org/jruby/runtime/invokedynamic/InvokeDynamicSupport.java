@@ -490,26 +490,26 @@ public class InvokeDynamicSupport {
     ////////////////////////////////////////////////////////////////////////////
 
     public static IRubyObject constantFallback(RubyConstantCallSite site, 
-            ThreadContext context) {
+            ThreadContext context, StaticScope scope) {
         SwitchPoint switchPoint = (SwitchPoint)context.runtime.getConstantInvalidator().getData();
-        IRubyObject value = context.getCurrentStaticScope().getConstant(site.name());
+        IRubyObject value = scope.getConstant(site.name());
         
         if (value != null) {
             if (RubyInstanceConfig.LOG_INDY_CONSTANTS) LOG.info("constant " + site.name() + " bound directly");
             
             MethodHandle valueHandle = constant(IRubyObject.class, value);
-            valueHandle = dropArguments(valueHandle, 0, ThreadContext.class);
+            valueHandle = dropArguments(valueHandle, 0, ThreadContext.class, StaticScope.class);
 
             MethodHandle fallback = insertArguments(
                     findStatic(InvokeDynamicSupport.class, "constantFallback",
-                    methodType(IRubyObject.class, RubyConstantCallSite.class, ThreadContext.class)),
+                    methodType(IRubyObject.class, RubyConstantCallSite.class, ThreadContext.class, StaticScope.class)),
                     0,
                     site);
 
             MethodHandle gwt = switchPoint.guardWithTest(valueHandle, fallback);
             site.setTarget(gwt);
         } else {
-            value = context.getCurrentScope().getStaticScope().getModule()
+            value = scope.getModule()
                     .callMethod(context, "const_missing", context.runtime.newSymbol(site.name()));
         }
         
