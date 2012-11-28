@@ -426,7 +426,10 @@ public class InvocationLinker {
 
     private static MethodHandle tryDispatchDirect(JRubyCallSite site, String name, RubyClass cls, DynamicMethod method) {
         // get the "real" method in a few ways
-        while (method instanceof AliasMethod) method = method.getRealMethod();
+        while (method instanceof AliasMethod) {
+            name = ((AliasMethod)method).getOldName(); // need to use original name, not aliased name
+            method = method.getRealMethod();
+        }
         while (method instanceof WrapperMethod) method = method.getRealMethod();
 
         if (method instanceof DefaultMethod) {
@@ -574,11 +577,11 @@ public class InvocationLinker {
             } else if (method instanceof CompiledMethod || method instanceof JittedMethod) {
                 // Ruby to Ruby
                 if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tbound to Ruby method " + logMethod(method) + ": " + nativeCall);
-                nativeTarget = createRubyHandle(site, method);
+                nativeTarget = createRubyHandle(site, method, name);
             } else {
                 // Ruby to Core
                 if (RubyInstanceConfig.LOG_INDY_BINDINGS) LOG.info(name + "\tbound to native method " + logMethod(method) + ": " + nativeCall);
-                nativeTarget = createNativeHandle(site, method);
+                nativeTarget = createNativeHandle(site, method, name);
             }
         }
                         
@@ -1222,7 +1225,7 @@ public class InvocationLinker {
     // Dispatch via direct handle to native core method
     ////////////////////////////////////////////////////////////////////////////
 
-    private static MethodHandle createNativeHandle(JRubyCallSite site, DynamicMethod method) {
+    private static MethodHandle createNativeHandle(JRubyCallSite site, DynamicMethod method, String name) {
         MethodHandle nativeTarget = (MethodHandle)method.getHandle();
         if (nativeTarget != null) return nativeTarget;
 
@@ -1274,7 +1277,7 @@ public class InvocationLinker {
         nativeTarget = explicitCastArguments(nativeTarget, convert);
         nativeTarget = permuteArguments(nativeTarget, inboundType, permute);
 
-        nativeTarget = wrapWithFraming(site, method, nativeTarget, null, argCount);
+        nativeTarget = wrapWithFraming(method, name, nativeTarget, null, argCount);
 
         method.setHandle(nativeTarget);
 
@@ -1372,7 +1375,7 @@ public class InvocationLinker {
     // Dispatch via direct handle to Ruby method
     ////////////////////////////////////////////////////////////////////////////
 
-    private static MethodHandle createRubyHandle(JRubyCallSite site, DynamicMethod method) {
+    private static MethodHandle createRubyHandle(JRubyCallSite site, DynamicMethod method, String name) {
         MethodHandle nativeTarget = (MethodHandle)method.getHandle();
         if (nativeTarget != null) return nativeTarget;
         
@@ -1399,7 +1402,7 @@ public class InvocationLinker {
                     .insert(0, scriptObject)
                     .invokeStaticQuiet(site.lookup(), nativeCall.getNativeTarget(), nativeCall.getNativeName());
 
-            nativeTarget = wrapWithFraming(site, method, nativeTarget, scope, argCount);
+            nativeTarget = wrapWithFraming(method, name, nativeTarget, scope, argCount);
             
             method.setHandle(nativeTarget);
             return nativeTarget;
@@ -1408,8 +1411,8 @@ public class InvocationLinker {
         }
     }
 
-    private static MethodHandle wrapWithFraming(JRubyCallSite site, DynamicMethod method, MethodHandle nativeTarget, StaticScope scope, int argCount) {
-        MethodHandle framePre = getFramePre(site, method, argCount, scope);
+    private static MethodHandle wrapWithFraming(DynamicMethod method, String name, MethodHandle nativeTarget, StaticScope scope, int argCount) {
+        MethodHandle framePre = getFramePre(method, name, argCount, scope);
 
         if (framePre != null) {
             MethodHandle framePost = getFramePost(method, argCount);
@@ -1475,7 +1478,7 @@ public class InvocationLinker {
         throw context.runtime.newLocalJumpError(RubyLocalJumpError.Reason.REDO, context.runtime.getNil(), "unexpected redo");
     }
 
-    private static MethodHandle getFramePre(JRubyCallSite site, DynamicMethod method, int argCount, StaticScope scope) {
+    private static MethodHandle getFramePre(DynamicMethod method, String name, int argCount, StaticScope scope) {
         MethodHandle framePre = null;
 
         switch (method.getCallConfig()) {
@@ -1484,7 +1487,7 @@ public class InvocationLinker {
                 framePre = Binder
                         .from(STANDARD_NATIVE_TYPES_BLOCK[Math.abs(argCount)].changeReturnType(void.class))
                         .permute(TC_SELF_BLOCK_PERMUTES[Math.abs(argCount)])
-                        .insert(1, new Class[]{RubyModule.class, String.class}, method.getImplementationClass(), site.name())
+                        .insert(1, new Class[]{RubyModule.class, String.class}, method.getImplementationClass(), name)
                         .insert(5, new Class[]{StaticScope.class}, scope)
                         .invokeVirtualQuiet(lookup(), "preMethodFrameAndScope");
 
@@ -1495,7 +1498,7 @@ public class InvocationLinker {
                 framePre = Binder
                         .from(STANDARD_NATIVE_TYPES_BLOCK[Math.abs(argCount)].changeReturnType(void.class))
                         .permute(TC_SELF_BLOCK_PERMUTES[Math.abs(argCount)])
-                        .insert(1, new Class[]{RubyModule.class, String.class}, method.getImplementationClass(), site.name())
+                        .insert(1, new Class[]{RubyModule.class, String.class}, method.getImplementationClass(), name)
                         .insert(5, new Class[]{StaticScope.class}, scope)
                         .invokeVirtualQuiet(lookup(), "preMethodFrameAndDummyScope");
 
@@ -1506,7 +1509,7 @@ public class InvocationLinker {
                 framePre = Binder
                         .from(STANDARD_NATIVE_TYPES_BLOCK[Math.abs(argCount)].changeReturnType(void.class))
                         .permute(TC_SELF_BLOCK_PERMUTES[Math.abs(argCount)])
-                        .insert(1, new Class[]{RubyModule.class, String.class}, method.getImplementationClass(), site.name())
+                        .insert(1, new Class[]{RubyModule.class, String.class}, method.getImplementationClass(), name)
                         .invokeVirtualQuiet(lookup(), "preMethodFrameOnly");
 
                 break;
