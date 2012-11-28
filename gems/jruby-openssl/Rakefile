@@ -2,7 +2,7 @@ require 'rake'
 require 'rake/testtask'
 
 MANIFEST = FileList["Rakefile", "History.txt", "Manifest.txt", "README.txt", "License.txt", "lib/shared/jopenssl.jar", "lib/**/*", "test/**/*"]
-BC_JARS = FileList["build_lib/bc*.jar"]
+BC_JARS = FileList["../../build_lib/bc*.jar"]
 
 task :default => [:java_compile, :test]
 
@@ -34,7 +34,7 @@ task :java_compile do
   end
 
   File.open("pkg/compile_sourcefiles", "w") do |f|
-    f << FileList['src/org/jruby/ext/openssl/**/*.java'].join(' ')
+    f << FileList['../../src/org/jruby/ext/openssl/**/*.java'].join(' ')
   end
 
   sh "javac @pkg/compile_options @pkg/compile_classpath @pkg/compile_sourcefiles"
@@ -54,7 +54,7 @@ begin
   ENV['RUBY_FLAGS'] ||= [
     (RUBY_VERSION >= '1.9.0' ? '--1.9' : '--1.8'),
     '-w',
-    '-Ibuild_lib:lib/shared:lib:test',
+    '-I../../build_lib:lib/shared:lib:test',
     '-J-ea',
     ENV['RUBY_DEBUG']
   ].compact.join(' ')
