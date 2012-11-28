@@ -143,7 +143,6 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
         String descriptor = RuntimeHelpers.buildBlockDescriptor(
                 closureMethod,
                 arity,
-                scope,
                 file,
                 line,
                 hasMultipleArgsHead,
@@ -152,10 +151,11 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
 
         method.loadThis();
         method.loadThreadContext();
+        cacheStaticScope(method, scope);
         
         method.method.invokedynamic(
                 "getBlockBody",
-                sig(BlockBody.class, Object.class, ThreadContext.class),
+                sig(BlockBody.class, Object.class, ThreadContext.class, StaticScope.class),
                 InvokeDynamicSupport.getBlockBodyHandle(),
                 descriptor);
     }
@@ -168,7 +168,6 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
         String descriptor = RuntimeHelpers.buildBlockDescriptor19(
                 closureMethod,
                 arity,
-                scope,
                 file,
                 line,
                 hasMultipleArgsHead,
@@ -178,10 +177,11 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
 
         method.loadThis();
         method.loadThreadContext();
+        cacheStaticScope(method, scope);
         
         method.method.invokedynamic(
                 "getBlockBody19",
-                sig(BlockBody.class, Object.class, ThreadContext.class),
+                sig(BlockBody.class, Object.class, ThreadContext.class, StaticScope.class),
                 InvokeDynamicSupport.getBlockBody19Handle(),
                 descriptor);
     }

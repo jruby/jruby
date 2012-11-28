@@ -106,4 +106,9 @@ public class LocalStaticScope extends StaticScope {
     public String toString() {
         return "LocalScope: " + super.toString();
     }
+
+    @Override
+    public Type getType() {
+        return Type.LOCAL;
+    }
 }

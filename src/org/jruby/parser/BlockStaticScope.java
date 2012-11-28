@@ -119,4 +119,9 @@ public class BlockStaticScope extends StaticScope {
     public String toString() {
         return "BlockScope: " + super.toString() + "\n" + getEnclosingScope();
     }
+
+    @Override
+    public Type getType() {
+        return Type.BLOCK;
+    }
 }

@@ -81,6 +81,12 @@ public abstract class StaticScope implements Serializable {
     
     private DynamicScope dummyScope;
 
+    public enum Type {
+        LOCAL,
+        BLOCK,
+        EVAL
+    }
+
     /**
      * Construct a new static scope. The array of strings should all be the
      * interned versions, since several other optimizations depend on being
@@ -430,4 +436,6 @@ public abstract class StaticScope implements Serializable {
             
         return buf.toString();
     }
+
+    public abstract Type getType();
 }

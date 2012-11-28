@@ -498,7 +498,6 @@ public class InheritedCacheCompiler implements CacheCompiler {
         String descriptor = RuntimeHelpers.buildBlockDescriptor(
                 closureMethod,
                 arity,
-                scope,
                 file,
                 line,
                 hasMultipleArgsHead,
@@ -507,14 +506,15 @@ public class InheritedCacheCompiler implements CacheCompiler {
 
         method.loadThis();
         method.loadThreadContext();
+        cacheStaticScope(method, scope);
 
         if (inheritedBlockBodyCount < AbstractScript.NUMBERED_BLOCKBODY_COUNT) {
             method.method.ldc(descriptor);
-            method.method.invokevirtual(scriptCompiler.getClassname(), "getBlockBody" + inheritedBlockBodyCount, sig(BlockBody.class, ThreadContext.class, String.class));
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getBlockBody" + inheritedBlockBodyCount, sig(BlockBody.class, ThreadContext.class, StaticScope.class, String.class));
         } else {
             method.method.pushInt(inheritedBlockBodyCount);
             method.method.ldc(descriptor);
-            method.method.invokevirtual(scriptCompiler.getClassname(), "getBlockBody", sig(BlockBody.class, ThreadContext.class, int.class, String.class));
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getBlockBody", sig(BlockBody.class, ThreadContext.class, StaticScope.class, int.class, String.class));
         }
 
         inheritedBlockBodyCount++;
@@ -524,7 +524,6 @@ public class InheritedCacheCompiler implements CacheCompiler {
         String descriptor = RuntimeHelpers.buildBlockDescriptor19(
                 closureMethod,
                 arity,
-                scope,
                 file,
                 line,
                 hasMultipleArgsHead,
@@ -534,14 +533,15 @@ public class InheritedCacheCompiler implements CacheCompiler {
 
         method.loadThis();
         method.loadThreadContext();
+        cacheStaticScope(method, scope);
 
         if (inheritedBlockBodyCount < AbstractScript.NUMBERED_BLOCKBODY_COUNT) {
             method.method.ldc(descriptor);
-            method.method.invokevirtual(scriptCompiler.getClassname(), "getBlockBody19" + inheritedBlockBodyCount, sig(BlockBody.class, ThreadContext.class, String.class));
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getBlockBody19" + inheritedBlockBodyCount, sig(BlockBody.class, ThreadContext.class, StaticScope.class, String.class));
         } else {
             method.method.pushInt(inheritedBlockBodyCount);
             method.method.ldc(descriptor);
-            method.method.invokevirtual(scriptCompiler.getClassname(), "getBlockBody19", sig(BlockBody.class, ThreadContext.class, int.class, String.class));
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getBlockBody19", sig(BlockBody.class, ThreadContext.class, StaticScope.class, int.class, String.class));
         }
 
         inheritedBlockBodyCount++;

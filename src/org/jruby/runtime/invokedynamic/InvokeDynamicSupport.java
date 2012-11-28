@@ -350,8 +350,8 @@ public class InvokeDynamicSupport {
         MethodHandle init = findStatic(
                 InvokeDynamicSupport.class,
                 "initBlockBody",
-                methodType(BlockBody.class, MutableCallSite.class, Object.class, ThreadContext.class, String.class));
-        init = insertArguments(init, 3, descriptor);
+                methodType(BlockBody.class, MutableCallSite.class, Object.class, ThreadContext.class, StaticScope.class, String.class));
+        init = insertArguments(init, 4, descriptor);
         init = insertArguments(
                 init,
                 0,
@@ -365,8 +365,8 @@ public class InvokeDynamicSupport {
         MethodHandle init = findStatic(
                 InvokeDynamicSupport.class,
                 "initBlockBody19",
-                methodType(BlockBody.class, MutableCallSite.class, Object.class, ThreadContext.class, String.class));
-        init = insertArguments(init, 3, descriptor);
+                methodType(BlockBody.class, MutableCallSite.class, Object.class, ThreadContext.class, StaticScope.class, String.class));
+        init = insertArguments(init, 4, descriptor);
         init = insertArguments(
                 init,
                 0,
@@ -563,15 +563,15 @@ public class InvokeDynamicSupport {
         return rubyEncoding;
     }
     
-    public static BlockBody initBlockBody(MutableCallSite site, Object scriptObject, ThreadContext context, String descriptor) {
-        BlockBody body = RuntimeHelpers.createCompiledBlockBody(context, scriptObject, descriptor);
-        site.setTarget(dropArguments(constant(BlockBody.class, body), 0, Object.class, ThreadContext.class));
+    public static BlockBody initBlockBody(MutableCallSite site, Object scriptObject, ThreadContext context, StaticScope scope, String descriptor) {
+        BlockBody body = RuntimeHelpers.createCompiledBlockBody(context, scriptObject, scope, descriptor);
+        site.setTarget(dropArguments(constant(BlockBody.class, body), 0, Object.class, ThreadContext.class, StaticScope.class));
         return body;
     }
     
-    public static BlockBody initBlockBody19(MutableCallSite site, Object scriptObject, ThreadContext context, String descriptor) {
-        BlockBody body = RuntimeHelpers.createCompiledBlockBody19(context, scriptObject, descriptor);
-        site.setTarget(dropArguments(constant(BlockBody.class, body), 0, Object.class, ThreadContext.class));
+    public static BlockBody initBlockBody19(MutableCallSite site, Object scriptObject, ThreadContext context, StaticScope scope, String descriptor) {
+        BlockBody body = RuntimeHelpers.createCompiledBlockBody19(context, scriptObject, scope, descriptor);
+        site.setTarget(dropArguments(constant(BlockBody.class, body), 0, Object.class, ThreadContext.class, StaticScope.class));
         return body;
     }
     

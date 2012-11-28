@@ -140,4 +140,11 @@ public class IRStaticScope extends StaticScope {
     public int getNumberOfVariables() {
         return (irScope == null) ? super.getNumberOfVariables() : irScope.getUsedVariablesCount();
     }
+
+    @Override
+    public Type getType() {
+        return isBlock ? Type.BLOCK :
+                isEval ? Type.EVAL :
+                Type.LOCAL;
+    }
 }

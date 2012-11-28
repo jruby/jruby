@@ -107,29 +107,29 @@ public abstract class AbstractScript implements Script {
 
     public static final int NUMBERED_BLOCKBODY_COUNT = 10;
 
-    public final BlockBody getBlockBody(ThreadContext context, int i, String descriptor) {return runtimeCache.getBlockBody(this, context, i, descriptor);}
-    public final BlockBody getBlockBody0(ThreadContext context, String descriptor) {return runtimeCache.getBlockBody(this, context, 0, descriptor);}
-    public final BlockBody getBlockBody1(ThreadContext context, String descriptor) {return runtimeCache.getBlockBody(this, context, 1, descriptor);}
-    public final BlockBody getBlockBody2(ThreadContext context, String descriptor) {return runtimeCache.getBlockBody(this, context, 2, descriptor);}
-    public final BlockBody getBlockBody3(ThreadContext context, String descriptor) {return runtimeCache.getBlockBody(this, context, 3, descriptor);}
-    public final BlockBody getBlockBody4(ThreadContext context, String descriptor) {return runtimeCache.getBlockBody(this, context, 4, descriptor);}
-    public final BlockBody getBlockBody5(ThreadContext context, String descriptor) {return runtimeCache.getBlockBody(this, context, 5, descriptor);}
-    public final BlockBody getBlockBody6(ThreadContext context, String descriptor) {return runtimeCache.getBlockBody(this, context, 6, descriptor);}
-    public final BlockBody getBlockBody7(ThreadContext context, String descriptor) {return runtimeCache.getBlockBody(this, context, 7, descriptor);}
-    public final BlockBody getBlockBody8(ThreadContext context, String descriptor) {return runtimeCache.getBlockBody(this, context, 8, descriptor);}
-    public final BlockBody getBlockBody9(ThreadContext context, String descriptor) {return runtimeCache.getBlockBody(this, context, 9, descriptor);}
+    public final BlockBody getBlockBody(ThreadContext context, StaticScope scope, int i, String descriptor) {return runtimeCache.getBlockBody(this, context, scope, i, descriptor);}
+    public final BlockBody getBlockBody0(ThreadContext context, StaticScope scope, String descriptor) {return runtimeCache.getBlockBody(this, context, scope, 0, descriptor);}
+    public final BlockBody getBlockBody1(ThreadContext context, StaticScope scope, String descriptor) {return runtimeCache.getBlockBody(this, context, scope, 1, descriptor);}
+    public final BlockBody getBlockBody2(ThreadContext context, StaticScope scope, String descriptor) {return runtimeCache.getBlockBody(this, context, scope, 2, descriptor);}
+    public final BlockBody getBlockBody3(ThreadContext context, StaticScope scope, String descriptor) {return runtimeCache.getBlockBody(this, context, scope, 3, descriptor);}
+    public final BlockBody getBlockBody4(ThreadContext context, StaticScope scope, String descriptor) {return runtimeCache.getBlockBody(this, context, scope, 4, descriptor);}
+    public final BlockBody getBlockBody5(ThreadContext context, StaticScope scope, String descriptor) {return runtimeCache.getBlockBody(this, context, scope, 5, descriptor);}
+    public final BlockBody getBlockBody6(ThreadContext context, StaticScope scope, String descriptor) {return runtimeCache.getBlockBody(this, context, scope, 6, descriptor);}
+    public final BlockBody getBlockBody7(ThreadContext context, StaticScope scope, String descriptor) {return runtimeCache.getBlockBody(this, context, scope, 7, descriptor);}
+    public final BlockBody getBlockBody8(ThreadContext context, StaticScope scope, String descriptor) {return runtimeCache.getBlockBody(this, context, scope, 8, descriptor);}
+    public final BlockBody getBlockBody9(ThreadContext context, StaticScope scope, String descriptor) {return runtimeCache.getBlockBody(this, context, scope, 9, descriptor);}
 
-    public final BlockBody getBlockBody19(ThreadContext context, int i, String descriptor) {return runtimeCache.getBlockBody19(this, context, i, descriptor);}
-    public final BlockBody getBlockBody190(ThreadContext context, String descriptor) {return runtimeCache.getBlockBody19(this, context, 0, descriptor);}
-    public final BlockBody getBlockBody191(ThreadContext context, String descriptor) {return runtimeCache.getBlockBody19(this, context, 1, descriptor);}
-    public final BlockBody getBlockBody192(ThreadContext context, String descriptor) {return runtimeCache.getBlockBody19(this, context, 2, descriptor);}
-    public final BlockBody getBlockBody193(ThreadContext context, String descriptor) {return runtimeCache.getBlockBody19(this, context, 3, descriptor);}
-    public final BlockBody getBlockBody194(ThreadContext context, String descriptor) {return runtimeCache.getBlockBody19(this, context, 4, descriptor);}
-    public final BlockBody getBlockBody195(ThreadContext context, String descriptor) {return runtimeCache.getBlockBody19(this, context, 5, descriptor);}
-    public final BlockBody getBlockBody196(ThreadContext context, String descriptor) {return runtimeCache.getBlockBody19(this, context, 6, descriptor);}
-    public final BlockBody getBlockBody197(ThreadContext context, String descriptor) {return runtimeCache.getBlockBody19(this, context, 7, descriptor);}
-    public final BlockBody getBlockBody198(ThreadContext context, String descriptor) {return runtimeCache.getBlockBody19(this, context, 8, descriptor);}
-    public final BlockBody getBlockBody199(ThreadContext context, String descriptor) {return runtimeCache.getBlockBody19(this, context, 9, descriptor);}
+    public final BlockBody getBlockBody19(ThreadContext context, StaticScope scope, int i, String descriptor) {return runtimeCache.getBlockBody19(this, context, scope, i, descriptor);}
+    public final BlockBody getBlockBody190(ThreadContext context, StaticScope scope, String descriptor) {return runtimeCache.getBlockBody19(this, context, scope, 0, descriptor);}
+    public final BlockBody getBlockBody191(ThreadContext context, StaticScope scope, String descriptor) {return runtimeCache.getBlockBody19(this, context, scope, 1, descriptor);}
+    public final BlockBody getBlockBody192(ThreadContext context, StaticScope scope, String descriptor) {return runtimeCache.getBlockBody19(this, context, scope, 2, descriptor);}
+    public final BlockBody getBlockBody193(ThreadContext context, StaticScope scope, String descriptor) {return runtimeCache.getBlockBody19(this, context, scope, 3, descriptor);}
+    public final BlockBody getBlockBody194(ThreadContext context, StaticScope scope, String descriptor) {return runtimeCache.getBlockBody19(this, context, scope, 4, descriptor);}
+    public final BlockBody getBlockBody195(ThreadContext context, StaticScope scope, String descriptor) {return runtimeCache.getBlockBody19(this, context, scope, 5, descriptor);}
+    public final BlockBody getBlockBody196(ThreadContext context, StaticScope scope, String descriptor) {return runtimeCache.getBlockBody19(this, context, scope, 6, descriptor);}
+    public final BlockBody getBlockBody197(ThreadContext context, StaticScope scope, String descriptor) {return runtimeCache.getBlockBody19(this, context, scope, 7, descriptor);}
+    public final BlockBody getBlockBody198(ThreadContext context, StaticScope scope, String descriptor) {return runtimeCache.getBlockBody19(this, context, scope, 8, descriptor);}
+    public final BlockBody getBlockBody199(ThreadContext context, StaticScope scope, String descriptor) {return runtimeCache.getBlockBody19(this, context, scope, 9, descriptor);}
 
     public static final int NUMBERED_BLOCKCALLBACK_COUNT = 10;
 

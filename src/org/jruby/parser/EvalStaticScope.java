@@ -23,4 +23,9 @@ public class EvalStaticScope extends BlockStaticScope {
     public StaticScope getLocalScope() {
         return this;
     }
+
+    @Override
+    public Type getType() {
+        return Type.EVAL;
+    }
 }

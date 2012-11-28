@@ -178,39 +178,29 @@ public class RuntimeHelpers {
     public static String buildBlockDescriptor19(
             String closureMethod,
             int arity,
-            StaticScope scope,
             String file,
             int line,
             boolean hasMultipleArgsHead,
             NodeType argsNodeId,
             String parameterList,
             ASTInspector inspector) {
-        return buildBlockDescriptor(closureMethod, arity, scope, file, line, hasMultipleArgsHead, argsNodeId, inspector) +
+        return buildBlockDescriptor(closureMethod, arity, file, line, hasMultipleArgsHead, argsNodeId, inspector) +
                 "," + parameterList;
     }
 
     public static String buildBlockDescriptor(
             String closureMethod,
             int arity,
-            StaticScope scope,
             String file,
             int line,
             boolean hasMultipleArgsHead,
             NodeType argsNodeId,
             ASTInspector inspector) {
-        
-        // build scope names string
-        StringBuffer scopeNames = new StringBuffer();
-        for (int i = 0; i < scope.getVariables().length; i++) {
-            if (i != 0) scopeNames.append(';');
-            scopeNames.append(scope.getVariables()[i]);
-        }
 
         // build descriptor string
         String descriptor =
                 closureMethod + ',' +
                 arity + ',' +
-                scopeNames + ',' +
                 hasMultipleArgsHead + ',' +
                 BlockBody.asArgumentType(argsNodeId) + ',' +
                 file + ',' +
@@ -220,31 +210,17 @@ public class RuntimeHelpers {
         return descriptor;
     }
     
-    public static String[][] parseBlockDescriptor(String descriptor) {
-        String[] firstSplit = descriptor.split(",");
-        String[] secondSplit;
-        if (firstSplit[2].length() == 0) {
-            secondSplit = new String[0];
-        } else {
-            secondSplit = firstSplit[2].split(";");
-            // FIXME: Big fat hack here, because scope names are expected to be interned strings by the parser
-            for (int i = 0; i < secondSplit.length; i++) {
-                secondSplit[i] = secondSplit[i].intern();
-            }
-        }
-        return new String[][] {firstSplit, secondSplit};
+    public static String[] parseBlockDescriptor(String descriptor) {
+        return descriptor.split(",");
     }
 
-    public static BlockBody createCompiledBlockBody(ThreadContext context, Object scriptObject, String descriptor) {
-        String[][] splitDesc = parseBlockDescriptor(descriptor);
-        String[] firstSplit = splitDesc[0];
-        String[] secondSplit = splitDesc[1];
-        return createCompiledBlockBody(context, scriptObject, firstSplit[0], Integer.parseInt(firstSplit[1]), secondSplit, Boolean.valueOf(firstSplit[3]), Integer.parseInt(firstSplit[4]), firstSplit[5], Integer.parseInt(firstSplit[6]), Boolean.valueOf(firstSplit[7]));
+    public static BlockBody createCompiledBlockBody(ThreadContext context, Object scriptObject, StaticScope scope, String descriptor) {
+        String[] firstSplit = parseBlockDescriptor(descriptor);
+        return createCompiledBlockBody(context, scriptObject, firstSplit[0], Integer.parseInt(firstSplit[1]), scope, Boolean.valueOf(firstSplit[2]), Integer.parseInt(firstSplit[3]), firstSplit[4], Integer.parseInt(firstSplit[5]), Boolean.valueOf(firstSplit[6]));
     }
     
-    public static BlockBody createCompiledBlockBody(ThreadContext context, Object scriptObject, String closureMethod, int arity, 
-            String[] staticScopeNames, boolean hasMultipleArgsHead, int argsNodeType, String file, int line, boolean light) {
-        StaticScope staticScope = context.runtime.getStaticScopeFactory().newBlockScope(context.getCurrentScope().getStaticScope(), staticScopeNames);
+    public static BlockBody createCompiledBlockBody(ThreadContext context, Object scriptObject, String closureMethod, int arity,
+            StaticScope staticScope, boolean hasMultipleArgsHead, int argsNodeType, String file, int line, boolean light) {
         staticScope.determineModule();
         
         if (light) {
@@ -260,16 +236,13 @@ public class RuntimeHelpers {
         }
     }
 
-    public static BlockBody createCompiledBlockBody19(ThreadContext context, Object scriptObject, String descriptor) {
-        String[][] splitDesc = parseBlockDescriptor(descriptor);
-        String[] firstSplit = splitDesc[0];
-        String[] secondSplit = splitDesc[1];
-        return createCompiledBlockBody19(context, scriptObject, firstSplit[0], Integer.parseInt(firstSplit[1]), secondSplit, Boolean.valueOf(firstSplit[3]), Integer.parseInt(firstSplit[4]), firstSplit[5], Integer.parseInt(firstSplit[6]), Boolean.valueOf(firstSplit[7]), firstSplit[8]);
+    public static BlockBody createCompiledBlockBody19(ThreadContext context, Object scriptObject, StaticScope scope, String descriptor) {
+        String[] firstSplit = parseBlockDescriptor(descriptor);
+        return createCompiledBlockBody19(context, scriptObject, firstSplit[0], Integer.parseInt(firstSplit[1]), scope, Boolean.valueOf(firstSplit[2]), Integer.parseInt(firstSplit[3]), firstSplit[4], Integer.parseInt(firstSplit[5]), Boolean.valueOf(firstSplit[6]), firstSplit[7]);
     }
 
     public static BlockBody createCompiledBlockBody19(ThreadContext context, Object scriptObject, String closureMethod, int arity,
-            String[] staticScopeNames, boolean hasMultipleArgsHead, int argsNodeType, String file, int line, boolean light, String parameterList) {
-        StaticScope staticScope = context.runtime.getStaticScopeFactory().newBlockScope(context.getCurrentScope().getStaticScope(), staticScopeNames);
+            StaticScope staticScope, boolean hasMultipleArgsHead, int argsNodeType, String file, int line, boolean light, String parameterList) {
         staticScope.determineModule();
 
         if (light) {
@@ -300,8 +273,7 @@ public class RuntimeHelpers {
     }
     
     public static IRubyObject runBeginBlock(ThreadContext context, IRubyObject self, String scopeString, CompiledBlockCallback callback) {
-        StaticScope staticScope = decodeBlockScope(context, scopeString);
-        staticScope.determineModule();
+        StaticScope staticScope = decodeScope(context, context.getCurrentStaticScope(), scopeString);
         
         context.preScopedBody(DynamicScope.newDynamicScope(staticScope, context.getCurrentScope()));
         
@@ -1632,7 +1604,7 @@ public class RuntimeHelpers {
     }
 
     public static void preLoad(ThreadContext context, String scopeString, boolean wrap) {
-        StaticScope staticScope = decodeRootScope(context, scopeString);
+        StaticScope staticScope = decodeScope(context, context.getCurrentStaticScope(), scopeString);
         preLoadCommon(context, staticScope, wrap);
     }
 
@@ -2064,7 +2036,9 @@ public class RuntimeHelpers {
     }
 
     public static String encodeScope(StaticScope scope) {
-        StringBuilder namesBuilder = new StringBuilder();
+        StringBuilder namesBuilder = new StringBuilder(scope.getType().name());
+
+        namesBuilder.append(',');
 
         boolean first = true;
         for (String name : scope.getVariables()) {
@@ -2083,47 +2057,56 @@ public class RuntimeHelpers {
         return namesBuilder.toString();
     }
 
+    @Deprecated
     public static StaticScope decodeRootScope(ThreadContext context, String scopeString) {
-        String[][] decodedScope = decodeScopeDescriptor(scopeString);
-        StaticScope scope = context.runtime.getStaticScopeFactory().newLocalScope(null, decodedScope[1]);
-        setAritiesFromDecodedScope(scope, decodedScope[0]);
-        return scope;
+        return decodeScope(context, null, scopeString);
     }
 
+    @Deprecated
     public static StaticScope decodeLocalScope(ThreadContext context, String scopeString) {
-        String[][] decodedScope = decodeScopeDescriptor(scopeString);
-        StaticScope scope = context.runtime.getStaticScopeFactory().newLocalScope(context.getCurrentScope().getStaticScope(), decodedScope[1]);
-        setAritiesFromDecodedScope(scope, decodedScope[0]);
-        return scope;
+        return decodeScope(context, context.getCurrentStaticScope(), scopeString);
     }
 
+    @Deprecated
     public static StaticScope decodeLocalScope(ThreadContext context, StaticScope parent, String scopeString) {
-        String[][] decodedScope = decodeScopeDescriptor(scopeString);
-        StaticScope scope = context.runtime.getStaticScopeFactory().newLocalScope(parent, decodedScope[1]);
-        scope.determineModule();
-        setAritiesFromDecodedScope(scope, decodedScope[0]);
-        return scope;
+        return decodeScope(context, parent, scopeString);
     }
 
+    @Deprecated
     public static StaticScope decodeBlockScope(ThreadContext context, String scopeString) {
+        return decodeScope(context, context.getCurrentStaticScope(), scopeString);
+    }
+
+    public static StaticScope decodeScope(ThreadContext context, StaticScope parent, String scopeString) {
         String[][] decodedScope = decodeScopeDescriptor(scopeString);
-        StaticScope scope = context.runtime.getStaticScopeFactory().newBlockScope(context.getCurrentScope().getStaticScope(), decodedScope[1]);
+        StaticScope scope = null;
+        switch (StaticScope.Type.valueOf(decodedScope[0][0])) {
+            case BLOCK:
+                scope = context.runtime.getStaticScopeFactory().newBlockScope(context.getCurrentStaticScope(), decodedScope[1]);
+                break;
+            case EVAL:
+                scope = context.runtime.getStaticScopeFactory().newEvalScope(context.getCurrentStaticScope(), decodedScope[1]);
+                break;
+            case LOCAL:
+                scope = context.runtime.getStaticScopeFactory().newLocalScope(context.getCurrentStaticScope(), decodedScope[1]);
+                break;
+        }
         setAritiesFromDecodedScope(scope, decodedScope[0]);
         return scope;
     }
 
     private static String[][] decodeScopeDescriptor(String scopeString) {
         String[] scopeElements = scopeString.split(",");
-        String[] scopeNames = scopeElements[0].length() == 0 ? new String[0] : getScopeNames(scopeElements[0]);
+        String[] scopeNames = scopeElements[1].length() == 0 ? new String[0] : getScopeNames(scopeElements[1]);
         return new String[][] {scopeElements, scopeNames};
     }
 
     private static void setAritiesFromDecodedScope(StaticScope scope, String[] scopeElements) {
-        scope.setArities(Integer.parseInt(scopeElements[1]), Integer.parseInt(scopeElements[2]), Integer.parseInt(scopeElements[3]));
+        scope.setArities(Integer.parseInt(scopeElements[2]), Integer.parseInt(scopeElements[3]), Integer.parseInt(scopeElements[4]));
     }
 
     public static StaticScope createScopeForClass(ThreadContext context, String scopeString) {
-        StaticScope scope = decodeLocalScope(context, scopeString);
+        StaticScope scope = decodeScope(context, context.getCurrentStaticScope(), scopeString);
         scope.determineModule();
 
         return scope;

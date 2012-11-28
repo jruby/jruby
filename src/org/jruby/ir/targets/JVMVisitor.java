@@ -444,7 +444,7 @@ public class JVMVisitor extends IRVisitor {
         a.aload(0);
         a.aload(1);
         a.ldc(scopeString);
-        a.invokestatic(p(RuntimeHelpers.class), "decodeLocalScope", "(Lorg/jruby/runtime/ThreadContext;Lorg/jruby/parser/StaticScope;Ljava/lang/String;)Lorg/jruby/parser/StaticScope;");
+        a.invokestatic(p(RuntimeHelpers.class), "decodeScope", "(Lorg/jruby/runtime/ThreadContext;Lorg/jruby/parser/StaticScope;Ljava/lang/String;)Lorg/jruby/parser/StaticScope;");
         a.swap();
 
         // set into StaticScope
@@ -499,7 +499,7 @@ public class JVMVisitor extends IRVisitor {
         a.aload(0);
         a.aload(1);
         a.ldc(scopeString);
-        a.invokestatic(p(RuntimeHelpers.class), "decodeLocalScope", "(Lorg/jruby/runtime/ThreadContext;Lorg/jruby/parser/StaticScope;Ljava/lang/String;)Lorg/jruby/parser/StaticScope;");
+        a.invokestatic(p(RuntimeHelpers.class), "decodeScope", "(Lorg/jruby/runtime/ThreadContext;Lorg/jruby/parser/StaticScope;Ljava/lang/String;)Lorg/jruby/parser/StaticScope;");
 
         a.aload(0);
         a.invokevirtual(p(ThreadContext.class), "getCurrentVisibility", "()Lorg/jruby/runtime/Visibility;");
@@ -542,7 +542,7 @@ public class JVMVisitor extends IRVisitor {
         a.aload(0);
         a.aload(1);
         a.ldc(scopeString);
-        a.invokestatic(p(RuntimeHelpers.class), "decodeLocalScope", "(Lorg/jruby/runtime/ThreadContext;Lorg/jruby/parser/StaticScope;Ljava/lang/String;)Lorg/jruby/parser/StaticScope;");
+        a.invokestatic(p(RuntimeHelpers.class), "decodeScope", "(Lorg/jruby/runtime/ThreadContext;Lorg/jruby/parser/StaticScope;Ljava/lang/String;)Lorg/jruby/parser/StaticScope;");
 
         // get singleton class
         m.pushRuntime();
@@ -591,7 +591,7 @@ public class JVMVisitor extends IRVisitor {
         a.aload(0);
         a.aload(1);
         a.ldc(scopeString);
-        a.invokestatic(p(RuntimeHelpers.class), "decodeLocalScope", "(Lorg/jruby/runtime/ThreadContext;Lorg/jruby/parser/StaticScope;Ljava/lang/String;)Lorg/jruby/parser/StaticScope;");
+        a.invokestatic(p(RuntimeHelpers.class), "decodeScope", "(Lorg/jruby/runtime/ThreadContext;Lorg/jruby/parser/StaticScope;Ljava/lang/String;)Lorg/jruby/parser/StaticScope;");
 
         // create module
         m.loadLocal(0);
