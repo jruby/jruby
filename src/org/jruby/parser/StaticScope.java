@@ -172,6 +172,10 @@ public abstract class StaticScope implements Serializable {
         // If we could not find the constant from cref..then try getting from inheritence hierarchy
         return result == null ? cref.getConstant(internedName) : result;        
     }
+
+    public boolean isConstantDefined(String internedName) {
+        return getConstant(internedName) != null;
+    }
     
     public IRubyObject getConstant(String internedName) {
         IRubyObject result = getConstantInner(internedName);
@@ -194,6 +198,18 @@ public abstract class StaticScope implements Serializable {
         if (previousCRefScope == null) return null;
 
         return getConstantInner(internedName);
+    }
+
+    public IRubyObject setConstant(String internedName, IRubyObject result) {
+        RubyModule module;
+
+        if ((module = getModule()) != null) {
+            module.setConstant(internedName, result);
+            return result;
+        }
+
+        // TODO: wire into new exception handling mechanism
+        throw result.getRuntime().newTypeError("no class/module to define constant");
     }
     
     /**

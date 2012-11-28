@@ -492,7 +492,7 @@ public class InvokeDynamicSupport {
     public static IRubyObject constantFallback(RubyConstantCallSite site, 
             ThreadContext context) {
         SwitchPoint switchPoint = (SwitchPoint)context.runtime.getConstantInvalidator().getData();
-        IRubyObject value = context.getConstant(site.name());
+        IRubyObject value = context.getCurrentStaticScope().getConstant(site.name());
         
         if (value != null) {
             if (RubyInstanceConfig.LOG_INDY_CONSTANTS) LOG.info("constant " + site.name() + " bound directly");

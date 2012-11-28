@@ -660,40 +660,34 @@ public final class ThreadContext {
         RubyModule parentModule = parentStack[parentIndex - 1];
         return parentModule.getNonIncludedClass();
     }
-    
-    public boolean getConstantDefined(String internedName) {
-        IRubyObject value = getConstant(internedName);
 
-        return value != null;
+    @Deprecated
+    public boolean getConstantDefined(String internedName) {
+        return getCurrentStaticScope().isConstantDefined(internedName);
     }
     
     /**
      * Used by the evaluator and the compiler to look up a constant by name
      */
+    @Deprecated
     public IRubyObject getConstant(String internedName) {
         return getCurrentStaticScope().getConstant(internedName);
     }
-    
+
     /**
      * Used by the evaluator and the compiler to set a constant by name
      * This is for a null const decl
      */
+    @Deprecated
     public IRubyObject setConstantInCurrent(String internedName, IRubyObject result) {
-        RubyModule module;
-
-        if ((module = getCurrentStaticScope().getModule()) != null) {
-            module.setConstant(internedName, result);
-            return result;
-        }
-
-        // TODO: wire into new exception handling mechanism
-        throw runtime.newTypeError("no class/module to define constant");
+        return getCurrentStaticScope().setConstant(internedName, result);
     }
     
     /**
      * Used by the evaluator and the compiler to set a constant by name.
      * This is for a Colon2 const decl
      */
+    @Deprecated
     public IRubyObject setConstantInModule(String internedName, IRubyObject target, IRubyObject result) {
         if (!(target instanceof RubyModule)) {
             throw runtime.newTypeError(target.toString() + " is not a class/module");
@@ -708,6 +702,7 @@ public final class ThreadContext {
      * Used by the evaluator and the compiler to set a constant by name
      * This is for a Colon2 const decl
      */
+    @Deprecated
     public IRubyObject setConstantInObject(String internedName, IRubyObject result) {
         runtime.getObject().setConstant(internedName, result);
         

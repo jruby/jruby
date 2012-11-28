@@ -1243,11 +1243,16 @@ public class RuntimeHelpers {
     }
     
     public static IRubyObject setConstantInModule(IRubyObject value, IRubyObject module, String name, ThreadContext context) {
-        return context.setConstantInModule(name, module, value);
+        if (!(module instanceof RubyModule)) {
+            throw context.runtime.newTypeError(module.toString() + " is not a class/module");
+        }
+        ((RubyModule)module).setConstant(name, value);
+
+        return value;
     }
 
     public static IRubyObject setConstantInCurrent(IRubyObject value, ThreadContext context, String name) {
-        return context.setConstantInCurrent(name, value);
+        return context.getCurrentStaticScope().setConstant(name, value);
     }
     
     public static IRubyObject retryJump() {

@@ -96,7 +96,7 @@ public class ConstNode extends Node implements INameNode {
 
     @Override
     public RubyString definition(Ruby runtime, ThreadContext context, IRubyObject self, Block aBlock) {
-        return context.getConstantDefined(name) ? runtime.getDefinedMessage(DefinedMessage.CONSTANT) : null;
+        return context.getCurrentStaticScope().isConstantDefined(name) ? runtime.getDefinedMessage(DefinedMessage.CONSTANT) : null;
     }
     
     public IRubyObject getValue(ThreadContext context) {
