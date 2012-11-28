@@ -19,8 +19,8 @@ import static org.objectweb.asm.Opcodes.*;
 public abstract class RootScopedBodyCompiler extends BaseBodyCompiler {
     private boolean specificArity;
 
-    protected RootScopedBodyCompiler(StandardASMCompiler scriptCompiler, String friendlyName, String rubyName, ASTInspector inspector, StaticScope scope) {
-        super(scriptCompiler, friendlyName, rubyName, inspector, scope);
+    protected RootScopedBodyCompiler(StandardASMCompiler scriptCompiler, String friendlyName, String rubyName, ASTInspector inspector, StaticScope scope, int scopeIndex) {
+        super(scriptCompiler, friendlyName, rubyName, inspector, scope, scopeIndex);
     }
 
     public String getSignature() {

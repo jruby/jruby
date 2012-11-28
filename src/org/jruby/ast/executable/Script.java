@@ -1,5 +1,6 @@
 package org.jruby.ast.executable;
 
+import org.jruby.parser.StaticScope;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
@@ -16,4 +17,5 @@ public interface Script {
     public IRubyObject load(ThreadContext context, IRubyObject self, IRubyObject[] args, Block block);
     public IRubyObject load(ThreadContext context, IRubyObject self, boolean wrap);
     public void setFilename(String filename);
+    public void setRootScope(StaticScope scope);
 }

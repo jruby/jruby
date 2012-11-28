@@ -139,7 +139,7 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
      * Cache a closure body (BlockBody) using invokedynamic.
      */
     @Override
-    public void cacheClosure(BaseBodyCompiler method, String closureMethod, int arity, StaticScope scope, String file, int line, boolean hasMultipleArgsHead, NodeType argsNodeId, ASTInspector inspector) {
+    public int cacheClosure(BaseBodyCompiler method, String closureMethod, int arity, StaticScope scope, String file, int line, boolean hasMultipleArgsHead, NodeType argsNodeId, ASTInspector inspector) {
         String descriptor = RuntimeHelpers.buildBlockDescriptor(
                 closureMethod,
                 arity,
@@ -151,20 +151,22 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
 
         method.loadThis();
         method.loadThreadContext();
-        cacheStaticScope(method, scope);
+        int scopeIndex = cacheStaticScope(method, scope);
         
         method.method.invokedynamic(
                 "getBlockBody",
                 sig(BlockBody.class, Object.class, ThreadContext.class, StaticScope.class),
                 InvokeDynamicSupport.getBlockBodyHandle(),
                 descriptor);
+
+        return scopeIndex;
     }
 
     /**
      * Cache a closure body (BlockBody) for 1.9 mode using invokedynamic.
      */
     @Override
-    public void cacheClosure19(BaseBodyCompiler method, String closureMethod, int arity, StaticScope scope, String file, int line, boolean hasMultipleArgsHead, NodeType argsNodeId, String parameterList, ASTInspector inspector) {
+    public int cacheClosure19(BaseBodyCompiler method, String closureMethod, int arity, StaticScope scope, String file, int line, boolean hasMultipleArgsHead, NodeType argsNodeId, String parameterList, ASTInspector inspector) {
         String descriptor = RuntimeHelpers.buildBlockDescriptor19(
                 closureMethod,
                 arity,
@@ -177,13 +179,15 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
 
         method.loadThis();
         method.loadThreadContext();
-        cacheStaticScope(method, scope);
+        int scopeIndex = cacheStaticScope(method, scope);
         
         method.method.invokedynamic(
                 "getBlockBody19",
                 sig(BlockBody.class, Object.class, ThreadContext.class, StaticScope.class),
                 InvokeDynamicSupport.getBlockBody19Handle(),
                 descriptor);
+
+        return scopeIndex;
     }
 
     /**

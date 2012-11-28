@@ -178,6 +178,9 @@ public class JITCompiler implements JITCompilerMBean {
                     // finally, grab the script
                     Script jitCompiledScript = sourceClass.newInstance();
 
+                    // set root scope
+                    jitCompiledScript.setRootScope(method.getStaticScope());
+
                     // add to the jitted methods set
                     Set<Script> jittedMethods = runtime.getJittedMethods();
                     jittedMethods.add(jitCompiledScript);

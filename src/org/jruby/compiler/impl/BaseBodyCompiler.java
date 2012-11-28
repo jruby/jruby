@@ -94,8 +94,9 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     protected String methodName;
     protected String rubyName;
     protected StandardASMCompiler script;
+    protected int scopeIndex;
 
-    public BaseBodyCompiler(StandardASMCompiler scriptCompiler, String methodName, String rubyName, ASTInspector inspector, StaticScope scope) {
+    public BaseBodyCompiler(StandardASMCompiler scriptCompiler, String methodName, String rubyName, ASTInspector inspector, StaticScope scope, int scopeIndex) {
         this.script = scriptCompiler;
         this.scope = scope;
         this.inspector = inspector;
@@ -107,6 +108,8 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
         createVariableCompiler();
         invocationCompiler = OptoFactory.newInvocationCompiler(this, method);
+
+        this.scopeIndex = scopeIndex;
     }
 
     public String getNativeMethodName() {
@@ -219,8 +222,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     }
 
     protected void loadStaticScope() {
-        loadThreadContext();
-        invokeThreadContext("getCurrentStaticScope", sig(StaticScope.class));
+        script.getCacheCompiler().loadStaticScope(this, scopeIndex);
     }
 
     public void loadThis() {
@@ -1081,24 +1083,26 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         }
         String closureMethodName = "block_" + script.getAndIncrementInnerIndex() + "$RUBY$" + blockInMethod;
 
-        ChildScopedBodyCompiler closureCompiler = new ChildScopedBodyCompiler(script, closureMethodName, rubyName, inspector, scope);
+        // Done with closure compilation
+
+        loadThreadContext();
+        loadSelf();
+        int scopeIndex = script.getCacheCompiler().cacheClosure(this, closureMethodName, arity, scope, file, line, hasMultipleArgsHead, argsNodeId, inspector);
+
+        script.addBlockCallbackDescriptor(closureMethodName, file, line);
+
+        invokeUtilityMethod("createBlock", sig(Block.class,
+                params(ThreadContext.class, IRubyObject.class, BlockBody.class)));
+
+        // emit closure body
+
+        ChildScopedBodyCompiler closureCompiler = new ChildScopedBodyCompiler(script, closureMethodName, rubyName, inspector, scope, scopeIndex);
 
         closureCompiler.beginMethod(args, scope);
 
         body.call(closureCompiler);
 
         closureCompiler.endBody();
-
-        // Done with closure compilation
-
-        loadThreadContext();
-        loadSelf();
-        script.getCacheCompiler().cacheClosure(this, closureMethodName, arity, scope, file, line, hasMultipleArgsHead, argsNodeId, inspector);
-
-        script.addBlockCallbackDescriptor(closureMethodName, file, line);
-
-        invokeUtilityMethod("createBlock", sig(Block.class,
-                params(ThreadContext.class, IRubyObject.class, BlockBody.class)));
     }
 
     public void createNewClosure19(
@@ -1118,30 +1122,32 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         }
         String closureMethodName = "block_" + script.getAndIncrementInnerIndex() + "$RUBY$" + blockInMethod;
 
-        ChildScopedBodyCompiler19 closureCompiler = new ChildScopedBodyCompiler19(script, closureMethodName, rubyName, inspector, scope);
+        // Done with closure compilation
+
+        loadThreadContext();
+        loadSelf();
+        int scopeIndex = script.getCacheCompiler().cacheClosure19(this, closureMethodName, arity, scope, file, line, hasMultipleArgsHead, argsNodeId, parameterList, inspector);
+
+        script.addBlockCallback19Descriptor(closureMethodName, file, line);
+
+        invokeUtilityMethod("createBlock19", sig(Block.class,
+                params(ThreadContext.class, IRubyObject.class, BlockBody.class)));
+
+        // emit closure body
+
+        ChildScopedBodyCompiler19 closureCompiler = new ChildScopedBodyCompiler19(script, closureMethodName, rubyName, inspector, scope, scopeIndex);
 
         closureCompiler.beginMethod(args, scope);
 
         body.call(closureCompiler);
 
         closureCompiler.endBody();
-
-        // Done with closure compilation
-
-        loadThreadContext();
-        loadSelf();
-        script.getCacheCompiler().cacheClosure19(this, closureMethodName, arity, scope, file, line, hasMultipleArgsHead, argsNodeId, parameterList, inspector);
-
-        script.addBlockCallback19Descriptor(closureMethodName, file, line);
-
-        invokeUtilityMethod("createBlock19", sig(Block.class,
-                params(ThreadContext.class, IRubyObject.class, BlockBody.class)));
     }
 
     public void runBeginBlock(StaticScope scope, CompilerCallback body) {
         String closureMethodName = "block_" + script.getAndIncrementInnerIndex() + "$RUBY$__begin__";
 
-        ChildScopedBodyCompiler closureCompiler = new ChildScopedBodyCompiler(script, closureMethodName, rubyName, null, scope);
+        ChildScopedBodyCompiler closureCompiler = new ChildScopedBodyCompiler(script, closureMethodName, rubyName, null, scope, scopeIndex);
 
         closureCompiler.beginMethod(null, scope);
 
@@ -1165,7 +1171,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     public void createNewForLoop(int arity, CompilerCallback body, CompilerCallback args, boolean hasMultipleArgsHead, NodeType argsNodeId, ASTInspector inspector) {
         String closureMethodName = "block_" + script.getAndIncrementInnerIndex() + "$RUBY$__for__";
 
-        ChildScopedBodyCompiler closureCompiler = new ChildScopedBodyCompiler(script, closureMethodName, rubyName, inspector, scope);
+        ChildScopedBodyCompiler closureCompiler = new ChildScopedBodyCompiler(script, closureMethodName, rubyName, inspector, scope, scopeIndex);
 
         closureCompiler.beginMethod(args, null);
 
@@ -1190,7 +1196,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     public void createNewEndBlock(CompilerCallback body) {
         String closureMethodName = "block_" + script.getAndIncrementInnerIndex() + "$RUBY$__end__";
 
-        ChildScopedBodyCompiler closureCompiler = new ChildScopedBodyCompiler(script, closureMethodName, rubyName, null, scope);
+        ChildScopedBodyCompiler closureCompiler = new ChildScopedBodyCompiler(script, closureMethodName, rubyName, null, scope, scopeIndex);
 
         closureCompiler.beginMethod(null, null);
 
@@ -2413,7 +2419,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         method.invokestatic(script.getClassname(), classMethodName, StandardASMCompiler.getStaticMethodSignature(script.getClassname(), 0));
 
         // define the method that forms the body of the class/module
-        final RootScopedBodyCompiler classBody = new ClassBodyCompiler(script, classMethodName, rubyName, inspector, staticScope);
+        final RootScopedBodyCompiler classBody = new ClassBodyCompiler(script, classMethodName, rubyName, inspector, staticScope, scopeIndex);
 
         Label start = new Label();
         Label end = new Label();
@@ -2485,7 +2491,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         method.invokestatic(script.getClassname(), moduleMethodName, StandardASMCompiler.getStaticMethodSignature(script.getClassname(), 0));
 
         // define the method that forms the body of the class/module
-        final RootScopedBodyCompiler classBody = new ClassBodyCompiler(script, moduleMethodName, mangledName, inspector, staticScope);
+        final RootScopedBodyCompiler classBody = new ClassBodyCompiler(script, moduleMethodName, mangledName, inspector, staticScope, scopeIndex);
 
         Label start = new Label();
         Label end = new Label();
@@ -2643,13 +2649,6 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         String mangledName = JavaNameMangler.mangleMethodName(name);
         String newMethodName = "method__" + script.getAndIncrementMethodIndex() + "$RUBY$" + mangledName;
 
-        BodyCompiler methodCompiler = script.startMethod(name, newMethodName, args, scope, inspector);
-
-        // callbacks to fill in method body
-        body.call(methodCompiler);
-
-        methodCompiler.endBody();
-
         // prepare to call "def" utility method to handle def logic
         loadThreadContext();
 
@@ -2664,7 +2663,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
         method.ldc(newMethodName);
 
-        script.getCacheCompiler().cacheStaticScope(this, scope);
+        int scopeIndex = script.getCacheCompiler().cacheStaticScope(this, scope);
 
         method.pushInt(methodArity);
 
@@ -2683,6 +2682,15 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
         }
 
         script.addInvokerDescriptor(newMethodName, methodArity, scope, inspector.getCallConfig(), filename, line);
+
+        // emit method body
+
+        BodyCompiler methodCompiler = script.startMethod(name, newMethodName, args, scope, inspector, scopeIndex);
+
+        // callbacks to fill in method body
+        body.call(methodCompiler);
+
+        methodCompiler.endBody();
     }
 
     public void rethrowIfSystemExit() {

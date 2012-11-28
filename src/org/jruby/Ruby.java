@@ -571,7 +571,7 @@ public final class Ruby {
             getGlobalVariables().set("$\\", getGlobalVariables().get("$/"));
         }
 
-        // we do preand post load outside the "body" versions to pre-prepare
+        // we do pre and post load outside the "body" versions to pre-prepare
         // and pre-push the dynamic scope we need for lastline
         RuntimeHelpers.preLoad(context, ((RootNode)scriptNode).getStaticScope().getVariables());
 
@@ -757,6 +757,9 @@ public final class Ruby {
                 JITCompiler.saveToCodeCache(this, asmCompiler.getClassByteArray(), "ruby/jit", new File(RubyInstanceConfig.JIT_CODE_CACHE, pathName + ".class"));
             }
             script = (Script)asmCompiler.loadClass(classLoader).newInstance();
+
+            // __file__ method expects its scope at 0, so prepare that here
+            script.setRootScope(getCurrentContext().getCurrentStaticScope());
 
             if (config.isJitLogging()) {
                 LOG.info("compiled: " + node.getPosition().getFile());

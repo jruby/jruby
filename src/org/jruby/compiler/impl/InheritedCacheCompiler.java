@@ -98,6 +98,13 @@ public class InheritedCacheCompiler implements CacheCompiler {
         this.scriptCompiler = scriptCompiler;
     }
 
+    public int reserveStaticScope() {
+        int index = scopeCount;
+        scopeCount++;
+
+        return index;
+    }
+
     public int cacheStaticScope(BaseBodyCompiler method, StaticScope scope) {
         String scopeString = RuntimeHelpers.encodeScope(scope);
         
@@ -121,12 +128,14 @@ public class InheritedCacheCompiler implements CacheCompiler {
     }
     
     public void loadStaticScope(BaseBodyCompiler method, int index) {
+        method.loadThis();
+
         if (scopeCount < AbstractScript.NUMBERED_SCOPE_COUNT) {
             // use numbered access method
-            method.method.invokevirtual(scriptCompiler.getClassname(), "getScope" + index, sig(StaticScope.class, ThreadContext.class, String.class));
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getScope" + index, sig(StaticScope.class));
         } else {
             method.method.pushInt(index);
-            method.method.invokevirtual(scriptCompiler.getClassname(), "getScope", sig(StaticScope.class, ThreadContext.class, String.class, int.class));
+            method.method.invokevirtual(scriptCompiler.getClassname(), "getScope", sig(StaticScope.class, int.class));
         }
     }
     
@@ -495,7 +504,7 @@ public class InheritedCacheCompiler implements CacheCompiler {
         }
     }
 
-    public void cacheClosure(BaseBodyCompiler method, String closureMethod, int arity, StaticScope scope, String file, int line, boolean hasMultipleArgsHead, NodeType argsNodeId, ASTInspector inspector) {
+    public int cacheClosure(BaseBodyCompiler method, String closureMethod, int arity, StaticScope scope, String file, int line, boolean hasMultipleArgsHead, NodeType argsNodeId, ASTInspector inspector) {
         String descriptor = RuntimeHelpers.buildBlockDescriptor(
                 closureMethod,
                 arity,
@@ -507,7 +516,7 @@ public class InheritedCacheCompiler implements CacheCompiler {
 
         method.loadThis();
         method.loadThreadContext();
-        cacheStaticScope(method, scope);
+        int scopeIndex = cacheStaticScope(method, scope);
 
         if (inheritedBlockBodyCount < AbstractScript.NUMBERED_BLOCKBODY_COUNT) {
             method.method.ldc(descriptor);
@@ -519,9 +528,11 @@ public class InheritedCacheCompiler implements CacheCompiler {
         }
 
         inheritedBlockBodyCount++;
+
+        return scopeIndex;
     }
 
-    public void cacheClosure19(BaseBodyCompiler method, String closureMethod, int arity, StaticScope scope, String file, int line, boolean hasMultipleArgsHead, NodeType argsNodeId, String parameterList, ASTInspector inspector) {
+    public int cacheClosure19(BaseBodyCompiler method, String closureMethod, int arity, StaticScope scope, String file, int line, boolean hasMultipleArgsHead, NodeType argsNodeId, String parameterList, ASTInspector inspector) {
         String descriptor = RuntimeHelpers.buildBlockDescriptor19(
                 closureMethod,
                 arity,
@@ -534,7 +545,7 @@ public class InheritedCacheCompiler implements CacheCompiler {
 
         method.loadThis();
         method.loadThreadContext();
-        cacheStaticScope(method, scope);
+        int scopeIndex = cacheStaticScope(method, scope);
 
         if (inheritedBlockBodyCount < AbstractScript.NUMBERED_BLOCKBODY_COUNT) {
             method.method.ldc(descriptor);
@@ -546,6 +557,8 @@ public class InheritedCacheCompiler implements CacheCompiler {
         }
 
         inheritedBlockBodyCount++;
+
+        return scopeIndex;
     }
 
     public void cacheSpecialClosure(BaseBodyCompiler method, String closureMethod) {

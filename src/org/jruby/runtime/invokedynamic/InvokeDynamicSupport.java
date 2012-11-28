@@ -70,6 +70,7 @@ public class InvokeDynamicSupport {
     ////////////////////////////////////////////////////////////////////////////
     
     public final static String BOOTSTRAP_BARE_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class);
+    public final static String BOOTSTRAP_INT_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, int.class);
     public final static String BOOTSTRAP_STRING_STRING_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, String.class);
     public final static String BOOTSTRAP_STRING_STRING_INT_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class, String.class, int.class);
     public final static String BOOTSTRAP_STRING_SIG = sig(CallSite.class, Lookup.class, String.class, MethodType.class, String.class);
@@ -123,7 +124,7 @@ public class InvokeDynamicSupport {
     }
     
     public static Handle getLoadStaticScopeHandle() {
-        return getBootstrapHandle("getLoadStaticScopeBootstrap", BOOTSTRAP_BARE_SIG);
+        return getBootstrapHandle("getLoadStaticScopeBootstrap", BOOTSTRAP_INT_SIG);
     }
     
     public static Handle getCallSiteHandle() {

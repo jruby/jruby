@@ -16,7 +16,7 @@ public class ChainedChildBodyCompiler extends ChildScopedBodyCompiler {
     }
 
     public ChainedChildBodyCompiler(StandardASMCompiler scriptCompiler, String methodName, String rubyName, ASTInspector inspector, StaticScope scope, ChildScopedBodyCompiler parent) {
-        super(scriptCompiler, methodName, rubyName, inspector, scope);
+        super(scriptCompiler, methodName, rubyName, inspector, scope, parent.scopeIndex);
         this.inNestedMethod = true;
     }
 }

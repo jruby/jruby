@@ -13,8 +13,8 @@ import static org.jruby.util.CodegenUtils.*;
 
 public class ChildScopedBodyCompiler extends BaseBodyCompiler {
 
-    public ChildScopedBodyCompiler(StandardASMCompiler scriptCompiler, String closureMethodName, String rubyName, ASTInspector inspector, StaticScope scope) {
-        super(scriptCompiler, closureMethodName, rubyName, inspector, scope);
+    public ChildScopedBodyCompiler(StandardASMCompiler scriptCompiler, String closureMethodName, String rubyName, ASTInspector inspector, StaticScope scope, int scopeIndex) {
+        super(scriptCompiler, closureMethodName, rubyName, inspector, scope, scopeIndex);
     }
 
     @Override

@@ -1598,14 +1598,18 @@ public class RuntimeHelpers {
         return RubyString.newStringShared(context.runtime, value);
     }
     
-    public static void preLoad(ThreadContext context, String[] varNames) {
+    public static StaticScope preLoad(ThreadContext context, String[] varNames) {
         StaticScope staticScope = context.runtime.getStaticScopeFactory().newLocalScope(null, varNames);
         preLoadCommon(context, staticScope, false);
+
+        return staticScope;
     }
 
-    public static void preLoad(ThreadContext context, String scopeString, boolean wrap) {
+    public static StaticScope preLoad(ThreadContext context, String scopeString, boolean wrap) {
         StaticScope staticScope = decodeScope(context, context.getCurrentStaticScope(), scopeString);
         preLoadCommon(context, staticScope, wrap);
+
+        return staticScope;
     }
 
     public static void preLoadCommon(ThreadContext context, StaticScope staticScope, boolean wrap) {

@@ -498,7 +498,12 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             String scopeNames = RuntimeHelpers.encodeScope(topLevelScope);
             method.ldc(scopeNames);
             method.iload(SELF_INDEX + 1);
-            method.invokestatic(p(RuntimeHelpers.class), "preLoad", sig(void.class, ThreadContext.class, String.class, boolean.class));
+            method.invokestatic(p(RuntimeHelpers.class), "preLoad", sig(StaticScope.class, ThreadContext.class, String.class, boolean.class));
+
+            // store root scope
+            method.aload(THIS);
+            method.swap();
+            method.invokevirtual(p(AbstractScript.class), "setRootScope", sig(void.class, StaticScope.class));
 
             method.aload(THIS);
             method.aload(THREADCONTEXT_INDEX);
@@ -632,8 +637,8 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
         return cacheCompiler;
     }
     
-    public BodyCompiler startMethod(String rubyName, String javaName, CompilerCallback args, StaticScope scope, ASTInspector inspector) {
-        RootScopedBodyCompiler methodCompiler = new MethodBodyCompiler(this, rubyName, javaName, inspector, scope);
+    public BodyCompiler startMethod(String rubyName, String javaName, CompilerCallback args, StaticScope scope, ASTInspector inspector, int scopeIndex) {
+        RootScopedBodyCompiler methodCompiler = new MethodBodyCompiler(this, rubyName, javaName, inspector, scope, scopeIndex);
         
         methodCompiler.beginMethod(args, scope);
         
@@ -641,7 +646,11 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
     }
 
     public BodyCompiler startFileMethod(CompilerCallback args, StaticScope scope, ASTInspector inspector) {
-        MethodBodyCompiler methodCompiler = new MethodBodyCompiler(this, "__file__", "__file__", inspector, scope);
+        MethodBodyCompiler methodCompiler = new MethodBodyCompiler(this, "__file__", "__file__", inspector, scope, 0);
+
+        // allocate the 0 StaticScope slot in the cache
+        int reservedIndex = cacheCompiler.reserveStaticScope();
+        assert reservedIndex == 0 : "__file__ scope index was not zero";
         
         methodCompiler.beginMethod(args, scope);
         
@@ -678,14 +687,6 @@ public class StandardASMCompiler implements ScriptCompiler, Opcodes {
             method.areturn();
             method.end();
         }
-
-        return methodCompiler;
-    }
-
-    public BodyCompiler startRoot(String rubyName, String javaName, StaticScope scope, ASTInspector inspector) {
-        RootScopedBodyCompiler methodCompiler = new MethodBodyCompiler(this, rubyName, javaName, inspector, scope);
-
-        methodCompiler.beginMethod(null, scope);
 
         return methodCompiler;
     }

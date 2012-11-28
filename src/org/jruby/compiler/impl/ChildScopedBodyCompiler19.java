@@ -5,8 +5,8 @@ import org.jruby.parser.StaticScope;
 
 public class ChildScopedBodyCompiler19 extends ChildScopedBodyCompiler {
 
-    public ChildScopedBodyCompiler19(StandardASMCompiler scriptCompiler, String closureMethodName, String rubyName, ASTInspector inspector, StaticScope scope) {
-        super(scriptCompiler, closureMethodName, rubyName, inspector, scope);
+    public ChildScopedBodyCompiler19(StandardASMCompiler scriptCompiler, String closureMethodName, String rubyName, ASTInspector inspector, StaticScope scope, int scopeIndex) {
+        super(scriptCompiler, closureMethodName, rubyName, inspector, scope, scopeIndex);
         // we force argParamCount to 1 since we always know we'll have [] args
         argParamCount = 1;
     }
