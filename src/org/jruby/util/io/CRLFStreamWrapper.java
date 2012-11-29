@@ -5,6 +5,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.channels.Channel;
+import org.jcodings.Encoding;
+import org.jcodings.specific.UTF16BEEncoding;
+import org.jcodings.specific.UTF16LEEncoding;
 import org.jruby.Ruby;
 import org.jruby.util.ByteList;
 
@@ -209,19 +212,53 @@ public class CRLFStreamWrapper implements Stream {
     }
 
     private ByteList convertCRLFToLF(ByteList input) {
-        if (input == null) {
-            return null;
-        }
-
-        if (binmode) {
-            return input;
-        }
+        if (input == null || binmode) return input;        
 
         ByteList result = new ByteList();
         convertCRLFToLF(input, result);
         return result;
     }
 
+    // FIXME: Horrific hack until we properly setup transcoding support of cr/lf logic in 1.9 proper.  This class
+    // is going away in 9k and the LE/BE logic is never used by 1.8 support.
+    
+    // I could not find any way in MRI to exercise this logic....endless needs
+    // binmode set (which obviously would not work here).  Leaving it for now
+    // since I will likely be either doubling down on new knowledge for 1.7.2
+    // or ripping all this out when we have real transcoding logic ported
+    // properly
+//    private int skipCROfLF(ByteList src, int i, int c) {
+//        Encoding encoding = src.getEncoding();
+//        int length = src.length();
+//        
+//        if (encoding == UTF16BEEncoding.INSTANCE) {
+//            if (i + 3 < length && c == 0 && src.get(i + 1) == CR && 
+//                    src.get(i + 2) == 0 && src.get(i + 3) == LF) {
+//                return i + 1;
+//            }
+//        } else if (encoding == UTF16LEEncoding.INSTANCE) {
+//            if (i + 3 < length && c == CR && src.get(i + 1) == 0 && 
+//                    src.get(i + 2) == LF && src.get(i + 3) == 0) {
+//                return i + 1;
+//            }            
+//        } else if (c == CR && i + 1 < length && src.get(i + 1) == LF) {
+//            return i;
+//        }
+//        
+//        return -1;
+//    }
+//    
+//    private void convertCRLFToLF(ByteList src, ByteList dst) {
+//        for (int i = 0; i < src.length(); i++) {
+//            int b = src.get(i);
+//            int j = skipCROfLF(src, i, b);
+//            if (j != -1) i = j;
+//
+//            dst.append(b);
+//        }
+//    }
+    
+    
     private void convertCRLFToLF(ByteList src, ByteList dst) {
         for (int i = 0; i < src.length(); i++) {
             int b = src.get(i);
@@ -232,22 +269,44 @@ public class CRLFStreamWrapper implements Stream {
         }
     }
 
-    private ByteList convertLFToCRLF(ByteList input) {
-        if (input == null) {
-            return null;
-        }
+    final byte[] CRBYTES = new byte[] { CR };
+    final byte[] CRLEBYTES = new byte[] { CR, 0};
+    final byte[] CRBEBYTES = new byte[] { 0, CR };
+    
+    private byte[] crBytes(Encoding encoding) {
+        if (encoding == UTF16BEEncoding.INSTANCE) return CRBEBYTES;
+        if (encoding == UTF16LEEncoding.INSTANCE) return CRLEBYTES;
+            
+        return CRBYTES;
+    }
+    
+    final byte[] LFBYTES = new byte[] { LF };
+    final byte[] LFLEBYTES = new byte[] { LF, 0 };
+    final byte[] LFBEBYTES = new byte[] { 0, LF };    
 
-        if (binmode) {
-            return input;
-        }
+    private byte[] lfBytes(Encoding encoding) {
+        if (encoding == UTF16BEEncoding.INSTANCE) return LFBEBYTES;
+        if (encoding == UTF16LEEncoding.INSTANCE) return LFLEBYTES;
+            
+        return LFBYTES;
+    }
+    
+    private ByteList convertLFToCRLF(ByteList input) {
+        if (input == null || binmode) return input;
+
+        byte[] crBytes = crBytes(input.getEncoding());
+        byte[] lfBytes = lfBytes(input.getEncoding());
 
         ByteList result = new ByteList();
-        for (int i = 0; i < input.length(); i++) {
-            int b = input.get(i);
+        int length = input.lengthEnc();
+        for (int i = 0; i < length; i++) {
+            int b = input.getEnc(i);
             if (b == LF) {
-                result.append(CR);
+                result.append(crBytes);
+                result.append(lfBytes);
+            } else {
+                result.append(b);
             }
-            result.append(b);
         }
         return result;
     }
