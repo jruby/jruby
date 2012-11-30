@@ -109,7 +109,7 @@ public class AliasMethod extends DynamicMethod {
     public Arity getArity(){
         return oldMethod.getArity();
     }
-    
+
     public String getOldName() {
         return oldName;
     }
@@ -137,9 +137,5 @@ public class AliasMethod extends DynamicMethod {
     @Override
     public CallConfiguration getCallConfig() {
         return oldMethod.getCallConfig();
-    }
-
-    public String getOldName() {
-        return oldName;
     }
 }
