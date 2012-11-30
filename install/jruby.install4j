@@ -54,7 +54,7 @@
           <entry location="docs/.cvsignore" fileType="regular" />
           <entry location="docs/rdocs.tar.gz" fileType="regular" />
           <entry location="findbugs.xml" fileType="regular" />
-          <entry location="gem" fileType="regular" />
+          <entry location="gems" fileType="regular" />
           <entry location="install" fileType="regular" />
           <entry location="ivy" fileType="regular" />
           <entry location="jruby.bnd.template" fileType="regular" />
