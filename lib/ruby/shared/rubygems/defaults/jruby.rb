@@ -57,6 +57,12 @@ module Gem
   def self.default_exec_format
     "%s"
   end
+
+  # Allow specifying jar and classpath type gem path entries
+  def self.path_separator
+    return File::PATH_SEPARATOR unless File::PATH_SEPARATOR == ':'
+    /(?<!jar:file|jar|file|classpath):/
+  end
 end
 
 ## JAR FILES: Allow gem path entries to contain jar files
