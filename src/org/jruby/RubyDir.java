@@ -163,9 +163,13 @@ public class RubyDir extends RubyObject {
 
     private static IRubyObject asRubyStringList(Ruby runtime, List<ByteList> dirs) {
         List<RubyString> allFiles = new ArrayList<RubyString>();
+        Encoding enc = runtime.getDefaultExternalEncoding();
+        if (enc == null) {
+            enc = UTF8;
+        }
 
         for (ByteList dir : dirs) {
-            allFiles.add(RubyString.newString(runtime, dir, runtime.getDefaultExternalEncoding()));
+            allFiles.add(RubyString.newString(runtime, dir, enc));
         }
 
         IRubyObject[] tempFileList = new IRubyObject[allFiles.size()];
@@ -328,7 +332,11 @@ public class RubyDir extends RubyObject {
 
         if (block.isGiven()) {
             for (int i = 0; i < dirs.size(); i++) {
-                block.yield(context, RubyString.newString(runtime, dirs.get(i), runtime.getDefaultExternalEncoding()));
+                Encoding enc = runtime.getDefaultExternalEncoding();
+                if (enc == null) {
+                    enc = UTF8;
+                }
+                block.yield(context, RubyString.newString(runtime, dirs.get(i), enc));
             }
 
             return runtime.getNil();
