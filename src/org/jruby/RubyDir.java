@@ -49,6 +49,8 @@ import jnr.posix.FileStat;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.anno.JRubyClass;
 import jnr.posix.util.Platform;
+import org.jcodings.Encoding;
+import org.jcodings.specific.UTF8Encoding;
 
 import org.jruby.exceptions.RaiseException;
 import org.jruby.javasupport.JavaUtil;
@@ -75,6 +77,8 @@ public class RubyDir extends RubyObject {
     private String[] snapshot;     // snapshot of contents of directory
     private int pos;               // current position in directory
     private boolean isOpen = true;
+
+    private final static Encoding UTF8 = UTF8Encoding.INSTANCE;
 
     public RubyDir(Ruby runtime, RubyClass type) {
         super(runtime, type);
@@ -159,10 +163,13 @@ public class RubyDir extends RubyObject {
 
     private static IRubyObject asRubyStringList(Ruby runtime, List<ByteList> dirs) {
         List<RubyString> allFiles = new ArrayList<RubyString>();
-        RubyEncoding enc = (RubyEncoding) runtime.getEncodingService().getDefaultExternal();
+        Encoding enc = runtime.getDefaultExternalEncoding();
+        if (enc == null) {
+            enc = UTF8;
+        }
 
         for (ByteList dir : dirs) {
-            allFiles.add(RubyString.newString(runtime, dir, enc.getEncoding()));
+            allFiles.add(RubyString.newString(runtime, dir, enc));
         }
 
         IRubyObject[] tempFileList = new IRubyObject[allFiles.size()];
@@ -325,8 +332,11 @@ public class RubyDir extends RubyObject {
 
         if (block.isGiven()) {
             for (int i = 0; i < dirs.size(); i++) {
-                RubyEncoding enc = (RubyEncoding) runtime.getEncodingService().getDefaultExternal();
-                block.yield(context, RubyString.newString(runtime, dirs.get(i), enc.getEncoding()));
+                Encoding enc = runtime.getDefaultExternalEncoding();
+                if (enc == null) {
+                    enc = UTF8;
+                }
+                block.yield(context, RubyString.newString(runtime, dirs.get(i), enc));
             }
 
             return runtime.getNil();
