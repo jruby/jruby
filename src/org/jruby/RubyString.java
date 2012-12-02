@@ -6712,7 +6712,7 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
         final TR trSrc = new TR(srcList);
         boolean cflag = false;
-        if (value.getRealSize() > 1) {
+        if (value.getRealSize() > 0) {
             if (enc.isAsciiCompatible()) {
                 if (trSrc.buf.length > 0 && (trSrc.buf[trSrc.p] & 0xff) == '^' && trSrc.p + 1 < trSrc.pend) {
                     cflag = true;
