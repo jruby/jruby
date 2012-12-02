@@ -1,2 +1,0 @@
-fails:String#tr translates chars not in from_string when it starts with a ^
-fails:String#tr can replace a 7-bit ASCII character with a multibyte one
