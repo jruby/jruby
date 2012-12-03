@@ -192,7 +192,6 @@ public class Main {
         Main main;
 
         if (DripMain.DRIP_RUNTIME != null) {
-            System.out.println("using drip runtime");
             main = new Main(DripMain.DRIP_CONFIG, true);
         } else {
             main = new Main(true);
