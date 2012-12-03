@@ -11,12 +11,27 @@ public class DripMain {
     public static RubyInstanceConfig DRIP_CONFIG;
     public static Ruby DRIP_RUNTIME;
 
-    public static void main(String[] args) throws IOException {
-        File dripMain = new File("./dripmain.rb");
+    public static final String JRUBY_DRIP_WARMUP_ENV = "JRUBY_DRIP_WARMUP";
+    public static final String JRUBY_DRIP_WARMUP_DEFAULT = "1 + 1";
+    public static final String JRUBY_DRIP_PREBOOT_FILE = "./dripmain.rb";
 
-        // pre-boot our "Drip" runtime
+    public static void main(String[] args) throws IOException {
+        // warmup JVM first
+        Ruby ruby = Ruby.newInstance();
+
+        String envWarmup = System.getenv(JRUBY_DRIP_WARMUP_ENV);
+        if (envWarmup != null && envWarmup.length() > 0) {
+            ruby.evalScriptlet(envWarmup);
+        } else {
+            ruby.evalScriptlet(JRUBY_DRIP_WARMUP_DEFAULT);
+        }
+
+        // preboot actual runtime
+        Ruby.clearGlobalRuntime();
+        File dripMain = new File(JRUBY_DRIP_PREBOOT_FILE);
+
         RubyInstanceConfig config = new RubyInstanceConfig();
-        Ruby ruby = Ruby.newInstance(config);
+        ruby = Ruby.newInstance(config);
 
         if (dripMain.exists()) {
             FileInputStream fis = new FileInputStream(dripMain);
@@ -27,6 +42,7 @@ public class DripMain {
             }
         }
 
+        // use config and runtime from preboot process
         DRIP_CONFIG = config;
         DRIP_RUNTIME = ruby;
     }

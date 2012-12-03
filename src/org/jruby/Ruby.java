@@ -353,6 +353,13 @@ public final class Ruby {
     }
 
     /**
+     * Clear the global runtime.
+     */
+    public static void clearGlobalRuntime() {
+        globalRuntime = null;
+    }
+
+    /**
      * Get the thread-local runtime for the current thread, or null if unset.
      * 
      * @return the thread-local runtime, or null if unset
