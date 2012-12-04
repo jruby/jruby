@@ -641,9 +641,8 @@ public class Cipher extends RubyObject {
         try {
             if (!"ECB".equalsIgnoreCase(cryptoMode)) {
                 if (this.realIV == null) {
+                    // no IV yet, start out with all zeros
                     this.realIV = new byte[ivLen];
-                    System.arraycopy("OpenSSL for JRuby rulez".getBytes(), 0,
-                            this.realIV, 0, ivLen);
                 }
                 if ("RC2".equalsIgnoreCase(cryptoBase)) {
                     this.ciph.init(encryptMode ? javax.crypto.Cipher.ENCRYPT_MODE : javax.crypto.Cipher.DECRYPT_MODE, new SimpleSecretKey("RC2", this.key), new RC2ParameterSpec(this.key.length * 8, this.realIV));
