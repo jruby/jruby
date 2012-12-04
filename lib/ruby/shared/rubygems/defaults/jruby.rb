@@ -53,11 +53,6 @@ module Gem
     @@win_platform
   end
 
-  # We do not want prefixes on installed binaries.
-  def self.default_exec_format
-    "%s"
-  end
-
   # Allow specifying jar and classpath type gem path entries
   def self.path_separator
     return File::PATH_SEPARATOR unless File::PATH_SEPARATOR == ':'
