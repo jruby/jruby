@@ -26,6 +26,8 @@ describe "Directed Graph Utility" do
     @graph.addEdge(4,5,'bar')
     @graph.removeEdge(4,5)
     @graph.edges.size.should be 1
+    @graph.removeEdge(@graph.edges.to_a.last)
+    @graph.edges.size.should be 0
   end
 
   it "should not delete a non-existent edge from the graph" do
@@ -68,6 +70,28 @@ describe "Directed Graph Utility" do
     @graph.size.should be 2
     @graph.addEdge('foo','bar','baz')
     @graph.size.should be 4
+  end
+
+  it "should give all data in the graph" do
+    @graph.allData.size.should be 0
+    @graph.addEdge(1,2,'baz')
+    @graph.allData.each do |key|
+      @graph.findVertexFor(key).should_not be_nil
+    end
+    @graph.removeVertexFor(1)
+    @graph.allData.each do |key|
+      @graph.findVertexFor(key).should_not be_nil
+    end
+  end
+
+  it "should give data in the graph in the order in which it was inserted" do
+    @graph.getInorderData.to_a.size.should be 0
+    @graph.vertexFor(1)
+    @graph.getInorderData.to_a.should eq [1]
+    @graph.addEdge('foo','bar','baz')
+    @graph.getInorderData.to_a.should eq [1,'foo','bar']
+    @graph.removeVertexFor('foo')
+    @graph.getInorderData.to_a.should eq [1,'bar']
   end
 
 end

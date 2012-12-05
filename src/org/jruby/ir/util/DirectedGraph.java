@@ -64,6 +64,9 @@ public class DirectedGraph<T> {
         return vertices.get(data);
     }
 
+    /**
+     * @return vertex for given data. If vertex is not present it creates vertex and returns it.
+     */
     public Vertex<T> vertexFor(T data) {
         Vertex vertex = vertices.get(data);
 
