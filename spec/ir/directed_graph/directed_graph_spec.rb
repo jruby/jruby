@@ -26,6 +26,8 @@ describe "Directed Graph Utility" do
     @graph.addEdge(4,5,'bar')
     @graph.removeEdge(4,5)
     @graph.edges.size.should be 1
+    @graph.removeEdge(@graph.edges.to_a.last)
+    @graph.edges.size.should be 0
   end
 
   it "should not delete a non-existent edge from the graph" do
