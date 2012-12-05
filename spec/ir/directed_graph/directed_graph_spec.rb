@@ -84,4 +84,14 @@ describe "Directed Graph Utility" do
     end
   end
 
+  it "should give data in the graph in the order in which it was inserted" do
+    @graph.getInorderData.to_a.size.should be 0
+    @graph.vertexFor(1)
+    @graph.getInorderData.to_a.should eq [1]
+    @graph.addEdge('foo','bar','baz')
+    @graph.getInorderData.to_a.should eq [1,'foo','bar']
+    @graph.removeVertexFor('foo')
+    @graph.getInorderData.to_a.should eq [1,'bar']
+  end
+
 end
