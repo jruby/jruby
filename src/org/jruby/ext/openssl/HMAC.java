@@ -153,7 +153,7 @@ public class HMAC extends RubyObject {
     @JRubyMethod
     public IRubyObject digest() {
         mac.reset();
-        return RubyString.newString(getRuntime(), mac.doFinal(ByteList.plain(data)));
+        return RubyString.newString(getRuntime(), getSignatureBytes());
     }
 
     @JRubyMethod
@@ -164,12 +164,16 @@ public class HMAC extends RubyObject {
 
     @JRubyMethod(name={"hexdigest","inspect","to_s"})
     public IRubyObject hexdigest() {
-        mac.reset();
-        return RubyString.newString(getRuntime(), ByteList.plain(Utils.toHex(mac.doFinal(ByteList.plain(data)))));
+        return RubyString.newString(getRuntime(), ByteList.plain(Utils.toHex(getSignatureBytes())));
     }
 
     String getAlgorithm() {
         return this.mac.getAlgorithm();
+    }
+
+    private byte[] getSignatureBytes() {
+        mac.reset();
+        return mac.doFinal(data.toString().getBytes());
     }
 
     private static String getDigestAlgorithmName(IRubyObject digest) {
