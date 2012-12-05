@@ -76,6 +76,7 @@ import java.util.Map;
 
 import static org.jruby.CompatVersion.RUBY1_8;
 import static org.jruby.CompatVersion.RUBY1_9;
+import static org.jruby.CompatVersion.RUBY2_0;
 import static org.jruby.RubyEnumerator.enumeratorize;
 import static org.jruby.anno.FrameField.BACKREF;
 import static org.jruby.anno.FrameField.BLOCK;
@@ -2062,6 +2063,20 @@ public class RubyKernel {
     @JRubyMethod(name = "extend", required = 1, rest = true)
     public static IRubyObject extend(IRubyObject self, IRubyObject[] args) {
         return ((RubyBasicObject)self).extend(args);
+    }
+
+    @JRubyMethod(name = "using", compat = RUBY2_0)
+    public static IRubyObject using(ThreadContext context, IRubyObject self, IRubyObject clazz) {
+        if (clazz == null || !(clazz instanceof RubyModule)) {
+            throw context.runtime.newTypeError("can only use modules");
+        }
+        if (!(self instanceof RubyModule)) {
+            throw context.runtime.newTypeError("can only call within a module");
+        }
+        RubyModule usingModule = (RubyModule)self;
+        RubyModule usedModule = (RubyModule)clazz;
+        usingModule.using(context, usedModule);
+        return self;
     }
 
     @JRubyMethod(name = {"send", "__send__"}, compat = RUBY1_8)
