@@ -70,4 +70,16 @@ describe "Directed Graph Utility" do
     @graph.size.should be 4
   end
 
+  it "should give all data in the graph" do
+    @graph.allData.size.should be 0
+    @graph.addEdge(1,2,'baz')
+    @graph.allData.each do |key|
+      @graph.findVertexFor(key).should_not be_nil
+    end
+    @graph.removeVertexFor(1)
+    @graph.allData.each do |key|
+      @graph.findVertexFor(key).should_not be_nil
+    end
+  end
+
 end
