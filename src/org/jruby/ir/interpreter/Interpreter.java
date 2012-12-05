@@ -653,7 +653,7 @@ public class Interpreter {
 
         // If not in a lambda, and lastInstr was a return, check if this was a non-local return
         if ((lastInstr instanceof ReturnInstr) && !inLambda(blockType)) {
-            handleNonLocalReturn(context, scope, (ReturnInstr) lastInstr, rv, inClosure);
+            handleNonLocalReturn(context, scope, ((ReturnInstr) lastInstr).methodToReturnFrom, rv, inClosure);
         }
 
         return rv;
@@ -662,9 +662,7 @@ public class Interpreter {
     /*
      * Handle non-local returns (ex: when nested in closures, root scopes of module/class/sclass bodies)
      */
-    private static void handleNonLocalReturn(ThreadContext context, IRScope scope, ReturnInstr returnInstr, IRubyObject returnValue, boolean inClosure) {
-        IRMethod methodToReturnFrom = returnInstr.methodToReturnFrom;
-
+    private static void handleNonLocalReturn(ThreadContext context, IRScope scope, IRMethod methodToReturnFrom, IRubyObject returnValue, boolean inClosure) {
         if (inClosure) {
             if (methodToReturnFrom == null) {
                 // SSS FIXME: As Tom correctly pointed out, this is not correct.  The example that breaks this code is:
