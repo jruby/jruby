@@ -7252,9 +7252,20 @@ public class RubyString extends RubyObject implements EncodingCapable {
 
         Ruby runtime = context.runtime;
         ByteList val = value.shallowDup();
+        boolean isUSASCII = val.getEncoding() == USASCIIEncoding.INSTANCE;
+        boolean is7bit = getCodeRange() == StringSupport.CR_7BIT;
+        
+        // if 7bit, don't use more expensive length logic
+        // if USASCII, use preallocated single-byte ByteLists
         while (p < end) {
-            int n = StringSupport.length(enc, bytes, p, end);
-            block.yield(context, makeShared19(runtime, val, p-value.getBegin(), n));
+            int n = is7bit ? 1 : StringSupport.length(enc, bytes, p, end);
+            RubyString str;
+            if (n == 1 && isUSASCII) {
+                str = newStringShared(runtime, RubyFixnum.SINGLE_CHAR_BYTELISTS19[bytes[p]], StringSupport.CR_7BIT);
+            } else {
+                str = makeShared19(runtime, val, p-value.getBegin(), n);
+            }
+            block.yield(context, str);
             p += n;
         }
         return this;
