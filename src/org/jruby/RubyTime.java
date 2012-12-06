@@ -101,7 +101,7 @@ public class RubyTime extends RubyObject {
      * Since MRI accepts these values, we need to translate them.
      */
     private static final Map<String, String> LONG_TZNAME = new HashMap<String, String>() {{
-        put("MET", "CET"); // JRUBY-2579
+        put("MET", "CET"); // JRUBY-2759
         put("ROC", "Asia/Taipei"); // Republic of China
         put("WET", "Europe/Lisbon"); // Western European Time
         
