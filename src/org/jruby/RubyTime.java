@@ -149,7 +149,7 @@ public class RubyTime extends RubyObject {
         if (cachedZone != null) return cachedZone;
 
         String originalZone = zone;
-        TimeZone tz = TimeZone.getTimeZone(getEnvTimeZone(runtime).toString());
+        TimeZone tz = TimeZone.getTimeZone(zone);
 
         // Value of "TZ" property is of a bit different format,
         // which confuses the Java's TimeZone.getTimeZone(id) method,
