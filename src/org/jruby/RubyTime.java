@@ -107,6 +107,17 @@ public class RubyTime extends RubyObject {
         
     }};
     
+    /* github-215
+     * Some non-JVM timezone names are recognized by MRI.
+     * This map translate those to JVM-friendly names.
+     */
+    private static final Map<String, String> NON_JVM_TZNAME = new HashMap<String, String>() {{
+        put("EDT", "EST");
+        put("CDT", "CST");
+        put("MDT", "MST");
+        put("PDT", "PST");
+    }};
+    
     /* Some TZ values need to be overriden for Time#zone
      */
     private static final Map<String, String> SHORT_STD_TZNAME = new HashMap<String, String>() {{
@@ -149,6 +160,9 @@ public class RubyTime extends RubyObject {
         if (cachedZone != null) return cachedZone;
 
         String originalZone = zone;
+        if (NON_JVM_TZNAME.containsKey(zone.toUpperCase())) {
+            zone = NON_JVM_TZNAME.get(zone.toUpperCase());
+        }
         TimeZone tz = TimeZone.getTimeZone(zone);
 
         // Value of "TZ" property is of a bit different format,
