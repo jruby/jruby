@@ -129,7 +129,7 @@ public class InvocationLinker {
         }
         
         MethodHandle target = getTarget(site, selfClass, method, entry, 0);
-        target = updateInvocationTarget(target, site, selfClass, method, entry, switchPoint, false, 0);
+        target = updateInvocationTarget(target, site, self, selfClass, method, entry, switchPoint, false, 0);
 
         return (IRubyObject)target.invokeWithArguments(context, caller, self);
     }
@@ -146,7 +146,7 @@ public class InvocationLinker {
         }
         
         MethodHandle target = getTarget(site, selfClass, method, entry, 1);
-        target = updateInvocationTarget(target, site, selfClass, method, entry, switchPoint, false, 1);
+        target = updateInvocationTarget(target, site, self, selfClass, method, entry, switchPoint, false, 1);
 
         return (IRubyObject)target.invokeWithArguments(context, caller, self, arg0);
     }
@@ -163,7 +163,7 @@ public class InvocationLinker {
         }
         
         MethodHandle target = getTarget(site, selfClass, method, entry, 2);
-        target = updateInvocationTarget(target, site, selfClass, method, entry, switchPoint, false, 2);
+        target = updateInvocationTarget(target, site, self, selfClass, method, entry, switchPoint, false, 2);
 
         return (IRubyObject)target.invokeWithArguments(context, caller, self, arg0, arg1);
     }
@@ -180,7 +180,7 @@ public class InvocationLinker {
         }
         
         MethodHandle target = getTarget(site, selfClass, method, entry, 3);
-        target = updateInvocationTarget(target, site, selfClass, method, entry, switchPoint, false, 3);
+        target = updateInvocationTarget(target, site, self, selfClass, method, entry, switchPoint, false, 3);
 
         return (IRubyObject)target.invokeWithArguments(context, caller, self, arg0, arg1, arg2);
     }
@@ -197,7 +197,7 @@ public class InvocationLinker {
         }
         
         MethodHandle target = getTarget(site, selfClass, method, entry, -1);
-        target = updateInvocationTarget(target, site, selfClass, method, entry, switchPoint, false, 4);
+        target = updateInvocationTarget(target, site, self, selfClass, method, entry, switchPoint, false, 4);
 
         return (IRubyObject)target.invokeWithArguments(context, caller, self, args);
     }
@@ -221,7 +221,7 @@ public class InvocationLinker {
         }
 
         MethodHandle target = getTarget(site, selfClass, method, entry, 0);
-        target = updateInvocationTarget(target, site, selfClass, method, entry, switchPoint, true, 0);
+        target = updateInvocationTarget(target, site, self, selfClass, method, entry, switchPoint, true, 0);
 
         return (IRubyObject) target.invokeWithArguments(context, caller, self, block);
     }
@@ -245,7 +245,7 @@ public class InvocationLinker {
         }
 
         MethodHandle target = getTarget(site, selfClass, method, entry, 1);
-        target = updateInvocationTarget(target, site, selfClass, method, entry, switchPoint, true, 1);
+        target = updateInvocationTarget(target, site, self, selfClass, method, entry, switchPoint, true, 1);
 
         return (IRubyObject) target.invokeWithArguments(context, caller, self, arg0, block);
     }
@@ -269,7 +269,7 @@ public class InvocationLinker {
         }
 
         MethodHandle target = getTarget(site, selfClass, method, entry, 2);
-        target = updateInvocationTarget(target, site, selfClass, method, entry, switchPoint, true, 2);
+        target = updateInvocationTarget(target, site, self, selfClass, method, entry, switchPoint, true, 2);
 
         return (IRubyObject) target.invokeWithArguments(context, caller, self, arg0, arg1, block);
     }
@@ -293,7 +293,7 @@ public class InvocationLinker {
         }
 
         MethodHandle target = getTarget(site, selfClass, method, entry, 3);
-        target = updateInvocationTarget(target, site, selfClass, method, entry, switchPoint, true, 3);
+        target = updateInvocationTarget(target, site, self, selfClass, method, entry, switchPoint, true, 3);
 
         return (IRubyObject) target.invokeWithArguments(context, caller, self, arg0, arg1, arg2, block);
     }
@@ -317,7 +317,7 @@ public class InvocationLinker {
         }
 
         MethodHandle target = getTarget(site, selfClass, method, entry, -1);
-        target = updateInvocationTarget(target, site, selfClass, method, entry, switchPoint, true, 4);
+        target = updateInvocationTarget(target, site, self, selfClass, method, entry, switchPoint, true, 4);
 
         return (IRubyObject) target.invokeWithArguments(context, caller, self, args, block);
     }
@@ -327,7 +327,7 @@ public class InvocationLinker {
      * guard and argument-juggling logic. Return a handle suitable for invoking
      * with the site's original method type.
      */
-    private static MethodHandle updateInvocationTarget(MethodHandle target, JRubyCallSite site, RubyModule selfClass, String name, CacheEntry entry, SwitchPoint switchPoint, boolean block, int arity) {
+    private static MethodHandle updateInvocationTarget(MethodHandle target, JRubyCallSite site, IRubyObject self, RubyModule selfClass, String name, CacheEntry entry, SwitchPoint switchPoint, boolean block, int arity) {
         if (target == null ||
                 site.clearCount() > RubyInstanceConfig.MAX_FAIL_COUNT ||
                 (!site.hasSeenType(selfClass.id)
@@ -356,7 +356,30 @@ public class InvocationLinker {
             }
 
             site.addType(selfClass.id);
-            gwt = createGWT(selfClass, (block?TESTS_B:TESTS)[arity], target, fallback, entry, site, curry);
+            
+            Ruby runtime = selfClass.getRuntime();
+            MethodHandle test;
+            if (self instanceof RubySymbol ||
+                    self instanceof RubyFixnum ||
+                    self instanceof RubyFloat ||
+                    self instanceof RubyNil ||
+                    self instanceof RubyBoolean.True) {
+                test = Binder
+                        .from(site.type().changeReturnType(boolean.class))
+                        .permute(2)
+                        .insert(1, self.getClass())
+                        .cast(boolean.class, Object.class, Class.class)
+                        .invoke(TEST_CLASS);
+            } else {
+                test = Binder
+                        .from(site.type().changeReturnType(boolean.class))
+                        .permute(2)
+                        .insert(0, RubyInstanceConfig.INVOKEDYNAMIC_INVOCATION_SWITCHPOINT ? selfClass : entry.token)
+                        .cast(boolean.class, RubyClass.class, IRubyObject.class)
+                        .invoke(TEST);
+            }
+            
+            gwt = createGWT(test, target, fallback, entry, site, curry);
             
             if (RubyInstanceConfig.INVOKEDYNAMIC_INVOCATION_SWITCHPOINT) {
                 // wrap in switchpoint for mutation invalidation
@@ -407,13 +430,9 @@ public class InvocationLinker {
         return myFail;
     }
 
-    private static MethodHandle createGWT(RubyModule selfClass, MethodHandle test, MethodHandle target, MethodHandle fallback, CacheEntry entry, JRubyCallSite site, boolean curryFallback) {
-        MethodHandle myTest =
-                RubyInstanceConfig.INVOKEDYNAMIC_INVOCATION_SWITCHPOINT ?
-                insertArguments(test, 0, selfClass) :
-                insertArguments(test, 0, entry.token);
+    private static MethodHandle createGWT(MethodHandle test, MethodHandle target, MethodHandle fallback, CacheEntry entry, JRubyCallSite site, boolean curryFallback) {
         MethodHandle myFallback = curryFallback ? insertArguments(fallback, 0, site) : fallback;
-        MethodHandle guardWithTest = guardWithTest(myTest, target, myFallback);
+        MethodHandle guardWithTest = guardWithTest(test, target, myFallback);
         
         return guardWithTest;
     }
@@ -610,12 +629,16 @@ public class InvocationLinker {
         return token == ((RubyBasicObject)self).getMetaClass().getGeneration();
     }
 
-    public static boolean testMetaclass(RubyModule metaclass, IRubyObject self) {
+    public static boolean testMetaclass(RubyClass metaclass, IRubyObject self) {
         return metaclass == ((RubyBasicObject)self).getMetaClass();
     }
 
     public static boolean testRealClass(int id, IRubyObject self) {
         return id == ((RubyBasicObject)self).getMetaClass().getRealClass().id;
+    }
+    
+    public static boolean testClass(Object object, Class clazz) {
+        return object.getClass() == clazz;
     }
     
     public static IRubyObject getLast(IRubyObject[] args) {
@@ -1698,29 +1721,22 @@ public class InvocationLinker {
                     .permute(1, 3)
                     .invokeStaticQuiet(lookup(), InvokeDynamicSupport.class, "pollAndGetClass");
 
-    private static final MethodHandle PGC2 = Binder
-            .from(RubyClass.class, ThreadContext.class, IRubyObject.class, IRubyObject.class)
-            .drop(1)
-            .invokeStaticQuiet(lookup(), InvokeDynamicSupport.class, "pollAndGetClass");
-
-    private static final Binder test_binder = Binder
-            .from(boolean.class, int.class, ThreadContext.class, IRubyObject.class, IRubyObject.class)
-            .drop(1, 2);
-
     private static final MethodHandle TEST_GENERATION = Binder
-            .from(boolean.class, int.class, ThreadContext.class, IRubyObject.class, IRubyObject.class)
-            .drop(1, 2)
+            .from(boolean.class, int.class, IRubyObject.class)
             .invokeStaticQuiet(lookup(), InvocationLinker.class, "testGeneration");
 
     private static final MethodHandle TEST_METACLASS = Binder
-            .from(boolean.class, RubyModule.class, ThreadContext.class, IRubyObject.class, IRubyObject.class)
-            .drop(1, 2)
+            .from(boolean.class, RubyClass.class, IRubyObject.class)
             .invokeStaticQuiet(lookup(), InvocationLinker.class, "testMetaclass");
     
     private static final MethodHandle TEST =
             RubyInstanceConfig.INVOKEDYNAMIC_INVOCATION_SWITCHPOINT ?
             TEST_METACLASS :
             TEST_GENERATION;
+    
+    private static final MethodHandle TEST_CLASS = Binder
+            .from(boolean.class, Object.class, Class.class)
+            .invokeStaticQuiet(lookup(), InvocationLinker.class, "testClass");
 
     private static MethodHandle dropNameAndArgs(MethodHandle original, int index, int count, boolean block) {
         switch (count) {
@@ -1800,7 +1816,6 @@ public class InvocationLinker {
     // Support handles for DynamicMethod.call paths
     ////////////////////////////////////////////////////////////////////////////
 
-    private static final MethodHandle TEST_0 = dropArgs(TEST, 4, 0, false);
     private static final MethodHandle TARGET_0 = Binder
             .from(IRubyObject.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class)
             .fold(dropNameAndArgs(PGC, 4, 0, false))
@@ -1814,7 +1829,6 @@ public class InvocationLinker {
     private static final MethodHandle FAIL_0 = findStatic(InvocationLinker.class, "fail",
             methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class));
 
-    private static final MethodHandle TEST_1 = dropArgs(TEST, 4, 1, false);
     private static final MethodHandle TARGET_1 = Binder
             .from(IRubyObject.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class)
             .fold(dropNameAndArgs(PGC, 4, 1, false))
@@ -1828,7 +1842,6 @@ public class InvocationLinker {
     private static final MethodHandle FAIL_1 = findStatic(InvocationLinker.class, "fail",
             methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
 
-    private static final MethodHandle TEST_2 = dropArgs(TEST, 4, 2, false);
     private static final MethodHandle TARGET_2 = Binder
             .from(IRubyObject.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class)
             .fold(dropNameAndArgs(PGC, 4, 2, false))
@@ -1842,7 +1855,6 @@ public class InvocationLinker {
     private static final MethodHandle FAIL_2 = findStatic(InvocationLinker.class, "fail",
             methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
 
-    private static final MethodHandle TEST_3 = dropArgs(TEST, 4, 3, false);
     private static final MethodHandle TARGET_3 = Binder
             .from(IRubyObject.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class)
             .fold(dropNameAndArgs(PGC, 4, 3, false))
@@ -1856,7 +1868,6 @@ public class InvocationLinker {
     private static final MethodHandle FAIL_3 = findStatic(InvocationLinker.class, "fail",
             methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class));
 
-    private static final MethodHandle TEST_N = dropArgs(TEST, 4, -1, false);
     private static final MethodHandle TARGET_N = Binder
             .from(IRubyObject.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class)
             .fold(dropNameAndArgs(PGC, 4, -1, false))
@@ -1870,7 +1881,6 @@ public class InvocationLinker {
     private static final MethodHandle FAIL_N = findStatic(InvocationLinker.class, "fail",
             methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject[].class));
 
-    private static final MethodHandle TEST_0_B = dropArgs(TEST, 4, 0, true);
     private static final MethodHandle TARGET_0_B = Binder
             .from(IRubyObject.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, Block.class)
             .fold(dropNameAndArgs(PGC, 4, 0, true))
@@ -1884,7 +1894,6 @@ public class InvocationLinker {
     private static final MethodHandle FAIL_0_B = findStatic(InvocationLinker.class, "fail",
             methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, Block.class));
 
-    private static final MethodHandle TEST_1_B = dropArgs(TEST, 4, 1, true);
     private static final MethodHandle TARGET_1_B = Binder
             .from(IRubyObject.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, Block.class)
             .fold(dropNameAndArgs(PGC, 4, 1, true))
@@ -1898,7 +1907,6 @@ public class InvocationLinker {
     private static final MethodHandle FAIL_1_B = findStatic(InvocationLinker.class, "fail",
             methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
 
-    private static final MethodHandle TEST_2_B = dropArgs(TEST, 4, 2, true);
     private static final MethodHandle TARGET_2_B = Binder
             .from(IRubyObject.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, Block.class)
             .fold(dropNameAndArgs(PGC, 4, 2, true))
@@ -1912,7 +1920,6 @@ public class InvocationLinker {
     private static final MethodHandle FAIL_2_B = findStatic(InvocationLinker.class, "fail",
             methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
 
-    private static final MethodHandle TEST_3_B = dropArgs(TEST, 4, 3, true);
     private static final MethodHandle TARGET_3_B = Binder
             .from(IRubyObject.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class)
             .fold(dropNameAndArgs(PGC, 4, 3, true))
@@ -1926,7 +1933,6 @@ public class InvocationLinker {
     private static final MethodHandle FAIL_3_B = findStatic(InvocationLinker.class, "fail",
             methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, IRubyObject.class, Block.class));
 
-    private static final MethodHandle TEST_N_B = dropArgs(TEST, 4, -1, true);
     private static final MethodHandle TARGET_N_B = Binder
             .from(IRubyObject.class, CacheEntry.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, String.class, IRubyObject[].class, Block.class)
             .fold(dropNameAndArgs(PGC, 4, -1, true))
@@ -1940,14 +1946,6 @@ public class InvocationLinker {
     private static final MethodHandle FAIL_N_B = findStatic(InvocationLinker.class, "fail",
                     methodType(IRubyObject.class, JRubyCallSite.class, ThreadContext.class, IRubyObject.class, IRubyObject.class, IRubyObject[].class, Block.class));
 
-    private static final MethodHandle[] TESTS = new MethodHandle[] {
-        TEST_0,
-        TEST_1,
-        TEST_2,
-        TEST_3,
-        TEST_N
-    };
-    
     private static final MethodHandle[] FALLBACKS = new MethodHandle[] {
         FALLBACK_0,
         FALLBACK_1,
@@ -1962,14 +1960,6 @@ public class InvocationLinker {
         FAIL_2,
         FAIL_3,
         FAIL_N
-    };
-    
-    private static final MethodHandle[] TESTS_B = new MethodHandle[] {
-        TEST_0_B,
-        TEST_1_B,
-        TEST_2_B,
-        TEST_3_B,
-        TEST_N_B
     };
     
     private static final MethodHandle[] FALLBACKS_B = new MethodHandle[] {

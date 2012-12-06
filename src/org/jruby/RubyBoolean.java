@@ -105,7 +105,14 @@ public class RubyBoolean extends RubyObject {
         return value ? runtime.getTrue() : runtime.getFalse();
     }
     
-    public static class False {
+    public static class False extends RubyBoolean {
+        False(Ruby runtime) {
+            super(runtime,
+                    false); // Don't put in object space
+
+            flags = FALSE_F;
+        }
+        
         @JRubyMethod(name = "&")
         public static IRubyObject false_and(IRubyObject f, IRubyObject oth) {
             return f;
@@ -127,7 +134,12 @@ public class RubyBoolean extends RubyObject {
         }
     }
     
-    public static class True {
+    public static class True extends RubyBoolean {
+        True(Ruby runtime) {
+            super(runtime,
+                    true); // Don't put in object space
+        }
+        
         @JRubyMethod(name = "&")
         public static IRubyObject true_and(IRubyObject t, IRubyObject oth) {
             return oth.isTrue() ? t : t.getRuntime().getFalse();
