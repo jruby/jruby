@@ -1117,9 +1117,9 @@ public class RubyModule extends RubyObject {
     protected void invalidateCoreClasses() {
         if (!getRuntime().isBooting()) {
             if (this == getRuntime().getFixnum()) {
-                getRuntime().setFixnumReopened(true);
+                getRuntime().reopenFixnum();
             } else if (this == getRuntime().getFloat()) {
-                getRuntime().setFloatReopened(true);
+                getRuntime().reopenFloat();
             }
         }
     }
