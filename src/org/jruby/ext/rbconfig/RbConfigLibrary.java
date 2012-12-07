@@ -185,7 +185,7 @@ public class RbConfigLibrary implements Library {
     }
 
     public static String getSiteDir(Ruby runtime) {
-        return new NormalizedFile(getSiteDirGeneral(runtime), "ruby/site_ruby").getPath();
+        return new NormalizedFile(getSiteDirGeneral(runtime), String.format("ruby/%s/site_ruby", getRuntimeVerStr(runtime))).getPath();
     }
 
     public static String getSiteLibDir(Ruby runtime) {
