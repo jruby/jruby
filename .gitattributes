@@ -1,0 +1,14 @@
+*	text=auto
+
+# Windows specific files
+*.bat	eol=crlf
+
+# *nix specific files
+*.sh	eol=lf
+
+# Binary files
+*.svg	-text
+
+# Specially treated files
+test/heredoc_CRLF_data.rb	-text
+
