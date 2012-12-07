@@ -1348,7 +1348,7 @@ public class LoadService {
                 if (RubyInstanceConfig.DEBUG_LOAD_SERVICE) {
                     debugLogTry("resourceFromLoadPath", "'" + actualPath.toString() + "' " + actualPath.isFile() + " " + actualPath.canRead());
                 }
-                if (actualPath.isFile() && actualPath.canRead()) {
+                if (actualPath.canRead()) {
                     foundResource = new LoadServiceResource(actualPath, reportedPath, absolute);
                     debugLogFound(foundResource);
                 }
