@@ -136,6 +136,14 @@ public class Readline {
         return (ConsoleHolder) (runtime.getModule("Readline").dataGetStruct());
     }
 
+    public static ConsoleHolder getHolderWithReadline(Ruby runtime) {
+        ConsoleHolder holder = getHolder(runtime);
+        if (holder.readline == null) {
+            initReadline(runtime, holder);
+        }
+        return holder;
+    }
+
     public static void setCompletor(ConsoleHolder holder, Completer completor) {
         if (holder.readline != null) {
             holder.readline.removeCompleter(holder.currentCompletor);
@@ -157,10 +165,7 @@ public class Readline {
     @JRubyMethod(name = "readline", module = true, visibility = PRIVATE)
     public static IRubyObject s_readline(ThreadContext context, IRubyObject recv, IRubyObject prompt, IRubyObject add_to_hist) {
         Ruby runtime = context.runtime;
-        ConsoleHolder holder = getHolder(runtime);
-        if (holder.readline == null) {
-            initReadline(runtime, holder); // not overridden, let's go
-        }
+        ConsoleHolder holder = getHolderWithReadline(runtime);
         holder.readline.setExpandEvents(false);
         
         IRubyObject line = runtime.getNil();
@@ -299,7 +304,7 @@ public class Readline {
     @JRubyMethod(name = "get_screen_size", module = true, visibility = PRIVATE, compat = RUBY1_9)
     public static IRubyObject s_get_screen_size(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.runtime;
-        ConsoleHolder holder = getHolder(runtime);
+        ConsoleHolder holder = getHolderWithReadline(runtime);
         IRubyObject[] ary = new IRubyObject[2];
         ary[0] = runtime.newFixnum(holder.readline.getTerminal().getHeight());
         ary[1] = runtime.newFixnum(holder.readline.getTerminal().getWidth());
@@ -310,10 +315,7 @@ public class Readline {
     @JRubyMethod(name = "line_buffer", module = true, visibility = PRIVATE, compat = RUBY1_9)
     public static IRubyObject s_get_line_buffer(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.runtime;
-        ConsoleHolder holder = getHolder(runtime);
-        if (holder.readline == null) {
-            initReadline(runtime, holder);
-        }
+        ConsoleHolder holder = getHolderWithReadline(runtime);
         CursorBuffer cb = holder.readline.getCursorBuffer();
         return runtime.newString(cb.toString()).taint(context);
     }
@@ -321,10 +323,7 @@ public class Readline {
     @JRubyMethod(name = "point", module = true, visibility = PRIVATE, compat = RUBY1_9)
     public static IRubyObject s_get_point(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.runtime;
-        ConsoleHolder holder = getHolder(runtime);
-        if (holder.readline == null) {
-            initReadline(runtime, holder);
-        }
+        ConsoleHolder holder = getHolderWithReadline(runtime);
         CursorBuffer cb = holder.readline.getCursorBuffer();
         return runtime.newFixnum(cb.cursor);
     }
@@ -332,7 +331,7 @@ public class Readline {
     @JRubyMethod(name = "refresh_line", module = true, visibility = PRIVATE, compat = RUBY1_9)
     public static IRubyObject s_refresh_line(ThreadContext context, IRubyObject recv) {
         Ruby runtime = context.runtime;
-        ConsoleHolder holder = getHolder(runtime);
+        ConsoleHolder holder = getHolderWithReadline(runtime);
         try {
             holder.readline.redrawLine(); // not quite the same as rl_refresh_line()
         } catch (IOException ioe) {
