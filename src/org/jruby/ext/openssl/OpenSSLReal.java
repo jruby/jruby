@@ -117,29 +117,11 @@ public class OpenSSLReal {
         Random.createRandom(runtime, ossl);
         HMAC.createHMAC(runtime, ossl);
         Config.createConfig(runtime, ossl);
-
-        // these classes depends on BC provider now.
-        try {
-            ASN1.createASN1(runtime, ossl);
-            X509.createX509(runtime, ossl);
-            NetscapeSPKI.createNetscapeSPKI(runtime, ossl);
-            PKCS7.createPKCS7(runtime, ossl);
-        } catch (SecurityException ignore) {
-            // some class might be prohibited to use.
-            runtime.getLoadService().require("openssl/dummy");
-        } catch (Error ignore) {
-            // mainly for rescuing NoClassDefFoundError: no bc*.jar
-            runtime.getLoadService().require("openssl/dummy");
-        }
-        try {
-            SSL.createSSL(runtime, ossl);
-        } catch (SecurityException ignore) {
-            // some class might be prohibited to use. ex. SSL* on GAE/J.
-            runtime.getLoadService().require("openssl/dummyssl");
-        } catch (Error ignore) {
-            // mainly for rescuing NoClassDefFoundError: no bc*.jar
-            runtime.getLoadService().require("openssl/dummyssl");
-        }
+        ASN1.createASN1(runtime, ossl);
+        X509.createX509(runtime, ossl);
+        NetscapeSPKI.createNetscapeSPKI(runtime, ossl);
+        PKCS7.createPKCS7(runtime, ossl);
+        SSL.createSSL(runtime, ossl);
 
         runtime.getLoadService().require("jopenssl/version");
         String jopensslVersion = runtime.getClassFromPath("Jopenssl::Version").getConstant("VERSION").toString();
