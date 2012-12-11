@@ -29,7 +29,7 @@ import org.jruby.RubyEncoding;
 import org.jruby.RubyIO;
 import org.jruby.RubyModule;
 import org.jruby.RubyString;
-import org.jruby.ext.Readline;
+import org.jruby.ext.readline.Readline;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
 import org.jruby.runtime.builtin.IRubyObject;

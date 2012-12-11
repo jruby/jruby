@@ -26,7 +26,7 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the CPL, the GPL or the LGPL.
  ***** END LICENSE BLOCK *****/
-package org.jruby.ext;
+package org.jruby.ext.readline;
 
 import java.io.IOException;
 import org.jruby.Ruby;
