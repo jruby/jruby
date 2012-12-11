@@ -1,7 +1,7 @@
 require 'rake'
 require 'rake/testtask'
 
-MANIFEST = FileList["Rakefile", "History.txt", "Manifest.txt", "README.txt", "License.txt", "../../lib/ruby/shared/jopenssl.jar", "lib/**/*", "test/**/*"]
+MANIFEST = FileList["Rakefile", "History.txt", "Manifest.txt", "README.txt", "License.txt", "lib/shared/jopenssl.jar", "lib/**/*", "test/**/*"]
 BC_JARS = FileList["../../build_lib/bc*.jar"]
 
 task :default => [:java_compile, :test]
@@ -40,10 +40,10 @@ task :java_compile do
   sh "javac @pkg/compile_options @pkg/compile_classpath @pkg/compile_sourcefiles"
   sh "jar cf ../../lib/ruby/shared/jopenssl.jar -C pkg/classes/ ."
 end
-file "../../lib/ruby/shared/jopenssl.jar" => :java_compile
+file "lib/shared/jopenssl.jar" => :java_compile
 
 task :more_clean do
-  rm_f FileList['../../lib/ruby/shared/jopenssl.jar']
+  rm_f FileList['lib/shared/jopenssl.jar']
 end
 task :clean => :more_clean
 
