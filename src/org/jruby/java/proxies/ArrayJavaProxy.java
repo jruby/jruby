@@ -20,8 +20,11 @@ import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 
 public class ArrayJavaProxy extends JavaProxy {
-    public ArrayJavaProxy(Ruby runtime, RubyClass klazz) {
-        super(runtime, klazz);
+    private final JavaUtil.JavaConverter converter;
+    
+    public ArrayJavaProxy(Ruby runtime, RubyClass klazz, Object ary, JavaUtil.JavaConverter converter) {
+        super(runtime, klazz, ary);
+        this.converter = converter;
     }
     
     public static RubyClass createArrayJavaProxy(ThreadContext context) {
@@ -29,11 +32,7 @@ public class ArrayJavaProxy extends JavaProxy {
         
         RubyClass arrayJavaProxy = runtime.defineClass("ArrayJavaProxy",
                 runtime.getJavaSupport().getJavaProxyClass(),
-                new ObjectAllocator() {
-            public IRubyObject allocate(Ruby runtime, RubyClass klazz) {
-                return new ArrayJavaProxy(runtime, klazz);
-            }
-        });
+                ObjectAllocator.NOT_ALLOCATABLE_ALLOCATOR);
         
         RubyClass singleton = arrayJavaProxy.getSingletonClass();
         
@@ -48,7 +47,14 @@ public class ArrayJavaProxy extends JavaProxy {
     }
     
     public JavaArray getJavaArray() {
-        return (JavaArray)dataGetStruct();
+        JavaArray javaArray = (JavaArray)dataGetStruct();
+        
+        if (javaArray == null) {
+            javaArray = new JavaArray(getRuntime(), getObject());
+            dataWrapStruct(javaArray);
+        }
+        
+        return javaArray;
     }
     
     @JRubyMethod(name = {"length","size"})

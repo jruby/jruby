@@ -1293,6 +1293,11 @@ public class Java implements Library {
     }
     
     public static IRubyObject allocateProxy(Object javaObject, RubyClass clazz) {
+        // Arrays are never stored in OPC
+        if (clazz.getSuperClass() == clazz.getRuntime().getJavaSupport().getArrayProxyClass()) {
+            return new ArrayJavaProxy(clazz.getRuntime(), clazz, javaObject, JavaUtil.getJavaConverter(javaObject.getClass().getComponentType()));
+        }
+        
         IRubyObject proxy = clazz.allocate();
         if (proxy instanceof JavaProxy) {
             ((JavaProxy)proxy).setObject(javaObject);

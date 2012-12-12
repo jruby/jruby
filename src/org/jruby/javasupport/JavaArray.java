@@ -148,20 +148,24 @@ public class JavaArray extends JavaObject {
     }
     
     public void setWithExceptionHandling(int intIndex, Object javaObject) {
+        setWithExceptionHandlingDirect(getRuntime(), getValue(), intIndex, javaObject);
+    }
+    
+    public static void setWithExceptionHandlingDirect(Ruby runtime, Object ary, int intIndex, Object javaObject) {
         try {
-            Array.set(getValue(), intIndex, javaObject);
+            Array.set(ary, intIndex, javaObject);
         } catch (IndexOutOfBoundsException e) {
-            throw getRuntime().newArgumentError(
+            throw runtime.newArgumentError(
                                     "index out of bounds for java array (" + intIndex +
-                                    " for length " + getLength() + ")");
+                                    " for length " + Array.getLength(ary) + ")");
         } catch (ArrayStoreException e) {
-            throw getRuntime().newTypeError(
+            throw runtime.newTypeError(
                                     "wrong element type " + javaObject.getClass() + "(array contains " +
-                                    getValue().getClass().getComponentType().getName() + ")");
+                                    ary.getClass().getComponentType().getName() + ")");
         } catch (IllegalArgumentException iae) {
-            throw getRuntime().newArgumentError(
+            throw runtime.newArgumentError(
                                     "wrong element type " + javaObject.getClass() + "(array contains " +
-                                    getValue().getClass().getComponentType().getName() + ")");
+                                    ary.getClass().getComponentType().getName() + ")");
         }
     }
 

@@ -1780,15 +1780,24 @@ public class JavaClass extends JavaObject {
             " - must be Integer or Array of Integer");
         }
     }
-   
-    public IRubyObject emptyJavaArray(ThreadContext context) {
-        JavaArray javaArray = new JavaArray(getRuntime(), Array.newInstance(javaClass(), 0));
-        RubyClass newProxyClass = (RubyClass)Java.get_proxy_class(javaArray, array_class());
+    
+    public ArrayJavaProxy newProxiedArray(Ruby runtime, Class componentType, int size) {
+        return newProxiedArray(runtime, componentType, JavaUtil.getJavaConverter(componentType), size);
+    }
+    
+    public ArrayJavaProxy newProxiedArray(Ruby runtime, Class componentType, JavaUtil.JavaConverter converter, int size) {
+        Object ary = Array.newInstance(componentType, size);
+        RubyClass newProxyClass = (RubyClass)JavaClass.get(runtime, ary.getClass()).getProxyClass();
 
-        ArrayJavaProxy proxy = new ArrayJavaProxy(context.runtime, newProxyClass);
-        proxy.dataWrapStruct(javaArray);
+        ArrayJavaProxy proxy = new ArrayJavaProxy(runtime, newProxyClass, ary, converter);
         
         return proxy;
+    }
+   
+    public IRubyObject emptyJavaArray(ThreadContext context) {
+        Ruby runtime = context.runtime;
+        Class componentType = javaClass();
+        return newProxiedArray(runtime, componentType, 0);
     }
    
     public IRubyObject javaArraySubarray(ThreadContext context, JavaArray fromArray, int index, int size) {
@@ -1800,13 +1809,9 @@ public class JavaClass extends JavaObject {
                 size = actualLength - index;
             }
             
-            Object newArray = Array.newInstance(javaClass(), size);
-            JavaArray javaArray = new JavaArray(getRuntime(), newArray);
+            ArrayJavaProxy proxy = newProxiedArray(context.runtime, javaClass(), size);
+            Object newArray = proxy.getObject();
             System.arraycopy(fromArray.getValue(), index, newArray, 0, size);
-            RubyClass newProxyClass = (RubyClass)Java.get_proxy_class(javaArray, array_class());
-
-            ArrayJavaProxy proxy = new ArrayJavaProxy(context.runtime, newProxyClass);
-            proxy.dataWrapStruct(javaArray);
 
             return proxy;
         }
@@ -1825,14 +1830,12 @@ public class JavaClass extends JavaObject {
     public IRubyObject concatArrays(ThreadContext context, JavaArray original, JavaArray additional) {
         int oldLength = (int)original.length().getLongValue();
         int addLength = (int)additional.length().getLongValue();
-        Object newArray = Array.newInstance(javaClass(), oldLength + addLength);
-        JavaArray javaArray = new JavaArray(getRuntime(), newArray);
+        
+        ArrayJavaProxy proxy = newProxiedArray(context.runtime, javaClass(), oldLength + addLength);
+        Object newArray = proxy.getObject();
+        
         System.arraycopy(original.getValue(), 0, newArray, 0, oldLength);
         System.arraycopy(additional.getValue(), 0, newArray, oldLength, addLength);
-        RubyClass newProxyClass = (RubyClass)Java.get_proxy_class(javaArray, array_class());
-
-        ArrayJavaProxy proxy = new ArrayJavaProxy(context.runtime, newProxyClass);
-        proxy.dataWrapStruct(javaArray);
 
         return proxy;
     }
@@ -1846,16 +1849,15 @@ public class JavaClass extends JavaObject {
      * @return
      */
     public IRubyObject concatArrays(ThreadContext context, JavaArray original, IRubyObject additional) {
+        Ruby runtime = context.runtime;
         int oldLength = (int)original.length().getLongValue();
         int addLength = (int)((RubyFixnum)RuntimeHelpers.invoke(context, additional, "length")).getLongValue();
-        Object newArray = Array.newInstance(javaClass(), oldLength + addLength);
-        JavaArray javaArray = new JavaArray(getRuntime(), newArray);
+        
+        ArrayJavaProxy proxy = newProxiedArray(runtime, javaClass(), oldLength + addLength);
+        Object newArray = proxy.getObject();
+        
         System.arraycopy(original.getValue(), 0, newArray, 0, oldLength);
-        RubyClass newProxyClass = (RubyClass)Java.get_proxy_class(javaArray, array_class());
-        ArrayJavaProxy proxy = new ArrayJavaProxy(context.runtime, newProxyClass);
-        proxy.dataWrapStruct(javaArray);
 
-        Ruby runtime = context.runtime;
         for (int i = 0; i < addLength; i++) {
             RuntimeHelpers.invoke(context, proxy, "[]=", runtime.newFixnum(oldLength + i), 
                     RuntimeHelpers.invoke(context, additional, "[]", runtime.newFixnum(i)));
@@ -1869,26 +1871,32 @@ public class JavaClass extends JavaObject {
         if (!(fromArray instanceof RubyArray)) {
             throw runtime.newTypeError(fromArray, runtime.getArray());
         }
+        
+        Object newArray = javaArrayFromRubyArrayDirect(context, fromArray);
+        
+        return new ArrayJavaProxy(runtime, Java.getProxyClassForObject(runtime, newArray), newArray, JavaUtil.getJavaConverter(javaClass()));
+    }
+
+    public Object javaArrayFromRubyArrayDirect(ThreadContext context, IRubyObject fromArray) {
+        Ruby runtime = context.runtime;
+        if (!(fromArray instanceof RubyArray)) {
+            throw runtime.newTypeError(fromArray, runtime.getArray());
+        }
         RubyArray rubyArray = (RubyArray)fromArray;
-        JavaArray javaArray = new JavaArray(getRuntime(), Array.newInstance(javaClass(), rubyArray.size()));
+        Object newArray = Array.newInstance(javaClass(), rubyArray.size());
         
         if (javaClass().isArray()) {
             // if it's an array of arrays, recurse with the component type
             for (int i = 0; i < rubyArray.size(); i++) {
                 JavaClass componentType = component_type();
-                IRubyObject wrappedComponentArray = componentType.javaArrayFromRubyArray(context, rubyArray.eltInternal(i));
-                javaArray.setWithExceptionHandling(i, JavaUtil.unwrapJavaObject(wrappedComponentArray));
+                Object componentArray = componentType.javaArrayFromRubyArrayDirect(context, rubyArray.eltInternal(i));
+                JavaArray.setWithExceptionHandlingDirect(runtime, newArray, i, componentArray);
             }
         } else {
-            ArrayJavaAddons.copyDataToJavaArray(context, rubyArray, javaArray);
+            ArrayJavaAddons.copyDataToJavaArrayDirect(context, rubyArray, newArray);
         }
         
-        RubyClass newProxyClass = (RubyClass)Java.get_proxy_class(javaArray, array_class());
-
-        ArrayJavaProxy proxy = new ArrayJavaProxy(runtime, newProxyClass);
-        proxy.dataWrapStruct(javaArray);
-        
-        return proxy;
+        return newArray;
     }
 
     @JRubyMethod
