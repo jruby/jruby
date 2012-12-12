@@ -93,14 +93,16 @@ public class JavaArray extends JavaObject {
     }
 
     public IRubyObject arefDirect(Ruby runtime, int intIndex) {
-        Object array = getValue();
+        return arefDirect(runtime, getValue(), javaConverter, intIndex);
+    }
 
+    public static IRubyObject arefDirect(Ruby runtime, Object array, JavaUtil.JavaConverter javaConverter, int intIndex) {
         try {
             return JavaUtil.convertJavaArrayElementToRuby(runtime, javaConverter, array, intIndex);
         } catch (IndexOutOfBoundsException e) {
             throw runtime.newArgumentError(
                     "index out of bounds for java array (" + intIndex +
-                            " for length " + getLength() + ")");
+                            " for length " + Array.getLength(array) + ")");
         }
     }
 
@@ -127,22 +129,24 @@ public class JavaArray extends JavaObject {
     }
 
     public IRubyObject asetDirect(Ruby runtime, int intIndex, IRubyObject value) {
-        Object array = getValue();
+        return asetDirect(runtime, getValue(), javaConverter, intIndex, value);
+    }
 
+    public static IRubyObject asetDirect(Ruby runtime, Object array, JavaUtil.JavaConverter javaConverter, int intIndex, IRubyObject value) {
         try {
             javaConverter.set(runtime, array, intIndex, value);
         } catch (IndexOutOfBoundsException e) {
             throw runtime.newArgumentError(
                     "index out of bounds for java array (" + intIndex +
-                            " for length " + getLength() + ")");
+                            " for length " + Array.getLength(array) + ")");
         } catch (ArrayStoreException e) {
             throw runtime.newTypeError(
                     "wrong element type " + value.getClass() + "(array contains " +
-                            getValue().getClass().getComponentType().getName() + ")");
+                            array.getClass().getComponentType().getName() + ")");
         } catch (IllegalArgumentException iae) {
             throw runtime.newArgumentError(
                     "wrong element type " + value.getClass() + "(array contains " +
-                            getValue().getClass().getComponentType().getName() + ")");
+                            array.getClass().getComponentType().getName() + ")");
         }
         return value;
     }
