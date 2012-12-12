@@ -81,6 +81,7 @@ import org.jruby.java.addons.ArrayJavaAddons;
 import org.jruby.java.proxies.ArrayJavaProxy;
 import org.jruby.java.invokers.ConstructorInvoker;
 import org.jruby.java.proxies.ConcreteJavaProxy;
+import org.jruby.java.util.ArrayUtils;
 import org.jruby.javasupport.util.RuntimeHelpers;
 import org.jruby.runtime.Arity;
 import org.jruby.runtime.Block;
@@ -1780,48 +1781,13 @@ public class JavaClass extends JavaObject {
             " - must be Integer or Array of Integer");
         }
     }
-    
-    public static ArrayJavaProxy newProxiedArray(Ruby runtime, Class componentType, int size) {
-        return newProxiedArray(runtime, componentType, JavaUtil.getJavaConverter(componentType), size);
-    }
-    
-    public static ArrayJavaProxy newProxiedArray(Ruby runtime, Class componentType, JavaUtil.JavaConverter converter, int size) {
-        Object ary = Array.newInstance(componentType, size);
-        RubyClass newProxyClass = (RubyClass)JavaClass.get(runtime, ary.getClass()).getProxyClass();
-
-        ArrayJavaProxy proxy = new ArrayJavaProxy(runtime, newProxyClass, ary, converter);
-        
-        return proxy;
-    }
    
     public IRubyObject emptyJavaArray(ThreadContext context) {
-        return emptyJavaArrayDirect(context, javaClass());
-    }
-   
-    public static IRubyObject emptyJavaArrayDirect(ThreadContext context, Class componentType) {
-        Ruby runtime = context.runtime;
-        return newProxiedArray(runtime, componentType, 0);
+        return ArrayUtils.emptyJavaArrayDirect(context, javaClass());
     }
    
     public IRubyObject javaArraySubarray(ThreadContext context, JavaArray fromArray, int index, int size) {
-        return javaArraySubarrayDirect(context, getValue(), index, size);
-    }
-   
-    public static IRubyObject javaArraySubarrayDirect(ThreadContext context, Object fromArray, int index, int size) {
-        int actualLength = Array.getLength(fromArray);
-        if (index >= actualLength) {
-            return context.runtime.getNil();
-        } else {
-            if (index + size > actualLength) {
-                size = actualLength - index;
-            }
-            
-            ArrayJavaProxy proxy = newProxiedArray(context.runtime, fromArray.getClass().getComponentType(), size);
-            Object newArray = proxy.getObject();
-            System.arraycopy(fromArray, index, newArray, 0, size);
-
-            return proxy;
-        }
+        return ArrayUtils.javaArraySubarrayDirect(context, getValue(), index, size);
     }
    
     /**
@@ -1835,20 +1801,7 @@ public class JavaClass extends JavaObject {
      * @return
      */
     public IRubyObject concatArrays(ThreadContext context, JavaArray original, JavaArray additional) {
-        return concatArraysDirect(context, original.getValue(), additional.getValue());
-    }
-    
-    public static IRubyObject concatArraysDirect(ThreadContext context, Object original, Object additional) {
-        int oldLength = Array.getLength(original);
-        int addLength = Array.getLength(additional);
-        
-        ArrayJavaProxy proxy = newProxiedArray(context.runtime, original.getClass().getComponentType(), oldLength + addLength);
-        Object newArray = proxy.getObject();
-        
-        System.arraycopy(original, 0, newArray, 0, oldLength);
-        System.arraycopy(additional, 0, newArray, oldLength, addLength);
-
-        return proxy;
+        return ArrayUtils.concatArraysDirect(context, original.getValue(), additional.getValue());
     }
    
     /**
@@ -1860,39 +1813,7 @@ public class JavaClass extends JavaObject {
      * @return
      */
     public IRubyObject concatArrays(ThreadContext context, JavaArray original, IRubyObject additional) {
-        Ruby runtime = context.runtime;
-        int oldLength = (int)original.length().getLongValue();
-        int addLength = (int)((RubyFixnum)RuntimeHelpers.invoke(context, additional, "length")).getLongValue();
-        
-        ArrayJavaProxy proxy = newProxiedArray(runtime, javaClass(), oldLength + addLength);
-        Object newArray = proxy.getObject();
-        
-        System.arraycopy(original.getValue(), 0, newArray, 0, oldLength);
-
-        for (int i = 0; i < addLength; i++) {
-            RuntimeHelpers.invoke(context, proxy, "[]=", runtime.newFixnum(oldLength + i), 
-                    RuntimeHelpers.invoke(context, additional, "[]", runtime.newFixnum(i)));
-        }
-
-        return proxy;
-    }
-    
-    public static IRubyObject concatArraysDirect(ThreadContext context, Object original, IRubyObject additional) {
-        Ruby runtime = context.runtime;
-        int oldLength = Array.getLength(original);
-        int addLength = (int)((RubyFixnum)RuntimeHelpers.invoke(context, additional, "length")).getLongValue();
-        
-        ArrayJavaProxy proxy = newProxiedArray(runtime, original.getClass().getComponentType(), oldLength + addLength);
-        Object newArray = proxy.getObject();
-        
-        System.arraycopy(original, 0, newArray, 0, oldLength);
-
-        for (int i = 0; i < addLength; i++) {
-            RuntimeHelpers.invoke(context, proxy, "[]=", runtime.newFixnum(oldLength + i), 
-                    RuntimeHelpers.invoke(context, additional, "[]", runtime.newFixnum(i)));
-        }
-
-        return proxy;
+        return ArrayUtils.concatArraysDirect(context, original.getValue(), additional);
     }
 
     public IRubyObject javaArrayFromRubyArray(ThreadContext context, IRubyObject fromArray) {
@@ -1919,10 +1840,10 @@ public class JavaClass extends JavaObject {
             for (int i = 0; i < rubyArray.size(); i++) {
                 JavaClass componentType = component_type();
                 Object componentArray = componentType.javaArrayFromRubyArrayDirect(context, rubyArray.eltInternal(i));
-                JavaArray.setWithExceptionHandlingDirect(runtime, newArray, i, componentArray);
+                ArrayUtils.setWithExceptionHandlingDirect(runtime, newArray, i, componentArray);
             }
         } else {
-            ArrayJavaAddons.copyDataToJavaArrayDirect(context, rubyArray, newArray);
+            ArrayUtils.copyDataToJavaArrayDirect(context, rubyArray, newArray);
         }
         
         return newArray;

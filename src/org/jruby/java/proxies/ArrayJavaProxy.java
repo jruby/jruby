@@ -10,6 +10,7 @@ import org.jruby.RubyModule;
 import org.jruby.RubyRange;
 import org.jruby.anno.JRubyMethod;
 import org.jruby.internal.runtime.methods.DynamicMethod;
+import org.jruby.java.util.ArrayUtils;
 import org.jruby.javasupport.JavaArray;
 import org.jruby.javasupport.JavaClass;
 import org.jruby.javasupport.JavaUtil;
@@ -75,7 +76,7 @@ public class ArrayJavaProxy extends JavaProxy {
     public IRubyObject op_aref(ThreadContext context, IRubyObject arg) {
         if (arg instanceof RubyInteger) {
             int index = (int)((RubyInteger)arg).getLongValue();
-            return JavaArray.arefDirect(context.runtime, getObject(), converter, index);
+            return ArrayUtils.arefDirect(context.runtime, getObject(), converter, index);
         } else {
             return getRange(context, arg);
         }
@@ -85,7 +86,7 @@ public class ArrayJavaProxy extends JavaProxy {
     public IRubyObject op_aref(ThreadContext context, IRubyObject[] args) {
         if (args.length == 1 && args[0] instanceof RubyInteger) {
             int index = (int)((RubyInteger)args[0]).getLongValue();
-            return JavaArray.arefDirect(context.runtime, getObject(), converter, index);
+            return ArrayUtils.arefDirect(context.runtime, getObject(), converter, index);
         } else {
             return getRange(context, args);
         }
@@ -93,7 +94,7 @@ public class ArrayJavaProxy extends JavaProxy {
     
     @JRubyMethod(name = "[]=")
     public IRubyObject op_aset(ThreadContext context, IRubyObject index, IRubyObject value) {
-        JavaArray.asetDirect(context.runtime, getObject(), converter, (int)((RubyInteger)index).getLongValue(), value);
+        ArrayUtils.asetDirect(context.runtime, getObject(), converter, (int)((RubyInteger)index).getLongValue(), value);
         return value;
     }
     
@@ -109,7 +110,7 @@ public class ArrayJavaProxy extends JavaProxy {
         }
         
         if (index >= 0 && index < length) {
-            return JavaArray.arefDirect(runtime, array, converter, (int)index);
+            return ArrayUtils.arefDirect(runtime, array, converter, (int)index);
         } else {
             return context.nil;
         }
@@ -121,10 +122,10 @@ public class ArrayJavaProxy extends JavaProxy {
             Object otherArray = ((ArrayJavaProxy)other).getObject();
             
             if (getObject().getClass().getComponentType().isAssignableFrom(otherArray.getClass().getComponentType())) {
-                return JavaClass.concatArraysDirect(context, getObject(), otherArray);
+                return ArrayUtils.concatArraysDirect(context, getObject(), otherArray);
             }
         }
-        return JavaClass.concatArraysDirect(context, getObject(), other);
+        return ArrayUtils.concatArraysDirect(context, getObject(), other);
     }
     
     @JRubyMethod
@@ -133,7 +134,7 @@ public class ArrayJavaProxy extends JavaProxy {
         int length = Array.getLength(getObject());
 
         for (int i = 0; i < length; i++) {
-            IRubyObject rubyObj = JavaArray.arefDirect(runtime, getObject(), converter, i);
+            IRubyObject rubyObj = ArrayUtils.arefDirect(runtime, getObject(), converter, i);
             block.yield(context, rubyObj);
         }
         return this;
@@ -209,10 +210,10 @@ public class ArrayJavaProxy extends JavaProxy {
                 if (range.exclude_end_p().isFalse()) newLength += 1;
                 
                 if (newLength <= 0) {
-                    return JavaClass.emptyJavaArrayDirect(context, getObject().getClass().getComponentType());
+                    return ArrayUtils.emptyJavaArrayDirect(context, getObject().getClass().getComponentType());
                 }
         
-                return JavaClass.javaArraySubarrayDirect(context, getObject(), first, newLength);
+                return ArrayUtils.javaArraySubarrayDirect(context, getObject(), first, newLength);
             } else {
                 throw context.runtime.newTypeError("only Fixnum ranges supported");
             }
@@ -233,10 +234,10 @@ public class ArrayJavaProxy extends JavaProxy {
             first = first >= 0 ? first : Array.getLength(getObject()) + first;
 
             if (length <= 0) {
-                return JavaClass.emptyJavaArrayDirect(context, getObject().getClass().getComponentType());
+                return ArrayUtils.emptyJavaArrayDirect(context, getObject().getClass().getComponentType());
             }
 
-            return JavaClass.javaArraySubarrayDirect(context, getObject(), first, length);
+            return ArrayUtils.javaArraySubarrayDirect(context, getObject(), first, length);
         } else {
             throw context.runtime.newTypeError("only Fixnum ranges supported");
         }
