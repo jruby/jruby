@@ -449,11 +449,13 @@ public class JavaProxy extends RubyObject {
     @Override
     public Object toJava(Class type) {
         Object obj = getObject();
-        if (type.isAssignableFrom(obj.getClass())) {
+        Class cls = obj.getClass();
+        
+        if (type.isAssignableFrom(cls)) {
             return obj;
-        } else {
-            return super.toJava(type);
         }
+        
+        throw getRuntime().newTypeError("failed to coerce " + cls.getName() + " to " + type.getName());
     }
 
     @Override

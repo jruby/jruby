@@ -202,16 +202,14 @@ public class ConcreteJavaProxy extends JavaProxy {
                 // FIXME in more permissive call paths, like invokedynamic, this can allow
                 // precision-loading downcasts to happen silently
                 return obj;
-            } else {
-                throw getRuntime().newTypeError("failed to coerce " + cls.getName() + " to " + type.getName());
             }
         } else if (type.isAssignableFrom(cls)) {
             if (Java.OBJECT_PROXY_CACHE || metaClass.getCacheProxy()) {
                 getRuntime().getJavaSupport().getObjectProxyCache().put(obj, this);
             }
             return obj;
-        } else {
-            return super.toJava(type);
         }
+        
+        throw getRuntime().newTypeError("failed to coerce " + cls.getName() + " to " + type.getName());
     }
 }
