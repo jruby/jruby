@@ -68,31 +68,6 @@ public class ArrayJavaAddons {
             javaArray.setWithExceptionHandling(i, rubyArray.entry(i).toJava(targetType));
         }
     }
-
-    public static void copyDataToJavaArrayDirect(
-            ThreadContext context, RubyArray rubyArray, Object javaArray) {
-        int javaLength = Array.getLength(javaArray);
-        Class targetType = javaArray.getClass().getComponentType();
-
-        int rubyLength = rubyArray.getLength();
-
-        int i = 0;
-        for (; i < rubyLength && i < javaLength; i++) {
-            Array.set(javaArray, i, rubyArray.entry(i).toJava(targetType));
-        }
-    }
-    
-    public static void copyDataToJavaArray(
-            ThreadContext context, RubyArray rubyArray, int src, JavaArray javaArray, int dest, int length) {
-        Class targetType = javaArray.getComponentType();
-        
-        int destLength = (int)javaArray.length().getLongValue();
-        int srcLength = rubyArray.getLength();
-        
-        for (int i = 0; src + i < srcLength && dest + i < destLength && i < length; i++) {
-            javaArray.setWithExceptionHandling(dest + i, rubyArray.entry(src + i).toJava(targetType));
-        }
-    }
     
     @JRubyMethod
     public static IRubyObject dimensions(ThreadContext context, IRubyObject maybeArray) {
