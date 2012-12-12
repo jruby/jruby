@@ -61,6 +61,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.concurrent.locks.ReentrantLock;
+import org.jcodings.Encoding;
 
 import org.jruby.Ruby;
 import org.jruby.RubyArray;
@@ -1252,7 +1253,7 @@ public class JavaClass extends JavaObject {
     @JRubyMethod
     public RubyModule ruby_class() {
         // Java.getProxyClass deals with sync issues, so we won't duplicate the logic here
-        return Java.getProxyClass(getRuntime(), this);
+        return Java.getProxyClass(getRuntime(), javaClass());
     }
 
     @JRubyMethod(name = "public?")

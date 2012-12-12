@@ -33,7 +33,7 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.javasupport;
 
-import org.jruby.java.proxies.MapBasedProxyCache;
+import org.jruby.util.collections.MapBasedClassValue;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Member;
@@ -49,12 +49,13 @@ import org.jruby.RubyClass;
 import org.jruby.RubyModule;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.exceptions.Unrescuable;
-import org.jruby.java.proxies.ProxyCache;
+import org.jruby.util.collections.ClassValue;
 import org.jruby.javasupport.proxy.JavaProxyClass;
 import org.jruby.javasupport.util.ObjectProxyCache;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.WeakIdentityHashMap;
 import org.jruby.util.cli.Options;
+import org.jruby.util.collections.ClassValueCalculator;
 
 public class JavaSupport {
     private static final Map<String,Class> PRIMITIVE_CLASSES = new HashMap<String,Class>();
@@ -85,18 +86,19 @@ public class JavaSupport {
         }
     };
     
-    private final ProxyCache proxyCache;
-    private static final Constructor<? extends ProxyCache> PROXY_CACHE_CONSTRUCTOR;
+    private final ClassValue<JavaClass> javaClassCache;
+    private final ClassValue<RubyModule> proxyClassCache;
+    private static final Constructor<? extends ClassValue> CLASS_VALUE_CONSTRUCTOR;
     
     static {
-        Constructor<? extends ProxyCache> constructor = null;
+        Constructor<? extends ClassValue> constructor = null;
 
         if (Options.INVOKEDYNAMIC_CLASS_VALUES.load()) {
             try {
                 // try to load the ClassValue class. If it succeeds, we can use our
                 // ClassValue-based cache.
                 Class.forName("java.lang.ClassValue");
-                constructor = (Constructor<ProxyCache>)Class.forName("org.jruby.java.proxies.ClassValueProxyCache").getConstructor(Ruby.class);
+                constructor = (Constructor<ClassValue>)Class.forName("org.jruby.java.proxies.ClassValueProxyCache").getConstructor(ClassValueCalculator.class);
             }
             catch (Exception ex) {
                 // fall through to Map version
@@ -105,13 +107,13 @@ public class JavaSupport {
 
         if (constructor == null) {
             try {
-                constructor = MapBasedProxyCache.class.getConstructor(Ruby.class);
+                constructor = MapBasedClassValue.class.getConstructor(ClassValueCalculator.class);
             } catch (Exception ex2) {
                 throw new RuntimeException(ex2);
             }
         }
 
-        PROXY_CACHE_CONSTRUCTOR = constructor;
+        CLASS_VALUE_CONSTRUCTOR = constructor;
     }
 
     private RubyModule javaModule;
@@ -139,11 +141,22 @@ public class JavaSupport {
     // A cache of all JavaProxyClass objects created for this runtime
     private Map<Set<?>, JavaProxyClass> javaProxyClassCache = Collections.synchronizedMap(new HashMap<Set<?>, JavaProxyClass>());
     
-    public JavaSupport(Ruby ruby) {
+    public JavaSupport(final Ruby ruby) {
         this.runtime = ruby;
         
         try {
-            this.proxyCache = PROXY_CACHE_CONSTRUCTOR.newInstance(ruby);
+            this.javaClassCache = CLASS_VALUE_CONSTRUCTOR.newInstance(new ClassValueCalculator<JavaClass>() {
+                @Override
+                public JavaClass computeValue(Class<?> cls) {
+                    return new JavaClass(runtime, cls);
+                }
+            });
+            this.proxyClassCache = CLASS_VALUE_CONSTRUCTOR.newInstance(new ClassValueCalculator<RubyModule>() {
+                @Override
+                public RubyModule computeValue(Class<?> cls) {
+                    return Java.createProxyClassForClass(runtime, cls);
+                }
+            });
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
@@ -190,7 +203,11 @@ public class JavaSupport {
     }
 
     public JavaClass getJavaClassFromCache(Class clazz) {
-        return proxyCache.get(clazz);
+        return javaClassCache.get(clazz);
+    }
+
+    public RubyModule getProxyClassFromCache(Class clazz) {
+        return proxyClassCache.get(clazz);
     }
 
     public void handleNativeException(Throwable exception, Member target) {

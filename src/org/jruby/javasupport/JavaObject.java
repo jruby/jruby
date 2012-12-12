@@ -254,21 +254,6 @@ public class JavaObject extends RubyObject {
         throw getRuntime().newTypeError("not a java array");
     }
 
-    @JRubyMethod(name = "[]", required = 1)
-    public IRubyObject aref(IRubyObject index) {
-        throw getRuntime().newTypeError("not a java array");
-    }
-
-    @JRubyMethod(name = "[]=", required = 2)
-    public IRubyObject aset(IRubyObject index, IRubyObject someValue) {
-        throw getRuntime().newTypeError("not a java array");
-    }
-
-    @JRubyMethod(name = "fill", required = 3)
-    public IRubyObject afill(IRubyObject beginIndex, IRubyObject endIndex, IRubyObject someValue) {
-        throw getRuntime().newTypeError("not a java array");
-    }
-
     @JRubyMethod(name = "java_proxy?")
     public IRubyObject is_java_proxy() {
         return getRuntime().getTrue();

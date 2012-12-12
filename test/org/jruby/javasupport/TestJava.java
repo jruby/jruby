@@ -14,13 +14,13 @@ class B extends A {}
 public class TestJava extends TestCase {
 
     public void testProxyCreation() {
-	Ruby runtime = Ruby.newInstance();
-	try {
-	    Java.getProxyClass(runtime, JavaClass.get(runtime, B.class));
-	    assert(true);
-	}
-	catch (AssertionError ae) {
-	    fail(ae.toString());
-	}
+        Ruby runtime = Ruby.newInstance();
+        try {
+            Java.getProxyClass(runtime, B.class);
+            assert(true);
+        }
+        catch (AssertionError ae) {
+            fail(ae.toString());
+        }
     }
 }
