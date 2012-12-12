@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -19,6 +20,7 @@ import org.jruby.RubyArray;
 import org.jruby.RubyClass;
 import org.jruby.RubyHash;
 import org.jruby.RubyHash.Visitor;
+import org.jruby.RubyInteger;
 import org.jruby.RubyMethod;
 import org.jruby.RubyModule;
 import org.jruby.RubyObject;
@@ -146,6 +148,16 @@ public class JavaProxy extends RubyObject {
         } else {
             return Java.get_proxy_class(javaClass, RuntimeHelpers.invoke(context, javaClass, "array_class"));
         }
+    }
+    
+    @JRubyMethod(meta = true)
+    public static IRubyObject new_array(ThreadContext context, IRubyObject recv, IRubyObject arg0) {
+        JavaClass javaClass = (JavaClass)RuntimeHelpers.invoke(context, recv, "java_class");
+        RubyClass proxyClass = (RubyClass)recv;
+        Class componentType = javaClass.javaClass();
+        
+        // construct new array proxy (ArrayJavaProxy)
+        return new ArrayJavaProxy(context.runtime, proxyClass, Array.newInstance(componentType, (int)((RubyInteger)arg0.convertToInteger()).getLongValue()));
     }
 
     @JRubyMethod(name = "__persistent__=", meta = true)

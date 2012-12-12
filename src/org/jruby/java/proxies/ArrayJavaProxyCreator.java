@@ -55,8 +55,10 @@ public class ArrayJavaProxyCreator extends RubyObject {
 
     @JRubyMethod(name = "new")
     public IRubyObject _new(ThreadContext context) {
+        Ruby runtime = context.runtime;
         Object array = Array.newInstance(elementClass, dimensions);
-        return Java.wrapJavaObject(context.runtime, array);
+        
+        return new ArrayJavaProxy(runtime, Java.getProxyClassForObject(runtime, array), array);
     }
 
     private void aggregateDimensions(IRubyObject[] sizes) {

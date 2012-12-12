@@ -22,6 +22,10 @@ import org.jruby.runtime.builtin.IRubyObject;
 public class ArrayJavaProxy extends JavaProxy {
     private final JavaUtil.JavaConverter converter;
     
+    public ArrayJavaProxy(Ruby runtime, RubyClass klazz, Object ary) {
+        this(runtime, klazz, ary, JavaUtil.getJavaConverter(ary.getClass().getComponentType()));
+    }
+    
     public ArrayJavaProxy(Ruby runtime, RubyClass klazz, Object ary, JavaUtil.JavaConverter converter) {
         super(runtime, klazz, ary);
         this.converter = converter;
