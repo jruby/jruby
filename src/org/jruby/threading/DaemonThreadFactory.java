@@ -10,19 +10,28 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class DaemonThreadFactory implements ThreadFactory {
     private final AtomicInteger count = new AtomicInteger(1);
     private final String name;
+    private final int priority;
 
     public DaemonThreadFactory(String name) {
         this.name = name;
+        this.priority = Thread.NORM_PRIORITY;
+    }
+
+    public DaemonThreadFactory(String name, int priority) {
+        this.name = name;
+        this.priority = priority;
     }
 
     public DaemonThreadFactory() {
         this.name = "JRubyWorker";
+        this.priority = Thread.NORM_PRIORITY;
     }
 
     public Thread newThread(Runnable runnable) {
         Thread thread = new Thread(runnable);
         thread.setName(name + "-" + count.getAndIncrement());
         thread.setDaemon(true);
+        thread.setPriority(priority);
 
         return thread;
     }
