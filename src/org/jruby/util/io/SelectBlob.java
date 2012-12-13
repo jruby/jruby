@@ -302,14 +302,6 @@ public class SelectBlob {
                     if (writeArray != null && (interestAndReady & (SelectionKey.OP_WRITE | SelectionKey.OP_CONNECT)) != 0) {
                         writeIoIndex = ((Map<Character,Integer>)key.attachment()).get('w');
                         getWriteResults().append(writeArray.eltOk(writeIoIndex));
-
-                        // not-great logic for JRUBY-5165; we should move finishConnect into RubySocket logic, I think
-                        if (key.channel() instanceof SocketChannel) {
-                            SocketChannel socketChannel = (SocketChannel)key.channel();
-                            if (socketChannel.isConnectionPending()) {
-                                socketChannel.finishConnect();
-                            }
-                        }
                     }
                 } catch (CancelledKeyException cke) {
                     // TODO: is this the right thing to do?
