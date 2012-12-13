@@ -1,21 +1,15 @@
 require 'java'
 
 module JRuby
-  StringWriter = java.io.StringWriter
-  
-  begin
-    ClassReader = org.jruby.org.objectweb.asm.ClassReader
-    TraceClassVisitor = org.jruby.org.objectweb.asm.util.TraceClassVisitor
-  rescue
-    ClassReader = org.objectweb.asm.ClassReader
-    TraceClassVisitor = org.objectweb.asm.util.TraceClassVisitor
+  def self.init_asm
+    begin
+      JRuby.const_set(:TraceClassVisitor, org.jruby.org.objectweb.asm.util.TraceClassVisitor)
+      JRuby.const_set(:ClassReader, org.jruby.org.objectweb.asm.ClassReader)
+    rescue
+      JRuby.const_set(:TraceClassVisitor, org.objectweb.asm.util.TraceClassVisitor)
+      JRuby.const_set(:ClassReader, org.objectweb.asm.ClassReader)
+    end
   end
-    
-  PrintWriter = java.io.PrintWriter
-  Ruby = org.jruby.Ruby
-  CompiledBlock = org.jruby.runtime.CompiledBlock
-  ASTInspector = org.jruby.compiler.ASTInspector
-  StandardASMCompiler = org.jruby.compiler.impl.StandardASMCompiler
   
   class << self
     # Get a Java integration reference to the given object
@@ -36,7 +30,7 @@ module JRuby
     # runtime.
     def with_current_runtime_as_global
       current = runtime
-      global = Ruby.global_runtime
+      global = org.jruby.Ruby.global_runtime
 
       begin
         if current != global
@@ -44,7 +38,7 @@ module JRuby
         end
         yield
       ensure
-        if Ruby.global_runtime != global
+        if org.jruby.Ruby.global_runtime != global
           global.use_as_global_runtime
         end
       end
@@ -56,7 +50,7 @@ module JRuby
         block_r = reference0(block)
         body = block_r.body
 
-        if CompiledBlock === body
+        if org.jruby.runtime.CompiledBlock === body
           raise ArgumentError, "cannot get parse tree from compiled block"
         end
 
@@ -90,10 +84,10 @@ module JRuby
         classname.gsub!(/-/, 'dash')
       end
 
-      inspector = ASTInspector.new
+      inspector = org.jruby.compiler.ASTInspector.new
       inspector.inspect(node)
 
-      generator = StandardASMCompiler.new(classname, filename)
+      generator = org.jruby.compiler.impl.StandardASMCompiler.new(classname, filename)
 
       compiler = runtime.instance_config.new_compiler
       compiler.compile_root(node, generator, inspector)
@@ -133,9 +127,10 @@ module JRuby
     end
     
     def inspect_bytecode
-      writer = StringWriter.new
+      JRuby.init_asm
+      writer = java.io.StringWriter.new
       reader = ClassReader.new(@code)
-      tracer = TraceClassVisitor.new(PrintWriter.new(writer))
+      tracer = TraceClassVisitor.new(java.io.PrintWriter.new(writer))
       
       reader.accept(tracer, ClassReader::SKIP_DEBUG)
       
