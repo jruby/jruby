@@ -452,8 +452,16 @@ public class RubySocket extends RubyBasicSocket {
         try {
             if (channel instanceof SocketChannel) {
                 SocketChannel socket = (SocketChannel)channel;
+                boolean result;
+                
+                if (socket.isConnectionPending()) {
+                    // connection initiated but not finished
+                    result = socket.finishConnect();
+                } else {
+                    result = socket.connect(addr);
+                }
 
-                if(!socket.connect(addr)) {
+                if(!result) {
                     if (runtime.is1_9()) {
                         throw runtime.newErrnoEINPROGRESSWritableError();
                     } else {
@@ -476,7 +484,11 @@ public class RubySocket extends RubyBasicSocket {
             throw runtime.newErrnoEISCONNError();
 
         } catch(ConnectionPendingException e) {
-            throw runtime.newErrnoEINPROGRESSError();
+            if (runtime.is1_9()) {
+                throw runtime.newErrnoEINPROGRESSWritableError();
+            } else {
+                throw runtime.newErrnoEINPROGRESSError();
+            }
 
         } catch(UnknownHostException e) {
             throw SocketUtils.sockerr(runtime, "connect(2): unknown host");
