@@ -612,7 +612,7 @@ public class RubyDateFormat extends DateFormat {
                     if (ruby_1_9) value += nsec;
                     String width = ruby_1_9 ? "9" : "3";
                     if (formatter != null) width = formatter.getFormatter();
-                    output = String.format("%0" + width + "d", value);
+                    output = String.format("%0" + width + "d", value).substring(0, Integer.valueOf(width));
                     formatter = null; // we are done with this formatter
                     break;
                 case FORMAT_WEEKYEAR:
