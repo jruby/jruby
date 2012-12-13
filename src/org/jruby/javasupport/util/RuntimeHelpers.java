@@ -1589,7 +1589,7 @@ public class RuntimeHelpers {
     }
 
     public static StaticScope preLoad(ThreadContext context, String scopeString, boolean wrap) {
-        StaticScope staticScope = decodeScope(context, context.getCurrentStaticScope(), scopeString);
+        StaticScope staticScope = decodeScope(context, null, scopeString);
         preLoadCommon(context, staticScope, wrap);
 
         return staticScope;

@@ -783,7 +783,10 @@ public final class Ruby {
             script = (Script)asmCompiler.loadClass(classLoader).newInstance();
 
             // __file__ method expects its scope at 0, so prepare that here
-            script.setRootScope(getCurrentContext().getCurrentStaticScope());
+            // this is only needed for the "gets loop" which skips calling load
+            StaticScope rootScope = ((RootNode)node).getStaticScope();
+            if (rootScope.getModule() == null) rootScope.setModule(objectClass);
+            script.setRootScope(rootScope);
 
             if (config.isJitLogging()) {
                 LOG.info("compiled: " + node.getPosition().getFile());
