@@ -450,6 +450,13 @@ public class InvocationLinker {
             method = method.getRealMethod();
         }
         while (method instanceof WrapperMethod) method = method.getRealMethod();
+        
+        // ProfilingDynamicMethod wraps any number of other types of methods but
+        // we do not handle it in indy binding right now. Disable direct binding
+        // and bind through DynamicMethod.
+        if (method instanceof ProfilingDynamicMethod) {
+            throw new IndirectBindingException("profiling active");
+        }
 
         if (method instanceof DefaultMethod) {
             DefaultMethod defaultMethod = (DefaultMethod) method;
