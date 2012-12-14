@@ -398,20 +398,19 @@ public class ArgumentProcessor {
                             config.setProfilingMode(RubyInstanceConfig.ProfilingMode.FLAT);
                         } else {
                             String profilingMode = argument.substring(dotIndex + 1, argument.length());
-                            try {
-                                config.setProfilingMode(RubyInstanceConfig.ProfilingMode.valueOf(profilingMode.toUpperCase()));
-                            } catch (IllegalArgumentException e) {
-                                throw new MainExitException(1, String.format("jruby: unknown profiler mode \"%s\"", profilingMode));
-                            }
-                        }
-                        if (config.getProfilingMode() != RubyInstanceConfig.ProfilingMode.API) {
-                            characterIndex = argument.length();
-                            if (argumentIndex < arguments.size() && !arguments.get(argumentIndex + 1).originalValue.startsWith("-")) {
-                                String outputFile = grabValue(""); // no error message, since we already checked that the arg exists
+                            if (profilingMode.equals("out")) {
+                                // output file for profiling results
+                                String outputFile = grabValue(getArgumentError("--profile.out requires an output file argument"));
                                 try {
                                     config.setProfileOutput(new ProfileOutput(new File(outputFile)));
                                 } catch (FileNotFoundException e) {
                                     throw new MainExitException(1, String.format("jruby: %s", e.getMessage()));
+                                }
+                            } else {
+                                try {
+                                    config.setProfilingMode(RubyInstanceConfig.ProfilingMode.valueOf(profilingMode.toUpperCase()));
+                                } catch (IllegalArgumentException e) {
+                                    throw new MainExitException(1, String.format("jruby: unknown profiler mode \"%s\"", profilingMode));
                                 }
                             }
                         }
