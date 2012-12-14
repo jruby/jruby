@@ -28,6 +28,7 @@ package org.jruby.compiler.impl;
 
 import java.math.BigInteger;
 import org.jcodings.Encoding;
+import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
@@ -440,5 +441,15 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
                 method.getScriptCompiler().getSourcename(),
                 method.getLastLine() + 1
         );
+    }
+    
+    public void cacheGlobal(BaseBodyCompiler method, String globalName) {
+        method.loadThreadContext();
+        method.method.invokedynamic(
+                "get:" + globalName,
+                sig(IRubyObject.class, ThreadContext.class),
+                InvokeDynamicSupport.getGlobalHandle(),
+                method.getScriptCompiler().getSourcename(), 
+                method.getLastLine() + 1);
     }
 }

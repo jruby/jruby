@@ -609,6 +609,12 @@ public class InheritedCacheCompiler implements CacheCompiler {
 
         inheritedMethodCount++;
     }
+    
+    public void cacheGlobal(BaseBodyCompiler method, String globalName) {
+        method.loadRuntime();
+        method.method.ldc(globalName);
+        method.invokeUtilityMethod("getGlobalVariable", sig(IRubyObject.class, Ruby.class, String.class));
+    }
 
     public void finish() {
         SkinnyMethodAdapter initMethod = scriptCompiler.getInitMethod();

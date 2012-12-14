@@ -1283,9 +1283,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     }
 
     public void retrieveGlobalVariable(String name) {
-        loadRuntime();
-        method.ldc(name);
-        invokeUtilityMethod("getGlobalVariable", sig(IRubyObject.class, Ruby.class, String.class));
+        getScriptCompiler().getCacheCompiler().cacheGlobal(this, name);
     }
 
     public void assignGlobalVariable(String name) {

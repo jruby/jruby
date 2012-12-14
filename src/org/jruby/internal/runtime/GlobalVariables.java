@@ -111,6 +111,16 @@ public class GlobalVariables {
 	    }
 		return runtime.getNil();
 	}
+    
+    public GlobalVariable getVariable(String name) {
+	    assert name != null;
+	    assert name.startsWith("$");
+	
+	    GlobalVariable variable = (GlobalVariable)globalVariables.get(name);
+        if (variable != null) return variable;
+        
+        return createIfNotDefined(name);
+    }
 
     public IRubyObject set(String name, IRubyObject value) {
         assert name != null;
@@ -119,6 +129,7 @@ public class GlobalVariables {
         GlobalVariable variable = createIfNotDefined(name);
         IRubyObject result = variable.getAccessor().setValue(value);
         variable.trace(value);
+        variable.invalidate();
         return result;
     }
 

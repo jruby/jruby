@@ -282,43 +282,81 @@ public class SelectBlob {
             }
         }
     }
+    
+    private static final int READ_ACCEPT_OPS = SelectionKey.OP_READ | SelectionKey.OP_ACCEPT;
+    private static final int WRITE_CONNECT_OPS = SelectionKey.OP_WRITE | SelectionKey.OP_CONNECT;
+    private static final int CANCELLED_OPS = SelectionKey.OP_READ | SelectionKey.OP_ACCEPT | SelectionKey.OP_CONNECT;
+    
+    private static boolean ready(int ops, int mask) {
+        return (ops & mask) != 0;
+    }
+    
+    private static boolean readAcceptReady(int ops) {
+        return ready(ops, READ_ACCEPT_OPS);
+    }
+    
+    private static boolean writeConnectReady(int ops) {
+        return ready(ops, WRITE_CONNECT_OPS);
+    }
+    
+    private static boolean cancelReady(int ops) {
+        return ready(ops, CANCELLED_OPS);
+    }
+    
+    private static boolean writeReady(int ops) {
+        return ready(ops, SelectionKey.OP_WRITE);
+    }
 
     @SuppressWarnings("unchecked")
     private void processSelectedKeys(Ruby runtime) throws IOException {
         for (Selector selector : selectors.values()) {
-            for (Iterator i = selector.selectedKeys().iterator(); i.hasNext();) {
-                SelectionKey key = (SelectionKey) i.next();
+            
+            for (SelectionKey key : selector.selectedKeys()) {
+                
                 int readIoIndex = 0;
                 int writeIoIndex = 0;
+                
                 try {
                     int interestAndReady = key.interestOps() & key.readyOps();
-                    if (readArray != null && (interestAndReady & (SelectionKey.OP_READ | SelectionKey.OP_ACCEPT)) != 0) {
+                    
+                    if (readArray != null && readAcceptReady(interestAndReady)) {
                         readIoIndex = ((Map<Character,Integer>)key.attachment()).get('r');
+                        
                         getReadResults().append(readArray.eltOk(readIoIndex));
+                        
                         if (pendingReads != null) {
                             pendingReads[readIoIndex] = false;
                         }
                     }
-                    if (writeArray != null && (interestAndReady & (SelectionKey.OP_WRITE | SelectionKey.OP_CONNECT)) != 0) {
+                    
+                    if (writeArray != null && writeConnectReady(interestAndReady)) {
                         writeIoIndex = ((Map<Character,Integer>)key.attachment()).get('w');
+                        
                         getWriteResults().append(writeArray.eltOk(writeIoIndex));
                     }
+                    
                 } catch (CancelledKeyException cke) {
                     // TODO: is this the right thing to do?
                     int interest = key.interestOps();
-                    if (readArray != null && (interest & (SelectionKey.OP_READ | SelectionKey.OP_ACCEPT | SelectionKey.OP_CONNECT)) != 0) {
+                    
+                    if (readArray != null && cancelReady(interest)) {
+                        
                         if (pendingReads != null) {
                             pendingReads[readIoIndex] = false;
                         }
+                        
                         if (errorResults != null) {
                             errorResults = RubyArray.newArray(runtime, readArray.size() + writeArray.size());
                         }
+                        
                         if (fastSearch(errorResults.toJavaArrayUnsafe(), readIOs[readIoIndex]) == -1) {
                             // only add to error if not there
                             getErrorResults().append(readArray.eltOk(readIoIndex));
                         }
                     }
-                    if (writeArray != null && (interest & (SelectionKey.OP_WRITE)) != 0) {
+                    
+                    if (writeArray != null && writeReady(interest)) {
+                        
                         if (fastSearch(errorResults.toJavaArrayUnsafe(), writeIOs[writeIoIndex]) == -1) {
                             // only add to error if not there
                             errorResults.append(writeArray.eltOk(writeIoIndex));

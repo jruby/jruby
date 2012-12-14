@@ -60,6 +60,8 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
+import org.jruby.internal.runtime.GlobalVariable;
+import org.jruby.runtime.opto.Invalidator;
 
 @SuppressWarnings("deprecation")
 public class InvokeDynamicSupport {
@@ -165,6 +167,10 @@ public class InvokeDynamicSupport {
     
     public static Handle getVariableHandle() {
         return getBootstrapHandle("variableBootstrap", BOOTSTRAP_STRING_INT_SIG);
+    }
+    
+    public static Handle getGlobalHandle() {
+        return getBootstrapHandle("globalBootstrap", BOOTSTRAP_STRING_INT_SIG);
     }
     
     ////////////////////////////////////////////////////////////////////////////
@@ -485,6 +491,43 @@ public class InvokeDynamicSupport {
 
     public static IRubyObject setVariableFail(VariableSite site, IRubyObject self, IRubyObject value) throws Throwable {
         return site.setVariable(self, value);
+    }
+
+    public static CallSite globalBootstrap(Lookup lookup, String name, MethodType type, String file, int line) throws Throwable {
+        String[] names = name.split(":");
+        String operation = names[0];
+        String varName = names[1];
+        GlobalSite site = new GlobalSite(type, varName, file, line);
+        MethodHandle handle;
+        
+        if (operation.equals("get")) {
+            handle = lookup.findStatic(InvokeDynamicSupport.class, "getGlobalFallback", methodType(IRubyObject.class, GlobalSite.class, ThreadContext.class));
+        } else {
+            throw new RuntimeException("invalid variable access type");
+        }
+        
+        handle = handle.bindTo(site);
+        site.setTarget(handle);
+        
+        return site;
+    }
+    
+    public static IRubyObject getGlobalFallback(GlobalSite site, ThreadContext context) throws Throwable {
+        Ruby runtime = context.runtime;
+        GlobalVariable variable = runtime.getGlobalVariables().getVariable(site.name);
+        Invalidator invalidator = variable.getInvalidator();
+        IRubyObject value = variable.getAccessor().getValue();
+        
+        MethodHandle target = constant(IRubyObject.class, value);
+        target = dropArguments(target, 0, ThreadContext.class);
+        MethodHandle fallback = lookup().findStatic(InvokeDynamicSupport.class, "getGlobalFallback", methodType(IRubyObject.class, GlobalSite.class, ThreadContext.class));
+        fallback = fallback.bindTo(site);
+        
+        target = ((SwitchPoint)invalidator.getData()).guardWithTest(target, fallback);
+        
+        site.setTarget(target);
+        
+        return value;
     }
 
     ////////////////////////////////////////////////////////////////////////////

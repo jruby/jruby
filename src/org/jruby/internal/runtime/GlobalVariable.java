@@ -36,6 +36,8 @@ import org.jruby.RubyProc;
 import org.jruby.runtime.IAccessor;
 import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.builtin.IRubyObject;
+import org.jruby.runtime.opto.Invalidator;
+import org.jruby.runtime.opto.OptoFactory;
 
 /**
  * 
@@ -45,6 +47,7 @@ public final class GlobalVariable {
     private IAccessor accessor;
     private ArrayList<IRubyObject> traces = null;
     private boolean tracing;
+    private Invalidator invalidator = OptoFactory.newConstantInvalidator();
 
     public GlobalVariable(IAccessor accessor) {
         this.accessor = accessor;
@@ -106,6 +109,14 @@ public final class GlobalVariable {
         } finally {
             context.setWithinTrace(false);
         }
+    }
+    
+    public Invalidator getInvalidator() {
+        return invalidator;
+    }
+    
+    public void invalidate() {
+        invalidator.invalidate();
     }
 
 }
