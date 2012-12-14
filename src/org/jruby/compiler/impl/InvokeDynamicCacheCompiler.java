@@ -452,4 +452,14 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
                 method.getScriptCompiler().getSourcename(), 
                 method.getLastLine() + 1);
     }
+    
+    public void cacheGlobalBoolean(BaseBodyCompiler method, String globalName) {
+        method.loadThreadContext();
+        method.method.invokedynamic(
+                "getBoolean:" + globalName,
+                sig(boolean.class, ThreadContext.class),
+                InvokeDynamicSupport.getGlobalBooleanHandle(),
+                method.getScriptCompiler().getSourcename(), 
+                method.getLastLine() + 1);
+    }
 }

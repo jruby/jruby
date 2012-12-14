@@ -173,6 +173,10 @@ public class InvokeDynamicSupport {
         return getBootstrapHandle("globalBootstrap", BOOTSTRAP_STRING_INT_SIG);
     }
     
+    public static Handle getGlobalBooleanHandle() {
+        return getBootstrapHandle("globalBooleanBootstrap", BOOTSTRAP_STRING_INT_SIG);
+    }
+    
     ////////////////////////////////////////////////////////////////////////////
     // BOOTSTRAP METHODS
     ////////////////////////////////////////////////////////////////////////////
@@ -511,6 +515,25 @@ public class InvokeDynamicSupport {
         
         return site;
     }
+
+    public static CallSite globalBooleanBootstrap(Lookup lookup, String name, MethodType type, String file, int line) throws Throwable {
+        String[] names = name.split(":");
+        String operation = names[0];
+        String varName = names[1];
+        GlobalSite site = new GlobalSite(type, varName, file, line);
+        MethodHandle handle;
+        
+        if (operation.equals("getBoolean")) {
+            handle = lookup.findStatic(InvokeDynamicSupport.class, "getGlobalBooleanFallback", methodType(boolean.class, GlobalSite.class, ThreadContext.class));
+        } else {
+            throw new RuntimeException("invalid variable access type");
+        }
+        
+        handle = handle.bindTo(site);
+        site.setTarget(handle);
+        
+        return site;
+    }
     
     public static IRubyObject getGlobalFallback(GlobalSite site, ThreadContext context) throws Throwable {
         Ruby runtime = context.runtime;
@@ -521,6 +544,24 @@ public class InvokeDynamicSupport {
         MethodHandle target = constant(IRubyObject.class, value);
         target = dropArguments(target, 0, ThreadContext.class);
         MethodHandle fallback = lookup().findStatic(InvokeDynamicSupport.class, "getGlobalFallback", methodType(IRubyObject.class, GlobalSite.class, ThreadContext.class));
+        fallback = fallback.bindTo(site);
+        
+        target = ((SwitchPoint)invalidator.getData()).guardWithTest(target, fallback);
+        
+        site.setTarget(target);
+        
+        return value;
+    }
+    
+    public static boolean getGlobalBooleanFallback(GlobalSite site, ThreadContext context) throws Throwable {
+        Ruby runtime = context.runtime;
+        GlobalVariable variable = runtime.getGlobalVariables().getVariable(site.name);
+        Invalidator invalidator = variable.getInvalidator();
+        boolean value = variable.getAccessor().getValue().isTrue();
+        
+        MethodHandle target = constant(boolean.class, value);
+        target = dropArguments(target, 0, ThreadContext.class);
+        MethodHandle fallback = lookup().findStatic(InvokeDynamicSupport.class, "getGlobalBooleanFallback", methodType(boolean.class, GlobalSite.class, ThreadContext.class));
         fallback = fallback.bindTo(site);
         
         target = ((SwitchPoint)invalidator.getData()).guardWithTest(target, fallback);
