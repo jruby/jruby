@@ -326,6 +326,11 @@ public class InheritedCacheCompiler implements CacheCompiler {
         inheritedConstantCount++;
     }
 
+    public void cacheConstantBoolean(BaseBodyCompiler method, String constantName) {
+        cacheConstant(method, constantName);
+        method.method.invokeinterface(p(IRubyObject.class), "isTrue", sig(boolean.class));
+    }
+
     public void cacheConstantDefined(BaseBodyCompiler method, String constantName) {
         method.loadThis();
         method.loadThreadContext();

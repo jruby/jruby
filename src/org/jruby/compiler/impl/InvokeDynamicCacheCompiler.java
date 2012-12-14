@@ -88,6 +88,32 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
     }
 
     /**
+     * Cache a constant boolean using invokedynamic.
+     * 
+     * This cache uses a java.lang.invoke.SwitchPoint as the invalidation
+     * mechanism in order to avoid the cost of constantly pinging a constant
+     * generation in org.jruby.Ruby. This allows a nearly free constant cache.
+     * 
+     * @param method the method compiler with which bytecode is emitted
+     * @param constantName the name of the constant to look up
+     */
+    @Override
+    public void cacheConstantBoolean(BaseBodyCompiler method, String constantName) {
+        if (!RubyInstanceConfig.INVOKEDYNAMIC_CONSTANTS) {
+            super.cacheConstantBoolean(method, constantName);
+            return;
+        }
+
+        method.loadThis();
+        method.loadThreadContext();
+        method.method.invokedynamic(
+                constantName,
+                sig(boolean.class, AbstractScript.class, ThreadContext.class),
+                InvokeDynamicSupport.getConstantBooleanHandle(),
+                method.getScopeIndex());
+    }
+
+    /**
      * This doesn't get used, since it's only used from cacheRegexp in superclass,
      * and that is completely bound via invokedynamic now. Implemented here and in
      * InvokeDynamicSupport for consistency.

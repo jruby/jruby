@@ -101,6 +101,10 @@ public class InvokeDynamicSupport {
         return getBootstrapHandle("getConstantBootstrap", BOOTSTRAP_INT_SIG);
     }
     
+    public static Handle getConstantBooleanHandle() {
+        return getBootstrapHandle("getConstantBooleanBootstrap", BOOTSTRAP_INT_SIG);
+    }
+    
     public static Handle getByteListHandle() {
         return getBootstrapHandle("getByteListBootstrap", BOOTSTRAP_STRING_STRING_SIG);
     }
@@ -189,6 +193,22 @@ public class InvokeDynamicSupport {
         MethodType fallbackType = methodType(IRubyObject.class, RubyConstantCallSite.class, AbstractScript.class, ThreadContext.class, int.class);
         MethodHandle myFallback = insertArguments(
                 lookup.findStatic(InvokeDynamicSupport.class, "constantFallback",
+                fallbackType),
+                0,
+                site);
+        myFallback = insertArguments(myFallback, 2, scopeIndex);
+        site.setTarget(myFallback);
+        return site;
+    }
+
+    public static CallSite getConstantBooleanBootstrap(Lookup lookup, String name, MethodType type, int scopeIndex) throws NoSuchMethodException, IllegalAccessException {
+        RubyConstantCallSite site;
+
+        site = new RubyConstantCallSite(type, name);
+        
+        MethodType fallbackType = methodType(boolean.class, RubyConstantCallSite.class, AbstractScript.class, ThreadContext.class, int.class);
+        MethodHandle myFallback = insertArguments(
+                lookup.findStatic(InvokeDynamicSupport.class, "constantBooleanFallback",
                 fallbackType),
                 0,
                 site);
@@ -602,6 +622,37 @@ public class InvokeDynamicSupport {
         }
         
         return value;
+    }
+
+    public static boolean constantBooleanFallback(RubyConstantCallSite site, 
+            AbstractScript script, ThreadContext context, int scopeIndex) {
+        SwitchPoint switchPoint = (SwitchPoint)context.runtime.getConstantInvalidator().getData();
+        StaticScope scope = script.getScope(scopeIndex);
+        IRubyObject value = scope.getConstant(site.name());
+        
+        if (value != null) {
+            if (RubyInstanceConfig.LOG_INDY_CONSTANTS) LOG.info("constant " + site.name() + " bound directly");
+            
+            MethodHandle valueHandle = constant(boolean.class, value.isTrue());
+            valueHandle = dropArguments(valueHandle, 0, AbstractScript.class, ThreadContext.class);
+
+            MethodHandle fallback = insertArguments(
+                    findStatic(InvokeDynamicSupport.class, "constantBooleanFallback",
+                    methodType(boolean.class, RubyConstantCallSite.class, AbstractScript.class, ThreadContext.class, int.class)),
+                    0,
+                    site);
+            fallback = insertArguments(fallback, 2, scopeIndex);
+
+            MethodHandle gwt = switchPoint.guardWithTest(valueHandle, fallback);
+            site.setTarget(gwt);
+        } else {
+            value = scope.getModule()
+                    .callMethod(context, "const_missing", context.runtime.newSymbol(site.name()));
+        }
+        
+        boolean booleanValue = value.isTrue();
+        
+        return booleanValue;
     }
     
     public static RubyRegexp initRegexp(MutableCallSite site, ThreadContext context, ByteList pattern, int options) {

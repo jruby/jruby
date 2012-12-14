@@ -899,18 +899,13 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     public void performBooleanGlobalBranch(String globalName, BranchCallback trueBranch, BranchCallback falseBranch) {
         getScriptCompiler().getCacheCompiler().cacheGlobalBoolean(this, globalName);
         
-        Label afterJmp = new Label();
-        Label falseJmp = new Label();
-
-        method.ifeq(falseJmp); // EQ == 0 (i.e. false)
-        trueBranch.branch(this);
-        method.go_to(afterJmp);
-
-        // FIXME: optimize for cases where we have no false branch
-        method.label(falseJmp);
-        falseBranch.branch(this);
-
-        method.label(afterJmp);
+        performBooleanBranch2(trueBranch, falseBranch);
+    }
+    
+    public void performBooleanConstantBranch(String globalName, BranchCallback trueBranch, BranchCallback falseBranch) {
+        getScriptCompiler().getCacheCompiler().cacheConstantBoolean(this, globalName);
+        
+        performBooleanBranch2(trueBranch, falseBranch);
     }
 
     public void performLogicalAnd(BranchCallback longBranch) {
