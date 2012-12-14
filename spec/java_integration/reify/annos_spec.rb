@@ -20,6 +20,19 @@ describe "JRuby annotation processing:" do
     end
   end
 
+  context "parameter annotations using #add_parameter_annotation" do
+    class ClassWithAnnotatedParams
+      add_parameter_annotation 'foo', [{Java::java_integration.fixtures.ParameterAnnotations::Annotated => {}}]
+      def foo(x); end
+
+      become_java!
+    end
+
+    it "has an annotated parameter" do
+      Java::java_integration.fixtures.ParameterAnnotations.countAnnotated(ClassWithAnnotatedParams).size.should == 1
+    end
+  end
+
   context "method annotations using #java_signature" do
     class ClassWithAnnotatedMethods2
       java_signature("@java_integration.fixtures.MethodAnnotations.Annotated void foo()")
