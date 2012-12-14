@@ -393,19 +393,25 @@ public class ArgumentProcessor {
                         config.setCompileMode(RubyInstanceConfig.CompileMode.FORCE);
                         break FOR;
                     } else if (argument.startsWith("--profile")) {
+                        characterIndex = argument.length();
                         int dotIndex = argument.indexOf(".");
+                        
                         if (dotIndex == -1) {
                             config.setProfilingMode(RubyInstanceConfig.ProfilingMode.FLAT);
+                            
                         } else {
                             String profilingMode = argument.substring(dotIndex + 1, argument.length());
+                            
                             if (profilingMode.equals("out")) {
                                 // output file for profiling results
                                 String outputFile = grabValue(getArgumentError("--profile.out requires an output file argument"));
+                                
                                 try {
                                     config.setProfileOutput(new ProfileOutput(new File(outputFile)));
                                 } catch (FileNotFoundException e) {
                                     throw new MainExitException(1, String.format("jruby: %s", e.getMessage()));
                                 }
+                                
                             } else {
                                 try {
                                     config.setProfilingMode(RubyInstanceConfig.ProfilingMode.valueOf(profilingMode.toUpperCase()));
@@ -414,6 +420,7 @@ public class ArgumentProcessor {
                                 }
                             }
                         }
+                        
                         break FOR;
                     } else if (argument.equals("--1.9")) {
                         config.setCompatVersion(CompatVersion.RUBY1_9);
