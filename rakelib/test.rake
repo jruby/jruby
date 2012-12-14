@@ -62,7 +62,7 @@ namespace :test do
       
       test_task = Rake::TestTask.new("#{base_name}:#{name}", &block).tap do |t|
         flags.each do |flag|
-          t.ruby_opts << flag
+          t.ruby_opts.unshift flag
         end
       end
       tasks[name] = test_task.name
@@ -70,9 +70,6 @@ namespace :test do
         t.add_description "#{flags.inspect}"
         t.prerequisites.concat prereqs
       end
-    end
-    
-    proc do |&block|
     end
     
     # set up default, if specified
