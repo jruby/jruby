@@ -140,7 +140,7 @@ class Class
     annotations.each_with_index do |param_annos, i|
       for cls, params in param_annos
         params ||= {}
-        self_r.add_parameter_annotation(name, i, _anno_class(cls))
+        self_r.add_parameter_annotation(name, i, _anno_class(cls), params)
       end
     end
     
