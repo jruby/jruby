@@ -33,6 +33,7 @@ import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.ast.NodeType;
+import org.jruby.ast.executable.AbstractScript;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.ArgumentsCallback;
@@ -63,6 +64,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.InstanceVariables;
+import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
 import org.jruby.util.DefinedMessage;
@@ -72,6 +74,7 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 import static org.objectweb.asm.Opcodes.*;
 import static org.jruby.util.CodegenUtils.*;
+import org.jruby.util.cli.Options;
 
 /**
  * BaseBodyCompiler encapsulates all common behavior between BodyCompiler
@@ -1510,8 +1513,17 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
     public void pollThreadEvents() {
         if (!RubyInstanceConfig.THREADLESS_COMPILE_ENABLED) {
-            loadThreadContext();
-            invokeThreadContext("pollThreadEvents", sig(Void.TYPE));
+            if (Options.COMPILE_INVOKEDYNAMIC.load()) {
+                // switchpoint version
+                loadThreadContext();
+                method.invokedynamic(
+                        "checkpoint",
+                        sig(void.class, ThreadContext.class),
+                        InvokeDynamicSupport.checkpointHandle());
+            } else {
+                loadThreadContext();
+                invokeThreadContext("pollThreadEvents", sig(void.class));
+            }
         }
     }
 

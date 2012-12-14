@@ -222,6 +222,7 @@ public final class Ruby {
         runtimeCache.initMethodCache(ClassIndex.MAX_CLASSES * MethodNames.values().length - 1);
         
         constantInvalidator = OptoFactory.newConstantInvalidator();
+        checkpointInvalidator = OptoFactory.newConstantInvalidator();
 
         if (config.isObjectSpaceEnabled()) {
             objectSpacer = ENABLED_OBJECTSPACE;
@@ -4068,6 +4069,10 @@ public final class Ruby {
         return constantInvalidator;
     }
     
+    public Invalidator getCheckpointInvalidator() {
+        return checkpointInvalidator;
+    }
+    
     public void invalidateConstants() {
         
     }
@@ -4333,6 +4338,7 @@ public final class Ruby {
     }
 
     private final Invalidator constantInvalidator;
+    private final Invalidator checkpointInvalidator;
     private final ThreadService threadService;
     
     private POSIX posix;

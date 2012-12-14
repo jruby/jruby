@@ -27,6 +27,7 @@
 
 package org.jruby.runtime.invokedynamic;
 
+import com.headius.invokebinder.Binder;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
@@ -179,6 +180,10 @@ public class InvokeDynamicSupport {
     
     public static Handle getGlobalBooleanHandle() {
         return getBootstrapHandle("globalBooleanBootstrap", BOOTSTRAP_STRING_INT_SIG);
+    }
+    
+    public static Handle checkpointHandle() {
+        return getBootstrapHandle("checkpointBootstrap", BOOTSTRAP_BARE_SIG);
     }
     
     ////////////////////////////////////////////////////////////////////////////
@@ -589,6 +594,31 @@ public class InvokeDynamicSupport {
         site.setTarget(target);
         
         return value;
+    }
+
+    public static CallSite checkpointBootstrap(Lookup lookup, String name, MethodType type) throws Throwable {
+        MutableCallSite site = new MutableCallSite(type);
+        MethodHandle handle = lookup.findStatic(InvokeDynamicSupport.class, "checkpointFallback", methodType(void.class, MutableCallSite.class, ThreadContext.class));
+        
+        handle = handle.bindTo(site);
+        site.setTarget(handle);
+        
+        return site;
+    }
+    
+    public static void checkpointFallback(MutableCallSite site, ThreadContext context) throws Throwable {
+        Ruby runtime = context.runtime;
+        Invalidator invalidator = runtime.getCheckpointInvalidator();
+        
+        MethodHandle target = Binder
+                .from(void.class, ThreadContext.class)
+                .nop();
+        MethodHandle fallback = lookup().findStatic(InvokeDynamicSupport.class, "checkpointFallback", methodType(void.class, MutableCallSite.class, ThreadContext.class));
+        fallback = fallback.bindTo(site);
+        
+        target = ((SwitchPoint)invalidator.getData()).guardWithTest(target, fallback);
+        
+        site.setTarget(target);
     }
 
     ////////////////////////////////////////////////////////////////////////////
