@@ -29,7 +29,7 @@ namespace :test do
   end
 
   desc "FIXME: Not sure about what this should be called (name came from ant)"
-  task :rake_targets => ['install_gems', 'spec:ji:quiet', 'spec:compiler', 'spec:ffi', 'spec:regression', "spec:regression_19"] do
+  task :rake_targets => ['install_gems', 'spec:ji:quiet', 'spec:compiler', 'spec:compiler19', 'spec:ffi', 'spec:ffi19', 'spec:regression', "spec:regression19"] do
     jrake(BASE_DIR, 'test:tracing') { arg :line => '--debug' }
   end
 
@@ -42,47 +42,6 @@ namespace :test do
       t.ruby_opts << '--1.8'
     end
   end
-
-  def permute_flags(base_name, options, *prereqs, &block)
-    default_task = nil
-    all_tasks = nil
-    
-    # iterate over all flag sets, noting default mapping
-    tasks = {}
-    options.each do |name, flags|
-      if name == :default
-        default_task = flags
-        next
-      end
-      
-      if name == :all
-        all_tasks = flags
-        next
-      end
-      
-      test_task = Rake::TestTask.new("#{base_name}:#{name}", &block).tap do |t|
-        flags.each do |flag|
-          t.ruby_opts.unshift flag
-        end
-      end
-      tasks[name] = test_task.name
-      Rake::Task[test_task.name].tap do |t|
-        t.add_description "#{flags.inspect}"
-        t.prerequisites.concat prereqs
-      end
-    end
-    
-    # set up default, if specified
-    if default_task
-      desc "Run tests for #{default_task}"
-      task base_name => tasks[default_task]
-    end
-    
-    # set up "all", if specified, or make it run everything
-    all_tasks ||= tasks.keys
-    desc "Run tests for #{all_tasks.inspect}"
-    task "#{base_name}:all" => all_tasks.map {|key| tasks[key]}
-  end
   
   COMPILE_FLAGS = {
     :default => :int,
@@ -93,7 +52,7 @@ namespace :test do
     :all => [:int, :jit, :aot]
   }
   
-  permute_flags(:mri19, COMPILE_FLAGS) do |t|
+  permute_tests(:mri19, COMPILE_FLAGS) do |t|
     files = []
     File.open('test/mri.1.9.index') do |f|
       f.lines.each do |line|
@@ -112,7 +71,7 @@ namespace :test do
     t.ruby_opts << '-r minitest/excludes'
   end
 
-  permute_flags(:jruby19, COMPILE_FLAGS, 'test:compile') do |t|
+  permute_tests(:jruby19, COMPILE_FLAGS, 'test:compile') do |t|
     files = []
     File.open('test/jruby.1.9.index') do |f|
       f.lines.each do |line|
@@ -128,7 +87,7 @@ namespace :test do
     t.ruby_opts << '--1.9'
   end
 
-  permute_flags(:rubicon19, COMPILE_FLAGS) do |t|
+  permute_tests(:rubicon19, COMPILE_FLAGS) do |t|
     files = []
     File.open('test/rubicon.1.9.index') do |f|
       f.lines.each do |line|

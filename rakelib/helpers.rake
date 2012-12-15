@@ -57,3 +57,61 @@ def sha1_checksum(filename)
   HashTask.hash_for(filename, Digest::SHA1)
 end
 
+COMPILE_FLAGS = {
+  :default => :int,
+  :int => ["-X-C"],
+  :jit => ["-Xjit.threshold=0"],
+  :aot => ["-X+C"],
+  :ir_int => ["-X-CIR"],
+  :all => [:int, :jit, :aot]
+}
+
+def permute_tests(base_name, options, *prereqs, &block)
+  permute_task("test", Rake::TestTask, base_name, options, *prereqs, &block)
+end
+
+def permute_specs(base_name, options, *prereqs, &block)
+  permute_task("spec", RSpec::Core::RakeTask, base_name, options, *prereqs, &block)
+end
+
+def permute_task(task_desc, task_type, base_name, options, *prereqs, &block)
+  default_task = nil
+  all_tasks = nil
+
+  # iterate over all flag sets, noting default mapping
+  tasks = {}
+  options.each do |name, flags|
+    if name == :default
+      default_task = flags
+      next
+    end
+
+    if name == :all
+      all_tasks = flags
+      next
+    end
+
+    test_task = task_type.new("#{base_name}:#{name}", &block).tap do |t|
+      t.ruby_opts ||= []
+      flags.each do |flag|
+        t.ruby_opts.unshift flag
+      end
+    end
+    tasks[name] = test_task.name
+    Rake::Task[test_task.name].tap do |t|
+      t.add_description "#{flags.inspect}"
+      t.prerequisites.concat prereqs
+    end
+  end
+
+  # set up default, if specified
+  if default_task
+    desc "Run #{task_desc}s for #{default_task}"
+    task base_name => tasks[default_task]
+  end
+
+  # set up "all", if specified, or make it run everything
+  all_tasks ||= tasks.keys
+  desc "Run #{task_desc}s for #{all_tasks.inspect}"
+  task "#{base_name}:all" => all_tasks.map {|key| tasks[key]}
+end
