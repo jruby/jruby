@@ -60,8 +60,7 @@ class TestLoad < Test::Unit::TestCase
 
   def test_require_bogus
     assert_raises(LoadError) { require 'foo/' }
-    # bug #445
-    #assert_raises(LoadError) { require '' }
+    assert_raises(LoadError) { require '' }
 
     # Yes, the following line is supposed to appear twice
     assert_raises(LoadError) { require 'NonExistantRequriedFile'}
