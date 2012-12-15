@@ -63,6 +63,7 @@ import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
 import org.jruby.internal.runtime.GlobalVariable;
 import org.jruby.runtime.opto.Invalidator;
+import org.jruby.util.JavaNameMangler;
 
 @SuppressWarnings("deprecation")
 public class InvokeDynamicSupport {
@@ -525,7 +526,7 @@ public class InvokeDynamicSupport {
     public static CallSite globalBootstrap(Lookup lookup, String name, MethodType type, String file, int line) throws Throwable {
         String[] names = name.split(":");
         String operation = names[0];
-        String varName = names[1];
+        String varName = JavaNameMangler.demangleMethodName(names[1]);
         GlobalSite site = new GlobalSite(type, varName, file, line);
         MethodHandle handle;
         
@@ -544,7 +545,7 @@ public class InvokeDynamicSupport {
     public static CallSite globalBooleanBootstrap(Lookup lookup, String name, MethodType type, String file, int line) throws Throwable {
         String[] names = name.split(":");
         String operation = names[0];
-        String varName = names[1];
+        String varName = JavaNameMangler.demangleMethodName(names[1]);
         GlobalSite site = new GlobalSite(type, varName, file, line);
         MethodHandle handle;
         

@@ -50,6 +50,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
 import org.jruby.util.ByteList;
 import static org.jruby.util.CodegenUtils.*;
+import org.jruby.util.JavaNameMangler;
 
 /**
  * A CacheCompiler that uses invokedynamic as a lazy thunk for literals and other
@@ -472,7 +473,7 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
     public void cacheGlobal(BaseBodyCompiler method, String globalName) {
         method.loadThreadContext();
         method.method.invokedynamic(
-                "get:" + globalName,
+                "get:" + JavaNameMangler.mangleMethodName(globalName),
                 sig(IRubyObject.class, ThreadContext.class),
                 InvokeDynamicSupport.getGlobalHandle(),
                 method.getScriptCompiler().getSourcename(), 
@@ -482,7 +483,7 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
     public void cacheGlobalBoolean(BaseBodyCompiler method, String globalName) {
         method.loadThreadContext();
         method.method.invokedynamic(
-                "getBoolean:" + globalName,
+                "getBoolean:" + JavaNameMangler.mangleMethodName(globalName),
                 sig(boolean.class, ThreadContext.class),
                 InvokeDynamicSupport.getGlobalBooleanHandle(),
                 method.getScriptCompiler().getSourcename(), 
