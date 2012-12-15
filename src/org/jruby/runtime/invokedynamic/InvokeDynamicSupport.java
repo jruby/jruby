@@ -27,6 +27,7 @@
 
 package org.jruby.runtime.invokedynamic;
 
+import com.headius.invokebinder.Binder;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
@@ -167,9 +168,37 @@ public class InvokeDynamicSupport {
         return getBootstrapHandle("variableBootstrap", BOOTSTRAP_STRING_INT_SIG);
     }
     
+    public static Handle getContextFieldHandle() {
+        return getBootstrapHandle("contextFieldBootstrap", BOOTSTRAP_BARE_SIG);
+    }
+    
     ////////////////////////////////////////////////////////////////////////////
     // BOOTSTRAP METHODS
     ////////////////////////////////////////////////////////////////////////////
+    
+    public static CallSite contextFieldBootstrap(Lookup lookup, String name, MethodType type) throws NoSuchMethodException, IllegalAccessException {
+        MutableCallSite site = new MutableCallSite(type);
+        
+        if (name.equals("nil")) {
+            site.setTarget(Binder.from(type).insert(0, site).invokeStatic(lookup, InvokeDynamicSupport.class, "loadNil"));
+        } else if (name.equals("runtime")) {
+            site.setTarget(Binder.from(type).insert(0, site).invokeStatic(lookup, InvokeDynamicSupport.class, "loadRuntime"));
+        }
+        
+        return site;
+    }
+    
+    public static IRubyObject loadNil(MutableCallSite site, ThreadContext context) throws Throwable {
+        site.setTarget(Binder.from(IRubyObject.class, ThreadContext.class).drop(0).constant(context.nil));
+        
+        return context.nil;
+    }
+    
+    public static Ruby loadRuntime(MutableCallSite site, ThreadContext context) throws Throwable {
+        site.setTarget(Binder.from(Ruby.class, ThreadContext.class).drop(0).constant(context.runtime));
+        
+        return context.runtime;
+    }
 
     public static CallSite getConstantBootstrap(Lookup lookup, String name, MethodType type, int scopeIndex) throws NoSuchMethodException, IllegalAccessException {
         RubyConstantCallSite site;

@@ -63,6 +63,7 @@ import org.jruby.runtime.ThreadContext;
 import org.jruby.runtime.Visibility;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.builtin.InstanceVariables;
+import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
 import org.jruby.runtime.opto.OptoFactory;
 import org.jruby.util.ByteList;
 import org.jruby.util.DefinedMessage;
@@ -72,6 +73,7 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.Type;
 import static org.objectweb.asm.Opcodes.*;
 import static org.jruby.util.CodegenUtils.*;
+import org.jruby.util.cli.Options;
 
 /**
  * BaseBodyCompiler encapsulates all common behavior between BodyCompiler
@@ -231,7 +233,11 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
     public void loadRuntime() {
         loadThreadContext();
-        method.getfield(p(ThreadContext.class), "runtime", ci(Ruby.class));
+        if (Options.COMPILE_INVOKEDYNAMIC.load()) {
+            method.invokedynamic("runtime", sig(Ruby.class, ThreadContext.class), InvokeDynamicSupport.getContextFieldHandle());
+        } else {
+            method.getfield(p(ThreadContext.class), "runtime", ci(Ruby.class));
+        }
     }
 
     public void loadBlock() {
@@ -240,7 +246,11 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
     public void loadNil() {
         loadThreadContext();
-        method.getfield(p(ThreadContext.class), "nil", ci(IRubyObject.class));
+        if (Options.COMPILE_INVOKEDYNAMIC.load()) {
+            method.invokedynamic("nil", sig(IRubyObject.class, ThreadContext.class), InvokeDynamicSupport.getContextFieldHandle());
+        } else {
+            method.getfield(p(ThreadContext.class), "nil", ci(IRubyObject.class));
+        }
     }
 
     public void loadNull() {
