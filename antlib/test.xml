@@ -315,11 +315,4 @@
             <arg line="-v test/test_jar_complete.rb"/>
         </java>
     </target>
-
-    <target name="test-rails-stable" depends="jar">
-        <rake task="test:rails"/>
-    </target>
-    <target name="test-prawn" depends="jar">
-        <rake task="test:prawn"/>
-    </target>
 </project>
