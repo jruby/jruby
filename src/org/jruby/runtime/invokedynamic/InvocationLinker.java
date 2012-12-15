@@ -363,7 +363,8 @@ public class InvocationLinker {
                     self instanceof RubyFixnum ||
                     self instanceof RubyFloat ||
                     self instanceof RubyNil ||
-                    self instanceof RubyBoolean.True) {
+                    self instanceof RubyBoolean.True ||
+                    self instanceof RubyBoolean.False) {
                 test = Binder
                         .from(site.type().changeReturnType(boolean.class))
                         .permute(2)
