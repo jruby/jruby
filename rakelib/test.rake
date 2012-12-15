@@ -27,7 +27,7 @@ namespace :test do
   long_tests = long_tests_18 + long_tests_19 + slow_tests
   all_tests_18 = long_tests_18.map {|test| test + ':all'}
   all_tests_19 = long_tests_19.map {|test| test + ':all'}
-  all_tests = long_tests.map {|test| test + ":all"}
+  all_tests = all_tests_18 + all_tests_19 + slow_tests
 
   desc "Run the short suite: #{short_tests.inspect}"
   task :short => [:compile, *short_tests]
