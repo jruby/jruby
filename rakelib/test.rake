@@ -89,7 +89,6 @@ namespace :test do
     t.test_files = files
     t.verbose = true
     ENV['EXCLUDE_DIR'] = 'test/externals/ruby1.9/excludes'
-    t.ruby_opts << '--debug'
     t.ruby_opts << '--1.9'
     t.ruby_opts << '-I test/externals/ruby1.9'
     t.ruby_opts << '-I test/externals/ruby1.9/ruby'
@@ -108,7 +107,6 @@ namespace :test do
     t.test_files = files
     t.verbose = true
     ENV['EXCLUDE_DIR'] = 'test/externals/ruby1.9/excludes'
-    t.ruby_opts << '--debug'
     t.ruby_opts << '--1.8'
   end
 
@@ -124,7 +122,6 @@ namespace :test do
     t.test_files = files
     t.verbose = true
     t.ruby_opts << '-J-cp build/classes/test'
-    t.ruby_opts << '--debug'
     t.ruby_opts << '--1.9'
   end
 
@@ -140,7 +137,6 @@ namespace :test do
     t.test_files = files
     t.verbose = true
     t.ruby_opts << '-J-cp build/classes/test'
-    t.ruby_opts << '--debug'
     t.ruby_opts << '--1.8'
   end
 
@@ -156,7 +152,6 @@ namespace :test do
     t.test_files = files
     t.verbose = true
     t.ruby_opts << '-J-cp build/classes/test'
-    t.ruby_opts << '--debug'
     t.ruby_opts << '--1.9'
     t.ruby_opts << '-X+O'
   end
@@ -173,7 +168,6 @@ namespace :test do
     t.test_files = files
     t.verbose = true
     t.ruby_opts << '-J-cp build/classes/test'
-    t.ruby_opts << '--debug'
     t.ruby_opts << '--1.8'
     t.ruby_opts << '-X+O'
   end
@@ -190,9 +184,7 @@ namespace :test do
     t.test_files = files
     t.verbose = true
     t.ruby_opts << '-J-cp build/classes/test'
-    t.ruby_opts << '--debug'
     t.ruby_opts << '--1.8'
-    t.ruby_opts << '-X+O'
   end
 
   permute_tests(:objectspace, compile_flags) do |t|
@@ -207,7 +199,6 @@ namespace :test do
     t.test_files = files
     t.verbose = true
     t.ruby_opts << '-J-cp build/classes/test'
-    t.ruby_opts << '--debug'
     t.ruby_opts << '--1.8'
     t.ruby_opts << '-X+O'
   end
