@@ -77,7 +77,7 @@ namespace :test do
     :all => [:int, :jit, :aot]
   }
   
-  permute_tests(:mri19, compile_flags) do |t|
+  permute_tests(:mri19, compile_flags, :install_dev_gems) do |t|
     files = []
     File.open('test/mri.1.9.index') do |f|
       f.lines.each do |line|
