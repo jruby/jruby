@@ -7,7 +7,7 @@
 #
 # See also rakelib/*.rake for more tasks and details.
 
-require 'rakelib/helpers.rb'
+require File.dirname(__FILE__) + '/rakelib/helpers.rb'
 
 task :default => [:build]
 
