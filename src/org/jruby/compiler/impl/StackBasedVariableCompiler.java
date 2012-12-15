@@ -117,9 +117,14 @@ public class StackBasedVariableCompiler extends AbstractVariableCompiler {
         methodCompiler.invokeThreadContext("getCurrentScope", sig(DynamicScope.class));
         method.astore(methodCompiler.getDynamicScopeIndex());
         
+        boolean first = true;
         for (int i = 0; i < scope.getNumberOfVariables(); i++) {
-            methodCompiler.loadNil();
-            assignLocalVariable(i, false);
+            if (first) {
+                methodCompiler.loadNil();
+                first = false;
+            }
+            // assign, duping value for all but last
+            assignLocalVariable(i, i + 1 < scope.getNumberOfVariables());
         }
 
         // temp locals must start after last real local
