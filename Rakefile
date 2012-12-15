@@ -7,6 +7,8 @@
 #
 # See also rakelib/*.rake for more tasks and details.
 
+require 'rakelib/helpers.rb'
+
 task :default => [:build]
 
 desc "Build JRuby"
