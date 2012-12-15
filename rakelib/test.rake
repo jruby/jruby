@@ -15,7 +15,7 @@ task :test18 => "test:short18"
 namespace :test do
   desc "Compile test code"
   task :compile do
-    ant "-q compile-test"
+    ant "compile-test"
   end
 
   short_tests_18 = ['jruby', 'mri', 'rubicon']
@@ -71,8 +71,8 @@ namespace :test do
   compile_flags = {
     :default => :int,
     :int => ["-X-C"],
-    :jit => ["-Xjit.threshold=0"],
-    :aot => ["-X+C"],
+    :jit => ["-Xjit.threshold=0", "-J-XX:MaxPermSize=256M"],
+    :aot => ["-X+C", "-J-XX:MaxPermSize=256M"],
     :ir_int => ["-X-CIR"],
     :all => [:int, :jit, :aot]
   }
@@ -201,5 +201,33 @@ namespace :test do
     t.ruby_opts << '-J-cp build/classes/test'
     t.ruby_opts << '--1.8'
     t.ruby_opts << '-X+O'
+  end
+  
+  def junit(options)
+    cp = options[:classpath] or raise "junit tasks must have classpath"
+    test = options[:test] or raise "junit tasks must have test"
+    
+    cmd = "#{ENV_JAVA['java.home']}/bin/java -cp #{cp.join(File::PATH_SEPARATOR)} -Djruby.compat.mode=1.8 junit.textui.TestRunner #{test}"
+    
+    puts cmd
+    system cmd
+  end
+  
+  namespace :junit do
+    test_class_path = [
+      "build_lib/junit.jar",
+      "build_lib/livetribe-jsr223-2.0.6.jar",
+      "build_lib/bsf.jar",
+      "build_lib/commons-logging-1.1.1.jar",
+      "lib/jruby.jar",
+      "build/classes/test",
+      "test/requireTest.jar",
+      "test"
+    ]
+    
+    desc "Run the main JUnit test suite"
+    task :main => 'test:compile' do
+      junit :classpath => test_class_path, :test => "org.jruby.test.MainTestSuite"
+    end
   end
 end
