@@ -69,6 +69,12 @@ public interface CacheCompiler {
     public void cacheMethod(BaseBodyCompiler method, String methodName);
 
     public void cacheMethod(BaseBodyCompiler method, String methodName, int receiverLocal);
+    
+    public void cacheGlobal(BaseBodyCompiler method, String globalName);
+    
+    public void cacheGlobalBoolean(BaseBodyCompiler method, String globalName);
+    
+    public void cacheConstantBoolean(BaseBodyCompiler method, String globalName);
 
     public void finish();
 }

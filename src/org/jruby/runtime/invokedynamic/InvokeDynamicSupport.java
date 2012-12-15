@@ -61,6 +61,9 @@ import org.jruby.util.log.Logger;
 import org.jruby.util.log.LoggerFactory;
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
+import org.jruby.internal.runtime.GlobalVariable;
+import org.jruby.runtime.opto.Invalidator;
+import org.jruby.util.JavaNameMangler;
 
 @SuppressWarnings("deprecation")
 public class InvokeDynamicSupport {
@@ -98,6 +101,10 @@ public class InvokeDynamicSupport {
     
     public static Handle getConstantHandle() {
         return getBootstrapHandle("getConstantBootstrap", BOOTSTRAP_INT_SIG);
+    }
+    
+    public static Handle getConstantBooleanHandle() {
+        return getBootstrapHandle("getConstantBooleanBootstrap", BOOTSTRAP_INT_SIG);
     }
     
     public static Handle getByteListHandle() {
@@ -172,6 +179,18 @@ public class InvokeDynamicSupport {
         return getBootstrapHandle("contextFieldBootstrap", BOOTSTRAP_BARE_SIG);
     }
     
+    public static Handle getGlobalHandle() {
+        return getBootstrapHandle("globalBootstrap", BOOTSTRAP_STRING_INT_SIG);
+    }
+    
+    public static Handle getGlobalBooleanHandle() {
+        return getBootstrapHandle("globalBooleanBootstrap", BOOTSTRAP_STRING_INT_SIG);
+    }
+    
+    public static Handle checkpointHandle() {
+        return getBootstrapHandle("checkpointBootstrap", BOOTSTRAP_BARE_SIG);
+    }
+    
     ////////////////////////////////////////////////////////////////////////////
     // BOOTSTRAP METHODS
     ////////////////////////////////////////////////////////////////////////////
@@ -208,6 +227,22 @@ public class InvokeDynamicSupport {
         MethodType fallbackType = methodType(IRubyObject.class, RubyConstantCallSite.class, AbstractScript.class, ThreadContext.class, int.class);
         MethodHandle myFallback = insertArguments(
                 lookup.findStatic(InvokeDynamicSupport.class, "constantFallback",
+                fallbackType),
+                0,
+                site);
+        myFallback = insertArguments(myFallback, 2, scopeIndex);
+        site.setTarget(myFallback);
+        return site;
+    }
+
+    public static CallSite getConstantBooleanBootstrap(Lookup lookup, String name, MethodType type, int scopeIndex) throws NoSuchMethodException, IllegalAccessException {
+        RubyConstantCallSite site;
+
+        site = new RubyConstantCallSite(type, name);
+        
+        MethodType fallbackType = methodType(boolean.class, RubyConstantCallSite.class, AbstractScript.class, ThreadContext.class, int.class);
+        MethodHandle myFallback = insertArguments(
+                lookup.findStatic(InvokeDynamicSupport.class, "constantBooleanFallback",
                 fallbackType),
                 0,
                 site);
@@ -516,6 +551,105 @@ public class InvokeDynamicSupport {
         return site.setVariable(self, value);
     }
 
+    public static CallSite globalBootstrap(Lookup lookup, String name, MethodType type, String file, int line) throws Throwable {
+        String[] names = name.split(":");
+        String operation = names[0];
+        String varName = JavaNameMangler.demangleMethodName(names[1]);
+        GlobalSite site = new GlobalSite(type, varName, file, line);
+        MethodHandle handle;
+        
+        if (operation.equals("get")) {
+            handle = lookup.findStatic(InvokeDynamicSupport.class, "getGlobalFallback", methodType(IRubyObject.class, GlobalSite.class, ThreadContext.class));
+        } else {
+            throw new RuntimeException("invalid variable access type");
+        }
+        
+        handle = handle.bindTo(site);
+        site.setTarget(handle);
+        
+        return site;
+    }
+
+    public static CallSite globalBooleanBootstrap(Lookup lookup, String name, MethodType type, String file, int line) throws Throwable {
+        String[] names = name.split(":");
+        String operation = names[0];
+        String varName = JavaNameMangler.demangleMethodName(names[1]);
+        GlobalSite site = new GlobalSite(type, varName, file, line);
+        MethodHandle handle;
+        
+        if (operation.equals("getBoolean")) {
+            handle = lookup.findStatic(InvokeDynamicSupport.class, "getGlobalBooleanFallback", methodType(boolean.class, GlobalSite.class, ThreadContext.class));
+        } else {
+            throw new RuntimeException("invalid variable access type");
+        }
+        
+        handle = handle.bindTo(site);
+        site.setTarget(handle);
+        
+        return site;
+    }
+    
+    public static IRubyObject getGlobalFallback(GlobalSite site, ThreadContext context) throws Throwable {
+        Ruby runtime = context.runtime;
+        GlobalVariable variable = runtime.getGlobalVariables().getVariable(site.name);
+        Invalidator invalidator = variable.getInvalidator();
+        IRubyObject value = variable.getAccessor().getValue();
+        
+        MethodHandle target = constant(IRubyObject.class, value);
+        target = dropArguments(target, 0, ThreadContext.class);
+        MethodHandle fallback = lookup().findStatic(InvokeDynamicSupport.class, "getGlobalFallback", methodType(IRubyObject.class, GlobalSite.class, ThreadContext.class));
+        fallback = fallback.bindTo(site);
+        
+        target = ((SwitchPoint)invalidator.getData()).guardWithTest(target, fallback);
+        
+        site.setTarget(target);
+        
+        return value;
+    }
+    
+    public static boolean getGlobalBooleanFallback(GlobalSite site, ThreadContext context) throws Throwable {
+        Ruby runtime = context.runtime;
+        GlobalVariable variable = runtime.getGlobalVariables().getVariable(site.name);
+        Invalidator invalidator = variable.getInvalidator();
+        boolean value = variable.getAccessor().getValue().isTrue();
+        
+        MethodHandle target = constant(boolean.class, value);
+        target = dropArguments(target, 0, ThreadContext.class);
+        MethodHandle fallback = lookup().findStatic(InvokeDynamicSupport.class, "getGlobalBooleanFallback", methodType(boolean.class, GlobalSite.class, ThreadContext.class));
+        fallback = fallback.bindTo(site);
+        
+        target = ((SwitchPoint)invalidator.getData()).guardWithTest(target, fallback);
+        
+        site.setTarget(target);
+        
+        return value;
+    }
+
+    public static CallSite checkpointBootstrap(Lookup lookup, String name, MethodType type) throws Throwable {
+        MutableCallSite site = new MutableCallSite(type);
+        MethodHandle handle = lookup.findStatic(InvokeDynamicSupport.class, "checkpointFallback", methodType(void.class, MutableCallSite.class, ThreadContext.class));
+        
+        handle = handle.bindTo(site);
+        site.setTarget(handle);
+        
+        return site;
+    }
+    
+    public static void checkpointFallback(MutableCallSite site, ThreadContext context) throws Throwable {
+        Ruby runtime = context.runtime;
+        Invalidator invalidator = runtime.getCheckpointInvalidator();
+        
+        MethodHandle target = Binder
+                .from(void.class, ThreadContext.class)
+                .nop();
+        MethodHandle fallback = lookup().findStatic(InvokeDynamicSupport.class, "checkpointFallback", methodType(void.class, MutableCallSite.class, ThreadContext.class));
+        fallback = fallback.bindTo(site);
+        
+        target = ((SwitchPoint)invalidator.getData()).guardWithTest(target, fallback);
+        
+        site.setTarget(target);
+    }
+
     ////////////////////////////////////////////////////////////////////////////
     // INITIAL AND FALLBACK METHODS FOR POST BOOTSTRAP
     ////////////////////////////////////////////////////////////////////////////
@@ -547,6 +681,37 @@ public class InvokeDynamicSupport {
         }
         
         return value;
+    }
+
+    public static boolean constantBooleanFallback(RubyConstantCallSite site, 
+            AbstractScript script, ThreadContext context, int scopeIndex) {
+        SwitchPoint switchPoint = (SwitchPoint)context.runtime.getConstantInvalidator().getData();
+        StaticScope scope = script.getScope(scopeIndex);
+        IRubyObject value = scope.getConstant(site.name());
+        
+        if (value != null) {
+            if (RubyInstanceConfig.LOG_INDY_CONSTANTS) LOG.info("constant " + site.name() + " bound directly");
+            
+            MethodHandle valueHandle = constant(boolean.class, value.isTrue());
+            valueHandle = dropArguments(valueHandle, 0, AbstractScript.class, ThreadContext.class);
+
+            MethodHandle fallback = insertArguments(
+                    findStatic(InvokeDynamicSupport.class, "constantBooleanFallback",
+                    methodType(boolean.class, RubyConstantCallSite.class, AbstractScript.class, ThreadContext.class, int.class)),
+                    0,
+                    site);
+            fallback = insertArguments(fallback, 2, scopeIndex);
+
+            MethodHandle gwt = switchPoint.guardWithTest(valueHandle, fallback);
+            site.setTarget(gwt);
+        } else {
+            value = scope.getModule()
+                    .callMethod(context, "const_missing", context.runtime.newSymbol(site.name()));
+        }
+        
+        boolean booleanValue = value.isTrue();
+        
+        return booleanValue;
     }
     
     public static RubyRegexp initRegexp(MutableCallSite site, ThreadContext context, ByteList pattern, int options) {

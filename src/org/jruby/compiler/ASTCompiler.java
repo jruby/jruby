@@ -2491,9 +2491,17 @@ public class ASTCompiler {
                 }
             };
             
-            // normal
-            compileCondition(actualCondition, context, true);
-            context.performBooleanBranch2(trueCallback, falseCallback);
+            if (actualCondition.getNodeType() == NodeType.GLOBALVARNODE) {
+                // use fast logic to cache raw boolean of global
+                context.performBooleanGlobalBranch(((GlobalVarNode)actualCondition).getName(), trueCallback, falseCallback);
+            } else if (actualCondition.getNodeType() == NodeType.CONSTNODE) {
+                // use fast logic to cache raw boolean of global
+                context.performBooleanConstantBranch(((ConstNode)actualCondition).getName(), trueCallback, falseCallback);
+            } else {
+                // normal
+                compileCondition(actualCondition, context, true);
+                context.performBooleanBranch2(trueCallback, falseCallback);
+            }
         }
     }
     

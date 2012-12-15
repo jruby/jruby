@@ -326,6 +326,11 @@ public class InheritedCacheCompiler implements CacheCompiler {
         inheritedConstantCount++;
     }
 
+    public void cacheConstantBoolean(BaseBodyCompiler method, String constantName) {
+        cacheConstant(method, constantName);
+        method.method.invokeinterface(p(IRubyObject.class), "isTrue", sig(boolean.class));
+    }
+
     public void cacheConstantDefined(BaseBodyCompiler method, String constantName) {
         method.loadThis();
         method.loadThreadContext();
@@ -608,6 +613,17 @@ public class InheritedCacheCompiler implements CacheCompiler {
         }
 
         inheritedMethodCount++;
+    }
+    
+    public void cacheGlobal(BaseBodyCompiler method, String globalName) {
+        method.loadRuntime();
+        method.method.ldc(globalName);
+        method.invokeUtilityMethod("getGlobalVariable", sig(IRubyObject.class, Ruby.class, String.class));
+    }
+    
+    public void cacheGlobalBoolean(BaseBodyCompiler method, String globalName) {
+        cacheGlobal(method, globalName);
+        method.method.invokeinterface(p(IRubyObject.class), "isTrue", sig(boolean.class));
     }
 
     public void finish() {

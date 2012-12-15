@@ -28,6 +28,7 @@ package org.jruby.compiler.impl;
 
 import java.math.BigInteger;
 import org.jcodings.Encoding;
+import org.jruby.Ruby;
 import org.jruby.RubyEncoding;
 import org.jruby.RubyFixnum;
 import org.jruby.RubyFloat;
@@ -49,6 +50,7 @@ import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.runtime.invokedynamic.InvokeDynamicSupport;
 import org.jruby.util.ByteList;
 import static org.jruby.util.CodegenUtils.*;
+import org.jruby.util.JavaNameMangler;
 
 /**
  * A CacheCompiler that uses invokedynamic as a lazy thunk for literals and other
@@ -83,6 +85,32 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
                 constantName,
                 sig(IRubyObject.class, AbstractScript.class, ThreadContext.class),
                 InvokeDynamicSupport.getConstantHandle(),
+                method.getScopeIndex());
+    }
+
+    /**
+     * Cache a constant boolean using invokedynamic.
+     * 
+     * This cache uses a java.lang.invoke.SwitchPoint as the invalidation
+     * mechanism in order to avoid the cost of constantly pinging a constant
+     * generation in org.jruby.Ruby. This allows a nearly free constant cache.
+     * 
+     * @param method the method compiler with which bytecode is emitted
+     * @param constantName the name of the constant to look up
+     */
+    @Override
+    public void cacheConstantBoolean(BaseBodyCompiler method, String constantName) {
+        if (!RubyInstanceConfig.INVOKEDYNAMIC_CONSTANTS) {
+            super.cacheConstantBoolean(method, constantName);
+            return;
+        }
+
+        method.loadThis();
+        method.loadThreadContext();
+        method.method.invokedynamic(
+                constantName,
+                sig(boolean.class, AbstractScript.class, ThreadContext.class),
+                InvokeDynamicSupport.getConstantBooleanHandle(),
                 method.getScopeIndex());
     }
 
@@ -440,5 +468,25 @@ public class InvokeDynamicCacheCompiler extends InheritedCacheCompiler {
                 method.getScriptCompiler().getSourcename(),
                 method.getLastLine() + 1
         );
+    }
+    
+    public void cacheGlobal(BaseBodyCompiler method, String globalName) {
+        method.loadThreadContext();
+        method.method.invokedynamic(
+                "get:" + JavaNameMangler.mangleMethodName(globalName),
+                sig(IRubyObject.class, ThreadContext.class),
+                InvokeDynamicSupport.getGlobalHandle(),
+                method.getScriptCompiler().getSourcename(), 
+                method.getLastLine() + 1);
+    }
+    
+    public void cacheGlobalBoolean(BaseBodyCompiler method, String globalName) {
+        method.loadThreadContext();
+        method.method.invokedynamic(
+                "getBoolean:" + JavaNameMangler.mangleMethodName(globalName),
+                sig(boolean.class, ThreadContext.class),
+                InvokeDynamicSupport.getGlobalBooleanHandle(),
+                method.getScriptCompiler().getSourcename(), 
+                method.getLastLine() + 1);
     }
 }

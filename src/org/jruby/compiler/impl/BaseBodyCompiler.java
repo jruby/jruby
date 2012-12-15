@@ -33,6 +33,7 @@ import org.jruby.RubyRegexp;
 import org.jruby.RubyString;
 import org.jruby.RubySymbol;
 import org.jruby.ast.NodeType;
+import org.jruby.ast.executable.AbstractScript;
 import org.jruby.ast.util.ArgsUtil;
 import org.jruby.compiler.ASTInspector;
 import org.jruby.compiler.ArgumentsCallback;
@@ -905,6 +906,18 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
         method.label(afterJmp);
     }
+    
+    public void performBooleanGlobalBranch(String globalName, BranchCallback trueBranch, BranchCallback falseBranch) {
+        getScriptCompiler().getCacheCompiler().cacheGlobalBoolean(this, globalName);
+        
+        performBooleanBranch2(trueBranch, falseBranch);
+    }
+    
+    public void performBooleanConstantBranch(String globalName, BranchCallback trueBranch, BranchCallback falseBranch) {
+        getScriptCompiler().getCacheCompiler().cacheConstantBoolean(this, globalName);
+        
+        performBooleanBranch2(trueBranch, falseBranch);
+    }
 
     public void performLogicalAnd(BranchCallback longBranch) {
         Label falseJmp = new Label();
@@ -1293,9 +1306,7 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
     }
 
     public void retrieveGlobalVariable(String name) {
-        loadRuntime();
-        method.ldc(name);
-        invokeUtilityMethod("getGlobalVariable", sig(IRubyObject.class, Ruby.class, String.class));
+        getScriptCompiler().getCacheCompiler().cacheGlobal(this, name);
     }
 
     public void assignGlobalVariable(String name) {
@@ -1510,8 +1521,17 @@ public abstract class BaseBodyCompiler implements BodyCompiler {
 
     public void pollThreadEvents() {
         if (!RubyInstanceConfig.THREADLESS_COMPILE_ENABLED) {
-            loadThreadContext();
-            invokeThreadContext("pollThreadEvents", sig(Void.TYPE));
+            if (Options.COMPILE_INVOKEDYNAMIC.load()) {
+                // switchpoint version
+                loadThreadContext();
+                method.invokedynamic(
+                        "checkpoint",
+                        sig(void.class, ThreadContext.class),
+                        InvokeDynamicSupport.checkpointHandle());
+            } else {
+                loadThreadContext();
+                invokeThreadContext("pollThreadEvents", sig(void.class));
+            }
         }
     }
 
