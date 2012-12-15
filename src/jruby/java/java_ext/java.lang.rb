@@ -93,6 +93,15 @@ module JavaUtilities::ModifierShortcuts
   end
 end
 
+class java::lang::ClassLoader
+  alias resource_as_stream get_resource_as_stream
+  alias resource_as_url get_resource
+  
+  def resource_as_string(name)
+    resource_as_stream(name).to_io.read
+  end
+end
+
 class java::lang::Class
   include Comparable
   include JavaUtilities::ModifierShortcuts

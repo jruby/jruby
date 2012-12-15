@@ -2,12 +2,12 @@ language: java
 before_script:
   - unset GEM_PATH GEM_HOME IRBRC
   - "export PATH=`pwd`/bin:$PATH"
-# disable indy until openjdk7 on travis is upgraded and oraclejdk7 is 7u6 or 7u8
+# disable cext
 env: JAVA_OPTS="-server -Djruby.cext.enabled=false"
 jdk:
   - oraclejdk7
 #  - openjdk6
-script: "ant test-extended && rake test19"
+script: "ant test-extended"
 install: /bin/true
 notifications:
   irc:

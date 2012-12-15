@@ -35,7 +35,6 @@ package org.jruby.test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
-import java.util.ArrayList;
 import java.util.Arrays;
 
 import org.jruby.Ruby;
@@ -59,12 +58,6 @@ public class TestRuby extends TestRubyBase {
     
     public TestRuby(String name) {
         super(name);
-    }
-
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
-        runtime = Ruby.newInstance();
     }
     
     public void testArgvIsNonNil() throws Exception {

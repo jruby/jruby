@@ -1,14 +1,8 @@
 package org.jruby.test;
 
-import org.jruby.Ruby;
 import org.jruby.exceptions.RaiseException;
 
 public class TestParser extends TestRubyBase {
-
-    protected void setUp() throws Exception {
-        super.setUp();
-        runtime = Ruby.newInstance();
-    }
     
     public void testWarningLineNumber() throws Exception {
         String out;

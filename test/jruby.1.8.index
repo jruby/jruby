@@ -1,9 +1,6 @@
 # Our own test/unit-based tests
 # NOTE: test_globals comes first here because it has tests that $? be nil
 test_globals
-# NOTE: test_object_class_default_methods comes early because it depends
-#       on no additional methods existing on the Object class
-test_object_class_default_methods
 test_argf
 test_array
 test_array_subclass_behavior
@@ -28,7 +25,6 @@ test_default_constants
 test_delegated_array_equals
 test_dir
 test_dir_with_jar_without_dir_entry
-test_digest_lazy_load
 test_digest_extend
 test_digest2
 test_dup_clone_taint_freeze

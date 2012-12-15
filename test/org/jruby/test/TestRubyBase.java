@@ -35,9 +35,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
 import junit.framework.TestCase;
+import org.jruby.CompatVersion;
 
 import org.jruby.Ruby;
 import org.jruby.RubyIO;
+import org.jruby.RubyInstanceConfig;
 
 /**
  * @author Benoit
@@ -51,6 +53,16 @@ public class TestRubyBase extends TestCase {
     
     public TestRubyBase(String name) {
         super(name);
+    }
+
+    @Override
+    protected void setUp() throws Exception {
+        super.setUp();
+        if (runtime == null) {
+            RubyInstanceConfig config = new RubyInstanceConfig();
+            config.setCompatVersion(CompatVersion.RUBY1_8);
+        	runtime = Ruby.newInstance(config);
+        }
     }
 
     /**

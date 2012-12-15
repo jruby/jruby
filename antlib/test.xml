@@ -223,8 +223,6 @@
                        jit.maxsize="@{jit.maxsize}" jvm.flags="@{jvm.flags}">
                 <junit-tests>
                     <test name="${test}" if="test"/>
-                    <test name="org.jruby.test.JRubyTestSuite" todir="${test.results.dir}" unless="test"/>
-                    <test name="org.jruby.test.MRITestSuite" todir="${test.results.dir}" unless="test"/>
                     <test name="org.jruby.test.MainTestSuite" todir="${test.results.dir}" unless="test"/>
                 </junit-tests>
             </run-junit>
@@ -248,11 +246,6 @@
                        jvm.flags="@{jvm.flags}">
                 <junit-tests>
                     <test name="${test}" if="test"/>
-                    <test name="org.jruby.test.JRubyTestSuite" todir="${test.results.dir}" unless="test"/>
-                    <test name="org.jruby.test.SlowTestSuite" todir="${test.results.dir}" unless="test"/>
-                    <test name="org.jruby.test.MRITestSuite" todir="${test.results.dir}" unless="test"/>
-                    <test name="org.jruby.test.RubiconTestSuite" todir="${test.results.dir}" unless="test"/>
-                    <test name="org.jruby.test.ObjectSpaceTestSuite" todir="${test.results.dir}" unless="test"/>
                     <test name="org.jruby.test.MainTestSuite" todir="${test.results.dir}" unless="test"/>
                 </junit-tests>
             </run-junit>
@@ -308,7 +301,12 @@
     </target>
 
     <target name="test-rake-targets" depends="init">
-        <rake task="test:rake_targets" objectspace.enabled="false"/>
+        <java classname="org.jruby.Main" fork="true" failonerror="true">
+            <classpath refid="test.class.path"/>
+            <jvmarg line="${java.opts}"/>
+            <jvmarg line="-Djruby.home=${basedir}"/>
+            <arg line="-S rake test:rake_targets"/>
+        </java>
     </target>
 
     <target name="test-jar-complete" depends="init,unzip-native-libs,jar-jruby-complete"

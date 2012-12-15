@@ -708,30 +708,26 @@ CLASSDEF
   end
   
   # JRUBY-2169
-  unless RUBY_VERSION =~ /1\.9/ # FIXME not sure why this doesn't pass in 1.9 mode
-    def test_java_class_resource_methods
-      # FIXME? not sure why this works, didn't modify build.xml
-      # to copy this file, yet it finds it anyway
-      file = 'test_java_class_resource_methods.properties'
+  def test_java_class_resource_methods
+    $CLASSPATH << 'test/org/jruby/javasupport/test/'
+    file = 'test_java_class_resource_methods.properties'
 
-      # nothing special about this class, selected at random for testing
-      jc = org.jruby.javasupport.test.RubyTestObject.java_class
+    jc = JRuby.runtime.jruby_class_loader
 
-      # get resource as URL
-      url = jc.resource(file)
-      assert(java.net.URL === url)
-      assert(/^foo=bar/ =~ java.io.DataInputStream.new(url.content).read_line)
+    # get resource as URL
+    url = jc.resource_as_url(file)
+    assert(java.net.URL === url)
+    assert(/^foo=bar/ =~ java.io.DataInputStream.new(url.content).read_line)
 
-      # get resource as stream
-      is = jc.resource_as_stream(file)
-      assert(java.io.InputStream === is)
-      assert(/^foo=bar/ =~ java.io.DataInputStream.new(is).read_line)
+    # get resource as stream
+    is = jc.resource_as_stream(file)
+    assert(java.io.InputStream === is)
+    assert(/^foo=bar/ =~ java.io.DataInputStream.new(is).read_line)
 
 
-      # get resource as string
-      str = jc.resource_as_string(file)
-      assert(/^foo=bar/ =~ str)
-    end
+    # get resource as string
+    str = jc.resource_as_string(file)
+    assert(/^foo=bar/ =~ str)
   end
   
   # JRUBY-2169

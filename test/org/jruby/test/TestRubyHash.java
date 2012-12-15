@@ -30,8 +30,10 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.test;
 
+import org.jruby.CompatVersion;
 import org.jruby.Ruby;
 import org.jruby.RubyHash;
+import org.jruby.RubyInstanceConfig;
 
 /**
  * @author chadfowler
@@ -47,9 +49,6 @@ public class TestRubyHash extends TestRubyBase {
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-        if (runtime == null) {
-        	runtime = Ruby.newInstance();
-        }
         eval("$h = {'foo' => 'bar'}");
     }
 

@@ -43,9 +43,6 @@ public class TestRubyArray extends TestRubyBase {
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-        if (runtime == null) {
-        	runtime = Ruby.newInstance();
-        }
         eval("$h = ['foo','bar']");
     }
 

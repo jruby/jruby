@@ -57,15 +57,6 @@ def sha1_checksum(filename)
   HashTask.hash_for(filename, Digest::SHA1)
 end
 
-COMPILE_FLAGS = {
-  :default => :int,
-  :int => ["-X-C"],
-  :jit => ["-Xjit.threshold=0"],
-  :aot => ["-X+C"],
-  :ir_int => ["-X-CIR"],
-  :all => [:int, :jit, :aot]
-}
-
 def permute_tests(base_name, options, *prereqs, &block)
   permute_task("test", Rake::TestTask, base_name, options, *prereqs, &block)
 end

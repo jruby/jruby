@@ -8,9 +8,7 @@ class TestJavaWrapperDeadlock < Test::Unit::TestCase
   def test_deadlock_due_to_java_object_wrapping_locking_on_java_instances
     Runner.getRunner.runJob Runnable.impl {
       Thread.new do
-        puts "geting runner instance"
         runner = Runner.getRunner
-        puts "got runner instance"
         assert runner.isRunning, "runner should be running"
       end.join
     }

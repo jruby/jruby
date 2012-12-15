@@ -19,7 +19,7 @@ class TestThreadBacktrace < Test::Unit::TestCase
                   /org\/jruby\/RubyProc\.java:[0-9]+:in `call'/]
     else
       expected = [
-                  /\.\/test\/test_thread_backtrace\.rb:7:in `test_simple_backtrace'/,
+                  /\/test\/test_thread_backtrace\.rb:7:in `test_simple_backtrace'/,
                   /org\/jruby\/RubyProc\.java:[0-9]+:in `call'/,
                   /org\/jruby\/RubyProc\.java:[0-9]+:in `call'/]
     end

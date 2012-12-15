@@ -41,12 +41,6 @@ public class TestRequire extends TestRubyBase {
         super(name);
     }
 
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
-        runtime = Ruby.newInstance();
-    }
-
     public void testRubyRequire() throws Exception {
         String result = eval("require 'A/C'; puts A::C.new.meth");
         assertEquals("ok", result);

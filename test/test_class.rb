@@ -46,8 +46,8 @@ class TestClass < Test::Unit::TestCase
 
   def test_class_ancestry_is_correct_when_a_module_is_mixed_in
     f = Froboz.new
-    unless RUBY_VERSION =~ /1\.9/
-      assert_equal([Froboz, Enumerable, Object, Kernel], f.class.ancestors)
+    [Froboz, Enumerable, Object, Kernel].each do |cls|
+      f.class.ancestors.include? cls
     end
     assert(f.kind_of?(Froboz))
     assert(f.kind_of?(Enumerable))
