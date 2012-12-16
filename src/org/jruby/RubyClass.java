@@ -278,6 +278,8 @@ public class RubyClass extends RubyModule {
 
     private volatile VariableAccessor ffiHandleAccessor = VariableAccessor.DUMMY_ACCESSOR;
 
+    private volatile VariableAccessor objectGroupAccessor = VariableAccessor.DUMMY_ACCESSOR;
+
     private synchronized final VariableAccessor allocateVariableAccessor(String name) {
         String[] myVariableNames = variableNames;
 
@@ -341,6 +343,14 @@ public class RubyClass extends RubyModule {
         return ffiHandleAccessor;
     }
 
+    private synchronized VariableAccessor allocateObjectGroupAccessor() {
+        if (objectGroupAccessor == VariableAccessor.DUMMY_ACCESSOR) {
+            objectGroupAccessor = allocateVariableAccessor("object_group");
+        }
+
+        return objectGroupAccessor;
+    }
+
 
     public VariableAccessor getVariableAccessorForRead(String name) {
         VariableAccessor accessor = getVariableAccessorsForRead().get(name);
@@ -373,6 +383,15 @@ public class RubyClass extends RubyModule {
 
     public VariableAccessor getFFIHandleAccessorForRead() {
         return ffiHandleAccessor;
+    }
+
+    public VariableAccessor getObjectGroupAccessorForWrite() {
+        VariableAccessor accessor = objectGroupAccessor;
+        return accessor != VariableAccessor.DUMMY_ACCESSOR ? accessor : allocateObjectGroupAccessor();
+    }
+
+    public VariableAccessor getObjectGroupAccessorForRead() {
+        return objectGroupAccessor;
     }
 
     public int getVariableTableSize() {

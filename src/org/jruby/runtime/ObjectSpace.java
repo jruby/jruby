@@ -30,16 +30,16 @@
  ***** END LICENSE BLOCK *****/
 package org.jruby.runtime;
 
+import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
+import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReferenceArray;
 
 import org.jruby.RubyModule;
+import org.jruby.java.proxies.JavaProxy;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.util.WeakIdentityHashMap;
 
@@ -52,13 +52,16 @@ import org.jruby.util.WeakIdentityHashMap;
  * for now, this may be acceptable.
  */
 public class ObjectSpace {
-    private ReferenceQueue deadReferences = new ReferenceQueue();
+    private final ReferenceQueue<Object> deadReferences = new ReferenceQueue<Object>();
+    private final ReferenceQueue<ObjectGroup> objectGroupReferenceQueue = new ReferenceQueue<ObjectGroup>();
     private WeakReferenceListNode top;
 
     private ReferenceQueue deadIdentityReferences = new ReferenceQueue();
     private final Map identities = new HashMap();
     private final Map identitiesByObject = new WeakIdentityHashMap();
     private static final AtomicLong maxId = new AtomicLong(1000);
+    private final ThreadLocal<Reference<ObjectGroup>> currentObjectGroup = new ThreadLocal<Reference<ObjectGroup>>();
+    private Reference<GroupSweeper> groupSweeperReference;
 
     public void registerObjectId(long id, IRubyObject object) {
         synchronized (identities) {
@@ -122,25 +125,69 @@ public class ObjectSpace {
         }
     }
     
-    public synchronized void add(IRubyObject object) {
-        cleanup();
-        top = new WeakReferenceListNode(object, deadReferences, top);
+    public void add(IRubyObject object) {
+        if (true && object.getMetaClass() != null && !(object instanceof JavaProxy)) {
+            getObjectGroup().add(object);
+        } else {
+            addIndividualWeakReference(object);
+        }
+    }
+
+    private synchronized void addIndividualWeakReference(IRubyObject object) {
+        cleanup(deadReferences);
+        top = new WeakReferenceListNode<Object>(object, deadReferences, top);
+    }
+
+    private synchronized void registerGroupSweeper() {
+        if (groupSweeperReference == null || groupSweeperReference.get() == null) {
+            groupSweeperReference = new WeakReference<GroupSweeper>(new GroupSweeper());
+        }
+    }
+
+    private synchronized void splitObjectGroups() {
+        cleanup(objectGroupReferenceQueue);
+
+        // Split apart each group into individual weak references
+        WeakReferenceListNode node = top;
+        while (node != null) {
+            Object obj = node.get();
+            if (obj instanceof ObjectGroup) {
+                ObjectGroup objectGroup = (ObjectGroup) obj;
+                for (int i = 0; i < objectGroup.size(); i++) {
+                    IRubyObject rubyObject = objectGroup.set(i, null);
+                    if (rubyObject != null) {
+                        top = new WeakReferenceListNode<Object>(rubyObject, deadReferences, top);
+                    }
+                }
+            }
+            node = node.nextNode;
+        }
     }
 
     public synchronized Iterator iterator(RubyModule rubyClass) {
-        final List objList = new ArrayList();
+        final List<Reference<Object>> objList = new ArrayList<Reference<Object>>();
         WeakReferenceListNode current = top;
         while (current != null) {
-            IRubyObject obj = (IRubyObject)current.get();
-            if (obj != null && rubyClass.isInstance(obj)) {
-                objList.add(current);
+            Object obj = current.get();
+            if (obj instanceof IRubyObject) {
+                IRubyObject rubyObject = (IRubyObject)current.get();
+                if (rubyObject != null && rubyClass.isInstance(rubyObject)) {
+                    objList.add(current);
+                }
+
+            } else if (obj instanceof ObjectGroup) {
+                for (IRubyObject rubyObject : (ObjectGroup) obj) {
+                    if (rubyObject != null && rubyClass.isInstance(rubyObject)) {
+                        objList.add(new WeakReference<Object>(rubyObject));
+                    }
+                }
             }
 
             current = current.nextNode;
         }
 
         return new Iterator() {
-            private Iterator iter = objList.iterator();
+            private Iterator<Reference<Object>> iter = objList.iterator();
 
             public boolean hasNext() {
                 throw new UnsupportedOperationException();
@@ -149,9 +196,7 @@ public class ObjectSpace {
             public Object next() {
                 Object obj = null;
                 while (iter.hasNext()) {
-                    WeakReferenceListNode node = (WeakReferenceListNode)iter.next();
-
-                    obj = node.get();
+                    obj = iter.next().get();
 
                     if (obj != null) break;
                 }
@@ -164,19 +209,19 @@ public class ObjectSpace {
         };
     }
 
-    private synchronized void cleanup() {
+    private void cleanup(ReferenceQueue<?> referenceQueue) {
         WeakReferenceListNode reference;
-        while ((reference = (WeakReferenceListNode)deadReferences.poll()) != null) {
+        while ((reference = (WeakReferenceListNode)referenceQueue.poll()) != null) {
             reference.remove();
         }
     }
 
-    private class WeakReferenceListNode extends WeakReference {
+    private class WeakReferenceListNode<T> extends WeakReference<T> {
         private WeakReferenceListNode prevNode;
         private WeakReferenceListNode nextNode;
 
-        public WeakReferenceListNode(Object ref, ReferenceQueue queue, WeakReferenceListNode next) {
-            super(ref, queue);
+        public WeakReferenceListNode(T referent, ReferenceQueue<T> queue, WeakReferenceListNode<?> next) {
+            super(referent, queue);
 
             this.nextNode = next;
             if (next != null) {
@@ -184,16 +229,14 @@ public class ObjectSpace {
             }
         }
 
-        public void remove() {
-            synchronized (ObjectSpace.this) {
-                if (prevNode != null) {
-                    prevNode.nextNode = nextNode;
-                } else {
-                    top = nextNode;
-                }
-                if (nextNode != null) {
-                    nextNode.prevNode = prevNode;
-                }
+        private void remove() {
+            if (prevNode != null) {
+                prevNode.nextNode = nextNode;
+            } else {
+                top = nextNode;
+            }
+            if (nextNode != null) {
+                nextNode.prevNode = prevNode;
             }
         }
     }
@@ -208,6 +251,71 @@ public class ObjectSpace {
 
         public long id() {
             return id;
+        }
+    }
+
+    private ObjectGroup getObjectGroup() {
+        Reference<ObjectGroup> ref = currentObjectGroup.get();
+        ObjectGroup objectGroup = ref != null ? ref.get() : null;
+        return objectGroup != null && !objectGroup.isFull() ? objectGroup : addObjectGroup();
+    }
+
+
+    private synchronized ObjectGroup addObjectGroup() {
+        cleanup(objectGroupReferenceQueue);
+        ObjectGroup objectGroup;
+        WeakReferenceListNode<ObjectGroup> ref = new WeakReferenceListNode<ObjectGroup>(objectGroup = new ObjectGroup(),
+                objectGroupReferenceQueue, top);
+        currentObjectGroup.set(ref);
+        top = ref;
+        if (groupSweeperReference == null) registerGroupSweeper();
+
+        return objectGroup;
+    }
+
+    private static final class ObjectGroup extends AbstractList<IRubyObject> {
+        private static final int MAX_OBJECTS_PER_GROUP = 64;
+        private final AtomicReferenceArray<IRubyObject> objects = new AtomicReferenceArray<IRubyObject>(MAX_OBJECTS_PER_GROUP);
+        private int nextIndex = 0;
+
+        public boolean add(IRubyObject obj) {
+            obj.getMetaClass().getRealClass().getObjectGroupAccessorForWrite().set(obj, this);
+            objects.set(nextIndex, obj);
+            ++nextIndex;
+            return true;
+        }
+
+        @Override
+        public IRubyObject get(int index) {
+            return objects.get(index);
+        }
+
+        @Override
+        public IRubyObject set(int index, IRubyObject element) {
+            return objects.getAndSet(index, element);
+        }
+
+        private boolean isFull() {
+            return nextIndex >= objects.length();
+        }
+
+        public int size() {
+            return objects.length();
+        }
+    }
+
+    // This class is used as a low-memory cleaner.  When it is finalized, it will cause all groups to be split into
+    // individual weak refs, so each object can be collected.
+    private final class GroupSweeper {
+
+        @Override
+        protected void finalize() throws Throwable {
+            try {
+                splitObjectGroups();
+            } finally {
+                registerGroupSweeper();
+                super.finalize();
+            }
         }
     }
 }

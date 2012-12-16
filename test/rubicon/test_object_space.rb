@@ -107,8 +107,8 @@ class TestObjectSpace < Test::Unit::TestCase
     x = nil
 
     # force GC (and wait until var is gone)
-    JRuby.gc
-    sleep 1
+    t = Time.now
+    (JRuby.gc; sleep 0.1) until (ObjectSpace._id2ref(n).nil? || (Time.now - t > 5))
 
     # straight reference should succeed
     assert_nil(ObjectSpace._id2ref n)
