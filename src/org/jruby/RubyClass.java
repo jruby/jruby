@@ -59,7 +59,6 @@ import org.jruby.anno.JRubyMethod;
 import org.jruby.compiler.impl.SkinnyMethodAdapter;
 import org.jruby.exceptions.RaiseException;
 import org.jruby.internal.runtime.methods.DynamicMethod;
-import org.jruby.internal.runtime.methods.ProfilingDynamicMethod;
 import org.jruby.java.codegen.RealClassGenerator;
 import org.jruby.java.codegen.Reified;
 import org.jruby.javasupport.Java;
@@ -272,13 +271,10 @@ public class RubyClass extends RubyModule {
         return variableAccessors;
     }
     
-    private volatile VariableAccessor objectIdAccessor = VariableAccessor.DUMMY_ACCESSOR;
-    
-    private volatile VariableAccessor cextHandleAccessor = VariableAccessor.DUMMY_ACCESSOR;
-
-    private volatile VariableAccessor ffiHandleAccessor = VariableAccessor.DUMMY_ACCESSOR;
-
-    private volatile VariableAccessor objectGroupAccessor = VariableAccessor.DUMMY_ACCESSOR;
+    private final VariableAccessorField objectIdVariableAccessorField = new VariableAccessorField("object_id");
+    private final VariableAccessorField cextHandleVariableAccessorField = new VariableAccessorField("cext");
+    private final VariableAccessorField ffiHandleVariableAccessorField = new VariableAccessorField("ffi");
+    private final VariableAccessorField objectGroupVariableAccessorField = new VariableAccessorField("objectspace_group");
 
     private synchronized final VariableAccessor allocateVariableAccessor(String name) {
         String[] myVariableNames = variableNames;
@@ -319,38 +315,31 @@ public class RubyClass extends RubyModule {
         return ivarAccessor;
     }
 
-    private synchronized VariableAccessor allocateIdAccessor() {
-        if (objectIdAccessor == VariableAccessor.DUMMY_ACCESSOR) {
-            objectIdAccessor = allocateVariableAccessor("object_id");
+    public final class VariableAccessorField {
+        private final String name;
+        private volatile VariableAccessor variableAccessor = VariableAccessor.DUMMY_ACCESSOR;
+
+        private VariableAccessorField(String name) {
+            this.name = name;
         }
 
-        return objectIdAccessor;
-    }
-
-    private synchronized VariableAccessor allocateCExtHandleAccessor() {
-        if (cextHandleAccessor == VariableAccessor.DUMMY_ACCESSOR) {
-            cextHandleAccessor = allocateVariableAccessor("cext");
+        public VariableAccessor getVariableAccessorForRead() {
+            return variableAccessor;
         }
 
-        return cextHandleAccessor;
-    }
-
-    private synchronized VariableAccessor allocateFFIHandleAccessor() {
-        if (ffiHandleAccessor == VariableAccessor.DUMMY_ACCESSOR) {
-            ffiHandleAccessor = allocateVariableAccessor("ffi");
+        public VariableAccessor getVariableAccessorForWrite() {
+            return variableAccessor != VariableAccessor.DUMMY_ACCESSOR
+                    ? variableAccessor : allocateVariableAccessor();
         }
 
-        return ffiHandleAccessor;
-    }
+        private synchronized VariableAccessor allocateVariableAccessor() {
+            if (variableAccessor == VariableAccessor.DUMMY_ACCESSOR) {
+                variableAccessor = RubyClass.this.allocateVariableAccessor(name);
+            }
 
-    private synchronized VariableAccessor allocateObjectGroupAccessor() {
-        if (objectGroupAccessor == VariableAccessor.DUMMY_ACCESSOR) {
-            objectGroupAccessor = allocateVariableAccessor("object_group");
+            return variableAccessor;
         }
-
-        return objectGroupAccessor;
     }
-
 
     public VariableAccessor getVariableAccessorForRead(String name) {
         VariableAccessor accessor = getVariableAccessorsForRead().get(name);
@@ -358,40 +347,20 @@ public class RubyClass extends RubyModule {
         return accessor;
     }
 
-    public VariableAccessor getObjectIdAccessorForWrite() {
-        VariableAccessor accessor = objectIdAccessor;
-        return accessor != VariableAccessor.DUMMY_ACCESSOR ? accessor : allocateIdAccessor();
+    public VariableAccessorField getObjectIdAccessorField() {
+        return objectIdVariableAccessorField;
     }
 
-    public VariableAccessor getObjectIdAccessorForRead() {
-        return objectIdAccessor;
+    public VariableAccessorField getNativeHandleAccessorField() {
+        return cextHandleVariableAccessorField;
     }
 
-    public VariableAccessor getNativeHandleAccessorForWrite() {
-        VariableAccessor accessor = cextHandleAccessor;
-        return accessor != VariableAccessor.DUMMY_ACCESSOR ? accessor : allocateCExtHandleAccessor();
+    public VariableAccessorField getFFIHandleAccessorField() {
+        return ffiHandleVariableAccessorField;
     }
 
-    public VariableAccessor getNativeHandleAccessorForRead() {
-        return cextHandleAccessor;
-    }
-
-    public VariableAccessor getFFIHandleAccessorForWrite() {
-        VariableAccessor accessor = ffiHandleAccessor;
-        return accessor != VariableAccessor.DUMMY_ACCESSOR ? accessor : allocateFFIHandleAccessor();
-    }
-
-    public VariableAccessor getFFIHandleAccessorForRead() {
-        return ffiHandleAccessor;
-    }
-
-    public VariableAccessor getObjectGroupAccessorForWrite() {
-        VariableAccessor accessor = objectGroupAccessor;
-        return accessor != VariableAccessor.DUMMY_ACCESSOR ? accessor : allocateObjectGroupAccessor();
-    }
-
-    public VariableAccessor getObjectGroupAccessorForRead() {
-        return objectGroupAccessor;
+    public VariableAccessorField getObjectGroupAccessorField() {
+        return objectGroupVariableAccessorField;
     }
 
     public int getVariableTableSize() {

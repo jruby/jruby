@@ -969,16 +969,16 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
      */
     protected long getObjectId() {
         RubyClass realClass = metaClass.getRealClass();
-        RubyClass.VariableAccessor objectIdAccessor = realClass.getObjectIdAccessorForRead();
+        RubyClass.VariableAccessor objectIdAccessor = realClass.getObjectIdAccessorField().getVariableAccessorForRead();
         Long id = (Long)objectIdAccessor.get(this);
         if (id != null) return id;
         
         synchronized (this) {
-            objectIdAccessor = realClass.getObjectIdAccessorForRead();
+            objectIdAccessor = realClass.getObjectIdAccessorField().getVariableAccessorForRead();
             id = (Long)objectIdAccessor.get(this);
             if (id != null) return id;
 
-            return initObjectId(realClass.getObjectIdAccessorForWrite());
+            return initObjectId(realClass.getObjectIdAccessorField().getVariableAccessorForWrite());
         }
     }
 
@@ -1293,21 +1293,21 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
     }
     
     public final Object getNativeHandle() {
-        return getMetaClass().getRealClass().getNativeHandleAccessorForRead().get(this);
+        return getMetaClass().getRealClass().getNativeHandleAccessorField().getVariableAccessorForRead().get(this);
     }
 
     public final void setNativeHandle(Object value) {
-        int index = getMetaClass().getRealClass().getNativeHandleAccessorForWrite().getIndex();
+        int index = getMetaClass().getRealClass().getNativeHandleAccessorField().getVariableAccessorForWrite().getIndex();
         Object[] ivarTable = getVariableTableForWrite(index);
         ivarTable[index] = value;
     }
 
     public final Object getFFIHandle() {
-        return getMetaClass().getRealClass().getFFIHandleAccessorForRead().get(this);
+        return getMetaClass().getRealClass().getFFIHandleAccessorField().getVariableAccessorForRead().get(this);
     }
 
     public final void setFFIHandle(Object value) {
-        int index = getMetaClass().getRealClass().getFFIHandleAccessorForWrite().getIndex();
+        int index = getMetaClass().getRealClass().getFFIHandleAccessorField().getVariableAccessorForWrite().getIndex();
         Object[] ivarTable = getVariableTableForWrite(index);
         ivarTable[index] = value;
     }
@@ -1471,7 +1471,7 @@ public class RubyBasicObject implements Cloneable, IRubyObject, Serializable, Co
         boolean sameTable = otherRealClass == realClass;
 
         if (sameTable) {
-            RubyClass.VariableAccessor objIdAccessor = otherRealClass.getObjectIdAccessorForRead();
+            RubyClass.VariableAccessor objIdAccessor = otherRealClass.getObjectIdAccessorField().getVariableAccessorForRead();
             Object[] otherVars = ((RubyBasicObject) other).varTable;
             int otherLength = otherVars.length;
             Object[] myVars = getVariableTableForWrite(otherLength - 1);
