@@ -713,7 +713,7 @@ public class Pack {
      *       remaining elements.  <br/>
      *       The directives <code>sSiIlL</code> may each be followed by an underscore (``<code>_</code>'') to use the underlying platform's native size for the specified type; otherwise, it uses a platform-independent consistent size.  <br/>
      *       Spaces are ignored in the format string.
-     *           @see RubyArray#pack
+     * 
      *       <table border="2" width="500" bgcolor="#ffe0e0">
      *           <tr>
      *             <td>
@@ -939,6 +939,7 @@ public class Pack {
      *           </tr>
      *         </table>
      *
+     * @see RubyArray#pack
      **/
     public static RubyArray unpack(Ruby runtime, ByteList encodedString, ByteList formatString) {
         Encoding encoding = encodedString.getEncoding();
@@ -1735,7 +1736,19 @@ public class Pack {
      * pack_pack
      *
      * Template characters for Array#pack Directive  Meaning
-     *              <table class="codebox" cellspacing="0" border="0" cellpadding="3">
+     *       Packs the contents of arr into a binary sequence according to the directives in
+     *       aTemplateString (see preceding table).
+     *       Directives ``A,'' ``a,'' and ``Z'' may be followed by a count, which gives the
+     *       width of the resulting field.
+     *       The remaining directives also may take a count, indicating the number of array
+     *       elements to convert.
+     *       If the count is an asterisk (``*''] = all remaining array elements will be
+     *       converted.
+     *       Any of the directives ``sSiIlL'' may be followed by an underscore (``_'') to use
+     *       the underlying platform's native size for the specified type; otherwise, they
+     *       use a platform-independent size. Spaces are ignored in the template string.
+     * 
+     *       <table class="codebox" cellspacing="0" border="0" cellpadding="3">
      * <tr bgcolor="#ff9999">
      *   <td valign="top">
      *                     <b>Directive</b>
@@ -1892,19 +1905,7 @@ public class Pack {
      *                   <td colspan="9" bgcolor="#ff9999" height="2"><img src="dot.gif" width="1" height="1"></td>
      *                 </tr>
      *               </table>
-     *
-     *
-     * Packs the contents of arr into a binary sequence according to the directives in
-     * aTemplateString (see preceding table).
-     * Directives ``A,'' ``a,'' and ``Z'' may be followed by a count, which gives the
-     * width of the resulting field.
-     * The remaining directives also may take a count, indicating the number of array
-     * elements to convert.
-     * If the count is an asterisk (``*''] = all remaining array elements will be
-     * converted.
-     * Any of the directives ``sSiIlL'' may be followed by an underscore (``_'') to use
-     * the underlying platform's native size for the specified type; otherwise, they
-     * use a platform-independent size. Spaces are ignored in the template string.
+     * 
      * @see RubyString#unpack
      **/
     @SuppressWarnings("fallthrough")
