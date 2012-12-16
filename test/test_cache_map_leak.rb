@@ -9,8 +9,8 @@ class TestCacheMapLeak < Test::Unit::TestCase
     @num = 100
     @num.times { class << TestMe.new; def foo; end; end }
     
-    sleep 1
-    java.lang.System.gc
+    t = Time.now
+    (JRuby.gc; sleep 0.1) until (ObjectSpace.each_object(TestMe){} < @num || (Time.now - t > 5))
   end
   
   def test_objects_are_released_by_cache_map
