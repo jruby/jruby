@@ -5207,15 +5207,16 @@ public class RubyString extends RubyObject implements EncodingCapable {
         IRubyObject tmp = arg.checkStringType();
         if (tmp.isNil()) return false;
         RubyString otherString = (RubyString)tmp;
+        int otherLength = otherString.value.getRealSize();
         Encoding enc = checkEncoding(otherString);
-        if (value.getRealSize() < otherString.value.getRealSize()) return false;
+        if (value.getRealSize() < otherLength) return false;
         int p = value.getBegin();
         int end = p + value.getRealSize();
-        if (otherString.value.getRealSize() == 0) {
+        if (otherLength == 0) {
             // other is '', so return true
             return true;
         }
-        int s = end - otherString.value.getRealSize();
+        int s = end - otherLength;
         if (enc.leftAdjustCharHead(value.getUnsafeBytes(), p, s, end) != s) return false;
         return value.endsWith(otherString.value);
     }
