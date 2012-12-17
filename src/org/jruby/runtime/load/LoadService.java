@@ -644,7 +644,13 @@ public class LoadService {
     }
     
     private boolean isFeaturesIndexUpToDate() {
-        return loadedFeaturesDup != null && loadedFeaturesDup.eql(loadedFeatures);
+        // disable tracing during index check
+        runtime.getCurrentContext().preTrace();
+        try {
+            return loadedFeaturesDup != null && loadedFeaturesDup.eql(loadedFeatures);
+        } finally {
+            runtime.getCurrentContext().postTrace();
+        }
     }
 
     protected boolean featureAlreadyLoaded(String name) {
@@ -654,7 +660,7 @@ public class LoadService {
         if (!isFeaturesIndexUpToDate()) { 
             loadedFeaturesIndex.clear();
             return false;
-        } 
+        }
         
         return isFeatureInIndex(name);
     }
