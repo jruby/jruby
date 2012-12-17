@@ -1886,14 +1886,11 @@ restarg_mark    : tSTAR2 | tSTAR
 
 // [!null]
 f_rest_arg      : restarg_mark tIDENTIFIER {
-                    if (!support.is_local_id($2)) {
-                        support.yyerror("rest argument must be local variable");
-                    }
-                    
-                    $$ = new RestArgNode(support.arg_var(support.shadowing_lvar($2)));
+                    support.arg_var(support.shadowing_lvar($2));
+                    $$ = dispatcher.dispatch('on_rest_param', $2);
                 }
                 | restarg_mark {
-                    $$ = new UnnamedRestArgNode($1.getPosition(), "", support.getCurrentScope().addVariable("*"));
+                    $$ = dispatcher.dispatch('on_rest_param', null);
                 }
 
 // [!null]
@@ -1901,11 +1898,8 @@ blkarg_mark     : tAMPER2 | tAMPER
 
 // f_block_arg - Block argument def for function (foo(&block)) [!null]
 f_block_arg     : blkarg_mark tIDENTIFIER {
-                    if (!support.is_local_id($2)) {
-                        support.yyerror("block argument must be local variable");
-                    }
-                    
-                    $$ = new BlockArgNode(support.arg_var(support.shadowing_lvar($2)));
+                    support.arg_var(support.shadowing_lvar($2));
+                    $$ = dispatcher.dispatch('on_blockarg', $2);
                 }
 
 opt_f_block_arg : ',' f_block_arg {
@@ -1916,29 +1910,18 @@ opt_f_block_arg : ',' f_block_arg {
                 }
 
 singleton       : var_ref {
-                    if (!($1 instanceof SelfNode)) {
-                        support.checkExpression($1);
-                    }
                     $$ = $1;
                 }
                 | tLPAREN2 {
                     lexer.setState(LexState.EXPR_BEG);
                 } expr rparen {
-                    if ($3 == null) {
-                        support.yyerror("can't define single method for ().");
-                    } else if ($3 instanceof ILiteralNode) {
-                        support.yyerror("can't define single method for literals.");
-                    }
-                    support.checkExpression($3);
-                    $$ = $3;
+                    $$ = dispatcher.dispatch('on_paren', $3);
                 }
 
 // [!null]
-assoc_list      : none {
-                    $$ = new ArrayNode(lexer.getPosition());
-                }
+assoc_list      : none
                 | assocs trailer {
-                    $$ = $1;
+                    $$ = dispatcher.dispatch('on_assoclist_from_args', $1);
                 }
 
 // [!null]
@@ -1949,24 +1932,21 @@ assocs          : assoc
 
 // [!null]
 assoc           : arg_value tASSOC arg_value {
-                    ISourcePosition pos;
-                    if ($1 == null && $3 == null) {
-                        pos = $2.getPosition();
-                    } else {
-                        pos = $1.getPosition();
-                    }
-
-                    $$ = support.newArrayNode(pos, $1).add($3);
+                    $$ = dispatcher.dispatch('on_assoc_new', $1, $3);
                 }
                 | tLABEL arg_value {
-                    ISourcePosition pos = $1.getPosition();
-                    $$ = support.newArrayNode(pos, new SymbolNode(pos, (String) $1.getValue())).add($2);
+                    $$ = dispatcher.dispatch('on_assoc_new', $1, $2);
                 }
 
 operation       : tIDENTIFIER | tCONSTANT | tFID
 operation2      : tIDENTIFIER | tCONSTANT | tFID | op
 operation3      : tIDENTIFIER | tFID | op
-dot_or_colon    : tDOT | tCOLON2
+dot_or_colon    : tDOT {
+                    $$ = $1;
+                }
+                | tCOLON2 {
+                    $$ = $1;
+                }
 opt_terms       : /* none */ | terms
 opt_nl          : /* none */ | '\n'
 rparen          : opt_nl tRPAREN {
