@@ -37,10 +37,6 @@ package org.jruby.parser;
 
 import java.math.BigInteger;
 import org.jcodings.Encoding;
-import org.jcodings.specific.EUCJPEncoding;
-import org.jcodings.specific.SJISEncoding;
-import org.jcodings.specific.USASCIIEncoding;
-import org.jcodings.specific.UTF8Encoding;
 import org.jruby.CompatVersion;
 import org.jruby.RubyBignum;
 import org.jruby.RubyRegexp;

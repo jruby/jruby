@@ -39,7 +39,6 @@ import org.jruby.runtime.encoding.EncodingService;
 import org.jruby.runtime.scope.ManyVarsDynamicScope;
 import org.jruby.util.ByteList;
 import org.jruby.util.KCode;
-import org.jruby.util.SafePropertyAccessor;
 
 public class ParserConfiguration {
     private DynamicScope existingScope = null;
