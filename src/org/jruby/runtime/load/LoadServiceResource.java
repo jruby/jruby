@@ -137,7 +137,6 @@ public class LoadServiceResource {
         try {
             return new File(URLUtil.getPath(getURL())).getCanonicalPath();
         } catch (IOException e) {
-            e.printStackTrace();
             return resource.toString();
         }
     }
