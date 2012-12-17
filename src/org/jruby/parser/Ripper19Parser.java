@@ -119,17 +119,15 @@ import org.jruby.lexer.yacc.Token;
 import org.jruby.util.ByteList;
 
 public class Ripper19Parser implements RubyParser {
-    protected ParserSupport19 support;
+    protected RipperSupport support;
     protected RubyYaccLexer lexer;
-    protected RipperDispatcher dispatcher;
 
     public Ripper19Parser() {
-        this(new ParserSupport19());
+        this(new RipperSupport());
     }
 
-    public Ripper19Parser(ParserSupport19 support) {
+    public Ripper19Parser(RipperSupport support) {
         this.support = support;
-        dispatcher = new RipperDispatcher(support);
         lexer = new RubyYaccLexer(false);
         lexer.setParserSupport(support);
         support.setLexer(lexer);
@@ -139,7 +137,7 @@ public class Ripper19Parser implements RubyParser {
         support.setWarnings(warnings);
         lexer.setWarnings(warnings);
     }
-					// line 143 "-"
+					// line 141 "-"
   // %token constants
   public static final int kCLASS = 257;
   public static final int kMODULE = 258;
@@ -1536,7 +1534,7 @@ states[1] = new ParserState() {
 };
 states[2] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                  support.setResult(dispatcher.dispatch('program', ((Node)yyVals[0+yyTop])));
+                  support.setResult(support.dispatch("on_program", ((Node)yyVals[0+yyTop])));
     return yyVal;
   }
 };
@@ -1548,22 +1546,22 @@ states[3] = new ParserState() {
 };
 states[4] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = dispatcher.dispatch('stmts_add', 
-                                           dispatcher.dispatch('stmts_new'), 
-                                           dispatcher.dispatch('void_stmt'));
+                  yyVal = support.dispatch("on_stmts_add", 
+                                           support.dispatch("on_stmts_new"), 
+                                           support.dispatch("on_void_stmt"));
     return yyVal;
   }
 };
 states[5] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = dispatcher.dispatch('stmts_add', 
-                                           dispatcher.dispatch('stmts_new'), ((Node)yyVals[0+yyTop]));
+                  yyVal = support.dispatch("on_stmts_add", 
+                                           support.dispatch("on_stmts_new"), ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[6] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = dispatcher.dispatch('stmts_add', ((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
+                  yyVal = support.dispatch("on_stmts_add", ((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -1583,13 +1581,13 @@ states[9] = new ParserState() {
 };
 states[10] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = dispatcher.dispatch('BEGIN', ((Node)yyVals[-1+yyTop]));
+                  yyVal = support.dispatch("on_BEGIN", ((Node)yyVals[-1+yyTop]));
     return yyVal;
   }
 };
 states[11] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                  yyVal = dispatcher.dispatch('bodystmt', escape(((Node)yyVals[-3+yyTop])), escape(((RescueBodyNode)yyVals[-2+yyTop])),
+                  yyVal = support.dispatch("on_bodystmt", escape(((Node)yyVals[-3+yyTop])), escape(((RescueBodyNode)yyVals[-2+yyTop])),
                                 escape(((Node)yyVals[-1+yyTop])), escape(((Node)yyVals[0+yyTop])));
     return yyVal;
   }
@@ -1602,22 +1600,22 @@ states[12] = new ParserState() {
 };
 states[13] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = dispatcher.dispatch('stmts_add', 
-                                             dispatcher.dispatch('stmts_new'),
-                                             dispatcher.dispatch('void_stmt'));
+                    yyVal = support.dispatch("on_stmts_add", 
+                                             support.dispatch("on_stmts_new"),
+                                             support.dispatch("on_void_stmt"));
     return yyVal;
   }
 };
 states[14] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = dispatcher.dispatch('stmts_add',
-                                             dispatch('stmts_new'), ((Node)yyVals[0+yyTop]));
+                    yyVal = support.dispatch("on_stmts_add",
+                                             dispatch("on_stmts_new"), ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[15] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = dispatcher.dispatch('stmts_add', ((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
+                    yyVal = support.dispatch("on_stmts_add", ((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -1635,62 +1633,62 @@ states[17] = new ParserState() {
 };
 states[18] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = dispatcher.dispatch('alias', ((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
+                    yyVal = support.dispatch("on_alias", ((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[19] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = dispatcher.dispatch('var_alias', ((Token)yyVals[-1+yyTop]), ((Token)yyVals[0+yyTop]));
+                    yyVal = support.dispatch("on_var_alias", ((Token)yyVals[-1+yyTop]), ((Token)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[20] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = dispatcher.dispatch('var_alias', ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
+                    yyVal = support.dispatch("on_var_alias", ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[21] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = dispatcher.dispatch('alias_error', 
-                                             dispatcher.dispatch('var_alias', ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop])));
+                    yyVal = support.dispatch("on_alias_error", 
+                                             support.dispatch("on_var_alias", ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop])));
     return yyVal;
   }
 };
 states[22] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = dispatcher.dispatch('undef', ((Node)yyVals[0+yyTop]));
+                    yyVal = support.dispatch("on_undef", ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[23] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = dispatcher.dispatch('if_mod', ((Node)yyVals[0+yyTop]), ((Node)yyVals[-2+yyTop]));
+                    yyVal = support.dispatch("on_if_mod", ((Node)yyVals[0+yyTop]), ((Node)yyVals[-2+yyTop]));
     return yyVal;
   }
 };
 states[24] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = dispatcher.dispatch('unless_mod', ((Node)yyVals[0+yyTop]), ((Node)yyVals[-2+yyTop]));
+                    yyVal = support.dispatch("on_unless_mod", ((Node)yyVals[0+yyTop]), ((Node)yyVals[-2+yyTop]));
     return yyVal;
   }
 };
 states[25] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = dispatcher.dispatch('while_mod', ((Node)yyVals[0+yyTop]), ((Node)yyVals[-2+yyTop]));
+                    yyVal = support.dispatch("on_while_mod", ((Node)yyVals[0+yyTop]), ((Node)yyVals[-2+yyTop]));
     return yyVal;
   }
 };
 states[26] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = dispatcher.dispatch('until_mod', ((Node)yyVals[0+yyTop]), ((Node)yyVals[-2+yyTop]));
+                    yyVal = support.dispatch("on_until_mod", ((Node)yyVals[0+yyTop]), ((Node)yyVals[-2+yyTop]));
     return yyVal;
   }
 };
 states[27] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = dispatcher.dispatch('rescue_mod', ((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
+                    yyVal = support.dispatch("on_rescue_mod", ((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -1699,117 +1697,117 @@ states[28] = new ParserState() {
                     if (support.isInDef() || support.isInSingle()) {
                         support.warn(ID.END_IN_METHOD, ((Token)yyVals[-3+yyTop]).getPosition(), "END in method; use at_exit");
                     }
-                    yyVal = dispatcher.dispatch('END', ((Node)yyVals[-1+yyTop]));
+                    yyVal = support.dispatch("on_END", ((Node)yyVals[-1+yyTop]));
     return yyVal;
   }
 };
 states[30] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = dispatcher.dispatch('massign', ((MultipleAsgn19Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
+                    yyVal = support.dispatch("on_massign", ((MultipleAsgn19Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[31] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = dispatcher.dispatch('opassign', ((AssignableNode)yyVals[-2+yyTop]), ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
+                    yyVal = support.dispatch("on_opassign", ((AssignableNode)yyVals[-2+yyTop]), ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[32] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = dispatcher.dispatch('aref_field', ((Node)yyVals[-5+yyTop]), escape(((Node)yyVals[-3+yyTop])));
-                    yyVal = dispatcher.dispatch('opassign', yyVal, ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
+                    yyVal = support.dispatch("on_aref_field", ((Node)yyVals[-5+yyTop]), escape(((Node)yyVals[-3+yyTop])));
+                    yyVal = support.dispatch("on_opassign", yyVal, ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[33] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = dispatcher.dispatch('field', ((Node)yyVals[-4+yyTop]), ".", ((Token)yyVals[-2+yyTop]));
-                    yyVal = dispatcher.dispatch('opassign', yyVal, ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
+                    yyVal = support.dispatch("on_field", ((Node)yyVals[-4+yyTop]), ".", ((Token)yyVals[-2+yyTop]));
+                    yyVal = support.dispatch("on_opassign", yyVal, ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[34] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = dispatcher.dispatch('field', ((Node)yyVals[-4+yyTop]), ".", ((Token)yyVals[-2+yyTop]));
-                    yyVal = dispatcher.dispatch('opassign', yyVal, ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
+                    yyVal = support.dispatch("on_field", ((Node)yyVals[-4+yyTop]), ".", ((Token)yyVals[-2+yyTop]));
+                    yyVal = support.dispatch("on_opassign", yyVal, ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[35] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = dispatcher.dispatch('const_path_field', ((Node)yyVals[-4+yyTop]), ((Token)yyVals[-2+yyTop]));
-                    yyVal = dispatcher.dispatch('opassign', yyVal, ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
-                    yyVal = dispatcher.dispatch('assign_error', yyVal);
+                    yyVal = support.dispatch("on_const_path_field", ((Node)yyVals[-4+yyTop]), ((Token)yyVals[-2+yyTop]));
+                    yyVal = support.dispatch("on_opassign", yyVal, ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
+                    yyVal = support.dispatch("on_assign_error", yyVal);
     return yyVal;
   }
 };
 states[36] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = dispatcher.dispatch('field', ((Node)yyVals[-4+yyTop]), "::", ((Token)yyVals[-2+yyTop]));
-                    yyVal = dispatcher.dispatch('opassign', yyVal, ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
+                    yyVal = support.dispatch("on_field", ((Node)yyVals[-4+yyTop]), "::", ((Token)yyVals[-2+yyTop]));
+                    yyVal = support.dispatch("on_opassign", yyVal, ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[37] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = dispatcher.dispatch('assign', 
-                                             dispatcher.dispatch('var_field', ((Node)yyVals[-2+yyTop])), ((Node)yyVals[0+yyTop]));
-                    yyVal = dispatcher.dispatch('assign_error', yyVal);
+                    yyVal = support.dispatch("on_assign", 
+                                             support.dispatch("on_var_field", ((Node)yyVals[-2+yyTop])), ((Node)yyVals[0+yyTop]));
+                    yyVal = support.dispatch("on_assign_error", yyVal);
     return yyVal;
   }
 };
 states[38] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = dispatcher.dispatch('assign', ((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
+                    yyVal = support.dispatch("on_assign", ((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[39] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = dispatcher.dispatch('assign', ((MultipleAsgn19Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
+                    yyVal = support.dispatch("on_assign", ((MultipleAsgn19Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[40] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = dispatcher.dispatch('massign', ((MultipleAsgn19Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
+                    yyVal = support.dispatch("on_massign", ((MultipleAsgn19Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[42] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = dispatcher.dispatch('assign', ((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
+                    yyVal = support.dispatch("on_assign", ((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[43] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = dispatcher.dispatch('assign', ((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
+                    yyVal = support.dispatch("on_assign", ((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[45] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = dispatcher.dispatch('binary', ((Node)yyVals[-2+yyTop]), "and", ((Node)yyVals[0+yyTop]));
+                    yyVal = support.dispatch("on_binary", ((Node)yyVals[-2+yyTop]), "and", ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[46] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = dispatcher.dispatch('binary', ((Node)yyVals[-2+yyTop]), "or", ((Node)yyVals[0+yyTop]));
+                    yyVal = support.dispatch("on_binary", ((Node)yyVals[-2+yyTop]), "or", ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[47] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = dispatcher.dispatch('unary', ripper_intern("not"), ((Node)yyVals[0+yyTop]));
+                    yyVal = support.dispatch("on_unary", ripper_intern("not"), ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[48] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = dispatcher.dispatch('unary', ripper_id2sym('!'), ((Node)yyVals[0+yyTop]));
+                    yyVal = support.dispatch("on_unary", ripper_id2sym("!"), ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -1821,13 +1819,13 @@ states[50] = new ParserState() {
 };
 states[54] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = method_arg(dispatcher.dispatch('call', ((Node)yyVals[-3+yyTop]), ".", ((Token)yyVals[-1+yyTop])), ((Node)yyVals[0+yyTop]));
+                    yyVal = method_arg(support.dispatch("on_call", ((Node)yyVals[-3+yyTop]), ".", ((Token)yyVals[-1+yyTop])), ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[55] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = method_arg(dispatcher.dispatch('call', ((Node)yyVals[-3+yyTop]), "::", ((Token)yyVals[-1+yyTop])), ((Node)yyVals[0+yyTop]));
+                    yyVal = method_arg(support.dispatch("on_call", ((Node)yyVals[-3+yyTop]), "::", ((Token)yyVals[-1+yyTop])), ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -1839,88 +1837,88 @@ states[56] = new ParserState() {
 };
 states[57] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = dispatcher.dispatch('brace_block', escape(((ArgsNode)yyVals[-2+yyTop])), ((Node)yyVals[-1+yyTop]));
+                    yyVal = support.dispatch("on_brace_block", escape(((ArgsNode)yyVals[-2+yyTop])), ((Node)yyVals[-1+yyTop]));
                     support.popCurrentScope();
     return yyVal;
   }
 };
 states[58] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = dispatcher.dispatch('command', ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
+                    yyVal = support.dispatch("on_command", ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[59] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = method_add_block(dispatcher.dispatch('command', ((Token)yyVals[-2+yyTop]), ((Node)yyVals[-1+yyTop])), ((IterNode)yyVals[0+yyTop]));
+                    yyVal = method_add_block(support.dispatch("on_command", ((Token)yyVals[-2+yyTop]), ((Node)yyVals[-1+yyTop])), ((IterNode)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[60] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = dispatcher.dispatch('command_call', ((Node)yyVals[-3+yyTop]), ".", ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
+                    yyVal = support.dispatch("on_command_call", ((Node)yyVals[-3+yyTop]), ".", ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[61] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = dispatcher.dispatch('command_call', ((Node)yyVals[-4+yyTop]), ".", ((Token)yyVals[-2+yyTop]), ((Node)yyVals[-1+yyTop]));
+                    yyVal = support.dispatch("on_command_call", ((Node)yyVals[-4+yyTop]), ".", ((Token)yyVals[-2+yyTop]), ((Node)yyVals[-1+yyTop]));
                     yyVal = method_add_block(yyVal, ((IterNode)yyVals[0+yyTop])); 
     return yyVal;
   }
 };
 states[62] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = dispatcher.dispatch('command_call', ((Node)yyVals[-3+yyTop]), "::", ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
+                    yyVal = support.dispatch("on_command_call", ((Node)yyVals[-3+yyTop]), "::", ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[63] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = dispatcher.dispatch('command_call', ((Node)yyVals[-4+yyTop]), "::", ((Token)yyVals[-2+yyTop]), ((Node)yyVals[-1+yyTop]));
+                    yyVal = support.dispatch("on_command_call", ((Node)yyVals[-4+yyTop]), "::", ((Token)yyVals[-2+yyTop]), ((Node)yyVals[-1+yyTop]));
                     yyVal = method_add_block(yyVal, ((IterNode)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[64] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = dispatcher.dispatch('super', ((Node)yyVals[0+yyTop]));
+                    yyVal = support.dispatch("on_super", ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[65] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = dispatcher.dispatch('yield', ((Node)yyVals[0+yyTop]));
+                    yyVal = support.dispatch("on_yield", ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[66] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = dispatcher.dispatch('areturn', ((Node)yyVals[0+yyTop]));
+                    yyVal = support.dispatch("on_areturn", ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[67] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = dispatcher.dispatch('abreak', ((Node)yyVals[0+yyTop]));
+                    yyVal = support.dispatch("on_abreak", ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[68] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = dispatcher.dispatch('next', ((Node)yyVals[0+yyTop]));
+                    yyVal = support.dispatch("on_next", ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[70] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = dispatcher.dispatch('mlhs_paren', ((Node)yyVals[-1+yyTop]));
+                    yyVal = support.dispatch("on_mlhs_paren", ((Node)yyVals[-1+yyTop]));
     return yyVal;
   }
 };
 states[72] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = dispatcher.dispatch('mlhs_paren', ((Node)yyVals[-1+yyTop]));
+                    yyVal = support.dispatch("on_mlhs_paren", ((Node)yyVals[-1+yyTop]));
     return yyVal;
   }
 };
@@ -1987,7 +1985,7 @@ states[82] = new ParserState() {
 };
 states[84] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = dispatcher.dispatch('mlhs_paren', ((Node)yyVals[-1+yyTop]));
+                    yyVal = support.dispatch("on_mlhs_paren", ((Node)yyVals[-1+yyTop]));
     return yyVal;
   }
 };
@@ -2023,7 +2021,7 @@ states[89] = new ParserState() {
 };
 states[90] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = dispatcher.dispatch('aref_field', ((Node)yyVals[-3+yyTop]), escape(((Node)yyVals[-1+yyTop])));
+                    yyVal = support.dispatch("on_aref_field", ((Node)yyVals[-3+yyTop]), escape(((Node)yyVals[-1+yyTop])));
     return yyVal;
   }
 };
@@ -4101,27 +4099,21 @@ states[505] = new ParserState() {
 };
 states[508] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    if (!support.is_local_id(((Token)yyVals[0+yyTop]))) {
-                        support.yyerror("rest argument must be local variable");
-                    }
-                    
-                    yyVal = new RestArgNode(support.arg_var(support.shadowing_lvar(((Token)yyVals[0+yyTop]))));
+                    support.arg_var(support.shadowing_lvar(((Token)yyVals[0+yyTop])));
+                    yyVal = support.dispatch("on_rest_param", ((Token)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[509] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = new UnnamedRestArgNode(((Token)yyVals[0+yyTop]).getPosition(), "", support.getCurrentScope().addVariable("*"));
+                    yyVal = support.dispatch("on_rest_param", null);
     return yyVal;
   }
 };
 states[512] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    if (!support.is_local_id(((Token)yyVals[0+yyTop]))) {
-                        support.yyerror("block argument must be local variable");
-                    }
-                    
-                    yyVal = new BlockArgNode(support.arg_var(support.shadowing_lvar(((Token)yyVals[0+yyTop]))));
+                    support.arg_var(support.shadowing_lvar(((Token)yyVals[0+yyTop])));
+                    yyVal = support.dispatch("on_blockarg", ((Token)yyVals[0+yyTop]));
     return yyVal;
   }
 };
@@ -4139,9 +4131,6 @@ states[514] = new ParserState() {
 };
 states[515] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    if (!(((Node)yyVals[0+yyTop]) instanceof SelfNode)) {
-                        support.checkExpression(((Node)yyVals[0+yyTop]));
-                    }
                     yyVal = ((Node)yyVals[0+yyTop]);
     return yyVal;
   }
@@ -4154,25 +4143,13 @@ states[516] = new ParserState() {
 };
 states[517] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    if (((Node)yyVals[-1+yyTop]) == null) {
-                        support.yyerror("can't define single method for ().");
-                    } else if (((Node)yyVals[-1+yyTop]) instanceof ILiteralNode) {
-                        support.yyerror("can't define single method for literals.");
-                    }
-                    support.checkExpression(((Node)yyVals[-1+yyTop]));
-                    yyVal = ((Node)yyVals[-1+yyTop]);
-    return yyVal;
-  }
-};
-states[518] = new ParserState() {
-  public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = new ArrayNode(lexer.getPosition());
+                    yyVal = support.dispatch("on_paren", ((Node)yyVals[-1+yyTop]));
     return yyVal;
   }
 };
 states[519] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    yyVal = ((ListNode)yyVals[-1+yyTop]);
+                    yyVal = support.dispatch("on_assoclist_from_args", ((ListNode)yyVals[-1+yyTop]));
     return yyVal;
   }
 };
@@ -4184,21 +4161,25 @@ states[521] = new ParserState() {
 };
 states[522] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    ISourcePosition pos;
-                    if (((Node)yyVals[-2+yyTop]) == null && ((Node)yyVals[0+yyTop]) == null) {
-                        pos = ((Token)yyVals[-1+yyTop]).getPosition();
-                    } else {
-                        pos = ((Node)yyVals[-2+yyTop]).getPosition();
-                    }
-
-                    yyVal = support.newArrayNode(pos, ((Node)yyVals[-2+yyTop])).add(((Node)yyVals[0+yyTop]));
+                    yyVal = support.dispatch("on_assoc_new", ((Node)yyVals[-2+yyTop]), ((Node)yyVals[0+yyTop]));
     return yyVal;
   }
 };
 states[523] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                    ISourcePosition pos = ((Token)yyVals[-1+yyTop]).getPosition();
-                    yyVal = support.newArrayNode(pos, new SymbolNode(pos, (String) ((Token)yyVals[-1+yyTop]).getValue())).add(((Node)yyVals[0+yyTop]));
+                    yyVal = support.dispatch("on_assoc_new", ((Token)yyVals[-1+yyTop]), ((Node)yyVals[0+yyTop]));
+    return yyVal;
+  }
+};
+states[534] = new ParserState() {
+  public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                    yyVal = ((Token)yyVals[0+yyTop]);
+    return yyVal;
+  }
+};
+states[535] = new ParserState() {
+  public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
+                    yyVal = ((Token)yyVals[0+yyTop]);
     return yyVal;
   }
 };
@@ -4227,7 +4208,7 @@ states[550] = new ParserState() {
   }
 };
 }
-					// line 1995 "Ripper19Parser.y"
+					// line 1973 "Ripper19Parser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -4260,4 +4241,4 @@ states[550] = new ParserState() {
         return support.getResult();
     }
 }
-					// line 8131 "-"
+					// line 8112 "-"
