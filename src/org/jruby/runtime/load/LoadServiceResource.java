@@ -107,18 +107,37 @@ public class LoadServiceResource {
         if (resource != null) {
             return resource;
         } else {
+            String absolutePath = path.getAbsolutePath();
             try {
-                return new URI("file", path.getAbsolutePath(), null).toURL();
+                return new URI("file", absolutePath, null).toURL();
             } catch(URISyntaxException e) {
-                throw new IOException(e.getMessage());
+                try {
+                    // Let's try this one more time.  For some reason [ and ]
+                    // are not getting escaped in URI (I think they are for
+                    // ipv6 host stuff).  We make this double attempt so that
+                    // we are not constantly trying to string substitute every 
+                    // path we encounter.
+                    return new URI("file", escapeReservedChars(absolutePath), null).toURL();
+                } catch (URISyntaxException ee) {
+                    throw new IOException(ee.getMessage());
+                }
             }
         }
+    }
+    
+    // URI Does not escape all characters.  In particular the characters
+    // marked as 'reserved' in the URI spec: ?/[]@.  Of these characters
+    // the file: uri only seems to care about '[' and ']'.  Let's escape
+    // them
+    private String escapeReservedChars(String path) {
+        return path.replaceAll("\\[", "%5b").replaceAll("\\]", "%5a");
     }
 
     public String getAbsolutePath() {
         try {
             return new File(URLUtil.getPath(getURL())).getCanonicalPath();
         } catch (IOException e) {
+            e.printStackTrace();
             return resource.toString();
         }
     }
