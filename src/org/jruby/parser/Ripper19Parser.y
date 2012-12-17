@@ -274,7 +274,7 @@ public class Ripper19Parser implements RubyParser {
 program       : {
                   lexer.setState(LexState.EXPR_BEG);
               } top_compstmt {
-                  support.setResult(dispatcher.dispatch('program', $2));
+                  support.setResult(dispatcher.dispatch('on_program', $2));
               }
 
 top_compstmt  : top_stmts opt_terms {
@@ -282,16 +282,16 @@ top_compstmt  : top_stmts opt_terms {
               }
 
 top_stmts     : none {
-                  $$ = dispatcher.dispatch('stmts_add', 
-                                           dispatcher.dispatch('stmts_new'), 
-                                           dispatcher.dispatch('void_stmt'));
+                  $$ = dispatcher.dispatch('on_stmts_add', 
+                                           dispatcher.dispatch('on_stmts_new'), 
+                                           dispatcher.dispatch('on_void_stmt'));
               }
               | top_stmt {
-                  $$ = dispatcher.dispatch('stmts_add', 
-                                           dispatcher.dispatch('stmts_new'), $1);
+                  $$ = dispatcher.dispatch('on_stmts_add', 
+                                           dispatcher.dispatch('on_stmts_new'), $1);
               }
               | top_stmts terms top_stmt {
-                  $$ = dispatcher.dispatch('stmts_add', $1, $3);
+                  $$ = dispatcher.dispatch('on_stmts_add', $1, $3);
               }
               | error top_stmt {
                   $$ = remove_begin($2);
@@ -303,11 +303,11 @@ top_stmt      : stmt
                       support.yyerror("BEGIN in method");
                   }
               } tLCURLY top_compstmt tRCURLY {
-                  $$ = dispatcher.dispatch('BEGIN', $4);
+                  $$ = dispatcher.dispatch('on_BEGIN', $4);
               }
 
 bodystmt      : compstmt opt_rescue opt_else opt_ensure {
-                  $$ = dispatcher.dispatch('bodystmt', escape($1), escape($2),
+                  $$ = dispatcher.dispatch('on_bodystmt', escape($1), escape($2),
                                 escape($3), escape($4));
                 }
 
@@ -316,16 +316,16 @@ compstmt        : stmts opt_terms {
                 }
 
  stmts          : none {
-                    $$ = dispatcher.dispatch('stmts_add', 
-                                             dispatcher.dispatch('stmts_new'),
-                                             dispatcher.dispatch('void_stmt'));
+                    $$ = dispatcher.dispatch('on_stmts_add', 
+                                             dispatcher.dispatch('on_stmts_new'),
+                                             dispatcher.dispatch('on_void_stmt'));
                 }
                 | stmt {
-                    $$ = dispatcher.dispatch('stmts_add',
-                                             dispatch('stmts_new'), $1);
+                    $$ = dispatcher.dispatch('on_stmts_add',
+                                             dispatch('on_stmts_new'), $1);
                 }
                 | stmts terms stmt {
-                    $$ = dispatcher.dispatch('stmts_add', $1, $3);
+                    $$ = dispatcher.dispatch('on_stmts_add', $1, $3);
                 }
                 | error stmt {
                     $$ = remove_begin($2);
@@ -334,106 +334,106 @@ compstmt        : stmts opt_terms {
 stmt            : kALIAS fitem {
                     lexer.setState(LexState.EXPR_FNAME);
                 } fitem {
-                    $$ = dispatcher.dispatch('alias', $2, $4);
+                    $$ = dispatcher.dispatch('on_alias', $2, $4);
                 }
                 | kALIAS tGVAR tGVAR {
-                    $$ = dispatcher.dispatch('var_alias', $2, $3);
+                    $$ = dispatcher.dispatch('on_var_alias', $2, $3);
                 }
                 | kALIAS tGVAR tBACK_REF {
-                    $$ = dispatcher.dispatch('var_alias', $2, $3);
+                    $$ = dispatcher.dispatch('on_var_alias', $2, $3);
                 }
                 | kALIAS tGVAR tNTH_REF {
-                    $$ = dispatcher.dispatch('alias_error', 
-                                             dispatcher.dispatch('var_alias', $2, $3));
+                    $$ = dispatcher.dispatch('on_alias_error', 
+                                             dispatcher.dispatch('on_var_alias', $2, $3));
                 }
                 | kUNDEF undef_list {
-                    $$ = dispatcher.dispatch('undef', $2);
+                    $$ = dispatcher.dispatch('on_undef', $2);
                 }
                 | stmt kIF_MOD expr_value {
-                    $$ = dispatcher.dispatch('if_mod', $3, $1);
+                    $$ = dispatcher.dispatch('on_if_mod', $3, $1);
                 }
                 | stmt kUNLESS_MOD expr_value {
-                    $$ = dispatcher.dispatch('unless_mod', $3, $1);
+                    $$ = dispatcher.dispatch('on_unless_mod', $3, $1);
                 }
                 | stmt kWHILE_MOD expr_value {
-                    $$ = dispatcher.dispatch('while_mod', $3, $1);
+                    $$ = dispatcher.dispatch('on_while_mod', $3, $1);
                 }
                 | stmt kUNTIL_MOD expr_value {
-                    $$ = dispatcher.dispatch('until_mod', $3, $1);
+                    $$ = dispatcher.dispatch('on_until_mod', $3, $1);
                 }
                 | stmt kRESCUE_MOD stmt {
-                    $$ = dispatcher.dispatch('rescue_mod', $1, $3);
+                    $$ = dispatcher.dispatch('on_rescue_mod', $1, $3);
                 }
                 | klEND tLCURLY compstmt tRCURLY {
                     if (support.isInDef() || support.isInSingle()) {
                         support.warn(ID.END_IN_METHOD, $1.getPosition(), "END in method; use at_exit");
                     }
-                    $$ = dispatcher.dispatch('END', $3);
+                    $$ = dispatcher.dispatch('on_END', $3);
                 }
                 | command_asgn
                 | mlhs '=' command_call {
-                    $$ = dispatcher.dispatch('massign', $1, $3);
+                    $$ = dispatcher.dispatch('on_massign', $1, $3);
                 }
                 | var_lhs tOP_ASGN command_call {
-                    $$ = dispatcher.dispatch('opassign', $1, $2, $3);
+                    $$ = dispatcher.dispatch('on_opassign', $1, $2, $3);
                 }
                 | primary_value '[' opt_call_args rbracket tOP_ASGN command_call {
-                    $$ = dispatcher.dispatch('aref_field', $1, escape($3));
-                    $$ = dispatcher.dispatch('opassign', $$, $5, $6);
+                    $$ = dispatcher.dispatch('on_aref_field', $1, escape($3));
+                    $$ = dispatcher.dispatch('on_opassign', $$, $5, $6);
                 }
                 | primary_value tDOT tIDENTIFIER tOP_ASGN command_call {
-                    $$ = dispatcher.dispatch('field', $1, ".", $3);
-                    $$ = dispatcher.dispatch('opassign', $$, $4, $5);
+                    $$ = dispatcher.dispatch('on_field', $1, ".", $3);
+                    $$ = dispatcher.dispatch('on_opassign', $$, $4, $5);
                 }
                 | primary_value tDOT tCONSTANT tOP_ASGN command_call {
-                    $$ = dispatcher.dispatch('field', $1, ".", $3);
-                    $$ = dispatcher.dispatch('opassign', $$, $4, $5);
+                    $$ = dispatcher.dispatch('on_field', $1, ".", $3);
+                    $$ = dispatcher.dispatch('on_opassign', $$, $4, $5);
                 }
                 | primary_value tCOLON2 tCONSTANT tOP_ASGN command_call {
-                    $$ = dispatcher.dispatch('const_path_field', $1, $3);
-                    $$ = dispatcher.dispatch('opassign', $$, $4, $5);
-                    $$ = dispatcher.dispatch('assign_error', $$);
+                    $$ = dispatcher.dispatch('on_const_path_field', $1, $3);
+                    $$ = dispatcher.dispatch('on_opassign', $$, $4, $5);
+                    $$ = dispatcher.dispatch('on_assign_error', $$);
                 }
                 | primary_value tCOLON2 tIDENTIFIER tOP_ASGN command_call {
-                    $$ = dispatcher.dispatch('field', $1, "::", $3);
-                    $$ = dispatcher.dispatch('opassign', $$, $4, $5);
+                    $$ = dispatcher.dispatch('on_field', $1, "::", $3);
+                    $$ = dispatcher.dispatch('on_opassign', $$, $4, $5);
                 }
                 | backref tOP_ASGN command_call {
-                    $$ = dispatcher.dispatch('assign', 
-                                             dispatcher.dispatch('var_field', $1), $3);
-                    $$ = dispatcher.dispatch('assign_error', $$);
+                    $$ = dispatcher.dispatch('on_assign', 
+                                             dispatcher.dispatch('on_var_field', $1), $3);
+                    $$ = dispatcher.dispatch('on_assign_error', $$);
                }
                 | lhs '=' mrhs {
-                    $$ = dispatcher.dispatch('assign', $1, $3);
+                    $$ = dispatcher.dispatch('on_assign', $1, $3);
                 }
                 | mlhs '=' arg_value {
-                    $$ = dispatcher.dispatch('assign', $1, $3);
+                    $$ = dispatcher.dispatch('on_assign', $1, $3);
                 }
                 | mlhs '=' mrhs {
-                    $$ = dispatcher.dispatch('massign', $1, $3);
+                    $$ = dispatcher.dispatch('on_massign', $1, $3);
                 }
                 | expr
 
 command_asgn    : lhs '=' command_call {
-                    $$ = dispatcher.dispatch('assign', $1, $3);
+                    $$ = dispatcher.dispatch('on_assign', $1, $3);
                 }
                 | lhs '=' command_asgn {
-                    $$ = dispatcher.dispatch('assign', $1, $3);
+                    $$ = dispatcher.dispatch('on_assign', $1, $3);
                 }
 
 // Node:expr *CURRENT* all but arg so far
 expr            : command_call
                 | expr kAND expr {
-                    $$ = dispatcher.dispatch('binary', $1, "and", $3);
+                    $$ = dispatcher.dispatch('on_binary', $1, "and", $3);
                 }
                 | expr kOR expr {
-                    $$ = dispatcher.dispatch('binary', $1, "or", $3);
+                    $$ = dispatcher.dispatch('on_binary', $1, "or", $3);
                 }
                 | kNOT opt_nl expr {
-                    $$ = dispatcher.dispatch('unary', ripper_intern("not"), $3);
+                    $$ = dispatcher.dispatch('on_unary', ripper_intern("not"), $3);
                 }
                 | tBANG command_call {
-                    $$ = dispatcher.dispatch('unary', ripper_id2sym('!'), $2);
+                    $$ = dispatcher.dispatch('on_unary', ripper_id2sym('!'), $2);
                 }
                 | arg
 
@@ -449,68 +449,68 @@ command_call    : command
 // Node:block_command - A call with a block (foo.bar {...}, foo::bar {...}, bar {...}) [!null]
 block_command   : block_call
                 | block_call tDOT operation2 command_args {
-                    $$ = method_arg(dispatcher.dispatch('call', $1, ".", $3), $4);
+                    $$ = method_arg(dispatcher.dispatch('on_call', $1, ".", $3), $4);
                 }
                 | block_call tCOLON2 operation2 command_args {
-                    $$ = method_arg(dispatcher.dispatch('call', $1, "::", $3), $4);
+                    $$ = method_arg(dispatcher.dispatch('on_call', $1, "::", $3), $4);
                 }
 
 // :brace_block - [!null]
 cmd_brace_block : tLBRACE_ARG {
                     support.pushBlockScope();
                 } opt_block_param compstmt tRCURLY {
-                    $$ = dispatcher.dispatch('brace_block', escape($3), $4);
+                    $$ = dispatcher.dispatch('on_brace_block', escape($3), $4);
                     support.popCurrentScope();
                 }
 
 // Node:command - fcall/call/yield/super [!null]
 command        : operation command_args %prec tLOWEST {
-                    $$ = dispatcher.dispatch('command', $1, $2);
+                    $$ = dispatcher.dispatch('on_command', $1, $2);
                 }
                 | operation command_args cmd_brace_block {
-                    $$ = method_add_block(dispatcher.dispatch('command', $1, $2), $3);
+                    $$ = method_add_block(dispatcher.dispatch('on_command', $1, $2), $3);
                 }
                 | primary_value tDOT operation2 command_args %prec tLOWEST {
-                    $$ = dispatcher.dispatch('command_call', $1, ".", $3, $4);
+                    $$ = dispatcher.dispatch('on_command_call', $1, ".", $3, $4);
                 }
                 | primary_value tDOT operation2 command_args cmd_brace_block {
-                    $$ = dispatcher.dispatch('command_call', $1, ".", $3, $4);
+                    $$ = dispatcher.dispatch('on_command_call', $1, ".", $3, $4);
                     $$ = method_add_block($$, $5); 
                 }
                 | primary_value tCOLON2 operation2 command_args %prec tLOWEST {
-                    $$ = dispatcher.dispatch('command_call', $1, "::", $3, $4);
+                    $$ = dispatcher.dispatch('on_command_call', $1, "::", $3, $4);
                 }
                 | primary_value tCOLON2 operation2 command_args cmd_brace_block {
-                    $$ = dispatcher.dispatch('command_call', $1, "::", $3, $4);
+                    $$ = dispatcher.dispatch('on_command_call', $1, "::", $3, $4);
                     $$ = method_add_block($$, $5);
                 }
                 | kSUPER command_args {
-                    $$ = dispatcher.dispatch('super', $2);
+                    $$ = dispatcher.dispatch('on_super', $2);
                 }
                 | kYIELD command_args {
-                    $$ = dispatcher.dispatch('yield', $2);
+                    $$ = dispatcher.dispatch('on_yield', $2);
                 }
                 | kRETURN call_args {
-                    $$ = dispatcher.dispatch('areturn', $2);
+                    $$ = dispatcher.dispatch('on_areturn', $2);
                 }
 		| kBREAK call_args {
-                    $$ = dispatcher.dispatch('abreak', $2);
+                    $$ = dispatcher.dispatch('on_abreak', $2);
                 }
 		| kNEXT call_args {
-                    $$ = dispatcher.dispatch('next', $2);
+                    $$ = dispatcher.dispatch('on_next', $2);
                 }
 
 
 // MultipleAssig19Node:mlhs - [!null]
 mlhs            : mlhs_basic
                 | tLPAREN mlhs_inner rparen {
-                    $$ = dispatcher.dispatch('mlhs_paren', $2);
+                    $$ = dispatcher.dispatch('on_mlhs_paren', $2);
                 }
 
 // MultipleAssign19Node:mlhs_entry - mlhs w or w/o parens [!null]
 mlhs_inner      : mlhs_basic
                 | tLPAREN mlhs_inner rparen {
-                    $$ = dispatcher.dispatch('mlhs_paren', $2);
+                    $$ = dispatcher.dispatch('on_mlhs_paren', $2);
                 }
 
 // MultipleAssign19Node:mlhs_basic - multiple left hand side (basic because used in multiple context) [!null]
@@ -548,7 +548,7 @@ mlhs_basic      : mlhs_head {
 
 mlhs_item       : mlhs_node
                 | tLPAREN mlhs_inner rparen {
-                    $$ = dispatcher.dispatch('mlhs_paren', $2);
+                    $$ = dispatcher.dispatch('on_mlhs_paren', $2);
                 }
 
 // Set of mlhs terms at front of mlhs (a, *b, d, e = arr  # a is head)
@@ -571,7 +571,7 @@ mlhs_node       : variable {
                     $$ = assignable($1, 0);
                 }
                 | primary_value '[' opt_call_args rbracket {
-                    $$ = dispatcher.dispatch('aref_field', $1, escape($3));
+                    $$ = dispatcher.dispatch('on_aref_field', $1, escape($3));
                 }
                 | primary_value tDOT tIDENTIFIER {
                     
