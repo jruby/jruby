@@ -121,6 +121,7 @@ import org.jruby.util.ByteList;
 public class Ripper19Parser implements RubyParser {
     protected ParserSupport19 support;
     protected RubyYaccLexer lexer;
+    protected RipperDispatcher dispatcher;
 
     public Ripper19Parser() {
         this(new ParserSupport19());
@@ -137,7 +138,7 @@ public class Ripper19Parser implements RubyParser {
         support.setWarnings(warnings);
         lexer.setWarnings(warnings);
     }
-					// line 141 "-"
+					// line 142 "-"
   // %token constants
   public static final int kCLASS = 257;
   public static final int kMODULE = 258;
@@ -1534,7 +1535,7 @@ states[1] = new ParserState() {
 };
 states[2] = new ParserState() {
   public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {
-                  support.setResult(dispatch(program, ((Node)yyVals[0+yyTop])))
+                  support.setResult(dispatch(program, ((Node)yyVals[0+yyTop])));
     return yyVal;
   }
 };
@@ -4219,7 +4220,7 @@ states[550] = new ParserState() {
   }
 };
 }
-					// line 1987 "Ripper19Parser.y"
+					// line 1988 "Ripper19Parser.y"
 
     /** The parse method use an lexer stream and parse it to an AST node 
      * structure
@@ -4252,4 +4253,4 @@ states[550] = new ParserState() {
         return support.getResult();
     }
 }
-					// line 8123 "-"
+					// line 8124 "-"
