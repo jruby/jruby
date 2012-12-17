@@ -416,8 +416,8 @@ public class RubyArray extends RubyObject implements List, RandomAccess {
 
     public IRubyObject[] toJavaArrayMaybeUnsafe() {
         return (!isShared && begin == 0 && values.length == realLength) ? values : toJavaArray();
-    }    
-
+    }
+    
     /** rb_ary_make_shared
     *
     */
