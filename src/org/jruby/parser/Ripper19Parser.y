@@ -30,78 +30,7 @@ package org.jruby.parser;
 
 import java.io.IOException;
 
-import org.jruby.ast.ArgsNode;
-import org.jruby.ast.ArgumentNode;
-import org.jruby.ast.ArrayNode;
-import org.jruby.ast.AssignableNode;
-import org.jruby.ast.BackRefNode;
-import org.jruby.ast.BeginNode;
-import org.jruby.ast.BlockAcceptingNode;
-import org.jruby.ast.BlockArgNode;
-import org.jruby.ast.BlockNode;
-import org.jruby.ast.BlockPassNode;
-import org.jruby.ast.BreakNode;
-import org.jruby.ast.ClassNode;
-import org.jruby.ast.ClassVarNode;
-import org.jruby.ast.Colon3Node;
-import org.jruby.ast.ConstDeclNode;
-import org.jruby.ast.DStrNode;
-import org.jruby.ast.DSymbolNode;
-import org.jruby.ast.DXStrNode;
-import org.jruby.ast.DefinedNode;
-import org.jruby.ast.DefnNode;
-import org.jruby.ast.DefsNode;
-import org.jruby.ast.DotNode;
-import org.jruby.ast.EnsureNode;
-import org.jruby.ast.EvStrNode;
-import org.jruby.ast.FCallNoArgBlockNode;
-import org.jruby.ast.FCallNoArgNode;
-import org.jruby.ast.FixnumNode;
-import org.jruby.ast.FloatNode;
-import org.jruby.ast.ForNode;
-import org.jruby.ast.GlobalVarNode;
-import org.jruby.ast.Hash19Node;
-import org.jruby.ast.IfNode;
-import org.jruby.ast.InstVarNode;
-import org.jruby.ast.IterNode;
-import org.jruby.ast.LambdaNode;
-import org.jruby.ast.ListNode;
-import org.jruby.ast.LiteralNode;
-import org.jruby.ast.ModuleNode;
-import org.jruby.ast.MultipleAsgn19Node;
-import org.jruby.ast.NextNode;
-import org.jruby.ast.NilImplicitNode;
-import org.jruby.ast.NilNode;
-import org.jruby.ast.Node;
-import org.jruby.ast.NotNode;
-import org.jruby.ast.OpAsgnAndNode;
-import org.jruby.ast.OpAsgnNode;
-import org.jruby.ast.OpAsgnOrNode;
-import org.jruby.ast.OptArgNode;
-import org.jruby.ast.PostExeNode;
-import org.jruby.ast.PreExe19Node;
-import org.jruby.ast.RedoNode;
-import org.jruby.ast.RegexpNode;
-import org.jruby.ast.RescueBodyNode;
-import org.jruby.ast.RescueNode;
-import org.jruby.ast.RestArgNode;
-import org.jruby.ast.RetryNode;
-import org.jruby.ast.ReturnNode;
-import org.jruby.ast.SClassNode;
-import org.jruby.ast.SelfNode;
-import org.jruby.ast.StarNode;
-import org.jruby.ast.StrNode;
-import org.jruby.ast.SymbolNode;
-import org.jruby.ast.UnnamedRestArgNode;
-import org.jruby.ast.UntilNode;
-import org.jruby.ast.VAliasNode;
-import org.jruby.ast.WhileNode;
-import org.jruby.ast.XStrNode;
-import org.jruby.ast.YieldNode;
-import org.jruby.ast.ZArrayNode;
-import org.jruby.ast.ZSuperNode;
-import org.jruby.ast.ZYieldNode;
-import org.jruby.ast.types.ILiteralNode;
+import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
 import org.jruby.lexer.yacc.ISourcePosition;
@@ -138,17 +67,17 @@ public class Ripper19Parser implements RubyParser {
 
 // We need to make sure we have same tokens in the same order and up
 // front so 1.8 and 1.9 parser can use the same Tokens.java file.
-%token <Token> kCLASS kMODULE kDEF kUNDEF kBEGIN kRESCUE kENSURE kEND kIF
+%token <IRubyObject> kCLASS kMODULE kDEF kUNDEF kBEGIN kRESCUE kENSURE kEND kIF
   kUNLESS kTHEN kELSIF kELSE kCASE kWHEN kWHILE kUNTIL kFOR kBREAK kNEXT
   kREDO kRETRY kIN kDO kDO_COND kDO_BLOCK kRETURN kYIELD kSUPER kSELF kNIL
   kTRUE kFALSE kAND kOR kNOT kIF_MOD kUNLESS_MOD kWHILE_MOD kUNTIL_MOD
   kRESCUE_MOD kALIAS kDEFINED klBEGIN klEND k__LINE__ k__FILE__
   k__ENCODING__ kDO_LAMBDA 
 
-%token <Token> tIDENTIFIER tFID tGVAR tIVAR tCONSTANT tCVAR tLABEL tCHAR
-%type <Token> variable
-%type <Token> sym symbol operation operation2 operation3 cname fname op 
-%type <Token> f_norm_arg dot_or_colon restarg_mark blkarg_mark
+%token <IRubyObject> tIDENTIFIER tFID tGVAR tIVAR tCONSTANT tCVAR tLABEL tCHAR
+%type <IRubyObject> variable
+%type <IRubyObject> sym symbol operation operation2 operation3 cname fname op 
+%type <IRubyObject> f_norm_arg dot_or_colon restarg_mark blkarg_mark
 %token <Token> tUPLUS         /* unary+ */
 %token <Token> tUMINUS        /* unary- */
 %token <Token> tUMINUS_NUM    /* unary- */
@@ -197,46 +126,46 @@ public class Ripper19Parser implements RubyParser {
 %token <Token> tSYMBEG tSTRING_BEG tXSTRING_BEG tREGEXP_BEG tWORDS_BEG tQWORDS_BEG
 %token <Token> tSTRING_DBEG tSTRING_DVAR tSTRING_END
 %token <Token> tLAMBDA tLAMBEG
-%token <Node> tNTH_REF tBACK_REF tSTRING_CONTENT tINTEGER
-%token <FloatNode> tFLOAT  
-%token <RegexpNode>  tREGEXP_END
-%type <RestArgNode> f_rest_arg 
-%type <Node> singleton strings string string1 xstring regexp
-%type <Node> string_contents xstring_contents string_content method_call
-%type <Node> words qwords word literal numeric dsym cpath command_asgn command_call
-%type <Node> compstmt bodystmt stmts stmt expr arg primary command 
-%type <Node> expr_value primary_value opt_else cases if_tail exc_var
+%token <IRubyObject> tNTH_REF tBACK_REF tSTRING_CONTENT tINTEGER
+%token <IRubyObject> tFLOAT  
+%token <IRubyObject>  tREGEXP_END
+%type <IRubyObject> f_rest_arg 
+%type <IRubyObject> singleton strings string string1 xstring regexp
+%type <IRubyObject> string_contents xstring_contents string_content method_call
+%type <IRubyObject> words qwords word literal numeric dsym cpath command_asgn command_call
+%type <IRubyObject> compstmt bodystmt stmts stmt expr arg primary command 
+%type <IRubyObject> expr_value primary_value opt_else cases if_tail exc_var
    // ENEBO: missing call_args2, open_args
-%type <Node> call_args opt_ensure paren_args superclass
-%type <Node> command_args var_ref opt_paren_args block_call block_command
-%type <Node> f_opt undef_list string_dvar backref
-%type <ArgsNode> f_args f_arglist f_larglist block_param block_param_def opt_block_param 
-%type <Node> mrhs mlhs_item mlhs_node arg_value case_body exc_list aref_args
+%type <IRubyObject> call_args opt_ensure paren_args superclass
+%type <IRubyObject> command_args var_ref opt_paren_args block_call block_command
+%type <IRubyObject> f_opt undef_list string_dvar backref
+%type <IRubyObject> f_args f_arglist f_larglist block_param block_param_def opt_block_param 
+%type <IRubyObject> mrhs mlhs_item mlhs_node arg_value case_body exc_list aref_args
    // ENEBO: missing block_var == for_var, opt_block_var
-%type <Node> lhs none args
-%type <ListNode> qword_list word_list f_arg f_optarg f_marg_list
+%type <IRubyObject> lhs none args
+%type <IRubyObject> qword_list word_list f_arg f_optarg f_marg_list
    // ENEBO: missing when_args
-%type <ListNode> mlhs_head assocs assoc assoc_list mlhs_post f_block_optarg
-%type <BlockPassNode> opt_block_arg block_arg none_block_pass
-%type <BlockArgNode> opt_f_block_arg f_block_arg
-%type <IterNode> brace_block do_block cmd_brace_block
+%type <IRubyObject> mlhs_head assocs assoc assoc_list mlhs_post f_block_optarg
+%type <IRubyObject> opt_block_arg block_arg none_block_pass
+%type <IRubyObject> opt_f_block_arg f_block_arg
+%type <IRubyObject> brace_block do_block cmd_brace_block
    // ENEBO: missing mhls_entry
-%type <MultipleAsgn19Node> mlhs mlhs_basic 
-%type <RescueBodyNode> opt_rescue
-%type <AssignableNode> var_lhs
-%type <LiteralNode> fsym
-%type <Node> fitem
+%type <IRubyObject> mlhs mlhs_basic 
+%type <IRubyObject> opt_rescue
+%type <IRubyObject> var_lhs
+%type <IRubyObject> fsym
+%type <IRubyObject> fitem
    // ENEBO: begin all new types
-%type <Node> f_arg_item
-%type <Node> bv_decls opt_bv_decl lambda_body 
-%type <LambdaNode> lambda
-%type <Node> mlhs_inner f_block_opt for_var
-%type <Node> opt_call_args f_marg f_margs
-%type <Token> bvar
+%type <IRubyObject> f_arg_item
+%type <IRubyObject> bv_decls opt_bv_decl lambda_body 
+%type <IRubyObject> lambda
+%type <IRubyObject> mlhs_inner f_block_opt for_var
+%type <IRubyObject> opt_call_args f_marg f_margs
+%type <IRubyObject> bvar
    // ENEBO: end all new types
 
-%type <Token> rparen rbracket reswords f_bad_arg
-%type <Node> top_compstmt top_stmts top_stmt
+%type <IRubyObject> rparen rbracket reswords f_bad_arg
+%type <IRubyObject> top_compstmt top_stmts top_stmt
 
 /*
  *    precedence table
@@ -315,12 +244,12 @@ compstmt        : stmts opt_terms {
 
  stmts          : none {
                     $$ = support.dispatch("on_stmts_add", 
-                                             support.dispatch("on_stmts_new"),
-                                             support.dispatch("on_void_stmt"));
+                                          support.dispatch("on_stmts_new"),
+                                          support.dispatch("on_void_stmt"));
                 }
                 | stmt {
                     $$ = support.dispatch("on_stmts_add",
-                                             dispatch("on_stmts_new"), $1);
+                                          ripper.dispatch("on_stmts_new"), $1);
                 }
                 | stmts terms stmt {
                     $$ = support.dispatch("on_stmts_add", $1, $3);
@@ -342,7 +271,7 @@ stmt            : kALIAS fitem {
                 }
                 | kALIAS tGVAR tNTH_REF {
                     $$ = support.dispatch("on_alias_error", 
-                                             support.dispatch("on_var_alias", $2, $3));
+                                          support.dispatch("on_var_alias", $2, $3));
                 }
                 | kUNDEF undef_list {
                     $$ = support.dispatch("on_undef", $2);
