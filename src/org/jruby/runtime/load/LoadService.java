@@ -43,10 +43,12 @@ import java.net.URISyntaxException;
 import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.jar.JarFile;
@@ -204,6 +206,8 @@ public class LoadService {
 
     protected RubyArray loadPath;
     protected StringArraySet loadedFeatures;
+    protected RubyArray loadedFeaturesDup;
+    private final Map<String, String> loadedFeaturesIndex = new ConcurrentHashMap<String, String>();
     protected final Map<String, Library> builtinLibraries = new HashMap<String, Library>();
 
     protected final Map<String, JarFile> jarFiles = new HashMap<String, JarFile>();
@@ -296,9 +300,20 @@ public class LoadService {
             addPath(dir);
         }
     }
+    
+    protected boolean isFeatureInIndex(String shortName) {
+        return loadedFeaturesIndex.containsKey(shortName);
+    }
 
-    protected void addLoadedFeature(String name) {
+    protected void addLoadedFeature(String shortName, String name) {
         loadedFeatures.append(RubyString.newString(runtime, name));
+        
+        addFeatureToIndex(shortName, name);
+    }
+    
+    protected void addFeatureToIndex(String shortName, String name) {
+        loadedFeaturesDup = (RubyArray)loadedFeatures.dup();
+        loadedFeaturesIndex.put(shortName, name);
     }
 
     protected void addPath(String path) {
@@ -536,7 +551,7 @@ public class LoadService {
 
         boolean loaded = tryLoadingLibraryOrScript(runtime, state);
         if (loaded) {
-            addLoadedFeature(state.loadName);
+            addLoadedFeature(file, state.loadName);
         }
         return loaded;
     }
@@ -629,7 +644,20 @@ public class LoadService {
     }
 
     protected boolean featureAlreadyLoaded(String name) {
-        return loadedFeatures.containsString(name);
+        if (loadedFeatures.containsString(name)) {
+            return true;
+        }
+        
+        // also check index
+        if (loadedFeaturesDup != null && loadedFeaturesDup.eql(loadedFeatures)) {
+            if (isFeatureInIndex(name)) {
+                return true;
+            }
+        } else {
+            loadedFeaturesIndex.clear();
+        }
+        
+        return false;
     }
 
     protected boolean isJarfileLibrary(SearchState state, final String file) {
