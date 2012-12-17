@@ -359,80 +359,81 @@ stmt            : kALIAS fitem {
                     $$ = dispatcher.dispatch('while_mod', $3, $1);
                 }
                 | stmt kUNTIL_MOD expr_value {
-                    $$ = dispatch2(until_mod, $3, $1);
+                    $$ = dispatcher.dispatch('until_mod', $3, $1);
                 }
                 | stmt kRESCUE_MOD stmt {
-                    $$ = dispatch2(rescue_mod, $1, $3);
+                    $$ = dispatcher.dispatch('rescue_mod', $1, $3);
                 }
                 | klEND tLCURLY compstmt tRCURLY {
                     if (support.isInDef() || support.isInSingle()) {
                         support.warn(ID.END_IN_METHOD, $1.getPosition(), "END in method; use at_exit");
                     }
-                    $$ = dispatch1(END, $3);
+                    $$ = dispatcher.dispatch('END', $3);
                 }
                 | command_asgn
                 | mlhs '=' command_call {
-                    $$ = dispatch2(massign, $1, $3);
+                    $$ = dispatcher.dispatch('massign', $1, $3);
                 }
                 | var_lhs tOP_ASGN command_call {
-                    $$ = dispatch3(opassign, $1, $2, $3);
+                    $$ = dispatcher.dispatch('opassign', $1, $2, $3);
                 }
                 | primary_value '[' opt_call_args rbracket tOP_ASGN command_call {
                     $$ = dispatcher.dispatch('aref_field', $1, escape($3));
                     $$ = dispatcher.dispatch('opassign', $$, $5, $6);
                 }
                 | primary_value tDOT tIDENTIFIER tOP_ASGN command_call {
-                    $$ = dispatch3(field, $1, ".", $3);
-                    $$ = dispatch3(opassign, $$, $4, $5);
+                    $$ = dispatcher.dispatch('field', $1, ".", $3);
+                    $$ = dispatcher.dispatch('opassign', $$, $4, $5);
                 }
                 | primary_value tDOT tCONSTANT tOP_ASGN command_call {
-                    $$ = dispatch3(field, $1, ".", $3);
-                    $$ = dispatch3(opassign, $$, $4, $5);
+                    $$ = dispatcher.dispatch('field', $1, ".", $3);
+                    $$ = dispatcher.dispatch('opassign', $$, $4, $5);
                 }
                 | primary_value tCOLON2 tCONSTANT tOP_ASGN command_call {
-                    $$ = dispatch2(const_path_field, $1, $3);
-                    $$ = dispatch3(opassign, $$, $4, $5);
-                    $$ = dispatch1(assign_error, $$);
+                    $$ = dispatcher.dispatch('const_path_field', $1, $3);
+                    $$ = dispatcher.dispatch('opassign', $$, $4, $5);
+                    $$ = dispatcher.dispatch('assign_error', $$);
                 }
                 | primary_value tCOLON2 tIDENTIFIER tOP_ASGN command_call {
                     $$ = dispatcher.dispatch('field', $1, "::", $3);
                     $$ = dispatcher.dispatch('opassign', $$, $4, $5);
                 }
                 | backref tOP_ASGN command_call {
-                    $$ = dispatch2(assign, dispatch1(var_field, $1), $3);
-                    $$ = dispatch1(assign_error, $$);
+                    $$ = dispatcher.dispatch('assign', 
+                                             dispatcher.dispatch('var_field', $1), $3);
+                    $$ = dispatcher.dispatch('assign_error', $$);
                }
                 | lhs '=' mrhs {
-                    $$ = dispatch2(assign, $1, $3);
+                    $$ = dispatcher.dispatch('assign', $1, $3);
                 }
                 | mlhs '=' arg_value {
-                    $$ = dispatch2(assign, $1, $3);
+                    $$ = dispatcher.dispatch('assign', $1, $3);
                 }
                 | mlhs '=' mrhs {
-                    $$ = dispatch2(massign, $1, $3);
+                    $$ = dispatcher.dispatch('massign', $1, $3);
                 }
                 | expr
 
 command_asgn    : lhs '=' command_call {
-                    $$ = dispatch2(assign, $1, $3);
+                    $$ = dispatcher.dispatch('assign', $1, $3);
                 }
                 | lhs '=' command_asgn {
-                    $$ = dispatch2(assign, $1, $3);
+                    $$ = dispatcher.dispatch('assign', $1, $3);
                 }
 
 // Node:expr *CURRENT* all but arg so far
 expr            : command_call
                 | expr kAND expr {
-                    $$ = dispatch3(binary, $1, "and", $3);
+                    $$ = dispatcher.dispatch('binary', $1, "and", $3);
                 }
                 | expr kOR expr {
-                    $$ = dispatch3(binary, $1, "or", $3);
+                    $$ = dispatcher.dispatch('binary', $1, "or", $3);
                 }
                 | kNOT opt_nl expr {
-                    $$ = dispatch2(unary, ripper_intern("not"), $3);
+                    $$ = dispatcher.dispatch('unary', ripper_intern("not"), $3);
                 }
                 | tBANG command_call {
-                    $$ = dispatch2(unary, ripper_id2sym('!'), $2);
+                    $$ = dispatcher.dispatch('unary', ripper_id2sym('!'), $2);
                 }
                 | arg
 
@@ -464,7 +465,7 @@ cmd_brace_block : tLBRACE_ARG {
 
 // Node:command - fcall/call/yield/super [!null]
 command        : operation command_args %prec tLOWEST {
-                    $$ = dispatch2(command, $1, $2);
+                    $$ = dispatcher.dispatch('command', $1, $2);
                 }
                 | operation command_args cmd_brace_block {
                     $$ = method_add_block(dispatcher.dispatch('command', $1, $2), $3);
@@ -487,16 +488,16 @@ command        : operation command_args %prec tLOWEST {
                     $$ = dispatcher.dispatch('super', $2);
                 }
                 | kYIELD command_args {
-                    $$ = dispatch1(yield, $2);
+                    $$ = dispatcher.dispatch('yield', $2);
                 }
                 | kRETURN call_args {
-                    $$ = dispatch1(areturn, $2);
+                    $$ = dispatcher.dispatch('areturn', $2);
                 }
 		| kBREAK call_args {
-                    $$ = dispatch1(abreak, $2);
+                    $$ = dispatcher.dispatch('abreak', $2);
                 }
 		| kNEXT call_args {
-                    $$ = dispatch1(next, $2);
+                    $$ = dispatcher.dispatch('next', $2);
                 }
 
 
@@ -509,7 +510,7 @@ mlhs            : mlhs_basic
 // MultipleAssign19Node:mlhs_entry - mlhs w or w/o parens [!null]
 mlhs_inner      : mlhs_basic
                 | tLPAREN mlhs_inner rparen {
-                    $$ = dispatch1(mlhs_paren, $2);
+                    $$ = dispatcher.dispatch('mlhs_paren', $2);
                 }
 
 // MultipleAssign19Node:mlhs_basic - multiple left hand side (basic because used in multiple context) [!null]
@@ -547,7 +548,7 @@ mlhs_basic      : mlhs_head {
 
 mlhs_item       : mlhs_node
                 | tLPAREN mlhs_inner rparen {
-                    $$ = dispatch1(mlhs_paren, $2);
+                    $$ = dispatcher.dispatch('mlhs_paren', $2);
                 }
 
 // Set of mlhs terms at front of mlhs (a, *b, d, e = arr  # a is head)
@@ -570,7 +571,7 @@ mlhs_node       : variable {
                     $$ = assignable($1, 0);
                 }
                 | primary_value '[' opt_call_args rbracket {
-                    $$ = dispatch2(aref_field, $1, escape($3));
+                    $$ = dispatcher.dispatch('aref_field', $1, escape($3));
                 }
                 | primary_value tDOT tIDENTIFIER {
                     
