@@ -47,7 +47,7 @@ class PostProcessor
 
   def generate_action_body_method(state, code_body)
     @out.puts "states[#{state}] = new ParserState() {"
-    @out.puts "  public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {"
+    @out.puts "  @Override public Object execute(ParserSupport support, RubyYaccLexer lexer, Object yyVal, Object[] yyVals, int yyTop) {"
     code_body.each { |line| @out.puts line }
     @out.puts "    return yyVal;"
     @out.puts "  }"
