@@ -642,22 +642,21 @@ public class LoadService {
         RubyString nameRubyString = runtime.newString(name);
         loadedFeatures.delete(runtime.getCurrentContext(), nameRubyString, Block.NULL_BLOCK);
     }
+    
+    private boolean isFeaturesIndexUpToDate() {
+        return loadedFeaturesDup != null && loadedFeaturesDup.eql(loadedFeatures);
+    }
 
     protected boolean featureAlreadyLoaded(String name) {
-        if (loadedFeatures.containsString(name)) {
-            return true;
-        }
+        if (loadedFeatures.containsString(name)) return true;
         
-        // also check index
-        if (loadedFeaturesDup != null && loadedFeaturesDup.eql(loadedFeatures)) {
-            if (isFeatureInIndex(name)) {
-                return true;
-            }
-        } else {
+        // Bail if our features index fell out of date.
+        if (!isFeaturesIndexUpToDate()) { 
             loadedFeaturesIndex.clear();
-        }
+            return false;
+        } 
         
-        return false;
+        return isFeatureInIndex(name);
     }
 
     protected boolean isJarfileLibrary(SearchState state, final String file) {
