@@ -402,21 +402,7 @@ stmt            : kALIAS fitem {
                     $$ = $1;
                 }
                 | var_lhs tOP_ASGN command_call {
-                    support.checkExpression($3);
-
-                    ISourcePosition pos = $1.getPosition();
-                    String asgnOp = (String) $2.getValue();
-                    if (asgnOp.equals("||")) {
-                        $1.setValueNode($3);
-                        $$ = new OpAsgnOrNode(pos, support.gettable2($1), $1);
-                    } else if (asgnOp.equals("&&")) {
-                        $1.setValueNode($3);
-                        $$ = new OpAsgnAndNode(pos, support.gettable2($1), $1);
-                    } else {
-                        $1.setValueNode(support.getOperatorCallNode(support.gettable2($1), asgnOp, $3));
-                        $1.setPosition(pos);
-                        $$ = $1;
-                    }
+                    $$ = support.new_opAssign($1, (String) $2.getValue(), $3);
                 }
                 | primary_value '[' opt_call_args rbracket tOP_ASGN command_call {
   // FIXME: arg_concat logic missing for opt_call_args
@@ -762,21 +748,7 @@ arg             : lhs '=' arg {
                     $$ = support.node_assign($1, new RescueNode(position, $3, new RescueBodyNode(position, null, body, null), null));
                 }
                 | var_lhs tOP_ASGN arg {
-                    support.checkExpression($3);
-
-                    ISourcePosition pos = $1.getPosition();
-                    String asgnOp = (String) $2.getValue();
-                    if (asgnOp.equals("||")) {
-                        $1.setValueNode($3);
-                        $$ = new OpAsgnOrNode(pos, support.gettable2($1), $1);
-                    } else if (asgnOp.equals("&&")) {
-                        $1.setValueNode($3);
-                        $$ = new OpAsgnAndNode(pos, support.gettable2($1), $1);
-                    } else {
-                        $1.setValueNode(support.getOperatorCallNode(support.gettable2($1), asgnOp, $3));
-                        $1.setPosition(pos);
-                        $$ = $1;
-                    }
+                    $$ = support.new_opAssign($1, (String) $2.getValue(), $3);
                 }
                 | var_lhs tOP_ASGN arg kRESCUE_MOD arg {
                     support.checkExpression($3);
@@ -784,19 +756,7 @@ arg             : lhs '=' arg {
                     Node body = $5 == null ? NilImplicitNode.NIL : $5;
                     Node rescue = new RescueNode($4.getPosition(), $3, new RescueBodyNode($4.getPosition(), null, body, null), null);
 
-                    pos = $1.getPosition();
-                    String asgnOp = (String) $2.getValue();
-                    if (asgnOp.equals("||")) {
-                        $1.setValueNode(rescue);
-                        $$ = new OpAsgnOrNode(pos, support.gettable2($1), $1);
-                    } else if (asgnOp.equals("&&")) {
-                        $1.setValueNode(rescue);
-                        $$ = new OpAsgnAndNode(pos, support.gettable2($1), $1);
-                    } else {
-                        $1.setValueNode(support.getOperatorCallNode(support.gettable2($1), asgnOp, rescue));
-                        $1.setPosition(pos);
-                        $$ = $1;
-                    }
+                    $$ = support.new_opAssign($1, (String) $2.getValue(), rescue);
                 }
                 | primary_value '[' opt_call_args rbracket tOP_ASGN arg {
   // FIXME: arg_concat missing for opt_call_args

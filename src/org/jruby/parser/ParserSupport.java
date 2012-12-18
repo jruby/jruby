@@ -812,6 +812,25 @@ public class ParserSupport {
         return node;
     }
     
+    public Node new_opAssign(AssignableNode lhs, String asgnOp, Node rhs) {
+        checkExpression(rhs);
+
+        ISourcePosition pos = lhs.getPosition();
+        
+        if (asgnOp.equals("||")) {
+            lhs.setValueNode(rhs);
+            return new OpAsgnOrNode(pos, gettable2(lhs), lhs);
+        } else if (asgnOp.equals("&&")) {
+            lhs.setValueNode(rhs);
+            return new OpAsgnAndNode(pos, gettable2(lhs), lhs);
+        }
+        
+        lhs.setValueNode(getOperatorCallNode(gettable2(lhs), asgnOp, rhs));
+        lhs.setPosition(pos);
+        
+        return lhs;
+    }
+    
     public Node new_opElementAsgnNode(ISourcePosition position, Node receiverNode, String operatorName, Node argsNode, Node valueNode) {
         if (argsNode instanceof ArrayNode) {
             ArrayNode array = (ArrayNode) argsNode;
