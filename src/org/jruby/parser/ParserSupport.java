@@ -1603,6 +1603,22 @@ public class ParserSupport {
     
     // RIPPER stubs
     
+    public IRubyObject arg_add_assocs(IRubyObject arg1, IRubyObject arg2) {
+        throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
+    }
+    
+    public IRubyObject arg_add_optblock(IRubyObject arg1, IRubyObject arg2) {
+        throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
+    }
+    
+    public IRubyObject arg_add_star(IRubyObject arg1, IRubyObject arg2) {
+        throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
+    }
+    
+    public IRubyObject arg_new() {
+        throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
+    }    
+    
     public IRubyObject assignable(String name, IRubyObject value) {
         throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
     }
@@ -1619,15 +1635,35 @@ public class ParserSupport {
         throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
     }
     
+    public IRubyObject dispatch(String method_name, IRubyObject arg1, IRubyObject arg2, IRubyObject arg3) {
+        throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
+    }    
+    
     public IRubyObject escape(IRubyObject arg) {
+        throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
+    }
+    
+    public IRubyObject method_add_block(IRubyObject arg1, IRubyObject arg2) {
+        throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
+    }
+    
+    public IRubyObject method_arg(IRubyObject arg1, IRubyObject arg2) {
         throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
     }
     
     public IRubyObject mlhs_add(IRubyObject arg1, IRubyObject arg2) {
         throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
-    }
+    }    
     
     public IRubyObject mlhs_add_star(IRubyObject arg1, IRubyObject arg2) {
+        throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
+    }
+    
+    public IRubyObject mrhs_add(IRubyObject arg1, IRubyObject arg2) {
+        throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
+    }
+    
+    public IRubyObject mrhs_add_star(IRubyObject arg1, IRubyObject arg2) {
         throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
     }
     
