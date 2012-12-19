@@ -221,7 +221,7 @@ top_stmts     : none {
                   $$ = support.dispatch("on_stmts_add", $1, $3);
               }
               | error top_stmt {
-                  $$ = remove_begin($2);
+                  $$ = support.remove_begin($2);
               }
 
 top_stmt      : stmt
@@ -234,8 +234,8 @@ top_stmt      : stmt
               }
 
 bodystmt      : compstmt opt_rescue opt_else opt_ensure {
-                  $$ = support.dispatch("on_bodystmt", escape($1), escape($2),
-                                escape($3), escape($4));
+                  $$ = support.dispatch("on_bodystmt", support.escape($1), support.escape($2),
+                                support.escape($3), support.escape($4));
                 }
 
 compstmt        : stmts opt_terms {
@@ -305,7 +305,7 @@ stmt            : kALIAS fitem {
                     $$ = support.dispatch("on_opassign", $1, $2, $3);
                 }
                 | primary_value '[' opt_call_args rbracket tOP_ASGN command_call {
-                    $$ = support.dispatch("on_aref_field", $1, escape($3));
+                    $$ = support.dispatch("on_aref_field", $1, support.escape($3));
                     $$ = support.dispatch("on_opassign", $$, $5, $6);
                 }
                 | primary_value tDOT tIDENTIFIER tOP_ASGN command_call {
@@ -386,7 +386,7 @@ block_command   : block_call
 cmd_brace_block : tLBRACE_ARG {
                     support.pushBlockScope();
                 } opt_block_param compstmt tRCURLY {
-                    $$ = support.dispatch("on_brace_block", escape($3), $4);
+                    $$ = support.dispatch("on_brace_block", support.escape($3), $4);
                     support.popCurrentScope();
                 }
 
@@ -445,32 +445,32 @@ mlhs_basic      : mlhs_head {
                     $$ = $1;
                 }
                 | mlhs_head mlhs_item {
-                    $$ = mlhs_add($1, $2);
+                    $$ = support.mlhs_add($1, $2);
                 }
                 | mlhs_head tSTAR mlhs_node {
-                    $$ = mlhs_add_star($1, $3);
+                    $$ = support.mlhs_add_star($1, $3);
                 }
                 | mlhs_head tSTAR mlhs_node ',' mlhs_post {
-                    $$ = mlhs_add(mlhs_add_star($1, $3), $5);
+                    $$ = support.mlhs_add(support.mlhs_add_star($1, $3), $5);
                 }
                 | mlhs_head tSTAR {
-                    $$ = mlhs_add_star($1, Qnil);
+                    $$ = support.mlhs_add_star($1, Qnil);
                 }
                 | mlhs_head tSTAR ',' mlhs_post {
-                    $1 = mlhs_add_star($1, Qnil);
-                    $$ = mlhs_add($1, $4);
+                    $1 = support.mlhs_add_star($1, Qnil);
+                    $$ = support.mlhs_add($1, $4);
                 }
                 | tSTAR mlhs_node {
-                    $$ = mlhs_add_star(mlhs_new(), $2);
+                    $$ = support.mlhs_add_star(support.mlhs_new(), $2);
                 }
                 | tSTAR mlhs_node ',' mlhs_post {
-                    $$ = mlhs_add(mlhs_add_star(mlhs_new(), $2), $4);
+                    $$ = support.mlhs_add(support.mlhs_add_star(support.mlhs_new(), $2), $4);
                 }
                 | tSTAR {
-                    $$ = mlhs_add_star(mlhs_new(), Qnil);
+                    $$ = support.mlhs_add_star(support.mlhs_new(), Qnil);
                 }
                 | tSTAR ',' mlhs_post {
-                    $$ = mlhs_add(mlhs_add_star(mlhs_new(), Qnil), $3);
+                    $$ = support.mlhs_add(support.mlhs_add_star(support.mlhs_new(), Qnil), $3);
                 }
 
 mlhs_item       : mlhs_node
@@ -480,25 +480,25 @@ mlhs_item       : mlhs_node
 
 // Set of mlhs terms at front of mlhs (a, *b, d, e = arr  # a is head)
 mlhs_head       : mlhs_item ',' {
-                    $$ = mlhs_add(mlhs_new(), $1);
+                    $$ = support.mlhs_add(support.mlhs_new(), $1);
                 }
                 | mlhs_head mlhs_item ',' {
-                    $$ = mlhs_add($1, $2);
+                    $$ = support.mlhs_add($1, $2);
                 }
 
 // Set of mlhs terms at end of mlhs (a, *b, d, e = arr  # d,e is post)
 mlhs_post       : mlhs_item {
-                    $$ = mlhs_add(mlhs_new(), $1);
+                    $$ = support.mlhs_add(support.mlhs_new(), $1);
                 }
                 | mlhs_post ',' mlhs_item {
-                    $$ = mlhs_add($1, $3);
+                    $$ = support.mlhs_add($1, $3);
                 }
 
 mlhs_node       : variable {
                     $$ = assignable($1, 0);
                 }
                 | primary_value '[' opt_call_args rbracket {
-                    $$ = support.dispatch("on_aref_field", $1, escape($3));
+                    $$ = support.dispatch("on_aref_field", $1, support.escape($3));
                 }
                 | primary_value tDOT tIDENTIFIER {
                     
