@@ -78,7 +78,7 @@ public class Ripper19Parser implements RubyParser {
 %token <IRubyObject> tIDENTIFIER tFID tGVAR tIVAR tCONSTANT tCVAR tLABEL tCHAR
 %type <IRubyObject> variable
 %type <IRubyObject> sym symbol operation operation2 operation3 cname fname 
-%type <Token> op 
+%type <Token> op
 %type <IRubyObject> f_norm_arg dot_or_colon restarg_mark blkarg_mark
 %token <Token> tUPLUS         /* unary+ */
 %token <Token> tUMINUS        /* unary- */
@@ -140,8 +140,9 @@ public class Ripper19Parser implements RubyParser {
    // ENEBO: missing call_args2, open_args
 %type <IRubyObject> call_args opt_ensure paren_args superclass
 %type <IRubyObject> command_args var_ref opt_paren_args block_call block_command
-%type <IRubyObject> f_opt string_dvar backref
+%type <IRubyObject> f_opt
 %type <RubyArray> undef_list 
+%type <IRubyObject> string_dvar backref
 %type <IRubyObject> f_args f_arglist f_larglist block_param block_param_def opt_block_param 
 %type <IRubyObject> mrhs mlhs_item mlhs_node arg_value case_body exc_list aref_args
    // ENEBO: missing block_var == for_var, opt_block_var
@@ -596,14 +597,20 @@ fname          : tIDENTIFIER | tCONSTANT | tFID
                }
 
 // LiteralNode:fsym
-fsym           : fname
-               | symbol
+ fsym          : fname {
+                   $$ = $1;
+               }
+               | symbol {
+                   $$ = $1;
+               }
 
 // Node:fitem
 fitem           : fsym {
-                    $$ = support.dispatch("on_symbol_literal", $1);
+                   $$ = support.dispatch("on_symbol_literal", $1);
                 }
-                | dsym
+                | dsym {
+                   $$ = $1;
+                }
 
 undef_list      : fitem {
                     $$ = support.new_array($1);
@@ -769,7 +776,7 @@ arg             : lhs '=' arg {
                     $$ = support.dispatch("on_binary", $1, support.string("||"), $3);
                 }
                 | kDEFINED opt_nl arg {
-                    $$ = support.dispatch("on_defined", $4);
+                    $$ = support.dispatch("on_defined", $3);
                 }
                 | arg '?' arg opt_nl ':' arg {
                     $$ = support.dispatch("on_ifop", $1, $3, $6);
