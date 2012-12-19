@@ -12,7 +12,7 @@ namespace :gem do
     end
   end
   task 'jruby-openssl' do
-    ruby "-S", "maybe_install_gems", "hoe", "rdoc"
+    ruby "-S", "maybe_install_gems", "rdoc"
     Dir.chdir("gems/jruby-openssl") do
       ruby "-S", "rake", "package"
       cp FileList["pkg/*.gem"], "../../#{DIST_DIR}"
