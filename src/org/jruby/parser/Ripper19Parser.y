@@ -495,78 +495,75 @@ mlhs_post       : mlhs_item {
                 }
 
 mlhs_node       : variable {
-                    $$ = assignable($1, 0);
+                    $$ = support.assignable($1, null);
+                }
+		| keyword_variable {
+                    $$ = support.assignable($1, null);
                 }
                 | primary_value '[' opt_call_args rbracket {
                     $$ = support.dispatch("on_aref_field", $1, support.escape($3));
                 }
                 | primary_value tDOT tIDENTIFIER {
+                    $$ = support.dispatch("on_field", $1, support.symbol('.'), $3);
                     
                 }
                 | primary_value tCOLON2 tIDENTIFIER {
-                    $$ = support.attrset($1, (String) $3.getValue());
+                    $$ = support.dispatch("on_const_path_field", $1, $3);
                 }
                 | primary_value tDOT tCONSTANT {
-                    $$ = support.attrset($1, (String) $3.getValue());
+		    $$ = support.dispatch('on_field', $1, support.symbol('.'), $3);
                 }
                 | primary_value tCOLON2 tCONSTANT {
                     if (support.isInDef() || support.isInSingle()) {
                         support.yyerror("dynamic constant assignment");
                     }
 
-                    ISourcePosition position = support.getPosition($1);
-
-                    $$ = new ConstDeclNode(position, null, support.new_colon2(position, $1, (String) $3.getValue()), NilImplicitNode.NIL);
+                    $$ = support.dispatch('on_const_path_field', $1, $3);
                 }
                 | tCOLON3 tCONSTANT {
-                    if (support.isInDef() || support.isInSingle()) {
-                        support.yyerror("dynamic constant assignment");
-                    }
-
-                    ISourcePosition position = $1.getPosition();
-
-                    $$ = new ConstDeclNode(position, null, support.new_colon3(position, (String) $2.getValue()), NilImplicitNode.NIL);
+                    $$ = support.dispatch("on_top_const_field", $2);
                 }
                 | backref {
-                    support.backrefAssignError($1);
+                    $$ = support.dispatch("on_var_field", $1);
+                    $$ = support.dispatch("on_assign_error", $$);
                 }
 
-lhs             : variable {
-                      // if (!($$ = assignable($1, 0))) $$ = NEW_BEGIN(0);
-                    $$ = support.assignable($1, NilImplicitNode.NIL);
+lhs             : user_variable {
+                    $$ = support.assignable($1, null);
+                    $$ = support.dispatch("on_var_field", $$);
+                }
+		| keyword_variable {
+                    $$ = support.assignable($1, null);
+                    $$ = support.dispatch("on_var_field", $$);
                 }
                 | primary_value '[' opt_call_args rbracket {
-                    $$ = support.aryset($1, $3);
+                    $$ = support.dispatch("on_aref_field", $1, support.escape($3));
                 }
                 | primary_value tDOT tIDENTIFIER {
-                    $$ = support.attrset($1, (String) $3.getValue());
+                    $$ = support.dispatch("on_field", $1, support.symbol('.'), $3);
                 }
                 | primary_value tCOLON2 tIDENTIFIER {
-                    $$ = support.attrset($1, (String) $3.getValue());
+                    $$ = support.dispatch("on_field", $1, support.string("::"), $3);
                 }
                 | primary_value tDOT tCONSTANT {
-                    $$ = support.attrset($1, (String) $3.getValue());
+                    $$ = support.dispatch("on_field", $1, support.symbol('.'), $3);
                 }
                 | primary_value tCOLON2 tCONSTANT {
+                    $$ = support.dispatch("on_const_path_field", $1, $3);
+
                     if (support.isInDef() || support.isInSingle()) {
-                        support.yyerror("dynamic constant assignment");
+                        $$ = support.dispatch("on_assign_error", $$);
                     }
-
-                    ISourcePosition position = support.getPosition($1);
-
-                    $$ = new ConstDeclNode(position, null, support.new_colon2(position, $1, (String) $3.getValue()), NilImplicitNode.NIL);
                 }
                 | tCOLON3 tCONSTANT {
+                    $$ = support.dispatch("on_top_const_field", $2);
+
                     if (support.isInDef() || support.isInSingle()) {
-                        support.yyerror("dynamic constant assignment");
+                        $$ = support.dispatch("on_assign_error", $$);
                     }
-
-                    ISourcePosition position = $1.getPosition();
-
-                    $$ = new ConstDeclNode(position, null, support.new_colon3(position, (String) $2.getValue()), NilImplicitNode.NIL);
                 }
                 | backref {
-                    support.backrefAssignError($1);
+                    $$ = support.dispatch("on_assign_error", $1);
                 }
 
 cname           : tIDENTIFIER {
