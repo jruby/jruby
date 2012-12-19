@@ -30,6 +30,7 @@ package org.jruby.parser;
 
 import java.io.IOException;
 
+import org.jruby.RubyArray;
 import org.jruby.runtime.builtin.IRubyObject;
 import org.jruby.common.IRubyWarnings;
 import org.jruby.common.IRubyWarnings.ID;
@@ -138,7 +139,8 @@ public class Ripper19Parser implements RubyParser {
    // ENEBO: missing call_args2, open_args
 %type <IRubyObject> call_args opt_ensure paren_args superclass
 %type <IRubyObject> command_args var_ref opt_paren_args block_call block_command
-%type <IRubyObject> f_opt undef_list string_dvar backref
+%type <IRubyObject> f_opt string_dvar backref
+%type <RubyArray> undef_list 
 %type <IRubyObject> f_args f_arglist f_larglist block_param block_param_def opt_block_param 
 %type <IRubyObject> mrhs mlhs_item mlhs_node arg_value case_body exc_list aref_args
    // ENEBO: missing block_var == for_var, opt_block_var
@@ -567,18 +569,18 @@ lhs             : user_variable {
                 }
 
 cname           : tIDENTIFIER {
-                    support.yyerror("class/module name must be CONSTANT");
+                    $$ = support.dispatch("on_class_name_error", $1);
                 }
                 | tCONSTANT
 
 cpath           : tCOLON3 cname {
-                    $$ = support.new_colon3($1.getPosition(), (String) $2.getValue());
+                    $$ = support.dispatch("on_top_const_ref", $2);
                 }
                 | cname {
-                    $$ = support.new_colon2($1.getPosition(), null, (String) $1.getValue());
+                    $$ = support.dispatch("on_const_ref", $1);
                 }
                 | primary_value tCOLON2 cname {
-                    $$ = support.new_colon2(support.getPosition($1), $1, (String) $3.getValue());
+                    $$ = support.dispatch("on_const_path_ref", $1, $3);
                 }
 
 // Token:fname - A function name [!null]
@@ -593,28 +595,22 @@ fname          : tIDENTIFIER | tCONSTANT | tFID
                }
 
 // LiteralNode:fsym
-fsym           : fname {
-                    $$ = new LiteralNode($1);
-                }
-                | symbol {
-                    $$ = new LiteralNode($1);
-                }
+fsym           : fname
+               | symbol
 
 // Node:fitem
 fitem           : fsym {
-                    $$ = $1;
+                    $$ = support.dispatch("on_symbol_literal", $1);
                 }
-                | dsym {
-                    $$ = $1;
-                }
+                | dsym
 
 undef_list      : fitem {
-                    $$ = support.newUndef($1.getPosition(), $1);
+                    $$ = support.new_array($1);
                 }
                 | undef_list ',' {
                     lexer.setState(LexState.EXPR_FNAME);
                 } fitem {
-                    $$ = support.appendToBlock($1, support.newUndef($1.getPosition(), $4));
+                    $1.append($4);
                 }
 
 // Token:op
@@ -633,190 +629,118 @@ reswords        : k__LINE__ | k__FILE__ | k__ENCODING__ | klBEGIN | klEND
                 | kIF_MOD | kUNLESS_MOD | kWHILE_MOD | kUNTIL_MOD | kRESCUE_MOD
 
 arg             : lhs '=' arg {
-                    $$ = support.node_assign($1, $3);
-                    // FIXME: Consider fixing node_assign itself rather than single case
-                    $<Node>$.setPosition(support.getPosition($1));
+                    $$ = support.dispatch("on_assign", $1, $3);
                 }
                 | lhs '=' arg kRESCUE_MOD arg {
-                    ISourcePosition position = $4.getPosition();
-                    Node body = $5 == null ? NilImplicitNode.NIL : $5;
-                    $$ = support.node_assign($1, new RescueNode(position, $3, new RescueBodyNode(position, null, body, null), null));
+                    $$ = support.dispatch("on_assign", $1, support.dispatch("on_rescue_mod", $3, $5));
                 }
                 | var_lhs tOP_ASGN arg {
-                    support.checkExpression($3);
-
-                    ISourcePosition pos = $1.getPosition();
-                    String asgnOp = (String) $2.getValue();
-                    if (asgnOp.equals("||")) {
-                        $1.setValueNode($3);
-                        $$ = new OpAsgnOrNode(pos, support.gettable2($1), $1);
-                    } else if (asgnOp.equals("&&")) {
-                        $1.setValueNode($3);
-                        $$ = new OpAsgnAndNode(pos, support.gettable2($1), $1);
-                    } else {
-                        $1.setValueNode(support.getOperatorCallNode(support.gettable2($1), asgnOp, $3));
-                        $1.setPosition(pos);
-                        $$ = $1;
-                    }
+                    $$ = support.dispatch("on_opassign", $1, $2, $3);
                 }
                 | var_lhs tOP_ASGN arg kRESCUE_MOD arg {
-                    support.checkExpression($3);
-                    ISourcePosition pos = $4.getPosition();
-                    Node body = $5 == null ? NilImplicitNode.NIL : $5;
-                    Node rescue = new RescueNode($4.getPosition(), $3, new RescueBodyNode($4.getPosition(), null, body, null), null);
-
-                    pos = $1.getPosition();
-                    String asgnOp = (String) $2.getValue();
-                    if (asgnOp.equals("||")) {
-                        $1.setValueNode(rescue);
-                        $$ = new OpAsgnOrNode(pos, support.gettable2($1), $1);
-                    } else if (asgnOp.equals("&&")) {
-                        $1.setValueNode(rescue);
-                        $$ = new OpAsgnAndNode(pos, support.gettable2($1), $1);
-                    } else {
-                        $1.setValueNode(support.getOperatorCallNode(support.gettable2($1), asgnOp, rescue));
-                        $1.setPosition(pos);
-                        $$ = $1;
-                    }
+                    $3 = support.dispatch("on_rescue_mod", $3, $5);
+                    $$ = support.dispatch("on_opassign", $1, $2, $3);
                 }
                 | primary_value '[' opt_call_args rbracket tOP_ASGN arg {
-  // FIXME: arg_concat missing for opt_call_args
-                    $$ = support.new_opElementAsgnNode(support.getPosition($1), $1, (String) $5.getValue(), $3, $6);
+                    $1 = support.dispatch("on_aref_field", $1, support.escape($3));
+                    $$ = support.dispatch("on_opassign", $1, $5, $6);
                 }
                 | primary_value tDOT tIDENTIFIER tOP_ASGN arg {
-                    $$ = new OpAsgnNode(support.getPosition($1), $1, $5, (String) $3.getValue(), (String) $4.getValue());
+                    $1 = support.dispatch("on_field", $1, support.symbol('.'), $3);
+                    $$ = support.dispatch("on_opassign", $1, $4, $5);
                 }
                 | primary_value tDOT tCONSTANT tOP_ASGN arg {
-                    $$ = new OpAsgnNode(support.getPosition($1), $1, $5, (String) $3.getValue(), (String) $4.getValue());
+                    $1 = support.dispatch("on_field", $1, support.symbol('.'), $3);
+                    $$ = support.dispatch("on_opassign", $1, $4, $5);
                 }
                 | primary_value tCOLON2 tIDENTIFIER tOP_ASGN arg {
-                    $$ = new OpAsgnNode(support.getPosition($1), $1, $5, (String) $3.getValue(), (String) $4.getValue());
+                    $1 = support.dispatch("on_field", $1, support.string("::"), $3);
+                    $$ = support.dispatch("on_opassign", $1, $4, $5);
                 }
                 | primary_value tCOLON2 tCONSTANT tOP_ASGN arg {
-                    support.yyerror("constant re-assignment");
+                    $$ = support.dispatch("on_const_path_field", $1, $3);
+                    $$ = support.dispatch("on_opassign", $$, $4, $5);
+                    $$ = support.dispatch("on_assign_error", $$);
                 }
                 | tCOLON3 tCONSTANT tOP_ASGN arg {
-                    support.yyerror("constant re-assignment");
+                    $$ = support.dispatch("on_top_const_field", $2);
+                    $$ = support.dispatch("on_opassign", $$, $3, $4);
+                    $$ = support.dispatch("on_assign_error", $$);
                 }
                 | backref tOP_ASGN arg {
-                    support.backrefAssignError($1);
+                    $$ = support.dispatch("on_var_field", $1);
+                    $$ = support.dispatch("on_opassign", $$, $2, $3);
+                    $$ = support.dispatch("on_assign_error", $$);
                 }
                 | arg tDOT2 arg {
-                    support.checkExpression($1);
-                    support.checkExpression($3);
-    
-                    boolean isLiteral = $1 instanceof FixnumNode && $3 instanceof FixnumNode;
-                    $$ = new DotNode(support.getPosition($1), $1, $3, false, isLiteral);
+                    $$ = support.dispatch("on_dot2", $1, $3);
                 }
                 | arg tDOT3 arg {
-                    support.checkExpression($1);
-                    support.checkExpression($3);
-
-                    boolean isLiteral = $1 instanceof FixnumNode && $3 instanceof FixnumNode;
-                    $$ = new DotNode(support.getPosition($1), $1, $3, true, isLiteral);
+                    $$ = support.dispatch("on_dot3", $1, $3);
                 }
                 | arg tPLUS arg {
-                    $$ = support.getOperatorCallNode($1, "+", $3, lexer.getPosition());
                 }
                 | arg tMINUS arg {
-                    $$ = support.getOperatorCallNode($1, "-", $3, lexer.getPosition());
                 }
                 | arg tSTAR2 arg {
-                    $$ = support.getOperatorCallNode($1, "*", $3, lexer.getPosition());
                 }
                 | arg tDIVIDE arg {
-                    $$ = support.getOperatorCallNode($1, "/", $3, lexer.getPosition());
                 }
                 | arg tPERCENT arg {
-                    $$ = support.getOperatorCallNode($1, "%", $3, lexer.getPosition());
                 }
                 | arg tPOW arg {
-                    $$ = support.getOperatorCallNode($1, "**", $3, lexer.getPosition());
                 }
                 | tUMINUS_NUM tINTEGER tPOW arg {
-                    $$ = support.getOperatorCallNode(support.getOperatorCallNode($2, "**", $4, lexer.getPosition()), "-@");
                 }
                 | tUMINUS_NUM tFLOAT tPOW arg {
-                    $$ = support.getOperatorCallNode(support.getOperatorCallNode($2, "**", $4, lexer.getPosition()), "-@");
                 }
                 | tUPLUS arg {
-                    $$ = support.getOperatorCallNode($2, "+@");
                 }
                 | tUMINUS arg {
-                    $$ = support.getOperatorCallNode($2, "-@");
                 }
                 | arg tPIPE arg {
-                    $$ = support.getOperatorCallNode($1, "|", $3, lexer.getPosition());
                 }
                 | arg tCARET arg {
-                    $$ = support.getOperatorCallNode($1, "^", $3, lexer.getPosition());
                 }
                 | arg tAMPER2 arg {
-                    $$ = support.getOperatorCallNode($1, "&", $3, lexer.getPosition());
                 }
                 | arg tCMP arg {
-                    $$ = support.getOperatorCallNode($1, "<=>", $3, lexer.getPosition());
                 }
                 | arg tGT arg {
-                    $$ = support.getOperatorCallNode($1, ">", $3, lexer.getPosition());
                 }
                 | arg tGEQ arg {
-                    $$ = support.getOperatorCallNode($1, ">=", $3, lexer.getPosition());
                 }
                 | arg tLT arg {
-                    $$ = support.getOperatorCallNode($1, "<", $3, lexer.getPosition());
                 }
                 | arg tLEQ arg {
-                    $$ = support.getOperatorCallNode($1, "<=", $3, lexer.getPosition());
                 }
                 | arg tEQ arg {
-                    $$ = support.getOperatorCallNode($1, "==", $3, lexer.getPosition());
                 }
                 | arg tEQQ arg {
-                    $$ = support.getOperatorCallNode($1, "===", $3, lexer.getPosition());
                 }
                 | arg tNEQ arg {
-                    $$ = support.getOperatorCallNode($1, "!=", $3, lexer.getPosition());
                 }
                 | arg tMATCH arg {
-                    $$ = support.getMatchNode($1, $3);
-                  /* ENEBO
-                        $$ = match_op($1, $3);
-                        if (nd_type($1) == NODE_LIT && TYPE($1->nd_lit) == T_REGEXP) {
-                            $$ = reg_named_capture_assign($1->nd_lit, $$);
-                        }
-                  */
                 }
                 | arg tNMATCH arg {
-                    $$ = support.getOperatorCallNode($1, "!~", $3, lexer.getPosition());
                 }
                 | tBANG arg {
-                    $$ = support.getOperatorCallNode(support.getConditionNode($2), "!");
                 }
                 | tTILDE arg {
-                    $$ = support.getOperatorCallNode($2, "~");
                 }
                 | arg tLSHFT arg {
-                    $$ = support.getOperatorCallNode($1, "<<", $3, lexer.getPosition());
                 }
                 | arg tRSHFT arg {
-                    $$ = support.getOperatorCallNode($1, ">>", $3, lexer.getPosition());
                 }
                 | arg tANDOP arg {
-                    $$ = support.newAndNode($2.getPosition(), $1, $3);
                 }
                 | arg tOROP arg {
-                    $$ = support.newOrNode($2.getPosition(), $1, $3);
                 }
                 | kDEFINED opt_nl arg {
-                    // ENEBO: arg surrounded by in_defined set/unset
-                    $$ = new DefinedNode($1.getPosition(), $3);
                 }
                 | arg '?' arg opt_nl ':' arg {
-                    $$ = new IfNode(support.getPosition($1), support.getConditionNode($1), $3, $6);
                 }
                 | primary {
-                    $$ = $1;
                 }
 
 arg_value       : arg {
