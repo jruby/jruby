@@ -76,7 +76,6 @@ public class Ripper19Parser implements RubyParser {
   k__ENCODING__ kDO_LAMBDA 
 
 %token <IRubyObject> tIDENTIFIER tFID tGVAR tIVAR tCONSTANT tCVAR tLABEL tCHAR
-%type <IRubyObject> variable
 %type <IRubyObject> sym symbol operation operation2 operation3 cname fname 
 %type <Token> op
 %type <IRubyObject> f_norm_arg dot_or_colon restarg_mark blkarg_mark
@@ -166,6 +165,7 @@ public class Ripper19Parser implements RubyParser {
 %type <IRubyObject> mlhs_inner f_block_opt for_var
 %type <IRubyObject> opt_call_args f_marg f_margs
 %type <IRubyObject> bvar
+%type <Token> user_variable, keyword_variable
    // ENEBO: end all new types
 
 %type <IRubyObject> rparen rbracket reswords f_bad_arg
@@ -1494,13 +1494,13 @@ user_variable	: tIDENTIFIER
 		| tCVAR
 
 // [!null]
-kernel_variable : kNIL
-                | kSELF
-                | kTRUE
-                | kFALSE
-                | k__FILE__
-                | k__LINE__
-                | k__ENCODING__
+keyword_variable : kNIL
+                 | kSELF
+                 | kTRUE
+                 | kFALSE
+                 | k__FILE__
+                 | k__LINE__
+                 | k__ENCODING__
 
 // [!null]
 var_ref         : user_variable {
@@ -1510,7 +1510,7 @@ var_ref         : user_variable {
                         $$ = support.dispatch1("on_vcall", $1);
                     }
                 }
-                | kernel_variable {
+                | keyword_variable {
                     $$ = support.dispatch("on_var_ref", $1);
                 }
 
@@ -1519,7 +1519,7 @@ var_lhs         : user_variable {
                     $$ = support.assignable($1, null);
                     $$ = support.dispatch("on_var_field", $$);
                 }
-                | kernel_variable {
+                | keyword_variable {
                     $$ = support.assignable($1, null);
                     $$ = support.dispatch("on_var_field", $$);
                 }
@@ -1553,62 +1553,62 @@ f_arglist       : tLPAREN2 f_args rparen {
 
 // [!null]
 f_args          : f_arg ',' f_optarg ',' f_rest_arg opt_f_block_arg {
-                    $$ = support.new_args($1.getPosition(), $1, $3, $5, null, $6);
+                    $$ = support.params_new($1, $3, $5, null, support.escape($6));
                 }
                 | f_arg ',' f_optarg ',' f_rest_arg ',' f_arg opt_f_block_arg {
-                    $$ = support.new_args($1.getPosition(), $1, $3, $5, $7, $8);
+                    $$ = support.params_new($1, $3, $5, $7, support.escape($8));
                 }
                 | f_arg ',' f_optarg opt_f_block_arg {
-                    $$ = support.new_args($1.getPosition(), $1, $3, null, null, $4);
+                    $$ = support.params_new($1, $3, null, null, support.escape($4));
                 }
                 | f_arg ',' f_optarg ',' f_arg opt_f_block_arg {
-                    $$ = support.new_args($1.getPosition(), $1, $3, null, $5, $6);
+                    $$ = support.params_new($1, $3, null, $5, support.escape($6));
                 }
                 | f_arg ',' f_rest_arg opt_f_block_arg {
-                    $$ = support.new_args($1.getPosition(), $1, null, $3, null, $4);
+                    $$ = support.params_new($1, null, $3, null, support.escape($4));
                 }
                 | f_arg ',' f_rest_arg ',' f_arg opt_f_block_arg {
-                    $$ = support.new_args($1.getPosition(), $1, null, $3, $5, $6);
+                    $$ = support.params_new($1, null, $3, $5, support.escape($6));
                 }
                 | f_arg opt_f_block_arg {
-                    $$ = support.new_args($1.getPosition(), $1, null, null, null, $2);
+                    $$ = support.params_new($1, null, null, null,support.escape($2));
                 }
                 | f_optarg ',' f_rest_arg opt_f_block_arg {
-                    $$ = support.new_args($1.getPosition(), null, $1, $3, null, $4);
+                    $$ = support.params_new(null, $1, $3, null, support.escape($4));
                 }
                 | f_optarg ',' f_rest_arg ',' f_arg opt_f_block_arg {
-                    $$ = support.new_args($1.getPosition(), null, $1, $3, $5, $6);
+                    $$ = support.params_new(null, $1, $3, $5, support.escape($6));
                 }
                 | f_optarg opt_f_block_arg {
-                    $$ = support.new_args($1.getPosition(), null, $1, null, null, $2);
+                    $$ = support.params_new(null, $1, null, null,support.escape($2));
                 }
                 | f_optarg ',' f_arg opt_f_block_arg {
-                    $$ = support.new_args($1.getPosition(), null, $1, null, $3, $4);
+                    $$ = support.params_new(null, $1, null, $3, support.escape($4));
                 }
                 | f_rest_arg opt_f_block_arg {
-                    $$ = support.new_args($1.getPosition(), null, null, $1, null, $2);
+                    $$ = support.params_new(null, null, $1, null,support.escape($2));
                 }
                 | f_rest_arg ',' f_arg opt_f_block_arg {
-                    $$ = support.new_args($1.getPosition(), null, null, $1, $3, $4);
+                    $$ = support.params_new(null, null, $1, $3, support.escape($4));
                 }
                 | f_block_arg {
-                    $$ = support.new_args($1.getPosition(), null, null, null, null, $1);
+                    $$ = support.params_new(null, null, null, null, $1);
                 }
                 | /* none */ {
-                    $$ = support.new_args(lexer.getPosition(), null, null, null, null, null);
+                    $$ = support.params_new(null, null, null, null, null);
                 }
 
 f_bad_arg       : tCONSTANT {
-                    support.yyerror("formal argument cannot be a constant");
+                    $$ = support.dispatch("on_param_error", $1);
                 }
                 | tIVAR {
-                    support.yyerror("formal argument cannot be an instance variable");
+                    $$ = support.dispatch("on_param_error", $1);
                 }
                 | tGVAR {
-                    support.yyerror("formal argument cannot be a global variable");
+                    $$ = support.dispatch("on_param_error", $1);
                 }
                 | tCVAR {
-                    support.yyerror("formal argument cannot be a class variable");
+                    $$ = support.dispatch("on_param_error", $1);
                 }
 
 // Token:f_norm_arg [!null]
@@ -1619,56 +1619,44 @@ f_norm_arg      : f_bad_arg
 
 f_arg_item      : f_norm_arg {
                     $$ = support.arg_var($1);
-  /*
-                    $$ = new ArgAuxiliaryNode($1.getPosition(), (String) $1.getValue(), 1);
-  */
                 }
                 | tLPAREN f_margs rparen {
-                    $$ = $2;
-                    /*		    {
-			ID tid = internal_id();
-			arg_var(tid);
-			if (dyna_in_block()) {
-			    $2->nd_value = NEW_DVAR(tid);
-			}
-			else {
-			    $2->nd_value = NEW_LVAR(tid);
-			}
-			$$ = NEW_ARGS_AUX(tid, 1);
-			$$->nd_next = $2;*/
+                    $$ = support.dispatch("on_mlhs_paren", $2);
                 }
 
 // [!null]
 f_arg           : f_arg_item {
-                    $$ = new ArrayNode(lexer.getPosition(), $1);
+                    $$ = support.new_array($1);
                 }
                 | f_arg ',' f_arg_item {
-                    $1.add($3);
-                    $$ = $1;
+                    $$ = $1.append($3)
                 }
 
 f_opt           : tIDENTIFIER '=' arg_value {
                     support.arg_var(support.formal_argument($1));
-                    $$ = new OptArgNode($1.getPosition(), support.assignable($1, $3));
+                    $$ = support.assignable($1, $3);
+                    $$ = support.new_assoc($$, $3);
+
                 }
 
 f_block_opt     : tIDENTIFIER '=' primary_value {
                     support.arg_var(support.formal_argument($1));
-                    $$ = new OptArgNode($1.getPosition(), support.assignable($1, $3));
+                    $$ = support.assignable($1, $3);
+                    $$ = support.new_assoc($$, $3);
                 }
 
 f_block_optarg  : f_block_opt {
-                    $$ = new BlockNode($1.getPosition()).add($1);
+                    $$ = support.new_array($1);
                 }
                 | f_block_optarg ',' f_block_opt {
-                    $$ = support.appendToBlock($1, $3);
+                    $$ = $1.append($3);
                 }
 
 f_optarg        : f_opt {
-                    $$ = new BlockNode($1.getPosition()).add($1);
+                    $$ = support.new_array($1);
                 }
                 | f_optarg ',' f_opt {
-                    $$ = support.appendToBlock($1, $3);
+                    $$ = $1.append($3);
                 }
 
 restarg_mark    : tSTAR2 | tSTAR
@@ -1714,9 +1702,11 @@ assoc_list      : none
                 }
 
 // [!null]
-assocs          : assoc
+assocs          : assoc {
+                    $$ = support.new_array($1);
+                }
                 | assocs ',' assoc {
-                    $$ = $1.addAll($3);
+                    $$ = $1.append($3);
                 }
 
 // [!null]

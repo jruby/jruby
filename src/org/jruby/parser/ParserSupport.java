@@ -1679,6 +1679,10 @@ public class ParserSupport {
         throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
     }
     
+    public IRubyObject new_assoc(IRubyObject arg1, IRubyObject arg2) {
+        throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
+    }    
+    
     public IRubyObject mlhs_new() {
         throw new UnsupportedOperationException("Something seriously wrong to call ripper methods when not in ripper");
     }
